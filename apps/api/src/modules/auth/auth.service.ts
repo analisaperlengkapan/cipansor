@@ -49,21 +49,7 @@ export class AuthService {
     // Determine active role (primary or first role)
     const primaryRole = user.userRoles.find((r) => r.isPrimary) || user.userRoles[0];
 
-    // Defined Admin Roles for mandatory 2FA
-    const ADMIN_ROLES = [
-        RoleCode.SUPER_ADMIN,
-        RoleCode.YAYASAN_ADMIN,
-        RoleCode.TKQ_ADMIN,
-        RoleCode.SDIT_ADMIN,
-        RoleCode.SMPIT_ADMIN,
-        RoleCode.SMAQ_ADMIN,
-        RoleCode.UNIT_ADMIN, // If used
-    ];
-
-    const isUserAdmin =
-        user.role === UserRole.SUPER_ADMIN ||
-        user.role === UserRole.UNIT_ADMIN ||
-        (primaryRole?.role.code && ADMIN_ROLES.includes(primaryRole.role.code as RoleCode));
+    const isUserAdmin = this.isAdminAccount(user, primaryRole?.role.code as RoleCode);
 
     // Check for 2FA
     if (user.isTwoFactorEnabled) {
@@ -523,11 +509,20 @@ export class AuthService {
    * Disable 2FA
    */
   async disableTwoFactor(userId: string, token: string, adminId?: string) {
-    const user = await prisma.user.findUnique({ where: { id: userId } });
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+        include: {
+            userRoles: {
+                where: { isActive: true },
+                include: { role: true }
+            }
+        }
+    });
     if (!user) throw Errors.notFound('User');
 
-    // Admin check
-    const isTargetAdmin = user.role === UserRole.SUPER_ADMIN || user.role === UserRole.UNIT_ADMIN; // Simplified check for core admin roles
+    // Consistently check if target is Admin using role code logic
+    const primaryTargetRole = user.userRoles.find((r) => r.isPrimary) || user.userRoles[0];
+    const isTargetAdmin = this.isAdminAccount(user, primaryTargetRole?.role.code as RoleCode);
 
     if (adminId) {
         // Admin disabling for another user (Reset flow)
@@ -536,13 +531,24 @@ export class AuthService {
             throw Errors.unauthorized('Admin must have 2FA enabled to perform this action');
         }
 
+        // Check Admin privileges
         if (admin.role !== UserRole.SUPER_ADMIN && admin.role !== UserRole.UNIT_ADMIN) {
             throw Errors.forbidden('Only Admins can disable 2FA for other users');
         }
 
         // Fix Privilege Escalation: Prevent UNIT_ADMIN from disabling 2FA for SUPER_ADMIN
-        if (admin.role === UserRole.UNIT_ADMIN && user.role === UserRole.SUPER_ADMIN) {
-            throw Errors.forbidden('UNIT_ADMIN cannot disable 2FA for SUPER_ADMIN');
+        if (admin.role === UserRole.UNIT_ADMIN) {
+            if (user.role === UserRole.SUPER_ADMIN) {
+                throw Errors.forbidden('UNIT_ADMIN cannot disable 2FA for SUPER_ADMIN');
+            }
+            // Enforce Unit Boundary: UNIT_ADMIN can only manage users in same unit
+            if (admin.unitId !== user.unitId) {
+                throw Errors.forbidden('UNIT_ADMIN can only disable 2FA for users in their own unit');
+            }
+            // Enforce Hierarchy: UNIT_ADMIN cannot disable other UNIT_ADMINs (Peer protection)
+            if (user.role === UserRole.UNIT_ADMIN) {
+                throw Errors.forbidden('UNIT_ADMIN cannot disable 2FA for other UNIT_ADMINs');
+            }
         }
 
         // Check if target user actually has 2FA enabled
@@ -599,6 +605,29 @@ export class AuthService {
     return Array.from({ length: 10 }, () =>
       crypto.randomBytes(5).toString('hex').toUpperCase()
     );
+  }
+
+  /**
+   * Helper to check if a user is an Admin
+   * Checks both legacy role and RoleCode
+   */
+  private isAdminAccount(user: { role: UserRole }, roleCode?: RoleCode): boolean {
+      const ADMIN_ROLES = [
+          RoleCode.SUPER_ADMIN,
+          RoleCode.YAYASAN_ADMIN,
+          RoleCode.TKQ_ADMIN,
+          RoleCode.SDIT_ADMIN,
+          RoleCode.SMPIT_ADMIN,
+          RoleCode.SMAQ_ADMIN,
+          RoleCode.UNIT_ADMIN,
+      ];
+
+      return (
+          user.role === UserRole.SUPER_ADMIN ||
+          user.role === UserRole.UNIT_ADMIN ||
+          (roleCode && ADMIN_ROLES.includes(roleCode)) ||
+          false
+      );
   }
 }
 

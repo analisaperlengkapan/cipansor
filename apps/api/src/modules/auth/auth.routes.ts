@@ -300,7 +300,7 @@ router.post('/register', isAdmin, validate(registerSchema), controller.register)
  *       200:
  *         description: 2FA disabled successfully
  */
-router.post('/2fa/disable', controller.disableTwoFactor);
+router.post('/2fa/disable', twoFactorLimiter, controller.disableTwoFactor);
 
 /**
  * @swagger

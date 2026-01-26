@@ -8,8 +8,18 @@ import {
   refreshTokenSchema,
   changePasswordSchema,
 } from './auth.schema';
+import rateLimit from 'express-rate-limit';
 
 const router = Router();
+
+// Rate limiter for 2FA actions
+const twoFactorLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // Limit each IP to 10 requests per windowMs
+  message: 'Too many 2FA attempts, please try again later',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 /**
  * @swagger
@@ -100,15 +110,17 @@ router.post('/2fa/generate', authenticate2FA, controller.generateTwoFactorSecret
  *         application/json:
  *           schema:
  *             type: object
- *             required: [token]
+ *             required: [token, secret]
  *             properties:
  *               token:
+ *                 type: string
+ *               secret:
  *                 type: string
  *     responses:
  *       200:
  *         description: 2FA enabled successfully
  */
-router.post('/2fa/enable', authenticate2FA, controller.enableTwoFactor);
+router.post('/2fa/enable', authenticate2FA, twoFactorLimiter, controller.enableTwoFactor);
 
 /**
  * @swagger
@@ -132,7 +144,7 @@ router.post('/2fa/enable', authenticate2FA, controller.enableTwoFactor);
  *       200:
  *         description: 2FA verified, returns tokens
  */
-router.post('/2fa/login', authenticate2FA, controller.verifyTwoFactorLogin);
+router.post('/2fa/login', authenticate2FA, twoFactorLimiter, controller.verifyTwoFactorLogin);
 
 // Protected routes (Requires Full Access Token)
 router.use(authenticate);

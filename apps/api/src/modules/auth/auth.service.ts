@@ -540,6 +540,11 @@ export class AuthService {
             throw Errors.forbidden('Only Admins can disable 2FA for other users');
         }
 
+        // Fix Privilege Escalation: Prevent UNIT_ADMIN from disabling 2FA for SUPER_ADMIN
+        if (admin.role === UserRole.UNIT_ADMIN && user.role === UserRole.SUPER_ADMIN) {
+            throw Errors.forbidden('UNIT_ADMIN cannot disable 2FA for SUPER_ADMIN');
+        }
+
         // Check if target user actually has 2FA enabled
         if (!user.isTwoFactorEnabled) {
             throw Errors.badRequest('2FA is not enabled for this user');

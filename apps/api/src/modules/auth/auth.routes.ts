@@ -100,11 +100,9 @@ router.post('/2fa/generate', authenticate2FA, controller.generateTwoFactorSecret
  *         application/json:
  *           schema:
  *             type: object
- *             required: [token, secret]
+ *             required: [token]
  *             properties:
  *               token:
- *                 type: string
- *               secret:
  *                 type: string
  *     responses:
  *       200:

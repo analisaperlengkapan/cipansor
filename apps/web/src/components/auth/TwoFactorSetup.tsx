@@ -54,7 +54,6 @@ export function TwoFactorSetup({ onComplete }: TwoFactorSetupProps) {
     try {
       const res = await authApi.enable2FA({
         token: data.token,
-        secret: secret,
       });
       setRecoveryCodes(res.data.data.recoveryCodes);
       setStep("recovery");

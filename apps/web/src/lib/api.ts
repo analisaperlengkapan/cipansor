@@ -156,7 +156,7 @@ export const authApi = {
   // 2FA methods
   generate2FA: () =>
     api.post<ApiResponse<TwoFactorGenerateResponse>>("/auth/2fa/generate"),
-  enable2FA: (data: { token: string; secret: string }) =>
+  enable2FA: (data: { token: string }) =>
     api.post<ApiResponse<TwoFactorEnableResponse>>("/auth/2fa/enable", data),
   verify2FA: (data: { token: string }) =>
     api.post<ApiResponse<LoginResponse>>("/auth/2fa/login", data),

@@ -20,30 +20,30 @@ export interface TokenPair {
 /**
  * Generate access token
  */
-export function generateAccessToken(payload: Omit<JwtPayload, 'type'>): string {
+export function generateAccessToken(payload: Omit<JwtPayload, 'type'>, expiresIn?: string): string {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (jwt as any).sign({ ...payload, type: 'access' }, config.jwt.secret, {
-    expiresIn: config.jwt.expiresIn,
+    expiresIn: expiresIn || config.jwt.expiresIn,
   });
 }
 
 /**
  * Generate refresh token
  */
-export function generateRefreshToken(payload: Omit<JwtPayload, 'type'>): string {
+export function generateRefreshToken(payload: Omit<JwtPayload, 'type'>, expiresIn?: string): string {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (jwt as any).sign({ ...payload, type: 'refresh' }, config.jwt.secret, {
-    expiresIn: config.jwt.refreshExpiresIn,
+    expiresIn: expiresIn || config.jwt.refreshExpiresIn,
   });
 }
 
 /**
  * Generate both access and refresh tokens
  */
-export function generateTokenPair(payload: Omit<JwtPayload, 'type'>): TokenPair {
+export function generateTokenPair(payload: Omit<JwtPayload, 'type'>, expiresIn?: string): TokenPair {
   return {
-    accessToken: generateAccessToken(payload),
-    refreshToken: generateRefreshToken(payload),
+    accessToken: generateAccessToken(payload, expiresIn),
+    refreshToken: generateRefreshToken(payload, expiresIn),
   };
 }
 

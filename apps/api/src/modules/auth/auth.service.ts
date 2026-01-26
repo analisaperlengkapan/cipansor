@@ -4,9 +4,10 @@ import { generateTokenPair, verifyToken, getExpirationDate } from '@/lib/jwt';
 import { Errors } from '@/middleware/error';
 import { config } from '@/config';
 import type { LoginInput, RegisterInput, ChangePasswordInput } from './auth.schema';
-import { UserRole } from '@prisma/client';
+import { UserRole, RoleCode } from '@prisma/client';
 import { authenticator } from 'otplib';
 import * as qrcode from 'qrcode';
+import crypto from 'crypto';
 
 export class AuthService {
   /**
@@ -48,9 +49,25 @@ export class AuthService {
     // Determine active role (primary or first role)
     const primaryRole = user.userRoles.find((r) => r.isPrimary) || user.userRoles[0];
 
+    // Defined Admin Roles for mandatory 2FA
+    const ADMIN_ROLES = [
+        RoleCode.SUPER_ADMIN,
+        RoleCode.YAYASAN_ADMIN,
+        RoleCode.TKQ_ADMIN,
+        RoleCode.SDIT_ADMIN,
+        RoleCode.SMPIT_ADMIN,
+        RoleCode.SMAQ_ADMIN,
+        RoleCode.UNIT_ADMIN, // If used
+    ];
+
+    const isUserAdmin =
+        user.role === UserRole.SUPER_ADMIN ||
+        user.role === UserRole.UNIT_ADMIN ||
+        (primaryRole?.role.code && ADMIN_ROLES.includes(primaryRole.role.code as RoleCode));
+
     // Check for 2FA
     if (user.isTwoFactorEnabled) {
-      // Return temporary token for 2FA verification
+      // Return temporary token for 2FA verification with SHORT expiry
       const tempToken = generateTokenPair({
         sub: user.id,
         email: user.email,
@@ -58,7 +75,7 @@ export class AuthService {
         unitId: user.unitId,
         roleId: primaryRole?.roleId,
         isTemp: true, // Marker for temp token
-      }).accessToken; // We reuse access token as temp token but verify it differently or check payload
+      }, '5m').accessToken; // 5 minutes expiry
 
       return {
         requiresTwoFactor: true,
@@ -67,10 +84,7 @@ export class AuthService {
     }
 
     // Force 2FA setup for Admin/Super Admin
-    if (
-      (user.role === UserRole.SUPER_ADMIN || user.role === UserRole.UNIT_ADMIN || primaryRole?.role.code === 'SUPER_ADMIN' || primaryRole?.role.code.includes('ADMIN')) &&
-      !user.isTwoFactorEnabled
-    ) {
+    if (isUserAdmin && !user.isTwoFactorEnabled) {
         const tempToken = generateTokenPair({
             sub: user.id,
             email: user.email,
@@ -78,7 +92,7 @@ export class AuthService {
             unitId: user.unitId,
             roleId: primaryRole?.roleId,
             isTemp: true,
-        }).accessToken;
+        }, '10m').accessToken; // 10 mins for setup
 
         return {
             requiresTwoFactorSetup: true,
@@ -122,7 +136,7 @@ export class AuthService {
     });
 
     // Return user without password
-    const { passwordHash, twoFactorSecret, twoFactorRecoveryCodes, ...userWithoutPassword } = user;
+    const { passwordHash, twoFactorSecret, twoFactorSecretPending, twoFactorRecoveryCodes, ...userWithoutPassword } = user;
 
     return {
       user: {
@@ -296,7 +310,7 @@ export class AuthService {
       where: { isActive: true },
     });
 
-    const { passwordHash, twoFactorSecret, twoFactorRecoveryCodes, ...userWithoutPassword } = user;
+    const { passwordHash, twoFactorSecret, twoFactorSecretPending, twoFactorRecoveryCodes, ...userWithoutPassword } = user;
 
     return {
       ...userWithoutPassword,
@@ -363,8 +377,14 @@ export class AuthService {
     const otpauth = authenticator.keyuri(user.email, 'Cipansor App', secret);
     const qrCodeUrl = await qrcode.toDataURL(otpauth);
 
+    // BUG FIX: Store pending secret server-side
+    await prisma.user.update({
+        where: { id: userId },
+        data: { twoFactorSecretPending: secret },
+    });
+
     return {
-      secret,
+      secret, // Still return for manual entry if needed, but verification uses DB
       qrCodeUrl,
     };
   }
@@ -372,8 +392,16 @@ export class AuthService {
   /**
    * Enable 2FA
    */
-  async enableTwoFactor(userId: string, token: string, secret: string) {
-    const isValid = authenticator.verify({ token, secret });
+  async enableTwoFactor(userId: string, token: string) {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw Errors.notFound('User');
+
+    // BUG FIX: Verify against pending secret
+    if (!user.twoFactorSecretPending) {
+        throw Errors.badRequest('No pending 2FA setup found. Please generate a new code.');
+    }
+
+    const isValid = authenticator.verify({ token, secret: user.twoFactorSecretPending });
 
     if (!isValid) {
       throw Errors.badRequest('Invalid OTP code');
@@ -385,7 +413,8 @@ export class AuthService {
       where: { id: userId },
       data: {
         isTwoFactorEnabled: true,
-        twoFactorSecret: secret,
+        twoFactorSecret: user.twoFactorSecretPending,
+        twoFactorSecretPending: null, // Clear pending
         twoFactorRecoveryCodes: recoveryCodes,
       },
     });
@@ -461,7 +490,7 @@ export class AuthService {
     });
 
     const activeAcademicYearId = await this.getActiveAcademicYearId();
-    const { passwordHash, twoFactorSecret, twoFactorRecoveryCodes, ...userWithoutPassword } = user;
+    const { passwordHash, twoFactorSecret, twoFactorRecoveryCodes, twoFactorSecretPending, ...userWithoutPassword } = user;
 
     return {
       user: {
@@ -479,23 +508,10 @@ export class AuthService {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw Errors.notFound('User');
 
-    // Admin/Super Admin cannot disable their own 2FA (if enforcing policy)
-    // But for now let's stick to prompt: "tidak bisa di nonaktifkan (untuk admin dan super admin)"
-    // This implies they CANNOT disable it at all.
-    // "untuk admin dan super admin ketika login pertama kali WAJIB aktifkan 2fa (karena tingkat bahayanya) dan tidak bisa di nonaktifkan (untuk admin dan super admin)"
-
-    // We need to check if target user is admin/super admin
-    // We can check role
-    const isTargetAdmin = user.role === UserRole.SUPER_ADMIN || user.role === UserRole.UNIT_ADMIN; // Or check specific RoleCode
+    // Admin check
+    const isTargetAdmin = user.role === UserRole.SUPER_ADMIN || user.role === UserRole.UNIT_ADMIN; // Simplified check for core admin roles
 
     if (isTargetAdmin) {
-       // If admin tries to disable their own 2FA, prevent it?
-       // The prompt says "tidak bisa di nonaktifkan".
-       // But wait, "cara kedua yaitu oleh admin atau super admin ... lalu klik tombol non aktifkan 2fa untuk user yang bersangkutan"
-       // This implies admin can disable for OTHERS.
-       // "untuk admin dan super admin ... tidak bisa di nonaktifkan (untuk admin dan super admin)"
-       // This likely means Admin cannot disable 2FA for THEMSELVES or OTHER ADMINS.
-
        throw Errors.forbidden('2FA cannot be disabled for Admin/Super Admin accounts');
     }
 
@@ -529,6 +545,7 @@ export class AuthService {
       data: {
         isTwoFactorEnabled: false,
         twoFactorSecret: null,
+        twoFactorSecretPending: null,
         twoFactorRecoveryCodes: [],
       },
     });
@@ -552,7 +569,7 @@ export class AuthService {
 
   private generateRecoveryCodes(): string[] {
     return Array.from({ length: 10 }, () =>
-      Math.random().toString(36).substr(2, 10).toUpperCase()
+      crypto.randomBytes(5).toString('hex').toUpperCase()
     );
   }
 }

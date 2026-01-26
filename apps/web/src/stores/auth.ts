@@ -231,15 +231,12 @@ export const useAuthStore = create<AuthState>()(
       partialize: (state) => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated,
-        requiresTwoFactor: state.requiresTwoFactor,
-        requiresTwoFactorSetup: state.requiresTwoFactorSetup,
-        tempToken: state.tempToken,
       }),
       onRehydrateStorage: () => (state) => {
         // After hydration, trigger fetchUser if token exists
         if (state && typeof window !== "undefined") {
           const token = localStorage.getItem("accessToken");
-          if (token && !state.requiresTwoFactor && !state.requiresTwoFactorSetup) {
+          if (token) {
             // Delay fetchUser to next tick to ensure store is ready
             setTimeout(() => state.fetchUser(), 0);
           }

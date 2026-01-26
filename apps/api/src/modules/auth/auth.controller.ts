@@ -109,8 +109,8 @@ export const generateTwoFactorSecret = asyncHandler(async (req: Request, res: Re
  */
 export const enableTwoFactor = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user!.sub;
-  const { token, secret } = req.body;
-  const result = await authService.enableTwoFactor(userId, token, secret);
+  const { token } = req.body; // Secret is no longer taken from body
+  const result = await authService.enableTwoFactor(userId, token);
   res.json({ success: true, data: result });
 });
 

@@ -373,6 +373,10 @@ export class AuthService {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw Errors.notFound('User');
 
+    if (user.isTwoFactorEnabled) {
+      throw Errors.badRequest('2FA is already enabled');
+    }
+
     const secret = authenticator.generateSecret();
     const otpauth = authenticator.keyuri(user.email, 'Cipansor App', secret);
     const qrCodeUrl = await qrcode.toDataURL(otpauth);
@@ -395,6 +399,10 @@ export class AuthService {
   async enableTwoFactor(userId: string, token: string) {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw Errors.notFound('User');
+
+    if (user.isTwoFactorEnabled) {
+      throw Errors.badRequest('2FA is already enabled');
+    }
 
     // BUG FIX: Verify against pending secret
     if (!user.twoFactorSecretPending) {
@@ -521,12 +529,8 @@ export class AuthService {
     // Admin check
     const isTargetAdmin = user.role === UserRole.SUPER_ADMIN || user.role === UserRole.UNIT_ADMIN; // Simplified check for core admin roles
 
-    if (isTargetAdmin) {
-       throw Errors.forbidden('2FA cannot be disabled for Admin/Super Admin accounts');
-    }
-
     if (adminId) {
-        // Admin disabling for another user
+        // Admin disabling for another user (Reset flow)
         const admin = await prisma.user.findUnique({ where: { id: adminId } });
         if (!admin || !admin.isTwoFactorEnabled || !admin.twoFactorSecret) {
             throw Errors.unauthorized('Admin must have 2FA enabled to perform this action');
@@ -536,7 +540,7 @@ export class AuthService {
             throw Errors.forbidden('Only Admins can disable 2FA for other users');
         }
 
-        // Bug 2: Check if target user actually has 2FA enabled
+        // Check if target user actually has 2FA enabled
         if (!user.isTwoFactorEnabled) {
             throw Errors.badRequest('2FA is not enabled for this user');
         }
@@ -547,6 +551,10 @@ export class AuthService {
 
     } else {
         // User disabling their own
+        if (isTargetAdmin) {
+           throw Errors.forbidden('2FA cannot be disabled for Admin/Super Admin accounts');
+        }
+
         if (!user.isTwoFactorEnabled || !user.twoFactorSecret) {
             throw Errors.badRequest('2FA is not enabled');
         }

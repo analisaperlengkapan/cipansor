@@ -112,6 +112,31 @@ router.post(
 
 /**
  * @openapi
+ * /api/roles/users/{userId}:
+ *   get:
+ *     tags: [Roles]
+ *     summary: Get user's role assignments (admin only)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: User's role assignments
+ */
+router.get(
+  '/users/:userId',
+  authenticate,
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  rolesController.getUserRoles.bind(rolesController)
+);
+
+/**
+ * @openapi
  * /api/roles/{id}:
  *   get:
  *     tags: [Roles]
@@ -160,31 +185,6 @@ router.patch(
   authorize(UserRole.SUPER_ADMIN),
   validate(updateRoleSchema),
   rolesController.updateRole.bind(rolesController)
-);
-
-/**
- * @openapi
- * /api/roles/users/{userId}:
- *   get:
- *     tags: [Roles]
- *     summary: Get user's role assignments (admin only)
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: userId
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: User's role assignments
- */
-router.get(
-  '/users/:userId',
-  authenticate,
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
-  rolesController.getUserRoles.bind(rolesController)
 );
 
 /**

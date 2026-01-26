@@ -1,6 +1,8 @@
 import { prisma } from '@/lib/prisma';
+import { redis } from '@/lib/redis';
 import { Errors } from '@/middleware/error';
-import { Realm, RoleCode } from '@prisma/client';
+import { Realm } from '@prisma/client';
+import type { CreateRoleInput, UpdateRoleInput } from './roles.schema';
 
 export class RolesService {
   /**
@@ -33,7 +35,7 @@ export class RolesService {
   /**
    * Get role by code
    */
-  async getRoleByCode(code: RoleCode) {
+  async getRoleByCode(code: string) {
     const role = await prisma.role.findUnique({
       where: { code },
     });
@@ -43,6 +45,87 @@ export class RolesService {
     }
 
     return role;
+  }
+
+  /**
+   * Create a new role
+   */
+  async createRole(input: CreateRoleInput) {
+    if (!input.code) {
+        throw Errors.badRequest('Role code is required');
+    }
+
+    const existing = await prisma.role.findUnique({
+      where: { code: input.code },
+    });
+
+    if (existing) {
+      throw Errors.conflict('Role with this code already exists');
+    }
+
+    // Determine realm: Use provided realm or infer from code prefix
+    let realm: Realm;
+
+    if (input.realm) {
+      realm = input.realm as Realm;
+    } else {
+      realm = Realm.GLOBAL; // Default
+      const codeStr = input.code.toString();
+      if (codeStr.startsWith('YAYASAN')) realm = Realm.YAYASAN;
+      else if (codeStr.startsWith('TKQ')) realm = Realm.TK_QURAN;
+      else if (codeStr.startsWith('SDIT')) realm = Realm.SD_IT;
+      else if (codeStr.startsWith('SMPIT')) realm = Realm.SMP_IT;
+      else if (codeStr.startsWith('SMAQ')) realm = Realm.SMA_QURAN;
+      else if (
+        codeStr.startsWith('PESANTREN') ||
+        ['MUSYRIF', 'MUHAFIDZ', 'MURABBI', 'WALI_KAMAR'].some((p) => codeStr.startsWith(p))
+      )
+        realm = Realm.PESANTREN;
+    }
+
+    return prisma.role.create({
+      data: {
+        code: input.code,
+        name: input.name,
+        description: input.description,
+        permissions: input.permissions ?? [],
+        realm,
+        isActive: true,
+      },
+    });
+  }
+
+  /**
+   * Update role (name, description, permissions)
+   */
+  async updateRole(id: string, input: UpdateRoleInput) {
+    const role = await prisma.role.findUnique({
+      where: { id },
+    });
+
+    if (!role) {
+      throw Errors.notFound('Role');
+    }
+
+    const updated = await prisma.role.update({
+      where: { id },
+      data: {
+        name: input.name,
+        description: input.description,
+        permissions: input.permissions ?? undefined, // Only update if provided
+      },
+    });
+
+    // Invalidate permission cache
+    try {
+      await redis.del(`role:permissions:${id}`);
+    } catch (error) {
+      // Log error but continue since DB update succeeded
+      // eslint-disable-next-line no-console
+      console.error('Failed to invalidate role permissions cache:', error);
+    }
+
+    return updated;
   }
 
   /**

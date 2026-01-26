@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { rolesApi, Role, RoleAssignment, AssignRoleRequest } from "@/lib/api";
+import { rolesApi, Role, RoleAssignment, AssignRoleRequest, CreateRoleInput, UpdateRoleInput } from "@/lib/api";
 import { toast } from "sonner";
 
 // Query keys
@@ -35,6 +35,39 @@ export function useRole(id: string) {
     },
     enabled: !!id,
     staleTime: 60 * 60 * 1000, // 1 hour
+  });
+}
+
+// Create Role
+export function useCreateRole() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CreateRoleInput) => rolesApi.createRole(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: rolesKeys.lists() });
+      toast.success("Role created successfully");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to create role");
+    },
+  });
+}
+
+// Update Role
+export function useUpdateRole(id: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: UpdateRoleInput) => rolesApi.updateRole(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: rolesKeys.detail(id) });
+      queryClient.invalidateQueries({ queryKey: rolesKeys.lists() });
+      toast.success("Role updated successfully");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to update role");
+    },
   });
 }
 

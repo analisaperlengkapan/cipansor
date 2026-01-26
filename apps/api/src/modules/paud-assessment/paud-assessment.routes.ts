@@ -354,6 +354,10 @@ router.get('/assessments', validateQuery(listAssessmentsQuerySchema), controller
  *         description: Assessments created
  */
 router.post('/assessments/class', validate(bulkCreateClassAssessmentSchema), controller.createClassAssessment);
+
+/**
+ * @openapi
+ * /api/paud-assessment/assessments/{id}:
  *   get:
  *     summary: Get assessment by ID
  *     tags: [PAUD Assessment]

@@ -2,6 +2,8 @@ import { Request, Response, NextFunction } from 'express';
 import { UserRole } from '@prisma/client';
 import { verifyToken, JwtPayload } from '@/lib/jwt';
 import { Errors } from './error';
+import { prisma } from '@/lib/prisma';
+import { redis } from '@/lib/redis';
 
 // Extend Express Request type
 declare global {
@@ -71,7 +73,7 @@ export function optionalAuth(req: Request, res: Response, next: NextFunction) {
 }
 
 /**
- * Role-based access control middleware
+ * Role-based access control middleware (Legacy Enum Check)
  */
 export function authorize(...allowedRoles: UserRole[]) {
   return (req: Request, res: Response, next: NextFunction) => {
@@ -84,6 +86,71 @@ export function authorize(...allowedRoles: UserRole[]) {
     }
 
     next();
+  };
+}
+
+/**
+ * Permission-based access control middleware (New Granular Check)
+ */
+export function hasPermission(permission: string) {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    if (!req.user) {
+      return next(Errors.unauthorized());
+    }
+
+    // Super Admin has all permissions implicitly
+    if (req.user.role === UserRole.SUPER_ADMIN) {
+      return next();
+    }
+
+    // Check if user has an active role assignment
+    if (!req.user.roleId) {
+      return next(Errors.forbidden('No active role assignment'));
+    }
+
+    try {
+      let permissions: string[] | null = null;
+      const cacheKey = `role:permissions:${req.user.roleId}`;
+
+      // Try Redis first
+      try {
+        const cached = await redis.get(cacheKey);
+        if (cached) {
+          permissions = JSON.parse(cached);
+        }
+      } catch (redisError) {
+        // Log error but continue to DB
+        // eslint-disable-next-line no-console
+        console.error('Redis error in auth middleware:', redisError);
+      }
+
+      if (!permissions) {
+        // Fetch from DB
+        const role = await prisma.role.findUnique({
+          where: { id: req.user.roleId },
+          select: { permissions: true },
+        });
+
+        if (!role) {
+          return next(Errors.forbidden('Active role not found'));
+        }
+
+        permissions = (role.permissions as string[]) || [];
+
+        // Cache for 1 hour (fire and forget)
+        redis
+          .setex(cacheKey, 3600, JSON.stringify(permissions))
+          .catch((e) => console.error('Redis cache set error:', e));
+      }
+
+      if (!permissions.includes(permission)) {
+        return next(Errors.forbidden(`Missing permission: ${permission}`));
+      }
+
+      next();
+    } catch (error) {
+      next(error);
+    }
   };
 }
 

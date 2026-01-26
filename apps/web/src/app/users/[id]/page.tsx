@@ -80,6 +80,12 @@ export default function UserDetailPage() {
               Edit
             </Link>
           </Button>
+          <Button variant="outline" asChild>
+            <Link href={`/users/${user.id}/roles`}>
+              <Shield className="mr-2 h-4 w-4" />
+              Manage Roles
+            </Link>
+          </Button>
         </PageHeader>
 
         {/* Status Banner */}

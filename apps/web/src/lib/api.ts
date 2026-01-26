@@ -27,8 +27,6 @@ export * from "@cipansor/shared";
 export type UserRole = UserRoleAssignment;
 
 // LEGACY PaginatedResponse
-// Restoring this to prevent build errors in legacy modules.
-// New modules should use `SharedPaginatedResponse`.
 export interface PaginatedResponse<T> {
   success: boolean;
   data: T[];
@@ -38,6 +36,20 @@ export interface PaginatedResponse<T> {
     total: number;
     totalPages: number;
   };
+}
+
+// Local types for Roles (since shared was not updated)
+export interface CreateRoleInput {
+  code: string;
+  name: string;
+  description?: string;
+  permissions?: string[];
+}
+
+export interface UpdateRoleInput {
+  name?: string;
+  description?: string;
+  permissions?: string[];
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
@@ -160,6 +172,14 @@ export const rolesApi = {
   // Get role by ID
   getRoleById: (id: string) => api.get<ApiResponse<Role>>(`/roles/${id}`),
 
+  // Create role
+  createRole: (data: CreateRoleInput) =>
+    api.post<ApiResponse<Role>>("/roles", data),
+
+  // Update role
+  updateRole: (id: string, data: UpdateRoleInput) =>
+    api.patch<ApiResponse<Role>>(`/roles/${id}`, data),
+
   // Get roles assigned to a user
   getUserRoles: (userId: string) =>
     api.get<ApiResponse<RoleAssignment[]>>(`/roles/users/${userId}`),
@@ -180,7 +200,6 @@ export const rolesApi = {
 };
 
 // Tahfidz API
-// Uses SharedPaginatedResponse to enforce standard structure
 export const tahfidzApi = {
   getRecords: (params?: any) =>
     api.get<SharedPaginatedResponse<TahfidzRecord>>("/tahfidz", { params }),

@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { hashPassword, comparePassword } from '@/lib/password';
-import { generateTokenPair, verifyToken, getExpirationDate } from '@/lib/jwt';
+import { generateTokenPair, verifyToken, getExpirationDate, generateAccessToken } from '@/lib/jwt';
 import { Errors } from '@/middleware/error';
 import { config } from '@/config';
 import type { LoginInput, RegisterInput, ChangePasswordInput } from './auth.schema';
@@ -68,14 +68,14 @@ export class AuthService {
     // Check for 2FA
     if (user.isTwoFactorEnabled) {
       // Return temporary token for 2FA verification with SHORT expiry
-      const tempToken = generateTokenPair({
+      const tempToken = generateAccessToken({
         sub: user.id,
         email: user.email,
         role: user.role,
         unitId: user.unitId,
         roleId: primaryRole?.roleId,
         isTemp: true, // Marker for temp token
-      }, '5m').accessToken; // 5 minutes expiry
+      }, '5m'); // 5 minutes expiry
 
       return {
         requiresTwoFactor: true,
@@ -85,14 +85,14 @@ export class AuthService {
 
     // Force 2FA setup for Admin/Super Admin
     if (isUserAdmin && !user.isTwoFactorEnabled) {
-        const tempToken = generateTokenPair({
+        const tempToken = generateAccessToken({
             sub: user.id,
             email: user.email,
             role: user.role,
             unitId: user.unitId,
             roleId: primaryRole?.roleId,
             isTemp: true,
-        }, '10m').accessToken; // 10 mins for setup
+        }, '10m'); // 10 mins for setup
 
         return {
             requiresTwoFactorSetup: true,
@@ -524,6 +524,11 @@ export class AuthService {
 
         if (admin.role !== UserRole.SUPER_ADMIN && admin.role !== UserRole.UNIT_ADMIN) {
             throw Errors.forbidden('Only Admins can disable 2FA for other users');
+        }
+
+        // Bug 2: Check if target user actually has 2FA enabled
+        if (!user.isTwoFactorEnabled) {
+            throw Errors.badRequest('2FA is not enabled for this user');
         }
 
         // Verify ADMIN's OTP

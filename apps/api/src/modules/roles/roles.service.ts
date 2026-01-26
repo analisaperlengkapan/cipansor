@@ -117,7 +117,13 @@ export class RolesService {
     });
 
     // Invalidate permission cache
-    await redis.del(`role:permissions:${id}`);
+    try {
+      await redis.del(`role:permissions:${id}`);
+    } catch (error) {
+      // Log error but continue since DB update succeeded
+      // eslint-disable-next-line no-console
+      console.error('Failed to invalidate role permissions cache:', error);
+    }
 
     return updated;
   }

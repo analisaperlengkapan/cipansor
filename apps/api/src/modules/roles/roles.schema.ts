@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { Realm } from '@prisma/client';
+import { PERMISSIONS } from './permissions';
 
 export const getRolesQuerySchema = z.object({
   realm: z
@@ -23,16 +24,23 @@ export const setPrimaryRoleSchema = z.object({
 });
 
 export const createRoleSchema = z.object({
-  code: z.string().min(3).regex(/^[A-Z0-9_]+$/, "Code must be uppercase alphanumeric with underscores"),
+  code: z
+    .string()
+    .min(3)
+    .regex(/^[A-Z0-9_]+$/, 'Code must be uppercase alphanumeric with underscores'),
   name: z.string().min(3),
   description: z.string().optional(),
-  permissions: z.array(z.string()).optional(),
+  permissions: z
+    .array(z.enum(Object.values(PERMISSIONS) as [string, ...string[]]))
+    .optional(),
 });
 
 export const updateRoleSchema = z.object({
   name: z.string().min(3).optional(),
   description: z.string().optional(),
-  permissions: z.array(z.string()).optional(),
+  permissions: z
+    .array(z.enum(Object.values(PERMISSIONS) as [string, ...string[]]))
+    .optional(),
 });
 
 export type GetRolesQuery = z.infer<typeof getRolesQuerySchema>;

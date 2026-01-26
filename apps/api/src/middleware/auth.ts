@@ -109,14 +109,22 @@ export function hasPermission(permission: string) {
     }
 
     try {
-      // Check cache first
+      let permissions: string[] | null = null;
       const cacheKey = `role:permissions:${req.user.roleId}`;
-      let permissions: string[] = [];
-      const cached = await redis.get(cacheKey);
 
-      if (cached) {
-        permissions = JSON.parse(cached);
-      } else {
+      // Try Redis first
+      try {
+        const cached = await redis.get(cacheKey);
+        if (cached) {
+          permissions = JSON.parse(cached);
+        }
+      } catch (redisError) {
+        // Log error but continue to DB
+        // eslint-disable-next-line no-console
+        console.error('Redis error in auth middleware:', redisError);
+      }
+
+      if (!permissions) {
         // Fetch from DB
         const role = await prisma.role.findUnique({
           where: { id: req.user.roleId },
@@ -129,8 +137,10 @@ export function hasPermission(permission: string) {
 
         permissions = (role.permissions as string[]) || [];
 
-        // Cache for 1 hour
-        await redis.setex(cacheKey, 3600, JSON.stringify(permissions));
+        // Cache for 1 hour (fire and forget)
+        redis
+          .setex(cacheKey, 3600, JSON.stringify(permissions))
+          .catch((e) => console.error('Redis cache set error:', e));
       }
 
       if (!permissions.includes(permission)) {

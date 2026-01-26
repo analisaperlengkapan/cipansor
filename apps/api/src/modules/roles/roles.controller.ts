@@ -21,7 +21,7 @@ export class RolesController {
     try {
       const query = req.query as GetRolesQuery;
       const roles = await rolesService.getAllRoles(query.realm as Realm);
-      res.json(roles);
+      res.json({ success: true, data: roles });
     } catch (error) {
       next(error);
     }
@@ -33,7 +33,7 @@ export class RolesController {
   async getRoleById(req: Request, res: Response, next: NextFunction) {
     try {
       const role = await rolesService.getRoleById(req.params.id);
-      res.json(role);
+      res.json({ success: true, data: role });
     } catch (error) {
       next(error);
     }
@@ -46,7 +46,7 @@ export class RolesController {
     try {
       const input = req.body as CreateRoleInput;
       const role = await rolesService.createRole(input);
-      res.status(201).json(role);
+      res.status(201).json({ success: true, data: role });
     } catch (error) {
       next(error);
     }
@@ -59,7 +59,7 @@ export class RolesController {
     try {
       const input = req.body as UpdateRoleInput;
       const role = await rolesService.updateRole(req.params.id, input);
-      res.json(role);
+      res.json({ success: true, data: role });
     } catch (error) {
       next(error);
     }
@@ -72,7 +72,7 @@ export class RolesController {
     try {
       const userId = req.user!.sub;
       const roles = await rolesService.getUserRoles(userId);
-      res.json(roles);
+      res.json({ success: true, data: roles });
     } catch (error) {
       next(error);
     }
@@ -84,7 +84,7 @@ export class RolesController {
   async getUserRoles(req: Request, res: Response, next: NextFunction) {
     try {
       const roles = await rolesService.getUserRoles(req.params.userId);
-      res.json(roles);
+      res.json({ success: true, data: roles });
     } catch (error) {
       next(error);
     }
@@ -102,7 +102,7 @@ export class RolesController {
         input.unitId,
         input.isPrimary
       );
-      res.status(201).json(assignment);
+      res.status(201).json({ success: true, data: assignment });
     } catch (error) {
       next(error);
     }
@@ -128,7 +128,7 @@ export class RolesController {
       const userId = req.params.userId;
       const input = req.body as SetPrimaryRoleInput;
       const assignment = await rolesService.setPrimaryRole(userId, input.roleAssignmentId);
-      res.json(assignment);
+      res.json({ success: true, data: assignment });
     } catch (error) {
       next(error);
     }
@@ -164,13 +164,16 @@ export class RolesController {
       });
 
       res.json({
-        message: 'Role switched successfully',
-        activeRole: {
-          id: result.activeRole.id,
-          role: result.activeRole.role,
-          unit: result.activeRole.unit,
+        success: true,
+        data: {
+          message: 'Role switched successfully',
+          activeRole: {
+            id: result.activeRole.id,
+            role: result.activeRole.role,
+            unit: result.activeRole.unit,
+          },
+          ...tokens,
         },
-        ...tokens,
       });
     } catch (error) {
       next(error);

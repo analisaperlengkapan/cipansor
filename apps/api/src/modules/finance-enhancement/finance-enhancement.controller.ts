@@ -11,7 +11,7 @@ import {
   UpdateBudgetInput,
   CreateFinancialPeriodInput,
 } from '@cipansor/shared';
-import { createBudget, updateBudget, getBudgets } from './budget.service';
+import { createBudget, updateBudget, getBudgets, deleteBudget, recalculateBudgetUsage } from './budget.service';
 import { createFinancialPeriod, closePeriod, getFinancialPeriods } from './period.service';
 import {
   getBalanceSheet,
@@ -414,6 +414,30 @@ export class FinanceEnhancementController {
       const { id } = req.params;
       const input: UpdateBudgetInput = req.body;
       const result = await updateBudget(id, input);
+      res.json({ success: true, data: result });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async deleteBudget(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      await deleteBudget(id);
+      res.json({ success: true, message: 'Budget deleted successfully' });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async recalculateBudgetUsage(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { unitId, academicYearId } = req.body;
+      if (!unitId || !academicYearId) {
+        return res.status(400).json({ success: false, message: 'Unit ID and Academic Year ID are required' });
+      }
+
+      const result = await recalculateBudgetUsage(unitId, academicYearId);
       res.json({ success: true, data: result });
     } catch (error) {
       next(error);

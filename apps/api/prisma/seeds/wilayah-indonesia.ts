@@ -1,7 +1,5 @@
 import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient();
-
 /**
  * Data Wilayah Indonesia berdasarkan BPS (Badan Pusat Statistik)
  * 34 Provinsi dengan kode standar
@@ -285,7 +283,7 @@ export const villageData = [
   { code: '3202031004', name: 'CIKADU', districtCode: '320203' },
 ];
 
-export async function seedWilayahIndonesia() {
+export async function seedWilayahIndonesia(prisma: PrismaClient) {
   console.log('🌍 Seeding Wilayah Indonesia...');
 
   // Clean up existing wilayah data

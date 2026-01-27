@@ -50,6 +50,7 @@ import {
   Activity,
   ShoppingBag,
   Key,
+  MessageSquareWarning,
   type LucideIcon,
 } from "lucide-react";
 
@@ -228,6 +229,11 @@ const teacherNavigation: NavGroup[] = [
         href: "/announcements",
         icon: Bell,
       },
+      {
+        title: "Aduan & Aspirasi",
+        href: "/quality/complaints",
+        icon: MessageSquareWarning,
+      },
     ],
   },
 ];
@@ -286,6 +292,11 @@ const staffNavigation: NavGroup[] = [
         title: "Pengumuman",
         href: "/announcements",
         icon: Bell,
+      },
+      {
+        title: "Aduan & Aspirasi",
+        href: "/quality/complaints",
+        icon: MessageSquareWarning,
       },
     ],
   },
@@ -376,6 +387,11 @@ const studentNavigation: NavGroup[] = [
         href: "/announcements",
         icon: Bell,
       },
+      {
+        title: "Aduan & Aspirasi",
+        href: "/quality/complaints",
+        icon: MessageSquareWarning,
+      },
     ],
   },
 ];
@@ -460,6 +476,11 @@ const parentNavigation: NavGroup[] = [
         href: "/parent/announcements",
         icon: Megaphone,
       },
+      {
+        title: "Aduan & Aspirasi",
+        href: "/quality/complaints",
+        icon: MessageSquareWarning,
+      },
     ],
   },
 ];
@@ -508,6 +529,11 @@ const yayasanNavigation: NavGroup[] = [
         title: "Penjaminan Mutu",
         href: "/quality",
         icon: Award,
+      },
+      {
+        title: "Aduan & Aspirasi",
+        href: "/quality/complaints",
+        icon: MessageSquareWarning,
       },
     ],
   },
@@ -889,6 +915,11 @@ const adminNavigation: NavGroup[] = [
         title: "Penjaminan Mutu",
         href: "/quality",
         icon: Award,
+      },
+      {
+        title: "Aduan & Aspirasi",
+        href: "/quality/complaints",
+        icon: MessageSquareWarning,
       },
     ],
   },

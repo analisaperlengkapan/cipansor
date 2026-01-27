@@ -182,7 +182,7 @@ export class RolesService {
       });
     }
 
-    return prisma.userRoleAssignment.create({
+    const assignment = await prisma.userRoleAssignment.create({
       data: {
         userId,
         roleId,
@@ -195,6 +195,8 @@ export class RolesService {
         unit: true,
       },
     });
+
+    return assignment;
   }
 
   /**
@@ -209,9 +211,11 @@ export class RolesService {
       throw Errors.notFound('Role assignment');
     }
 
-    return prisma.userRoleAssignment.delete({
+    const deleted = await prisma.userRoleAssignment.delete({
       where: { id: assignmentId },
     });
+
+    return deleted;
   }
 
   /**
@@ -234,7 +238,7 @@ export class RolesService {
     });
 
     // Set new primary role
-    return prisma.userRoleAssignment.update({
+    const updated = await prisma.userRoleAssignment.update({
       where: { id: assignmentId },
       data: { isPrimary: true },
       include: {
@@ -242,6 +246,8 @@ export class RolesService {
         unit: true,
       },
     });
+
+    return updated;
   }
 
   /**

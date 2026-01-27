@@ -131,7 +131,14 @@ export const qualityService = {
 
   // --- Audit Management ---
 
-  createAudit: async (data: CreateAuditInput) => {
+  createAudit: async (data: CreateAuditInput, userRole: string, userUnitId?: string) => {
+    // Security check: If not SUPER_ADMIN, ensure user can only create audit for their own unit
+    if (userRole !== 'SUPER_ADMIN') {
+      if (!userUnitId || data.unitId !== userUnitId) {
+        throw new ApiError(ErrorCode.FORBIDDEN, 'Access denied: You can only create audits for your own unit');
+      }
+    }
+
     // 1. Create the Audit
     const audit = await prisma.qualityAudit.create({
       data: {
@@ -165,7 +172,14 @@ export const qualityService = {
     return audit;
   },
 
-  getAudits: async (unitId: string, academicYearId: string) => {
+  getAudits: async (unitId: string, academicYearId: string, userRole: string, userUnitId?: string) => {
+    // Security check: If not SUPER_ADMIN, ensure user can only list audits for their own unit
+    if (userRole !== 'SUPER_ADMIN') {
+      if (!userUnitId || unitId !== userUnitId) {
+        throw new ApiError(ErrorCode.FORBIDDEN, 'Access denied: You can only view audits for your own unit');
+      }
+    }
+
     return prisma.qualityAudit.findMany({
       where: {
         unitId,
@@ -183,8 +197,8 @@ export const qualityService = {
     });
   },
 
-  getAuditDetails: async (auditId: string) => {
-    return prisma.qualityAudit.findUnique({
+  getAuditDetails: async (auditId: string, userRole: string, userUnitId?: string) => {
+    const audit = await prisma.qualityAudit.findUnique({
       where: { id: auditId },
       include: {
         leadAuditor: {
@@ -208,6 +222,19 @@ export const qualityService = {
         },
       },
     });
+
+    if (!audit) {
+      return null;
+    }
+
+    // Security check: If not SUPER_ADMIN, ensure user belongs to the same unit
+    if (userRole !== 'SUPER_ADMIN') {
+      if (!userUnitId || audit.unitId !== userUnitId) {
+        throw new ApiError(ErrorCode.FORBIDDEN, 'Access denied: You can only view audits for your own unit');
+      }
+    }
+
+    return audit;
   },
 
   updateAuditItem: async (

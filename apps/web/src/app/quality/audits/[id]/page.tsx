@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/accordion";
 import { ArrowLeft, Save, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function AuditExecutionPage() {
   const params = useParams();
@@ -105,6 +105,12 @@ function AuditItemRow({ item }: { item: any }) {
   const updateItem = useUpdateAuditItem();
   const [score, setScore] = useState<string>(item.score?.toString() || "");
   const [notes, setNotes] = useState<string>(item.notes || "");
+
+  // Sync local state when item prop updates (e.g. after refetch)
+  useEffect(() => {
+    setScore(item.score?.toString() || "");
+    setNotes(item.notes || "");
+  }, [item.score, item.notes]);
 
   const isDirty = (score !== (item.score?.toString() || "")) || (notes !== (item.notes || ""));
 

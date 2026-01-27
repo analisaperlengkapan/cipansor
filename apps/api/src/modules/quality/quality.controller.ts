@@ -37,7 +37,10 @@ export const qualityController = {
   }),
 
   createEvidence: asyncHandler(async (req: Request, res: Response) => {
-    const userId = (req as any).user.id;
+    const user = (req as any).user;
+    // Use user.sub as the userId (as defined in JwtPayload)
+    const userId = user.sub || user.id;
+
     const evidence = await qualityService.createEvidence(req.body, userId);
     res.status(httpStatus.CREATED).json({
       success: true,
@@ -74,7 +77,14 @@ export const qualityController = {
   // --- Audit Management ---
 
   createAudit: asyncHandler(async (req: Request, res: Response) => {
-    const audit = await qualityService.createAudit(req.body);
+    const user = (req as any).user;
+
+    const audit = await qualityService.createAudit(
+      req.body,
+      user.role,
+      user.unitId
+    );
+
     res.status(httpStatus.CREATED).json({
       success: true,
       data: audit,
@@ -83,12 +93,19 @@ export const qualityController = {
 
   getAudits: asyncHandler(async (req: Request, res: Response) => {
     const { unitId, academicYearId } = req.query;
+    const user = (req as any).user;
 
     if (!unitId || !academicYearId) {
       throw new ApiError(ErrorCode.BAD_REQUEST, 'unitId and academicYearId are required');
     }
 
-    const audits = await qualityService.getAudits(unitId as string, academicYearId as string);
+    const audits = await qualityService.getAudits(
+      unitId as string,
+      academicYearId as string,
+      user.role,
+      user.unitId
+    );
+
     res.json({
       success: true,
       data: audits,
@@ -97,7 +114,13 @@ export const qualityController = {
 
   getAuditDetails: asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
-    const audit = await qualityService.getAuditDetails(id);
+    const user = (req as any).user;
+
+    const audit = await qualityService.getAuditDetails(
+      id,
+      user.role,
+      user.unitId
+    );
 
     if (!audit) {
       throw new ApiError(ErrorCode.NOT_FOUND, 'Audit not found');
@@ -114,10 +137,13 @@ export const qualityController = {
     const user = (req as any).user;
     const { score, notes } = req.body;
 
+    // Use user.sub as the userId (as defined in JwtPayload)
+    const userId = user.sub || user.id;
+
     const updatedItem = await qualityService.updateAuditItem(
       itemId,
       { score, notes },
-      user.id,
+      userId,
       user.role,
       user.unitId
     );

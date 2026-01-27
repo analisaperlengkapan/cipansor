@@ -63,6 +63,7 @@ import raporPesantrenRoutes from '@/modules/rapor-pesantren/routes';
 import { procurementRoutes } from '@/modules/procurement/procurement.routes';
 import { supplierRoutes } from '@/modules/suppliers/suppliers.routes';
 import { uploadRoutes } from '@/modules/upload/upload.routes';
+import secretsRoutes from '@/modules/system-secrets/secrets.routes';
 
 // Phase 12 routes
 import extracurricularRoutes from '@/modules/extracurricular/extracurricular.routes';
@@ -229,6 +230,7 @@ apiRouter.use('/rapor-pesantren', raporPesantrenRoutes);
 apiRouter.use('/procurement', procurementRoutes);
 apiRouter.use('/suppliers', supplierRoutes);
 apiRouter.use('/upload', uploadRoutes);
+apiRouter.use('/secrets', secretsRoutes);
 
 // Phase 12 routes
 apiRouter.use('/extracurricular', extracurricularRoutes);
@@ -323,6 +325,7 @@ apiRouter.get('/', (_req, res) => {
       ibadah: '/api/ibadah',
       raporPesantren: '/api/rapor-pesantren',
       reception: '/api/reception',
+      secrets: '/api/secrets',
     },
   });
 });

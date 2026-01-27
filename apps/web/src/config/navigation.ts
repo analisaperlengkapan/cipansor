@@ -49,6 +49,7 @@ import {
   FileBarChart,
   Activity,
   ShoppingBag,
+  Key,
   MessageSquareWarning,
   type LucideIcon,
 } from "lucide-react";
@@ -1035,6 +1036,13 @@ const adminNavigation: NavGroup[] = [
         title: "Settings",
         href: "/settings",
         icon: Settings,
+      },
+      {
+        title: "Secrets",
+        href: "/dashboard/settings/system-secrets",
+        icon: Key,
+        roleCodes: ["SUPER_ADMIN"],
+        roles: ["SUPER_ADMIN"], // Explicitly support legacy role
       },
     ],
   },

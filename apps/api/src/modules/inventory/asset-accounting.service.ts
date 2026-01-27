@@ -83,7 +83,8 @@ export async function createDepreciationJournal(
   asset: Asset,
   amount: number,
   date: Date,
-  userId: string
+  userId: string,
+  tx: Prisma.TransactionClient = prisma
 ) {
   if (amount <= 0) return;
 
@@ -91,7 +92,7 @@ export async function createDepreciationJournal(
   const decimalAmount = new Prisma.Decimal(amount);
 
   // 1. Find Expense Account
-  let expenseAccount = await prisma.accountCode.findFirst({
+  const expenseAccount = await tx.accountCode.findFirst({
     where: {
       OR: [
         { code: DEFAULT_ACCOUNTS.DEPR_EXPENSE },
@@ -102,7 +103,7 @@ export async function createDepreciationJournal(
   });
 
   // 2. Find Accum Depr Account
-  let accumAccount = await prisma.accountCode.findFirst({
+  const accumAccount = await tx.accountCode.findFirst({
     where: {
       OR: [
         { code: DEFAULT_ACCOUNTS.ACCUM_DEPR },
@@ -113,40 +114,38 @@ export async function createDepreciationJournal(
   });
 
   if (!expenseAccount || !accumAccount) {
-    console.warn(`Asset Accounting: Missing depreciation accounts`);
-    return;
+    throw new Error(`Asset Accounting: Missing depreciation accounts`);
   }
 
   const desc = `Penyusutan Periode ${date.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })} - ${asset.code}`;
 
-  await prisma.$transaction([
-    // Debit Expense
-    prisma.journalEntry.create({
-      data: {
-        unitId,
-        date,
-        description: desc,
-        reference: asset.id,
-        referenceType: 'ASSET_DEPRECIATION',
-        accountId: expenseAccount.id,
-        debit: decimalAmount,
-        credit: 0,
-        createdById: userId,
-      },
-    }),
-    // Credit Accum Depr
-    prisma.journalEntry.create({
-      data: {
-        unitId,
-        date,
-        description: desc,
-        reference: asset.id,
-        referenceType: 'ASSET_DEPRECIATION',
-        accountId: accumAccount.id,
-        debit: 0,
-        credit: decimalAmount,
-        createdById: userId,
-      },
-    }),
-  ]);
+  // Debit Expense
+  await tx.journalEntry.create({
+    data: {
+      unitId,
+      date,
+      description: desc,
+      reference: asset.id,
+      referenceType: 'ASSET_DEPRECIATION',
+      accountId: expenseAccount.id,
+      debit: decimalAmount,
+      credit: 0,
+      createdById: userId,
+    },
+  });
+
+  // Credit Accum Depr
+  await tx.journalEntry.create({
+    data: {
+      unitId,
+      date,
+      description: desc,
+      reference: asset.id,
+      referenceType: 'ASSET_DEPRECIATION',
+      accountId: accumAccount.id,
+      debit: 0,
+      credit: decimalAmount,
+      createdById: userId,
+    },
+  });
 }

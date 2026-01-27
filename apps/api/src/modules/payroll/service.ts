@@ -667,6 +667,7 @@ export const payrollPeriodService = {
         where: { periodId: id },
         _sum: {
           totalEarnings: true,
+          totalDeductions: true,
           taxAmount: true,
           netSalary: true,
         },

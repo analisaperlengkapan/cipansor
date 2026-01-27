@@ -65,7 +65,23 @@ async function main() {
     notes: 'Verified by script'
   });
 
-  // 3. Verify Journal Entries
+  // 3. Test Duplicate Verification
+  console.log('Testing duplicate verification...');
+  try {
+    await donationService.verify(donation.id, 'SYSTEM_TEST_USER', {
+      status: 'VERIFIED',
+      notes: 'Duplicate verify attempt'
+    });
+    console.error('FAILURE: Duplicate verification should have thrown an error.');
+  } catch (error: any) {
+    if (error.message === 'Donation is already verified') {
+        console.log('SUCCESS: Duplicate verification blocked correctly.');
+    } else {
+        console.error('FAILURE: Unexpected error during duplicate verification:', error.message);
+    }
+  }
+
+  // 4. Verify Journal Entries
   const journals = await prisma.journalEntry.findMany({
     where: {
       reference: donation.id

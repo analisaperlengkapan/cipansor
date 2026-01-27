@@ -5,7 +5,7 @@ import {
   DonationPaymentMethod,
   CampaignStatus,
 } from '@prisma/client';
-import { AccountType, JournalReferenceType } from '@cipansor/shared';
+import { AccountType } from '@cipansor/shared';
 import {
   CreateCampaignInput,
   UpdateCampaignInput,
@@ -91,6 +91,7 @@ export const campaignService = {
       id: campaign.id,
       title: campaign.title,
       slug: campaign.slug,
+      status: campaign.status,
       description: campaign.description,
       imageUrl: campaign.imageUrl,
       targetAmount: campaign.targetAmount,
@@ -336,6 +337,11 @@ export const donationService = {
 
       if (!donation) {
         throw new Error('Donation not found');
+      }
+
+      // Prevent duplicate verification
+      if (donation.status === 'VERIFIED' && input.status === 'VERIFIED') {
+        throw new Error('Donation is already verified');
       }
 
       const updatedDonation = await tx.donation.update({
@@ -623,6 +629,7 @@ export const donationService = {
         type: true,
         isAnonymous: true,
         donatedAt: true,
+        createdAt: true,
         campaign: { select: { id: true, title: true, slug: true } },
       },
     });

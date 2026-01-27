@@ -30,7 +30,7 @@ export const complaintsService = {
 
   findAll: async (
     params: {
-      unitId: string;
+      unitId: string | null;
       userId: string;
       role: string;
       status?: ComplaintStatus;
@@ -42,15 +42,21 @@ export const complaintsService = {
     const { unitId, userId, role, status, category, page = 1, limit = 10 } = params;
     const skip = (page - 1) * limit;
 
-    const where: Prisma.ComplaintWhereInput = {
-      unitId,
-    };
+    const where: Prisma.ComplaintWhereInput = {};
+
+    // SUPER_ADMIN sees all if unitId is null, otherwise filters by unitId
+    if (role === 'SUPER_ADMIN') {
+      if (unitId) where.unitId = unitId;
+    } else {
+      // Other roles must have a unitId
+      if (!unitId) throw new Error('Unit ID required');
+      where.unitId = unitId;
+    }
 
     if (status) where.status = status;
     if (category) where.category = category;
 
     // Access Control
-    // Allow Admins, Principals, Yayasan, and Staff to see all complaints in their unit
     const hasFullAccess =
       role.includes('ADMIN') ||
       role.includes('KEPALA_SEKOLAH') ||
@@ -136,6 +142,11 @@ export const complaintsService = {
 
     if (!hasFullAccess && complaint.userId !== userId) {
       throw new Error('Unauthorized'); // Controller will handle this
+    }
+
+    // Filter internal comments for non-staff
+    if (!hasFullAccess) {
+      complaint.comments = complaint.comments.filter(c => !c.isInternal);
     }
 
     if (complaint.isAnonymous) {

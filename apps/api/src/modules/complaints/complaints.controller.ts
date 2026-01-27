@@ -19,6 +19,11 @@ export const complaintsController = {
       const user = (req as any).user;
       const unitId = user.unitId;
 
+      // For SUPER_ADMIN creating a complaint, they must specify unitId if not present in token (though typically they act within a unit context or unitId is null)
+      if (!unitId && user.role !== 'SUPER_ADMIN') {
+         return res.status(httpStatus.BAD_REQUEST).json({ message: 'Unit ID missing' });
+      }
+
       const complaint = await complaintsService.create({
         category: validation.data.category,
         subject: validation.data.subject,
@@ -27,7 +32,7 @@ export const complaintsController = {
         isAnonymous: validation.data.isAnonymous,
         attachments: validation.data.attachments,
         userId: user.sub,
-        unitId,
+        unitId: unitId || '',
       });
       res.status(httpStatus.CREATED).json(complaint);
     } catch (error) {
@@ -132,11 +137,23 @@ export const complaintsController = {
       const user = (req as any).user;
       const { content, isInternal } = validation.data;
 
+      // Check if user is allowed to make internal comments
+      const canSetInternal =
+        user.role.includes('ADMIN') ||
+        user.role.includes('KEPALA_SEKOLAH') ||
+        user.role.includes('YAYASAN') ||
+        user.role.includes('STAFF') ||
+        user.role.includes('TATA_USAHA') ||
+        user.role === 'SUPER_ADMIN';
+
+      // Force isInternal to false if user is not staff/admin
+      const finalIsInternal = canSetInternal ? isInternal : false;
+
       const comment = await complaintsService.addComment({
         complaintId: id,
         userId: user.sub,
         content,
-        isInternal,
+        isInternal: finalIsInternal,
       });
       res.status(httpStatus.CREATED).json(comment);
     } catch (error) {

@@ -196,13 +196,6 @@ export class RolesService {
       },
     });
 
-    // Invalidate permission cache for this role
-    try {
-      await redis.del(`role:permissions:${roleId}`);
-    } catch (error) {
-      console.error('Failed to invalidate role permissions cache:', error);
-    }
-
     return assignment;
   }
 
@@ -221,13 +214,6 @@ export class RolesService {
     const deleted = await prisma.userRoleAssignment.delete({
       where: { id: assignmentId },
     });
-
-    // Invalidate permission cache for this role
-    try {
-      await redis.del(`role:permissions:${assignment.roleId}`);
-    } catch (error) {
-      console.error('Failed to invalidate role permissions cache:', error);
-    }
 
     return deleted;
   }
@@ -260,13 +246,6 @@ export class RolesService {
         unit: true,
       },
     });
-
-    // Invalidate permission cache for this role
-    try {
-      await redis.del(`role:permissions:${assignment.roleId}`);
-    } catch (error) {
-      console.error('Failed to invalidate role permissions cache:', error);
-    }
 
     return updated;
   }

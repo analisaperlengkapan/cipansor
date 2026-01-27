@@ -183,6 +183,9 @@ export const bulkCreateDailyReportsSchema = z.object({
             ayahStart: z.number().int().min(1),
             ayahEnd: z.number().int().min(1),
           })
+          .refine((data) => data.ayahEnd >= data.ayahStart, {
+            message: 'ayahEnd must be greater than or equal to ayahStart',
+          })
           .optional(),
       })
     )

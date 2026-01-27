@@ -734,7 +734,11 @@ export const payrollPeriodService = {
         });
 
         // Credit Tax Payable
-        if (tax.gt(0) && taxPayableAcc) {
+        // Credit Tax Payable
+        if (tax.gt(0)) {
+          if (!taxPayableAcc) {
+            throw new Error('Akun Utang PPh 21 tidak ditemukan. Mohon cek Chart of Accounts.');
+          }
           await tx.journalEntry.create({
             data: {
               unitId: period.unitId,
@@ -751,7 +755,10 @@ export const payrollPeriodService = {
         }
 
         // Credit Other Payables
-        if (otherDeductions.gt(0) && otherPayableAcc) {
+        if (otherDeductions.gt(0)) {
+          if (!otherPayableAcc) {
+            throw new Error('Akun Utang Lainnya tidak ditemukan. Mohon cek Chart of Accounts.');
+          }
           await tx.journalEntry.create({
             data: {
               unitId: period.unitId,

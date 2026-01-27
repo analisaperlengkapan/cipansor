@@ -173,9 +173,9 @@ export function hasPermission(permission: string) {
 
         permissions = (role.permissions as string[]) || [];
 
-        // Cache for 1 hour (fire and forget)
+        // Cache for 5 minutes (reduced TTL to mitigate stale permissions)
         redis
-          .setex(cacheKey, 3600, JSON.stringify(permissions))
+          .setex(cacheKey, 300, JSON.stringify(permissions))
           .catch((e) => console.error('Redis cache set error:', e));
       }
 

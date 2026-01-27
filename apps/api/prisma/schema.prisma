@@ -398,6 +398,10 @@ model User {
   createdRisks                      Risk[]                      @relation("RiskCreator")
   assignedMitigations               RiskMitigation[]            @relation("MitigationPIC")
   createdMitigations                RiskMitigation[]            @relation("MitigationCreator")
+  // Complaint Module
+  reportedComplaints                Complaint[]                 @relation("ComplaintReporter")
+  assignedComplaints                Complaint[]                 @relation("ComplaintHandler")
+  complaintComments                 ComplaintComment[]
 
   @@index([email])
   @@index([role])
@@ -501,6 +505,7 @@ model Unit {
   ibadahLeaderboards     IbadahLeaderboard[]
   // Settings and Rapor Pesantren
   settings               Setting[]
+  systemSecrets          SystemSecret[]
   raporPesantren         RaporPesantren[]       @relation("RaporPesantrenUnit")
   // PAUD & Enhancement relations
   paudIndicators         PAUDDevelopmentIndicator[]
@@ -532,6 +537,7 @@ model Unit {
   qualityAudits          QualityAudit[]
   assignments            Assignment[]
   questionBanks          QuestionBank[]
+  complaints             Complaint[]
 
   // Risk Management
   risks                  Risk[]
@@ -5754,6 +5760,24 @@ model Setting {
   @@map("settings")
 }
 
+/// SystemSecret - Encrypted system configuration/secrets
+model SystemSecret {
+  id          String   @id @default(uuid())
+  unitId      String?  @map("unit_id")
+  key         String
+  value       String   // Encrypted value
+  description String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  unit        Unit?    @relation(fields: [unitId], references: [id])
+
+  @@unique([unitId, key])
+  @@index([unitId])
+  @@map("system_secrets")
+}
+
 /// RaporPesantren - Rapor Pesantren Terintegrasi
 model RaporPesantren {
   id             String @id @default(uuid())
@@ -7119,4 +7143,81 @@ model RiskMitigation {
 
   @@index([riskId])
   @@map("risk_mitigations")
+// COMPLAINT MODULE (ADUAN & ASPIRASI)
+// =====================================
+
+enum ComplaintCategory {
+  ACADEMIC
+  FACILITY
+  SERVICE
+  BULLYING
+  FINANCE
+  OTHER
+}
+
+enum ComplaintStatus {
+  PENDING
+  IN_PROGRESS
+  RESOLVED
+  REJECTED
+}
+
+enum ComplaintPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+/// Complaint - Modul Aduan & Aspirasi (Part of Quality Assurance)
+model Complaint {
+  id          String   @id @default(uuid())
+  unitId      String   @map("unit_id")
+  userId      String?  @map("user_id") // Optional for anonymous, but better to track
+  category    ComplaintCategory
+  subject     String
+  description String   @db.Text
+  location    String?
+  status      ComplaintStatus   @default(PENDING)
+  priority    ComplaintPriority @default(NORMAL)
+  isAnonymous Boolean  @default(false) @map("is_anonymous")
+  attachments Json?    // Array of strings (URLs)
+
+  // Resolution
+  assignedToId String?   @map("assigned_to_id")
+  resolution   String?   @db.Text
+  resolvedAt   DateTime? @map("resolved_at")
+
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  unit       Unit      @relation(fields: [unitId], references: [id])
+  user       User?     @relation("ComplaintReporter", fields: [userId], references: [id])
+  assignedTo User?     @relation("ComplaintHandler", fields: [assignedToId], references: [id])
+  comments   ComplaintComment[]
+
+  @@index([unitId])
+  @@index([userId])
+  @@index([status])
+  @@index([category])
+  @@map("complaints")
+}
+
+model ComplaintComment {
+  id          String   @id @default(uuid())
+  complaintId String   @map("complaint_id")
+  userId      String   @map("user_id")
+  content     String   @db.Text
+  isInternal  Boolean  @default(false) @map("is_internal") // Only visible to staff
+
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  complaint Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id])
+
+  @@index([complaintId])
+  @@map("complaint_comments")
 }

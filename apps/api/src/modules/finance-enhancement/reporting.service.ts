@@ -493,3 +493,64 @@ export async function getCashFlowStatement(
     endingCashBalance: endingCash,
   };
 }
+
+export async function getBudgetRealizationReport(
+  unitId: string,
+  academicYearId: string
+): Promise<any> {
+  // 1. Get Academic Year
+  const academicYear = await prisma.academicYear.findUnique({
+    where: { id: academicYearId },
+  });
+
+  if (!academicYear) throw new Error('Academic Year not found');
+
+  // 2. Get all budgets with account details
+  const budgets = await prisma.budget.findMany({
+    where: { unitId, academicYearId },
+    include: {
+      account: true,
+    },
+    orderBy: { account: { code: 'asc' } },
+  });
+
+  // 3. Transform to report format
+  const items = budgets.map((budget) => {
+    const amount = Number(budget.amount);
+    const used = Number(budget.usedAmount);
+    const balance = amount - used;
+    const percentage = amount > 0 ? (used / amount) * 100 : 0;
+
+    return {
+      accountId: budget.accountId,
+      accountCode: budget.account.code,
+      accountName: budget.account.name,
+      budgetAmount: amount,
+      realizedAmount: used,
+      balanceAmount: balance,
+      percentage: parseFloat(percentage.toFixed(2)),
+      status: percentage > 100 ? 'OVER_BUDGET' : percentage > 80 ? 'WARNING' : 'SAFE',
+    };
+  });
+
+  // 4. Calculate Totals
+  const totalBudget = items.reduce((sum, item) => sum + item.budgetAmount, 0);
+  const totalRealized = items.reduce((sum, item) => sum + item.realizedAmount, 0);
+  const totalBalance = totalBudget - totalRealized;
+  const totalPercentage = totalBudget > 0 ? (totalRealized / totalBudget) * 100 : 0;
+
+  return {
+    academicYear: academicYear.name,
+    period: {
+      startDate: formatDate(academicYear.startDate),
+      endDate: formatDate(academicYear.endDate),
+    },
+    items,
+    summary: {
+      totalBudget,
+      totalRealized,
+      totalBalance,
+      percentage: parseFloat(totalPercentage.toFixed(2)),
+    },
+  };
+}

@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { qualityController } from './quality.controller';
 import { authenticate, authorize } from '@/middleware/auth';
 import { validate } from '@/middleware/validate';
-import { createEvidenceSchema, createAuditSchema } from './schema';
+import { createEvidenceSchema, createAuditSchema, updateAuditItemSchema } from './schema';
 import { UserRole } from '@prisma/client';
 
 const router = Router();
@@ -56,6 +56,7 @@ router.patch(
   '/audits/items/:itemId',
   authenticate,
   authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF, UserRole.TEACHER),
+  validate(updateAuditItemSchema),
   qualityController.updateAuditItem
 );
 

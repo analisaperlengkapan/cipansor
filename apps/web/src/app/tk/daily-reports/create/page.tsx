@@ -253,7 +253,7 @@ export default function BulkCreateDailyReportPage() {
       await bulkMutation.mutateAsync({
         unitId: user?.unitId || "",
         academicYearId: user?.academicYearId || "",
-        reportDate: format(new Date(), "yyyy-MM-dd"),
+        reportDate: new Date().toISOString(),
         reports: reportsData,
       });
 

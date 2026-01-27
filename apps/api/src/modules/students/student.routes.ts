@@ -13,7 +13,54 @@ import {
 
 const router = Router();
 
-// All routes require authentication
+// ==================== PUBLIC ROUTES ====================
+
+/**
+ * @swagger
+ * /api/students/id-cards/verify:
+ *   post:
+ *     summary: Verify QR code from ID card
+ *     tags: [Students - ID Card]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - qrData
+ *             properties:
+ *               qrData:
+ *                 type: string
+ *                 description: QR code data string
+ *     responses:
+ *       200:
+ *         description: Verification result with student data
+ */
+router.post('/id-cards/verify', IdCardController.verifyQRCode); // Publicly accessible for verification (e.g. security guards)
+
+/**
+ * @swagger
+ * /api/students/id-cards/verify:
+ *   get:
+ *     summary: Verify QR code via URL (for direct scan)
+ *     tags: [Students - ID Card]
+ *     parameters:
+ *       - in: query
+ *         name: q
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: QR code data (URL encoded)
+ *     responses:
+ *       200:
+ *         description: Verification result
+ */
+router.get('/id-cards/verify', IdCardController.verifyQRCodeGet); // Publicly accessible for verification (e.g. security guards)
+
+// ==================== AUTHENTICATED ROUTES ====================
+
+// All subsequent routes require authentication
 router.use(authenticate);
 
 /**
@@ -94,51 +141,6 @@ router.get('/', hasPermission(PERMISSIONS.STUDENT_VIEW), validateQuery(listStude
  *         description: List of available templates
  */
 router.get('/id-cards/templates', hasPermission(PERMISSIONS.STUDENT_VIEW), IdCardController.getTemplates);
-
-/**
- * @swagger
- * /api/students/id-cards/verify:
- *   post:
- *     summary: Verify QR code from ID card
- *     tags: [Students - ID Card]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - qrData
- *             properties:
- *               qrData:
- *                 type: string
- *                 description: QR code data string
- *     responses:
- *       200:
- *         description: Verification result with student data
- */
-router.post('/id-cards/verify', IdCardController.verifyQRCode); // Publicly accessible for verification (e.g. security guards)
-
-/**
- * @swagger
- * /api/students/id-cards/verify:
- *   get:
- *     summary: Verify QR code via URL (for direct scan)
- *     tags: [Students - ID Card]
- *     parameters:
- *       - in: query
- *         name: q
- *         required: true
- *         schema:
- *           type: string
- *         description: QR code data (URL encoded)
- *     responses:
- *       200:
- *         description: Verification result
- */
-router.get('/id-cards/verify', IdCardController.verifyQRCodeGet); // Publicly accessible for verification (e.g. security guards)
 
 /**
  * @swagger

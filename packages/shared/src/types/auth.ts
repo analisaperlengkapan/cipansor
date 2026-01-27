@@ -33,6 +33,7 @@ export interface User {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  permissions?: string[];
 }
 
 export interface LoginRequest {

@@ -124,10 +124,14 @@ export class AuthService {
     // Return user without password
     const { passwordHash, twoFactorSecret, twoFactorSecretPending, twoFactorRecoveryCodes, ...userWithoutPassword } = user;
 
+    // Get permissions from active role
+    const permissions = (primaryRole?.role.permissions as string[]) || [];
+
     return {
       user: {
         ...userWithoutPassword,
         academicYearId: activeAcademicYearId,
+        permissions,
       },
       ...tokens,
     };
@@ -310,11 +314,16 @@ export class AuthService {
       where: { isActive: true },
     });
 
+    // Get active role permissions
+    const primaryRole = user.userRoles.find((r) => r.isPrimary) || user.userRoles[0];
+    const permissions = (primaryRole?.role.permissions as string[]) || [];
+
     const { passwordHash, twoFactorSecret, twoFactorSecretPending, twoFactorRecoveryCodes, ...userWithoutPassword } = user;
 
     return {
       ...userWithoutPassword,
       academicYearId: activeAcademicYearId,
+      permissions,
     };
   }
 
@@ -510,10 +519,14 @@ export class AuthService {
     const activeAcademicYearId = await this.getActiveAcademicYearId();
     const { passwordHash, twoFactorSecret, twoFactorRecoveryCodes, twoFactorSecretPending, ...userWithoutPassword } = user;
 
+    // Get permissions from active role
+    const permissions = (primaryRole?.role.permissions as string[]) || [];
+
     return {
       user: {
         ...userWithoutPassword,
         academicYearId: activeAcademicYearId,
+        permissions,
       },
       ...tokens,
     };

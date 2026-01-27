@@ -512,114 +512,138 @@ export async function createLeave(data: CreateLeaveInput) {
     throw Errors.badRequest('Either staffId or teacherId must be provided');
   }
 
-  // 1. Check for overlapping leaves
-  const overlapWhere: Prisma.LeaveWhereInput = {
-    status: { in: [LeaveStatus.PENDING, LeaveStatus.APPROVED] },
-    OR: [
-      {
-        startDate: { lte: endDate },
-        endDate: { gte: startDate },
-      },
-    ],
-  };
+  return prisma.$transaction(async (tx) => {
+    // 1. Check for overlapping leaves
+    const overlapWhere: Prisma.LeaveWhereInput = {
+      status: { in: [LeaveStatus.PENDING, LeaveStatus.APPROVED] },
+      OR: [
+        {
+          startDate: { lte: endDate },
+          endDate: { gte: startDate },
+        },
+      ],
+    };
 
-  if (data.staffId) overlapWhere.staffId = data.staffId;
-  if (data.teacherId) overlapWhere.teacherId = data.teacherId;
+    if (data.staffId) overlapWhere.staffId = data.staffId;
+    if (data.teacherId) overlapWhere.teacherId = data.teacherId;
 
-  const overlappingLeave = await prisma.leave.findFirst({ where: overlapWhere });
+    const overlappingLeave = await tx.leave.findFirst({ where: overlapWhere });
 
-  if (overlappingLeave) {
-    throw Errors.badRequest('Leave request overlaps with an existing request');
-  }
-
-  // 2. Check Balance (for ANNUAL leave)
-  if (data.type === LeaveType.ANNUAL) {
-    let userId: string | undefined;
-    if (data.staffId) {
-      const staff = await prisma.staff.findUnique({
-        where: { id: data.staffId },
-        select: { userId: true },
-      });
-      userId = staff?.userId;
-    } else if (data.teacherId) {
-      const teacher = await prisma.teacher.findUnique({
-        where: { id: data.teacherId },
-        select: { userId: true },
-      });
-      userId = teacher?.userId;
+    if (overlappingLeave) {
+      throw Errors.badRequest('Leave request overlaps with an existing request');
     }
 
-    if (userId) {
-      // Find Academic Year covering the leave period
-      const academicYear = await prisma.academicYear.findFirst({
-        where: {
-          startDate: { lte: startDate },
-          endDate: { gte: endDate },
-        },
-      });
-
-      if (!academicYear) {
-        throw Errors.badRequest(
-          'No active Academic Year found for the requested dates.'
-        );
+    // 2. Check Balance (for ANNUAL leave)
+    if (data.type === LeaveType.ANNUAL) {
+      let userId: string | undefined;
+      if (data.staffId) {
+        const staff = await tx.staff.findUnique({
+          where: { id: data.staffId },
+          select: { userId: true },
+        });
+        userId = staff?.userId;
+      } else if (data.teacherId) {
+        const teacher = await tx.teacher.findUnique({
+          where: { id: data.teacherId },
+          select: { userId: true },
+        });
+        userId = teacher?.userId;
       }
 
-      const balance = await prisma.leaveBalance.findUnique({
-        where: {
-          userId_academicYearId_leaveType: {
-            userId,
-            academicYearId: academicYear.id,
-            leaveType: LeaveType.ANNUAL,
+      if (userId) {
+        // Find Academic Year covering the leave period
+        const academicYear = await tx.academicYear.findFirst({
+          where: {
+            startDate: { lte: startDate },
+            endDate: { gte: endDate },
           },
-        },
-      });
+        });
 
-      if (balance) {
-        if (balance.remainingDays < totalDays) {
+        if (!academicYear) {
           throw Errors.badRequest(
-            `Insufficient annual leave balance. Remaining: ${balance.remainingDays} days.`
+            'No active Academic Year found for the requested dates.'
           );
         }
-      } else {
-        // Fallback: Calculate used days in this AY
-        const whereClause: Prisma.LeaveWhereInput = {
+
+        // Calculate pending days from other requests in the same period
+        const pendingWhere: Prisma.LeaveWhereInput = {
           type: LeaveType.ANNUAL,
-          status: { in: [LeaveStatus.APPROVED, LeaveStatus.PENDING] },
+          status: LeaveStatus.PENDING,
           startDate: {
             gte: academicYear.startDate,
             lte: academicYear.endDate,
           },
         };
+        if (data.staffId) pendingWhere.staffId = data.staffId;
+        else if (data.teacherId) pendingWhere.teacherId = data.teacherId;
 
-        if (data.staffId) whereClause.staffId = data.staffId;
-        else if (data.teacherId) whereClause.teacherId = data.teacherId;
-
-        const used = await prisma.leave.aggregate({
+        const pendingAgg = await tx.leave.aggregate({
           _sum: { totalDays: true },
-          where: whereClause,
+          where: pendingWhere,
+        });
+        const pendingDays = pendingAgg._sum.totalDays || 0;
+
+        // Check against Balance
+        const balance = await tx.leaveBalance.findUnique({
+          where: {
+            userId_academicYearId_leaveType: {
+              userId,
+              academicYearId: academicYear.id,
+              leaveType: LeaveType.ANNUAL,
+            },
+          },
         });
 
-        const usedDays = used._sum.totalDays || 0;
-        const remaining = 12 - usedDays; // Default 12 days
-        if (remaining < totalDays) {
-          throw Errors.badRequest(
-            `Insufficient annual leave balance. Remaining: ${remaining} days.`
-          );
+        if (balance) {
+          // remainingDays in DB usually excludes PENDING. So we must subtract pendingDays.
+          const effectiveRemaining = balance.remainingDays - pendingDays;
+          if (effectiveRemaining < totalDays) {
+            throw Errors.badRequest(
+              `Insufficient annual leave balance. Remaining: ${effectiveRemaining} days (including pending requests).`
+            );
+          }
+        } else {
+          // Fallback: Calculate used days (Approved + Pending) in this AY
+          const usedWhere: Prisma.LeaveWhereInput = {
+            type: LeaveType.ANNUAL,
+            status: LeaveStatus.APPROVED, // Only APPROVED, since we add pendingDays separately or query both
+            startDate: {
+              gte: academicYear.startDate,
+              lte: academicYear.endDate,
+            },
+          };
+          if (data.staffId) usedWhere.staffId = data.staffId;
+          else if (data.teacherId) usedWhere.teacherId = data.teacherId;
+
+          const usedAgg = await tx.leave.aggregate({
+            _sum: { totalDays: true },
+            where: usedWhere,
+          });
+
+          const usedDays = usedAgg._sum.totalDays || 0;
+          const totalUsedAndPending = usedDays + pendingDays;
+          const remaining = 12 - totalUsedAndPending; // Default 12 days
+
+          if (remaining < totalDays) {
+            throw Errors.badRequest(
+              `Insufficient annual leave balance. Remaining: ${remaining} days (including pending requests).`
+            );
+          }
         }
       }
     }
-  }
 
-  return prisma.leave.create({
-    data: {
-      staffId: data.staffId,
-      teacherId: data.teacherId,
-      type: data.type,
-      startDate,
-      endDate,
-      totalDays,
-      reason: data.reason,
-    },
+    return tx.leave.create({
+      data: {
+        staffId: data.staffId,
+        teacherId: data.teacherId,
+        type: data.type,
+        startDate,
+        endDate,
+        totalDays,
+        reason: data.reason,
+      },
+    });
   });
 }
 

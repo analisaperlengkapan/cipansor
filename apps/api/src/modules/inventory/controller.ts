@@ -18,6 +18,7 @@ import {
   createAssetAuditSchema,
   queryAssetAuditSchema,
   updateAssetAuditItemSchema,
+  updateInventorySettingsSchema,
 } from './schema';
 import { Errors } from '../../middleware/error';
 
@@ -342,6 +343,43 @@ export async function getInventoryStats(req: Request, res: Response, next: NextF
     const unitId = req.params.unitId;
     const stats = await service.getInventoryStats(unitId);
     res.json({ success: true, data: stats });
+  } catch (error) {
+    next(error);
+  }
+}
+
+// ==================== SETTINGS & AUTOMATION ====================
+
+export async function getInventorySettings(req: Request, res: Response, next: NextFunction) {
+  try {
+    // Assuming unitId is passed in query or user context, but Settings are per unit.
+    // For admin purposes, let's allow passing unitId as query param or require it.
+    // Ideally, frontend should pass ?unitId=...
+    const unitId = req.query.unitId as string;
+    if (!unitId) throw Errors.badRequest('unitId is required');
+    const settings = await service.getInventorySettings(unitId);
+    res.json({ success: true, data: settings });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function updateInventorySettings(req: Request, res: Response, next: NextFunction) {
+  try {
+    const data = updateInventorySettingsSchema.parse(req.body);
+    await service.updateInventorySettings(data);
+    res.json({ success: true, message: 'Settings updated' });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function runMonthlyDepreciation(req: Request, res: Response, next: NextFunction) {
+  try {
+    // Optional unitId filter
+    const unitId = req.body.unitId;
+    const results = await service.runDepreciationJob(unitId);
+    res.json({ success: true, data: results });
   } catch (error) {
     next(error);
   }

@@ -32,6 +32,11 @@ router.get(
   controller.getInventoryStats
 );
 
+// Settings & Automation (Before dynamic :id)
+router.get('/settings', authorize(UserRole.UNIT_ADMIN), controller.getInventorySettings);
+router.put('/settings', authorize(UserRole.UNIT_ADMIN), controller.updateInventorySettings);
+router.post('/depreciation/run', authorize(UserRole.UNIT_ADMIN), controller.runMonthlyDepreciation);
+
 // Assignments
 router.get(
   '/assignments',

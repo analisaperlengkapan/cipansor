@@ -11,6 +11,9 @@ import {
   Trash2,
   Filter,
   BarChart3,
+  Settings,
+  PlayCircle,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,6 +33,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Pagination } from "@/components/shared/pagination";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
@@ -42,6 +55,13 @@ import {
   AssetCondition,
   AssetStatus,
 } from "@/hooks/use-inventory";
+import {
+  useInventorySettings,
+  useUpdateInventorySettings,
+  useRunDepreciation,
+} from "@/hooks/use-inventory-settings";
+import { useAccounts } from "@/hooks/use-accounting";
+import { useAuth } from "@/hooks/use-auth";
 
 function getConditionBadge(condition: AssetCondition) {
   const colorMap: Record<AssetCondition, string> = {
@@ -74,12 +94,116 @@ function getStatusBadge(status: AssetStatus) {
   );
 }
 
+function DepreciationSettingsDialog({ unitId }: { unitId?: string }) {
+  const [open, setOpen] = useState(false);
+  const { data: settings, isLoading } = useInventorySettings(unitId || "");
+  const { data: accounts } = useAccounts({ type: "EXPENSE", isActive: true });
+  // Fetch asset/contra-asset accounts separately or filter locally if needed
+  // Ideally we should fetch ALL active accounts or specific types
+  const { data: allAccounts } = useAccounts({ isActive: true });
+
+  const updateMutation = useUpdateInventorySettings();
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!unitId) return;
+    const formData = new FormData(e.currentTarget);
+    try {
+      await updateMutation.mutateAsync({
+        unitId,
+        depreciationExpenseAccount: formData.get(
+          "depreciationExpenseAccount",
+        ) as string,
+        accumulatedDepreciationAccount: formData.get(
+          "accumulatedDepreciationAccount",
+        ) as string,
+      });
+      setOpen(false);
+    } catch {
+      // Error handled in hook
+    }
+  };
+
+  if (!unitId) return null;
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline">
+          <Settings className="mr-2 h-4 w-4" />
+          Pengaturan
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Pengaturan Depresiasi</DialogTitle>
+          <DialogDescription>
+            Konfigurasi akun akuntansi untuk penjurnalan otomatis depresiasi aset.
+          </DialogDescription>
+        </DialogHeader>
+        {isLoading ? (
+          <div className="flex justify-center py-4">
+            <Loader2 className="h-6 w-6 animate-spin" />
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label>Akun Beban Depresiasi (Debit)</Label>
+              <Select
+                name="depreciationExpenseAccount"
+                defaultValue={settings?.depreciationExpenseAccount || ""}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Pilih Akun Beban" />
+                </SelectTrigger>
+                <SelectContent>
+                  {accounts?.map((acc) => (
+                    <SelectItem key={acc.id} value={acc.id}>
+                      {acc.code} - {acc.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Akun Akumulasi Depresiasi (Kredit)</Label>
+              <Select
+                name="accumulatedDepreciationAccount"
+                defaultValue={settings?.accumulatedDepreciationAccount || ""}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Pilih Akun Akumulasi" />
+                </SelectTrigger>
+                <SelectContent>
+                  {allAccounts?.map((acc) => (
+                    <SelectItem key={acc.id} value={acc.id}>
+                      {acc.code} - {acc.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <DialogFooter>
+              <Button type="submit" disabled={updateMutation.isPending}>
+                Simpan Pengaturan
+              </Button>
+            </DialogFooter>
+          </form>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function InventoryPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [categoryId, setCategoryId] = useState<string>("all");
   const [conditionFilter, setConditionFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+
+  const { user } = useAuth();
+  const unitId = user?.unitId;
 
   const { data: inventoryData, isLoading } = useInventoryItems({
     page,
@@ -96,6 +220,7 @@ export default function InventoryPage() {
   const { data: categories } = useInventoryCategories();
   const { data: summaryData } = useInventorySummary();
   const deleteMutation = useDeleteInventoryItem();
+  const runDepreciationMutation = useRunDepreciation();
 
   const handleDelete = async (id: string) => {
     try {
@@ -103,6 +228,15 @@ export default function InventoryPage() {
       toast.success("Inventaris berhasil dihapus");
     } catch {
       toast.error("Gagal menghapus inventaris");
+    }
+  };
+
+  const handleRunDepreciation = async () => {
+    if (!unitId) return;
+    try {
+      await runDepreciationMutation.mutateAsync(unitId);
+    } catch {
+      // Handled in hook
     }
   };
 
@@ -128,6 +262,21 @@ export default function InventoryPage() {
           </p>
         </div>
         <div className="flex gap-2">
+          {unitId && <DepreciationSettingsDialog unitId={unitId} />}
+          {unitId && (
+            <Button
+              variant="outline"
+              onClick={handleRunDepreciation}
+              disabled={runDepreciationMutation.isPending}
+            >
+              {runDepreciationMutation.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <PlayCircle className="mr-2 h-4 w-4" />
+              )}
+              Hitung Depresiasi
+            </Button>
+          )}
           <Button variant="outline" asChild>
             <Link href="/inventory/assignments">Peminjaman</Link>
           </Button>

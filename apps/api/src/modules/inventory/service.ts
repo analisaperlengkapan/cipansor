@@ -8,7 +8,6 @@ import {
   NotificationType,
 } from '@prisma/client';
 import { prisma } from '../../lib/prisma';
-import { createNotification } from '../notifications/service';
 import type {
   CreateInventoryCategoryInput,
   UpdateInventoryCategoryInput,
@@ -27,7 +26,9 @@ import type {
   CreateAssetAuditInput,
   QueryAssetAuditInput,
   UpdateAssetAuditItemInput,
+  UpdateInventorySettingsInput,
 } from './schema';
+import { runMonthlyDepreciation } from '../../jobs/asset-depreciation.job';
 
 export async function getQrCode(id: string) {
   const asset = await prisma.asset.findUnique({
@@ -36,10 +37,6 @@ export async function getQrCode(id: string) {
 
   if (!asset) throw new Error('Asset not found');
 
-  // Format: "CODE - NAME" or a deep link if preferred
-  // For now, let's use a URL to the frontend detail page
-  // Assumption: Frontend URL is accessible via generic means or just encoding the ID
-  // Let's encode a JSON object or just the URL. A URL is "Best Practice" for scanning.
   const appUrl = process.env.APP_URL || 'http://localhost:3000';
   const url = `${appUrl}/inventory/${id}`;
 
@@ -276,9 +273,7 @@ export async function getMaintenanceById(id: string) {
   });
 }
 
-// Admin/Staff direct creation
 export async function createMaintenance(data: CreateMaintenanceInput) {
-  // Update asset status to MAINTENANCE
   await prisma.asset.update({
     where: { id: data.itemId },
     data: { status: AssetStatus.MAINTENANCE },
@@ -309,7 +304,6 @@ export async function createMaintenance(data: CreateMaintenanceInput) {
   });
 }
 
-// User request
 export async function createMaintenanceRequest(
   data: CreateMaintenanceRequestInput,
   userId: string
@@ -334,7 +328,6 @@ export async function createMaintenanceRequest(
     },
   });
 
-  // Notify Unit Admins
   const admins = await prisma.user.findMany({
     where: {
       unitId: asset.unitId,
@@ -344,7 +337,6 @@ export async function createMaintenanceRequest(
     select: { id: true },
   });
 
-  // Send notifications asynchronously
   Promise.all(
     admins.map((admin) =>
       createNotification({
@@ -353,7 +345,7 @@ export async function createMaintenanceRequest(
         title: 'Permintaan Maintenance Baru',
         message: `Permintaan maintenance untuk aset ${asset.code} - ${asset.name}: ${data.description}`,
         link: `/inventory/${asset.id}?tab=maintenance`,
-        priority: 1, // High priority
+        priority: 1,
         channels: ['APP'],
         recipientType: 'UNIT_ADMIN',
       })
@@ -395,13 +387,11 @@ export async function updateMaintenanceStatus(id: string, data: UpdateMaintenanc
     invoiceUrl: data.invoiceUrl,
   };
 
-  // If completing, fix asset status
   if (data.status === AssetMaintenanceStatus.COMPLETED) {
     await prisma.asset.update({
       where: { id: maintenance.assetId },
       data: { status: AssetStatus.ACTIVE },
     });
-    // Ensure completion date is set
     if (!updateData.completionDate) {
       updateData.completionDate = new Date();
     }
@@ -440,7 +430,6 @@ export async function disposeAsset(
   if (!asset) throw new Error('Asset not found');
   if (asset.status === AssetStatus.DISPOSED) throw new Error('Asset is already disposed');
 
-  // Calculate book value at disposal
   const depreciation = await calculateDepreciation(assetId);
   const bookValue = depreciation?.bookValue ?? 0;
 
@@ -466,7 +455,6 @@ export async function disposeAsset(
 // ==================== ASSET ASSIGNMENT ====================
 
 export async function createAssignment(data: CreateAssetAssignmentInput) {
-  // Verify asset is available
   const asset = await prisma.asset.findUnique({
     where: { id: data.assetId },
   });
@@ -474,7 +462,6 @@ export async function createAssignment(data: CreateAssetAssignmentInput) {
   if (!asset) throw new Error('Asset not found');
   if (asset.status !== AssetStatus.ACTIVE) throw new Error('Asset is not available for assignment');
 
-  // Check if asset is already assigned
   const activeAssignment = await prisma.assetAssignment.findFirst({
     where: {
       assetId: data.assetId,
@@ -509,7 +496,6 @@ export async function returnAssignment(id: string, data: ReturnAssetAssignmentIn
   if (!assignment) throw new Error('Assignment not found');
   if (assignment.status !== 'ACTIVE') throw new Error('Assignment is already returned');
 
-  // Update assignment status and asset condition
   const [, updatedAssignment] = await prisma.$transaction([
     prisma.asset.update({
       where: { id: assignment.assetId },
@@ -573,7 +559,6 @@ export async function getAssignments(query: QueryAssetAssignmentInput) {
 // ==================== ASSET AUDIT ====================
 
 export async function createAudit(data: CreateAssetAuditInput, createdById: string) {
-  // Create audit and populate items
   const assets = await prisma.asset.findMany({
     where: { unitId: data.unitId, deletedAt: null },
   });
@@ -589,9 +574,9 @@ export async function createAudit(data: CreateAssetAuditInput, createdById: stri
         create: assets.map((asset) => ({
           assetId: asset.id,
           systemStatus: asset.status,
-          actualStatus: 'UNKNOWN', // To be filled during audit
+          actualStatus: 'UNKNOWN',
           condition: asset.condition,
-          isMatch: true, // Default assume match until checked
+          isMatch: true,
         })),
       },
     },
@@ -699,6 +684,47 @@ export async function calculateDepreciation(assetId: string) {
   };
 }
 
+// ==================== SETTINGS & AUTOMATION ====================
+
+export async function getInventorySettings(unitId: string) {
+  const settings = await prisma.setting.findMany({
+    where: {
+      unitId,
+      key: { in: ['DEPRECIATION_EXPENSE_ACCOUNT', 'ACCUMULATED_DEPRECIATION_ACCOUNT'] },
+    },
+  });
+
+  return {
+    depreciationExpenseAccount:
+      (settings.find((s) => s.key === 'DEPRECIATION_EXPENSE_ACCOUNT')?.value as string) || null,
+    accumulatedDepreciationAccount:
+      (settings.find((s) => s.key === 'ACCUMULATED_DEPRECIATION_ACCOUNT')?.value as string) || null,
+  };
+}
+
+export async function updateInventorySettings(data: UpdateInventorySettingsInput) {
+  const keys = [
+    { key: 'DEPRECIATION_EXPENSE_ACCOUNT', value: data.depreciationExpenseAccount },
+    { key: 'ACCUMULATED_DEPRECIATION_ACCOUNT', value: data.accumulatedDepreciationAccount },
+  ];
+
+  await prisma.$transaction(
+    keys.map((k) =>
+      prisma.setting.upsert({
+        where: { unitId_key: { unitId: data.unitId, key: k.key } },
+        update: { value: k.value },
+        create: { unitId: data.unitId, key: k.key, value: k.value },
+      })
+    )
+  );
+
+  return { success: true };
+}
+
+export async function runDepreciationJob(unitId?: string) {
+  return runMonthlyDepreciation(unitId);
+}
+
 // ==================== STATISTICS ====================
 
 export async function getInventoryStats(unitId?: string) {
@@ -737,7 +763,6 @@ export async function getInventoryStats(unitId?: string) {
       }),
     ]);
 
-  // Get category names for stats
   const categoryIds = byCategory.map((c) => c.categoryId);
   const categories = await prisma.assetCategory.findMany({
     where: { id: { in: categoryIds } },

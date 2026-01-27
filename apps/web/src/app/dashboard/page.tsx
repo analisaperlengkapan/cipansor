@@ -15,6 +15,7 @@ import {
   useFinanceStats,
   useViolationRewardStats,
   useTahfidzStats,
+  useTahfidzRecords,
 } from "@/hooks";
 import { useStudents } from "@/hooks/use-students";
 import { useHealthSummary } from "@/hooks/use-health";
@@ -72,7 +73,9 @@ export default function DashboardPage() {
   const { data: tahfidzData, isLoading: tahfidzLoading } = useTahfidzStats({
     period: "month",
   });
-  const { data: violationData } = useViolationRewardStats({ period: "month" });
+  const { data: recentTahfidz } = useTahfidzRecords({ limit: 5 });
+  const { data: violationData, isLoading: violationLoading } =
+    useViolationRewardStats({ period: "month" });
   const { data: healthData } = useHealthSummary();
   const { data: recentStudents } = useStudents({ limit: 5, status: "ACTIVE" }); // Assume default sort is filtered by new/active
 
@@ -86,6 +89,14 @@ export default function DashboardPage() {
         time: s.createdAt,
         type: "student",
         rawTime: new Date(s.createdAt).getTime(),
+      })) || []),
+      ...(recentTahfidz?.data?.map((t: any) => ({
+        id: t.id,
+        title: "Setoran Hafalan",
+        description: `${t.student?.user?.name || "Santri"} - QS. ${t.surahName} : ${t.ayahStart}-${t.ayahEnd}`,
+        time: t.recordedAt,
+        type: "tahfidz",
+        rawTime: new Date(t.recordedAt).getTime(),
       })) || []),
       ...(violationData?.recentViolations?.map((v) => ({
         id: v.id,
@@ -114,7 +125,7 @@ export default function DashboardPage() {
     ];
 
     return allActivities.sort((a, b) => b.rawTime - a.rawTime).slice(0, 5);
-  }, [recentStudents, violationData, financeData]);
+  }, [recentStudents, recentTahfidz, violationData, financeData]);
 
   return (
     <MainLayout>
@@ -163,7 +174,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Secondary Stats Grid */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           <StatsCard
             title="Total Hafalan"
             value={tahfidzData?.totalMemorized?.toLocaleString("id-ID") ?? "-"}
@@ -183,6 +194,22 @@ export default function DashboardPage() {
             isLoading={tahfidzLoading}
           />
           <StatsCard
+            title="Pelanggaran"
+            value={violationData?.totalViolations ?? "-"}
+            description="Bulan ini"
+            icon={AlertTriangle}
+            variant="destructive"
+            isLoading={violationLoading}
+          />
+          <StatsCard
+            title="Penghargaan"
+            value={violationData?.totalRewards ?? "-"}
+            description="Bulan ini"
+            icon={Award}
+            variant="warning"
+            isLoading={violationLoading}
+          />
+          <StatsCard
             title="Total Unit"
             value={stats?.totalUnits ?? "-"}
             description="Unit pendidikan"
@@ -196,30 +223,6 @@ export default function DashboardPage() {
             icon={Calendar}
             isLoading={isLoading}
           />
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Pelanggaran</CardTitle>
-              <AlertTriangle className="h-4 w-4 text-red-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-red-600">
-                {violationData?.totalViolations ?? "-"}
-              </div>
-              <p className="text-xs text-muted-foreground">Bulan ini</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Penghargaan</CardTitle>
-              <Award className="h-4 w-4 text-yellow-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {violationData?.totalRewards ?? "-"}
-              </div>
-              <p className="text-xs text-muted-foreground">Bulan ini</p>
-            </CardContent>
-          </Card>
         </div>
 
         {/* Tahfidz Section */}
@@ -331,7 +334,7 @@ export default function DashboardPage() {
                           {student.totalJuz} Juz
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {student.totalAyah.toLocaleString()} Ayat
+                          {(student.totalAyah ?? 0).toLocaleString()} Ayat
                         </p>
                       </div>
                     </div>
@@ -731,7 +734,7 @@ interface StatsCardProps {
   icon: React.ElementType;
   trend?: number;
   isLoading?: boolean;
-  negative?: boolean;
+  variant?: "default" | "destructive" | "warning" | "success";
 }
 
 function StatsCard({
@@ -741,26 +744,35 @@ function StatsCard({
   icon: Icon,
   trend,
   isLoading,
-  negative,
+  variant = "default",
 }: StatsCardProps) {
+  const getVariantStyles = () => {
+    switch (variant) {
+      case "destructive":
+        return { icon: "text-red-500", text: "text-red-600" };
+      case "warning":
+        return { icon: "text-yellow-500", text: "" };
+      case "success":
+        return { icon: "text-green-500", text: "text-green-600" };
+      default:
+        return { icon: "text-muted-foreground", text: "" };
+    }
+  };
+
+  const styles = getVariantStyles();
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        <Icon
-          className={`h-4 w-4 ${negative ? "text-red-500" : "text-muted-foreground"}`}
-        />
+        <Icon className={`h-4 w-4 ${styles.icon}`} />
       </CardHeader>
       <CardContent>
         {isLoading ? (
           <div className="h-8 w-20 animate-pulse rounded bg-muted" />
         ) : (
           <>
-            <div
-              className={`text-2xl font-bold ${negative ? "text-red-600" : ""}`}
-            >
-              {value}
-            </div>
+            <div className={`text-2xl font-bold ${styles.text}`}>{value}</div>
             <div className="flex items-center gap-1">
               <p className="text-xs text-muted-foreground">{description}</p>
               {trend !== undefined && trend !== 0 && (

@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { qualityController } from './quality.controller';
 import { authenticate, authorize } from '@/middleware/auth';
 import { validate } from '@/middleware/validate';
-import { createEvidenceSchema, createAuditSchema } from './schema';
+import { createEvidenceSchema, createAuditSchema, updateAuditItemSchema } from './schema';
 import { UserRole } from '@prisma/client';
 
 const router = Router();
@@ -14,7 +14,7 @@ router.get('/standards/:id', authenticate, qualityController.getStandardDetails)
 
 router.get('/dashboard/summary', authenticate, qualityController.getDashboardSummary);
 
-// Admin/Staff routes
+// Admin/Staff routes for Evidence
 router.post(
   '/evidence',
   authenticate,
@@ -28,6 +28,36 @@ router.delete(
   authenticate,
   authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
   qualityController.deleteEvidence
+);
+
+// --- Audit Management Routes ---
+
+router.post(
+  '/audits',
+  authenticate,
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  validate(createAuditSchema),
+  qualityController.createAudit
+);
+
+router.get(
+  '/audits',
+  authenticate,
+  qualityController.getAudits
+);
+
+router.get(
+  '/audits/:id',
+  authenticate,
+  qualityController.getAuditDetails
+);
+
+router.patch(
+  '/audits/items/:itemId',
+  authenticate,
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF, UserRole.TEACHER),
+  validate(updateAuditItemSchema),
+  qualityController.updateAuditItem
 );
 
 export const qualityRoutes = router;

@@ -7,6 +7,23 @@ import {
 } from "@cipansor/shared";
 import { toast } from "sonner";
 
+// Define locally if not in shared yet
+interface CreateAuditInput {
+  unitId: string;
+  academicYearId: string;
+  code: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+  leadAuditorId?: string;
+  notes?: string;
+}
+
+interface UpdateAuditItemInput {
+  score?: number;
+  notes?: string;
+}
+
 export const useQualityDashboard = (unitId: string, academicYearId: string) => {
   return useQuery({
     queryKey: ["quality", "dashboard", unitId, academicYearId],
@@ -95,6 +112,78 @@ export const useDeleteEvidence = () => {
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || "Gagal menghapus bukti");
+    },
+  });
+};
+
+// --- Audit Management Hooks ---
+
+export const useQualityAudits = (unitId: string, academicYearId: string) => {
+  return useQuery({
+    queryKey: ["quality", "audits", unitId, academicYearId],
+    queryFn: async () => {
+      const response = await api.get("/api/quality/audits", {
+        params: { unitId, academicYearId },
+      });
+      return response.data.data;
+    },
+    enabled: !!unitId && !!academicYearId,
+  });
+};
+
+export const useCreateAudit = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: CreateAuditInput) => {
+      const response = await api.post("/api/quality/audits", data);
+      return response.data.data;
+    },
+    onSuccess: (_, variables) => {
+      toast.success("Audit berhasil dibuat");
+      queryClient.invalidateQueries({
+        queryKey: ["quality", "audits", variables.unitId, variables.academicYearId],
+      });
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Gagal membuat audit");
+    },
+  });
+};
+
+export const useAuditDetails = (id: string) => {
+  return useQuery({
+    queryKey: ["quality", "audit", id],
+    queryFn: async () => {
+      const response = await api.get(`/api/quality/audits/${id}`);
+      return response.data.data;
+    },
+    enabled: !!id,
+  });
+};
+
+export const useUpdateAuditItem = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      itemId,
+      data,
+    }: {
+      itemId: string;
+      data: UpdateAuditItemInput;
+    }) => {
+      const response = await api.patch(`/api/quality/audits/items/${itemId}`, data);
+      return response.data.data;
+    },
+    onSuccess: () => {
+      toast.success("Penilaian berhasil disimpan");
+      queryClient.invalidateQueries({
+        queryKey: ["quality", "audit"],
+      });
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Gagal menyimpan penilaian");
     },
   });
 };

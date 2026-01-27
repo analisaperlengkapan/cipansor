@@ -192,6 +192,10 @@ export class FinanceEnhancementService {
           startDate: { lte: entryDate },
           endDate: { gte: entryDate },
         },
+        orderBy: [
+          { isActive: 'desc' }, // Prefer active year first
+          { startDate: 'desc' }, // Then most recent start date
+        ],
       });
 
       if (academicYear) {
@@ -217,10 +221,13 @@ export class FinanceEnhancementService {
           }
 
           if (delta !== 0) {
+            const currentUsed = budget.usedAmount.toNumber();
+            const newUsed = Math.max(0, currentUsed + delta);
+
             await tx.budget.update({
               where: { id: budget.id },
               data: {
-                usedAmount: { increment: new Prisma.Decimal(delta) },
+                usedAmount: new Prisma.Decimal(newUsed),
               },
             });
           }

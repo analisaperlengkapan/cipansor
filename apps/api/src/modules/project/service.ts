@@ -94,6 +94,15 @@ export async function deleteProject(id: string) {
 
 // Tasks
 
+export async function getTaskById(id: string) {
+  return prisma.projectTask.findUnique({
+    where: { id },
+    include: {
+      project: true,
+    },
+  });
+}
+
 export async function createTask(projectId: string, data: CreateProjectTaskInput, creatorId: string) {
   let columnId = data.columnId;
   if (!columnId) {
@@ -134,9 +143,9 @@ export async function createTask(projectId: string, data: CreateProjectTaskInput
       title: 'New Task Assigned',
       message: `You have been assigned to task "${task.title}" in project "${task.project.name}"`,
       link: `/project/${projectId}`,
-      priority: 1,
-      channels: ['in_app'],
-      recipientType: 'user',
+      priority: 'NORMAL',
+      channels: ['IN_APP'],
+      recipientType: 'INDIVIDUAL',
     });
   }
 
@@ -144,6 +153,11 @@ export async function createTask(projectId: string, data: CreateProjectTaskInput
 }
 
 export async function updateTask(id: string, data: UpdateProjectTaskInput, updaterId: string) {
+  const existingTask = await prisma.projectTask.findUnique({
+    where: { id },
+    select: { assigneeId: true },
+  });
+
   const task = await prisma.projectTask.update({
     where: { id },
     data: {
@@ -155,16 +169,17 @@ export async function updateTask(id: string, data: UpdateProjectTaskInput, updat
     },
   });
 
-  if (data.assigneeId && data.assigneeId !== updaterId) {
+  // Only notify if assignee has actually changed and is not the one making the update
+  if (data.assigneeId && data.assigneeId !== updaterId && data.assigneeId !== existingTask?.assigneeId) {
      await createNotification({
       userId: data.assigneeId,
       type: 'INFO',
       title: 'Task Assignment Updated',
       message: `You have been assigned to task "${task.title}" in project "${task.project.name}"`,
       link: `/project/${task.projectId}`,
-      priority: 1,
-      channels: ['in_app'],
-      recipientType: 'user',
+      priority: 'NORMAL',
+      channels: ['IN_APP'],
+      recipientType: 'INDIVIDUAL',
     });
   }
 
@@ -214,7 +229,37 @@ export async function updateTaskPosition(id: string, data: UpdateTaskPositionInp
 }
 
 export async function deleteTask(id: string) {
-  return prisma.projectTask.delete({ where: { id } });
+  return prisma.$transaction(async (tx) => {
+    const task = await tx.projectTask.findUnique({
+      where: { id },
+      select: { columnId: true, order: true },
+    });
+
+    if (task && task.columnId) {
+      await tx.projectTask.updateMany({
+        where: {
+          columnId: task.columnId,
+          order: { gt: task.order },
+        },
+        data: {
+          order: { decrement: 1 },
+        },
+      });
+    }
+
+    return tx.projectTask.delete({ where: { id } });
+  });
+}
+
+// Columns
+
+export async function getColumnById(id: string) {
+  return prisma.projectColumn.findUnique({
+    where: { id },
+    include: {
+      project: true,
+    },
+  });
 }
 
 export async function createColumn(projectId: string, data: CreateColumnInput) {

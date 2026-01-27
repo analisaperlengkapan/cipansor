@@ -130,6 +130,18 @@ router.get(
   financeEnhancementController.getIncomeExpenseReport
 );
 
+router.get(
+  '/reports/general-ledger',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  financeEnhancementController.getGeneralLedger
+);
+
+router.get(
+  '/reports/cash-flow',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  financeEnhancementController.getCashFlowStatement
+);
+
 // ==================== BUDGETS ====================
 
 router.get(

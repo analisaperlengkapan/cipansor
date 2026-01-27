@@ -11,7 +11,8 @@
  */
 
 import { prisma } from '../../lib/prisma';
-import { Prisma, SalaryComponentType, PayrollStatus } from '@prisma/client';
+import { Prisma, SalaryComponentType, PayrollStatus, JournalReferenceType } from '@prisma/client';
+import { ACCOUNT_MAPPING_KEYS, getAccountOrFallback } from '../finance/accounting-config.service';
 import {
   CreateSalaryComponentInput,
   UpdateSalaryComponentInput,
@@ -645,13 +646,71 @@ export const payrollPeriodService = {
     }
 
     return prisma.$transaction(async (tx) => {
-      // Update all payrolls to PAID
+      // 1. Update all payrolls to PAID
       await tx.payroll.updateMany({
         where: { periodId: id, status: 'APPROVED' },
         data: { status: 'PAID' },
       });
 
-      // Update period
+      // 2. Calculate Total for Journal
+      const totals = await tx.payroll.aggregate({
+        where: { periodId: id },
+        _sum: { netSalary: true },
+      });
+      const totalAmount = totals._sum.netSalary?.toNumber() || 0;
+
+      // 3. Create Journal Entry (Integration)
+      if (totalAmount > 0) {
+        const expenseAccount = await getAccountOrFallback(
+          period.unitId,
+          ACCOUNT_MAPPING_KEYS.PAYROLL_EXPENSE,
+          undefined,
+          'Beban Gaji'
+        );
+
+        const cashAccount = await getAccountOrFallback(
+          period.unitId,
+          ACCOUNT_MAPPING_KEYS.CASH,
+          '1101', // Fallback code
+          'Kas'
+        );
+
+        if (expenseAccount && cashAccount) {
+          const description = `Pembayaran Gaji Periode ${period.name}`;
+
+          // Debit Expense
+          await tx.journalEntry.create({
+            data: {
+              unitId: period.unitId,
+              accountId: expenseAccount.id,
+              date: payDate,
+              description,
+              debit: new Prisma.Decimal(totalAmount),
+              credit: new Prisma.Decimal(0),
+              reference: id,
+              referenceType: JournalReferenceType.PAYROLL || 'PAYROLL', // Fallback string if enum missing
+              createdById: period.createdById, // Using creator as actor
+            },
+          });
+
+          // Credit Cash
+          await tx.journalEntry.create({
+            data: {
+              unitId: period.unitId,
+              accountId: cashAccount.id,
+              date: payDate,
+              description,
+              debit: new Prisma.Decimal(0),
+              credit: new Prisma.Decimal(totalAmount),
+              reference: id,
+              referenceType: JournalReferenceType.PAYROLL || 'PAYROLL',
+              createdById: period.createdById,
+            },
+          });
+        }
+      }
+
+      // 4. Update period
       return tx.payrollPeriod.update({
         where: { id },
         data: {

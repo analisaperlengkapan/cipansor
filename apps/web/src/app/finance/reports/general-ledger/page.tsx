@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { format } from "date-fns";
-import { useJournals, useAccounts } from "@/hooks/use-accounting";
-import { Loader2, Download, Search, Filter } from "lucide-react";
+import { MainLayout } from "@/components/layout/main-layout";
+import { PageHeader } from "@/components/shared/page-header";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Table,
   TableBody,
@@ -13,8 +15,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatCurrency } from "@/lib/utils";
-import { Label } from "@/components/ui/label";
+import {
+  useGeneralLedgerReport,
+  useAccountCodes,
+} from "@/hooks/use-finance-enhancement";
+import { useUnits } from "@/hooks/use-units";
 import {
   Select,
   SelectContent,
@@ -22,149 +27,218 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Pagination } from "@/components/shared/pagination";
-import { DateRangePicker } from "@/components/ui/date-range-picker";
+import { Loader2, Download, ArrowLeft } from "lucide-react";
+import Link from "next/link";
+import { format } from "date-fns";
+import { id as localeID } from "date-fns/locale";
+
+function formatCurrency(amount: number): string {
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount);
+}
 
 export default function GeneralLedgerPage() {
-  const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({
-    from: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
-    to: new Date(),
-  });
-  const [accountId, setAccountId] = useState<string>("all");
-  const [page, setPage] = useState(1);
+  const currentDate = new Date();
+  const [unitId, setUnitId] = useState("");
+  const [accountId, setAccountId] = useState("");
+  const [startDate, setStartDate] = useState(
+    format(new Date(currentDate.getFullYear(), 0, 1), "yyyy-MM-dd"),
+  );
+  const [endDate, setEndDate] = useState(format(currentDate, "yyyy-MM-dd"));
 
-  const { data: accounts } = useAccounts();
-  const { data: journalsData, isLoading } = useJournals({
-    accountId: accountId === "all" ? undefined : accountId,
-    startDate: dateRange.from?.toISOString(),
-    endDate: dateRange.to?.toISOString(),
-    page,
-    limit: 50,
+  const { data: units } = useUnits();
+  const { data: accounts } = useAccountCodes({ isActive: true, limit: 1000 });
+  const { data: report, isLoading } = useGeneralLedgerReport({
+    unitId: unitId || undefined,
+    accountId,
+    startDate,
+    endDate,
   });
-
-  const handlePrint = () => {
-    window.print();
-  };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 print:hidden">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">General Ledger</h1>
-          <p className="text-muted-foreground">
-            View all financial transactions and journal entries.
-          </p>
-        </div>
-        <Button onClick={handlePrint} variant="outline">
-          <Download className="mr-2 h-4 w-4" /> Print / PDF
-        </Button>
-      </div>
-
-      <div className="flex flex-col md:flex-row gap-4 items-end bg-card p-4 rounded-lg border print:hidden">
-        <div className="grid gap-1.5 flex-1 w-full md:w-auto">
-          <Label>Filter by Account</Label>
-          <Select
-            value={accountId}
-            onValueChange={(val) => {
-              setAccountId(val);
-              setPage(1);
-            }}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="All Accounts" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Accounts</SelectItem>
-              {accounts?.map((acc) => (
-                <SelectItem key={acc.id} value={acc.id}>
-                  {acc.code} - {acc.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="grid gap-1.5">
-          <Label>Date Period</Label>
-          <DateRangePicker
-            date={dateRange}
-            setDate={(range) => {
-              if (range) setDateRange(range);
-            }}
-          />
-        </div>
-      </div>
-
-      <div className="rounded-md border bg-card">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Date</TableHead>
-              <TableHead>Account</TableHead>
-              <TableHead>Description</TableHead>
-              <TableHead>Ref</TableHead>
-              <TableHead className="text-right">Debit</TableHead>
-              <TableHead className="text-right">Credit</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center h-24">
-                  <div className="flex justify-center items-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin" /> Loading data...
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : !journalsData?.data || journalsData.data.length === 0 ? (
-              <TableRow>
-                <TableCell
-                  colSpan={6}
-                  className="text-center h-24 text-muted-foreground"
-                >
-                  No transactions found for the selected criteria.
-                </TableCell>
-              </TableRow>
-            ) : (
-              journalsData.data.map((entry) => (
-                <TableRow key={entry.id}>
-                  <TableCell>
-                    {format(new Date(entry.date), "dd/MM/yyyy")}
-                  </TableCell>
-                  <TableCell>
-                    <span className="font-medium">{entry.account.code}</span>
-                    <br />
-                    <span className="text-xs text-muted-foreground">
-                      {entry.account.name}
-                    </span>
-                  </TableCell>
-                  <TableCell>{entry.description}</TableCell>
-                  <TableCell className="text-xs text-muted-foreground font-mono">
-                    {entry.referenceType || "MANUAL"}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {entry.debit > 0
-                      ? formatCurrency(Number(entry.debit))
-                      : "-"}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {entry.credit > 0
-                      ? formatCurrency(Number(entry.credit))
-                      : "-"}
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
-
-      {journalsData && journalsData.meta.totalPages > 1 && (
-        <Pagination
-          currentPage={page}
-          totalPages={journalsData.meta.totalPages}
-          onPageChange={setPage}
+    <MainLayout>
+      <div className="space-y-6">
+        <PageHeader
+          title="Buku Besar (General Ledger)"
+          description="Rincian transaksi per akun"
+          actions={
+            <Link href="/finance/reports">
+              <Button variant="outline">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Kembali
+              </Button>
+            </Link>
+          }
         />
-      )}
-    </div>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+              <div className="space-y-2">
+                <Label>Unit</Label>
+                <Select value={unitId} onValueChange={setUnitId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Semua Unit" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Semua Unit</SelectItem>
+                    {units?.map((unit: any) => (
+                      <SelectItem key={unit.id} value={unit.id}>
+                        {unit.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Akun</Label>
+                <Select value={accountId} onValueChange={setAccountId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Pilih Akun" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {accounts?.data.map((acc: any) => (
+                      <SelectItem key={acc.id} value={acc.id}>
+                        {acc.code} - {acc.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Tanggal Mulai</Label>
+                <Input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Tanggal Akhir</Label>
+                <Input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            {isLoading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin" />
+              </div>
+            ) : report && report.accounts.length > 0 ? (
+              <div className="space-y-8">
+                {report.accounts.map((acc) => (
+                  <div key={acc.accountId} className="space-y-4">
+                    <div className="flex justify-between items-center border-b pb-2">
+                      <div>
+                        <h3 className="text-lg font-bold">
+                          {acc.code} - {acc.name}
+                        </h3>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm text-muted-foreground">
+                          Saldo Awal
+                        </div>
+                        <div className="font-mono font-medium">
+                          {formatCurrency(acc.startBalance)}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="rounded-md border">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-[120px]">Tanggal</TableHead>
+                            <TableHead>Keterangan</TableHead>
+                            <TableHead className="text-right w-[150px]">
+                              Debit
+                            </TableHead>
+                            <TableHead className="text-right w-[150px]">
+                              Kredit
+                            </TableHead>
+                            <TableHead className="text-right w-[150px]">
+                              Saldo
+                            </TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {acc.entries.length === 0 ? (
+                            <TableRow>
+                              <TableCell
+                                colSpan={5}
+                                className="text-center py-4 text-muted-foreground"
+                              >
+                                Tidak ada transaksi
+                              </TableCell>
+                            </TableRow>
+                          ) : (
+                            acc.entries.map((entry) => (
+                              <TableRow key={entry.id}>
+                                <TableCell>
+                                  {format(new Date(entry.date), "dd/MM/yyyy")}
+                                </TableCell>
+                                <TableCell>
+                                  {entry.description}
+                                  {entry.reference && (
+                                    <span className="ml-2 text-xs text-muted-foreground bg-muted px-1 rounded">
+                                      Ref: {entry.reference}
+                                    </span>
+                                  )}
+                                </TableCell>
+                                <TableCell className="text-right font-mono">
+                                  {entry.debit > 0
+                                    ? formatCurrency(entry.debit)
+                                    : "-"}
+                                </TableCell>
+                                <TableCell className="text-right font-mono">
+                                  {entry.credit > 0
+                                    ? formatCurrency(entry.credit)
+                                    : "-"}
+                                </TableCell>
+                                <TableCell className="text-right font-mono font-medium">
+                                  {formatCurrency(entry.balance)}
+                                </TableCell>
+                              </TableRow>
+                            ))
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
+
+                    <div className="flex justify-end pt-2">
+                      <div className="text-right">
+                        <div className="text-sm text-muted-foreground">
+                          Saldo Akhir
+                        </div>
+                        <div className="text-xl font-bold">
+                          {formatCurrency(acc.endBalance)}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12 text-muted-foreground">
+                {!accountId
+                  ? "Pilih akun untuk melihat rincian buku besar"
+                  : "Tidak ada data transaksi untuk filter ini"}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </MainLayout>
   );
 }

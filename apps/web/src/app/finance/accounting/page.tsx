@@ -48,11 +48,15 @@ import {
   Download,
   Wallet,
   PieChart,
+  Settings,
+  Save,
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { id as localeID } from "date-fns/locale";
+import { api } from "@/lib/api";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 import {
   useAccountCodes,
@@ -954,6 +958,10 @@ export default function AccountingPage() {
               <Calculator className="h-4 w-4" />
               Ringkasan Laporan
             </TabsTrigger>
+            <TabsTrigger value="settings" className="flex items-center gap-2">
+              <Settings className="h-4 w-4" />
+              Pengaturan
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="account-codes" className="mt-6">
@@ -966,6 +974,10 @@ export default function AccountingPage() {
 
           <TabsContent value="reports" className="mt-6">
             <ReportsTab />
+          </TabsContent>
+
+          <TabsContent value="settings" className="mt-6">
+            <AccountingSettingsTab />
           </TabsContent>
         </Tabs>
       </div>

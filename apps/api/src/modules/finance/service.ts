@@ -3,6 +3,7 @@ import { PaymentStatus, Prisma, NotificationType } from '@prisma/client';
 import * as notificationService from '../notifications/service';
 import { eventBus } from '@/lib/event-bus';
 import { AccountType, JournalReferenceType } from '@cipansor/shared';
+import { ACCOUNT_MAPPING_KEYS, getAccountOrFallback } from './accounting-config.service';
 import {
   CreatePaymentTypeDto,
   UpdatePaymentTypeDto,
@@ -351,31 +352,19 @@ export async function createPayment(data: CreatePaymentDto, userId: string = 'SY
     // =================================================================
     if (invoice.paymentType.accountId && invoice.student.unitId) {
       // 1. Determine Debit Account (Asset) based on Payment Method
-      // Look up by Name (more robust than code potentially) or standard codes
-      let assetAccount = await tx.accountCode.findFirst({
-        where: {
-          name: {
-            contains: ['BANK_TRANSFER', 'VIRTUAL_ACCOUNT', 'QRIS', 'EWALLET'].includes(
-              payment.method
-            )
-              ? 'Bank'
-              : 'Kas',
-            mode: 'insensitive',
-          },
-          type: AccountType.ASSET,
-          isActive: true,
-        },
-      });
+      const isBank = ['BANK_TRANSFER', 'VIRTUAL_ACCOUNT', 'QRIS', 'EWALLET'].includes(
+        payment.method
+      );
+      const mappingKey = isBank ? ACCOUNT_MAPPING_KEYS.BANK : ACCOUNT_MAPPING_KEYS.CASH;
+      const fallbackCode = isBank ? '1102' : '1101';
+      const fallbackName = isBank ? 'Bank' : 'Kas';
 
-      // Fallback to strict code check if name lookup fails
-      if (!assetAccount) {
-        const code = ['BANK_TRANSFER', 'VIRTUAL_ACCOUNT', 'QRIS', 'EWALLET'].includes(
-          payment.method
-        )
-          ? '1102'
-          : '1101';
-        assetAccount = await tx.accountCode.findFirst({ where: { code } });
-      }
+      const assetAccount = await getAccountOrFallback(
+        invoice.student.unitId,
+        mappingKey,
+        fallbackCode,
+        fallbackName
+      );
 
       if (assetAccount) {
         const descriptionPrefix = `Pembayaran ${invoice.invoiceNumber}`;

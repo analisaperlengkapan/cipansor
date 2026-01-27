@@ -385,11 +385,19 @@ export const accountCodesData = [
   { code: '2102', name: 'Utang Gaji', type: 'LIABILITY', parentCode: '2100' },
   { code: '2103', name: 'Utang Bank', type: 'LIABILITY', parentCode: '2100' },
   { code: '2200', name: 'Pendapatan Diterima Dimuka', type: 'LIABILITY', parentCode: null },
+  { code: '2300', name: 'Kewajiban Dana Titipan (ZIS)', type: 'LIABILITY', parentCode: null },
+  { code: '2301', name: 'Titipan Zakat', type: 'LIABILITY', parentCode: '2300' },
+  { code: '2302', name: 'Titipan Infaq/Shodaqoh', type: 'LIABILITY', parentCode: '2300' },
+  { code: '2303', name: 'Titipan Wakaf', type: 'LIABILITY', parentCode: '2300' },
 
   // Ekuitas
   { code: '3100', name: 'Modal', type: 'EQUITY', parentCode: null },
   { code: '3101', name: 'Modal Yayasan', type: 'EQUITY', parentCode: '3100' },
   { code: '3102', name: 'Saldo Laba', type: 'EQUITY', parentCode: '3100' },
+  { code: '3103', name: 'Aset Neto Tidak Terikat', type: 'EQUITY', parentCode: '3100' },
+  { code: '3200', name: 'Aset Neto Terikat', type: 'EQUITY', parentCode: null },
+  { code: '3201', name: 'Aset Wakaf', type: 'EQUITY', parentCode: '3200' },
+  { code: '3202', name: 'Aset Amil', type: 'EQUITY', parentCode: '3200' },
 
   // Pendapatan
   { code: '4100', name: 'Pendapatan Operasional', type: 'REVENUE', parentCode: null },

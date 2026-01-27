@@ -385,7 +385,7 @@ export function useVerifyDonation() {
       id: string;
       status: DonationStatus;
     }) => {
-      const response = await api.patch<ApiResponse<Donation>>(
+      const response = await api.put<ApiResponse<Donation>>(
         `/donation/${id}/verify`,
         { status },
       );

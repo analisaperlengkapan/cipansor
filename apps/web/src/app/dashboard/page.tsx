@@ -114,9 +114,9 @@ export default function DashboardPage() {
         id: d.id,
         title: "Donasi Masuk",
         description: `${d.donorName} - ${d.type} (Rp ${d.amount.toLocaleString("id-ID")})`,
-        time: d.createdAt,
+        time: (d as any).donatedAt || d.createdAt,
         type: "donation",
-        rawTime: new Date(d.createdAt).getTime(),
+        rawTime: new Date((d as any).donatedAt || d.createdAt).getTime(),
       })) || []),
     ];
 

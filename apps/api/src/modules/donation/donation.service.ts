@@ -452,7 +452,7 @@ export const donationService = {
                 debit: donation.amount,
                 credit: 0,
                 reference: donation.id,
-                referenceType: JournalReferenceType.DONATION, // Assuming this exists or falls back to string
+                referenceType: 'DONATION',
                 createdById: verifiedById,
               },
             });
@@ -467,7 +467,7 @@ export const donationService = {
                 debit: 0,
                 credit: donation.amount,
                 reference: donation.id,
-                referenceType: JournalReferenceType.DONATION,
+                referenceType: 'DONATION',
                 createdById: verifiedById,
               },
             });

@@ -1,8 +1,15 @@
 
 import 'dotenv/config';
-import { prisma } from '../src/lib/prisma';
+import { PrismaClient } from '@prisma/client';
 import { donationService } from '../src/modules/donation/donation.service';
-import { AccountType } from '@cipansor/shared';
+
+// Mock AccountType from shared if unavailable
+const AccountType = {
+  ASSET: 'ASSET',
+  REVENUE: 'REVENUE'
+};
+
+const prisma = new PrismaClient();
 
 async function main() {
   console.log('Starting verification script...');
@@ -74,11 +81,14 @@ async function main() {
     console.log('SUCCESS: Both Debit and Credit entries found.');
     console.log(`Debit: ${debitEntry.description} - ${debitEntry.debit}`);
     console.log(`Credit: ${creditEntry.description} - ${creditEntry.credit}`);
+    console.log(`Reference Type: ${debitEntry.referenceType}`);
 
-    // Additional check on account matching
-    // Note: The logic searches by name "Bank" and "Infak".
-    // "Bank BSI Test" contains "Bank". "Pendapatan Infak Test" contains "Infak".
-    // So it should pick these up (or other existing ones).
+    if (debitEntry.referenceType === 'DONATION' && creditEntry.referenceType === 'DONATION') {
+        console.log('SUCCESS: Reference Type matches "DONATION" string literal.');
+    } else {
+        console.error('FAILURE: Reference Type mismatch.');
+    }
+
     console.log('Debit Account ID:', debitEntry.accountId);
     console.log('Credit Account ID:', creditEntry.accountId);
   } else {

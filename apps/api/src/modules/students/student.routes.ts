@@ -79,6 +79,161 @@ router.use(authenticate);
  */
 router.get('/', hasPermission(PERMISSIONS.STUDENT_VIEW), validateQuery(listStudentsQuerySchema), controller.list);
 
+// ==================== ID CARD ROUTES ====================
+
+/**
+ * @swagger
+ * /api/students/id-cards/templates:
+ *   get:
+ *     summary: Get available ID card templates
+ *     tags: [Students - ID Card]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of available templates
+ */
+router.get('/id-cards/templates', hasPermission(PERMISSIONS.STUDENT_VIEW), IdCardController.getTemplates);
+
+/**
+ * @swagger
+ * /api/students/id-cards/verify:
+ *   post:
+ *     summary: Verify QR code from ID card
+ *     tags: [Students - ID Card]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - qrData
+ *             properties:
+ *               qrData:
+ *                 type: string
+ *                 description: QR code data string
+ *     responses:
+ *       200:
+ *         description: Verification result with student data
+ */
+router.post('/id-cards/verify', IdCardController.verifyQRCode);
+
+/**
+ * @swagger
+ * /api/students/id-cards/verify:
+ *   get:
+ *     summary: Verify QR code via URL (for direct scan)
+ *     tags: [Students - ID Card]
+ *     parameters:
+ *       - in: query
+ *         name: q
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: QR code data (URL encoded)
+ *     responses:
+ *       200:
+ *         description: Verification result
+ */
+router.get('/id-cards/verify', IdCardController.verifyQRCodeGet);
+
+/**
+ * @swagger
+ * /api/students/id-cards/stats/{unitId}:
+ *   get:
+ *     summary: Get ID card statistics for a unit
+ *     tags: [Students - ID Card]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: unitId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Card statistics
+ */
+router.get('/id-cards/stats/:unitId', hasPermission(PERMISSIONS.STUDENT_VIEW), IdCardController.getStatistics);
+
+/**
+ * @swagger
+ * /api/students/id-cards/classes/{classId}:
+ *   get:
+ *     summary: Generate bulk ID cards for a class
+ *     tags: [Students - ID Card]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: classId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: academicYearId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: template
+ *         schema:
+ *           type: string
+ *           enum: [STANDARD, PESANTREN, TAHFIDZ, MINIMAL]
+ *       - in: query
+ *         name: showTahfidz
+ *         schema:
+ *           type: boolean
+ *     responses:
+ *       200:
+ *         description: Bulk ID cards data
+ */
+router.get('/id-cards/classes/:classId', hasPermission(PERMISSIONS.STUDENT_VIEW), IdCardController.generateClassCards);
+
+/**
+ * @swagger
+ * /api/students/{studentId}/id-card:
+ *   get:
+ *     summary: Generate ID card for a student
+ *     tags: [Students - ID Card]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: studentId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: template
+ *         schema:
+ *           type: string
+ *           enum: [STANDARD, PESANTREN, TAHFIDZ, MINIMAL]
+ *       - in: query
+ *         name: orientation
+ *         schema:
+ *           type: string
+ *           enum: [PORTRAIT, LANDSCAPE]
+ *       - in: query
+ *         name: showTahfidz
+ *         schema:
+ *           type: boolean
+ *       - in: query
+ *         name: validityPeriod
+ *         schema:
+ *           type: integer
+ *           default: 12
+ *         description: Validity period in months
+ *     responses:
+ *       200:
+ *         description: ID card data with QR code
+ */
+router.get('/:studentId/id-card', hasPermission(PERMISSIONS.STUDENT_VIEW), IdCardController.generateStudentCard);
+
 /**
  * @swagger
  * /api/students/{id}:
@@ -236,160 +391,5 @@ router.put(
  *         $ref: '#/components/responses/Forbidden'
  */
 router.delete('/:id', hasPermission(PERMISSIONS.STUDENT_DELETE), validateParams(studentIdParamSchema), controller.remove);
-
-// ==================== ID CARD ROUTES ====================
-
-/**
- * @swagger
- * /api/students/id-cards/templates:
- *   get:
- *     summary: Get available ID card templates
- *     tags: [Students - ID Card]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: List of available templates
- */
-router.get('/id-cards/templates', hasPermission(PERMISSIONS.STUDENT_VIEW), IdCardController.getTemplates);
-
-/**
- * @swagger
- * /api/students/id-cards/verify:
- *   post:
- *     summary: Verify QR code from ID card
- *     tags: [Students - ID Card]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - qrData
- *             properties:
- *               qrData:
- *                 type: string
- *                 description: QR code data string
- *     responses:
- *       200:
- *         description: Verification result with student data
- */
-router.post('/id-cards/verify', IdCardController.verifyQRCode);
-
-/**
- * @swagger
- * /api/students/id-cards/verify:
- *   get:
- *     summary: Verify QR code via URL (for direct scan)
- *     tags: [Students - ID Card]
- *     parameters:
- *       - in: query
- *         name: q
- *         required: true
- *         schema:
- *           type: string
- *         description: QR code data (URL encoded)
- *     responses:
- *       200:
- *         description: Verification result
- */
-router.get('/id-cards/verify', IdCardController.verifyQRCodeGet);
-
-/**
- * @swagger
- * /api/students/id-cards/stats/{unitId}:
- *   get:
- *     summary: Get ID card statistics for a unit
- *     tags: [Students - ID Card]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: unitId
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Card statistics
- */
-router.get('/id-cards/stats/:unitId', hasPermission(PERMISSIONS.STUDENT_VIEW), IdCardController.getStatistics);
-
-/**
- * @swagger
- * /api/students/id-cards/classes/{classId}:
- *   get:
- *     summary: Generate bulk ID cards for a class
- *     tags: [Students - ID Card]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: classId
- *         required: true
- *         schema:
- *           type: string
- *       - in: query
- *         name: academicYearId
- *         required: true
- *         schema:
- *           type: string
- *       - in: query
- *         name: template
- *         schema:
- *           type: string
- *           enum: [STANDARD, PESANTREN, TAHFIDZ, MINIMAL]
- *       - in: query
- *         name: showTahfidz
- *         schema:
- *           type: boolean
- *     responses:
- *       200:
- *         description: Bulk ID cards data
- */
-router.get('/id-cards/classes/:classId', hasPermission(PERMISSIONS.STUDENT_VIEW), IdCardController.generateClassCards);
-
-/**
- * @swagger
- * /api/students/{studentId}/id-card:
- *   get:
- *     summary: Generate ID card for a student
- *     tags: [Students - ID Card]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: studentId
- *         required: true
- *         schema:
- *           type: string
- *       - in: query
- *         name: template
- *         schema:
- *           type: string
- *           enum: [STANDARD, PESANTREN, TAHFIDZ, MINIMAL]
- *       - in: query
- *         name: orientation
- *         schema:
- *           type: string
- *           enum: [PORTRAIT, LANDSCAPE]
- *       - in: query
- *         name: showTahfidz
- *         schema:
- *           type: boolean
- *       - in: query
- *         name: validityPeriod
- *         schema:
- *           type: integer
- *           default: 12
- *         description: Validity period in months
- *     responses:
- *       200:
- *         description: ID card data with QR code
- */
-router.get('/:studentId/id-card', hasPermission(PERMISSIONS.STUDENT_VIEW), IdCardController.generateStudentCard);
 
 export default router;

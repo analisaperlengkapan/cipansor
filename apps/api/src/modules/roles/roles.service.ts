@@ -182,7 +182,7 @@ export class RolesService {
       });
     }
 
-    return prisma.userRoleAssignment.create({
+    const assignment = await prisma.userRoleAssignment.create({
       data: {
         userId,
         roleId,
@@ -195,6 +195,15 @@ export class RolesService {
         unit: true,
       },
     });
+
+    // Invalidate permission cache for this role
+    try {
+      await redis.del(`role:permissions:${roleId}`);
+    } catch (error) {
+      console.error('Failed to invalidate role permissions cache:', error);
+    }
+
+    return assignment;
   }
 
   /**
@@ -209,9 +218,18 @@ export class RolesService {
       throw Errors.notFound('Role assignment');
     }
 
-    return prisma.userRoleAssignment.delete({
+    const deleted = await prisma.userRoleAssignment.delete({
       where: { id: assignmentId },
     });
+
+    // Invalidate permission cache for this role
+    try {
+      await redis.del(`role:permissions:${assignment.roleId}`);
+    } catch (error) {
+      console.error('Failed to invalidate role permissions cache:', error);
+    }
+
+    return deleted;
   }
 
   /**
@@ -234,7 +252,7 @@ export class RolesService {
     });
 
     // Set new primary role
-    return prisma.userRoleAssignment.update({
+    const updated = await prisma.userRoleAssignment.update({
       where: { id: assignmentId },
       data: { isPrimary: true },
       include: {
@@ -242,6 +260,15 @@ export class RolesService {
         unit: true,
       },
     });
+
+    // Invalidate permission cache for this role
+    try {
+      await redis.del(`role:permissions:${assignment.roleId}`);
+    } catch (error) {
+      console.error('Failed to invalidate role permissions cache:', error);
+    }
+
+    return updated;
   }
 
   /**

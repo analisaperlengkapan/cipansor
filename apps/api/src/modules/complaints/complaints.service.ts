@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { ComplaintStatus, ComplaintPriority, ComplaintCategory, Prisma } from '@prisma/client';
+import { ComplaintStatus, ComplaintPriority, ComplaintCategory, Prisma, UserRole } from '@prisma/client';
 
 export const complaintsService = {
   create: async (data: {
@@ -45,7 +45,7 @@ export const complaintsService = {
     const where: Prisma.ComplaintWhereInput = {};
 
     // SUPER_ADMIN sees all if unitId is null, otherwise filters by unitId
-    if (role === 'SUPER_ADMIN') {
+    if (role === UserRole.SUPER_ADMIN) {
       if (unitId) where.unitId = unitId;
     } else {
       // Other roles must have a unitId
@@ -58,12 +58,15 @@ export const complaintsService = {
 
     // Access Control
     const hasFullAccess =
-      role.includes('ADMIN') ||
-      role.includes('KEPALA_SEKOLAH') ||
-      role.includes('YAYASAN') ||
-      role.includes('STAFF') ||
-      role.includes('TATA_USAHA') ||
-      role === 'SUPER_ADMIN';
+      role === UserRole.SUPER_ADMIN ||
+      role === UserRole.UNIT_ADMIN ||
+      role === UserRole.STAFF ||
+      role === UserRole.TEACHER;
+      // Assuming Teacher also has 'staff-like' access within unit, or restrict further if needed.
+      // Original logic included 'KEPALA_SEKOLAH', etc. which maps to UNIT_ADMIN or TEACHER usually.
+      // Based on PR comment, RoleCode values were used incorrectly.
+      // Correct mapping:
+      // Admins/Staff see all. Students/Parents see own.
 
     // Students/Parents only see their own
     if (!hasFullAccess) {
@@ -92,8 +95,11 @@ export const complaintsService = {
     ]);
 
     // Mask anonymous users logic
+    // Conditional Unmasking: Only mask if the user is NOT SUPER_ADMIN
+    const shouldMask = role !== UserRole.SUPER_ADMIN;
+
     const sanitizedData = data.map(d => {
-      if (d.isAnonymous) {
+      if (d.isAnonymous && shouldMask) {
         return {
           ...d,
           user: null, // Hide user details for anonymous complaints
@@ -133,12 +139,10 @@ export const complaintsService = {
 
     // Access check
     const hasFullAccess =
-      role.includes('ADMIN') ||
-      role.includes('KEPALA_SEKOLAH') ||
-      role.includes('YAYASAN') ||
-      role.includes('STAFF') ||
-      role.includes('TATA_USAHA') ||
-      role === 'SUPER_ADMIN';
+      role === UserRole.SUPER_ADMIN ||
+      role === UserRole.UNIT_ADMIN ||
+      role === UserRole.STAFF ||
+      role === UserRole.TEACHER;
 
     if (!hasFullAccess && complaint.userId !== userId) {
       throw new Error('Unauthorized'); // Controller will handle this
@@ -149,7 +153,11 @@ export const complaintsService = {
       complaint.comments = complaint.comments.filter(c => !c.isInternal);
     }
 
-    if (complaint.isAnonymous) {
+    // Mask anonymous users logic
+    // Conditional Unmasking: Only mask if the user is NOT SUPER_ADMIN
+    const shouldMask = role !== UserRole.SUPER_ADMIN;
+
+    if (complaint.isAnonymous && shouldMask) {
       // If anonymous, mask the reporter
       complaint.user = null;
       complaint.userId = null;

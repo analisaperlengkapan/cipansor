@@ -1,8 +1,9 @@
 import { Request, Response } from 'express';
 import { complaintsService } from './complaints.service';
-import { ComplaintStatus, ComplaintCategory } from '@prisma/client';
+import { ComplaintStatus, ComplaintCategory, UserRole } from '@prisma/client';
 import httpStatus from 'http-status';
 import { createComplaintSchema, updateComplaintStatusSchema, addCommentSchema, assignHandlerSchema } from './complaints.schema';
+import { prisma } from '@/lib/prisma';
 
 export const complaintsController = {
   create: async (req: Request, res: Response) => {
@@ -19,8 +20,8 @@ export const complaintsController = {
       const user = (req as any).user;
       const unitId = user.unitId;
 
-      // For SUPER_ADMIN creating a complaint, they must specify unitId if not present in token (though typically they act within a unit context or unitId is null)
-      if (!unitId && user.role !== 'SUPER_ADMIN') {
+      // For SUPER_ADMIN creating a complaint, they must specify unitId if not present in token
+      if (!unitId && user.role !== UserRole.SUPER_ADMIN) {
          return res.status(httpStatus.BAD_REQUEST).json({ message: 'Unit ID missing' });
       }
 
@@ -93,8 +94,26 @@ export const complaintsController = {
         });
       }
 
+      const user = (req as any).user;
       const { id } = req.params;
       const { status, resolution } = validation.data;
+
+      // Unit Authorization Check
+      if (user.role !== UserRole.SUPER_ADMIN) {
+        const existingComplaint = await prisma.complaint.findUnique({
+          where: { id },
+          select: { unitId: true }
+        });
+
+        if (!existingComplaint) {
+          return res.status(httpStatus.NOT_FOUND).json({ message: 'Complaint not found' });
+        }
+
+        if (existingComplaint.unitId !== user.unitId) {
+          return res.status(httpStatus.FORBIDDEN).json({ message: 'Forbidden: Cannot update complaint from another unit' });
+        }
+      }
+
       const updated = await complaintsService.updateStatus(id, status, resolution);
       res.json(updated);
     } catch (error) {
@@ -113,8 +132,26 @@ export const complaintsController = {
         });
       }
 
+      const user = (req as any).user;
       const { id } = req.params;
       const { handlerId } = validation.data;
+
+      // Unit Authorization Check
+      if (user.role !== UserRole.SUPER_ADMIN) {
+        const existingComplaint = await prisma.complaint.findUnique({
+          where: { id },
+          select: { unitId: true }
+        });
+
+        if (!existingComplaint) {
+          return res.status(httpStatus.NOT_FOUND).json({ message: 'Complaint not found' });
+        }
+
+        if (existingComplaint.unitId !== user.unitId) {
+          return res.status(httpStatus.FORBIDDEN).json({ message: 'Forbidden: Cannot assign handler to complaint from another unit' });
+        }
+      }
+
       const updated = await complaintsService.assignHandler(id, handlerId);
       res.json(updated);
     } catch (error) {
@@ -137,14 +174,18 @@ export const complaintsController = {
       const user = (req as any).user;
       const { content, isInternal } = validation.data;
 
-      // Check if user is allowed to make internal comments
+      // Verify access using findOne logic (throws Unauthorized if no access)
+      const existingComplaint = await complaintsService.findOne(id, user.sub, user.role);
+      if (!existingComplaint) {
+        return res.status(httpStatus.NOT_FOUND).json({ message: 'Complaint not found' });
+      }
+
+      // Check if user is allowed to make internal comments using UserRole enum
       const canSetInternal =
-        user.role.includes('ADMIN') ||
-        user.role.includes('KEPALA_SEKOLAH') ||
-        user.role.includes('YAYASAN') ||
-        user.role.includes('STAFF') ||
-        user.role.includes('TATA_USAHA') ||
-        user.role === 'SUPER_ADMIN';
+        user.role === UserRole.SUPER_ADMIN ||
+        user.role === UserRole.UNIT_ADMIN ||
+        user.role === UserRole.STAFF ||
+        user.role === UserRole.TEACHER;
 
       // Force isInternal to false if user is not staff/admin
       const finalIsInternal = canSetInternal ? isInternal : false;
@@ -157,6 +198,9 @@ export const complaintsController = {
       });
       res.status(httpStatus.CREATED).json(comment);
     } catch (error) {
+      if (error instanceof Error && error.message === 'Unauthorized') {
+        return res.status(httpStatus.FORBIDDEN).json({ message: 'Unauthorized' });
+      }
       console.error(error);
       res.status(httpStatus.INTERNAL_SERVER_ERROR).json({ message: 'Error adding comment' });
     }

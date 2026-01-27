@@ -392,17 +392,6 @@ export const donationService = {
                },
              });
 
-             // Restore campaign totals
-             if (donation.campaignId) {
-               await tx.donationCampaign.update({
-                 where: { id: donation.campaignId },
-                 data: {
-                   collectedAmount: { increment: donation.amount },
-                   donorCount: { increment: 1 },
-                 },
-               });
-             }
-
              // Skip creating new entries
              return updatedDonation;
            }

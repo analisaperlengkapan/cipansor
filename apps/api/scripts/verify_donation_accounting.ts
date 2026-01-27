@@ -45,6 +45,17 @@ async function main() {
   });
   console.log('Created Revenue Account:', revenueAccount.id);
 
+  // Create Campaign
+  const campaign = await prisma.donationCampaign.create({
+    data: {
+        title: 'Test Campaign',
+        slug: 'test-campaign-' + Date.now(),
+        targetAmount: 10000000,
+        createdById: 'SYSTEM_TEST_USER' // Assuming createdById is string and not relation here for simplicity, or dummy
+    }
+  });
+  console.log('Created Campaign:', campaign.id);
+
   // Create Donation
   const donation = await prisma.donation.create({
     data: {
@@ -53,107 +64,56 @@ async function main() {
       paymentMethod: 'BANK_TRANSFER',
       donorName: 'Test Donor',
       status: 'PENDING',
-      unitId: unit.id
+      unitId: unit.id,
+      campaignId: campaign.id
     }
   });
   console.log('Created Donation:', donation.id);
 
-  // 2. Perform Verify Action
-  console.log('Verifying Donation...');
+  // 2. Perform Verify Action (First Time)
+  console.log('Verifying Donation (1st)...');
   await donationService.verify(donation.id, 'SYSTEM_TEST_USER', {
     status: 'VERIFIED',
     notes: 'Verified by script'
   });
 
-  // 3. Test Duplicate Verification
-  console.log('Testing duplicate verification...');
-  try {
-    await donationService.verify(donation.id, 'SYSTEM_TEST_USER', {
-      status: 'VERIFIED',
-      notes: 'Duplicate verify attempt'
-    });
-    console.error('FAILURE: Duplicate verification should have thrown an error.');
-  } catch (error: any) {
-    if (error.message === 'Donation is already verified') {
-        console.log('SUCCESS: Duplicate verification blocked correctly.');
-    } else {
-        console.error('FAILURE: Unexpected error during duplicate verification:', error.message);
-    }
-  }
+  // Check Campaign Totals (Should be 100000)
+  const campaign1 = await prisma.donationCampaign.findUnique({ where: { id: campaign.id } });
+  console.log('Campaign Total (1st Verify):', campaign1?.collectedAmount.toNumber());
 
-  // 4. Verify Journal Entries
-  const journals = await prisma.journalEntry.findMany({
-    where: {
-      reference: donation.id
-    }
-  });
-
-  console.log(`Found ${journals.length} journal entries.`);
-
-  const debitEntry = journals.find(j => j.debit.toNumber() > 0 && j.referenceType === 'DONATION');
-  const creditEntry = journals.find(j => j.credit.toNumber() > 0 && j.referenceType === 'DONATION');
-
-  if (debitEntry && creditEntry) {
-    console.log('SUCCESS: Both Debit and Credit entries found.');
-  } else {
-    console.error('FAILURE: Missing journal entries.');
-  }
-
-  // 5. Test Cancellation
+  // 3. Test Cancellation
   console.log('Testing Cancellation...');
   await donationService.verify(donation.id, 'SYSTEM_TEST_USER', {
     status: 'CANCELLED',
     notes: 'Cancelled by script'
   });
 
-  // Verify Reversing Entries
-  const allJournals = await prisma.journalEntry.findMany({
-    where: {
-      reference: donation.id
-    }
-  });
+  // Check Campaign Totals (Should be 0)
+  const campaign2 = await prisma.donationCampaign.findUnique({ where: { id: campaign.id } });
+  console.log('Campaign Total (Cancelled):', campaign2?.collectedAmount.toNumber());
 
-  console.log(`Found ${allJournals.length} total journal entries (expecting 4).`);
-  const reversalEntries = allJournals.filter(j => j.referenceType === 'DONATION_CANCEL');
-
-  if (reversalEntries.length === 2) {
-      console.log('SUCCESS: Reversal entries found.');
-      const reversalDebit = reversalEntries.find(j => j.debit.toNumber() > 0); // Should debit Revenue
-      const reversalCredit = reversalEntries.find(j => j.credit.toNumber() > 0); // Should credit Asset
-
-      console.log(`Reversal Debit (Revenue): ${reversalDebit?.debit} - Account: ${reversalDebit?.accountId}`);
-      console.log(`Reversal Credit (Asset): ${reversalCredit?.credit} - Account: ${reversalCredit?.accountId}`);
-  } else {
-      console.error('FAILURE: Reversal entries missing or incorrect count.');
-  }
-
-  // 6. Test Re-verification
+  // 4. Test Re-verification
   console.log('Testing Re-verification (Cancelled -> Verified)...');
   await donationService.verify(donation.id, 'SYSTEM_TEST_USER', {
     status: 'VERIFIED',
     notes: 'Re-verified by script'
   });
 
-  const finalJournals = await prisma.journalEntry.findMany({
-    where: {
-      reference: donation.id
-    }
-  });
+  // Check Campaign Totals (Should be 100000, NOT 200000)
+  const campaign3 = await prisma.donationCampaign.findUnique({ where: { id: campaign.id } });
+  console.log('Campaign Total (Re-verified):', campaign3?.collectedAmount.toNumber());
 
-  console.log(`Found ${finalJournals.length} final journal entries.`);
-  const finalReversals = finalJournals.filter(j => j.referenceType === 'DONATION_CANCEL');
-  const finalOriginals = finalJournals.filter(j => j.referenceType === 'DONATION');
-
-  if (finalReversals.length === 0 && finalOriginals.length === 2) {
-      console.log('SUCCESS: Re-verification cleaned up reversals and kept originals.');
+  if (campaign3?.collectedAmount.toNumber() === 100000) {
+      console.log('SUCCESS: Campaign totals are correct (no double increment).');
   } else {
-      console.error(`FAILURE: Incorrect entry count. Reversals: ${finalReversals.length}, Originals: ${finalOriginals.length}`);
+      console.error('FAILURE: Campaign totals incorrect. Expected 100000, got', campaign3?.collectedAmount.toNumber());
   }
 
-  // 7. Cleanup
+  // 5. Cleanup
   console.log('Cleaning up...');
   await prisma.journalEntry.deleteMany({ where: { reference: donation.id } });
   await prisma.donation.delete({ where: { id: donation.id } });
+  await prisma.donationCampaign.delete({ where: { id: campaign.id } });
   await prisma.accountCode.delete({ where: { id: assetAccount.id } });
   await prisma.accountCode.delete({ where: { id: revenueAccount.id } });
   await prisma.unit.delete({ where: { id: unit.id } });

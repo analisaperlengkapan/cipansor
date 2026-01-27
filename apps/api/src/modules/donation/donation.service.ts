@@ -486,6 +486,64 @@ export const donationService = {
         }
       }
 
+      // Handle Cancellation (Reversal)
+      if (input.status === 'CANCELLED' && donation.status === 'VERIFIED') {
+        // 1. Revert Campaign Totals
+        if (donation.campaignId) {
+          await tx.donationCampaign.update({
+            where: { id: donation.campaignId },
+            data: {
+              collectedAmount: { decrement: donation.amount },
+              donorCount: { decrement: 1 },
+            },
+          });
+        }
+
+        // 2. Create Reversing Journal Entries
+        // Find the original journal entries for this donation
+        const originalEntries = await tx.journalEntry.findMany({
+          where: {
+            reference: donation.id,
+            referenceType: 'DONATION',
+          },
+        });
+
+        const debitEntry = originalEntries.find((e) => e.debit.gt(0));
+        const creditEntry = originalEntries.find((e) => e.credit.gt(0));
+
+        if (debitEntry && creditEntry) {
+          // Reverse: Credit the Asset Account
+          await tx.journalEntry.create({
+            data: {
+              unitId: debitEntry.unitId,
+              accountId: debitEntry.accountId,
+              date: new Date(),
+              description: `Pembatalan Donasi ${donation.id} (Reversal)`,
+              debit: 0,
+              credit: debitEntry.debit,
+              reference: donation.id,
+              referenceType: 'DONATION_CANCEL',
+              createdById: verifiedById,
+            },
+          });
+
+          // Reverse: Debit the Revenue Account
+          await tx.journalEntry.create({
+            data: {
+              unitId: creditEntry.unitId,
+              accountId: creditEntry.accountId,
+              date: new Date(),
+              description: `Pembatalan Donasi ${donation.id} (Reversal)`,
+              debit: creditEntry.credit,
+              credit: 0,
+              reference: donation.id,
+              referenceType: 'DONATION_CANCEL',
+              createdById: verifiedById,
+            },
+          });
+        }
+      }
+
       return updatedDonation;
     });
   },

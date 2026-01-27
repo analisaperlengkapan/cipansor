@@ -90,29 +90,44 @@ async function main() {
 
   console.log(`Found ${journals.length} journal entries.`);
 
-  const debitEntry = journals.find(j => j.debit.toNumber() > 0);
-  const creditEntry = journals.find(j => j.credit.toNumber() > 0);
+  const debitEntry = journals.find(j => j.debit.toNumber() > 0 && j.referenceType === 'DONATION');
+  const creditEntry = journals.find(j => j.credit.toNumber() > 0 && j.referenceType === 'DONATION');
 
   if (debitEntry && creditEntry) {
     console.log('SUCCESS: Both Debit and Credit entries found.');
-    console.log(`Debit: ${debitEntry.description} - ${debitEntry.debit}`);
-    console.log(`Credit: ${creditEntry.description} - ${creditEntry.credit}`);
-    console.log(`Reference Type: ${debitEntry.referenceType}`);
-
-    if (debitEntry.referenceType === 'DONATION' && creditEntry.referenceType === 'DONATION') {
-        console.log('SUCCESS: Reference Type matches "DONATION" string literal.');
-    } else {
-        console.error('FAILURE: Reference Type mismatch.');
-    }
-
-    console.log('Debit Account ID:', debitEntry.accountId);
-    console.log('Credit Account ID:', creditEntry.accountId);
   } else {
     console.error('FAILURE: Missing journal entries.');
-    console.log(journals);
   }
 
-  // 4. Cleanup
+  // 5. Test Cancellation
+  console.log('Testing Cancellation...');
+  await donationService.verify(donation.id, 'SYSTEM_TEST_USER', {
+    status: 'CANCELLED',
+    notes: 'Cancelled by script'
+  });
+
+  // Verify Reversing Entries
+  const allJournals = await prisma.journalEntry.findMany({
+    where: {
+      reference: donation.id
+    }
+  });
+
+  console.log(`Found ${allJournals.length} total journal entries (expecting 4).`);
+  const reversalEntries = allJournals.filter(j => j.referenceType === 'DONATION_CANCEL');
+
+  if (reversalEntries.length === 2) {
+      console.log('SUCCESS: Reversal entries found.');
+      const reversalDebit = reversalEntries.find(j => j.debit.toNumber() > 0); // Should debit Revenue
+      const reversalCredit = reversalEntries.find(j => j.credit.toNumber() > 0); // Should credit Asset
+
+      console.log(`Reversal Debit (Revenue): ${reversalDebit?.debit} - Account: ${reversalDebit?.accountId}`);
+      console.log(`Reversal Credit (Asset): ${reversalCredit?.credit} - Account: ${reversalCredit?.accountId}`);
+  } else {
+      console.error('FAILURE: Reversal entries missing or incorrect count.');
+  }
+
+  // 6. Cleanup
   console.log('Cleaning up...');
   await prisma.journalEntry.deleteMany({ where: { reference: donation.id } });
   await prisma.donation.delete({ where: { id: donation.id } });

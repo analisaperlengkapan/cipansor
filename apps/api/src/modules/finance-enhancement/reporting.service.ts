@@ -494,16 +494,81 @@ export async function getCashFlowStatement(
   };
 }
 
-// TODO: Implement actual budget realization logic once budgets are fully integrated
+// Budget Realization Report
 export async function getBudgetRealizationReport(unitId: string, academicYearId: string) {
-  // Stub implementation to satisfy controller import
+  // 1. Get all Budgets for the Unit & Year
+  const budgets = await prisma.budget.findMany({
+    where: { unitId, academicYearId },
+    include: { account: true },
+  });
+
+  // 2. Get Actuals from Journals for the Unit (Date range needs to be derived from Academic Year)
+  // Fetch Academic Year to get dates
+  const academicYear = await prisma.academicYear.findUnique({
+    where: { id: academicYearId },
+  });
+
+  if (!academicYear) {
+    throw new Error('Academic Year not found');
+  }
+
+  const actuals = await prisma.journalEntry.groupBy({
+    by: ['accountId'],
+    where: {
+      unitId,
+      date: {
+        gte: academicYear.startDate,
+        lte: academicYear.endDate,
+      },
+    },
+    _sum: { debit: true, credit: true },
+  });
+
+  const actualMap = new Map<string, number>();
+  actuals.forEach((a) => {
+    // For Expense: Actual is Debit - Credit
+    // For Revenue: Actual is Credit - Debit
+    // Defaulting to simple net Debit for now, adjusted per account type in loop
+    actualMap.set(a.accountId, (a._sum.debit?.toNumber() || 0) - (a._sum.credit?.toNumber() || 0));
+  });
+
+  const items = budgets.map((b) => {
+    let actualAmount = actualMap.get(b.accountId) || 0;
+
+    // Adjust sign based on account type
+    if (b.account.type === AccountType.REVENUE || b.account.type === AccountType.LIABILITY || b.account.type === AccountType.EQUITY) {
+      actualAmount = -actualAmount;
+    }
+
+    const budgetAmount = b.amount.toNumber();
+    const variance = budgetAmount - actualAmount;
+    const percentage = budgetAmount !== 0 ? (actualAmount / budgetAmount) * 100 : 0;
+
+    return {
+      accountId: b.accountId,
+      code: b.account.code,
+      name: b.account.name,
+      budgetAmount,
+      actualAmount,
+      variance,
+      percentage,
+    };
+  });
+
+  const totals = items.reduce(
+    (acc, item) => ({
+      budget: acc.budget + item.budgetAmount,
+      actual: acc.actual + item.actualAmount,
+      variance: acc.variance + item.variance,
+    }),
+    { budget: 0, actual: 0, variance: 0 }
+  );
+
   return {
     totals: {
-      budget: 0,
-      actual: 0,
-      variance: 0,
-      percentage: 0
+      ...totals,
+      percentage: totals.budget !== 0 ? (totals.actual / totals.budget) * 100 : 0,
     },
-    items: []
+    items,
   };
 }

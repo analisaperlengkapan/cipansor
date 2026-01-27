@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/main-layout";
 import { PageHeader } from "@/components/shared/page-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -864,18 +864,24 @@ function AccountingSettingsTab() {
   const [settings, setSettings] = useState<Record<string, string>>({});
 
   // Fetch settings when unit selected
-  useQuery({
+  const { data: fetchedSettings } = useQuery({
     queryKey: ["accounting-settings", selectedUnitId],
     queryFn: async () => {
       if (!selectedUnitId) return {};
       const res = await api.get("/finance/accounting/settings", {
         params: { unitId: selectedUnitId },
       });
-      setSettings(res.data.data);
       return res.data.data;
     },
     enabled: !!selectedUnitId,
   });
+
+  // Sync settings when fetched data changes
+  useEffect(() => {
+    if (fetchedSettings) {
+      setSettings(fetchedSettings);
+    }
+  }, [fetchedSettings]);
 
   const { data: accounts } = useAccountCodes({
     isActive: true,

@@ -1,5 +1,4 @@
 import QRCode from 'qrcode';
-import { createNotification } from '../notifications/service';
 import {
   Prisma,
   AssetStatus,
@@ -227,7 +226,7 @@ export async function createItem(data: CreateInventoryItemInput) {
             debit: amount,
             credit: new Prisma.Decimal(0),
             reference: asset.id,
-            referenceType: JournalReferenceType.EXPENSE || 'EXPENSE', // Fallback, implies outflow
+            referenceType: JournalReferenceType.OTHER,
             createdById: 'SYSTEM', // Default system user
           },
         });
@@ -242,7 +241,7 @@ export async function createItem(data: CreateInventoryItemInput) {
             debit: new Prisma.Decimal(0),
             credit: amount,
             reference: asset.id,
-            referenceType: JournalReferenceType.EXPENSE || 'EXPENSE',
+            referenceType: JournalReferenceType.OTHER,
             createdById: 'SYSTEM',
           },
         });

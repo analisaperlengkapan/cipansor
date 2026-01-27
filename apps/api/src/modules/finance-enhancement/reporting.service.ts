@@ -493,3 +493,17 @@ export async function getCashFlowStatement(
     endingCashBalance: endingCash,
   };
 }
+
+// TODO: Implement actual budget realization logic once budgets are fully integrated
+export async function getBudgetRealizationReport(unitId: string, academicYearId: string) {
+  // Stub implementation to satisfy controller import
+  return {
+    totals: {
+      budget: 0,
+      actual: 0,
+      variance: 0,
+      percentage: 0
+    },
+    items: []
+  };
+}

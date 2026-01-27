@@ -76,7 +76,12 @@ export const updateRisk = asyncHandler(async (req: Request, res: Response) => {
   }
 
   const body = updateRiskSchema.parse(req.body);
-  const risk = await riskService.updateRisk(id, body);
+
+  // Destructure unitId to prevent unauthorized modification of the risk's unit
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { unitId: _, ...updateData } = body;
+
+  const risk = await riskService.updateRisk(id, updateData);
   res.json({ success: true, data: risk });
 });
 

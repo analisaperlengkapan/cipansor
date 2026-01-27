@@ -81,8 +81,13 @@ export class ParentController {
 
       // Default to current month if dates not provided
       const now = new Date();
-      const start = startDate ? String(startDate) : new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-      const end = endDate ? String(endDate) : new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString();
+      // Use YYYY-MM-DD format to avoid UTC timezone shifts when using toISOString() on midnight local dates
+      const start = startDate
+        ? String(startDate)
+        : new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+      const end = endDate
+        ? String(endDate)
+        : new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
 
       const data = await parentService.getChildIbadah(parentId, studentId, {
         startDate: start,

@@ -12,7 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, MessageSquare } from "lucide-react";
+import { Plus, MessageSquare, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import {
@@ -72,7 +72,7 @@ export default function ComplaintsPage() {
         </div>
 
         <div className="flex flex-wrap gap-4">
-          <Select value={status} onValueChange={setStatus}>
+          <Select value={status} onValueChange={(val) => { setStatus(val); setPage(1); }}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
@@ -86,7 +86,7 @@ export default function ComplaintsPage() {
             </SelectContent>
           </Select>
 
-          <Select value={category} onValueChange={setCategory}>
+          <Select value={category} onValueChange={(val) => { setCategory(val); setPage(1); }}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Kategori" />
             </SelectTrigger>
@@ -170,6 +170,33 @@ export default function ComplaintsPage() {
             </TableBody>
           </Table>
         </div>
+
+        {/* Pagination */}
+        {data && data.meta.totalPages > 1 && (
+          <div className="flex items-center justify-end space-x-2 py-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Previous
+            </Button>
+            <div className="text-sm text-muted-foreground">
+              Page {page} of {data.meta.totalPages}
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.min(data.meta.totalPages, p + 1))}
+              disabled={page === data.meta.totalPages}
+            >
+              Next
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
       </div>
     </MainLayout>
   );

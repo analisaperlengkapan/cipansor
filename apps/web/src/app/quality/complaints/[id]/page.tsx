@@ -22,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ADMIN_ROLES, STAFF_ROLES } from "@/config/navigation";
 
 export default function ComplaintDetailPage() {
   const params = useParams();
@@ -48,14 +49,11 @@ export default function ComplaintDetailPage() {
     );
   }
 
-  // Check if user is admin/staff based on legacy role string
-  // This is a simple check, ideally check permissions
-  const role = user?.role || "";
+  // Check if user is admin/staff based on role code from config
+  const roleCode = user?.role || "";
   const isAdminOrStaff =
-    role.includes("ADMIN") ||
-    role.includes("STAFF") ||
-    role.includes("TATA_USAHA") ||
-    role.includes("KEPALA_SEKOLAH");
+    ADMIN_ROLES.includes(roleCode) ||
+    STAFF_ROLES.includes(roleCode);
 
   const handleStatusChange = (status: string) => {
     updateStatus({ id, status: status as ComplaintStatus });

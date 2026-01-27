@@ -2,16 +2,30 @@ import { Request, Response } from 'express';
 import { complaintsService } from './complaints.service';
 import { ComplaintStatus, ComplaintCategory } from '@prisma/client';
 import httpStatus from 'http-status';
+import { createComplaintSchema, updateComplaintStatusSchema, addCommentSchema, assignHandlerSchema } from './complaints.schema';
 
 export const complaintsController = {
   create: async (req: Request, res: Response) => {
     try {
+      const validation = createComplaintSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(httpStatus.BAD_REQUEST).json({
+          message: 'Validation error',
+          errors: validation.error.errors
+        });
+      }
+
       // req.user is guaranteed by authenticate middleware
       const user = (req as any).user;
       const unitId = user.unitId;
 
       const complaint = await complaintsService.create({
-        ...req.body,
+        category: validation.data.category,
+        subject: validation.data.subject,
+        description: validation.data.description,
+        location: validation.data.location,
+        isAnonymous: validation.data.isAnonymous,
+        attachments: validation.data.attachments,
         userId: user.sub,
         unitId,
       });
@@ -66,8 +80,16 @@ export const complaintsController = {
 
   updateStatus: async (req: Request, res: Response) => {
     try {
+      const validation = updateComplaintStatusSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(httpStatus.BAD_REQUEST).json({
+          message: 'Validation error',
+          errors: validation.error.errors
+        });
+      }
+
       const { id } = req.params;
-      const { status, resolution } = req.body;
+      const { status, resolution } = validation.data;
       const updated = await complaintsService.updateStatus(id, status, resolution);
       res.json(updated);
     } catch (error) {
@@ -78,8 +100,16 @@ export const complaintsController = {
 
   assignHandler: async (req: Request, res: Response) => {
     try {
+      const validation = assignHandlerSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(httpStatus.BAD_REQUEST).json({
+          message: 'Validation error',
+          errors: validation.error.errors
+        });
+      }
+
       const { id } = req.params;
-      const { handlerId } = req.body;
+      const { handlerId } = validation.data;
       const updated = await complaintsService.assignHandler(id, handlerId);
       res.json(updated);
     } catch (error) {
@@ -90,9 +120,17 @@ export const complaintsController = {
 
   addComment: async (req: Request, res: Response) => {
     try {
+      const validation = addCommentSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(httpStatus.BAD_REQUEST).json({
+          message: 'Validation error',
+          errors: validation.error.errors
+        });
+      }
+
       const { id } = req.params;
       const user = (req as any).user;
-      const { content, isInternal } = req.body;
+      const { content, isInternal } = validation.data;
 
       const comment = await complaintsService.addComment({
         complaintId: id,

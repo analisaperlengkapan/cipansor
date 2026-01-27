@@ -49,12 +49,12 @@ export default function ComplaintDetailPage() {
   }
 
   // Check if user is admin/staff based on UserRole enum values (legacy format in JWT)
+  // Teachers are excluded from management actions (status update, assignment)
   const role = user?.role || "";
   const isAdminOrStaff =
     role === 'SUPER_ADMIN' ||
     role === 'UNIT_ADMIN' ||
-    role === 'STAFF' ||
-    role === 'TEACHER';
+    role === 'STAFF';
 
   const handleStatusChange = (status: string) => {
     updateStatus({ id, status: status as ComplaintStatus });

@@ -4,12 +4,13 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Plus, Pencil, Trash2, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Database } from "lucide-react";
 import {
   useAccounts,
   useCreateAccount,
   useUpdateAccount,
   useDeleteAccount,
+  useSeedAccounts,
   AccountCode,
 } from "@/hooks/use-accounting";
 import { Button } from "@/components/ui/button";
@@ -67,6 +68,7 @@ export default function ChartOfAccountsPage() {
   const createAccount = useCreateAccount();
   const updateAccount = useUpdateAccount();
   const deleteAccount = useDeleteAccount();
+  const seedAccounts = useSeedAccounts();
 
   const [isOpen, setIsOpen] = useState(false);
   const [editingAccount, setEditingAccount] = useState<AccountCode | null>(
@@ -140,6 +142,19 @@ export default function ChartOfAccountsPage() {
     }
   };
 
+  const handleSeed = async () => {
+    if (
+      confirm("This will create default accounts if they don't exist. Continue?")
+    ) {
+      try {
+        await seedAccounts.mutateAsync();
+        toast.success("Default accounts seeded successfully");
+      } catch (error) {
+        toast.error("Failed to seed accounts");
+      }
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -151,13 +166,22 @@ export default function ChartOfAccountsPage() {
             Manage your financial accounts and hierarchy.
           </p>
         </div>
-        <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" /> Add Account
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[500px]">
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={handleSeed}
+            disabled={seedAccounts.isPending}
+          >
+            <Database className="mr-2 h-4 w-4" />
+            {seedAccounts.isPending ? "Seeding..." : "Seed Defaults"}
+          </Button>
+          <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" /> Add Account
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
               <DialogTitle>
                 {editingAccount ? "Edit Account" : "Add Account"}

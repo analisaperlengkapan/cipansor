@@ -6,6 +6,15 @@ import { CreateAccountDto, CreateJournalDto, UpdateAccountDto } from './schema';
 // ACCOUNTS
 // =====================================
 
+export async function seedAccounts(req: Request, res: Response, next: NextFunction) {
+  try {
+    const result = await service.seedDefaultAccounts();
+    res.status(201).json({ message: 'Accounts seeded successfully', data: result });
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function createAccount(req: Request, res: Response, next: NextFunction) {
   try {
     const data: CreateAccountDto = req.body;
@@ -71,7 +80,7 @@ export async function deleteAccount(req: Request, res: Response, next: NextFunct
 export async function createJournal(req: Request, res: Response, next: NextFunction) {
   try {
     const data: CreateJournalDto = req.body;
-    const userId = req.user?.id;
+    const userId = req.user?.sub;
     if (!userId) {
       res.status(401).json({ message: 'Unauthorized' });
       return;

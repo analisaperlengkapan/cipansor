@@ -315,11 +315,69 @@ export async function getIncomeStatement(query: {
   const revenues = trialBalance.filter((i) => i.type === 'REVENUE');
   const expenses = trialBalance.filter((i) => i.type === 'EXPENSE');
 
+  const totalRevenue = revenues.reduce((sum, i) => sum + i.credit - i.debit, 0);
+  const totalExpense = expenses.reduce((sum, i) => sum + i.debit - i.credit, 0);
+
   return {
     revenues,
-    totalRevenue: revenues.reduce((sum, i) => sum + i.credit - i.debit, 0),
+    totalRevenue,
     expenses,
-    totalExpense: expenses.reduce((sum, i) => sum + i.debit - i.credit, 0),
-    netIncome: 0, // Calculated on frontend or here
+    totalExpense,
+    netIncome: totalRevenue - totalExpense,
   };
+}
+
+// =====================================
+// SEEDING SERVICE
+// =====================================
+
+export async function seedDefaultAccounts() {
+  const defaultAccounts = [
+    // ASSETS
+    { code: '1101', name: 'Kas', type: 'ASSET', normalBalance: 'DEBIT' },
+    { code: '1102', name: 'Bank', type: 'ASSET', normalBalance: 'DEBIT' },
+    { code: '1103', name: 'Piutang Santri', type: 'ASSET', normalBalance: 'DEBIT' },
+    { code: '1201', name: 'Tanah', type: 'ASSET', normalBalance: 'DEBIT' },
+    { code: '1202', name: 'Bangunan', type: 'ASSET', normalBalance: 'DEBIT' },
+
+    // LIABILITIES
+    { code: '2101', name: 'Hutang Usaha', type: 'LIABILITY', normalBalance: 'CREDIT' },
+    { code: '2102', name: 'Hutang Gaji', type: 'LIABILITY', normalBalance: 'CREDIT' },
+
+    // EQUITY
+    { code: '3101', name: 'Modal Yayasan', type: 'EQUITY', normalBalance: 'CREDIT' },
+    { code: '3102', name: 'Saldo Laba', type: 'EQUITY', normalBalance: 'CREDIT' },
+
+    // REVENUE
+    { code: '4101', name: 'Pendapatan SPP', type: 'REVENUE', normalBalance: 'CREDIT' },
+    { code: '4102', name: 'Pendapatan Pembangunan', type: 'REVENUE', normalBalance: 'CREDIT' },
+    { code: '4103', name: 'Pendapatan Lain-lain', type: 'REVENUE', normalBalance: 'CREDIT' },
+
+    // EXPENSE
+    { code: '5101', name: 'Beban Gaji', type: 'EXPENSE', normalBalance: 'DEBIT' },
+    { code: '5102', name: 'Beban Listrik & Air', type: 'EXPENSE', normalBalance: 'DEBIT' },
+    { code: '5103', name: 'Beban Operasional', type: 'EXPENSE', normalBalance: 'DEBIT' },
+  ];
+
+  const results = [];
+  for (const acc of defaultAccounts) {
+    const existing = await prisma.accountCode.findUnique({
+      where: { code: acc.code },
+    });
+
+    if (!existing) {
+      const created = await prisma.accountCode.create({
+        data: {
+          code: acc.code,
+          name: acc.name,
+          type: acc.type,
+          normalBalance: acc.normalBalance,
+          isActive: true,
+        },
+      });
+      results.push(created);
+    }
+  }
+
+  return results;
 }

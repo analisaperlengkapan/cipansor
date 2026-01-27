@@ -829,6 +829,19 @@ router.get(
 
 /**
  * @swagger
+ * /api/finance/accounting/accounts/seed:
+ *   post:
+ *     summary: Seed default accounts
+ *     tags: [Finance - Accounting]
+ */
+router.post(
+  '/accounting/accounts/seed',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  accountingController.seedAccounts
+);
+
+/**
+ * @swagger
  * /api/finance/accounting/accounts:
  *   post:
  *     summary: Create account

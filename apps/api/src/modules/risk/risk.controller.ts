@@ -5,11 +5,23 @@ import { riskService } from './risk.service';
 import { createRiskSchema, updateRiskSchema, createMitigationSchema, updateMitigationSchema } from './risk.validation';
 import { UserRole } from '@prisma/client';
 
+const PRIVILEGED_ROLES = [
+  UserRole.SUPER_ADMIN,
+  UserRole.YAYASAN_ADMIN,
+  UserRole.YAYASAN_KETUA
+];
+
+function isPrivileged(role?: UserRole): boolean {
+  return role ? PRIVILEGED_ROLES.includes(role) : false;
+}
+
 export const listRisks = asyncHandler(async (req: Request, res: Response) => {
   const unitId = req.user?.unitId;
-  if (!unitId && req.user?.role !== UserRole.SUPER_ADMIN) throw Errors.unauthorized('Unit ID required');
+  const isPrivilegedUser = isPrivileged(req.user?.role);
 
-  const targetUnitId = (req.user?.role === UserRole.SUPER_ADMIN && req.query.unitId)
+  if (!unitId && !isPrivilegedUser) throw Errors.unauthorized('Unit ID required');
+
+  const targetUnitId = (isPrivilegedUser && req.query.unitId)
     ? String(req.query.unitId)
     : unitId;
 
@@ -28,7 +40,7 @@ export const getRisk = asyncHandler(async (req: Request, res: Response) => {
   }
 
   // Authorization Check
-  if (req.user?.role !== UserRole.SUPER_ADMIN && risk.unitId !== req.user?.unitId) {
+  if (!isPrivileged(req.user?.role) && risk.unitId !== req.user?.unitId) {
     throw Errors.forbidden('Access denied');
   }
 
@@ -41,12 +53,12 @@ export const createRisk = asyncHandler(async (req: Request, res: Response) => {
 
   // Handle unitId resolution:
   // 1. From User context (default)
-  // 2. From Request body (for SUPER_ADMIN without unitId)
+  // 2. From Request body (for SUPER_ADMIN/YAYASAN without unitId)
   const body = createRiskSchema.parse(req.body);
   let targetUnitId = req.user?.unitId;
 
   if (!targetUnitId) {
-    if (req.user?.role === UserRole.SUPER_ADMIN && body.unitId) {
+    if (isPrivileged(req.user?.role) && body.unitId) {
       targetUnitId = body.unitId;
     } else {
       throw Errors.badRequest('Unit ID is required');
@@ -71,7 +83,7 @@ export const updateRisk = asyncHandler(async (req: Request, res: Response) => {
   const existingRisk = await riskService.getRiskById(id);
   if (!existingRisk) throw Errors.notFound('Risk not found');
 
-  if (req.user?.role !== UserRole.SUPER_ADMIN && existingRisk.unitId !== req.user?.unitId) {
+  if (!isPrivileged(req.user?.role) && existingRisk.unitId !== req.user?.unitId) {
     throw Errors.forbidden('Access denied');
   }
 
@@ -91,7 +103,7 @@ export const deleteRisk = asyncHandler(async (req: Request, res: Response) => {
   const existingRisk = await riskService.getRiskById(id);
   if (!existingRisk) throw Errors.notFound('Risk not found');
 
-  if (req.user?.role !== UserRole.SUPER_ADMIN && existingRisk.unitId !== req.user?.unitId) {
+  if (!isPrivileged(req.user?.role) && existingRisk.unitId !== req.user?.unitId) {
     throw Errors.forbidden('Access denied');
   }
 
@@ -111,7 +123,7 @@ export const addMitigation = asyncHandler(async (req: Request, res: Response) =>
   const risk = await riskService.getRiskById(riskId);
   if (!risk) throw Errors.notFound('Risk not found');
 
-  if (req.user?.role !== UserRole.SUPER_ADMIN && risk.unitId !== req.user?.unitId) {
+  if (!isPrivileged(req.user?.role) && risk.unitId !== req.user?.unitId) {
     throw Errors.forbidden('Access denied');
   }
 
@@ -132,7 +144,7 @@ export const updateMitigation = asyncHandler(async (req: Request, res: Response)
   const existingMitigation = await riskService.getMitigationById(id);
   if (!existingMitigation) throw Errors.notFound('Mitigation not found');
 
-  if (req.user?.role !== UserRole.SUPER_ADMIN && existingMitigation.risk.unitId !== req.user?.unitId) {
+  if (!isPrivileged(req.user?.role) && existingMitigation.risk.unitId !== req.user?.unitId) {
     throw Errors.forbidden('Access denied');
   }
 
@@ -159,7 +171,7 @@ export const deleteMitigation = asyncHandler(async (req: Request, res: Response)
   const existingMitigation = await riskService.getMitigationById(id);
   if (!existingMitigation) throw Errors.notFound('Mitigation not found');
 
-  if (req.user?.role !== UserRole.SUPER_ADMIN && existingMitigation.risk.unitId !== req.user?.unitId) {
+  if (!isPrivileged(req.user?.role) && existingMitigation.risk.unitId !== req.user?.unitId) {
     throw Errors.forbidden('Access denied');
   }
 

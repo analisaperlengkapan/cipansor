@@ -14,6 +14,10 @@ export const updateCampaignSchema = createCampaignSchema.partial().extend({
   isActive: z.boolean().optional(),
 });
 
+export const getCampaignByCodeSchema = z.object({
+  code: z.string().min(1),
+});
+
 export const logInteractionSchema = z.object({
   registrantId: z.string().uuid(),
   date: z.string().datetime(),

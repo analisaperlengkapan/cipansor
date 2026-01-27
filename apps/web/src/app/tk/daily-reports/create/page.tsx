@@ -190,7 +190,14 @@ export default function BulkCreateDailyReportPage() {
       }
 
       // Reading Validation
-      if (student.readingBookId && student.readingPage) {
+      const hasReadingData = student.readingBookId || student.readingPage;
+      if (hasReadingData) {
+        if (!student.readingBookId || !student.readingPage) {
+          toast.error(
+            `Data membaca tidak lengkap untuk siswa ID: ${student.studentId}. Harap isi buku dan halaman.`,
+          );
+          return;
+        }
         const page = parseInt(student.readingPage);
         if (isNaN(page) || page < 1) {
           toast.error(

@@ -161,27 +161,76 @@ export class FinanceEnhancementService {
     input: CreateJournalEntryInput & { createdById: string }
   ): Promise<JournalEntry> {
     // Check if period is closed
-    await checkPeriodStatus(input.unitId, new Date(input.date));
+    const entryDate = new Date(input.date);
+    await checkPeriodStatus(input.unitId, entryDate);
 
-    const entry = await prisma.journalEntry.create({
-      data: {
-        unitId: input.unitId,
-        accountId: input.accountId,
-        date: new Date(input.date),
-        description: input.description || '',
-        debit: input.debit || 0,
-        credit: input.credit || 0,
-        reference: input.reference,
-        referenceType: input.referenceType ?? null,
-        createdById: input.createdById,
-      },
-      include: {
-        unit: { select: { name: true } },
-        account: { select: { code: true, name: true } },
-      },
+    // Use transaction to ensure consistency
+    const result = await prisma.$transaction(async (tx) => {
+      // 1. Create Journal Entry
+      const entry = await tx.journalEntry.create({
+        data: {
+          unitId: input.unitId,
+          accountId: input.accountId,
+          date: entryDate,
+          description: input.description || '',
+          debit: input.debit || 0,
+          credit: input.credit || 0,
+          reference: input.reference,
+          referenceType: input.referenceType ?? null,
+          createdById: input.createdById,
+        },
+        include: {
+          unit: { select: { name: true } },
+          account: { select: { code: true, name: true, normalBalance: true } },
+        },
+      });
+
+      // 2. Update Budget Realization (if exists)
+      // Find academic year for this date
+      const academicYear = await tx.academicYear.findFirst({
+        where: {
+          startDate: { lte: entryDate },
+          endDate: { gte: entryDate },
+        },
+      });
+
+      if (academicYear) {
+        const budget = await tx.budget.findUnique({
+          where: {
+            unitId_academicYearId_accountId: {
+              unitId: input.unitId,
+              academicYearId: academicYear.id,
+              accountId: input.accountId,
+            },
+          },
+        });
+
+        if (budget) {
+          const debit = Number(input.debit || 0);
+          const credit = Number(input.credit || 0);
+          let delta = 0;
+
+          if (entry.account?.normalBalance === 'CREDIT') {
+            delta = credit - debit;
+          } else {
+            delta = debit - credit;
+          }
+
+          if (delta !== 0) {
+            await tx.budget.update({
+              where: { id: budget.id },
+              data: {
+                usedAmount: { increment: new Prisma.Decimal(delta) },
+              },
+            });
+          }
+        }
+      }
+
+      return entry;
     });
 
-    return this.mapToJournalEntry(entry);
+    return this.mapToJournalEntry(result);
   }
 
   async getJournalEntryById(id: string): Promise<JournalEntry | null> {

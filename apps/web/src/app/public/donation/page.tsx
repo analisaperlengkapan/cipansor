@@ -153,6 +153,7 @@ export default function PublicDonationPage() {
         paymentMethod: "BANK_TRANSFER",
         notes: "",
       });
+      setSelectedCampaignId(null);
       setShowForm(false);
     } catch {
       toast.error("Gagal mengirim donasi. Silakan coba lagi.");
@@ -201,7 +202,10 @@ export default function PublicDonationPage() {
           <Button
             size="lg"
             className="bg-white text-emerald-600 hover:bg-emerald-50"
-            onClick={() => setShowForm(true)}
+            onClick={() => {
+              setSelectedCampaignId(null);
+              setShowForm(true);
+            }}
           >
             <Gift className="h-5 w-5 mr-2" />
             Donasi Sekarang
@@ -288,7 +292,10 @@ export default function PublicDonationPage() {
                 <Button
                   variant="outline"
                   className="mt-4"
-                  onClick={() => setShowForm(true)}
+                  onClick={() => {
+                    setSelectedCampaignId(null);
+                    setShowForm(true);
+                  }}
                 >
                   Donasi Umum
                 </Button>

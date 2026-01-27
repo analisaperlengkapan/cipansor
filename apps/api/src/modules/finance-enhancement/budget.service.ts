@@ -83,41 +83,100 @@ export async function getBudgets(query: {
     prisma.budget.count({ where }),
   ]);
 
-  // Calculate used amount dynamically
-  const result = await Promise.all(
-    data.map(async (budget) => {
-      // Determine date range for usage calculation
-      // Ideally this comes from academic year, or we use current fiscal year
-      const startDate = budget.academicYear.startDate;
-      const endDate = budget.academicYear.endDate;
-
-      const usage = await prisma.journalEntry.aggregate({
-        where: {
-          unitId: budget.unitId,
-          accountId: budget.accountId,
-          date: { gte: startDate, lte: endDate },
-          // Normally we filter for debits on Expense accounts, but Journal Entry structure handles this.
-          // Expenses are typically debited.
-          // However, we should sum (debit - credit) to account for corrections.
-        },
-        _sum: {
-          debit: true,
-          credit: true,
-        },
-      });
-
-      const usedAmount = (usage._sum.debit?.toNumber() || 0) - (usage._sum.credit?.toNumber() || 0);
-
-      return {
-        ...budget,
-        amount: budget.amount.toNumber(),
-        usedAmount: Math.max(0, usedAmount), // Ensure non-negative just in case
-      };
-    })
-  );
+  const result = data.map((budget) => ({
+    ...budget,
+    amount: budget.amount.toNumber(),
+    usedAmount: budget.usedAmount.toNumber(),
+  }));
 
   return {
     data: result,
     meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
   };
+}
+
+export async function deleteBudget(id: string) {
+  const budget = await prisma.budget.findUnique({
+    where: { id },
+  });
+
+  if (!budget) {
+    throw new Error('Budget not found');
+  }
+
+  if (budget.usedAmount.toNumber() > 0) {
+    throw new Error('Cannot delete budget with existing usage');
+  }
+
+  return prisma.budget.delete({
+    where: { id },
+  });
+}
+
+export async function recalculateBudgetUsage(unitId: string, academicYearId: string) {
+  // 1. Get Academic Year dates
+  const academicYear = await prisma.academicYear.findUnique({
+    where: { id: academicYearId },
+  });
+  if (!academicYear) throw new Error('Academic Year not found');
+
+  // 2. Get all budgets
+  const budgets = await prisma.budget.findMany({
+    where: { unitId, academicYearId },
+    include: { account: true },
+  });
+
+  if (budgets.length === 0) return { count: 0 };
+
+  // 3. Aggregate Journal Entries efficiently
+  const aggregates = await prisma.journalEntry.groupBy({
+    by: ['accountId'],
+    where: {
+      unitId,
+      date: {
+        gte: academicYear.startDate,
+        lte: academicYear.endDate,
+      },
+      accountId: { in: budgets.map((b) => b.accountId) },
+    },
+    _sum: {
+      debit: true,
+      credit: true,
+    },
+  });
+
+  // 4. Map aggregates for lookup
+  const usageMap = new Map();
+  aggregates.forEach((agg) => {
+    usageMap.set(agg.accountId, {
+      debit: agg._sum.debit?.toNumber() || 0,
+      credit: agg._sum.credit?.toNumber() || 0,
+    });
+  });
+
+  // 5. Create Update Operations
+  const updates = budgets.map((budget) => {
+    const usage = usageMap.get(budget.accountId) || { debit: 0, credit: 0 };
+    let usedAmount = 0;
+
+    // Check normal balance to decide direction
+    if (budget.account.normalBalance === 'CREDIT') {
+      usedAmount = usage.credit - usage.debit;
+    } else {
+      usedAmount = usage.debit - usage.credit;
+    }
+
+    usedAmount = Math.max(0, usedAmount);
+
+    return prisma.budget.update({
+      where: { id: budget.id },
+      data: { usedAmount: new Prisma.Decimal(usedAmount) },
+    });
+  });
+
+  if (updates.length > 0) {
+    await prisma.$transaction(updates);
+  }
+
+  return { count: updates.length };
 }

@@ -152,6 +152,18 @@ router.put(
   financeEnhancementController.updateBudget
 );
 
+router.delete(
+  '/budgets/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  financeEnhancementController.deleteBudget
+);
+
+router.post(
+  '/budgets/recalculate',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  financeEnhancementController.recalculateBudgetUsage
+);
+
 // ==================== FINANCIAL PERIODS ====================
 
 router.get(

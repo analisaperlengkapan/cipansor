@@ -221,15 +221,12 @@ export class FinanceEnhancementService {
           }
 
           if (delta !== 0) {
-            const currentUsed = budget.usedAmount.toNumber();
-            const newUsed = Math.max(0, currentUsed + delta);
-
-            await tx.budget.update({
-              where: { id: budget.id },
-              data: {
-                usedAmount: new Prisma.Decimal(newUsed),
-              },
-            });
+            // Use raw SQL to update atomically and enforce non-negative constraint
+            await tx.$executeRaw`
+              UPDATE budgets
+              SET used_amount = GREATEST(0, used_amount + ${delta})
+              WHERE id = ${budget.id}
+            `;
           }
         }
       }

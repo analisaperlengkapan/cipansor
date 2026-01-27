@@ -6,6 +6,15 @@ import { CreateAccountDto, CreateJournalDto, UpdateAccountDto } from './schema';
 // ACCOUNTS
 // =====================================
 
+export async function seedAccounts(req: Request, res: Response, next: NextFunction) {
+  try {
+    const result = await service.seedDefaultAccounts();
+    res.status(201).json({ message: 'Accounts seeded successfully', data: result });
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function createAccount(req: Request, res: Response, next: NextFunction) {
   try {
     const data: CreateAccountDto = req.body;

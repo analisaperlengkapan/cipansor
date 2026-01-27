@@ -46,9 +46,9 @@ export default function ParentIbadahPage() {
           router.replace(`/parent/ibadah/${childrenData[0].id}`);
           return; // Prevent flash of content by keeping loading true during redirect
         }
+        setLoading(false);
       } catch (err) {
         console.error("Failed to fetch children:", err);
-      } finally {
         setLoading(false);
       }
     };

@@ -62,6 +62,7 @@ interface StudentProfile {
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
+  SHOLAT_WAJIB: "Sholat 5 Waktu",
   SHOLAT_JAMAAH: "Sholat Berjamaah",
   SHOLAT_SUNNAH: "Sholat Sunnah",
   QIYAMULLAIL: "Qiyamullail",

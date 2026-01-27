@@ -1,7 +1,5 @@
 import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient();
-
 // Learning Phase codes as string constants
 const LearningPhase = {
   FASE_A: 'FASE_A',
@@ -431,7 +429,11 @@ export const accountCodesData = [
   { code: '5204', name: 'Beban Lain-lain', type: 'EXPENSE', parentCode: '5200' },
 ];
 
-export async function seedKurikulumMerdeka(unitId: string, academicYearId: string) {
+export async function seedKurikulumMerdeka(
+  prisma: PrismaClient,
+  unitId: string,
+  academicYearId: string
+) {
   console.log('📚 Seeding Kurikulum Merdeka data...');
 
   // Seed Learning Phases
@@ -501,7 +503,7 @@ export async function seedKurikulumMerdeka(unitId: string, academicYearId: strin
   return { phaseMap };
 }
 
-export async function seedAccountCodes() {
+export async function seedAccountCodes(prisma: PrismaClient) {
   console.log('💰 Seeding Account Codes...');
 
   const codeMap: Record<string, string> = {};

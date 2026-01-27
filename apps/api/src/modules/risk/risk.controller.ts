@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { asyncHandler } from '@/middleware/error';
 import { Errors } from '@/middleware/error';
 import { riskService } from './risk.service';
-import { createRiskSchema, updateRiskSchema, createMitigationSchema, updateMitigationSchema } from './risk.validation';
+import { createRiskSchema, updateRiskSchema, createMitigationSchema, updateMitigationSchema, listRiskQuerySchema } from './risk.validation';
 import { UserRole } from '@prisma/client';
 
 const PRIVILEGED_ROLES = [
@@ -27,7 +27,14 @@ export const listRisks = asyncHandler(async (req: Request, res: Response) => {
 
   if (!targetUnitId) throw Errors.badRequest('Unit ID required');
 
-  const risks = await riskService.getRisks(targetUnitId, req.query);
+  // Validate query parameters to prevent 500 errors on invalid enums
+  const query = listRiskQuerySchema.parse({
+    category: req.query.category,
+    riskLevel: req.query.riskLevel,
+    unitId: targetUnitId
+  });
+
+  const risks = await riskService.getRisks(targetUnitId, query);
   res.json({ success: true, data: risks });
 });
 

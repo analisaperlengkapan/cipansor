@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { RiskCategory, RiskLikelihood, RiskImpact, MitigationStrategy } from '@prisma/client';
+import { RiskCategory, RiskLikelihood, RiskImpact, MitigationStrategy, RiskLevel } from '@prisma/client';
 
 export const createRiskSchema = z.object({
   unitId: z.string().uuid().optional(),
@@ -16,6 +16,12 @@ export const createRiskSchema = z.object({
 });
 
 export const updateRiskSchema = createRiskSchema.partial();
+
+export const listRiskQuerySchema = z.object({
+  category: z.nativeEnum(RiskCategory).optional(),
+  riskLevel: z.nativeEnum(RiskLevel).optional(),
+  unitId: z.string().uuid().optional(),
+});
 
 export const createMitigationSchema = z.object({
   riskId: z.string().uuid(),

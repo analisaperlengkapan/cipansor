@@ -35,16 +35,24 @@ export function StudentSelect({
 }: StudentSelectProps) {
   const [open, setOpen] = React.useState(false);
   const [search, setSearch] = React.useState("");
+  const [selectedLabel, setSelectedLabel] = React.useState("");
   const debouncedSearch = useDebounce(search, 300);
 
   // Search query
   const { data: students, isLoading } = useStudentSearch(debouncedSearch, unitId);
 
-  // Find selected student details from search results
-  // Note: If this is used for editing and the student isn't in search results,
-  // the name might not show up correctly without a separate useStudent(value) call.
-  // For 'Create' flow, this is acceptable.
-  const selectedStudent = students?.find((student) => student.id === value);
+  // Update internal label when selection is made from the list
+  // or if the current value is found in the search results
+  React.useEffect(() => {
+    if (value && students) {
+      const found = students.find((s) => s.id === value);
+      if (found) {
+        setSelectedLabel(found.name);
+      }
+    } else if (!value) {
+      setSelectedLabel("");
+    }
+  }, [value, students]);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -55,9 +63,7 @@ export function StudentSelect({
           aria-expanded={open}
           className={cn("w-full justify-between", className)}
         >
-          {value
-            ? (selectedStudent?.name || "Santri Terpilih")
-            : "Pilih santri..."}
+          {value && selectedLabel ? selectedLabel : "Pilih santri..."}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
@@ -79,6 +85,7 @@ export function StudentSelect({
                   value={student.name}
                   onSelect={() => {
                     onValueChange(student.id);
+                    setSelectedLabel(student.name);
                     setOpen(false);
                   }}
                 >

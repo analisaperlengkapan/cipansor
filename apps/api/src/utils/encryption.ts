@@ -67,7 +67,7 @@ export function decrypt(text: string): string {
 
     return decrypted;
   } catch (error) {
-    console.error('Decryption failed:', error);
+    console.error('Decryption failed');
     throw new Error('Failed to decrypt value');
   }
 }

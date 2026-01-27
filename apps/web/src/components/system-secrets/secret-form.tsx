@@ -23,7 +23,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
@@ -56,11 +56,15 @@ export function SecretForm({ open, onOpenChange, secret }: SecretFormProps) {
     },
   });
 
-  // Reset form when secret changes (e.g. switching from add to edit)
-  // But useForm defaultValues only applies on mount.
-  // We should ideally use useEffect to reset form if secret prop changes.
-  // Or force remount by key on Dialog.
-  // For simplicity, we rely on parent resetting/handling or use useEffect here.
+  useEffect(() => {
+    if (open) {
+      form.reset({
+        key: secret?.key || "",
+        value: "",
+        description: secret?.description || "",
+      });
+    }
+  }, [open, secret, form]);
 
   const mutation = useMutation({
     mutationFn: async (values: z.infer<typeof formSchema>) => {

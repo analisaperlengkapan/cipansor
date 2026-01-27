@@ -139,37 +139,39 @@ export const qualityService = {
       }
     }
 
-    // 1. Create the Audit
-    const audit = await prisma.qualityAudit.create({
-      data: {
-        unitId: data.unitId,
-        academicYearId: data.academicYearId,
-        code: data.code,
-        name: data.name,
-        startDate: new Date(data.startDate),
-        endDate: new Date(data.endDate),
-        leadAuditorId: data.leadAuditorId,
-        notes: data.notes,
-        status: 'PLANNED',
-      },
-    });
-
-    // 2. Fetch all indicators
-    const indicators = await prisma.qualityIndicator.findMany({
-      where: { isActive: true },
-    });
-
-    // 3. Create Audit Items for each indicator
-    if (indicators.length > 0) {
-      await prisma.qualityAuditItem.createMany({
-        data: indicators.map((ind) => ({
-          auditId: audit.id,
-          indicatorId: ind.id,
-        })),
+    return prisma.$transaction(async (tx) => {
+      // 1. Create the Audit
+      const audit = await tx.qualityAudit.create({
+        data: {
+          unitId: data.unitId,
+          academicYearId: data.academicYearId,
+          code: data.code,
+          name: data.name,
+          startDate: new Date(data.startDate),
+          endDate: new Date(data.endDate),
+          leadAuditorId: data.leadAuditorId,
+          notes: data.notes,
+          status: 'PLANNED',
+        },
       });
-    }
 
-    return audit;
+      // 2. Fetch all indicators
+      const indicators = await tx.qualityIndicator.findMany({
+        where: { isActive: true },
+      });
+
+      // 3. Create Audit Items for each indicator
+      if (indicators.length > 0) {
+        await tx.qualityAuditItem.createMany({
+          data: indicators.map((ind) => ({
+            auditId: audit.id,
+            indicatorId: ind.id,
+          })),
+        });
+      }
+
+      return audit;
+    });
   },
 
   getAudits: async (unitId: string, academicYearId: string, userRole: string, userUnitId?: string) => {

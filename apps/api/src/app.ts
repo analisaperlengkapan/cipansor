@@ -79,6 +79,7 @@ import emisRoutes from '@/modules/emis/emis.routes';
 import { dapodikRouter } from '@/modules/dapodik/dapodik.routes';
 import { qualityRoutes } from '@/modules/quality/quality.routes';
 import correspondenceRoutes from '@/modules/correspondence/correspondence.routes';
+import riskRoutes from '@/modules/risk/risk.routes';
 import { complaintsRoutes } from '@/modules/complaints/complaints.routes';
 
 // Enhancement module routes
@@ -246,6 +247,7 @@ apiRouter.use('/emis', emisRoutes);
 apiRouter.use('/dapodik', dapodikRouter);
 apiRouter.use('/quality', qualityRoutes);
 apiRouter.use('/correspondence', correspondenceRoutes);
+apiRouter.use('/risk', riskRoutes);
 apiRouter.use('/complaints', complaintsRoutes);
 
 // Enhancement modules

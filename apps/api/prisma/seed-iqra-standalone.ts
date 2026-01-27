@@ -14,32 +14,15 @@ async function main() {
     { vol: 6, pages: 32 },
   ];
 
-  // We need a dummy unit ID because KitabKuning requires unitId.
-  // We'll try to find the TK unit, or fallback to the first unit found.
-  const tkUnit = await prisma.unit.findFirst({
-    where: { type: 'TK_QURAN' },
-  });
-
-  const anyUnit = await prisma.unit.findFirst();
-
-  const unitId = tkUnit?.id || anyUnit?.id;
-
-  if (!unitId) {
-    console.error('❌ No Unit found. Please seed units first.');
-    process.exit(1);
-  }
-
   for (const book of iqraBooks) {
     const name = `Iqra Jilid ${book.vol}`;
 
     // We try to find existing first to avoid unique constraint issues if we re-run
     // But KitabKuning doesn't enforce unique name globally, just ID.
     // Ideally we should have a unique code.
-    // Let's check if we can find it by name and unitId.
 
     const existing = await prisma.kitabKuning.findFirst({
       where: {
-        unitId,
         title: name,
       }
     });
@@ -51,7 +34,6 @@ async function main() {
 
     await prisma.kitabKuning.create({
       data: {
-        unitId,
         title: name,
         author: 'KH. As\'ad Humam',
         category: KitabCategory.OTHER, // Using OTHER as Tahsin/Iqra is not in enum

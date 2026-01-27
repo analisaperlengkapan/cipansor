@@ -29,6 +29,18 @@ export const BORROW_STATUSES: {
   { value: "LOST", label: "Hilang", color: "bg-gray-100 text-gray-800" },
 ];
 
+export const BOOK_CATEGORIES = [
+  { value: "FIQH", label: "Fiqih" },
+  { value: "AQIDAH", label: "Aqidah" },
+  { value: "TASAWUF", label: "Tasawuf" },
+  { value: "HADITS", label: "Hadits" },
+  { value: "TAFSIR", label: "Tafsir" },
+  { value: "TARIKH", label: "Tarikh (Sejarah)" },
+  { value: "BAHASA", label: "Bahasa Arab/Nahwu Shorof" },
+  { value: "UMUM", label: "Umum/Pelajaran" },
+  { value: "LAINNYA", label: "Lainnya" },
+];
+
 // Category Hooks
 export function useBookCategories(unitId?: string) {
   return useQuery({

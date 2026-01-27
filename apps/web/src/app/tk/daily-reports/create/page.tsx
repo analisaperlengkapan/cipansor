@@ -25,6 +25,7 @@ import { useBulkCreateDailyReport } from "@/hooks/use-daily-report";
 import { format } from "date-fns";
 import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/api";
+import type { BulkCreateDailyReportsInput } from "@cipansor/shared";
 
 const MOODS = [
   { value: "HAPPY", label: "Senang", icon: Smile, color: "text-green-500" },
@@ -142,15 +143,35 @@ export default function BulkCreateDailyReportPage() {
       return;
     }
 
+    // Validate inputs
+    for (const student of presentStudents) {
+      if (student.tahfidzAyahStart && student.tahfidzAyahEnd) {
+        if (
+          parseInt(student.tahfidzAyahEnd) < parseInt(student.tahfidzAyahStart)
+        ) {
+          toast.error(
+            `Data Tahfidz salah untuk siswa ID: ${student.studentId} (Ayat akhir < awal)`,
+          );
+          return;
+        }
+      }
+      if (student.tahfidzSurahNumber) {
+        const num = parseInt(student.tahfidzSurahNumber);
+        if (num < 1 || num > 114) {
+          toast.error(
+            `Nomor surat tidak valid untuk siswa ID: ${student.studentId}`,
+          );
+          return;
+        }
+      }
+    }
+
     try {
-      await bulkMutation.mutateAsync({
-        unitId: user?.unitId || "",
-        academicYearId: user?.academicYearId || "", // Assuming this exists in store
-        reportDate: format(new Date(), "yyyy-MM-dd"),
-        reports: presentStudents.map((r) => {
-          const reportPayload: any = {
+      const reportsData: BulkCreateDailyReportsInput["reports"] =
+        presentStudents.map((r) => {
+          const reportPayload: BulkCreateDailyReportsInput["reports"][0] = {
             studentId: r.studentId,
-            morningMood: r.morningMood,
+            morningMood: r.morningMood as any, // Cast as needed if shared type enum mismatch
             healthNotes: r.healthNotes,
             lunchConsumption: r.lunchConsumption,
             activitiesSummary: r.activitiesSummary,
@@ -180,7 +201,13 @@ export default function BulkCreateDailyReportPage() {
           }
 
           return reportPayload;
-        }),
+        });
+
+      await bulkMutation.mutateAsync({
+        unitId: user?.unitId || "",
+        academicYearId: user?.academicYearId || "",
+        reportDate: format(new Date(), "yyyy-MM-dd"),
+        reports: reportsData,
       });
 
       toast.success(

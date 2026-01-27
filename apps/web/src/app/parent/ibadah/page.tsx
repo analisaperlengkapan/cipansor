@@ -17,16 +17,13 @@ import { Users, ChevronRight, Star } from "lucide-react";
 
 interface Child {
   id: string;
-  student: {
-    id: string;
-    nis: string;
+  name: string;
+  nis: string;
+  currentClass?: {
     name: string;
-    class?: {
-      name: string;
-    };
-    unit?: {
-      name: string;
-    };
+  };
+  unit?: {
+    name: string;
   };
   relation: string;
 }
@@ -46,7 +43,7 @@ export default function ParentIbadahPage() {
 
         // If only one child, redirect immediately
         if (childrenData.length === 1) {
-          router.replace(`/parent/ibadah/${childrenData[0].student.id}`);
+          router.replace(`/parent/ibadah/${childrenData[0].id}`);
         }
       } catch (err) {
         console.error("Failed to fetch children:", err);
@@ -104,18 +101,18 @@ export default function ParentIbadahPage() {
           <Card
             key={child.id}
             className="cursor-pointer transition-all hover:border-primary hover:shadow-md"
-            onClick={() => router.push(`/parent/ibadah/${child.student.id}`)}
+            onClick={() => router.push(`/parent/ibadah/${child.id}`)}
           >
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
                 <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-xl">
-                  {child.student.name.charAt(0)}
+                  {child.name.charAt(0)}
                 </div>
                 <div className="flex-1">
-                  <p className="font-semibold text-lg">{child.student.name}</p>
+                  <p className="font-semibold text-lg">{child.name}</p>
                   <div className="flex flex-wrap gap-2 mt-1">
                     <Badge variant="secondary" className="font-normal">
-                      {child.student.class?.name || "Belum ada kelas"}
+                      {child.currentClass?.name || "Belum ada kelas"}
                     </Badge>
                   </div>
                 </div>
@@ -125,7 +122,7 @@ export default function ParentIbadahPage() {
                 <span className="flex items-center gap-1">
                   <Star className="h-4 w-4 text-yellow-500" /> Lihat Laporan
                 </span>
-                <span>{child.student.unit?.name}</span>
+                <span>{child.unit?.name}</span>
               </div>
             </CardContent>
           </Card>

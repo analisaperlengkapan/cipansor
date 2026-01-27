@@ -4,6 +4,7 @@ import { authenticate, authorize } from '@/middleware/auth';
 import { UserRole } from '@prisma/client';
 import { z } from 'zod';
 import { validate } from '@/middleware/validate';
+import { Errors } from '@/middleware/error';
 
 export const CorrespondenceController = {
   async create(req: Request, res: Response, next: NextFunction) {
@@ -17,8 +18,17 @@ export const CorrespondenceController = {
 
   async findAll(req: Request, res: Response, next: NextFunction) {
     try {
-      // Prioritize authenticated user's unitId to prevent IDOR
-      const unitId = req.user?.unitId || (req.query.unitId as string);
+      let unitId = req.user?.unitId;
+
+      // Allow SUPER_ADMIN to query specific unit, otherwise require unitId
+      if (!unitId) {
+        if (req.user?.role === UserRole.SUPER_ADMIN) {
+          unitId = req.query.unitId as string;
+        } else {
+          throw Errors.forbidden('Access denied: User has no unit assigned');
+        }
+      }
+
       if (!unitId) throw new Error('Unit ID is required');
 
       const result = await CorrespondenceService.getLetters(unitId, {
@@ -90,8 +100,17 @@ export const CorrespondenceController = {
 
   async getStats(req: Request, res: Response, next: NextFunction) {
     try {
-      // Prioritize authenticated user's unitId to prevent IDOR
-      const unitId = req.user?.unitId || (req.query.unitId as string);
+      let unitId = req.user?.unitId;
+
+      // Allow SUPER_ADMIN to query specific unit, otherwise require unitId
+      if (!unitId) {
+        if (req.user?.role === UserRole.SUPER_ADMIN) {
+          unitId = req.query.unitId as string;
+        } else {
+          throw Errors.forbidden('Access denied: User has no unit assigned');
+        }
+      }
+
       if (!unitId) throw new Error('Unit ID is required');
 
       const result = await CorrespondenceService.getDashboardStats(unitId);

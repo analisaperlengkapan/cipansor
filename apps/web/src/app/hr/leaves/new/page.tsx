@@ -34,6 +34,8 @@ import {
   LEAVE_TYPES,
   LEAVE_TYPE_LABELS,
 } from "@/hooks";
+import { useAcademicYears } from "@/hooks/use-academic-years";
+import { useLeaveBalances } from "@/hooks/use-leave-balances";
 import { ArrowLeft, Save, Loader2, Calendar, Info } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -78,6 +80,9 @@ export default function NewLeavePage() {
   const { data: employeesData } = useEmployees({ status: "ACTIVE" });
   const employees = employeesData?.data || [];
 
+  const { data: academicYearsData } = useAcademicYears({ isActive: true });
+  const activeAcademicYear = academicYearsData?.data?.[0];
+
   const form = useForm<LeaveRequestFormData>({
     resolver: zodResolver(leaveRequestSchema),
     defaultValues: {
@@ -89,6 +94,17 @@ export default function NewLeavePage() {
       attachmentUrl: "",
     },
   });
+
+  const selectedEmployeeId = form.watch("employeeId");
+  const selectedEmployee = employees.find((e) => e.id === selectedEmployeeId);
+  const selectedLeaveType = form.watch("leaveType");
+
+  const { data: leaveBalances } = useLeaveBalances(
+    selectedEmployee?.userId || "",
+    activeAcademicYear?.id
+  );
+
+  const annualBalance = leaveBalances?.find((b) => b.leaveType === "ANNUAL");
 
   const startDate = form.watch("startDate");
   const endDate = form.watch("endDate");
@@ -268,6 +284,21 @@ export default function NewLeavePage() {
                     />
                   </CardContent>
                 </Card>
+
+                {selectedLeaveType === "ANNUAL" && annualBalance && (
+                  <Card className="border-green-200 bg-green-50">
+                    <CardContent className="pt-6">
+                      <div className="flex items-center justify-between">
+                        <span className="text-green-800 font-medium">
+                          Sisa Cuti Tahunan:
+                        </span>
+                        <span className="text-2xl font-bold text-green-800">
+                          {annualBalance.remainingDays} Hari
+                        </span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
 
                 <div className="flex justify-end gap-4">
                   <Button

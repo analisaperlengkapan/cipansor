@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { Prisma, DailyMood, MealConsumption, UnitType } from '@prisma/client';
+import { Prisma, DailyMood, MealConsumption, UnitType, TahfidzActivityType } from '@prisma/client';
 import { whatsAppService } from '../notifications';
 import { logger } from '@/lib/logger';
 import type {
@@ -369,11 +369,67 @@ export const dailyReportService = {
           })),
         });
 
-        // Process successful reports (notifications and results)
+        // Process related data (Kitab & Tahfidz)
         await Promise.all(
           validReports.map(async (report) => {
+            // Update Reading Progress (Iqra/Kitab)
+            if (report.readingProgress) {
+              try {
+                await prisma.kitabProgress.upsert({
+                  where: {
+                    kitabId_studentId_academicYearId: {
+                      kitabId: report.readingProgress.bookId,
+                      studentId: report.studentId,
+                      academicYearId: data.academicYearId,
+                    },
+                  },
+                  update: {
+                    currentPage: report.readingProgress.page,
+                    teacherId: userId, // Assuming current user is teacher
+                  },
+                  create: {
+                    kitabId: report.readingProgress.bookId,
+                    studentId: report.studentId,
+                    academicYearId: data.academicYearId,
+                    teacherId: userId, // Assuming current user is teacher
+                    currentPage: report.readingProgress.page,
+                  },
+                });
+              } catch (err) {
+                logger.error(
+                  `Failed to update Reading Progress for ${report.studentId}: ${err}`
+                );
+              }
+            }
+
+            // Create Tahfidz Record
+            if (report.tahfidzProgress) {
+              try {
+                await prisma.tahfidzRecord.create({
+                  data: {
+                    studentId: report.studentId,
+                    activityType: TahfidzActivityType.ZIYADAH,
+                    surahNumber: report.tahfidzProgress.surahNumber,
+                    surahName: report.tahfidzProgress.surahName,
+                    ayahStart: report.tahfidzProgress.ayahStart,
+                    ayahEnd: report.tahfidzProgress.ayahEnd,
+                    juz: 30, // Default to 30 for TK, or calculate
+                    totalAyah:
+                      report.tahfidzProgress.ayahEnd - report.tahfidzProgress.ayahStart + 1,
+                    recordedById: userId,
+                    recordedAt: reportDate,
+                  },
+                });
+              } catch (err) {
+                logger.error(
+                  `Failed to create Tahfidz Record for ${report.studentId}: ${err}`
+                );
+              }
+            }
+
             results.success.push(report.studentId);
 
+            // Notifications
             const studentInfo = studentInfoMap.get(report.studentId);
             if (studentInfo?.parentPhone) {
               try {

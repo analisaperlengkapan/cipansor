@@ -4,7 +4,7 @@ import { z } from 'zod';
 export const DailyMoodEnum = z.enum(['HAPPY', 'NEUTRAL', 'SAD', 'SICK', 'TIRED', 'EXCITED']);
 
 // Meal Consumption enum
-export const MealConsumptionEnum = z.enum(['FULL', 'HALF', 'QUARTER', 'NONE']);
+export const MealConsumptionEnum = z.enum(['HABIS', 'SETENGAH', 'SEDIKIT', 'TIDAK_MAU']);
 
 // ============================================
 // Daily Report Query Schemas

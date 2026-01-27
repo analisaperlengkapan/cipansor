@@ -211,7 +211,7 @@ export const dailyReportService = {
         mood: data.morningMood as DailyMood | undefined,
         healthStatus: data.healthNotes,
         temperature: data.temperature,
-        hadBreakfast: data.breakfastConsumption === 'FULL' || data.breakfastConsumption === 'HALF',
+        hadBreakfast: data.breakfastConsumption === 'HABIS' || data.breakfastConsumption === 'SETENGAH',
         mealStatus: data.lunchConsumption as MealConsumption | undefined,
         snackStatus: data.snackConsumption as MealConsumption | undefined,
         napDuration: data.napDurationMinutes,
@@ -362,7 +362,7 @@ export const dailyReportService = {
             mood: report.morningMood as DailyMood | undefined,
             healthStatus: report.healthNotes,
             hadBreakfast:
-              report.breakfastConsumption === 'FULL' || report.breakfastConsumption === 'HALF',
+              report.breakfastConsumption === 'HABIS' || report.breakfastConsumption === 'SETENGAH',
             mealStatus: report.lunchConsumption as MealConsumption | undefined,
             activitiesSummary: report.activitiesSummary,
             tahfidzActivity: report.ibadahNotes,
@@ -491,7 +491,7 @@ export const dailyReportService = {
         healthStatus: data.healthNotes,
         temperature: data.temperature,
         hadBreakfast: data.breakfastConsumption
-          ? data.breakfastConsumption === 'FULL' || data.breakfastConsumption === 'HALF'
+          ? data.breakfastConsumption === 'HABIS' || data.breakfastConsumption === 'SETENGAH'
           : undefined,
         mealStatus: data.lunchConsumption as MealConsumption | undefined,
         snackStatus: data.snackConsumption as MealConsumption | undefined,

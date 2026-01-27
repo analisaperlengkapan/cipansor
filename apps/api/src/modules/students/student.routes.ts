@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authenticate, isAdmin, hasPermission } from '@/middleware/auth';
+import { authenticate, hasPermission } from '@/middleware/auth';
 import { validate, validateQuery, validateParams } from '@/middleware/error';
 import * as controller from './student.controller';
 import { IdCardController } from './id-card.controller';

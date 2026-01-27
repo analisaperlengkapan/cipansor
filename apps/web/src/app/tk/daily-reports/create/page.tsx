@@ -23,6 +23,9 @@ import { useClasses } from "@/hooks/use-classes";
 import { useStudents } from "@/hooks/use-students";
 import { useBulkCreateDailyReport } from "@/hooks/use-daily-report";
 import { format } from "date-fns";
+import { useQuery } from "@tanstack/react-query";
+import api from "@/lib/api";
+import type { BulkCreateDailyReportsInput } from "@cipansor/shared";
 
 const MOODS = [
   { value: "HAPPY", label: "Senang", icon: Smile, color: "text-green-500" },
@@ -44,10 +47,17 @@ interface StudentReportDraft {
   morningMood: string;
   healthNotes: string;
   lunchConsumption: string;
-  surahPractice: string; // Tahfidz note
+  surahPractice: string; // Tahfidz note (summary)
   sholatDhuha: boolean;
   sholatDzuhur: boolean;
   activitiesSummary: string;
+  // New Fields
+  readingBookId: string;
+  readingPage: string;
+  tahfidzSurahName: string;
+  tahfidzSurahNumber: string;
+  tahfidzAyahStart: string;
+  tahfidzAyahEnd: string;
 }
 
 export default function BulkCreateDailyReportPage() {
@@ -57,6 +67,17 @@ export default function BulkCreateDailyReportPage() {
   const [reports, setReports] = useState<Record<string, StudentReportDraft>>(
     {},
   );
+
+  // Fetch Kitab Books (Iqra)
+  const { data: kitabData } = useQuery({
+    queryKey: ["kitab-books"],
+    queryFn: async () => {
+      const res = await api.get("/kitab-progress/kitab", {
+        params: { isActive: true, limit: 100 },
+      });
+      return res.data?.data || [];
+    },
+  });
 
   const { data: classes } = useClasses({ unitId: user?.unitId });
   const { data: students, isLoading: isLoadingStudents } = useStudents({
@@ -83,6 +104,12 @@ export default function BulkCreateDailyReportPage() {
           sholatDhuha: true, // Optimistic default
           sholatDzuhur: true,
           activitiesSummary: "",
+          readingBookId: "",
+          readingPage: "",
+          tahfidzSurahName: "",
+          tahfidzSurahNumber: "",
+          tahfidzAyahStart: "",
+          tahfidzAyahEnd: "",
         };
       });
       setReports(initialReports);
@@ -116,24 +143,118 @@ export default function BulkCreateDailyReportPage() {
       return;
     }
 
+    // Validate inputs
+    for (const student of presentStudents) {
+      // Tahfidz Validation
+      const hasTahfidzData =
+        student.tahfidzSurahName ||
+        student.tahfidzAyahStart ||
+        student.tahfidzAyahEnd ||
+        student.tahfidzSurahNumber;
+
+      if (hasTahfidzData) {
+        if (
+          !student.tahfidzSurahNumber ||
+          !student.tahfidzSurahName ||
+          !student.tahfidzAyahStart ||
+          !student.tahfidzAyahEnd
+        ) {
+          toast.error(
+            `Data Tahfidz tidak lengkap untuk siswa ID: ${student.studentId}. Harap isi semua field.`,
+          );
+          return;
+        }
+
+        const surahNum = parseInt(student.tahfidzSurahNumber);
+        const ayahStart = parseInt(student.tahfidzAyahStart);
+        const ayahEnd = parseInt(student.tahfidzAyahEnd);
+
+        if (isNaN(surahNum) || surahNum < 1 || surahNum > 114) {
+          toast.error(
+            `Nomor surat tidak valid untuk siswa ID: ${student.studentId}`,
+          );
+          return;
+        }
+
+        if (isNaN(ayahStart) || isNaN(ayahEnd)) {
+          toast.error(`Ayat harus berupa angka untuk siswa ID: ${student.studentId}`);
+          return;
+        }
+
+        if (ayahEnd < ayahStart) {
+          toast.error(
+            `Data Tahfidz salah untuk siswa ID: ${student.studentId} (Ayat akhir < awal)`,
+          );
+          return;
+        }
+      }
+
+      // Reading Validation
+      const hasReadingData = student.readingBookId || student.readingPage;
+      if (hasReadingData) {
+        if (!student.readingBookId || !student.readingPage) {
+          toast.error(
+            `Data membaca tidak lengkap untuk siswa ID: ${student.studentId}. Harap isi buku dan halaman.`,
+          );
+          return;
+        }
+        const page = parseInt(student.readingPage);
+        if (isNaN(page) || page < 1) {
+          toast.error(
+            `Halaman membaca tidak valid untuk siswa ID: ${student.studentId}`,
+          );
+          return;
+        }
+      }
+    }
+
     try {
+      const reportsData: BulkCreateDailyReportsInput["reports"] =
+        presentStudents.map((r) => {
+          const reportPayload: BulkCreateDailyReportsInput["reports"][0] = {
+            studentId: r.studentId,
+            morningMood: r.morningMood as any, // Cast as needed if shared type enum mismatch
+            healthNotes: r.healthNotes,
+            lunchConsumption: r.lunchConsumption,
+            activitiesSummary: r.activitiesSummary,
+            ibadahNotes: r.surahPractice,
+            sholatDhuha: r.sholatDhuha,
+            sholatDzuhur: r.sholatDzuhur,
+            sholatAshar: false,
+            sholatJamaah: false,
+          };
+
+          // Add Reading Progress
+          if (r.readingBookId && r.readingPage) {
+            reportPayload.readingProgress = {
+              bookId: r.readingBookId,
+              page: parseInt(r.readingPage),
+            };
+          }
+
+          // Add Tahfidz Progress
+          if (
+            r.tahfidzSurahName &&
+            r.tahfidzSurahNumber &&
+            r.tahfidzAyahStart &&
+            r.tahfidzAyahEnd
+          ) {
+            reportPayload.tahfidzProgress = {
+              surahName: r.tahfidzSurahName,
+              surahNumber: parseInt(r.tahfidzSurahNumber),
+              ayahStart: parseInt(r.tahfidzAyahStart),
+              ayahEnd: parseInt(r.tahfidzAyahEnd),
+            };
+          }
+
+          return reportPayload;
+        });
+
       await bulkMutation.mutateAsync({
         unitId: user?.unitId || "",
-        academicYearId: user?.academicYearId || "", // Assuming this exists in store
-        reportDate: format(new Date(), "yyyy-MM-dd"),
-        reports: presentStudents.map((r) => ({
-          studentId: r.studentId,
-          morningMood: r.morningMood,
-          healthNotes: r.healthNotes,
-          lunchConsumption: r.lunchConsumption,
-          activitiesSummary: r.activitiesSummary,
-          ibadahNotes: r.surahPractice, // Mapping Tahfidz to ibadahNotes/tahfidzActivity
-          sholatDhuha: r.sholatDhuha,
-          sholatDzuhur: r.sholatDzuhur,
-          // Defaults for required fields not in bulk form
-          sholatAshar: false,
-          sholatJamaah: false,
-        })),
+        academicYearId: user?.academicYearId || "",
+        reportDate: new Date().toISOString(),
+        reports: reportsData,
       });
 
       toast.success(
@@ -311,11 +432,11 @@ export default function BulkCreateDailyReportPage() {
                           </div>
                         </div>
 
-                        {/* Tahfidz/Notes */}
+                        {/* Tahfidz/Notes (Summary) */}
                         <div className="space-y-2">
-                          <Label>Hafalan/Tahfidz</Label>
+                          <Label>Catatan Ibadah</Label>
                           <Input
-                            placeholder="Surah..."
+                            placeholder="Catatan tambahan..."
                             value={report.surahPractice}
                             onChange={(e) =>
                               updateReport(
@@ -326,6 +447,109 @@ export default function BulkCreateDailyReportPage() {
                             }
                             className="h-8"
                           />
+                        </div>
+
+                        {/* Reading Progress (Iqra) */}
+                        <div className="p-3 bg-blue-50 rounded-md space-y-3">
+                          <Label className="text-blue-800 font-semibold">
+                            Capaian Membaca (Iqra/Jilid)
+                          </Label>
+                          <div className="grid grid-cols-3 gap-2">
+                            <div className="col-span-2">
+                              <Select
+                                value={report.readingBookId}
+                                onValueChange={(val) =>
+                                  updateReport(student.id, "readingBookId", val)
+                                }
+                              >
+                                <SelectTrigger className="h-8 bg-white">
+                                  <SelectValue placeholder="Pilih Buku" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {kitabData?.map((book: any) => (
+                                    <SelectItem key={book.id} value={book.id}>
+                                      {book.title}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <Input
+                              type="number"
+                              placeholder="Hal"
+                              value={report.readingPage}
+                              onChange={(e) =>
+                                updateReport(
+                                  student.id,
+                                  "readingPage",
+                                  e.target.value,
+                                )
+                              }
+                              className="h-8 bg-white"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Tahfidz Progress */}
+                        <div className="p-3 bg-green-50 rounded-md space-y-3">
+                          <Label className="text-green-800 font-semibold">
+                            Capaian Tahfidz (Hafalan Baru)
+                          </Label>
+                          <div className="space-y-2">
+                            <Input
+                              placeholder="Nama Surah"
+                              value={report.tahfidzSurahName}
+                              onChange={(e) =>
+                                updateReport(
+                                  student.id,
+                                  "tahfidzSurahName",
+                                  e.target.value,
+                                )
+                              }
+                              className="h-8 bg-white"
+                            />
+                            <div className="grid grid-cols-3 gap-2">
+                              <Input
+                                type="number"
+                                placeholder="No. Surat"
+                                value={report.tahfidzSurahNumber}
+                                onChange={(e) =>
+                                  updateReport(
+                                    student.id,
+                                    "tahfidzSurahNumber",
+                                    e.target.value,
+                                  )
+                                }
+                                className="h-8 bg-white"
+                              />
+                              <Input
+                                type="number"
+                                placeholder="Ayat Awal"
+                                value={report.tahfidzAyahStart}
+                                onChange={(e) =>
+                                  updateReport(
+                                    student.id,
+                                    "tahfidzAyahStart",
+                                    e.target.value,
+                                  )
+                                }
+                                className="h-8 bg-white"
+                              />
+                              <Input
+                                type="number"
+                                placeholder="Ayat Akhir"
+                                value={report.tahfidzAyahEnd}
+                                onChange={(e) =>
+                                  updateReport(
+                                    student.id,
+                                    "tahfidzAyahEnd",
+                                    e.target.value,
+                                  )
+                                }
+                                className="h-8 bg-white"
+                              />
+                            </div>
+                          </div>
                         </div>
                       </CardContent>
                     )}

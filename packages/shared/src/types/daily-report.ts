@@ -137,5 +137,15 @@ export interface BulkCreateDailyReportsInput {
     sholatDzuhur?: boolean;
     sholatAshar?: boolean;
     sholatJamaah?: boolean;
+    readingProgress?: {
+      bookId: string;
+      page: number;
+    };
+    tahfidzProgress?: {
+      surahName: string;
+      surahNumber: number;
+      ayahStart: number;
+      ayahEnd: number;
+    };
   }>;
 }

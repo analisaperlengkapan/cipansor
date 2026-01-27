@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { Prisma, DailyMood, MealConsumption, UnitType } from '@prisma/client';
+import { Prisma, DailyMood, MealConsumption, UnitType, TahfidzActivityType } from '@prisma/client';
 import { whatsAppService } from '../notifications';
 import { logger } from '@/lib/logger';
 import type {
@@ -211,7 +211,7 @@ export const dailyReportService = {
         mood: data.morningMood as DailyMood | undefined,
         healthStatus: data.healthNotes,
         temperature: data.temperature,
-        hadBreakfast: data.breakfastConsumption === 'FULL' || data.breakfastConsumption === 'HALF',
+        hadBreakfast: data.breakfastConsumption === 'HABIS' || data.breakfastConsumption === 'SETENGAH',
         mealStatus: data.lunchConsumption as MealConsumption | undefined,
         snackStatus: data.snackConsumption as MealConsumption | undefined,
         napDuration: data.napDurationMinutes,
@@ -291,6 +291,12 @@ export const dailyReportService = {
       select: { type: true },
     });
 
+    // Get teacher record for KitabProgress (userId is User.id, need Teacher.id)
+    const teacher = await prisma.teacher.findUnique({
+      where: { userId },
+      select: { id: true },
+    });
+
     const studentIds = data.reports.map((r) => r.studentId);
 
     // 1. Batch fetch existing reports to identify duplicates
@@ -343,6 +349,14 @@ export const dailyReportService = {
       validReports.push(report);
     }
 
+    // Check if reading progress is present but user is not a teacher
+    const hasReadingProgress = validReports.some((r) => r.readingProgress);
+    if (hasReadingProgress && !teacher) {
+      throw new Error(
+        'Cannot record reading progress: User is not a registered Teacher. Please contact administrator.'
+      );
+    }
+
     if (validReports.length > 0) {
       try {
         await prisma.dailyStudentReport.createMany({
@@ -356,7 +370,7 @@ export const dailyReportService = {
             mood: report.morningMood as DailyMood | undefined,
             healthStatus: report.healthNotes,
             hadBreakfast:
-              report.breakfastConsumption === 'FULL' || report.breakfastConsumption === 'HALF',
+              report.breakfastConsumption === 'HABIS' || report.breakfastConsumption === 'SETENGAH',
             mealStatus: report.lunchConsumption as MealConsumption | undefined,
             activitiesSummary: report.activitiesSummary,
             tahfidzActivity: report.ibadahNotes,
@@ -369,11 +383,73 @@ export const dailyReportService = {
           })),
         });
 
-        // Process successful reports (notifications and results)
+        // Process related data (Kitab & Tahfidz)
         await Promise.all(
           validReports.map(async (report) => {
+            // Update Reading Progress (Iqra/Kitab)
+            if (report.readingProgress) {
+              if (teacher) {
+                try {
+                  await prisma.kitabProgress.upsert({
+                    where: {
+                      kitabId_studentId_academicYearId: {
+                        kitabId: report.readingProgress.bookId,
+                        studentId: report.studentId,
+                        academicYearId: data.academicYearId,
+                      },
+                    },
+                    update: {
+                      currentPage: report.readingProgress.page,
+                      teacherId: teacher.id,
+                    },
+                    create: {
+                      kitabId: report.readingProgress.bookId,
+                      studentId: report.studentId,
+                      academicYearId: data.academicYearId,
+                      teacherId: teacher.id,
+                      currentPage: report.readingProgress.page,
+                    },
+                  });
+                } catch (err) {
+                  logger.error(
+                    `Failed to update Reading Progress for ${report.studentId}: ${err}`
+                  );
+                }
+              } else {
+                logger.warn(
+                  `Skipped Reading Progress for ${report.studentId}: User ${userId} is not a Teacher`
+                );
+              }
+            }
+
+            // Create Tahfidz Record
+            if (report.tahfidzProgress) {
+              try {
+                await prisma.tahfidzRecord.create({
+                  data: {
+                    studentId: report.studentId,
+                    activityType: TahfidzActivityType.ZIYADAH,
+                    surahNumber: report.tahfidzProgress.surahNumber,
+                    surahName: report.tahfidzProgress.surahName,
+                    ayahStart: report.tahfidzProgress.ayahStart,
+                    ayahEnd: report.tahfidzProgress.ayahEnd,
+                    juz: 30, // Default to 30 for TK, or calculate
+                    totalAyah:
+                      report.tahfidzProgress.ayahEnd - report.tahfidzProgress.ayahStart + 1,
+                    recordedById: userId,
+                    recordedAt: reportDate,
+                  },
+                });
+              } catch (err) {
+                logger.error(
+                  `Failed to create Tahfidz Record for ${report.studentId}: ${err}`
+                );
+              }
+            }
+
             results.success.push(report.studentId);
 
+            // Notifications
             const studentInfo = studentInfoMap.get(report.studentId);
             if (studentInfo?.parentPhone) {
               try {
@@ -423,7 +499,7 @@ export const dailyReportService = {
         healthStatus: data.healthNotes,
         temperature: data.temperature,
         hadBreakfast: data.breakfastConsumption
-          ? data.breakfastConsumption === 'FULL' || data.breakfastConsumption === 'HALF'
+          ? data.breakfastConsumption === 'HABIS' || data.breakfastConsumption === 'SETENGAH'
           : undefined,
         mealStatus: data.lunchConsumption as MealConsumption | undefined,
         snackStatus: data.snackConsumption as MealConsumption | undefined,

@@ -1,8 +1,9 @@
 import { Router } from 'express';
-import { authenticate, isAdmin } from '@/middleware/auth';
+import { authenticate, isAdmin, hasPermission } from '@/middleware/auth';
 import { validate, validateQuery, validateParams } from '@/middleware/error';
 import * as controller from './student.controller';
 import { IdCardController } from './id-card.controller';
+import { PERMISSIONS } from '../roles/permissions';
 import {
   createStudentSchema,
   updateStudentSchema,
@@ -76,7 +77,7 @@ router.use(authenticate);
  *       401:
  *         $ref: '#/components/responses/Unauthorized'
  */
-router.get('/', validateQuery(listStudentsQuerySchema), controller.list);
+router.get('/', hasPermission(PERMISSIONS.STUDENT_VIEW), validateQuery(listStudentsQuerySchema), controller.list);
 
 /**
  * @swagger
@@ -99,7 +100,7 @@ router.get('/', validateQuery(listStudentsQuerySchema), controller.list);
  *       404:
  *         $ref: '#/components/responses/NotFound'
  */
-router.get('/:id', validateParams(studentIdParamSchema), controller.getById);
+router.get('/:id', hasPermission(PERMISSIONS.STUDENT_VIEW), validateParams(studentIdParamSchema), controller.getById);
 
 /**
  * @swagger
@@ -153,7 +154,7 @@ router.get('/:id', validateParams(studentIdParamSchema), controller.getById);
  *       403:
  *         $ref: '#/components/responses/Forbidden'
  */
-router.post('/', isAdmin, validate(createStudentSchema), controller.create);
+router.post('/', hasPermission(PERMISSIONS.STUDENT_CREATE), validate(createStudentSchema), controller.create);
 
 /**
  * @swagger
@@ -207,7 +208,7 @@ router.post('/', isAdmin, validate(createStudentSchema), controller.create);
  */
 router.put(
   '/:id',
-  isAdmin,
+  hasPermission(PERMISSIONS.STUDENT_UPDATE),
   validateParams(studentIdParamSchema),
   validate(updateStudentSchema),
   controller.update
@@ -234,7 +235,7 @@ router.put(
  *       403:
  *         $ref: '#/components/responses/Forbidden'
  */
-router.delete('/:id', isAdmin, validateParams(studentIdParamSchema), controller.remove);
+router.delete('/:id', hasPermission(PERMISSIONS.STUDENT_DELETE), validateParams(studentIdParamSchema), controller.remove);
 
 // ==================== ID CARD ROUTES ====================
 
@@ -250,7 +251,7 @@ router.delete('/:id', isAdmin, validateParams(studentIdParamSchema), controller.
  *       200:
  *         description: List of available templates
  */
-router.get('/id-cards/templates', IdCardController.getTemplates);
+router.get('/id-cards/templates', hasPermission(PERMISSIONS.STUDENT_VIEW), IdCardController.getTemplates);
 
 /**
  * @swagger
@@ -315,7 +316,7 @@ router.get('/id-cards/verify', IdCardController.verifyQRCodeGet);
  *       200:
  *         description: Card statistics
  */
-router.get('/id-cards/stats/:unitId', IdCardController.getStatistics);
+router.get('/id-cards/stats/:unitId', hasPermission(PERMISSIONS.STUDENT_VIEW), IdCardController.getStatistics);
 
 /**
  * @swagger
@@ -349,7 +350,7 @@ router.get('/id-cards/stats/:unitId', IdCardController.getStatistics);
  *       200:
  *         description: Bulk ID cards data
  */
-router.get('/id-cards/classes/:classId', IdCardController.generateClassCards);
+router.get('/id-cards/classes/:classId', hasPermission(PERMISSIONS.STUDENT_VIEW), IdCardController.generateClassCards);
 
 /**
  * @swagger
@@ -389,6 +390,6 @@ router.get('/id-cards/classes/:classId', IdCardController.generateClassCards);
  *       200:
  *         description: ID card data with QR code
  */
-router.get('/:studentId/id-card', IdCardController.generateStudentCard);
+router.get('/:studentId/id-card', hasPermission(PERMISSIONS.STUDENT_VIEW), IdCardController.generateStudentCard);
 
 export default router;

@@ -139,9 +139,6 @@ function RegistrationForm() {
       form.setValue("source", `CAMPAIGN_${campaign.code}`);
       toast.info(`Mendaftar melalui program: ${campaign.name}`);
     }
-    if (isCampaignError) {
-      toast.error("Kode kampanye tidak valid atau tidak ditemukan");
-    }
   }, [campaign, isCampaignError, form]);
 
   const onSubmit = async (data: RegistrationFormData) => {

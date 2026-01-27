@@ -109,12 +109,17 @@ function AuditItemRow({ item }: { item: any }) {
   const isDirty = (score !== (item.score?.toString() || "")) || (notes !== (item.notes || ""));
 
   const handleSave = () => {
-    const numericScore = score === "" ? null : parseFloat(score);
+    const numericScore = score === "" ? undefined : parseFloat(score);
+
+    // Check if numericScore is NaN (invalid input)
+    if (score !== "" && isNaN(numericScore as number)) {
+      return; // Or show error toast
+    }
 
     updateItem.mutate({
       itemId: item.id,
       data: {
-        score: numericScore as any, // Cast to any to bypass strict check if needed
+        score: numericScore,
         notes: notes,
       },
     });

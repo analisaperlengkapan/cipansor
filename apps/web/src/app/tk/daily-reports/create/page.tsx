@@ -145,21 +145,56 @@ export default function BulkCreateDailyReportPage() {
 
     // Validate inputs
     for (const student of presentStudents) {
-      if (student.tahfidzAyahStart && student.tahfidzAyahEnd) {
+      // Tahfidz Validation
+      const hasTahfidzData =
+        student.tahfidzSurahName ||
+        student.tahfidzAyahStart ||
+        student.tahfidzAyahEnd ||
+        student.tahfidzSurahNumber;
+
+      if (hasTahfidzData) {
         if (
-          parseInt(student.tahfidzAyahEnd) < parseInt(student.tahfidzAyahStart)
+          !student.tahfidzSurahNumber ||
+          !student.tahfidzSurahName ||
+          !student.tahfidzAyahStart ||
+          !student.tahfidzAyahEnd
         ) {
+          toast.error(
+            `Data Tahfidz tidak lengkap untuk siswa ID: ${student.studentId}. Harap isi semua field.`,
+          );
+          return;
+        }
+
+        const surahNum = parseInt(student.tahfidzSurahNumber);
+        const ayahStart = parseInt(student.tahfidzAyahStart);
+        const ayahEnd = parseInt(student.tahfidzAyahEnd);
+
+        if (isNaN(surahNum) || surahNum < 1 || surahNum > 114) {
+          toast.error(
+            `Nomor surat tidak valid untuk siswa ID: ${student.studentId}`,
+          );
+          return;
+        }
+
+        if (isNaN(ayahStart) || isNaN(ayahEnd)) {
+          toast.error(`Ayat harus berupa angka untuk siswa ID: ${student.studentId}`);
+          return;
+        }
+
+        if (ayahEnd < ayahStart) {
           toast.error(
             `Data Tahfidz salah untuk siswa ID: ${student.studentId} (Ayat akhir < awal)`,
           );
           return;
         }
       }
-      if (student.tahfidzSurahNumber) {
-        const num = parseInt(student.tahfidzSurahNumber);
-        if (num < 1 || num > 114) {
+
+      // Reading Validation
+      if (student.readingBookId && student.readingPage) {
+        const page = parseInt(student.readingPage);
+        if (isNaN(page) || page < 1) {
           toast.error(
-            `Nomor surat tidak valid untuk siswa ID: ${student.studentId}`,
+            `Halaman membaca tidak valid untuk siswa ID: ${student.studentId}`,
           );
           return;
         }
@@ -191,10 +226,15 @@ export default function BulkCreateDailyReportPage() {
           }
 
           // Add Tahfidz Progress
-          if (r.tahfidzSurahName && r.tahfidzAyahStart && r.tahfidzAyahEnd) {
+          if (
+            r.tahfidzSurahName &&
+            r.tahfidzSurahNumber &&
+            r.tahfidzAyahStart &&
+            r.tahfidzAyahEnd
+          ) {
             reportPayload.tahfidzProgress = {
               surahName: r.tahfidzSurahName,
-              surahNumber: parseInt(r.tahfidzSurahNumber) || 0,
+              surahNumber: parseInt(r.tahfidzSurahNumber),
               ayahStart: parseInt(r.tahfidzAyahStart),
               ayahEnd: parseInt(r.tahfidzAyahEnd),
             };

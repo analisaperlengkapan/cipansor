@@ -291,6 +291,12 @@ export const dailyReportService = {
       select: { type: true },
     });
 
+    // Get teacher record for KitabProgress (userId is User.id, need Teacher.id)
+    const teacher = await prisma.teacher.findUnique({
+      where: { userId },
+      select: { id: true },
+    });
+
     const studentIds = data.reports.map((r) => r.studentId);
 
     // 1. Batch fetch existing reports to identify duplicates
@@ -374,30 +380,36 @@ export const dailyReportService = {
           validReports.map(async (report) => {
             // Update Reading Progress (Iqra/Kitab)
             if (report.readingProgress) {
-              try {
-                await prisma.kitabProgress.upsert({
-                  where: {
-                    kitabId_studentId_academicYearId: {
+              if (teacher) {
+                try {
+                  await prisma.kitabProgress.upsert({
+                    where: {
+                      kitabId_studentId_academicYearId: {
+                        kitabId: report.readingProgress.bookId,
+                        studentId: report.studentId,
+                        academicYearId: data.academicYearId,
+                      },
+                    },
+                    update: {
+                      currentPage: report.readingProgress.page,
+                      teacherId: teacher.id,
+                    },
+                    create: {
                       kitabId: report.readingProgress.bookId,
                       studentId: report.studentId,
                       academicYearId: data.academicYearId,
+                      teacherId: teacher.id,
+                      currentPage: report.readingProgress.page,
                     },
-                  },
-                  update: {
-                    currentPage: report.readingProgress.page,
-                    teacherId: userId, // Assuming current user is teacher
-                  },
-                  create: {
-                    kitabId: report.readingProgress.bookId,
-                    studentId: report.studentId,
-                    academicYearId: data.academicYearId,
-                    teacherId: userId, // Assuming current user is teacher
-                    currentPage: report.readingProgress.page,
-                  },
-                });
-              } catch (err) {
-                logger.error(
-                  `Failed to update Reading Progress for ${report.studentId}: ${err}`
+                  });
+                } catch (err) {
+                  logger.error(
+                    `Failed to update Reading Progress for ${report.studentId}: ${err}`
+                  );
+                }
+              } else {
+                logger.warn(
+                  `Skipped Reading Progress for ${report.studentId}: User ${userId} is not a Teacher`
                 );
               }
             }

@@ -119,7 +119,7 @@ router.get('/id-cards/templates', hasPermission(PERMISSIONS.STUDENT_VIEW), IdCar
  *       200:
  *         description: Verification result with student data
  */
-router.post('/id-cards/verify', IdCardController.verifyQRCode); // No permission check needed for verification
+router.post('/id-cards/verify', IdCardController.verifyQRCode); // Publicly accessible for verification (e.g. security guards)
 
 /**
  * @swagger
@@ -138,7 +138,7 @@ router.post('/id-cards/verify', IdCardController.verifyQRCode); // No permission
  *       200:
  *         description: Verification result
  */
-router.get('/id-cards/verify', IdCardController.verifyQRCodeGet); // No permission check needed for verification
+router.get('/id-cards/verify', IdCardController.verifyQRCodeGet); // Publicly accessible for verification (e.g. security guards)
 
 /**
  * @swagger

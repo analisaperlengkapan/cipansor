@@ -53,8 +53,11 @@ export const createRisk = asyncHandler(async (req: Request, res: Response) => {
     }
   }
 
+  // Destructure to remove unitId from spread, preventing Prisma conflict
+  const { unitId: _, ...rest } = body;
+
   const risk = await riskService.createRisk({
-    ...body,
+    ...rest,
     unit: { connect: { id: targetUnitId } },
     createdBy: { connect: { id: userId } },
   });

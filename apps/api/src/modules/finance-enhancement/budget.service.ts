@@ -96,21 +96,33 @@ export async function getBudgets(query: {
 }
 
 export async function deleteBudget(id: string) {
-  const budget = await prisma.budget.findUnique({
-    where: { id },
+  // Check for Purchase Request dependencies first
+  const purchaseRequestCount = await prisma.purchaseRequestItem.count({
+    where: { budgetId: id },
   });
 
-  if (!budget) {
-    throw new Error('Budget not found');
+  if (purchaseRequestCount > 0) {
+    throw new Error('Cannot delete budget referenced by Purchase Requests');
   }
 
-  if (budget.usedAmount.toNumber() > 0) {
+  // Use atomic delete with condition to prevent race condition
+  const result = await prisma.budget.deleteMany({
+    where: {
+      id,
+      usedAmount: { equals: 0 },
+    },
+  });
+
+  if (result.count === 0) {
+    // Determine why it failed
+    const budget = await prisma.budget.findUnique({ where: { id } });
+    if (!budget) {
+      throw new Error('Budget not found');
+    }
     throw new Error('Cannot delete budget with existing usage');
   }
 
-  return prisma.budget.delete({
-    where: { id },
-  });
+  return { success: true };
 }
 
 export async function recalculateBudgetUsage(unitId: string, academicYearId: string) {

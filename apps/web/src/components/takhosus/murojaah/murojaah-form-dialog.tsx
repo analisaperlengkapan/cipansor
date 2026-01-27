@@ -139,14 +139,17 @@ export function MurojaahFormDialog({
     },
   });
 
-  // Reset form when dialog closes
+  // Reset form when dialog state changes
   useEffect(() => {
     if (!isOpen) {
       form.reset();
       setMistakes([]);
       setSelectedStudentId("");
+    } else if (!initialData) {
+      // Ensure date is fresh when opening in create mode
+      form.setValue("murojaahDate", new Date());
     }
-  }, [isOpen, form]);
+  }, [isOpen, form, initialData]);
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {

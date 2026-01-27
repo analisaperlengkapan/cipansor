@@ -23,31 +23,34 @@ export class SecretsService {
     const encryptedValue = encrypt(data.value);
     const targetUnitId = data.unitId || null;
 
-    // Manual upsert to handle potential unique constraint issues with NULL unitId in Postgres
-    const existing = await prisma.systemSecret.findFirst({
-      where: {
-        key: data.key,
-        unitId: targetUnitId,
-      },
-    });
+    // Wrap in transaction to mitigate race conditions
+    return prisma.$transaction(async (tx) => {
+      // Manual upsert to handle potential unique constraint issues with NULL unitId in Postgres
+      const existing = await tx.systemSecret.findFirst({
+        where: {
+          key: data.key,
+          unitId: targetUnitId,
+        },
+      });
 
-    if (existing) {
-      return prisma.systemSecret.update({
-        where: { id: existing.id },
+      if (existing) {
+        return tx.systemSecret.update({
+          where: { id: existing.id },
+          data: {
+            value: encryptedValue,
+            description: data.description,
+          },
+        });
+      }
+
+      return tx.systemSecret.create({
         data: {
+          unitId: targetUnitId,
+          key: data.key,
           value: encryptedValue,
           description: data.description,
         },
       });
-    }
-
-    return prisma.systemSecret.create({
-      data: {
-        unitId: targetUnitId,
-        key: data.key,
-        value: encryptedValue,
-        description: data.description,
-      },
     });
   }
 

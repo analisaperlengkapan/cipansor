@@ -100,8 +100,8 @@ async function main() {
   // ============================================
   // PHASE 8: Wilayah Indonesia & Kurikulum Merdeka
   // ============================================
-  await seedWilayahIndonesia();
-  await seedAccountCodes();
+  await seedWilayahIndonesia(prisma);
+  await seedAccountCodes(prisma);
 
   // Clean up existing data (in reverse order of dependencies)
   // Phase 6 cleanup
@@ -2334,7 +2334,7 @@ async function main() {
   console.log('✅ Subjects created');
 
   // Seed Kurikulum Merdeka Learning Outcomes (sekarang subjects sudah ada)
-  await seedKurikulumMerdeka(pesantren.id, academicYear.id);
+  await seedKurikulumMerdeka(prisma, pesantren.id, academicYear.id);
 
   // Assign teacher to subjects
   for (let i = 0; i < 4; i++) {
@@ -3064,8 +3064,8 @@ async function main() {
   // ============================================
   // PHASE 9: PAUD Enhancement Seeds
   // ============================================
-  await seedPAUDIndicators();
-  await seedImmunizationReference();
+  await seedPAUDIndicators(prisma);
+  await seedImmunizationReference(prisma);
 
   console.log('\n✅ Database seeded successfully!');
 }

@@ -1,7 +1,5 @@
 import { PrismaClient, PAUDAspect } from '@prisma/client';
 
-const prisma = new PrismaClient();
-
 interface IndicatorSeed {
   aspect: PAUDAspect;
   code: string;
@@ -606,7 +604,7 @@ const indicators: IndicatorSeed[] = [
   },
 ];
 
-export async function seedPAUDIndicators() {
+export async function seedPAUDIndicators(prisma: PrismaClient) {
   console.log('🌱 Seeding PAUD Development Indicators...');
 
   for (const indicator of indicators) {
@@ -646,7 +644,8 @@ export async function seedPAUDIndicators() {
 
 // Run if called directly
 if (require.main === module) {
-  seedPAUDIndicators()
+  const prisma = new PrismaClient();
+  seedPAUDIndicators(prisma)
     .catch((e) => {
       console.error(e);
       process.exit(1);

@@ -377,6 +377,7 @@ export const donationService = {
 
         if (unitId) {
           // 1. Determine Debit Account (Asset: Bank/Cash)
+          // Tries to match account name based on payment method (e.g., "Bank" or "Kas")
           let assetAccount = await tx.accountCode.findFirst({
             where: {
               name: {
@@ -392,7 +393,7 @@ export const donationService = {
             },
           });
 
-          // Fallback if not found
+          // Fallback: Use the first available Asset account if specific one is not found
           if (!assetAccount) {
              assetAccount = await tx.accountCode.findFirst({
                where: {
@@ -403,7 +404,7 @@ export const donationService = {
           }
 
           // 2. Determine Credit Account (Revenue: Pendapatan Donasi)
-          // Map DonationType to Account Keywords
+          // Map DonationType to Account Keywords for intelligent account matching
           const revenueKeywords: Record<string, string> = {
             INFAK: 'Infak',
             ZAKAT: 'Zakat',
@@ -424,7 +425,7 @@ export const donationService = {
             },
           });
 
-          // Fallback to generic donation revenue
+          // Fallback 1: Try generic "Donasi" revenue account
           if (!revenueAccount) {
             revenueAccount = await tx.accountCode.findFirst({
               where: {
@@ -435,7 +436,7 @@ export const donationService = {
             });
           }
 
-          // Last Resort Fallback
+          // Fallback 2: Last resort, use any Revenue account (starts with '4')
           if (!revenueAccount) {
              revenueAccount = await tx.accountCode.findFirst({
                where: {

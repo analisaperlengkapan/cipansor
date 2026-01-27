@@ -53,15 +53,6 @@ import {
 } from "recharts";
 import { useMemo } from "react";
 
-const CHART_COLORS = [
-  "#22c55e",
-  "#3b82f6",
-  "#f59e0b",
-  "#ef4444",
-  "#8b5cf6",
-  "#ec4899",
-];
-
 export default function DashboardPage() {
   const { user } = useAuthStore();
   const { data: stats, isLoading } = useDashboardStats();

@@ -21,7 +21,7 @@ export const createMitigationSchema = z.object({
   strategy: z.nativeEnum(MitigationStrategy),
   actionPlan: z.string().min(5),
   picId: z.string().uuid().optional(),
-  deadline: z.string().transform((str) => new Date(str)).optional(),
+  deadline: z.string().optional().transform((str) => str ? new Date(str) : undefined),
   notes: z.string().optional(),
 });
 

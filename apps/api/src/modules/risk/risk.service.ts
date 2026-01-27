@@ -91,6 +91,13 @@ export class RiskService {
     });
   }
 
+  async getMitigationById(id: string): Promise<(RiskMitigation & { risk: Risk }) | null> {
+    return prisma.riskMitigation.findUnique({
+      where: { id },
+      include: { risk: true }
+    });
+  }
+
   async updateMitigation(id: string, data: Prisma.RiskMitigationUpdateInput): Promise<RiskMitigation> {
     return prisma.riskMitigation.update({
       where: { id },

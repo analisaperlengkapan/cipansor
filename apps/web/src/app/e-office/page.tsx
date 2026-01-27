@@ -277,7 +277,6 @@ export default function EOfficeMainPage() {
                   <Area
                     type="monotone"
                     dataKey="incoming"
-                    stackId="1"
                     stroke="#2563eb"
                     fill="#3b82f6"
                     fillOpacity={0.2}
@@ -286,7 +285,6 @@ export default function EOfficeMainPage() {
                   <Area
                     type="monotone"
                     dataKey="outgoing"
-                    stackId="1"
                     stroke="#16a34a"
                     fill="#22c55e"
                     fillOpacity={0.2}

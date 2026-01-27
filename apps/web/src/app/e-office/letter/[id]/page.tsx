@@ -233,7 +233,7 @@ export default function LetterDetailPage({
               className="border-green-600 text-green-600 bg-green-50 gap-1"
             >
               <ShieldCheck className="h-3 w-3" />
-              Tanda Tangan Digital Valid
+              Status: Ditandatangani
             </Badge>
           )}
           <LetterStatusBadge status={letter.status} />
@@ -330,11 +330,25 @@ export default function LetterDetailPage({
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <iframe
-                  src={letter.fileUrl}
+                <object
+                  data={letter.fileUrl}
+                  type="application/pdf"
                   className="w-full h-[600px] rounded border bg-muted"
-                  title="PDF Preview"
-                />
+                >
+                  <div className="flex flex-col items-center justify-center h-full p-6 text-center text-muted-foreground">
+                    <FileText className="h-12 w-12 mb-2 opacity-50" />
+                    <p className="mb-2">Pratinjau tidak tersedia.</p>
+                    <Button variant="outline" size="sm" asChild>
+                      <a
+                        href={letter.fileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Unduh Dokumen
+                      </a>
+                    </Button>
+                  </div>
+                </object>
               </CardContent>
             </Card>
           )}

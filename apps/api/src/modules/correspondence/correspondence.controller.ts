@@ -17,7 +17,8 @@ export const CorrespondenceController = {
 
   async findAll(req: Request, res: Response, next: NextFunction) {
     try {
-      const unitId = req.query.unitId as string;
+      // Prioritize authenticated user's unitId to prevent IDOR
+      const unitId = req.user?.unitId || (req.query.unitId as string);
       if (!unitId) throw new Error('Unit ID is required');
 
       const result = await CorrespondenceService.getLetters(unitId, {

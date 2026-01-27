@@ -333,7 +333,7 @@ export const CorrespondenceService = {
       throw new Error('Unauthorized access to this disposition');
     }
 
-    return await prisma.disposition.update({
+    const updatedDisposition = await prisma.disposition.update({
       where: { id },
       data: {
         status,
@@ -362,7 +362,7 @@ export const CorrespondenceService = {
       });
     }
 
-    return await prisma.disposition.findUnique({ where: { id } });
+    return updatedDisposition;
   },
 
   async getDashboardStats(unitId: string) {

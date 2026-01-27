@@ -23,8 +23,27 @@ export async function runMonthlyDepreciation(unitId: string, date: Date, userId:
   const startOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
   const endOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0);
 
+  // Optimization: Fetch all existing depreciation journals for this month in one query
+  const existingJournals = await prisma.journalEntry.findMany({
+    where: {
+      unitId,
+      referenceType: 'ASSET_DEPRECIATION',
+      date: {
+        gte: startOfMonth,
+        lte: endOfMonth,
+      },
+    },
+    select: { reference: true },
+  });
+
+  const processedAssetIds = new Set(existingJournals.map((j) => j.reference));
+
   for (const asset of assets) {
     try {
+      if (processedAssetIds.has(asset.id)) {
+        continue;
+      }
+
       const depreciation = await calculateDepreciation(asset.id);
 
       if (!depreciation) continue;
@@ -34,22 +53,6 @@ export async function runMonthlyDepreciation(unitId: string, date: Date, userId:
 
       const amount = depreciation.monthlyDepreciation;
       if (amount <= 0) continue;
-
-      // Check if depreciation already run for this month
-      const existing = await prisma.journalEntry.findFirst({
-        where: {
-          reference: asset.id,
-          referenceType: 'ASSET_DEPRECIATION',
-          date: {
-            gte: startOfMonth,
-            lte: endOfMonth,
-          },
-        },
-      });
-
-      if (existing) {
-        continue; // Already depreciated this month
-      }
 
       await createDepreciationJournal(asset, amount, date, userId);
       results.journals++;

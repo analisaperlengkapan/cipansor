@@ -46,7 +46,7 @@ export async function runMonthlyDepreciation(unitId: string, date: Date, userId:
           continue;
         }
 
-        const depreciation = await calculateDepreciation(asset.id);
+        const depreciation = await calculateDepreciation(asset.id, tx);
 
         if (!depreciation) continue;
 

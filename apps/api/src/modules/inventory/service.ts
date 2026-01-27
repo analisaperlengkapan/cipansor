@@ -677,8 +677,8 @@ export async function completeAudit(id: string) {
 
 // ==================== DEPRECIATION ====================
 
-export async function calculateDepreciation(assetId: string) {
-  const asset = await prisma.asset.findUnique({ where: { id: assetId } });
+export async function calculateDepreciation(assetId: string, tx: Prisma.TransactionClient = prisma) {
+  const asset = await tx.asset.findUnique({ where: { id: assetId } });
   if (!asset || !asset.purchasePrice || !asset.purchaseDate || !asset.usefulLife) {
     return null;
   }

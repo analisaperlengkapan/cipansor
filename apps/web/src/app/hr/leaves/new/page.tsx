@@ -100,7 +100,7 @@ export default function NewLeavePage() {
   const selectedLeaveType = form.watch("leaveType");
 
   const { data: leaveBalances } = useLeaveBalances(
-    selectedEmployee?.id || "",
+    selectedEmployee?.userId || selectedEmployee?.user?.id || "",
     activeAcademicYear?.id
   );
 

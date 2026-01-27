@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { format, startOfMonth, endOfMonth } from "date-fns";
+import { format, startOfMonth, endOfMonth, parse } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 import {
   ArrowLeft,
@@ -90,7 +90,8 @@ export default function ParentChildIbadahPage() {
         setLoading(true);
 
         // Calculate date range from selected month
-        const date = new Date(month);
+        // Parse "yyyy-MM" to Date object safely to avoid timezone issues
+        const date = parse(month, "yyyy-MM", new Date());
         const startDate = format(startOfMonth(date), "yyyy-MM-dd");
         const endDate = format(endOfMonth(date), "yyyy-MM-dd");
 

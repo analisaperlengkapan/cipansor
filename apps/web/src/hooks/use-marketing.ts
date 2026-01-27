@@ -152,6 +152,22 @@ export const useUpdateCampaign = () => {
   });
 };
 
+// Public Campaign Lookup
+export const usePublicCampaign = (code?: string | null) => {
+  return useQuery({
+    queryKey: ["marketing", "public", "campaign", code],
+    queryFn: async () => {
+      const { data } = await api.get<{
+        success: boolean;
+        data: MarketingCampaign;
+      }>(`/marketing/public/campaigns/code/${code}`);
+      return data.data;
+    },
+    enabled: !!code,
+    retry: false,
+  });
+};
+
 // Interactions
 export const useInteractions = (registrantId: string) => {
   return useQuery({

@@ -73,6 +73,19 @@ export const getCampaignById = async (req: Request, res: Response, next: NextFun
   }
 };
 
+export const getCampaignByCode = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { code } = req.params;
+    const campaign = await marketingService.getCampaignByCode(code);
+    if (!campaign) {
+      return res.status(404).json({ success: false, message: 'Campaign not found' });
+    }
+    res.json({ success: true, data: campaign });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const logInteraction = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const data = logInteractionSchema.parse(req.body);

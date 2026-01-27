@@ -12,6 +12,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { PageHeader } from "@/components/shared/page-header";
+import { useAuthStore } from "@/stores/auth";
+import { useQuery } from "@tanstack/react-query";
 
 const RiskCategory = ["STRATEGIC", "FINANCIAL", "OPERATIONAL", "COMPLIANCE", "REPUTATIONAL", "SAFETY", "OTHER"] as const;
 const RiskLikelihood = ["RARE", "UNLIKELY", "POSSIBLE", "LIKELY", "ALMOST_CERTAIN"] as const;
@@ -25,10 +27,30 @@ const formSchema = z.object({
   consequence: z.string().optional(),
   likelihood: z.enum(RiskLikelihood),
   impact: z.enum(RiskImpact),
+  unitId: z.string().optional(),
 });
+
+const PRIVILEGED_ROLES = [
+  "SUPER_ADMIN",
+  "YAYASAN_ADMIN",
+  "YAYASAN_KETUA"
+];
 
 export default function CreateRiskPage() {
   const router = useRouter();
+  const { user } = useAuthStore();
+
+  const isPrivileged = user?.role && PRIVILEGED_ROLES.includes(user.role);
+
+  const { data: units } = useQuery({
+    queryKey: ["units"],
+    queryFn: async () => {
+      const res = await api.get("/units");
+      return res.data.data; // Assuming response structure { data: Unit[] }
+    },
+    enabled: !!isPrivileged,
+  });
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -39,10 +61,18 @@ export default function CreateRiskPage() {
       consequence: "",
       likelihood: "POSSIBLE",
       impact: "MODERATE",
+      unitId: "", // Optional, only required for privileged users without context
     }
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    // If privileged and no unit selected, validation on backend will fail if unitId is required.
+    // We can add client side validation here if we want strictness.
+    if (isPrivileged && !values.unitId) {
+      form.setError("unitId", { message: "Unit is required for admin users" });
+      return;
+    }
+
     try {
       await api.post("/risk", values);
       toast.success("Risk created successfully");
@@ -63,6 +93,31 @@ export default function CreateRiskPage() {
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 mt-6 p-6 bg-white rounded-lg border shadow-sm">
+
+          {isPrivileged && (
+            <FormField
+              control={form.control}
+              name="unitId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Unit</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select unit" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {units?.map((u: any) => (
+                        <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
 
           <FormField
             control={form.control}

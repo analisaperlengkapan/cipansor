@@ -556,6 +556,16 @@ const yayasanNavigation: NavGroup[] = [
     ],
   },
   {
+    title: "Risk Management",
+    items: [
+      {
+        title: "Manajemen Risiko",
+        href: "/risk-management",
+        icon: Shield,
+      },
+    ],
+  },
+  {
     title: "Pengumuman",
     items: [
       {
@@ -983,6 +993,16 @@ const adminNavigation: NavGroup[] = [
       {
         title: "Teacher Compliance",
         href: "/compliance/teachers",
+        icon: Shield,
+      },
+    ],
+  },
+  {
+    title: "Risk Management",
+    items: [
+      {
+        title: "Manajemen Risiko",
+        href: "/risk-management",
         icon: Shield,
       },
     ],

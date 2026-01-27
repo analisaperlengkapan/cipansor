@@ -394,6 +394,11 @@ model User {
   sentDispositions                  Disposition[]               @relation("DispositionSender")
   receivedDispositions              Disposition[]               @relation("DispositionRecipient")
 
+  // Risk Management
+  createdRisks                      Risk[]                      @relation("RiskCreator")
+  assignedMitigations               RiskMitigation[]            @relation("MitigationPIC")
+  createdMitigations                RiskMitigation[]            @relation("MitigationCreator")
+
   @@index([email])
   @@index([role])
   @@index([unitId])
@@ -527,6 +532,9 @@ model Unit {
   qualityAudits          QualityAudit[]
   assignments            Assignment[]
   questionBanks          QuestionBank[]
+
+  // Risk Management
+  risks                  Risk[]
 
   @@index([type])
   @@index([foundationId])
@@ -713,6 +721,9 @@ model AcademicYear {
   qualityEvidences      QualityEvidence[]
   qualityAudits         QualityAudit[]
   assignments           Assignment[]
+
+  // Risk Management
+  risks                 Risk[]
 
   @@index([isActive])
   @@map("academic_years")
@@ -6998,4 +7009,114 @@ model AssignmentSubmission {
   @@index([assignmentId])
   @@index([studentId])
   @@map("assignment_submissions")
+}
+
+// =====================================
+// RISK MANAGEMENT (MANAJEMEN RISIKO)
+// =====================================
+
+enum RiskCategory {
+  STRATEGIC
+  FINANCIAL
+  OPERATIONAL
+  COMPLIANCE
+  REPUTATIONAL
+  SAFETY
+  OTHER
+}
+
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+  EXTREME
+}
+
+enum RiskLikelihood {
+  RARE // 1
+  UNLIKELY // 2
+  POSSIBLE // 3
+  LIKELY // 4
+  ALMOST_CERTAIN // 5
+}
+
+enum RiskImpact {
+  INSIGNIFICANT // 1
+  MINOR // 2
+  MODERATE // 3
+  MAJOR // 4
+  CATASTROPHIC // 5
+}
+
+enum MitigationStrategy {
+  AVOID
+  REDUCE
+  SHARE
+  ACCEPT
+}
+
+/// Risk - Identifikasi dan Analisis Risiko
+model Risk {
+  id              String         @id @default(uuid())
+  unitId          String         @map("unit_id")
+  academicYearId  String?        @map("academic_year_id")
+  code            String         // RSK-001 (Generated or Manual)
+  description     String         @db.Text
+  category        RiskCategory
+  cause           String?        @db.Text
+  consequence     String?        @db.Text
+
+  // Assessment (Inherent Risk - Before Mitigation)
+  likelihood      RiskLikelihood
+  impact          RiskImpact
+  riskScore       Int            // Calculated (Likelihood * Impact)
+  riskLevel       RiskLevel      // Calculated
+
+  // Owner
+  ownerId         String?        @map("owner_id") // User or Department
+
+  // Status
+  status          String         @default("OPEN") // OPEN, CLOSED, MONITORING
+
+  createdById     String         @map("created_by_id")
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+
+  // Relations
+  unit            Unit           @relation(fields: [unitId], references: [id])
+  academicYear    AcademicYear?  @relation(fields: [academicYearId], references: [id])
+  createdBy       User           @relation("RiskCreator", fields: [createdById], references: [id])
+  mitigations     RiskMitigation[]
+
+  @@index([unitId])
+  @@index([category])
+  @@index([riskLevel])
+  @@map("risks")
+}
+
+/// RiskMitigation - Rencana Penanganan Risiko
+model RiskMitigation {
+  id              String             @id @default(uuid())
+  riskId          String             @map("risk_id")
+  strategy        MitigationStrategy
+  actionPlan      String             @db.Text
+  picId           String?            @map("pic_id") // Person in charge
+  deadline        DateTime?
+
+  // Status
+  isCompleted     Boolean            @default(false) @map("is_completed")
+  progress        Int                @default(0) // 0-100%
+  notes           String?            @db.Text
+
+  createdById     String             @map("created_by_id")
+  createdAt       DateTime           @default(now()) @map("created_at")
+  updatedAt       DateTime           @updatedAt @map("updated_at")
+
+  // Relations
+  risk            Risk               @relation(fields: [riskId], references: [id], onDelete: Cascade)
+  pic             User?              @relation("MitigationPIC", fields: [picId], references: [id])
+  createdBy       User               @relation("MitigationCreator", fields: [createdById], references: [id])
+
+  @@index([riskId])
+  @@map("risk_mitigations")
 }

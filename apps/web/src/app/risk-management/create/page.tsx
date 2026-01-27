@@ -1,0 +1,198 @@
+"use client";
+
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { api } from "@/lib/api";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { PageHeader } from "@/components/shared/page-header";
+
+const RiskCategory = ["STRATEGIC", "FINANCIAL", "OPERATIONAL", "COMPLIANCE", "REPUTATIONAL", "SAFETY", "OTHER"] as const;
+const RiskLikelihood = ["RARE", "UNLIKELY", "POSSIBLE", "LIKELY", "ALMOST_CERTAIN"] as const;
+const RiskImpact = ["INSIGNIFICANT", "MINOR", "MODERATE", "MAJOR", "CATASTROPHIC"] as const;
+
+const formSchema = z.object({
+  code: z.string().min(3, "Code must be at least 3 characters"),
+  description: z.string().min(10, "Description must be at least 10 characters"),
+  category: z.enum(RiskCategory),
+  cause: z.string().optional(),
+  consequence: z.string().optional(),
+  likelihood: z.enum(RiskLikelihood),
+  impact: z.enum(RiskImpact),
+});
+
+export default function CreateRiskPage() {
+  const router = useRouter();
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      code: "",
+      description: "",
+      category: "OPERATIONAL",
+      cause: "",
+      consequence: "",
+      likelihood: "POSSIBLE",
+      impact: "MODERATE",
+    }
+  });
+
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    try {
+      await api.post("/risk", values);
+      toast.success("Risk created successfully");
+      router.push("/risk-management");
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to create risk");
+    }
+  }
+
+  return (
+    <div className="container mx-auto py-6 max-w-2xl">
+      <PageHeader
+        title="Create New Risk"
+        description="Identify and register a new risk."
+        backUrl="/risk-management"
+      />
+
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 mt-6 p-6 bg-white rounded-lg border shadow-sm">
+
+          <FormField
+            control={form.control}
+            name="code"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Risk Code</FormLabel>
+                <FormControl><Input placeholder="e.g. RSK-001" {...field} /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <div className="grid grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="category"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Category</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {RiskCategory.map((cat) => (
+                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <FormField
+            control={form.control}
+            name="description"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Description</FormLabel>
+                <FormControl><Textarea placeholder="Describe the risk..." {...field} /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <div className="grid grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="cause"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Cause</FormLabel>
+                  <FormControl><Textarea placeholder="Root cause..." {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="consequence"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Consequence</FormLabel>
+                  <FormControl><Textarea placeholder="Potential impact..." {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-md">
+            <FormField
+              control={form.control}
+              name="likelihood"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Likelihood</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select likelihood" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {RiskLikelihood.map((l) => (
+                        <SelectItem key={l} value={l}>{l}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="impact"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Impact</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select impact" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {RiskImpact.map((i) => (
+                        <SelectItem key={i} value={i}>{i}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => router.back()}>Cancel</Button>
+            <Button type="submit">Create Risk</Button>
+          </div>
+        </form>
+      </Form>
+    </div>
+  );
+}

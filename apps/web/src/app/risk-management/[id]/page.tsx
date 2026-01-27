@@ -90,8 +90,13 @@ export default function RiskDetailPage() {
         actions={
           <Button variant="destructive" size="sm" onClick={async () => {
             if(confirm("Delete this risk?")) {
-              await api.delete(`/risk/${id}`);
-              router.push("/risk-management");
+              try {
+                await api.delete(`/risk/${id}`);
+                toast.success("Risk deleted");
+                router.push("/risk-management");
+              } catch (error) {
+                toast.error("Failed to delete risk");
+              }
             }
           }}>Delete Risk</Button>
         }

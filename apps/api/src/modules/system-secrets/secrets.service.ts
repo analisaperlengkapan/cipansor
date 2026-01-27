@@ -21,29 +21,28 @@ export class SecretsService {
 
   static async upsert(data: { key: string; value: string; description?: string; unitId?: string | null }) {
     const encryptedValue = encrypt(data.value);
-
-    // We treat unitId undefined as null for global
     const targetUnitId = data.unitId || null;
 
-    // We must ensure the 'key' is unique per unit.
-    // The schema has @@unique([unitId, key])
-    // However, Prisma might have trouble with unique constraint involving nulls if not handled explicitly in 'where'
-    // But let's try standard upsert.
-
-    return prisma.systemSecret.upsert({
+    // Manual upsert to handle potential unique constraint issues with NULL unitId in Postgres
+    const existing = await prisma.systemSecret.findFirst({
       where: {
-        unitId_key: {
-          unitId: targetUnitId as string, // Cast to string because Prisma types might be strict, but actually it allows null if mapped correctly.
-                                          // If generated types for unitId_key.unitId include null, it's fine.
-                                          // Usually Prisma generates `unitId: string | null`.
-          key: data.key,
+        key: data.key,
+        unitId: targetUnitId,
+      },
+    });
+
+    if (existing) {
+      return prisma.systemSecret.update({
+        where: { id: existing.id },
+        data: {
+          value: encryptedValue,
+          description: data.description,
         },
-      },
-      update: {
-        value: encryptedValue,
-        description: data.description,
-      },
-      create: {
+      });
+    }
+
+    return prisma.systemSecret.create({
+      data: {
         unitId: targetUnitId,
         key: data.key,
         value: encryptedValue,
@@ -60,12 +59,10 @@ export class SecretsService {
 
   // Internal use only - to get decrypted value
   static async getValue(key: string, unitId: string | null = null) {
-     const secret = await prisma.systemSecret.findUnique({
+     const secret = await prisma.systemSecret.findFirst({
         where: {
-            unitId_key: {
-                unitId: unitId,
-                key: key
-            }
+            unitId: unitId,
+            key: key
         }
      });
      if (!secret) return null;

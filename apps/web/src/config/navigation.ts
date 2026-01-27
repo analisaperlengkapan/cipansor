@@ -1011,6 +1011,7 @@ const adminNavigation: NavGroup[] = [
         href: "/dashboard/settings/system-secrets",
         icon: Key,
         roleCodes: ["SUPER_ADMIN"],
+        roles: ["SUPER_ADMIN"], // Explicitly support legacy role
       },
     ],
   },

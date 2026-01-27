@@ -9,6 +9,7 @@ import {
 } from '@prisma/client';
 import { prisma } from '../../lib/prisma';
 import { createNotification } from '../notifications/service';
+import { createPurchaseJournal } from './asset-accounting.service';
 import type {
   CreateInventoryCategoryInput,
   UpdateInventoryCategoryInput,
@@ -159,35 +160,44 @@ export async function getItemById(id: string) {
   });
 }
 
-export async function createItem(data: CreateInventoryItemInput) {
-  return prisma.asset.create({
-    data: {
-      unitId: data.unitId,
-      categoryId: data.categoryId,
-      code: data.code,
-      name: data.name,
-      brand: data.brand,
-      model: data.model,
-      serialNumber: data.serialNumber,
-      purchaseDate: data.purchaseDate,
-      purchasePrice: data.purchasePrice,
-      supplier: data.supplier,
-      location: data.location,
-      roomId: data.roomId,
-      purchaseOrderNo: data.purchaseOrderNo,
-      usefulLife: data.usefulLife,
-      residualValue: data.residualValue,
-      condition: data.condition,
-      status: data.status,
-      warrantyExpiry: data.warrantyExpiry,
-      notes: data.notes,
-      photoUrl: data.photoUrl,
-    },
-    include: {
-      category: { select: { id: true, name: true, code: true } },
-      unit: { select: { id: true, name: true } },
-      room: { select: { id: true, name: true } },
-    },
+export async function createItem(data: CreateInventoryItemInput, userId?: string) {
+  return prisma.$transaction(async (tx) => {
+    const asset = await tx.asset.create({
+      data: {
+        unitId: data.unitId,
+        categoryId: data.categoryId,
+        code: data.code,
+        name: data.name,
+        brand: data.brand,
+        model: data.model,
+        serialNumber: data.serialNumber,
+        purchaseDate: data.purchaseDate,
+        purchasePrice: data.purchasePrice,
+        supplier: data.supplier,
+        location: data.location,
+        roomId: data.roomId,
+        purchaseOrderNo: data.purchaseOrderNo,
+        usefulLife: data.usefulLife,
+        residualValue: data.residualValue,
+        condition: data.condition,
+        status: data.status,
+        warrantyExpiry: data.warrantyExpiry,
+        notes: data.notes,
+        photoUrl: data.photoUrl,
+      },
+      include: {
+        category: { select: { id: true, name: true, code: true } },
+        unit: { select: { id: true, name: true } },
+        room: { select: { id: true, name: true } },
+      },
+    });
+
+    if (userId) {
+      // Propagate error to rollback transaction if journaling fails
+      await createPurchaseJournal(asset, userId, tx);
+    }
+
+    return asset;
   });
 }
 

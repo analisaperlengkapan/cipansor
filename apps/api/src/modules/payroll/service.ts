@@ -633,7 +633,7 @@ export const payrollPeriodService = {
     });
   },
 
-  async markAsPaid(id: string, payDate: Date, notes?: string) {
+  async markAsPaid(id: string, payDate: Date, notes?: string, userId: string = 'SYSTEM') {
     const period = await prisma.payrollPeriod.findUnique({ where: { id } });
 
     if (!period) {
@@ -652,7 +652,7 @@ export const payrollPeriodService = {
       });
 
       // Update period
-      return tx.payrollPeriod.update({
+      const updatedPeriod = await tx.payrollPeriod.update({
         where: { id },
         data: {
           status: 'PAID',
@@ -661,6 +661,111 @@ export const payrollPeriodService = {
           notes: notes || period.notes,
         },
       });
+
+      // INTEGRATION: Create Journal Entry
+      const agg = await tx.payroll.aggregate({
+        where: { periodId: id },
+        _sum: {
+          totalEarnings: true,
+          taxAmount: true,
+          netSalary: true,
+        },
+      });
+
+      const earnings = agg._sum.totalEarnings || new Prisma.Decimal(0);
+      const tax = agg._sum.taxAmount || new Prisma.Decimal(0);
+      const totalDeductions = agg._sum.totalDeductions || new Prisma.Decimal(0);
+      const net = agg._sum.netSalary || new Prisma.Decimal(0);
+      const otherDeductions = totalDeductions.sub(tax);
+
+      if (earnings.gt(0)) {
+        // Find Accounts (Defaulting to standard codes)
+        const salaryExpenseAcc = await tx.accountCode.findFirst({
+          where: { code: '5100', isActive: true },
+        });
+        const taxPayableAcc = await tx.accountCode.findFirst({
+          where: { code: '2103', isActive: true },
+        });
+        const otherPayableAcc = await tx.accountCode.findFirst({
+          where: {
+            OR: [{ code: '2199' }, { name: { contains: 'Utang Lain', mode: 'insensitive' } }],
+            isActive: true,
+          },
+        });
+        const cashAcc = await tx.accountCode.findFirst({
+          where: { code: '1101', isActive: true },
+        });
+
+        if (salaryExpenseAcc && cashAcc) {
+          const desc = `Penggajian Periode ${period.name}`;
+
+          // Debit Salaries Expense
+          await tx.journalEntry.create({
+            data: {
+              unitId: period.unitId,
+              date: payDate,
+              description: desc,
+              reference: period.id,
+              referenceType: 'PAYROLL',
+              accountId: salaryExpenseAcc.id,
+              debit: earnings,
+              credit: 0,
+              createdById: userId,
+            },
+          });
+
+          // Credit Cash (Net Salary)
+          await tx.journalEntry.create({
+            data: {
+              unitId: period.unitId,
+              date: payDate,
+              description: `Pembayaran Gaji ${period.name}`,
+              reference: period.id,
+              referenceType: 'PAYROLL',
+              accountId: cashAcc.id,
+              debit: 0,
+              credit: net,
+              createdById: userId,
+            },
+          });
+
+          // Credit Tax Payable
+          if (tax.gt(0) && taxPayableAcc) {
+            await tx.journalEntry.create({
+              data: {
+                unitId: period.unitId,
+                date: payDate,
+                description: `Penyetoran PPh 21 ${period.name}`,
+                reference: period.id,
+                referenceType: 'PAYROLL',
+                accountId: taxPayableAcc.id,
+                debit: 0,
+                credit: tax,
+                createdById: userId,
+              },
+            });
+          }
+
+          // Credit Other Payables
+          if (otherDeductions.gt(0) && otherPayableAcc) {
+            await tx.journalEntry.create({
+              data: {
+                unitId: period.unitId,
+                date: payDate,
+                description: `Potongan Lain ${period.name}`,
+                reference: period.id,
+                referenceType: 'PAYROLL',
+                accountId: otherPayableAcc.id,
+                debit: 0,
+                credit: otherDeductions,
+                createdById: userId,
+              },
+            });
+          }
+        }
+      }
+
+      return updatedPeriod;
     });
   },
 

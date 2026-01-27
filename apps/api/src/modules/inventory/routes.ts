@@ -120,4 +120,7 @@ router.put('/:id', authorize(UserRole.UNIT_ADMIN, UserRole.STAFF), controller.up
 router.delete('/:id', authorize(UserRole.UNIT_ADMIN), controller.deleteItem);
 router.post('/:id/dispose', authorize(UserRole.UNIT_ADMIN), controller.disposeAsset);
 
+// Depreciation
+router.post('/depreciation/run', authorize(UserRole.UNIT_ADMIN), controller.runDepreciation);
+
 export default router;

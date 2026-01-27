@@ -493,3 +493,81 @@ export async function getCashFlowStatement(
     endingCashBalance: endingCash,
   };
 }
+
+export async function getBudgetRealizationReport(unitId: string, academicYearId: string) {
+  const academicYear = await prisma.academicYear.findUnique({
+    where: { id: academicYearId },
+  });
+
+  if (!academicYear) throw new Error('Academic Year not found');
+
+  const budgets = await prisma.budget.findMany({
+    where: { unitId, academicYearId },
+    include: { account: true },
+  });
+
+  const start = academicYear.startDate;
+  const end = academicYear.endDate;
+
+  // Get Actuals
+  const accountIds = budgets.map((b) => b.accountId);
+
+  const actuals = await prisma.journalEntry.groupBy({
+    by: ['accountId'],
+    where: {
+      unitId,
+      accountId: { in: accountIds },
+      date: { gte: start, lte: end },
+    },
+    _sum: { debit: true, credit: true },
+  });
+
+  const actualMap = new Map<string, { debit: number; credit: number }>();
+  actuals.forEach((a) => {
+    const debit = a._sum.debit?.toNumber() || 0;
+    const credit = a._sum.credit?.toNumber() || 0;
+    actualMap.set(a.accountId, { debit, credit });
+  });
+
+  const items = budgets.map((b) => {
+    const act = actualMap.get(b.accountId) || { debit: 0, credit: 0 };
+    let actualAmount = 0;
+
+    if (b.account.type === AccountType.EXPENSE || b.account.type === AccountType.ASSET) {
+      actualAmount = act.debit - act.credit;
+    } else {
+      actualAmount = act.credit - act.debit;
+    }
+
+    const budgetAmount = b.amount.toNumber();
+    const variance = budgetAmount - actualAmount;
+    const percentage = budgetAmount > 0 ? (actualAmount / budgetAmount) * 100 : 0;
+
+    return {
+      accountId: b.accountId,
+      code: b.account.code,
+      name: b.account.name,
+      budgetAmount,
+      actualAmount,
+      variance,
+      percentage,
+    };
+  });
+
+  const totals = items.reduce(
+    (acc, item) => ({
+      budget: acc.budget + item.budgetAmount,
+      actual: acc.actual + item.actualAmount,
+      variance: acc.variance + item.variance,
+    }),
+    { budget: 0, actual: 0, variance: 0 }
+  );
+
+  return {
+    items,
+    totals: {
+      ...totals,
+      percentage: totals.budget > 0 ? (totals.actual / totals.budget) * 100 : 0,
+    },
+  };
+}

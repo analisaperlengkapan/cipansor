@@ -202,16 +202,16 @@ export default function ParentChildIbadahPage() {
           <Card className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950 dark:to-amber-950">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                Streak
+                Streak (Maksimal)
               </CardTitle>
               <Flame className="h-4 w-4 text-orange-600" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-orange-700">
-                {stats.summary.currentStreak} Hari
+                {stats.summary.maxStreak} Hari
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                Konsistensi berturut-turut
+                Rekor konsistensi terbaik
               </p>
             </CardContent>
           </Card>

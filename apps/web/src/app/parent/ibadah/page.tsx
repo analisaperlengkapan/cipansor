@@ -44,6 +44,7 @@ export default function ParentIbadahPage() {
         // If only one child, redirect immediately
         if (childrenData.length === 1) {
           router.replace(`/parent/ibadah/${childrenData[0].id}`);
+          return; // Prevent flash of content by keeping loading true during redirect
         }
       } catch (err) {
         console.error("Failed to fetch children:", err);

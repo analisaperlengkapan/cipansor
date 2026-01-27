@@ -14,6 +14,8 @@ import {
   useAttendanceStats,
   useFinanceStats,
   useViolationRewardStats,
+  useTahfidzStats,
+  useTahfidzRecords,
 } from "@/hooks";
 import { useStudents } from "@/hooks/use-students";
 import { useHealthSummary } from "@/hooks/use-health";
@@ -68,7 +70,12 @@ export default function DashboardPage() {
   const { data: financeData } = useFinanceStats();
 
   // New hooks for enhanced dashboard
-  const { data: violationData } = useViolationRewardStats({ period: "month" });
+  const { data: tahfidzData, isLoading: tahfidzLoading } = useTahfidzStats({
+    period: "month",
+  });
+  const { data: recentTahfidz } = useTahfidzRecords({ limit: 5 });
+  const { data: violationData, isLoading: violationLoading } =
+    useViolationRewardStats({ period: "month" });
   const { data: healthData } = useHealthSummary();
   const { data: recentStudents } = useStudents({ limit: 5, status: "ACTIVE" }); // Assume default sort is filtered by new/active
 
@@ -82,6 +89,14 @@ export default function DashboardPage() {
         time: s.createdAt,
         type: "student",
         rawTime: new Date(s.createdAt).getTime(),
+      })) || []),
+      ...(recentTahfidz?.data?.map((t: any) => ({
+        id: t.id,
+        title: "Setoran Hafalan",
+        description: `${t.student?.user?.name || "Santri"} - QS. ${t.surahName} : ${t.ayahStart}-${t.ayahEnd}`,
+        time: t.recordedAt,
+        type: "tahfidz",
+        rawTime: new Date(t.recordedAt).getTime(),
       })) || []),
       ...(violationData?.recentViolations?.map((v) => ({
         id: v.id,
@@ -110,7 +125,7 @@ export default function DashboardPage() {
     ];
 
     return allActivities.sort((a, b) => b.rawTime - a.rawTime).slice(0, 5);
-  }, [recentStudents, violationData, financeData]);
+  }, [recentStudents, recentTahfidz, violationData, financeData]);
 
   return (
     <MainLayout>
@@ -159,7 +174,41 @@ export default function DashboardPage() {
         </div>
 
         {/* Secondary Stats Grid */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <StatsCard
+            title="Total Hafalan"
+            value={tahfidzData?.totalMemorized?.toLocaleString("id-ID") ?? "-"}
+            description="Total ayat dihafal"
+            icon={BookOpen}
+            isLoading={tahfidzLoading}
+          />
+          <StatsCard
+            title="Rata-rata Hafalan"
+            value={
+              tahfidzData?.averageJuz !== undefined
+                ? `${tahfidzData.averageJuz} Juz`
+                : "-"
+            }
+            description="Per santri"
+            icon={Award}
+            isLoading={tahfidzLoading}
+          />
+          <StatsCard
+            title="Pelanggaran"
+            value={violationData?.totalViolations ?? "-"}
+            description="Bulan ini"
+            icon={AlertTriangle}
+            variant="destructive"
+            isLoading={violationLoading}
+          />
+          <StatsCard
+            title="Penghargaan"
+            value={violationData?.totalRewards ?? "-"}
+            description="Bulan ini"
+            icon={Award}
+            variant="warning"
+            isLoading={violationLoading}
+          />
           <StatsCard
             title="Total Unit"
             value={stats?.totalUnits ?? "-"}
@@ -174,28 +223,128 @@ export default function DashboardPage() {
             icon={Calendar}
             isLoading={isLoading}
           />
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Pelanggaran</CardTitle>
-              <AlertTriangle className="h-4 w-4 text-red-500" />
+        </div>
+
+        {/* Tahfidz Section */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {/* Tahfidz Progress Chart */}
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BookOpen className="h-5 w-5" />
+                Progress Tahfidz (Bulanan)
+              </CardTitle>
+              <CardDescription>Jumlah ayat yang disetorkan</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-red-600">
-                {violationData?.totalViolations ?? "-"}
-              </div>
-              <p className="text-xs text-muted-foreground">Bulan ini</p>
+              {tahfidzLoading ? (
+                <div className="h-[250px] flex items-center justify-center">
+                  <div className="h-full w-full animate-pulse bg-muted rounded-md" />
+                </div>
+              ) : tahfidzData?.monthlyProgress &&
+                tahfidzData.monthlyProgress.length > 0 ? (
+                <ResponsiveContainer width="100%" height={250}>
+                  <BarChart
+                    data={tahfidzData.monthlyProgress}
+                    margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                  >
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      className="stroke-muted"
+                    />
+                    <XAxis dataKey="month" className="text-xs" />
+                    <YAxis className="text-xs" />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "hsl(var(--background))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: "8px",
+                      }}
+                    />
+                    <Bar
+                      dataKey="ayahCount"
+                      name="Ayat"
+                      fill="#8b5cf6"
+                      radius={[4, 4, 0, 0]}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-[250px] text-sm text-muted-foreground">
+                  Belum ada data tahfidz
+                </div>
+              )}
             </CardContent>
           </Card>
+
+          {/* Top Hafidz List */}
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Penghargaan</CardTitle>
-              <Award className="h-4 w-4 text-yellow-500" />
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Award className="h-5 w-5" />
+                Top 5 Hafidz
+              </CardTitle>
+              <CardDescription>Capaian hafalan terbanyak</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                {violationData?.totalRewards ?? "-"}
+              <div className="space-y-4">
+                {tahfidzLoading ? (
+                  Array(5)
+                    .fill(0)
+                    .map((_, i) => (
+                      <div
+                        key={i}
+                        className="flex items-center justify-between animate-pulse"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="h-8 w-8 rounded-full bg-muted" />
+                          <div className="space-y-1">
+                            <div className="h-4 w-32 bg-muted rounded" />
+                            <div className="h-3 w-20 bg-muted rounded" />
+                          </div>
+                        </div>
+                        <div className="space-y-1">
+                          <div className="h-4 w-10 bg-muted rounded" />
+                          <div className="h-3 w-16 bg-muted rounded" />
+                        </div>
+                      </div>
+                    ))
+                ) : tahfidzData?.topStudents &&
+                  tahfidzData.topStudents.length > 0 ? (
+                  tahfidzData.topStudents.map((student, i) => (
+                    <div
+                      key={student.id}
+                      className="flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-100 text-purple-600 font-bold text-sm">
+                          {i + 1}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">
+                            {student.studentName}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {student.unitName}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-bold text-purple-600">
+                          {student.totalJuz} Juz
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {(student.totalAyah ?? 0).toLocaleString()} Ayat
+                        </p>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center text-sm text-muted-foreground py-4">
+                    Belum ada data
+                  </div>
+                )}
               </div>
-              <p className="text-xs text-muted-foreground">Bulan ini</p>
             </CardContent>
           </Card>
         </div>
@@ -585,7 +734,7 @@ interface StatsCardProps {
   icon: React.ElementType;
   trend?: number;
   isLoading?: boolean;
-  negative?: boolean;
+  variant?: "default" | "destructive" | "warning" | "success";
 }
 
 function StatsCard({
@@ -595,26 +744,35 @@ function StatsCard({
   icon: Icon,
   trend,
   isLoading,
-  negative,
+  variant = "default",
 }: StatsCardProps) {
+  const getVariantStyles = () => {
+    switch (variant) {
+      case "destructive":
+        return { icon: "text-red-500", text: "text-red-600" };
+      case "warning":
+        return { icon: "text-yellow-500", text: "" };
+      case "success":
+        return { icon: "text-green-500", text: "text-green-600" };
+      default:
+        return { icon: "text-muted-foreground", text: "" };
+    }
+  };
+
+  const styles = getVariantStyles();
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        <Icon
-          className={`h-4 w-4 ${negative ? "text-red-500" : "text-muted-foreground"}`}
-        />
+        <Icon className={`h-4 w-4 ${styles.icon}`} />
       </CardHeader>
       <CardContent>
         {isLoading ? (
           <div className="h-8 w-20 animate-pulse rounded bg-muted" />
         ) : (
           <>
-            <div
-              className={`text-2xl font-bold ${negative ? "text-red-600" : ""}`}
-            >
-              {value}
-            </div>
+            <div className={`text-2xl font-bold ${styles.text}`}>{value}</div>
             <div className="flex items-center gap-1">
               <p className="text-xs text-muted-foreground">{description}</p>
               {trend !== undefined && trend !== 0 && (

@@ -76,7 +76,11 @@ export function StudentSelect({
           />
           <CommandList>
             <CommandEmpty>
-                {isLoading ? "Mencari..." : "Santri tidak ditemukan."}
+              {search.length < 2
+                ? "Ketik minimal 2 karakter..."
+                : isLoading
+                  ? "Mencari..."
+                  : "Santri tidak ditemukan."}
             </CommandEmpty>
             <CommandGroup>
               {students?.map((student) => (

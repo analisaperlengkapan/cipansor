@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -138,6 +138,15 @@ export function MurojaahFormDialog({
       mistakes: [],
     },
   });
+
+  // Reset form when dialog closes
+  useEffect(() => {
+    if (!isOpen) {
+      form.reset();
+      setMistakes([]);
+      setSelectedStudentId("");
+    }
+  }, [isOpen, form]);
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {

@@ -4,27 +4,8 @@ import { id } from "date-fns/locale";
 
 import { LetterDetail } from "@cipansor/shared";
 
-interface ExtendedLetterDetail extends LetterDetail {
-  unit?: {
-    name: string;
-    address: string;
-    phone?: string;
-    email?: string;
-    logoUrl?: string;
-  };
-  reviewers?: Array<{
-    reviewer?: {
-      name: string;
-      teacher?: { nip: string | null };
-      staff?: { nip: string | null };
-    };
-    isSigner: boolean;
-    status: string;
-  }>;
-}
-
 interface LetterPDFTemplateProps {
-  letter: ExtendedLetterDetail;
+  letter: LetterDetail;
 }
 
 export const LetterPDFTemplate = forwardRef<HTMLDivElement, LetterPDFTemplateProps>(

@@ -94,11 +94,34 @@ export default function LetterDetailPage({
       toast.info("Sedang menyiapkan PDF...");
       const canvas = await html2canvas(pdfRef.current, { scale: 2, useCORS: true });
       const imgData = canvas.toDataURL("image/png");
+
       const pdf = new jsPDF("p", "mm", "a4");
       const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      const pdfHeight = pdf.internal.pageSize.getHeight();
 
-      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+      const imgWidth = canvas.width;
+      const imgHeight = canvas.height;
+
+      const ratio = pdfWidth / imgWidth;
+      const scaledHeight = imgHeight * ratio;
+
+      let heightLeft = scaledHeight;
+      let position = 0;
+      let page = 1;
+
+      // Add first page
+      pdf.addImage(imgData, "PNG", 0, position, pdfWidth, scaledHeight);
+      heightLeft -= pdfHeight;
+
+      // Add remaining pages
+      while (heightLeft > 0) {
+        position = heightLeft - scaledHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, "PNG", 0, position, pdfWidth, scaledHeight);
+        heightLeft -= pdfHeight;
+        page++;
+      }
+
       pdf.save(`Surat-${letter.letterNumber || "Draft"}.pdf`);
       toast.success("Surat berhasil diunduh");
     } catch (error) {
@@ -232,6 +255,42 @@ export default function LetterDetailPage({
           </div>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={completeDialogOpen} onOpenChange={setCompleteDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Selesaikan Disposisi</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label>Catatan Penyelesaian</Label>
+              <Textarea
+                placeholder="Tuliskan laporan hasil tindak lanjut..."
+                value={completeNotes}
+                onChange={(e) => setCompleteNotes(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-3">
+            <Button
+              variant="outline"
+              onClick={() => setCompleteDialogOpen(false)}
+            >
+              Batal
+            </Button>
+            <Button
+              onClick={async () => {
+                await handleUpdateDisposition("COMPLETED", completeNotes);
+                setCompleteDialogOpen(false);
+              }}
+              disabled={isUpdating}
+            >
+              {isUpdating ? "Menyimpan..." : "Selesai"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Hidden PDF Template */}
       <div className="fixed left-[-9999px] top-0">
         <LetterPDFTemplate ref={pdfRef} letter={letter} />

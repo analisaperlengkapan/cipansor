@@ -340,7 +340,7 @@ export const CorrespondenceService = {
       throw new Error('Unauthorized access to this disposition');
     }
 
-    return await prisma.disposition.update({
+    const result = await prisma.disposition.update({
       where: { id },
       data: {
         status,

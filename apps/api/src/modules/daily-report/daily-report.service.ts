@@ -349,6 +349,14 @@ export const dailyReportService = {
       validReports.push(report);
     }
 
+    // Check if reading progress is present but user is not a teacher
+    const hasReadingProgress = validReports.some((r) => r.readingProgress);
+    if (hasReadingProgress && !teacher) {
+      throw new Error(
+        'Cannot record reading progress: User is not a registered Teacher. Please contact administrator.'
+      );
+    }
+
     if (validReports.length > 0) {
       try {
         await prisma.dailyStudentReport.createMany({

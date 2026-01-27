@@ -280,7 +280,7 @@ function AccountCodesTab() {
                     Memuat data...
                   </TableCell>
                 </TableRow>
-              ) : accountCodesData?.data.length === 0 ? (
+              ) : flattenedData.length === 0 ? (
                 <TableRow>
                   <TableCell
                     colSpan={5}

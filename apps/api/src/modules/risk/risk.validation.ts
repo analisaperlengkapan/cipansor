@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { RiskCategory, RiskLikelihood, RiskImpact, MitigationStrategy } from '@prisma/client';
 
 export const createRiskSchema = z.object({
+  unitId: z.string().uuid().optional(),
   academicYearId: z.string().uuid().optional(),
   code: z.string().min(3),
   description: z.string().min(10),
@@ -26,6 +27,7 @@ export const createMitigationSchema = z.object({
 });
 
 export const updateMitigationSchema = createMitigationSchema.partial().omit({ riskId: true }).extend({
+  picId: z.string().uuid().nullable().optional(),
   isCompleted: z.boolean().optional(),
   progress: z.number().min(0).max(100).optional(),
 });

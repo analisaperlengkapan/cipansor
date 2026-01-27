@@ -36,15 +36,26 @@ export const getRisk = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const createRisk = asyncHandler(async (req: Request, res: Response) => {
-  const unitId = req.user?.unitId;
   const userId = req.user?.sub;
-  if (!unitId || !userId) throw Errors.unauthorized('User context missing');
+  if (!userId) throw Errors.unauthorized('User context missing');
 
+  // Handle unitId resolution:
+  // 1. From User context (default)
+  // 2. From Request body (for SUPER_ADMIN without unitId)
   const body = createRiskSchema.parse(req.body);
+  let targetUnitId = req.user?.unitId;
+
+  if (!targetUnitId) {
+    if (req.user?.role === UserRole.SUPER_ADMIN && body.unitId) {
+      targetUnitId = body.unitId;
+    } else {
+      throw Errors.badRequest('Unit ID is required');
+    }
+  }
 
   const risk = await riskService.createRisk({
     ...body,
-    unit: { connect: { id: unitId } },
+    unit: { connect: { id: targetUnitId } },
     createdBy: { connect: { id: userId } },
   });
 
@@ -123,6 +134,9 @@ export const updateMitigation = asyncHandler(async (req: Request, res: Response)
   const data: any = { ...rest };
   if (picId) {
     data.pic = { connect: { id: picId } };
+  } else if (picId === null) {
+    // Explicitly null means disconnect
+    data.pic = { disconnect: true };
   }
 
   const mitigation = await riskService.updateMitigation(id, data);

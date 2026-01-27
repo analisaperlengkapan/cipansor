@@ -13,7 +13,7 @@ import { useActiveAcademicYear } from "@/hooks/use-academic-years";
 import { useQualityDashboard, useQualityStandards } from "@/hooks/use-quality";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, CheckCircle2 } from "lucide-react";
+import { ArrowRight, CheckCircle2, FileCheck } from "lucide-react";
 import Link from "next/link";
 
 export default function QualityDashboardPage() {
@@ -83,6 +83,25 @@ export default function QualityDashboardPage() {
               <p className="text-xs text-muted-foreground mt-2">
                 Rata-rata dari 8 Standar
               </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Audit Mutu Internal
+              </CardTitle>
+              <FileCheck className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-sm text-muted-foreground mb-4">
+                Kelola jadwal dan hasil audit internal secara berkala.
+              </div>
+              <Link href="/quality/audits">
+                <Button size="sm" className="w-full">
+                  Buka Menu Audit <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
             </CardContent>
           </Card>
         </div>

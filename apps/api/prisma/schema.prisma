@@ -394,6 +394,12 @@ model User {
   sentDispositions                  Disposition[]               @relation("DispositionSender")
   receivedDispositions              Disposition[]               @relation("DispositionRecipient")
 
+  // Project Management
+  managedProjects                   Project[]                   @relation("ProjectManager")
+  projectMemberships                ProjectMember[]
+  assignedTasks                     ProjectTask[]               @relation("TaskAssignee")
+  taskComments                      TaskComment[]
+
   @@index([email])
   @@index([role])
   @@index([unitId])
@@ -527,6 +533,7 @@ model Unit {
   qualityAudits          QualityAudit[]
   assignments            Assignment[]
   questionBanks          QuestionBank[]
+  projects               Project[]
 
   @@index([type])
   @@index([foundationId])
@@ -6998,4 +7005,122 @@ model AssignmentSubmission {
   @@index([assignmentId])
   @@index([studentId])
   @@map("assignment_submissions")
+}
+
+// =====================================
+// PROJECT MANAGEMENT MODULE
+// =====================================
+
+enum ProjectStatus {
+  PLANNING
+  IN_PROGRESS
+  ON_HOLD
+  COMPLETED
+  CANCELLED
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+model Project {
+  id          String        @id @default(uuid())
+  unitId      String        @map("unit_id")
+  name        String
+  description String?       @db.Text
+  status      ProjectStatus @default(PLANNING)
+  priority    TaskPriority  @default(MEDIUM)
+  startDate   DateTime?     @map("start_date")
+  endDate     DateTime?     @map("end_date")
+  managerId   String        @map("manager_id")
+  budget      Decimal?      @db.Decimal(15, 2)
+
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  // Relations
+  unit        Unit            @relation(fields: [unitId], references: [id])
+  manager     User            @relation("ProjectManager", fields: [managerId], references: [id])
+  members     ProjectMember[]
+  columns     ProjectColumn[]
+  tasks       ProjectTask[]
+
+  @@index([unitId])
+  @@index([status])
+  @@map("projects")
+}
+
+model ProjectMember {
+  id        String   @id @default(uuid())
+  projectId String   @map("project_id")
+  userId    String   @map("user_id")
+  role      String   @default("MEMBER") // MANAGER, MEMBER, VIEWER
+  joinedAt  DateTime @default(now()) @map("joined_at")
+
+  // Relations
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id])
+
+  @@unique([projectId, userId])
+  @@map("project_members")
+}
+
+model ProjectColumn {
+  id        String   @id @default(uuid())
+  projectId String   @map("project_id")
+  name      String
+  order     Int      @default(0)
+  color     String?  // Hex code
+
+  // Relations
+  project Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tasks   ProjectTask[]
+
+  @@index([projectId])
+  @@map("project_columns")
+}
+
+model ProjectTask {
+  id          String       @id @default(uuid())
+  projectId   String       @map("project_id")
+  columnId    String?      @map("column_id") // Nullable if not in board view yet
+  title       String
+  description String?      @db.Text
+  priority    TaskPriority @default(MEDIUM)
+  dueDate     DateTime?    @map("due_date")
+  assigneeId  String?      @map("assignee_id")
+  order       Int          @default(0)
+  checklist   Json?        // Simple checklist array
+
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  // Relations
+  project   Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  column    ProjectColumn? @relation(fields: [columnId], references: [id])
+  assignee  User?          @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  comments  TaskComment[]
+
+  @@index([projectId])
+  @@index([columnId])
+  @@index([assigneeId])
+  @@map("project_tasks")
+}
+
+model TaskComment {
+  id        String   @id @default(uuid())
+  taskId    String   @map("task_id")
+  userId    String   @map("user_id")
+  content   String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  task ProjectTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user User        @relation(fields: [userId], references: [id])
+
+  @@index([taskId])
+  @@map("task_comments")
 }

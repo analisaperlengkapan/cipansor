@@ -17,6 +17,7 @@ import {
 } from "@/hooks";
 import { useStudents } from "@/hooks/use-students";
 import { useHealthSummary } from "@/hooks/use-health";
+import { useDonationStats, useRecentDonations } from "@/hooks/use-donation";
 import {
   Users,
   GraduationCap,
@@ -71,6 +72,8 @@ export default function DashboardPage() {
   const { data: violationData } = useViolationRewardStats({ period: "month" });
   const { data: healthData } = useHealthSummary();
   const { data: recentStudents } = useStudents({ limit: 5, status: "ACTIVE" }); // Assume default sort is filtered by new/active
+  const { data: donationStats } = useDonationStats();
+  const { data: recentDonations } = useRecentDonations();
 
   // Combine activity feed
   const activities = useMemo(() => {
@@ -107,10 +110,18 @@ export default function DashboardPage() {
         type: "finance",
         rawTime: new Date(p.date).getTime(),
       })) || []),
+      ...(recentDonations?.map((d) => ({
+        id: d.id,
+        title: "Donasi Masuk",
+        description: `${d.donorName} - ${d.type} (Rp ${d.amount.toLocaleString("id-ID")})`,
+        time: d.createdAt,
+        type: "donation",
+        rawTime: new Date(d.createdAt).getTime(),
+      })) || []),
     ];
 
     return allActivities.sort((a, b) => b.rawTime - a.rawTime).slice(0, 5);
-  }, [recentStudents, violationData, financeData]);
+  }, [recentStudents, violationData, financeData, recentDonations]);
 
   return (
     <MainLayout>
@@ -196,6 +207,22 @@ export default function DashboardPage() {
                 {violationData?.totalRewards ?? "-"}
               </div>
               <p className="text-xs text-muted-foreground">Bulan ini</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">Donasi & Infak</CardTitle>
+              <Heart className="h-4 w-4 text-emerald-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-emerald-600">
+                {donationStats?.totalAmount
+                  ? `Rp ${(donationStats.totalAmount / 1000000).toFixed(1)}jt`
+                  : "-"}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {donationStats?.pendingVerification ?? 0} menunggu verifikasi
+              </p>
             </CardContent>
           </Card>
         </div>
@@ -663,6 +690,8 @@ function ActivityItem({ title, description, time, type }: ActivityItemProps) {
         return "bg-pink-500";
       case "finance":
         return "bg-emerald-500";
+      case "donation":
+        return "bg-teal-500";
       default:
         return "bg-primary";
     }

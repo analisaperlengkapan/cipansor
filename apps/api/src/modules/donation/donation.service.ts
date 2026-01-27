@@ -5,6 +5,7 @@ import {
   DonationPaymentMethod,
   CampaignStatus,
 } from '@prisma/client';
+import { AccountType, JournalReferenceType } from '@cipansor/shared';
 import {
   CreateCampaignInput,
   UpdateCampaignInput,
@@ -325,40 +326,159 @@ export const donationService = {
    * Verify donation and update campaign totals
    */
   async verify(id: string, verifiedById: string, input: VerifyDonationInput) {
-    const donation = await prisma.donation.findUnique({
-      where: { id },
-    });
+    return prisma.$transaction(async (tx) => {
+      const donation = await tx.donation.findUnique({
+        where: { id },
+        include: {
+          campaign: true
+        }
+      });
 
-    if (!donation) {
-      throw new Error('Donation not found');
-    }
+      if (!donation) {
+        throw new Error('Donation not found');
+      }
 
-    const updatedDonation = await prisma.donation.update({
-      where: { id },
-      data: {
-        status: input.status as DonationStatus,
-        verifiedById,
-        verifiedAt: new Date(),
-        ...(input.notes && { notes: input.notes }),
-      },
-      include: {
-        campaign: { select: { id: true, title: true, slug: true } },
-        verifiedBy: { select: { id: true, name: true } },
-      },
-    });
-
-    // If verified, update campaign totals
-    if (input.status === 'VERIFIED' && donation.campaignId) {
-      await prisma.donationCampaign.update({
-        where: { id: donation.campaignId },
+      const updatedDonation = await tx.donation.update({
+        where: { id },
         data: {
-          collectedAmount: { increment: donation.amount },
-          donorCount: { increment: 1 },
+          status: input.status as DonationStatus,
+          verifiedById,
+          verifiedAt: new Date(),
+          ...(input.notes && { notes: input.notes }),
+        },
+        include: {
+          campaign: { select: { id: true, title: true, slug: true } },
+          verifiedBy: { select: { id: true, name: true } },
         },
       });
-    }
 
-    return updatedDonation;
+      // If verified, update campaign totals
+      if (input.status === 'VERIFIED' && donation.campaignId) {
+        await tx.donationCampaign.update({
+          where: { id: donation.campaignId },
+          data: {
+            collectedAmount: { increment: donation.amount },
+            donorCount: { increment: 1 },
+          },
+        });
+      }
+
+      // =================================================================
+      // INTEGRATION: Create Journal Entry for Accounting
+      // =================================================================
+      if (input.status === 'VERIFIED') {
+        const unitId = donation.unitId || donation.campaign?.unitId;
+
+        if (unitId) {
+          // 1. Determine Debit Account (Asset: Bank/Cash)
+          let assetAccount = await tx.accountCode.findFirst({
+            where: {
+              name: {
+                contains: ['BANK_TRANSFER', 'QRIS', 'EWALLET'].includes(
+                  donation.paymentMethod
+                )
+                  ? 'Bank'
+                  : 'Kas',
+                mode: 'insensitive',
+              },
+              type: AccountType.ASSET,
+              isActive: true,
+            },
+          });
+
+          // Fallback if not found
+          if (!assetAccount) {
+             assetAccount = await tx.accountCode.findFirst({
+               where: {
+                 type: AccountType.ASSET,
+                 code: { startsWith: '1' }
+               }
+             });
+          }
+
+          // 2. Determine Credit Account (Revenue: Pendapatan Donasi)
+          // Map DonationType to Account Keywords
+          const revenueKeywords: Record<string, string> = {
+            INFAK: 'Infak',
+            ZAKAT: 'Zakat',
+            WAKAF: 'Wakaf',
+            BEASISWA: 'Beasiswa',
+            PEMBANGUNAN: 'Pembangunan'
+          };
+
+          const keyword = Object.keys(revenueKeywords).find(k => donation.type.includes(k))
+            ? revenueKeywords[Object.keys(revenueKeywords).find(k => donation.type.includes(k))!]
+            : 'Donasi';
+
+          let revenueAccount = await tx.accountCode.findFirst({
+            where: {
+              name: { contains: keyword, mode: 'insensitive' },
+              type: AccountType.REVENUE,
+              isActive: true,
+            },
+          });
+
+          // Fallback to generic donation revenue
+          if (!revenueAccount) {
+            revenueAccount = await tx.accountCode.findFirst({
+              where: {
+                name: { contains: 'Donasi', mode: 'insensitive' },
+                type: AccountType.REVENUE,
+                isActive: true,
+              },
+            });
+          }
+
+          // Last Resort Fallback
+          if (!revenueAccount) {
+             revenueAccount = await tx.accountCode.findFirst({
+               where: {
+                 type: AccountType.REVENUE,
+                 code: { startsWith: '4' }
+               }
+             });
+          }
+
+          if (assetAccount && revenueAccount) {
+            const description = `Penerimaan Donasi ${donation.type} dari ${donation.isAnonymous ? 'Hamba Allah' : donation.donorName}`;
+
+            // Create Debit Entry (Asset)
+            await tx.journalEntry.create({
+              data: {
+                unitId,
+                accountId: assetAccount.id,
+                date: new Date(),
+                description: `${description} (${donation.paymentMethod})`,
+                debit: donation.amount,
+                credit: 0,
+                reference: donation.id,
+                referenceType: JournalReferenceType.DONATION, // Assuming this exists or falls back to string
+                createdById: verifiedById,
+              },
+            });
+
+            // Create Credit Entry (Revenue)
+            await tx.journalEntry.create({
+              data: {
+                unitId,
+                accountId: revenueAccount.id,
+                date: new Date(),
+                description: description,
+                debit: 0,
+                credit: donation.amount,
+                reference: donation.id,
+                referenceType: JournalReferenceType.DONATION,
+                createdById: verifiedById,
+              },
+            });
+          } else {
+            console.warn(`Accounting Integration Skipped for Donation ${id}: Accounts not found. Asset: ${assetAccount?.name}, Revenue: ${revenueAccount?.name}`);
+          }
+        }
+      }
+
+      return updatedDonation;
+    });
   },
 
   /**

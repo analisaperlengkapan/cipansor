@@ -2,8 +2,14 @@ import { prisma } from '../lib/prisma';
 import { AssetStatus, Prisma } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
 
-export async function runMonthlyDepreciation(unitId?: string) {
+// Use same ID as in seed.ts
+const SYSTEM_USER_UUID = '00000000-0000-0000-0000-000000000000';
+
+export async function runMonthlyDepreciation(unitId?: string, executorId?: string) {
   console.log(`[DepreciationJob] Starting for unit: ${unitId || 'ALL'}`);
+
+  // Use executorId if provided (API trigger), otherwise fallback to SYSTEM_USER_UUID (cron/automated)
+  const createdById = executorId || SYSTEM_USER_UUID;
 
   // 1. Get Units to process
   const units = await prisma.unit.findMany({
@@ -39,6 +45,7 @@ export async function runMonthlyDepreciation(unitId?: string) {
           status: AssetStatus.ACTIVE,
           purchasePrice: { gt: 0 },
           usefulLife: { gt: 0 },
+          purchaseDate: { not: null }, // Fix Bug 2: Ensure purchaseDate is present
           deletedAt: null,
         },
       });
@@ -53,6 +60,8 @@ export async function runMonthlyDepreciation(unitId?: string) {
       const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`; // YYYY-MM
 
       for (const asset of assets) {
+        if (!asset.purchaseDate) continue; // Should be covered by query, but for type safety
+
         // Calculate Depreciation
         const cost = Number(asset.purchasePrice);
         const residual = Number(asset.residualValue || 0);
@@ -61,8 +70,8 @@ export async function runMonthlyDepreciation(unitId?: string) {
 
         // Skip if fully depreciated (approx)
         const ageMonths =
-          (now.getFullYear() - (asset.purchaseDate?.getFullYear() || now.getFullYear())) * 12 +
-          (now.getMonth() - (asset.purchaseDate?.getMonth() || now.getMonth()));
+          (now.getFullYear() - asset.purchaseDate.getFullYear()) * 12 +
+          (now.getMonth() - asset.purchaseDate.getMonth());
 
         if (ageMonths > lifeMonths) {
              skippedCount++;
@@ -95,6 +104,7 @@ export async function runMonthlyDepreciation(unitId?: string) {
 
         // Debit Expense
         journalEntries.push({
+            id: randomUUID(), // Generate UUID for consistency
             unitId: unit.id,
             accountId: expenseAccount,
             date: now,
@@ -103,11 +113,12 @@ export async function runMonthlyDepreciation(unitId?: string) {
             credit: new Prisma.Decimal(0),
             reference: reference, // Unique per asset per month
             referenceType: 'DEPRECIATION',
-            createdById: 'SYSTEM',
+            createdById, // Fix Bug 1: Use valid user ID
         });
 
         // Credit Accum Depr
         journalEntries.push({
+            id: randomUUID(),
             unitId: unit.id,
             accountId: accumAccount,
             date: now,
@@ -116,21 +127,23 @@ export async function runMonthlyDepreciation(unitId?: string) {
             credit: new Prisma.Decimal(monthlyDepreciation),
             reference: reference,
             referenceType: 'DEPRECIATION',
-            createdById: 'SYSTEM',
+            createdById, // Fix Bug 1: Use valid user ID
         });
 
         processedCount++;
       }
 
-      // Batch Insert (Chunk size 100)
+      // Batch Insert (Chunk size 100) wrapped in transaction (Fix Bug 3)
       if (journalEntries.length > 0) {
           const BATCH_SIZE = 100;
-          for (let i = 0; i < journalEntries.length; i += BATCH_SIZE) {
-              const batch = journalEntries.slice(i, i + BATCH_SIZE);
-              await prisma.journalEntry.createMany({
-                  data: batch
-              });
-          }
+          await prisma.$transaction(async (tx) => {
+            for (let i = 0; i < journalEntries.length; i += BATCH_SIZE) {
+                const batch = journalEntries.slice(i, i + BATCH_SIZE);
+                await tx.journalEntry.createMany({
+                    data: batch
+                });
+            }
+          });
       }
 
       results.push({

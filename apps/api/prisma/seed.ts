@@ -92,6 +92,9 @@ const RoleCode = {
   WALI_KAMAR: 'WALI_KAMAR', // Penanggung jawab kamar
 } as const;
 
+// Define System User ID constant
+export const SYSTEM_USER_ID = '00000000-0000-0000-0000-000000000000';
+
 const prisma = new PrismaClient();
 
 async function main() {
@@ -163,6 +166,21 @@ async function main() {
   await prisma.user.deleteMany();
   await prisma.role.deleteMany();
   await prisma.unit.deleteMany();
+
+  // ============================================
+  // SYSTEM USER
+  // ============================================
+  await prisma.user.create({
+    data: {
+      id: SYSTEM_USER_ID,
+      name: 'SYSTEM',
+      email: 'system@cipansor.id',
+      passwordHash: await bcrypt.hash('System123!', 10),
+      role: UserRole.SUPER_ADMIN,
+      isActive: true,
+    },
+  });
+  console.log('✅ System user created');
 
   // ============================================
   // PHASE 3: Foundation / Yayasan
@@ -1558,7 +1576,7 @@ async function main() {
         approvedById: leave.status !== LeaveStatus.PENDING ? teacherPesantrenUser.id : undefined,
         approvedAt: leave.status !== LeaveStatus.PENDING ? new Date() : undefined,
         rejectedNote:
-          leave.status === LeaveStatus.REJECTED ? 'Tidak memenuhi syarat cuti' : undefined,
+          leave.status === LeaveStatus.REJECTED ? 'Tidak memenuhi persyaratan cuti' : undefined,
       },
     });
   }
@@ -2985,7 +3003,7 @@ async function main() {
   console.log(`   Board Members: ${boardMembersData.length}`);
   console.log(`   Units: 4`);
   console.log(`   Roles: 24`);
-  console.log(`   Users: ${students.length + 15 + staffData.length}`);
+  console.log(`   Users: ${students.length + 15 + staffData.length + 1}`); // +1 for System User
   console.log(`   Staff: ${staffData.length}`);
   console.log(`   Students: ${students.length}`);
   console.log(`   Classes: 2`);

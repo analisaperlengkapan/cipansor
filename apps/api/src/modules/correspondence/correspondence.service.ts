@@ -366,6 +366,13 @@ export const CorrespondenceService = {
   },
 
   async getDashboardStats(unitId: string) {
+    // Type definition for Raw SQL Result
+    type ChartDataRow = {
+      month_key: string;
+      direction: string;
+      count: number;
+    };
+
     const [totalIncoming, totalOutgoing, pendingReview, needsAction, chartDataRaw] =
       await Promise.all([
         // Total Incoming
@@ -382,7 +389,7 @@ export const CorrespondenceService = {
           },
         }),
         // Chart Data (Last 6 Months)
-        prisma.$queryRaw`
+        prisma.$queryRaw<ChartDataRow[]>`
         SELECT
           TO_CHAR(date, 'YYYY-MM') as month_key,
           direction,
@@ -422,7 +429,7 @@ export const CorrespondenceService = {
       chartMap.set(key, { name: monthLabel, incoming: 0, outgoing: 0 });
     }
 
-    (chartDataRaw as any[]).forEach((row: any) => {
+    (chartDataRaw as ChartDataRow[]).forEach((row) => {
       if (chartMap.has(row.month_key)) {
         const entry = chartMap.get(row.month_key)!;
         if (row.direction === 'INCOMING') entry.incoming = row.count;

@@ -210,11 +210,18 @@ export const CorrespondenceService = {
     return await prisma.letter.findUnique({
       where: { id },
       include: {
+        unit: true,
         classification: true,
         createdBy: { select: { name: true } },
         reviewers: {
           include: {
-            reviewer: { select: { name: true } },
+            reviewer: {
+              select: {
+                name: true,
+                teacher: { select: { nip: true } },
+                staff: { select: { nip: true } },
+              },
+            },
           },
           orderBy: { order: 'asc' },
         },
@@ -333,7 +340,7 @@ export const CorrespondenceService = {
       throw new Error('Unauthorized access to this disposition');
     }
 
-    return await prisma.disposition.update({
+    const result = await prisma.disposition.update({
       where: { id },
       data: {
         status,

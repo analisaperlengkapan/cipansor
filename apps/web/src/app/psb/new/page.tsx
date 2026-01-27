@@ -93,7 +93,7 @@ function RegistrationForm() {
 
   const { data: periods } = useRegistrationPeriods({ isActive: true });
   const { data: units } = useUnits();
-  const { data: campaign } = usePublicCampaign(refCode);
+  const { data: campaign, isError: isCampaignError } = usePublicCampaign(refCode);
   const createMutation = useCreateRegistration();
 
   const form = useForm<RegistrationFormData>({
@@ -139,7 +139,10 @@ function RegistrationForm() {
       form.setValue("source", `CAMPAIGN_${campaign.code}`);
       toast.info(`Mendaftar melalui program: ${campaign.name}`);
     }
-  }, [campaign, form]);
+    if (isCampaignError) {
+      toast.error("Kode kampanye tidak valid atau tidak ditemukan");
+    }
+  }, [campaign, isCampaignError, form]);
 
   const onSubmit = async (data: RegistrationFormData) => {
     try {

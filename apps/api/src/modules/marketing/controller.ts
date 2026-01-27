@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import * as marketingService from './service';
-import { createCampaignSchema, logInteractionSchema, updateCampaignSchema } from './schema';
+import { createCampaignSchema, logInteractionSchema, updateCampaignSchema, getCampaignByCodeSchema } from './schema';
 
 export const createCampaign = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -75,7 +75,7 @@ export const getCampaignById = async (req: Request, res: Response, next: NextFun
 
 export const getCampaignByCode = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { code } = req.params;
+    const { code } = getCampaignByCodeSchema.parse(req.params);
     const campaign = await marketingService.getCampaignByCode(code);
     if (!campaign) {
       return res.status(404).json({ success: false, message: 'Campaign not found' });

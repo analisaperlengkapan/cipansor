@@ -124,6 +124,36 @@ router.get('/children/:studentId/tahfidz', parentController.getChildTahfidz.bind
 
 /**
  * @swagger
+ * /api/parent/children/{studentId}/ibadah:
+ *   get:
+ *     summary: Get child's ibadah statistics
+ *     tags: [Parent Portal]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: studentId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: startDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *       - in: query
+ *         name: endDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *     responses:
+ *       200:
+ *         description: Ibadah statistics and records
+ */
+router.get('/children/:studentId/ibadah', parentController.getChildIbadah.bind(parentController));
+
+/**
+ * @swagger
  * /api/parent/children/{studentId}/grades:
  *   get:
  *     summary: Get child's grades

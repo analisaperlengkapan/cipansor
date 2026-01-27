@@ -1,6 +1,7 @@
 import { prisma } from '../../lib/prisma';
 import { ApiError, ErrorCode } from '../../middleware/error';
 import { AttendanceStatus, Invoice, StudentParent } from '@prisma/client';
+import { getStudentIbadahStats } from '../ibadah/ibadah.service';
 
 type StudentParentWithStudent = Awaited<ReturnType<typeof prisma.studentParent.findMany>>[0];
 type GradeWithRelations = Awaited<ReturnType<typeof prisma.grade.findMany>>[0];
@@ -312,6 +313,26 @@ export class ParentService {
         totalPages: Math.ceil(total / limit),
       },
     };
+  }
+
+  /**
+   * Get child ibadah stats
+   */
+  async getChildIbadah(
+    parentId: string,
+    studentId: string,
+    query: {
+      startDate: string;
+      endDate: string;
+    }
+  ) {
+    await this.verifyParentAccess(parentId, studentId);
+
+    return getStudentIbadahStats({
+      studentId,
+      startDate: new Date(query.startDate),
+      endDate: new Date(query.endDate),
+    });
   }
 
   /**

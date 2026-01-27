@@ -14,6 +14,7 @@ import {
   useAttendanceStats,
   useFinanceStats,
   useViolationRewardStats,
+  useTahfidzStats,
 } from "@/hooks";
 import { useStudents } from "@/hooks/use-students";
 import { useHealthSummary } from "@/hooks/use-health";
@@ -68,6 +69,7 @@ export default function DashboardPage() {
   const { data: financeData } = useFinanceStats();
 
   // New hooks for enhanced dashboard
+  const { data: tahfidzData } = useTahfidzStats({ period: "month" });
   const { data: violationData } = useViolationRewardStats({ period: "month" });
   const { data: healthData } = useHealthSummary();
   const { data: recentStudents } = useStudents({ limit: 5, status: "ACTIVE" }); // Assume default sort is filtered by new/active
@@ -161,6 +163,20 @@ export default function DashboardPage() {
         {/* Secondary Stats Grid */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <StatsCard
+            title="Total Hafalan"
+            value={tahfidzData?.totalMemorized?.toLocaleString("id-ID") ?? "-"}
+            description="Total ayat dihafal"
+            icon={BookOpen}
+            isLoading={!tahfidzData}
+          />
+          <StatsCard
+            title="Rata-rata Hafalan"
+            value={tahfidzData?.averageJuz ? `${tahfidzData.averageJuz} Juz` : "-"}
+            description="Per santri"
+            icon={Award}
+            isLoading={!tahfidzData}
+          />
+          <StatsCard
             title="Total Unit"
             value={stats?.totalUnits ?? "-"}
             description="Unit pendidikan"
@@ -196,6 +212,105 @@ export default function DashboardPage() {
                 {violationData?.totalRewards ?? "-"}
               </div>
               <p className="text-xs text-muted-foreground">Bulan ini</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Tahfidz Section */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {/* Tahfidz Progress Chart */}
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BookOpen className="h-5 w-5" />
+                Progress Tahfidz (Bulanan)
+              </CardTitle>
+              <CardDescription>Jumlah ayat yang disetorkan</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {tahfidzData?.monthlyProgress &&
+              tahfidzData.monthlyProgress.length > 0 ? (
+                <ResponsiveContainer width="100%" height={250}>
+                  <BarChart
+                    data={tahfidzData.monthlyProgress}
+                    margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                  >
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      className="stroke-muted"
+                    />
+                    <XAxis dataKey="month" className="text-xs" />
+                    <YAxis className="text-xs" />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "hsl(var(--background))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: "8px",
+                      }}
+                    />
+                    <Bar
+                      dataKey="ayahCount"
+                      name="Ayat"
+                      fill="#8b5cf6"
+                      radius={[4, 4, 0, 0]}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-[250px] text-sm text-muted-foreground">
+                  Belum ada data tahfidz
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Top Hafidz List */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Award className="h-5 w-5" />
+                Top 5 Hafidz
+              </CardTitle>
+              <CardDescription>Capaian hafalan terbanyak</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {tahfidzData?.topStudents &&
+                tahfidzData.topStudents.length > 0 ? (
+                  tahfidzData.topStudents.map((student, i) => (
+                    <div
+                      key={student.id}
+                      className="flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-100 text-purple-600 font-bold text-sm">
+                          {i + 1}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">
+                            {student.studentName}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {student.unitName}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-bold text-purple-600">
+                          {student.totalJuz} Juz
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {student.totalAyah.toLocaleString()} Ayat
+                        </p>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center text-sm text-muted-foreground py-4">
+                    Belum ada data
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
         </div>

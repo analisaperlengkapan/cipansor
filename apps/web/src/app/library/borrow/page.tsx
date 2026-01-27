@@ -73,7 +73,9 @@ const borrowSchema = z.object({
 type BorrowFormData = z.infer<typeof borrowSchema>;
 
 function getCategoryLabel(category: BookCategory) {
-  return BOOK_CATEGORIES.find((c) => c.value === category)?.label || category;
+  // Use a type guard or safe access if BOOK_CATEGORIES is typed
+  const cat = BOOK_CATEGORIES.find((c) => c.value === category);
+  return cat?.label || category;
 }
 
 function BorrowBookContent() {

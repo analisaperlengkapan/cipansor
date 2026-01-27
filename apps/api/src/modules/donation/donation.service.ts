@@ -398,7 +398,8 @@ export const donationService = {
              assetAccount = await tx.accountCode.findFirst({
                where: {
                  type: AccountType.ASSET,
-                 code: { startsWith: '1' }
+                 code: { startsWith: '1' },
+                 isActive: true
                }
              });
           }
@@ -441,7 +442,8 @@ export const donationService = {
              revenueAccount = await tx.accountCode.findFirst({
                where: {
                  type: AccountType.REVENUE,
-                 code: { startsWith: '4' }
+                 code: { startsWith: '4' },
+                 isActive: true
                }
              });
           }

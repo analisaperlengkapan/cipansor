@@ -63,7 +63,7 @@ import raporPesantrenRoutes from '@/modules/rapor-pesantren/routes';
 import { procurementRoutes } from '@/modules/procurement/procurement.routes';
 import { supplierRoutes } from '@/modules/suppliers/suppliers.routes';
 import { uploadRoutes } from '@/modules/upload/upload.routes';
-import secretsRoutes from '@/modules/secrets/secrets.routes';
+import secretsRoutes from '@/modules/system-secrets/secrets.routes';
 
 // Phase 12 routes
 import extracurricularRoutes from '@/modules/extracurricular/extracurricular.routes';

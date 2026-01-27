@@ -1008,7 +1008,7 @@ const adminNavigation: NavGroup[] = [
       },
       {
         title: "Secrets",
-        href: "/dashboard/settings/secrets",
+        href: "/dashboard/settings/system-secrets",
         icon: Key,
         roleCodes: ["SUPER_ADMIN"],
       },

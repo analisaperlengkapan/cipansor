@@ -86,4 +86,17 @@ export const CorrespondenceController = {
       next(error);
     }
   },
+
+  async getStats(req: Request, res: Response, next: NextFunction) {
+    try {
+      // Prioritize authenticated user's unitId to prevent IDOR
+      const unitId = req.user?.unitId || (req.query.unitId as string);
+      if (!unitId) throw new Error('Unit ID is required');
+
+      const result = await CorrespondenceService.getDashboardStats(unitId);
+      res.json({ success: true, data: result });
+    } catch (error) {
+      next(error);
+    }
+  },
 };

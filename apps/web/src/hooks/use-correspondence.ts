@@ -125,6 +125,21 @@ export function useCorrespondence(unitId?: string) {
     },
   });
 
+  // Get Stats
+  const useStats = () => {
+    return useQuery({
+      queryKey: ["letters", "stats", unitId],
+      queryFn: async () => {
+        if (!unitId) return null;
+        const response = await api.get("/correspondence/stats", {
+          params: { unitId },
+        });
+        return response.data.data;
+      },
+      enabled: !!unitId,
+    });
+  };
+
   return {
     useLetters,
     useLetter,
@@ -132,5 +147,6 @@ export function useCorrespondence(unitId?: string) {
     reviewLetter,
     createDisposition,
     updateDispositionStatus,
+    useStats,
   };
 }

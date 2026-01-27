@@ -164,6 +164,7 @@ export default function ParentChildIbadahPage() {
             <SelectContent>
               {Array.from({ length: 6 }).map((_, i) => {
                 const d = new Date();
+                d.setDate(1); // Set to first day to avoid month overflow on 31st
                 d.setMonth(d.getMonth() - i);
                 const value = format(d, "yyyy-MM");
                 const label = format(d, "MMMM yyyy", { locale: localeId });

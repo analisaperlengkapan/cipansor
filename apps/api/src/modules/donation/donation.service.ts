@@ -373,6 +373,41 @@ export const donationService = {
       // INTEGRATION: Create Journal Entry for Accounting
       // =================================================================
       if (input.status === 'VERIFIED') {
+        // Check for re-verification (CANCELLED -> VERIFIED)
+        if (donation.status === 'CANCELLED') {
+           // Find reversal entries
+           const reversalEntries = await tx.journalEntry.findMany({
+             where: {
+               reference: donation.id,
+               referenceType: 'DONATION_CANCEL',
+             },
+           });
+
+           if (reversalEntries.length > 0) {
+             // Delete reversal entries to restore original state
+             await tx.journalEntry.deleteMany({
+               where: {
+                 reference: donation.id,
+                 referenceType: 'DONATION_CANCEL',
+               },
+             });
+
+             // Restore campaign totals
+             if (donation.campaignId) {
+               await tx.donationCampaign.update({
+                 where: { id: donation.campaignId },
+                 data: {
+                   collectedAmount: { increment: donation.amount },
+                   donorCount: { increment: 1 },
+                 },
+               });
+             }
+
+             // Skip creating new entries
+             return updatedDonation;
+           }
+        }
+
         const unitId = donation.unitId || donation.campaign?.unitId;
 
         if (unitId) {

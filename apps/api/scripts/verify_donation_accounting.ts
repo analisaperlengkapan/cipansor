@@ -127,7 +127,30 @@ async function main() {
       console.error('FAILURE: Reversal entries missing or incorrect count.');
   }
 
-  // 6. Cleanup
+  // 6. Test Re-verification
+  console.log('Testing Re-verification (Cancelled -> Verified)...');
+  await donationService.verify(donation.id, 'SYSTEM_TEST_USER', {
+    status: 'VERIFIED',
+    notes: 'Re-verified by script'
+  });
+
+  const finalJournals = await prisma.journalEntry.findMany({
+    where: {
+      reference: donation.id
+    }
+  });
+
+  console.log(`Found ${finalJournals.length} final journal entries.`);
+  const finalReversals = finalJournals.filter(j => j.referenceType === 'DONATION_CANCEL');
+  const finalOriginals = finalJournals.filter(j => j.referenceType === 'DONATION');
+
+  if (finalReversals.length === 0 && finalOriginals.length === 2) {
+      console.log('SUCCESS: Re-verification cleaned up reversals and kept originals.');
+  } else {
+      console.error(`FAILURE: Incorrect entry count. Reversals: ${finalReversals.length}, Originals: ${finalOriginals.length}`);
+  }
+
+  // 7. Cleanup
   console.log('Cleaning up...');
   await prisma.journalEntry.deleteMany({ where: { reference: donation.id } });
   await prisma.donation.delete({ where: { id: donation.id } });

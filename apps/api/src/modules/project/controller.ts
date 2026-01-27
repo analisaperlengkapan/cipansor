@@ -6,12 +6,13 @@ import { ProjectStatus } from '@prisma/client';
 
 export async function createProject(req: Request, res: Response, next: NextFunction) {
   try {
-    const unitId = (req as any).user?.unitId;
+    const data = createProjectSchema.parse(req);
+    const unitId = data.body.unitId || (req as any).user?.unitId;
+
     if (!unitId) {
       throw Errors.badRequest('Unit is required to create a project');
     }
 
-    const data = createProjectSchema.parse(req);
     const project = await service.createProject({
       ...data.body,
       managerId: req.user!.sub,

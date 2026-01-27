@@ -82,12 +82,20 @@ export class ParentController {
       // Default to current month if dates not provided
       const now = new Date();
       // Use YYYY-MM-DD format to avoid UTC timezone shifts when using toISOString() on midnight local dates
+      // We manually format to YYYY-MM-DD using local time
+      const formatDate = (d: Date) => {
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      };
+
       const start = startDate
         ? String(startDate)
-        : new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+        : formatDate(new Date(now.getFullYear(), now.getMonth(), 1));
       const end = endDate
         ? String(endDate)
-        : new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+        : formatDate(new Date(now.getFullYear(), now.getMonth() + 1, 0));
 
       const data = await parentService.getChildIbadah(parentId, studentId, {
         startDate: start,

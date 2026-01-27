@@ -245,6 +245,28 @@ export function useSubmitSimaanScores() {
   });
 }
 
+export function useCompleteSimaan() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: { passed: boolean; notes?: string };
+    }) => {
+      // Assuming a complete endpoint or update
+      const response = await apiClient.patch(`/simaan/${id}/complete`, data);
+      return response.data;
+    },
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: simaanKeys.detail(id) });
+      queryClient.invalidateQueries({ queryKey: simaanKeys.lists() });
+    },
+  });
+}
+
 export function useUpcomingSimaan(days: number = 7) {
   return useQuery({
     queryKey: [...simaanKeys.upcoming(), days],

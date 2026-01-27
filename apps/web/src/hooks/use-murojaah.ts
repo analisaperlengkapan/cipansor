@@ -28,10 +28,16 @@ export interface MurojaahMistake {
     | "GHUNNAH"
     | "MAD"
     | "WAQF"
-    | "IBTIDA";
+    | "IBTIDA"
+    | "TAJWID"
+    | "MAKHROJ"
+    | "HARAKAT"
+    | "LAFAZ"
+    | "OTHER";
   juz: number;
   surahNumber: number;
-  ayahNumber?: number;
+  ayatNumber?: number; // Frontend uses ayatNumber
+  ayahNumber?: number; // Backend uses ayahNumber
   description?: string;
   createdAt: string;
 }
@@ -44,21 +50,35 @@ export interface MurojaahRecord {
   recordedById: string;
   murojaahType: "DAILY" | "WEEKLY" | "MONTHLY" | "EXAM_PREP";
   murojaahDate: string; // ISO Date
+  date?: string; // Frontend might expect 'date'
   juzStart: number;
   juzEnd: number;
+  startAyat?: number;
+  endAyat?: number;
+  surahName?: string;
+  repetitions?: number;
   pagesReviewed: number;
   durationMinutes: number;
   qualityScore: number;
   mistakeCount: number;
   fluencyLevel: number;
   tajwidScore?: number;
+  grade?: number;
+  status: string; // PENDING, PASSED, etc.
   notes?: string;
   improvementAreas?: string;
   createdAt: string;
   updatedAt: string;
+  reviewedAt?: string;
   student?: {
     id: string;
     nis: string;
+    photoUrl?: string;
+    user?: {
+      name: string;
+    };
+  };
+  teacher?: {
     user?: {
       name: string;
     };
@@ -114,7 +134,10 @@ export interface CreateMurojaahData {
 
 export type UpdateMurojaahData = Partial<
   Omit<CreateMurojaahData, "studentId" | "mistakes">
->;
+> & {
+  status?: string;
+  grade?: number;
+};
 
 export interface StudentMurojaahSummary {
   student: {
@@ -157,6 +180,7 @@ export const murojaahKeys = {
     [...murojaahKeys.all, "summary", studentId] as const,
   schedule: (studentId: string) =>
     [...murojaahKeys.all, "schedule", studentId] as const,
+  mistakes: (id: string) => [...murojaahKeys.detail(id), "mistakes"] as const,
 };
 
 // Hooks
@@ -182,9 +206,25 @@ export function useMurojaah(id: string) {
     queryKey: murojaahKeys.detail(id),
     queryFn: async () => {
       const response = await apiClient.get(`/murojaah/${id}`);
-      return response.data.data as MurojaahRecord;
+      // Adapt backend response to frontend expectations if needed
+      const data = response.data.data as MurojaahRecord;
+      if (!data.date && data.murojaahDate) data.date = data.murojaahDate;
+      return data;
     },
     enabled: !!id,
+  });
+}
+
+export function useMurojaahMistakes(murojaahId: string) {
+  return useQuery({
+    queryKey: murojaahKeys.mistakes(murojaahId),
+    queryFn: async () => {
+      // Backend includes mistakes in getMurojaahById usually
+      const response = await apiClient.get(`/murojaah/${murojaahId}`);
+      const data = response.data.data as MurojaahRecord;
+      return { data: data.mistakes || [] };
+    },
+    enabled: !!murojaahId,
   });
 }
 
@@ -213,7 +253,33 @@ export function useUpdateMurojaah() {
       id: string;
       data: UpdateMurojaahData;
     }) => {
-      const response = await apiClient.put(`/murojaah/${id}`, data);
+      const response = await apiClient.patch(`/murojaah/${id}`, data);
+      return response.data;
+    },
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: murojaahKeys.detail(id) });
+      queryClient.invalidateQueries({ queryKey: murojaahKeys.lists() });
+    },
+  });
+}
+
+export function useReviewMurojaah() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      id,
+      status,
+      grade,
+    }: {
+      id: string;
+      status: string;
+      grade?: number;
+    }) => {
+      const response = await apiClient.patch(`/murojaah/${id}`, {
+        status,
+        grade,
+      });
       return response.data;
     },
     onSuccess: (_, { id }) => {
@@ -237,6 +303,27 @@ export function useDeleteMurojaah() {
   });
 }
 
+export function useDeleteMurojaahMistake() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      murojaahId,
+      mistakeId,
+    }: {
+      murojaahId: string;
+      mistakeId: string;
+    }) => {
+      const response = await apiClient.delete(`/murojaah/mistakes/${mistakeId}`);
+      return response.data;
+    },
+    onSuccess: (_, { murojaahId }) => {
+      queryClient.invalidateQueries({ queryKey: murojaahKeys.detail(murojaahId) });
+      queryClient.invalidateQueries({ queryKey: murojaahKeys.mistakes(murojaahId) });
+    },
+  });
+}
+
 export function useStudentMurojaahSummary(
   studentId: string,
   filters?: { startDate?: string; endDate?: string; murojaahType?: string },
@@ -251,7 +338,7 @@ export function useStudentMurojaahSummary(
         });
       }
       const response = await apiClient.get(
-        `/murojaah/student/${studentId}/summary?${params.toString()}`,
+        `/murojaah/students/${studentId}/summary?${params.toString()}`,
       );
       return response.data.data as StudentMurojaahSummary;
     },
@@ -264,7 +351,7 @@ export function useMurojaahSchedule(studentId: string) {
     queryKey: murojaahKeys.schedule(studentId),
     queryFn: async () => {
       const response = await apiClient.get(
-        `/murojaah/schedule?studentId=${studentId}`,
+        `/murojaah/students/${studentId}/schedule`,
       );
       return response.data.data;
     },

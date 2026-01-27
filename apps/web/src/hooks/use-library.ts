@@ -29,6 +29,16 @@ export const BORROW_STATUSES: {
   { value: "LOST", label: "Hilang", color: "bg-gray-100 text-gray-800" },
 ];
 
+export const BOOK_CATEGORIES = [
+  { value: "FIQ", label: "Fiqih" },
+  { value: "HAD", label: "Hadits" },
+  { value: "TAF", label: "Tafsir" },
+  { value: "AQD", label: "Aqidah" },
+  { value: "AKH", label: "Akhlaq" },
+  { value: "TAR", label: "Tarikh" },
+  { value: "UMM", label: "Umum" },
+];
+
 // Category Hooks
 export function useBookCategories(unitId?: string) {
   return useQuery({

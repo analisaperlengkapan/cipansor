@@ -69,7 +69,9 @@ export default function DashboardPage() {
   const { data: financeData } = useFinanceStats();
 
   // New hooks for enhanced dashboard
-  const { data: tahfidzData } = useTahfidzStats({ period: "month" });
+  const { data: tahfidzData, isLoading: tahfidzLoading } = useTahfidzStats({
+    period: "month",
+  });
   const { data: violationData } = useViolationRewardStats({ period: "month" });
   const { data: healthData } = useHealthSummary();
   const { data: recentStudents } = useStudents({ limit: 5, status: "ACTIVE" }); // Assume default sort is filtered by new/active
@@ -167,14 +169,18 @@ export default function DashboardPage() {
             value={tahfidzData?.totalMemorized?.toLocaleString("id-ID") ?? "-"}
             description="Total ayat dihafal"
             icon={BookOpen}
-            isLoading={!tahfidzData}
+            isLoading={tahfidzLoading}
           />
           <StatsCard
             title="Rata-rata Hafalan"
-            value={tahfidzData?.averageJuz ? `${tahfidzData.averageJuz} Juz` : "-"}
+            value={
+              tahfidzData?.averageJuz !== undefined
+                ? `${tahfidzData.averageJuz} Juz`
+                : "-"
+            }
             description="Per santri"
             icon={Award}
-            isLoading={!tahfidzData}
+            isLoading={tahfidzLoading}
           />
           <StatsCard
             title="Total Unit"
@@ -228,8 +234,12 @@ export default function DashboardPage() {
               <CardDescription>Jumlah ayat yang disetorkan</CardDescription>
             </CardHeader>
             <CardContent>
-              {tahfidzData?.monthlyProgress &&
-              tahfidzData.monthlyProgress.length > 0 ? (
+              {tahfidzLoading ? (
+                <div className="h-[250px] flex items-center justify-center">
+                  <div className="h-full w-full animate-pulse bg-muted rounded-md" />
+                </div>
+              ) : tahfidzData?.monthlyProgress &&
+                tahfidzData.monthlyProgress.length > 0 ? (
                 <ResponsiveContainer width="100%" height={250}>
                   <BarChart
                     data={tahfidzData.monthlyProgress}
@@ -275,8 +285,29 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {tahfidzData?.topStudents &&
-                tahfidzData.topStudents.length > 0 ? (
+                {tahfidzLoading ? (
+                  Array(5)
+                    .fill(0)
+                    .map((_, i) => (
+                      <div
+                        key={i}
+                        className="flex items-center justify-between animate-pulse"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="h-8 w-8 rounded-full bg-muted" />
+                          <div className="space-y-1">
+                            <div className="h-4 w-32 bg-muted rounded" />
+                            <div className="h-3 w-20 bg-muted rounded" />
+                          </div>
+                        </div>
+                        <div className="space-y-1">
+                          <div className="h-4 w-10 bg-muted rounded" />
+                          <div className="h-3 w-16 bg-muted rounded" />
+                        </div>
+                      </div>
+                    ))
+                ) : tahfidzData?.topStudents &&
+                  tahfidzData.topStudents.length > 0 ? (
                   tahfidzData.topStudents.map((student, i) => (
                     <div
                       key={student.id}

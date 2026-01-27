@@ -108,15 +108,14 @@ function DepreciationSettingsDialog({ unitId }: { unitId?: string }) {
     e.preventDefault();
     if (!unitId) return;
     const formData = new FormData(e.currentTarget);
+    const expenseAccount = formData.get("depreciationExpenseAccount");
+    const accumAccount = formData.get("accumulatedDepreciationAccount");
+
     try {
       await updateMutation.mutateAsync({
         unitId,
-        depreciationExpenseAccount: formData.get(
-          "depreciationExpenseAccount",
-        ) as string,
-        accumulatedDepreciationAccount: formData.get(
-          "accumulatedDepreciationAccount",
-        ) as string,
+        depreciationExpenseAccount: expenseAccount ? (expenseAccount as string) : null,
+        accumulatedDepreciationAccount: accumAccount ? (accumAccount as string) : null,
       });
       setOpen(false);
     } catch {

@@ -80,7 +80,7 @@ export async function deleteAccount(req: Request, res: Response, next: NextFunct
 export async function createJournal(req: Request, res: Response, next: NextFunction) {
   try {
     const data: CreateJournalDto = req.body;
-    const userId = req.user?.id;
+    const userId = req.user?.sub;
     if (!userId) {
       res.status(401).json({ message: 'Unauthorized' });
       return;

@@ -94,6 +94,9 @@ router.patch(
 );
 router.delete('/maintenance/:id', authorize(UserRole.UNIT_ADMIN), controller.deleteMaintenance);
 
+// Depreciation (Moved before :id routes)
+router.post('/depreciation/run', authorize(UserRole.UNIT_ADMIN), controller.runDepreciation);
+
 // Items
 router.get(
   '/',
@@ -119,8 +122,5 @@ router.get(
 router.put('/:id', authorize(UserRole.UNIT_ADMIN, UserRole.STAFF), controller.updateItem);
 router.delete('/:id', authorize(UserRole.UNIT_ADMIN), controller.deleteItem);
 router.post('/:id/dispose', authorize(UserRole.UNIT_ADMIN), controller.disposeAsset);
-
-// Depreciation
-router.post('/depreciation/run', authorize(UserRole.UNIT_ADMIN), controller.runDepreciation);
 
 export default router;

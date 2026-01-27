@@ -697,72 +697,74 @@ export const payrollPeriodService = {
           where: { code: '1101', isActive: true },
         });
 
-        if (salaryExpenseAcc && cashAcc) {
-          const desc = `Penggajian Periode ${period.name}`;
+        if (!salaryExpenseAcc || !cashAcc) {
+          throw new Error('Konfigurasi Akun Gaji/Kas tidak ditemukan. Mohon cek Chart of Accounts.');
+        }
 
-          // Debit Salaries Expense
+        const desc = `Penggajian Periode ${period.name}`;
+
+        // Debit Salaries Expense
+        await tx.journalEntry.create({
+          data: {
+            unitId: period.unitId,
+            date: payDate,
+            description: desc,
+            reference: period.id,
+            referenceType: 'PAYROLL',
+            accountId: salaryExpenseAcc.id,
+            debit: earnings,
+            credit: 0,
+            createdById: userId,
+          },
+        });
+
+        // Credit Cash (Net Salary)
+        await tx.journalEntry.create({
+          data: {
+            unitId: period.unitId,
+            date: payDate,
+            description: `Pembayaran Gaji ${period.name}`,
+            reference: period.id,
+            referenceType: 'PAYROLL',
+            accountId: cashAcc.id,
+            debit: 0,
+            credit: net,
+            createdById: userId,
+          },
+        });
+
+        // Credit Tax Payable
+        if (tax.gt(0) && taxPayableAcc) {
           await tx.journalEntry.create({
             data: {
               unitId: period.unitId,
               date: payDate,
-              description: desc,
+              description: `Penyetoran PPh 21 ${period.name}`,
               reference: period.id,
               referenceType: 'PAYROLL',
-              accountId: salaryExpenseAcc.id,
-              debit: earnings,
-              credit: 0,
-              createdById: userId,
-            },
-          });
-
-          // Credit Cash (Net Salary)
-          await tx.journalEntry.create({
-            data: {
-              unitId: period.unitId,
-              date: payDate,
-              description: `Pembayaran Gaji ${period.name}`,
-              reference: period.id,
-              referenceType: 'PAYROLL',
-              accountId: cashAcc.id,
+              accountId: taxPayableAcc.id,
               debit: 0,
-              credit: net,
+              credit: tax,
               createdById: userId,
             },
           });
+        }
 
-          // Credit Tax Payable
-          if (tax.gt(0) && taxPayableAcc) {
-            await tx.journalEntry.create({
-              data: {
-                unitId: period.unitId,
-                date: payDate,
-                description: `Penyetoran PPh 21 ${period.name}`,
-                reference: period.id,
-                referenceType: 'PAYROLL',
-                accountId: taxPayableAcc.id,
-                debit: 0,
-                credit: tax,
-                createdById: userId,
-              },
-            });
-          }
-
-          // Credit Other Payables
-          if (otherDeductions.gt(0) && otherPayableAcc) {
-            await tx.journalEntry.create({
-              data: {
-                unitId: period.unitId,
-                date: payDate,
-                description: `Potongan Lain ${period.name}`,
-                reference: period.id,
-                referenceType: 'PAYROLL',
-                accountId: otherPayableAcc.id,
-                debit: 0,
-                credit: otherDeductions,
-                createdById: userId,
-              },
-            });
-          }
+        // Credit Other Payables
+        if (otherDeductions.gt(0) && otherPayableAcc) {
+          await tx.journalEntry.create({
+            data: {
+              unitId: period.unitId,
+              date: payDate,
+              description: `Potongan Lain ${period.name}`,
+              reference: period.id,
+              referenceType: 'PAYROLL',
+              accountId: otherPayableAcc.id,
+              debit: 0,
+              credit: otherDeductions,
+              createdById: userId,
+            },
+          });
         }
       }
 

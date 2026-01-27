@@ -78,6 +78,7 @@ export interface LetterDispositionDetail {
   id: string;
   senderName: string;
   recipientName: string;
+  recipientId: string;
   instruction: string;
   status: string;
   deadline?: string;

@@ -8,10 +8,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LetterStatusBadge } from "@/components/e-office/letter-status-badge";
 import { DispositionTimeline } from "@/components/e-office/disposition-timeline";
-import { ArrowLeft, FileText, Send, CheckCircle, XCircle } from "lucide-react";
+import { LetterPDFTemplate } from "@/components/e-office/letter-pdf-template";
+import { ArrowLeft, FileText, Send, CheckCircle, XCircle, Printer } from "lucide-react";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
-import { useState } from "react";
+import { useState, useRef } from "react";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 import {
   Dialog,
   DialogContent,
@@ -50,6 +53,7 @@ export default function LetterDetailPage({
   });
   const { data: letter, isLoading } = useLetter(params.id);
 
+  const pdfRef = useRef<HTMLDivElement>(null);
   const [notes, setNotes] = useState("");
   const [dispositionOpen, setDispositionOpen] = useState(false);
   const [dispositionData, setDispositionData] = useState({
@@ -80,6 +84,26 @@ export default function LetterDetailPage({
       toast.success("Status disposisi diperbarui");
     } catch (error) {
       toast.error("Gagal memperbarui status");
+    }
+  };
+
+  const handleDownloadPDF = async () => {
+    if (!pdfRef.current) return;
+
+    try {
+      toast.info("Sedang menyiapkan PDF...");
+      const canvas = await html2canvas(pdfRef.current, { scale: 2, useCORS: true });
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`Surat-${letter.letterNumber || "Draft"}.pdf`);
+      toast.success("Surat berhasil diunduh");
+    } catch (error) {
+      console.error(error);
+      toast.error("Gagal mengunduh surat");
     }
   };
 
@@ -208,6 +232,11 @@ export default function LetterDetailPage({
           </div>
         </DialogContent>
       </Dialog>
+      {/* Hidden PDF Template */}
+      <div className="fixed left-[-9999px] top-0">
+        <LetterPDFTemplate ref={pdfRef} letter={letter} />
+      </div>
+
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" onClick={() => router.back()}>
           <ArrowLeft className="h-4 w-4" />
@@ -356,6 +385,15 @@ export default function LetterDetailPage({
               <CardTitle>Aksi</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
+              <Button
+                className="w-full"
+                variant="outline"
+                onClick={handleDownloadPDF}
+              >
+                <Printer className="mr-2 h-4 w-4" />
+                Cetak Surat
+              </Button>
+
               <Button
                 className="w-full"
                 variant="outline"

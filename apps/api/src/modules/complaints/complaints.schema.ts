@@ -8,6 +8,7 @@ export const createComplaintSchema = z.object({
   location: z.string().optional(),
   isAnonymous: z.boolean().optional(),
   attachments: z.array(z.string().url()).optional(),
+  unitId: z.string().uuid().optional(), // Optional, required for SUPER_ADMIN if token unitId is missing
 });
 
 export const updateComplaintStatusSchema = z.object({

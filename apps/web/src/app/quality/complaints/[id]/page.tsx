@@ -22,7 +22,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ADMIN_ROLES, STAFF_ROLES } from "@/config/navigation";
 
 export default function ComplaintDetailPage() {
   const params = useParams();
@@ -49,11 +48,13 @@ export default function ComplaintDetailPage() {
     );
   }
 
-  // Check if user is admin/staff based on role code from config
-  const roleCode = user?.role || "";
+  // Check if user is admin/staff based on UserRole enum values (legacy format in JWT)
+  const role = user?.role || "";
   const isAdminOrStaff =
-    ADMIN_ROLES.includes(roleCode) ||
-    STAFF_ROLES.includes(roleCode);
+    role === 'SUPER_ADMIN' ||
+    role === 'UNIT_ADMIN' ||
+    role === 'STAFF' ||
+    role === 'TEACHER';
 
   const handleStatusChange = (status: string) => {
     updateStatus({ id, status: status as ComplaintStatus });

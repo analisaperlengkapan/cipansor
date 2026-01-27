@@ -18,11 +18,17 @@ export const complaintsController = {
 
       // req.user is guaranteed by authenticate middleware
       const user = (req as any).user;
-      const unitId = user.unitId;
+      // If user has unitId in token, use it. Otherwise (SUPER_ADMIN), use unitId from body.
+      const unitId = user.unitId || validation.data.unitId;
 
       // For SUPER_ADMIN creating a complaint, they must specify unitId if not present in token
       if (!unitId && user.role !== UserRole.SUPER_ADMIN) {
          return res.status(httpStatus.BAD_REQUEST).json({ message: 'Unit ID missing' });
+      }
+
+      // Double check for SUPER_ADMIN specifically if unitId ended up empty
+      if (!unitId && user.role === UserRole.SUPER_ADMIN) {
+        return res.status(httpStatus.BAD_REQUEST).json({ message: 'Unit ID is required for Super Admin' });
       }
 
       const complaint = await complaintsService.create({
@@ -33,7 +39,7 @@ export const complaintsController = {
         isAnonymous: validation.data.isAnonymous,
         attachments: validation.data.attachments,
         userId: user.sub,
-        unitId: unitId || '',
+        unitId: unitId,
       });
       res.status(httpStatus.CREATED).json(complaint);
     } catch (error) {
@@ -68,7 +74,8 @@ export const complaintsController = {
       const { id } = req.params;
       const user = (req as any).user;
 
-      const complaint = await complaintsService.findOne(id, user.sub, user.role);
+      // Pass user.unitId for isolation check
+      const complaint = await complaintsService.findOne(id, user.sub, user.role, user.unitId);
 
       if (!complaint) {
         return res.status(httpStatus.NOT_FOUND).json({ message: 'Complaint not found' });
@@ -174,8 +181,8 @@ export const complaintsController = {
       const user = (req as any).user;
       const { content, isInternal } = validation.data;
 
-      // Verify access using findOne logic (throws Unauthorized if no access)
-      const existingComplaint = await complaintsService.findOne(id, user.sub, user.role);
+      // Verify access using findOne logic (throws Unauthorized if no access, includes unit check)
+      const existingComplaint = await complaintsService.findOne(id, user.sub, user.role, user.unitId);
       if (!existingComplaint) {
         return res.status(httpStatus.NOT_FOUND).json({ message: 'Complaint not found' });
       }

@@ -62,11 +62,6 @@ export const complaintsService = {
       role === UserRole.UNIT_ADMIN ||
       role === UserRole.STAFF ||
       role === UserRole.TEACHER;
-      // Assuming Teacher also has 'staff-like' access within unit, or restrict further if needed.
-      // Original logic included 'KEPALA_SEKOLAH', etc. which maps to UNIT_ADMIN or TEACHER usually.
-      // Based on PR comment, RoleCode values were used incorrectly.
-      // Correct mapping:
-      // Admins/Staff see all. Students/Parents see own.
 
     // Students/Parents only see their own
     if (!hasFullAccess) {
@@ -95,11 +90,11 @@ export const complaintsService = {
     ]);
 
     // Mask anonymous users logic
-    // Conditional Unmasking: Only mask if the user is NOT SUPER_ADMIN
-    const shouldMask = role !== UserRole.SUPER_ADMIN;
+    // Unmask for SUPER_ADMIN and UNIT_ADMIN (for investigation)
+    const canViewAnonymous = role === UserRole.SUPER_ADMIN || role === UserRole.UNIT_ADMIN;
 
     const sanitizedData = data.map(d => {
-      if (d.isAnonymous && shouldMask) {
+      if (d.isAnonymous && !canViewAnonymous) {
         return {
           ...d,
           user: null, // Hide user details for anonymous complaints
@@ -120,7 +115,7 @@ export const complaintsService = {
     };
   },
 
-  findOne: async (id: string, userId: string, role: string) => {
+  findOne: async (id: string, userId: string, role: string, userUnitId: string | null) => {
     const complaint = await prisma.complaint.findUnique({
       where: { id },
       include: {
@@ -148,16 +143,26 @@ export const complaintsService = {
       throw new Error('Unauthorized'); // Controller will handle this
     }
 
-    // Filter internal comments for non-staff
+    // Unit Isolation Check
+    // If user has full access (Admin/Staff/Teacher), they must be in the same unit as the complaint
+    // Unless they are SUPER_ADMIN (who might have null unitId or access across units)
+    if (hasFullAccess && role !== UserRole.SUPER_ADMIN) {
+      if (complaint.unitId !== userUnitId) {
+        throw new Error('Unauthorized'); // Cannot access complaints from other units
+      }
+    }
+
+    // Filter internal comments for non-staff/non-admin
+    // Teachers are considered staff-level for visibility but restricted in management actions
     if (!hasFullAccess) {
       complaint.comments = complaint.comments.filter(c => !c.isInternal);
     }
 
     // Mask anonymous users logic
-    // Conditional Unmasking: Only mask if the user is NOT SUPER_ADMIN
-    const shouldMask = role !== UserRole.SUPER_ADMIN;
+    // Unmask for SUPER_ADMIN and UNIT_ADMIN (for investigation)
+    const canViewAnonymous = role === UserRole.SUPER_ADMIN || role === UserRole.UNIT_ADMIN;
 
-    if (complaint.isAnonymous && shouldMask) {
+    if (complaint.isAnonymous && !canViewAnonymous) {
       // If anonymous, mask the reporter
       complaint.user = null;
       complaint.userId = null;
@@ -169,7 +174,16 @@ export const complaintsService = {
   updateStatus: async (id: string, status: ComplaintStatus, resolution?: string) => {
     const data: Prisma.ComplaintUpdateInput = { status };
     if (resolution) data.resolution = resolution;
-    if (status === 'RESOLVED') data.resolvedAt = new Date();
+
+    if (status === 'RESOLVED') {
+      data.resolvedAt = new Date();
+    } else {
+      // If moving away from RESOLVED, clear resolvedAt?
+      // Optional: data.resolvedAt = null;
+      // Keeping history might be better, but typically "resolvedAt" implies current resolution state.
+      // Let's clear it if status is not resolved to avoid confusion.
+      data.resolvedAt = null;
+    }
 
     return prisma.complaint.update({
       where: { id },

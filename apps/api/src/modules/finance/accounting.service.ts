@@ -315,12 +315,15 @@ export async function getIncomeStatement(query: {
   const revenues = trialBalance.filter((i) => i.type === 'REVENUE');
   const expenses = trialBalance.filter((i) => i.type === 'EXPENSE');
 
+  const totalRevenue = revenues.reduce((sum, i) => sum + i.credit - i.debit, 0);
+  const totalExpense = expenses.reduce((sum, i) => sum + i.debit - i.credit, 0);
+
   return {
     revenues,
-    totalRevenue: revenues.reduce((sum, i) => sum + i.credit - i.debit, 0),
+    totalRevenue,
     expenses,
-    totalExpense: expenses.reduce((sum, i) => sum + i.debit - i.credit, 0),
-    netIncome: 0, // Calculated on frontend or here
+    totalExpense,
+    netIncome: totalRevenue - totalExpense,
   };
 }
 

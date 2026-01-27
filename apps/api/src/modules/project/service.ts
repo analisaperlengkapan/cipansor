@@ -83,7 +83,7 @@ export async function updateProject(id: string, data: UpdateProjectInput) {
     where: { id },
     data: {
       ...data,
-      priority: data.priority as TaskPriority,
+      ...(data.priority && { priority: data.priority as TaskPriority }),
     },
   });
 }
@@ -113,27 +113,29 @@ export async function createTask(projectId: string, data: CreateProjectTaskInput
     if (firstCol) columnId = firstCol.id;
   }
 
-  // Get max order in column
-  const lastTask = await prisma.projectTask.findFirst({
-    where: { columnId },
-    orderBy: { order: 'desc' },
-  });
-  const newOrder = lastTask ? lastTask.order + 1 : 0;
+  const task = await prisma.$transaction(async (tx) => {
+    // Get max order in column
+    const lastTask = await tx.projectTask.findFirst({
+      where: { columnId },
+      orderBy: { order: 'desc' },
+    });
+    const newOrder = lastTask ? lastTask.order + 1 : 0;
 
-  const task = await prisma.projectTask.create({
-    data: {
-      projectId,
-      columnId,
-      title: data.title,
-      description: data.description,
-      priority: data.priority as TaskPriority,
-      dueDate: data.dueDate,
-      assigneeId: data.assigneeId,
-      order: newOrder,
-    },
-    include: {
-      project: { select: { name: true } },
-    },
+    return tx.projectTask.create({
+      data: {
+        projectId,
+        columnId,
+        title: data.title,
+        description: data.description,
+        priority: data.priority as TaskPriority,
+        dueDate: data.dueDate,
+        assigneeId: data.assigneeId,
+        order: newOrder,
+      },
+      include: {
+        project: { select: { name: true } },
+      },
+    });
   });
 
   if (data.assigneeId && data.assigneeId !== creatorId) {
@@ -162,7 +164,7 @@ export async function updateTask(id: string, data: UpdateProjectTaskInput, updat
     where: { id },
     data: {
       ...data,
-      priority: data.priority as TaskPriority,
+      ...(data.priority && { priority: data.priority as TaskPriority }),
     },
     include: {
       project: { select: { name: true } },

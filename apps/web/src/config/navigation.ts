@@ -49,6 +49,7 @@ import {
   FileBarChart,
   Activity,
   ShoppingBag,
+  Key,
   type LucideIcon,
 } from "lucide-react";
 
@@ -1004,6 +1005,12 @@ const adminNavigation: NavGroup[] = [
         title: "Settings",
         href: "/settings",
         icon: Settings,
+      },
+      {
+        title: "Secrets",
+        href: "/dashboard/settings/secrets",
+        icon: Key,
+        roleCodes: ["SUPER_ADMIN"],
       },
     ],
   },

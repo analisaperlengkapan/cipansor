@@ -26,6 +26,7 @@ import {
   Bell,
   Wallet,
   MessageSquare,
+  Star,
 } from "lucide-react";
 
 interface Child {
@@ -435,6 +436,12 @@ export default function ParentDashboardPage() {
               <Button variant="outline" className="w-full h-20 flex-col gap-2">
                 <MessageSquare className="h-6 w-6" />
                 <span>Pesan Guru</span>
+              </Button>
+            </Link>
+            <Link href="/parent/ibadah">
+              <Button variant="outline" className="w-full h-20 flex-col gap-2">
+                <Star className="h-6 w-6" />
+                <span>Mutaba&apos;ah</span>
               </Button>
             </Link>
           </div>

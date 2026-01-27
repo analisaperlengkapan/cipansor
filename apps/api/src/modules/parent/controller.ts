@@ -71,6 +71,30 @@ export class ParentController {
   }
 
   /**
+   * Get child ibadah
+   */
+  async getChildIbadah(req: Request, res: Response, next: NextFunction) {
+    try {
+      const parentId = req.user!.sub;
+      const { studentId } = req.params;
+      const { startDate, endDate } = req.query;
+
+      // Default to current month if dates not provided
+      const now = new Date();
+      const start = startDate ? String(startDate) : new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      const end = endDate ? String(endDate) : new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString();
+
+      const data = await parentService.getChildIbadah(parentId, studentId, {
+        startDate: start,
+        endDate: end,
+      });
+      res.json({ success: true, data });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
    * Get child grades
    */
   async getChildGrades(req: Request, res: Response, next: NextFunction) {

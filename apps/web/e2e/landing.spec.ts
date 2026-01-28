@@ -63,6 +63,10 @@ test.describe("Landing Page", () => {
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
     const footer = page.locator("footer");
     await expect(footer.getByText("Jl. Pesantren No. 123")).toBeVisible();
-    await expect(footer.getByRole("link", { name: "Donasi", exact: true })).toBeVisible();
+
+    // Verify Donasi link points to public page
+    const donasiLink = footer.getByRole("link", { name: "Donasi", exact: true });
+    await expect(donasiLink).toBeVisible();
+    await expect(donasiLink).toHaveAttribute("href", "/donation/public");
   });
 });

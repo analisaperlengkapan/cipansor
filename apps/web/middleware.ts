@@ -153,7 +153,8 @@ export function middleware(request: NextRequest) {
       const dashboard = getDashboardForRole(role);
       return NextResponse.redirect(new URL(dashboard, request.url));
     }
-    return NextResponse.redirect(new URL("/login", request.url));
+    // Allow unauthenticated users to see landing page
+    return NextResponse.next();
   }
 
   // Role-based access control for authenticated users

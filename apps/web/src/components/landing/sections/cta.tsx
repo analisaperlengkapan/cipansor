@@ -42,7 +42,7 @@ export function CtaSection() {
                   Salurkan donasi terbaik Anda untuk pengembangan pendidikan dan pembangunan fasilitas pesantren.
                 </p>
               </div>
-              <Link href="/donation">
+              <Link href="/donation/public">
                 <Button size="lg" className="w-full sm:w-auto gap-2">
                   Salurkan Donasi <ArrowRight className="h-4 w-4" />
                 </Button>

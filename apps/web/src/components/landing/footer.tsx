@@ -48,7 +48,7 @@ export function LandingFooter() {
                 </Link>
               </li>
               <li>
-                <Link href="/donation" className="text-sm text-muted-foreground hover:text-primary">
+                <Link href="/donation/public" className="text-sm text-muted-foreground hover:text-primary">
                   Donasi
                 </Link>
               </li>

@@ -81,9 +81,12 @@ export function ProgramSection() {
                 </CardDescription>
               </CardContent>
               <CardFooter>
-                 {/* Placeholder link */}
-                 <Button variant="ghost" className="p-0 h-auto font-medium text-primary hover:text-primary/80 hover:bg-transparent group-hover:underline">
-                   Selengkapnya <ArrowRight className="ml-2 h-4 w-4" />
+                 <Button
+                    variant="ghost"
+                    className="p-0 h-auto font-medium text-primary hover:text-primary/80 hover:bg-transparent group-hover:underline cursor-not-allowed opacity-50"
+                    disabled
+                  >
+                   Info Detail Segera Hadir
                  </Button>
               </CardFooter>
             </Card>

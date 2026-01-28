@@ -27,6 +27,7 @@ export function LandingNavbar() {
     const handleScroll = () => {
       setScrolled(window.scrollY > 20);
     };
+    handleScroll(); // Initialize on mount
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);

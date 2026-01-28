@@ -634,7 +634,7 @@ export const payrollPeriodService = {
     });
   },
 
-  async markAsPaid(id: string, payDate: Date, notes?: string) {
+  async markAsPaid(id: string, payDate: Date, notes?: string, userId: string = 'SYSTEM') {
     const period = await prisma.payrollPeriod.findUnique({ where: { id } });
 
     if (!period) {
@@ -652,66 +652,8 @@ export const payrollPeriodService = {
         data: { status: 'PAID' },
       });
 
-      // 2. Calculate Total for Journal
-      const totals = await tx.payroll.aggregate({
-        where: { periodId: id },
-        _sum: { netSalary: true },
-      });
-      const totalAmount = totals._sum.netSalary?.toNumber() || 0;
-
-      // 3. Create Journal Entry (Integration)
-      if (totalAmount > 0) {
-        const expenseAccount = await getAccountOrFallback(
-          period.unitId,
-          ACCOUNT_MAPPING_KEYS.PAYROLL_EXPENSE,
-          undefined,
-          'Beban Gaji'
-        );
-
-        const cashAccount = await getAccountOrFallback(
-          period.unitId,
-          ACCOUNT_MAPPING_KEYS.CASH,
-          '1101', // Fallback code
-          'Kas'
-        );
-
-        if (expenseAccount && cashAccount) {
-          const description = `Pembayaran Gaji Periode ${period.name}`;
-
-          // Debit Expense
-          await tx.journalEntry.create({
-            data: {
-              unitId: period.unitId,
-              accountId: expenseAccount.id,
-              date: payDate,
-              description,
-              debit: new Prisma.Decimal(totalAmount),
-              credit: new Prisma.Decimal(0),
-              reference: id,
-              referenceType: JournalReferenceType.PAYROLL || 'PAYROLL', // Fallback string if enum missing
-              createdById: period.createdById, // Using creator as actor
-            },
-          });
-
-          // Credit Cash
-          await tx.journalEntry.create({
-            data: {
-              unitId: period.unitId,
-              accountId: cashAccount.id,
-              date: payDate,
-              description,
-              debit: new Prisma.Decimal(0),
-              credit: new Prisma.Decimal(totalAmount),
-              reference: id,
-              referenceType: JournalReferenceType.PAYROLL || 'PAYROLL',
-              createdById: period.createdById,
-            },
-          });
-        }
-      }
-
-      // 4. Update period
-      return tx.payrollPeriod.update({
+      // 2. Update period
+      const updatedPeriod = await tx.payrollPeriod.update({
         where: { id },
         data: {
           status: 'PAID',
@@ -720,6 +662,129 @@ export const payrollPeriodService = {
           notes: notes || period.notes,
         },
       });
+
+      // 3. INTEGRATION: Create Journal Entry
+      const agg = await tx.payroll.aggregate({
+        where: { periodId: id },
+        _sum: {
+          totalEarnings: true,
+          totalDeductions: true,
+          taxAmount: true,
+          netSalary: true,
+        },
+      });
+
+      const earnings = agg._sum.totalEarnings || new Prisma.Decimal(0);
+      const tax = agg._sum.taxAmount || new Prisma.Decimal(0);
+      const totalDeductions = agg._sum.totalDeductions || new Prisma.Decimal(0);
+      const net = agg._sum.netSalary || new Prisma.Decimal(0);
+      const otherDeductions = totalDeductions.sub(tax);
+
+      if (earnings.gt(0)) {
+        // Find Accounts
+        const salaryExpenseAcc = await getAccountOrFallback(
+          period.unitId,
+          ACCOUNT_MAPPING_KEYS.PAYROLL_EXPENSE,
+          '5100',
+          'Beban Gaji'
+        );
+
+        const taxPayableAcc = await tx.accountCode.findFirst({
+          where: { code: '2103', isActive: true },
+        });
+
+        const otherPayableAcc = await tx.accountCode.findFirst({
+          where: {
+            OR: [{ code: '2199' }, { name: { contains: 'Utang Lain', mode: 'insensitive' } }],
+            isActive: true,
+          },
+        });
+
+        const cashAcc = await getAccountOrFallback(
+          period.unitId,
+          ACCOUNT_MAPPING_KEYS.CASH,
+          '1101',
+          'Kas'
+        );
+
+        if (!salaryExpenseAcc || !cashAcc) {
+          throw new Error('Konfigurasi Akun Gaji/Kas tidak ditemukan. Mohon cek Chart of Accounts.');
+        }
+
+        const desc = `Penggajian Periode ${period.name}`;
+
+        // Debit Salaries Expense (Gross)
+        await tx.journalEntry.create({
+          data: {
+            unitId: period.unitId,
+            date: payDate,
+            description: desc,
+            reference: period.id,
+            referenceType: JournalReferenceType.PAYROLL,
+            accountId: salaryExpenseAcc.id,
+            debit: earnings,
+            credit: 0,
+            createdById: userId,
+          },
+        });
+
+        // Credit Cash (Net Salary)
+        await tx.journalEntry.create({
+          data: {
+            unitId: period.unitId,
+            date: payDate,
+            description: `Pembayaran Gaji ${period.name}`,
+            reference: period.id,
+            referenceType: JournalReferenceType.PAYROLL,
+            accountId: cashAcc.id,
+            debit: 0,
+            credit: net,
+            createdById: userId,
+          },
+        });
+
+        // Credit Tax Payable
+        if (tax.gt(0)) {
+          if (!taxPayableAcc) {
+            throw new Error('Akun Utang PPh 21 tidak ditemukan. Mohon cek Chart of Accounts.');
+          }
+          await tx.journalEntry.create({
+            data: {
+              unitId: period.unitId,
+              date: payDate,
+              description: `Penyetoran PPh 21 ${period.name}`,
+              reference: period.id,
+              referenceType: JournalReferenceType.PAYROLL,
+              accountId: taxPayableAcc.id,
+              debit: 0,
+              credit: tax,
+              createdById: userId,
+            },
+          });
+        }
+
+        // Credit Other Payables
+        if (otherDeductions.gt(0)) {
+          if (!otherPayableAcc) {
+            throw new Error('Akun Utang Lainnya tidak ditemukan. Mohon cek Chart of Accounts.');
+          }
+          await tx.journalEntry.create({
+            data: {
+              unitId: period.unitId,
+              date: payDate,
+              description: `Potongan Lain ${period.name}`,
+              reference: period.id,
+              referenceType: JournalReferenceType.PAYROLL,
+              accountId: otherPayableAcc.id,
+              debit: 0,
+              credit: otherDeductions,
+              createdById: userId,
+            },
+          });
+        }
+      }
+
+      return updatedPeriod;
     });
   },
 

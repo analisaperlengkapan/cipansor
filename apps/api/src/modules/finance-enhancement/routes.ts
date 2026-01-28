@@ -137,11 +137,22 @@ router.get(
 );
 
 router.get(
+  '/reports/income-statement',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  financeEnhancementController.getIncomeExpenseReport
+);
+
+router.get(
   '/reports/cash-flow',
   authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
   financeEnhancementController.getCashFlowStatement
 );
 
+router.get(
+  '/reports/budget-realization',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  financeEnhancementController.getBudgetRealizationReport
+);
 // ==================== BUDGETS ====================
 
 router.get(

@@ -9,7 +9,7 @@ import {
 } from '@prisma/client';
 import { prisma } from '../../lib/prisma';
 import { createNotification } from '../notifications/service';
-import { ACCOUNT_MAPPING_KEYS, getAccountOrFallback } from '../finance/accounting-config.service';
+import { createPurchaseJournal } from './asset-accounting.service';
 import type {
   CreateInventoryCategoryInput,
   UpdateInventoryCategoryInput,
@@ -158,9 +158,8 @@ export async function getItemById(id: string) {
   });
 }
 
-export async function createItem(data: CreateInventoryItemInput) {
+export async function createItem(data: CreateInventoryItemInput, userId?: string) {
   return prisma.$transaction(async (tx) => {
-    // 1. Create Asset
     const asset = await tx.asset.create({
       data: {
         unitId: data.unitId,
@@ -191,59 +190,9 @@ export async function createItem(data: CreateInventoryItemInput) {
       },
     });
 
-    // 2. Accounting Integration: Purchase Journal
-    // Only if price > 0 and status is ACTIVE (or implies ownership)
-    if (data.purchasePrice && Number(data.purchasePrice) > 0) {
-      const assetAccount = await getAccountOrFallback(
-        data.unitId,
-        ACCOUNT_MAPPING_KEYS.INVENTORY_ASSET,
-        undefined,
-        'Inventaris'
-      );
-
-      // Default Credit to Cash/Bank (Purchase)
-      // Future improvement: Support Accounts Payable if purchaseOrderNo exists?
-      const cashAccount = await getAccountOrFallback(
-        data.unitId,
-        ACCOUNT_MAPPING_KEYS.CASH,
-        '1101',
-        'Kas'
-      );
-
-      if (assetAccount && cashAccount) {
-        const description = `Pembelian Aset: ${asset.name} (${asset.code})`;
-        const amount = new Prisma.Decimal(data.purchasePrice);
-
-        // Debit Asset
-        await tx.journalEntry.create({
-          data: {
-            unitId: data.unitId,
-            accountId: assetAccount.id,
-            date: data.purchaseDate ? new Date(data.purchaseDate) : new Date(),
-            description,
-            debit: amount,
-            credit: new Prisma.Decimal(0),
-            reference: asset.id,
-            referenceType: JournalReferenceType.OTHER,
-            createdById: 'SYSTEM', // Default system user
-          },
-        });
-
-        // Credit Cash
-        await tx.journalEntry.create({
-          data: {
-            unitId: data.unitId,
-            accountId: cashAccount.id,
-            date: data.purchaseDate ? new Date(data.purchaseDate) : new Date(),
-            description,
-            debit: new Prisma.Decimal(0),
-            credit: amount,
-            reference: asset.id,
-            referenceType: JournalReferenceType.OTHER,
-            createdById: 'SYSTEM',
-          },
-        });
-      }
+    if (userId) {
+      // Propagate error to rollback transaction if journaling fails
+      await createPurchaseJournal(asset, userId, tx);
     }
 
     return asset;
@@ -714,8 +663,8 @@ export async function completeAudit(id: string) {
 
 // ==================== DEPRECIATION ====================
 
-export async function calculateDepreciation(assetId: string) {
-  const asset = await prisma.asset.findUnique({ where: { id: assetId } });
+export async function calculateDepreciation(assetId: string, tx: Prisma.TransactionClient = prisma) {
+  const asset = await tx.asset.findUnique({ where: { id: assetId } });
   if (!asset || !asset.purchasePrice || !asset.purchaseDate || !asset.usefulLife) {
     return null;
   }

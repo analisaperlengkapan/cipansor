@@ -61,6 +61,7 @@ playwright-report/
 *.bak
 *.tmp
 *.temp
+*.txt
 .cache/
 .parcel-cache/
 

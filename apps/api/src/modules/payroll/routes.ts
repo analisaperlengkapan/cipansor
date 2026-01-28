@@ -422,10 +422,12 @@ router.post(
   validate(payPayrollPeriodSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
+      const userId = (req as any).user.id;
       const period = await payrollPeriodService.markAsPaid(
         req.params.id,
         new Date(req.body.payDate),
-        req.body.notes
+        req.body.notes,
+        userId
       );
 
       res.json({

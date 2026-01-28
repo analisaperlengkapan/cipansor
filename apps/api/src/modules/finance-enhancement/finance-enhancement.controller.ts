@@ -271,10 +271,10 @@ export class FinanceEnhancementController {
     try {
       const { unitId, startDate, endDate } = req.query;
 
-      if (!startDate || !endDate) {
+      if (!unitId || !startDate || !endDate) {
         return res
           .status(400)
-          .json({ success: false, message: 'Start date and end date are required' });
+          .json({ success: false, message: 'Unit ID, Start date, and End date are required' });
       }
 
       // Use Reporting Service Logic
@@ -294,10 +294,10 @@ export class FinanceEnhancementController {
     try {
       const { unitId, accountId, startDate, endDate } = req.query;
 
-      if (!startDate || !endDate || !accountId) {
+      if (!unitId || !startDate || !endDate || !accountId) {
         return res
           .status(400)
-          .json({ success: false, message: 'Start date, end date, and accountId are required' });
+          .json({ success: false, message: 'Unit ID, Start date, End date, and Account ID are required' });
       }
 
       const result = await getGeneralLedger(
@@ -317,10 +317,10 @@ export class FinanceEnhancementController {
     try {
       const { unitId, startDate, endDate } = req.query;
 
-      if (!startDate || !endDate) {
+      if (!unitId || !startDate || !endDate) {
         return res
           .status(400)
-          .json({ success: false, message: 'Start date and end date are required' });
+          .json({ success: false, message: 'Unit ID, Start date, and End date are required' });
       }
 
       const result = await getCashFlowStatement(
@@ -339,10 +339,10 @@ export class FinanceEnhancementController {
     try {
       const { unitId, startDate, endDate } = req.query;
 
-      if (!startDate || !endDate) {
+      if (!unitId || !startDate || !endDate) {
         return res
           .status(400)
-          .json({ success: false, message: 'Start date and end date are required' });
+          .json({ success: false, message: 'Unit ID, Start date, and End date are required' });
       }
 
       const result = await getIncomeStatement(
@@ -361,8 +361,8 @@ export class FinanceEnhancementController {
     try {
       const { unitId, date } = req.query;
 
-      if (!date) {
-        return res.status(400).json({ success: false, message: 'Date is required' });
+      if (!unitId || !date) {
+        return res.status(400).json({ success: false, message: 'Unit ID and Date are required' });
       }
 
       const result = await getBalanceSheet(unitId as string, new Date(date as string));

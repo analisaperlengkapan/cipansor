@@ -496,48 +496,50 @@ export async function getCashFlowStatement(
 
 // Budget Realization Report
 export async function getBudgetRealizationReport(unitId: string, academicYearId: string) {
+  const academicYear = await prisma.academicYear.findUnique({
+    where: { id: academicYearId },
+  });
+
+  if (!academicYear) throw new Error('Academic Year not found');
+
   // 1. Get all Budgets for the Unit & Year
   const budgets = await prisma.budget.findMany({
     where: { unitId, academicYearId },
     include: { account: true },
   });
 
-  // 2. Get Actuals from Journals for the Unit (Date range needs to be derived from Academic Year)
-  // Fetch Academic Year to get dates
-  const academicYear = await prisma.academicYear.findUnique({
-    where: { id: academicYearId },
-  });
+  const start = academicYear.startDate;
+  const end = academicYear.endDate;
 
-  if (!academicYear) {
-    throw new Error('Academic Year not found');
-  }
+  // 2. Get Actuals from Journals
+  const accountIds = budgets.map((b) => b.accountId);
 
   const actuals = await prisma.journalEntry.groupBy({
     by: ['accountId'],
     where: {
       unitId,
-      date: {
-        gte: academicYear.startDate,
-        lte: academicYear.endDate,
-      },
+      accountId: { in: accountIds },
+      date: { gte: start, lte: end },
     },
     _sum: { debit: true, credit: true },
   });
 
-  const actualMap = new Map<string, number>();
+  const actualMap = new Map<string, { debit: number; credit: number }>();
   actuals.forEach((a) => {
-    // For Expense: Actual is Debit - Credit
-    // For Revenue: Actual is Credit - Debit
-    // Defaulting to simple net Debit for now, adjusted per account type in loop
-    actualMap.set(a.accountId, (a._sum.debit?.toNumber() || 0) - (a._sum.credit?.toNumber() || 0));
+    const debit = a._sum.debit?.toNumber() || 0;
+    const credit = a._sum.credit?.toNumber() || 0;
+    actualMap.set(a.accountId, { debit, credit });
   });
 
   const items = budgets.map((b) => {
-    let actualAmount = actualMap.get(b.accountId) || 0;
+    const act = actualMap.get(b.accountId) || { debit: 0, credit: 0 };
+    let actualAmount = 0;
 
     // Adjust sign based on account type
-    if (b.account.type === AccountType.REVENUE || b.account.type === AccountType.LIABILITY || b.account.type === AccountType.EQUITY) {
-      actualAmount = -actualAmount;
+    if (b.account.type === AccountType.EXPENSE || b.account.type === AccountType.ASSET) {
+      actualAmount = act.debit - act.credit;
+    } else {
+      actualAmount = act.credit - act.debit;
     }
 
     const budgetAmount = b.amount.toNumber();

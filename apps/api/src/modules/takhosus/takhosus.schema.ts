@@ -11,10 +11,18 @@ export const SimaanTypeEnum = z.enum(['BIN_NAZHR', 'BIL_GHAIB', 'TAHDIR', 'TASMI
 // Murojaah Schemas
 // ============================================
 
+const mistakeSchema = z.object({
+  mistakeType: z.enum(['LAHIN_JALI', 'LAHIN_KHAFI', 'TAJWID', 'LUPA', 'URUTAN']),
+  juz: z.number().int(),
+  surahNumber: z.number().int(),
+  ayahNumber: z.number().int().optional(),
+  description: z.string().optional(),
+});
+
 export const createMurojaahSchema = z.object({
   studentId: z.string().uuid(),
   teacherId: z.string().uuid(),
-  date: z.string().datetime(), // ISO Date string
+  murojaahDate: z.string().datetime(), // ISO Date string
   murojaahType: MurojaahTypeEnum,
   surahName: z.string().optional(),
   juzStart: z.number().int().min(1).max(30),
@@ -28,6 +36,7 @@ export const createMurojaahSchema = z.object({
   endAyat: z.number().optional(),
   repetitions: z.number().optional(),
   status: z.string().optional().default('COMPLETED'),
+  mistakes: z.array(mistakeSchema).optional(),
 });
 
 export const updateMurojaahSchema = createMurojaahSchema.partial();
@@ -99,6 +108,48 @@ export const createSanadSchema = z.object({
   notes: z.string().optional(),
 });
 
+export const updateSanadSchema = createSanadSchema.partial();
+
+// ============================================
+// Halaqoh Schemas (Added)
+// ============================================
+
+export const createHalaqohSchema = z.object({
+  name: z.string().min(3),
+  teacherId: z.string().uuid(),
+  level: z.number().int().min(1),
+  scheduleDay: z.array(z.string()),
+  scheduleTime: z.string(),
+  location: z.string().optional(),
+});
+
+export const updateHalaqohSchema = createHalaqohSchema.partial();
+
+// ============================================
+// Enrollment Schemas (Added)
+// ============================================
+
+export const createEnrollmentSchema = z.object({
+  studentId: z.string().uuid(),
+  halaqohId: z.string().uuid(),
+  status: z.string().optional(),
+  targetJuz: z.number().int().min(1).max(30).optional(),
+});
+
+export const updateEnrollmentSchema = createEnrollmentSchema.partial();
+
+// ============================================
+// Target Schemas (Added)
+// ============================================
+
+export const createTargetSchema = z.object({
+  studentId: z.string().uuid(),
+  academicYearId: z.string().uuid(),
+  targetJuz: z.number().int().min(1),
+});
+
+export const updateTargetSchema = createTargetSchema.partial();
+
 // ============================================
 // Types
 // ============================================
@@ -112,3 +163,13 @@ export type UpdateSimaanResultInput = z.infer<typeof updateSimaanResultSchema>;
 export type ListSimaanQuery = z.infer<typeof listSimaanQuerySchema>;
 
 export type CreateSanadInput = z.infer<typeof createSanadSchema>;
+export type UpdateSanadInput = z.infer<typeof updateSanadSchema>;
+
+export type CreateHalaqohInput = z.infer<typeof createHalaqohSchema>;
+export type UpdateHalaqohInput = z.infer<typeof updateHalaqohSchema>;
+
+export type CreateEnrollmentInput = z.infer<typeof createEnrollmentSchema>;
+export type UpdateEnrollmentInput = z.infer<typeof updateEnrollmentSchema>;
+
+export type CreateTargetInput = z.infer<typeof createTargetSchema>;
+export type UpdateTargetInput = z.infer<typeof updateTargetSchema>;

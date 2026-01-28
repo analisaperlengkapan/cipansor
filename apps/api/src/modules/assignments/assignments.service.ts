@@ -255,7 +255,8 @@ export class AssignmentsService {
           select: {
             id: true,
             nis: true,
-            user: { select: { name: true, photoUrl: true } },
+            photoUrl: true,
+            user: { select: { name: true } },
           },
         },
       },
@@ -268,7 +269,7 @@ export class AssignmentsService {
         id: s.student.id,
         nis: s.student.nis,
         name: s.student.user.name,
-        photoUrl: s.student.user.photoUrl,
+        photoUrl: s.student.photoUrl,
       },
     }));
   }

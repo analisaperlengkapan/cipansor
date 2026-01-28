@@ -3,6 +3,7 @@ import { config } from '@/config';
 import { UserRole } from '@prisma/client';
 
 export interface JwtPayload {
+  id: string;
   sub: string;
   email: string;
   role: UserRole;

@@ -68,7 +68,7 @@ export class AnnouncementService {
         where,
         include: {
           unit: {
-            select: { id: true, name: true, code: true },
+            select: { id: true, name: true },
           },
           createdBy: {
             select: { id: true, name: true },
@@ -97,7 +97,7 @@ export class AnnouncementService {
       where: { id },
       include: {
         unit: {
-          select: { id: true, name: true, code: true },
+          select: { id: true, name: true },
         },
         createdBy: {
           select: { id: true, name: true },
@@ -122,7 +122,7 @@ export class AnnouncementService {
       },
       include: {
         unit: {
-          select: { id: true, name: true, code: true },
+          select: { id: true, name: true },
         },
         createdBy: {
           select: { id: true, name: true },
@@ -137,7 +137,7 @@ export class AnnouncementService {
       data,
       include: {
         unit: {
-          select: { id: true, name: true, code: true },
+          select: { id: true, name: true },
         },
         createdBy: {
           select: { id: true, name: true },
@@ -210,7 +210,7 @@ export class AnnouncementService {
       where,
       include: {
         unit: {
-          select: { id: true, name: true, code: true },
+          select: { id: true, name: true },
         },
         createdBy: {
           select: { id: true, name: true },

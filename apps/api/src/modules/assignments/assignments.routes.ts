@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { authenticate, authorize } from '@/middleware/auth';
 import { validate } from '@/middleware/error';
+import { UserRole } from '@prisma/client';
 import { assignmentsController } from './assignments.controller';
 import {
   createAssignmentSchema,
@@ -16,29 +17,29 @@ router.use(authenticate);
 // Teacher/Admin routes
 router.post(
   '/',
-  authorize(['TEACHER', 'SUPER_ADMIN', 'UNIT_ADMIN']),
+  authorize(UserRole.TEACHER, UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
   validate(createAssignmentSchema),
   assignmentsController.create
 );
 router.put(
   '/:id',
-  authorize(['TEACHER', 'SUPER_ADMIN', 'UNIT_ADMIN']),
+  authorize(UserRole.TEACHER, UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
   validate(updateAssignmentSchema),
   assignmentsController.update
 );
 router.delete(
   '/:id',
-  authorize(['TEACHER', 'SUPER_ADMIN', 'UNIT_ADMIN']),
+  authorize(UserRole.TEACHER, UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
   assignmentsController.delete
 );
 router.get(
   '/:id/submissions',
-  authorize(['TEACHER', 'SUPER_ADMIN', 'UNIT_ADMIN']),
+  authorize(UserRole.TEACHER, UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
   assignmentsController.getSubmissions
 );
 router.post(
   '/:id/submissions/:studentId/grade',
-  authorize(['TEACHER', 'SUPER_ADMIN', 'UNIT_ADMIN']),
+  authorize(UserRole.TEACHER, UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
   validate(gradeSubmissionSchema),
   assignmentsController.grade
 );
@@ -46,7 +47,7 @@ router.post(
 // Student routes
 router.post(
   '/:id/submit',
-  authorize(['STUDENT']),
+  authorize(UserRole.STUDENT),
   validate(submitAssignmentSchema),
   assignmentsController.submit
 );

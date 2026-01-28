@@ -11,17 +11,8 @@ router.use(authenticate);
 router.use(
   authorize(
     UserRole.SUPER_ADMIN,
-    UserRole.YAYASAN_ADMIN,
-    UserRole.YAYASAN_KETUA,
     UserRole.UNIT_ADMIN,
-    UserRole.TKQ_ADMIN,
-    UserRole.TKQ_KEPALA_SEKOLAH,
-    UserRole.SDIT_ADMIN,
-    UserRole.SDIT_KEPALA_SEKOLAH,
-    UserRole.SMPIT_ADMIN,
-    UserRole.SMPIT_KEPALA_SEKOLAH,
-    UserRole.SMAQ_ADMIN,
-    UserRole.SMAQ_KEPALA_SEKOLAH
+    UserRole.TEACHER // Assuming teachers might need access, or restrict to Admin/Unit Admin
   )
 );
 

@@ -196,3 +196,13 @@ export const queryAssetAuditSchema = z.object({
 export type CreateAssetAuditInput = z.infer<typeof createAssetAuditSchema>;
 export type UpdateAssetAuditItemInput = z.infer<typeof updateAssetAuditItemSchema>;
 export type QueryAssetAuditInput = z.infer<typeof queryAssetAuditSchema>;
+
+// ==================== SETTINGS ====================
+
+export const updateInventorySettingsSchema = z.object({
+  unitId: z.string().uuid(),
+  depreciationExpenseAccount: z.string().uuid().optional().nullable(),
+  accumulatedDepreciationAccount: z.string().uuid().optional().nullable(),
+});
+
+export type UpdateInventorySettingsInput = z.infer<typeof updateInventorySettingsSchema>;

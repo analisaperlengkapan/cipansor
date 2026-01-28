@@ -327,7 +327,7 @@ export const updatePackage = async (id: string, data: UpdateStudentPackageInput)
     include: {
       student: {
         select: {
-          name: true,
+          user: { select: { name: true } },
           nis: true,
           enrollments: {
             where: { status: 'active' },

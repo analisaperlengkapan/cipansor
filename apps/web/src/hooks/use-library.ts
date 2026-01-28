@@ -30,13 +30,15 @@ export const BORROW_STATUSES: {
 ];
 
 export const BOOK_CATEGORIES = [
-  { value: "FIQ", label: "Fiqih" },
-  { value: "HAD", label: "Hadits" },
-  { value: "TAF", label: "Tafsir" },
-  { value: "AQD", label: "Aqidah" },
-  { value: "AKH", label: "Akhlaq" },
-  { value: "TAR", label: "Tarikh" },
-  { value: "UMM", label: "Umum" },
+  { value: "FIQH", label: "Fiqih" },
+  { value: "AQIDAH", label: "Aqidah" },
+  { value: "TASAWUF", label: "Tasawuf" },
+  { value: "HADITS", label: "Hadits" },
+  { value: "TAFSIR", label: "Tafsir" },
+  { value: "TARIKH", label: "Tarikh (Sejarah)" },
+  { value: "BAHASA", label: "Bahasa Arab/Nahwu Shorof" },
+  { value: "UMUM", label: "Umum/Pelajaran" },
+  { value: "LAINNYA", label: "Lainnya" },
 ];
 
 // Category Hooks

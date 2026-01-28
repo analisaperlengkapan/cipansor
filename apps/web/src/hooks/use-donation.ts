@@ -312,6 +312,18 @@ export function useDonationStats() {
   });
 }
 
+export function useRecentDonations(limit = 5) {
+  return useQuery({
+    queryKey: ["donation", "recent", limit],
+    queryFn: async () => {
+      const response = await api.get<ApiResponse<Donation[]>>("/donation/recent", {
+        params: { limit },
+      });
+      return response.data.data;
+    },
+  });
+}
+
 export interface CreateDonationData {
   campaignId?: string;
   donorName: string;
@@ -373,7 +385,7 @@ export function useVerifyDonation() {
       id: string;
       status: DonationStatus;
     }) => {
-      const response = await api.patch<ApiResponse<Donation>>(
+      const response = await api.put<ApiResponse<Donation>>(
         `/donation/${id}/verify`,
         { status },
       );

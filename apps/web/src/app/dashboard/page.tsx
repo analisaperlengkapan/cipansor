@@ -19,6 +19,7 @@ import {
 } from "@/hooks";
 import { useStudents } from "@/hooks/use-students";
 import { useHealthSummary } from "@/hooks/use-health";
+import { useDonationStats, useRecentDonations } from "@/hooks/use-donation";
 import {
   Users,
   GraduationCap,
@@ -54,15 +55,6 @@ import {
 } from "recharts";
 import { useMemo } from "react";
 
-const CHART_COLORS = [
-  "#22c55e",
-  "#3b82f6",
-  "#f59e0b",
-  "#ef4444",
-  "#8b5cf6",
-  "#ec4899",
-];
-
 export default function DashboardPage() {
   const { user } = useAuthStore();
   const { data: stats, isLoading } = useDashboardStats();
@@ -78,6 +70,8 @@ export default function DashboardPage() {
     useViolationRewardStats({ period: "month" });
   const { data: healthData } = useHealthSummary();
   const { data: recentStudents } = useStudents({ limit: 5, status: "ACTIVE" }); // Assume default sort is filtered by new/active
+  const { data: donationStats } = useDonationStats();
+  const { data: recentDonations } = useRecentDonations();
 
   // Combine activity feed
   const activities = useMemo(() => {
@@ -122,10 +116,18 @@ export default function DashboardPage() {
         type: "finance",
         rawTime: new Date(p.date).getTime(),
       })) || []),
+      ...(recentDonations?.map((d) => ({
+        id: d.id,
+        title: "Donasi Masuk",
+        description: `${d.donorName} - ${d.type} (Rp ${d.amount.toLocaleString("id-ID")})`,
+        time: (d as any).donatedAt || d.createdAt,
+        type: "donation",
+        rawTime: new Date((d as any).donatedAt || d.createdAt).getTime(),
+      })) || []),
     ];
 
     return allActivities.sort((a, b) => b.rawTime - a.rawTime).slice(0, 5);
-  }, [recentStudents, recentTahfidz, violationData, financeData]);
+  }, [recentStudents, recentTahfidz, violationData, financeData, recentDonations]);
 
   return (
     <MainLayout>
@@ -345,6 +347,22 @@ export default function DashboardPage() {
                   </div>
                 )}
               </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">Donasi & Infak</CardTitle>
+              <Heart className="h-4 w-4 text-emerald-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-emerald-600">
+                {donationStats?.totalAmount
+                  ? `Rp ${(donationStats.totalAmount / 1000000).toFixed(1)}jt`
+                  : "-"}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {donationStats?.pendingVerification ?? 0} menunggu verifikasi
+              </p>
             </CardContent>
           </Card>
         </div>
@@ -821,6 +839,8 @@ function ActivityItem({ title, description, time, type }: ActivityItemProps) {
         return "bg-pink-500";
       case "finance":
         return "bg-emerald-500";
+      case "donation":
+        return "bg-teal-500";
       default:
         return "bg-primary";
     }

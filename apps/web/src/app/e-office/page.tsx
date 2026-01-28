@@ -46,11 +46,20 @@ import {
   type LetterDetail,
 } from "@cipansor/shared";
 import Link from "next/link";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 
 export default function EOfficeMainPage() {
   const router = useRouter();
   const { user } = useAuth();
-  const { useLetters } = useCorrespondence(user?.unitId);
+  const { useLetters, useStats } = useCorrespondence(user?.unitId);
 
   // Fetch inbox and outbox
   const { data: inboxData, isLoading: loadingInbox } = useLetters({
@@ -63,21 +72,18 @@ export default function EOfficeMainPage() {
     limit: 5,
   });
 
+  // Fetch real stats
+  const { data: statsData, isLoading: loadingStats } = useStats();
+
   const inbox = inboxData?.data || [];
   const outbox = outboxData?.data || [];
 
-  // Calculate stats
+  // Stats from backend
   const stats = {
-    totalIncoming: inboxData?.meta?.total || 0,
-    totalOutgoing: outboxData?.meta?.total || 0,
-    pendingReview: inbox.filter(
-      (l: LetterDetail) => l.status === LetterStatus.PENDING_REVIEW,
-    ).length,
-    needsAction: inbox.filter(
-      (l: LetterDetail) =>
-        l.status === LetterStatus.DRAFT ||
-        l.status === LetterStatus.PENDING_REVIEW,
-    ).length,
+    totalIncoming: statsData?.counts?.totalIncoming || 0,
+    totalOutgoing: statsData?.counts?.totalOutgoing || 0,
+    pendingReview: statsData?.counts?.pendingReview || 0,
+    needsAction: statsData?.counts?.needsAction || 0,
   };
 
   const getStatusBadge = (status: LetterStatus) => {
@@ -225,6 +231,71 @@ export default function EOfficeMainPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Chart Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Statistik Surat</CardTitle>
+          <CardDescription>
+            Tren surat masuk dan keluar 6 bulan terakhir
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[300px] w-full">
+            {loadingStats ? (
+              <div className="h-full w-full flex items-center justify-center text-muted-foreground">
+                <RefreshCw className="h-6 w-6 animate-spin mr-2" />
+                Memuat grafik...
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart
+                  data={statsData?.chart || []}
+                  margin={{
+                    top: 10,
+                    right: 30,
+                    left: 0,
+                    bottom: 0,
+                  }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis
+                    dataKey="name"
+                    stroke="#888888"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis
+                    stroke="#888888"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                    tickFormatter={(value) => `${value}`}
+                  />
+                  <Tooltip />
+                  <Area
+                    type="monotone"
+                    dataKey="incoming"
+                    stroke="#2563eb"
+                    fill="#3b82f6"
+                    fillOpacity={0.2}
+                    name="Surat Masuk"
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="outgoing"
+                    stroke="#16a34a"
+                    fill="#22c55e"
+                    fillOpacity={0.2}
+                    name="Surat Keluar"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Quick Actions */}
       <div className="grid gap-4 md:grid-cols-4">

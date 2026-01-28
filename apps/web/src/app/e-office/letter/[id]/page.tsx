@@ -6,10 +6,19 @@ import { useAuth } from "@/hooks/use-auth";
 import { useTeachers } from "@/hooks/use-teachers";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { LetterStatusBadge } from "@/components/e-office/letter-status-badge";
 import { DispositionTimeline } from "@/components/e-office/disposition-timeline";
 import { LetterPDFTemplate } from "@/components/e-office/letter-pdf-template";
-import { ArrowLeft, FileText, Send, CheckCircle, XCircle, Printer } from "lucide-react";
+import {
+  ArrowLeft,
+  FileText,
+  Send,
+  CheckCircle,
+  XCircle,
+  Printer,
+  ShieldCheck,
+} from "lucide-react";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import { useState, useRef } from "react";
@@ -307,6 +316,15 @@ export default function LetterDetailPage({
           </p>
         </div>
         <div className="ml-auto flex items-center gap-2">
+          {letter.status === "SIGNED" && (
+            <Badge
+              variant="outline"
+              className="border-green-600 text-green-600 bg-green-50 gap-1"
+            >
+              <ShieldCheck className="h-3 w-3" />
+              Status: Ditandatangani
+            </Badge>
+          )}
           <LetterStatusBadge status={letter.status} />
         </div>
       </div>
@@ -384,13 +402,45 @@ export default function LetterDetailPage({
                       target="_blank"
                       rel="noopener noreferrer"
                     >
-                      Lihat
+                      Download
                     </a>
                   </Button>
                 </div>
               )}
             </CardContent>
           </Card>
+
+          {letter.fileUrl && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Pratinjau Naskah
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <object
+                  data={letter.fileUrl}
+                  type="application/pdf"
+                  className="w-full h-[600px] rounded border bg-muted"
+                >
+                  <div className="flex flex-col items-center justify-center h-full p-6 text-center text-muted-foreground">
+                    <FileText className="h-12 w-12 mb-2 opacity-50" />
+                    <p className="mb-2">Pratinjau tidak tersedia.</p>
+                    <Button variant="outline" size="sm" asChild>
+                      <a
+                        href={letter.fileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Unduh Dokumen
+                      </a>
+                    </Button>
+                  </div>
+                </object>
+              </CardContent>
+            </Card>
+          )}
 
           <Card>
             <CardHeader>

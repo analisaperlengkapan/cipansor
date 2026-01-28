@@ -340,7 +340,7 @@ export const CorrespondenceService = {
       throw new Error('Unauthorized access to this disposition');
     }
 
-    const result = await prisma.disposition.update({
+    const updatedDisposition = await prisma.disposition.update({
       where: { id },
       data: {
         status,
@@ -369,6 +369,89 @@ export const CorrespondenceService = {
       });
     }
 
-    return result;
+    return updatedDisposition;
+  },
+
+  async getDashboardStats(unitId: string) {
+    // Type definition for Raw SQL Result
+    type ChartDataRow = {
+      month_key: string;
+      direction: string;
+      count: number;
+    };
+
+    const [totalIncoming, totalOutgoing, pendingReview, needsAction, chartDataRaw] =
+      await Promise.all([
+        // Total Incoming
+        prisma.letter.count({ where: { unitId, direction: 'INCOMING' } }),
+        // Total Outgoing
+        prisma.letter.count({ where: { unitId, direction: 'OUTGOING' } }),
+        // Pending Review
+        prisma.letter.count({ where: { unitId, status: 'PENDING_REVIEW' } }),
+        // Needs Action
+        prisma.letter.count({
+          where: {
+            unitId,
+            status: { in: ['DRAFT', 'PENDING_REVIEW', 'REVISION_NEEDED'] },
+          },
+        }),
+        // Chart Data (Last 6 Months)
+        prisma.$queryRaw<ChartDataRow[]>`
+        SELECT
+          TO_CHAR(date, 'YYYY-MM') as month_key,
+          direction,
+          COUNT(*)::int as count
+        FROM letters
+        WHERE unit_id = ${unitId}
+          AND date >= NOW() - INTERVAL '6 months'
+        GROUP BY 1, 2
+        ORDER BY 1 ASC
+      `,
+      ]);
+
+    // Process Chart Data
+    const chartMap = new Map<string, { name: string; incoming: number; outgoing: number }>();
+    const monthNames = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'Mei',
+      'Jun',
+      'Jul',
+      'Agu',
+      'Sep',
+      'Okt',
+      'Nov',
+      'Des',
+    ];
+
+    // Initialize last 6 months
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(1); // Prevent month skipping on 31st
+      d.setMonth(d.getMonth() - i);
+      const key = d.toISOString().slice(0, 7); // YYYY-MM
+      const monthLabel = monthNames[d.getMonth()];
+      chartMap.set(key, { name: monthLabel, incoming: 0, outgoing: 0 });
+    }
+
+    (chartDataRaw as ChartDataRow[]).forEach((row) => {
+      if (chartMap.has(row.month_key)) {
+        const entry = chartMap.get(row.month_key)!;
+        if (row.direction === 'INCOMING') entry.incoming = row.count;
+        if (row.direction === 'OUTGOING') entry.outgoing = row.count;
+      }
+    });
+
+    return {
+      counts: {
+        totalIncoming,
+        totalOutgoing,
+        pendingReview,
+        needsAction,
+      },
+      chart: Array.from(chartMap.values()),
+    };
   },
 };

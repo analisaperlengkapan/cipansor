@@ -15,6 +15,7 @@ router.use(authenticate);
 
 router.post('/letters', validate(createLetterSchema), CorrespondenceController.create);
 router.get('/letters', CorrespondenceController.findAll);
+router.get('/stats', CorrespondenceController.getStats);
 router.get('/letters/:id', CorrespondenceController.findOne);
 router.post('/letters/:id/review', validate(reviewLetterSchema), CorrespondenceController.review);
 router.post(

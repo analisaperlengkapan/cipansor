@@ -10,6 +10,7 @@ export const uploadController = {
       if (!req.file) {
         return res.status(400).json({
           success: false,
+          data: null as any,
           error: {
             code: 'NO_FILE',
             message: 'No file uploaded',
@@ -36,6 +37,7 @@ export const uploadController = {
     } catch (error) {
       return res.status(500).json({
         success: false,
+        data: null as any,
         error: {
           code: 'UPLOAD_ERROR',
           message: error instanceof Error ? error.message : 'Unknown upload error',

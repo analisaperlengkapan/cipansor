@@ -1,7 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
-import { ApiError } from '@/middleware/error';
-import httpStatus from 'http-status';
+import { ApiError, ErrorCode } from '@/middleware/error';
 import { CreateSimaanInput, UpdateSimaanResultInput, ListSimaanQuery } from './takhosus.schema';
 
 export const simaanService = {
@@ -13,7 +12,7 @@ export const simaanService = {
     });
 
     if (!student) {
-      throw new ApiError(httpStatus.NOT_FOUND, 'Student not found');
+      throw new ApiError(ErrorCode.NOT_FOUND, 'Student not found');
     }
 
     // Create simaan exam
@@ -114,7 +113,7 @@ export const simaanService = {
     });
 
     if (!exam) {
-      throw new ApiError(httpStatus.NOT_FOUND, 'Simaan exam not found');
+      throw new ApiError(ErrorCode.NOT_FOUND, 'Simaan exam not found');
     }
 
     return exam;
@@ -123,7 +122,7 @@ export const simaanService = {
   async updateResult(id: string, data: UpdateSimaanResultInput) {
     const exam = await prisma.simaanExam.findUnique({ where: { id } });
     if (!exam) {
-      throw new ApiError(httpStatus.NOT_FOUND, 'Simaan exam not found');
+      throw new ApiError(ErrorCode.NOT_FOUND, 'Simaan exam not found');
     }
 
     return prisma.simaanExam.update({

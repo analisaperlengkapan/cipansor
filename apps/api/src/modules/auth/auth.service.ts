@@ -55,6 +55,7 @@ export class AuthService {
     if (user.isTwoFactorEnabled) {
       // Return temporary token for 2FA verification with SHORT expiry
       const tempToken = generateAccessToken({
+        id: user.id,
         sub: user.id,
         email: user.email,
         role: user.role,
@@ -72,6 +73,7 @@ export class AuthService {
     // Force 2FA setup for Admin/Super Admin
     if (isUserAdmin && !user.isTwoFactorEnabled) {
         const tempToken = generateAccessToken({
+            id: user.id,
             sub: user.id,
             email: user.email,
             role: user.role,
@@ -88,6 +90,7 @@ export class AuthService {
 
     // Generate tokens with roleId
     const tokens = generateTokenPair({
+      id: user.id,
       sub: user.id,
       email: user.email,
       role: user.role,
@@ -240,6 +243,7 @@ export class AuthService {
 
     // Generate new tokens
     const tokens = generateTokenPair({
+      id: storedToken.user.id,
       sub: storedToken.user.id,
       email: storedToken.user.email,
       role: storedToken.user.role,
@@ -496,6 +500,7 @@ export class AuthService {
     // Generate tokens
     const primaryRole = user.userRoles.find((r) => r.isPrimary) || user.userRoles[0];
     const tokens = generateTokenPair({
+      id: user.id,
       sub: user.id,
       email: user.email,
       role: user.role,

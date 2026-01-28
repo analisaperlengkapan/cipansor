@@ -104,14 +104,23 @@ export const murojaahService = {
       halaqohId = activeEnrollment.halaqohId;
     }
 
+    const { studentId } = rest;
+
     return prisma.murojaahRecord.create({
       data: {
-        ...rest,
+        student: { connect: { id: studentId } },
         murojaahDate: new Date(murojaahDate),
         murojaahType: input.murojaahType as MurojaahType,
-        recordedById,
-        enrollmentId,
-        halaqohId,
+        juzStart: input.juzStart,
+        juzEnd: input.juzEnd,
+        pagesReviewed: input.pagesReviewed,
+        durationMinutes: input.durationMinutes,
+        qualityScore: input.qualityScore,
+        fluencyLevel: input.fluencyLevel,
+        notes: input.notes,
+        recordedBy: { connect: { id: recordedById } },
+        ...(enrollmentId ? { enrollment: { connect: { id: enrollmentId } } } : {}),
+        ...(halaqohId ? { halaqoh: { connect: { id: halaqohId } } } : {}),
         mistakes: mistakes
           ? {
               create: mistakes.map((m) => ({

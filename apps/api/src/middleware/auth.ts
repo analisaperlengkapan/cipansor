@@ -43,7 +43,7 @@ export function authenticate(req: Request, res: Response, next: NextFunction) {
       throw Errors.unauthorized('2FA Verification Required');
     }
 
-    req.user = payload;
+    req.user = { ...payload, id: payload.sub };
     next();
   } catch (error) {
     next(error);
@@ -74,7 +74,7 @@ export function authenticate2FA(req: Request, res: Response, next: NextFunction)
       throw Errors.unauthorized('Invalid token type');
     }
 
-    req.user = payload;
+    req.user = { ...payload, id: payload.sub };
     next();
   } catch (error) {
     next(error);
@@ -97,7 +97,7 @@ export function optionalAuth(req: Request, res: Response, next: NextFunction) {
     if (type === 'Bearer' && token) {
       const payload = verifyToken(token);
       if (payload.type === 'access' && !payload.isTemp) {
-        req.user = payload;
+        req.user = { ...payload, id: payload.sub };
       }
     }
 

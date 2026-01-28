@@ -154,7 +154,7 @@ export const getStudentVisits = async (
     include: {
       student: {
         select: {
-          name: true,
+          user: { select: { name: true } },
           nis: true,
           enrollments: {
             where: { status: 'active' },
@@ -191,7 +191,7 @@ export const createStudentVisit = async (unitId: string, data: CreateStudentVisi
     include: {
       student: {
         select: {
-          name: true,
+          user: { select: { name: true } },
           nis: true,
           enrollments: {
             where: { status: 'active' },
@@ -218,7 +218,7 @@ export const updateStudentVisit = async (id: string, data: UpdateStudentVisitInp
     include: {
       student: {
         select: {
-          name: true,
+          user: { select: { name: true } },
           nis: true,
           enrollments: {
             where: { status: 'active' },
@@ -253,7 +253,7 @@ export const getPackages = async (
     include: {
       student: {
         select: {
-          name: true,
+          user: { select: { name: true } },
           nis: true,
           enrollments: {
             where: { status: 'active' },
@@ -290,7 +290,7 @@ export const createPackage = async (
     include: {
       student: {
         select: {
-          name: true,
+          user: { select: { name: true } },
           nis: true,
           enrollments: {
             where: { status: 'active' },
@@ -327,7 +327,7 @@ export const updatePackage = async (id: string, data: UpdateStudentPackageInput)
     include: {
       student: {
         select: {
-          name: true,
+          user: { select: { name: true } },
           nis: true,
           enrollments: {
             where: { status: 'active' },

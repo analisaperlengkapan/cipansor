@@ -53,6 +53,8 @@ export class ApiError extends Error {
   }
 }
 
+export class AppError extends ApiError {}
+
 // Helper functions to create common errors
 export const Errors = {
   badRequest: (message: string) => new ApiError(ErrorCode.BAD_REQUEST, message),

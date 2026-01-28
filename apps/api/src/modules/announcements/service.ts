@@ -68,7 +68,7 @@ export class AnnouncementService {
         where,
         include: {
           unit: {
-            select: { id: true, name: true, code: true },
+            select: { id: true, name: true },
           },
           createdBy: {
             select: { id: true, name: true },
@@ -97,7 +97,7 @@ export class AnnouncementService {
       where: { id },
       include: {
         unit: {
-          select: { id: true, name: true, code: true },
+          select: { id: true, name: true },
         },
         createdBy: {
           select: { id: true, name: true },
@@ -122,7 +122,7 @@ export class AnnouncementService {
       },
       include: {
         unit: {
-          select: { id: true, name: true, code: true },
+          select: { id: true, name: true },
         },
         createdBy: {
           select: { id: true, name: true },
@@ -137,7 +137,7 @@ export class AnnouncementService {
       data,
       include: {
         unit: {
-          select: { id: true, name: true, code: true },
+          select: { id: true, name: true },
         },
         createdBy: {
           select: { id: true, name: true },
@@ -167,23 +167,26 @@ export class AnnouncementService {
       prisma.announcement.count({ where }),
       prisma.announcement.count({
         where: {
-          ...where,
-          publishedAt: { lte: now },
-          OR: [{ expiresAt: null }, { expiresAt: { gte: now } }],
+          AND: [
+            where,
+            { publishedAt: { lte: now } },
+            { OR: [{ expiresAt: null }, { expiresAt: { gte: now } }] },
+          ],
         },
       }),
       prisma.announcement.count({
         where: {
-          ...where,
-          priority: 2, // urgent
-          publishedAt: { lte: now },
-          OR: [{ expiresAt: null }, { expiresAt: { gte: now } }],
+          AND: [
+            where,
+            { priority: 2 }, // urgent
+            { publishedAt: { lte: now } },
+            { OR: [{ expiresAt: null }, { expiresAt: { gte: now } }] },
+          ],
         },
       }),
       prisma.announcement.count({
         where: {
-          ...where,
-          createdAt: { gte: startOfMonth },
+          AND: [where, { createdAt: { gte: startOfMonth } }],
         },
       }),
     ]);
@@ -210,7 +213,7 @@ export class AnnouncementService {
       where,
       include: {
         unit: {
-          select: { id: true, name: true, code: true },
+          select: { id: true, name: true },
         },
         createdBy: {
           select: { id: true, name: true },

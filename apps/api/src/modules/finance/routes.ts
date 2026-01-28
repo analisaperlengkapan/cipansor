@@ -894,6 +894,32 @@ router.delete(
   accountingController.deleteAccount
 );
 
+/**
+ * @swagger
+ * /api/finance/accounting/settings:
+ *   get:
+ *     summary: Get accounting settings (account mappings)
+ *     tags: [Finance - Accounting]
+ */
+router.get(
+  '/accounting/settings',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  accountingController.getSettings
+);
+
+/**
+ * @swagger
+ * /api/finance/accounting/settings:
+ *   post:
+ *     summary: Update accounting settings (account mappings)
+ *     tags: [Finance - Accounting]
+ */
+router.post(
+  '/accounting/settings',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  accountingController.updateSettings
+);
+
 // ==================== JOURNALS ====================
 
 /**

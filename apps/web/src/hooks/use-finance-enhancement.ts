@@ -10,6 +10,8 @@ import {
   PaymentComponent,
   TrialBalanceReport,
   IncomeExpenseReport,
+  GeneralLedgerReport,
+  CashFlowReport,
   AccountType,
   ScholarshipSource,
   ScholarshipType,
@@ -27,6 +29,8 @@ export type {
   PaymentComponent,
   TrialBalanceReport,
   IncomeExpenseReport,
+  GeneralLedgerReport,
+  CashFlowReport,
   // Values/Enums must be exported as values too if used as such
 };
 
@@ -400,6 +404,52 @@ export function useTrialBalanceReport(filters: {
 
       const response = await api.get<{ data: TrialBalanceReport }>(
         `/finance-enhancement/reports/trial-balance?${params}`,
+      );
+      return response.data.data;
+    },
+    enabled: !!filters.startDate && !!filters.endDate,
+  });
+}
+
+export function useGeneralLedgerReport(filters: {
+  unitId?: string;
+  accountId: string;
+  startDate: string;
+  endDate: string;
+}) {
+  return useQuery({
+    queryKey: ["general-ledger-report", filters],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (filters.unitId) params.append("unitId", filters.unitId);
+      params.append("accountId", filters.accountId);
+      params.append("startDate", filters.startDate);
+      params.append("endDate", filters.endDate);
+
+      const response = await api.get<{ data: GeneralLedgerReport }>(
+        `/finance-enhancement/reports/general-ledger?${params}`,
+      );
+      return response.data.data;
+    },
+    enabled: !!filters.accountId && !!filters.startDate && !!filters.endDate,
+  });
+}
+
+export function useCashFlowReport(filters: {
+  unitId?: string;
+  startDate: string;
+  endDate: string;
+}) {
+  return useQuery({
+    queryKey: ["cash-flow-report", filters],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (filters.unitId) params.append("unitId", filters.unitId);
+      params.append("startDate", filters.startDate);
+      params.append("endDate", filters.endDate);
+
+      const response = await api.get<{ data: CashFlowReport }>(
+        `/finance-enhancement/reports/cash-flow?${params}`,
       );
       return response.data.data;
     },

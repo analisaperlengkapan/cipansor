@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { MainLayout } from "@/components/layout/main-layout";
 import { PageHeader } from "@/components/shared/page-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -48,11 +48,15 @@ import {
   Download,
   Wallet,
   PieChart,
+  Settings,
+  Save,
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { id as localeID } from "date-fns/locale";
+import { api } from "@/lib/api";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 import {
   useAccountCodes,
@@ -872,6 +876,149 @@ function ReportsTab() {
   );
 }
 
+// Accounting Settings Tab
+function AccountingSettingsTab() {
+  const { data: units } = useUnits();
+  const [selectedUnitId, setSelectedUnitId] = useState<string>("");
+  const [settings, setSettings] = useState<Record<string, string>>({});
+
+  // Fetch settings when unit selected
+  const { data: fetchedSettings } = useQuery({
+    queryKey: ["accounting-settings", selectedUnitId],
+    queryFn: async () => {
+      if (!selectedUnitId) return {};
+      const res = await api.get("/finance/accounting/settings", {
+        params: { unitId: selectedUnitId },
+      });
+      return res.data.data;
+    },
+    enabled: !!selectedUnitId,
+  });
+
+  // Sync settings when fetched data changes
+  useEffect(() => {
+    if (fetchedSettings) {
+      setSettings(fetchedSettings);
+    }
+  }, [fetchedSettings]);
+
+  const { data: accounts } = useAccountCodes({
+    isActive: true,
+    limit: 500, // Fetch all for selection
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async (newSettings: Record<string, string>) => {
+      await api.post("/finance/accounting/settings", {
+        unitId: selectedUnitId,
+        settings: newSettings,
+      });
+    },
+    onSuccess: () => {
+      toast.success("Pengaturan berhasil disimpan");
+    },
+    onError: () => {
+      toast.error("Gagal menyimpan pengaturan");
+    },
+  });
+
+  const handleSave = () => {
+    if (!selectedUnitId) return;
+    updateMutation.mutate(settings);
+  };
+
+  const MAPPINGS = [
+    {
+      key: "ACCOUNT_MAPPING_CASH",
+      label: "Akun Kas Tunai",
+      description: "Akun default untuk penerimaan tunai (Kas)",
+    },
+    {
+      key: "ACCOUNT_MAPPING_BANK",
+      label: "Akun Bank/Transfer",
+      description: "Akun default untuk penerimaan transfer (Bank)",
+    },
+    {
+      key: "ACCOUNT_MAPPING_PAYROLL_EXPENSE",
+      label: "Beban Gaji",
+      description: "Akun beban untuk pencatatan gaji karyawan",
+    },
+    {
+      key: "ACCOUNT_MAPPING_INVENTORY_ASSET",
+      label: "Aset Inventaris",
+      description: "Akun aset untuk pembelian inventaris baru",
+    },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Pengaturan Integrasi Akuntansi</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="space-y-2">
+            <Label>Pilih Unit</Label>
+            <Select value={selectedUnitId} onValueChange={setSelectedUnitId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Pilih Unit Sekolah/Pesantren" />
+              </SelectTrigger>
+              <SelectContent>
+                {units?.map((unit: any) => (
+                  <SelectItem key={unit.id} value={unit.id}>
+                    {unit.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {selectedUnitId ? (
+            <div className="space-y-4">
+              {MAPPINGS.map((mapping) => (
+                <div key={mapping.key} className="space-y-2">
+                  <Label>{mapping.label}</Label>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    {mapping.description}
+                  </p>
+                  <Select
+                    value={settings[mapping.key] || ""}
+                    onValueChange={(val) =>
+                      setSettings((prev) => ({ ...prev, [mapping.key]: val }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Pilih Akun" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {accounts?.data.map((acc) => (
+                        <SelectItem key={acc.id} value={acc.id}>
+                          {acc.code} - {acc.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              ))}
+
+              <div className="pt-4">
+                <Button onClick={handleSave} disabled={updateMutation.isPending}>
+                  <Save className="h-4 w-4 mr-2" />
+                  {updateMutation.isPending ? "Menyimpan..." : "Simpan Pengaturan"}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground border rounded-md bg-muted/20">
+              Silakan pilih unit terlebih dahulu untuk mengatur pemetaan akun.
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 // Main Page
 export default function AccountingPage() {
   const [activeTab, setActiveTab] = useState("account-codes");
@@ -973,6 +1120,10 @@ export default function AccountingPage() {
               <Calculator className="h-4 w-4" />
               Ringkasan Laporan
             </TabsTrigger>
+            <TabsTrigger value="settings" className="flex items-center gap-2">
+              <Settings className="h-4 w-4" />
+              Pengaturan
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="account-codes" className="mt-6">
@@ -985,6 +1136,10 @@ export default function AccountingPage() {
 
           <TabsContent value="reports" className="mt-6">
             <ReportsTab />
+          </TabsContent>
+
+          <TabsContent value="settings" className="mt-6">
+            <AccountingSettingsTab />
           </TabsContent>
         </Tabs>
       </div>

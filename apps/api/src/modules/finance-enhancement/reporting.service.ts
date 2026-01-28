@@ -494,63 +494,81 @@ export async function getCashFlowStatement(
   };
 }
 
-export async function getBudgetRealizationReport(
-  unitId: string,
-  academicYearId: string
-): Promise<any> {
-  // 1. Get Academic Year
+// Budget Realization Report
+export async function getBudgetRealizationReport(unitId: string, academicYearId: string) {
+  // 1. Get all Budgets for the Unit & Year
+  const budgets = await prisma.budget.findMany({
+    where: { unitId, academicYearId },
+    include: { account: true },
+  });
+
+  // 2. Get Actuals from Journals for the Unit (Date range needs to be derived from Academic Year)
+  // Fetch Academic Year to get dates
   const academicYear = await prisma.academicYear.findUnique({
     where: { id: academicYearId },
   });
 
-  if (!academicYear) throw new Error('Academic Year not found');
+  if (!academicYear) {
+    throw new Error('Academic Year not found');
+  }
 
-  // 2. Get all budgets with account details
-  const budgets = await prisma.budget.findMany({
-    where: { unitId, academicYearId },
-    include: {
-      account: true,
+  const actuals = await prisma.journalEntry.groupBy({
+    by: ['accountId'],
+    where: {
+      unitId,
+      date: {
+        gte: academicYear.startDate,
+        lte: academicYear.endDate,
+      },
     },
-    orderBy: { account: { code: 'asc' } },
+    _sum: { debit: true, credit: true },
   });
 
-  // 3. Transform to report format
-  const items = budgets.map((budget) => {
-    const amount = Number(budget.amount);
-    const used = Number(budget.usedAmount);
-    const balance = amount - used;
-    const percentage = amount > 0 ? (used / amount) * 100 : 0;
+  const actualMap = new Map<string, number>();
+  actuals.forEach((a) => {
+    // For Expense: Actual is Debit - Credit
+    // For Revenue: Actual is Credit - Debit
+    // Defaulting to simple net Debit for now, adjusted per account type in loop
+    actualMap.set(a.accountId, (a._sum.debit?.toNumber() || 0) - (a._sum.credit?.toNumber() || 0));
+  });
+
+  const items = budgets.map((b) => {
+    let actualAmount = actualMap.get(b.accountId) || 0;
+
+    // Adjust sign based on account type
+    if (b.account.type === AccountType.REVENUE || b.account.type === AccountType.LIABILITY || b.account.type === AccountType.EQUITY) {
+      actualAmount = -actualAmount;
+    }
+
+    const budgetAmount = b.amount.toNumber();
+    const variance = budgetAmount - actualAmount;
+    const percentage = budgetAmount !== 0 ? (actualAmount / budgetAmount) * 100 : 0;
 
     return {
-      accountId: budget.accountId,
-      accountCode: budget.account.code,
-      accountName: budget.account.name,
-      budgetAmount: amount,
-      realizedAmount: used,
-      balanceAmount: balance,
-      percentage: parseFloat(percentage.toFixed(2)),
-      status: percentage > 100 ? 'OVER_BUDGET' : percentage > 80 ? 'WARNING' : 'SAFE',
+      accountId: b.accountId,
+      code: b.account.code,
+      name: b.account.name,
+      budgetAmount,
+      actualAmount,
+      variance,
+      percentage,
     };
   });
 
-  // 4. Calculate Totals
-  const totalBudget = items.reduce((sum, item) => sum + item.budgetAmount, 0);
-  const totalRealized = items.reduce((sum, item) => sum + item.realizedAmount, 0);
-  const totalBalance = totalBudget - totalRealized;
-  const totalPercentage = totalBudget > 0 ? (totalRealized / totalBudget) * 100 : 0;
+  const totals = items.reduce(
+    (acc, item) => ({
+      budget: acc.budget + item.budgetAmount,
+      actual: acc.actual + item.actualAmount,
+      variance: acc.variance + item.variance,
+    }),
+    { budget: 0, actual: 0, variance: 0 }
+  );
 
   return {
-    academicYear: academicYear.name,
-    period: {
-      startDate: formatDate(academicYear.startDate),
-      endDate: formatDate(academicYear.endDate),
+    totals: {
+      ...totals,
+      percentage: totals.budget !== 0 ? (totals.actual / totals.budget) * 100 : 0,
     },
     items,
-    summary: {
-      totalBudget,
-      totalRealized,
-      totalBalance,
-      percentage: parseFloat(totalPercentage.toFixed(2)),
-    },
   };
 }

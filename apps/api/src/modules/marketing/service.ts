@@ -55,6 +55,24 @@ export const getCampaignById = async (id: string) => {
   });
 };
 
+export const getCampaignByCode = async (code: string) => {
+  return prisma.marketingCampaign.findFirst({
+    where: {
+      code: {
+        equals: code,
+        mode: 'insensitive',
+      },
+      isActive: true,
+    },
+    select: {
+      id: true,
+      name: true,
+      code: true,
+      description: true,
+    },
+  });
+};
+
 export const logInteraction = async (data: LogInteractionInput, userId: string) => {
   return prisma.marketingInteraction.create({
     data: {
@@ -179,6 +197,7 @@ export default {
   updateCampaign,
   getCampaigns,
   getCampaignById,
+  getCampaignByCode,
   logInteraction,
   getInteractionsByRegistrant,
   getDashboardStats,

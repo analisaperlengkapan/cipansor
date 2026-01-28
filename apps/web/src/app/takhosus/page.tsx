@@ -57,9 +57,11 @@ import { TakhosusDashboard } from "@/components/takhosus/takhosus-dashboard";
 import { useTakhosusDashboard } from "@/hooks/use-takhosus-details";
 import { MurojaahList } from "@/components/takhosus/murojaah/murojaah-list";
 import { SimaanList } from "@/components/takhosus/simaan/simaan-list";
+import { MurojaahFormDialog } from "@/components/takhosus/murojaah/murojaah-form-dialog";
 
 export default function TakhosusPage() {
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [showCreateMurojaah, setShowCreateMurojaah] = useState(false);
 
   // Murojaah & Simaan state
   const [murojaahUnitFilter, setMurojaahUnitFilter] = useState<string>("");
@@ -268,7 +270,7 @@ export default function TakhosusPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex flex-wrap gap-4">
+              <div className="flex flex-wrap gap-4 items-center">
                 <Select
                   value={murojaahUnitFilter}
                   onValueChange={setMurojaahUnitFilter}
@@ -290,6 +292,13 @@ export default function TakhosusPage() {
                   onClick={() => setMurojaahUnitFilter("")}
                 >
                   Reset
+                </Button>
+                <Button
+                  onClick={() => setShowCreateMurojaah(true)}
+                  className="ml-auto"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Catat Murojaah
                 </Button>
               </div>
             </CardContent>
@@ -683,6 +692,12 @@ export default function TakhosusPage() {
         description="Apakah Anda yakin ingin menghapus pendaftaran ini? Data sanad santri akan ikut terhapus."
         onConfirm={handleDeleteEnrollment}
         isLoading={deleteEnrollment.isPending}
+      />
+
+      <MurojaahFormDialog
+        open={showCreateMurojaah}
+        onOpenChange={setShowCreateMurojaah}
+        studentId=""
       />
     </MainLayout>
   );

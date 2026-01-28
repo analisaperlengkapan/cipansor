@@ -31,33 +31,66 @@ export const queryAdmissionPeriodSchema = z.object({
 // Registrant schemas
 export const createRegistrantSchema = z.object({
   admissionPeriodId: z.string().uuid(),
-  name: z.string().min(2).max(100),
+  fullName: z.string().min(2).max(100), // Updated from 'name'
+  nickname: z.string().optional(),
   gender: z.enum(['MALE', 'FEMALE']),
   birthPlace: z.string().min(2).max(100),
   birthDate: z.string().datetime(),
   address: z.string().min(5),
+
+  // Optional identity fields
+  nationalId: z.string().optional(),
+  familyCardNumber: z.string().optional(),
+
+  // Location details
+  village: z.string().optional(),
+  district: z.string().optional(),
+  city: z.string().optional(),
+  province: z.string().optional(),
+  postalCode: z.string().optional(),
+
+  // Contact
   phone: z.string().max(20).optional(),
-  email: z.string().email().optional(),
+  email: z.string().email().optional().or(z.literal('')),
+
+  // Education
   previousSchool: z.string().max(200).optional(),
-  parentName: z.string().min(2).max(100),
-  parentPhone: z.string().min(8).max(20),
-  parentEmail: z.string().email().optional(),
-  parentOccupation: z.string().max(100).optional(),
+  previousSchoolAddress: z.string().optional(),
+  graduationYear: z.number().int().optional(),
+
+  // Parents
+  fatherName: z.string().min(1).max(100),
+  fatherOccupation: z.string().optional(),
+  fatherPhone: z.string().optional(),
+  fatherEmail: z.string().email().optional().or(z.literal('')),
+
+  motherName: z.string().min(1).max(100),
+  motherOccupation: z.string().optional(),
+  motherPhone: z.string().optional(),
+
+  // Quran
+  quranAbility: z.string().optional(),
+  memorizedJuz: z.number().int().optional(),
+
+  notes: z.string().optional(),
+
   // Marketing fields
   source: z.string().optional(),
   campaignId: z.string().uuid().optional(),
 });
 
 export const updateRegistrantSchema = z.object({
-  name: z.string().min(2).max(100).optional(),
+  fullName: z.string().min(2).max(100).optional(),
   phone: z.string().max(20).optional(),
   email: z.string().email().optional(),
   address: z.string().min(5).optional(),
   previousSchool: z.string().max(200).optional(),
-  parentName: z.string().min(2).max(100).optional(),
-  parentPhone: z.string().min(8).max(20).optional(),
-  parentEmail: z.string().email().optional(),
-  parentOccupation: z.string().max(100).optional(),
+  // Parents
+  fatherName: z.string().min(1).max(100).optional(),
+  fatherPhone: z.string().max(20).optional(),
+  motherName: z.string().min(1).max(100).optional(),
+  motherPhone: z.string().max(20).optional(),
+
   notes: z.string().optional(),
 });
 

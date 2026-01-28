@@ -49,6 +49,8 @@ import {
   FileBarChart,
   Activity,
   ShoppingBag,
+  Key,
+  MessageSquareWarning,
   type LucideIcon,
 } from "lucide-react";
 
@@ -227,6 +229,11 @@ const teacherNavigation: NavGroup[] = [
         href: "/announcements",
         icon: Bell,
       },
+      {
+        title: "Aduan & Aspirasi",
+        href: "/quality/complaints",
+        icon: MessageSquareWarning,
+      },
     ],
   },
 ];
@@ -285,6 +292,11 @@ const staffNavigation: NavGroup[] = [
         title: "Pengumuman",
         href: "/announcements",
         icon: Bell,
+      },
+      {
+        title: "Aduan & Aspirasi",
+        href: "/quality/complaints",
+        icon: MessageSquareWarning,
       },
     ],
   },
@@ -375,6 +387,11 @@ const studentNavigation: NavGroup[] = [
         href: "/announcements",
         icon: Bell,
       },
+      {
+        title: "Aduan & Aspirasi",
+        href: "/quality/complaints",
+        icon: MessageSquareWarning,
+      },
     ],
   },
 ];
@@ -459,6 +476,11 @@ const parentNavigation: NavGroup[] = [
         href: "/parent/announcements",
         icon: Megaphone,
       },
+      {
+        title: "Aduan & Aspirasi",
+        href: "/quality/complaints",
+        icon: MessageSquareWarning,
+      },
     ],
   },
 ];
@@ -508,6 +530,11 @@ const yayasanNavigation: NavGroup[] = [
         href: "/quality",
         icon: Award,
       },
+      {
+        title: "Aduan & Aspirasi",
+        href: "/quality/complaints",
+        icon: MessageSquareWarning,
+      },
     ],
   },
   {
@@ -552,6 +579,16 @@ const yayasanNavigation: NavGroup[] = [
         title: "Data Alumni",
         href: "/alumni",
         icon: GraduationCap,
+      },
+    ],
+  },
+  {
+    title: "Risk Management",
+    items: [
+      {
+        title: "Manajemen Risiko",
+        href: "/risk-management",
+        icon: Shield,
       },
     ],
   },
@@ -889,6 +926,11 @@ const adminNavigation: NavGroup[] = [
         href: "/quality",
         icon: Award,
       },
+      {
+        title: "Aduan & Aspirasi",
+        href: "/quality/complaints",
+        icon: MessageSquareWarning,
+      },
     ],
   },
   {
@@ -988,6 +1030,16 @@ const adminNavigation: NavGroup[] = [
     ],
   },
   {
+    title: "Risk Management",
+    items: [
+      {
+        title: "Manajemen Risiko",
+        href: "/risk-management",
+        icon: Shield,
+      },
+    ],
+  },
+  {
     title: "Alumni",
     items: [
       {
@@ -1004,6 +1056,13 @@ const adminNavigation: NavGroup[] = [
         title: "Settings",
         href: "/settings",
         icon: Settings,
+      },
+      {
+        title: "Secrets",
+        href: "/dashboard/settings/system-secrets",
+        icon: Key,
+        roleCodes: ["SUPER_ADMIN"],
+        roles: ["SUPER_ADMIN"], // Explicitly support legacy role
       },
     ],
   },

@@ -162,6 +162,22 @@ export function useDeleteAccount() {
   });
 }
 
+export function useSeedAccounts() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const response = await api.post<ApiResponse<AccountCode[]>>(
+        "/finance/accounting/accounts/seed",
+      );
+      return response.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["accounts"] });
+    },
+  });
+}
+
 // =====================================
 // JOURNAL HOOKS
 // =====================================

@@ -222,10 +222,10 @@ router.get('/:id', controller.getDailyReportById);
  *                 type: string
  *               breakfastConsumption:
  *                 type: string
- *                 enum: [FULL, HALF, QUARTER, NONE]
+ *                 enum: [HABIS, SETENGAH, SEDIKIT, TIDAK_MAU]
  *               lunchConsumption:
  *                 type: string
- *                 enum: [FULL, HALF, QUARTER, NONE]
+ *                 enum: [HABIS, SETENGAH, SEDIKIT, TIDAK_MAU]
  *               activitiesSummary:
  *                 type: string
  *               ibadahNotes:

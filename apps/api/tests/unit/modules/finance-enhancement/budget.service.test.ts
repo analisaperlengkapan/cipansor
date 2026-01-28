@@ -114,6 +114,7 @@ describe('Budget Service', () => {
         unitId: 'unit-1',
         accountId: 'acc-1',
         amount: new Prisma.Decimal(1000),
+        usedAmount: new Prisma.Decimal(200),
         academicYear: { startDate: new Date(), endDate: new Date() },
       },
     ];
@@ -121,10 +122,7 @@ describe('Budget Service', () => {
     (prisma.budget.findMany as any).mockResolvedValue(mockBudgets);
     (prisma.budget.count as any).mockResolvedValue(1);
 
-    // Mock aggregate for usage calculation
-    (prisma.journalEntry.aggregate as any).mockResolvedValue({
-      _sum: { debit: new Prisma.Decimal(200), credit: new Prisma.Decimal(0) },
-    });
+    // No longer need aggregate mock for getBudgets
 
     const result = await getBudgets({});
 

@@ -4,6 +4,24 @@ import {
   QualityDashboardSummary,
   QualityStandardType,
 } from '@cipansor/shared';
+import { ApiError, ErrorCode } from '@/middleware/error';
+
+// Define inputs locally if not in shared
+interface CreateAuditInput {
+  unitId: string;
+  academicYearId: string;
+  code: string;
+  name: string;
+  startDate: string; // ISO Date string
+  endDate: string; // ISO Date string
+  leadAuditorId?: string;
+  notes?: string;
+}
+
+interface UpdateAuditItemInput {
+  score?: number;
+  notes?: string;
+}
 
 export const qualityService = {
   // Get all standards with indicators
@@ -108,6 +126,150 @@ export const qualityService = {
         compliancePercentage:
           totalIndicators > 0 ? (compliantIndicators / totalIndicators) * 100 : 0,
       };
+    });
+  },
+
+  // --- Audit Management ---
+
+  createAudit: async (data: CreateAuditInput, userRole: string, userUnitId?: string) => {
+    // Security check: If not SUPER_ADMIN, ensure user can only create audit for their own unit
+    if (userRole !== 'SUPER_ADMIN') {
+      if (!userUnitId || data.unitId !== userUnitId) {
+        throw new ApiError(ErrorCode.FORBIDDEN, 'Access denied: You can only create audits for your own unit');
+      }
+    }
+
+    return prisma.$transaction(async (tx) => {
+      // 1. Create the Audit
+      const audit = await tx.qualityAudit.create({
+        data: {
+          unitId: data.unitId,
+          academicYearId: data.academicYearId,
+          code: data.code,
+          name: data.name,
+          startDate: new Date(data.startDate),
+          endDate: new Date(data.endDate),
+          leadAuditorId: data.leadAuditorId,
+          notes: data.notes,
+          status: 'PLANNED',
+        },
+      });
+
+      // 2. Fetch all indicators
+      const indicators = await tx.qualityIndicator.findMany({
+        where: { isActive: true },
+      });
+
+      // 3. Create Audit Items for each indicator
+      if (indicators.length > 0) {
+        await tx.qualityAuditItem.createMany({
+          data: indicators.map((ind) => ({
+            auditId: audit.id,
+            indicatorId: ind.id,
+          })),
+        });
+      }
+
+      return audit;
+    });
+  },
+
+  getAudits: async (unitId: string, academicYearId: string, userRole: string, userUnitId?: string) => {
+    // Security check: If not SUPER_ADMIN, ensure user can only list audits for their own unit
+    if (userRole !== 'SUPER_ADMIN') {
+      if (!userUnitId || unitId !== userUnitId) {
+        throw new ApiError(ErrorCode.FORBIDDEN, 'Access denied: You can only view audits for your own unit');
+      }
+    }
+
+    return prisma.qualityAudit.findMany({
+      where: {
+        unitId,
+        academicYearId,
+      },
+      include: {
+        leadAuditor: {
+          select: { id: true, name: true },
+        },
+        _count: {
+          select: { items: true },
+        },
+      },
+      orderBy: { startDate: 'desc' },
+    });
+  },
+
+  getAuditDetails: async (auditId: string, userRole: string, userUnitId?: string) => {
+    const audit = await prisma.qualityAudit.findUnique({
+      where: { id: auditId },
+      include: {
+        leadAuditor: {
+          select: { id: true, name: true },
+        },
+        items: {
+          include: {
+            indicator: {
+              include: {
+                standard: true,
+              },
+            },
+            auditor: {
+              select: { id: true, name: true },
+            },
+          },
+          orderBy: [
+            { indicator: { standard: { type: 'asc' } } },
+            { indicator: { sortOrder: 'asc' } },
+          ],
+        },
+      },
+    });
+
+    if (!audit) {
+      return null;
+    }
+
+    // Security check: If not SUPER_ADMIN, ensure user belongs to the same unit
+    if (userRole !== 'SUPER_ADMIN') {
+      if (!userUnitId || audit.unitId !== userUnitId) {
+        throw new ApiError(ErrorCode.FORBIDDEN, 'Access denied: You can only view audits for your own unit');
+      }
+    }
+
+    return audit;
+  },
+
+  updateAuditItem: async (
+    itemId: string,
+    data: UpdateAuditItemInput,
+    userId: string,
+    userRole: string,
+    userUnitId?: string
+  ) => {
+    const item = await prisma.qualityAuditItem.findUnique({
+      where: { id: itemId },
+      include: { audit: true },
+    });
+
+    if (!item) {
+      throw new ApiError(ErrorCode.NOT_FOUND, 'Audit item not found');
+    }
+
+    // Security check: If not SUPER_ADMIN, ensure user belongs to the same unit
+    if (userRole !== 'SUPER_ADMIN') {
+      if (!userUnitId || item.audit.unitId !== userUnitId) {
+        throw new ApiError(ErrorCode.FORBIDDEN, 'Access denied: You can only audit your own unit');
+      }
+    }
+
+    return prisma.qualityAuditItem.update({
+      where: { id: itemId },
+      data: {
+        score: data.score,
+        notes: data.notes,
+        auditorId: userId,
+        updatedAt: new Date(),
+      },
     });
   },
 };

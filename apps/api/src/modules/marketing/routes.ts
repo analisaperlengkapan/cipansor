@@ -5,6 +5,9 @@ import { UserRole } from '@prisma/client';
 
 const router = Router();
 
+// Public routes
+router.get('/public/campaigns/code/:code', marketingController.getCampaignByCode);
+
 // Protected routes (require auth)
 router.use(authenticate);
 

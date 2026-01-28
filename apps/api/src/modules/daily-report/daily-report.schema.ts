@@ -4,7 +4,7 @@ import { z } from 'zod';
 export const DailyMoodEnum = z.enum(['HAPPY', 'NEUTRAL', 'SAD', 'SICK', 'TIRED', 'EXCITED']);
 
 // Meal Consumption enum
-export const MealConsumptionEnum = z.enum(['FULL', 'HALF', 'QUARTER', 'NONE']);
+export const MealConsumptionEnum = z.enum(['HABIS', 'SETENGAH', 'SEDIKIT', 'TIDAK_MAU']);
 
 // ============================================
 // Daily Report Query Schemas
@@ -166,6 +166,27 @@ export const bulkCreateDailyReportsSchema = z.object({
         activitiesSummary: z.string().max(1000).optional().nullable(),
         ibadahNotes: z.string().max(500).optional().nullable(),
         parentNotes: z.string().max(500).optional().nullable(),
+        sholatDhuha: z.boolean().optional(),
+        sholatDzuhur: z.boolean().optional(),
+        sholatAshar: z.boolean().optional(),
+        sholatJamaah: z.boolean().optional(),
+        readingProgress: z
+          .object({
+            bookId: z.string().uuid(),
+            page: z.number().int().min(1),
+          })
+          .optional(),
+        tahfidzProgress: z
+          .object({
+            surahName: z.string(),
+            surahNumber: z.number().int().min(1).max(114),
+            ayahStart: z.number().int().min(1),
+            ayahEnd: z.number().int().min(1),
+          })
+          .refine((data) => data.ayahEnd >= data.ayahStart, {
+            message: 'ayahEnd must be greater than or equal to ayahStart',
+          })
+          .optional(),
       })
     )
     .min(1)

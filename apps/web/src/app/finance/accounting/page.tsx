@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { MainLayout } from "@/components/layout/main-layout";
 import { PageHeader } from "@/components/shared/page-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -67,6 +67,11 @@ import {
   FinanceReportPeriod,
 } from "@/hooks/use-finance-enhancement";
 import { useUnits } from "@/hooks/use-units";
+import {
+  buildAccountTree,
+  flattenAccountTree,
+  type AccountCode as TreeAccountCode,
+} from "@/lib/finance-utils";
 
 // Account type labels and colors
 const ACCOUNT_TYPES: { value: AccountType; label: string; color: string }[] = [
@@ -101,6 +106,16 @@ function AccountCodesTab() {
     search: search || undefined,
     limit: 100,
   });
+
+  const flattenedData = useMemo(() => {
+    if (!accountCodesData?.data) return [];
+    // If searching or filtering by type, don't build tree (show flat results)
+    if (search || typeFilter !== "ALL") {
+      return accountCodesData.data;
+    }
+    const tree = buildAccountTree(accountCodesData.data);
+    return flattenAccountTree(tree);
+  }, [accountCodesData?.data, search, typeFilter]);
 
   const createAccountCode = useCreateAccountCode();
 
@@ -265,7 +280,7 @@ function AccountCodesTab() {
                     Memuat data...
                   </TableCell>
                 </TableRow>
-              ) : accountCodesData?.data.length === 0 ? (
+              ) : flattenedData.length === 0 ? (
                 <TableRow>
                   <TableCell
                     colSpan={5}
@@ -275,10 +290,14 @@ function AccountCodesTab() {
                   </TableCell>
                 </TableRow>
               ) : (
-                accountCodesData?.data.map((account) => (
+                flattenedData.map((account: TreeAccountCode) => (
                   <TableRow key={account.id}>
                     <TableCell className="font-mono font-medium">
-                      {account.code}
+                      <span
+                        style={{ paddingLeft: `${(account.level || 0) * 20}px` }}
+                      >
+                        {account.code}
+                      </span>
                     </TableCell>
                     <TableCell>{account.name}</TableCell>
                     <TableCell>

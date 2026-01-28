@@ -1,7 +1,5 @@
 import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient();
-
 interface ImmunizationSchedule {
   vaccineName: string;
   vaccineCode: string;
@@ -356,7 +354,7 @@ const immunizationSchedules: ImmunizationSchedule[] = [
 ];
 
 // Store reference as JSON in Setting or separate reference table
-export async function seedImmunizationReference() {
+export async function seedImmunizationReference(prisma: PrismaClient) {
   console.log('🌱 Seeding Immunization Reference Data...');
 
   // Store immunization schedule reference in settings
@@ -425,7 +423,8 @@ export function getUpcomingImmunizations(ageMonths: number): ImmunizationSchedul
 
 // Run if called directly
 if (require.main === module) {
-  seedImmunizationReference()
+  const prisma = new PrismaClient();
+  seedImmunizationReference(prisma)
     .catch((e) => {
       console.error(e);
       process.exit(1);

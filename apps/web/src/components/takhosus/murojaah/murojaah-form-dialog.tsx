@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -42,6 +42,7 @@ import {
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
+import { StudentSelect } from "@/components/shared/student-select";
 import {
   useCreateMurojaah,
   useUpdateMurojaah,
@@ -81,7 +82,7 @@ const formSchema = z
 interface MurojaahFormDialogProps {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
-  studentId: string;
+  studentId?: string;
   initialData?: MurojaahRecord;
   enrollmentId?: string;
   halaqohId?: string;
@@ -91,13 +92,14 @@ interface MurojaahFormDialogProps {
 export function MurojaahFormDialog({
   open,
   onOpenChange,
-  studentId,
+  studentId: propStudentId,
   initialData,
   enrollmentId,
   halaqohId,
   trigger,
 }: MurojaahFormDialogProps) {
   const [internalOpen, setInternalOpen] = useState(false);
+  const [selectedStudentId, setSelectedStudentId] = useState<string>("");
   const [mistakes, setMistakes] = useState<z.infer<typeof mistakeSchema>[]>(
     initialData?.mistakes?.map((m) => ({
       mistakeType: m.mistakeType,
@@ -107,6 +109,8 @@ export function MurojaahFormDialog({
       description: m.description,
     })) || [],
   );
+
+  const studentId = propStudentId || selectedStudentId;
 
   const isControlled = typeof open !== "undefined";
   const isOpen = isControlled ? open : internalOpen;
@@ -135,6 +139,18 @@ export function MurojaahFormDialog({
     },
   });
 
+  // Reset form when dialog state changes
+  useEffect(() => {
+    if (!isOpen) {
+      form.reset();
+      setMistakes([]);
+      setSelectedStudentId("");
+    } else if (!initialData) {
+      // Ensure date is fresh when opening in create mode
+      form.setValue("murojaahDate", new Date());
+    }
+  }, [isOpen, form, initialData]);
+
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
       if (initialData) {
@@ -147,6 +163,11 @@ export function MurojaahFormDialog({
         });
         toast.success("Data murojaah berhasil diperbarui");
       } else {
+        if (!studentId) {
+          toast.error("Silakan pilih santri terlebih dahulu");
+          return;
+        }
+
         await createMurojaah.mutateAsync({
           studentId,
           enrollmentId,
@@ -160,6 +181,7 @@ export function MurojaahFormDialog({
       setIsOpen?.(false);
       form.reset();
       setMistakes([]);
+      setSelectedStudentId("");
     } catch (error: unknown) {
       const err = error as Error;
       toast.error(err.message || "Terjadi kesalahan");
@@ -203,6 +225,16 @@ export function MurojaahFormDialog({
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {!initialData && !propStudentId && (
+              <div className="space-y-2">
+                <FormLabel>Santri</FormLabel>
+                <StudentSelect
+                  value={selectedStudentId}
+                  onValueChange={setSelectedStudentId}
+                />
+              </div>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}

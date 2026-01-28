@@ -37,7 +37,10 @@ export const qualityController = {
   }),
 
   createEvidence: asyncHandler(async (req: Request, res: Response) => {
-    const userId = (req as any).user.id;
+    const user = (req as any).user;
+    // Use user.sub as the userId (as defined in JwtPayload)
+    const userId = user.sub || user.id;
+
     const evidence = await qualityService.createEvidence(req.body, userId);
     res.status(httpStatus.CREATED).json({
       success: true,
@@ -68,6 +71,86 @@ export const qualityController = {
     res.json({
       success: true,
       data: summary,
+    });
+  }),
+
+  // --- Audit Management ---
+
+  createAudit: asyncHandler(async (req: Request, res: Response) => {
+    const user = (req as any).user;
+
+    const audit = await qualityService.createAudit(
+      req.body,
+      user.role,
+      user.unitId
+    );
+
+    res.status(httpStatus.CREATED).json({
+      success: true,
+      data: audit,
+    });
+  }),
+
+  getAudits: asyncHandler(async (req: Request, res: Response) => {
+    const { unitId, academicYearId } = req.query;
+    const user = (req as any).user;
+
+    if (!unitId || !academicYearId) {
+      throw new ApiError(ErrorCode.BAD_REQUEST, 'unitId and academicYearId are required');
+    }
+
+    const audits = await qualityService.getAudits(
+      unitId as string,
+      academicYearId as string,
+      user.role,
+      user.unitId
+    );
+
+    res.json({
+      success: true,
+      data: audits,
+    });
+  }),
+
+  getAuditDetails: asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const user = (req as any).user;
+
+    const audit = await qualityService.getAuditDetails(
+      id,
+      user.role,
+      user.unitId
+    );
+
+    if (!audit) {
+      throw new ApiError(ErrorCode.NOT_FOUND, 'Audit not found');
+    }
+
+    res.json({
+      success: true,
+      data: audit,
+    });
+  }),
+
+  updateAuditItem: asyncHandler(async (req: Request, res: Response) => {
+    const { itemId } = req.params;
+    const user = (req as any).user;
+    const { score, notes } = req.body;
+
+    // Use user.sub as the userId (as defined in JwtPayload)
+    const userId = user.sub || user.id;
+
+    const updatedItem = await qualityService.updateAuditItem(
+      itemId,
+      { score, notes },
+      userId,
+      user.role,
+      user.unitId
+    );
+
+    res.json({
+      success: true,
+      data: updatedItem,
     });
   }),
 };

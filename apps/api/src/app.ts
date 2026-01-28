@@ -63,6 +63,7 @@ import raporPesantrenRoutes from '@/modules/rapor-pesantren/routes';
 import { procurementRoutes } from '@/modules/procurement/procurement.routes';
 import { supplierRoutes } from '@/modules/suppliers/suppliers.routes';
 import { uploadRoutes } from '@/modules/upload/upload.routes';
+import secretsRoutes from '@/modules/system-secrets/secrets.routes';
 
 // Phase 12 routes
 import extracurricularRoutes from '@/modules/extracurricular/extracurricular.routes';
@@ -78,6 +79,8 @@ import emisRoutes from '@/modules/emis/emis.routes';
 import { dapodikRouter } from '@/modules/dapodik/dapodik.routes';
 import { qualityRoutes } from '@/modules/quality/quality.routes';
 import correspondenceRoutes from '@/modules/correspondence/correspondence.routes';
+import riskRoutes from '@/modules/risk/risk.routes';
+import { complaintsRoutes } from '@/modules/complaints/complaints.routes';
 
 // Enhancement module routes
 import { paudAssessmentRoutes } from '@/modules/paud-assessment';
@@ -228,6 +231,7 @@ apiRouter.use('/rapor-pesantren', raporPesantrenRoutes);
 apiRouter.use('/procurement', procurementRoutes);
 apiRouter.use('/suppliers', supplierRoutes);
 apiRouter.use('/upload', uploadRoutes);
+apiRouter.use('/secrets', secretsRoutes);
 
 // Phase 12 routes
 apiRouter.use('/extracurricular', extracurricularRoutes);
@@ -243,6 +247,8 @@ apiRouter.use('/emis', emisRoutes);
 apiRouter.use('/dapodik', dapodikRouter);
 apiRouter.use('/quality', qualityRoutes);
 apiRouter.use('/correspondence', correspondenceRoutes);
+apiRouter.use('/risk', riskRoutes);
+apiRouter.use('/complaints', complaintsRoutes);
 
 // Enhancement modules
 apiRouter.use('/paud-assessment', paudAssessmentRoutes);
@@ -321,6 +327,7 @@ apiRouter.get('/', (_req, res) => {
       ibadah: '/api/ibadah',
       raporPesantren: '/api/rapor-pesantren',
       reception: '/api/reception',
+      secrets: '/api/secrets',
     },
   });
 });

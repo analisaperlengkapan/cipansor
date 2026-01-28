@@ -67,12 +67,18 @@ export interface LetterReviewerDetail {
   isSigner: boolean;
   notes?: string;
   reviewedAt?: string;
+  reviewer?: {
+    name: string;
+    teacher?: { nip: string | null };
+    staff?: { nip: string | null };
+  };
 }
 
 export interface LetterDispositionDetail {
   id: string;
   senderName: string;
   recipientName: string;
+  recipientId: string;
   instruction: string;
   status: string;
   deadline?: string;
@@ -82,6 +88,13 @@ export interface LetterDispositionDetail {
 export interface LetterDetail {
   id: string;
   unitId: string;
+  unit?: {
+    name: string;
+    address: string;
+    phone?: string;
+    email?: string;
+    logoUrl?: string;
+  };
   direction: LetterDirection;
   classificationId?: string;
   classificationCode?: string;

@@ -24,7 +24,6 @@ export const createMurojaahSchema = z.object({
   teacherId: z.string().uuid(),
   murojaahDate: z.string().datetime(), // ISO Date string
   murojaahType: MurojaahTypeEnum,
-  surahName: z.string().optional(),
   juzStart: z.number().int().min(1).max(30),
   juzEnd: z.number().int().min(1).max(30),
   pagesReviewed: z.number().int().min(0),
@@ -32,10 +31,6 @@ export const createMurojaahSchema = z.object({
   qualityScore: z.number().min(0).max(100),
   fluencyLevel: z.number().min(0).max(10), // 0-10 scale
   notes: z.string().optional(),
-  startAyat: z.number().optional(),
-  endAyat: z.number().optional(),
-  repetitions: z.number().optional(),
-  status: z.string().optional().default('COMPLETED'),
   mistakes: z.array(mistakeSchema).optional(),
 });
 

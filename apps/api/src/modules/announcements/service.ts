@@ -167,23 +167,26 @@ export class AnnouncementService {
       prisma.announcement.count({ where }),
       prisma.announcement.count({
         where: {
-          ...where,
-          publishedAt: { lte: now },
-          OR: [{ expiresAt: null }, { expiresAt: { gte: now } }],
+          AND: [
+            where,
+            { publishedAt: { lte: now } },
+            { OR: [{ expiresAt: null }, { expiresAt: { gte: now } }] },
+          ],
         },
       }),
       prisma.announcement.count({
         where: {
-          ...where,
-          priority: 2, // urgent
-          publishedAt: { lte: now },
-          OR: [{ expiresAt: null }, { expiresAt: { gte: now } }],
+          AND: [
+            where,
+            { priority: 2 }, // urgent
+            { publishedAt: { lte: now } },
+            { OR: [{ expiresAt: null }, { expiresAt: { gte: now } }] },
+          ],
         },
       }),
       prisma.announcement.count({
         where: {
-          ...where,
-          createdAt: { gte: startOfMonth },
+          AND: [where, { createdAt: { gte: startOfMonth } }],
         },
       }),
     ]);

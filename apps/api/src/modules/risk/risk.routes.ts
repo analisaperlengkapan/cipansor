@@ -12,7 +12,8 @@ router.use(
   authorize(
     UserRole.SUPER_ADMIN,
     UserRole.UNIT_ADMIN,
-    UserRole.TEACHER // Assuming teachers might need access, or restrict to Admin/Unit Admin
+    UserRole.TEACHER,
+    UserRole.STAFF // Added to ensure broad access for administrative staff
   )
 );
 

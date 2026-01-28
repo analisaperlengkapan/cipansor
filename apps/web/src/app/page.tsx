@@ -5,6 +5,13 @@ import { StatsSection } from "@/components/landing/sections/stats";
 import { AboutSection } from "@/components/landing/sections/about";
 import { ProgramSection } from "@/components/landing/sections/programs";
 import { CtaSection } from "@/components/landing/sections/cta";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Pesantren Cipansor - Membangun Generasi Qur'ani",
+  description:
+    "Lembaga pendidikan Islam terpadu yang memadukan kurikulum nasional dengan nilai-nilai pesantren untuk mencetak pemimpin masa depan yang hafal Al-Qur'an.",
+};
 
 export default function Home() {
   return (

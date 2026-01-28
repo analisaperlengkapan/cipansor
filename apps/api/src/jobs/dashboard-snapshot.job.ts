@@ -204,39 +204,43 @@ export async function createWeeklySummary(): Promise<void> {
     weekEnd.setDate(weekEnd.getDate() + 6);
     weekEnd.setHours(23, 59, 59, 999);
 
-    for (const unit of units) {
-      try {
-        // Get daily snapshots for this week
-        const dailySnapshots = await prisma.dashboardMetricSnapshot.findMany({
-          where: {
-            unitId: unit.id,
-            academicYearId: academicYear.id,
-            periodType: 'DAILY',
-            periodDate: {
-              gte: weekStart,
-              lte: weekEnd,
-            },
+    let successCount = 0;
+    let errorCount = 0;
+
+    const processUnit = async (unit: { id: string; name: string }) => {
+      // Get daily snapshots for this week
+      const dailySnapshots = await prisma.dashboardMetricSnapshot.findMany({
+        where: {
+          unitId: unit.id,
+          academicYearId: academicYear.id,
+          periodType: 'DAILY',
+          periodDate: {
+            gte: weekStart,
+            lte: weekEnd,
           },
-        });
+        },
+      });
 
-        // Group by metric type and calculate averages (metricValue is Float, not Decimal)
-        const metricGroups = dailySnapshots.reduce(
-          (acc, snapshot) => {
-            const type = snapshot.metricType;
-            if (!acc[type]) {
-              acc[type] = [];
-            }
-            acc[type].push(snapshot.metricValue);
-            return acc;
-          },
-          {} as Record<string, number[]>
-        );
+      // Group by metric type and calculate averages
+      const metricGroups = dailySnapshots.reduce(
+        (acc, snapshot) => {
+          const type = snapshot.metricType;
+          if (!acc[type]) {
+            acc[type] = [];
+          }
+          acc[type].push(snapshot.metricValue);
+          return acc;
+        },
+        {} as Record<string, number[]>
+      );
 
-        // Create weekly summaries
-        for (const [metricType, values] of Object.entries(metricGroups)) {
-          const avgValue = values.reduce((sum, v) => sum + v, 0) / values.length;
+      // Create weekly summaries for all metric types of a unit concurrently
+      const upsertPromises = Object.entries(metricGroups).map(
+        ([metricType, values]) => {
+          const avgValue =
+            values.reduce((sum, v) => sum + v, 0) / values.length;
 
-          await prisma.dashboardMetricSnapshot.upsert({
+          return prisma.dashboardMetricSnapshot.upsert({
             where: {
               unitId_metricType_periodType_periodDate: {
                 unitId: unit.id,
@@ -270,17 +274,28 @@ export async function createWeeklySummary(): Promise<void> {
             },
           });
         }
+      );
+      await Promise.all(upsertPromises);
+    };
 
-        logger.debug(`[${jobName}] Created weekly summary for unit: ${unit.name}`);
-      } catch (unitError) {
+    const results = await Promise.allSettled(units.map(unit => processUnit(unit)));
+
+    results.forEach((result, index) => {
+      if (result.status === 'fulfilled') {
+        logger.debug(`[${jobName}] Created weekly summary for unit: ${units[index].name}`);
+        successCount++;
+      } else {
         logger.error(
-          `[${jobName}] Error creating weekly summary for unit ${unit.name}:`,
-          unitError
+          `[${jobName}] Error creating weekly summary for unit ${units[index].name}:`,
+          result.reason
         );
+        errorCount++;
       }
-    }
+    });
 
-    logger.info(`[${jobName}] Weekly summary job completed`);
+    logger.info(
+      `[${jobName}] Weekly summary job completed: ${successCount} success, ${errorCount} errors`
+    );
   } catch (error) {
     logger.error(`[${jobName}] Fatal error in weekly summary job:`, error);
     throw error;

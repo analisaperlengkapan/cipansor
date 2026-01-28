@@ -67,6 +67,6 @@ test.describe("Landing Page", () => {
     // Verify Donasi link points to public page
     const donasiLink = footer.getByRole("link", { name: "Donasi", exact: true });
     await expect(donasiLink).toBeVisible();
-    await expect(donasiLink).toHaveAttribute("href", "/donation/public");
+    await expect(donasiLink).toHaveAttribute("href", "/public/donation");
   });
 });

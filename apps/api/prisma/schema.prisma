@@ -7143,7 +7143,7 @@ model RiskMitigation {
 
   @@index([riskId])
   @@map("risk_mitigations")
-// COMPLAINT MODULE (ADUAN & ASPIRASI)
+}
 // =====================================
 
 enum ComplaintCategory {

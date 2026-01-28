@@ -109,10 +109,56 @@ async function main() {
       console.error('FAILURE: Campaign totals incorrect. Expected 100000, got', campaign3?.collectedAmount.toNumber());
   }
 
-  // 5. Cleanup
+  // 5. Test Anonymous Masking
+  console.log('Testing Anonymous Masking...');
+  const anonymousDonation = await prisma.donation.create({
+    data: {
+      amount: 50000,
+      type: 'INFAK',
+      paymentMethod: 'CASH',
+      donorName: 'Secret Donor',
+      isAnonymous: true,
+      status: 'VERIFIED',
+      unitId: unit.id
+    }
+  });
+
+  // Call getRecent directly via service (mocking controller call)
+  const recentDonations = await donationService.getRecent(5);
+  const fetchedAnonymous = recentDonations.find(d => d.id === anonymousDonation.id);
+
+  if (fetchedAnonymous?.donorName === 'Hamba Allah') {
+      console.log('SUCCESS: Anonymous donor name is masked.');
+  } else {
+      console.error(`FAILURE: Anonymous donor name NOT masked. Got: ${fetchedAnonymous?.donorName}`);
+  }
+
+  // 6. Test Dirty Re-verification (No Reversals)
+  console.log('Testing Dirty Re-verification (Cancelled but no reversal)...');
+  // Manually delete reversals for the main donation
+  await prisma.journalEntry.deleteMany({
+      where: { reference: donation.id, referenceType: 'DONATION_CANCEL' }
+  });
+
+  // Re-verify again
+  await donationService.verify(donation.id, 'SYSTEM_TEST_USER', {
+    status: 'VERIFIED',
+    notes: 'Re-verified dirty'
+  });
+
+  // Check that we didn't duplicate original entries (should still be 2 originals, 0 reversals)
+  const dirtyJournals = await prisma.journalEntry.findMany({ where: { reference: donation.id } });
+  if (dirtyJournals.length === 2) {
+      console.log('SUCCESS: Dirty re-verification prevented duplicate entries.');
+  } else {
+      console.error(`FAILURE: Dirty re-verification created duplicates. Count: ${dirtyJournals.length}`);
+  }
+
+  // 7. Cleanup
   console.log('Cleaning up...');
   await prisma.journalEntry.deleteMany({ where: { reference: donation.id } });
   await prisma.donation.delete({ where: { id: donation.id } });
+  await prisma.donation.delete({ where: { id: anonymousDonation.id } });
   await prisma.donationCampaign.delete({ where: { id: campaign.id } });
   await prisma.accountCode.delete({ where: { id: assetAccount.id } });
   await prisma.accountCode.delete({ where: { id: revenueAccount.id } });

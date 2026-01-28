@@ -374,6 +374,7 @@ export const donationService = {
       // =================================================================
       if (input.status === 'VERIFIED') {
         // Check for re-verification (CANCELLED -> VERIFIED)
+        // Note: We allow re-verification to correct mistakes (e.g., accidental cancellation).
         if (donation.status === 'CANCELLED') {
            // Find reversal entries
            const reversalEntries = await tx.journalEntry.findMany({
@@ -394,6 +395,21 @@ export const donationService = {
 
              // Skip creating new entries
              return updatedDonation;
+           } else {
+             // Edge case: Cancelled but no reversal entries found (e.g. accounting skipped previously)
+             // Check if original entries exist to avoid duplication
+             const originalEntries = await tx.journalEntry.findMany({
+               where: {
+                 reference: donation.id,
+                 referenceType: 'DONATION',
+               },
+             });
+
+             if (originalEntries.length > 0) {
+               // Originals exist but no reversals -> Treat as "Restored" without new entries
+               // (This implies the cancellation didn't record reversal, so the original entries are still effectively active in the ledger if we ignore the status mismatch period)
+               return updatedDonation;
+             }
            }
         }
 
@@ -777,7 +793,7 @@ export const donationService = {
    * Get recent donations for dashboard
    */
   async getRecent(limit: number = 10) {
-    return prisma.donation.findMany({
+    const donations = await prisma.donation.findMany({
       where: { status: 'VERIFIED' },
       orderBy: { donatedAt: 'desc' },
       take: limit,
@@ -792,6 +808,11 @@ export const donationService = {
         campaign: { select: { id: true, title: true, slug: true } },
       },
     });
+
+    return donations.map((d) => ({
+      ...d,
+      donorName: d.isAnonymous ? 'Hamba Allah' : d.donorName,
+    }));
   },
 };
 

@@ -567,7 +567,7 @@ const yayasanNavigation: NavGroup[] = [
       },
       {
         title: "Public Portal",
-        href: "/donation/public",
+        href: "/public/donation",
         icon: HeartHandshake,
       },
     ],

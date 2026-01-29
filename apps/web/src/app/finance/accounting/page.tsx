@@ -948,6 +948,11 @@ function AccountingSettingsTab() {
       label: "Aset Inventaris",
       description: "Akun aset untuk pembelian inventaris baru",
     },
+    {
+      key: "ACCOUNT_MAPPING_ACCOUNTS_RECEIVABLE",
+      label: "Piutang Santri (AR)",
+      description: "Akun piutang untuk pencatatan tagihan (Invoice)",
+    },
   ];
 
   return (

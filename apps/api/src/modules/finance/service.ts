@@ -129,24 +129,88 @@ export async function createInvoice(data: CreateInvoiceDto) {
       const invoiceNumber = await generateInvoiceNumber();
 
       const { studentId, paymentTypeId, ...invoiceData } = data;
-      invoice = await prisma.invoice.create({
-        data: {
-          ...invoiceData,
-          invoiceNumber,
-          amount: new Prisma.Decimal(data.amount),
-          dueDate: new Date(data.dueDate),
-          student: { connect: { id: studentId } },
-          paymentType: { connect: { id: paymentTypeId } },
-        },
-        include: {
-          student: {
-            include: {
-              user: { select: { id: true, name: true, email: true } },
-              unit: { select: { id: true, name: true } },
-            },
+
+      // Use transaction to ensure Invoice and Journal are created together (Accrual Basis)
+      invoice = await prisma.$transaction(async (tx) => {
+        const newInvoice = await tx.invoice.create({
+          data: {
+            ...invoiceData,
+            invoiceNumber,
+            amount: new Prisma.Decimal(data.amount),
+            dueDate: new Date(data.dueDate),
+            student: { connect: { id: studentId } },
+            paymentType: { connect: { id: paymentTypeId } },
           },
-          paymentType: { select: { id: true, name: true, code: true } },
-        },
+          include: {
+            student: {
+              include: {
+                user: { select: { id: true, name: true, email: true } },
+                unit: { select: { id: true, name: true } },
+              },
+            },
+            paymentType: { select: { id: true, name: true, code: true, accountId: true, name: true } },
+          },
+        });
+
+        // =================================================================
+        // ACCRUAL BASIS: Create Journal Entry (Debit AR, Credit Revenue)
+        // =================================================================
+        if (newInvoice.student.unitId) {
+          // 1. Get Accounts Receivable (Piutang)
+          const arAccount = await getAccountOrFallback(
+            newInvoice.student.unitId,
+            ACCOUNT_MAPPING_KEYS.ACCOUNTS_RECEIVABLE,
+            '1103',
+            'Piutang Santri'
+          );
+
+          // 2. Get Revenue Account (Pendapatan)
+          const revenueAccount = newInvoice.paymentType.accountId
+            ? await tx.accountCode.findUnique({ where: { id: newInvoice.paymentType.accountId } })
+            : await getAccountOrFallback(
+                newInvoice.student.unitId,
+                'ACCOUNT_MAPPING_REVENUE_DEFAULT', // Placeholder
+                '4101',
+                'Pendapatan SPP'
+              );
+
+          if (arAccount && revenueAccount) {
+            const descriptionPrefix = `Tagihan ${newInvoice.invoiceNumber}`;
+            const userId = 'SYSTEM'; // Or pass userId if available
+
+            // Debit AR (Asset Increases)
+            await tx.journalEntry.create({
+              data: {
+                unitId: newInvoice.student.unitId,
+                accountId: arAccount.id,
+                date: new Date(), // Invoice Date
+                description: `${descriptionPrefix} - ${newInvoice.paymentType.name}`,
+                debit: newInvoice.amount,
+                credit: 0,
+                reference: newInvoice.id,
+                referenceType: JournalReferenceType.INVOICE,
+                createdById: userId,
+              },
+            });
+
+            // Credit Revenue (Income Increases)
+            await tx.journalEntry.create({
+              data: {
+                unitId: newInvoice.student.unitId,
+                accountId: revenueAccount.id,
+                date: new Date(),
+                description: `Pendapatan ${newInvoice.paymentType.name} - ${newInvoice.student.user.name}`,
+                debit: 0,
+                credit: newInvoice.amount,
+                reference: newInvoice.id,
+                referenceType: JournalReferenceType.INVOICE,
+                createdById: userId,
+              },
+            });
+          }
+        }
+
+        return newInvoice;
       });
       break;
     } catch (error) {
@@ -384,20 +448,37 @@ export async function createPayment(data: CreatePaymentDto, userId: string = 'SY
           },
         });
 
-        // Credit Entry (Revenue increases)
-        await tx.journalEntry.create({
-          data: {
-            unitId: invoice.student.unitId,
-            accountId: invoice.paymentType.accountId,
-            date: new Date(),
-            description: `Pendapatan ${invoice.paymentType.name} - ${invoice.student.user.name}`,
-            debit: 0,
-            credit: payment.amount,
-            reference: payment.id,
-            referenceType: JournalReferenceType.PAYMENT,
-            createdById: userId,
-          },
-        });
+        // Credit Entry: ACCOUNTS RECEIVABLE (Asset decreases) - ACCRUAL BASIS
+        // Fallback to Revenue if AR not configured (Cash Basis fallback)
+
+        const arAccount = await getAccountOrFallback(
+          invoice.student.unitId,
+          ACCOUNT_MAPPING_KEYS.ACCOUNTS_RECEIVABLE,
+          '1103',
+          'Piutang Santri'
+        );
+
+        // If AR account exists, we credit AR. If not, we credit Revenue (legacy/cash basis).
+        const creditAccountId = arAccount ? arAccount.id : invoice.paymentType.accountId;
+        const creditDescription = arAccount
+          ? `Pelunasan Piutang ${invoice.invoiceNumber}`
+          : `Pendapatan ${invoice.paymentType.name} - ${invoice.student.user.name}`;
+
+        if (creditAccountId) {
+          await tx.journalEntry.create({
+            data: {
+              unitId: invoice.student.unitId,
+              accountId: creditAccountId,
+              date: new Date(),
+              description: creditDescription,
+              debit: 0,
+              credit: payment.amount,
+              reference: payment.id,
+              referenceType: JournalReferenceType.PAYMENT,
+              createdById: userId,
+            },
+          });
+        }
       } else {
         // If no account found, we must throw error to maintain integrity
         console.warn(

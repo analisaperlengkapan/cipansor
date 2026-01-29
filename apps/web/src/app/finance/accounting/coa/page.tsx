@@ -317,6 +317,7 @@ export default function ChartOfAccountsPage() {
           </DialogContent>
         </Dialog>
       </div>
+    </div>
 
       <div className="flex items-center space-x-2">
         <Search className="h-4 w-4 text-muted-foreground" />

@@ -121,6 +121,13 @@ export async function createEmployee(data: CreateEmployeeInput) {
           nik: data.nik,
           noKK: data.noKK,
           religion: data.religion || 'ISLAM',
+          rt: data.rt,
+          rw: data.rw,
+          postalCode: data.postalCode,
+          provinceId: data.provinceId,
+          regencyId: data.regencyId,
+          districtId: data.districtId,
+          villageId: data.villageId,
           joinDate: data.joinDate ? new Date(data.joinDate) : undefined,
           employmentStatus: data.employmentStatus,
           specialization: data.specialization,
@@ -139,6 +146,21 @@ export async function createEmployee(data: CreateEmployeeInput) {
           position: data.position,
           department: data.department,
           joinDate: data.joinDate ? new Date(data.joinDate) : undefined,
+          // Expanded fields for compliance
+          nik: data.nik,
+          noKK: data.noKK,
+          gender: data.gender,
+          birthPlace: data.birthPlace,
+          birthDate: data.birthDate ? new Date(data.birthDate) : undefined,
+          address: data.address,
+          religion: data.religion || 'ISLAM',
+          rt: data.rt,
+          rw: data.rw,
+          postalCode: data.postalCode,
+          provinceId: data.provinceId,
+          regencyId: data.regencyId,
+          districtId: data.districtId,
+          villageId: data.villageId,
         },
       });
     }
@@ -182,6 +204,13 @@ export async function updateEmployee(id: string, data: UpdateEmployeeInput) {
           nik: data.nik,
           noKK: data.noKK,
           religion: data.religion,
+          rt: data.rt,
+          rw: data.rw,
+          postalCode: data.postalCode,
+          provinceId: data.provinceId,
+          regencyId: data.regencyId,
+          districtId: data.districtId,
+          villageId: data.villageId,
           joinDate: data.joinDate ? new Date(data.joinDate) : undefined,
           employmentStatus: data.employmentStatus,
           specialization: data.specialization,
@@ -198,6 +227,21 @@ export async function updateEmployee(id: string, data: UpdateEmployeeInput) {
           department: data.department,
           joinDate: data.joinDate ? new Date(data.joinDate) : undefined,
           unitId: data.unitId,
+          // Expanded fields for compliance
+          nik: data.nik,
+          noKK: data.noKK,
+          gender: data.gender,
+          birthPlace: data.birthPlace,
+          birthDate: data.birthDate ? new Date(data.birthDate) : undefined,
+          address: data.address,
+          religion: data.religion,
+          rt: data.rt,
+          rw: data.rw,
+          postalCode: data.postalCode,
+          provinceId: data.provinceId,
+          regencyId: data.regencyId,
+          districtId: data.districtId,
+          villageId: data.villageId,
         },
       });
     }
@@ -617,7 +661,7 @@ async function validateLeaveRequest(
       }
 
       // Helper to check for leaves overlapping with AY
-      const getOverlappingLeaveQuery = (statusFilter: Prisma.EnumLeaveStatusFilter): Prisma.LeaveWhereInput => ({
+      const getOverlappingLeaveQuery = (statusFilter: LeaveStatus): Prisma.LeaveWhereInput => ({
         type: LeaveType.ANNUAL,
         status: statusFilter,
         OR: [

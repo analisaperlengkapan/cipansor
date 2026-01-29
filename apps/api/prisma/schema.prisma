@@ -671,6 +671,26 @@ model Staff {
   department String? // Bagian
   departmentId String? @map("department_id")
   joinDate   DateTime? @map("join_date")
+
+  // === PHASE 8: Indonesia Compliance Fields (Matching Teacher) ===
+  nik         String?
+  noKK        String?   @map("no_kk")
+  gender      Gender?
+  birthPlace  String?   @map("birth_place")
+  birthDate   DateTime? @map("birth_date")
+  religion    String    @default("ISLAM")
+  nationality String    @default("Indonesia")
+  address     String?
+
+  // Data Domisili
+  rt         String?
+  rw         String?
+  postalCode String? @map("postal_code")
+  provinceId String? @map("province_id")
+  regencyId  String? @map("regency_id")
+  districtId String? @map("district_id")
+  villageId  String? @map("village_id")
+
   createdAt  DateTime  @default(now()) @map("created_at")
   updatedAt  DateTime  @updatedAt @map("updated_at")
   deletedAt  DateTime? @map("deleted_at")
@@ -678,6 +698,10 @@ model Staff {
   // Relations
   user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   unit           Unit              @relation(fields: [unitId], references: [id])
+  province       Province?         @relation("StaffProvince", fields: [provinceId], references: [id])
+  regency        Regency?          @relation("StaffRegency", fields: [regencyId], references: [id])
+  district       District?         @relation("StaffDistrict", fields: [districtId], references: [id])
+  village        Village?          @relation("StaffVillage", fields: [villageId], references: [id])
   departmentRel  Department?       @relation(fields: [departmentId], references: [id])
   attendance     StaffAttendance[]
   leaves         Leave[]
@@ -4137,6 +4161,7 @@ model Province {
   regencies Regency[]
   students  Student[] @relation("StudentProvince")
   teachers  Teacher[] @relation("TeacherProvince")
+  staff     Staff[]   @relation("StaffProvince")
 
   @@index([code])
   @@map("provinces")
@@ -4156,6 +4181,7 @@ model Regency {
   districts District[]
   students  Student[]  @relation("StudentRegency")
   teachers  Teacher[]  @relation("TeacherRegency")
+  staff     Staff[]    @relation("StaffRegency")
 
   @@index([provinceId])
   @@index([code])
@@ -4175,6 +4201,7 @@ model District {
   villages Village[]
   students Student[] @relation("StudentDistrict")
   teachers Teacher[] @relation("TeacherDistrict")
+  staff     Staff[]    @relation("StaffDistrict")
 
   @@index([regencyId])
   @@index([code])
@@ -4195,6 +4222,7 @@ model Village {
   district District  @relation(fields: [districtId], references: [id])
   students Student[] @relation("StudentVillage")
   teachers Teacher[] @relation("TeacherVillage")
+  staff     Staff[]    @relation("StaffVillage")
 
   @@index([districtId])
   @@index([code])

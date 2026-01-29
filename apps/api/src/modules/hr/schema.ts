@@ -106,17 +106,28 @@ export const createEmployeeSchema = z.object({
   unitId: z.string().uuid(),
   phone: z.string().optional(),
 
-  // Teacher specific
-  nip: z.string().optional(), // Shared with Staff but optional
-  nuptk: z.string().optional(),
+  // Biodata (Shared)
+  nip: z.string().optional(),
+  nik: z.string().optional(),
+  noKK: z.string().optional(),
   gender: z.nativeEnum(Gender).optional(),
   birthPlace: z.string().optional(),
   birthDate: z.string().datetime().optional(),
   address: z.string().optional(),
-  nik: z.string().optional(),
-  noKK: z.string().optional(),
   religion: z.string().optional(),
   joinDate: z.string().datetime().optional(),
+
+  // Regional (Shared)
+  provinceId: z.string().optional(),
+  regencyId: z.string().optional(),
+  districtId: z.string().optional(),
+  villageId: z.string().optional(),
+  rt: z.string().optional(),
+  rw: z.string().optional(),
+  postalCode: z.string().optional(),
+
+  // Teacher specific
+  nuptk: z.string().optional(),
   employmentStatus: z.nativeEnum(EmploymentStatus).optional(),
   specialization: z.string().optional(),
   certificationNumber: z.string().optional(),
@@ -133,21 +144,33 @@ export const updateEmployeeSchema = z.object({
   phone: z.string().optional(),
   isActive: z.boolean().optional(),
 
-  // Profile fields
+  // Biodata (Shared)
   nip: z.string().optional(),
-  nuptk: z.string().optional(),
+  nik: z.string().optional(),
+  noKK: z.string().optional(),
   gender: z.nativeEnum(Gender).optional(),
   birthPlace: z.string().optional(),
   birthDate: z.string().datetime().optional(),
   address: z.string().optional(),
-  nik: z.string().optional(),
-  noKK: z.string().optional(),
   religion: z.string().optional(),
   joinDate: z.string().datetime().optional(),
+
+  // Regional (Shared)
+  provinceId: z.string().optional(),
+  regencyId: z.string().optional(),
+  districtId: z.string().optional(),
+  villageId: z.string().optional(),
+  rt: z.string().optional(),
+  rw: z.string().optional(),
+  postalCode: z.string().optional(),
+
+  // Teacher specific
+  nuptk: z.string().optional(),
   employmentStatus: z.nativeEnum(EmploymentStatus).optional(),
   specialization: z.string().optional(),
   certificationNumber: z.string().optional(),
 
+  // Staff specific
   position: z.string().optional(),
   department: z.string().optional(),
 });

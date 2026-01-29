@@ -2,7 +2,12 @@ import { Request, Response } from 'express';
 import { complaintsService } from './complaints.service';
 import { ComplaintStatus, ComplaintCategory, UserRole } from '@prisma/client';
 import httpStatus from 'http-status';
-import { createComplaintSchema, updateComplaintStatusSchema, addCommentSchema, assignHandlerSchema } from './complaints.schema';
+import {
+  createComplaintSchema,
+  updateComplaintStatusSchema,
+  addCommentSchema,
+  assignHandlerSchema,
+} from './complaints.schema';
 import { prisma } from '@/lib/prisma';
 
 export const complaintsController = {
@@ -12,7 +17,7 @@ export const complaintsController = {
       if (!validation.success) {
         return res.status(httpStatus.BAD_REQUEST).json({
           message: 'Validation error',
-          errors: validation.error.errors
+          errors: validation.error.errors,
         });
       }
 
@@ -22,7 +27,7 @@ export const complaintsController = {
 
       // For SUPER_ADMIN creating a complaint, they must specify unitId if not present in token
       if (!unitId && user.role !== UserRole.SUPER_ADMIN) {
-         return res.status(httpStatus.BAD_REQUEST).json({ message: 'Unit ID missing' });
+        return res.status(httpStatus.BAD_REQUEST).json({ message: 'Unit ID missing' });
       }
 
       const complaint = await complaintsService.create({
@@ -90,7 +95,7 @@ export const complaintsController = {
       if (!validation.success) {
         return res.status(httpStatus.BAD_REQUEST).json({
           message: 'Validation error',
-          errors: validation.error.errors
+          errors: validation.error.errors,
         });
       }
 
@@ -101,7 +106,7 @@ export const complaintsController = {
       // Existence and Unit Authorization Check
       const existingComplaint = await prisma.complaint.findUnique({
         where: { id },
-        select: { unitId: true }
+        select: { unitId: true },
       });
 
       if (!existingComplaint) {
@@ -110,14 +115,18 @@ export const complaintsController = {
 
       // If not SUPER_ADMIN, ensure complaint belongs to user's unit
       if (user.role !== UserRole.SUPER_ADMIN && existingComplaint.unitId !== user.unitId) {
-        return res.status(httpStatus.FORBIDDEN).json({ message: 'Forbidden: Cannot update complaint from another unit' });
+        return res
+          .status(httpStatus.FORBIDDEN)
+          .json({ message: 'Forbidden: Cannot update complaint from another unit' });
       }
 
       const updated = await complaintsService.updateStatus(id, status, resolution);
       res.json(updated);
     } catch (error) {
       console.error(error);
-      res.status(httpStatus.INTERNAL_SERVER_ERROR).json({ message: 'Error updating complaint status' });
+      res
+        .status(httpStatus.INTERNAL_SERVER_ERROR)
+        .json({ message: 'Error updating complaint status' });
     }
   },
 
@@ -127,7 +136,7 @@ export const complaintsController = {
       if (!validation.success) {
         return res.status(httpStatus.BAD_REQUEST).json({
           message: 'Validation error',
-          errors: validation.error.errors
+          errors: validation.error.errors,
         });
       }
 
@@ -138,7 +147,7 @@ export const complaintsController = {
       // Existence and Unit Authorization Check
       const existingComplaint = await prisma.complaint.findUnique({
         where: { id },
-        select: { unitId: true }
+        select: { unitId: true },
       });
 
       if (!existingComplaint) {
@@ -147,7 +156,9 @@ export const complaintsController = {
 
       // If not SUPER_ADMIN, ensure complaint belongs to user's unit
       if (user.role !== UserRole.SUPER_ADMIN && existingComplaint.unitId !== user.unitId) {
-        return res.status(httpStatus.FORBIDDEN).json({ message: 'Forbidden: Cannot assign handler to complaint from another unit' });
+        return res
+          .status(httpStatus.FORBIDDEN)
+          .json({ message: 'Forbidden: Cannot assign handler to complaint from another unit' });
       }
 
       const updated = await complaintsService.assignHandler(id, handlerId);
@@ -164,7 +175,7 @@ export const complaintsController = {
       if (!validation.success) {
         return res.status(httpStatus.BAD_REQUEST).json({
           message: 'Validation error',
-          errors: validation.error.errors
+          errors: validation.error.errors,
         });
       }
 
@@ -173,7 +184,12 @@ export const complaintsController = {
       const { content, isInternal } = validation.data;
 
       // Verify access using findOne logic (throws Unauthorized if no access)
-      const existingComplaint = await complaintsService.findOne(id, user.sub, user.role, user.unitId);
+      const existingComplaint = await complaintsService.findOne(
+        id,
+        user.sub,
+        user.role,
+        user.unitId
+      );
       if (!existingComplaint) {
         return res.status(httpStatus.NOT_FOUND).json({ message: 'Complaint not found' });
       }

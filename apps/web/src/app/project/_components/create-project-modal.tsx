@@ -1,17 +1,17 @@
-'use client';
+"use client";
 
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
-import { toast } from 'sonner';
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   Form,
   FormControl,
@@ -19,22 +19,22 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Button } from '@/components/ui/button';
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 
 const formSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
+  name: z.string().min(1, "Name is required"),
   description: z.string().optional(),
-  priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']),
+  priority: z.enum(["LOW", "MEDIUM", "HIGH", "URGENT"]),
   budget: z.string().optional(),
 });
 
@@ -48,10 +48,10 @@ export function CreateProjectModal({ open, onOpenChange }: Props) {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: '',
-      description: '',
-      priority: 'MEDIUM',
-      budget: '',
+      name: "",
+      description: "",
+      priority: "MEDIUM",
+      budget: "",
     },
   });
 
@@ -61,16 +61,16 @@ export function CreateProjectModal({ open, onOpenChange }: Props) {
         ...values,
         budget: values.budget ? parseFloat(values.budget) : undefined,
       };
-      return axios.post('/api/projects', payload);
+      return axios.post("/api/projects", payload);
     },
     onSuccess: () => {
-      toast.success('Project created successfully');
-      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      toast.success("Project created successfully");
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
       onOpenChange(false);
       form.reset();
     },
     onError: () => {
-      toast.error('Failed to create project');
+      toast.error("Failed to create project");
     },
   });
 
@@ -119,7 +119,10 @@ export function CreateProjectModal({ open, onOpenChange }: Props) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Priority</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select priority" />
@@ -159,7 +162,7 @@ export function CreateProjectModal({ open, onOpenChange }: Props) {
                 Cancel
               </Button>
               <Button type="submit" disabled={mutation.isPending}>
-                {mutation.isPending ? 'Creating...' : 'Create Project'}
+                {mutation.isPending ? "Creating..." : "Create Project"}
               </Button>
             </div>
           </form>

@@ -35,7 +35,9 @@ export default function IncomeStatementPage() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 print:hidden">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Income Statement</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Income Statement
+          </h1>
           <p className="text-muted-foreground">Laporan Laba Rugi</p>
         </div>
         <div className="flex gap-4">
@@ -74,13 +76,17 @@ export default function IncomeStatementPage() {
             <div className="space-y-8">
               {/* REVENUE */}
               <div>
-                <h3 className="text-lg font-semibold mb-2 text-primary">Revenue</h3>
+                <h3 className="text-lg font-semibold mb-2 text-primary">
+                  Revenue
+                </h3>
                 <Table>
                   <TableBody>
                     {report.revenues.map((item) => (
                       <TableRow key={item.accountId} className="border-b-0">
                         <TableCell>
-                          <span className="font-mono text-muted-foreground mr-2">{item.code}</span>
+                          <span className="font-mono text-muted-foreground mr-2">
+                            {item.code}
+                          </span>
                           {item.name}
                         </TableCell>
                         <TableCell className="text-right">
@@ -100,13 +106,17 @@ export default function IncomeStatementPage() {
 
               {/* EXPENSES */}
               <div>
-                <h3 className="text-lg font-semibold mb-2 text-red-600">Expenses</h3>
+                <h3 className="text-lg font-semibold mb-2 text-red-600">
+                  Expenses
+                </h3>
                 <Table>
                   <TableBody>
                     {report.expenses.map((item) => (
                       <TableRow key={item.accountId} className="border-b-0">
                         <TableCell>
-                          <span className="font-mono text-muted-foreground mr-2">{item.code}</span>
+                          <span className="font-mono text-muted-foreground mr-2">
+                            {item.code}
+                          </span>
                           {item.name}
                         </TableCell>
                         <TableCell className="text-right">
@@ -128,7 +138,9 @@ export default function IncomeStatementPage() {
               <div className="pt-4 border-t-4 border-double">
                 <div className="flex justify-between items-center p-4 bg-muted rounded-lg">
                   <span className="text-xl font-bold">Net Income</span>
-                  <span className={`text-xl font-bold ${report.netIncome >= 0 ? "text-green-600" : "text-red-600"}`}>
+                  <span
+                    className={`text-xl font-bold ${report.netIncome >= 0 ? "text-green-600" : "text-red-600"}`}
+                  >
                     {formatCurrency(report.netIncome)}
                   </span>
                 </div>

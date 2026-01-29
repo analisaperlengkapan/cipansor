@@ -55,10 +55,20 @@ router.delete(
 // --- Student Routes ---
 // Exam Taking
 // Start Exam (examId is the ID of the scheduled Exam)
-router.post('/exams/:examId/start', authenticate, authorize(UserRole.STUDENT), CBTController.startExam);
+router.post(
+  '/exams/:examId/start',
+  authenticate,
+  authorize(UserRole.STUDENT),
+  CBTController.startExam
+);
 
 // Get Attempt Details (Questions, etc.)
-router.get('/attempts/:attemptId', authenticate, authorize(UserRole.STUDENT), CBTController.getAttempt);
+router.get(
+  '/attempts/:attemptId',
+  authenticate,
+  authorize(UserRole.STUDENT),
+  CBTController.getAttempt
+);
 
 // Submit Answer
 router.post(

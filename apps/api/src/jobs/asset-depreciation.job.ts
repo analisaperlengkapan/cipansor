@@ -29,11 +29,15 @@ export async function runMonthlyDepreciation(unitId?: string, executorId?: strin
         },
       });
 
-      const expenseAccount = settings.find((s) => s.key === 'DEPRECIATION_EXPENSE_ACCOUNT')?.value as string;
-      const accumAccount = settings.find((s) => s.key === 'ACCUMULATED_DEPRECIATION_ACCOUNT')?.value as string;
+      const expenseAccount = settings.find((s) => s.key === 'DEPRECIATION_EXPENSE_ACCOUNT')
+        ?.value as string;
+      const accumAccount = settings.find((s) => s.key === 'ACCUMULATED_DEPRECIATION_ACCOUNT')
+        ?.value as string;
 
       if (!expenseAccount || !accumAccount) {
-        console.warn(`[DepreciationJob] Skipping Unit ${unit.name} (${unit.id}): Missing account settings`);
+        console.warn(
+          `[DepreciationJob] Skipping Unit ${unit.name} (${unit.id}): Missing account settings`
+        );
         results.push({ unit: unit.name, status: 'SKIPPED', reason: 'Missing Settings' });
         continue;
       }
@@ -74,13 +78,13 @@ export async function runMonthlyDepreciation(unitId?: string, executorId?: strin
           (now.getMonth() - asset.purchaseDate.getMonth());
 
         if (ageMonths > lifeMonths) {
-             skippedCount++;
-             continue;
+          skippedCount++;
+          continue;
         }
 
         if (monthlyDepreciation <= 0) {
-            skippedCount++;
-            continue;
+          skippedCount++;
+          continue;
         }
 
         // Check if already run for this month
@@ -104,30 +108,30 @@ export async function runMonthlyDepreciation(unitId?: string, executorId?: strin
 
         // Debit Expense
         journalEntries.push({
-            id: randomUUID(), // Generate UUID for consistency
-            unitId: unit.id,
-            accountId: expenseAccount,
-            date: now,
-            description,
-            debit: new Prisma.Decimal(monthlyDepreciation),
-            credit: new Prisma.Decimal(0),
-            reference: reference, // Unique per asset per month
-            referenceType: 'DEPRECIATION',
-            createdById, // Fix Bug 1: Use valid user ID
+          id: randomUUID(), // Generate UUID for consistency
+          unitId: unit.id,
+          accountId: expenseAccount,
+          date: now,
+          description,
+          debit: new Prisma.Decimal(monthlyDepreciation),
+          credit: new Prisma.Decimal(0),
+          reference: reference, // Unique per asset per month
+          referenceType: 'DEPRECIATION',
+          createdById, // Fix Bug 1: Use valid user ID
         });
 
         // Credit Accum Depr
         journalEntries.push({
-            id: randomUUID(),
-            unitId: unit.id,
-            accountId: accumAccount,
-            date: now,
-            description,
-            debit: new Prisma.Decimal(0),
-            credit: new Prisma.Decimal(monthlyDepreciation),
-            reference: reference,
-            referenceType: 'DEPRECIATION',
-            createdById, // Fix Bug 1: Use valid user ID
+          id: randomUUID(),
+          unitId: unit.id,
+          accountId: accumAccount,
+          date: now,
+          description,
+          debit: new Prisma.Decimal(0),
+          credit: new Prisma.Decimal(monthlyDepreciation),
+          reference: reference,
+          referenceType: 'DEPRECIATION',
+          createdById, // Fix Bug 1: Use valid user ID
         });
 
         processedCount++;
@@ -135,25 +139,24 @@ export async function runMonthlyDepreciation(unitId?: string, executorId?: strin
 
       // Batch Insert (Chunk size 100) wrapped in transaction (Fix Bug 3)
       if (journalEntries.length > 0) {
-          const BATCH_SIZE = 100;
-          await prisma.$transaction(async (tx) => {
-            for (let i = 0; i < journalEntries.length; i += BATCH_SIZE) {
-                const batch = journalEntries.slice(i, i + BATCH_SIZE);
-                await tx.journalEntry.createMany({
-                    data: batch
-                });
-            }
-          });
+        const BATCH_SIZE = 100;
+        await prisma.$transaction(async (tx) => {
+          for (let i = 0; i < journalEntries.length; i += BATCH_SIZE) {
+            const batch = journalEntries.slice(i, i + BATCH_SIZE);
+            await tx.journalEntry.createMany({
+              data: batch,
+            });
+          }
+        });
       }
 
       results.push({
-          unit: unit.name,
-          status: 'SUCCESS',
-          assets: assets.length,
-          processed: processedCount,
-          skipped: skippedCount
+        unit: unit.name,
+        status: 'SUCCESS',
+        assets: assets.length,
+        processed: processedCount,
+        skipped: skippedCount,
       });
-
     } catch (error) {
       console.error(`[DepreciationJob] Error processing unit ${unit.name}:`, error);
       results.push({ unit: unit.name, status: 'ERROR', error: String(error) });

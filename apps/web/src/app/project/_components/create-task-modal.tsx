@@ -1,17 +1,17 @@
-'use client';
+"use client";
 
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
-import { toast } from 'sonner';
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   Form,
   FormControl,
@@ -19,27 +19,31 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Button } from '@/components/ui/button';
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { CalendarIcon } from 'lucide-react';
-import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
+} from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 const formSchema = z.object({
-  title: z.string().min(1, 'Title is required'),
+  title: z.string().min(1, "Title is required"),
   description: z.string().optional(),
-  priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']),
+  priority: z.enum(["LOW", "MEDIUM", "HIGH", "URGENT"]),
   dueDate: z.date().optional(),
   assigneeId: z.string().optional(),
 });
@@ -51,14 +55,19 @@ interface Props {
   columnId: string | null;
 }
 
-export function CreateTaskModal({ open, onOpenChange, projectId, columnId }: Props) {
+export function CreateTaskModal({
+  open,
+  onOpenChange,
+  projectId,
+  columnId,
+}: Props) {
   const queryClient = useQueryClient();
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      title: '',
-      description: '',
-      priority: 'MEDIUM',
+      title: "",
+      description: "",
+      priority: "MEDIUM",
     },
   });
 
@@ -71,13 +80,13 @@ export function CreateTaskModal({ open, onOpenChange, projectId, columnId }: Pro
       return axios.post(`/api/projects/${projectId}/tasks`, payload);
     },
     onSuccess: () => {
-      toast.success('Task created successfully');
-      queryClient.invalidateQueries({ queryKey: ['project', projectId] });
+      toast.success("Task created successfully");
+      queryClient.invalidateQueries({ queryKey: ["project", projectId] });
       onOpenChange(false);
       form.reset();
     },
     onError: () => {
-      toast.error('Failed to create task');
+      toast.error("Failed to create task");
     },
   });
 
@@ -126,7 +135,10 @@ export function CreateTaskModal({ open, onOpenChange, projectId, columnId }: Pro
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Priority</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select priority" />
@@ -153,14 +165,14 @@ export function CreateTaskModal({ open, onOpenChange, projectId, columnId }: Pro
                       <PopoverTrigger asChild>
                         <FormControl>
                           <Button
-                            variant={'outline'}
+                            variant={"outline"}
                             className={cn(
-                              'w-full pl-3 text-left font-normal',
-                              !field.value && 'text-muted-foreground'
+                              "w-full pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground",
                             )}
                           >
                             {field.value ? (
-                              format(field.value, 'PPP')
+                              format(field.value, "PPP")
                             ) : (
                               <span>Pick a date</span>
                             )}
@@ -197,7 +209,7 @@ export function CreateTaskModal({ open, onOpenChange, projectId, columnId }: Pro
                 Cancel
               </Button>
               <Button type="submit" disabled={mutation.isPending}>
-                {mutation.isPending ? 'Creating...' : 'Create Task'}
+                {mutation.isPending ? "Creating..." : "Create Task"}
               </Button>
             </div>
           </form>

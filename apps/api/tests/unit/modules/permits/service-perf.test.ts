@@ -59,7 +59,7 @@ vi.mock('@prisma/client', () => ({
   },
   UserRole: {
     STUDENT: 'STUDENT',
-  }
+  },
 }));
 
 import { updatePermitStatus } from '../../../../src/modules/permits/service';
@@ -102,11 +102,7 @@ describe('Permit Service Performance', () => {
 
     const start = Date.now();
 
-    await updatePermitStatus(
-      mockPermitId,
-      { status: PermitStatus.APPROVED },
-      'approver-1'
-    );
+    await updatePermitStatus(mockPermitId, { status: PermitStatus.APPROVED }, 'approver-1');
 
     const duration = Date.now() - start;
 

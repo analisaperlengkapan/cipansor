@@ -79,11 +79,7 @@ export const qualityController = {
   createAudit: asyncHandler(async (req: Request, res: Response) => {
     const user = (req as any).user;
 
-    const audit = await qualityService.createAudit(
-      req.body,
-      user.role,
-      user.unitId
-    );
+    const audit = await qualityService.createAudit(req.body, user.role, user.unitId);
 
     res.status(httpStatus.CREATED).json({
       success: true,
@@ -116,11 +112,7 @@ export const qualityController = {
     const { id } = req.params;
     const user = (req as any).user;
 
-    const audit = await qualityService.getAuditDetails(
-      id,
-      user.role,
-      user.unitId
-    );
+    const audit = await qualityService.getAuditDetails(id, user.role, user.unitId);
 
     if (!audit) {
       throw new ApiError(ErrorCode.NOT_FOUND, 'Audit not found');

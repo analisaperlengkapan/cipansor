@@ -21,7 +21,11 @@ interface TwoFactorVerifyProps {
   error?: string | null;
 }
 
-export function TwoFactorVerify({ onVerify, isLoading, error }: TwoFactorVerifyProps) {
+export function TwoFactorVerify({
+  onVerify,
+  isLoading,
+  error,
+}: TwoFactorVerifyProps) {
   const {
     register,
     handleSubmit,

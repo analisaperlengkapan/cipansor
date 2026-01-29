@@ -1,7 +1,15 @@
 import { Request, Response, NextFunction } from 'express';
 import { Errors } from '../../middleware/error';
 import * as service from './service';
-import { createProjectSchema, updateProjectSchema, createProjectTaskSchema, updateProjectTaskSchema, updateTaskPositionSchema, createColumnSchema, updateColumnSchema } from './schema';
+import {
+  createProjectSchema,
+  updateProjectSchema,
+  createProjectTaskSchema,
+  updateProjectTaskSchema,
+  updateTaskPositionSchema,
+  createColumnSchema,
+  updateColumnSchema,
+} from './schema';
 import { ProjectStatus } from '@prisma/client';
 
 export async function createProject(req: Request, res: Response, next: NextFunction) {
@@ -119,10 +127,10 @@ export async function updateTaskPosition(req: Request, res: Response, next: Next
 
     // Verify target column belongs to the same project
     if (data.body.columnId) {
-        const column = await service.getColumnById(data.body.columnId);
-        if (!column || column.projectId !== task.projectId) {
-             throw Errors.badRequest('Invalid target column');
-        }
+      const column = await service.getColumnById(data.body.columnId);
+      if (!column || column.projectId !== task.projectId) {
+        throw Errors.badRequest('Invalid target column');
+      }
     }
 
     const updatedTask = await service.updateTaskPosition(req.params.taskId, data.body);

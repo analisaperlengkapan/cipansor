@@ -5,6 +5,7 @@
 **Assignee:** Unassigned
 
 ## Deskripsi Task
+
 Mengembangkan modul "Manajemen Inovasi" untuk sistem informasi manajemen pesantren (Cipansor). Modul ini bertujuan untuk memfasilitasi pengumpulan, evaluasi, dan pelaksanaan ide-ide inovasi dari seluruh civitas akademika (Guru, Staff, Santri).
 
 ## Lingkup Pekerjaan (Scope)
@@ -152,6 +153,7 @@ Lokasi: `apps/api/src/modules/innovation`
 Lokasi: `apps/web/src/app/innovation`
 
 ### Struktur Halaman
+
 1.  `page.tsx`: **Innovation Dashboard & List**
     - Statistik ringkas (Total Ide, Approved, In Progress).
     - Tabel/Card list inovasi dengan filter dan pagination.
@@ -165,11 +167,13 @@ Lokasi: `apps/web/src/app/innovation`
     - Tombol Action (Approve/Reject) untuk Role Admin/Yayasan.
 
 ### Komponen UI (Shadcn/UI)
+
 - `InnovationCard`: Untuk tampilan grid.
 - `StatusBadge`: Helper component untuk warna status.
 - `CommentSection`: Reusable comment list & input.
 
 ### Integrasi Navigasi
+
 Update `apps/web/src/config/navigation.ts` untuk menambahkan menu "Manajemen Inovasi" (Icon: `Lightbulb`).
 
 ---

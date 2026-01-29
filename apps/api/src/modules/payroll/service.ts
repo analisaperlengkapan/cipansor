@@ -708,7 +708,9 @@ export const payrollPeriodService = {
         );
 
         if (!salaryExpenseAcc || !cashAcc) {
-          throw new Error('Konfigurasi Akun Gaji/Kas tidak ditemukan. Mohon cek Chart of Accounts.');
+          throw new Error(
+            'Konfigurasi Akun Gaji/Kas tidak ditemukan. Mohon cek Chart of Accounts.'
+          );
         }
 
         const desc = `Penggajian Periode ${period.name}`;

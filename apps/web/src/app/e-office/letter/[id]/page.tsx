@@ -101,7 +101,10 @@ export default function LetterDetailPage({
 
     try {
       toast.info("Sedang menyiapkan PDF...");
-      const canvas = await html2canvas(pdfRef.current, { scale: 2, useCORS: true });
+      const canvas = await html2canvas(pdfRef.current, {
+        scale: 2,
+        useCORS: true,
+      });
       const imgData = canvas.toDataURL("image/png");
 
       const pdf = new jsPDF("p", "mm", "a4");

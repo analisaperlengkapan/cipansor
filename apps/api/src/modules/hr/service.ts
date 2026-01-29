@@ -432,7 +432,7 @@ export async function getLeaves(params: {
 
   if (unitId) {
     andConditions.push({
-      OR: [{ staff: { unitId } }, { teacher: { unitId } }]
+      OR: [{ staff: { unitId } }, { teacher: { unitId } }],
     });
   }
 
@@ -611,13 +611,13 @@ async function validateLeaveRequest(
       });
 
       if (!academicYear) {
-        throw Errors.badRequest(
-          'No active Academic Year found for the requested dates.'
-        );
+        throw Errors.badRequest('No active Academic Year found for the requested dates.');
       }
 
       // Helper to check for leaves overlapping with AY
-      const getOverlappingLeaveQuery = (statusFilter: Prisma.EnumLeaveStatusFilter): Prisma.LeaveWhereInput => ({
+      const getOverlappingLeaveQuery = (
+        statusFilter: Prisma.EnumLeaveStatusFilter
+      ): Prisma.LeaveWhereInput => ({
         type: LeaveType.ANNUAL,
         status: statusFilter,
         OR: [
@@ -913,8 +913,7 @@ export async function getLeaveBalance(employeeId: string, year: number) {
 
       const annualQuota = annualBalance?.totalDays || 12;
       const usedAnnual = annualBalance?.usedDays || 0;
-      const remainingAnnual =
-        annualBalance?.remainingDays ?? annualQuota - usedAnnual;
+      const remainingAnnual = annualBalance?.remainingDays ?? annualQuota - usedAnnual;
 
       return {
         employeeId,

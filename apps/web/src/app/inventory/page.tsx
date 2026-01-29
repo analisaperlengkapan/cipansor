@@ -114,8 +114,12 @@ function DepreciationSettingsDialog({ unitId }: { unitId?: string }) {
     try {
       await updateMutation.mutateAsync({
         unitId,
-        depreciationExpenseAccount: expenseAccount ? (expenseAccount as string) : null,
-        accumulatedDepreciationAccount: accumAccount ? (accumAccount as string) : null,
+        depreciationExpenseAccount: expenseAccount
+          ? (expenseAccount as string)
+          : null,
+        accumulatedDepreciationAccount: accumAccount
+          ? (accumAccount as string)
+          : null,
       });
       setOpen(false);
     } catch {
@@ -137,7 +141,8 @@ function DepreciationSettingsDialog({ unitId }: { unitId?: string }) {
         <DialogHeader>
           <DialogTitle>Pengaturan Depresiasi</DialogTitle>
           <DialogDescription>
-            Konfigurasi akun akuntansi untuk penjurnalan otomatis depresiasi aset.
+            Konfigurasi akun akuntansi untuk penjurnalan otomatis depresiasi
+            aset.
           </DialogDescription>
         </DialogHeader>
         {isLoading ? (

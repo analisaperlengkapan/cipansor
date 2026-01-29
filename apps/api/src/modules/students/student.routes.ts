@@ -124,7 +124,12 @@ router.use(authenticate);
  *       401:
  *         $ref: '#/components/responses/Unauthorized'
  */
-router.get('/', hasPermission(PERMISSIONS.STUDENT_VIEW), validateQuery(listStudentsQuerySchema), controller.list);
+router.get(
+  '/',
+  hasPermission(PERMISSIONS.STUDENT_VIEW),
+  validateQuery(listStudentsQuerySchema),
+  controller.list
+);
 
 // ==================== ID CARD ROUTES ====================
 
@@ -140,7 +145,11 @@ router.get('/', hasPermission(PERMISSIONS.STUDENT_VIEW), validateQuery(listStude
  *       200:
  *         description: List of available templates
  */
-router.get('/id-cards/templates', hasPermission(PERMISSIONS.STUDENT_VIEW), IdCardController.getTemplates);
+router.get(
+  '/id-cards/templates',
+  hasPermission(PERMISSIONS.STUDENT_VIEW),
+  IdCardController.getTemplates
+);
 
 /**
  * @swagger
@@ -160,7 +169,11 @@ router.get('/id-cards/templates', hasPermission(PERMISSIONS.STUDENT_VIEW), IdCar
  *       200:
  *         description: Card statistics
  */
-router.get('/id-cards/stats/:unitId', hasPermission(PERMISSIONS.STUDENT_VIEW), IdCardController.getStatistics);
+router.get(
+  '/id-cards/stats/:unitId',
+  hasPermission(PERMISSIONS.STUDENT_VIEW),
+  IdCardController.getStatistics
+);
 
 /**
  * @swagger
@@ -194,7 +207,11 @@ router.get('/id-cards/stats/:unitId', hasPermission(PERMISSIONS.STUDENT_VIEW), I
  *       200:
  *         description: Bulk ID cards data
  */
-router.get('/id-cards/classes/:classId', hasPermission(PERMISSIONS.STUDENT_VIEW), IdCardController.generateClassCards);
+router.get(
+  '/id-cards/classes/:classId',
+  hasPermission(PERMISSIONS.STUDENT_VIEW),
+  IdCardController.generateClassCards
+);
 
 /**
  * @swagger
@@ -234,7 +251,11 @@ router.get('/id-cards/classes/:classId', hasPermission(PERMISSIONS.STUDENT_VIEW)
  *       200:
  *         description: ID card data with QR code
  */
-router.get('/:studentId/id-card', hasPermission(PERMISSIONS.STUDENT_VIEW), IdCardController.generateStudentCard);
+router.get(
+  '/:studentId/id-card',
+  hasPermission(PERMISSIONS.STUDENT_VIEW),
+  IdCardController.generateStudentCard
+);
 
 /**
  * @swagger
@@ -257,7 +278,12 @@ router.get('/:studentId/id-card', hasPermission(PERMISSIONS.STUDENT_VIEW), IdCar
  *       404:
  *         $ref: '#/components/responses/NotFound'
  */
-router.get('/:id', hasPermission(PERMISSIONS.STUDENT_VIEW), validateParams(studentIdParamSchema), controller.getById);
+router.get(
+  '/:id',
+  hasPermission(PERMISSIONS.STUDENT_VIEW),
+  validateParams(studentIdParamSchema),
+  controller.getById
+);
 
 /**
  * @swagger
@@ -311,7 +337,12 @@ router.get('/:id', hasPermission(PERMISSIONS.STUDENT_VIEW), validateParams(stude
  *       403:
  *         $ref: '#/components/responses/Forbidden'
  */
-router.post('/', hasPermission(PERMISSIONS.STUDENT_CREATE), validate(createStudentSchema), controller.create);
+router.post(
+  '/',
+  hasPermission(PERMISSIONS.STUDENT_CREATE),
+  validate(createStudentSchema),
+  controller.create
+);
 
 /**
  * @swagger
@@ -392,6 +423,11 @@ router.put(
  *       403:
  *         $ref: '#/components/responses/Forbidden'
  */
-router.delete('/:id', hasPermission(PERMISSIONS.STUDENT_DELETE), validateParams(studentIdParamSchema), controller.remove);
+router.delete(
+  '/:id',
+  hasPermission(PERMISSIONS.STUDENT_DELETE),
+  validateParams(studentIdParamSchema),
+  controller.remove
+);
 
 export default router;

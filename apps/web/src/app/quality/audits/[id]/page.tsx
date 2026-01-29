@@ -68,7 +68,9 @@ export default function AuditExecutionPage() {
           </Link>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold tracking-tight">{audit.name}</h1>
+              <h1 className="text-2xl font-bold tracking-tight">
+                {audit.name}
+              </h1>
               <Badge variant="outline">{audit.code}</Badge>
             </div>
             <p className="text-muted-foreground">
@@ -78,23 +80,25 @@ export default function AuditExecutionPage() {
         </div>
 
         <div className="space-y-4">
-          {Object.entries(itemsByStandard).map(([standardName, items]: [string, any]) => (
-            <Card key={standardName}>
-              <CardHeader>
-                <CardTitle>{standardName}</CardTitle>
-                <CardDescription>
-                  {items.length} Indikator Penilaian
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Accordion type="single" collapsible className="w-full">
-                  {items.map((item: any) => (
-                    <AuditItemRow key={item.id} item={item} />
-                  ))}
-                </Accordion>
-              </CardContent>
-            </Card>
-          ))}
+          {Object.entries(itemsByStandard).map(
+            ([standardName, items]: [string, any]) => (
+              <Card key={standardName}>
+                <CardHeader>
+                  <CardTitle>{standardName}</CardTitle>
+                  <CardDescription>
+                    {items.length} Indikator Penilaian
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Accordion type="single" collapsible className="w-full">
+                    {items.map((item: any) => (
+                      <AuditItemRow key={item.id} item={item} />
+                    ))}
+                  </Accordion>
+                </CardContent>
+              </Card>
+            ),
+          )}
         </div>
       </div>
     </MainLayout>
@@ -112,7 +116,8 @@ function AuditItemRow({ item }: { item: any }) {
     setNotes(item.notes || "");
   }, [item.score, item.notes]);
 
-  const isDirty = (score !== (item.score?.toString() || "")) || (notes !== (item.notes || ""));
+  const isDirty =
+    score !== (item.score?.toString() || "") || notes !== (item.notes || "");
 
   const handleSave = () => {
     const numericScore = score === "" ? undefined : parseFloat(score);
@@ -136,71 +141,78 @@ function AuditItemRow({ item }: { item: any }) {
       <AccordionTrigger className="hover:no-underline">
         <div className="flex items-center justify-between w-full pr-4 text-left">
           <div className="flex items-center gap-3">
-             <Badge variant={item.score !== null ? "default" : "secondary"}>
-                {item.indicator.code}
-             </Badge>
-             <span className="font-medium text-sm md:text-base line-clamp-1">
-                {item.indicator.name}
-             </span>
+            <Badge variant={item.score !== null ? "default" : "secondary"}>
+              {item.indicator.code}
+            </Badge>
+            <span className="font-medium text-sm md:text-base line-clamp-1">
+              {item.indicator.name}
+            </span>
           </div>
           <div className="flex items-center gap-4">
             <div className="text-sm text-muted-foreground hidden md:block">
               Target: {item.indicator.targetScore}
             </div>
             {item.score !== null && (
-               <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                  Skor: {item.score}
-               </Badge>
+              <Badge
+                variant="outline"
+                className="bg-green-50 text-green-700 border-green-200"
+              >
+                Skor: {item.score}
+              </Badge>
             )}
           </div>
         </div>
       </AccordionTrigger>
       <AccordionContent className="pt-4 pb-2 px-1">
         <div className="grid gap-4 md:grid-cols-2">
-           <div className="space-y-2">
-              <div className="font-semibold text-sm">Deskripsi Indikator:</div>
-              <p className="text-sm text-muted-foreground bg-muted p-2 rounded-md">
-                 {item.indicator.description || "Tidak ada deskripsi"}
-              </p>
-           </div>
+          <div className="space-y-2">
+            <div className="font-semibold text-sm">Deskripsi Indikator:</div>
+            <p className="text-sm text-muted-foreground bg-muted p-2 rounded-md">
+              {item.indicator.description || "Tidak ada deskripsi"}
+            </p>
+          </div>
 
-           <div className="space-y-4 border rounded-md p-4 bg-card">
-              <div className="flex gap-4">
-                 <div className="w-1/3">
-                    <label className="text-sm font-medium mb-1 block">Skor Capaian</label>
-                    <Input
-                       type="number"
-                       value={score}
-                       onChange={(e) => setScore(e.target.value)}
-                       placeholder="0-100"
-                    />
-                 </div>
-                 <div className="w-2/3">
-                    <label className="text-sm font-medium mb-1 block">Catatan Temuan</label>
-                    <Textarea
-                       value={notes}
-                       onChange={(e) => setNotes(e.target.value)}
-                       placeholder="Catatan hasil audit..."
-                       className="min-h-[80px]"
-                    />
-                 </div>
+          <div className="space-y-4 border rounded-md p-4 bg-card">
+            <div className="flex gap-4">
+              <div className="w-1/3">
+                <label className="text-sm font-medium mb-1 block">
+                  Skor Capaian
+                </label>
+                <Input
+                  type="number"
+                  value={score}
+                  onChange={(e) => setScore(e.target.value)}
+                  placeholder="0-100"
+                />
               </div>
+              <div className="w-2/3">
+                <label className="text-sm font-medium mb-1 block">
+                  Catatan Temuan
+                </label>
+                <Textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Catatan hasil audit..."
+                  className="min-h-[80px]"
+                />
+              </div>
+            </div>
 
-              <div className="flex justify-end">
-                 <Button
-                    size="sm"
-                    onClick={handleSave}
-                    disabled={!isDirty || updateItem.isPending}
-                 >
-                    {updateItem.isPending ? (
-                       <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    ) : (
-                       <Save className="h-4 w-4 mr-2" />
-                    )}
-                    Simpan Penilaian
-                 </Button>
-              </div>
-           </div>
+            <div className="flex justify-end">
+              <Button
+                size="sm"
+                onClick={handleSave}
+                disabled={!isDirty || updateItem.isPending}
+              >
+                {updateItem.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <Save className="h-4 w-4 mr-2" />
+                )}
+                Simpan Penilaian
+              </Button>
+            </div>
+          </div>
         </div>
       </AccordionContent>
     </AccordionItem>

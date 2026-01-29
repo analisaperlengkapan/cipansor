@@ -93,7 +93,8 @@ function RegistrationForm() {
 
   const { data: periods } = useRegistrationPeriods({ isActive: true });
   const { data: units } = useUnits();
-  const { data: campaign, isError: isCampaignError } = usePublicCampaign(refCode);
+  const { data: campaign, isError: isCampaignError } =
+    usePublicCampaign(refCode);
   const createMutation = useCreateRegistration();
 
   const form = useForm<RegistrationFormData>({
@@ -234,9 +235,7 @@ function RegistrationForm() {
             <Card>
               <CardHeader>
                 <CardTitle>Data Pribadi</CardTitle>
-                <CardDescription>
-                  Informasi dasar calon santri
-                </CardDescription>
+                <CardDescription>Informasi dasar calon santri</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid gap-4 md:grid-cols-2">
@@ -435,10 +434,7 @@ function RegistrationForm() {
                         <FormItem>
                           <FormLabel>Nama Ayah *</FormLabel>
                           <FormControl>
-                            <Input
-                              placeholder="Nama lengkap ayah"
-                              {...field}
-                            />
+                            <Input placeholder="Nama lengkap ayah" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -503,10 +499,7 @@ function RegistrationForm() {
                         <FormItem>
                           <FormLabel>Nama Ibu *</FormLabel>
                           <FormControl>
-                            <Input
-                              placeholder="Nama lengkap ibu"
-                              {...field}
-                            />
+                            <Input placeholder="Nama lengkap ibu" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -579,10 +572,7 @@ function RegistrationForm() {
                       <FormItem>
                         <FormLabel>Desa/Kelurahan *</FormLabel>
                         <FormControl>
-                          <Input
-                            placeholder="Nama desa/kelurahan"
-                            {...field}
-                          />
+                          <Input placeholder="Nama desa/kelurahan" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -611,10 +601,7 @@ function RegistrationForm() {
                       <FormItem>
                         <FormLabel>Kota/Kabupaten *</FormLabel>
                         <FormControl>
-                          <Input
-                            placeholder="Nama kota/kabupaten"
-                            {...field}
-                          />
+                          <Input placeholder="Nama kota/kabupaten" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

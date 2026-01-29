@@ -385,6 +385,7 @@ The implementation includes comprehensive error handling:
    - Result: Response is still returned, next request will miss cache
 
 3. **Redis Unavailable**
+
    ```typescript
    if (!redisPublisher) {
      logger.warn('Redis publisher not initialized');

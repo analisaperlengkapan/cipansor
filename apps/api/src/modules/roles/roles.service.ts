@@ -52,7 +52,7 @@ export class RolesService {
    */
   async createRole(input: CreateRoleInput) {
     if (!input.code) {
-        throw Errors.badRequest('Role code is required');
+      throw Errors.badRequest('Role code is required');
     }
 
     const existing = await prisma.role.findUnique({

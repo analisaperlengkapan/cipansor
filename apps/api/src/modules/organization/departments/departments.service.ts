@@ -1,14 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import httpStatus from 'http-status'; // Need to make sure we throw errors that controller catches or just generic errors
-
-// Define a custom error or just use Error
-class AppError extends Error {
-  statusCode: number;
-  constructor(message: string, statusCode: number) {
-    super(message);
-    this.statusCode = statusCode;
-  }
-}
+import { Errors } from '@/middleware/error';
 
 export const departmentService = {
   async create(data: {
@@ -25,8 +16,8 @@ export const departmentService = {
         code: data.code,
         name: data.name,
         description: data.description,
-        managerId: data.managerId || null,
-        parentId: data.parentId || null,
+        manager: data.managerId ? { connect: { id: data.managerId } } : undefined,
+        parent: data.parentId ? { connect: { id: data.parentId } } : undefined,
       },
     });
   },
@@ -45,7 +36,7 @@ export const departmentService = {
     // Circular dependency check
     if (data.parentId) {
       if (data.parentId === id) {
-        throw new Error("Cannot set parent to self"); // Controller should handle 500 or we need standard Error class
+        throw Errors.badRequest("Cannot set parent to self");
       }
 
       // Check if 'id' is an ancestor of 'data.parentId'
@@ -53,14 +44,14 @@ export const departmentService = {
       let iterations = 0;
       while (currentParentId && iterations < 100) { // Safety break
         if (currentParentId === id) {
-           throw new Error("Circular dependency detected");
+           throw Errors.badRequest("Circular dependency detected");
         }
         const parent = await prisma.department.findUnique({
           where: { id: currentParentId },
           select: { parentId: true }
         });
         if (!parent) break;
-        currentParentId = parent.parentId || undefined;
+        currentParentId = parent.parentId || "";
         iterations++;
       }
     }
@@ -71,8 +62,16 @@ export const departmentService = {
         code: data.code,
         name: data.name,
         description: data.description,
-        managerId: data.managerId || null,
-        parentId: data.parentId || null,
+        manager: data.managerId
+          ? { connect: { id: data.managerId } }
+          : data.managerId === null
+            ? { disconnect: true }
+            : undefined,
+        parent: data.parentId
+          ? { connect: { id: data.parentId } }
+          : data.parentId === null
+            ? { disconnect: true }
+            : undefined,
         isActive: data.isActive,
       },
     });

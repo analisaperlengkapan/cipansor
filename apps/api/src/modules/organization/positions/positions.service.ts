@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { Errors } from '@/middleware/error';
 
 export const positionService = {
   async create(data: {
@@ -38,21 +39,21 @@ export const positionService = {
     // Circular dependency check
     if (data.parentId) {
       if (data.parentId === id) {
-        throw new Error("Cannot set parent to self");
+        throw Errors.badRequest("Cannot set parent to self");
       }
 
       let currentParentId = data.parentId;
       let iterations = 0;
       while (currentParentId && iterations < 100) {
         if (currentParentId === id) {
-           throw new Error("Circular dependency detected");
+           throw Errors.badRequest("Circular dependency detected");
         }
         const parent = await prisma.position.findUnique({
           where: { id: currentParentId },
           select: { parentId: true }
         });
         if (!parent) break;
-        currentParentId = parent.parentId || undefined;
+        currentParentId = parent.parentId || "";
         iterations++;
       }
     }

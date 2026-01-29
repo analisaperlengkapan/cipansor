@@ -937,6 +937,11 @@ const adminNavigation: NavGroup[] = [
     title: "Operations",
     items: [
       {
+        title: "Dashboard Ops",
+        href: "/operations",
+        icon: LayoutDashboard,
+      },
+      {
         title: "Facilities",
         href: "/facilities",
         icon: Building2,

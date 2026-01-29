@@ -15,11 +15,13 @@ import {
   Trash2,
   ChevronRight,
   LayoutGrid,
+  Wrench,
 } from "lucide-react";
 import { toast } from "sonner";
 import { ColumnDef } from "@tanstack/react-table";
 
 import { MainLayout } from "@/components/layout/main-layout";
+import { MaintenanceTab } from "./tabs/maintenance-tab";
 import { PageHeader } from "@/components/shared/page-header";
 import { DataTable } from "@/components/shared/data-table";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
@@ -1241,6 +1243,10 @@ export default function FacilitiesPage() {
                 <DoorOpen className="h-4 w-4" />
                 Ruang
               </TabsTrigger>
+              <TabsTrigger value="maintenance" className="gap-2">
+                <Wrench className="h-4 w-4" />
+                Maintenance
+              </TabsTrigger>
             </TabsList>
 
             {/* Filter Bar */}
@@ -1326,6 +1332,10 @@ export default function FacilitiesPage() {
                 data={rooms || []}
                 isLoading={loadingRooms}
               />
+            </TabsContent>
+
+            <TabsContent value="maintenance">
+              <MaintenanceTab />
             </TabsContent>
           </Tabs>
         </CardContent>

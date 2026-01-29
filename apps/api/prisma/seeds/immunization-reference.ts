@@ -402,7 +402,7 @@ export async function seedImmunizationReference(prisma: PrismaClient) {
   }
 
   // Log summary
-  const vaccineTypes = [...new Set(immunizationSchedules.map((s) => s.vaccineName))];
+  const vaccineTypes = Array.from(new Set(immunizationSchedules.map((s) => s.vaccineName)));
   console.log(`   - Total vaccine types: ${vaccineTypes.length}`);
   console.log(`   - Total doses defined: ${immunizationSchedules.length}`);
 }

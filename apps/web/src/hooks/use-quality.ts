@@ -4,6 +4,7 @@ import {
   QualityDashboardSummary,
   QualityStandard,
   CreateQualityEvidenceInput,
+  ApiResponse,
 } from "@cipansor/shared";
 import { toast } from "sonner";
 
@@ -28,7 +29,7 @@ export const useQualityDashboard = (unitId: string, academicYearId: string) => {
   return useQuery({
     queryKey: ["quality", "dashboard", unitId, academicYearId],
     queryFn: async () => {
-      const response = await api.get<QualityDashboardSummary[]>(
+      const response = await api.get<ApiResponse<QualityDashboardSummary[]>>(
         "/api/quality/dashboard/summary",
         { params: { unitId, academicYearId } },
       );
@@ -42,7 +43,7 @@ export const useQualityStandards = () => {
   return useQuery({
     queryKey: ["quality", "standards"],
     queryFn: async () => {
-      const response = await api.get<QualityStandard[]>(
+      const response = await api.get<ApiResponse<QualityStandard[]>>(
         "/api/quality/standards",
       );
       return response.data.data;
@@ -58,7 +59,7 @@ export const useStandardDetails = (
   return useQuery({
     queryKey: ["quality", "standard", id, unitId, academicYearId],
     queryFn: async () => {
-      const response = await api.get<QualityStandard>(
+      const response = await api.get<ApiResponse<QualityStandard>>(
         `/api/quality/standards/${id}`,
         { params: { unitId, academicYearId } },
       );

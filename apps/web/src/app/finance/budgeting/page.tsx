@@ -247,64 +247,65 @@ export default function BudgetingPage() {
               </Button>
             </DialogTrigger>
             <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{editingId ? "Edit Anggaran" : "Buat Anggaran Baru"}</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label>Akun Beban (Expense)</Label>
-                <Select
-                  value={formData.accountId}
-                  onValueChange={(val) =>
-                    setFormData({ ...formData, accountId: val })
-                  }
-                  disabled={!!editingId}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Pilih Akun" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {accounts?.map((acc: any) => (
-                      <SelectItem key={acc.id} value={acc.id}>
-                        {acc.code} - {acc.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Jumlah Anggaran</Label>
-                <Input
-                  type="number"
-                  value={formData.amount}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      amount: parseFloat(e.target.value),
-                    })
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Catatan</Label>
-                <Input
-                  value={formData.notes}
-                  onChange={(e) =>
-                    setFormData({ ...formData, notes: e.target.value })
-                  }
-                />
-              </div>
-              <DialogFooter>
-                <Button
-                  type="submit"
-                  disabled={!formData.accountId || formData.amount <= 0}
-                >
-                  Simpan
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
+              <DialogHeader>
+                <DialogTitle>{editingId ? "Edit Anggaran" : "Buat Anggaran Baru"}</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Akun Beban (Expense)</Label>
+                  <Select
+                    value={formData.accountId}
+                    onValueChange={(val) =>
+                      setFormData({ ...formData, accountId: val })
+                    }
+                    disabled={!!editingId}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Pilih Akun" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {accounts?.map((acc: any) => (
+                        <SelectItem key={acc.id} value={acc.id}>
+                          {acc.code} - {acc.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Jumlah Anggaran</Label>
+                  <Input
+                    type="number"
+                    value={formData.amount}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        amount: parseFloat(e.target.value),
+                      })
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Catatan</Label>
+                  <Input
+                    value={formData.notes}
+                    onChange={(e) =>
+                      setFormData({ ...formData, notes: e.target.value })
+                    }
+                  />
+                </div>
+                <DialogFooter>
+                  <Button
+                    type="submit"
+                    disabled={!formData.accountId || formData.amount <= 0}
+                  >
+                    Simpan
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       <div className="flex gap-4">

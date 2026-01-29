@@ -13,6 +13,7 @@ COPY pnpm-lock.yaml ./
 # Copy package.json files for all workspaces
 COPY package.json ./
 COPY apps/web/package.json ./apps/web/
+COPY packages/shared/package.json ./packages/shared/
 
 # Install dependencies
 RUN pnpm install --frozen-lockfile
@@ -25,6 +26,7 @@ WORKDIR /app
 # Copy dependencies
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
+COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_modules
 
 # Copy source files
 COPY . .
@@ -34,6 +36,7 @@ ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 
 # Build the app
+RUN pnpm --filter @cipansor/shared build
 WORKDIR /app/apps/web
 RUN pnpm build
 

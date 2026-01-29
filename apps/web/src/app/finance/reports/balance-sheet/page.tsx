@@ -32,7 +32,9 @@ export default function BalanceSheetPage() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 print:hidden">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Balance Sheet</h1>
-          <p className="text-muted-foreground">Laporan Posisi Keuangan (Neraca)</p>
+          <p className="text-muted-foreground">
+            Laporan Posisi Keuangan (Neraca)
+          </p>
         </div>
         <div className="flex gap-4">
           <div className="w-[200px]">
@@ -65,7 +67,9 @@ export default function BalanceSheetPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {/* ASSETS */}
               <div>
-                <h3 className="text-lg font-semibold mb-4 border-b pb-2">Assets</h3>
+                <h3 className="text-lg font-semibold mb-4 border-b pb-2">
+                  Assets
+                </h3>
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -77,7 +81,9 @@ export default function BalanceSheetPage() {
                     {report.assets.map((item) => (
                       <TableRow key={item.accountId}>
                         <TableCell>
-                          <span className="font-mono text-muted-foreground mr-2">{item.code}</span>
+                          <span className="font-mono text-muted-foreground mr-2">
+                            {item.code}
+                          </span>
                           {item.name}
                         </TableCell>
                         <TableCell className="text-right">
@@ -98,7 +104,9 @@ export default function BalanceSheetPage() {
               {/* LIABILITIES & EQUITY */}
               <div className="space-y-8">
                 <div>
-                  <h3 className="text-lg font-semibold mb-4 border-b pb-2">Liabilities</h3>
+                  <h3 className="text-lg font-semibold mb-4 border-b pb-2">
+                    Liabilities
+                  </h3>
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -110,7 +118,9 @@ export default function BalanceSheetPage() {
                       {report.liabilities.map((item) => (
                         <TableRow key={item.accountId}>
                           <TableCell>
-                            <span className="font-mono text-muted-foreground mr-2">{item.code}</span>
+                            <span className="font-mono text-muted-foreground mr-2">
+                              {item.code}
+                            </span>
                             {item.name}
                           </TableCell>
                           <TableCell className="text-right">
@@ -129,7 +139,9 @@ export default function BalanceSheetPage() {
                 </div>
 
                 <div>
-                  <h3 className="text-lg font-semibold mb-4 border-b pb-2">Equity</h3>
+                  <h3 className="text-lg font-semibold mb-4 border-b pb-2">
+                    Equity
+                  </h3>
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -141,7 +153,9 @@ export default function BalanceSheetPage() {
                       {report.equity.map((item) => (
                         <TableRow key={item.accountId}>
                           <TableCell>
-                            <span className="font-mono text-muted-foreground mr-2">{item.code}</span>
+                            <span className="font-mono text-muted-foreground mr-2">
+                              {item.code}
+                            </span>
                             {item.name}
                           </TableCell>
                           <TableCell className="text-right">
@@ -151,7 +165,9 @@ export default function BalanceSheetPage() {
                       ))}
                       {/* Net Income Row */}
                       <TableRow>
-                        <TableCell className="italic">Net Income (Current Period)</TableCell>
+                        <TableCell className="italic">
+                          Net Income (Current Period)
+                        </TableCell>
                         <TableCell className="text-right">
                           {formatCurrency(report.netIncome)}
                         </TableCell>
@@ -168,7 +184,11 @@ export default function BalanceSheetPage() {
 
                 <div className="p-4 bg-muted rounded-md flex justify-between items-center font-bold text-lg border">
                   <span>Total Liabilities & Equity</span>
-                  <span>{formatCurrency(report.totalLiabilities + report.totalEquity)}</span>
+                  <span>
+                    {formatCurrency(
+                      report.totalLiabilities + report.totalEquity,
+                    )}
+                  </span>
                 </div>
               </div>
             </div>

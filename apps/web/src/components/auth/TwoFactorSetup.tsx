@@ -72,13 +72,19 @@ export function TwoFactorSetup({ onComplete }: TwoFactorSetupProps) {
   };
 
   if (!qrCode && step === "scan") {
-    return <div className="flex justify-center p-4"><Loader2 className="animate-spin" /></div>;
+    return (
+      <div className="flex justify-center p-4">
+        <Loader2 className="animate-spin" />
+      </div>
+    );
   }
 
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h3 className="text-lg font-semibold">Setup Two-Factor Authentication</h3>
+        <h3 className="text-lg font-semibold">
+          Setup Two-Factor Authentication
+        </h3>
         <p className="text-sm text-muted-foreground">
           {step === "scan" || step === "verify"
             ? "Scan the QR code with your authenticator app."
@@ -94,8 +100,12 @@ export function TwoFactorSetup({ onComplete }: TwoFactorSetupProps) {
           </div>
 
           <div className="w-full text-center">
-             <p className="text-xs text-muted-foreground mb-1">Manual Entry Code:</p>
-             <code className="bg-muted p-2 rounded text-sm font-mono break-all block">{secret}</code>
+            <p className="text-xs text-muted-foreground mb-1">
+              Manual Entry Code:
+            </p>
+            <code className="bg-muted p-2 rounded text-sm font-mono break-all block">
+              {secret}
+            </code>
           </div>
 
           <form onSubmit={handleSubmit(onVerify)} className="w-full space-y-4">
@@ -108,7 +118,9 @@ export function TwoFactorSetup({ onComplete }: TwoFactorSetupProps) {
                 {...register("token")}
               />
               {errors.token && (
-                <p className="text-sm text-destructive">{errors.token.message}</p>
+                <p className="text-sm text-destructive">
+                  {errors.token.message}
+                </p>
               )}
             </div>
 
@@ -128,7 +140,8 @@ export function TwoFactorSetup({ onComplete }: TwoFactorSetupProps) {
               <div className="text-sm text-amber-800 dark:text-amber-200">
                 <p className="font-medium mb-1">Important!</p>
                 <p>
-                  Save these recovery codes in a safe place. You will need them if you lose access to your authenticator app.
+                  Save these recovery codes in a safe place. You will need them
+                  if you lose access to your authenticator app.
                 </p>
               </div>
             </div>
@@ -136,7 +149,9 @@ export function TwoFactorSetup({ onComplete }: TwoFactorSetupProps) {
 
           <div className="grid grid-cols-2 gap-2 bg-muted p-4 rounded-lg font-mono text-sm">
             {recoveryCodes.map((code, i) => (
-              <div key={i} className="text-center">{code}</div>
+              <div key={i} className="text-center">
+                {code}
+              </div>
             ))}
           </div>
 

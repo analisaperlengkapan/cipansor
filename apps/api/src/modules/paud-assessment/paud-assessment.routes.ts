@@ -55,7 +55,12 @@ router.use(authenticate);
  *       201:
  *         description: Evidence created
  */
-router.post('/evidences', handleSingleUpload('file'), validate(createEvidenceSchema), controller.createEvidence);
+router.post(
+  '/evidences',
+  handleSingleUpload('file'),
+  validate(createEvidenceSchema),
+  controller.createEvidence
+);
 
 // ============================================
 // INDICATOR ROUTES
@@ -353,7 +358,11 @@ router.get('/assessments', validateQuery(listAssessmentsQuerySchema), controller
  *       201:
  *         description: Assessments created
  */
-router.post('/assessments/class', validate(bulkCreateClassAssessmentSchema), controller.createClassAssessment);
+router.post(
+  '/assessments/class',
+  validate(bulkCreateClassAssessmentSchema),
+  controller.createClassAssessment
+);
 
 /**
  * @openapi
@@ -463,7 +472,11 @@ router.post('/assessments', validate(createAssessmentSchema), controller.createA
  *       201:
  *         description: Assessments created
  */
-router.post('/assessments/bulk', validate(bulkCreateAssessmentSchema), controller.bulkCreateAssessments);
+router.post(
+  '/assessments/bulk',
+  validate(bulkCreateAssessmentSchema),
+  controller.bulkCreateAssessments
+);
 
 /**
  * @swagger
@@ -523,8 +536,6 @@ router.delete('/assessments/:id', controller.deleteAssessment);
 // ============================================
 // EVIDENCE ROUTES
 // ============================================
-
-
 
 /**
  * @swagger
@@ -592,7 +603,11 @@ router.delete('/evidences/:id', controller.deleteEvidence);
  *       200:
  *         description: List of narrative reports
  */
-router.get('/reports', validateQuery(listNarrativeReportsQuerySchema), controller.listNarrativeReports);
+router.get(
+  '/reports',
+  validateQuery(listNarrativeReportsQuerySchema),
+  controller.listNarrativeReports
+);
 
 /**
  * @swagger
@@ -739,7 +754,11 @@ router.put('/reports/:id', validate(updateNarrativeReportSchema), controller.upd
  *       200:
  *         description: Narrative report finalized
  */
-router.post('/reports/:id/finalize', validate(finalizeReportSchema), controller.finalizeNarrativeReport);
+router.post(
+  '/reports/:id/finalize',
+  validate(finalizeReportSchema),
+  controller.finalizeNarrativeReport
+);
 
 /**
  * @swagger
@@ -792,7 +811,11 @@ router.delete('/reports/:id', controller.deleteNarrativeReport);
  *       200:
  *         description: Student assessment summary by aspect
  */
-router.get('/summary/student', validateQuery(assessmentSummaryQuerySchema), controller.getStudentSummary);
+router.get(
+  '/summary/student',
+  validateQuery(assessmentSummaryQuerySchema),
+  controller.getStudentSummary
+);
 
 /**
  * @swagger

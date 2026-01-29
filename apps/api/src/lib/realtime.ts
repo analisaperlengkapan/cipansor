@@ -683,14 +683,9 @@ export async function warmDashboardCache(): Promise<void> {
     // Check for failures
     const failures = results.filter((r) => r.status === 'rejected');
     if (failures.length > 0) {
-      logger.warn(
-        `Dashboard cache warming completed with ${failures.length} errors`,
-        {
-          errors: failures.map((f) =>
-            f.status === 'rejected' ? f.reason : null
-          ),
-        }
-      );
+      logger.warn(`Dashboard cache warming completed with ${failures.length} errors`, {
+        errors: failures.map((f) => (f.status === 'rejected' ? f.reason : null)),
+      });
     }
 
     logger.info(

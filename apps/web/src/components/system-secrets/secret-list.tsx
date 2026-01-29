@@ -66,11 +66,13 @@ export function SecretList() {
   });
 
   if (isLoading) {
-    return <div className="space-y-2">
-      <Skeleton className="h-10 w-full" />
-      <Skeleton className="h-10 w-full" />
-      <Skeleton className="h-10 w-full" />
-    </div>;
+    return (
+      <div className="space-y-2">
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-full" />
+      </div>
+    );
   }
 
   if (error) {
@@ -80,7 +82,12 @@ export function SecretList() {
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <Button onClick={() => { setEditingSecret(null); setIsFormOpen(true); }}>
+        <Button
+          onClick={() => {
+            setEditingSecret(null);
+            setIsFormOpen(true);
+          }}
+        >
           Add Secret
         </Button>
       </div>
@@ -98,23 +105,32 @@ export function SecretList() {
           </TableHeader>
           <TableBody>
             {data?.length === 0 ? (
-               <TableRow>
-                 <TableCell colSpan={5} className="h-24 text-center">
-                   No secrets found.
-                 </TableCell>
-               </TableRow>
+              <TableRow>
+                <TableCell colSpan={5} className="h-24 text-center">
+                  No secrets found.
+                </TableCell>
+              </TableRow>
             ) : (
               data?.map((secret) => (
                 <TableRow key={secret.id}>
-                  <TableCell className="font-medium font-mono">{secret.key}</TableCell>
-                  <TableCell className="font-mono text-muted-foreground">{secret.maskedValue}</TableCell>
+                  <TableCell className="font-medium font-mono">
+                    {secret.key}
+                  </TableCell>
+                  <TableCell className="font-mono text-muted-foreground">
+                    {secret.maskedValue}
+                  </TableCell>
                   <TableCell>{secret.description || "-"}</TableCell>
-                  <TableCell>{format(new Date(secret.updatedAt), "PPP")}</TableCell>
+                  <TableCell>
+                    {format(new Date(secret.updatedAt), "PPP")}
+                  </TableCell>
                   <TableCell className="flex gap-2">
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => { setEditingSecret(secret); setIsFormOpen(true); }}
+                      onClick={() => {
+                        setEditingSecret(secret);
+                        setIsFormOpen(true);
+                      }}
                     >
                       <Edit2 className="h-4 w-4" />
                     </Button>
@@ -140,20 +156,30 @@ export function SecretList() {
         secret={editingSecret}
       />
 
-      <AlertDialog open={!!deletingSecret} onOpenChange={(open) => !open && setDeletingSecret(null)}>
+      <AlertDialog
+        open={!!deletingSecret}
+        onOpenChange={(open) => !open && setDeletingSecret(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the secret
-              <span className="font-mono font-bold"> {deletingSecret?.key}</span>.
+              This action cannot be undone. This will permanently delete the
+              secret
+              <span className="font-mono font-bold">
+                {" "}
+                {deletingSecret?.key}
+              </span>
+              .
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => deletingSecret && deleteMutation.mutate(deletingSecret.id)}
+              onClick={() =>
+                deletingSecret && deleteMutation.mutate(deletingSecret.id)
+              }
               disabled={deleteMutation.isPending}
             >
               {deleteMutation.isPending ? "Deleting..." : "Delete"}

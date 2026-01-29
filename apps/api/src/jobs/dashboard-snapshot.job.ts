@@ -235,50 +235,47 @@ export async function createWeeklySummary(): Promise<void> {
       );
 
       // Create weekly summaries for all metric types of a unit concurrently
-      const upsertPromises = Object.entries(metricGroups).map(
-        ([metricType, values]) => {
-          const avgValue =
-            values.reduce((sum, v) => sum + v, 0) / values.length;
+      const upsertPromises = Object.entries(metricGroups).map(([metricType, values]) => {
+        const avgValue = values.reduce((sum, v) => sum + v, 0) / values.length;
 
-          return prisma.dashboardMetricSnapshot.upsert({
-            where: {
-              unitId_metricType_periodType_periodDate: {
-                unitId: unit.id,
-                metricType,
-                periodDate: weekStart,
-                periodType: 'WEEKLY',
-              },
-            },
-            update: {
-              metricValue: avgValue,
-              metricData: {
-                dataPoints: values.length,
-                min: Math.min(...values),
-                max: Math.max(...values),
-                values,
-              },
-            },
-            create: {
+        return prisma.dashboardMetricSnapshot.upsert({
+          where: {
+            unitId_metricType_periodType_periodDate: {
               unitId: unit.id,
-              academicYearId: academicYear.id,
               metricType,
-              metricValue: avgValue,
-              metricData: {
-                dataPoints: values.length,
-                min: Math.min(...values),
-                max: Math.max(...values),
-                values,
-              },
-              periodType: 'WEEKLY',
               periodDate: weekStart,
+              periodType: 'WEEKLY',
             },
-          });
-        }
-      );
+          },
+          update: {
+            metricValue: avgValue,
+            metricData: {
+              dataPoints: values.length,
+              min: Math.min(...values),
+              max: Math.max(...values),
+              values,
+            },
+          },
+          create: {
+            unitId: unit.id,
+            academicYearId: academicYear.id,
+            metricType,
+            metricValue: avgValue,
+            metricData: {
+              dataPoints: values.length,
+              min: Math.min(...values),
+              max: Math.max(...values),
+              values,
+            },
+            periodType: 'WEEKLY',
+            periodDate: weekStart,
+          },
+        });
+      });
       await Promise.all(upsertPromises);
     };
 
-    const results = await Promise.allSettled(units.map(unit => processUnit(unit)));
+    const results = await Promise.allSettled(units.map((unit) => processUnit(unit)));
 
     results.forEach((result, index) => {
       if (result.status === 'fulfilled') {

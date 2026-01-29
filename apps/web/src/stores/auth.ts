@@ -92,7 +92,14 @@ export const useAuthStore = create<AuthState>()(
           // Also set token in cookie for middleware
           document.cookie = `accessToken=${accessToken}; path=/; max-age=86400; samesite=lax`;
 
-          set({ user, isAuthenticated: true, isLoading: false, requiresTwoFactor: false, requiresTwoFactorSetup: false, tempToken: null });
+          set({
+            user,
+            isAuthenticated: true,
+            isLoading: false,
+            requiresTwoFactor: false,
+            requiresTwoFactorSetup: false,
+            tempToken: null,
+          });
         } catch (error: unknown) {
           const message =
             error instanceof Error ? error.message : "Login failed";
@@ -119,7 +126,7 @@ export const useAuthStore = create<AuthState>()(
 
           const tempToken = get().tempToken;
           if (tempToken) {
-             localStorage.setItem("accessToken", tempToken);
+            localStorage.setItem("accessToken", tempToken);
           }
 
           const response = await authApi.verify2FA({ token });
@@ -129,9 +136,15 @@ export const useAuthStore = create<AuthState>()(
           localStorage.setItem("refreshToken", refreshToken);
           document.cookie = `accessToken=${accessToken}; path=/; max-age=86400; samesite=lax`;
 
-          set({ user, isAuthenticated: true, isLoading: false, requiresTwoFactor: false, tempToken: null });
+          set({
+            user,
+            isAuthenticated: true,
+            isLoading: false,
+            requiresTwoFactor: false,
+            tempToken: null,
+          });
         } catch (error: unknown) {
-           const message =
+          const message =
             error instanceof Error ? error.message : "2FA Verification failed";
           const axiosError = error as {
             response?: { data?: { message?: string } };
@@ -155,7 +168,13 @@ export const useAuthStore = create<AuthState>()(
           // Also remove from cookies
           document.cookie = "accessToken=; path=/; max-age=0";
           document.cookie = "auth-storage=; path=/; max-age=0";
-          set({ user: null, isAuthenticated: false, requiresTwoFactor: false, requiresTwoFactorSetup: false, tempToken: null });
+          set({
+            user: null,
+            isAuthenticated: false,
+            requiresTwoFactor: false,
+            requiresTwoFactorSetup: false,
+            tempToken: null,
+          });
         }
       },
 
@@ -216,11 +235,18 @@ export const useAuthStore = create<AuthState>()(
       },
 
       resetAuth: () => {
-          localStorage.removeItem("accessToken");
-          localStorage.removeItem("refreshToken");
-          document.cookie = "accessToken=; path=/; max-age=0";
-          document.cookie = "auth-storage=; path=/; max-age=0";
-          set({ user: null, isAuthenticated: false, requiresTwoFactor: false, requiresTwoFactorSetup: false, tempToken: null, error: null });
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+        document.cookie = "accessToken=; path=/; max-age=0";
+        document.cookie = "auth-storage=; path=/; max-age=0";
+        set({
+          user: null,
+          isAuthenticated: false,
+          requiresTwoFactor: false,
+          requiresTwoFactorSetup: false,
+          tempToken: null,
+          error: null,
+        });
       },
 
       clearError: () => set({ error: null }),

@@ -177,7 +177,9 @@ export default function BulkCreateDailyReportPage() {
         }
 
         if (isNaN(ayahStart) || isNaN(ayahEnd)) {
-          toast.error(`Ayat harus berupa angka untuk siswa ID: ${student.studentId}`);
+          toast.error(
+            `Ayat harus berupa angka untuk siswa ID: ${student.studentId}`,
+          );
           return;
         }
 

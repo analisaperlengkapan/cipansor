@@ -32,7 +32,10 @@ const formSchema = z.object({
   key: z
     .string()
     .min(1, "Key is required")
-    .regex(/^[A-Z0-9_]+$/, "Key must be uppercase alphanumeric with underscores"),
+    .regex(
+      /^[A-Z0-9_]+$/,
+      "Key must be uppercase alphanumeric with underscores",
+    ),
   value: z.string().min(1, "Value is required"),
   description: z.string().optional(),
 });
@@ -112,7 +115,9 @@ export function SecretForm({ open, onOpenChange, secret }: SecretFormProps) {
                       placeholder="API_KEY_EXAMPLE"
                       disabled={!!secret}
                       className="uppercase"
-                      onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                      onChange={(e) =>
+                        field.onChange(e.target.value.toUpperCase())
+                      }
                     />
                   </FormControl>
                   <FormDescription>
@@ -167,7 +172,11 @@ export function SecretForm({ open, onOpenChange, secret }: SecretFormProps) {
               )}
             />
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+              >
                 Cancel
               </Button>
               <Button type="submit" disabled={mutation.isPending}>

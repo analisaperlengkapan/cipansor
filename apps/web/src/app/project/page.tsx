@@ -1,34 +1,37 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CreateProjectModal } from './_components/create-project-modal';
-import { format } from 'date-fns';
-import { Badge } from '@/components/ui/badge';
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CreateProjectModal } from "./_components/create-project-modal";
+import { format } from "date-fns";
+import { Badge } from "@/components/ui/badge";
 
 export default function ProjectListPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   const { data: projects, isLoading } = useQuery({
-    queryKey: ['projects'],
+    queryKey: ["projects"],
     queryFn: async () => {
-      const res = await axios.get('/api/projects');
+      const res = await axios.get("/api/projects");
       return res.data;
     },
   });
 
-  if (isLoading) return <div className="p-8 text-center">Loading projects...</div>;
+  if (isLoading)
+    return <div className="p-8 text-center">Loading projects...</div>;
 
   return (
     <div className="container py-6 space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Projects</h1>
-          <p className="text-muted-foreground">Manage your projects and tasks.</p>
+          <p className="text-muted-foreground">
+            Manage your projects and tasks.
+          </p>
         </div>
         <Button onClick={() => setIsCreateOpen(true)}>Create Project</Button>
       </div>
@@ -39,7 +42,9 @@ export default function ProjectListPage() {
             <Card className="h-full hover:shadow-md transition-all cursor-pointer border-l-4 border-l-primary/50">
               <CardHeader className="pb-2">
                 <div className="flex justify-between items-start">
-                  <CardTitle className="text-xl line-clamp-1">{project.name}</CardTitle>
+                  <CardTitle className="text-xl line-clamp-1">
+                    {project.name}
+                  </CardTitle>
                   <Badge variant={getStatusVariant(project.status)}>
                     {formatStatus(project.status)}
                   </Badge>
@@ -47,7 +52,7 @@ export default function ProjectListPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground line-clamp-2 min-h-[40px] mb-4">
-                  {project.description || 'No description provided.'}
+                  {project.description || "No description provided."}
                 </p>
                 <div className="flex items-center justify-between text-xs text-muted-foreground pt-4 border-t">
                   <div className="flex gap-4">
@@ -55,7 +60,7 @@ export default function ProjectListPage() {
                     <span>Members: {project._count.members}</span>
                   </div>
                   <span>
-                    {format(new Date(project.updatedAt), 'MMM d, yyyy')}
+                    {format(new Date(project.updatedAt), "MMM d, yyyy")}
                   </span>
                 </div>
               </CardContent>
@@ -66,7 +71,11 @@ export default function ProjectListPage() {
           <div className="col-span-full flex flex-col items-center justify-center py-16 text-muted-foreground border-2 border-dashed rounded-lg">
             <p className="text-lg font-medium">No projects found</p>
             <p className="text-sm">Create your first project to get started.</p>
-            <Button variant="outline" className="mt-4" onClick={() => setIsCreateOpen(true)}>
+            <Button
+              variant="outline"
+              className="mt-4"
+              onClick={() => setIsCreateOpen(true)}
+            >
               Create Project
             </Button>
           </div>
@@ -80,14 +89,19 @@ export default function ProjectListPage() {
 
 function getStatusVariant(status: string) {
   switch (status) {
-    case 'PLANNING': return 'secondary';
-    case 'IN_PROGRESS': return 'default';
-    case 'COMPLETED': return 'secondary'; // Using secondary for success if success not available
-    case 'CANCELLED': return 'destructive';
-    default: return 'outline';
+    case "PLANNING":
+      return "secondary";
+    case "IN_PROGRESS":
+      return "default";
+    case "COMPLETED":
+      return "secondary"; // Using secondary for success if success not available
+    case "CANCELLED":
+      return "destructive";
+    default:
+      return "outline";
   }
 }
 
 function formatStatus(status: string) {
-  return status.replace(/_/g, ' ');
+  return status.replace(/_/g, " ");
 }

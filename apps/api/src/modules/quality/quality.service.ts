@@ -135,7 +135,10 @@ export const qualityService = {
     // Security check: If not SUPER_ADMIN, ensure user can only create audit for their own unit
     if (userRole !== 'SUPER_ADMIN') {
       if (!userUnitId || data.unitId !== userUnitId) {
-        throw new ApiError(ErrorCode.FORBIDDEN, 'Access denied: You can only create audits for your own unit');
+        throw new ApiError(
+          ErrorCode.FORBIDDEN,
+          'Access denied: You can only create audits for your own unit'
+        );
       }
     }
 
@@ -174,11 +177,19 @@ export const qualityService = {
     });
   },
 
-  getAudits: async (unitId: string, academicYearId: string, userRole: string, userUnitId?: string) => {
+  getAudits: async (
+    unitId: string,
+    academicYearId: string,
+    userRole: string,
+    userUnitId?: string
+  ) => {
     // Security check: If not SUPER_ADMIN, ensure user can only list audits for their own unit
     if (userRole !== 'SUPER_ADMIN') {
       if (!userUnitId || unitId !== userUnitId) {
-        throw new ApiError(ErrorCode.FORBIDDEN, 'Access denied: You can only view audits for your own unit');
+        throw new ApiError(
+          ErrorCode.FORBIDDEN,
+          'Access denied: You can only view audits for your own unit'
+        );
       }
     }
 
@@ -232,7 +243,10 @@ export const qualityService = {
     // Security check: If not SUPER_ADMIN, ensure user belongs to the same unit
     if (userRole !== 'SUPER_ADMIN') {
       if (!userUnitId || audit.unitId !== userUnitId) {
-        throw new ApiError(ErrorCode.FORBIDDEN, 'Access denied: You can only view audits for your own unit');
+        throw new ApiError(
+          ErrorCode.FORBIDDEN,
+          'Access denied: You can only view audits for your own unit'
+        );
       }
     }
 

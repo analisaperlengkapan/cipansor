@@ -10,7 +10,14 @@ import { PageHeader } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { PermissionSelector } from "@/components/roles/permission-selector";
 import { useRole, useUpdateRole } from "@/hooks/use-roles";
 import { ArrowLeft, Save } from "lucide-react";
@@ -116,7 +123,9 @@ export default function EditRolePage() {
                 <FormControl>
                   <Input value={role.code} disabled className="bg-muted" />
                 </FormControl>
-                <p className="text-[0.8rem] text-muted-foreground">Code cannot be changed.</p>
+                <p className="text-[0.8rem] text-muted-foreground">
+                  Code cannot be changed.
+                </p>
               </FormItem>
               <FormField
                 control={form.control}
@@ -125,7 +134,10 @@ export default function EditRolePage() {
                   <FormItem className="md:col-span-2">
                     <FormLabel>Description</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="Describe the role responsibilities..." {...field} />
+                      <Textarea
+                        placeholder="Describe the role responsibilities..."
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -151,7 +163,11 @@ export default function EditRolePage() {
             />
 
             <div className="flex justify-end gap-4">
-              <Button type="button" variant="outline" onClick={() => router.back()}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.back()}
+              >
                 Cancel
               </Button>
               <Button type="submit" disabled={updateRoleMutation.isPending}>

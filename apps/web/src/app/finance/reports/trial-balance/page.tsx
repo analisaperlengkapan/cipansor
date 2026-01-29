@@ -15,7 +15,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useTrialBalanceReport, AccountType } from "@/hooks/use-finance-enhancement";
+import {
+  useTrialBalanceReport,
+  AccountType,
+} from "@/hooks/use-finance-enhancement";
 import { useUnits } from "@/hooks/use-units";
 import {
   Select,
@@ -128,7 +131,9 @@ export default function TrialBalancePage() {
                         <TableHead className="text-right">Saldo Awal</TableHead>
                         <TableHead className="text-right">Debit</TableHead>
                         <TableHead className="text-right">Kredit</TableHead>
-                        <TableHead className="text-right">Saldo Akhir</TableHead>
+                        <TableHead className="text-right">
+                          Saldo Akhir
+                        </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -153,7 +158,9 @@ export default function TrialBalancePage() {
                                 {formatCurrency(acc.startBalance)}
                               </TableCell>
                               <TableCell className="text-right font-mono">
-                                {acc.debit > 0 ? formatCurrency(acc.debit) : "-"}
+                                {acc.debit > 0
+                                  ? formatCurrency(acc.debit)
+                                  : "-"}
                               </TableCell>
                               <TableCell className="text-right font-mono">
                                 {acc.credit > 0

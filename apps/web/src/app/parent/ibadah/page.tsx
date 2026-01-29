@@ -91,7 +91,9 @@ export default function ParentIbadahPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Mutaba&apos;ah Ibadah</h1>
+        <h1 className="text-3xl font-bold tracking-tight">
+          Mutaba&apos;ah Ibadah
+        </h1>
         <p className="text-muted-foreground">
           Pilih anak untuk melihat laporan ibadah harian
         </p>

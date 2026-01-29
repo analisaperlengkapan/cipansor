@@ -39,7 +39,10 @@ export function StudentSelect({
   const debouncedSearch = useDebounce(search, 300);
 
   // Search query
-  const { data: students, isLoading } = useStudentSearch(debouncedSearch, unitId);
+  const { data: students, isLoading } = useStudentSearch(
+    debouncedSearch,
+    unitId,
+  );
 
   // Update internal label when selection is made from the list
   // or if the current value is found in the search results
@@ -96,12 +99,14 @@ export function StudentSelect({
                   <Check
                     className={cn(
                       "mr-2 h-4 w-4",
-                      value === student.id ? "opacity-100" : "opacity-0"
+                      value === student.id ? "opacity-100" : "opacity-0",
                     )}
                   />
                   <div className="flex flex-col text-left">
                     <span className="font-medium">{student.name}</span>
-                    <span className="text-xs text-muted-foreground">{student.nis} - {student.unit?.name || "-"}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {student.nis} - {student.unit?.name || "-"}
+                    </span>
                   </div>
                 </CommandItem>
               ))}

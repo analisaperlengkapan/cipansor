@@ -2,14 +2,16 @@ import { Request, Response } from 'express';
 import { asyncHandler } from '@/middleware/error';
 import { Errors } from '@/middleware/error';
 import { riskService } from './risk.service';
-import { createRiskSchema, updateRiskSchema, createMitigationSchema, updateMitigationSchema, listRiskQuerySchema } from './risk.validation';
+import {
+  createRiskSchema,
+  updateRiskSchema,
+  createMitigationSchema,
+  updateMitigationSchema,
+  listRiskQuerySchema,
+} from './risk.validation';
 import { UserRole } from '@prisma/client';
 
-const PRIVILEGED_ROLES = [
-  UserRole.SUPER_ADMIN,
-  UserRole.YAYASAN_ADMIN,
-  UserRole.YAYASAN_KETUA
-];
+const PRIVILEGED_ROLES = [UserRole.SUPER_ADMIN, UserRole.YAYASAN_ADMIN, UserRole.YAYASAN_KETUA];
 
 function isPrivileged(role?: UserRole): boolean {
   return role ? PRIVILEGED_ROLES.includes(role) : false;
@@ -21,9 +23,7 @@ export const listRisks = asyncHandler(async (req: Request, res: Response) => {
 
   if (!unitId && !isPrivilegedUser) throw Errors.unauthorized('Unit ID required');
 
-  const targetUnitId = (isPrivilegedUser && req.query.unitId)
-    ? String(req.query.unitId)
-    : unitId;
+  const targetUnitId = isPrivilegedUser && req.query.unitId ? String(req.query.unitId) : unitId;
 
   if (!targetUnitId) throw Errors.badRequest('Unit ID required');
 
@@ -31,7 +31,7 @@ export const listRisks = asyncHandler(async (req: Request, res: Response) => {
   const query = listRiskQuerySchema.parse({
     category: req.query.category,
     riskLevel: req.query.riskLevel,
-    unitId: targetUnitId
+    unitId: targetUnitId,
   });
 
   const risks = await riskService.getRisks(targetUnitId, query);

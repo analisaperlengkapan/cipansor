@@ -2,7 +2,11 @@
 
 import { MainLayout } from "@/components/layout/main-layout";
 import { useParams } from "next/navigation";
-import { useComplaint, useUpdateComplaintStatus, useAddComplaintComment } from "@/hooks/use-complaints";
+import {
+  useComplaint,
+  useUpdateComplaintStatus,
+  useAddComplaintComment,
+} from "@/hooks/use-complaints";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,7 +32,8 @@ export default function ComplaintDetailPage() {
   const id = params.id as string;
   const { data: complaint, isLoading } = useComplaint(id);
   const { mutate: updateStatus } = useUpdateComplaintStatus();
-  const { mutate: addComment, isPending: isSendingComment } = useAddComplaintComment();
+  const { mutate: addComment, isPending: isSendingComment } =
+    useAddComplaintComment();
   const { user } = useAuth();
   const [comment, setComment] = useState("");
 
@@ -52,9 +57,7 @@ export default function ComplaintDetailPage() {
   // Teachers are excluded from management actions (status update, assignment)
   const role = user?.role || "";
   const isAdminOrStaff =
-    role === 'SUPER_ADMIN' ||
-    role === 'UNIT_ADMIN' ||
-    role === 'STAFF';
+    role === "SUPER_ADMIN" || role === "UNIT_ADMIN" || role === "STAFF";
 
   const handleStatusChange = (status: string) => {
     updateStatus({ id, status: status as ComplaintStatus });
@@ -66,7 +69,7 @@ export default function ComplaintDetailPage() {
       { id, content: comment, isInternal: false },
       {
         onSuccess: () => setComment(""),
-      }
+      },
     );
   };
 
@@ -77,7 +80,11 @@ export default function ComplaintDetailPage() {
       case "IN_PROGRESS":
         return <Badge variant="secondary">Diproses</Badge>;
       case "RESOLVED":
-        return <Badge variant="default" className="bg-green-600">Selesai</Badge>;
+        return (
+          <Badge variant="default" className="bg-green-600">
+            Selesai
+          </Badge>
+        );
       case "REJECTED":
         return <Badge variant="destructive">Ditolak</Badge>;
       default:
@@ -95,11 +102,19 @@ export default function ComplaintDetailPage() {
             </Button>
           </Link>
           <div className="flex-1">
-            <h1 className="text-2xl font-bold tracking-tight">{complaint.subject}</h1>
+            <h1 className="text-2xl font-bold tracking-tight">
+              {complaint.subject}
+            </h1>
             <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-              <span>{format(new Date(complaint.createdAt), "dd MMMM yyyy HH:mm", { locale: idLocale })}</span>
+              <span>
+                {format(new Date(complaint.createdAt), "dd MMMM yyyy HH:mm", {
+                  locale: idLocale,
+                })}
+              </span>
               <span>•</span>
-              <span className="font-medium text-foreground">{complaint.category}</span>
+              <span className="font-medium text-foreground">
+                {complaint.category}
+              </span>
             </div>
           </div>
           <div>{getStatusBadge(complaint.status)}</div>
@@ -115,7 +130,8 @@ export default function ComplaintDetailPage() {
 
                 {complaint.location && (
                   <div className="text-sm bg-muted p-3 rounded-md">
-                    <span className="font-semibold">Lokasi:</span> {complaint.location}
+                    <span className="font-semibold">Lokasi:</span>{" "}
+                    {complaint.location}
                   </div>
                 )}
               </CardContent>
@@ -131,9 +147,13 @@ export default function ComplaintDetailPage() {
                     </div>
                     <div className="flex-1 space-y-1">
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold text-sm">{c.user?.name || "User"}</span>
+                        <span className="font-semibold text-sm">
+                          {c.user?.name || "User"}
+                        </span>
                         <span className="text-xs text-muted-foreground">
-                          {format(new Date(c.createdAt), "dd MMM HH:mm", { locale: idLocale })}
+                          {format(new Date(c.createdAt), "dd MMM HH:mm", {
+                            locale: idLocale,
+                          })}
                         </span>
                       </div>
                       <div className="text-sm p-3 bg-muted/50 rounded-md">
@@ -144,7 +164,9 @@ export default function ComplaintDetailPage() {
                 ))}
 
                 {complaint.comments?.length === 0 && (
-                  <p className="text-center text-sm text-muted-foreground py-4">Belum ada komentar.</p>
+                  <p className="text-center text-sm text-muted-foreground py-4">
+                    Belum ada komentar.
+                  </p>
                 )}
               </div>
 
@@ -155,7 +177,10 @@ export default function ComplaintDetailPage() {
                   onChange={(e) => setComment(e.target.value)}
                   className="flex-1 min-h-[80px]"
                 />
-                <Button onClick={handleSendComment} disabled={isSendingComment || !comment.trim()}>
+                <Button
+                  onClick={handleSendComment}
+                  disabled={isSendingComment || !comment.trim()}
+                >
                   <Send className="h-4 w-4" />
                 </Button>
               </div>
@@ -171,7 +196,9 @@ export default function ComplaintDetailPage() {
                 <div>
                   <div className="text-muted-foreground mb-1">Pelapor</div>
                   <div className="font-medium">
-                    {complaint.isAnonymous ? "Anonim" : complaint.user?.name || "-"}
+                    {complaint.isAnonymous
+                      ? "Anonim"
+                      : complaint.user?.name || "-"}
                   </div>
                   {!complaint.isAnonymous && complaint.user?.role && (
                     <div className="text-xs text-muted-foreground capitalize">
@@ -184,7 +211,9 @@ export default function ComplaintDetailPage() {
 
                 <div>
                   <div className="text-muted-foreground mb-1">Petugas</div>
-                  <div className="font-medium">{complaint.assignedTo?.name || "Belum ditugaskan"}</div>
+                  <div className="font-medium">
+                    {complaint.assignedTo?.name || "Belum ditugaskan"}
+                  </div>
                 </div>
 
                 {isAdminOrStaff && (
@@ -192,7 +221,10 @@ export default function ComplaintDetailPage() {
                     <Separator />
                     <div className="space-y-2">
                       <div className="text-muted-foreground">Update Status</div>
-                      <Select value={complaint.status} onValueChange={handleStatusChange}>
+                      <Select
+                        value={complaint.status}
+                        onValueChange={handleStatusChange}
+                      >
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>

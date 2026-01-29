@@ -45,7 +45,11 @@ export default function ComplaintsPage() {
       case "IN_PROGRESS":
         return <Badge variant="secondary">Diproses</Badge>;
       case "RESOLVED":
-        return <Badge variant="default" className="bg-green-600">Selesai</Badge>;
+        return (
+          <Badge variant="default" className="bg-green-600">
+            Selesai
+          </Badge>
+        );
       case "REJECTED":
         return <Badge variant="destructive">Ditolak</Badge>;
       default:
@@ -58,7 +62,9 @@ export default function ComplaintsPage() {
       <div className="space-y-6 p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Aduan & Aspirasi</h1>
+            <h1 className="text-3xl font-bold tracking-tight">
+              Aduan & Aspirasi
+            </h1>
             <p className="text-muted-foreground">
               Kelola dan pantau aduan serta aspirasi civitas akademika.
             </p>
@@ -72,7 +78,13 @@ export default function ComplaintsPage() {
         </div>
 
         <div className="flex flex-wrap gap-4">
-          <Select value={status} onValueChange={(val) => { setStatus(val); setPage(1); }}>
+          <Select
+            value={status}
+            onValueChange={(val) => {
+              setStatus(val);
+              setPage(1);
+            }}
+          >
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
@@ -86,7 +98,13 @@ export default function ComplaintsPage() {
             </SelectContent>
           </Select>
 
-          <Select value={category} onValueChange={(val) => { setCategory(val); setPage(1); }}>
+          <Select
+            value={category}
+            onValueChange={(val) => {
+              setCategory(val);
+              setPage(1);
+            }}
+          >
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Kategori" />
             </SelectTrigger>
@@ -189,7 +207,9 @@ export default function ComplaintsPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setPage((p) => Math.min(data.meta.totalPages, p + 1))}
+              onClick={() =>
+                setPage((p) => Math.min(data.meta.totalPages, p + 1))
+              }
               disabled={page === data.meta.totalPages}
             >
               Next

@@ -101,7 +101,7 @@ export default function NewLeavePage() {
 
   const { data: leaveBalances } = useLeaveBalances(
     selectedEmployee?.userId || selectedEmployee?.user?.id || "",
-    activeAcademicYear?.id
+    activeAcademicYear?.id,
   );
 
   const annualBalance = leaveBalances?.find((b) => b.leaveType === "ANNUAL");

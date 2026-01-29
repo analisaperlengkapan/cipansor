@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -12,13 +12,13 @@ import {
   DragStartEvent,
   DragOverEvent,
   DragEndEvent,
-} from '@dnd-kit/core';
-import { sortableKeyboardCoordinates, arrayMove } from '@dnd-kit/sortable';
-import { ProjectColumn } from './project-column';
-import { TaskCard } from './task-card';
-import { CreateTaskModal } from './create-task-modal';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
+} from "@dnd-kit/core";
+import { sortableKeyboardCoordinates, arrayMove } from "@dnd-kit/sortable";
+import { ProjectColumn } from "./project-column";
+import { TaskCard } from "./task-card";
+import { CreateTaskModal } from "./create-task-modal";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
 
 interface Props {
   project: any;
@@ -37,18 +37,24 @@ export function KanbanBoard({ project }: Props) {
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
   );
 
   const moveTaskMutation = useMutation({
-    mutationFn: async (data: { taskId: string; columnId: string; order: number }) => {
+    mutationFn: async (data: {
+      taskId: string;
+      columnId: string;
+      order: number;
+    }) => {
       await axios.patch(`/api/projects/tasks/${data.taskId}/position`, {
         columnId: data.columnId,
         order: data.order,
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['project', project.id] });
+      queryClient.invalidateQueries({ queryKey: ["project", project.id] });
     },
   });
 
@@ -81,22 +87,34 @@ export function KanbanBoard({ project }: Props) {
     if (activeCol !== overCol) {
       // Moving between columns
       setColumns((prev: any) => {
-        const activeColumnIndex = prev.findIndex((col: any) => col.id === activeCol.id);
-        const overColumnIndex = prev.findIndex((col: any) => col.id === overCol.id);
+        const activeColumnIndex = prev.findIndex(
+          (col: any) => col.id === activeCol.id,
+        );
+        const overColumnIndex = prev.findIndex(
+          (col: any) => col.id === overCol.id,
+        );
 
         const activeColumn = prev[activeColumnIndex];
         const overColumn = prev[overColumnIndex];
 
-        const activeTaskIndex = activeColumn.tasks.findIndex((t: any) => t.id === activeId);
+        const activeTaskIndex = activeColumn.tasks.findIndex(
+          (t: any) => t.id === activeId,
+        );
         // If dropping on a task, get its index, else append
-        const overTaskIndex = overColumn.tasks.findIndex((t: any) => t.id === overId);
+        const overTaskIndex = overColumn.tasks.findIndex(
+          (t: any) => t.id === overId,
+        );
 
-        const newIndex = overTaskIndex >= 0 ? overTaskIndex : overColumn.tasks.length + 1;
+        const newIndex =
+          overTaskIndex >= 0 ? overTaskIndex : overColumn.tasks.length + 1;
 
         // Clone to avoid mutation
         const newColumns = JSON.parse(JSON.stringify(prev));
 
-        const [movedTask] = newColumns[activeColumnIndex].tasks.splice(activeTaskIndex, 1);
+        const [movedTask] = newColumns[activeColumnIndex].tasks.splice(
+          activeTaskIndex,
+          1,
+        );
         movedTask.columnId = overCol.id;
         newColumns[overColumnIndex].tasks.splice(newIndex, 0, movedTask);
 
@@ -114,7 +132,9 @@ export function KanbanBoard({ project }: Props) {
     const activeId = active.id as string;
 
     // Trigger API update
-    const finalCol = columns.find((col: any) => col.tasks.some((t: any) => t.id === activeId));
+    const finalCol = columns.find((col: any) =>
+      col.tasks.some((t: any) => t.id === activeId),
+    );
     if (finalCol) {
       const taskIndex = finalCol.tasks.findIndex((t: any) => t.id === activeId);
       moveTaskMutation.mutate({

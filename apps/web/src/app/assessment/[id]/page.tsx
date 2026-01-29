@@ -58,6 +58,7 @@ import {
   Minus,
   FileEdit,
   AlertCircle,
+  FileCheck,
 } from "lucide-react";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
@@ -210,6 +211,12 @@ export default function AssessmentDetailPage() {
                 Publikasikan
               </Button>
             )}
+            <Button variant="outline" asChild>
+              <Link href={`/assessment/${assessmentId}/proctoring`}>
+                <FileCheck className="mr-2 h-4 w-4" />
+                Berita Acara
+              </Link>
+            </Button>
             <Button variant="outline" asChild>
               <Link href={`/assessment/${assessmentId}/grades`}>
                 <FileEdit className="mr-2 h-4 w-4" />

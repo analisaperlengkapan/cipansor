@@ -49,10 +49,13 @@ import {
   Clock,
   Loader2,
   Download,
+  Calendar,
+  CreditCard,
 } from "lucide-react";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import Link from "next/link";
+import { ExamCalendar } from "@/components/assessment/exam-calendar";
 
 export default function AssessmentPage() {
   const [activeTab, setActiveTab] = useState("assessments");
@@ -109,6 +112,12 @@ export default function AssessmentPage() {
             </p>
           </div>
           <div className="flex gap-2">
+            <Button variant="outline" asChild>
+              <Link href="/assessment/exam-cards">
+                <CreditCard className="mr-2 h-4 w-4" />
+                Kartu Ujian
+              </Link>
+            </Button>
             <Button variant="outline" asChild>
               <Link href="/assessment/report-cards">
                 <FileText className="mr-2 h-4 w-4" />
@@ -195,6 +204,10 @@ export default function AssessmentPage() {
               <ClipboardList className="mr-2 h-4 w-4" />
               Penilaian
             </TabsTrigger>
+            <TabsTrigger value="calendar">
+              <Calendar className="mr-2 h-4 w-4" />
+              Kalender
+            </TabsTrigger>
             <TabsTrigger value="report-cards">
               <FileText className="mr-2 h-4 w-4" />
               Rapor
@@ -204,6 +217,69 @@ export default function AssessmentPage() {
               Analitik
             </TabsTrigger>
           </TabsList>
+
+          {/* Calendar Tab */}
+          <TabsContent value="calendar" className="space-y-4">
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex flex-col gap-4 md:flex-row md:items-center">
+                  <Select value={classFilter} onValueChange={setClassFilter}>
+                    <SelectTrigger className="w-full md:w-[200px]">
+                      <SelectValue placeholder="Semua Kelas" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ALL">Semua Kelas</SelectItem>
+                      {classes?.data?.map((cls) => (
+                        <SelectItem key={cls.id} value={cls.id}>
+                          {cls.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select
+                    value={subjectFilter}
+                    onValueChange={setSubjectFilter}
+                  >
+                    <SelectTrigger className="w-full md:w-[200px]">
+                      <SelectValue placeholder="Semua Mapel" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ALL">Semua Mapel</SelectItem>
+                      {subjects?.map((subject) => (
+                        <SelectItem key={subject.id} value={subject.id}>
+                          {subject.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select
+                    value={typeFilter}
+                    onValueChange={(v) =>
+                      setTypeFilter(v as AssessmentType | "ALL")
+                    }
+                  >
+                    <SelectTrigger className="w-full md:w-[200px]">
+                      <SelectValue placeholder="Semua Tipe" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ALL">Semua Tipe</SelectItem>
+                      {ASSESSMENT_TYPES.map((type) => (
+                        <SelectItem key={type} value={type}>
+                          {ASSESSMENT_TYPE_LABELS[type]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardContent>
+            </Card>
+
+            <ExamCalendar
+              classId={classFilter}
+              subjectId={subjectFilter}
+              type={typeFilter}
+            />
+          </TabsContent>
 
           {/* Assessments Tab */}
           <TabsContent value="assessments" className="space-y-4">

@@ -532,6 +532,7 @@ model Unit {
   marketingCampaigns     MarketingCampaign[]
   leaveBalances          LeaveBalance[]
   departments            Department[]
+  positions              Position[]
 
   // Tata Naskah Dinas (E-Office)
   agendaNumbers          AgendaNumber[]
@@ -654,6 +655,9 @@ model Teacher {
   pkgEvaluations           PKGEvaluation[]
   assignments              Assignment[]
 
+  positionId               String?             @map("position_id")
+  positionRel              Position?           @relation(fields: [positionId], references: [id])
+
   @@index([unitId])
   @@index([provinceId])
   @@index([regencyId])
@@ -684,6 +688,9 @@ model Staff {
   musyrifs       Musyrif[]
   employeeSalary EmployeeSalary?
   payrolls       Payroll[]
+
+  positionId     String?           @map("position_id")
+  positionRel    Position?         @relation(fields: [positionId], references: [id])
 
   @@index([unitId])
   @@map("staff")
@@ -1587,6 +1594,7 @@ model LeaveBalance {
 model Department {
   id          String   @id @default(uuid())
   unitId      String   @map("unit_id")
+  parentId    String?  @map("parent_id")
   code        String   // Kode departemen
   name        String   // Nama departemen
   description String?
@@ -1596,14 +1604,46 @@ model Department {
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   // Relations
-  unit    Unit      @relation(fields: [unitId], references: [id])
-  manager User?     @relation("DepartmentManager", fields: [managerId], references: [id])
-  staff   Staff[]
-  teachers Teacher[]
+  unit      Unit        @relation(fields: [unitId], references: [id])
+  parent    Department? @relation("DepartmentHierarchy", fields: [parentId], references: [id])
+  children  Department[] @relation("DepartmentHierarchy")
+  manager   User?       @relation("DepartmentManager", fields: [managerId], references: [id])
+  staff     Staff[]
+  teachers  Teacher[]
+  positions Position[]
 
   @@unique([unitId, code])
   @@index([unitId])
+  @@index([parentId])
   @@map("departments")
+}
+
+/// Position - Jabatan
+model Position {
+  id           String   @id @default(uuid())
+  unitId       String   @map("unit_id")
+  departmentId String?  @map("department_id")
+  parentId     String?  @map("parent_id")
+  name         String
+  code         String?
+  level        Int      @default(0) // 0=Board, 1=Director, 2=Manager, 3=Supervisor, 4=Staff
+  description  String?  @db.Text
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  unit        Unit        @relation(fields: [unitId], references: [id])
+  department  Department? @relation(fields: [departmentId], references: [id])
+  parent      Position?   @relation("PositionHierarchy", fields: [parentId], references: [id])
+  children    Position[]  @relation("PositionHierarchy")
+  staff       Staff[]
+  teachers    Teacher[]
+
+  @@index([unitId])
+  @@index([departmentId])
+  @@index([parentId])
+  @@map("positions")
 }
 
 enum ContractStatus {

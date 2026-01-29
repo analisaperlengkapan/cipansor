@@ -51,6 +51,7 @@ import {
   ShoppingBag,
   Key,
   MessageSquareWarning,
+  Network,
   type LucideIcon,
 } from "lucide-react";
 
@@ -673,6 +674,29 @@ const adminNavigation: NavGroup[] = [
         href: "/units",
         icon: School,
         roleCodes: ["SUPER_ADMIN"],
+      },
+      {
+        title: "Organization",
+        href: "/organization",
+        icon: Network,
+        roleCodes: ["SUPER_ADMIN", "YAYASAN_ADMIN"],
+        children: [
+          {
+            title: "Structure",
+            href: "/organization/structure",
+            icon: Network,
+          },
+          {
+            title: "Departments",
+            href: "/organization/departments",
+            icon: Building2,
+          },
+          {
+            title: "Positions",
+            href: "/organization/positions",
+            icon: UserCog,
+          },
+        ],
       },
       {
         title: "Users & Roles",

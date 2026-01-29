@@ -1,5 +1,6 @@
 import { prisma } from '../../lib/prisma';
 import { Prisma, AccountCode, JournalReferenceType } from '@prisma/client';
+import { checkPeriodStatus } from '../finance-enhancement/period.service';
 
 // =====================================
 // COA (CHART OF ACCOUNTS) SERVICE
@@ -123,6 +124,9 @@ export async function createManualJournal(data: {
   }[];
   createdById: string;
 }) {
+  // Check if the period is closed
+  await checkPeriodStatus(data.unitId, data.date);
+
   return prisma.$transaction(async (tx) => {
     // Validate balance
     const totalDebit = data.entries.reduce((sum, e) => sum + e.debit, 0);
@@ -333,34 +337,86 @@ export async function getIncomeStatement(query: {
 
 export async function seedDefaultAccounts() {
   const defaultAccounts = [
-    // ASSETS
-    { code: '1101', name: 'Kas', type: 'ASSET', normalBalance: 'DEBIT' },
-    { code: '1102', name: 'Bank', type: 'ASSET', normalBalance: 'DEBIT' },
-    { code: '1103', name: 'Piutang Santri', type: 'ASSET', normalBalance: 'DEBIT' },
-    { code: '1201', name: 'Tanah', type: 'ASSET', normalBalance: 'DEBIT' },
-    { code: '1202', name: 'Bangunan', type: 'ASSET', normalBalance: 'DEBIT' },
+    // 1. ASSETS (ASET)
+    { code: '1100', name: 'ASET LANCAR', type: 'ASSET', normalBalance: 'DEBIT' },
+    { code: '1101', name: 'Kas Tunai', type: 'ASSET', normalBalance: 'DEBIT', parentCode: '1100' },
+    { code: '1102', name: 'Bank Syariah', type: 'ASSET', normalBalance: 'DEBIT', parentCode: '1100' },
+    { code: '1103', name: 'Piutang Santri/Siswa', type: 'ASSET', normalBalance: 'DEBIT', parentCode: '1100' },
+    { code: '1104', name: 'Perlengkapan (Supplies)', type: 'ASSET', normalBalance: 'DEBIT', parentCode: '1100' },
+    { code: '1105', name: 'Uang Muka', type: 'ASSET', normalBalance: 'DEBIT', parentCode: '1100' },
 
-    // LIABILITIES
-    { code: '2101', name: 'Hutang Usaha', type: 'LIABILITY', normalBalance: 'CREDIT' },
-    { code: '2102', name: 'Hutang Gaji', type: 'LIABILITY', normalBalance: 'CREDIT' },
+    { code: '1200', name: 'ASET TETAP', type: 'ASSET', normalBalance: 'DEBIT' },
+    { code: '1201', name: 'Tanah', type: 'ASSET', normalBalance: 'DEBIT', parentCode: '1200' },
+    { code: '1202', name: 'Bangunan', type: 'ASSET', normalBalance: 'DEBIT', parentCode: '1200' },
+    { code: '1203', name: 'Akumulasi Penyusutan Bangunan', type: 'ASSET', normalBalance: 'CREDIT', parentCode: '1202' },
+    { code: '1204', name: 'Kendaraan', type: 'ASSET', normalBalance: 'DEBIT', parentCode: '1200' },
+    { code: '1205', name: 'Akumulasi Penyusutan Kendaraan', type: 'ASSET', normalBalance: 'CREDIT', parentCode: '1204' },
+    { code: '1206', name: 'Inventaris & Peralatan', type: 'ASSET', normalBalance: 'DEBIT', parentCode: '1200' },
+    { code: '1207', name: 'Akumulasi Penyusutan Inventaris', type: 'ASSET', normalBalance: 'CREDIT', parentCode: '1206' },
 
-    // EQUITY
-    { code: '3101', name: 'Modal Yayasan', type: 'EQUITY', normalBalance: 'CREDIT' },
-    { code: '3102', name: 'Saldo Laba', type: 'EQUITY', normalBalance: 'CREDIT' },
+    // 2. LIABILITIES (KEWAJIBAN/LIABILITAS)
+    { code: '2100', name: 'LIABILITAS JANGKA PENDEK', type: 'LIABILITY', normalBalance: 'CREDIT' },
+    { code: '2101', name: 'Hutang Usaha', type: 'LIABILITY', normalBalance: 'CREDIT', parentCode: '2100' },
+    { code: '2102', name: 'Hutang Gaji & Honor', type: 'LIABILITY', normalBalance: 'CREDIT', parentCode: '2100' },
+    { code: '2103', name: 'Pendapatan Diterima Dimuka', type: 'LIABILITY', normalBalance: 'CREDIT', parentCode: '2100' },
+    { code: '2104', name: 'Titipan Dana ZISWAF (Sementara)', type: 'LIABILITY', normalBalance: 'CREDIT', parentCode: '2100' },
 
-    // REVENUE
-    { code: '4101', name: 'Pendapatan SPP', type: 'REVENUE', normalBalance: 'CREDIT' },
-    { code: '4102', name: 'Pendapatan Pembangunan', type: 'REVENUE', normalBalance: 'CREDIT' },
-    { code: '4103', name: 'Pendapatan Lain-lain', type: 'REVENUE', normalBalance: 'CREDIT' },
+    { code: '2200', name: 'LIABILITAS JANGKA PANJANG', type: 'LIABILITY', normalBalance: 'CREDIT' },
+    { code: '2201', name: 'Hutang Bank', type: 'LIABILITY', normalBalance: 'CREDIT', parentCode: '2200' },
+    { code: '2202', name: 'Hutang Pihak Ketiga', type: 'LIABILITY', normalBalance: 'CREDIT', parentCode: '2200' },
 
-    // EXPENSE
-    { code: '5101', name: 'Beban Gaji', type: 'EXPENSE', normalBalance: 'DEBIT' },
-    { code: '5102', name: 'Beban Listrik & Air', type: 'EXPENSE', normalBalance: 'DEBIT' },
-    { code: '5103', name: 'Beban Operasional', type: 'EXPENSE', normalBalance: 'DEBIT' },
+    // 3. NET ASSETS (ASET NETO - ISAK 35)
+    // Menggantikan Ekuitas/Modal konvensional
+    { code: '3100', name: 'ASET NETO TIDAK TERIKAT', type: 'EQUITY', normalBalance: 'CREDIT' },
+    { code: '3101', name: 'Aset Neto Tidak Terikat (Saldo Awal)', type: 'EQUITY', normalBalance: 'CREDIT', parentCode: '3100' },
+    { code: '3102', name: 'Surplus/Defisit Tahun Berjalan - Tidak Terikat', type: 'EQUITY', normalBalance: 'CREDIT', parentCode: '3100' },
+
+    { code: '3200', name: 'ASET NETO TERIKAT TEMPORER', type: 'EQUITY', normalBalance: 'CREDIT' },
+    { code: '3201', name: 'Aset Neto Terikat Program', type: 'EQUITY', normalBalance: 'CREDIT', parentCode: '3200' },
+    { code: '3202', name: 'Surplus/Defisit Tahun Berjalan - Terikat', type: 'EQUITY', normalBalance: 'CREDIT', parentCode: '3200' },
+
+    { code: '3300', name: 'ASET NETO TERIKAT PERMANEN', type: 'EQUITY', normalBalance: 'CREDIT' },
+    { code: '3301', name: 'Dana Abadi (Endowment)', type: 'EQUITY', normalBalance: 'CREDIT', parentCode: '3300' },
+    { code: '3302', name: 'Wakaf Tunai', type: 'EQUITY', normalBalance: 'CREDIT', parentCode: '3300' },
+
+    // 4. REVENUES (PENDAPATAN)
+    { code: '4100', name: 'PENDAPATAN JASA LAYANAN (TIDAK TERIKAT)', type: 'REVENUE', normalBalance: 'CREDIT' },
+    { code: '4101', name: 'Pendapatan SPP', type: 'REVENUE', normalBalance: 'CREDIT', parentCode: '4100' },
+    { code: '4102', name: 'Pendapatan Uang Pangkal/Gedung', type: 'REVENUE', normalBalance: 'CREDIT', parentCode: '4100' },
+    { code: '4103', name: 'Pendapatan Asrama/Boarding', type: 'REVENUE', normalBalance: 'CREDIT', parentCode: '4100' },
+    { code: '4104', name: 'Pendapatan Laundry & Kantin', type: 'REVENUE', normalBalance: 'CREDIT', parentCode: '4100' },
+
+    { code: '4200', name: 'PENERIMAAN SUMBANGAN (TERIKAT/TIDAK TERIKAT)', type: 'REVENUE', normalBalance: 'CREDIT' },
+    { code: '4201', name: 'Penerimaan Zakat', type: 'REVENUE', normalBalance: 'CREDIT', parentCode: '4200' },
+    { code: '4202', name: 'Penerimaan Infaq/Shodaqoh', type: 'REVENUE', normalBalance: 'CREDIT', parentCode: '4200' },
+    { code: '4203', name: 'Penerimaan Wakaf', type: 'REVENUE', normalBalance: 'CREDIT', parentCode: '4200' },
+    { code: '4204', name: 'Hibah Pemerintah (BOS/BOP)', type: 'REVENUE', normalBalance: 'CREDIT', parentCode: '4200' },
+
+    // 5. EXPENSES (BEBAN)
+    { code: '5100', name: 'BEBAN PROGRAM PENDIDIKAN & DAKWAH', type: 'EXPENSE', normalBalance: 'DEBIT' },
+    { code: '5101', name: 'Gaji & Honor Guru/Ustadz', type: 'EXPENSE', normalBalance: 'DEBIT', parentCode: '5100' },
+    { code: '5102', name: 'Tunjangan & Kesejahteraan Guru', type: 'EXPENSE', normalBalance: 'DEBIT', parentCode: '5100' },
+    { code: '5103', name: 'Beban Operasional KBM', type: 'EXPENSE', normalBalance: 'DEBIT', parentCode: '5100' },
+    { code: '5104', name: 'Beban Kegiatan Santri', type: 'EXPENSE', normalBalance: 'DEBIT', parentCode: '5100' },
+    { code: '5105', name: 'Penyaluran Beasiswa', type: 'EXPENSE', normalBalance: 'DEBIT', parentCode: '5100' },
+
+    { code: '5200', name: 'BEBAN UMUM & ADMINISTRASI', type: 'EXPENSE', normalBalance: 'DEBIT' },
+    { code: '5201', name: 'Gaji & Honor Staff Admin', type: 'EXPENSE', normalBalance: 'DEBIT', parentCode: '5200' },
+    { code: '5202', name: 'Listrik, Air, Internet', type: 'EXPENSE', normalBalance: 'DEBIT', parentCode: '5200' },
+    { code: '5203', name: 'Pemeliharaan Gedung & Aset', type: 'EXPENSE', normalBalance: 'DEBIT', parentCode: '5200' },
+    { code: '5204', name: 'ATK & Perlengkapan Kantor', type: 'EXPENSE', normalBalance: 'DEBIT', parentCode: '5200' },
+    { code: '5205', name: 'Beban Penyusutan', type: 'EXPENSE', normalBalance: 'DEBIT', parentCode: '5200' },
+
+    { code: '5300', name: 'BEBAN PENGGALANGAN DANA', type: 'EXPENSE', normalBalance: 'DEBIT' },
+    { code: '5301', name: 'Biaya Event & Sosialisasi', type: 'EXPENSE', normalBalance: 'DEBIT', parentCode: '5300' },
   ];
 
   const results = [];
+
+  // First pass: Create parent accounts
   for (const acc of defaultAccounts) {
+    if (acc.parentCode) continue;
+
     const existing = await prisma.accountCode.findUnique({
       where: { code: acc.code },
     });
@@ -376,6 +432,36 @@ export async function seedDefaultAccounts() {
         },
       });
       results.push(created);
+    }
+  }
+
+  // Second pass: Create child accounts and link to parents
+  for (const acc of defaultAccounts) {
+    if (!acc.parentCode) continue;
+
+    const existing = await prisma.accountCode.findUnique({
+      where: { code: acc.code },
+    });
+
+    if (!existing) {
+      // Find parent
+      const parent = await prisma.accountCode.findUnique({
+        where: { code: acc.parentCode },
+      });
+
+      if (parent) {
+        const created = await prisma.accountCode.create({
+          data: {
+            code: acc.code,
+            name: acc.name,
+            type: acc.type,
+            normalBalance: acc.normalBalance,
+            isActive: true,
+            parentId: parent.id,
+          },
+        });
+        results.push(created);
+      }
     }
   }
 

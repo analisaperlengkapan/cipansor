@@ -50,6 +50,9 @@ import {
   PieChart,
   Settings,
   Save,
+  CalendarRange,
+  Lock,
+  Unlock,
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -94,6 +97,50 @@ function formatCurrency(amount: number): string {
     maximumFractionDigits: 0,
   }).format(amount);
 }
+
+// --- NEW HOOKS FOR PERIODS ---
+const useFinancialPeriods = (unitId?: string) => {
+  return useQuery({
+    queryKey: ["financial-periods", unitId],
+    queryFn: async () => {
+      const res = await api.get("/finance-enhancement/financial-periods", {
+        params: { unitId },
+      });
+      return res.data.data;
+    },
+    enabled: !!unitId,
+  });
+};
+
+const useCreateFinancialPeriod = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: any) => {
+      const res = await api.post("/finance-enhancement/financial-periods", data);
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["financial-periods"] });
+    },
+  });
+};
+
+const useClosePeriod = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const res = await api.patch(
+        `/finance-enhancement/financial-periods/${id}/close`,
+      );
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["financial-periods"] });
+    },
+  });
+};
+
+// --- TABS COMPONENTS ---
 
 // Account Codes Tab
 function AccountCodesTab() {
@@ -613,6 +660,186 @@ function JournalEntriesTab() {
   );
 }
 
+// Financial Periods Tab
+function FinancialPeriodsTab() {
+  const { data: units } = useUnits();
+  const [selectedUnitId, setSelectedUnitId] = useState<string>("");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  // Auto-select first unit if available
+  useEffect(() => {
+    if (units && units.length > 0 && !selectedUnitId) {
+      setSelectedUnitId(units[0].id);
+    }
+  }, [units, selectedUnitId]);
+
+  const { data: periods, isLoading } = useFinancialPeriods(selectedUnitId);
+  const createPeriod = useCreateFinancialPeriod();
+  const closePeriod = useClosePeriod();
+
+  const handleCreate = async (formData: FormData) => {
+    if (!selectedUnitId) return;
+    try {
+      await createPeriod.mutateAsync({
+        unitId: selectedUnitId,
+        name: formData.get("name") as string,
+        startDate: formData.get("startDate") as string,
+        endDate: formData.get("endDate") as string,
+      });
+      toast.success("Periode berhasil dibuat");
+      setIsDialogOpen(false);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Gagal membuat periode");
+    }
+  };
+
+  const handleClose = async (id: string) => {
+    if (confirm("Apakah Anda yakin ingin menutup periode ini? Data tidak akan bisa diubah lagi.")) {
+      try {
+        await closePeriod.mutateAsync(id);
+        toast.success("Periode berhasil ditutup");
+      } catch (error: any) {
+        toast.error("Gagal menutup periode");
+      }
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row gap-4 justify-between">
+        <div className="w-[300px]">
+          <Label className="mb-2 block">Unit</Label>
+          <Select value={selectedUnitId} onValueChange={setSelectedUnitId}>
+            <SelectTrigger>
+              <SelectValue placeholder="Pilih Unit" />
+            </SelectTrigger>
+            <SelectContent>
+              {units?.map((unit: any) => (
+                <SelectItem key={unit.id} value={unit.id}>
+                  {unit.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="self-end">
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button disabled={!selectedUnitId}>
+                <Plus className="h-4 w-4 mr-2" />
+                Periode Baru
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <form action={handleCreate}>
+                <DialogHeader>
+                  <DialogTitle>Buat Periode Akuntansi</DialogTitle>
+                  <DialogDescription>
+                    Tentukan rentang tanggal untuk periode buku baru
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Nama Periode</Label>
+                    <Input id="name" name="name" placeholder="Januari 2024" required />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="startDate">Tanggal Mulai</Label>
+                      <Input id="startDate" name="startDate" type="date" required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="endDate">Tanggal Akhir</Label>
+                      <Input id="endDate" name="endDate" type="date" required />
+                    </div>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                    Batal
+                  </Button>
+                  <Button type="submit" disabled={createPeriod.isPending}>
+                    {createPeriod.isPending ? "Menyimpan..." : "Simpan"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
+
+      <Card>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nama Periode</TableHead>
+                <TableHead>Mulai</TableHead>
+                <TableHead>Selesai</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Aksi</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-8">
+                    <RefreshCw className="h-6 w-6 animate-spin mx-auto mb-2" />
+                    Memuat data...
+                  </TableCell>
+                </TableRow>
+              ) : !periods?.length ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                    Tidak ada periode ditemukan untuk unit ini.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                periods.map((period: any) => (
+                  <TableRow key={period.id}>
+                    <TableCell className="font-medium">{period.name}</TableCell>
+                    <TableCell>{format(new Date(period.startDate), "dd MMM yyyy", { locale: localeID })}</TableCell>
+                    <TableCell>{format(new Date(period.endDate), "dd MMM yyyy", { locale: localeID })}</TableCell>
+                    <TableCell>
+                      {period.isClosed ? (
+                        <Badge variant="secondary" className="bg-slate-100 text-slate-600 border-slate-200">
+                          <Lock className="h-3 w-3 mr-1" /> Ditutup
+                        </Badge>
+                      ) : (
+                        <Badge variant="default" className="bg-green-100 text-green-700 border-green-200 hover:bg-green-200">
+                          <Unlock className="h-3 w-3 mr-1" /> Terbuka
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {!period.isClosed && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleClose(period.id)}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          Tutup Periode
+                        </Button>
+                      )}
+                      {period.isClosed && period.closedBy && (
+                        <span className="text-xs text-muted-foreground">
+                          Oleh: {period.closedBy.name}
+                        </span>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 // Reports Tab
 function ReportsTab() {
   const currentDate = new Date();
@@ -1116,6 +1343,10 @@ export default function AccountingPage() {
               <FileText className="h-4 w-4" />
               Jurnal Umum
             </TabsTrigger>
+            <TabsTrigger value="periods" className="flex items-center gap-2">
+              <CalendarRange className="h-4 w-4" />
+              Periode Buku
+            </TabsTrigger>
             <TabsTrigger value="reports" className="flex items-center gap-2">
               <Calculator className="h-4 w-4" />
               Ringkasan Laporan
@@ -1132,6 +1363,10 @@ export default function AccountingPage() {
 
           <TabsContent value="journal-entries" className="mt-6">
             <JournalEntriesTab />
+          </TabsContent>
+
+          <TabsContent value="periods" className="mt-6">
+            <FinancialPeriodsTab />
           </TabsContent>
 
           <TabsContent value="reports" className="mt-6">

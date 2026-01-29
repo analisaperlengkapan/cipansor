@@ -85,7 +85,7 @@ export async function getBalanceSheet(unitId: string, date: Date): Promise<Balan
       total: liabilities.reduce((s, i) => s + i.amount, 0),
       items: liabilities,
     },
-    equity: { title: 'Ekuitas', total: equity.reduce((s, i) => s + i.amount, 0), items: equity },
+    equity: { title: 'Aset Neto (Ekuitas)', total: equity.reduce((s, i) => s + i.amount, 0), items: equity },
     periodDate: formatDate(date),
   };
 }

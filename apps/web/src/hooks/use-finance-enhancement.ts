@@ -411,6 +411,61 @@ export function useTrialBalanceReport(filters: {
   });
 }
 
+// ==================== FINANCIAL PERIODS ====================
+
+export function useFinancialPeriods(unitId?: string) {
+  return useQuery({
+    queryKey: ["financial-periods", unitId],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (unitId) params.append("unitId", unitId);
+
+      const response = await api.get(
+        `/finance-enhancement/financial-periods?${params}`,
+      );
+      return response.data.data;
+    },
+    enabled: !!unitId,
+  });
+}
+
+export function useCreateFinancialPeriod() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: {
+      unitId: string;
+      name: string;
+      startDate: string;
+      endDate: string;
+      notes?: string;
+    }) => {
+      const response = await api.post(
+        "/finance-enhancement/financial-periods",
+        data,
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["financial-periods"] });
+    },
+  });
+}
+
+export function useClosePeriod() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const response = await api.patch(
+        `/finance-enhancement/financial-periods/${id}/close`,
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["financial-periods"] });
+    },
+  });
+}
+
 export function useGeneralLedgerReport(filters: {
   unitId?: string;
   accountId: string;

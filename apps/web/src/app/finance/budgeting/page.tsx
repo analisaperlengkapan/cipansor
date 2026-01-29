@@ -22,25 +22,6 @@ import {
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { formatCurrency } from "@/lib/utils";
-// Extended type locally since shared package update is not propagated
-interface ExtendedBudget {
-  id: string;
-  unitId: string;
-  academicYearId: string;
-  accountId: string;
-  amount: number;
-  usedAmount: number;
-  notes?: string;
-  status: "DRAFT" | "PENDING_APPROVAL" | "APPROVED" | "REJECTED";
-  account: {
-    code: string;
-    name: string;
-  };
-  periodType: string;
-  approvedById?: string;
-  rejectionNote?: string;
-}
-
 import { Loader2, Plus, Pencil, Trash2, RefreshCw, CheckCircle, XCircle, Send, Info } from "lucide-react";
 import {
   AlertDialog,
@@ -68,6 +49,25 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
+
+// Extended type locally since shared package update is not propagated
+interface ExtendedBudget {
+  id: string;
+  unitId: string;
+  academicYearId: string;
+  accountId: string;
+  amount: number;
+  usedAmount: number;
+  notes?: string;
+  status: "DRAFT" | "PENDING_APPROVAL" | "APPROVED" | "REJECTED";
+  account: {
+    code: string;
+    name: string;
+  };
+  periodType: string;
+  approvedById?: string;
+  rejectionNote?: string;
+}
 
 // Helper Hooks
 const useBudgets = (unitId: string, academicYearId: string) => {
@@ -308,6 +308,7 @@ export default function BudgetingPage() {
             />
             Recalculate
           </Button>
+
           <Dialog open={isDialogOpen} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
               <Button disabled={!selectedUnitId || !selectedYearId}>
@@ -373,6 +374,8 @@ export default function BudgetingPage() {
             </form>
           </DialogContent>
         </Dialog>
+
+        </div>
       </div>
 
       <div className="flex gap-4">

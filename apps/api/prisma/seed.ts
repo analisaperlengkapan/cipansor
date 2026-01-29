@@ -37,6 +37,7 @@ import { seedWilayahIndonesia } from './seeds/wilayah-indonesia';
 import { seedKurikulumMerdeka, seedAccountCodes } from './seeds/kurikulum-merdeka';
 import { seedPAUDIndicators } from './seeds/paud-indicators';
 import { seedImmunizationReference } from './seeds/immunization-reference';
+import { seedQualityStandards } from './seeds/quality-standards';
 import { PERMISSIONS } from '../src/modules/roles/permissions';
 
 // RoleCode - All possible role codes in the system
@@ -3084,6 +3085,11 @@ async function main() {
   // ============================================
   await seedPAUDIndicators(prisma);
   await seedImmunizationReference(prisma);
+
+  // ============================================
+  // PHASE 13: Quality Assurance (SPMI)
+  // ============================================
+  await seedQualityStandards(prisma);
 
   console.log('\n✅ Database seeded successfully!');
 }

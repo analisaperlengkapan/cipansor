@@ -13,7 +13,7 @@ import { useActiveAcademicYear } from "@/hooks/use-academic-years";
 import { useQualityDashboard, useQualityStandards } from "@/hooks/use-quality";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, CheckCircle2, FileCheck } from "lucide-react";
+import { ArrowRight, CheckCircle2, FileCheck, MessageSquare } from "lucide-react";
 import Link from "next/link";
 
 export default function QualityDashboardPage() {
@@ -100,6 +100,25 @@ export default function QualityDashboardPage() {
               <Link href="/quality/audits">
                 <Button size="sm" className="w-full">
                   Buka Menu Audit <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Aduan & Aspirasi
+              </CardTitle>
+              <MessageSquare className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-sm text-muted-foreground mb-4">
+                Kelola aduan dan aspirasi dari civitas akademika.
+              </div>
+              <Link href="/quality/complaints">
+                <Button size="sm" className="w-full">
+                  Buka Menu Aduan <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
             </CardContent>

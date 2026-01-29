@@ -51,6 +51,7 @@ import {
   ShoppingBag,
   Key,
   MessageSquareWarning,
+  Scale,
   type LucideIcon,
 } from "lucide-react";
 
@@ -455,6 +456,16 @@ const parentNavigation: NavGroup[] = [
         title: "Penghargaan",
         href: "/parent/rewards",
         icon: Award,
+      },
+    ],
+  },
+  {
+    title: "Syariah",
+    items: [
+      {
+        title: "Manajemen Syariah",
+        href: "/sharia",
+        icon: Scale,
       },
     ],
   },
@@ -865,6 +876,16 @@ const adminNavigation: NavGroup[] = [
         title: "Rewards",
         href: "/rewards",
         icon: Award,
+      },
+    ],
+  },
+  {
+    title: "Syariah",
+    items: [
+      {
+        title: "Manajemen Syariah",
+        href: "/sharia",
+        icon: Scale,
       },
     ],
   },

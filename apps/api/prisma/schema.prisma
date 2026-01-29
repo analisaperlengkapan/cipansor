@@ -409,6 +409,9 @@ model User {
   assignedTasks                     ProjectTask[]               @relation("TaskAssignee")
   taskComments                      TaskComment[]
 
+  // Sharia Management
+  createdDistributions              ZiswafDistribution[]        @relation("DistributionCreator")
+
   @@index([email])
   @@index([role])
   @@index([unitId])
@@ -548,6 +551,10 @@ model Unit {
   // Risk Management
   risks                  Risk[]
   projects               Project[]
+
+  // Sharia Management
+  mustahiks              Mustahik[]
+  ziswafDistributions    ZiswafDistribution[]
 
   @@index([type])
   @@index([foundationId])
@@ -7346,4 +7353,71 @@ model TaskComment {
   @@index([taskId])
   @@map("task_comments")
 
+}
+
+// =====================================
+// SHARIA MANAGEMENT MODULE
+// =====================================
+
+enum AsnafType {
+  FAKIR
+  MISKIN
+  AMIL
+  MUALAF
+  RIQAB
+  GHARIM
+  FISABILILLAH
+  IBNU_SABIL
+  LAINNYA
+}
+
+model Mustahik {
+  id          String   @id @default(uuid())
+  unitId      String   @map("unit_id")
+  name        String
+  type        String   // INDIVIDU, LEMBAGA
+  asnafType   AsnafType
+  nik         String?
+  address     String?
+  phone       String?
+  email       String?
+  status      String   @default("ACTIVE")
+  notes       String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  unit        Unit     @relation(fields: [unitId], references: [id])
+  distributions ZiswafDistribution[]
+
+  @@index([unitId])
+  @@map("mustahiks")
+}
+
+model ZiswafDistribution {
+  id          String   @id @default(uuid())
+  unitId      String   @map("unit_id")
+  mustahikId  String   @map("mustahik_id")
+  programId   String?  @map("program_id") // Optional link to specific program
+  amount      Decimal  @db.Decimal(15, 2)
+  date        DateTime @default(now())
+  fundSource  String   // ZAKAT, INFAK, WAKAF
+  description String?  @db.Text
+
+  // Accounting Link
+  journalEntryId String? @map("journal_entry_id")
+
+  createdById String   @map("created_by_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  unit        Unit     @relation(fields: [unitId], references: [id])
+  mustahik    Mustahik @relation(fields: [mustahikId], references: [id])
+  createdBy   User     @relation("DistributionCreator", fields: [createdById], references: [id])
+
+  @@index([unitId])
+  @@index([mustahikId])
+  @@index([date])
+  @@map("ziswaf_distributions")
 }

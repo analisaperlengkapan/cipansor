@@ -52,6 +52,39 @@ router.get(
 
 /**
  * @swagger
+ * /api/violations/summary:
+ *   get:
+ *     summary: Get global violation summary
+ *     tags: [Violations]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: unitId
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: startDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *       - in: query
+ *         name: endDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *     responses:
+ *       200:
+ *         description: Global violation summary stats
+ */
+router.get(
+  '/summary',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
+  controller.getGlobalViolationSummary
+);
+
+/**
+ * @swagger
  * /api/violations/categories:
  *   get:
  *     summary: List violation categories

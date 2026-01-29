@@ -80,6 +80,29 @@ export async function deleteViolation(req: Request, res: Response, next: NextFun
   }
 }
 
+export async function getGlobalViolationSummary(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { unitId, startDate, endDate } = req.query;
+
+    // Authorization: If not SUPER_ADMIN, enforce unitId
+    // If user has unitId (e.g. UNIT_ADMIN), force use it.
+    // If user has NO unitId (e.g. SUPER_ADMIN), use query param or null.
+    const userUnitId = req.user?.unitId;
+    const targetUnitId = userUnitId ? userUnitId : (unitId as string);
+
+    const start = startDate ? new Date(startDate as string) : undefined;
+    const end = endDate ? new Date(endDate as string) : undefined;
+
+    const summary = await violationService.getGlobalViolationSummary(targetUnitId, start, end);
+    res.json({
+      success: true,
+      data: summary,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function getStudentViolationSummary(req: Request, res: Response, next: NextFunction) {
   try {
     const { studentId } = req.params;

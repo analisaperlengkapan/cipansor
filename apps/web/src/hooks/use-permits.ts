@@ -103,6 +103,23 @@ export function usePermits(params: PermitParams = {}) {
   });
 }
 
+export function usePermitStats(unitId?: string) {
+  return useQuery({
+    queryKey: ["permits", "stats", unitId],
+    queryFn: async () => {
+      const response = await api.get<{
+        pending: number;
+        approved: number;
+        active: number;
+        completed: number;
+      }>("/permits/stats", {
+        params: { unitId },
+      });
+      return response.data;
+    },
+  });
+}
+
 export function usePermit(id: string) {
   return useQuery({
     queryKey: ["permits", id],

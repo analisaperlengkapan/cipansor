@@ -792,6 +792,11 @@ const adminNavigation: NavGroup[] = [
     title: "Kesiswaan",
     items: [
       {
+        title: "Dashboard Kesantrian",
+        href: "/kesantrian",
+        icon: LayoutDashboard,
+      },
+      {
         title: "Ekstrakurikuler",
         href: "/extracurricular",
         icon: Drama,
@@ -1148,6 +1153,11 @@ const kepalaSekolahNavigation: NavGroup[] = [
   {
     title: "Kesiswaan",
     items: [
+      {
+        title: "Dashboard Kesantrian",
+        href: "/kesantrian",
+        icon: LayoutDashboard,
+      },
       {
         title: "Attendance",
         href: "/attendance",

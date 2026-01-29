@@ -14,6 +14,34 @@ router.use(authenticate);
 
 /**
  * @swagger
+ * /api/foundation/stats/assets:
+ *   get:
+ *     summary: Get asset overview analytics
+ *     tags: [Foundation - Analytics]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Asset overview including total value and condition stats
+ */
+router.get('/stats/assets', authorize(UserRole.SUPER_ADMIN), controller.getAssetOverview);
+
+/**
+ * @swagger
+ * /api/foundation/stats/hr:
+ *   get:
+ *     summary: Get HR overview analytics
+ *     tags: [Foundation - Analytics]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: HR overview including teacher certification and staffing distribution
+ */
+router.get('/stats/hr', authorize(UserRole.SUPER_ADMIN), controller.getHROverview);
+
+/**
+ * @swagger
  * /api/foundation:
  *   get:
  *     summary: List foundations

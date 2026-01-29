@@ -112,19 +112,41 @@ export async function getFinancialOverview(): Promise<FoundationFinancialOvervie
     select: { id: true, name: true },
   });
 
-  // Build by-unit breakdown with placeholder data
-  const byUnit = units.map((u) => ({
-    unitId: u.id,
-    unitName: u.name,
-    revenue: 0, // Placeholder - requires complex join through Invoice chain
-    expense: 0, // Placeholder - requires expense tracking per unit
-  }));
+  // Calculate Revenue per Unit (Credit sum of account starting with '4')
+  const revenueByUnit = await prisma.journalEntry.groupBy({
+    by: ['unitId'],
+    _sum: { credit: true },
+    where: {
+      date: { gte: startOfMonth, lte: endOfMonth },
+      account: { code: { startsWith: '4' } },
+    },
+  });
 
-  // Build units array with net income for PR #3 UI compatibility
-  const unitsWithNetIncome = byUnit.map((u) => ({
-    ...u,
-    netIncome: u.revenue - u.expense,
-  }));
+  // Calculate Expense per Unit (Debit sum of account starting with '5')
+  const expenseByUnit = await prisma.journalEntry.groupBy({
+    by: ['unitId'],
+    _sum: { debit: true },
+    where: {
+      date: { gte: startOfMonth, lte: endOfMonth },
+      account: { code: { startsWith: '5' } },
+    },
+  });
+
+  // Build by-unit breakdown with real data
+  const byUnit = units.map((u) => {
+    const rev = revenueByUnit.find((r) => r.unitId === u.id);
+    const exp = expenseByUnit.find((e) => e.unitId === u.id);
+    const revenue = Number(rev?._sum.credit || 0);
+    const expense = Number(exp?._sum.debit || 0);
+
+    return {
+      unitId: u.id,
+      unitName: u.name,
+      revenue,
+      expense,
+      netIncome: revenue - expense,
+    };
+  });
 
   // Get expense composition by account for pie chart
   const expensesByAccount = await prisma.journalEntry.groupBy({
@@ -156,7 +178,7 @@ export async function getFinancialOverview(): Promise<FoundationFinancialOvervie
     currentMonth: current,
     lastMonth: last,
     byUnit,
-    units: unitsWithNetIncome,
+    units: byUnit, // Alias for backward compatibility if needed
     expenseComposition,
   };
 }
@@ -204,4 +226,148 @@ export async function getUnitComparison(): Promise<FoundationUnitComparison[]> {
       averageGrade: 0, // Placeholder - requires complex grade aggregation
     };
   });
+}
+
+/**
+ * Get asset overview
+ * Total value, condition stats, category stats, unit breakdown
+ */
+export async function getAssetOverview() {
+  // Aggregate asset values by unit
+  // Note: Assuming 'purchasePrice' is the value to track.
+  // In a real scenario, book value (depreciated) might be better, but 'purchasePrice' is simpler.
+  const assets = await prisma.asset.findMany({
+    select: {
+      unitId: true,
+      purchasePrice: true,
+      condition: true,
+      categoryId: true,
+      category: { select: { name: true } },
+    },
+    where: { status: 'ACTIVE' }
+  });
+
+  const totalValue = assets.reduce((sum, asset) => sum + Number(asset.purchasePrice || 0), 0);
+  const totalCount = assets.length;
+
+  // Condition Stats
+  const conditionStats = assets.reduce((acc, asset) => {
+    const condition = asset.condition || 'UNKNOWN';
+    acc[condition] = (acc[condition] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const conditions = Object.keys(conditionStats).map(key => ({
+    name: key,
+    value: conditionStats[key]
+  }));
+
+  // Category Stats
+  const categoryStats = assets.reduce((acc, asset) => {
+    const category = asset.category?.name || 'Uncategorized';
+    acc[category] = (acc[category] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const categories = Object.keys(categoryStats).map(key => ({
+    name: key,
+    value: categoryStats[key]
+  }));
+
+  // Unit Breakdown
+  const units = await prisma.unit.findMany({ select: { id: true, name: true } });
+  const byUnit = units.map(u => {
+    const unitAssets = assets.filter(a => a.unitId === u.id);
+    const value = unitAssets.reduce((sum, a) => sum + Number(a.purchasePrice || 0), 0);
+    return {
+      unitId: u.id,
+      unitName: u.name,
+      assetCount: unitAssets.length,
+      totalValue: value
+    };
+  });
+
+  return {
+    totalValue,
+    totalCount,
+    conditions,
+    categories,
+    byUnit
+  };
+}
+
+/**
+ * Get HR overview
+ * Teacher certification stats, Staffing distribution
+ */
+export async function getHROverview() {
+  const units = await prisma.unit.findMany({
+    select: { id: true, name: true }
+  });
+
+  // Get Teachers
+  const teachers = await prisma.teacher.findMany({
+    select: {
+      unitId: true,
+      certificationStatus: true,
+      employmentStatus: true,
+    },
+    where: {
+       deletedAt: null
+    }
+  });
+
+  // Get Staff
+  const staff = await prisma.staff.findMany({
+    select: { unitId: true },
+    where: { deletedAt: null }
+  });
+
+  // Aggregate Certification Status
+  const certificationStats = teachers.reduce((acc, teacher) => {
+    const status = teacher.certificationStatus || 'BELUM_SERTIFIKASI';
+    acc[status] = (acc[status] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const certifications = Object.keys(certificationStats).map(key => ({
+    name: key.replace('_', ' '),
+    value: certificationStats[key]
+  }));
+
+  // Aggregate Employment Status
+  const employmentStats = teachers.reduce((acc, teacher) => {
+    const status = teacher.employmentStatus || 'UNKNOWN';
+    acc[status] = (acc[status] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const employmentStatus = Object.keys(employmentStats).map(key => ({
+    name: key.replace('_', ' '),
+    value: employmentStats[key]
+  }));
+
+  // Unit Breakdown
+  const byUnit = units.map(u => {
+    const unitTeachers = teachers.filter(t => t.unitId === u.id);
+    const unitStaff = staff.filter(s => s.unitId === u.id);
+    const certifiedCount = unitTeachers.filter(t => t.certificationStatus === 'SUDAH_SERTIFIKASI').length;
+
+    return {
+      unitId: u.id,
+      unitName: u.name,
+      teacherCount: unitTeachers.length,
+      staffCount: unitStaff.length,
+      certifiedTeacherCount: certifiedCount,
+      certificationRatio: unitTeachers.length > 0 ? (certifiedCount / unitTeachers.length) * 100 : 0
+    };
+  });
+
+  return {
+    totalTeachers: teachers.length,
+    totalStaff: staff.length,
+    certifications,
+    employmentStatus,
+    byUnit
+  };
 }

@@ -25,6 +25,24 @@ export async function getFoundations(req: Request, res: Response, next: NextFunc
   }
 }
 
+export async function getAssetOverview(req: Request, res: Response, next: NextFunction) {
+  try {
+    const overview = await analyticsService.getAssetOverview();
+    res.json({ success: true, data: overview });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getHROverview(req: Request, res: Response, next: NextFunction) {
+  try {
+    const overview = await analyticsService.getHROverview();
+    res.json({ success: true, data: overview });
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function getFoundationById(req: Request, res: Response, next: NextFunction) {
   try {
     const foundation = await service.getFoundationById(req.params.id);

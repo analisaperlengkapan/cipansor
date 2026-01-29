@@ -51,6 +51,8 @@ import {
   useFoundationBoardMembers,
   useDeleteFoundationBoardMember,
   useFinancialSummary,
+  useAssetOverview,
+  useHROverview,
   DOCUMENT_TYPE_LABELS,
   type DocumentType,
 } from "@/hooks";
@@ -87,6 +89,8 @@ import {
   DollarSign,
   TrendingUp,
   TrendingDown,
+  Package,
+  Briefcase,
 } from "lucide-react";
 import { format, isPast, isBefore, addMonths } from "date-fns";
 import { id } from "date-fns/locale";
@@ -102,6 +106,8 @@ export default function FoundationPage() {
   const { data: documents } = useFoundationDocuments();
   const { data: boardMembers } = useFoundationBoardMembers();
   const { data: financialSummary } = useFinancialSummary(foundation?.id);
+  const { data: assetOverview } = useAssetOverview();
+  const { data: hrOverview } = useHROverview();
   const updateFoundation = useUpdateFoundation();
   const deleteDocument = useDeleteFoundationDocument();
   const deleteBoardMember = useDeleteFoundationBoardMember();
@@ -217,6 +223,14 @@ export default function FoundationPage() {
             <TabsTrigger value="financial" className="flex items-center gap-2">
               <DollarSign className="h-4 w-4" />
               Keuangan
+            </TabsTrigger>
+            <TabsTrigger value="assets" className="flex items-center gap-2">
+              <Package className="h-4 w-4" />
+              Aset
+            </TabsTrigger>
+            <TabsTrigger value="hr" className="flex items-center gap-2">
+              <Briefcase className="h-4 w-4" />
+              HR
             </TabsTrigger>
           </TabsList>
 
@@ -924,6 +938,379 @@ export default function FoundationPage() {
                           className="text-center py-8 text-muted-foreground"
                         >
                           Belum ada data transaksi
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Assets Tab */}
+          <TabsContent value="assets" className="space-y-6">
+            <div>
+              <h2 className="text-xl font-semibold">Ringkasan Aset</h2>
+              <p className="text-sm text-muted-foreground">
+                Overview aset dan inventaris yayasan
+              </p>
+            </div>
+
+            {/* KPI Cards */}
+            <div className="grid gap-4 md:grid-cols-2">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Total Nilai Aset
+                  </CardTitle>
+                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {formatCurrency(assetOverview?.totalValue || 0)}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Akumulasi nilai pembelian aset aktif
+                  </p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Total Item Aset
+                  </CardTitle>
+                  <Package className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {assetOverview?.totalCount || 0}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Unit barang terdaftar
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Charts */}
+            <div className="grid gap-4 md:grid-cols-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Kondisi Aset</CardTitle>
+                  <CardDescription>Distribusi kondisi fisik aset</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[300px]">
+                    {assetOverview?.conditions?.length ? (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={assetOverview.conditions}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            outerRadius={100}
+                            fill="#8884d8"
+                            dataKey="value"
+                            nameKey="name"
+                            label={({ name, percent }) =>
+                              `${name} ${(percent * 100).toFixed(0)}%`
+                            }
+                          >
+                            {assetOverview.conditions.map((entry, index) => (
+                              <Cell
+                                key={`cell-${index}`}
+                                fill={COLORS[index % COLORS.length]}
+                              />
+                            ))}
+                          </Pie>
+                          <Tooltip />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="flex h-full items-center justify-center text-muted-foreground">
+                        Belum ada data
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Kategori Aset</CardTitle>
+                  <CardDescription>Jumlah aset per kategori</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[300px]">
+                    {assetOverview?.categories?.length ? (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={assetOverview.categories}
+                          layout="vertical"
+                          margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                          <XAxis type="number" hide />
+                          <YAxis
+                            dataKey="name"
+                            type="category"
+                            width={100}
+                            fontSize={12}
+                            tickLine={false}
+                            axisLine={false}
+                          />
+                          <Tooltip />
+                          <Bar
+                            dataKey="value"
+                            fill="#82ca9d"
+                            radius={[0, 4, 4, 0]}
+                            barSize={20}
+                          />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="flex h-full items-center justify-center text-muted-foreground">
+                        Belum ada data
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Unit Breakdown Table */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Aset per Unit</CardTitle>
+                <CardDescription>
+                  Distribusi aset berdasarkan unit pendidikan
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nama Unit</TableHead>
+                      <TableHead className="text-right">Jumlah Aset</TableHead>
+                      <TableHead className="text-right">Total Nilai</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {assetOverview?.byUnit?.length ? (
+                      assetOverview.byUnit.map((unit) => (
+                        <TableRow key={unit.unitId}>
+                          <TableCell className="font-medium">
+                            {unit.unitName}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {unit.assetCount}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {formatCurrency(unit.totalValue)}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell
+                          colSpan={3}
+                          className="text-center py-8 text-muted-foreground"
+                        >
+                          Belum ada data
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* HR Tab */}
+          <TabsContent value="hr" className="space-y-6">
+            <div>
+              <h2 className="text-xl font-semibold">Sumber Daya Manusia</h2>
+              <p className="text-sm text-muted-foreground">
+                Statistik tenaga pendidik dan kependidikan
+              </p>
+            </div>
+
+            {/* KPI Cards */}
+            <div className="grid gap-4 md:grid-cols-2">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Total Guru
+                  </CardTitle>
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {hrOverview?.totalTeachers || 0}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Tenaga pengajar aktif di semua unit
+                  </p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Total Staff
+                  </CardTitle>
+                  <Briefcase className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {hrOverview?.totalStaff || 0}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Tenaga kependidikan aktif
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Charts */}
+            <div className="grid gap-4 md:grid-cols-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Status Sertifikasi Guru</CardTitle>
+                  <CardDescription>
+                    Distribusi guru berdasarkan sertifikasi
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[300px]">
+                    {hrOverview?.certifications?.length ? (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={hrOverview.certifications}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            outerRadius={100}
+                            fill="#8884d8"
+                            dataKey="value"
+                            nameKey="name"
+                            label={({ name, percent }) =>
+                              `${name} ${(percent * 100).toFixed(0)}%`
+                            }
+                          >
+                            {hrOverview.certifications.map((entry, index) => (
+                              <Cell
+                                key={`cell-${index}`}
+                                fill={COLORS[index % COLORS.length]}
+                              />
+                            ))}
+                          </Pie>
+                          <Tooltip />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="flex h-full items-center justify-center text-muted-foreground">
+                        Belum ada data
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Status Kepegawaian</CardTitle>
+                  <CardDescription>
+                    Distribusi guru berdasarkan status
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[300px]">
+                    {hrOverview?.employmentStatus?.length ? (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={hrOverview.employmentStatus}
+                          layout="vertical"
+                          margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
+                        >
+                          <CartesianGrid
+                            strokeDasharray="3 3"
+                            horizontal={false}
+                          />
+                          <XAxis type="number" hide />
+                          <YAxis
+                            dataKey="name"
+                            type="category"
+                            width={100}
+                            fontSize={12}
+                            tickLine={false}
+                            axisLine={false}
+                          />
+                          <Tooltip />
+                          <Bar
+                            dataKey="value"
+                            fill="#8884d8"
+                            radius={[0, 4, 4, 0]}
+                            barSize={20}
+                          />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="flex h-full items-center justify-center text-muted-foreground">
+                        Belum ada data
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Unit Breakdown Table */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Staffing per Unit</CardTitle>
+                <CardDescription>
+                  Distribusi SDM berdasarkan unit pendidikan
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nama Unit</TableHead>
+                      <TableHead className="text-right">Jumlah Guru</TableHead>
+                      <TableHead className="text-right">Jumlah Staff</TableHead>
+                      <TableHead className="text-right">
+                        % Guru Tersertifikasi
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {hrOverview?.byUnit?.length ? (
+                      hrOverview.byUnit.map((unit) => (
+                        <TableRow key={unit.unitId}>
+                          <TableCell className="font-medium">
+                            {unit.unitName}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {unit.teacherCount}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {unit.staffCount}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {unit.certificationRatio.toFixed(1)}%
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell
+                          colSpan={4}
+                          className="text-center py-8 text-muted-foreground"
+                        >
+                          Belum ada data
                         </TableCell>
                       </TableRow>
                     )}

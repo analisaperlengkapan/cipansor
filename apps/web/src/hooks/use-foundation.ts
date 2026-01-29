@@ -158,6 +158,56 @@ export function useFinancialSummary(foundationId?: string) {
   });
 }
 
+// Asset Overview Types and Hooks
+export interface AssetOverview {
+  totalValue: number;
+  totalCount: number;
+  conditions: { name: string; value: number }[];
+  categories: { name: string; value: number }[];
+  byUnit: {
+    unitId: string;
+    unitName: string;
+    assetCount: number;
+    totalValue: number;
+  }[];
+}
+
+export function useAssetOverview() {
+  return useQuery({
+    queryKey: ["foundation-asset-overview"],
+    queryFn: async () => {
+      const response = await api.get("/foundation/stats/assets");
+      return response.data.data as AssetOverview;
+    },
+  });
+}
+
+// HR Overview Types and Hooks
+export interface HROverview {
+  totalTeachers: number;
+  totalStaff: number;
+  certifications: { name: string; value: number }[];
+  employmentStatus: { name: string; value: number }[];
+  byUnit: {
+    unitId: string;
+    unitName: string;
+    teacherCount: number;
+    staffCount: number;
+    certifiedTeacherCount: number;
+    certificationRatio: number;
+  }[];
+}
+
+export function useHROverview() {
+  return useQuery({
+    queryKey: ["foundation-hr-overview"],
+    queryFn: async () => {
+      const response = await api.get("/foundation/stats/hr");
+      return response.data.data as HROverview;
+    },
+  });
+}
+
 // Document queries
 export function useFoundationDocuments() {
   return useQuery({

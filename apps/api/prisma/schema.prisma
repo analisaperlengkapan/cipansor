@@ -346,6 +346,7 @@ model User {
   merdekaGrades                     MerdekaAssessmentResult[]   @relation("MerdekaGrader")
   journalEntries                    JournalEntry[]              @relation("JournalCreator")
   createdBudgets                    Budget[]                    @relation("BudgetCreator")
+  approvedBudgets                   Budget[]                    @relation("BudgetApprover")
   closedPeriods                     FinancialPeriod[]           @relation("PeriodCloser")
   walletTransactions                WalletTransaction[]         @relation("WalletTransactor")
   // Canteen relations
@@ -4666,6 +4667,13 @@ model AccountCode {
   @@map("account_codes")
 }
 
+enum BudgetStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+}
+
 /// Budget - Anggaran Keuangan
 model Budget {
   id             String   @id @default(uuid())
@@ -4676,6 +4684,13 @@ model Budget {
   usedAmount     Decimal  @default(0) @map("used_amount") @db.Decimal(15, 2) // Cache current usage
   periodType     String   @default("YEARLY") @map("period_type") // YEARLY, MONTHLY
   notes          String?
+
+  // Status & Approval
+  status         BudgetStatus @default(DRAFT)
+  approvedById   String?      @map("approved_by_id")
+  approvedAt     DateTime?    @map("approved_at")
+  rejectionNote  String?      @map("rejection_note")
+
   createdById    String   @map("created_by_id")
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
@@ -4684,10 +4699,12 @@ model Budget {
   academicYear AcademicYear @relation(fields: [academicYearId], references: [id])
   account      AccountCode  @relation(fields: [accountId], references: [id])
   createdBy    User         @relation("BudgetCreator", fields: [createdById], references: [id])
+  approvedBy   User?        @relation("BudgetApprover", fields: [approvedById], references: [id])
   purchaseRequestItems PurchaseRequestItem[]
 
   @@unique([unitId, academicYearId, accountId])
   @@index([unitId])
+  @@index([status])
   @@map("budgets")
 }
 

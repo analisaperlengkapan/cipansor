@@ -11,7 +11,7 @@ import {
   UpdateBudgetInput,
   CreateFinancialPeriodInput,
 } from '@cipansor/shared';
-import { createBudget, updateBudget, getBudgets, deleteBudget, recalculateBudgetUsage } from './budget.service';
+import { createBudget, updateBudget, updateBudgetStatus, getBudgets, deleteBudget, recalculateBudgetUsage } from './budget.service';
 import { createFinancialPeriod, closePeriod, getFinancialPeriods } from './period.service';
 import {
   getBalanceSheet,
@@ -414,6 +414,19 @@ export class FinanceEnhancementController {
       const { id } = req.params;
       const input: UpdateBudgetInput = req.body;
       const result = await updateBudget(id, input);
+      res.json({ success: true, data: result });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async updateBudgetStatus(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const { status, note } = req.body;
+      const userId = (req as any).user.id;
+
+      const result = await updateBudgetStatus(id, status, userId, note);
       res.json({ success: true, data: result });
     } catch (error) {
       next(error);

@@ -22,8 +22,26 @@ import {
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { formatCurrency } from "@/lib/utils";
-import { Budget } from "@cipansor/shared";
-import { Loader2, Plus, Pencil, Trash2, RefreshCw } from "lucide-react";
+// Extended type locally since shared package update is not propagated
+interface ExtendedBudget {
+  id: string;
+  unitId: string;
+  academicYearId: string;
+  accountId: string;
+  amount: number;
+  usedAmount: number;
+  notes?: string;
+  status: "DRAFT" | "PENDING_APPROVAL" | "APPROVED" | "REJECTED";
+  account: {
+    code: string;
+    name: string;
+  };
+  periodType: string;
+  approvedById?: string;
+  rejectionNote?: string;
+}
+
+import { Loader2, Plus, Pencil, Trash2, RefreshCw, CheckCircle, XCircle, Send, Info } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -42,10 +60,14 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 
 // Helper Hooks
 const useBudgets = (unitId: string, academicYearId: string) => {
@@ -55,7 +77,7 @@ const useBudgets = (unitId: string, academicYearId: string) => {
       const res = await api.get(`/finance-enhancement/budgets`, {
         params: { unitId, academicYearId },
       });
-      return res.data.data;
+      return res.data.data as ExtendedBudget[];
     },
     enabled: !!unitId && !!academicYearId,
   });
@@ -124,6 +146,21 @@ const useUpdateBudget = () => {
   });
 };
 
+const useUpdateBudgetStatus = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, status, note }: { id: string; status: string; note?: string }) =>
+      api.patch(`/finance-enhancement/budgets/${id}/status`, { status, note }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["budgets"] });
+      toast.success("Budget status updated");
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || "Failed to update status");
+    },
+  });
+};
+
 const useRecalculateBudget = () => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -137,6 +174,19 @@ const useRecalculateBudget = () => {
       toast.error(err.response?.data?.message || "Failed to recalculate");
     },
   });
+};
+
+const StatusBadge = ({ status }: { status: string }) => {
+  switch (status) {
+    case "APPROVED":
+      return <Badge className="bg-green-500">Approved</Badge>;
+    case "PENDING_APPROVAL":
+      return <Badge className="bg-yellow-500">Pending</Badge>;
+    case "REJECTED":
+      return <Badge variant="destructive">Rejected</Badge>;
+    default:
+      return <Badge variant="secondary">Draft</Badge>;
+  }
 };
 
 export default function BudgetingPage() {
@@ -154,6 +204,7 @@ export default function BudgetingPage() {
   const createBudget = useCreateBudget();
   const deleteBudget = useDeleteBudget();
   const updateBudget = useUpdateBudget();
+  const updateStatus = useUpdateBudgetStatus();
   const recalculateBudget = useRecalculateBudget();
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -164,6 +215,12 @@ export default function BudgetingPage() {
     notes: "",
   });
 
+  const [rejectDialog, setRejectDialog] = useState<{ isOpen: boolean; id: string | null }>({
+    isOpen: false,
+    id: null,
+  });
+  const [rejectionNote, setRejectionNote] = useState("");
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -173,7 +230,6 @@ export default function BudgetingPage() {
           data: {
             amount: formData.amount,
             notes: formData.notes,
-            // periodType is optional, defaulting to YEARLY if not present in form
           },
         });
         toast.success("Success", { description: "Budget updated successfully" });
@@ -195,7 +251,7 @@ export default function BudgetingPage() {
     }
   };
 
-  const handleEdit = (budget: Budget) => {
+  const handleEdit = (budget: ExtendedBudget) => {
     setEditingId(budget.id);
     setFormData({
       accountId: budget.accountId,
@@ -210,6 +266,18 @@ export default function BudgetingPage() {
     if (!open) {
       setEditingId(null);
       setFormData({ accountId: "", amount: 0, notes: "" });
+    }
+  };
+
+  const handleRejectSubmit = () => {
+    if (rejectDialog.id) {
+      updateStatus.mutate({
+        id: rejectDialog.id,
+        status: "REJECTED",
+        note: rejectionNote,
+      });
+      setRejectDialog({ isOpen: false, id: null });
+      setRejectionNote("");
     }
   };
 
@@ -354,11 +422,12 @@ export default function BudgetingPage() {
                   <TableHead>Terpakai</TableHead>
                   <TableHead>Sisa</TableHead>
                   <TableHead>%</TableHead>
+                  <TableHead>Status</TableHead>
                   <TableHead>Aksi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {budgets?.map((budget: Budget) => {
+                {budgets?.map((budget: ExtendedBudget) => {
                   const percentage =
                     budget.amount > 0
                       ? (budget.usedAmount / budget.amount) * 100
@@ -387,7 +456,7 @@ export default function BudgetingPage() {
                       <TableCell className="text-right font-bold text-muted-foreground">
                         {formatCurrency(budget.amount - budget.usedAmount)}
                       </TableCell>
-                      <TableCell className="w-[200px]">
+                      <TableCell className="w-[120px]">
                         <div className="flex flex-col gap-1">
                           <div className="flex justify-between text-xs">
                             <span>{percentage.toFixed(1)}%</span>
@@ -399,38 +468,122 @@ export default function BudgetingPage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEdit(budget)}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="sm" className="text-destructive">
-                                <Trash2 className="h-4 w-4" />
+                        <div className="flex items-center gap-1">
+                          <StatusBadge status={budget.status} />
+                          {budget.status === "REJECTED" && budget.rejectionNote && (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger>
+                                  <Info className="h-4 w-4 text-destructive" />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>{budget.rejectionNote}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          {budget.status === "DRAFT" && (
+                            <>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8 text-blue-600"
+                                      onClick={() => updateStatus.mutate({ id: budget.id, status: "PENDING_APPROVAL" })}
+                                    >
+                                      <Send className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Submit for Approval</TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => handleEdit(budget)}
+                              >
+                                <Pencil className="h-4 w-4" />
                               </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  This action cannot be undone. This will permanently delete the budget for {budget.account?.name}.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => deleteBudget.mutate(budget.id)}
-                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                >
-                                  Delete
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive">
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      This action cannot be undone.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() => deleteBudget.mutate(budget.id)}
+                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                    >
+                                      Delete
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </>
+                          )}
+
+                          {budget.status === "PENDING_APPROVAL" && (
+                            <>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8 text-green-600"
+                                      onClick={() => updateStatus.mutate({ id: budget.id, status: "APPROVED" })}
+                                    >
+                                      <CheckCircle className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Approve</TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8 text-red-600"
+                                      onClick={() => setRejectDialog({ isOpen: true, id: budget.id })}
+                                    >
+                                      <XCircle className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Reject</TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </>
+                          )}
+
+                          {budget.status === "REJECTED" && (
+                             <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => handleEdit(budget)}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -439,7 +592,7 @@ export default function BudgetingPage() {
                 {!budgets?.length && (
                   <TableRow>
                     <TableCell
-                      colSpan={7}
+                      colSpan={8}
                       className="text-center py-8 text-muted-foreground"
                     >
                       Belum ada data anggaran.
@@ -451,6 +604,35 @@ export default function BudgetingPage() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={rejectDialog.isOpen} onOpenChange={(open) => !open && setRejectDialog({ isOpen: false, id: null })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reject Budget Proposal</DialogTitle>
+            <DialogDescription>
+              Please provide a reason for rejecting this budget.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Rejection Note</Label>
+              <Textarea
+                value={rejectionNote}
+                onChange={(e) => setRejectionNote(e.target.value)}
+                placeholder="Reason for rejection..."
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRejectDialog({ isOpen: false, id: null })}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleRejectSubmit} disabled={!rejectionNote.trim()}>
+              Reject
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

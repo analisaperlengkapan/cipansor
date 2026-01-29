@@ -1,5 +1,5 @@
 import { prisma } from '../../lib/prisma';
-import { Prisma } from '@prisma/client';
+import { Prisma, BudgetStatus } from '@prisma/client';
 import { CreateBudgetInput, UpdateBudgetInput } from '@cipansor/shared';
 
 export async function createBudget(data: CreateBudgetInput & { createdById: string }) {
@@ -28,6 +28,7 @@ export async function createBudget(data: CreateBudgetInput & { createdById: stri
       amount: new Prisma.Decimal(amount),
       periodType: periodType || 'YEARLY',
       notes,
+      status: BudgetStatus.DRAFT,
       createdBy: { connect: { id: createdById } },
     },
     include: {
@@ -37,8 +38,46 @@ export async function createBudget(data: CreateBudgetInput & { createdById: stri
   });
 }
 
+export async function updateBudgetStatus(
+  id: string,
+  status: BudgetStatus,
+  userId: string,
+  note?: string
+) {
+  const budget = await prisma.budget.findUnique({ where: { id } });
+  if (!budget) throw new Error('Budget not found');
+
+  const updateData: Prisma.BudgetUpdateInput = { status };
+
+  if (status === BudgetStatus.APPROVED) {
+    updateData.approvedBy = { connect: { id: userId } };
+    updateData.approvedAt = new Date();
+  } else if (status === BudgetStatus.REJECTED && note) {
+    updateData.rejectionNote = note;
+  }
+
+  return prisma.budget.update({
+    where: { id },
+    data: updateData,
+    include: {
+      account: true,
+      approvedBy: { select: { id: true, name: true } },
+    },
+  });
+}
+
 export async function updateBudget(id: string, data: UpdateBudgetInput) {
   const { amount, periodType, notes } = data;
+
+  // Check current status
+  const currentBudget = await prisma.budget.findUnique({ where: { id } });
+  if (!currentBudget) throw new Error('Budget not found');
+
+  let statusUpdate = {};
+  // If modifying a REJECTED or APPROVED budget, reset to DRAFT to force re-approval
+  if (currentBudget.status === BudgetStatus.REJECTED || currentBudget.status === BudgetStatus.APPROVED) {
+    statusUpdate = { status: BudgetStatus.DRAFT };
+  }
 
   return prisma.budget.update({
     where: { id },
@@ -46,6 +85,7 @@ export async function updateBudget(id: string, data: UpdateBudgetInput) {
       ...(amount !== undefined && { amount: new Prisma.Decimal(amount) }),
       ...(periodType && { periodType }),
       ...(notes !== undefined && { notes }),
+      ...statusUpdate,
     },
     include: {
       account: true,

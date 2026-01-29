@@ -33,6 +33,13 @@ const updateBudgetSchema = z.object({
   }),
 });
 
+const updateBudgetStatusSchema = z.object({
+  body: z.object({
+    status: z.enum(['PENDING_APPROVAL', 'APPROVED', 'REJECTED']),
+    note: z.string().optional(),
+  }),
+});
+
 const createFinancialPeriodSchema = z.object({
   body: z.object({
     unitId: z.string().uuid(),
@@ -173,6 +180,13 @@ router.put(
   authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
   validate(updateBudgetSchema),
   financeEnhancementController.updateBudget
+);
+
+router.patch(
+  '/budgets/:id/status',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  validate(updateBudgetStatusSchema),
+  financeEnhancementController.updateBudgetStatus
 );
 
 router.delete(

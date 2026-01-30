@@ -37,8 +37,8 @@ const createFinancialPeriodSchema = z.object({
   body: z.object({
     unitId: z.string().uuid(),
     name: z.string().min(1),
-    startDate: z.string().datetime().or(z.date()),
-    endDate: z.string().datetime().or(z.date()),
+    startDate: z.coerce.date(),
+    endDate: z.coerce.date(),
     notes: z.string().optional(),
   }),
 });

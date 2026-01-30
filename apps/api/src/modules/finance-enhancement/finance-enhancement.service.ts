@@ -160,12 +160,23 @@ export class FinanceEnhancementService {
   async createJournalEntry(
     input: CreateJournalEntryInput & { createdById: string }
   ): Promise<JournalEntry> {
-    // Check if period is closed
-    const entryDate = new Date(input.date);
-    await checkPeriodStatus(input.unitId, entryDate);
-
     // Use transaction to ensure consistency
     const result = await prisma.$transaction(async (tx) => {
+      const entryDate = new Date(input.date);
+
+      // Check period status inside transaction to prevent race conditions
+      const period = await tx.financialPeriod.findFirst({
+        where: {
+          unitId: input.unitId,
+          startDate: { lte: entryDate },
+          endDate: { gte: entryDate },
+        },
+      });
+
+      if (period && period.isClosed) {
+        throw new Error(`Financial period for ${entryDate.toISOString()} is closed.`);
+      }
+
       // 1. Create Journal Entry
       const entry = await tx.journalEntry.create({
         data: {

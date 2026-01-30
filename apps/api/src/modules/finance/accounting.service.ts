@@ -124,10 +124,20 @@ export async function createManualJournal(data: {
   }[];
   createdById: string;
 }) {
-  // Check if the period is closed
-  await checkPeriodStatus(data.unitId, data.date);
-
   return prisma.$transaction(async (tx) => {
+    // Check if the period is closed inside transaction
+    const period = await tx.financialPeriod.findFirst({
+      where: {
+        unitId: data.unitId,
+        startDate: { lte: data.date },
+        endDate: { gte: data.date },
+      },
+    });
+
+    if (period && period.isClosed) {
+      throw new Error(`Financial period for ${data.date.toISOString()} is closed.`);
+    }
+
     // Validate balance
     const totalDebit = data.entries.reduce((sum, e) => sum + e.debit, 0);
     const totalCredit = data.entries.reduce((sum, e) => sum + e.credit, 0);

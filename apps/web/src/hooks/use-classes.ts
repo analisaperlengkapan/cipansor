@@ -14,6 +14,7 @@ export interface ClassListParams {
   unitId?: string;
   grade?: number;
   academicYearId?: string;
+  isActive?: boolean;
 }
 
 // Ensure the local type usage aligns with shared type or just use shared type directly.

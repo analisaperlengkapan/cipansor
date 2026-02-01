@@ -18,7 +18,7 @@ import Link from "next/link";
 
 export default function QualityDashboardPage() {
   const { user } = useAuth();
-  const { activeAcademicYear } = useActiveAcademicYear();
+  const { data: activeAcademicYear } = useActiveAcademicYear();
   const unitId = user?.unitId;
 
   const { data: dashboardData, isLoading } = useQualityDashboard(

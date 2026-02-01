@@ -67,6 +67,7 @@ export interface SimaanExam {
   fashohaScore?: number;
   tartilScore?: number;
   grade?: "MUMTAZ" | "JAYYID_JIDDAN" | "JAYYID" | "MAQBUL" | "RASIB";
+  status?: "SCHEDULED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
   passed: boolean;
   notes?: string;
   recommendations?: string;
@@ -75,6 +76,7 @@ export interface SimaanExam {
   student?: {
     id: string;
     nis: string;
+    photoUrl?: string | null;
     user?: {
       name: string;
     };
@@ -98,6 +100,7 @@ export interface SimaanFilters {
   dateFrom?: string;
   dateTo?: string;
   passed?: boolean;
+  status?: string;
 }
 
 export interface CreateSimaanData {
@@ -136,6 +139,22 @@ export interface SubmitScoresData {
   recommendations?: string;
 }
 
+export interface SimaanResponse {
+  data: SimaanExam[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+  summary?: {
+    scheduled: number;
+    inProgress: number;
+    completed: number;
+    averageGrade: number;
+  };
+}
+
 // Query Keys
 export const simaanKeys = {
   all: ["simaan"] as const,
@@ -159,7 +178,7 @@ export function useSimaanExams(filters: SimaanFilters = {}) {
         }
       });
       const response = await apiClient.get(`/simaan?${params.toString()}`);
-      return response.data;
+      return response.data as SimaanResponse;
     },
   });
 }

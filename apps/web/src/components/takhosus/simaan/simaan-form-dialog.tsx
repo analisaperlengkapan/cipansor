@@ -56,8 +56,8 @@ const formSchema = z
   .object({
     simaanType: z.string(),
     examDate: z.date(),
-    sessionNumber: z.coerce.number().min(1).default(1),
-    totalSessions: z.coerce.number().min(1).default(1),
+    sessionNumber: z.coerce.number().min(1),
+    totalSessions: z.coerce.number().min(1),
     juzStart: z.coerce.number().min(1).max(30),
     juzEnd: z.coerce.number().min(1).max(30),
     overallScore: z.coerce.number().min(0).max(100).optional(),
@@ -65,7 +65,7 @@ const formSchema = z
     fashohaScore: z.coerce.number().min(0).max(100).optional(),
     tartilScore: z.coerce.number().min(0).max(100).optional(),
     grade: z.string().optional(),
-    passed: z.boolean().default(false),
+    passed: z.boolean(),
     notes: z.string().optional(),
     recommendations: z.string().optional(),
   })
@@ -144,6 +144,7 @@ export function SimaanFormDialog({
           halaqohId,
           ...values,
           examDate: values.examDate.toISOString(),
+          examinerIds: [],
         });
         toast.success("Jadwal simaan berhasil dibuat");
       }

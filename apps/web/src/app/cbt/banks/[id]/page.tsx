@@ -315,9 +315,14 @@ export default function BankDetailPage({ params }: { params: { id: string } }) {
                               <Badge
                                 variant={
                                   question.answerKey === "true"
-                                    ? "success"
+                                      ? "default"
                                     : "destructive"
                                 }
+                                  className={
+                                    question.answerKey === "true"
+                                      ? "bg-green-600 hover:bg-green-700"
+                                      : ""
+                                  }
                               >
                                 {question.answerKey === "true"
                                   ? "BENAR"

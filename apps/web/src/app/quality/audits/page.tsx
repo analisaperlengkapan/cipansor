@@ -21,7 +21,7 @@ import { id as idLocale } from "date-fns/locale";
 
 export default function QualityAuditsPage() {
   const { user } = useAuth();
-  const { activeAcademicYear } = useActiveAcademicYear();
+  const { data: activeAcademicYear } = useActiveAcademicYear();
   const unitId = user?.unitId;
 
   const { data: audits, isLoading } = useQualityAudits(

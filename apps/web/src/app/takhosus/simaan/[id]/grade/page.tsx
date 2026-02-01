@@ -134,7 +134,7 @@ export default function GradeSimaanPage({
       <PageHeader
         title="Penilaian Simaan"
         description={`Input nilai untuk ${exam.student?.user?.name || "Santri"}`}
-        backUrl="/takhosus/simaan"
+          backHref="/takhosus/simaan"
       />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

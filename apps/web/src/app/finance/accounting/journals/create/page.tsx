@@ -82,7 +82,7 @@ export default function CreateManualJournalPage() {
     value: string | number,
   ) => {
     const newRows = [...rows];
-    // @ts-expect-error - value type depends on field but Typescript needs discriminated union which is overkill here
+    // @ts-ignore - value type depends on field but Typescript needs discriminated union which is overkill here
     newRows[index] = { ...newRows[index], [field]: value };
     setRows(newRows);
   };

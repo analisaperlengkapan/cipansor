@@ -82,3 +82,21 @@ export enum EnrollmentStatus {
   TRANSFERRED = "transferred",
   DROPPED = "dropped",
 }
+
+// Complaint Category
+export enum ComplaintCategory {
+  ACADEMIC = "ACADEMIC",
+  FACILITY = "FACILITY",
+  SERVICE = "SERVICE",
+  BULLYING = "BULLYING",
+  FINANCE = "FINANCE",
+  OTHER = "OTHER",
+}
+
+// Complaint Status
+export enum ComplaintStatus {
+  PENDING = "PENDING",
+  IN_PROGRESS = "IN_PROGRESS",
+  RESOLVED = "RESOLVED",
+  REJECTED = "REJECTED",
+}

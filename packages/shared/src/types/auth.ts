@@ -30,6 +30,20 @@ export interface User {
   };
   academicYearId?: string;
   userRoles?: UserRoleAssignment[];
+  // Relations that might be included
+  student?: {
+    id: string;
+    name?: string;
+    nis?: string;
+  };
+  teacher?: {
+    id: string;
+    nip?: string;
+  };
+  staff?: {
+    id: string;
+    nip?: string;
+  };
   isActive: boolean;
   createdAt: string;
   updatedAt: string;

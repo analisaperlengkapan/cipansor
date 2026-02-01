@@ -98,7 +98,7 @@ export default function NewBookPage() {
         isbn: data.isbn || undefined,
         publisher: data.publisher || undefined,
         publishYear: data.publishYear ? Number(data.publishYear) : undefined,
-        category: data.category as BookCategory,
+        category: data.category as any,
         description: data.description || undefined,
         quantity: data.quantity,
         location: data.location || undefined,

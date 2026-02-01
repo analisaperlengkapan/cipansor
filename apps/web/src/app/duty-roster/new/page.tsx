@@ -102,7 +102,7 @@ export default function NewDutyRosterPage() {
   // Extract students and teachers from API response
   const students = useMemo(() => {
     return (
-      studentsData?.data?.map((s) => ({
+      studentsData?.data?.map((s: any) => ({
         id: s.id,
         nis: s.nis,
         name: s.name,
@@ -114,9 +114,9 @@ export default function NewDutyRosterPage() {
 
   const supervisors = useMemo(() => {
     return (
-      teachersData?.data?.map((t) => ({
+      teachersData?.data?.map((t: any) => ({
         id: t.id,
-        name: t.name,
+        name: t.user?.name || t.name,
       })) || []
     );
   }, [teachersData]);

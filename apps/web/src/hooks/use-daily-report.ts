@@ -78,6 +78,7 @@ interface DailyReportListQuery {
   dateFrom?: string;
   dateTo?: string;
   search?: string;
+  attendanceStatus?: string;
 }
 
 interface StudentDailySummaryQuery {
@@ -129,12 +130,19 @@ export function useAddDailyReportPhoto() {
     mutationFn: async ({
       reportId,
       file,
+      caption,
+      activityType,
     }: {
       reportId: string;
       file: File;
+      caption?: string;
+      activityType?: string;
     }) => {
       const formData = new FormData();
       formData.append("file", file);
+      if (caption) formData.append("caption", caption);
+      if (activityType) formData.append("activityType", activityType);
+
       const { data } = await api.post(
         `/daily-report/${reportId}/photos`,
         formData,

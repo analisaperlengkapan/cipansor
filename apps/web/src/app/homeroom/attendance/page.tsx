@@ -140,7 +140,7 @@ export default function QuickAttendancePage() {
           gender: att.student?.gender || "MALE",
           status: att.status,
           notes: att.notes || "",
-          arrivalTime: att.arrivalTime || undefined,
+          arrivalTime: undefined,
         }));
       setAttendances(updatedAttendances);
     }

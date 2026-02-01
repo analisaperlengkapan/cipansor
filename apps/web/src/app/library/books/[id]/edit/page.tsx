@@ -105,10 +105,10 @@ export default function EditBookPage({
         isbn: book.isbn || "",
         publisher: book.publisher || "",
         publishYear: book.publishYear || "",
-        category: book.category,
+        category: (book.category as any) || "OTHER",
         description: book.description || "",
         quantity: book.quantity,
-        location: book.location || "",
+        location: (book as any).location || (book as any).shelfLocation || "",
       });
     }
   }, [book, form]);
@@ -121,7 +121,7 @@ export default function EditBookPage({
         isbn: data.isbn || undefined,
         publisher: data.publisher || undefined,
         publishYear: data.publishYear ? Number(data.publishYear) : undefined,
-        category: data.category as BookCategory,
+        category: data.category as any,
         description: data.description || undefined,
         quantity: data.quantity,
         location: data.location || undefined,
@@ -325,7 +325,7 @@ export default function EditBookPage({
                           <Input type="number" min={1} {...field} />
                         </FormControl>
                         <FormDescription>
-                          Tersedia: {book.availableQuantity} dari{" "}
+                            Tersedia: {(book as any).available} dari{" "}
                           {book.quantity}
                         </FormDescription>
                         <FormMessage />
@@ -359,10 +359,10 @@ export default function EditBookPage({
                 </CardHeader>
                 <CardContent>
                   <div className="flex flex-col items-center text-center">
-                    {book.coverImage ? (
+                    {book.coverUrl ? (
                       <div className="h-32 w-24 overflow-hidden rounded-lg bg-muted mb-4">
                         <img
-                          src={book.coverImage}
+                          src={book.coverUrl}
                           alt={book.title}
                           className="h-full w-full object-cover"
                         />

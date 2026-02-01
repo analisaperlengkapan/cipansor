@@ -306,6 +306,7 @@ export default function BudgetingPage() {
           </DialogContent>
         </Dialog>
       </div>
+    </div>
 
       <div className="flex gap-4">
         <Select value={selectedUnitId} onValueChange={setSelectedUnitId}>

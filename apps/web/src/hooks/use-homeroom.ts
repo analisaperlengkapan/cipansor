@@ -166,7 +166,7 @@ export interface RecentViolation {
   action?: string;
 }
 
-export interface DashboardSummary {
+export interface HomeroomDashboardSummary {
   averageAttendance: number;
   averageAcademicScore: number;
   pendingBehaviorNotes: number;
@@ -197,7 +197,7 @@ export interface HomeroomDashboardData {
     status: string;
     count: number;
   }[];
-  dashboardSummary: DashboardSummary;
+  dashboardSummary: HomeroomDashboardSummary;
 }
 
 // ======================

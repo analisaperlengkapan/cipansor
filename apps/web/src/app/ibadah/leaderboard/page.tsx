@@ -97,7 +97,7 @@ export default function IbadahLeaderboardPage() {
   // Transform API data to UI format
   const leaderboard: LeaderboardEntry[] = useMemo(() => {
     if (!leaderboardData) return [];
-    return leaderboardData.map((item, index) => ({
+    return leaderboardData.map((item: any, index) => ({
       rank: item.rank || index + 1,
       name: item.student?.name || item.student?.user?.name || "Unknown",
       class: item.student?.class?.name || "-",
@@ -111,7 +111,7 @@ export default function IbadahLeaderboardPage() {
   const currentUserEntry = useMemo(() => {
     if (!user?.id || !leaderboardData) return { rank: "-", score: 0 };
     const found = leaderboardData.find(
-      (item) => item.studentId === user.id || item.student?.userId === user.id,
+      (item: any) => item.studentId === user.id || item.student?.userId === user.id,
     );
     if (found) {
       return {

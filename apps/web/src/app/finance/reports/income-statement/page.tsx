@@ -40,9 +40,9 @@ export default function IncomeStatementPage() {
         </div>
         <div className="flex gap-4">
           <DateRangePicker
-            date={dateRange}
+            date={dateRange as any}
             setDate={(range) => {
-              if (range) setDateRange(range);
+              if (range) setDateRange(range as any);
             }}
           />
           <Button onClick={handlePrint} variant="outline">

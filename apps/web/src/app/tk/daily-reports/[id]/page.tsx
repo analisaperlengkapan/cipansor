@@ -475,9 +475,9 @@ export default function DailyReportDetailPage() {
                       <Skeleton key={i} className="aspect-square rounded-lg" />
                     ))}
                   </div>
-                ) : photos?.data?.length ? (
+                ) : photos?.length ? (
                   <div className="grid grid-cols-2 gap-2">
-                    {photos.data.map((photo: any) => (
+                    {photos.map((photo: any) => (
                       <div key={photo.id} className="group relative">
                         <img
                           src={photo.photoUrl}

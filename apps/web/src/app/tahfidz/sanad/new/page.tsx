@@ -77,7 +77,7 @@ export default function NewSanadPage() {
   const { data: enrollmentsData, isLoading: isLoadingEnrollments } =
     useEnrollments({
       limit: 100,
-      status: "active",
+      status: "ACTIVE",
     });
   const { data: teachersData, isLoading: isLoadingTeachers } = useTeachers();
   const createMutation = useCreateSanad();
@@ -183,9 +183,8 @@ export default function NewSanadPage() {
                                 value={enrollment.id}
                               >
                                 {enrollment.student?.user?.name ||
-                                  enrollment.student?.name ||
                                   "Unknown"}{" "}
-                                - {enrollment.student?.nis || "—"}
+                                - {(enrollment.student as any)?.nis || "—"}
                               </SelectItem>
                             ))
                           )}
@@ -321,9 +320,9 @@ export default function NewSanadPage() {
                                 Memuat...
                               </SelectItem>
                             ) : (
-                              teachersData?.map((teacher: any) => (
+                              teachersData?.data?.map((teacher: any) => (
                                 <SelectItem key={teacher.id} value={teacher.id}>
-                                  {teacher.name}
+                                  {teacher.user?.name || teacher.nip}
                                 </SelectItem>
                               ))
                             )}

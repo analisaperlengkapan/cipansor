@@ -18,6 +18,7 @@ import {
   FileText,
   Activity,
   Clock,
+  CheckCircle,
 } from "lucide-react";
 
 import { MainLayout } from "@/components/layout";

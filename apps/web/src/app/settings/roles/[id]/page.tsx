@@ -19,7 +19,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 const updateRoleSchema = z.object({
   name: z.string().min(3, "Name is required"),
   description: z.string().optional(),
-  permissions: z.array(z.string()).default([]),
+  permissions: z.array(z.string()).optional(),
 });
 
 type UpdateRoleForm = z.infer<typeof updateRoleSchema>;
@@ -141,7 +141,7 @@ export default function EditRolePage() {
                   <FormLabel>Permissions</FormLabel>
                   <FormControl>
                     <PermissionSelector
-                      selectedPermissions={field.value}
+                      selectedPermissions={field.value || []}
                       onChange={field.onChange}
                     />
                   </FormControl>

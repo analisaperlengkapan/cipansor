@@ -89,7 +89,7 @@ export default function AssignmentDetailPage() {
         <PageHeader
           title={assignment.title}
           description="Assignment Details"
-          backUrl="/assignments"
+          backHref="/assignments"
         />
 
         <Card>

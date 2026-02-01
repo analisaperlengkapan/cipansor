@@ -2,6 +2,11 @@ export type PAUDAspect = "NAM" | "FM" | "KOG" | "BHS" | "SE" | "SNI";
 export type PAUDAchievementLevel = "BB" | "MB" | "BSH" | "BSB";
 export type PAUDReportPeriod = "HARIAN" | "MINGGUAN" | "BULANAN" | "SEMESTER";
 
+// Aliases for Frontend Compatibility
+export type TKAspect = PAUDAspect;
+export type TKAchievementLevel = PAUDAchievementLevel;
+export type TKReportPeriod = PAUDReportPeriod;
+
 // Basic Types
 export interface PAUDIndicator {
   id: string;
@@ -18,6 +23,8 @@ export interface PAUDIndicator {
   updatedAt?: Date | string;
 }
 
+export type TKIndicator = PAUDIndicator;
+
 export interface PAUDEvidence {
   id: string;
   assessmentId: string;
@@ -27,6 +34,8 @@ export interface PAUDEvidence {
   caption?: string | null;
   createdAt: Date | string;
 }
+
+export type TKEvidence = PAUDEvidence;
 
 export interface PAUDAssessment {
   id: string;
@@ -68,6 +77,8 @@ export interface PAUDAssessment {
   };
   evidences?: PAUDEvidence[];
 }
+
+export type TKAssessment = PAUDAssessment;
 
 export interface PAUDReportPhoto {
   id: string;
@@ -194,7 +205,11 @@ export interface CreatePAUDAssessmentInput {
   recommendations?: string;
 }
 
+export type CreateTKAssessmentInput = CreatePAUDAssessmentInput;
+
 export interface UpdatePAUDAssessmentInput extends Partial<CreatePAUDAssessmentInput> {}
+
+export type UpdateTKAssessmentInput = UpdatePAUDAssessmentInput;
 
 export interface BulkCreatePAUDAssessmentInput {
   studentId: string;
@@ -212,6 +227,8 @@ export interface BulkCreatePAUDAssessmentInput {
     recommendations?: string;
   }>;
 }
+
+export type BulkCreateTKAssessmentInput = BulkCreatePAUDAssessmentInput;
 
 export interface BulkCreateClassPAUDAssessmentInput {
   classId: string;

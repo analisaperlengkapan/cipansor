@@ -56,7 +56,7 @@ export default function LeadsPage() {
                     <TableCell>
                       <div className="font-medium">{reg.fullName}</div>
                       <div className="text-xs text-muted-foreground">
-                        {reg.parentPhone}
+                          {(reg as any).parentPhone}
                       </div>
                     </TableCell>
                     <TableCell>

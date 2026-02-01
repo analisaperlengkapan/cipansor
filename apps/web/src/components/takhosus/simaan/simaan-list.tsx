@@ -80,8 +80,8 @@ export function SimaanList({
     );
   };
 
-  const records = data?.records || [];
-  const pagination = data?.pagination;
+  const records = data?.data || [];
+  const pagination = data?.meta;
 
   return (
     <div className="space-y-4">

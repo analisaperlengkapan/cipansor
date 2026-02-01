@@ -117,7 +117,7 @@ function AccountCodesTab() {
     if (search || typeFilter !== "ALL") {
       return accountCodesData.data;
     }
-    const tree = buildAccountTree(accountCodesData.data);
+    const tree = buildAccountTree(accountCodesData.data as any[]);
     return flattenAccountTree(tree);
   }, [accountCodesData?.data, search, typeFilter]);
 
@@ -294,7 +294,7 @@ function AccountCodesTab() {
                   </TableCell>
                 </TableRow>
               ) : (
-                flattenedData.map((account: TreeAccountCode) => (
+                flattenedData.map((account: any) => (
                   <TableRow key={account.id}>
                     <TableCell className="font-mono font-medium">
                       <span

@@ -101,7 +101,7 @@ export default function TKProgressDashboardPage() {
       let scoreSum = 0;
 
       progressData.forEach((student) => {
-        const aspectData = student.aspects?.[aspect];
+        const aspectData = student.summary.find((s) => s.aspect === aspect);
         if (aspectData) {
           total++;
           // Calculate score based on achievement level

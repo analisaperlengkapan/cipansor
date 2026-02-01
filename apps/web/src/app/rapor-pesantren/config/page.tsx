@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Save, AlertCircle, Settings } from "lucide-react";
@@ -51,7 +51,7 @@ export default function RaporConfigPage() {
 
   const [formData, setFormData] = useState<RaporConfig | null>(null);
 
-  const { isLoading } = useQuery({
+  const { data: configData, isLoading } = useQuery({
     queryKey: ["rapor-pesantren", "config", unitId],
     queryFn: async () => {
       if (!unitId) return null;
@@ -59,10 +59,13 @@ export default function RaporConfigPage() {
       return res.data.data as RaporConfig;
     },
     enabled: !!unitId,
-    onSuccess: (data) => {
-      if (data) setFormData(data);
-    },
   });
+
+  useEffect(() => {
+    if (configData) {
+      setFormData(configData);
+    }
+  }, [configData]);
 
   const mutation = useMutation({
     mutationFn: async (data: RaporConfig) => {

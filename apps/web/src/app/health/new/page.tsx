@@ -56,8 +56,8 @@ const formSchema = z.object({
   notes: z.string().optional(),
   status: z.string().min(1, "Status wajib dipilih"),
   followUpDate: z.string().optional(),
-  createAttendance: z.boolean().default(true),
-  notifyParent: z.boolean().default(true),
+  createAttendance: z.boolean(),
+  notifyParent: z.boolean(),
 });
 
 type FormData = z.infer<typeof formSchema>;

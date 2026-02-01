@@ -132,7 +132,7 @@ function VisitForm({ onSuccess }: { onSuccess: () => void }) {
   const studentOptions =
     studentsData?.data?.map((s) => ({
       value: s.id,
-      label: `${s.user?.name} (${s.nis})`,
+      label: `${s.name} (${s.nis})`,
     })) || [];
 
   const onSubmit = async (data: CreateStudentVisitInput) => {
@@ -267,7 +267,7 @@ function VisitRow({ visit }: { visit: StudentVisit }) {
               variant="ghost"
               size="icon"
               className="text-green-600 hover:text-green-700 hover:bg-green-50"
-              onClick={() => handleStatusChange("APPROVED")}
+              onClick={() => handleStatusChange(VisitStatus.APPROVED)}
               title="Setujui"
             >
               <CheckCircle className="h-4 w-4" />
@@ -276,7 +276,7 @@ function VisitRow({ visit }: { visit: StudentVisit }) {
               variant="ghost"
               size="icon"
               className="text-red-600 hover:text-red-700 hover:bg-red-50"
-              onClick={() => handleStatusChange("REJECTED")}
+              onClick={() => handleStatusChange(VisitStatus.REJECTED)}
               title="Tolak"
             >
               <XCircle className="h-4 w-4" />
@@ -287,7 +287,7 @@ function VisitRow({ visit }: { visit: StudentVisit }) {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => handleStatusChange("COMPLETED")}
+            onClick={() => handleStatusChange(VisitStatus.COMPLETED)}
           >
             Selesaikan
           </Button>

@@ -90,7 +90,7 @@ export default function SimaanSchedulePage() {
   const dateTo = format(endOfMonth(viewMonth), "yyyy-MM-dd");
 
   const { data: monthExams, isLoading } = useSimaanExams({
-    classId: selectedClass || undefined,
+    halaqohId: selectedClass || undefined,
     unitId: user?.role !== "SUPER_ADMIN" ? user?.unitId : undefined,
     dateFrom,
     dateTo,
@@ -98,7 +98,7 @@ export default function SimaanSchedulePage() {
   });
 
   const exams = monthExams?.data || [];
-  const upcoming = upcomingData?.data || [];
+  const upcoming = upcomingData || [];
 
   // Get exams for selected date
   const selectedDateExams = useMemo(() => {
@@ -210,7 +210,6 @@ export default function SimaanSchedulePage() {
                               <div>
                                 <h3 className="font-semibold">
                                   {exam.student?.user?.name ||
-                                    exam.student?.name ||
                                     "Santri"}
                                 </h3>
                                 <p className="text-sm text-muted-foreground">
@@ -218,31 +217,31 @@ export default function SimaanSchedulePage() {
                                 </p>
                                 <div className="flex items-center gap-2 mt-2">
                                   <Badge variant="outline">
-                                    {EXAM_TYPE_LABELS[exam.examType] ||
-                                      exam.examType}
+                                    {EXAM_TYPE_LABELS[exam.simaanType] ||
+                                      exam.simaanType}
                                   </Badge>
-                                  {exam.startJuz && exam.endJuz && (
+                                  {exam.juzStart && exam.juzEnd && (
                                     <span className="text-sm text-muted-foreground">
-                                      Juz {exam.startJuz}-{exam.endJuz}
+                                      Juz {exam.juzStart}-{exam.juzEnd}
                                     </span>
                                   )}
                                 </div>
                               </div>
                             </div>
                             <div className="text-right">
-                              <Badge className={STATUS_COLORS[exam.status]}>
-                                {STATUS_LABELS[exam.status] || exam.status}
+                              <Badge className={STATUS_COLORS[exam.status || "SCHEDULED"]}>
+                                {STATUS_LABELS[exam.status || "SCHEDULED"] || exam.status}
                               </Badge>
-                              {exam.duration && (
+                              {/* {exam.duration && (
                                 <p className="text-sm text-muted-foreground mt-2 flex items-center gap-1">
                                   <Clock className="h-3 w-3" />
                                   {exam.duration} menit
                                 </p>
-                              )}
-                              {exam._count?.examiners && (
+                              )} */}
+                              {exam.examiners && (
                                 <p className="text-sm text-muted-foreground flex items-center gap-1 justify-end">
                                   <Users className="h-3 w-3" />
-                                  {exam._count.examiners} penguji
+                                  {exam.examiners.length} penguji
                                 </p>
                               )}
                             </div>
@@ -305,12 +304,11 @@ export default function SimaanSchedulePage() {
                       <div>
                         <h4 className="font-medium">
                           {exam.student?.user?.name ||
-                            exam.student?.name ||
                             "Santri"}
                         </h4>
                         <p className="text-sm text-muted-foreground">
-                          {EXAM_TYPE_LABELS[exam.examType] || exam.examType}
-                          {exam.location && ` • ${exam.location}`}
+                          {EXAM_TYPE_LABELS[exam.simaanType] || exam.simaanType}
+                          {/* {exam.location && ` • ${exam.location}`} */}
                         </p>
                       </div>
                     </div>

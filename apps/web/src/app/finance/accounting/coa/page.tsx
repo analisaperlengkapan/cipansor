@@ -57,7 +57,7 @@ const accountFormSchema = z.object({
   normalBalance: z.enum(["DEBIT", "CREDIT"]),
   parentId: z.string().optional(),
   cashFlowCategory: z.string().optional(),
-  isActive: z.boolean().default(true),
+  isActive: z.boolean(),
 });
 
 type AccountFormValues = z.infer<typeof accountFormSchema>;
@@ -317,6 +317,7 @@ export default function ChartOfAccountsPage() {
           </DialogContent>
         </Dialog>
       </div>
+    </div>
 
       <div className="flex items-center space-x-2">
         <Search className="h-4 w-4 text-muted-foreground" />

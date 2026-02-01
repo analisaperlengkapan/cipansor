@@ -170,7 +170,10 @@ export default function PayrollPeriodDetailPage({ params }: PageProps) {
       return;
     }
     try {
-      await processPayroll.mutateAsync(selectedPayrolls);
+        await processPayroll.mutateAsync({
+          periodId: periodId,
+          staffIds: selectedPayrolls
+        });
       toast.success(`${selectedPayrolls.length} payroll berhasil diproses`);
       setSelectedPayrolls([]);
     } catch (error) {
@@ -201,7 +204,10 @@ export default function PayrollPeriodDetailPage({ params }: PageProps) {
       return;
     }
     try {
-      await processPayroll.mutateAsync(draftPayrolls);
+      await processPayroll.mutateAsync({
+        periodId: periodId,
+        staffIds: draftPayrolls
+      });
       toast.success(`${draftPayrolls.length} payroll berhasil diproses`);
     } catch (error) {
       toast.error("Gagal memproses payroll");

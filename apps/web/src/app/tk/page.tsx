@@ -34,7 +34,6 @@ import {
   getAchievementLabel,
   getAchievementColor,
 } from "@/hooks/use-paud-dashboard";
-import { id as localeId } from "date-fns/locale";
 
 export default function TKPage() {
   const router = useRouter();

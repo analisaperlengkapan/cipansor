@@ -96,29 +96,25 @@ export default function EOfficeMainPage() {
         label: "Menunggu Review",
         className: "bg-yellow-100 text-yellow-800",
       },
-      [LetterStatus.APPROVED]: {
-        label: "Disetujui",
-        className: "bg-green-100 text-green-800",
+      [LetterStatus.REVISION_NEEDED]: {
+        label: "Perlu Revisi",
+        className: "bg-orange-100 text-orange-800",
       },
-      [LetterStatus.REJECTED]: {
-        label: "Ditolak",
-        className: "bg-red-100 text-red-800",
+      [LetterStatus.READY_TO_SIGN]: {
+        label: "Siap TTD",
+        className: "bg-cyan-100 text-cyan-800",
+      },
+      [LetterStatus.SIGNED]: {
+        label: "Sudah TTD",
+        className: "bg-green-100 text-green-800",
       },
       [LetterStatus.SENT]: {
         label: "Terkirim",
         className: "bg-blue-100 text-blue-800",
       },
-      [LetterStatus.RECEIVED]: {
-        label: "Diterima",
-        className: "bg-purple-100 text-purple-800",
-      },
       [LetterStatus.DISPOSED]: {
         label: "Didisposisi",
         className: "bg-indigo-100 text-indigo-800",
-      },
-      [LetterStatus.COMPLETED]: {
-        label: "Selesai",
-        className: "bg-emerald-100 text-emerald-800",
       },
       [LetterStatus.ARCHIVED]: {
         label: "Diarsip",

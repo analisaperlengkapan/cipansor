@@ -147,6 +147,7 @@ export function useUpdateStudentVisit() {
 export function useStudentPackages(params?: {
   status?: string;
   studentId?: string;
+  date?: string;
 }) {
   return useQuery({
     queryKey: ["reception", "packages", params],

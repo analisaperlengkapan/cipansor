@@ -131,8 +131,11 @@ export default function CreateSimaanPage() {
       await createMutation.mutateAsync({
         ...data,
         examDate: format(data.examDate, "yyyy-MM-dd"),
-        startJuz: data.examType === "CUSTOM" ? data.startJuz : undefined,
-        endJuz: data.examType === "CUSTOM" ? data.endJuz : undefined,
+        simaanType: data.examType,
+        juzStart: data.examType === "CUSTOM" ? (data.startJuz || 1) : 1, // Logic to determine juz
+        juzEnd: data.examType === "CUSTOM" ? (data.endJuz || 1) : 1, // Logic to determine juz
+        sessionNumber: 1, // Default or add to form
+        totalSessions: 1, // Default or add to form
       });
       toast.success("Ujian simaan berhasil dijadwalkan");
       router.push("/tahfidz/simaan");
@@ -407,7 +410,7 @@ export default function CreateSimaanPage() {
                       </div>
                       <ScrollArea className="h-[200px] border rounded-lg p-4">
                         <div className="space-y-3">
-                          {teachers?.map((teacher) => (
+                          {teachers?.data?.map((teacher) => (
                             <div
                               key={teacher.id}
                               className={cn(
@@ -426,11 +429,11 @@ export default function CreateSimaanPage() {
                               />
                               <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
                                 <span className="text-xs font-medium">
-                                  {teacher.name?.[0] || "?"}
+                                  {teacher.user?.name?.[0] || "?"}
                                 </span>
                               </div>
                               <div>
-                                <p className="font-medium">{teacher.name}</p>
+                                <p className="font-medium">{teacher.user?.name}</p>
                                 <p className="text-xs text-muted-foreground">
                                   Pengajar
                                 </p>

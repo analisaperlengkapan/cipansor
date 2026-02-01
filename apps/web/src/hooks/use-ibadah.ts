@@ -137,6 +137,14 @@ export interface StudentIbadahStats {
     points: number;
     completionRate: number;
   }[];
+  summary?: {
+    completionRate: number;
+    currentStreak: number;
+  };
+  byCategory?: {
+    category: IbadahCategory;
+    completionRate: number;
+  }[];
 }
 
 // ======================

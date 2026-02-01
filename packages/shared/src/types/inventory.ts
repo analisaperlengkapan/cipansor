@@ -216,6 +216,11 @@ export interface UpdateAssetMaintenanceInput extends Partial<CreateAssetMaintena
   invoiceUrl?: string;
 }
 
+export type UpdateMaintenanceStatusInput = Pick<
+  UpdateAssetMaintenanceInput,
+  "status" | "notes" | "completionDate"
+>;
+
 export interface CreateAssetDisposalInput {
   date: Date | string;
   reason: AssetDisposalReason;
@@ -232,7 +237,7 @@ export interface CreateAssetAssignmentInput {
   notes?: string;
 }
 
-export interface ReturnAssetInput {
+export interface ReturnAssetAssignmentInput {
   returnedAt: Date | string;
   conditionAfter: AssetCondition;
   notes?: string;

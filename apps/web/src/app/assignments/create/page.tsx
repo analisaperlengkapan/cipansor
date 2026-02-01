@@ -49,7 +49,7 @@ export default function CreateAssignmentPage() {
         <PageHeader
           title="Create Assignment"
           description="Create a new task for students"
-          backUrl="/assignments"
+          backHref="/assignments"
         />
 
         <div className="p-6 bg-white rounded-lg border shadow-sm">

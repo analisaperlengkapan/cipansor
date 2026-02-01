@@ -256,7 +256,7 @@ export default function BukuPenghubungPage() {
       {
         onSuccess: () => {
           setNewMessageOpen(false);
-          setNewMessage({ subject: "", message: "", category: "GENERAL" });
+          setNewMessage({ subject: "", message: "", category: "GENERAL" as any });
           toast.success("Pesan berhasil dikirim");
         },
         onError: () => {
@@ -549,10 +549,10 @@ export default function BukuPenghubungPage() {
                         <div className="flex items-center gap-4">
                           <div className="flex flex-col items-center">
                             <span className="text-2xl font-bold text-primary">
-                              {format(new Date(report.date), "dd")}
+                              {format(new Date(report.reportDate), "dd")}
                             </span>
                             <span className="text-xs text-muted-foreground uppercase">
-                              {format(new Date(report.date), "MMM")}
+                              {format(new Date(report.reportDate), "MMM")}
                             </span>
                           </div>
                           <div className="h-10 w-[1px] bg-border" />
@@ -560,18 +560,17 @@ export default function BukuPenghubungPage() {
                             <div className="flex items-center gap-2">
                               <h4 className="font-semibold">
                                 {format(
-                                  new Date(report.date),
+                                  new Date(report.reportDate),
                                   "EEEE, d MMMM yyyy",
                                   { locale: idLocale },
                                 )}
                               </h4>
-                              {getMoodIcon(report.mood)}
+                              {report.mood && getMoodIcon(report.mood)}
                             </div>
                             <p className="text-sm text-muted-foreground">
-                              {report.healthStatus === "SICK"
-                                ? "Sakit"
-                                : "Sehat"}
-                              {report.healthNote && ` - ${report.healthNote}`}
+                              {report.healthStatus || "Sehat"}
+                              {report.temperature &&
+                                ` - ${report.temperature}°C`}
                             </p>
                           </div>
                         </div>
@@ -623,39 +622,37 @@ export default function BukuPenghubungPage() {
 
                       <div className="mt-4 grid md:grid-cols-2 gap-4 text-sm bg-muted/30 p-3 rounded-lg">
                         {/* Tahfidz Note */}
-                        {report.tahfidzNote && (
+                        {report.tahfidzActivity && (
                           <div>
                             <span className="font-semibold block mb-1">
                               Catatan Tahfidz:
                             </span>
                             <p className="text-muted-foreground">
-                              {report.tahfidzNote}
+                              {report.tahfidzActivity}
                             </p>
                           </div>
                         )}
 
                         {/* Activities */}
-                        {report.activities && report.activities.length > 0 && (
+                        {report.activitiesSummary && (
                           <div>
                             <span className="font-semibold block mb-1">
                               Aktivitas:
                             </span>
-                            <ul className="list-disc list-inside text-muted-foreground">
-                              {report.activities.map((act, idx) => (
-                                <li key={idx}>{act}</li>
-                              ))}
-                            </ul>
+                            <p className="text-muted-foreground whitespace-pre-wrap">
+                              {report.activitiesSummary}
+                            </p>
                           </div>
                         )}
 
                         {/* General Note */}
-                        {report.note && (
+                        {report.teacherNotes && (
                           <div className="md:col-span-2 border-t border-border pt-2 mt-2">
                             <span className="font-semibold block mb-1">
                               Catatan Wali Kelas:
                             </span>
                             <p className="text-muted-foreground italic">
-                              "{report.note}"
+                              "{report.teacherNotes}"
                             </p>
                           </div>
                         )}

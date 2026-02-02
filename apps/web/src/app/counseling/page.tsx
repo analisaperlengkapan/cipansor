@@ -21,7 +21,6 @@ import {
   TrendingUp,
 } from "lucide-react";
 
-import { MainLayout } from "@/components/layout/main-layout";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -116,7 +115,7 @@ export default function CounselingPage() {
   };
 
   return (
-    <MainLayout>
+    <>
       <PageHeader
         title="Bimbingan Konseling"
         description="Kelola catatan konseling dan bimbingan siswa"
@@ -463,6 +462,6 @@ export default function CounselingPage() {
           )}
         </CardContent>
       </Card>
-    </MainLayout>
+    </>
   );
 }

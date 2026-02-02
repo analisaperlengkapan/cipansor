@@ -95,6 +95,7 @@ import receptionRoutes from '@/modules/reception/reception.routes';
 import marketingRoutes from '@/modules/marketing/routes';
 import { announcementRoutes } from '@/modules/announcements';
 import projectRoutes from '@/modules/project/routes';
+import psychologyRoutes from '@/modules/psychology/psychology.routes';
 
 // Create Express app
 const app = express();
@@ -263,6 +264,7 @@ apiRouter.use('/dashboard', dashboardRoutes);
 apiRouter.use('/reception', receptionRoutes);
 apiRouter.use('/announcements', announcementRoutes);
 apiRouter.use('/projects', projectRoutes);
+apiRouter.use('/psychology', psychologyRoutes);
 
 // API info
 apiRouter.get('/', (_req, res) => {
@@ -330,6 +332,7 @@ apiRouter.get('/', (_req, res) => {
       raporPesantren: '/api/rapor-pesantren',
       reception: '/api/reception',
       secrets: '/api/secrets',
+      psychology: '/api/psychology',
     },
   });
 });

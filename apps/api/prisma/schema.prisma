@@ -408,6 +408,7 @@ model User {
   projectMemberships                ProjectMember[]
   assignedTasks                     ProjectTask[]               @relation("TaskAssignee")
   taskComments                      TaskComment[]
+  recordedPsychology                StudentPsychologyRecord[]   @relation("PsychologyRecorder")
 
   @@index([email])
   @@index([role])
@@ -548,6 +549,7 @@ model Unit {
   // Risk Management
   risks                  Risk[]
   projects               Project[]
+  psychologyTests        PsychologyTest[]
 
   @@index([type])
   @@index([foundationId])
@@ -950,6 +952,7 @@ model Student {
   packages                    StudentPackage[]
   assignmentSubmissions       AssignmentSubmission[]
   examAttempts                ExamAttempt[]
+  psychologyRecords           StudentPsychologyRecord[]
 
   @@index([nis])
   @@index([unitId])
@@ -7346,4 +7349,53 @@ model TaskComment {
   @@index([taskId])
   @@map("task_comments")
 
+}
+
+// =====================================
+// PSYCHOLOGY MODULE
+// =====================================
+
+model PsychologyTest {
+  id          String   @id @default(uuid())
+  unitId      String?  @map("unit_id")
+  name        String
+  type        String   // IQ, PERSONALITY, APTITUDE, INTEREST, OTHER
+  description String?  @db.Text
+  isActive    Boolean  @default(true) @map("is_active")
+
+  records     StudentPsychologyRecord[]
+
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  unit        Unit?    @relation(fields: [unitId], references: [id])
+
+  @@index([unitId])
+  @@map("psychology_tests")
+}
+
+model StudentPsychologyRecord {
+  id          String   @id @default(uuid())
+  studentId   String   @map("student_id")
+  testId      String   @map("test_id")
+  testDate    DateTime @map("test_date") @db.Date
+
+  score       Float?
+  classification String?
+  analysis    String?  @db.Text
+  details     Json?    // Flexible storage for detailed scores
+  attachmentUrl String? @map("attachment_url")
+
+  recordedById String  @map("recorded_by_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  student     Student        @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  test        PsychologyTest @relation(fields: [testId], references: [id])
+  recordedBy  User           @relation("PsychologyRecorder", fields: [recordedById], references: [id])
+
+  @@index([studentId])
+  @@index([testId])
+  @@index([testDate])
+  @@map("student_psychology_records")
 }

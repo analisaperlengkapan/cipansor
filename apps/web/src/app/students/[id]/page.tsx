@@ -39,6 +39,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StudentCounselingTab } from "@/components/students/student-counseling-tab";
 import { StudentBehaviorTab } from "@/components/students/student-behavior-tab";
 import { StudentIbadahTab } from "@/components/students/student-ibadah-tab";
+import { StudentPsychologyTab } from "@/components/students/student-psychology-tab";
 
 const statusColors: Record<string, string> = {
   ACTIVE: "bg-green-100 text-green-800",
@@ -209,6 +210,7 @@ export default function StudentDetailPage() {
             <TabsTrigger value="tahfidz">Tahfidz</TabsTrigger>
             <TabsTrigger value="behavior">Behavior</TabsTrigger>
             <TabsTrigger value="counseling">Counseling</TabsTrigger>
+            <TabsTrigger value="psychology">Psychology</TabsTrigger>
             <TabsTrigger value="ibadah">Mutabaah</TabsTrigger>
             <TabsTrigger value="finance">Finance</TabsTrigger>
             <TabsTrigger value="boarding">Boarding</TabsTrigger>
@@ -349,6 +351,10 @@ export default function StudentDetailPage() {
 
           <TabsContent value="counseling">
             <StudentCounselingTab studentId={studentId} />
+          </TabsContent>
+
+          <TabsContent value="psychology">
+            <StudentPsychologyTab studentId={studentId} />
           </TabsContent>
 
           <TabsContent value="behavior">

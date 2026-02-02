@@ -51,6 +51,7 @@ import {
   ShoppingBag,
   Key,
   MessageSquareWarning,
+  Microscope,
   type LucideIcon,
 } from "lucide-react";
 
@@ -158,6 +159,16 @@ const teacherNavigation: NavGroup[] = [
         title: "Portfolio Siswa",
         href: "/portfolio",
         icon: FolderOpen,
+      },
+    ],
+  },
+  {
+    title: "Research",
+    items: [
+      {
+        title: "Research",
+        href: "/research",
+        icon: Microscope,
       },
     ],
   },
@@ -511,6 +522,11 @@ const yayasanNavigation: NavGroup[] = [
     title: "Yayasan",
     items: [
       {
+        title: "Research",
+        href: "/research",
+        icon: Microscope,
+      },
+      {
         title: "Foundation",
         href: "/foundation",
         icon: Building2,
@@ -684,6 +700,26 @@ const adminNavigation: NavGroup[] = [
         href: "/roles",
         icon: Shield,
         roleCodes: ["SUPER_ADMIN"],
+      },
+    ],
+  },
+  {
+    title: "Research (Litbang)",
+    items: [
+      {
+        title: "Research",
+        href: "/research",
+        icon: Microscope,
+      },
+    ],
+  },
+  {
+    title: "Research",
+    items: [
+      {
+        title: "Research",
+        href: "/research",
+        icon: Microscope,
       },
     ],
   },

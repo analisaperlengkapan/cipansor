@@ -43,6 +43,7 @@ export async function getMedicalRecords(query: QueryMedicalRecordInput & { statu
           select: {
             id: true,
             nis: true,
+            unitId: true, // Ensure unitId is selected
             user: { select: { id: true, name: true } },
             unit: { select: { id: true, name: true } },
           },
@@ -88,6 +89,7 @@ export async function getMedicalRecordById(id: string) {
         select: {
           id: true,
           nis: true,
+          unitId: true, // Ensure unitId is selected
           gender: true,
           birthDate: true,
           user: { select: { id: true, name: true } },

@@ -19,7 +19,15 @@ export async function seedAccounts(req: Request, res: Response, next: NextFuncti
 export async function createAccount(req: Request, res: Response, next: NextFunction) {
   try {
     const data: CreateAccountDto = req.body;
-    const account = await service.createAccount(data);
+    const account = await service.createAccount({
+      code: data.code,
+      name: data.name,
+      type: data.type,
+      normalBalance: data.normalBalance,
+      isActive: data.isActive,
+      parentId: data.parentId ?? undefined,
+      cashFlowCategory: data.cashFlowCategory ?? undefined,
+    });
     res.status(201).json(account);
   } catch (error) {
     next(error);
@@ -132,8 +140,14 @@ export async function createJournal(req: Request, res: Response, next: NextFunct
       return;
     }
     const journals = await service.createManualJournal({
-      ...data,
+      unitId: data.unitId,
       date: new Date(data.date),
+      description: data.description,
+      entries: data.entries.map((e: any) => ({
+        accountId: e.accountId,
+        debit: e.debit,
+        credit: e.credit,
+      })),
       createdById: userId,
     });
     res.status(201).json({ data: journals });

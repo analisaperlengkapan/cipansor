@@ -4,7 +4,7 @@ import { RiskCategory, RiskLikelihood, RiskImpact, MitigationStrategy, RiskLevel
 export const createRiskSchema = z.object({
   unitId: z.string().uuid().optional(),
   academicYearId: z.string().uuid().optional(),
-  code: z.string().min(3),
+  code: z.string().min(3).optional(), // Make optional, will generate if missing
   description: z.string().min(10),
   category: z.nativeEnum(RiskCategory),
   cause: z.string().optional(),

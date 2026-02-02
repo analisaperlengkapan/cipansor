@@ -482,7 +482,10 @@ export class AuthService {
     }
 
     // Use global authenticator instance with plugins
-    let isValid = authenticator.verify({ token, secret: user.twoFactorSecret });
+    let isValid = false;
+    if (user.twoFactorSecret) {
+        isValid = authenticator.verify({ token, secret: user.twoFactorSecret });
+    }
 
     // Check recovery codes if OTP failed (with atomic update to prevent race conditions)
     if (!isValid) {
@@ -652,15 +655,16 @@ export class AuthService {
    * Checks both legacy role and RoleCode
    */
   private isAdminAccount(user: { role: UserRole }, roleCode?: RoleCode): boolean {
+      // Use string literals to avoid import issues if RoleCode enum is missing
       const ADMIN_ROLES = [
-          RoleCode.SUPER_ADMIN,
-          RoleCode.YAYASAN_ADMIN,
-          RoleCode.TKQ_ADMIN,
-          RoleCode.SDIT_ADMIN,
-          RoleCode.SMPIT_ADMIN,
-          RoleCode.SMAQ_ADMIN,
-          RoleCode.UNIT_ADMIN,
-      ];
+          'SUPER_ADMIN',
+          'YAYASAN_ADMIN',
+          'TKQ_ADMIN',
+          'SDIT_ADMIN',
+          'SMPIT_ADMIN',
+          'SMAQ_ADMIN',
+          'UNIT_ADMIN',
+      ] as any[];
 
       return (
           user.role === UserRole.SUPER_ADMIN ||

@@ -18,6 +18,7 @@ datasource db {
 // Legacy UserRole - kept for backward compatibility during migration
 enum UserRole {
   SUPER_ADMIN // Yayasan level admin
+  YAYASAN_ADMIN // Admin Yayasan
   UNIT_ADMIN // School/Unit level admin
   TEACHER // Guru/Ustadz
   STAFF // Non-teaching staff
@@ -6405,13 +6406,19 @@ model PurchaseRequestItem {
 // =====================================
 
 enum VisitStatus {
+  PENDING
   CHECKED_IN
   CHECKED_OUT
+  APPROVED
+  REJECTED
+  COMPLETED
   CANCELLED
 }
 
 enum PackageStatus {
   RECEIVED
+  NOTIFIED
+  PICKED_UP
   DELIVERED
   RETURNED
 }

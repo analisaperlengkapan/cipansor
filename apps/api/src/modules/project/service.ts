@@ -265,18 +265,21 @@ export async function getColumnById(id: string) {
 }
 
 export async function createColumn(projectId: string, data: CreateColumnInput) {
-  if (data.order === undefined) {
+  let order = data.order;
+  if (order === undefined) {
     const lastCol = await prisma.projectColumn.findFirst({
       where: { projectId },
       orderBy: { order: 'desc' },
     });
-    data.order = lastCol ? lastCol.order + 1 : 0;
+    order = lastCol ? lastCol.order + 1 : 0;
   }
 
   return prisma.projectColumn.create({
     data: {
       projectId,
-      ...data,
+      name: data.name,
+      color: data.color,
+      order,
     },
   });
 }

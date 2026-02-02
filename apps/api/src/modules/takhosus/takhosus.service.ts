@@ -771,7 +771,7 @@ export const dashboardService = {
             where: { status: 'ACTIVE' },
             select: { completedJuz: true },
           },
-          teacher: { select: { user: { select: { name: true } } } },
+          teacher: { select: { name: true } },
         },
       }),
     ]);
@@ -784,7 +784,7 @@ export const dashboardService = {
         return {
           id: h.id,
           name: h.name,
-          teacherName: h.teacher.user.name,
+          teacherName: (h.teacher as any).name, // Type assertion or simple access if type allows
           studentCount: h.enrollments.length,
           averageJuz: avgJuz,
         };

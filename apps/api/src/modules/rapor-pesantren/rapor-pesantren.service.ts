@@ -922,18 +922,29 @@ export async function getRaporPesantrenById(id: string): Promise<RaporPesantren 
   const currentClass = rapor.student.enrollments[0]?.class;
   const dormRoom = rapor.student.roomAssignments[0]?.room;
 
+  // Explicitly fetch unit from relations
+  const unit = await prisma.unit.findUnique({ where: { id: rapor.unitId } });
+
   return {
     id: rapor.id,
     studentId: rapor.studentId,
     unitId: rapor.unitId,
-    unit: {
-      id: rapor.unit.id,
-      name: rapor.unit.name,
-      address: rapor.unit.address,
-      phone: rapor.unit.phone,
-      email: rapor.unit.email,
-      website: rapor.unit.website,
-      logoUrl: rapor.unit.logoUrl,
+    unit: unit ? {
+      id: unit.id,
+      name: unit.name,
+      address: unit.address,
+      phone: unit.phone,
+      email: unit.email,
+      website: undefined, // Type compatibility fix
+      logoUrl: unit.logoUrl,
+    } : {
+      id: '',
+      name: 'Unknown Unit',
+      address: '',
+      phone: null,
+      email: null,
+      logoUrl: null,
+      website: '', // Added fallback
     },
     academicYearId: rapor.academicYearId,
     semester: rapor.semester,

@@ -11,12 +11,12 @@ const PRIVILEGED_ROLES = [
 ];
 
 function isPrivileged(role?: UserRole): boolean {
-  return role ? PRIVILEGED_ROLES.includes(role) : false;
+  return role ? (PRIVILEGED_ROLES as UserRole[]).includes(role) : false;
 }
 
 export const listRisks = asyncHandler(async (req: Request, res: Response) => {
   const unitId = req.user?.unitId;
-  const isPrivilegedUser = isPrivileged(req.user?.role);
+  const isPrivilegedUser = isPrivileged(req.user?.role as any);
 
   if (!unitId && !isPrivilegedUser) throw Errors.unauthorized('Unit ID required');
 
@@ -46,7 +46,7 @@ export const getRisk = asyncHandler(async (req: Request, res: Response) => {
   }
 
   // Authorization Check
-  if (!isPrivileged(req.user?.role) && risk.unitId !== req.user?.unitId) {
+  if (!isPrivileged(req.user?.role as any) && risk.unitId !== req.user?.unitId) {
     throw Errors.forbidden('Access denied');
   }
 
@@ -64,7 +64,7 @@ export const createRisk = asyncHandler(async (req: Request, res: Response) => {
   let targetUnitId = req.user?.unitId;
 
   if (!targetUnitId) {
-    if (isPrivileged(req.user?.role) && body.unitId) {
+    if (isPrivileged(req.user?.role as any) && body.unitId) {
       targetUnitId = body.unitId;
     } else {
       throw Errors.badRequest('Unit ID is required');
@@ -72,10 +72,23 @@ export const createRisk = asyncHandler(async (req: Request, res: Response) => {
   }
 
   // Destructure to remove unitId from spread, preventing Prisma conflict
+  // Destructure to remove unitId from spread, preventing Prisma conflict
   const { unitId: _, ...rest } = body;
 
+  // Generate code if missing
+  const code = rest.code || `RSK-${Date.now().toString().slice(-6)}`;
+
   const risk = await riskService.createRisk({
-    ...rest,
+    category: rest.category,
+    description: rest.description,
+    impact: rest.impact,
+    likelihood: rest.likelihood,
+    cause: rest.cause,
+    consequence: rest.consequence,
+    status: rest.status,
+    academicYear: rest.academicYearId ? { connect: { id: rest.academicYearId } } : undefined,
+    ownerId: rest.ownerId,
+    code,
     unit: { connect: { id: targetUnitId } },
     createdBy: { connect: { id: userId } },
   });
@@ -89,7 +102,7 @@ export const updateRisk = asyncHandler(async (req: Request, res: Response) => {
   const existingRisk = await riskService.getRiskById(id);
   if (!existingRisk) throw Errors.notFound('Risk not found');
 
-  if (!isPrivileged(req.user?.role) && existingRisk.unitId !== req.user?.unitId) {
+  if (!isPrivileged(req.user?.role as any) && existingRisk.unitId !== req.user?.unitId) {
     throw Errors.forbidden('Access denied');
   }
 
@@ -109,7 +122,7 @@ export const deleteRisk = asyncHandler(async (req: Request, res: Response) => {
   const existingRisk = await riskService.getRiskById(id);
   if (!existingRisk) throw Errors.notFound('Risk not found');
 
-  if (!isPrivileged(req.user?.role) && existingRisk.unitId !== req.user?.unitId) {
+  if (!isPrivileged(req.user?.role as any) && existingRisk.unitId !== req.user?.unitId) {
     throw Errors.forbidden('Access denied');
   }
 
@@ -129,12 +142,15 @@ export const addMitigation = asyncHandler(async (req: Request, res: Response) =>
   const risk = await riskService.getRiskById(riskId);
   if (!risk) throw Errors.notFound('Risk not found');
 
-  if (!isPrivileged(req.user?.role) && risk.unitId !== req.user?.unitId) {
+  if (!isPrivileged(req.user?.role as any) && risk.unitId !== req.user?.unitId) {
     throw Errors.forbidden('Access denied');
   }
 
   const mitigation = await riskService.createMitigation({
-    ...rest,
+    actionPlan: rest.actionPlan,
+    strategy: rest.strategy,
+    deadline: rest.deadline,
+    notes: rest.notes,
     risk: { connect: { id: riskId } },
     createdBy: { connect: { id: userId } },
     pic: picId ? { connect: { id: picId } } : undefined,
@@ -150,7 +166,7 @@ export const updateMitigation = asyncHandler(async (req: Request, res: Response)
   const existingMitigation = await riskService.getMitigationById(id);
   if (!existingMitigation) throw Errors.notFound('Mitigation not found');
 
-  if (!isPrivileged(req.user?.role) && existingMitigation.risk.unitId !== req.user?.unitId) {
+  if (!isPrivileged(req.user?.role as any) && existingMitigation.risk.unitId !== req.user?.unitId) {
     throw Errors.forbidden('Access denied');
   }
 
@@ -177,7 +193,7 @@ export const deleteMitigation = asyncHandler(async (req: Request, res: Response)
   const existingMitigation = await riskService.getMitigationById(id);
   if (!existingMitigation) throw Errors.notFound('Mitigation not found');
 
-  if (!isPrivileged(req.user?.role) && existingMitigation.risk.unitId !== req.user?.unitId) {
+  if (!isPrivileged(req.user?.role as any) && existingMitigation.risk.unitId !== req.user?.unitId) {
     throw Errors.forbidden('Access denied');
   }
 

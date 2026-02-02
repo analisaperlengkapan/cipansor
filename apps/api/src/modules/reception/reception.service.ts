@@ -56,13 +56,13 @@ export const getStats = async (unitId: string): Promise<ReceptionStats> => {
     prisma.studentVisit.count({
       where: {
         unitId,
-        status: VisitStatus.CHECKED_IN,
+        status: VisitStatus.CHECKED_IN as any,
       },
     }),
     prisma.studentPackage.count({
       where: {
         unitId,
-        status: PackageStatus.RECEIVED,
+        status: PackageStatus.RECEIVED as any,
       },
     }),
   ]);

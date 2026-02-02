@@ -1,10 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import { PaginatedResponse } from "@/types/api";
 import {
   MurojaahRecord,
   SimaanExam,
   TakhosusDashboardStats,
+  PaginatedResponse,
+  ApiResponse,
 } from "@cipansor/shared";
 
 // Define input types locally if not available in @cipansor/shared,
@@ -53,7 +54,7 @@ export function useTakhosusDashboard(unitId?: string) {
   return useQuery({
     queryKey: ["takhosus", "dashboard", unitId],
     queryFn: async () => {
-      const { data } = await api.get<TakhosusDashboardStats>(
+      const { data } = await api.get<ApiResponse<TakhosusDashboardStats>>(
         "/takhosus/dashboard-stats",
         {
           params: { unitId },

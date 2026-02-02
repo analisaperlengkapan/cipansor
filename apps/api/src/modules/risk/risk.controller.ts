@@ -3,15 +3,10 @@ import { asyncHandler } from '@/middleware/error';
 import { Errors } from '@/middleware/error';
 import { riskService } from './risk.service';
 import { createRiskSchema, updateRiskSchema, createMitigationSchema, updateMitigationSchema, listRiskQuerySchema } from './risk.validation';
-import { UserRole, RoleCode } from '@prisma/client';
+import { UserRole } from '@prisma/client';
 
 const PRIVILEGED_ROLES: string[] = [
   UserRole.SUPER_ADMIN,
-  // Mapping RoleCode to UserRole checks is tricky if types mismatch
-  // Assuming these are meant to be RoleCodes checked against something else,
-  // or we need to cast.
-  // Since UserRole enum doesn't have YAYASAN_ADMIN, we can't use it in PRIVILEGED_ROLES if it's typed as UserRole[]
-  // We'll use string[] and cast or check usage.
   'YAYASAN_ADMIN',
   'YAYASAN_KETUA'
 ];
@@ -80,8 +75,30 @@ export const createRisk = asyncHandler(async (req: Request, res: Response) => {
   // Destructure to remove unitId from spread, preventing Prisma conflict
   const { unitId: _, ...rest } = body;
 
+  // Calculate risk score and level
+  // Mapping enums to values is needed. Assuming direct mapping isn't available, we use helpers or switch.
+  // For now, simple mapping based on enum keys (assuming they are ordered or we use a map)
+  // Or better, let the service handle it? If service expects RiskCreateInput, we must provide it.
+
+  // Quick map for calculation (Adjust values as per business logic)
+  const likelihoodMap: Record<string, number> = { RARE: 1, UNLIKELY: 2, POSSIBLE: 3, LIKELY: 4, ALMOST_CERTAIN: 5 };
+  const impactMap: Record<string, number> = { INSIGNIFICANT: 1, MINOR: 2, MODERATE: 3, MAJOR: 4, CATASTROPHIC: 5 };
+
+  const likelihoodVal = likelihoodMap[rest.likelihood] || 1;
+  const impactVal = impactMap[rest.impact] || 1;
+  const riskScore = likelihoodVal * impactVal;
+
+  let riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'EXTREME' = 'LOW';
+  if (riskScore >= 15) riskLevel = 'EXTREME';
+  else if (riskScore >= 10) riskLevel = 'HIGH';
+  else if (riskScore >= 5) riskLevel = 'MEDIUM';
+
   const risk = await riskService.createRisk({
     ...rest,
+    description: rest.description || '', // Ensure description
+    code: `RISK-${Date.now()}`,
+    riskScore,
+    riskLevel,
     unit: { connect: { id: targetUnitId } },
     createdBy: { connect: { id: userId } },
   });
@@ -141,6 +158,8 @@ export const addMitigation = asyncHandler(async (req: Request, res: Response) =>
 
   const mitigation = await riskService.createMitigation({
     ...rest,
+    actionPlan: rest.actionPlan || '', // Ensure actionPlan
+    strategy: rest.strategy!,
     risk: { connect: { id: riskId } },
     createdBy: { connect: { id: userId } },
     pic: picId ? { connect: { id: picId } } : undefined,

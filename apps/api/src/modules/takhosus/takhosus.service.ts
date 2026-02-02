@@ -757,7 +757,7 @@ export const dashboardService = {
           enrollment: {
             include: {
               student: {
-                select: { user: { select: { name: true } } },
+                include: { user: { select: { name: true } } },
               },
             },
           },
@@ -771,7 +771,7 @@ export const dashboardService = {
             where: { status: 'ACTIVE' },
             select: { completedJuz: true },
           },
-          teacher: { select: { user: { select: { name: true } } } },
+          teacher: { select: { name: true } },
         },
       }),
     ]);
@@ -784,7 +784,7 @@ export const dashboardService = {
         return {
           id: h.id,
           name: h.name,
-          teacherName: h.teacher.user.name,
+          teacherName: h.teacher?.name || 'Unknown',
           studentCount: h.enrollments.length,
           averageJuz: avgJuz,
         };

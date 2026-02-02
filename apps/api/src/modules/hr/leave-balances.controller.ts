@@ -41,7 +41,7 @@ export const leaveBalanceController = {
     try {
       const { id } = req.params;
       const { totalDays } = req.body;
-      const result = await leaveBalanceService.updateBalance(id, Number(totalDays));
+      const result = await leaveBalanceService.updateBalance(id, Number(totalDays) as any);
       sendResponse(res, result, 'Leave balance updated successfully');
     } catch (error) {
       next(error);

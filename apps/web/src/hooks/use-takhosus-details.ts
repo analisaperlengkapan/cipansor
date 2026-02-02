@@ -58,7 +58,7 @@ export function useTakhosusDashboard(unitId?: string) {
           params: { unitId },
         },
       );
-      return data.data;
+      return data;
     },
   });
 }

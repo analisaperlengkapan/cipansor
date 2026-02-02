@@ -5,6 +5,7 @@ import {
   UpdateAccountCodeInput,
   JournalEntry,
   CreateJournalEntryInput,
+  CreateManualJournalInput,
   Scholarship,
   CreateScholarshipInput,
   ScholarshipRecipient,
@@ -235,6 +236,37 @@ export class FinanceEnhancementService {
     });
 
     return this.mapToJournalEntry(result);
+  }
+
+  async createManualJournal(input: CreateManualJournalInput & { createdById: string }): Promise<void> {
+    const { unitId, date, description, entries, createdById } = input;
+    const entryDate = new Date(date);
+    await checkPeriodStatus(unitId, entryDate);
+
+    // Validate entries match (Debit = Credit)
+    const totalDebit = entries.reduce((sum, e) => sum + (e.debit || 0), 0);
+    const totalCredit = entries.reduce((sum, e) => sum + (e.credit || 0), 0);
+
+    if (Math.abs(totalDebit - totalCredit) > 0.01) {
+        throw new Error('Journal entries must be balanced (Debit must equal Credit)');
+    }
+
+    await prisma.$transaction(async (tx) => {
+        for (const entry of entries) {
+            await tx.journalEntry.create({
+                data: {
+                    unitId,
+                    accountId: entry.accountId,
+                    date: entryDate,
+                    description,
+                    debit: entry.debit || 0,
+                    credit: entry.credit || 0,
+                    createdById,
+                    referenceType: 'MANUAL',
+                },
+            });
+        }
+    });
   }
 
   async getJournalEntryById(id: string): Promise<JournalEntry | null> {
@@ -534,8 +566,10 @@ export class FinanceEnhancementService {
       (acc, item) => ({
         debit: acc.debit + item.debit,
         credit: acc.credit + item.credit,
+        startBalance: 0,
+        endBalance: 0,
       }),
-      { debit: 0, credit: 0 }
+      { debit: 0, credit: 0, startBalance: 0, endBalance: 0 }
     );
 
     return {

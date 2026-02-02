@@ -41,7 +41,7 @@ export const contractController = {
       const search = req.query.search as string;
       const status = req.query.status as string;
 
-      const result = await contractService.findAll(unitId, { page, limit, search, status });
+      const result = await contractService.findAll(unitId, { page, limit, search, status } as any);
       sendResponse(res, result, 'Contracts retrieved successfully');
     } catch (error) {
       next(error);

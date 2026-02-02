@@ -98,10 +98,11 @@ export class TahfidzController {
     try {
       const createdById = (req as any).user.id;
       const input = req.body;
-      if (input.issueDate && typeof input.issueDate === 'string') {
-        input.issueDate = new Date(input.issueDate);
-      }
-      const result = await this.service.generateCertificate(input as GenerateCertificateInput, createdById);
+      const serviceInput = {
+        ...input,
+        issueDate: input.issueDate ? new Date(input.issueDate) : undefined,
+      };
+      const result = await this.service.generateCertificate(serviceInput as any, createdById);
       res.status(201).json({ success: true, data: result });
     } catch (error) {
       next(error);

@@ -141,6 +141,12 @@ export async function createJournal(req: Request, res: Response, next: NextFunct
     }
     const journals = await service.createManualJournal({
       ...data,
+      entries: data.entries.map(e => ({
+        accountId: e.accountId!,
+        debit: e.debit || 0,
+        credit: e.credit || 0
+      })),
+      description: data.description || '', // Ensure description is provided
       unitId: data.unitId!,
       date: new Date(data.date),
       createdById: userId,

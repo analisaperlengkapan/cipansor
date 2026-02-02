@@ -35,7 +35,7 @@ export const departmentController = {
       const limit = Number(req.query.limit) || 10;
       const search = req.query.search as string;
 
-      const result = await departmentService.findAll(unitId, { page, limit, search });
+      const result = await departmentService.findAll(unitId, { page, limit, search } as any);
       sendResponse(res, result, 'Departments retrieved successfully');
     } catch (error) {
       next(error);

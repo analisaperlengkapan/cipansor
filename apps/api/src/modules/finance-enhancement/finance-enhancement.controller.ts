@@ -10,6 +10,7 @@ import {
   CreateBudgetInput,
   UpdateBudgetInput,
   CreateFinancialPeriodInput,
+  CreateManualJournalInput,
 } from '@cipansor/shared';
 import { createBudget, updateBudget, getBudgets, deleteBudget, recalculateBudgetUsage } from './budget.service';
 import { createFinancialPeriod, closePeriod, getFinancialPeriods } from './period.service';

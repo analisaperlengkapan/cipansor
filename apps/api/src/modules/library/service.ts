@@ -200,7 +200,17 @@ export async function getBorrowings(query: QueryBorrowingInput) {
             category: { select: { id: true, name: true } },
           },
         },
-        student: { select: { name: true, nis: true, class: { select: { name: true } } } },
+          student: {
+            select: {
+              user: { select: { name: true } },
+              nis: true,
+              enrollments: {
+                where: { status: 'active' },
+                take: 1,
+                select: { class: { select: { name: true } } },
+              },
+            },
+          },
         processedByUser: { select: { id: true, name: true } },
       },
       orderBy: { borrowedAt: 'desc' },
@@ -266,7 +276,17 @@ export async function createBorrowing(data: CreateBorrowingInput, processedBy: s
       },
       include: {
         book: { select: { id: true, title: true, author: true } },
-        student: { select: { name: true, nis: true, class: { select: { name: true } } } },
+        student: {
+          select: {
+            user: { select: { name: true } },
+            nis: true,
+            enrollments: {
+              where: { status: 'active' },
+              take: 1,
+              select: { class: { select: { name: true } } },
+            },
+          },
+        },
         processedByUser: { select: { id: true, name: true } },
       },
     });
@@ -293,7 +313,7 @@ export async function returnBook(id: string, data: ReturnBookInput, processedBy:
     throw new Error('Borrowing not found or already returned');
   }
 
-  const isOverdue = new Date() > borrowing.dueDate;
+  const isOverdue = new Date().getTime() > borrowing.dueDate.getTime();
 
   return prisma.$transaction(async (tx) => {
     const updated = await tx.borrowing.update({

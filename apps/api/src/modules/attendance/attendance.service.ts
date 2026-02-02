@@ -32,7 +32,9 @@ export class AttendanceService {
     currentUser: { role: UserRole; unitId: string | null }
   ) {
     const { page, limit, classId, studentId, date, startDate, endDate, status } = query;
-    const skip = (page - 1) * limit;
+    const pageNum = Number(page);
+    const limitNum = Number(limit);
+    const skip = (pageNum - 1) * limitNum;
 
     const where: Prisma.AttendanceWhereInput = {};
 
@@ -113,10 +115,10 @@ export class AttendanceService {
     return {
       records: mappedRecords,
       pagination: {
-        page,
-        limit,
+        page: pageNum,
+        limit: limitNum,
         total,
-        totalPages: Math.ceil(total / limit),
+        totalPages: Math.ceil(total / limitNum),
       },
     };
   }

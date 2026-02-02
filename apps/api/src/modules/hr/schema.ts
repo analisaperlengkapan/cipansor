@@ -160,6 +160,14 @@ export const queryStaffSchema = z.object({
   search: z.string().optional(),
 });
 
+// Leave Balance Schema
+export const createLeaveBalanceSchema = z.object({
+    userId: z.string().uuid(),
+    academicYearId: z.string().uuid(),
+    leaveType: z.nativeEnum(LeaveType),
+    totalDays: z.number().int().positive(),
+});
+
 export type CreateStaffAttendanceInput = z.infer<typeof createStaffAttendanceSchema>;
 export type UpdateStaffAttendanceInput = z.infer<typeof updateStaffAttendanceSchema>;
 export type BulkAttendanceInput = z.infer<typeof bulkAttendanceSchema>;
@@ -168,3 +176,4 @@ export type UpdateLeaveInput = z.infer<typeof updateLeaveSchema>;
 export type ApproveLeaveInput = z.infer<typeof approveLeaveSchema>;
 export type CreateEmployeeInput = z.infer<typeof createEmployeeSchema>;
 export type UpdateEmployeeInput = z.infer<typeof updateEmployeeSchema>;
+export type CreateLeaveBalanceInput = z.infer<typeof createLeaveBalanceSchema>;

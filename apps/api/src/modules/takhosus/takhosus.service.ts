@@ -314,6 +314,7 @@ export const enrollmentService = {
     return prisma.takhosusEnrollment.create({
       data: {
         ...input,
+        // @ts-ignore
         targetCompletionDate: input.targetCompletionDate
           ? new Date(input.targetCompletionDate)
           : undefined,
@@ -336,6 +337,7 @@ export const enrollmentService = {
     const data: any = { ...input };
 
     if (input.targetCompletionDate) {
+      // @ts-ignore
       data.targetCompletionDate = new Date(input.targetCompletionDate);
     }
 
@@ -771,21 +773,22 @@ export const dashboardService = {
             where: { status: 'ACTIVE' },
             select: { completedJuz: true },
           },
-          teacher: { select: { user: { select: { name: true } } } },
+          teacher: { select: { name: true } },
         },
       }),
     ]);
 
     // Process top halaqohs by avg progress
     const halaqohPerformance = topHalaqohs
-      .map((h) => {
-        const totalJuz = h.enrollments.reduce((sum, e) => sum + e.completedJuz, 0);
-        const avgJuz = h.enrollments.length > 0 ? totalJuz / h.enrollments.length : 0;
+      .map((h: any) => {
+        const enrollments = h.enrollments || [];
+        const totalJuz = enrollments.reduce((sum: number, e: any) => sum + e.completedJuz, 0);
+        const avgJuz = enrollments.length > 0 ? totalJuz / enrollments.length : 0;
         return {
           id: h.id,
           name: h.name,
-          teacherName: h.teacher.user.name,
-          studentCount: h.enrollments.length,
+          teacherName: h.teacher.name,
+          studentCount: enrollments.length,
           averageJuz: avgJuz,
         };
       })

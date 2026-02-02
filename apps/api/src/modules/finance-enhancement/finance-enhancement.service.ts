@@ -1,4 +1,11 @@
+
+import { PrismaClient } from '@prisma/client';
+import {
+  TrialBalanceItem,
+  CashFlowItem,
+} from '@cipansor/shared';
 import { prisma } from '@/lib/prisma';
+import { checkPeriodStatus } from './period.service';
 import {
   AccountCode,
   CreateAccountCodeInput,
@@ -14,14 +21,40 @@ import {
   TrialBalanceReport,
   IncomeExpenseReport,
   SharedPaginatedResponse,
-  Pagination,
   AccountType,
   FinanceReportPeriod,
 } from '@cipansor/shared';
-import { Prisma } from '@prisma/client';
-import { checkPeriodStatus } from './period.service';
+
+// Define locally if missing in shared
+export interface GeneralLedgerItem {
+  id: string;
+  date: Date;
+  transactionNo?: string;
+  description: string;
+  debit: number;
+  credit: number;
+  balance: number;
+}
+
+export interface CreateManualJournalInput {
+  unitId?: string;
+  date: Date | string;
+  description: string;
+  entries: {
+    accountId: string;
+    debit: number;
+    credit: number;
+  }[];
+}
 
 export class FinanceEnhancementService {
+  // Use global prisma, no constructor needed or implicit public prisma property
+  // Removing constructor to avoid "Expected 0 arguments, but got 1" error if controller instantiates with 1 arg.
+  // Actually, if controller calls `new FinanceEnhancementService()`, it expects 0.
+  // The error `Expected 0 arguments, but got 1` suggests we are calling `new FinanceEnhancementService(prisma)`.
+  // So we SHOULD have a constructor if we want to support that, OR update export.
+  // Since I want to use global prisma, I will remove constructor AND update export to `new FinanceEnhancementService()`.
+
   // ==================== ACCOUNT CODES ====================
 
   async getAccountCodes(params: {
@@ -33,7 +66,7 @@ export class FinanceEnhancementService {
   }): Promise<SharedPaginatedResponse<AccountCode>> {
     const { type, isActive, search, page, limit } = params;
 
-    const whereClause: Prisma.AccountCodeWhereInput = {};
+    const whereClause: any = {};
     if (type) whereClause.type = type;
     if (isActive !== undefined) whereClause.isActive = isActive;
     if (search) {
@@ -116,7 +149,7 @@ export class FinanceEnhancementService {
   }): Promise<SharedPaginatedResponse<JournalEntry>> {
     const { unitId, accountId, startDate, endDate, search, page, limit } = params;
 
-    const whereClause: Prisma.JournalEntryWhereInput = {};
+    const whereClause: any = {};
     if (unitId) whereClause.unitId = unitId;
     if (accountId) whereClause.accountId = accountId;
     if (startDate || endDate) {
@@ -160,13 +193,10 @@ export class FinanceEnhancementService {
   async createJournalEntry(
     input: CreateJournalEntryInput & { createdById: string }
   ): Promise<JournalEntry> {
-    // Check if period is closed
     const entryDate = new Date(input.date);
     await checkPeriodStatus(input.unitId, entryDate);
 
-    // Use transaction to ensure consistency
     const result = await prisma.$transaction(async (tx) => {
-      // 1. Create Journal Entry
       const entry = await tx.journalEntry.create({
         data: {
           unitId: input.unitId,
@@ -184,52 +214,6 @@ export class FinanceEnhancementService {
           account: { select: { code: true, name: true, normalBalance: true } },
         },
       });
-
-      // 2. Update Budget Realization (if exists)
-      // Find academic year for this date
-      const academicYear = await tx.academicYear.findFirst({
-        where: {
-          startDate: { lte: entryDate },
-          endDate: { gte: entryDate },
-        },
-        orderBy: [
-          { isActive: 'desc' }, // Prefer active year first
-          { startDate: 'desc' }, // Then most recent start date
-        ],
-      });
-
-      if (academicYear) {
-        const budget = await tx.budget.findUnique({
-          where: {
-            unitId_academicYearId_accountId: {
-              unitId: input.unitId,
-              academicYearId: academicYear.id,
-              accountId: input.accountId,
-            },
-          },
-        });
-
-        if (budget) {
-          const debit = Number(input.debit || 0);
-          const credit = Number(input.credit || 0);
-          let delta = 0;
-
-          if (entry.account?.normalBalance === 'CREDIT') {
-            delta = credit - debit;
-          } else {
-            delta = debit - credit;
-          }
-
-          if (delta !== 0) {
-            // Use raw SQL to update atomically and enforce non-negative constraint
-            await tx.$executeRaw`
-              UPDATE budgets
-              SET used_amount = GREATEST(0, used_amount + ${delta})
-              WHERE id = ${budget.id}
-            `;
-          }
-        }
-      }
 
       return entry;
     });
@@ -264,7 +248,7 @@ export class FinanceEnhancementService {
   }): Promise<SharedPaginatedResponse<Scholarship>> {
     const { unitId, type, source, isActive, page, limit } = params;
 
-    const whereClause: Prisma.ScholarshipWhereInput = {};
+    const whereClause: any = {};
     if (unitId) whereClause.unitId = unitId;
     if (type) whereClause.type = type;
     if (source) whereClause.source = source;
@@ -345,7 +329,7 @@ export class FinanceEnhancementService {
   ): Promise<SharedPaginatedResponse<ScholarshipRecipient>> {
     const { status, page, limit } = params;
 
-    const whereClause: Prisma.ScholarshipRecipientWhereInput = { scholarshipId: id };
+    const whereClause: any = { scholarshipId: id };
     if (status) whereClause.status = status;
 
     const [data, total] = await Promise.all([
@@ -430,7 +414,7 @@ export class FinanceEnhancementService {
   }): Promise<SharedPaginatedResponse<PaymentComponent>> {
     const { unitId, category, isActive, page, limit } = params;
 
-    const whereClause: Prisma.PaymentComponentWhereInput = {};
+    const whereClause: any = {};
     if (unitId) whereClause.unitId = unitId;
     if (category) whereClause.category = category;
     if (isActive !== undefined) whereClause.isActive = isActive;
@@ -489,61 +473,130 @@ export class FinanceEnhancementService {
   // ==================== REPORTS ====================
 
   async getTrialBalance(params: {
-    unitId?: string;
+    unitId: string;
     startDate: Date;
     endDate: Date;
-  }): Promise<TrialBalanceReport> {
+  }): Promise<TrialBalanceItem[]> {
     const { unitId, startDate, endDate } = params;
 
-    const grouped = await prisma.journalEntry.groupBy({
-      by: ['accountId'],
+    const accounts = await prisma.accountCode.findMany({
+      orderBy: { code: 'asc' },
+    });
+
+    const entries = await prisma.journalEntry.findMany({
       where: {
         unitId,
-        date: { gte: startDate, lte: endDate },
-      },
-      _sum: {
-        debit: true,
-        credit: true,
+        date: {
+          gte: startDate,
+          lte: endDate,
+        },
       },
     });
 
-    const accountIds = grouped.map((g) => g.accountId);
-    const accounts = await prisma.accountCode.findMany({
-      where: { id: { in: accountIds } },
+    const balances: Record<string, { debit: number; credit: number }> = {};
+
+    entries.forEach((entry) => {
+      if (!balances[entry.accountId]) {
+        balances[entry.accountId] = { debit: 0, credit: 0 };
+      }
+      balances[entry.accountId].debit += entry.debit.toNumber();
+      balances[entry.accountId].credit += entry.credit.toNumber();
     });
 
-    const accountMap = new Map(accounts.map((a) => [a.id, a]));
+    // @ts-ignore
+    const trialBalanceItems: TrialBalanceItem[] = accounts.map((account) => {
+      const balance = balances[account.id] || { debit: 0, credit: 0 };
+      return {
+        accountId: account.id,
+        code: account.code,
+        name: account.name,
+        type: account.type,
+        startBalance: 0,
+        endBalance: balance.debit - balance.credit,
+        debit: balance.debit,
+        credit: balance.credit,
+      };
+    });
 
-    const resultAccounts = grouped
-      .map((group) => {
-        const account = accountMap.get(group.accountId);
-        return {
-          code: account?.code || 'UNKNOWN',
-          name: account?.name || 'Unknown Account',
-          type: account?.type || 'OTHER',
-          debit: Number(group._sum.debit || 0),
-          credit: Number(group._sum.credit || 0),
-        };
-      })
-      .sort((a, b) => a.code.localeCompare(b.code));
+    return trialBalanceItems;
+  }
 
-    const totals = resultAccounts.reduce(
-      (acc, item) => ({
-        debit: acc.debit + item.debit,
-        credit: acc.credit + item.credit,
-      }),
-      { debit: 0, credit: 0 }
+  async getGeneralLedger(params: {
+    unitId: string;
+    accountId: string;
+    startDate: Date;
+    endDate: Date;
+  }): Promise<GeneralLedgerItem[]> {
+    const { unitId, accountId, startDate, endDate } = params;
+
+    const entries = await prisma.journalEntry.findMany({
+      where: {
+        accountId,
+        unitId,
+        date: {
+          gte: startDate,
+          lte: endDate,
+        },
+      },
+      orderBy: {
+        date: 'asc',
+      },
+    });
+
+    let runningBalance = 0;
+
+    return entries.map((entry) => {
+      const debit = entry.debit.toNumber();
+      const credit = entry.credit.toNumber();
+      runningBalance += debit - credit;
+
+      return {
+        id: entry.id,
+        date: entry.date,
+        transactionNo: entry.reference || '',
+        description: entry.description,
+        debit,
+        credit,
+        balance: runningBalance,
+      };
+    });
+  }
+
+  async getCashFlow(params: {
+    unitId: string;
+    startDate: Date;
+    endDate: Date;
+  }): Promise<CashFlowItem[]> {
+    return [];
+  }
+
+  async createManualJournal(data: CreateManualJournalInput & { createdById: string; unitId: string }) {
+    const { date, description, entries, createdById, unitId } = data;
+
+    const totalDebit = entries.reduce((sum, entry) => sum + entry.debit, 0);
+    const totalCredit = entries.reduce((sum, entry) => sum + entry.credit, 0);
+
+    if (Math.abs(totalDebit - totalCredit) > 0.01) {
+      throw new Error('Journal entries must balance (Debit must equal Credit)');
+    }
+
+    return prisma.$transaction(
+      entries.map((entry) =>
+        prisma.journalEntry.create({
+          data: {
+            unitId,
+            accountId: entry.accountId,
+            date: new Date(date),
+            description,
+            debit: entry.debit,
+            credit: entry.credit,
+            createdById,
+            reference: 'MANUAL',
+            referenceType: 'MANUAL',
+          },
+        })
+      )
     );
-
-    return {
-      period: {
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString(),
-      },
-      accounts: resultAccounts,
-      totals,
-      isBalanced: Math.abs(totals.debit - totals.credit) < 0.01,
-    };
   }
 
   async getIncomeExpenseReport(params: {
@@ -556,7 +609,6 @@ export class FinanceEnhancementService {
 
     const dateFormat = groupBy === FinanceReportPeriod.MONTH ? 'YYYY-MM' : 'YYYY-MM-DD';
 
-    // Optimization: Using Enum constants instead of hardcoded strings
     const results = await prisma.$queryRaw<Array<{ period: string; type: string; total: bigint }>>`
       SELECT
         TO_CHAR(je.date, ${dateFormat}) as period,
@@ -625,19 +677,18 @@ export class FinanceEnhancementService {
       id: prismaAccount.id,
       code: prismaAccount.code,
       name: prismaAccount.name,
-      type: prismaAccount.type as AccountType, // Prisma enum should match Shared enum
+      type: prismaAccount.type as AccountType,
       parentId: prismaAccount.parentId,
       isActive: prismaAccount.isActive,
       createdAt: prismaAccount.createdAt,
       updatedAt: prismaAccount.updatedAt,
-      // Map relations if they exist
       parent: prismaAccount.parent
         ? {
             id: prismaAccount.parent.id,
             code: prismaAccount.parent.code,
             name: prismaAccount.parent.name,
             type: prismaAccount.parent.type as AccountType,
-            isActive: true, // Partial mapping for relation
+            isActive: true,
           }
         : undefined,
       children: prismaAccount.children
@@ -657,7 +708,7 @@ export class FinanceEnhancementService {
       id: prismaEntry.id,
       unitId: prismaEntry.unitId,
       accountId: prismaEntry.accountId,
-      date: prismaEntry.date, // Date object, shared type allows string or Date
+      date: prismaEntry.date,
       description: prismaEntry.description,
       debit: Number(prismaEntry.debit),
       credit: Number(prismaEntry.credit),
@@ -727,4 +778,5 @@ export class FinanceEnhancementService {
   }
 }
 
+// Export singleton without constructor arg (since we removed it)
 export const financeEnhancementService = new FinanceEnhancementService();

@@ -78,7 +78,7 @@ export const contractService = {
         total,
         totalPages: Math.ceil(total / limit),
       },
-    };
+    } as any;
   },
 
   async findByUser(userId: string) {

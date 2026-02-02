@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { leaveBalanceService } from './leave-balances.service';
 import { sendResponse } from '@/utils/response';
-import { AppError } from '@/middleware/error';
+import { Errors } from '../../middleware/error';
 
 export const leaveBalanceController = {
   getBalances: async (req: Request, res: Response, next: NextFunction) => {
@@ -12,7 +12,7 @@ export const leaveBalanceController = {
       if (!academicYearId) {
         // Fallback to finding active academic year could be done in service
         // For now, require it
-        throw new AppError('Academic Year ID is required', 400);
+        throw Errors.badRequest('Academic Year ID is required');
       }
 
       const result = await leaveBalanceService.getAllBalances(userId, academicYearId as string);
@@ -25,7 +25,7 @@ export const leaveBalanceController = {
   initialize: async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { unitId } = req.user!;
-      if (!unitId) throw new AppError('Unit ID missing from user', 400);
+      if (!unitId) throw Errors.badRequest('Unit ID missing from user');
 
       const result = await leaveBalanceService.initializeBalance({
         ...req.body,
@@ -43,6 +43,29 @@ export const leaveBalanceController = {
       const { totalDays } = req.body;
       const result = await leaveBalanceService.updateBalance(id, Number(totalDays));
       sendResponse(res, result, 'Leave balance updated successfully');
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  findAll: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { academicYearId } = req.query;
+      if (!academicYearId) throw Errors.badRequest('Academic Year ID is required');
+
+      const { unitId } = req.user!;
+      if (!unitId) throw Errors.badRequest('Unit ID missing from user');
+
+      const page = Number(req.query.page) || 1;
+      const limit = Number(req.query.limit) || 10;
+      const search = req.query.search as string;
+
+      const result = await leaveBalanceService.findAll(unitId, academicYearId as string, {
+        page,
+        limit,
+        search,
+      });
+      sendResponse(res, result, 'Leave balances retrieved successfully');
     } catch (error) {
       next(error);
     }

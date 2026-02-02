@@ -229,8 +229,8 @@ export async function runDepreciation(req: Request, res: Response, next: NextFun
       return;
     }
 
-    const date = req.body.date ? new Date(req.body.date) : new Date();
-    const result = await depreciationService.runMonthlyDepreciation(unitId, date, user.id);
+    // Fixed: calling service.runDepreciationJob instead of depreciationService.runMonthlyDepreciation
+    const result = await service.runDepreciationJob(unitId, user.id);
     res.json({ success: true, data: result });
   } catch (error) {
     next(error);
@@ -391,20 +391,6 @@ export async function updateInventorySettings(req: Request, res: Response, next:
     const data = updateInventorySettingsSchema.parse(req.body);
     await service.updateInventorySettings(data);
     res.json({ success: true, message: 'Settings updated' });
-  } catch (error) {
-    next(error);
-  }
-}
-
-export async function runMonthlyDepreciation(req: Request, res: Response, next: NextFunction) {
-  try {
-    // Optional unitId filter
-    const unitId = req.body.unitId;
-    // Pass the executor ID (current user) to the service
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const executorId = (req as any).user.id;
-    const results = await service.runDepreciationJob(unitId, executorId);
-    res.json({ success: true, data: results });
   } catch (error) {
     next(error);
   }

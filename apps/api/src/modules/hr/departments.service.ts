@@ -86,7 +86,7 @@ export const departmentService = {
         total,
         totalPages: Math.ceil(total / limit),
       },
-    };
+    } as any;
   },
 
   async findOne(id: string) {

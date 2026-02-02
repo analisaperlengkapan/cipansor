@@ -129,6 +129,7 @@ export const createEnrollmentSchema = z.object({
   halaqohId: z.string().uuid(),
   status: z.string().optional(),
   targetJuz: z.number().int().min(1).max(30).optional(),
+  targetCompletionDate: z.string().optional(),
 });
 
 export const updateEnrollmentSchema = createEnrollmentSchema.partial();

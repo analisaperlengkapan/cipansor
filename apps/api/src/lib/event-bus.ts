@@ -53,6 +53,9 @@ export interface AppEvents {
   // Notification Events
   'notification:send': NotificationSendEvent;
 
+  // Message Events
+  'message:sent': { messageId: string; recipientId: string };
+
   // Dashboard Events
   'dashboard:refresh': DashboardRefreshEvent;
   'dashboard:alert': DashboardAlertEvent;

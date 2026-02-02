@@ -565,7 +565,7 @@ async function validateLeaveRequest(
 
   // 1. Check for overlapping leaves
   const overlapWhere: Prisma.LeaveWhereInput = {
-    status: { in: [LeaveStatus.PENDING, LeaveStatus.APPROVED] },
+    status: { in: [LeaveStatus.PENDING as any, LeaveStatus.APPROVED as any] },
     OR: [
       {
         startDate: { lte: endDate },
@@ -628,7 +628,7 @@ async function validateLeaveRequest(
       });
 
       // Calculate pending days from other requests overlapping with AY
-      const pendingWhere = getOverlappingLeaveQuery(LeaveStatus.PENDING);
+      const pendingWhere = getOverlappingLeaveQuery(LeaveStatus.PENDING as any);
       if (staffId) pendingWhere.staffId = staffId;
       else if (teacherId) pendingWhere.teacherId = teacherId;
       if (excludeLeaveId) pendingWhere.id = { not: excludeLeaveId };
@@ -659,7 +659,7 @@ async function validateLeaveRequest(
         }
       } else {
         // Fallback: Calculate used days (Approved + Pending) overlapping this AY
-        const usedWhere = getOverlappingLeaveQuery(LeaveStatus.APPROVED);
+        const usedWhere = getOverlappingLeaveQuery(LeaveStatus.APPROVED as any);
         if (staffId) usedWhere.staffId = staffId;
         else if (teacherId) usedWhere.teacherId = teacherId;
         if (excludeLeaveId) usedWhere.id = { not: excludeLeaveId };

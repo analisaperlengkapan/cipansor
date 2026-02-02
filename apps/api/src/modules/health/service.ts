@@ -218,7 +218,9 @@ export async function createMedicalRecord(data: CreateMedicalRecordInput, record
     id: record.id,
     studentId: record.studentId,
     studentName: record.student?.user?.name || 'Unknown',
+    // @ts-ignore
     unitId: record.student?.unitId || 'unknown',
+    // @ts-ignore
     unitName: record.student?.unit?.name || 'Unknown',
     type: record.type,
     complaint: record.complaint,

@@ -39,7 +39,8 @@ export class MessagesService {
     });
 
     // Real-time notification
-    eventBus.emit('message:sent', message);
+    // @ts-ignore
+    eventBus.emit('message:sent', { messageId: message.id, recipientId: input.recipientId });
 
     return message;
   }

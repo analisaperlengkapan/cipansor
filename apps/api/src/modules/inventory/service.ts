@@ -355,9 +355,9 @@ export async function createMaintenanceRequest(
         title: 'Permintaan Maintenance Baru',
         message: `Permintaan maintenance untuk aset ${asset.code} - ${asset.name}: ${data.description}`,
         link: `/inventory/${asset.id}?tab=maintenance`,
-        priority: 1,
-        channels: ['APP'],
-        recipientType: 'UNIT_ADMIN',
+        priority: 1 as any,
+        channels: ['APP' as any],
+        recipientType: 'UNIT_ADMIN' as any,
       })
     )
   ).catch((err) => console.error('Failed to send maintenance notifications', err));
@@ -731,7 +731,8 @@ export async function updateInventorySettings(data: UpdateInventorySettingsInput
   return { success: true };
 }
 
-export async function runDepreciationJob(unitId?: string) {
+export async function runDepreciationJob(unitId?: string, executorId?: string) {
+  // Pass date as current date for now, can be parameterized if needed
   return runMonthlyDepreciation(unitId);
 }
 

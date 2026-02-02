@@ -48,8 +48,9 @@ export function ProposalFormDialog({ children }: { children: React.ReactNode }) 
       category: 'PTK',
       unitId: '',
       academicYearId: '',
+      documents: [],
       documentUrl: '',
-    },
+    } as any,
   });
 
   const onSubmit = async (data: any) => {
@@ -123,7 +124,7 @@ export function ProposalFormDialog({ children }: { children: React.ReactNode }) 
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl><SelectTrigger><SelectValue placeholder="Select Year" /></SelectTrigger></FormControl>
                     <SelectContent>
-                      {academicYears?.map((y: any) => <SelectItem key={y.id} value={y.id}>{y.name}</SelectItem>)}
+                      {academicYears?.data?.map((y: any) => <SelectItem key={y.id} value={y.id}>{y.name}</SelectItem>)}
                     </SelectContent>
                   </Select>
                   <FormMessage />

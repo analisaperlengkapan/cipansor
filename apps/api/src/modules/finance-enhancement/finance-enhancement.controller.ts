@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { financeEnhancementService } from './finance-enhancement.service';
+import { financeEnhancementService, CreateManualJournalInput } from './finance-enhancement.service';
 import {
   CreateAccountCodeInput,
   UpdateAccountCodeInput,
@@ -132,10 +132,12 @@ export class FinanceEnhancementController {
     try {
       const input: CreateManualJournalInput = req.body;
       const userId = (req as any).user.id;
+      const unitId = (req as any).user.unitId;
 
       await financeEnhancementService.createManualJournal({
         ...input,
         createdById: userId,
+        unitId,
       });
 
       res.status(201).json({ success: true, message: 'Manual journal created successfully' });

@@ -1,8 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { researchService } from './research.service';
-import { NotFoundError } from '@/middleware/error';
-
-// --- Proposals ---
+import { Errors } from '../../middleware/error';
 
 export const createProposal = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -32,7 +30,7 @@ export const getProposalById = async (req: Request, res: Response, next: NextFun
   try {
     const proposal = await researchService.findProposalById(req.params.id);
     if (!proposal) {
-      throw new NotFoundError('Research proposal not found');
+      throw Errors.notFound('Research proposal not found');
     }
     res.json({
       success: true,

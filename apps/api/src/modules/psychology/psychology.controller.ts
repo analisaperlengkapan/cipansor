@@ -9,7 +9,7 @@ export class PsychologyController {
     try {
       const unitId = req.query.unitId as string;
       const result = await psychologyService.getTests(unitId, req.user);
-      sendResponse(res, httpStatus.OK, { data: result });
+      sendResponse(res, result, 'Tests retrieved successfully', httpStatus.OK);
     } catch (error) {
       next(error);
     }
@@ -18,7 +18,7 @@ export class PsychologyController {
   async getTestById(req: Request, res: Response, next: NextFunction) {
     try {
       const result = await psychologyService.getTestById(req.params.id);
-      sendResponse(res, httpStatus.OK, { data: result });
+      sendResponse(res, result, 'Test retrieved successfully', httpStatus.OK);
     } catch (error) {
         next(error);
     }
@@ -27,7 +27,7 @@ export class PsychologyController {
   async createTest(req: Request, res: Response, next: NextFunction) {
     try {
       const result = await psychologyService.createTest(req.body, req.user);
-      sendResponse(res, httpStatus.CREATED, { data: result });
+      sendResponse(res, result, 'Test created successfully', httpStatus.CREATED);
     } catch (error) {
       next(error);
     }
@@ -36,7 +36,7 @@ export class PsychologyController {
   async updateTest(req: Request, res: Response, next: NextFunction) {
     try {
       const result = await psychologyService.updateTest(req.params.id, req.body, req.user);
-      sendResponse(res, httpStatus.OK, { data: result });
+      sendResponse(res, result, 'Test updated successfully', httpStatus.OK);
     } catch (error) {
       next(error);
     }
@@ -45,7 +45,7 @@ export class PsychologyController {
   async deleteTest(req: Request, res: Response, next: NextFunction) {
       try {
           await psychologyService.deleteTest(req.params.id, req.user);
-          sendResponse(res, httpStatus.OK, { message: 'Test deleted successfully' });
+          sendResponse(res, null, 'Test deleted successfully', httpStatus.OK);
       } catch (error) {
           next(error);
       }
@@ -61,7 +61,7 @@ export class PsychologyController {
         endDate: req.query.endDate as string,
       };
       const result = await psychologyService.getRecords(filters, req.user);
-      sendResponse(res, httpStatus.OK, { data: result });
+      sendResponse(res, result, 'Records retrieved successfully', httpStatus.OK);
     } catch (error) {
       next(error);
     }
@@ -70,7 +70,7 @@ export class PsychologyController {
   async getRecordById(req: Request, res: Response, next: NextFunction) {
       try {
           const result = await psychologyService.getRecordById(req.params.id, req.user);
-          sendResponse(res, httpStatus.OK, { data: result });
+          sendResponse(res, result, 'Record retrieved successfully', httpStatus.OK);
       } catch (error) {
           next(error);
       }
@@ -79,7 +79,7 @@ export class PsychologyController {
   async createRecord(req: Request, res: Response, next: NextFunction) {
     try {
       const result = await psychologyService.createRecord(req.body, req.user);
-      sendResponse(res, httpStatus.CREATED, { data: result });
+      sendResponse(res, result, 'Record created successfully', httpStatus.CREATED);
     } catch (error) {
       next(error);
     }
@@ -88,7 +88,7 @@ export class PsychologyController {
   async updateRecord(req: Request, res: Response, next: NextFunction) {
       try {
           const result = await psychologyService.updateRecord(req.params.id, req.body, req.user);
-          sendResponse(res, httpStatus.OK, { data: result });
+          sendResponse(res, result, 'Record updated successfully', httpStatus.OK);
       } catch (error) {
           next(error);
       }
@@ -97,7 +97,7 @@ export class PsychologyController {
   async deleteRecord(req: Request, res: Response, next: NextFunction) {
       try {
           await psychologyService.deleteRecord(req.params.id, req.user);
-          sendResponse(res, httpStatus.OK, { message: 'Record deleted successfully' });
+          sendResponse(res, null, 'Record deleted successfully', httpStatus.OK);
       } catch (error) {
           next(error);
       }

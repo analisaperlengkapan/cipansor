@@ -53,12 +53,12 @@ export class PsychologyService {
     }
 
     // Determine unitId:
-    // If unitId provided, use it (if Super Admin or Unit Admin of that unit)
-    // If not provided, and user is Unit Admin, use user's unitId
-    // If not provided, and user is Super Admin, create global (null)
-
     let targetUnitId = data.unitId;
-    if (!targetUnitId && currentUser.unitId) {
+
+    if (currentUser.role !== UserRole.SUPER_ADMIN) {
+        if (targetUnitId && targetUnitId !== currentUser.unitId) {
+            throw Errors.forbidden('You cannot create tests for other units');
+        }
         targetUnitId = currentUser.unitId;
     }
 
@@ -125,8 +125,8 @@ export class PsychologyService {
               student: {
                   select: {
                       id: true,
-                      name: true,
                       nis: true,
+                      user: { select: { name: true } },
                       enrollments: {
                           where: { status: 'active' },
                           take: 1,
@@ -145,7 +145,7 @@ export class PsychologyService {
       const record = await prisma.studentPsychologyRecord.findUnique({
           where: { id },
           include: {
-              student: { include: { unit: true } },
+              student: { include: { unit: true, user: { select: { name: true } } } },
               test: true,
               recordedBy: { select: { id: true, name: true } }
           }
@@ -180,7 +180,7 @@ export class PsychologyService {
               recordedById: currentUser.sub
           },
           include: {
-              student: { select: { name: true } },
+              student: { include: { user: { select: { name: true } } } },
               test: { select: { name: true } }
           }
       });

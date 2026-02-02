@@ -4,6 +4,7 @@
 
 generator client {
   provider = "prisma-client-js"
+  output = "../../../node_modules/@prisma/client"
 }
 
 datasource db {
@@ -7398,4 +7399,21 @@ model StudentPsychologyRecord {
   @@index([testId])
   @@index([testDate])
   @@map("student_psychology_records")
+}
+
+// =====================================
+// SHARED ENUMS (Re-added for Prisma Client generation)
+// =====================================
+
+enum JournalReferenceType {
+  INVOICE
+  PAYMENT
+  EXPENSE
+  ASSET_ACQUISITION
+  ASSET_DEPRECIATION
+  ASSET_DISPOSAL
+  INVENTORY_ADJUSTMENT
+  OPENING_BALANCE
+  PAYROLL
+  OTHER
 }

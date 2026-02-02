@@ -48,6 +48,7 @@ export async function getMedicalRecords(query: QueryMedicalRecordInput & { statu
           select: {
             id: true,
             nis: true,
+            unitId: true,
             user: { select: { id: true, name: true } },
             unit: { select: { id: true, name: true } },
           },
@@ -67,6 +68,7 @@ export async function getMedicalRecords(query: QueryMedicalRecordInput & { statu
         ? {
             id: record.student.id,
             nis: record.student.nis,
+            unitId: record.student.unitId,
             name: record.student.user.name,
             user: record.student.user,
             unit: record.student.unit,
@@ -236,7 +238,9 @@ export async function createMedicalRecord(data: CreateMedicalRecordInput, record
         select: {
           id: true,
           nis: true,
+          unitId: true,
           user: { select: { id: true, name: true } },
+          unit: { select: { name: true } },
         },
       },
       recordedBy: { select: { id: true, name: true } },
@@ -344,7 +348,9 @@ export async function updateMedicalRecord(id: string, data: UpdateMedicalRecordI
         select: {
           id: true,
           nis: true,
+          unitId: true,
           user: { select: { id: true, name: true } },
+          unit: { select: { name: true } },
         },
       },
       recordedBy: { select: { id: true, name: true } },

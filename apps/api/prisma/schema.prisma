@@ -348,6 +348,7 @@ model User {
   createdBudgets                    Budget[]                    @relation("BudgetCreator")
   closedPeriods                     FinancialPeriod[]           @relation("PeriodCloser")
   walletTransactions                WalletTransaction[]         @relation("WalletTransactor")
+  bookReservations                  Reservation[]
   // Canteen relations
   canteenTransactions               CanteenTransaction[]        @relation("CanteenCashier")
   canteenStockMovements             CanteenStockMovement[]      @relation("CanteenStockCreator")
@@ -462,6 +463,7 @@ model Unit {
   books                  Book[]
   medications            Medication[]
   announcements          Announcement[]
+  librarySetting         LibrarySetting?
   assets                 Asset[]
   assetAudits            AssetAudit[]
   subjects               Subject[]
@@ -1841,6 +1843,8 @@ model Book {
   unit       Unit         @relation(fields: [unitId], references: [id])
   category   BookCategory @relation(fields: [categoryId], references: [id])
   borrowings Borrowing[]
+  copies     BookCopy[]
+  reservations Reservation[]
 
   @@index([unitId])
   @@index([categoryId])
@@ -1868,16 +1872,72 @@ model Borrowing {
   updatedAt    DateTime        @updatedAt @map("updated_at")
 
   // Relations
-  book            Book     @relation(fields: [bookId], references: [id])
-  student         Student? @relation(fields: [studentId], references: [id])
-  processedByUser User     @relation("BorrowingProcessor", fields: [processedBy], references: [id])
+  book            Book      @relation(fields: [bookId], references: [id])
+  copy            BookCopy? @relation(fields: [copyId], references: [id])
+  student         Student?  @relation(fields: [studentId], references: [id])
+  processedByUser User      @relation("BorrowingProcessor", fields: [processedBy], references: [id])
+
+  copyId String? @map("copy_id")
 
   @@index([bookId])
+  @@index([copyId])
   @@index([borrowerId])
   @@index([studentId])
   @@index([status])
   @@index([dueDate])
   @@map("borrowings")
+}
+
+/// BookCopy - Eksemplar Buku (Barcode)
+model BookCopy {
+  id        String   @id @default(uuid())
+  bookId    String   @map("book_id")
+  code      String   @unique // Barcode / Inventory Number
+  condition String   @default("GOOD") // GOOD, DAMAGED, LOST, REPAIR
+  status    String   @default("AVAILABLE") // AVAILABLE, BORROWED, MAINTENANCE, LOST
+  location  String?  // Rak spesifik
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  book       Book        @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  borrowings Borrowing[]
+
+  @@index([bookId])
+  @@index([code])
+  @@map("book_copies")
+}
+
+/// Reservation - Reservasi Buku
+model Reservation {
+  id         String   @id @default(uuid())
+  bookId     String   @map("book_id")
+  userId     String   @map("user_id")
+  reservedAt DateTime @default(now()) @map("reserved_at")
+  status     String   @default("PENDING") // PENDING, FULFILLED, CANCELLED, EXPIRED
+  notes      String?
+
+  book Book @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([bookId])
+  @@index([userId])
+  @@index([status])
+  @@map("reservations")
+}
+
+/// LibrarySetting - Pengaturan Perpustakaan per Unit
+model LibrarySetting {
+  id           String   @id @default(uuid())
+  unitId       String   @unique @map("unit_id")
+  loanDuration Int      @default(14) @map("loan_duration") // Default lama pinjam (hari)
+  finePerDay   Decimal  @default(0) @map("fine_per_day") @db.Decimal(10, 2)
+  maxLoans     Int      @default(3) @map("max_loans") // Maksimal buku dipinjam
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  unit Unit @relation(fields: [unitId], references: [id], onDelete: Cascade)
+
+  @@map("library_settings")
 }
 
 // =====================================

@@ -1,6 +1,6 @@
 "use client";
 
-import { use } from "react";
+import { use, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
@@ -18,6 +18,8 @@ import {
   Calendar,
   Hash,
   Building,
+  Plus,
+  QrCode,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -39,6 +41,17 @@ import {
 } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import {
   useBook,
@@ -46,14 +59,19 @@ import {
   useDeleteBook,
   useReturnBook,
   useMarkLost,
+  useBookCopies,
+  useCreateBookCopy,
   BOOK_CATEGORIES,
   BORROW_STATUSES,
   BookCategory,
   BorrowStatus,
 } from "@/hooks/use-library";
 
-function getCategoryLabel(category: BookCategory) {
-    return BOOK_CATEGORIES.find((c) => c.value === (category as any))?.label || category;
+function getCategoryLabel(category: any) {
+    if (typeof category === 'object' && category !== null) {
+        return category.name || category.code || 'Unknown';
+    }
+    return BOOK_CATEGORIES.find((c) => c.value === category)?.label || category;
 }
 
 function getStatusBadge(status: BorrowStatus) {
@@ -75,9 +93,16 @@ export default function BookDetailPage({
 
   const { data: book, isLoading } = useBook(id);
   const { data: borrowsData } = useBorrows({ bookId: id, limit: 50 });
+  const { data: copies } = useBookCopies(id);
+
   const deleteBookMutation = useDeleteBook();
   const returnMutation = useReturnBook();
   const markLostMutation = useMarkLost();
+  const createCopyMutation = useCreateBookCopy();
+
+  // Add Copy State
+  const [isAddCopyOpen, setIsAddCopyOpen] = useState(false);
+  const [newCopyCode, setNewCopyCode] = useState("");
 
   const handleDelete = async () => {
     try {
@@ -109,6 +134,27 @@ export default function BookDetailPage({
       toast.success("Buku ditandai sebagai hilang");
     } catch {
       toast.error("Gagal menandai buku sebagai hilang");
+    }
+  };
+
+  const handleAddCopy = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCopyCode) return;
+
+    try {
+      await createCopyMutation.mutateAsync({
+        bookId: id,
+        data: {
+          code: newCopyCode,
+          status: "AVAILABLE",
+          condition: "GOOD"
+        }
+      });
+      toast.success("Salinan buku berhasil ditambahkan");
+      setNewCopyCode("");
+      setIsAddCopyOpen(false);
+    } catch {
+      toast.error("Gagal menambahkan salinan. Kode barcode mungkin sudah ada.");
     }
   };
 
@@ -291,19 +337,109 @@ export default function BookDetailPage({
         <div className="lg:col-span-2">
           <Card>
             <CardHeader>
-              <CardTitle>Peminjaman</CardTitle>
-              <CardDescription>Riwayat peminjaman buku ini</CardDescription>
+              <CardTitle>Detail Buku</CardTitle>
+              <CardDescription>Manajemen eksemplar dan riwayat</CardDescription>
             </CardHeader>
             <CardContent>
-              <Tabs defaultValue="active">
+              <Tabs defaultValue="copies">
                 <TabsList>
+                  <TabsTrigger value="copies">
+                    Eksemplar ({copies?.length || 0})
+                  </TabsTrigger>
                   <TabsTrigger value="active">
-                    Aktif ({activeBorrows.length})
+                    Peminjaman Aktif ({activeBorrows.length})
                   </TabsTrigger>
                   <TabsTrigger value="history">
                     Riwayat ({historyBorrows.length})
                   </TabsTrigger>
                 </TabsList>
+
+                <TabsContent value="copies" className="mt-4 space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-sm font-medium">Daftar Eksemplar</h3>
+                    <Dialog open={isAddCopyOpen} onOpenChange={setIsAddCopyOpen}>
+                      <DialogTrigger asChild>
+                        <Button size="sm">
+                          <Plus className="mr-2 h-4 w-4" />
+                          Tambah Salinan
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Tambah Salinan Buku</DialogTitle>
+                          <DialogDescription>
+                            Masukkan kode barcode untuk salinan baru buku ini.
+                          </DialogDescription>
+                        </DialogHeader>
+                        <form onSubmit={handleAddCopy}>
+                          <div className="grid gap-4 py-4">
+                            <div className="grid gap-2">
+                              <Label htmlFor="barcode">Barcode / Kode Inventaris</Label>
+                              <Input
+                                id="barcode"
+                                value={newCopyCode}
+                                onChange={(e) => setNewCopyCode(e.target.value)}
+                                placeholder="Scan atau ketik kode..."
+                                autoFocus
+                              />
+                            </div>
+                          </div>
+                          <DialogFooter>
+                            <Button type="submit" disabled={createCopyMutation.isPending || !newCopyCode}>
+                              {createCopyMutation.isPending ? "Menyimpan..." : "Simpan"}
+                            </Button>
+                          </DialogFooter>
+                        </form>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+
+                  {!copies || copies.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-8 border rounded-lg border-dashed">
+                      <QrCode className="h-12 w-12 text-muted-foreground" />
+                      <p className="mt-4 text-muted-foreground">
+                        Belum ada data eksemplar (Mode Legacy)
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Buku ini dikelola berdasarkan jumlah stok, bukan per item.
+                      </p>
+                    </div>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Kode/Barcode</TableHead>
+                          <TableHead>Kondisi</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Lokasi</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {copies.map((copy) => (
+                          <TableRow key={copy.id}>
+                            <TableCell className="font-mono">{copy.code}</TableCell>
+                            <TableCell>
+                              <Badge variant="secondary">{copy.condition}</Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Badge
+                                variant={copy.status === "AVAILABLE" ? "default" : "secondary"}
+                                className={
+                                  copy.status === "AVAILABLE"
+                                    ? "bg-green-100 text-green-800 hover:bg-green-100"
+                                    : ""
+                                }
+                              >
+                                {copy.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>{copy.location || "-"}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </TabsContent>
 
                 <TabsContent value="active" className="mt-4">
                   {activeBorrows.length === 0 ? (

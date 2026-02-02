@@ -6,6 +6,7 @@ import type {
   CreateBookInput,
   UpdateBookInput,
   QueryBookInput,
+  CreateBookCopyInput,
   CreateBorrowingInput,
   ReturnBookInput,
   QueryBorrowingInput,
@@ -112,10 +113,12 @@ export async function getBookById(id: string) {
     include: {
       unit: { select: { id: true, name: true } },
       category: { select: { id: true, name: true, code: true } },
+      copies: { orderBy: { code: 'asc' } }, // Include copies
       borrowings: {
         where: { status: BorrowingStatus.ACTIVE },
         include: {
           processedByUser: { select: { id: true, name: true } },
+          copy: true, // Include copy info
         },
         orderBy: { borrowedAt: 'desc' },
         take: 5,
@@ -169,6 +172,74 @@ export async function deleteBook(id: string) {
   });
 }
 
+// ==================== BOOK COPY ====================
+
+export async function addBookCopy(bookId: string, data: CreateBookCopyInput) {
+  return prisma.$transaction(async (tx) => {
+    // Check if code exists
+    const existing = await tx.bookCopy.findUnique({ where: { code: data.code } });
+    if (existing) {
+      throw new Error('Barcode/Code already exists');
+    }
+
+    const copy = await tx.bookCopy.create({
+      data: {
+        ...data,
+        bookId,
+      },
+    });
+
+    // Increment Book quantity and available
+    await tx.book.update({
+      where: { id: bookId },
+      data: {
+        quantity: { increment: 1 },
+        available: { increment: 1 },
+      },
+    });
+
+    return copy;
+  });
+}
+
+export async function getBookCopies(bookId: string) {
+  return prisma.bookCopy.findMany({
+    where: { bookId },
+    orderBy: { code: 'asc' },
+    include: {
+      borrowings: {
+        where: { status: BorrowingStatus.ACTIVE },
+        take: 1,
+        include: {
+           student: { select: { name: true } },
+           book: { select: { title: true } }
+        }
+      }
+    }
+  });
+}
+
+export async function findCopyByCode(code: string) {
+  return prisma.bookCopy.findUnique({
+    where: { code },
+    include: {
+      book: {
+        include: {
+          category: true,
+          unit: true,
+        },
+      },
+      borrowings: {
+        where: { status: BorrowingStatus.ACTIVE },
+        take: 1,
+        include: {
+           student: true
+        }
+      }
+    },
+  });
+}
+
 // ==================== BORROWING ====================
 
 export async function getBorrowings(query: QueryBorrowingInput) {
@@ -200,6 +271,7 @@ export async function getBorrowings(query: QueryBorrowingInput) {
             category: { select: { id: true, name: true } },
           },
         },
+        copy: true, // Include copy details
         student: { select: { name: true, nis: true, class: { select: { name: true } } } },
         processedByUser: { select: { id: true, name: true } },
       },
@@ -232,18 +304,13 @@ export async function getBorrowingById(id: string) {
           category: { select: { id: true, name: true } },
         },
       },
+      copy: true,
       processedByUser: { select: { id: true, name: true } },
     },
   });
 }
 
 export async function createBorrowing(data: CreateBorrowingInput, processedBy: string) {
-  // Check book availability
-  const book = await prisma.book.findUnique({ where: { id: data.bookId } });
-  if (!book || book.available < 1) {
-    throw new Error('Book not available for borrowing');
-  }
-
   const studentId = data.studentId;
   const borrowerId = data.borrowerId || studentId;
   const borrowerType = data.borrowerType || (studentId ? 'STUDENT' : 'STAFF');
@@ -252,11 +319,32 @@ export async function createBorrowing(data: CreateBorrowingInput, processedBy: s
     throw new Error('Borrower ID is required');
   }
 
-  // Create borrowing and update book availability
   return prisma.$transaction(async (tx) => {
+    // 1. Check Copy Logic (if copyId provided)
+    if (data.copyId) {
+      const copy = await tx.bookCopy.findUnique({ where: { id: data.copyId } });
+      if (!copy) throw new Error('Copy not found');
+      if (copy.status !== 'AVAILABLE') throw new Error('Book copy is not available');
+
+      // Update copy status
+      await tx.bookCopy.update({
+        where: { id: data.copyId },
+        data: { status: 'BORROWED' },
+      });
+    }
+
+    // 2. Check Book Availability (Global)
+    // Even if copy is selected, we must ensure Book.available > 0 logic holds for consistency
+    const book = await tx.book.findUnique({ where: { id: data.bookId } });
+    if (!book || book.available < 1) {
+      throw new Error('Book not available for borrowing');
+    }
+
+    // 3. Create Borrowing
     const borrowing = await tx.borrowing.create({
       data: {
         bookId: data.bookId,
+        copyId: data.copyId,
         studentId: studentId,
         borrowerId: borrowerId,
         borrowerType: borrowerType,
@@ -266,11 +354,13 @@ export async function createBorrowing(data: CreateBorrowingInput, processedBy: s
       },
       include: {
         book: { select: { id: true, title: true, author: true } },
+        copy: true,
         student: { select: { name: true, nis: true, class: { select: { name: true } } } },
         processedByUser: { select: { id: true, name: true } },
       },
     });
 
+    // 4. Update Book Availability
     await tx.book.update({
       where: { id: data.bookId },
       data: {
@@ -286,7 +376,7 @@ export async function createBorrowing(data: CreateBorrowingInput, processedBy: s
 export async function returnBook(id: string, data: ReturnBookInput, processedBy: string) {
   const borrowing = await prisma.borrowing.findUnique({
     where: { id },
-    include: { book: true },
+    include: { book: true, copy: true },
   });
 
   if (!borrowing || borrowing.status !== BorrowingStatus.ACTIVE) {
@@ -296,6 +386,7 @@ export async function returnBook(id: string, data: ReturnBookInput, processedBy:
   const isOverdue = new Date() > borrowing.dueDate;
 
   return prisma.$transaction(async (tx) => {
+    // 1. Update Borrowing
     const updated = await tx.borrowing.update({
       where: { id },
       data: {
@@ -310,6 +401,18 @@ export async function returnBook(id: string, data: ReturnBookInput, processedBy:
       },
     });
 
+    // 2. Update Copy (if exists)
+    if (borrowing.copyId) {
+      await tx.bookCopy.update({
+        where: { id: borrowing.copyId },
+        data: {
+          status: 'AVAILABLE',
+          condition: data.condition || borrowing.copy?.condition || 'GOOD',
+        },
+      });
+    }
+
+    // 3. Update Book Availability
     await tx.book.update({
       where: { id: borrowing.bookId },
       data: {
@@ -325,7 +428,7 @@ export async function returnBook(id: string, data: ReturnBookInput, processedBy:
 export async function markAsLost(id: string) {
   const borrowing = await prisma.borrowing.findUnique({
     where: { id },
-    include: { book: true },
+    include: { book: true, copy: true },
   });
 
   if (!borrowing || borrowing.status !== BorrowingStatus.ACTIVE) {
@@ -337,6 +440,14 @@ export async function markAsLost(id: string) {
       where: { id },
       data: { status: BorrowingStatus.LOST },
     });
+
+    // Update Copy if exists
+    if (borrowing.copyId) {
+      await tx.bookCopy.update({
+        where: { id: borrowing.copyId },
+        data: { status: 'LOST', condition: 'LOST' },
+      });
+    }
 
     await tx.book.update({
       where: { id: borrowing.bookId },

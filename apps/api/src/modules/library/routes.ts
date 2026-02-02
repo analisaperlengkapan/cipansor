@@ -279,6 +279,87 @@ router.delete(
   controller.deleteBook
 );
 
+// ==================== BOOK COPIES ====================
+
+/**
+ * @swagger
+ * /api/library/books/{id}/copies:
+ *   get:
+ *     summary: Get book copies
+ *     tags: [Library]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: List of book copies
+ */
+router.get('/books/:id/copies', controller.getBookCopies);
+
+/**
+ * @swagger
+ * /api/library/books/{id}/copies:
+ *   post:
+ *     summary: Add book copy
+ *     tags: [Library]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - code
+ *             properties:
+ *               code:
+ *                 type: string
+ *               condition:
+ *                 type: string
+ *               location:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Copy added
+ */
+router.post(
+  '/books/:id/copies',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  controller.addBookCopy
+);
+
+/**
+ * @swagger
+ * /api/library/copies/{code}:
+ *   get:
+ *     summary: Find copy by barcode
+ *     tags: [Library]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: code
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Copy details
+ */
+router.get('/copies/:code', controller.findCopyByCode);
+
 // ==================== BORROWINGS ====================
 
 /**

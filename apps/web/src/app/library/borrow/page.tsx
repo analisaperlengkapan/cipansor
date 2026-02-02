@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, Suspense } from "react";
+import { useState, useMemo, Suspense, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { format, addDays } from "date-fns";
@@ -14,6 +14,8 @@ import {
   Clock,
   Save,
   Loader2,
+  ScanBarcode,
+  CheckCircle,
 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -55,6 +57,7 @@ import { toast } from "sonner";
 import {
   useBooks,
   useCreateBorrow,
+  useCopyByCode,
   BOOK_CATEGORIES,
   Book,
   BookCategory,
@@ -64,6 +67,7 @@ import { cn } from "@/lib/utils";
 
 const borrowSchema = z.object({
   bookId: z.string().min(1, "Pilih buku yang akan dipinjam"),
+  copyId: z.string().optional(),
   studentId: z.string().min(1, "Pilih peminjam"),
   borrowDate: z.string().min(1, "Tanggal pinjam wajib diisi"),
   dueDate: z.string().min(1, "Tanggal jatuh tempo wajib diisi"),
@@ -72,10 +76,11 @@ const borrowSchema = z.object({
 
 type BorrowFormData = z.infer<typeof borrowSchema>;
 
-function getCategoryLabel(category: BookCategory) {
-  // Use a type guard or safe access if BOOK_CATEGORIES is typed
-    const cat = BOOK_CATEGORIES.find((c) => c.value === (category as any));
-  return cat?.label || category;
+function getCategoryLabel(category: any) {
+  if (typeof category === 'object' && category !== null) {
+    return category.name || category.code || 'Unknown';
+  }
+  return BOOK_CATEGORIES.find((c) => c.value === category)?.label || category;
 }
 
 function BorrowBookContent() {
@@ -87,6 +92,8 @@ function BorrowBookContent() {
   const [studentSearchOpen, setStudentSearchOpen] = useState(false);
   const [bookSearch, setBookSearch] = useState("");
   const [studentSearch, setStudentSearch] = useState("");
+  const [barcode, setBarcode] = useState("");
+  const [debouncedBarcode, setDebouncedBarcode] = useState("");
 
   const { data: booksData } = useBooks({
     limit: 100,
@@ -96,6 +103,10 @@ function BorrowBookContent() {
     limit: 100,
     search: studentSearch || undefined,
   });
+
+  // Barcode scanning
+  const { data: scannedCopy, isFetching: isScanning } = useCopyByCode(debouncedBarcode, !!debouncedBarcode);
+
   const createBorrowMutation = useCreateBorrow();
 
   const availableBooks = useMemo(() => {
@@ -113,12 +124,37 @@ function BorrowBookContent() {
     },
   });
 
+  // Handle scanned copy
+  useEffect(() => {
+    if (scannedCopy) {
+      if (scannedCopy.status === "AVAILABLE") {
+        form.setValue("bookId", scannedCopy.bookId);
+        form.setValue("copyId", scannedCopy.id);
+        toast.success(`Buku ditemukan: ${scannedCopy.book?.title}`);
+      } else {
+        toast.error(`Buku ini sedang tidak tersedia (Status: ${scannedCopy.status})`);
+        setBarcode("");
+      }
+    }
+  }, [scannedCopy, form]);
+
+  // Debounce barcode input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedBarcode(barcode);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [barcode]);
+
   const selectedBookId = form.watch("bookId");
   const selectedStudentId = form.watch("studentId");
+  const selectedCopyId = form.watch("copyId");
 
+  // Determine selected book (either from manual select or scan)
   const selectedBook = useMemo(() => {
+    if (scannedCopy && scannedCopy.bookId === selectedBookId) return scannedCopy.book;
     return booksData?.data.find((b) => b.id === selectedBookId);
-  }, [booksData, selectedBookId]);
+  }, [booksData, selectedBookId, scannedCopy]);
 
   const selectedStudent = useMemo(() => {
     return studentsData?.data?.find((s: Student) => s.id === selectedStudentId);
@@ -128,6 +164,7 @@ function BorrowBookContent() {
     try {
       await createBorrowMutation.mutateAsync({
         bookId: data.bookId,
+        copyId: data.copyId,
         studentId: data.studentId,
         borrowerType: "STUDENT",
         dueDate: data.dueDate,
@@ -157,6 +194,38 @@ function BorrowBookContent() {
         </div>
       </div>
 
+      {/* Barcode Scanner Section */}
+      <Card className="border-primary/20 bg-primary/5">
+        <CardContent className="pt-6">
+          <div className="flex items-end gap-4">
+            <div className="flex-1 space-y-2">
+              <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2">
+                <ScanBarcode className="h-4 w-4" />
+                Scan Barcode
+              </label>
+              <Input
+                placeholder="Scan barcode buku disini..."
+                value={barcode}
+                onChange={(e) => setBarcode(e.target.value)}
+                autoFocus
+                className="bg-background"
+              />
+            </div>
+            {isScanning && (
+              <div className="pb-2">
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              </div>
+            )}
+          </div>
+          {selectedCopyId && selectedBook && (
+            <div className="mt-4 flex items-center gap-2 text-sm text-green-700 bg-green-100 p-2 rounded">
+              <CheckCircle className="h-4 w-4" />
+              Buku terpilih: <strong>{selectedBook.title}</strong> (Copy ID: {debouncedBarcode})
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <div className="grid gap-6 lg:grid-cols-3">
@@ -170,7 +239,7 @@ function BorrowBookContent() {
                     Pilih Buku
                   </CardTitle>
                   <CardDescription>
-                    Cari dan pilih buku yang akan dipinjam
+                    Cari dan pilih buku yang akan dipinjam (jika tidak menggunakan scanner)
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -193,6 +262,7 @@ function BorrowBookContent() {
                                   "w-full justify-between",
                                   !field.value && "text-muted-foreground",
                                 )}
+                                disabled={!!selectedCopyId} // Disable manual select if scanned
                               >
                                 {selectedBook ? (
                                   <div className="flex items-center gap-2 overflow-hidden">
@@ -231,6 +301,8 @@ function BorrowBookContent() {
                                       value={book.id}
                                       onSelect={() => {
                                         form.setValue("bookId", book.id);
+                                        form.setValue("copyId", ""); // Reset copy if manual select
+                                        setBarcode("");
                                         setBookSearchOpen(false);
                                       }}
                                     >

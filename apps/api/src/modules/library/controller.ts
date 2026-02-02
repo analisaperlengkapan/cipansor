@@ -6,6 +6,7 @@ import {
   createBookSchema,
   updateBookSchema,
   queryBookSchema,
+  createBookCopySchema,
   createBorrowingSchema,
   returnBookSchema,
   queryBorrowingSchema,
@@ -116,6 +117,40 @@ export async function deleteBook(req: Request, res: Response, next: NextFunction
   try {
     await service.deleteBook(req.params.id);
     res.json({ success: true, message: 'Book deleted' });
+  } catch (error) {
+    next(error);
+  }
+}
+
+// ==================== BOOK COPY ====================
+
+export async function addBookCopy(req: Request, res: Response, next: NextFunction) {
+  try {
+    const data = createBookCopySchema.parse(req.body);
+    const copy = await service.addBookCopy(req.params.id, data);
+    res.status(201).json({ success: true, data: copy });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getBookCopies(req: Request, res: Response, next: NextFunction) {
+  try {
+    const copies = await service.getBookCopies(req.params.id);
+    res.json({ success: true, data: copies });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function findCopyByCode(req: Request, res: Response, next: NextFunction) {
+  try {
+    const code = req.params.code;
+    const copy = await service.findCopyByCode(code);
+    if (!copy) {
+      throw Errors.notFound('Copy not found');
+    }
+    res.json({ success: true, data: copy });
   } catch (error) {
     next(error);
   }

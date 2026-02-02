@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import api, { PaginatedResponse } from "@/lib/api";
+import api, { PaginatedResponse, ApiResponse } from "@/lib/api";
 import {
   Book,
   BookCategory,
@@ -12,6 +12,27 @@ import {
 
 // Re-export types for component use
 export type { Book, BookCategory, Borrow, BorrowStatus, BookStatus };
+
+// New Types
+export interface BookCopy {
+  id: string;
+  bookId: string;
+  code: string;
+  condition: string;
+  status: string;
+  location?: string;
+  createdAt: string;
+  updatedAt: string;
+  book?: Book; // Optional relation
+  borrowings?: Borrow[];
+}
+
+export type CreateBookCopyInput = {
+  code: string;
+  condition?: string;
+  location?: string;
+  status?: string;
+};
 
 // Constants
 export const BORROW_STATUSES: {
@@ -46,10 +67,10 @@ export function useBookCategories(unitId?: string) {
   return useQuery({
     queryKey: ["book-categories", unitId],
     queryFn: async () => {
-      const response = await api.get<BookCategory[]>("/library/categories", {
+      const response = await api.get<ApiResponse<BookCategory[]>>("/library/categories", {
         params: { unitId },
       });
-      return response.data;
+      return response.data.data;
     },
   });
 }
@@ -79,8 +100,8 @@ export function useBook(id: string) {
   return useQuery({
     queryKey: ["books", id],
     queryFn: async () => {
-      const response = await api.get<Book>(`/library/books/${id}`);
-      return response.data;
+      const response = await api.get<ApiResponse<Book>>(`/library/books/${id}`);
+      return response.data.data;
     },
     enabled: !!id,
   });
@@ -91,8 +112,8 @@ export function useCreateBook() {
 
   return useMutation({
     mutationFn: async (data: any) => {
-      const response = await api.post<Book>("/library/books", data);
-      return response.data;
+      const response = await api.post<ApiResponse<Book>>("/library/books", data);
+      return response.data.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["books"] });
@@ -105,8 +126,8 @@ export function useUpdateBook() {
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: any }) => {
-      const response = await api.put<Book>(`/library/books/${id}`, data);
-      return response.data;
+      const response = await api.put<ApiResponse<Book>>(`/library/books/${id}`, data);
+      return response.data.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["books"] });
@@ -124,6 +145,44 @@ export function useDeleteBook() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["books"] });
     },
+  });
+}
+
+// Book Copy Hooks
+export function useBookCopies(bookId: string) {
+  return useQuery({
+    queryKey: ["book-copies", bookId],
+    queryFn: async () => {
+      const response = await api.get<ApiResponse<BookCopy[]>>(`/library/books/${bookId}/copies`);
+      return response.data.data;
+    },
+    enabled: !!bookId,
+  });
+}
+
+export function useCreateBookCopy() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ bookId, data }: { bookId: string; data: CreateBookCopyInput }) => {
+      const response = await api.post<ApiResponse<BookCopy>>(`/library/books/${bookId}/copies`, data);
+      return response.data.data;
+    },
+    onSuccess: (_, { bookId }) => {
+      queryClient.invalidateQueries({ queryKey: ["book-copies", bookId] });
+      queryClient.invalidateQueries({ queryKey: ["books", bookId] }); // Updates quantity
+    },
+  });
+}
+
+export function useCopyByCode(code: string, enabled = false) {
+  return useQuery({
+    queryKey: ["copy", "code", code],
+    queryFn: async () => {
+      const response = await api.get<ApiResponse<BookCopy>>(`/library/copies/${code}`);
+      return response.data.data;
+    },
+    enabled: !!code && enabled,
+    retry: false,
   });
 }
 
@@ -151,8 +210,8 @@ export function useBorrow(id: string) {
   return useQuery({
     queryKey: ["borrows", id],
     queryFn: async () => {
-      const response = await api.get<Borrow>(`/library/borrowings/${id}`);
-      return response.data;
+      const response = await api.get<ApiResponse<Borrow>>(`/library/borrowings/${id}`);
+      return response.data.data;
     },
     enabled: !!id,
   });
@@ -178,8 +237,8 @@ export function useCreateBorrow() {
 
   return useMutation({
     mutationFn: async (data: CreateBorrowingInput) => {
-      const response = await api.post<Borrow>("/library/borrowings", data);
-      return response.data;
+      const response = await api.post<ApiResponse<Borrow>>("/library/borrowings", data);
+      return response.data.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["borrows"] });
@@ -193,11 +252,11 @@ export function useReturnBook() {
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: ReturnBookInput }) => {
-      const response = await api.patch<Borrow>(
+      const response = await api.patch<ApiResponse<Borrow>>(
         `/library/borrowings/${id}/return`,
         data,
       );
-      return response.data;
+      return response.data.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["borrows"] });
@@ -211,10 +270,10 @@ export function useMarkLost() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const response = await api.patch<Borrow>(
+      const response = await api.patch<ApiResponse<Borrow>>(
         `/library/borrowings/${id}/lost`,
       );
-      return response.data;
+      return response.data.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["borrows"] });
@@ -228,17 +287,16 @@ export function useLibrarySummary(unitId?: string) {
   return useQuery({
     queryKey: ["library", "stats", unitId],
     queryFn: async () => {
-      // Note: Endpoint changed to /stats/:unitId
       if (!unitId) return null;
-      const response = await api.get<{
+      const response = await api.get<ApiResponse<{
         totalTitles: number;
         totalBooks: number;
         availableBooks: number;
         totalCategories: number;
         activeBorrowings: number;
         overdueBorrowings: number;
-      }>(`/library/stats/${unitId}`);
-      return response.data;
+      }>>(`/library/stats/${unitId}`);
+      return response.data.data;
     },
     enabled: !!unitId,
   });

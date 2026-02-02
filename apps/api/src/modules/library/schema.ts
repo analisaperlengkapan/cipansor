@@ -39,10 +39,19 @@ export const queryBookSchema = z.object({
   status: z.nativeEnum(BookStatus).optional(),
 });
 
+// Book Copy schemas
+export const createBookCopySchema = z.object({
+  code: z.string().min(1).max(50), // Barcode
+  condition: z.enum(['GOOD', 'DAMAGED', 'LOST', 'REPAIR']).default('GOOD'),
+  location: z.string().optional(),
+  status: z.enum(['AVAILABLE', 'BORROWED', 'MAINTENANCE', 'LOST']).default('AVAILABLE'),
+});
+
 // Borrowing schemas
 export const createBorrowingSchema = z
   .object({
     bookId: z.string().uuid(),
+    copyId: z.string().uuid().optional(),
     studentId: z.string().uuid().optional(),
     borrowerId: z.string().uuid().optional(),
     borrowerType: z.enum(['STUDENT', 'STAFF', 'TEACHER']).optional().default('STUDENT'),
@@ -57,6 +66,7 @@ export const createBorrowingSchema = z
 export const returnBookSchema = z.object({
   lateFee: z.number().nonnegative().optional(),
   notes: z.string().optional(),
+  condition: z.enum(['GOOD', 'DAMAGED', 'LOST', 'REPAIR']).optional(), // Condition on return
 });
 
 export const queryBorrowingSchema = z.object({
@@ -73,6 +83,7 @@ export type UpdateBookCategoryInput = z.infer<typeof updateBookCategorySchema>;
 export type CreateBookInput = z.infer<typeof createBookSchema>;
 export type UpdateBookInput = z.infer<typeof updateBookSchema>;
 export type QueryBookInput = z.infer<typeof queryBookSchema>;
+export type CreateBookCopyInput = z.infer<typeof createBookCopySchema>;
 export type CreateBorrowingInput = z.infer<typeof createBorrowingSchema>;
 export type ReturnBookInput = z.infer<typeof returnBookSchema>;
 export type QueryBorrowingInput = z.infer<typeof queryBorrowingSchema>;

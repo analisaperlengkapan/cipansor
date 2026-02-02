@@ -45,13 +45,14 @@ describe('Reporting Service (ISAK 35)', () => {
   describe('getStatementOfActivities', () => {
     it('should correctly classify restricted and unrestricted revenues and expenses', async () => {
       // Mock Accounts
+      // Using 'any' cast to bypass strict Prisma type checks in mock if necessary,
+      // but ensuring runtime structure is correct.
       vi.mocked(prisma.accountCode.findMany).mockResolvedValue([
-        // Ensure all required fields from Prisma AccountCode model are present
-        { id: 'acc-1', code: '4101', name: 'Pendapatan SPP', type: AccountType.REVENUE, isActive: true, parentId: null, normalBalance: 'CREDIT', cashFlowCategory: null, createdAt: new Date(), updatedAt: new Date() },
-        { id: 'acc-2', code: '4201', name: 'Hibah Terikat Gedung', type: AccountType.REVENUE, isActive: true, parentId: null, normalBalance: 'CREDIT', cashFlowCategory: null, createdAt: new Date(), updatedAt: new Date() },
-        { id: 'acc-3', code: '5101', name: 'Beban Gaji', type: AccountType.EXPENSE, isActive: true, parentId: null, normalBalance: 'DEBIT', cashFlowCategory: null, createdAt: new Date(), updatedAt: new Date() },
-        { id: 'acc-4', code: '5201', name: 'Beban Pembangunan (Terikat)', type: AccountType.EXPENSE, isActive: true, parentId: null, normalBalance: 'DEBIT', cashFlowCategory: null, createdAt: new Date(), updatedAt: new Date() },
-      ]);
+        { id: 'acc-1', code: '4101', name: 'Pendapatan SPP', type: AccountType.REVENUE, isActive: true, parentId: null, normalBalance: 'CREDIT', cashFlowCategory: null, createdAt: new Date(), updatedAt: new Date(), deletedAt: null },
+        { id: 'acc-2', code: '4201', name: 'Hibah Terikat Gedung', type: AccountType.REVENUE, isActive: true, parentId: null, normalBalance: 'CREDIT', cashFlowCategory: null, createdAt: new Date(), updatedAt: new Date(), deletedAt: null },
+        { id: 'acc-3', code: '5101', name: 'Beban Gaji', type: AccountType.EXPENSE, isActive: true, parentId: null, normalBalance: 'DEBIT', cashFlowCategory: null, createdAt: new Date(), updatedAt: new Date(), deletedAt: null },
+        { id: 'acc-4', code: '5201', name: 'Beban Pembangunan (Terikat)', type: AccountType.EXPENSE, isActive: true, parentId: null, normalBalance: 'DEBIT', cashFlowCategory: null, createdAt: new Date(), updatedAt: new Date(), deletedAt: null },
+      ] as any);
 
       const mockDecimal = (val: number) => ({ toNumber: () => val });
 

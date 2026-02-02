@@ -23,21 +23,6 @@ export enum ComplaintPriority {
   URGENT = "URGENT",
 }
 
-export enum ComplaintCategory {
-  ACADEMIC = "ACADEMIC",
-  FACILITY = "FACILITY",
-  SERVICE = "SERVICE",
-  BULLYING = "BULLYING",
-  FINANCE = "FINANCE",
-  OTHER = "OTHER",
-}
-
-export enum ComplaintStatus {
-  PENDING = "PENDING",
-  IN_PROGRESS = "IN_PROGRESS",
-  RESOLVED = "RESOLVED",
-  REJECTED = "REJECTED",
-}
 
 export interface QualityStandard {
   id: string;

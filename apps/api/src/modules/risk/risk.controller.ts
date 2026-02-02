@@ -5,10 +5,11 @@ import { riskService } from './risk.service';
 import { createRiskSchema, updateRiskSchema, createMitigationSchema, updateMitigationSchema, listRiskQuerySchema } from './risk.validation';
 import { UserRole } from '@prisma/client';
 
-const PRIVILEGED_ROLES = [
+// Only use roles that exist in the UserRole enum
+const PRIVILEGED_ROLES: UserRole[] = [
   UserRole.SUPER_ADMIN,
-  UserRole.YAYASAN_ADMIN,
-  UserRole.YAYASAN_KETUA
+  // UserRole.YAYASAN_ADMIN, // Not in UserRole enum
+  // UserRole.YAYASAN_KETUA  // Not in UserRole enum
 ];
 
 function isPrivileged(role?: UserRole): boolean {

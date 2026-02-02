@@ -461,7 +461,7 @@ export const sanadService = {
           include: {
             student: {
               include: {
-                user: { select: { id: true, name: true } },
+                user: { select: { id: true, name: true, email: true } },
               },
             },
           },
@@ -683,7 +683,10 @@ export const progressService = {
       return null;
     }
 
-    const students = halaqoh.enrollments.map((e) => ({
+    // Cast halaqoh to any to avoid type check errors on 'enrollments' which sometimes Prisma fails to infer with partial select
+    const anyHalaqoh = halaqoh as any;
+
+    const students = anyHalaqoh.enrollments.map((e: any) => ({
       id: e.student.id,
       name: e.student.user.name,
       enrolledAt: e.enrolledAt,
@@ -694,7 +697,7 @@ export const progressService = {
       sanadCount: e.sanadRecords.length,
     }));
 
-    const totalProgress = students.reduce((acc, s) => acc + s.progressPercentage, 0);
+    const totalProgress = students.reduce((acc: number, s: any) => acc + s.progressPercentage, 0);
     const averageProgress = students.length > 0 ? Math.round(totalProgress / students.length) : 0;
 
     return {
@@ -710,7 +713,7 @@ export const progressService = {
       teacher: halaqoh.teacher,
       studentCount: students.length,
       averageProgress,
-      students: students.sort((a, b) => b.progressPercentage - a.progressPercentage),
+      students: students.sort((a: any, b: any) => b.progressPercentage - a.progressPercentage),
     };
   },
 };
@@ -771,7 +774,7 @@ export const dashboardService = {
             where: { status: 'ACTIVE' },
             select: { completedJuz: true },
           },
-          teacher: { select: { user: { select: { name: true } } } },
+          teacher: { select: { name: true } },
         },
       }),
     ]);
@@ -784,7 +787,7 @@ export const dashboardService = {
         return {
           id: h.id,
           name: h.name,
-          teacherName: h.teacher.user.name,
+          teacherName: h.teacher.name,
           studentCount: h.enrollments.length,
           averageJuz: avgJuz,
         };

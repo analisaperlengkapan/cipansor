@@ -59,7 +59,7 @@ export class AttendanceService {
     // Date filtering with timezone safety
     if (date) {
       // query.date is a string (YYYY-MM-DD) from schema
-      const d = new Date(date);
+      const d = new Date(String(date));
       // Use string comparison for date part to avoid timezone shifts if storing as Date
       // OR explicitly set UTC boundaries if the DB stores timestamps
       // Assuming DB stores DateTime (timestamp), we need range coverage
@@ -77,8 +77,8 @@ export class AttendanceService {
       };
     } else if (startDate && endDate) {
       where.date = {
-        gte: new Date(startDate),
-        lte: new Date(endDate),
+        gte: new Date(String(startDate)),
+        lte: new Date(String(endDate)),
       };
     }
 
@@ -401,8 +401,8 @@ export class AttendanceService {
 
     const where: Prisma.AttendanceWhereInput = {
       date: {
-        gte: new Date(startDate),
-        lte: new Date(endDate),
+        gte: new Date(String(startDate)),
+        lte: new Date(String(endDate)),
       },
     };
 

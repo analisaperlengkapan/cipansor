@@ -105,6 +105,12 @@ jobs:
           pnpm db:push
           pnpm db:seed
 
+      - name: Generate Prisma Client
+        run: cd apps/api && pnpm prisma generate
+
+      - name: Build shared package
+        run: pnpm --filter @cipansor/shared build
+
       - name: Build API
         run: cd apps/api && pnpm build
 

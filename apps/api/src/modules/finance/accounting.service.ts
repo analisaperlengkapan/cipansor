@@ -1,5 +1,6 @@
 import { prisma } from '../../lib/prisma';
-import { Prisma, AccountCode, JournalReferenceType } from '@prisma/client';
+import { Prisma, AccountCode } from '@prisma/client';
+import { JournalReferenceType } from '@cipansor/shared';
 
 // =====================================
 // COA (CHART OF ACCOUNTS) SERVICE
@@ -146,7 +147,7 @@ export async function createManualJournal(data: {
           debit: new Prisma.Decimal(entry.debit),
           credit: new Prisma.Decimal(entry.credit),
           reference: referenceId,
-          referenceType: 'MANUAL', // Using string literal as fallback if Enum not exported
+          referenceType: JournalReferenceType.MANUAL,
           createdById: data.createdById,
         },
       });

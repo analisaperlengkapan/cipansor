@@ -5,7 +5,6 @@ import {
   AssetCondition,
   AssetMaintenanceStatus,
   NotificationType,
-  JournalReferenceType,
 } from '@prisma/client';
 import { prisma } from '../../lib/prisma';
 import { createNotification } from '../notifications/service';

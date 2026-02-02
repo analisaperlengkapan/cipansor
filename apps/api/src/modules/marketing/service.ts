@@ -7,6 +7,9 @@ export const createCampaign = async (data: CreateCampaignInput, userId: string) 
   return prisma.marketingCampaign.create({
     data: {
       ...rest,
+      name: data.name!,
+      code: data.code!,
+      startDate: data.startDate ? new Date(data.startDate) : new Date(),
       unit: unitId ? { connect: { id: unitId } } : undefined,
       createdBy: { connect: { id: userId } },
     },
@@ -80,6 +83,8 @@ export const logInteraction = async (data: LogInteractionInput, userId: string) 
   return prisma.marketingInteraction.create({
     data: {
       ...rest,
+      date: new Date(data.date!),
+      type: data.type || 'OTHER',
       registrant: { connect: { id: registrantId } },
       recordedBy: { connect: { id: userId } },
     },

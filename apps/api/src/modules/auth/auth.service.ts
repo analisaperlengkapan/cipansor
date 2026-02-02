@@ -5,9 +5,9 @@ import { Errors } from '@/middleware/error';
 import { config } from '@/config';
 import type { LoginInput, RegisterInput, ChangePasswordInput } from './auth.schema';
 import { UserRole } from '@prisma/client';
-// Fix: Import otplib as * to handle potential default export issues
-import * as otplib from 'otplib';
-const { authenticator } = otplib;
+import { TOTP } from 'otplib';
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const authenticator: any = new TOTP();
 import * as qrcode from 'qrcode';
 import crypto from 'crypto';
 
@@ -404,7 +404,7 @@ export class AuthService {
     }
 
     const secret = authenticator.generateSecret();
-    const otpauth = authenticator.keyuri(user.email, 'Cipansor App', secret);
+    const otpauth = `otpauth://totp/Cipansor%20App:${encodeURIComponent(user.email)}?secret=${secret}&issuer=Cipansor%20App`;
     const qrCodeUrl = await qrcode.toDataURL(otpauth);
 
     // BUG FIX: Store pending secret server-side

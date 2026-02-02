@@ -303,7 +303,6 @@ export interface RaporPesantren {
     address: string;
     phone: string | null;
     email: string | null;
-    website: string | null;
     logoUrl: string | null;
   };
 }

@@ -78,7 +78,11 @@ export const createRisk = asyncHandler(async (req: Request, res: Response) => {
   const risk = await riskService.createRisk({
     ...rest,
     code: rest.code || `RSK-${Date.now()}`,
+    description: rest.description || '',
+    category: rest.category || 'OTHER',
     // Defaults for calculation (should be improved logic)
+    likelihood: rest.likelihood || 'RARE',
+    impact: rest.impact || 'INSIGNIFICANT',
     riskScore: 1,
     riskLevel: 'LOW',
     unit: { connect: { id: targetUnitId } },

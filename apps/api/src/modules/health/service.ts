@@ -152,6 +152,7 @@ export async function createMedicalRecord(data: CreateMedicalRecordInput, record
           id: true,
           nis: true,
           user: { select: { id: true, name: true } },
+          unit: { select: { id: true, name: true } },
         },
       },
       recordedBy: { select: { id: true, name: true } },

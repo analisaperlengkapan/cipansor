@@ -786,7 +786,7 @@ export const dashboardService = {
           id: h.id,
           name: h.name,
           teacherName: h.teacher.user.name,
-          studentCount: h.enrollments.length,
+          studentCount: enrollments.length,
           averageJuz: avgJuz,
         };
       })

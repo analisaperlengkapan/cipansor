@@ -4,9 +4,15 @@ import { Prisma } from '@prisma/client';
 
 export const createCampaign = async (data: CreateCampaignInput, userId: string) => {
   const { unitId, ...rest } = data;
+  // Ensure required fields are present and cast to correct type if needed
   return prisma.marketingCampaign.create({
     data: {
-      ...rest,
+      name: rest.name,
+      code: rest.code,
+      description: rest.description,
+      startDate: rest.startDate,
+      endDate: rest.endDate,
+      budget: rest.budget,
       unit: unitId ? { connect: { id: unitId } } : undefined,
       createdBy: { connect: { id: userId } },
     },

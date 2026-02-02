@@ -5,7 +5,8 @@ import { Errors } from '@/middleware/error';
 import { config } from '@/config';
 import type { LoginInput, RegisterInput, ChangePasswordInput } from './auth.schema';
 import { UserRole } from '@prisma/client';
-import { authenticator } from 'otplib';
+import * as otplib from 'otplib';
+const { authenticator } = otplib;
 import * as qrcode from 'qrcode';
 
 // RoleCode might not be in @prisma/client, assuming these are string constants or from shared

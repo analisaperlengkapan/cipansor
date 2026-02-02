@@ -29,7 +29,7 @@ export const departmentController = {
   findAll: async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { unitId } = req.user!;
-      if (!unitId) throw new AppError('Unit ID missing from user', 400);
+      if (!unitId) throw new AppError('Unit ID missing from user' as any, 400);
 
       const page = Number(req.query.page) || 1;
       const limit = Number(req.query.limit) || 10;

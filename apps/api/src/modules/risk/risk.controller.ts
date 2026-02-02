@@ -5,7 +5,7 @@ import { riskService } from './risk.service';
 import { createRiskSchema, updateRiskSchema, createMitigationSchema, updateMitigationSchema, listRiskQuerySchema } from './risk.validation';
 import { UserRole } from '@prisma/client';
 
-const PRIVILEGED_ROLES = [
+const PRIVILEGED_ROLES: UserRole[] = [
   UserRole.SUPER_ADMIN,
 ];
 

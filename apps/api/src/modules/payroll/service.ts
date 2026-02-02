@@ -11,7 +11,7 @@
  */
 
 import { prisma } from '../../lib/prisma';
-import { Prisma, SalaryComponentType, PayrollStatus, JournalReferenceType } from '@prisma/client';
+import { Prisma, SalaryComponentType, PayrollStatus } from '@prisma/client';
 import { ACCOUNT_MAPPING_KEYS, getAccountOrFallback } from '../finance/accounting-config.service';
 import {
   CreateSalaryComponentInput,
@@ -720,7 +720,7 @@ export const payrollPeriodService = {
             date: payDate,
             description: desc,
             reference: period.id,
-            referenceType: JournalReferenceType.PAYROLL,
+            referenceType: 'PAYROLL',
             accountId: salaryExpenseAcc.id,
             debit: earnings,
             credit: 0,
@@ -735,7 +735,7 @@ export const payrollPeriodService = {
             date: payDate,
             description: `Pembayaran Gaji ${period.name}`,
             reference: period.id,
-            referenceType: JournalReferenceType.PAYROLL,
+            referenceType: 'PAYROLL',
             accountId: cashAcc.id,
             debit: 0,
             credit: net,
@@ -754,7 +754,7 @@ export const payrollPeriodService = {
               date: payDate,
               description: `Penyetoran PPh 21 ${period.name}`,
               reference: period.id,
-              referenceType: JournalReferenceType.PAYROLL,
+              referenceType: 'PAYROLL',
               accountId: taxPayableAcc.id,
               debit: 0,
               credit: tax,
@@ -774,7 +774,7 @@ export const payrollPeriodService = {
               date: payDate,
               description: `Potongan Lain ${period.name}`,
               reference: period.id,
-              referenceType: JournalReferenceType.PAYROLL,
+              referenceType: 'PAYROLL',
               accountId: otherPayableAcc.id,
               debit: 0,
               credit: otherDeductions,

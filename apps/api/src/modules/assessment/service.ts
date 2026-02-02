@@ -50,8 +50,8 @@ export async function getExams(query: ExamQuery): Promise<SharedPaginatedRespons
   if (status) where.status = status as any; // Cast to Prisma enum
   if (startDate || endDate) {
     where.scheduledAt = {};
-    if (startDate) where.scheduledAt.gte = new Date(startDate);
-    if (endDate) where.scheduledAt.lte = new Date(endDate);
+    if (startDate) where.scheduledAt.gte = new Date(startDate as string);
+    if (endDate) where.scheduledAt.lte = new Date(endDate as string);
   }
 
   const [exams, total] = await Promise.all([

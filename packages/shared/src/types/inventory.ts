@@ -36,6 +36,8 @@ export interface AssetCategory {
   name: string;
   code: string;
   description?: string | null;
+  defaultUsefulLife?: number | null;
+  defaultResidualValue?: number | string | null;
   _count?: {
     assets: number;
   };
@@ -162,9 +164,14 @@ export interface CreateAssetCategoryInput {
   name: string;
   code: string;
   description?: string;
+  defaultUsefulLife?: number;
+  defaultResidualValue?: number;
 }
 
 export interface UpdateAssetCategoryInput extends Partial<CreateAssetCategoryInput> {}
+
+export type CreateInventoryCategoryInput = CreateAssetCategoryInput;
+export type UpdateInventoryCategoryInput = UpdateAssetCategoryInput;
 
 export interface CreateAssetInput {
   unitId: string;

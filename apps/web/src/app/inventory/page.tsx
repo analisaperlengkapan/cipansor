@@ -62,6 +62,7 @@ import {
 } from "@/hooks/use-inventory-settings";
 import { useAccounts } from "@/hooks/use-accounting";
 import { useAuth } from "@/hooks/use-auth";
+import { CategoriesDialog } from "./components/categories-dialog";
 
 function getConditionBadge(condition: AssetCondition) {
   const colorMap: Record<AssetCondition, string> = {
@@ -262,6 +263,7 @@ export default function InventoryPage() {
         </div>
         <div className="flex gap-2">
           {unitId && <DepreciationSettingsDialog unitId={unitId} />}
+          <CategoriesDialog />
           {unitId && (
             <Button
               variant="outline"

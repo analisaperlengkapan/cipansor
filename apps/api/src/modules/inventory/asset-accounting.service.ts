@@ -1,5 +1,5 @@
 import { prisma } from '../../lib/prisma';
-import { Asset, Prisma } from '@prisma/client';
+import { Asset, Prisma, AssetDisposal } from '@prisma/client';
 
 // Default Account Codes (Standard Indonesian Accounting)
 const DEFAULT_ACCOUNTS = {
@@ -148,4 +148,164 @@ export async function createDepreciationJournal(
       createdById: userId,
     },
   });
+}
+
+export async function createDisposalJournal(
+  asset: Asset,
+  disposal: AssetDisposal,
+  accumulatedDepreciation: number,
+  userId: string,
+  tx: Prisma.TransactionClient = prisma
+) {
+  const unitId = asset.unitId;
+  const purchasePrice = new Prisma.Decimal(asset.purchasePrice || 0);
+  const accumDepr = new Prisma.Decimal(accumulatedDepreciation);
+  const bookValue = purchasePrice.minus(accumDepr);
+  const salePrice = new Prisma.Decimal(disposal.salePrice || 0);
+
+  // Calculate Gain/Loss
+  const gainLoss = salePrice.minus(bookValue);
+
+  // 1. Fixed Asset (Credit)
+  const assetAccount = await tx.accountCode.findFirst({
+    where: {
+      OR: [
+        { code: DEFAULT_ACCOUNTS.FIXED_ASSET },
+        { name: { contains: 'Aset Tetap', mode: 'insensitive' } },
+        { name: { contains: 'Inventaris', mode: 'insensitive' } },
+      ],
+      isActive: true,
+    },
+  });
+
+  // 2. Accum Depr (Debit)
+  const accumAccount = await tx.accountCode.findFirst({
+    where: {
+      OR: [
+        { code: DEFAULT_ACCOUNTS.ACCUM_DEPR },
+        { name: { contains: 'Akumulasi Penyusutan', mode: 'insensitive' } },
+      ],
+      isActive: true,
+    },
+  });
+
+  // 3. Cash/Bank (Debit)
+  let cashAccount = null;
+  if (salePrice.gt(0)) {
+    cashAccount = await tx.accountCode.findFirst({
+      where: {
+        OR: [
+          { code: DEFAULT_ACCOUNTS.CASH },
+          { name: { contains: 'Kas', mode: 'insensitive' } },
+        ],
+        isActive: true,
+      },
+    });
+  }
+
+  // 4. Gain/Loss Account
+  let gainLossAccount = null;
+  if (!gainLoss.equals(0)) {
+    const isGain = gainLoss.gt(0);
+    const searchName = isGain ? 'Pendapatan Lain-lain' : 'Beban Kerugian';
+    gainLossAccount = await tx.accountCode.findFirst({
+      where: {
+        name: { contains: searchName, mode: 'insensitive' },
+        isActive: true,
+      },
+    });
+  }
+
+  if (!assetAccount || !accumAccount) {
+    // If accounts are missing, we log/warn but maybe still proceed or throw?
+    // For now, assume setup is done. If not, throw.
+    throw new Error(`Asset Accounting: Missing accounts for Asset Disposal`);
+  }
+
+  const desc = `Penghapusan Aset: ${asset.name} (${asset.code}) - ${disposal.reason}`;
+  const date = disposal.date;
+
+  // 1. Credit Fixed Asset (Remove Asset Cost)
+  await tx.journalEntry.create({
+    data: {
+      unitId,
+      date,
+      description: desc,
+      reference: disposal.id,
+      referenceType: 'ASSET_DISPOSAL',
+      accountId: assetAccount.id,
+      debit: 0,
+      credit: purchasePrice,
+      createdById: userId,
+    },
+  });
+
+  // 2. Debit Accum Depr (Remove Accum Depr)
+  if (accumDepr.gt(0)) {
+    await tx.journalEntry.create({
+      data: {
+        unitId,
+        date,
+        description: desc,
+        reference: disposal.id,
+        referenceType: 'ASSET_DISPOSAL',
+        accountId: accumAccount.id,
+        debit: accumDepr,
+        credit: 0,
+        createdById: userId,
+      },
+    });
+  }
+
+  // 3. Debit Cash (Receive Money)
+  if (cashAccount && salePrice.gt(0)) {
+    await tx.journalEntry.create({
+      data: {
+        unitId,
+        date,
+        description: desc,
+        reference: disposal.id,
+        referenceType: 'ASSET_DISPOSAL',
+        accountId: cashAccount.id,
+        debit: salePrice,
+        credit: 0,
+        createdById: userId,
+      },
+    });
+  }
+
+  // 4. Record Gain/Loss
+  if (gainLossAccount && !gainLoss.equals(0)) {
+    if (gainLoss.gt(0)) {
+      // Gain -> Credit
+      await tx.journalEntry.create({
+        data: {
+          unitId,
+          date,
+          description: `Keuntungan Penjualan Aset: ${asset.code}`,
+          reference: disposal.id,
+          referenceType: 'ASSET_DISPOSAL',
+          accountId: gainLossAccount.id,
+          debit: 0,
+          credit: gainLoss,
+          createdById: userId,
+        },
+      });
+    } else {
+      // Loss -> Debit
+      await tx.journalEntry.create({
+        data: {
+          unitId,
+          date,
+          description: `Kerugian Penghapusan Aset: ${asset.code}`,
+          reference: disposal.id,
+          referenceType: 'ASSET_DISPOSAL',
+          accountId: gainLossAccount.id,
+          debit: gainLoss.abs(),
+          credit: 0,
+          createdById: userId,
+        },
+      });
+    }
+  }
 }

@@ -307,6 +307,8 @@ export const procurementService = {
                 supplier: input.supplier,
                 supplierId: input.supplierId,
                 roomId: fulfillmentItem.roomId,
+                usefulLife: prItem.assetCategory?.defaultUsefulLife ?? undefined,
+                residualValue: prItem.assetCategory?.defaultResidualValue ?? undefined,
               },
             });
           }

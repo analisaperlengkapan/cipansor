@@ -5,6 +5,8 @@ import {
   AssetCategory,
   AssetStatus,
   AssetCondition,
+  CreateInventoryCategoryInput,
+  UpdateInventoryCategoryInput,
   CreateAssetInput,
   UpdateAssetInput,
   InventoryStats,
@@ -53,6 +55,56 @@ export function useInventoryCategories() {
         "/inventory/categories",
       );
       return response.data.data;
+    },
+  });
+}
+
+export function useCreateInventoryCategory() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: CreateInventoryCategoryInput) => {
+      const response = await api.post<{ data: AssetCategory }>(
+        "/inventory/categories",
+        data,
+      );
+      return response.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["inventory-categories"] });
+    },
+  });
+}
+
+export function useUpdateInventoryCategory() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: UpdateInventoryCategoryInput;
+    }) => {
+      const response = await api.put<{ data: AssetCategory }>(
+        `/inventory/categories/${id}`,
+        data,
+      );
+      return response.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["inventory-categories"] });
+    },
+  });
+}
+
+export function useDeleteInventoryCategory() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await api.delete(`/inventory/categories/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["inventory-categories"] });
     },
   });
 }

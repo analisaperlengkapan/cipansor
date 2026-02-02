@@ -9,7 +9,7 @@ import {
 } from '@prisma/client';
 import { prisma } from '../../lib/prisma';
 import { createNotification } from '../notifications/service';
-import { createPurchaseJournal } from './asset-accounting.service';
+import { createPurchaseJournal, createDisposalJournal } from './asset-accounting.service';
 import type {
   CreateInventoryCategoryInput,
   UpdateInventoryCategoryInput,
@@ -441,26 +441,33 @@ export async function disposeAsset(
   if (!asset) throw new Error('Asset not found');
   if (asset.status === AssetStatus.DISPOSED) throw new Error('Asset is already disposed');
 
-  const depreciation = await calculateDepreciation(assetId);
+  const disposalDate = new Date(data.date);
+  const depreciation = await calculateDepreciation(assetId, disposalDate);
   const bookValue = depreciation?.bookValue ?? 0;
+  const accumulatedDepreciation = depreciation?.accumulatedDepreciation ?? 0;
 
-  return prisma.$transaction([
-    prisma.asset.update({
-      where: { id: assetId },
-      data: { status: AssetStatus.DISPOSED, deletedAt: new Date() },
-    }),
-    prisma.assetDisposal.create({
+  return prisma.$transaction(async (tx) => {
+    const disposal = await tx.assetDisposal.create({
       data: {
         assetId,
-        date: data.date,
+        date: disposalDate,
         reason: data.reason,
         salePrice: data.salePrice,
         bookValue,
         notes: data.notes,
         approvedById: userId,
       },
-    }),
-  ]);
+    });
+
+    await tx.asset.update({
+      where: { id: assetId },
+      data: { status: AssetStatus.DISPOSED, deletedAt: new Date() },
+    });
+
+    await createDisposalJournal(asset, disposal, accumulatedDepreciation, userId, tx);
+
+    return disposal;
+  });
 }
 
 // ==================== ASSET ASSIGNMENT ====================
@@ -663,7 +670,11 @@ export async function completeAudit(id: string) {
 
 // ==================== DEPRECIATION ====================
 
-export async function calculateDepreciation(assetId: string, tx: Prisma.TransactionClient = prisma) {
+export async function calculateDepreciation(
+  assetId: string,
+  targetDate: Date = new Date(),
+  tx: Prisma.TransactionClient = prisma
+) {
   const asset = await tx.asset.findUnique({ where: { id: assetId } });
   if (!asset || !asset.purchasePrice || !asset.purchaseDate || !asset.usefulLife) {
     return null;
@@ -675,8 +686,8 @@ export async function calculateDepreciation(assetId: string, tx: Prisma.Transact
   const monthlyDepreciation = (cost - residual) / lifeMonths;
 
   const ageMonths =
-    (new Date().getFullYear() - asset.purchaseDate.getFullYear()) * 12 +
-    (new Date().getMonth() - asset.purchaseDate.getMonth());
+    (targetDate.getFullYear() - asset.purchaseDate.getFullYear()) * 12 +
+    (targetDate.getMonth() - asset.purchaseDate.getMonth());
 
   const accumulatedDepreciation = Math.min(
     monthlyDepreciation * Math.max(0, ageMonths),

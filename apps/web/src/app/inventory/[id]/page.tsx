@@ -50,6 +50,7 @@ import {
 } from "@/hooks/use-inventory";
 import { useUnits } from "@/hooks/use-units";
 import { useTeachers } from "@/hooks/use-teachers";
+import { DisposalDialog } from "../components/disposal-dialog";
 
 function getConditionBadge(condition: AssetCondition) {
   const colorMap: Record<AssetCondition, string> = {
@@ -100,6 +101,7 @@ export default function InventoryDetailPage({
   const [isReturnOpen, setIsReturnOpen] = useState(false);
   const [isMaintenanceOpen, setIsMaintenanceOpen] = useState(false);
   const [isPrintOpen, setIsPrintOpen] = useState(false);
+  const [isDisposalOpen, setIsDisposalOpen] = useState(false);
   const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
   const [selectedAssignmentId, setSelectedAssignmentId] = useState<string>("");
 
@@ -391,19 +393,36 @@ export default function InventoryDetailPage({
               Edit
             </Link>
           </Button>
+
+          {item.status === "ACTIVE" && (
+            <Button
+              variant="destructive"
+              onClick={() => setIsDisposalOpen(true)}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Dispose
+            </Button>
+          )}
+
           <ConfirmDialog
             title="Hapus Inventaris"
             description="Apakah Anda yakin ingin menghapus data inventaris ini? Data yang dihapus tidak dapat dikembalikan."
             onConfirm={handleDelete}
             loading={deleteMutation.isPending}
           >
-            <Button variant="destructive">
-              <Trash2 className="mr-2 h-4 w-4" />
-              Hapus
+            <Button variant="ghost" size="icon" className="text-destructive">
+              <Trash2 className="h-4 w-4" />
             </Button>
           </ConfirmDialog>
         </div>
       </div>
+
+      <DisposalDialog
+        assetId={itemId}
+        assetName={item.name}
+        open={isDisposalOpen}
+        onOpenChange={setIsDisposalOpen}
+      />
 
       <Tabs defaultValue="overview" className="space-y-4">
         <TabsList>

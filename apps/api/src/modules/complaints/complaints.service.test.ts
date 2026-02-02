@@ -1,36 +1,37 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { complaintsService } from './complaints.service';
 import { prisma } from '@/lib/prisma';
 import { createNotification, createBulkNotifications } from '../notifications/service';
-import { ComplaintStatus, ComplaintPriority, ComplaintCategory, UserRole } from '@prisma/client';
+import { ComplaintStatus, ComplaintPriority, ComplaintCategory } from '@prisma/client';
 
 // Mock dependencies
-jest.mock('@/lib/prisma', () => ({
+vi.mock('@/lib/prisma', () => ({
   prisma: {
     complaint: {
-      create: jest.fn(),
-      findMany: jest.fn(),
-      findUnique: jest.fn(),
-      update: jest.fn(),
-      count: jest.fn(),
+      create: vi.fn(),
+      findMany: vi.fn(),
+      findUnique: vi.fn(),
+      update: vi.fn(),
+      count: vi.fn(),
     },
     complaintComment: {
-      create: jest.fn(),
+      create: vi.fn(),
     },
     user: {
-      findMany: jest.fn(),
-      findUnique: jest.fn(),
+      findMany: vi.fn(),
+      findUnique: vi.fn(),
     },
   },
 }));
 
-jest.mock('../notifications/service', () => ({
-  createNotification: jest.fn(),
-  createBulkNotifications: jest.fn(),
+vi.mock('../notifications/service', () => ({
+  createNotification: vi.fn(),
+  createBulkNotifications: vi.fn(),
 }));
 
 describe('ComplaintsService', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('create', () => {
@@ -56,8 +57,8 @@ describe('ComplaintsService', () => {
 
       const mockAdmins = [{ id: 'admin-1' }, { id: 'admin-2' }];
 
-      (prisma.complaint.create as jest.Mock).mockResolvedValue(mockComplaint);
-      (prisma.user.findMany as jest.Mock).mockResolvedValue(mockAdmins);
+      (prisma.complaint.create as any).mockResolvedValue(mockComplaint);
+      (prisma.user.findMany as any).mockResolvedValue(mockAdmins);
 
       const result = await complaintsService.create(mockData);
 
@@ -90,7 +91,7 @@ describe('ComplaintsService', () => {
         status: status,
       };
 
-      (prisma.complaint.update as jest.Mock).mockResolvedValue(mockComplaint);
+      (prisma.complaint.update as any).mockResolvedValue(mockComplaint);
 
       const result = await complaintsService.updateStatus(complaintId, status);
 

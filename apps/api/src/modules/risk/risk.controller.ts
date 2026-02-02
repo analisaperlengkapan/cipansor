@@ -4,16 +4,44 @@ import { Errors } from '@/middleware/error';
 import { riskService } from './risk.service';
 import { studentRiskService } from './student-risk.service';
 import { createRiskSchema, updateRiskSchema, createMitigationSchema, updateMitigationSchema, listRiskQuerySchema } from './risk.validation';
-import { UserRole } from '@prisma/client';
+import { UserRole, RiskLikelihood, RiskImpact, RiskLevel } from '@prisma/client';
 
-const PRIVILEGED_ROLES = [
+const PRIVILEGED_ROLES: UserRole[] = [
   UserRole.SUPER_ADMIN,
-  UserRole.YAYASAN_ADMIN,
-  UserRole.YAYASAN_KETUA
+  // UserRole.YAYASAN_ADMIN, // Removed as it doesn't exist in UserRole enum
+  // UserRole.YAYASAN_KETUA  // Removed as it doesn't exist in UserRole enum
 ];
 
 function isPrivileged(role?: UserRole): boolean {
   return role ? PRIVILEGED_ROLES.includes(role) : false;
+}
+
+// Helper to calculate score and level
+function calculateRiskScore(likelihood: RiskLikelihood, impact: RiskImpact): { score: number; level: RiskLevel } {
+  const likelihoodMap: Record<RiskLikelihood, number> = {
+    RARE: 1,
+    UNLIKELY: 2,
+    POSSIBLE: 3,
+    LIKELY: 4,
+    ALMOST_CERTAIN: 5
+  };
+
+  const impactMap: Record<RiskImpact, number> = {
+    INSIGNIFICANT: 1,
+    MINOR: 2,
+    MODERATE: 3,
+    MAJOR: 4,
+    CATASTROPHIC: 5
+  };
+
+  const score = (likelihoodMap[likelihood] || 0) * (impactMap[impact] || 0);
+
+  let level: RiskLevel = RiskLevel.LOW;
+  if (score >= 20) level = RiskLevel.EXTREME;
+  else if (score >= 12) level = RiskLevel.HIGH;
+  else if (score >= 5) level = RiskLevel.MEDIUM;
+
+  return { score, level };
 }
 
 export const listRisks = asyncHandler(async (req: Request, res: Response) => {
@@ -76,8 +104,14 @@ export const createRisk = asyncHandler(async (req: Request, res: Response) => {
   // Destructure to remove unitId from spread, preventing Prisma conflict
   const { unitId: _, ...rest } = body;
 
+  // Calculate score and level
+  const { score, level } = calculateRiskScore(body.likelihood, body.impact);
+
   const risk = await riskService.createRisk({
     ...rest,
+    riskScore: score,
+    riskLevel: level,
+    code: rest.code || `RISK-${Date.now()}`, // Ensure code is present
     unit: { connect: { id: targetUnitId } },
     createdBy: { connect: { id: userId } },
   });
@@ -100,6 +134,14 @@ export const updateRisk = asyncHandler(async (req: Request, res: Response) => {
   // Destructure unitId to prevent unauthorized modification of the risk's unit
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { unitId: _, ...updateData } = body;
+
+  if (body.likelihood || body.impact) {
+      const newLikelihood = body.likelihood || existingRisk.likelihood;
+      const newImpact = body.impact || existingRisk.impact;
+      const { score, level } = calculateRiskScore(newLikelihood, newImpact);
+      (updateData as any).riskScore = score;
+      (updateData as any).riskLevel = level;
+  }
 
   const risk = await riskService.updateRisk(id, updateData);
   res.json({ success: true, data: risk });
@@ -137,6 +179,7 @@ export const addMitigation = asyncHandler(async (req: Request, res: Response) =>
 
   const mitigation = await riskService.createMitigation({
     ...rest,
+    actionPlan: rest.actionPlan || 'TBD', // Provide default
     risk: { connect: { id: riskId } },
     createdBy: { connect: { id: userId } },
     pic: picId ? { connect: { id: picId } } : undefined,

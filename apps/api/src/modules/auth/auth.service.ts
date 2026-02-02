@@ -4,7 +4,7 @@ import { generateTokenPair, verifyToken, getExpirationDate, generateAccessToken 
 import { Errors } from '@/middleware/error';
 import { config } from '@/config';
 import type { LoginInput, RegisterInput, ChangePasswordInput } from './auth.schema';
-import { UserRole, RoleCode } from '@prisma/client';
+import { UserRole } from '@prisma/client';
 import { authenticator } from 'otplib';
 import * as qrcode from 'qrcode';
 import crypto from 'crypto';
@@ -645,7 +645,7 @@ export class AuthService {
    * Helper to check if a user is an Admin
    * Checks both legacy role and RoleCode
    */
-  private isAdminAccount(user: { role: UserRole }, roleCode?: RoleCode): boolean {
+  private isAdminAccount(user: { role: UserRole }, roleCode?: string): boolean {
       // Use string literals to avoid strict enum checks if enum is missing
       const ADMIN_ROLES = [
           'SUPER_ADMIN',
@@ -660,7 +660,7 @@ export class AuthService {
       return (
           user.role === UserRole.SUPER_ADMIN ||
           user.role === UserRole.UNIT_ADMIN ||
-          (roleCode && ADMIN_ROLES.includes(roleCode as any)) ||
+          (roleCode && ADMIN_ROLES.includes(roleCode)) ||
           false
       );
   }

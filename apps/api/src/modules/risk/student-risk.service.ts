@@ -38,11 +38,12 @@ export interface StudentRiskProfile {
 // Type definition for student with all required relations included
 type StudentWithRiskData = Prisma.StudentGetPayload<{
   include: {
+    user: { select: { name: true } }; // Include user to get name
     enrollments: { include: { class: true } };
     violations: true;
     grades: true;
     invoices: true;
-    attendances: true; // Note: schema says 'attendances' (plural) relation name? Checking previous code... yes.
+    attendances: true;
   }
 }>;
 
@@ -63,6 +64,7 @@ export class StudentRiskService {
     const student = await prisma.student.findUnique({
       where: { id: studentId },
       include: {
+        user: { select: { name: true } },
         enrollments: {
           where: { status: 'active' },
           include: { class: true }
@@ -95,6 +97,7 @@ export class StudentRiskService {
         status: 'active'
       },
       include: {
+        user: { select: { name: true } },
         enrollments: {
           where: { status: 'active' },
           include: { class: true }
@@ -159,7 +162,7 @@ export class StudentRiskService {
 
     return {
       studentId: student.id,
-      studentName: student.name,
+      studentName: student.user.name, // Use student.user.name instead of student.name
       className: currentClass,
       riskScore: totalRiskScore,
       riskLevel: this.determineRiskLevel(totalRiskScore),

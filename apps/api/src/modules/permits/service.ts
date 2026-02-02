@@ -214,6 +214,9 @@ export async function updatePermitStatus(
             type: NotificationType.INFO,
             title: 'Izin Disetujui',
             message: `Pengajuan izin ${updatedPermit.type} untuk ${updatedPermit.student.user.name} telah disetujui.`,
+            priority: 'NORMAL' as any,
+            channels: ['IN_APP'] as any,
+            recipientType: 'INDIVIDUAL' as any,
             data: { permitId: updatedPermit.id },
           }).catch((e) => console.error('Failed to notify parent', e))
         )
@@ -227,6 +230,9 @@ export async function updatePermitStatus(
             type: NotificationType.INFO,
             title: 'Izin Ditolak',
             message: `Pengajuan izin untuk ${updatedPermit.student.user.name} ditolak. Alasan: ${updatedPermit.rejectionNote}`,
+            priority: 'NORMAL' as any,
+            channels: ['IN_APP'] as any,
+            recipientType: 'INDIVIDUAL' as any,
             data: { permitId: updatedPermit.id },
           }).catch((e) => console.error('Failed to notify parent', e))
         )
@@ -243,7 +249,7 @@ export async function markReturned(id: string, returnedAt?: string) {
     include: {
       student: {
         include: {
-          user: true,
+          user: { select: { id: true, name: true, email: true } },
           parents: { include: { parent: true } },
         },
       },
@@ -267,6 +273,9 @@ export async function markReturned(id: string, returnedAt?: string) {
         type: NotificationType.INFO,
         title: 'Santri Kembali',
         message: `${permit.student.user.name} telah kembali ke asrama.`,
+        priority: 'NORMAL' as any,
+        channels: ['IN_APP'] as any,
+        recipientType: 'INDIVIDUAL' as any,
         data: { permitId: permit.id },
       }).catch((e) => console.error('Failed to notify parent', e))
     )
@@ -281,7 +290,7 @@ export async function markDeparted(id: string) {
     include: {
       student: {
         include: {
-          user: true,
+          user: { select: { id: true, name: true, email: true } },
           parents: { include: { parent: true } },
         },
       },
@@ -308,6 +317,9 @@ export async function markDeparted(id: string) {
         type: NotificationType.INFO,
         title: 'Santri Keluar',
         message: `${permit.student.user.name} telah meninggalkan area pesantren sesuai izin.`,
+        priority: 'NORMAL' as any,
+        channels: ['IN_APP'] as any,
+        recipientType: 'INDIVIDUAL' as any,
         data: { permitId: permit.id },
       }).catch((e) => console.error('Failed to notify parent', e))
     )
@@ -322,9 +334,10 @@ export async function getPermitByCode(code: string) {
     include: {
       student: {
         include: {
-          user: { select: { id: true, name: true, email: true, photoUrl: true } }, // Include photo
+          user: { select: { id: true, name: true, email: true } }, // Removed photoUrl
           unit: { select: { id: true, name: true } },
-          dormitories: { include: { dormitory: true, room: true } }, // Include dorm info if available (via Musyrif logic usually, but here checking Dormitory relation if exists in Student... wait Student doesn't relate directly to Dormitory, it's RoomAssignment)
+          // Removed dormitories relation as it does not exist on Student.
+          // Dorm info is fetched separately below.
         },
       },
       approvedBy: { select: { id: true, name: true } },

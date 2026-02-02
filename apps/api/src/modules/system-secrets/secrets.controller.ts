@@ -5,8 +5,6 @@ import httpStatus from 'http-status';
 
 export const listSecrets = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    // Only SUPER_ADMIN can see global secrets. UNIT_ADMIN sees unit secrets.
-    // For now, allow filtering by unitId in query.
     const unitId = req.query.unitId as string | undefined;
     const secrets = await SecretsService.list(unitId);
     res.json({ data: secrets });
@@ -23,7 +21,27 @@ export const upsertSecret = async (req: Request, res: Response, next: NextFuncti
       return;
     }
 
-    const result = await SecretsService.upsert(validation.data);
+    // Ensure key and value are provided or handle missing value if it was optional in schema but required in service
+    // 'value' is often required for create but optional for update if logic allows,
+    // but Prisma upsert requires create data.
+    // If validation.data.value is undefined, it might fail.
+    // Assuming upsert needs value if it doesn't exist.
+    // We can default to empty string or error.
+    if (!validation.data.key) {
+        res.status(httpStatus.BAD_REQUEST).json({ message: 'Key is required' });
+        return;
+    }
+
+    if (validation.data.value === undefined) {
+        res.status(httpStatus.BAD_REQUEST).json({ message: 'Value is required' });
+        return;
+    }
+
+    const result = await SecretsService.upsert({
+        ...validation.data,
+        key: validation.data.key, // Force key to be present
+        value: validation.data.value // Force value to be present
+    });
     res.status(httpStatus.OK).json({ data: { id: result.id, key: result.key } });
   } catch (error) {
     next(error);

@@ -20,7 +20,7 @@ export const simaanService = {
       data: {
         studentId: data.studentId,
         enrollmentId: student.takhosusEnrollment?.id,
-        // @ts-ignore - Prisma enum mismatch workaroud or raw string
+        // @ts-ignore - Prisma enum mismatch workaround
         simaanType: data.simaanType as any,
         examDate: new Date(data.examDate),
         juzStart: data.juzStart,
@@ -39,7 +39,11 @@ export const simaanService = {
           include: { user: { select: { name: true } } },
         },
         examiners: {
-          include: { examiner: { include: { user: { select: { name: true } } } } },
+          include: {
+            examiner: {
+              select: { name: true } // Corrected: examiner IS a User, so select fields directly
+            }
+          },
         },
       },
     });
@@ -61,7 +65,7 @@ export const simaanService = {
           },
         }),
       // @ts-ignore
-      ...(status && { status }), // Note: status field might be string in schema but inferred as enum in Prisma types
+      ...(status && { status }),
     };
 
     const [exams, total] = await Promise.all([
@@ -75,7 +79,11 @@ export const simaanService = {
             include: { user: { select: { name: true } } },
           },
           examiners: {
-            include: { examiner: { include: { user: { select: { name: true } } } } },
+            include: {
+              examiner: {
+                select: { name: true }
+              }
+            },
           },
           _count: {
             select: { examiners: true },
@@ -107,7 +115,11 @@ export const simaanService = {
           },
         },
         examiners: {
-          include: { examiner: { include: { user: { select: { name: true } } } } },
+          include: {
+            examiner: {
+              select: { name: true }
+            }
+          },
         },
       },
     });

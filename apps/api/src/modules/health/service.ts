@@ -43,8 +43,9 @@ export async function getMedicalRecords(query: QueryMedicalRecordInput & { statu
           select: {
             id: true,
             nis: true,
+            unitId: true, // Added unitId
             user: { select: { id: true, name: true } },
-            unit: { select: { id: true, name: true } },
+            unit: { select: { id: true, name: true } }, // Added unit selection
           },
         },
         recordedBy: { select: { id: true, name: true } },
@@ -65,6 +66,7 @@ export async function getMedicalRecords(query: QueryMedicalRecordInput & { statu
             name: record.student.user.name,
             user: record.student.user,
             unit: record.student.unit,
+            unitId: record.student.unitId,
           }
         : undefined,
       recordedBy: record.recordedBy,
@@ -90,8 +92,9 @@ export async function getMedicalRecordById(id: string) {
           nis: true,
           gender: true,
           birthDate: true,
+          unitId: true, // Added unitId
           user: { select: { id: true, name: true } },
-          unit: { select: { id: true, name: true } },
+          unit: { select: { id: true, name: true } }, // Added unit selection
         },
       },
       recordedBy: { select: { id: true, name: true } },
@@ -108,11 +111,13 @@ export async function getMedicalRecordById(id: string) {
       name: record.student.user.name,
       user: record.student.user,
       unit: record.student.unit,
+      unitId: record.student.unitId,
     },
     recordedBy: record.recordedBy,
   } as unknown as MedicalRecord;
 }
 
+// ... rest of the file (unchanged)
 export async function createMedicalRecord(data: CreateMedicalRecordInput, recordedById: string) {
   const {
     status,
@@ -151,7 +156,9 @@ export async function createMedicalRecord(data: CreateMedicalRecordInput, record
         select: {
           id: true,
           nis: true,
+          unitId: true,
           user: { select: { id: true, name: true } },
+          unit: { select: { id: true, name: true } },
         },
       },
       recordedBy: { select: { id: true, name: true } },
@@ -259,7 +266,9 @@ export async function updateMedicalRecord(id: string, data: UpdateMedicalRecordI
         select: {
           id: true,
           nis: true,
+          unitId: true,
           user: { select: { id: true, name: true } },
+          unit: { select: { id: true, name: true } },
         },
       },
       recordedBy: { select: { id: true, name: true } },

@@ -142,9 +142,11 @@ export const createTargetSchema = z.object({
   studentId: z.string().uuid(),
   academicYearId: z.string().uuid(),
   targetJuz: z.number().int().min(1),
+  targetAyah: z.number().int().min(0).optional(),
+  notes: z.string().optional(),
 });
 
-export const updateTargetSchema = createTargetSchema.partial();
+export const updateTargetSchema = createTargetSchema.partial().omit({ studentId: true, academicYearId: true });
 
 // ============================================
 // Types

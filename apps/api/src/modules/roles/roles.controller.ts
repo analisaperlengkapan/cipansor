@@ -14,9 +14,7 @@ import type {
 } from './roles.schema';
 
 export class RolesController {
-  /**
-   * Get all roles
-   */
+  // ... existing methods ...
   async getAllRoles(req: Request, res: Response, next: NextFunction) {
     try {
       const query = req.query as GetRolesQuery;
@@ -27,9 +25,6 @@ export class RolesController {
     }
   }
 
-  /**
-   * Get role by ID
-   */
   async getRoleById(req: Request, res: Response, next: NextFunction) {
     try {
       const role = await rolesService.getRoleById(req.params.id);
@@ -39,9 +34,6 @@ export class RolesController {
     }
   }
 
-  /**
-   * Create a new role
-   */
   async createRole(req: Request, res: Response, next: NextFunction) {
     try {
       const input = req.body as CreateRoleInput;
@@ -52,9 +44,6 @@ export class RolesController {
     }
   }
 
-  /**
-   * Update role
-   */
   async updateRole(req: Request, res: Response, next: NextFunction) {
     try {
       const input = req.body as UpdateRoleInput;
@@ -65,9 +54,6 @@ export class RolesController {
     }
   }
 
-  /**
-   * Get current user's role assignments
-   */
   async getMyRoles(req: Request, res: Response, next: NextFunction) {
     try {
       const userId = req.user!.sub;
@@ -78,9 +64,6 @@ export class RolesController {
     }
   }
 
-  /**
-   * Get a specific user's role assignments (admin only)
-   */
   async getUserRoles(req: Request, res: Response, next: NextFunction) {
     try {
       const roles = await rolesService.getUserRoles(req.params.userId);
@@ -90,9 +73,6 @@ export class RolesController {
     }
   }
 
-  /**
-   * Assign role to user (admin only)
-   */
   async assignRole(req: Request, res: Response, next: NextFunction) {
     try {
       const input = req.body as AssignRoleInput;
@@ -108,9 +88,6 @@ export class RolesController {
     }
   }
 
-  /**
-   * Remove role assignment (admin only)
-   */
   async removeRoleAssignment(req: Request, res: Response, next: NextFunction) {
     try {
       await rolesService.removeRoleAssignment(req.params.id);
@@ -120,9 +97,6 @@ export class RolesController {
     }
   }
 
-  /**
-   * Set primary role for user (admin only)
-   */
   async setPrimaryRole(req: Request, res: Response, next: NextFunction) {
     try {
       const userId = req.params.userId;
@@ -147,6 +121,7 @@ export class RolesController {
 
       // Generate new tokens with the new active role
       const tokens = generateTokenPair({
+        id: result.user.id, // Changed from sub to id to match type
         sub: result.user.id,
         email: result.user.email,
         role: result.user.role,

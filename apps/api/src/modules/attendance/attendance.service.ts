@@ -582,7 +582,10 @@ export class AttendanceService {
         date,
         ...counts,
       }))
-      .sort((a, b) => a.date.localeCompare(b.date));
+      .sort((a, b) => {
+        // Safe sort using timestamps
+        return new Date(a.date).getTime() - new Date(b.date).getTime();
+      });
 
     // Calculate summary
     const totalSchoolDays = days.length;

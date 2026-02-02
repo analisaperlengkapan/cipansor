@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { contractService } from './contracts.service';
 import { sendResponse } from '@/utils/response';
-import { AppError } from '@/middleware/error';
+import { AppError, ErrorCode } from '@/middleware/error';
 
 export const contractController = {
   create: async (req: Request, res: Response, next: NextFunction) => {
@@ -34,7 +34,7 @@ export const contractController = {
   findAll: async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { unitId } = req.user!;
-      if (!unitId) throw new AppError('Unit ID missing from user', 400);
+      if (!unitId) throw new AppError(ErrorCode.BAD_REQUEST, 'Unit ID missing from user');
 
       const page = Number(req.query.page) || 1;
       const limit = Number(req.query.limit) || 10;
@@ -61,7 +61,7 @@ export const contractController = {
   getExpiring: async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { unitId } = req.user!;
-      if (!unitId) throw new AppError('Unit ID missing from user', 400);
+      if (!unitId) throw new AppError(ErrorCode.BAD_REQUEST, 'Unit ID missing from user');
 
       const days = Number(req.query.days) || 30;
       const result = await contractService.findExpiring(unitId, days);

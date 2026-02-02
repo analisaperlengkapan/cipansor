@@ -17,7 +17,8 @@ export class TahfidzController {
         page: Number(req.query.page) || 1,
         limit: Number(req.query.limit) || 10,
         studentId: req.query.studentId as string,
-        activityType: req.query.activityType as string,
+        // @ts-ignore
+        activityType: req.query.activityType as any,
         startDate: req.query.startDate as string,
         endDate: req.query.endDate as string,
         surah: req.query.surah as string,
@@ -97,8 +98,15 @@ export class TahfidzController {
   generateCertificate = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const createdById = (req as any).user.id;
-      const input: GenerateCertificateInput = req.body;
-      const result = await this.service.generateCertificate(input, createdById);
+      const input = req.body;
+
+      // Fix issueDate conversion if needed
+      const serviceInput: GenerateCertificateInput = {
+        ...input,
+        issueDate: input.issueDate ? new Date(input.issueDate) : new Date(),
+      };
+
+      const result = await this.service.generateCertificate(serviceInput, createdById);
       res.status(201).json({ success: true, data: result });
     } catch (error) {
       next(error);

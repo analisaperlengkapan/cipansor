@@ -15,10 +15,18 @@ import {
   KitabProgressSummary,
   AkhlakSummary,
   AttendanceSummary,
-  getGradeFromScore,
 } from './rapor-pesantren.schema';
-import type { Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { createNotification } from '../notifications/service';
+
+// Helper function defined locally to avoid import issues
+function getGradeFromScore(score: number, thresholds: any): string {
+  if (score >= thresholds.mumtaz) return 'MUMTAZ';
+  if (score >= thresholds.jayyidJiddan) return 'JAYYID_JIDDAN';
+  if (score >= thresholds.jayyid) return 'JAYYID';
+  if (score >= thresholds.maqbul) return 'MAQBUL';
+  return 'RASIB';
+}
 
 // =====================
 // CONFIG MANAGEMENT
@@ -93,13 +101,12 @@ export async function saveRaporConfig(config: RaporConfig): Promise<RaporConfig>
 // HELPER: Get Student with Relations
 // =====================
 
-type StudentWithRelations = Awaited<ReturnType<typeof getStudentWithRelations>>;
-
 async function getStudentWithRelations(studentId: string) {
   const student = await prisma.student.findUnique({
     where: { id: studentId },
     include: {
       user: true,
+      unit: true,
       enrollments: {
         where: { status: 'active' },
         include: { class: true },
@@ -118,7 +125,7 @@ async function getStudentWithRelations(studentId: string) {
   return student;
 }
 
-function formatStudentInfo(student: NonNullable<StudentWithRelations>) {
+function formatStudentInfo(student: NonNullable<Awaited<ReturnType<typeof getStudentWithRelations>>>) {
   const currentClass = student.enrollments[0]?.class;
   const dormRoom = student.roomAssignments[0]?.room;
 
@@ -136,7 +143,7 @@ function formatStudentInfo(student: NonNullable<StudentWithRelations>) {
 }
 
 // =====================
-// TAHFIDZ SUMMARY
+// SUMMARIES
 // =====================
 
 async function getTahfidzSummary(
@@ -164,14 +171,12 @@ async function getTahfidzSummary(
   const uniqueSurah = [...new Set(records.map((r) => r.surahName))];
   const uniqueJuz = [...new Set(records.map((r) => r.juz))];
 
-  // Calculate average score from assessment records
   const assessmentRecords = records.filter((r) => r.score !== null);
   const averageScore =
     assessmentRecords.length > 0
       ? assessmentRecords.reduce((sum, r) => sum + (r.score || 0), 0) / assessmentRecords.length
-      : 70; // Default score if no assessments
+      : 70;
 
-  // Calculate progress percentage (assuming 6236 total ayah in Quran)
   const progressPercentage = Math.min((totalAyah / 6236) * 100, 100);
 
   const score = averageScore;
@@ -200,10 +205,6 @@ async function getTahfidzSummary(
   };
 }
 
-// =====================
-// IBADAH SUMMARY
-// =====================
-
 async function getIbadahSummary(
   studentId: string,
   startDate: Date,
@@ -228,7 +229,6 @@ async function getIbadahSummary(
   const completedRecords = records.filter((r) => r.isCompleted);
   const completionRate = records.length > 0 ? (completedRecords.length / records.length) * 100 : 0;
 
-  // Calculate streak
   const sortedDates = [
     ...new Set(records.filter((r) => r.isCompleted).map((r) => r.date.toISOString().split('T')[0])),
   ]
@@ -251,7 +251,6 @@ async function getIbadahSummary(
     longestStreak = Math.max(longestStreak, tempStreak);
   }
 
-  // Category breakdown
   const categoryMap = new Map<string, { points: number; completed: number; total: number }>();
   records.forEach((r) => {
     const cat = r.target?.category || 'OTHER';
@@ -284,10 +283,6 @@ async function getIbadahSummary(
   };
 }
 
-// =====================
-// MUHADHOROH SUMMARY
-// =====================
-
 async function getMuhadhorohSummary(
   studentId: string,
   startDate: Date,
@@ -316,7 +311,7 @@ async function getMuhadhorohSummary(
 
   const themes = [...new Set(records.map((r) => r.topic).filter(Boolean))] as string[];
 
-  const score = averageScore || 70; // Default if no records
+  const score = averageScore || 70;
   const grade = getGradeFromScore(score, config.gradeThresholds);
 
   return {
@@ -335,10 +330,6 @@ async function getMuhadhorohSummary(
     })),
   };
 }
-
-// =====================
-// MUHADATSAH SUMMARY
-// =====================
 
 async function getMuhadatsahSummary(
   studentId: string,
@@ -368,7 +359,7 @@ async function getMuhadatsahSummary(
 
   const languages = [...new Set(records.map((r) => r.language).filter(Boolean))] as string[];
 
-  const score = averageScore || 70; // Default if no records
+  const score = averageScore || 70;
   const grade = getGradeFromScore(score, config.gradeThresholds);
 
   return {
@@ -388,10 +379,6 @@ async function getMuhadatsahSummary(
     })),
   };
 }
-
-// =====================
-// KITAB PROGRESS SUMMARY
-// =====================
 
 async function getKitabProgressSummary(
   studentId: string,
@@ -422,7 +409,6 @@ async function getKitabProgressSummary(
   const readPages = progress.reduce((sum, p) => sum + (p.currentPage || 0), 0);
   const progressPercentage = totalPages > 0 ? (readPages / totalPages) * 100 : 0;
 
-  // Calculate average grade score
   const gradeToScore: Record<string, number> = {
     MUMTAZ: 100,
     JAYYID_JIDDAN: 85,
@@ -460,10 +446,6 @@ async function getKitabProgressSummary(
   };
 }
 
-// =====================
-// AKHLAK SUMMARY
-// =====================
-
 async function getAkhlakSummary(
   studentId: string,
   startDate: Date,
@@ -500,7 +482,6 @@ async function getAkhlakSummary(
   const rewardPoints = rewards.reduce((sum, r) => sum + (r.points || 0), 0);
   const netPoints = rewardPoints - violationPoints;
 
-  // Calculate behavior score (start from 100, subtract violation points, add reward points)
   const baseScore = 100;
   const score = Math.max(0, Math.min(100, baseScore - violationPoints + rewardPoints * 0.5));
   const grade = getGradeFromScore(score, config.gradeThresholds);
@@ -533,10 +514,6 @@ async function getAkhlakSummary(
     })),
   };
 }
-
-// =====================
-// ATTENDANCE SUMMARY
-// =====================
 
 async function getAttendanceSummary(
   studentId: string,
@@ -596,14 +573,12 @@ async function getAttendanceSummary(
 export async function generateRaporPesantren(query: GetRaporQuery): Promise<RaporPesantren> {
   const { studentId, academicYearId, semester, unitId } = query;
 
-  // Get student info with relations
   const student = await getStudentWithRelations(studentId);
 
   if (!student) {
     throw new Error('Student not found');
   }
 
-  // Get academic year
   const academicYear = await prisma.academicYear.findUnique({
     where: { id: academicYearId },
   });
@@ -612,7 +587,6 @@ export async function generateRaporPesantren(query: GetRaporQuery): Promise<Rapo
     throw new Error('Academic year not found');
   }
 
-  // Calculate date range for semester
   const yearStart = new Date(academicYear.startDate);
   const yearEnd = new Date(academicYear.endDate);
   const midPoint = new Date((yearStart.getTime() + yearEnd.getTime()) / 2);
@@ -620,10 +594,8 @@ export async function generateRaporPesantren(query: GetRaporQuery): Promise<Rapo
   const startDate = semester === 1 ? yearStart : midPoint;
   const endDate = semester === 1 ? midPoint : yearEnd;
 
-  // Get config
   const config = await getRaporConfig(unitId || student.unitId);
 
-  // Generate all summaries in parallel
   const [tahfidz, ibadah, muhadhoroh, muhadatsah, kitabProgress, akhlak, attendance] =
     await Promise.all([
       getTahfidzSummary(studentId, startDate, endDate, config),
@@ -635,7 +607,6 @@ export async function generateRaporPesantren(query: GetRaporQuery): Promise<Rapo
       getAttendanceSummary(studentId, startDate, endDate, config),
     ]);
 
-  // Calculate overall score
   const weights = config.componentWeights;
   const overallScore =
     (tahfidz.score * weights.tahfidz) / 100 +
@@ -647,7 +618,6 @@ export async function generateRaporPesantren(query: GetRaporQuery): Promise<Rapo
 
   const overallGrade = getGradeFromScore(overallScore, config.gradeThresholds);
 
-  // Create or update rapor record
   const existingRapor = await prisma.raporPesantren.findFirst({
     where: {
       studentId,
@@ -720,10 +690,6 @@ export async function generateRaporPesantren(query: GetRaporQuery): Promise<Rapo
   };
 }
 
-// =====================
-// LIST RAPOR
-// =====================
-
 export async function listRaporPesantren(query: ListRaporQuery) {
   const { unitId, classId, academicYearId, semester, status, page, limit } = query;
   const skip = (page - 1) * limit;
@@ -734,15 +700,12 @@ export async function listRaporPesantren(query: ListRaporQuery) {
   if (semester) where.semester = semester;
   if (status) where.status = status;
 
-  // For classId filter, we need to use a subquery approach
-  let studentIds: string[] | undefined;
   if (classId) {
     const enrollments = await prisma.classEnrollment.findMany({
       where: { classId, status: 'active' },
       select: { studentId: true },
     });
-    studentIds = enrollments.map((e) => e.studentId);
-    where.studentId = { in: studentIds };
+    where.studentId = { in: enrollments.map((e) => e.studentId) };
   }
 
   const [rapors, total] = await Promise.all([
@@ -792,10 +755,6 @@ export async function listRaporPesantren(query: ListRaporQuery) {
   };
 }
 
-// =====================
-// UPDATE RAPOR
-// =====================
-
 export async function updateRaporPesantren(id: string, data: UpdateRaporInput) {
   const result = await prisma.raporPesantren.update({
     where: { id },
@@ -819,7 +778,6 @@ export async function updateRaporPesantren(id: string, data: UpdateRaporInput) {
     },
   });
 
-  // Trigger notification if status is changed to PUBLISHED
   if (data.status === 'PUBLISHED') {
     const parents = result.student.parents;
     const studentName = result.student.user.name;
@@ -834,6 +792,9 @@ export async function updateRaporPesantren(id: string, data: UpdateRaporInput) {
           title: 'Rapor Pesantren Diterbitkan',
           message: `Rapor Pesantren ananda ${studentName} untuk periode ${period} Semester ${semester} telah diterbitkan. Silakan cek di portal wali santri.`,
           link: `/rapor-pesantren/preview?id=${result.id}`,
+          priority: 'NORMAL' as any, // Cast to any to avoid strict type issues if enum
+          channels: ['IN_APP'] as any,
+          recipientType: 'INDIVIDUAL' as any,
           data: {
             studentId: result.studentId,
             raporId: result.id,
@@ -846,14 +807,9 @@ export async function updateRaporPesantren(id: string, data: UpdateRaporInput) {
   return result;
 }
 
-// =====================
-// BATCH GENERATE
-// =====================
-
 export async function generateBatchRaporPesantren(input: GenerateBatchRaporInput) {
   const { unitId, classId, academicYearId, semester, studentIds } = input;
 
-  // Get students
   let studentIdsToProcess: string[] = [];
 
   if (studentIds && studentIds.length > 0) {
@@ -872,7 +828,6 @@ export async function generateBatchRaporPesantren(input: GenerateBatchRaporInput
     studentIdsToProcess = students.map((s) => s.id);
   }
 
-  // Generate rapor for each student
   const results = await Promise.allSettled(
     studentIdsToProcess.map((studentId) =>
       generateRaporPesantren({
@@ -889,10 +844,6 @@ export async function generateBatchRaporPesantren(input: GenerateBatchRaporInput
 
   return { total: studentIdsToProcess.length, success, failed };
 }
-
-// =====================
-// GET SINGLE RAPOR
-// =====================
 
 export async function getRaporPesantrenById(id: string): Promise<RaporPesantren | null> {
   const rapor = await prisma.raporPesantren.findUnique({
@@ -914,6 +865,7 @@ export async function getRaporPesantrenById(id: string): Promise<RaporPesantren 
         },
       },
       academicYear: true,
+      unit: true,
     },
   });
 
@@ -930,10 +882,10 @@ export async function getRaporPesantrenById(id: string): Promise<RaporPesantren 
       id: rapor.unit.id,
       name: rapor.unit.name,
       address: rapor.unit.address,
-      phone: rapor.unit.phone,
-      email: rapor.unit.email,
-      website: rapor.unit.website,
-      logoUrl: rapor.unit.logoUrl,
+      phone: rapor.unit.phone || '',
+      email: rapor.unit.email || '',
+      website: (rapor.unit as any).website || '',
+      logoUrl: rapor.unit.logoUrl || '',
     },
     academicYearId: rapor.academicYearId,
     semester: rapor.semester,
@@ -977,14 +929,9 @@ export async function getRaporPesantrenById(id: string): Promise<RaporPesantren 
   };
 }
 
-// =====================
-// GET LEGER
-// =====================
-
 export async function getLegerPesantren(query: GetLegerQuery): Promise<LegerItem[]> {
   const { unitId, classId, academicYearId, semester } = query;
 
-  // 1. Get all students in the class
   const enrollments = await prisma.classEnrollment.findMany({
     where: {
       classId,
@@ -993,7 +940,9 @@ export async function getLegerPesantren(query: GetLegerQuery): Promise<LegerItem
     include: {
       student: {
         include: {
-          user: true,
+          user: {
+            // ...
+          },
         },
       },
     },
@@ -1012,7 +961,6 @@ export async function getLegerPesantren(query: GetLegerQuery): Promise<LegerItem
 
   const studentIds = enrollments.map((e) => e.studentId);
 
-  // 2. Get all rapors for these students
   const rapors = await prisma.raporPesantren.findMany({
     where: {
       studentId: { in: studentIds },
@@ -1021,10 +969,8 @@ export async function getLegerPesantren(query: GetLegerQuery): Promise<LegerItem
     },
   });
 
-  // 3. Map to LegerItem
   const raporMap = new Map(rapors.map((r) => [r.studentId, r]));
 
-  // Helper to safely extract score/grade from JSON
   const getComponent = (data: unknown) => {
     const typedData = data as { score?: number; grade?: string } | null;
     return {
@@ -1038,7 +984,6 @@ export async function getLegerPesantren(query: GetLegerQuery): Promise<LegerItem
     const rapor = raporMap.get(student.id);
 
     if (!rapor) {
-      // Return empty item if no rapor generated yet
       return {
         id: '',
         studentId: student.id,
@@ -1104,34 +1049,15 @@ export async function getLegerPesantren(query: GetLegerQuery): Promise<LegerItem
     };
   });
 
-  // Calculate Ranks
-  // 1. Sort by overallScore descending to determine rank
   const sortedByScore = [...leger].sort((a, b) => b.overallScore - a.overallScore);
 
-  // 2. Assign rank
-  sortedByScore.forEach((item, index) => {
-    item.rank = index + 1;
-  });
-
-  // 3. Update the original leger items with their calculated rank
-  // Note: Since objects are passed by reference, modifying sortedByScore items modifies the original leger items
-  // if they share the same object references. However, `toSorted` creates shallow copies in standard JS,
-  // but here we used `[...leger].sort`, so the objects inside are the SAME references.
-  // Wait, `sort` modifies in place? No, `[...leger]` creates a new array, but the *elements* are references.
-  // So modifying `item.rank` in `sortedByScore` SHOULD update the objects.
-  // But to be safe and explicit, let's map back.
-
-  const rankMap = new Map(sortedByScore.map((item) => [item.id, item.rank]));
+  const rankMap = new Map(sortedByScore.map((item, index) => [item.id, index + 1]));
 
   return leger.map((item) => ({
     ...item,
     rank: rankMap.get(item.id),
   }));
 }
-
-// =====================
-// DELETE RAPOR
-// =====================
 
 export async function deleteRaporPesantren(id: string) {
   return prisma.raporPesantren.delete({ where: { id } });

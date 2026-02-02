@@ -9,7 +9,7 @@ import {
 } from '@prisma/client';
 
 export class RiskService {
-  async createRisk(data: Prisma.RiskCreateInput): Promise<Risk> {
+  async createRisk(data: Omit<Prisma.RiskCreateInput, 'riskScore' | 'riskLevel'>): Promise<Risk> {
     const riskScore = this.calculateRiskScore(data.likelihood, data.impact);
     const riskLevel = this.determineRiskLevel(riskScore);
 

@@ -5,6 +5,7 @@ import {
   UpdateAccountCodeInput,
   JournalEntry,
   CreateJournalEntryInput,
+  CreateManualJournalInput,
   Scholarship,
   CreateScholarshipInput,
   ScholarshipRecipient,
@@ -20,6 +21,7 @@ import {
 } from '@cipansor/shared';
 import { Prisma } from '@prisma/client';
 import { checkPeriodStatus } from './period.service';
+import * as crypto from 'crypto';
 
 export class FinanceEnhancementService {
   // ==================== ACCOUNT CODES ====================
@@ -235,6 +237,40 @@ export class FinanceEnhancementService {
     });
 
     return this.mapToJournalEntry(result);
+  }
+
+  async createManualJournal(
+    input: CreateManualJournalInput & { createdById: string }
+  ): Promise<void> {
+    const entryDate = new Date(input.date);
+    await checkPeriodStatus(input.unitId, entryDate);
+
+    const totalDebit = input.entries.reduce((sum, e) => sum + e.debit, 0);
+    const totalCredit = input.entries.reduce((sum, e) => sum + e.credit, 0);
+
+    if (Math.abs(totalDebit - totalCredit) > 0.01) {
+      throw new Error(`Journal is not balanced. Debit: ${totalDebit}, Credit: ${totalCredit}`);
+    }
+
+    const referenceId = crypto.randomUUID();
+
+    await prisma.$transaction(async (tx) => {
+      for (const entry of input.entries) {
+        await tx.journalEntry.create({
+          data: {
+            unitId: input.unitId,
+            accountId: entry.accountId,
+            date: entryDate,
+            description: input.description,
+            debit: entry.debit,
+            credit: entry.credit,
+            reference: referenceId,
+            referenceType: 'MANUAL',
+            createdById: input.createdById,
+          },
+        });
+      }
+    });
   }
 
   async getJournalEntryById(id: string): Promise<JournalEntry | null> {
@@ -517,22 +553,38 @@ export class FinanceEnhancementService {
     const resultAccounts = grouped
       .map((group) => {
         const account = accountMap.get(group.accountId);
+        const debit = Number(group._sum.debit || 0);
+        const credit = Number(group._sum.credit || 0);
+        const startBalance = 0; // TODO: Calculate start balance from previous periods
+        let endBalance = startBalance;
+
+        if (account?.normalBalance === 'DEBIT') {
+          endBalance += debit - credit;
+        } else {
+          endBalance += credit - debit;
+        }
+
         return {
+          accountId: group.accountId,
           code: account?.code || 'UNKNOWN',
           name: account?.name || 'Unknown Account',
           type: account?.type || 'OTHER',
-          debit: Number(group._sum.debit || 0),
-          credit: Number(group._sum.credit || 0),
+          startBalance,
+          debit,
+          credit,
+          endBalance,
         };
       })
       .sort((a, b) => a.code.localeCompare(b.code));
 
     const totals = resultAccounts.reduce(
       (acc, item) => ({
+        startBalance: acc.startBalance + item.startBalance,
         debit: acc.debit + item.debit,
         credit: acc.credit + item.credit,
+        endBalance: acc.endBalance + item.endBalance,
       }),
-      { debit: 0, credit: 0 }
+      { startBalance: 0, debit: 0, credit: 0, endBalance: 0 }
     );
 
     return {

@@ -8,7 +8,6 @@ import { UserRole } from '@prisma/client';
 const PRIVILEGED_ROLES = [
   UserRole.SUPER_ADMIN,
   UserRole.YAYASAN_ADMIN,
-  UserRole.YAYASAN_KETUA
 ];
 
 function isPrivileged(role?: UserRole): boolean {

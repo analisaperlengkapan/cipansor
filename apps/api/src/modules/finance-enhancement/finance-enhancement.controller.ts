@@ -4,6 +4,7 @@ import {
   CreateAccountCodeInput,
   UpdateAccountCodeInput,
   CreateJournalEntryInput,
+  CreateManualJournalInput,
   CreateScholarshipInput,
   AssignScholarshipInput,
   CreatePaymentComponentInput,

@@ -12,6 +12,28 @@ import {
 } from '@cipansor/shared';
 import { Errors } from '../../middleware/error';
 import { Prisma } from '@prisma/client';
+import { StudentVisit, StudentPackage } from '@cipansor/shared';
+
+// --- Mappers ---
+
+const mapStudent = (student: any) => ({
+  name: student.user.name,
+  nis: student.nis,
+  class: student.enrollments?.[0]?.class ? { name: student.enrollments[0].class.name } : undefined,
+});
+
+const mapStudentVisit = (visit: any): StudentVisit => ({
+  ...visit,
+  status: visit.status as VisitStatus,
+  student: visit.student ? mapStudent(visit.student) : undefined,
+});
+
+const mapStudentPackage = (pkg: any): StudentPackage => ({
+  ...pkg,
+  status: pkg.status as PackageStatus,
+  student: pkg.student ? mapStudent(pkg.student) : undefined,
+  receivedBy: pkg.receivedBy,
+});
 
 // --- Stats ---
 
@@ -148,7 +170,7 @@ export const getStudentVisits = async (
     where.studentId = params.studentId;
   }
 
-  return prisma.studentVisit.findMany({
+  const visits = await prisma.studentVisit.findMany({
     where,
     orderBy: { checkIn: 'desc' },
     include: {
@@ -165,6 +187,8 @@ export const getStudentVisits = async (
       },
     },
   });
+
+  return visits.map(mapStudentVisit);
 };
 
 export const createStudentVisit = async (unitId: string, data: CreateStudentVisitInput) => {
@@ -174,10 +198,8 @@ export const createStudentVisit = async (unitId: string, data: CreateStudentVisi
   });
 
   if (!student) throw Errors.notFound('Student');
-  // In a real scenario, we might want to check if student.unitId === unitId
-  // But for now we trust the input or assume global student access within allowed scopes
 
-  return prisma.studentVisit.create({
+  const visit = await prisma.studentVisit.create({
     data: {
       unitId,
       studentId: data.studentId,
@@ -202,17 +224,19 @@ export const createStudentVisit = async (unitId: string, data: CreateStudentVisi
       },
     },
   });
+
+  return mapStudentVisit(visit);
 };
 
 export const updateStudentVisit = async (id: string, data: UpdateStudentVisitInput) => {
   const visit = await prisma.studentVisit.findUnique({ where: { id } });
   if (!visit) throw Errors.notFound('Visit');
 
-  return prisma.studentVisit.update({
+  const updated = await prisma.studentVisit.update({
     where: { id },
     data: {
       checkOut: data.checkOut,
-      status: data.status,
+      status: data.status as any,
       notes: data.notes,
     },
     include: {
@@ -229,6 +253,8 @@ export const updateStudentVisit = async (id: string, data: UpdateStudentVisitInp
       },
     },
   });
+
+  return mapStudentVisit(updated);
 };
 
 // --- Student Packages ---
@@ -247,7 +273,7 @@ export const getPackages = async (
     where.studentId = params.studentId;
   }
 
-  return prisma.studentPackage.findMany({
+  const packages = await prisma.studentPackage.findMany({
     where,
     orderBy: { receivedAt: 'desc' },
     include: {
@@ -267,6 +293,8 @@ export const getPackages = async (
       },
     },
   });
+
+  return packages.map(mapStudentPackage);
 };
 
 export const createPackage = async (
@@ -274,7 +302,7 @@ export const createPackage = async (
   userId: string,
   data: CreateStudentPackageInput
 ) => {
-  return prisma.studentPackage.create({
+  const pkg = await prisma.studentPackage.create({
     data: {
       unitId,
       studentId: data.studentId,
@@ -304,6 +332,8 @@ export const createPackage = async (
       },
     },
   });
+
+  return mapStudentPackage(pkg);
 };
 
 export const updatePackage = async (id: string, data: UpdateStudentPackageInput) => {
@@ -321,7 +351,7 @@ export const updatePackage = async (id: string, data: UpdateStudentPackageInput)
     updateData.deliveredAt = new Date();
   }
 
-  return prisma.studentPackage.update({
+  const updated = await prisma.studentPackage.update({
     where: { id },
     data: updateData,
     include: {
@@ -341,4 +371,6 @@ export const updatePackage = async (id: string, data: UpdateStudentPackageInput)
       },
     },
   });
+
+  return mapStudentPackage(updated);
 };

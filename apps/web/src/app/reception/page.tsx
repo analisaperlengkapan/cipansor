@@ -256,10 +256,9 @@ export default function ReceptionDashboardPage() {
         await createVisit.mutateAsync({
           studentId: visitForm.studentId,
           visitorName: visitForm.visitorName,
-          relationship: visitForm.relationship,
-          needs: visitForm.purpose, // Map purpose to needs
+          relation: visitForm.relationship,
+          purpose: visitForm.purpose,
           notes: "", // Default empty notes
-          // unitId inferred
         });
         toast.success("Kunjungan berhasil didaftarkan");
       }
@@ -305,9 +304,9 @@ export default function ReceptionDashboardPage() {
         await createPackage.mutateAsync({
           studentId: packageForm.studentId,
           senderName: packageForm.senderName,
-          expedition: packageForm.courier,
-          content: packageForm.description,
-          notes: packageForm.trackingNumber ? `Resi: ${packageForm.trackingNumber}` : undefined,
+          senderPhone: '', // Not in form
+          description: packageForm.description,
+          notes: `Ekspedisi: ${packageForm.courier}, Resi: ${packageForm.trackingNumber || '-'}`,
           // unitId inferred
         });
         toast.success("Paket berhasil didaftarkan");
@@ -329,8 +328,7 @@ export default function ReceptionDashboardPage() {
         id: pkg.id,
         data: {
           status: status as any, // Cast to PackageStatus enum
-          pickedUpAt:
-            status === "COLLECTED" ? new Date() : undefined,
+          // pickedUpAt removed, handled by backend on status change or deliveredTo
         },
       });
       toast.success("Status paket berhasil diperbarui");
@@ -619,7 +617,7 @@ export default function ReceptionDashboardPage() {
                           <PackageOpen className="h-5 w-5 text-muted-foreground" />
                         </div>
                         <p className="text-xs mt-2">
-                          {pkg.expedition} - {(pkg.notes || "").replace("Resi: ", "")}
+                          {pkg.senderPhone || '-'} - {(pkg.notes || "").replace("Resi: ", "")}
                         </p>
                         <div className="mt-3 flex gap-2">
                           <Button
@@ -787,8 +785,8 @@ export default function ReceptionDashboardPage() {
                       <TableCell>
                         {(visit as any).student?.name || "N/A"}
                       </TableCell>
-                      <TableCell>{visit.relationship}</TableCell>
-                      <TableCell>{visit.needs || "-"}</TableCell>
+                       <TableCell>{visit.relation}</TableCell>
+                       <TableCell>{visit.purpose || "-"}</TableCell>
                       <TableCell>
                         {format(new Date(visit.checkIn), "HH:mm")}
                       </TableCell>
@@ -870,11 +868,11 @@ export default function ReceptionDashboardPage() {
                           </p>
                         </div>
                       </TableCell>
-                      <TableCell>{pkg.expedition}</TableCell>
+                       <TableCell>{pkg.senderPhone || "-"}</TableCell>
                       <TableCell className="font-mono text-sm">
-                        {(pkg.notes || "").replace("Resi: ", "")}
+                        {pkg.notes || "-"}
                       </TableCell>
-                      <TableCell>{pkg.content || "-"}</TableCell>
+                      <TableCell>{pkg.description || "-"}</TableCell>
                       <TableCell>
                         {format(new Date(pkg.receivedAt), "dd/MM HH:mm")}
                       </TableCell>

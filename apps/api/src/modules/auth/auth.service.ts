@@ -5,9 +5,15 @@ import { Errors } from '@/middleware/error';
 import { config } from '@/config';
 import type { LoginInput, RegisterInput, ChangePasswordInput } from './auth.schema';
 import { UserRole, RoleCode } from '@prisma/client';
-import { authenticator } from 'otplib';
+import { TOTP, NobleCryptoPlugin, ScureBase32Plugin } from 'otplib';
 import * as qrcode from 'qrcode';
 import crypto from 'crypto';
+
+// Use plugins for cross-platform compatibility and standard Base32
+const authenticator = new TOTP({
+  crypto: new NobleCryptoPlugin(),
+  base32: new ScureBase32Plugin(),
+});
 
 export class AuthService {
   /**
@@ -391,7 +397,7 @@ export class AuthService {
     }
 
     const secret = authenticator.generateSecret();
-    const otpauth = authenticator.keyuri(user.email, 'Cipansor App', secret);
+    const otpauth = authenticator.toURI({ secret, label: user.email, issuer: 'Cipansor App' });
     const qrCodeUrl = await qrcode.toDataURL(otpauth);
 
     // BUG FIX: Store pending secret server-side
@@ -475,6 +481,7 @@ export class AuthService {
       throw Errors.unauthorized('2FA is not enabled for this user');
     }
 
+    // Use global authenticator instance with plugins
     let isValid = authenticator.verify({ token, secret: user.twoFactorSecret });
 
     // Check recovery codes if OTP failed (with atomic update to prevent race conditions)
@@ -589,6 +596,7 @@ export class AuthService {
         }
 
         // Verify ADMIN's OTP
+        const authenticator = new TOTP();
         const isValid = authenticator.verify({ token, secret: admin.twoFactorSecret });
         if (!isValid) throw Errors.unauthorized('Invalid Admin OTP');
 

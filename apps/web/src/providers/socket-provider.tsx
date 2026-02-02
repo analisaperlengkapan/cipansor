@@ -35,7 +35,9 @@ interface SocketProviderProps {
 export function SocketProvider({ children }: SocketProviderProps) {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
-  const { token, isAuthenticated } = useAuthStore();
+  // Get isAuthenticated from store, but get token directly from storage since it's not in state
+  const { isAuthenticated } = useAuthStore();
+  const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
 
   useEffect(() => {
     // Only connect if authenticated

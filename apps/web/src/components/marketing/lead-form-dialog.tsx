@@ -31,6 +31,7 @@ import { useCreateLead, useUpdateLead, Lead } from "@/hooks/use-leads";
 import { useCampaigns } from "@/hooks/use-marketing";
 import { useEffect } from "react";
 import { toast } from "sonner";
+import { LeadStatus } from "@cipansor/shared";
 
 const schema = z.object({
   name: z.string().min(2, "Nama wajib diisi"),
@@ -40,6 +41,7 @@ const schema = z.object({
   interest: z.string().optional(),
   campaignId: z.string().optional(),
   notes: z.string().optional(),
+  status: z.nativeEnum(LeadStatus).optional(),
 });
 
 interface LeadFormDialogProps {
@@ -99,6 +101,7 @@ export function LeadFormDialog({
         interest: lead.interest || "",
         campaignId: lead.campaignId || "",
         notes: lead.notes || "",
+        status: lead.status as LeadStatus,
       });
     } else {
       form.reset({
@@ -109,6 +112,7 @@ export function LeadFormDialog({
         interest: "",
         campaignId: "",
         notes: "",
+        status: undefined,
       });
     }
   }, [lead, form]);
@@ -156,6 +160,35 @@ export function LeadFormDialog({
                 </FormItem>
               )}
             />
+            {lead && (
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Pilih status" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {Object.values(LeadStatus).map((s) => (
+                          <SelectItem key={s} value={s}>
+                            {s}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}

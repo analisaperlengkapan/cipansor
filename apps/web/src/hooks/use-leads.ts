@@ -1,7 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { LeadStatus } from "@cipansor/shared";
 
-export type LeadStatus = 'NEW' | 'CONTACTED' | 'QUALIFIED' | 'CONVERTED' | 'LOST' | 'JUNK';
+export type { LeadStatus };
 
 export interface Lead {
   id: string;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useLead } from "@/hooks/use-leads";
+import { useLead, useUpdateLead } from "@/hooks/use-leads";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,12 +13,21 @@ import { LeadFormDialog } from "@/components/marketing/lead-form-dialog";
 import { ConvertToRegistrantDialog } from "@/components/marketing/convert-to-registrant-dialog";
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { LeadStatus } from "@cipansor/shared";
 
 export default function LeadDetailPage() {
   const params = useParams();
   const id = params.id as string;
   const router = useRouter();
   const { data: lead, isLoading } = useLead(id);
+  const updateMutation = useUpdateLead();
   const [logOpen, setLogOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [convertOpen, setConvertOpen] = useState(false);
@@ -42,6 +51,27 @@ export default function LeadDetailPage() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <h1 className="text-2xl font-bold flex-1">{lead.name}</h1>
+        <Select
+          value={lead.status}
+          onValueChange={(val) =>
+            updateMutation.mutate({
+              id: lead.id,
+              data: { status: val as LeadStatus },
+            })
+          }
+          disabled={updateMutation.isPending}
+        >
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            {Object.values(LeadStatus).map((s) => (
+              <SelectItem key={s} value={s}>
+                {s}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <Button variant="outline" onClick={() => setEditOpen(true)}>
           <Edit className="mr-2 h-4 w-4" /> Edit
         </Button>

@@ -130,7 +130,7 @@ export default function ReceptionDashboardPage() {
     studentId: "",
     visitorName: "",
     visitorPhone: "",
-    relationship: "PARENT",
+    relation: "PARENT",
     purpose: "",
   });
 
@@ -144,7 +144,7 @@ export default function ReceptionDashboardPage() {
     senderName: "",
     senderPhone: "",
     trackingNumber: "",
-    courier: "",
+    courier: "", // Keeping for UI state, will map to notes
     description: "",
   });
 
@@ -178,7 +178,7 @@ export default function ReceptionDashboardPage() {
       studentId: "",
       visitorName: "",
       visitorPhone: "",
-      relationship: "PARENT",
+      relation: "PARENT",
       purpose: "",
     });
     setEditingVisit(null);
@@ -256,8 +256,8 @@ export default function ReceptionDashboardPage() {
         await createVisit.mutateAsync({
           studentId: visitForm.studentId,
           visitorName: visitForm.visitorName,
-          relationship: visitForm.relationship,
-          needs: visitForm.purpose, // Map purpose to needs
+          relation: visitForm.relation,
+          purpose: visitForm.purpose,
           notes: "", // Default empty notes
           // unitId inferred
         });
@@ -305,9 +305,9 @@ export default function ReceptionDashboardPage() {
         await createPackage.mutateAsync({
           studentId: packageForm.studentId,
           senderName: packageForm.senderName,
-          expedition: packageForm.courier,
-          content: packageForm.description,
-          notes: packageForm.trackingNumber ? `Resi: ${packageForm.trackingNumber}` : undefined,
+          senderPhone: packageForm.senderPhone,
+          description: packageForm.description,
+          notes: `Kurir: ${packageForm.courier || "-"}, Resi: ${packageForm.trackingNumber || "-"}`,
           // unitId inferred
         });
         toast.success("Paket berhasil didaftarkan");
@@ -329,7 +329,7 @@ export default function ReceptionDashboardPage() {
         id: pkg.id,
         data: {
           status: status as any, // Cast to PackageStatus enum
-          pickedUpAt:
+          deliveredAt:
             status === "COLLECTED" ? new Date() : undefined,
         },
       });
@@ -563,8 +563,7 @@ export default function ReceptionDashboardPage() {
                           <div>
                             <p className="font-medium">{visit.visitorName}</p>
                             <p className="text-xs text-muted-foreground">
-                              Mengunjungi:{" "}
-                              {(visit as any).student?.name || "N/A"}
+                              {visit.relation} - {(visit as any).student?.name || "N/A"}
                             </p>
                           </div>
                           <Button
@@ -619,7 +618,7 @@ export default function ReceptionDashboardPage() {
                           <PackageOpen className="h-5 w-5 text-muted-foreground" />
                         </div>
                         <p className="text-xs mt-2">
-                          {pkg.expedition} - {(pkg.notes || "").replace("Resi: ", "")}
+                          {(pkg as any).senderPhone} - {(pkg.notes || "")}
                         </p>
                         <div className="mt-3 flex gap-2">
                           <Button
@@ -787,8 +786,8 @@ export default function ReceptionDashboardPage() {
                       <TableCell>
                         {(visit as any).student?.name || "N/A"}
                       </TableCell>
-                      <TableCell>{visit.relationship}</TableCell>
-                      <TableCell>{visit.needs || "-"}</TableCell>
+                      <TableCell>{visit.relation}</TableCell>
+                      <TableCell>{visit.purpose || "-"}</TableCell>
                       <TableCell>
                         {format(new Date(visit.checkIn), "HH:mm")}
                       </TableCell>
@@ -866,15 +865,15 @@ export default function ReceptionDashboardPage() {
                         <div>
                           <p>{pkg.senderName}</p>
                           <p className="text-xs text-muted-foreground">
-                            {(pkg as any).senderPhone || "-"}
+                            {pkg.senderPhone || "-"}
                           </p>
                         </div>
                       </TableCell>
-                      <TableCell>{pkg.expedition}</TableCell>
+                      <TableCell>{(pkg.notes || "")}</TableCell>
                       <TableCell className="font-mono text-sm">
-                        {(pkg.notes || "").replace("Resi: ", "")}
+                        -
                       </TableCell>
-                      <TableCell>{pkg.content || "-"}</TableCell>
+                      <TableCell>{pkg.description || "-"}</TableCell>
                       <TableCell>
                         {format(new Date(pkg.receivedAt), "dd/MM HH:mm")}
                       </TableCell>
@@ -1080,9 +1079,9 @@ export default function ReceptionDashboardPage() {
               <div className="space-y-2">
                 <Label>Hubungan*</Label>
                 <Select
-                  value={visitForm.relationship}
+                  value={visitForm.relation}
                   onValueChange={(v) =>
-                    setVisitForm({ ...visitForm, relationship: v })
+                    setVisitForm({ ...visitForm, relation: v })
                   }
                 >
                   <SelectTrigger>

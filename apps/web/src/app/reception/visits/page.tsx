@@ -177,10 +177,10 @@ function VisitForm({ onSuccess }: { onSuccess: () => void }) {
         )}
       </div>
       <div className="grid gap-2">
-        <Label htmlFor="relationship">Hubungan</Label>
+        <Label htmlFor="relation">Hubungan</Label>
         <Controller
           control={control}
-          name="relationship"
+          name="relation"
           rules={{ required: true }}
           render={({ field }) => (
             <Select onValueChange={field.onChange} value={field.value}>
@@ -199,9 +199,9 @@ function VisitForm({ onSuccess }: { onSuccess: () => void }) {
         />
       </div>
       <div className="grid gap-2">
-        <Label htmlFor="needs">Keperluan</Label>
-        <Textarea id="needs" {...register("needs", { required: true })} />
-        {errors.needs && (
+        <Label htmlFor="purpose">Keperluan</Label>
+        <Textarea id="purpose" {...register("purpose", { required: true })} />
+        {errors.purpose && (
           <span className="text-xs text-red-500">Wajib diisi</span>
         )}
       </div>
@@ -255,10 +255,10 @@ function VisitRow({ visit }: { visit: StudentVisit }) {
       <TableCell>
         <div className="font-medium">{visit.visitorName}</div>
         <div className="text-xs text-muted-foreground">
-          {visit.relationship}
+          {visit.relation}
         </div>
       </TableCell>
-      <TableCell>{visit.needs}</TableCell>
+      <TableCell>{visit.purpose}</TableCell>
       <TableCell>{getStatusBadge(visit.status)}</TableCell>
       <TableCell>
         {visit.status === "PENDING" && (

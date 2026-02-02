@@ -1,3 +1,12 @@
+export enum LeadStatus {
+  NEW = 'NEW',
+  CONTACTED = 'CONTACTED',
+  QUALIFIED = 'QUALIFIED',
+  CONVERTED = 'CONVERTED',
+  LOST = 'LOST',
+  JUNK = 'JUNK',
+}
+
 export interface MarketingCampaign {
   id: string;
   unitId?: string | null;
@@ -13,12 +22,42 @@ export interface MarketingCampaign {
   // Relations
   _count?: {
     registrants: number;
+    leads: number;
   };
+}
+
+export interface Lead {
+  id: string;
+  name: string;
+  phone: string;
+  email?: string | null;
+  source?: string | null;
+  status: LeadStatus;
+  interest?: string | null;
+  notes?: string | null;
+  campaignId?: string | null;
+  registrantId?: string | null;
+  createdById: string;
+  assignedToId?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  // Relations
+  campaign?: {
+    id: string;
+    name: string;
+    code: string;
+  } | null;
+  assignedTo?: {
+    id: string;
+    name: string;
+  } | null;
+  interactions?: MarketingInteraction[];
 }
 
 export interface MarketingInteraction {
   id: string;
-  registrantId: string;
+  registrantId?: string | null;
+  leadId?: string | null;
   date: string;
   type: string; // CALL, WA, VISIT, etc.
   notes?: string | null;
@@ -39,14 +78,31 @@ export interface CreateCampaignInput {
   startDate: string;
   endDate?: string;
   budget?: number;
+  targetLeads?: number;
 }
 
 export interface UpdateCampaignInput extends Partial<CreateCampaignInput> {
   isActive?: boolean;
 }
 
+export interface CreateLeadInput {
+  name: string;
+  phone: string;
+  email?: string;
+  source?: string;
+  interest?: string;
+  campaignId?: string;
+  notes?: string;
+}
+
+export interface UpdateLeadInput extends Partial<CreateLeadInput> {
+  status?: LeadStatus;
+  assignedToId?: string;
+}
+
 export interface LogInteractionInput {
-  registrantId: string;
+  registrantId?: string;
+  leadId?: string;
   date: string;
   type: string;
   notes?: string;
@@ -59,6 +115,9 @@ export interface MarketingStats {
     name: string;
     code: string;
     registrants: number;
+    leads: number;
+    conversionRate: number;
     budget?: number | null;
   }[];
+  funnel: Record<string, number>;
 }

@@ -2,6 +2,8 @@
 
 export enum VisitStatus {
   PENDING = "PENDING",
+  CHECKED_IN = "CHECKED_IN",
+  CHECKED_OUT = "CHECKED_OUT",
   APPROVED = "APPROVED",
   REJECTED = "REJECTED",
   COMPLETED = "COMPLETED",
@@ -12,6 +14,7 @@ export enum PackageStatus {
   RECEIVED = "RECEIVED",
   NOTIFIED = "NOTIFIED",
   PICKED_UP = "PICKED_UP",
+  DELIVERED = "DELIVERED",
   RETURNED = "RETURNED",
 }
 
@@ -42,8 +45,8 @@ export interface StudentVisit {
   studentId: string;
   unitId: string;
   visitorName: string;
-  relationship: string; // Changed from relation to match page
-  needs: string; // Changed from purpose to match page/impl
+  relation: string; // Changed from relationship
+  purpose: string; // Changed from needs
   checkIn: Date;
   checkOut?: Date | null;
   status: VisitStatus;
@@ -66,13 +69,14 @@ export interface StudentPackage {
   studentId: string;
   unitId: string;
   senderName: string;
-  expedition: string; // Added to match page
-  content: string; // Added to match page (description -> content)
+  senderPhone?: string | null; // Changed from expedition
+  description?: string | null; // Changed from content
   photoUrl?: string | null;
   receivedAt: Date;
   receivedById: string;
   status: PackageStatus;
-  pickedUpAt?: Date | null; // Changed from deliveredAt
+  deliveredAt?: Date | null; // Changed from pickedUpAt
+  deliveredTo?: string | null; // Added
   notes?: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -109,8 +113,8 @@ export interface UpdateGuestBookInput {
 export interface CreateStudentVisitInput {
   studentId: string;
   visitorName: string;
-  relationship: string;
-  needs: string;
+  relation: string; // Changed from relationship
+  purpose: string; // Changed from needs
   notes?: string;
 }
 
@@ -123,8 +127,8 @@ export interface UpdateStudentVisitInput {
 export interface CreateStudentPackageInput {
   studentId: string;
   senderName: string;
-  expedition: string;
-  content: string;
+  senderPhone?: string; // Changed from expedition
+  description?: string; // Changed from content
   photoUrl?: string;
   storageLocation?: string;
   notes?: string;
@@ -132,7 +136,8 @@ export interface CreateStudentPackageInput {
 
 export interface UpdateStudentPackageInput {
   status?: PackageStatus;
-  pickedUpAt?: Date;
+  deliveredAt?: Date; // Changed from pickedUpAt
+  deliveredTo?: string; // Added
   notes?: string;
 }
 

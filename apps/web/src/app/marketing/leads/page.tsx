@@ -13,19 +13,22 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Loader2, Eye, Plus } from "lucide-react";
+import { Loader2, Eye, Plus, List, LayoutGrid } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import { LeadFormDialog } from "@/components/marketing/lead-form-dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { LeadKanban } from "@/components/marketing/lead-kanban";
 
 export default function LeadsPage() {
   const { data: leadsData, isLoading } = useLeads({
-    limit: 50,
+    limit: 100, // Increase limit for board view
   });
   const leads = leadsData?.data || [];
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [view, setView] = useState("list");
 
   const handleCreate = () => {
     setSelectedLead(null);
@@ -42,96 +45,126 @@ export default function LeadsPage() {
         </Button>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Daftar Calon Santri (Leads)</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nama</TableHead>
-                <TableHead>Sumber</TableHead>
-                <TableHead>Kampanye</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Minat</TableHead>
-                <TableHead>Tanggal</TableHead>
-                <TableHead className="text-right">Aksi</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center py-4">
-                    <Loader2 className="animate-spin h-6 w-6 mx-auto" />
-                  </TableCell>
-                </TableRow>
-              ) : (
-                leads.map((lead) => (
-                  <TableRow key={lead.id}>
-                    <TableCell>
-                      <div className="font-medium">{lead.name}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {lead.phone}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {lead.source ? (
-                        <Badge variant="outline">{lead.source}</Badge>
-                      ) : (
-                        "-"
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {lead.campaign ? (
-                        <Badge variant="secondary">{lead.campaign.name}</Badge>
-                      ) : (
-                        "-"
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          lead.status === "CONVERTED"
-                            ? "default"
-                            : lead.status === "LOST" || lead.status === "JUNK"
-                            ? "destructive"
-                            : "secondary"
-                        }
-                      >
-                        {lead.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{lead.interest || "-"}</TableCell>
-                    <TableCell>
-                      {format(new Date(lead.createdAt), "d MMM yyyy", {
-                        locale: idLocale,
-                      })}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="ghost" size="icon" asChild>
-                        <Link href={`/marketing/leads/${lead.id}`}>
-                          <Eye className="h-4 w-4" />
-                        </Link>
-                      </Button>
-                    </TableCell>
+      <Tabs value={view} onValueChange={setView} className="w-full">
+        <div className="flex items-center justify-between mb-4">
+          <TabsList>
+            <TabsTrigger value="list">
+              <List className="mr-2 h-4 w-4" />
+              List
+            </TabsTrigger>
+            <TabsTrigger value="board">
+              <LayoutGrid className="mr-2 h-4 w-4" />
+              Board
+            </TabsTrigger>
+          </TabsList>
+        </div>
+
+        <TabsContent value="list">
+          <Card>
+            <CardHeader>
+              <CardTitle>Daftar Calon Santri (Leads)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nama</TableHead>
+                    <TableHead>Sumber</TableHead>
+                    <TableHead>Kampanye</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Minat</TableHead>
+                    <TableHead>Tanggal</TableHead>
+                    <TableHead className="text-right">Aksi</TableHead>
                   </TableRow>
-                ))
-              )}
-              {!isLoading && (!leads || leads.length === 0) && (
-                <TableRow>
-                  <TableCell
-                    colSpan={7}
-                    className="text-center text-muted-foreground py-8"
-                  >
-                    Belum ada data leads
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                </TableHeader>
+                <TableBody>
+                  {isLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center py-4">
+                        <Loader2 className="animate-spin h-6 w-6 mx-auto" />
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    leads.map((lead) => (
+                      <TableRow key={lead.id}>
+                        <TableCell>
+                          <div className="font-medium">{lead.name}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {lead.phone}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {lead.source ? (
+                            <Badge variant="outline">{lead.source}</Badge>
+                          ) : (
+                            "-"
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {lead.campaign ? (
+                            <Badge variant="secondary">
+                              {lead.campaign.name}
+                            </Badge>
+                          ) : (
+                            "-"
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={
+                              lead.status === "CONVERTED"
+                                ? "default"
+                                : lead.status === "LOST" ||
+                                  lead.status === "JUNK"
+                                ? "destructive"
+                                : "secondary"
+                            }
+                          >
+                            {lead.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{lead.interest || "-"}</TableCell>
+                        <TableCell>
+                          {format(new Date(lead.createdAt), "d MMM yyyy", {
+                            locale: idLocale,
+                          })}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button variant="ghost" size="icon" asChild>
+                            <Link href={`/marketing/leads/${lead.id}`}>
+                              <Eye className="h-4 w-4" />
+                            </Link>
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                  {!isLoading && (!leads || leads.length === 0) && (
+                    <TableRow>
+                      <TableCell
+                        colSpan={7}
+                        className="text-center text-muted-foreground py-8"
+                      >
+                        Belum ada data leads
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="board">
+          {isLoading ? (
+            <div className="flex justify-center items-center h-64">
+              <Loader2 className="animate-spin h-8 w-8" />
+            </div>
+          ) : (
+            <LeadKanban leads={leads} />
+          )}
+        </TabsContent>
+      </Tabs>
 
       <LeadFormDialog
         open={dialogOpen}

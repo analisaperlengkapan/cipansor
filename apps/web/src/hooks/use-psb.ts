@@ -63,6 +63,10 @@ export interface RegistrationPeriod {
     id: string;
     name: string;
   };
+  unit?: {
+    id: string;
+    name: string;
+  };
   startDate: string;
   endDate: string;
   quota: number;

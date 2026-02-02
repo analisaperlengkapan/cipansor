@@ -180,7 +180,7 @@ export const usePublicCampaign = (code?: string | null) => {
       const { data } = await api.get<{
         success: boolean;
         data: MarketingCampaign;
-      }>(`/marketing/public/campaigns/code/${encodeURIComponent(code)}`);
+      }>(`/marketing/public/campaigns/code/${encodeURIComponent(code || "")}`);
       return data.data;
     },
     enabled: !!code,

@@ -175,16 +175,19 @@ function PackageForm({ onSuccess }: { onSuccess: () => void }) {
           />
         </div>
         <div className="grid gap-2">
-          <Label htmlFor="expedition">Ekspedisi (JNE, dll)</Label>
+          <Label htmlFor="senderPhone">No. HP Pengirim</Label>
           <Input
-            id="expedition"
-            {...register("expedition", { required: true })}
+            id="senderPhone"
+            {...register("senderPhone", { required: false })}
           />
         </div>
       </div>
       <div className="grid gap-2">
-        <Label htmlFor="content">Isi Paket (Deskripsi)</Label>
-        <Textarea id="content" {...register("content", { required: true })} />
+        <Label htmlFor="description">Isi Paket (Deskripsi)</Label>
+        <Textarea
+          id="description"
+          {...register("description", { required: true })}
+        />
       </div>
       <div className="grid gap-2">
         <Label htmlFor="storageLocation">Lokasi Simpan</Label>
@@ -216,8 +219,8 @@ function PackageRow({ pkg }: { pkg: StudentPackage }) {
       await updatePackage.mutateAsync({
         id: pkg.id,
         data: {
-          status: PackageStatus.PICKED_UP,
-          pickedUpAt: new Date(),
+          status: PackageStatus.DELIVERED,
+          deliveredAt: new Date(),
         },
       });
       toast.success("Paket telah diambil");
@@ -232,7 +235,7 @@ function PackageRow({ pkg }: { pkg: StudentPackage }) {
         return <Badge variant="secondary">Diterima Resepsionis</Badge>;
       case "NOTIFIED":
         return <Badge className="bg-blue-500">Notifikasi Terkirim</Badge>;
-      case "PICKED_UP":
+      case "DELIVERED":
         return <Badge variant="outline">Sudah Diambil</Badge>;
       default:
         return <Badge variant="secondary">{status}</Badge>;
@@ -247,11 +250,11 @@ function PackageRow({ pkg }: { pkg: StudentPackage }) {
         <div className="text-xs text-muted-foreground">{pkg.student?.nis}</div>
       </TableCell>
       <TableCell>{pkg.senderName}</TableCell>
-      <TableCell>{pkg.expedition}</TableCell>
-      <TableCell>{pkg.content}</TableCell>
+      <TableCell>{pkg.senderPhone}</TableCell>
+      <TableCell>{pkg.description}</TableCell>
       <TableCell>{getStatusBadge(pkg.status)}</TableCell>
       <TableCell>
-        {pkg.status !== "PICKED_UP" && (
+        {pkg.status !== "DELIVERED" && (
           <Button
             variant="ghost"
             size="sm"
@@ -261,10 +264,10 @@ function PackageRow({ pkg }: { pkg: StudentPackage }) {
             <PackageCheck className="h-4 w-4 mr-2" /> Ambil
           </Button>
         )}
-        {pkg.status === "PICKED_UP" && (
+        {pkg.status === "DELIVERED" && (
           <span className="text-xs text-muted-foreground">
-            {pkg.pickedUpAt
-              ? format(new Date(pkg.pickedUpAt), "dd/MM HH:mm")
+            {pkg.deliveredAt
+              ? format(new Date(pkg.deliveredAt), "dd/MM HH:mm")
               : "-"}
           </span>
         )}

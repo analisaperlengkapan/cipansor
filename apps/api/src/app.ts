@@ -95,6 +95,7 @@ import receptionRoutes from '@/modules/reception/reception.routes';
 import marketingRoutes from '@/modules/marketing/routes';
 import { announcementRoutes } from '@/modules/announcements';
 import projectRoutes from '@/modules/project/routes';
+import innovationRoutes from '@/modules/innovation/routes';
 
 // Create Express app
 const app = express();
@@ -263,6 +264,7 @@ apiRouter.use('/dashboard', dashboardRoutes);
 apiRouter.use('/reception', receptionRoutes);
 apiRouter.use('/announcements', announcementRoutes);
 apiRouter.use('/projects', projectRoutes);
+apiRouter.use('/innovation', innovationRoutes);
 
 // API info
 apiRouter.get('/', (_req, res) => {

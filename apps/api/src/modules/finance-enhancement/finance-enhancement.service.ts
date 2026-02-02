@@ -84,6 +84,7 @@ export class FinanceEnhancementService {
         type: input.type,
         parentId: input.parentId,
         isActive: input.isActive ?? true,
+        normalBalance: input.normalBalance ?? 'DEBIT',
         cashFlowCategory: input.cashFlowCategory,
       },
     });
@@ -104,6 +105,33 @@ export class FinanceEnhancementService {
   }
 
   // ==================== JOURNAL ENTRIES ====================
+
+  async createManualJournal(input: CreateManualJournalInput & { createdById: string }) {
+    const { unitId, date, description, entries, createdById } = input;
+
+    // Verify period is open
+    await periodService.validatePeriodStatus(unitId, new Date(date));
+
+    // Create journal entries in transaction
+    const journalEntries = await prisma.$transaction(
+      entries.map((entry) =>
+        prisma.journalEntry.create({
+          data: {
+            unitId,
+            accountId: entry.accountId,
+            date: new Date(date),
+            description,
+            debit: entry.debit,
+            credit: entry.credit,
+            referenceType: JournalReferenceType.OTHER,
+            createdById,
+          },
+        })
+      )
+    );
+
+    return journalEntries.map((je) => this.mapToJournalEntry(je));
+  }
 
   async getJournalEntries(params: {
     unitId?: string;

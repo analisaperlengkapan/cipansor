@@ -5,13 +5,14 @@ import { riskService } from './risk.service';
 import { createRiskSchema, updateRiskSchema, createMitigationSchema, updateMitigationSchema, listRiskQuerySchema } from './risk.validation';
 import { UserRole } from '@prisma/client';
 
+// Hardcode role checking to bypass enum issues if types are out of sync
 const PRIVILEGED_ROLES = [
-  UserRole.SUPER_ADMIN,
-  UserRole.YAYASAN_ADMIN,
-  UserRole.YAYASAN_KETUA
+  'SUPER_ADMIN',
+  'YAYASAN_ADMIN',
+  'YAYASAN_KETUA'
 ];
 
-function isPrivileged(role?: UserRole): boolean {
+function isPrivileged(role?: string): boolean {
   return role ? PRIVILEGED_ROLES.includes(role) : false;
 }
 

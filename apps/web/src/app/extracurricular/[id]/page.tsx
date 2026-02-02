@@ -84,6 +84,9 @@ import {
   formatSchedule,
   DAY_NAMES,
 } from "@/hooks/use-extracurricular";
+import { AddMemberDialog } from "@/components/extracurricular/add-member-dialog";
+import { AttendanceDialog } from "@/components/extracurricular/attendance-dialog";
+import { AchievementDialog } from "@/components/extracurricular/achievement-dialog";
 
 export default function ExtracurricularDetailPage() {
   const params = useParams();
@@ -479,10 +482,7 @@ export default function ExtracurricularDetailPage() {
                 <CardTitle>
                   Daftar Anggota ({approvedEnrollments.length})
                 </CardTitle>
-                <Button size="sm">
-                  <Plus className="h-4 w-4 mr-1" />
-                  Tambah Anggota
-                </Button>
+                <AddMemberDialog extracurricularId={id} unitId={extracurricular.unitId} />
               </div>
             </CardHeader>
             <CardContent>
@@ -560,18 +560,15 @@ export default function ExtracurricularDetailPage() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>Absensi Kegiatan</CardTitle>
-                <Button>
-                  <ClipboardCheck className="h-4 w-4 mr-2" />
-                  Input Absensi
-                </Button>
+                <AttendanceDialog extracurricularId={id} />
               </div>
             </CardHeader>
             <CardContent>
               <div className="text-center py-12 text-muted-foreground">
                 <ClipboardCheck className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>Fitur absensi akan segera tersedia</p>
+                <p>Belum ada data absensi untuk ditampilkan</p>
                 <p className="text-sm">
-                  Rekam kehadiran anggota setiap kegiatan
+                  Gunakan tombol "Input Absensi" untuk merekam kehadiran
                 </p>
               </div>
             </CardContent>
@@ -583,10 +580,7 @@ export default function ExtracurricularDetailPage() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>Prestasi ({achievements.length})</CardTitle>
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Tambah Prestasi
-                </Button>
+                <AchievementDialog extracurricularId={id} unitId={extracurricular.unitId} />
               </div>
             </CardHeader>
             <CardContent>

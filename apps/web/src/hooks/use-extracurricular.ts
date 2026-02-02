@@ -90,6 +90,7 @@ export interface ExtracurricularAttendance {
   id: string;
   enrollmentId: string;
   enrollment?: ExtracurricularEnrollment;
+  studentId: string;
   date: string;
   status: AttendanceStatus;
   notes?: string;
@@ -482,15 +483,15 @@ export function useRecordExtracurricularAttendance() {
     mutationFn: async (data: {
       extracurricularId: string;
       date: string;
-      records: Array<{
-        enrollmentId: string;
+      attendances: Array<{
+        studentId: string;
         status: ExtracurricularAttendance["status"];
         notes?: string;
       }>;
     }) => {
       const response = await api.post<ApiResponse<ExtracurricularAttendance[]>>(
         `/extracurriculars/${data.extracurricularId}/attendance`,
-        { date: data.date, records: data.records },
+        { date: data.date, attendances: data.attendances },
       );
       return response.data.data;
     },

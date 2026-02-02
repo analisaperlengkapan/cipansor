@@ -8,10 +8,54 @@ import {
   CreateMedicalRecordInput,
   UpdateMedicalRecordInput,
   HealthStats,
+  Medication,
+  CreateMedicationInput,
+  UpdateMedicationInput,
+  MedicationUsageLog,
+  CreateMedicationUsageInput,
 } from "@cipansor/shared";
 
 export type { MedicalRecord };
 export { HealthStatus, MedicalRecordType as HealthRecordType };
+
+// --- LOCAL TYPES FOR IMMUNIZATION (Pending Shared Update) ---
+export interface ImmunizationRecord {
+  id: string;
+  studentId: string;
+  unitId: string;
+  vaccineName: string;
+  vaccineCode?: string | null;
+  doseNumber: number;
+  scheduledDate?: Date | string | null;
+  administeredDate?: Date | string | null;
+  administeredAt?: string | null;
+  batchNumber?: string | null;
+  notes?: string | null;
+  status: "PENDING" | "COMPLETED" | "SKIPPED";
+
+  student?: {
+    id: string;
+    user?: { name: string };
+  };
+  recordedBy?: {
+    id: string;
+    name: string;
+  };
+}
+
+export interface CreateImmunizationRecordInput {
+  studentId: string;
+  unitId: string;
+  vaccineName: string;
+  vaccineCode?: string;
+  doseNumber: number;
+  scheduledDate?: Date | string;
+  administeredDate?: Date | string;
+  administeredAt?: string;
+  batchNumber?: string;
+  notes?: string;
+  status?: "PENDING" | "COMPLETED" | "SKIPPED";
+}
 
 // Constants
 export const HEALTH_RECORD_TYPES: {
@@ -61,7 +105,8 @@ export function getRecordStatus(record: MedicalRecord): string {
   return HealthStatus.HEALTHY;
 }
 
-// Health Records Hooks
+// ==================== MEDICAL RECORDS ====================
+
 export function useHealthRecords(params?: {
   page?: number;
   limit?: number;
@@ -123,6 +168,8 @@ export function useCreateHealthRecord() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["health-records"] });
+      queryClient.invalidateQueries({ queryKey: ["health-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["health-summary"] });
     },
   });
 }
@@ -163,7 +210,188 @@ export function useDeleteHealthRecord() {
   });
 }
 
-// Health Stats Hook
+// ==================== MEDICATIONS ====================
+
+export function useMedications(params?: {
+  page?: number;
+  limit?: number;
+  unitId?: string;
+  search?: string;
+  lowStock?: boolean;
+}) {
+  return useQuery({
+    queryKey: ["medications", params],
+    queryFn: async () => {
+      const response = await api.get<SharedPaginatedResponse<Medication>>(
+        "/health/medications",
+        { params },
+      );
+      return response.data;
+    },
+  });
+}
+
+export function useMedication(id: string) {
+  return useQuery({
+    queryKey: ["medications", id],
+    queryFn: async () => {
+      const response = await api.get<{ success: boolean; data: Medication }>(
+        `/health/medications/${id}`,
+      );
+      return response.data.data;
+    },
+    enabled: !!id,
+  });
+}
+
+export function useCreateMedication() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: CreateMedicationInput) => {
+      const response = await api.post<{ success: boolean; data: Medication }>(
+        "/health/medications",
+        data,
+      );
+      return response.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["medications"] });
+      queryClient.invalidateQueries({ queryKey: ["health-summary"] });
+    },
+  });
+}
+
+export function useUpdateMedication() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: UpdateMedicationInput;
+    }) => {
+      const response = await api.put<{ success: boolean; data: Medication }>(
+        `/health/medications/${id}`,
+        data,
+      );
+      return response.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["medications"] });
+    },
+  });
+}
+
+export function useDeleteMedication() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await api.delete(`/health/medications/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["medications"] });
+    },
+  });
+}
+
+export function useAddMedicationStock() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      quantity,
+    }: {
+      id: string;
+      quantity: number;
+    }) => {
+      const response = await api.post<{ success: boolean; data: Medication }>(
+        `/health/medications/${id}/stock`,
+        { quantity },
+      );
+      return response.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["medications"] });
+      queryClient.invalidateQueries({ queryKey: ["health-summary"] });
+    },
+  });
+}
+
+// ==================== MEDICATION USAGE ====================
+
+export function useMedicationUsageLogs(params?: {
+  page?: number;
+  limit?: number;
+  medicationId?: string;
+  studentId?: string;
+}) {
+  return useQuery({
+    queryKey: ["medication-usage", params],
+    queryFn: async () => {
+      const response = await api.get<SharedPaginatedResponse<MedicationUsageLog>>(
+        "/health/usage",
+        { params },
+      );
+      return response.data;
+    },
+  });
+}
+
+export function useCreateMedicationUsage() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: CreateMedicationUsageInput) => {
+      const response = await api.post<{
+        success: boolean;
+        data: MedicationUsageLog;
+      }>("/health/usage", data);
+      return response.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["medication-usage"] });
+      queryClient.invalidateQueries({ queryKey: ["medications"] });
+    },
+  });
+}
+
+// ==================== IMMUNIZATION ====================
+
+export function useImmunizationRecords(params?: {
+  page?: number;
+  limit?: number;
+  studentId?: string;
+  vaccineName?: string;
+}) {
+  return useQuery({
+    queryKey: ["immunization", params],
+    queryFn: async () => {
+      const response = await api.get<
+        SharedPaginatedResponse<ImmunizationRecord>
+      >("/health/immunization", { params });
+      return response.data;
+    },
+  });
+}
+
+export function useCreateImmunizationRecord() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: CreateImmunizationRecordInput) => {
+      const response = await api.post<{
+        success: boolean;
+        data: ImmunizationRecord;
+      }>("/health/immunization", data);
+      return response.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["immunization"] });
+    },
+  });
+}
+
+// ==================== STATS ====================
+
 export function useHealthStats(unitId: string) {
   return useQuery({
     queryKey: ["health-stats", unitId],
@@ -177,7 +405,6 @@ export function useHealthStats(unitId: string) {
   });
 }
 
-// Added missing useHealthSummary hook
 export function useHealthSummary() {
   return useQuery({
     queryKey: ["health-summary"],

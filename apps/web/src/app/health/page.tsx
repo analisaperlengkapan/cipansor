@@ -22,6 +22,7 @@ import {
   Check,
   ChevronsUpDown,
   User,
+  Syringe,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -439,15 +440,37 @@ export default function HealthPage() {
             Pusat pemantauan kesehatan santri & manajemen UKS
           </p>
         </div>
-        <Button
-          asChild
-          className="bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-200"
-        >
-          <Link href="/health/new">
-            <Plus className="mr-2 h-4 w-4" />
-            Catat Manual
-          </Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            asChild
+            variant="outline"
+            className="border-indigo-200 text-indigo-700 hover:bg-indigo-50"
+          >
+            <Link href="/health/inventory">
+              <Pill className="mr-2 h-4 w-4" />
+              Stok Obat
+            </Link>
+          </Button>
+          <Button
+            asChild
+            variant="outline"
+            className="border-indigo-200 text-indigo-700 hover:bg-indigo-50"
+          >
+            <Link href="/health/immunization">
+              <Syringe className="mr-2 h-4 w-4" />
+              Imunisasi
+            </Link>
+          </Button>
+          <Button
+            asChild
+            className="bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-200"
+          >
+            <Link href="/health/new">
+              <Plus className="mr-2 h-4 w-4" />
+              Catat Manual
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {/* Hero Section: Stats + Sick Bay + Quick Admit */}

@@ -15,7 +15,12 @@ import type {
   MedicalRecord,
   HealthStats,
 } from '@cipansor/shared';
-import { CreateGrowthRecordInput, QueryGrowthRecordInput } from './schema';
+import {
+  CreateGrowthRecordInput,
+  QueryGrowthRecordInput,
+  CreateImmunizationRecordInput,
+  QueryImmunizationRecordInput,
+} from './schema';
 
 // ==================== MEDICAL RECORD ====================
 
@@ -69,6 +74,86 @@ export async function getMedicalRecords(query: QueryMedicalRecordInput & { statu
         : undefined,
       recordedBy: record.recordedBy,
     })) as MedicalRecord[],
+    meta: {
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    },
+  };
+}
+
+// ==================== IMMUNIZATION RECORD ====================
+
+export async function createImmunizationRecord(
+  data: CreateImmunizationRecordInput,
+  recordedById: string
+) {
+  return prisma.immunizationRecord.create({
+    data: {
+      studentId: data.studentId,
+      unitId: data.unitId,
+      vaccineName: data.vaccineName,
+      vaccineCode: data.vaccineCode,
+      doseNumber: data.doseNumber,
+      scheduledDate: data.scheduledDate,
+      administeredDate: data.administeredDate,
+      administeredAt: data.administeredAt,
+      batchNumber: data.batchNumber,
+      notes: data.notes,
+      status: data.status,
+      recordedById,
+    },
+    include: {
+      student: { select: { id: true, user: { select: { name: true } } } },
+      recordedBy: { select: { id: true, name: true } },
+    },
+  });
+}
+
+export async function getImmunizationRecords(query: QueryImmunizationRecordInput) {
+  const {
+    page = 1,
+    limit = 20,
+    studentId,
+    unitId,
+    vaccineName,
+    status,
+    startDate,
+    endDate,
+  } = query;
+  const skip = (page - 1) * limit;
+
+  const where: Prisma.ImmunizationRecordWhereInput = {
+    ...(studentId && { studentId }),
+    ...(unitId && { unitId }),
+    ...(vaccineName && { vaccineName: { contains: vaccineName, mode: 'insensitive' } }),
+    ...(status && { status }),
+    ...(startDate &&
+      endDate && {
+        administeredDate: { gte: startDate, lte: endDate },
+      }),
+  };
+
+  const [data, total] = await Promise.all([
+    prisma.immunizationRecord.findMany({
+      where,
+      skip,
+      take: limit,
+      include: {
+        student: { select: { id: true, user: { select: { name: true } } } },
+        recordedBy: { select: { id: true, name: true } },
+      },
+      orderBy: { administeredDate: 'desc' },
+    }),
+    prisma.immunizationRecord.count({ where }),
+  ]);
+
+  return {
+    success: true,
+    data,
     meta: {
       pagination: {
         page,

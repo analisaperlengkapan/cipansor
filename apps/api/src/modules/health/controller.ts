@@ -11,6 +11,8 @@ import {
   queryMedicationUsageSchema,
   createGrowthRecordSchema,
   queryGrowthRecordSchema,
+  createImmunizationRecordSchema,
+  queryImmunizationRecordSchema,
 } from './schema';
 import { Errors } from '../../middleware/error';
 import {
@@ -19,6 +21,7 @@ import {
   CreateMedicationInput,
   CreateMedicationUsageInput,
 } from '@cipansor/shared';
+import { CreateImmunizationRecordInput } from './schema';
 
 // ==================== MEDICAL RECORD ====================
 
@@ -30,6 +33,57 @@ export async function getMedicalRecords(req: Request, res: Response, next: NextF
       // Pass optional status filter if present
       status: req.query.status as string,
     });
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getHealthSummary(req: Request, res: Response, next: NextFunction) {
+  try {
+    // Check if user has unitId (e.g., from token)
+    const unitId = (req.user as any)?.unitId;
+    if (!unitId) {
+      // If no unitId (e.g. Super Admin), might need to handle differently or return empty
+      // For now, return empty or throw specific error.
+      // Assuming most users have unitId or pass it.
+      // If strict: throw Errors.badRequest('Unit context required');
+      // For safety, return empty stats:
+      return res.json({
+        success: true,
+        data: {
+          medications: { total: 0, lowStock: 0, expired: 0 },
+          thisMonthRecords: 0,
+          recordsByType: [],
+        },
+      });
+    }
+    const stats = await service.getHealthStats(unitId);
+    res.json({ success: true, data: stats });
+  } catch (error) {
+    next(error);
+  }
+}
+
+// ==================== IMMUNIZATION RECORD ====================
+
+export async function createImmunizationRecord(req: Request, res: Response, next: NextFunction) {
+  try {
+    const data = createImmunizationRecordSchema.parse(req.body);
+    const record = await service.createImmunizationRecord(
+      data as CreateImmunizationRecordInput,
+      req.user!.sub
+    );
+    res.status(201).json({ success: true, data: record });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getImmunizationRecords(req: Request, res: Response, next: NextFunction) {
+  try {
+    const query = queryImmunizationRecordSchema.parse(req.query);
+    const result = await service.getImmunizationRecords(query);
     res.json(result);
   } catch (error) {
     next(error);

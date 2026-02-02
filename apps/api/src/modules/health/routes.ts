@@ -461,4 +461,75 @@ router.post('/growth', controller.createGrowthRecord);
  */
 router.get('/growth', controller.getGrowthRecords);
 
+// ==================== SUMMARY ====================
+
+/**
+ * @swagger
+ * /api/health/summary:
+ *   get:
+ *     summary: Get health dashboard summary
+ *     tags: [Health]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Health summary data
+ */
+router.get('/summary', controller.getHealthSummary);
+
+// ==================== IMMUNIZATION RECORDS ====================
+
+/**
+ * @swagger
+ * /api/health/immunization:
+ *   get:
+ *     summary: List immunization records
+ *     tags: [Health]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: studentId
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: vaccineName
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: List of immunization records
+ */
+router.get('/immunization', controller.getImmunizationRecords);
+
+/**
+ * @swagger
+ * /api/health/immunization:
+ *   post:
+ *     summary: Create immunization record
+ *     tags: [Health]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - studentId
+ *               - vaccineName
+ *             properties:
+ *               studentId:
+ *                 type: string
+ *               vaccineName:
+ *                 type: string
+ *               doseNumber:
+ *                 type: integer
+ *     responses:
+ *       201:
+ *         description: Immunization record created
+ */
+router.post('/immunization', controller.createImmunizationRecord);
+
 export default router;

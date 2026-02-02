@@ -72,7 +72,11 @@ describe('AttendanceService', () => {
         status: 'PRESENT' as any, // Using string to simulate shared type input
       };
 
-      (prisma.student.findFirst as any).mockResolvedValue({ id: 'student-1' });
+      (prisma.student.findFirst as any).mockResolvedValue({
+        id: 'student-1',
+        user: { name: 'Student Name' },
+        unit: { id: 'unit-1' },
+      });
       (prisma.classEnrollment.findFirst as any).mockResolvedValue({ id: 'enrollment-1' });
       (prisma.attendance.findFirst as any).mockResolvedValue(null); // No duplicate
       (prisma.attendance.create as any).mockResolvedValue({

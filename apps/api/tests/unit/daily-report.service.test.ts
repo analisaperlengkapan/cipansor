@@ -32,6 +32,9 @@ vi.mock('@/lib/prisma', () => ({
       findUnique: vi.fn(),
       findMany: vi.fn(),
     },
+    teacher: {
+      findUnique: vi.fn(),
+    },
     unit: {
       findUniqueOrThrow: vi.fn(),
     },

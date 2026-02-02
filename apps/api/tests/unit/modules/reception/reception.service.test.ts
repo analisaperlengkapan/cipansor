@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { ReceptionService } from '../../../../../src/modules/reception/reception.service';
-import { prisma } from '../../../../../src/lib/prisma';
+import { ReceptionService } from '@/modules/reception/reception.service';
+import { prisma } from '@/lib/prisma';
 import { VisitStatus, PackageStatus } from '@cipansor/shared';
 
 // Mock dependencies
-vi.mock('../../../../../src/lib/prisma', () => ({
+vi.mock('@/lib/prisma', () => ({
   prisma: {
     guestBook: {
       findMany: vi.fn(),
@@ -38,7 +38,7 @@ describe('ReceptionService', () => {
   describe('getGuestBooks', () => {
     it('should return guest books filtered by unitId', async () => {
       const mockData = [{ id: '1', name: 'Guest 1' }];
-      (prisma.guestBook.findMany as any).mockResolvedValue(mockData);
+      vi.mocked(prisma.guestBook.findMany).mockResolvedValue(mockData as any);
 
       const result = await ReceptionService.getGuestBooks(unitId, {});
 
@@ -56,7 +56,7 @@ describe('ReceptionService', () => {
     it('should create a guest book entry', async () => {
       const input = { name: 'Guest', purpose: 'Visit' };
       const mockCreated = { id: '1', ...input };
-      (prisma.guestBook.create as any).mockResolvedValue(mockCreated);
+      vi.mocked(prisma.guestBook.create).mockResolvedValue(mockCreated as any);
 
       const result = await ReceptionService.createGuestBook(unitId, userId, input);
 
@@ -70,7 +70,7 @@ describe('ReceptionService', () => {
   describe('getStudentVisits', () => {
     it('should return student visits', async () => {
       const mockData = [{ id: '1', visitorName: 'Parent' }];
-      (prisma.studentVisit.findMany as any).mockResolvedValue(mockData);
+      vi.mocked(prisma.studentVisit.findMany).mockResolvedValue(mockData as any);
 
       const result = await ReceptionService.getStudentVisits(unitId, {});
 
@@ -85,9 +85,9 @@ describe('ReceptionService', () => {
 
   describe('getStats', () => {
     it('should return correct stats', async () => {
-      (prisma.guestBook.count as any).mockResolvedValue(5);
-      (prisma.studentVisit.count as any).mockResolvedValue(3);
-      (prisma.studentPackage.count as any).mockResolvedValue(2);
+      vi.mocked(prisma.guestBook.count).mockResolvedValue(5);
+      vi.mocked(prisma.studentVisit.count).mockResolvedValue(3);
+      vi.mocked(prisma.studentPackage.count).mockResolvedValue(2);
 
       const result = await ReceptionService.getStats(unitId);
 

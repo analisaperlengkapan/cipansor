@@ -8,10 +8,72 @@ import {
   createLeaveSchema,
   updateLeaveSchema,
   approveLeaveSchema,
+  createEmployeeSchema,
+  updateEmployeeSchema,
 } from './schema';
 import { Errors } from '../../middleware/error';
 import { z } from 'zod';
 import { UserRole } from '@prisma/client';
+
+// =====================================
+// EMPLOYEE CONTROLLERS
+// =====================================
+
+export async function getEmployees(req: Request, res: Response, next: NextFunction) {
+  try {
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 20;
+    const unitId = req.query.unitId as string;
+    const role = req.query.role as 'TEACHER' | 'STAFF';
+    const search = req.query.search as string;
+
+    const result = await service.getEmployees({ page, limit, unitId, role, search });
+    res.json({ success: true, ...result });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getEmployeeById(req: Request, res: Response, next: NextFunction) {
+  try {
+    const employee = await service.getEmployeeById(req.params.id);
+    if (!employee) {
+      throw Errors.notFound('Employee not found');
+    }
+    res.json({ success: true, data: employee });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function createEmployee(req: Request, res: Response, next: NextFunction) {
+  try {
+    const data = createEmployeeSchema.parse(req.body);
+    const employee = await service.createEmployee(data);
+    res.status(201).json({ success: true, data: employee });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function updateEmployee(req: Request, res: Response, next: NextFunction) {
+  try {
+    const data = updateEmployeeSchema.parse(req.body);
+    const employee = await service.updateEmployee(req.params.id, data);
+    res.json({ success: true, data: employee });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function deleteEmployee(req: Request, res: Response, next: NextFunction) {
+  try {
+    await service.deleteEmployee(req.params.id);
+    res.json({ success: true, message: 'Employee deleted successfully' });
+  } catch (error) {
+    next(error);
+  }
+}
 
 // =====================================
 // STAFF ATTENDANCE CONTROLLERS

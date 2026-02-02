@@ -79,14 +79,23 @@ export interface Employee {
   city?: string;
   province?: string;
   postalCode?: string;
+  rt?: string;
+  rw?: string;
+  districtId?: string;
+  villageId?: string;
 
   // Employment
   position: string;
+  role?: "TEACHER" | "STAFF";
   employeeType: EmployeeType;
   status: EmployeeStatus;
   joinDate: string;
   endDate?: string;
   resignDate?: string;
+  nuptk?: string;
+  specialization?: string;
+  certificationNumber?: string;
+  employmentHistory?: EmploymentHistory[];
 
   // Education
   lastEducation?: string;
@@ -117,9 +126,31 @@ export interface Employee {
     type?: string;
     uploadedAt?: string;
   }[];
+  employeeDocuments?: EmployeeDocument[];
 
   createdAt: string;
   updatedAt: string;
+}
+
+export interface EmploymentHistory {
+  id: string;
+  action: string;
+  previousPosition: string | null;
+  newPosition: string;
+  previousDepartment: string | null;
+  newDepartment: string | null;
+  effectiveDate: string;
+  notes: string | null;
+}
+
+export interface EmployeeDocument {
+  id: string;
+  name: string;
+  type: string;
+  fileUrl: string;
+  expiryDate: string | null;
+  notes: string | null;
+  createdAt: string;
 }
 
 export interface Department {

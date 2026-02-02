@@ -52,6 +52,11 @@ import { z } from "zod";
 import { toast } from "sonner";
 
 const employeeSchema = z.object({
+  // Role
+  role: z.enum(["TEACHER", "STAFF"], {
+    required_error: "Peran wajib dipilih",
+  }),
+
   // Personal Info
   nip: z.string().min(1, "NIP wajib diisi"),
   fullName: z.string().min(1, "Nama lengkap wajib diisi"),
@@ -63,9 +68,19 @@ const employeeSchema = z.object({
   religion: z.string().optional(),
   maritalStatus: z.string().optional(),
   nik: z.string().optional(),
+  noKK: z.string().optional(),
   email: z.string().email("Email tidak valid").optional().or(z.literal("")),
   phone: z.string().optional(),
+
+  // Address
   address: z.string().optional(),
+  rt: z.string().optional(),
+  rw: z.string().optional(),
+  provinceId: z.string().optional(),
+  regencyId: z.string().optional(),
+  districtId: z.string().optional(),
+  villageId: z.string().optional(),
+  postalCode: z.string().optional(),
 
   // Employment Info
   unitId: z.string().min(1, "Unit wajib dipilih"),
@@ -75,6 +90,9 @@ const employeeSchema = z.object({
     required_error: "Tipe karyawan wajib dipilih",
   }),
   joinDate: z.string().min(1, "Tanggal bergabung wajib diisi"),
+  nuptk: z.string().optional(),
+  specialization: z.string().optional(),
+  certificationNumber: z.string().optional(),
 
   // Bank Info
   bankName: z.string().optional(),
@@ -104,6 +122,7 @@ export default function NewEmployeePage() {
   const form = useForm<EmployeeFormData>({
     resolver: zodResolver(employeeSchema),
     defaultValues: {
+      role: "TEACHER",
       nip: "",
       fullName: "",
       gender: undefined,
@@ -112,14 +131,21 @@ export default function NewEmployeePage() {
       religion: "Islam",
       maritalStatus: "",
       nik: "",
+      noKK: "",
       email: "",
       phone: "",
       address: "",
+      rt: "",
+      rw: "",
+      postalCode: "",
       unitId: "",
       departmentId: "",
       position: "",
       employeeType: undefined,
       joinDate: new Date().toISOString().split("T")[0],
+      nuptk: "",
+      specialization: "",
+      certificationNumber: "",
       bankName: "",
       bankAccountNumber: "",
       bankAccountName: "",
@@ -132,6 +158,8 @@ export default function NewEmployeePage() {
       graduationYear: "",
     },
   });
+
+  const selectedRole = form.watch("role");
 
   const onSubmit = async (data: EmployeeFormData) => {
     try {
@@ -198,6 +226,31 @@ export default function NewEmployeePage() {
                     <CardDescription>Data pribadi karyawan</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
+                    <FormField
+                        control={form.control}
+                        name="role"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Peran / Jabatan *</FormLabel>
+                            <Select
+                              onValueChange={field.onChange}
+                              value={field.value}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Pilih Peran" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="TEACHER">Guru / Ustadz</SelectItem>
+                                <SelectItem value="STAFF">Tendik (Staf)</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
                     <div className="grid gap-4 md:grid-cols-2">
                       <FormField
                         control={form.control}
@@ -232,6 +285,37 @@ export default function NewEmployeePage() {
                         )}
                       />
                     </div>
+
+                    {selectedRole === "TEACHER" && (
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <FormField
+                          control={form.control}
+                          name="nuptk"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>NUPTK</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Nomor Unik Pendidik" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="noKK"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>No. Kartu Keluarga</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Nomor KK" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    )}
 
                     <FormField
                       control={form.control}
@@ -416,14 +500,58 @@ export default function NewEmployeePage() {
                       name="address"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Alamat</FormLabel>
+                          <FormLabel>Alamat Jalan</FormLabel>
                           <FormControl>
-                            <Textarea placeholder="Alamat lengkap" {...field} />
+                            <Textarea placeholder="Nama jalan, nomor rumah" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
+
+                    {selectedRole === "TEACHER" && (
+                      <div className="grid gap-4 md:grid-cols-3">
+                        <FormField
+                          control={form.control}
+                          name="rt"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>RT</FormLabel>
+                              <FormControl>
+                                <Input placeholder="001" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="rw"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>RW</FormLabel>
+                              <FormControl>
+                                <Input placeholder="002" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="postalCode"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Kode Pos</FormLabel>
+                              <FormControl>
+                                <Input placeholder="40xxx" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>

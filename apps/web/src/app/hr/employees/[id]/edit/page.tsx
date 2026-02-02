@@ -48,7 +48,11 @@ import {
   CreditCard,
   GraduationCap,
   AlertCircle,
+  FileText,
+  History,
 } from "lucide-react";
+import { EmploymentHistoryList } from "@/components/hr/EmploymentHistoryList";
+import { EmployeeDocumentList } from "@/components/hr/EmployeeDocumentList";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -68,6 +72,13 @@ const employeeSchema = z.object({
   email: z.string().email("Email tidak valid").optional().or(z.literal("")),
   phone: z.string().optional(),
   address: z.string().optional(),
+  rt: z.string().optional(),
+  rw: z.string().optional(),
+  provinceId: z.string().optional(),
+  regencyId: z.string().optional(),
+  districtId: z.string().optional(),
+  villageId: z.string().optional(),
+  postalCode: z.string().optional(),
   unitId: z.string().min(1, "Unit wajib dipilih"),
   departmentId: z.string().optional(),
   position: z.string().min(1, "Jabatan wajib diisi"),
@@ -85,6 +96,9 @@ const employeeSchema = z.object({
   educationInstitution: z.string().optional(),
   educationMajor: z.string().optional(),
   graduationYear: z.string().optional(),
+  role: z.enum(["TEACHER", "STAFF"]).optional(),
+  noKK: z.string().optional(),
+  nuptk: z.string().optional(),
 });
 
 type EmployeeFormData = z.infer<typeof employeeSchema>;
@@ -151,6 +165,12 @@ export default function EditEmployeePage() {
         email: employee.email ?? "",
         phone: employee.phone ?? "",
         address: employee.address ?? "",
+        rt: (employee as any).teacher?.rt || "",
+        rw: (employee as any).teacher?.rw || "",
+        postalCode: (employee as any).teacher?.postalCode || "",
+        noKK: (employee as any).teacher?.noKK || "",
+        nuptk: (employee as any).teacher?.nuptk || "",
+        role: employee.role,
         unitId: employee.unitId,
         departmentId: employee.departmentId ?? "",
         position: employee.position,
@@ -173,6 +193,8 @@ export default function EditEmployeePage() {
       });
     }
   }, [employee, form]);
+
+  const selectedRole = form.watch("role");
 
   const onSubmit = async (data: EmployeeFormData) => {
     try {
@@ -235,7 +257,7 @@ export default function EditEmployeePage() {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-4">
+              <TabsList className="grid w-full grid-cols-6 overflow-x-auto">
                 <TabsTrigger value="personal">
                   <User className="mr-2 h-4 w-4" />
                   Data Pribadi
@@ -251,6 +273,14 @@ export default function EditEmployeePage() {
                 <TabsTrigger value="education">
                   <GraduationCap className="mr-2 h-4 w-4" />
                   Pendidikan
+                </TabsTrigger>
+                <TabsTrigger value="history">
+                  <History className="mr-2 h-4 w-4" />
+                  Riwayat
+                </TabsTrigger>
+                <TabsTrigger value="documents">
+                  <FileText className="mr-2 h-4 w-4" />
+                  Dokumen
                 </TabsTrigger>
               </TabsList>
 
@@ -466,7 +496,7 @@ export default function EditEmployeePage() {
                       name="address"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Alamat</FormLabel>
+                          <FormLabel>Alamat Jalan</FormLabel>
                           <FormControl>
                             <Textarea {...field} />
                           </FormControl>
@@ -474,6 +504,50 @@ export default function EditEmployeePage() {
                         </FormItem>
                       )}
                     />
+
+                    {selectedRole === "TEACHER" && (
+                      <div className="grid gap-4 md:grid-cols-3">
+                        <FormField
+                          control={form.control}
+                          name="rt"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>RT</FormLabel>
+                              <FormControl>
+                                <Input placeholder="001" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="rw"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>RW</FormLabel>
+                              <FormControl>
+                                <Input placeholder="002" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="postalCode"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Kode Pos</FormLabel>
+                              <FormControl>
+                                <Input placeholder="40xxx" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -850,6 +924,16 @@ export default function EditEmployeePage() {
                     </div>
                   </CardContent>
                 </Card>
+              </TabsContent>
+
+              {/* History Tab */}
+              <TabsContent value="history" className="space-y-4">
+                <EmploymentHistoryList history={employee.employmentHistory || []} />
+              </TabsContent>
+
+              {/* Documents Tab */}
+              <TabsContent value="documents" className="space-y-4">
+                <EmployeeDocumentList documents={employee.employeeDocuments || []} />
               </TabsContent>
             </Tabs>
 

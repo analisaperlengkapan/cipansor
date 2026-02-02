@@ -14,6 +14,38 @@ const router = Router();
 
 router.use(authenticate);
 
+// ==================== EMPLOYEES ====================
+
+router.get(
+  '/employees',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  controller.getEmployees
+);
+
+router.get(
+  '/employees/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF),
+  controller.getEmployeeById
+);
+
+router.post(
+  '/employees',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  controller.createEmployee
+);
+
+router.put(
+  '/employees/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  controller.updateEmployee
+);
+
+router.delete(
+  '/employees/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  controller.deleteEmployee
+);
+
 // ==================== STAFF ====================
 
 /**

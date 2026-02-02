@@ -78,6 +78,8 @@ export async function getEmployeeById(id: string) {
       unit: { select: { id: true, name: true } },
       teacher: true,
       staff: true,
+      employmentHistory: { orderBy: { effectiveDate: 'desc' } },
+      employeeDocuments: { orderBy: { createdAt: 'desc' } },
     },
   });
 }
@@ -125,13 +127,25 @@ export async function createEmployee(data: CreateEmployeeInput) {
           employmentStatus: data.employmentStatus,
           specialization: data.specialization,
           certificationNumber: data.certificationNumber,
+          // Extended Address
+          rt: data.rt,
+          rw: data.rw,
+          postalCode: data.postalCode,
+          provinceId: data.provinceId,
+          regencyId: data.regencyId,
+          districtId: data.districtId,
+          villageId: data.villageId,
+          // Bank Info
+          bankName: data.bankName,
+          bankAccountNumber: data.bankAccountNumber,
+          bankAccountName: data.bankAccountName,
         },
       });
     } else {
       // STAFF
       if (!data.position) throw Errors.badRequest('Position is required for Staff');
 
-      await tx.staff.create({
+      const staff = await tx.staff.create({
         data: {
           userId: user.id,
           unitId: data.unitId,
@@ -141,6 +155,20 @@ export async function createEmployee(data: CreateEmployeeInput) {
           joinDate: data.joinDate ? new Date(data.joinDate) : undefined,
         },
       });
+
+      // Handle Bank Info for Staff via EmployeeSalary
+      if (data.bankName || data.bankAccountNumber) {
+        await tx.employeeSalary.create({
+          data: {
+            staffId: staff.id,
+            baseSalary: 0, // Default to 0, needs to be set in Payroll
+            bankName: data.bankName,
+            bankAccount: data.bankAccountNumber,
+            bankHolder: data.bankAccountName,
+            effectiveAt: new Date(),
+          },
+        });
+      }
     }
 
     return user;
@@ -187,6 +215,18 @@ export async function updateEmployee(id: string, data: UpdateEmployeeInput) {
           specialization: data.specialization,
           certificationNumber: data.certificationNumber,
           unitId: data.unitId, // Update unit if user moved
+          // Extended Address
+          rt: data.rt,
+          rw: data.rw,
+          postalCode: data.postalCode,
+          provinceId: data.provinceId,
+          regencyId: data.regencyId,
+          districtId: data.districtId,
+          villageId: data.villageId,
+          // Bank Info
+          bankName: data.bankName,
+          bankAccountNumber: data.bankAccountNumber,
+          bankAccountName: data.bankAccountName,
         },
       });
     } else if (user.role === 'STAFF' && user.staff) {
@@ -200,6 +240,27 @@ export async function updateEmployee(id: string, data: UpdateEmployeeInput) {
           unitId: data.unitId,
         },
       });
+
+      // Update Bank Info in EmployeeSalary if provided
+      if (data.bankName || data.bankAccountNumber) {
+        // Upsert because it might not exist
+        await tx.employeeSalary.upsert({
+          where: { staffId: user.staff.id },
+          update: {
+            bankName: data.bankName,
+            bankAccount: data.bankAccountNumber,
+            bankHolder: data.bankAccountName,
+          },
+          create: {
+            staffId: user.staff.id,
+            baseSalary: 0,
+            bankName: data.bankName,
+            bankAccount: data.bankAccountNumber,
+            bankHolder: data.bankAccountName,
+            effectiveAt: new Date(),
+          },
+        });
+      }
     }
 
     return updatedUser;

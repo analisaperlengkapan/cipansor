@@ -121,6 +121,20 @@ export const createEmployeeSchema = z.object({
   specialization: z.string().optional(),
   certificationNumber: z.string().optional(),
 
+  // Extended Address Fields
+  rt: z.string().optional(),
+  rw: z.string().optional(),
+  postalCode: z.string().optional(),
+  provinceId: z.string().optional(),
+  regencyId: z.string().optional(),
+  districtId: z.string().optional(),
+  villageId: z.string().optional(),
+
+  // Bank Info
+  bankName: z.string().optional(),
+  bankAccountNumber: z.string().optional(),
+  bankAccountName: z.string().optional(),
+
   // Staff specific
   position: z.string().optional(), // Required if role is STAFF
   department: z.string().optional(),
@@ -147,6 +161,20 @@ export const updateEmployeeSchema = z.object({
   employmentStatus: z.nativeEnum(EmploymentStatus).optional(),
   specialization: z.string().optional(),
   certificationNumber: z.string().optional(),
+
+  // Extended Address Fields
+  rt: z.string().optional(),
+  rw: z.string().optional(),
+  postalCode: z.string().optional(),
+  provinceId: z.string().optional(),
+  regencyId: z.string().optional(),
+  districtId: z.string().optional(),
+  villageId: z.string().optional(),
+
+  // Bank Info
+  bankName: z.string().optional(),
+  bankAccountNumber: z.string().optional(),
+  bankAccountName: z.string().optional(),
 
   position: z.string().optional(),
   department: z.string().optional(),

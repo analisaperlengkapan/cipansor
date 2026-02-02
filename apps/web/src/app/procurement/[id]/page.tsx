@@ -15,9 +15,10 @@ import {
   ArrowLeft,
   CheckCircle,
   XCircle,
-  PackageCheck,
   AlertTriangle,
   History,
+  Printer,
+  Truck,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -96,6 +97,29 @@ export default function ProcurementDetailPage() {
     mutate();
   };
 
+  const handleMarkOrdered = async () => {
+    if (
+      confirm(
+        "Tandai pesanan ini sebagai DIPESAN? Status ini menandakan PO sudah dikirim ke supplier."
+      )
+    ) {
+      await updateStatus({
+        id: request.id,
+        status: PurchaseRequestStatus.ORDERED,
+      });
+      mutate();
+    }
+  };
+
+  const showPrintButton =
+    request.status === PurchaseRequestStatus.APPROVED ||
+    request.status === PurchaseRequestStatus.ORDERED ||
+    request.status === PurchaseRequestStatus.RECEIVED;
+
+  const showOrderButton =
+    request.status === PurchaseRequestStatus.APPROVED &&
+    ["SUPER_ADMIN", "UNIT_ADMIN", "YAYASAN_ADMIN"].includes(user?.role || "");
+
   return (
     <MainLayout>
       <div className="space-y-6">
@@ -158,7 +182,28 @@ export default function ProcurementDetailPage() {
                   </div>
                 )}
 
-                <div className="flex gap-2 justify-end pt-4">
+                <div className="flex gap-2 justify-end pt-4 flex-wrap">
+                  {showPrintButton && (
+                    <Button variant="outline" asChild>
+                      <Link
+                        href={`/procurement/${request.id}/print-po`}
+                        target="_blank"
+                      >
+                        <Printer className="mr-2 h-4 w-4" /> Cetak PO
+                      </Link>
+                    </Button>
+                  )}
+
+                  {showOrderButton && (
+                    <Button
+                      onClick={handleMarkOrdered}
+                      disabled={isUpdating}
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      <Truck className="mr-2 h-4 w-4" /> Tandai Dipesan
+                    </Button>
+                  )}
+
                   {canApprove && (
                     <>
                       <Dialog

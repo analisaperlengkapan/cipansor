@@ -580,10 +580,12 @@ export class FinanceEnhancementService {
 
     const totals = resultAccounts.reduce(
       (acc, item) => ({
+        startBalance: acc.startBalance + item.startBalance,
         debit: acc.debit + item.debit,
         credit: acc.credit + item.credit,
+        endBalance: acc.endBalance + item.endBalance,
       }),
-      { debit: 0, credit: 0 }
+      { startBalance: 0, debit: 0, credit: 0, endBalance: 0 }
     );
 
     return {

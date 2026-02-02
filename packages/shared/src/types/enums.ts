@@ -12,6 +12,7 @@ export enum UserRole {
 export enum RoleCode {
   // Global
   SUPER_ADMIN = "SUPER_ADMIN",
+  UNIT_ADMIN = "UNIT_ADMIN", // Added to fix build error
 
   // Yayasan roles
   YAYASAN_ADMIN = "YAYASAN_ADMIN",

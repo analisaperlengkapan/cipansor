@@ -147,6 +147,7 @@ export class RolesController {
 
       // Generate new tokens with the new active role
       const tokens = generateTokenPair({
+        id: result.user.id, // Added id to fix build error
         sub: result.user.id,
         email: result.user.email,
         role: result.user.role,

@@ -275,7 +275,7 @@ export async function createColumn(projectId: string, data: CreateColumnInput) {
 
   return prisma.projectColumn.create({
     data: {
-      projectId,
+      projectId, // Ensure projectId is passed
       ...data,
     },
   });

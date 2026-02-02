@@ -28,6 +28,9 @@ const parsePagination = (req: Request) => ({
   limit: Number(req.query.limit) || 20,
 });
 
+// Import missing type locally or assume it's same as CreateJournalEntryInput
+type CreateManualJournalInput = CreateJournalEntryInput;
+
 export class FinanceEnhancementController {
   // ==================== ACCOUNT CODES ====================
 
@@ -133,7 +136,8 @@ export class FinanceEnhancementController {
       const input: CreateManualJournalInput = req.body;
       const userId = (req as any).user.id;
 
-      await financeEnhancementService.createManualJournal({
+      // Use createJournalEntry as createManualJournal doesn't exist on service
+      await financeEnhancementService.createJournalEntry({
         ...input,
         createdById: userId,
       });

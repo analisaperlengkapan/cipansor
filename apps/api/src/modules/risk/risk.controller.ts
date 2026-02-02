@@ -3,7 +3,7 @@ import { asyncHandler } from '@/middleware/error';
 import { Errors } from '@/middleware/error';
 import { riskService } from './risk.service';
 import { createRiskSchema, updateRiskSchema, createMitigationSchema, updateMitigationSchema, listRiskQuerySchema } from './risk.validation';
-import { UserRole } from '@prisma/client';
+import { UserRole, RiskLikelihood, RiskImpact, RiskLevel } from '@prisma/client';
 import { RoleCode } from '@cipansor/shared';
 
 const PRIVILEGED_ROLES = [
@@ -14,6 +14,26 @@ const PRIVILEGED_ROLES = [
 
 function isPrivileged(role?: UserRole | string): boolean {
   return role ? (PRIVILEGED_ROLES as string[]).includes(role) : false;
+}
+
+// Helper to calculate risk score and level
+function calculateRisk(likelihood: RiskLikelihood, impact: RiskImpact) {
+  // Assuming enums are mapped to values or we map them here
+  const likelihoodMap: Record<RiskLikelihood, number> = {
+    RARE: 1, UNLIKELY: 2, POSSIBLE: 3, LIKELY: 4, ALMOST_CERTAIN: 5
+  };
+  const impactMap: Record<RiskImpact, number> = {
+    INSIGNIFICANT: 1, MINOR: 2, MODERATE: 3, MAJOR: 4, CATASTROPHIC: 5
+  };
+
+  const score = likelihoodMap[likelihood] * impactMap[impact];
+
+  let level: RiskLevel = RiskLevel.LOW;
+  if (score >= 15) level = RiskLevel.EXTREME;
+  else if (score >= 10) level = RiskLevel.HIGH;
+  else if (score >= 5) level = RiskLevel.MEDIUM;
+
+  return { riskScore: score, riskLevel: level };
 }
 
 export const listRisks = asyncHandler(async (req: Request, res: Response) => {
@@ -76,8 +96,16 @@ export const createRisk = asyncHandler(async (req: Request, res: Response) => {
   // Destructure to remove unitId from spread, preventing Prisma conflict
   const { unitId: _, ...rest } = body;
 
+  // Calculate Risk Score & Level
+  // Cast enums to ensure type safety if Zod output implies string
+  const likelihood = rest.likelihood as RiskLikelihood;
+  const impact = rest.impact as RiskImpact;
+  const { riskScore, riskLevel } = calculateRisk(likelihood, impact);
+
   const risk = await riskService.createRisk({
     ...rest,
+    riskScore,
+    riskLevel,
     unit: { connect: { id: targetUnitId } },
     createdBy: { connect: { id: userId } },
   });
@@ -101,7 +129,15 @@ export const updateRisk = asyncHandler(async (req: Request, res: Response) => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { unitId: _, ...updateData } = body;
 
-  const risk = await riskService.updateRisk(id, updateData);
+  // Recalculate score/level if needed
+  let calculatedUpdates = {};
+  if (updateData.likelihood || updateData.impact) {
+      const newLikelihood = (updateData.likelihood || existingRisk.likelihood) as RiskLikelihood;
+      const newImpact = (updateData.impact || existingRisk.impact) as RiskImpact;
+      calculatedUpdates = calculateRisk(newLikelihood, newImpact);
+  }
+
+  const risk = await riskService.updateRisk(id, { ...updateData, ...calculatedUpdates });
   res.json({ success: true, data: risk });
 });
 

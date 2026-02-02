@@ -344,13 +344,26 @@ export const updatePackage = async (
   const pkg = await prisma.studentPackage.findUnique({ where: { id } });
   if (!pkg) throw Errors.notFound('Package');
 
+  let prismaStatus: PackageStatus | undefined;
+  if (data.status) {
+    if ((data.status as string) === 'PICKED_UP') {
+      prismaStatus = PackageStatus.DELIVERED;
+    } else {
+      // Allow other statuses if they match
+      prismaStatus = data.status as unknown as PackageStatus;
+    }
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const updateData: any = {
-    status: data.status as PackageStatus,
     notes: data.notes,
   };
 
-  if (data.status === PackageStatus.DELIVERED && !pkg.deliveredAt) {
+  if (prismaStatus) {
+    updateData.status = prismaStatus;
+  }
+
+  if (prismaStatus === PackageStatus.DELIVERED && !pkg.deliveredAt) {
     updateData.deliveredAt = data.pickedUpAt || new Date();
   }
 

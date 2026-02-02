@@ -141,6 +141,8 @@ export const createTargetSchema = z.object({
   studentId: z.string().uuid(),
   academicYearId: z.string().uuid(),
   targetJuz: z.number().int().min(1),
+  targetAyah: z.number().int().optional(),
+  notes: z.string().optional(),
 });
 
 export const updateTargetSchema = createTargetSchema.partial();

@@ -148,7 +148,7 @@ export const getStudentVisits = async (
     where.studentId = params.studentId;
   }
 
-  return prisma.studentVisit.findMany({
+  const visits = await prisma.studentVisit.findMany({
     where,
     orderBy: { checkIn: 'desc' },
     include: {
@@ -165,6 +165,12 @@ export const getStudentVisits = async (
       },
     },
   });
+
+  return visits.map((v) => ({
+    ...v,
+    relationship: v.relation,
+    needs: v.purpose,
+  }));
 };
 
 export const createStudentVisit = async (unitId: string, data: CreateStudentVisitInput) => {
@@ -177,13 +183,13 @@ export const createStudentVisit = async (unitId: string, data: CreateStudentVisi
   // In a real scenario, we might want to check if student.unitId === unitId
   // But for now we trust the input or assume global student access within allowed scopes
 
-  return prisma.studentVisit.create({
+  const visit = await prisma.studentVisit.create({
     data: {
       unitId,
       studentId: data.studentId,
       visitorName: data.visitorName,
-      relation: data.relation,
-      purpose: data.purpose,
+      relation: (data as any).relationship, // Map input
+      purpose: (data as any).needs, // Map input
       notes: data.notes,
       status: VisitStatus.CHECKED_IN,
       checkIn: new Date(),
@@ -202,13 +208,19 @@ export const createStudentVisit = async (unitId: string, data: CreateStudentVisi
       },
     },
   });
+
+  return {
+    ...visit,
+    relationship: visit.relation,
+    needs: visit.purpose,
+  };
 };
 
 export const updateStudentVisit = async (id: string, data: UpdateStudentVisitInput) => {
   const visit = await prisma.studentVisit.findUnique({ where: { id } });
   if (!visit) throw Errors.notFound('Visit');
 
-  return prisma.studentVisit.update({
+  const updated = await prisma.studentVisit.update({
     where: { id },
     data: {
       checkOut: data.checkOut,
@@ -229,6 +241,12 @@ export const updateStudentVisit = async (id: string, data: UpdateStudentVisitInp
       },
     },
   });
+
+  return {
+    ...updated,
+    relationship: updated.relation,
+    needs: updated.purpose,
+  };
 };
 
 // --- Student Packages ---
@@ -247,7 +265,7 @@ export const getPackages = async (
     where.studentId = params.studentId;
   }
 
-  return prisma.studentPackage.findMany({
+  const packages = await prisma.studentPackage.findMany({
     where,
     orderBy: { receivedAt: 'desc' },
     include: {
@@ -267,6 +285,12 @@ export const getPackages = async (
       },
     },
   });
+
+  return packages.map((p) => ({
+    ...p,
+    content: p.description,
+    expedition: p.senderName, // Approximation
+  }));
 };
 
 export const createPackage = async (
@@ -274,13 +298,13 @@ export const createPackage = async (
   userId: string,
   data: CreateStudentPackageInput
 ) => {
-  return prisma.studentPackage.create({
+  const pkg = await prisma.studentPackage.create({
     data: {
       unitId,
       studentId: data.studentId,
-      senderName: data.senderName,
-      senderPhone: data.senderPhone,
-      description: data.description,
+      senderName: (data as any).expedition || 'Unknown',
+      senderPhone: (data as any).senderPhone || '',
+      description: (data as any).content,
       photoUrl: data.photoUrl,
       notes: data.notes,
       receivedById: userId,
@@ -304,6 +328,12 @@ export const createPackage = async (
       },
     },
   });
+
+  return {
+    ...pkg,
+    content: pkg.description,
+    expedition: pkg.senderName,
+  };
 };
 
 export const updatePackage = async (id: string, data: UpdateStudentPackageInput) => {
@@ -314,14 +344,14 @@ export const updatePackage = async (id: string, data: UpdateStudentPackageInput)
   const updateData: any = {
     status: data.status,
     notes: data.notes,
-    deliveredTo: data.deliveredTo,
+    deliveredTo: (data as any).deliveredTo,
   };
 
   if (data.status === PackageStatus.DELIVERED && !pkg.deliveredAt) {
     updateData.deliveredAt = new Date();
   }
 
-  return prisma.studentPackage.update({
+  const updated = await prisma.studentPackage.update({
     where: { id },
     data: updateData,
     include: {
@@ -341,4 +371,10 @@ export const updatePackage = async (id: string, data: UpdateStudentPackageInput)
       },
     },
   });
+
+  return {
+    ...updated,
+    content: updated.description,
+    expedition: updated.senderName,
+  };
 };

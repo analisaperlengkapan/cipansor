@@ -5,8 +5,11 @@ import { Errors } from '@/middleware/error';
 import { config } from '@/config';
 import type { LoginInput, RegisterInput, ChangePasswordInput, UpdateProfileInput } from './auth.schema';
 import { UserRole, RoleCode } from '@prisma/client';
-import { authenticator } from 'otplib';
+import * as otplib from 'otplib';
 import * as qrcode from 'qrcode';
+
+// Handle both CJS and ESM interop for otplib
+const authenticator = (otplib as any).authenticator || otplib;
 import crypto from 'crypto';
 
 export class AuthService {
@@ -49,7 +52,7 @@ export class AuthService {
     // Determine active role (primary or first role)
     const primaryRole = user.userRoles.find((r) => r.isPrimary) || user.userRoles[0];
 
-    const isUserAdmin = this.isAdminAccount(user, primaryRole?.role.code as RoleCode);
+    const isUserAdmin = this.isAdminAccount(user, primaryRole?.role.code as any);
 
     // Check for 2FA
     if (user.isTwoFactorEnabled) {
@@ -680,15 +683,16 @@ export class AuthService {
    * Helper to check if a user is an Admin
    * Checks both legacy role and RoleCode
    */
-  private isAdminAccount(user: { role: UserRole }, roleCode?: RoleCode): boolean {
+  private isAdminAccount(user: { role: UserRole }, roleCode?: any): boolean {
+      // Use string literals to avoid Prisma Enum issues if generation fails
       const ADMIN_ROLES = [
-          RoleCode.SUPER_ADMIN,
-          RoleCode.YAYASAN_ADMIN,
-          RoleCode.TKQ_ADMIN,
-          RoleCode.SDIT_ADMIN,
-          RoleCode.SMPIT_ADMIN,
-          RoleCode.SMAQ_ADMIN,
-          RoleCode.UNIT_ADMIN,
+          'SUPER_ADMIN',
+          'YAYASAN_ADMIN',
+          'TKQ_ADMIN',
+          'SDIT_ADMIN',
+          'SMPIT_ADMIN',
+          'SMAQ_ADMIN',
+          'UNIT_ADMIN',
       ];
 
       return (

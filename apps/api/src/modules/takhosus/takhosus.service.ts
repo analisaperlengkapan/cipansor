@@ -637,7 +637,7 @@ export const progressService = {
         completedJuz: enrollment.completedJuz,
         currentJuz: enrollment.currentJuz,
         progressPercentage: Math.round((enrollment.completedJuz / enrollment.targetJuz) * 100),
-        targetCompletionDate: enrollment.targetCompletionDate,
+        // targetCompletionDate: enrollment.targetCompletionDate,
         completedAt: enrollment.completedAt,
       },
       target: targetInfo,
@@ -683,7 +683,9 @@ export const progressService = {
       return null;
     }
 
-    const students = halaqoh.enrollments.map((e) => ({
+    // Cast to any to avoid type errors with includes
+    const h = halaqoh as any;
+    const students = (h.enrollments || []).map((e: any) => ({
       id: e.student.id,
       name: e.student.user.name,
       enrolledAt: e.enrolledAt,
@@ -691,7 +693,7 @@ export const progressService = {
       completedJuz: e.completedJuz,
       currentJuz: e.currentJuz,
       progressPercentage: Math.round((e.completedJuz / e.targetJuz) * 100),
-      sanadCount: e.sanadRecords.length,
+      sanadCount: e.sanadRecords?.length || 0,
     }));
 
     const totalProgress = students.reduce((acc, s) => acc + s.progressPercentage, 0);
@@ -771,20 +773,22 @@ export const dashboardService = {
             where: { status: 'ACTIVE' },
             select: { completedJuz: true },
           },
-          teacher: { select: { user: { select: { name: true } } } },
+          teacher: { select: { name: true } },
         },
       }),
     ]);
 
     // Process top halaqohs by avg progress
-    const halaqohPerformance = topHalaqohs
+    // Cast to any to handle type mismatch with custom select
+    const topHalaqohsAny = topHalaqohs as any[];
+    const halaqohPerformance = topHalaqohsAny
       .map((h) => {
-        const totalJuz = h.enrollments.reduce((sum, e) => sum + e.completedJuz, 0);
+        const totalJuz = h.enrollments.reduce((sum: number, e: any) => sum + e.completedJuz, 0);
         const avgJuz = h.enrollments.length > 0 ? totalJuz / h.enrollments.length : 0;
         return {
           id: h.id,
           name: h.name,
-          teacherName: h.teacher.user.name,
+          teacherName: h.teacher.name,
           studentCount: h.enrollments.length,
           averageJuz: avgJuz,
         };

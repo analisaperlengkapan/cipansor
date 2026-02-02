@@ -98,7 +98,10 @@ export class TahfidzController {
     try {
       const createdById = (req as any).user.id;
       const input: GenerateCertificateInput = req.body;
-      const result = await this.service.generateCertificate(input, createdById);
+      const result = await this.service.generateCertificate({
+        ...input,
+        issueDate: input.issueDate ? new Date(input.issueDate) : new Date(),
+      }, createdById);
       res.status(201).json({ success: true, data: result });
     } catch (error) {
       next(error);

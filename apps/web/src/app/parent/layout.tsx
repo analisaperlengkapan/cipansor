@@ -21,6 +21,7 @@ import {
   Bell,
   LogOut,
   Menu,
+  Settings,
   type LucideIcon,
 } from "lucide-react";
 

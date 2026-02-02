@@ -175,10 +175,10 @@ export class AttendanceService {
     // Check for duplicate attendance on same date
     const inputDate = new Date(input.date);
     const startOfDay = new Date(
-      Date.UTC(inputDate.getFullYear(), inputDate.getMonth(), inputDate.getDate(), 0, 0, 0, 0)
+      Date.UTC(inputDate.getFullYear(), inputDate.getMonth(), inputDate.getDate(), 0, 0, 0, 0) as any
     );
     const endOfDay = new Date(
-      Date.UTC(inputDate.getFullYear(), inputDate.getMonth(), inputDate.getDate(), 23, 59, 59, 999)
+      Date.UTC(inputDate.getFullYear(), inputDate.getMonth(), inputDate.getDate(), 23, 59, 59, 999) as any
     );
 
     const existingAttendance = await prisma.attendance.findFirst({
@@ -264,7 +264,7 @@ export class AttendanceService {
     // Check for existing attendance on this date
     const targetDate = new Date(input.date);
     const startOfDay = new Date(
-      Date.UTC(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), 0, 0, 0, 0)
+      Date.UTC(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), 0, 0, 0, 0) as any
     );
     const endOfDay = new Date(
       Date.UTC(
@@ -275,7 +275,7 @@ export class AttendanceService {
         59,
         59,
         999
-      )
+      ) as any
     );
 
     const existingAttendance = await prisma.attendance.findMany({
@@ -458,10 +458,10 @@ export class AttendanceService {
     // Though we try to align them, let's be safe.
     // 'PERMISSION' in DB -> 'excused' in shared type?
     const permissionCount =
-      statusCounts.find((s) => s.status === ('PERMISSION' as PrismaAttendanceStatus))?._count
+      (statusCounts.find((s) => s.status === ('PERMISSION' as PrismaAttendanceStatus)) as any)?._count
         ._all || 0;
     if (permissionCount > 0) {
-      counts.excused = (counts.excused || 0) + permissionCount;
+      counts.excused = (counts.excused || 0) + (permissionCount as number);
     }
 
     // Calculate percentages
@@ -474,7 +474,8 @@ export class AttendanceService {
     };
 
     Object.keys(percentages).forEach((key) => {
-      percentages[key] = total > 0 ? ((counts[key] / total) * 100).toFixed(1) : '0';
+      const count = counts[key] as number;
+      percentages[key] = total > 0 ? ((count / total) * 100).toFixed(1) : '0';
     });
 
     // Ensure type safety for the return

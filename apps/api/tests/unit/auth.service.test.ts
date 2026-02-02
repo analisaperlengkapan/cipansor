@@ -260,6 +260,12 @@ describe('AuthService', () => {
           role: UserRole.SUPER_ADMIN,
           unitId: 'unit-1',
           isActive: true,
+          userRoles: [
+            {
+              role: { code: 'SUPER_ADMIN' },
+              isPrimary: true,
+            },
+          ],
         },
       };
 

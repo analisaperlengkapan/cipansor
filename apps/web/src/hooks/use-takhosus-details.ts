@@ -1,6 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/lib/api";
-import { PaginatedResponse } from "@/types/api";
+import { api, PaginatedResponse } from "@/lib/api";
 import {
   MurojaahRecord,
   SimaanExam,
@@ -53,12 +52,12 @@ export function useTakhosusDashboard(unitId?: string) {
   return useQuery({
     queryKey: ["takhosus", "dashboard", unitId],
     queryFn: async () => {
-      const { data } = await api.get<TakhosusDashboardStats>(
-        "/takhosus/dashboard-stats",
-        {
-          params: { unitId },
-        },
-      );
+      const { data } = await api.get<{
+        success: boolean;
+        data: TakhosusDashboardStats;
+      }>("/takhosus/dashboard-stats", {
+        params: { unitId },
+      });
       return data.data;
     },
   });

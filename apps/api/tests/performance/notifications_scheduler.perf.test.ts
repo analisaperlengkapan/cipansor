@@ -126,32 +126,23 @@ describe('SchedulerService Performance', () => {
     const end = performance.now();
     const duration = end - start;
 
-    const createCalls = vi.mocked(prisma.notification.create).mock.calls.length;
-    const createManyCalls = vi.mocked(prisma.notification.createMany).mock.calls.length;
-
     console.log(`\n[Benchmark] sendAttendanceSummary with ${studentCount} absences:`);
     console.log(`Time: ${duration.toFixed(2)}ms`);
-    console.log(`prisma.notification.create calls: ${createCalls}`);
-    console.log(`prisma.notification.createMany calls: ${createManyCalls}`);
 
     // Verify correct data mapping
-    expect(createCalls).toBe(0);
-    expect(createManyCalls).toBe(1);
+    expect(notificationService.createNotification).toHaveBeenCalledTimes(0);
+    expect(notificationService.createManyNotifications).toHaveBeenCalledTimes(1);
 
-    // If we were using createMany, we'd verify the payload size
-    expect(vi.mocked(prisma.notification.createMany)).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.arrayContaining([
-          expect.objectContaining({
-            userId: 'user-0',
-            type: 'ALERT',
-            data: expect.objectContaining({
-              priority: 'HIGH',
-              channels: ['IN_APP'],
-            }),
-          }),
-        ]),
-      })
+    // Verify call arguments for the service wrapper instead of Prisma directly
+    expect(notificationService.createManyNotifications).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({
+          userId: 'user-0',
+          type: 'ALERT',
+          priority: 'HIGH',
+          channels: ['IN_APP'],
+        }),
+      ])
     );
   });
 });

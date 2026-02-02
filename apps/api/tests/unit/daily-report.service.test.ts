@@ -35,6 +35,15 @@ vi.mock('@/lib/prisma', () => ({
     unit: {
       findUniqueOrThrow: vi.fn(),
     },
+    teacher: {
+      findUnique: vi.fn(),
+    },
+    kitabProgress: {
+      upsert: vi.fn(),
+    },
+    tahfidzRecord: {
+      create: vi.fn(),
+    },
   },
 }));
 
@@ -295,9 +304,9 @@ describe('DailyReportService', () => {
       morningMood: 'HAPPY',
       healthNotes: 'Sehat',
       temperature: 36.5,
-      breakfastConsumption: 'FULL',
-      lunchConsumption: 'FULL',
-      snackConsumption: 'HALF',
+      breakfastConsumption: 'HABIS',
+      lunchConsumption: 'HABIS',
+      snackConsumption: 'SETENGAH',
       napDurationMinutes: 60,
       toiletingNotes: 'Normal',
       activitiesSummary: 'Main balok',
@@ -378,7 +387,7 @@ describe('DailyReportService', () => {
     it('should handle breakfast consumption mapping', async () => {
       vi.mocked(prisma.dailyStudentReport.create).mockResolvedValue(mockReport as any);
 
-      await dailyReportService.create({ ...createInput, breakfastConsumption: 'FULL' }, mockUserId);
+      await dailyReportService.create({ ...createInput, breakfastConsumption: 'HABIS' }, mockUserId);
 
       const calledWith = vi.mocked(prisma.dailyStudentReport.create).mock.calls[0][0];
       expect(calledWith.data.hadBreakfast).toBe(true);
@@ -395,8 +404,8 @@ describe('DailyReportService', () => {
           studentId: 'student-1',
           morningMood: 'HAPPY',
           healthNotes: 'Sehat',
-          breakfastConsumption: 'FULL',
-          lunchConsumption: 'FULL',
+          breakfastConsumption: 'HABIS',
+          lunchConsumption: 'HABIS',
           activitiesSummary: 'Main',
           ibadahNotes: 'Berdoa',
           parentNotes: 'Baik',
@@ -405,8 +414,8 @@ describe('DailyReportService', () => {
           studentId: 'student-2',
           morningMood: 'NEUTRAL',
           healthNotes: 'Sehat',
-          breakfastConsumption: 'HALF',
-          lunchConsumption: 'HALF',
+          breakfastConsumption: 'SETENGAH',
+          lunchConsumption: 'SETENGAH',
           activitiesSummary: 'Belajar',
           ibadahNotes: 'Hafalan',
           parentNotes: 'Aktif',

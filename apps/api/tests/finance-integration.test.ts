@@ -112,17 +112,30 @@ describe('Finance Service Integration', () => {
         id: 'inv-123',
         amount: { toNumber: () => 100000, sub: vi.fn(), add: vi.fn(), gte: vi.fn(), gt: vi.fn() },
         paidAmount: { add: vi.fn(() => ({ gte: () => true, gt: () => true })) },
+        paymentType: { id: 'pt-1', name: 'SPP', accountId: 'acc-1' },
+        student: { id: 's1', unitId: 'u1', user: { id: 'u1', name: 'Student' } },
       };
 
       const mockPayment = {
         id: 'pay-1',
+        method: PaymentMethod.CASH,
         amount: { toNumber: () => 100000 },
         invoice: {
           id: 'inv-123',
-          student: { user: { id: 'user-1' } },
+          student: { user: { id: 'user-1', name: 'Student' } },
           paymentType: { name: 'SPP' },
         },
       };
+
+      // Mock getAccountOrFallback to avoid accounting error
+      vi.mock('../src/modules/finance/accounting-config.service', () => ({
+        ACCOUNT_MAPPING_KEYS: { CASH: 'CASH', BANK: 'BANK' },
+        getAccountOrFallback: vi.fn().mockResolvedValue({ id: 'acc-asset' }),
+      }));
+
+      // Mock Journal Entry creation and Student lookup for event
+      (prisma as any).journalEntry = { create: vi.fn() };
+      (prisma as any).student = { findUnique: vi.fn().mockResolvedValue({ unitId: 'u1', unit: { name: 'Unit' } }) };
 
       (prisma.invoice.findUnique as any).mockResolvedValue(mockInvoice);
       (prisma.payment.create as any).mockResolvedValue(mockPayment);

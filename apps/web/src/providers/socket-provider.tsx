@@ -35,9 +35,13 @@ interface SocketProviderProps {
 export function SocketProvider({ children }: SocketProviderProps) {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
-  const { token, isAuthenticated } = useAuthStore();
+  const { isAuthenticated } = useAuthStore();
 
   useEffect(() => {
+    // Get token from storage
+    const token =
+      typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
+
     // Only connect if authenticated
     if (!isAuthenticated || !token) {
       if (socket) {
@@ -92,7 +96,7 @@ export function SocketProvider({ children }: SocketProviderProps) {
     return () => {
       newSocket.disconnect();
     };
-  }, [isAuthenticated, token]);
+  }, [isAuthenticated]);
 
   return (
     <SocketContext.Provider value={{ socket, isConnected }}>

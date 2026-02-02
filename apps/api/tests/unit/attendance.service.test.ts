@@ -79,6 +79,8 @@ describe('AttendanceService', () => {
         id: 'att-1',
         ...input,
         status: AttendanceStatus.PRESENT,
+        student: { user: { name: 'Test Student' } },
+        class: { name: 'Test Class' },
       });
 
       const result = await service.create(input, 'user-1');

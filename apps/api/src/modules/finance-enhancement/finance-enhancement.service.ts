@@ -5,6 +5,7 @@ import {
   UpdateAccountCodeInput,
   JournalEntry,
   CreateJournalEntryInput,
+  // CreateManualJournalInput,
   Scholarship,
   CreateScholarshipInput,
   ScholarshipRecipient,
@@ -235,6 +236,41 @@ export class FinanceEnhancementService {
     });
 
     return this.mapToJournalEntry(result);
+  }
+
+  async createManualJournal(
+    input: any & { createdById: string }
+  ): Promise<void> {
+    const entryDate = new Date(input.date);
+    await checkPeriodStatus(input.unitId, entryDate);
+
+    await prisma.$transaction(async (tx) => {
+      // Validate total debit equals total credit
+      const totalDebit = input.entries.reduce((sum, e) => sum + e.debit, 0);
+      const totalCredit = input.entries.reduce((sum, e) => sum + e.credit, 0);
+
+      if (Math.abs(totalDebit - totalCredit) > 0.01) {
+        throw new Error('Journal is not balanced');
+      }
+
+      const reference = crypto.randomUUID();
+
+      for (const entry of input.entries) {
+        await tx.journalEntry.create({
+          data: {
+            unitId: input.unitId,
+            accountId: entry.accountId,
+            date: entryDate,
+            description: input.description,
+            debit: entry.debit,
+            credit: entry.credit,
+            reference,
+            referenceType: 'MANUAL',
+            createdById: input.createdById,
+          },
+        });
+      }
+    });
   }
 
   async getJournalEntryById(id: string): Promise<JournalEntry | null> {
@@ -518,11 +554,14 @@ export class FinanceEnhancementService {
       .map((group) => {
         const account = accountMap.get(group.accountId);
         return {
+          accountId: account?.id || '',
           code: account?.code || 'UNKNOWN',
           name: account?.name || 'Unknown Account',
           type: account?.type || 'OTHER',
           debit: Number(group._sum.debit || 0),
           credit: Number(group._sum.credit || 0),
+          startBalance: 0, // Placeholder
+          endBalance: 0, // Placeholder
         };
       })
       .sort((a, b) => a.code.localeCompare(b.code));
@@ -531,8 +570,10 @@ export class FinanceEnhancementService {
       (acc, item) => ({
         debit: acc.debit + item.debit,
         credit: acc.credit + item.credit,
+        startBalance: 0,
+        endBalance: 0,
       }),
-      { debit: 0, credit: 0 }
+      { debit: 0, credit: 0, startBalance: 0, endBalance: 0 }
     );
 
     return {

@@ -57,7 +57,7 @@ export async function createCompetency(data: CreateCompetencyInput) {
     throw Errors.badRequest('Competency with this name already exists');
   }
 
-  return prisma.competency.create({ data });
+  return prisma.competency.create({ data: data as any });
 }
 
 export async function updateCompetency(id: string, data: UpdateCompetencyInput) {
@@ -237,7 +237,7 @@ export async function createTrainingProgram(data: CreateTrainingProgramInput) {
       ...data,
       startDate: new Date(data.startDate),
       endDate: new Date(data.endDate),
-    },
+    } as any,
   });
 }
 

@@ -63,7 +63,7 @@ export async function getProjectById(id: string) {
           tasks: {
             orderBy: { order: 'asc' },
             include: {
-              assignee: { select: { id: true, name: true, photoUrl: true } },
+              assignee: { select: { id: true, name: true } },
               _count: { select: { comments: true } },
             },
           },
@@ -71,7 +71,7 @@ export async function getProjectById(id: string) {
       },
       members: {
         include: {
-          user: { select: { id: true, name: true, email: true, photoUrl: true } },
+          user: { select: { id: true, name: true, email: true } },
         },
       },
     },
@@ -265,18 +265,21 @@ export async function getColumnById(id: string) {
 }
 
 export async function createColumn(projectId: string, data: CreateColumnInput) {
-  if (data.order === undefined) {
+  let order = data.order;
+  if (order === undefined) {
     const lastCol = await prisma.projectColumn.findFirst({
       where: { projectId },
       orderBy: { order: 'desc' },
     });
-    data.order = lastCol ? lastCol.order + 1 : 0;
+    order = lastCol ? lastCol.order + 1 : 0;
   }
 
   return prisma.projectColumn.create({
     data: {
       projectId,
-      ...data,
+      name: data.name,
+      color: data.color,
+      order,
     },
   });
 }

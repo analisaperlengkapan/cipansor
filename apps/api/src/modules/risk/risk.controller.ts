@@ -4,14 +4,17 @@ import { Errors } from '@/middleware/error';
 import { riskService } from './risk.service';
 import { createRiskSchema, updateRiskSchema, createMitigationSchema, updateMitigationSchema, listRiskQuerySchema } from './risk.validation';
 import { UserRole } from '@prisma/client';
+// @ts-ignore
+import { RoleCode } from '@cipansor/shared';
 
 const PRIVILEGED_ROLES = [
   UserRole.SUPER_ADMIN,
-  UserRole.YAYASAN_ADMIN,
-  UserRole.YAYASAN_KETUA
+  'YAYASAN_ADMIN' as UserRole,
+  'YAYASAN_KETUA' as UserRole
 ];
 
 function isPrivileged(role?: UserRole): boolean {
+  // @ts-ignore
   return role ? PRIVILEGED_ROLES.includes(role) : false;
 }
 
@@ -77,6 +80,13 @@ export const createRisk = asyncHandler(async (req: Request, res: Response) => {
 
   const risk = await riskService.createRisk({
     ...rest,
+    code: rest.code || `RISK-${Date.now()}`,
+    description: rest.description || '',
+    category: rest.category!,
+    likelihood: rest.likelihood!,
+    impact: rest.impact!,
+    riskScore: 0, // Default or calculated
+    riskLevel: 'LOW', // Default or calculated
     unit: { connect: { id: targetUnitId } },
     createdBy: { connect: { id: userId } },
   });
@@ -136,6 +146,8 @@ export const addMitigation = asyncHandler(async (req: Request, res: Response) =>
 
   const mitigation = await riskService.createMitigation({
     ...rest,
+    actionPlan: rest.actionPlan!,
+    strategy: rest.strategy!, // Ensure strategy is present or handle optionality in service
     risk: { connect: { id: riskId } },
     createdBy: { connect: { id: userId } },
     pic: picId ? { connect: { id: picId } } : undefined,

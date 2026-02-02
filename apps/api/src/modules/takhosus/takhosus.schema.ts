@@ -110,6 +110,7 @@ export const updateSanadSchema = createSanadSchema.partial();
 // ============================================
 
 export const createHalaqohSchema = z.object({
+  unitId: z.string().uuid(),
   name: z.string().min(3),
   teacherId: z.string().uuid(),
   level: z.number().int().min(1),
@@ -129,6 +130,7 @@ export const createEnrollmentSchema = z.object({
   halaqohId: z.string().uuid(),
   status: z.string().optional(),
   targetJuz: z.number().int().min(1).max(30).optional(),
+  targetCompletionDate: z.string().datetime().optional(),
 });
 
 export const updateEnrollmentSchema = createEnrollmentSchema.partial();
@@ -141,6 +143,8 @@ export const createTargetSchema = z.object({
   studentId: z.string().uuid(),
   academicYearId: z.string().uuid(),
   targetJuz: z.number().int().min(1),
+  targetAyah: z.number().int().min(0).optional(),
+  notes: z.string().optional(),
 });
 
 export const updateTargetSchema = createTargetSchema.partial();

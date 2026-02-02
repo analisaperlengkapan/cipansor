@@ -82,7 +82,7 @@ test.describe('HR Talent Management', () => {
     await page.goto('/hr/talent/competencies');
     await page.getByRole('button', { name: 'Add Competency' }).click();
     await expect(page.getByRole('dialog')).toBeVisible();
-    await expect(page.getByText('Add Competency')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Add Competency' })).toBeVisible();
   });
 
   test('should display training page', async ({ page }) => {

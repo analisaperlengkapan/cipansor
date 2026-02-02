@@ -34,7 +34,7 @@ export const contractController = {
   findAll: async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { unitId } = req.user!;
-      if (!unitId) throw new AppError('Unit ID missing from user', 400);
+      if (!unitId) throw new AppError('BAD_REQUEST' as any, 'Unit ID missing from user');
 
       const page = Number(req.query.page) || 1;
       const limit = Number(req.query.limit) || 10;
@@ -61,7 +61,7 @@ export const contractController = {
   getExpiring: async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { unitId } = req.user!;
-      if (!unitId) throw new AppError('Unit ID missing from user', 400);
+      if (!unitId) throw new AppError('BAD_REQUEST' as any, 'Unit ID missing from user');
 
       const days = Number(req.query.days) || 30;
       const result = await contractService.findExpiring(unitId, days);

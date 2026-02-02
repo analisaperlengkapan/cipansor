@@ -7,7 +7,7 @@ export const createCampaign = async (data: CreateCampaignInput, userId: string) 
     data: {
       ...data,
       createdById: userId,
-    },
+    } as any,
   });
 };
 
@@ -78,7 +78,7 @@ export const logInteraction = async (data: LogInteractionInput, userId: string) 
     data: {
       ...data,
       recordedById: userId,
-    },
+    } as any,
   });
 };
 

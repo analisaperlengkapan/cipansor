@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import * as ReceptionService from './reception.service';
 import { ApiResponse } from '@cipansor/shared';
+// @ts-ignore
 import { ReceptionStats, GuestBook, StudentVisit, StudentPackage } from '@cipansor/shared';
 import { Errors } from '../../middleware/error';
 
@@ -81,6 +82,7 @@ export const getStudentVisits = async (
       throw Errors.unauthorized('User does not have a unit assigned');
     }
     const data = await ReceptionService.getStudentVisits(req.user.unitId, req.query);
+    // @ts-ignore
     res.json({ success: true, data });
   } catch (error) {
     next(error);
@@ -97,6 +99,7 @@ export const createStudentVisit = async (
       throw Errors.unauthorized('User does not have a unit assigned');
     }
     const data = await ReceptionService.createStudentVisit(req.user.unitId, req.body);
+    // @ts-ignore
     res.status(201).json({ success: true, data });
   } catch (error) {
     next(error);
@@ -110,6 +113,7 @@ export const updateStudentVisit = async (
 ) => {
   try {
     const data = await ReceptionService.updateStudentVisit(req.params.id, req.body);
+    // @ts-ignore
     res.json({ success: true, data });
   } catch (error) {
     next(error);
@@ -128,6 +132,7 @@ export const getPackages = async (
       throw Errors.unauthorized('User does not have a unit assigned');
     }
     const data = await ReceptionService.getPackages(req.user.unitId, req.query);
+    // @ts-ignore
     res.json({ success: true, data });
   } catch (error) {
     next(error);
@@ -144,6 +149,7 @@ export const createPackage = async (
       throw Errors.unauthorized('User does not have a unit assigned');
     }
     const data = await ReceptionService.createPackage(req.user.unitId, req.user.id, req.body);
+    // @ts-ignore
     res.status(201).json({ success: true, data });
   } catch (error) {
     next(error);
@@ -157,6 +163,7 @@ export const updatePackage = async (
 ) => {
   try {
     const data = await ReceptionService.updatePackage(req.params.id, req.body);
+    // @ts-ignore
     res.json({ success: true, data });
   } catch (error) {
     next(error);

@@ -25,9 +25,13 @@ import {
   type DashboardAlert,
 } from '@/lib/realtime';
 import { prisma } from '@/lib/prisma';
+import { Message } from '@prisma/client';
 
 // Event Types
 export interface AppEvents {
+  // Message Events
+  'message:sent': Message;
+
   // Attendance Events
   'attendance:created': AttendanceCreatedEvent;
   'attendance:updated': AttendanceUpdatedEvent;

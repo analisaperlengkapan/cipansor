@@ -19,7 +19,11 @@ export async function seedAccounts(req: Request, res: Response, next: NextFuncti
 export async function createAccount(req: Request, res: Response, next: NextFunction) {
   try {
     const data: CreateAccountDto = req.body;
-    const account = await service.createAccount(data);
+    if (!data.code || !data.name || !data.type || !data.normalBalance) {
+      res.status(400).json({ message: 'Missing required fields' });
+      return;
+    }
+    const account = await service.createAccount(data as any);
     res.status(201).json(account);
   } catch (error) {
     next(error);
@@ -127,12 +131,20 @@ export async function createJournal(req: Request, res: Response, next: NextFunct
   try {
     const data: CreateJournalDto = req.body;
     const userId = req.user?.sub;
+    const unitId = data.unitId || req.user?.unitId;
+
     if (!userId) {
       res.status(401).json({ message: 'Unauthorized' });
       return;
     }
+    if (!unitId) {
+      res.status(400).json({ message: 'Unit ID is required' });
+      return;
+    }
+
     const journals = await service.createManualJournal({
       ...data,
+      unitId,
       date: new Date(data.date),
       createdById: userId,
     });

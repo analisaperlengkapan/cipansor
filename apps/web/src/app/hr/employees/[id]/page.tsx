@@ -83,6 +83,7 @@ import {
   Scale,
   Plus,
   Pencil,
+  ClipboardCheck,
 } from "lucide-react";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
@@ -92,6 +93,7 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { DocumentsTab } from "./components/documents-tab";
 import { HistoryTab } from "./components/history-tab";
+import { AttendanceTab } from "./components/attendance-tab";
 
 export default function EmployeeDetailPage() {
   const params = useParams();
@@ -323,6 +325,10 @@ export default function EmployeeDetailPage() {
               <User className="mr-2 h-4 w-4" />
               Informasi
             </TabsTrigger>
+            <TabsTrigger value="attendance">
+              <ClipboardCheck className="mr-2 h-4 w-4" />
+              Absensi
+            </TabsTrigger>
             <TabsTrigger value="education">
               <GraduationCap className="mr-2 h-4 w-4" />
               Pendidikan
@@ -540,6 +546,11 @@ export default function EmployeeDetailPage() {
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          {/* Attendance Tab */}
+          <TabsContent value="attendance" className="space-y-4">
+            <AttendanceTab staffId={employee.id} />
           </TabsContent>
 
           {/* Education Tab */}

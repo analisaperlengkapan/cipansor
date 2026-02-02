@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -56,10 +55,12 @@ import {
   Clock,
   Loader2,
   AlertCircle,
+  ClipboardCheck,
 } from "lucide-react";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import Link from "next/link";
+import { StaffAttendanceView } from "./attendance/components/staff-attendance-view";
 
 export default function HRPage() {
   const [activeTab, setActiveTab] = useState("employees");
@@ -239,6 +240,10 @@ export default function HRPage() {
               <Users className="mr-2 h-4 w-4" />
               Karyawan
             </TabsTrigger>
+            <TabsTrigger value="attendance">
+              <ClipboardCheck className="mr-2 h-4 w-4" />
+              Absensi
+            </TabsTrigger>
             <TabsTrigger value="leaves">
               <Calendar className="mr-2 h-4 w-4" />
               Cuti
@@ -368,6 +373,11 @@ export default function HRPage() {
                 </TableBody>
               </Table>
             </Card>
+          </TabsContent>
+
+          {/* Attendance Tab */}
+          <TabsContent value="attendance">
+            <StaffAttendanceView />
           </TabsContent>
 
           {/* Leave Requests Tab */}

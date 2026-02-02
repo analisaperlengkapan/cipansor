@@ -381,6 +381,8 @@ model User {
   // Marketing relations
   marketingCampaignsCreated         MarketingCampaign[]         @relation("MarketingCampaignCreator")
   recordedInteractions              MarketingInteraction[]      @relation("InteractionRecorder")
+  createdLeads                      Lead[]                      @relation("LeadCreator")
+  assignedLeads                     Lead[]                      @relation("LeadAssignee")
   // Asset management relations
   assetAssignments                  AssetAssignment[]
   createdAudits                     AssetAudit[]                @relation("AuditCreator")
@@ -1441,6 +1443,7 @@ model Registrant {
   documents       RegistrantDocument[]
   campaign        MarketingCampaign?   @relation(fields: [campaignId], references: [id])
   interactions    MarketingInteraction[]
+  lead            Lead?
 
   @@index([admissionPeriodId])
   @@index([campaignId])
@@ -6501,6 +6504,15 @@ model StudentPackage {
 // MARKETING MODELS
 // =====================================
 
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  CONVERTED
+  LOST
+  JUNK
+}
+
 model MarketingCampaign {
   id          String    @id @default(uuid())
   unitId      String?   @map("unit_id") // Optional: Campaign per unit
@@ -6510,6 +6522,8 @@ model MarketingCampaign {
   startDate   DateTime  @map("start_date")
   endDate     DateTime? @map("end_date")
   budget      Decimal?  @db.Decimal(15, 2)
+  targetLeads Int?      @map("target_leads")
+  actualCost  Decimal?  @map("actual_cost") @db.Decimal(15, 2)
   isActive    Boolean   @default(true) @map("is_active")
   createdById String    @map("created_by_id")
   createdAt   DateTime  @default(now()) @map("created_at")
@@ -6519,6 +6533,7 @@ model MarketingCampaign {
   unit        Unit?        @relation(fields: [unitId], references: [id])
   createdBy   User         @relation("MarketingCampaignCreator", fields: [createdById], references: [id])
   registrants Registrant[]
+  leads       Lead[]
 
   @@index([unitId])
   @@index([isActive])
@@ -6527,7 +6542,8 @@ model MarketingCampaign {
 
 model MarketingInteraction {
   id             String    @id @default(uuid())
-  registrantId   String    @map("registrant_id")
+  registrantId   String?   @map("registrant_id")
+  leadId         String?   @map("lead_id")
   date           DateTime
   type           String // CALL, WA, VISIT, EMAIL, OTHER
   notes          String?   @db.Text
@@ -6537,12 +6553,44 @@ model MarketingInteraction {
   updatedAt      DateTime  @updatedAt @map("updated_at")
 
   // Relations
-  registrant Registrant @relation(fields: [registrantId], references: [id], onDelete: Cascade)
-  recordedBy User       @relation("InteractionRecorder", fields: [recordedById], references: [id])
+  registrant Registrant? @relation(fields: [registrantId], references: [id], onDelete: Cascade)
+  lead       Lead?       @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  recordedBy User        @relation("InteractionRecorder", fields: [recordedById], references: [id])
 
   @@index([registrantId])
+  @@index([leadId])
   @@index([date])
   @@map("marketing_interactions")
+}
+
+model Lead {
+  id          String     @id @default(uuid())
+  name        String
+  phone       String
+  email       String?
+  source      String? // WEBSITE, WA, REFERRAL, etc.
+  status      LeadStatus @default(NEW)
+  interest    String? // Unit interest
+  notes       String?    @db.Text
+  campaignId  String?    @map("campaign_id")
+  registrantId String?   @unique @map("registrant_id")
+  createdById String     @map("created_by_id")
+  assignedToId String?   @map("assigned_to_id")
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+  deletedAt   DateTime?  @map("deleted_at")
+
+  // Relations
+  campaign     MarketingCampaign?     @relation(fields: [campaignId], references: [id])
+  registrant   Registrant?            @relation(fields: [registrantId], references: [id])
+  interactions MarketingInteraction[]
+  createdBy    User                   @relation("LeadCreator", fields: [createdById], references: [id])
+  assignedTo   User?                  @relation("LeadAssignee", fields: [assignedToId], references: [id])
+
+  @@index([campaignId])
+  @@index([status])
+  @@index([phone])
+  @@map("leads")
 }
 
 // =====================================

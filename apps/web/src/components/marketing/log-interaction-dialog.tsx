@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -26,52 +27,66 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
 import { useLogInteraction } from "@/hooks/use-marketing";
 import { toast } from "sonner";
 
 const schema = z.object({
-  type: z.string().min(1),
-  date: z.string().min(1),
+  type: z.string().min(1, "Tipe interaksi wajib diisi"),
+  date: z.string().min(1, "Tanggal wajib diisi"),
   notes: z.string().optional(),
   nextActionDate: z.string().optional(),
 });
 
+interface LogInteractionDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  leadId?: string;
+  registrantId?: string;
+}
+
+const INTERACTION_TYPES = [
+  "CALL",
+  "WA",
+  "VISIT",
+  "EMAIL",
+  "MEETING",
+  "OTHER",
+];
+
 export function LogInteractionDialog({
   open,
   onOpenChange,
+  leadId,
   registrantId,
-}: {
-  open: boolean;
-  onOpenChange: (o: boolean) => void;
-  registrantId: string;
-}) {
+}: LogInteractionDialogProps) {
   const mutation = useLogInteraction();
-  const form = useForm({
+
+  const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues: {
-      type: "CALL",
+      type: "WA",
       date: new Date().toISOString().split("T")[0],
       notes: "",
       nextActionDate: "",
     },
   });
 
-  const onSubmit = async (values: any) => {
+  const onSubmit = async (values: z.infer<typeof schema>) => {
     try {
       await mutation.mutateAsync({
+        leadId,
         registrantId,
         type: values.type,
         date: new Date(values.date).toISOString(),
         notes: values.notes,
         nextActionDate: values.nextActionDate
           ? new Date(values.nextActionDate).toISOString()
-          : undefined,
+          : null,
       });
-      toast.success("Interaksi dicatat");
-      form.reset();
+      toast.success("Interaksi berhasil dicatat");
       onOpenChange(false);
-    } catch (e) {
+      form.reset();
+    } catch (error) {
       toast.error("Gagal mencatat interaksi");
     }
   };
@@ -80,7 +95,7 @@ export function LogInteractionDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Catat Interaksi Baru</DialogTitle>
+          <DialogTitle>Catat Interaksi</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -90,21 +105,19 @@ export function LogInteractionDialog({
                 name="type"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Jenis</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
+                    <FormLabel>Tipe</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Pilih jenis" />
+                          <SelectValue placeholder="Pilih tipe" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="CALL">Telepon</SelectItem>
-                        <SelectItem value="WA">WhatsApp</SelectItem>
-                        <SelectItem value="VISIT">Kunjungan</SelectItem>
-                        <SelectItem value="EMAIL">Email</SelectItem>
+                        {INTERACTION_TYPES.map((t) => (
+                          <SelectItem key={t} value={t}>
+                            {t}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -143,7 +156,7 @@ export function LogInteractionDialog({
               name="nextActionDate"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Jadwal Tindak Lanjut (Opsional)</FormLabel>
+                  <FormLabel>Tanggal Tindak Lanjut (Opsional)</FormLabel>
                   <FormControl>
                     <Input type="date" {...field} />
                   </FormControl>
@@ -151,13 +164,18 @@ export function LogInteractionDialog({
                 </FormItem>
               )}
             />
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={mutation.isPending}
-            >
-              Simpan
-            </Button>
+            <div className="flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+              >
+                Batal
+              </Button>
+              <Button type="submit" disabled={mutation.isPending}>
+                Simpan
+              </Button>
+            </div>
           </form>
         </Form>
       </DialogContent>

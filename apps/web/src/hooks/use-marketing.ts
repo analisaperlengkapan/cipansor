@@ -2,12 +2,32 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import {
   MarketingCampaign,
-  MarketingStats,
   CreateCampaignInput,
   UpdateCampaignInput,
-  LogInteractionInput,
   MarketingInteraction,
 } from "@cipansor/shared";
+
+export interface MarketingStats {
+  sources: { source: string; count: number }[];
+  topCampaigns: {
+    name: string;
+    code: string;
+    registrants: number;
+    leads: number;
+    conversionRate: number;
+    budget: number;
+  }[];
+  funnel: Record<string, number>;
+}
+
+export interface LogInteractionInput {
+  registrantId?: string;
+  leadId?: string;
+  type: string;
+  notes?: string;
+  date: string;
+  nextActionDate?: string | null;
+}
 
 // Stats
 export const useMarketingStats = (unitId?: string) => {
@@ -27,7 +47,7 @@ export const useMarketingStats = (unitId?: string) => {
 
 export interface RecentLead {
   id: string;
-  fullName: string;
+  name: string;
   createdAt: string;
   status: string;
   source: string | null;
@@ -194,9 +214,16 @@ export const useLogInteraction = () => {
       return res.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: ["marketing", "interactions", variables.registrantId],
-      });
+      if (variables.registrantId) {
+        queryClient.invalidateQueries({
+          queryKey: ["marketing", "interactions", variables.registrantId],
+        });
+      }
+      if (variables.leadId) {
+        queryClient.invalidateQueries({
+          queryKey: ["marketing", "interactions", variables.leadId],
+        });
+      }
     },
   });
 };

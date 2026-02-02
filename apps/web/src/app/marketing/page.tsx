@@ -283,7 +283,7 @@ export default function MarketingDashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Total Pendaftar
+              Total Leads
             </CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
@@ -373,7 +373,39 @@ export default function MarketingDashboard() {
           <div className="grid gap-4 md:grid-cols-2">
             <Card>
               <CardHeader>
-                <CardTitle>Sumber Pendaftar</CardTitle>
+                <CardTitle>Lead Funnel</CardTitle>
+                <CardDescription>
+                  Konversi status lead
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="h-[300px]">
+                {stats?.funnel ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={Object.entries(stats.funnel).map(([status, count]) => ({
+                        status,
+                        count,
+                      }))}
+                      layout="vertical"
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis type="number" />
+                      <YAxis dataKey="status" type="category" width={100} />
+                      <Tooltip />
+                      <Bar dataKey="count" fill="#8884d8" name="Jumlah" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-full text-muted-foreground">
+                    Belum ada data funnel
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Sumber Leads</CardTitle>
                 <CardDescription>
                   Distribusi berdasarkan channel
                 </CardDescription>
@@ -463,7 +495,7 @@ export default function MarketingDashboard() {
                     {recentLeads?.map((lead) => (
                       <TableRow key={lead.id}>
                         <TableCell>
-                          <div className="font-medium">{lead.fullName}</div>
+                          <div className="font-medium">{lead.name}</div>
                           <div className="text-xs text-muted-foreground">
                             {lead.status}
                           </div>

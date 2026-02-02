@@ -152,8 +152,11 @@ export async function getAdmissionPeriodStats(id: string) {
 // REGISTRANT SERVICE
 // =====================================
 
-async function generateRegistrationNo(admissionPeriodId: string): Promise<string> {
-  const period = await prisma.admissionPeriod.findUnique({
+async function generateRegistrationNo(
+  admissionPeriodId: string,
+  tx: Prisma.TransactionClient = prisma
+): Promise<string> {
+  const period = await tx.admissionPeriod.findUnique({
     where: { id: admissionPeriodId },
     include: { unit: true, academicYear: true },
   });
@@ -161,7 +164,7 @@ async function generateRegistrationNo(admissionPeriodId: string): Promise<string
   if (!period) throw new Error('Admission period not found');
 
   const year = period.academicYear.name.split('/')[0];
-  const count = await prisma.registrant.count({
+  const count = await tx.registrant.count({
     where: { admissionPeriodId },
   });
 
@@ -236,10 +239,13 @@ export async function getRegistrantById(id: string) {
   });
 }
 
-export async function createRegistrant(data: CreateRegistrantExtendedInput) {
-  const registrationNo = await generateRegistrationNo(data.admissionPeriodId);
+export async function createRegistrant(
+  data: CreateRegistrantExtendedInput,
+  tx: Prisma.TransactionClient = prisma
+) {
+  const registrationNo = await generateRegistrationNo(data.admissionPeriodId, tx);
 
-  return prisma.registrant.create({
+  return tx.registrant.create({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     data: {
       ...data,

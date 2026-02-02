@@ -7,7 +7,7 @@ export async function createViolation(data: CreateViolationDto, reportedById: st
       ...data,
       occurredAt: new Date(data.occurredAt),
       reportedById,
-    } as any,
+    },
     include: {
       student: {
         include: {

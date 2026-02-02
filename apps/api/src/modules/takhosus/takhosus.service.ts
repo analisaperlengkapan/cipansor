@@ -109,11 +109,13 @@ export const halaqohService = {
    * Update halaqoh
    */
   async update(id: string, input: UpdateHalaqohInput) {
+    const { scheduleDay, ...rest } = input;
+
     return prisma.halaqoh.update({
       where: { id },
       data: {
-        ...input,
-        ...(input.scheduleDay && { scheduleDay: input.scheduleDay as HalaqohDay[] }),
+        ...rest,
+        ...(scheduleDay && { scheduleDay: scheduleDay as HalaqohDay[] }),
       },
       include: {
         unit: { select: { id: true, name: true } },
@@ -461,7 +463,7 @@ export const sanadService = {
           include: {
             student: {
               include: {
-                user: { select: { id: true, name: true } },
+                user: { select: { id: true, name: true, email: true } },
               },
             },
           },
@@ -771,25 +773,25 @@ export const dashboardService = {
             where: { status: 'ACTIVE' },
             select: { completedJuz: true },
           },
-          teacher: { select: { user: { select: { name: true } } } },
+          teacher: { select: { name: true } },
         },
       }),
     ]);
 
     // Process top halaqohs by avg progress
     const halaqohPerformance = topHalaqohs
-      .map((h) => {
-        const totalJuz = h.enrollments.reduce((sum, e) => sum + e.completedJuz, 0);
+      .map((h: any) => {
+        const totalJuz = h.enrollments.reduce((sum: number, e: any) => sum + e.completedJuz, 0);
         const avgJuz = h.enrollments.length > 0 ? totalJuz / h.enrollments.length : 0;
         return {
           id: h.id,
           name: h.name,
-          teacherName: h.teacher.user.name,
+          teacherName: h.teacher.name,
           studentCount: h.enrollments.length,
           averageJuz: avgJuz,
         };
       })
-      .sort((a, b) => b.averageJuz - a.averageJuz);
+      .sort((a: any, b: any) => b.averageJuz - a.averageJuz);
 
     return {
       activeStudents: totalActiveStudents,

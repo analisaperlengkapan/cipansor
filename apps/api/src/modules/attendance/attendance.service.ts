@@ -175,10 +175,10 @@ export class AttendanceService {
     // Check for duplicate attendance on same date
     const inputDate = new Date(input.date);
     const startOfDay = new Date(
-      Date.UTC(inputDate.getFullYear(), inputDate.getMonth(), inputDate.getDate(), 0, 0, 0, 0)
+      Date.UTC(inputDate.getUTCFullYear(), inputDate.getUTCMonth(), inputDate.getUTCDate(), 0, 0, 0, 0)
     );
     const endOfDay = new Date(
-      Date.UTC(inputDate.getFullYear(), inputDate.getMonth(), inputDate.getDate(), 23, 59, 59, 999)
+      Date.UTC(inputDate.getUTCFullYear(), inputDate.getUTCMonth(), inputDate.getUTCDate(), 23, 59, 59, 999)
     );
 
     const existingAttendance = await prisma.attendance.findFirst({
@@ -264,13 +264,13 @@ export class AttendanceService {
     // Check for existing attendance on this date
     const targetDate = new Date(input.date);
     const startOfDay = new Date(
-      Date.UTC(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), 0, 0, 0, 0)
+      Date.UTC(targetDate.getUTCFullYear(), targetDate.getUTCMonth(), targetDate.getUTCDate(), 0, 0, 0, 0)
     );
     const endOfDay = new Date(
       Date.UTC(
-        targetDate.getFullYear(),
-        targetDate.getMonth(),
-        targetDate.getDate(),
+        targetDate.getUTCFullYear(),
+        targetDate.getUTCMonth(),
+        targetDate.getUTCDate(),
         23,
         59,
         59,

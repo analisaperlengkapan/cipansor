@@ -17,6 +17,7 @@ import {
   Pagination,
   AccountType,
   FinanceReportPeriod,
+  CreateManualJournalInput, // Ensure this type is available
 } from '@cipansor/shared';
 import { Prisma } from '@prisma/client';
 import { checkPeriodStatus } from './period.service';
@@ -235,6 +236,53 @@ export class FinanceEnhancementService {
     });
 
     return this.mapToJournalEntry(result);
+  }
+
+  // ADDED: Method to handle multiple manual entries
+  async createManualJournal(
+    input: CreateManualJournalInput & { createdById: string }
+  ): Promise<JournalEntry[]> {
+    // Check period status once for all entries
+    const entryDate = new Date(input.date);
+    await checkPeriodStatus(input.unitId, entryDate);
+
+    // Validate balance
+    const totalDebit = input.entries.reduce((sum, e) => sum + e.debit, 0);
+    const totalCredit = input.entries.reduce((sum, e) => sum + e.credit, 0);
+
+    // Allow small float discrepancy
+    if (Math.abs(totalDebit - totalCredit) > 0.01) {
+      throw new Error(`Journal is not balanced. Debit: ${totalDebit}, Credit: ${totalCredit}`);
+    }
+
+    const referenceId = crypto.randomUUID();
+
+    const entries = await prisma.$transaction(async (tx) => {
+        const results = [];
+        for (const entry of input.entries) {
+            const je = await tx.journalEntry.create({
+                data: {
+                    unitId: input.unitId,
+                    accountId: entry.accountId,
+                    date: entryDate,
+                    description: input.description,
+                    debit: new Prisma.Decimal(entry.debit),
+                    credit: new Prisma.Decimal(entry.credit),
+                    reference: referenceId,
+                    referenceType: 'MANUAL',
+                    createdById: input.createdById
+                },
+                include: {
+                    unit: { select: { name: true } },
+                    account: { select: { code: true, name: true } }
+                }
+            });
+            results.push(je);
+        }
+        return results;
+    });
+
+    return entries.map(this.mapToJournalEntry);
   }
 
   async getJournalEntryById(id: string): Promise<JournalEntry | null> {

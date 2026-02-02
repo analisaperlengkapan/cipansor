@@ -46,6 +46,7 @@ describe('Reporting Service (ISAK 35)', () => {
     it('should correctly classify restricted and unrestricted revenues and expenses', async () => {
       // Mock Accounts
       vi.mocked(prisma.accountCode.findMany).mockResolvedValue([
+        // Ensure all required fields from Prisma AccountCode model are present
         { id: 'acc-1', code: '4101', name: 'Pendapatan SPP', type: AccountType.REVENUE, isActive: true, parentId: null, normalBalance: 'CREDIT', cashFlowCategory: null, createdAt: new Date(), updatedAt: new Date() },
         { id: 'acc-2', code: '4201', name: 'Hibah Terikat Gedung', type: AccountType.REVENUE, isActive: true, parentId: null, normalBalance: 'CREDIT', cashFlowCategory: null, createdAt: new Date(), updatedAt: new Date() },
         { id: 'acc-3', code: '5101', name: 'Beban Gaji', type: AccountType.EXPENSE, isActive: true, parentId: null, normalBalance: 'DEBIT', cashFlowCategory: null, createdAt: new Date(), updatedAt: new Date() },
@@ -65,31 +66,24 @@ describe('Reporting Service (ISAK 35)', () => {
       const report = await getStatementOfActivities(mockUnitId, mockStartDate, mockEndDate);
 
       // Verify Revenue Classification
-      // Unrestricted Revenue (acc-1)
       expect(report.revenues.unrestricted.items).toHaveLength(1);
       expect(report.revenues.unrestricted.items[0].code).toBe('4101');
       expect(report.revenues.unrestricted.total).toBe(1000);
 
-      // Restricted Revenue (acc-2)
       expect(report.revenues.restricted.items).toHaveLength(1);
       expect(report.revenues.restricted.items[0].code).toBe('4201');
       expect(report.revenues.restricted.total).toBe(500);
 
       // Verify Expense Classification
-      // Unrestricted Expense (acc-3)
       expect(report.expenses.unrestricted.items).toHaveLength(1);
       expect(report.expenses.unrestricted.total).toBe(400);
 
-      // Restricted Expense (acc-4)
       expect(report.expenses.restricted.items).toHaveLength(1);
       expect(report.expenses.restricted.total).toBe(200);
 
       // Verify Net Assets Change
-      // Unrestricted: 1000 - 400 = 600
       expect(report.changeInNetAssets.unrestricted).toBe(600);
-      // Restricted: 500 - 200 = 300
       expect(report.changeInNetAssets.restricted).toBe(300);
-      // Total: 1500 - 600 = 900
       expect(report.changeInNetAssets.total).toBe(900);
     });
   });

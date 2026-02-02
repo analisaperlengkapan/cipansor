@@ -10,6 +10,7 @@ import {
   CreateBudgetInput,
   UpdateBudgetInput,
   CreateFinancialPeriodInput,
+  CreateManualJournalInput, // Add import
 } from '@cipansor/shared';
 import { createBudget, updateBudget, getBudgets, deleteBudget, recalculateBudgetUsage } from './budget.service';
 import { createFinancialPeriod, closePeriod, getFinancialPeriods } from './period.service';
@@ -135,12 +136,12 @@ export class FinanceEnhancementController {
       const input: CreateManualJournalInput = req.body;
       const userId = (req as any).user.id;
 
-      await financeEnhancementService.createManualJournal({
+      const result = await financeEnhancementService.createManualJournal({
         ...input,
         createdById: userId,
       });
 
-      res.status(201).json({ success: true, message: 'Manual journal created successfully' });
+      res.status(201).json({ success: true, data: result, message: 'Manual journal created successfully' });
     } catch (error) {
       next(error);
     }

@@ -4,7 +4,7 @@ import { generateTokenPair, verifyToken, getExpirationDate, generateAccessToken 
 import { Errors } from '@/middleware/error';
 import { config } from '@/config';
 import type { LoginInput, RegisterInput, ChangePasswordInput } from './auth.schema';
-import { UserRole, RoleCode } from '@prisma/client';
+import { UserRole } from '@prisma/client';
 import { authenticator } from 'otplib';
 import * as qrcode from 'qrcode';
 import crypto from 'crypto';

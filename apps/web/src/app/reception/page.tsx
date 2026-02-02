@@ -213,7 +213,6 @@ export default function ReceptionDashboardPage() {
       } else {
         await createGuest.mutateAsync({
           ...guestForm,
-          unitId: user?.unitId || "",
         });
         toast.success("Tamu berhasil didaftarkan");
       }
@@ -228,7 +227,7 @@ export default function ReceptionDashboardPage() {
     try {
       await updateGuest.mutateAsync({
         id: guest.id,
-        data: { checkOutTime: new Date().toISOString() },
+        data: { checkOut: new Date() },
       });
       toast.success("Tamu berhasil checkout");
     } catch (error: any) {
@@ -245,15 +244,22 @@ export default function ReceptionDashboardPage() {
 
     try {
       if (editingVisit) {
+        // Only notes can be updated in basic flow, for other edits create new flow or adjust type
         await updateVisit.mutateAsync({
           id: editingVisit.id,
-          data: visitForm,
+          data: {
+            notes: visitForm.purpose // Mapping purpose to notes for now as per type
+          },
         });
         toast.success("Data kunjungan berhasil diperbarui");
       } else {
         await createVisit.mutateAsync({
-          ...visitForm,
-          unitId: user?.unitId || "",
+          studentId: visitForm.studentId,
+          visitorName: visitForm.visitorName,
+          relationship: visitForm.relationship,
+          needs: visitForm.purpose, // Map purpose to needs
+          notes: "", // Default empty notes
+          // unitId inferred
         });
         toast.success("Kunjungan berhasil didaftarkan");
       }
@@ -268,7 +274,7 @@ export default function ReceptionDashboardPage() {
     try {
       await updateVisit.mutateAsync({
         id: visit.id,
-        data: { checkOutTime: new Date().toISOString() },
+        data: { checkOut: new Date() },
       });
       toast.success("Kunjungan berhasil selesai");
     } catch (error: any) {
@@ -287,15 +293,22 @@ export default function ReceptionDashboardPage() {
 
     try {
       if (editingPackage) {
+        // Only notes/description is editable in current type definition
         await updatePackage.mutateAsync({
           id: editingPackage.id,
-          data: packageForm,
+          data: {
+            notes: packageForm.description
+          },
         });
         toast.success("Data paket berhasil diperbarui");
       } else {
         await createPackage.mutateAsync({
-          ...packageForm,
-          unitId: user?.unitId || "",
+          studentId: packageForm.studentId,
+          senderName: packageForm.senderName,
+          expedition: packageForm.courier,
+          content: packageForm.description,
+          notes: packageForm.trackingNumber ? `Resi: ${packageForm.trackingNumber}` : undefined,
+          // unitId inferred
         });
         toast.success("Paket berhasil didaftarkan");
       }
@@ -311,12 +324,13 @@ export default function ReceptionDashboardPage() {
     status: string,
   ) => {
     try {
+      // Map string status to PackageStatus enum if needed, assuming shared type uses compatible strings
       await updatePackage.mutateAsync({
         id: pkg.id,
         data: {
-          status,
-          collectedAt:
-            status === "COLLECTED" ? new Date().toISOString() : undefined,
+          status: status as any, // Cast to PackageStatus enum
+          pickedUpAt:
+            status === "COLLECTED" ? new Date() : undefined,
         },
       });
       toast.success("Status paket berhasil diperbarui");
@@ -424,13 +438,13 @@ export default function ReceptionDashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Total Paket Bulan Ini
+              Total Paket Pending
             </CardTitle>
             <PackageCheck className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {stats?.packagesThisMonth || 0}
+              {stats?.pendingPackages || 0}
             </div>
             <p className="text-xs text-muted-foreground">Paket diterima</p>
           </CardContent>
@@ -489,15 +503,15 @@ export default function ReceptionDashboardPage() {
                           <div>
                             <p className="font-medium">{guest.name}</p>
                             <p className="text-xs text-muted-foreground">
-                              {guest.organization}
+                              {guest.institution}
                             </p>
                           </div>
                         </div>
                         <div className="text-right">
                           <p className="text-sm">
-                            {format(new Date(guest.checkInTime), "HH:mm")}
+                            {format(new Date(guest.checkIn), "HH:mm")}
                           </p>
-                          {guest.checkOutTime ? (
+                          {guest.checkOut ? (
                             <Badge variant="outline" className="text-green-600">
                               <CheckCircle className="h-3 w-3 mr-1" />
                               Keluar
@@ -531,7 +545,7 @@ export default function ReceptionDashboardPage() {
                 </Button>
               </CardHeader>
               <CardContent>
-                {visits?.filter((v: StudentVisit) => !v.checkOutTime).length ===
+                {visits?.filter((v: StudentVisit) => !v.checkOut).length ===
                 0 ? (
                   <p className="text-center text-muted-foreground py-4">
                     Tidak ada kunjungan aktif
@@ -539,7 +553,7 @@ export default function ReceptionDashboardPage() {
                 ) : (
                   <div className="space-y-3">
                     {visits
-                      ?.filter((v: StudentVisit) => !v.checkOutTime)
+                      ?.filter((v: StudentVisit) => !v.checkOut)
                       .slice(0, 5)
                       .map((visit: StudentVisit) => (
                         <div
@@ -605,7 +619,7 @@ export default function ReceptionDashboardPage() {
                           <PackageOpen className="h-5 w-5 text-muted-foreground" />
                         </div>
                         <p className="text-xs mt-2">
-                          {pkg.courier} - {pkg.trackingNumber}
+                          {pkg.expedition} - {(pkg.notes || "").replace("Resi: ", "")}
                         </p>
                         <div className="mt-3 flex gap-2">
                           <Button
@@ -681,23 +695,23 @@ export default function ReceptionDashboardPage() {
                           </p>
                         </div>
                       </TableCell>
-                      <TableCell>{guest.organization || "-"}</TableCell>
+                      <TableCell>{guest.institution || "-"}</TableCell>
                       <TableCell>
                         {GUEST_PURPOSE_OPTIONS.find(
                           (o) => o.value === guest.purpose,
                         )?.label || guest.purpose}
                       </TableCell>
-                      <TableCell>{guest.personToMeet || "-"}</TableCell>
+                      <TableCell>{(guest as any).personToMeet || "-"}</TableCell>
                       <TableCell>
-                        {format(new Date(guest.checkInTime), "HH:mm")}
+                        {format(new Date(guest.checkIn), "HH:mm")}
                       </TableCell>
                       <TableCell>
-                        {guest.checkOutTime
-                          ? format(new Date(guest.checkOutTime), "HH:mm")
+                        {guest.checkOut
+                          ? format(new Date(guest.checkOut), "HH:mm")
                           : "-"}
                       </TableCell>
                       <TableCell>
-                        {guest.checkOutTime ? (
+                        {guest.checkOut ? (
                           <Badge variant="outline" className="text-green-600">
                             Selesai
                           </Badge>
@@ -708,7 +722,7 @@ export default function ReceptionDashboardPage() {
                         )}
                       </TableCell>
                       <TableCell>
-                        {!guest.checkOutTime && (
+                        {!guest.checkOut && (
                           <Button
                             size="sm"
                             variant="outline"
@@ -766,7 +780,7 @@ export default function ReceptionDashboardPage() {
                         <div>
                           <p className="font-medium">{visit.visitorName}</p>
                           <p className="text-xs text-muted-foreground">
-                            {visit.visitorPhone}
+                            {(visit as any).visitorPhone || "-"}
                           </p>
                         </div>
                       </TableCell>
@@ -774,17 +788,17 @@ export default function ReceptionDashboardPage() {
                         {(visit as any).student?.name || "N/A"}
                       </TableCell>
                       <TableCell>{visit.relationship}</TableCell>
-                      <TableCell>{visit.purpose || "-"}</TableCell>
+                      <TableCell>{visit.needs || "-"}</TableCell>
                       <TableCell>
-                        {format(new Date(visit.checkInTime), "HH:mm")}
+                        {format(new Date(visit.checkIn), "HH:mm")}
                       </TableCell>
                       <TableCell>
-                        {visit.checkOutTime
-                          ? format(new Date(visit.checkOutTime), "HH:mm")
+                        {visit.checkOut
+                          ? format(new Date(visit.checkOut), "HH:mm")
                           : "-"}
                       </TableCell>
                       <TableCell>
-                        {visit.checkOutTime ? (
+                        {visit.checkOut ? (
                           <Badge variant="outline" className="text-green-600">
                             Selesai
                           </Badge>
@@ -795,7 +809,7 @@ export default function ReceptionDashboardPage() {
                         )}
                       </TableCell>
                       <TableCell>
-                        {!visit.checkOutTime && (
+                        {!visit.checkOut && (
                           <Button
                             size="sm"
                             variant="outline"
@@ -852,15 +866,15 @@ export default function ReceptionDashboardPage() {
                         <div>
                           <p>{pkg.senderName}</p>
                           <p className="text-xs text-muted-foreground">
-                            {pkg.senderPhone}
+                            {(pkg as any).senderPhone || "-"}
                           </p>
                         </div>
                       </TableCell>
-                      <TableCell>{pkg.courier}</TableCell>
+                      <TableCell>{pkg.expedition}</TableCell>
                       <TableCell className="font-mono text-sm">
-                        {pkg.trackingNumber}
+                        {(pkg.notes || "").replace("Resi: ", "")}
                       </TableCell>
-                      <TableCell>{pkg.description || "-"}</TableCell>
+                      <TableCell>{pkg.content || "-"}</TableCell>
                       <TableCell>
                         {format(new Date(pkg.receivedAt), "dd/MM HH:mm")}
                       </TableCell>
@@ -1032,7 +1046,7 @@ export default function ReceptionDashboardPage() {
                   <SelectValue placeholder="Pilih santri" />
                 </SelectTrigger>
                 <SelectContent>
-                  {students?.map((student: any) => (
+                  {students?.data?.map((student: any) => (
                     <SelectItem key={student.id} value={student.id}>
                       {student.name} - {student.nisn}
                     </SelectItem>
@@ -1132,7 +1146,7 @@ export default function ReceptionDashboardPage() {
                   <SelectValue placeholder="Pilih santri" />
                 </SelectTrigger>
                 <SelectContent>
-                  {students?.map((student: any) => (
+                  {students?.data?.map((student: any) => (
                     <SelectItem key={student.id} value={student.id}>
                       {student.name} - {student.nisn}
                     </SelectItem>

@@ -36,6 +36,7 @@ import {
   ACHIEVEMENT_COLORS,
   ACHIEVEMENT_LABELS,
   ASPECT_LABELS,
+  TKAchievementLevel,
 } from "@/hooks/use-tk-assessment";
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
@@ -102,7 +103,7 @@ export default function TKAssessmentListPage() {
       accessorKey: "achievementLevel",
       header: "Capaian",
       cell: ({ row }) => {
-        const level = row.getValue("achievementLevel") as string;
+        const level = row.getValue("achievementLevel") as TKAchievementLevel;
         return (
           <Badge className={ACHIEVEMENT_COLORS[level]} variant="outline">
             {ACHIEVEMENT_LABELS[level] || level}

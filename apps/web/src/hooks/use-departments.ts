@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
-import { Department } from "@/hooks/use-hr"; // Import type from use-hr or define locally if needed
+import { Department } from "@/hooks/use-hr";
+
+export type { Department }; // Export type for usage in components
 
 export function useDepartments(params?: {
   unitId?: string;

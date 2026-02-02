@@ -745,8 +745,20 @@ export function usePayPayroll() {
 }
 
 export function useProcessPayroll() {
-  // Deprecated or remove?
-  return { mutateAsync: async () => {} };
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: { periodId: string; staffIds: string[] }) => {
+      const response = await api.post(
+        `/payroll/process`,
+        data
+      );
+      return response.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["payrolls"] });
+    },
+  });
 }
 
 export function useCancelPayroll() {
@@ -934,6 +946,22 @@ export const STAFF_ATTENDANCE_STATUS_LABELS: Record<
   LEAVE: "Izin/Cuti",
   SICK: "Sakit",
 };
+
+export interface Department {
+  id: string;
+  unitId: string;
+  code: string;
+  name: string;
+  description?: string;
+  managerId?: string;
+  isActive: boolean;
+  manager?: {
+    id: string;
+    name: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
 
 export interface StaffAttendance {
   id: string;

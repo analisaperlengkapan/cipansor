@@ -142,7 +142,7 @@ export default function TKAssessmentCreatePage() {
         classId: selectedClassId,
         unitId: user?.unitId || "",
         academicYearId: user?.academicYearId || activeYear?.id || "",
-        semester: activeYear?.semester || "GANJIL",
+        semester: "GANJIL", // Default to GANJIL as AcademicYear doesn't have semester
         periodType: "HARIAN",
         periodDate: assessmentDate,
         aspect: selectedAspect,

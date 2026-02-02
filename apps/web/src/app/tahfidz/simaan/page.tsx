@@ -77,11 +77,11 @@ const STATUS_ICONS: Record<string, React.ReactNode> = {
 };
 
 const EXAM_TYPE_LABELS: Record<string, string> = {
-  JUZ_30: "Juz 30",
-  JUZ_1_15: "Juz 1-15",
-  JUZ_16_30: "Juz 16-30",
-  FULL_30_JUZ: "30 Juz",
-  CUSTOM: "Custom",
+  JUZ_AMMA: "Juz Amma",
+  ONE_JUZ: "1 Juz",
+  FIVE_JUZ: "5 Juz",
+  TEN_JUZ: "10 Juz",
+  FULL_QURAN: "30 Juz",
 };
 
 export default function SimaanListPage() {
@@ -103,8 +103,8 @@ export default function SimaanListPage() {
     limit: pageSize,
     search: search || undefined,
     status: statusFilter || undefined,
-    examType: examTypeFilter || undefined,
-    classId: classFilter || undefined,
+    simaanType: examTypeFilter || undefined,
+    // classId not supported in filters currently
     dateFrom: dateRange?.from
       ? format(dateRange.from, "yyyy-MM-dd")
       : undefined,
@@ -140,12 +140,12 @@ export default function SimaanListPage() {
           ) : (
             <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
               <span className="text-xs font-medium">
-                {row.original.student?.name?.[0] || "?"}
+                {row.original.student?.user?.name?.[0] || "?"}
               </span>
             </div>
           )}
           <div>
-            <p className="font-medium">{row.original.student?.name || "-"}</p>
+            <p className="font-medium">{row.original.student?.user?.name || "-"}</p>
             <p className="text-xs text-muted-foreground">
               {row.original.student?.nis}
             </p>
@@ -163,36 +163,39 @@ export default function SimaanListPage() {
               locale: idLocale,
             })}
           </p>
-          <p className="text-xs text-muted-foreground">
+          {/* <p className="text-xs text-muted-foreground">
             {row.original.duration} menit
-          </p>
+          </p> */}
         </div>
       ),
     },
     {
-      accessorKey: "examType",
+      accessorKey: "simaanType",
       header: "Jenis Ujian",
       cell: ({ row }) => (
         <Badge variant="outline" className="font-normal">
           <BookOpen className="h-3 w-3 mr-1" />
-          {EXAM_TYPE_LABELS[row.original.examType]}
+          {EXAM_TYPE_LABELS[row.original.simaanType]}
         </Badge>
       ),
     },
     {
       accessorKey: "status",
       header: "Status",
-      cell: ({ row }) => (
-        <Badge
-          className={cn(
-            "font-normal gap-1",
-            STATUS_COLORS[row.original.status],
-          )}
-        >
-          {STATUS_ICONS[row.original.status]}
-          {STATUS_LABELS[row.original.status]}
-        </Badge>
-      ),
+      cell: ({ row }) => {
+        const status = row.original.status || "SCHEDULED";
+        return (
+          <Badge
+            className={cn(
+              "font-normal gap-1",
+              STATUS_COLORS[status],
+            )}
+          >
+            {STATUS_ICONS[status]}
+            {STATUS_LABELS[status]}
+          </Badge>
+        );
+      },
     },
     {
       accessorKey: "examiners",
@@ -200,27 +203,27 @@ export default function SimaanListPage() {
       cell: ({ row }) => (
         <div className="flex items-center gap-1">
           <Users className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm">{row.original._count?.examiners || 0}</span>
+          <span className="text-sm">{row.original.examiners?.length || 0}</span>
         </div>
       ),
     },
     {
-      accessorKey: "overallGrade",
+      accessorKey: "overallScore",
       header: "Nilai",
       cell: ({ row }) => (
         <span
           className={cn(
             "font-semibold",
-            row.original.overallGrade
-              ? row.original.overallGrade >= 80
+            row.original.overallScore
+              ? row.original.overallScore >= 80
                 ? "text-green-600"
-                : row.original.overallGrade >= 60
+                : row.original.overallScore >= 60
                   ? "text-yellow-600"
                   : "text-red-600"
               : "text-muted-foreground",
           )}
         >
-          {row.original.overallGrade ?? "-"}
+          {row.original.overallScore ?? "-"}
         </span>
       ),
     },
@@ -240,7 +243,7 @@ export default function SimaanListPage() {
               <Eye className="mr-2 h-4 w-4" />
               Lihat Detail
             </DropdownMenuItem>
-            {row.original.status === "SCHEDULED" && (
+            {(row.original.status === "SCHEDULED" || !row.original.status) && (
               <>
                 <DropdownMenuItem
                   onClick={() =>
@@ -271,7 +274,7 @@ export default function SimaanListPage() {
               </DropdownMenuItem>
             )}
             <DropdownMenuSeparator />
-            {row.original.status === "SCHEDULED" && (
+            {(row.original.status === "SCHEDULED" || !row.original.status) && (
               <DropdownMenuItem
                 className="text-destructive"
                 onClick={() => setDeleteId(row.original.id)}
@@ -354,9 +357,8 @@ export default function SimaanListPage() {
           </Select>
 
           <DatePickerWithRange
-            value={dateRange}
-            onChange={setDateRange}
-            placeholder="Pilih tanggal"
+            date={dateRange}
+            setDate={setDateRange}
           />
         </div>
 

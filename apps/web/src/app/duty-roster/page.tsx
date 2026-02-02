@@ -539,7 +539,7 @@ export default function DutyRosterPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {report.topPerformers.map((performer, index) => (
+                  {report.topPerformers.map((performer: any, index) => (
                     <div
                       key={performer.student.id}
                       className={`flex items-center gap-4 p-4 rounded-lg ${

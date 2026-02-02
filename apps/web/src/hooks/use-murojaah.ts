@@ -102,7 +102,9 @@ export interface MurojaahFilters {
   enrollmentId?: string;
   halaqohId?: string;
   unitId?: string;
+  classId?: string;
   murojaahType?: string;
+  status?: string;
   dateFrom?: string;
   dateTo?: string;
   juz?: number;

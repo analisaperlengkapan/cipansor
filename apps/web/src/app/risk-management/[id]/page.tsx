@@ -86,19 +86,23 @@ export default function RiskDetailPage() {
       <PageHeader
         title={`Risk Details: ${risk.code}`}
         description="View and manage risk details and mitigation plans."
-        backUrl="/risk-management"
         actions={
-          <Button variant="destructive" size="sm" onClick={async () => {
-            if(confirm("Delete this risk?")) {
-              try {
-                await api.delete(`/risk/${id}`);
-                toast.success("Risk deleted");
-                router.push("/risk-management");
-              } catch (error) {
-                toast.error("Failed to delete risk");
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => router.push("/risk-management")}>
+              Back
+            </Button>
+            <Button variant="destructive" size="sm" onClick={async () => {
+              if(confirm("Delete this risk?")) {
+                try {
+                  await api.delete(`/risk/${id}`);
+                  toast.success("Risk deleted");
+                  router.push("/risk-management");
+                } catch (error) {
+                  toast.error("Failed to delete risk");
+                }
               }
-            }
-          }}>Delete Risk</Button>
+            }}>Delete Risk</Button>
+          </div>
         }
       />
 

@@ -38,7 +38,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 export default function StandardDetailPage() {
   const params = useParams();
   const { user } = useAuth();
-  const { activeAcademicYear } = useActiveAcademicYear();
+  const { data: activeAcademicYear } = useActiveAcademicYear();
   const unitId = user?.unitId;
   const standardId = params.id as string;
 

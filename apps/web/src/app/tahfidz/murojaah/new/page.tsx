@@ -157,9 +157,13 @@ export default function CreateMurojaahPage() {
     try {
       await createMutation.mutateAsync({
         ...data,
-        date: format(data.date, "yyyy-MM-dd"),
-        surahName: surah.name,
-        status: "PENDING",
+        murojaahDate: format(data.date, "yyyy-MM-dd"),
+        murojaahType: "DAILY", // Default type
+        juzStart: 1, // Placeholder as form only has surah/ayat
+        juzEnd: 1, // Placeholder
+        pagesReviewed: 1, // Placeholder
+        durationMinutes: 30, // Placeholder
+        qualityScore: 0, // Placeholder
       });
       toast.success("Record murojaah berhasil dibuat");
       router.push("/tahfidz/murojaah");
@@ -266,9 +270,9 @@ export default function CreateMurojaahPage() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {teachers?.map((teacher) => (
+                          {teachers?.data?.map((teacher) => (
                             <SelectItem key={teacher.id} value={teacher.id}>
-                              {teacher.name}
+                              {teacher.user?.name || teacher.nip}
                             </SelectItem>
                           ))}
                         </SelectContent>

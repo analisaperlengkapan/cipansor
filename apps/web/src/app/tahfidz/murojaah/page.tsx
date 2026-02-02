@@ -127,16 +127,14 @@ export default function MurojaahListPage() {
           ) : (
             <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
               <span className="text-xs font-medium">
-                {row.original.student?.name?.[0] ||
-                  row.original.student?.user?.name?.[0] ||
+                {row.original.student?.user?.name?.[0] ||
                   "?"}
               </span>
             </div>
           )}
           <div>
             <p className="font-medium">
-              {row.original.student?.name ||
-                row.original.student?.user?.name ||
+              {row.original.student?.user?.name ||
                 "-"}
             </p>
             <p className="text-xs text-muted-foreground">
@@ -151,9 +149,9 @@ export default function MurojaahListPage() {
       header: "Tanggal",
       cell: ({ row }) => (
         <span className="text-sm">
-          {format(new Date(row.original.date), "dd MMM yyyy", {
+          {row.original.date ? format(new Date(row.original.date), "dd MMM yyyy", {
             locale: idLocale,
-          })}
+          }) : "-"}
         </span>
       ),
     },
@@ -219,8 +217,7 @@ export default function MurojaahListPage() {
       header: "Musyrif",
       cell: ({ row }) => (
         <span className="text-sm">
-          {row.original.teacher?.name ||
-            row.original.teacher?.user?.name ||
+          {row.original.teacher?.user?.name ||
             "-"}
         </span>
       ),
@@ -329,9 +326,8 @@ export default function MurojaahListPage() {
           </Select>
 
           <DatePickerWithRange
-            value={dateRange}
-            onChange={setDateRange}
-            placeholder="Pilih tanggal"
+            date={dateRange}
+            setDate={setDateRange}
           />
         </div>
 

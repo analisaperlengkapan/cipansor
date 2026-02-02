@@ -359,7 +359,7 @@ function ScheduleFormDialog({ onSuccess }: { onSuccess: () => void }) {
                 <SelectValue placeholder="Pilih Mapel" />
               </SelectTrigger>
               <SelectContent>
-                {subjects?.data?.map((s) => (
+                {subjects?.map((s) => (
                   <SelectItem key={s.id} value={s.id}>
                     {s.name} ({s.code})
                   </SelectItem>

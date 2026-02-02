@@ -92,7 +92,6 @@ jobs:
       # Build uses lenient tsconfig.build.json until issues are fixed
       - name: Build API
         run: pnpm --filter api build
-        continue-on-error: true
 
   # Build Web
   build-web:
@@ -119,11 +118,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
 
-      # Note: Web build has missing hook exports documented in KNOWN_ISSUES.md
-      # These will be fixed incrementally
+      - name: Build shared package
+        run: pnpm --filter @cipansor/shared build
+
       - name: Build Web
         run: pnpm --filter web build
-        continue-on-error: true
         env:
           NEXT_PUBLIC_API_URL: 'http://localhost:3001/api'
 

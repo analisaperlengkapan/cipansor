@@ -310,9 +310,8 @@ export default function DailyReportListPage() {
           </Select>
 
           <DatePickerWithRange
-            value={dateRange}
-            onChange={setDateRange}
-            placeholder="Pilih tanggal"
+            date={dateRange}
+            setDate={setDateRange}
           />
         </div>
 
@@ -372,8 +371,8 @@ export default function DailyReportListPage() {
           pagination={{
             page: page,
             pageSize,
-            totalPages: data?.meta?.totalPages || 0,
-            total: data?.meta?.total || 0,
+            totalPages: data?.meta?.pagination?.totalPages || 0,
+            total: data?.meta?.pagination?.total || 0,
             onPageChange: (newPage) => setPage(newPage),
             onPageSizeChange: setPageSize,
           }}

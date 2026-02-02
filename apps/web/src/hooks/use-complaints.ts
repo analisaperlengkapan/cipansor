@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import { ComplaintStatus, ComplaintCategory } from "@prisma/client";
+import { ComplaintStatus, ComplaintCategory } from "@cipansor/shared";
 import { toast } from "sonner";
 
 export interface Complaint {

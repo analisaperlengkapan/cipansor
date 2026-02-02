@@ -97,6 +97,7 @@ import {
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
+import { MarketingCampaign } from "@cipansor/shared";
 
 const COLORS = [
   "#0088FE",
@@ -230,7 +231,7 @@ export default function MarketingDashboard() {
 
   const filteredCampaigns =
     campaigns?.filter(
-      (c: Campaign) =>
+        (c: MarketingCampaign) =>
         c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         c.code.toLowerCase().includes(searchQuery.toLowerCase()),
     ) || [];
@@ -303,7 +304,7 @@ export default function MarketingDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {campaigns?.filter((c: Campaign) => c.isActive).length || 0}
+                {campaigns?.filter((c: MarketingCampaign) => c.isActive).length || 0}
             </div>
             <p className="text-xs text-muted-foreground">
               Dari {campaigns?.length || 0} total
@@ -335,10 +336,10 @@ export default function MarketingDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {stats?.topCampaigns?.length > 0
+                {stats?.topCampaigns && stats.topCampaigns.length > 0
                 ? Math.round(
                     stats.topCampaigns.reduce(
-                      (sum, c) => sum + (c.conversionRate || 0),
+                        (sum, c) => sum + ((c as any).conversionRate || 0),
                       0,
                     ) / stats.topCampaigns.length,
                   )
@@ -386,8 +387,8 @@ export default function MarketingDashboard() {
                         cx="50%"
                         cy="50%"
                         labelLine={false}
-                        label={({ source, percent }) =>
-                          `${source || "Direct"} ${(percent * 100).toFixed(0)}%`
+                        label={({ name, percent }: any) =>
+                          `${name || "Direct"} ${(percent * 100).toFixed(0)}%`
                         }
                         outerRadius={100}
                         fill="#8884d8"
@@ -562,7 +563,7 @@ export default function MarketingDashboard() {
                 <div className="flex justify-center py-8">
                   <RefreshCw className="h-6 w-6 animate-spin" />
                 </div>
-              ) : filteredCampaigns.filter((c: Campaign) => c.isActive)
+              ) : filteredCampaigns.filter((c: MarketingCampaign) => c.isActive)
                   .length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   Tidak ada kampanye aktif
@@ -570,9 +571,9 @@ export default function MarketingDashboard() {
               ) : (
                 <div className="grid gap-4 md:grid-cols-3">
                   {filteredCampaigns
-                    .filter((c: Campaign) => c.isActive)
+                    .filter((c: MarketingCampaign) => c.isActive)
                     .slice(0, 6)
-                    .map((campaign: Campaign) => (
+                    .map((campaign: MarketingCampaign) => (
                       <Card key={campaign.id} className="relative">
                         <CardContent className="pt-6">
                           <div className="flex items-start justify-between">
@@ -591,12 +592,12 @@ export default function MarketingDashboard() {
                                   ` - ${format(new Date(campaign.endDate), "dd MMM yyyy", { locale: localeId })}`}
                               </p>
                             </div>
-                            {getChannelBadge(campaign.channel)}
+                            {getChannelBadge((campaign as any).channel)}
                           </div>
                           <div className="mt-4 flex items-center justify-between">
                             <div className="text-sm">
                               <span className="text-2xl font-bold">
-                                {campaign.registrantCount || 0}
+                                {campaign._count?.registrants || 0}
                               </span>
                               <span className="text-muted-foreground ml-1">
                                 pendaftar
@@ -667,14 +668,14 @@ export default function MarketingDashboard() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredCampaigns.map((campaign: Campaign) => (
+                    {filteredCampaigns.map((campaign: MarketingCampaign) => (
                       <TableRow key={campaign.id}>
                         <TableCell className="font-medium">
                           {campaign.code}
                         </TableCell>
                         <TableCell>{campaign.name}</TableCell>
                         <TableCell>
-                          {getChannelBadge(campaign.channel)}
+                          {getChannelBadge((campaign as any).channel)}
                         </TableCell>
                         <TableCell>
                           <div className="text-sm">
@@ -689,7 +690,7 @@ export default function MarketingDashboard() {
                             : "-"}
                         </TableCell>
                         <TableCell className="text-right font-semibold">
-                          {campaign.registrantCount || 0}
+                          {campaign._count?.registrants || 0}
                         </TableCell>
                         <TableCell>
                           <Badge
@@ -709,7 +710,7 @@ export default function MarketingDashboard() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem
-                                onClick={() => handleEditCampaign(campaign)}
+                                onClick={() => handleEditCampaign(campaign as any)}
                               >
                                 <Edit className="mr-2 h-4 w-4" />
                                 Edit

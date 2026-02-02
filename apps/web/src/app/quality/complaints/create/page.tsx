@@ -24,7 +24,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { ComplaintCategory } from "@prisma/client";
+import { ComplaintCategory } from "@cipansor/shared";
 import { useCreateComplaint } from "@/hooks/use-complaints";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
@@ -35,7 +35,7 @@ const complaintSchema = z.object({
   subject: z.string().min(5, "Subjek minimal 5 karakter"),
   description: z.string().min(20, "Deskripsi minimal 20 karakter"),
   location: z.string().optional(),
-  isAnonymous: z.boolean().default(false),
+  isAnonymous: z.boolean().optional(),
 });
 
 export default function CreateComplaintPage() {

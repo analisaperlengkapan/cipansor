@@ -88,14 +88,12 @@ const DIMENSION_MAP: Record<string, { name: string; icon: string }> = {
 
 const getStatusBadge = (status: ProjectStatus) => {
   switch (status) {
-    case "NOT_STARTED":
-      return <Badge variant="outline">Belum Dimulai</Badge>;
-    case "IN_PROGRESS":
+    case "DRAFT":
+      return <Badge variant="outline">Draft</Badge>;
+    case "ACTIVE":
       return <Badge className="bg-blue-500">Sedang Berjalan</Badge>;
     case "COMPLETED":
       return <Badge className="bg-green-500">Selesai</Badge>;
-    case "PRESENTED":
-      return <Badge className="bg-purple-500">Sudah Presentasi</Badge>;
     default:
       return <Badge variant="secondary">{status}</Badge>;
   }
@@ -104,13 +102,11 @@ const getStatusBadge = (status: ProjectStatus) => {
 // Calculate progress based on status
 const getProgressValue = (status: ProjectStatus): number => {
   switch (status) {
-    case "NOT_STARTED":
+    case "DRAFT":
       return 0;
-    case "IN_PROGRESS":
+    case "ACTIVE":
       return 50;
     case "COMPLETED":
-      return 100;
-    case "PRESENTED":
       return 100;
     default:
       return 0;
@@ -350,8 +346,7 @@ export default function ProjectBasedLearningPage() {
                     </div>
                   </div>
 
-                  {project.status !== "COMPLETED" &&
-                    project.status !== "PRESENTED" && (
+                  {project.status !== "COMPLETED" && (
                       <div className="space-y-2">
                         <div className="flex justify-between text-sm">
                           <span>Progress</span>
@@ -377,8 +372,7 @@ export default function ProjectBasedLearningPage() {
                   </div>
 
                   <div className="flex gap-2 pt-2">
-                    {project.status !== "COMPLETED" &&
-                      project.status !== "PRESENTED" && (
+                    {project.status !== "COMPLETED" && (
                         <>
                           <Button variant="outline" size="sm">
                             <Edit className="mr-1 h-4 w-4" />
@@ -394,8 +388,7 @@ export default function ProjectBasedLearningPage() {
                       <FileText className="mr-1 h-4 w-4" />
                       Lihat Detail
                     </Button>
-                    {(project.status === "COMPLETED" ||
-                      project.status === "PRESENTED") && (
+                    {project.status === "COMPLETED" && (
                       <Button variant="outline" size="sm">
                         <Presentation className="mr-1 h-4 w-4" />
                         Lihat Presentasi

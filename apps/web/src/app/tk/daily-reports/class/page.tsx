@@ -28,7 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useDailyReports } from "@/hooks/use-daily-report";
+import { useDailyReports, DailyReport } from "@/hooks/use-daily-report";
 import { useClasses } from "@/hooks/use-classes";
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
@@ -47,24 +47,6 @@ import {
   UserCheck,
   UserX,
 } from "lucide-react";
-
-interface DailyReport {
-  id: string;
-  student: {
-    id: string;
-    name: string;
-    nis: string;
-    photoUrl?: string;
-  };
-  reportDate: string;
-  attendanceStatus: string;
-  mood: string;
-  checkInTime?: string;
-  checkOutTime?: string;
-  breakfast?: string;
-  lunch?: string;
-  notes?: string;
-}
 
 const moodIcons: Record<string, React.ReactNode> = {
   EXCELLENT: <Smile className="h-4 w-4 text-green-500" />,
@@ -97,7 +79,7 @@ export default function ClassDailyReportsPage() {
   // Calculate statistics
   const totalStudents = reports.length;
   const presentCount = reports.filter(
-    (r: DailyReport) => r.attendanceStatus === "HADIR",
+    (r: DailyReport) => !!r.arrivalTime,
   ).length;
   const absentCount = totalStudents - presentCount;
   const attendanceRate =
@@ -112,11 +94,11 @@ export default function ClassDailyReportsPage() {
           <Avatar className="h-10 w-10">
             <AvatarImage src={row.original.student?.photoUrl} />
             <AvatarFallback>
-              {row.original.student?.name?.substring(0, 2).toUpperCase()}
+              {row.original.student?.user?.name?.substring(0, 2).toUpperCase()}
             </AvatarFallback>
           </Avatar>
           <div>
-            <div className="font-medium">{row.original.student?.name}</div>
+            <div className="font-medium">{row.original.student?.user?.name}</div>
             <div className="text-sm text-muted-foreground">
               {row.original.student?.nis}
             </div>
@@ -125,62 +107,66 @@ export default function ClassDailyReportsPage() {
       ),
     },
     {
-      accessorKey: "attendanceStatus",
+      id: "attendanceStatus",
       header: "Kehadiran",
-      cell: ({ row }) => (
-        <Badge
-          variant={
-            row.original.attendanceStatus === "HADIR"
-              ? "default"
-              : "destructive"
-          }
-          className="flex items-center gap-1 w-fit"
-        >
-          {row.original.attendanceStatus === "HADIR" ? (
-            <CheckCircle className="h-3 w-3" />
-          ) : (
-            <XCircle className="h-3 w-3" />
-          )}
-          {row.original.attendanceStatus}
-        </Badge>
-      ),
+      cell: ({ row }) => {
+        const isPresent = !!row.original.arrivalTime;
+        return (
+          <Badge
+            variant={isPresent ? "default" : "destructive"}
+            className="flex items-center gap-1 w-fit"
+          >
+            {isPresent ? (
+              <CheckCircle className="h-3 w-3" />
+            ) : (
+              <XCircle className="h-3 w-3" />
+            )}
+            {isPresent ? "HADIR" : "TIDAK HADIR"}
+          </Badge>
+        );
+      },
     },
     {
       accessorKey: "mood",
       header: "Kondisi",
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
-          {moodIcons[row.original.mood]}
-          <span>{moodLabels[row.original.mood] || row.original.mood}</span>
+          {row.original.mood && moodIcons[row.original.mood]}
+          <span>
+            {row.original.mood &&
+              (moodLabels[row.original.mood] || row.original.mood)}
+          </span>
         </div>
       ),
     },
     {
-      accessorKey: "checkInTime",
+      accessorKey: "arrivalTime",
       header: "Check-in",
       cell: ({ row }) =>
-        row.original.checkInTime ? (
-          <span>{format(new Date(row.original.checkInTime), "HH:mm")}</span>
+        row.original.arrivalTime ? (
+          <span>{format(new Date(row.original.arrivalTime), "HH:mm")}</span>
         ) : (
           <span className="text-muted-foreground">-</span>
         ),
     },
     {
-      accessorKey: "checkOutTime",
+      accessorKey: "departureTime",
       header: "Check-out",
       cell: ({ row }) =>
-        row.original.checkOutTime ? (
-          <span>{format(new Date(row.original.checkOutTime), "HH:mm")}</span>
+        row.original.departureTime ? (
+          <span>{format(new Date(row.original.departureTime), "HH:mm")}</span>
         ) : (
           <span className="text-muted-foreground">-</span>
         ),
     },
     {
-      accessorKey: "notes",
+      accessorKey: "teacherNotes",
       header: "Catatan",
       cell: ({ row }) =>
-        row.original.notes ? (
-          <div className="max-w-[200px] truncate">{row.original.notes}</div>
+        row.original.teacherNotes ? (
+          <div className="max-w-[200px] truncate">
+            {row.original.teacherNotes}
+          </div>
         ) : (
           <span className="text-muted-foreground">-</span>
         ),

@@ -97,15 +97,14 @@ export default function SimaanListPage() {
 
           {isLoading ? (
             <SkeletonTable columns={6} rows={5} />
-          ) : !data?.exams?.length ? (
+          ) : !data?.data?.length ? (
             <EmptyState
               title="Belum ada data simaan"
               description="Buat jadwal simaan baru untuk memulai."
-              action={
-                <Button onClick={() => router.push("/takhosus/simaan/create")}>
-                  Buat Jadwal
-                </Button>
-              }
+              action={{
+                label: "Buat Jadwal",
+                onClick: () => router.push("/takhosus/simaan/create"),
+              }}
             />
           ) : (
             <div className="border rounded-md">
@@ -122,7 +121,7 @@ export default function SimaanListPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {data.exams.map((exam: SimaanExam) => (
+                  {data.data.map((exam: SimaanExam) => (
                     <TableRow key={exam.id}>
                       <TableCell>
                         {format(new Date(exam.examDate), "dd MMMM yyyy", {
@@ -176,11 +175,13 @@ export default function SimaanListPage() {
             </div>
           )}
 
-          {data?.pagination && (
+          {data?.meta && (
             <div className="mt-4">
               <Pagination
-                currentPage={page}
-                totalPages={data.pagination.totalPages}
+                page={page}
+                totalPages={data.meta.totalPages}
+                pageSize={data.meta.limit}
+                total={data.meta.total}
                 onPageChange={setPage}
               />
             </div>

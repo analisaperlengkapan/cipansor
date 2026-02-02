@@ -132,7 +132,7 @@ function PackageForm({ onSuccess }: { onSuccess: () => void }) {
   const studentOptions =
     studentsData?.data?.map((s) => ({
       value: s.id,
-      label: `${s.user?.name} (${s.nis})`,
+      label: `${s.name} (${s.nis})`,
     })) || [];
 
   const onSubmit = async (data: CreateStudentPackageInput) => {
@@ -216,7 +216,7 @@ function PackageRow({ pkg }: { pkg: StudentPackage }) {
       await updatePackage.mutateAsync({
         id: pkg.id,
         data: {
-          status: "PICKED_UP",
+          status: PackageStatus.PICKED_UP,
           pickedUpAt: new Date(),
         },
       });

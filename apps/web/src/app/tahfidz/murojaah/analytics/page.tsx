@@ -5,7 +5,6 @@ import { MainLayout } from "@/components/layout";
 import { PageHeader } from "@/components/shared";
 import {
   useMurojaahRecords,
-  useClassMurojaahSummary,
   MurojaahRecord,
 } from "@/hooks/use-murojaah";
 import { useClasses } from "@/hooks/use-classes";
@@ -115,11 +114,11 @@ export default function MurojaahAnalyticsPage() {
       };
 
     const totalRecords = records.length;
-    const passedRecords = records.filter((r) => r.status === "PASSED").length;
-    const pendingRecords = records.filter((r) => r.status === "PENDING").length;
+    const passedRecords = records.filter((r: MurojaahRecord) => r.status === "PASSED").length;
+    const pendingRecords = records.filter((r: MurojaahRecord) => r.status === "PENDING").length;
 
     // Average grade
-    const gradesSum = records.reduce((sum, r) => sum + (r.grade || 0), 0);
+    const gradesSum = records.reduce((sum: number, r: MurojaahRecord) => sum + (r.grade || 0), 0);
     const averageGrade =
       totalRecords > 0 ? Math.round(gradesSum / totalRecords) : 0;
 
@@ -131,7 +130,7 @@ export default function MurojaahAnalyticsPage() {
       needsWork: 0,
     };
 
-    records.forEach((r) => {
+    records.forEach((r: MurojaahRecord) => {
       const grade = r.grade || 0;
       if (grade >= 90) qualityDistribution.excellent++;
       else if (grade >= 70) qualityDistribution.good++;
@@ -143,7 +142,7 @@ export default function MurojaahAnalyticsPage() {
     const mistakeCounts: Record<string, number> = {};
     let totalMistakes = 0;
 
-    records.forEach((r) => {
+    records.forEach((r: MurojaahRecord) => {
       r.mistakes?.forEach((m) => {
         mistakeCounts[m.mistakeType] = (mistakeCounts[m.mistakeType] || 0) + 1;
         totalMistakes++;
@@ -161,7 +160,7 @@ export default function MurojaahAnalyticsPage() {
 
     // Surah coverage
     const surahCounts: Record<string, number> = {};
-    records.forEach((r) => {
+    records.forEach((r: MurojaahRecord) => {
       if (r.surahName) {
         surahCounts[r.surahName] = (surahCounts[r.surahName] || 0) + 1;
       }

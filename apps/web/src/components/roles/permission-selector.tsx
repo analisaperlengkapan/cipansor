@@ -3,7 +3,7 @@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { PERMISSION_GROUPS, PERMISSION_LABELS } from "@/constants/permissions";
+import { PERMISSION_GROUPS, PERMISSION_LABELS } from "../../constants/permissions";
 
 interface PermissionSelectorProps {
   selectedPermissions: string[];

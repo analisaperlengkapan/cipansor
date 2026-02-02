@@ -45,7 +45,7 @@ export function EvidenceUploadDialog({
 }: EvidenceUploadDialogProps) {
   const [open, setOpen] = useState(false);
   const createEvidence = useCreateEvidence();
-  const { activeAcademicYear } = useActiveAcademicYear();
+  const { data: activeAcademicYear } = useActiveAcademicYear();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),

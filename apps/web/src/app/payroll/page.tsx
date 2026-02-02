@@ -106,7 +106,6 @@ import {
 } from "@/hooks/use-payroll";
 import { useAuth } from "@/hooks/use-auth";
 import { useUnits } from "@/hooks/use-units";
-import { useHr } from "@/hooks/use-hr";
 
 export default function PayrollPage() {
   const { user } = useAuth();

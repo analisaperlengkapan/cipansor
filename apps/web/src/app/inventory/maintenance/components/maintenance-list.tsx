@@ -201,6 +201,7 @@ export function MaintenanceList() {
       <Pagination
         page={data?.meta.page || 1}
         totalPages={data?.meta.totalPages || 1}
+          pageSize={limit}
         total={data?.meta.total || 0}
         onPageChange={setPage}
         onPageSizeChange={setLimit}

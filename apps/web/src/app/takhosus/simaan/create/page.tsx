@@ -105,7 +105,7 @@ export default function CreateSimaanPage() {
       <PageHeader
         title="Buat Jadwal Simaan"
         description="Jadwalkan ujian simaan baru untuk santri."
-        backUrl="/takhosus/simaan"
+          backHref="/takhosus/simaan"
       />
 
       <div className="grid gap-6">
@@ -130,9 +130,8 @@ export default function CreateSimaanPage() {
                           <SearchableSelect
                             options={studentOptions}
                             value={field.value}
-                            onSelect={field.onChange}
+                            onValueChange={field.onChange}
                             placeholder="Pilih santri..."
-                            isLoading={isLoadingStudents}
                           />
                         </FormControl>
                         <FormMessage />
@@ -150,9 +149,8 @@ export default function CreateSimaanPage() {
                           <SearchableSelect
                             options={teacherOptions}
                             value={field.value}
-                            onSelect={field.onChange}
+                            onValueChange={field.onChange}
                             placeholder="Pilih penguji..."
-                            isLoading={isLoadingTeachers}
                           />
                         </FormControl>
                         <FormMessage />

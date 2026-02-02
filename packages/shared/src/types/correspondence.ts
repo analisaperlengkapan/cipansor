@@ -97,6 +97,10 @@ export interface LetterDetail {
   };
   direction: LetterDirection;
   classificationId?: string;
+  classification?: {
+    code: string;
+    name: string;
+  };
   classificationCode?: string;
   classificationName?: string;
   agendaNumber?: string;

@@ -14,7 +14,7 @@ import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import { ArrowLeft, Send, User } from "lucide-react";
 import Link from "next/link";
-import { ComplaintStatus } from "@prisma/client";
+import { ComplaintStatus } from "@cipansor/shared";
 import {
   Select,
   SelectContent,

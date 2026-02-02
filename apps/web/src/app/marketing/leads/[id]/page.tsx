@@ -43,20 +43,20 @@ export default function LeadDetailPage() {
               <div className="grid grid-cols-3">
                 <span className="text-muted-foreground">Orang Tua</span>
                 <span className="col-span-2 font-medium">
-                  {lead.parentName}
+                  {(lead as any).parentName}
                 </span>
               </div>
               <div className="grid grid-cols-3">
                 <span className="text-muted-foreground">Telepon</span>
-                <span className="col-span-2">{lead.parentPhone}</span>
+                <span className="col-span-2">{(lead as any).parentPhone}</span>
               </div>
               <div className="grid grid-cols-3">
                 <span className="text-muted-foreground">Email</span>
-                <span className="col-span-2">{lead.parentEmail || "-"}</span>
+                <span className="col-span-2">{(lead as any).parentEmail || "-"}</span>
               </div>
               <div className="grid grid-cols-3">
                 <span className="text-muted-foreground">Alamat</span>
-                <span className="col-span-2">{lead.address}</span>
+                <span className="col-span-2">{(lead as any).address || "-"}</span>
               </div>
             </CardContent>
           </Card>

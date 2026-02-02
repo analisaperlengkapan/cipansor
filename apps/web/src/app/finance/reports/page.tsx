@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { formatCurrency } from "@/lib/utils";
-import { BudgetRealizationItem } from "@cipansor/shared";
 import { Loader2, Download, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import {
@@ -279,7 +278,7 @@ export default function FinanceReportsPage() {
                       </thead>
                       <tbody>
                         {realization.items.map(
-                          (item: BudgetRealizationItem) => (
+                          (item: any) => (
                             <tr
                               key={item.accountId}
                               className="border-b hover:bg-muted/10"

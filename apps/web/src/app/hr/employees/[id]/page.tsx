@@ -62,6 +62,7 @@ import {
   LEAVE_TYPE_LABELS,
   type EmployeeStatus,
   type LeaveStatus,
+  type LeaveType,
 } from "@/hooks";
 import {
   ArrowLeft,

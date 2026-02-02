@@ -240,13 +240,13 @@ export function useCreateJournal() {
 // REPORT HOOKS
 // =====================================
 
-export interface ReportParams {
+export interface AccountingReportParams {
   unitId?: string;
   startDate?: string;
   endDate?: string;
 }
 
-export function useTrialBalance(params: ReportParams = {}) {
+export function useTrialBalance(params: AccountingReportParams = {}) {
   return useQuery({
     queryKey: ["trial-balance", params],
     queryFn: async () => {
@@ -259,7 +259,7 @@ export function useTrialBalance(params: ReportParams = {}) {
   });
 }
 
-export function useBalanceSheet(params: ReportParams = {}) {
+export function useBalanceSheet(params: AccountingReportParams = {}) {
   return useQuery({
     queryKey: ["balance-sheet", params],
     queryFn: async () => {
@@ -272,7 +272,7 @@ export function useBalanceSheet(params: ReportParams = {}) {
   });
 }
 
-export function useIncomeStatement(params: ReportParams = {}) {
+export function useIncomeStatement(params: AccountingReportParams = {}) {
   return useQuery({
     queryKey: ["income-statement", params],
     queryFn: async () => {

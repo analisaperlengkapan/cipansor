@@ -180,7 +180,7 @@ export default function DutyRosterDetailPage() {
   const handleCheckIn = (assignmentId: string) => {
     updateStatusMutation.mutate(
       {
-        id: assignmentId,
+        assignmentId: assignmentId,
         status: "PENDING", // In a real scenario, you might have a different status or the backend handles this
       },
       {
@@ -207,7 +207,7 @@ export default function DutyRosterDetailPage() {
 
     updateStatusMutation.mutate(
       {
-        id: selectedAssignment.id,
+        assignmentId: selectedAssignment.id,
         status: "COMPLETED",
         notes: verifyForm.feedback,
       },
@@ -228,7 +228,7 @@ export default function DutyRosterDetailPage() {
   const handleMarkMissed = (assignmentId: string) => {
     updateStatusMutation.mutate(
       {
-        id: assignmentId,
+        assignmentId: assignmentId,
         status: "ABSENT",
       },
       {

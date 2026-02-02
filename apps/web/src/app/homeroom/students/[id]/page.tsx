@@ -161,14 +161,14 @@ export default function StudentDetailPage() {
 
   // Behavior notes from API
   const behaviorNotes = [
-    ...(notesData?.rewards || []).map((r) => ({
+    ...(notesData?.rewards || []).map((r: any) => ({
       id: r.id,
       type: "POSITIVE" as const,
       description: r.description,
       date: r.givenAt,
       points: r.points,
     })),
-    ...(notesData?.violations || []).map((v) => ({
+    ...(notesData?.violations || []).map((v: any) => ({
       id: v.id,
       type: "NEGATIVE" as const,
       description: v.description,
@@ -290,7 +290,7 @@ export default function StudentDetailPage() {
               </Avatar>
               <div className="text-center md:text-left">
                 <h2 className="text-2xl font-bold">
-                  {student.name || student.user?.name || "—"}
+                  {student.name || (student as any).user?.name || "—"}
                 </h2>
                 <p className="text-muted-foreground font-mono">{student.nis}</p>
                 <div className="flex gap-2 mt-2">
@@ -767,15 +767,14 @@ export default function StudentDetailPage() {
                   <div
                     key={note.id}
                     className={`p-4 rounded-lg border ${
-                      note.type === "POSITIVE" || note.type === "ACHIEVEMENT"
+                      note.type === "POSITIVE"
                         ? "bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800"
                         : "bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800"
                     }`}
                   >
                     <div className="flex justify-between items-start">
                       <div className="flex items-start gap-3">
-                        {note.type === "POSITIVE" ||
-                        note.type === "ACHIEVEMENT" ? (
+                        {note.type === "POSITIVE" ? (
                           <Award className="h-5 w-5 text-green-600 mt-0.5" />
                         ) : (
                           <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5" />

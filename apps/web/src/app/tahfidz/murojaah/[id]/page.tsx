@@ -146,7 +146,7 @@ export default function MurojaahDetailPage() {
     );
   }
 
-  const totalAyat = murojaah.endAyat - murojaah.startAyat + 1;
+  const totalAyat = (murojaah.endAyat || 0) - (murojaah.startAyat || 0) + 1;
   const mistakesList = mistakes?.data || murojaah.mistakes || [];
 
   return (
@@ -313,7 +313,7 @@ export default function MurojaahDetailPage() {
                       <p className="text-sm text-muted-foreground">Tanggal</p>
                       <p className="font-medium flex items-center gap-2">
                         <Calendar className="h-4 w-4" />
-                        {format(new Date(murojaah.date), "EEEE, dd MMMM yyyy", {
+                        {murojaah.date && format(new Date(murojaah.date), "EEEE, dd MMMM yyyy", {
                           locale: idLocale,
                         })}
                       </p>

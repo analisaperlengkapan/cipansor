@@ -57,7 +57,7 @@ const departmentSchema = z.object({
   name: z.string().min(1, "Nama departemen harus diisi"),
   description: z.string().optional(),
   managerId: z.string().nullable().optional(),
-  isActive: z.boolean().default(true),
+  isActive: z.boolean(),
 });
 
 type DepartmentFormValues = z.infer<typeof departmentSchema>;
@@ -200,10 +200,19 @@ export default function DepartmentsPage() {
           onSubmit={async (data) => {
             try {
               if (selectedDept) {
-                await updateMutation.mutateAsync({ id: selectedDept.id, data });
+                await updateMutation.mutateAsync({
+                  id: selectedDept.id,
+                  data: {
+                    ...data,
+                    managerId: data.managerId || undefined,
+                  }
+                });
                 toast.success("Department updated successfully");
               } else {
-                await createMutation.mutateAsync(data);
+                await createMutation.mutateAsync({
+                  ...data,
+                  managerId: data.managerId || undefined,
+                });
                 toast.success("Department created successfully");
               }
               setIsDialogOpen(false);

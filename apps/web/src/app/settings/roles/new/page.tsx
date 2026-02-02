@@ -20,7 +20,7 @@ const createRoleSchema = z.object({
   code: z.string().min(3).regex(/^[A-Z0-9_]+$/, "Code must be uppercase alphanumeric with underscores"),
   name: z.string().min(3, "Name is required"),
   description: z.string().optional(),
-  permissions: z.array(z.string()).default([]),
+  permissions: z.array(z.string()).optional(),
 });
 
 type CreateRoleForm = z.infer<typeof createRoleSchema>;
@@ -110,7 +110,7 @@ export default function CreateRolePage() {
                   <FormLabel>Permissions</FormLabel>
                   <FormControl>
                     <PermissionSelector
-                      selectedPermissions={field.value}
+                      selectedPermissions={field.value || []}
                       onChange={field.onChange}
                     />
                   </FormControl>

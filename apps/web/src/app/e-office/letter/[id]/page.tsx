@@ -131,7 +131,7 @@ export default function LetterDetailPage({
         page++;
       }
 
-      pdf.save(`Surat-${letter.letterNumber || "Draft"}.pdf`);
+      pdf.save(`Surat-${letter?.letterNumber || "Draft"}.pdf`);
       toast.success("Surat berhasil diunduh");
     } catch (error) {
       console.error(error);

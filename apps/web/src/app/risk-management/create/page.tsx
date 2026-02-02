@@ -88,7 +88,11 @@ export default function CreateRiskPage() {
       <PageHeader
         title="Create New Risk"
         description="Identify and register a new risk."
-        backUrl="/risk-management"
+        actions={
+          <Button variant="outline" size="sm" onClick={() => router.push("/risk-management")}>
+            Back
+          </Button>
+        }
       />
 
       <Form {...form}>

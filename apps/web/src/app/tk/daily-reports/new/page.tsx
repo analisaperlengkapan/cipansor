@@ -139,13 +139,13 @@ export default function CreateDailyReportPage() {
             // Using a placeholder URL for now to satisfy the requirement
             const mockUrl = `https://storage.cipansor.id/daily-reports/${report.id}/${photo.id}.jpg`;
 
+            if (!photo.file) return;
+
             return addPhotoMutation.mutateAsync({
               reportId: report.id,
-              data: {
-                photoUrl: mockUrl,
-                caption: photo.caption,
-                activityType: "ACTIVITY",
-              },
+              file: photo.file,
+              caption: photo.caption,
+              activityType: "ACTIVITY",
             });
           }),
         );

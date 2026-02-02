@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
   reactCompiler: process.env.NODE_ENV === "development",
 
   // Output standalone for Docker deployment
-  // output: "standalone",
+  output: "standalone",
 
   // Production optimizations
   poweredByHeader: false,

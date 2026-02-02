@@ -22,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ComplaintStatus, ComplaintCategory } from "@prisma/client";
+import { ComplaintStatus, ComplaintCategory } from "@cipansor/shared";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 

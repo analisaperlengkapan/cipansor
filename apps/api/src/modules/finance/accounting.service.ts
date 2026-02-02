@@ -1,5 +1,5 @@
 import { prisma } from '../../lib/prisma';
-import { Prisma, AccountCode, JournalReferenceType } from '@prisma/client';
+import { Prisma, AccountCode } from '@prisma/client';
 
 // =====================================
 // COA (CHART OF ACCOUNTS) SERVICE

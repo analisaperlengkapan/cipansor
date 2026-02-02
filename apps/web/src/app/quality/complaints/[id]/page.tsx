@@ -118,6 +118,34 @@ export default function ComplaintDetailPage() {
                     <span className="font-semibold">Lokasi:</span> {complaint.location}
                   </div>
                 )}
+
+                {complaint.attachments && complaint.attachments.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-semibold mb-2">Lampiran</h3>
+                    <div className="space-y-1">
+                      {complaint.attachments.map((url: string, idx: number) => (
+                        <a
+                          key={idx}
+                          href={url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-sm text-blue-600 hover:underline block truncate"
+                        >
+                          {url}
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {complaint.resolution && (
+                  <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-md border border-green-200 dark:border-green-800">
+                    <h3 className="font-semibold text-sm mb-2 text-green-800 dark:text-green-300">
+                      Resolusi / Tanggapan
+                    </h3>
+                    <p className="text-sm whitespace-pre-wrap">{complaint.resolution}</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -125,18 +153,41 @@ export default function ComplaintDetailPage() {
               <h3 className="text-lg font-semibold">Diskusi</h3>
               <div className="space-y-4">
                 {complaint.comments?.map((c: any) => (
-                  <div key={c.id} className="flex gap-3">
+                  <div
+                    key={c.id}
+                    className={`flex gap-3 ${
+                      c.isInternal
+                        ? "bg-yellow-50 dark:bg-yellow-900/10 p-4 rounded-lg border border-yellow-100 dark:border-yellow-900/50"
+                        : ""
+                    }`}
+                  >
                     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted">
                       <User className="h-4 w-4" />
                     </div>
                     <div className="flex-1 space-y-1">
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold text-sm">{c.user?.name || "User"}</span>
+                        <span className="font-semibold text-sm">
+                          {c.user?.name || "User"}
+                        </span>
+                        {c.isInternal && (
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] h-5 border-yellow-200 text-yellow-700 bg-yellow-50"
+                          >
+                            Internal
+                          </Badge>
+                        )}
                         <span className="text-xs text-muted-foreground">
-                          {format(new Date(c.createdAt), "dd MMM HH:mm", { locale: idLocale })}
+                          {format(new Date(c.createdAt), "dd MMM HH:mm", {
+                            locale: idLocale,
+                          })}
                         </span>
                       </div>
-                      <div className="text-sm p-3 bg-muted/50 rounded-md">
+                      <div
+                        className={`text-sm p-3 rounded-md ${
+                          c.isInternal ? "bg-white dark:bg-background/50" : "bg-muted/50"
+                        }`}
+                      >
                         {c.content}
                       </div>
                     </div>

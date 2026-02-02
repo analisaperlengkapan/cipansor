@@ -24,7 +24,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { ComplaintCategory } from "@cipansor/shared";
+import { ComplaintCategory, ComplaintPriority } from "@cipansor/shared";
 import { useCreateComplaint } from "@/hooks/use-complaints";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
@@ -32,9 +32,11 @@ import Link from "next/link";
 
 const complaintSchema = z.object({
   category: z.nativeEnum(ComplaintCategory),
+  priority: z.nativeEnum(ComplaintPriority).optional(),
   subject: z.string().min(5, "Subjek minimal 5 karakter"),
   description: z.string().min(20, "Deskripsi minimal 20 karakter"),
   location: z.string().optional(),
+  attachments: z.string().optional(), // Textarea for links
   isAnonymous: z.boolean().optional(),
 });
 
@@ -46,15 +48,24 @@ export default function CreateComplaintPage() {
     resolver: zodResolver(complaintSchema),
     defaultValues: {
       isAnonymous: false,
+      priority: ComplaintPriority.NORMAL,
     },
   });
 
   const onSubmit = (values: z.infer<typeof complaintSchema>) => {
-    createComplaint(values, {
-      onSuccess: () => {
-        router.push("/quality/complaints");
-      },
-    });
+    // Transform attachments string to array
+    const attachmentList = values.attachments
+      ? values.attachments.split("\n").map((s) => s.trim()).filter((s) => s !== "")
+      : [];
+
+    createComplaint(
+      { ...values, attachments: attachmentList },
+      {
+        onSuccess: () => {
+          router.push("/quality/complaints");
+        },
+      }
+    );
   };
 
   return (
@@ -77,33 +88,63 @@ export default function CreateComplaintPage() {
         <div className="rounded-lg border p-6 bg-card">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <FormField
-                control={form.control}
-                name="category"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Kategori</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Pilih kategori aduan" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {Object.values(ComplaintCategory).map((c) => (
-                          <SelectItem key={c} value={c}>
-                            {c}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="category"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Kategori</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Pilih kategori aduan" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {Object.values(ComplaintCategory).map((c) => (
+                            <SelectItem key={c} value={c}>
+                              {c}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="priority"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Prioritas</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Pilih prioritas" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {Object.values(ComplaintPriority).map((p) => (
+                            <SelectItem key={p} value={p}>
+                              {p}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
               <FormField
                 control={form.control}
@@ -146,6 +187,27 @@ export default function CreateComplaintPage() {
                         {...field}
                       />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="attachments"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Lampiran (Link)</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Masukkan link gambar/dokumen (Google Drive, Dropbox, dll). Pisahkan dengan baris baru."
+                        className="min-h-[80px]"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Pastikan link dapat diakses publik atau oleh petugas.
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}

@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { ComplaintStatus, ComplaintPriority, ComplaintCategory, Prisma, UserRole } from '@prisma/client';
+import { createNotification, createBulkNotifications } from '../notifications/service';
 
 export const complaintsService = {
   create: async (data: {
@@ -11,8 +12,9 @@ export const complaintsService = {
     location?: string;
     isAnonymous?: boolean;
     attachments?: string[];
+    priority?: ComplaintPriority;
   }) => {
-    return prisma.complaint.create({
+    const complaint = await prisma.complaint.create({
       data: {
         unitId: data.unitId,
         userId: data.userId,
@@ -23,9 +25,33 @@ export const complaintsService = {
         isAnonymous: data.isAnonymous || false,
         attachments: data.attachments || [],
         status: 'PENDING',
-        priority: 'NORMAL',
+        priority: data.priority || 'NORMAL',
       },
     });
+
+    // Notify Unit Admins
+    const admins = await prisma.user.findMany({
+      where: {
+        unitId: data.unitId,
+        role: { in: [UserRole.UNIT_ADMIN, UserRole.SUPER_ADMIN] },
+        isActive: true,
+      },
+      select: { id: true },
+    });
+
+    if (admins.length > 0) {
+      await createBulkNotifications({
+        userIds: admins.map((a) => a.id),
+        title: 'Aduan Baru',
+        message: `Aduan baru masuk: ${data.subject}`,
+        type: 'ALERT',
+        link: `/quality/complaints/${complaint.id}`,
+        priority: 'HIGH',
+        channels: ['IN_APP'],
+      });
+    }
+
+    return complaint;
   },
 
   findAll: async (
@@ -178,24 +204,49 @@ export const complaintsService = {
     if (status === 'RESOLVED') {
       data.resolvedAt = new Date();
     } else {
-      // If moving away from RESOLVED, clear resolvedAt?
-      // Optional: data.resolvedAt = null;
-      // Keeping history might be better, but typically "resolvedAt" implies current resolution state.
-      // Let's clear it if status is not resolved to avoid confusion.
       data.resolvedAt = null;
     }
 
-    return prisma.complaint.update({
+    const complaint = await prisma.complaint.update({
       where: { id },
       data,
+      include: { user: true },
     });
+
+    // Notify Reporter
+    if (complaint.userId) {
+      await createNotification({
+        userId: complaint.userId,
+        title: 'Update Status Aduan',
+        message: `Status aduan "${complaint.subject}" berubah menjadi ${status}`,
+        type: 'INFO',
+        link: `/quality/complaints/${complaint.id}`,
+        priority: 'NORMAL',
+        channels: ['IN_APP'],
+      });
+    }
+
+    return complaint;
   },
 
   assignHandler: async (id: string, handlerId: string) => {
-    return prisma.complaint.update({
+    const complaint = await prisma.complaint.update({
       where: { id },
       data: { assignedToId: handlerId, status: 'IN_PROGRESS' },
     });
+
+    // Notify Handler
+    await createNotification({
+      userId: handlerId,
+      title: 'Tugas Baru',
+      message: `Anda ditugaskan menangani aduan: ${complaint.subject}`,
+      type: 'INFO',
+      link: `/quality/complaints/${complaint.id}`,
+      priority: 'NORMAL',
+      channels: ['IN_APP'],
+    });
+
+    return complaint;
   },
 
   addComment: async (data: {
@@ -204,7 +255,7 @@ export const complaintsService = {
     content: string;
     isInternal?: boolean;
   }) => {
-    return prisma.complaintComment.create({
+    const comment = await prisma.complaintComment.create({
       data: {
         complaintId: data.complaintId,
         userId: data.userId,
@@ -215,5 +266,44 @@ export const complaintsService = {
         user: { select: { id: true, name: true, role: true } },
       },
     });
+
+    // Fetch complaint to get owner and handler
+    const complaint = await prisma.complaint.findUnique({
+      where: { id: data.complaintId },
+      select: { userId: true, assignedToId: true, subject: true },
+    });
+
+    if (complaint) {
+      // Logic: If commenter is Owner, notify Handler (if exists) or Admins?
+      // If commenter is Handler/Admin, notify Owner.
+
+      // Notify Owner if commenter is NOT the owner
+      if (complaint.userId && complaint.userId !== data.userId && !data.isInternal) {
+        await createNotification({
+          userId: complaint.userId,
+          title: 'Komentar Baru',
+          message: `Komentar baru pada aduan: ${complaint.subject}`,
+          type: 'INFO',
+          link: `/quality/complaints/${data.complaintId}`,
+          priority: 'NORMAL',
+          channels: ['IN_APP'],
+        });
+      }
+
+      // Notify Handler if commenter is NOT the handler
+      if (complaint.assignedToId && complaint.assignedToId !== data.userId) {
+         await createNotification({
+          userId: complaint.assignedToId,
+          title: 'Komentar Baru',
+          message: `Komentar baru pada aduan yang Anda tangani: ${complaint.subject}`,
+          type: 'INFO',
+          link: `/quality/complaints/${data.complaintId}`,
+          priority: 'NORMAL',
+          channels: ['IN_APP'],
+        });
+      }
+    }
+
+    return comment;
   },
 };

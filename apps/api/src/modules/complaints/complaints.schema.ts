@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ComplaintCategory, ComplaintStatus } from '@prisma/client';
+import { ComplaintCategory, ComplaintStatus, ComplaintPriority } from '@prisma/client';
 
 export const createComplaintSchema = z.object({
   category: z.nativeEnum(ComplaintCategory),
@@ -9,6 +9,7 @@ export const createComplaintSchema = z.object({
   isAnonymous: z.boolean().optional(),
   attachments: z.array(z.string().url()).optional(),
   unitId: z.string().uuid().optional(), // Optional, required for SUPER_ADMIN if token unitId is missing
+  priority: z.nativeEnum(ComplaintPriority).optional(),
 });
 
 export const updateComplaintStatusSchema = z.object({

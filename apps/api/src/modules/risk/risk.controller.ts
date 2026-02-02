@@ -10,7 +10,7 @@ const PRIVILEGED_ROLES = [
   UserRole.UNIT_ADMIN,
 ];
 
-function isPrivileged(role?: UserRole): boolean {
+function isPrivileged(role?: any): boolean {
   return role ? PRIVILEGED_ROLES.includes(role) : false;
 }
 
@@ -74,13 +74,15 @@ export const createRisk = asyncHandler(async (req: Request, res: Response) => {
   // Destructure to remove unitId from spread, preventing Prisma conflict
   const { unitId: _, ...rest } = body;
 
-  const risk = await riskService.createRisk({
+  const riskData: any = {
     ...rest,
     unit: { connect: { id: targetUnitId } },
     createdBy: { connect: { id: userId } },
     riskScore: 0,
     riskLevel: 'LOW',
-  } as any);
+  };
+
+  const risk = await riskService.createRisk(riskData);
 
   res.status(201).json({ success: true, data: risk });
 });
@@ -135,13 +137,15 @@ export const addMitigation = asyncHandler(async (req: Request, res: Response) =>
     throw Errors.forbidden('Access denied');
   }
 
-  const mitigation = await riskService.createMitigation({
+  const mitigationData: any = {
     ...rest,
     risk: { connect: { id: riskId } },
     createdBy: { connect: { id: userId } },
     pic: picId ? { connect: { id: picId } } : undefined,
-    strategy: rest.strategy || 'REDUCE',
-  } as any);
+    strategy: (rest as any).strategy || 'REDUCE',
+  };
+
+  const mitigation = await riskService.createMitigation(mitigationData);
 
   res.status(201).json({ success: true, data: mitigation });
 });

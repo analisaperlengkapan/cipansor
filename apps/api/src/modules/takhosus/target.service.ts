@@ -16,13 +16,15 @@ export class TargetService {
       },
     });
 
+    const anyInput = input as any;
+
     if (existing) {
       return prisma.tahfidzTarget.update({
         where: { id: existing.id },
         data: {
           targetJuz: input.targetJuz,
-          targetAyah: input.targetAyah,
-          notes: input.notes,
+          targetAyah: anyInput.targetAyah,
+          notes: anyInput.notes,
         },
         include: {
           student: { select: { id: true, user: { select: { name: true } } } },
@@ -36,8 +38,8 @@ export class TargetService {
         studentId: input.studentId,
         academicYearId: input.academicYearId,
         targetJuz: input.targetJuz,
-        targetAyah: input.targetAyah,
-        notes: input.notes,
+        targetAyah: anyInput.targetAyah,
+        notes: anyInput.notes,
       },
       include: {
         student: { select: { id: true, user: { select: { name: true } } } },

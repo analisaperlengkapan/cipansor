@@ -5,7 +5,6 @@ import {
   AssetCondition,
   AssetMaintenanceStatus,
   NotificationType,
-  JournalReferenceType,
 } from '@prisma/client';
 import { prisma } from '../../lib/prisma';
 import { createNotification } from '../notifications/service';
@@ -356,9 +355,9 @@ export async function createMaintenanceRequest(
         title: 'Permintaan Maintenance Baru',
         message: `Permintaan maintenance untuk aset ${asset.code} - ${asset.name}: ${data.description}`,
         link: `/inventory/${asset.id}?tab=maintenance`,
-        priority: 1,
-        channels: ['APP'],
-        recipientType: 'UNIT_ADMIN',
+        priority: 'HIGH' as any,
+        channels: ['IN_APP'] as any,
+        recipientType: 'UNIT' as any,
       })
     )
   ).catch((err) => console.error('Failed to send maintenance notifications', err));

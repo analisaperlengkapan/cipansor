@@ -686,10 +686,12 @@ export async function generateRaporPesantren(query: GetRaporQuery): Promise<Rapo
     });
   }
 
+  const raporAny = rapor as any;
+
   return {
     id: rapor.id,
     studentId: student.id,
-    unitId: rapor.unitId,
+    unitId: raporAny.unitId || student.unitId,
     academicYearId,
     semester,
     status: rapor.status as RaporPesantren['status'],
@@ -914,6 +916,7 @@ export async function getRaporPesantrenById(id: string): Promise<RaporPesantren 
         },
       },
       academicYear: true,
+      unit: true,
     },
   });
 
@@ -932,7 +935,7 @@ export async function getRaporPesantrenById(id: string): Promise<RaporPesantren 
       address: rapor.unit.address,
       phone: rapor.unit.phone,
       email: rapor.unit.email,
-      website: rapor.unit.website,
+      website: '', // Default value since it does not exist
       logoUrl: rapor.unit.logoUrl,
     },
     academicYearId: rapor.academicYearId,

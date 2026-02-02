@@ -4,13 +4,13 @@ import { generateTokenPair, verifyToken, getExpirationDate, generateAccessToken 
 import { Errors } from '@/middleware/error';
 import { config } from '@/config';
 import type { LoginInput, RegisterInput, ChangePasswordInput, UpdateProfileInput } from './auth.schema';
-import { UserRole, RoleCode } from '@prisma/client';
+import { UserRole } from '@prisma/client';
 import * as otplib from 'otplib';
 import * as qrcode from 'qrcode';
+import crypto from 'crypto';
 
 // Handle both CJS and ESM interop for otplib
 const authenticator = (otplib as any).authenticator || otplib;
-import crypto from 'crypto';
 
 export class AuthService {
   /**
@@ -501,7 +501,7 @@ export class AuthService {
           include: {
             role: true,
             unit: true,
-          },
+            },
           orderBy: { isPrimary: 'desc' },
         },
       },
@@ -594,7 +594,7 @@ export class AuthService {
 
     // Consistently check if target is Admin using role code logic
     const primaryTargetRole = user.userRoles.find((r) => r.isPrimary) || user.userRoles[0];
-    const isTargetAdmin = this.isAdminAccount(user, primaryTargetRole?.role.code as RoleCode);
+    const isTargetAdmin = this.isAdminAccount(user, primaryTargetRole?.role.code as any);
 
     if (adminId) {
         // Admin disabling for another user (Reset flow)

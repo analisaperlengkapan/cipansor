@@ -518,9 +518,12 @@ export class FinanceEnhancementService {
       .map((group) => {
         const account = accountMap.get(group.accountId);
         return {
+          accountId: group.accountId,
           code: account?.code || 'UNKNOWN',
           name: account?.name || 'Unknown Account',
           type: account?.type || 'OTHER',
+          startBalance: 0, // Placeholder as calculation is complex
+          endBalance: Number(group._sum.debit || 0) - Number(group._sum.credit || 0),
           debit: Number(group._sum.debit || 0),
           credit: Number(group._sum.credit || 0),
         };
@@ -529,10 +532,12 @@ export class FinanceEnhancementService {
 
     const totals = resultAccounts.reduce(
       (acc, item) => ({
+        startBalance: 0,
+        endBalance: 0,
         debit: acc.debit + item.debit,
         credit: acc.credit + item.credit,
       }),
-      { debit: 0, credit: 0 }
+      { debit: 0, credit: 0, startBalance: 0, endBalance: 0 }
     );
 
     return {

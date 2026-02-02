@@ -311,11 +311,13 @@ export const enrollmentService = {
       throw new Error('Student is already enrolled in Takhosus program');
     }
 
+    const anyInput = input as any;
+
     return prisma.takhosusEnrollment.create({
       data: {
         ...input,
-        targetCompletionDate: input.targetCompletionDate
-          ? new Date(input.targetCompletionDate)
+        targetCompletionDate: anyInput.targetCompletionDate
+          ? new Date(anyInput.targetCompletionDate)
           : undefined,
       } as any,
       include: {
@@ -335,8 +337,9 @@ export const enrollmentService = {
   async update(id: string, input: UpdateEnrollmentInput) {
     const data: any = { ...input };
 
-    if (input.targetCompletionDate) {
-      data.targetCompletionDate = new Date(input.targetCompletionDate);
+    const anyInput = input as any;
+    if (anyInput.targetCompletionDate) {
+      data.targetCompletionDate = new Date(anyInput.targetCompletionDate);
     }
 
     if (input.status === 'COMPLETED' && !data.completedAt) {
@@ -694,9 +697,10 @@ export const progressService = {
       currentJuz: e.currentJuz,
       progressPercentage: Math.round((e.completedJuz / e.targetJuz) * 100),
       sanadCount: e.sanadRecords?.length || 0,
+      targetCompletionDate: e.targetCompletionDate,
     }));
 
-    const totalProgress = students.reduce((acc, s) => acc + s.progressPercentage, 0);
+    const totalProgress = students.reduce((acc: number, s: any) => acc + s.progressPercentage, 0);
     const averageProgress = students.length > 0 ? Math.round(totalProgress / students.length) : 0;
 
     return {
@@ -712,7 +716,7 @@ export const progressService = {
       teacher: halaqoh.teacher,
       studentCount: students.length,
       averageProgress,
-      students: students.sort((a, b) => b.progressPercentage - a.progressPercentage),
+      students: students.sort((a: any, b: any) => b.progressPercentage - a.progressPercentage),
     };
   },
 };

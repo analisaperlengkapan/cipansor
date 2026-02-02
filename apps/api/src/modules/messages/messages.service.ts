@@ -39,7 +39,7 @@ export class MessagesService {
     });
 
     // Real-time notification
-    eventBus.emit('message:sent', message);
+    eventBus.emit('message:sent' as any, message);
 
     return message;
   }

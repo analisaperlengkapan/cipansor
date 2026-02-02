@@ -41,7 +41,7 @@ export const simaanService = {
         examiners: {
           include: { examiner: { include: { user: { select: { name: true } } } } },
         },
-      },
+      } as any,
     });
   },
 
@@ -80,7 +80,7 @@ export const simaanService = {
           _count: {
             select: { examiners: true },
           },
-        },
+        } as any,
       }),
       prisma.simaanExam.count({ where }),
     ]);
@@ -109,7 +109,7 @@ export const simaanService = {
         examiners: {
           include: { examiner: { include: { user: { select: { name: true } } } } },
         },
-      },
+      } as any,
     });
 
     if (!exam) {

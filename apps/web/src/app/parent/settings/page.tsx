@@ -18,7 +18,7 @@ import { toast } from "sonner";
 import { User, Lock, Save, Loader2 } from "lucide-react";
 
 export default function ParentSettingsPage() {
-  const { user, refreshProfile } = useAuthStore();
+  const { user, fetchUser: refreshProfile } = useAuthStore();
   const [loading, setLoading] = useState(false);
 
   // Profile State

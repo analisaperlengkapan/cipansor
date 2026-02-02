@@ -34,13 +34,13 @@ export const getStats = async (unitId: string): Promise<ReceptionStats> => {
     prisma.studentVisit.count({
       where: {
         unitId,
-        status: VisitStatus.CHECKED_IN,
+        status: 'CHECKED_IN',
       },
     }),
     prisma.studentPackage.count({
       where: {
         unitId,
-        status: PackageStatus.RECEIVED,
+        status: 'RECEIVED',
       },
     }),
   ]);
@@ -191,7 +191,7 @@ export const createStudentVisit = async (unitId: string, data: CreateStudentVisi
       relation: (data as any).relationship, // Map input
       purpose: (data as any).needs, // Map input
       notes: data.notes,
-      status: VisitStatus.CHECKED_IN,
+      status: 'CHECKED_IN',
       checkIn: new Date(),
     },
     include: {
@@ -224,7 +224,7 @@ export const updateStudentVisit = async (id: string, data: UpdateStudentVisitInp
     where: { id },
     data: {
       checkOut: data.checkOut,
-      status: data.status,
+      status: data.status as any,
       notes: data.notes,
     },
     include: {
@@ -258,7 +258,7 @@ export const getPackages = async (
   const where: Prisma.StudentPackageWhereInput = { unitId };
 
   if (params.status) {
-    where.status = params.status as PackageStatus;
+    where.status = params.status as any;
   }
 
   if (params.studentId) {
@@ -309,7 +309,7 @@ export const createPackage = async (
       notes: data.notes,
       receivedById: userId,
       receivedAt: new Date(),
-      status: PackageStatus.RECEIVED,
+      status: 'RECEIVED',
     },
     include: {
       student: {
@@ -347,7 +347,7 @@ export const updatePackage = async (id: string, data: UpdateStudentPackageInput)
     deliveredTo: (data as any).deliveredTo,
   };
 
-  if (data.status === PackageStatus.DELIVERED && !pkg.deliveredAt) {
+  if ((data.status as any) === 'DELIVERED' && !pkg.deliveredAt) {
     updateData.deliveredAt = new Date();
   }
 

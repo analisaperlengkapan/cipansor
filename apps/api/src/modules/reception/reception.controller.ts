@@ -73,7 +73,7 @@ export const updateGuestBook = async (
 
 export const getStudentVisits = async (
   req: Request,
-  res: Response<ApiResponse<StudentVisit[]>>,
+  res: Response<ApiResponse<any[]>>,
   next: NextFunction
 ) => {
   try {
@@ -89,7 +89,7 @@ export const getStudentVisits = async (
 
 export const createStudentVisit = async (
   req: Request,
-  res: Response<ApiResponse<StudentVisit>>,
+  res: Response<ApiResponse<any>>,
   next: NextFunction
 ) => {
   try {
@@ -105,7 +105,7 @@ export const createStudentVisit = async (
 
 export const updateStudentVisit = async (
   req: Request,
-  res: Response<ApiResponse<StudentVisit>>,
+  res: Response<ApiResponse<any>>,
   next: NextFunction
 ) => {
   try {
@@ -120,7 +120,7 @@ export const updateStudentVisit = async (
 
 export const getPackages = async (
   req: Request,
-  res: Response<ApiResponse<StudentPackage[]>>,
+  res: Response<ApiResponse<any[]>>,
   next: NextFunction
 ) => {
   try {
@@ -136,7 +136,7 @@ export const getPackages = async (
 
 export const createPackage = async (
   req: Request,
-  res: Response<ApiResponse<StudentPackage>>,
+  res: Response<ApiResponse<any>>,
   next: NextFunction
 ) => {
   try {
@@ -152,7 +152,7 @@ export const createPackage = async (
 
 export const updatePackage = async (
   req: Request,
-  res: Response<ApiResponse<StudentPackage>>,
+  res: Response<ApiResponse<any>>,
   next: NextFunction
 ) => {
   try {

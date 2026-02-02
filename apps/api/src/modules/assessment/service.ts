@@ -50,8 +50,8 @@ export async function getExams(query: ExamQuery): Promise<SharedPaginatedRespons
   if (status) where.status = status as any; // Cast to Prisma enum
   if (startDate || endDate) {
     where.scheduledAt = {};
-    if (startDate) where.scheduledAt.gte = new Date(startDate);
-    if (endDate) where.scheduledAt.lte = new Date(endDate);
+    if (startDate) where.scheduledAt.gte = new Date(startDate as string);
+    if (endDate) where.scheduledAt.lte = new Date(endDate as string);
   }
 
   const [exams, total] = await Promise.all([
@@ -117,7 +117,7 @@ export async function createExam(data: CreateExamInput): Promise<Exam> {
       type: data.type as any, // Prisma enum
       title: data.title,
       description: data.description,
-      scheduledAt: new Date(data.scheduledAt),
+      scheduledAt: new Date(data.scheduledAt as string | number | Date),
       duration: data.duration ?? 60,
       maxScore: new Decimal(data.maxScore ?? 100),
       passingScore: new Decimal(data.passingScore ?? 70),
@@ -140,7 +140,7 @@ export async function updateExam(id: string, data: UpdateExamInput): Promise<Exa
 
   if (data.title) updateData.title = data.title;
   if (data.description !== undefined) updateData.description = data.description;
-  if (data.scheduledAt) updateData.scheduledAt = new Date(data.scheduledAt);
+  if (data.scheduledAt) updateData.scheduledAt = new Date(data.scheduledAt as string | number | Date);
   if (data.duration !== undefined) updateData.duration = data.duration;
   if (data.maxScore !== undefined) updateData.maxScore = new Decimal(data.maxScore);
   if (data.passingScore !== undefined) updateData.passingScore = new Decimal(data.passingScore);

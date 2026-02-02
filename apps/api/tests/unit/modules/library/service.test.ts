@@ -106,7 +106,11 @@ describe('Library Service', () => {
         expect.objectContaining({
           include: expect.objectContaining({
             student: expect.objectContaining({
-              select: expect.objectContaining({ name: true }),
+              select: expect.objectContaining({
+                user: expect.objectContaining({
+                  select: expect.objectContaining({ name: true }),
+                }),
+              }),
             }),
           }),
         })

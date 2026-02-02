@@ -35,7 +35,7 @@ export const createJournalEntrySchema = z
     reference: z.string().optional(),
     referenceType: z.nativeEnum(JournalReferenceType).optional(),
   })
-  .refine((data) => (data.debit || 0) > 0 || (data.credit || 0) > 0, {
+  .refine((data) => ((data.debit as number) || 0) > 0 || ((data.credit as number) || 0) > 0, {
     message: 'Either debit or credit must be greater than 0',
   });
 

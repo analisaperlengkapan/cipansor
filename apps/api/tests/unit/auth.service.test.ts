@@ -62,7 +62,7 @@ const {
 });
 
 // Mock modules after hoisted definitions
-vi.mock('@/lib/prisma', () => ({
+vi.mock('../../src/lib/prisma', () => ({
   prisma: mockPrisma,
 }));
 

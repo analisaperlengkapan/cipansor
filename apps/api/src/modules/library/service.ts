@@ -293,7 +293,7 @@ export async function returnBook(id: string, data: ReturnBookInput, processedBy:
     throw new Error('Borrowing not found or already returned');
   }
 
-  const isOverdue = new Date() > borrowing.dueDate;
+  const isOverdue = new Date().getTime() > borrowing.dueDate.getTime();
 
   return prisma.$transaction(async (tx) => {
     const updated = await tx.borrowing.update({
@@ -371,7 +371,7 @@ export async function getLibraryStats(unitId: string) {
 
   const activeBorrowings = activeBorrowingsData.length;
   const now = new Date();
-  const overdueBorrowings = activeBorrowingsData.filter((b) => b.dueDate < now).length;
+  const overdueBorrowings = activeBorrowingsData.filter((b) => b.dueDate.getTime() < now.getTime()).length;
 
   return {
     totalTitles: totalBooks._count,

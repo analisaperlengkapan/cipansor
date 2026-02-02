@@ -53,7 +53,7 @@ describe('Finance Service Integration', () => {
         student: {
           user: { id: 'user-1' },
         },
-        paymentType: { name: 'SPP Januari' },
+        paymentType: { name: 'SPP Januari', accountId: 'acc-1' },
       };
 
       (prisma.invoice.findFirst as any).mockResolvedValue(null); // First invoice of month
@@ -92,7 +92,7 @@ describe('Finance Service Integration', () => {
         amount: { toNumber: () => 500000 },
         dueDate: new Date(),
         student: { user: { id: 'u1' } },
-        paymentType: { name: 'SPP' },
+        paymentType: { name: 'SPP', accountId: 'acc-1' },
       });
 
       await financeService.createInvoice({
@@ -120,7 +120,7 @@ describe('Finance Service Integration', () => {
         invoice: {
           id: 'inv-123',
           student: { user: { id: 'user-1' } },
-          paymentType: { name: 'SPP' },
+          paymentType: { name: 'SPP', accountId: 'acc-1' },
         },
       };
 

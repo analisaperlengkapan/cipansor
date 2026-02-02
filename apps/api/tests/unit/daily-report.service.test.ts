@@ -12,7 +12,7 @@ vi.mock('@/modules/notifications', () => ({
 }));
 
 // Mock Prisma
-vi.mock('@/lib/prisma', () => ({
+vi.mock('../../src/lib/prisma', () => ({
   prisma: {
     dailyStudentReport: {
       findMany: vi.fn(),

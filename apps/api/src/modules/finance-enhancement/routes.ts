@@ -216,4 +216,16 @@ router.get(
   financeEnhancementController.getBalanceSheet
 );
 
+router.get(
+  '/reports/statement-of-activities',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  financeEnhancementController.getStatementOfActivities
+);
+
+router.get(
+  '/reports/statement-of-financial-position',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  financeEnhancementController.getStatementOfFinancialPosition
+);
+
 export default router;

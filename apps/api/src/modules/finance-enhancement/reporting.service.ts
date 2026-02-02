@@ -574,3 +574,267 @@ export async function getBudgetRealizationReport(unitId: string, academicYearId:
     items,
   };
 }
+
+// ==========================================
+// ISAK 35 REPORTS (Non-Profit Specific)
+// ==========================================
+
+export interface StatementOfActivitiesReport {
+  period: { startDate: string; endDate: string };
+  revenues: {
+    unrestricted: { items: any[]; total: number };
+    restricted: { items: any[]; total: number };
+    total: number;
+  };
+  expenses: {
+    unrestricted: { items: any[]; total: number };
+    restricted: { items: any[]; total: number };
+    total: number;
+  };
+  changeInNetAssets: {
+    unrestricted: number;
+    restricted: number;
+    total: number;
+  };
+}
+
+export interface StatementOfFinancialPositionReport {
+  assets: { title: string; total: number; items: any[] };
+  liabilities: { title: string; total: number; items: any[] };
+  netAssets: {
+    unrestricted: { title: string; total: number; items: any[] };
+    restricted: { title: string; total: number; items: any[] };
+    total: number;
+  };
+  periodDate: string;
+}
+
+export async function getStatementOfActivities(
+  unitId: string,
+  startDate: Date,
+  endDate: Date
+): Promise<StatementOfActivitiesReport> {
+  const accounts = await prisma.accountCode.findMany({
+    where: {
+      type: { in: [AccountType.REVENUE, AccountType.EXPENSE] },
+      isActive: true,
+    },
+    orderBy: { code: 'asc' },
+  });
+
+  const balances = await prisma.journalEntry.groupBy({
+    by: ['accountId'],
+    where: {
+      unitId,
+      date: { gte: startDate, lte: endDate },
+    },
+    _sum: {
+      debit: true,
+      credit: true,
+    },
+  });
+
+  const balanceMap = new Map<string, number>();
+  balances.forEach((b) => {
+    const debit = b._sum.debit?.toNumber() || 0;
+    const credit = b._sum.credit?.toNumber() || 0;
+    balanceMap.set(b.accountId, debit - credit);
+  });
+
+  const restrictedRevenueItems: any[] = [];
+  const unrestrictedRevenueItems: any[] = [];
+  const restrictedExpenseItems: any[] = [];
+  const unrestrictedExpenseItems: any[] = [];
+
+  let restrictedRevTotal = 0;
+  let unrestrictedRevTotal = 0;
+  let restrictedExpTotal = 0;
+  let unrestrictedExpTotal = 0;
+
+  for (const acc of accounts) {
+    let amount = balanceMap.get(acc.id) || 0;
+    if (amount === 0) continue;
+
+    const isRestricted = acc.name.toLowerCase().includes('terikat') || acc.name.toLowerCase().includes('restricted');
+
+    if (acc.type === AccountType.REVENUE) {
+      amount = -amount; // Revenue is Credit normal
+      if (isRestricted) {
+        restrictedRevenueItems.push({ code: acc.code, name: acc.name, amount });
+        restrictedRevTotal += amount;
+      } else {
+        unrestrictedRevenueItems.push({ code: acc.code, name: acc.name, amount });
+        unrestrictedRevTotal += amount;
+      }
+    } else {
+      // Expense
+      if (isRestricted) {
+        restrictedExpenseItems.push({ code: acc.code, name: acc.name, amount });
+        restrictedExpTotal += amount;
+      } else {
+        unrestrictedExpenseItems.push({ code: acc.code, name: acc.name, amount });
+        unrestrictedExpTotal += amount;
+      }
+    }
+  }
+
+  return {
+    period: { startDate: formatDate(startDate), endDate: formatDate(endDate) },
+    revenues: {
+      unrestricted: { items: unrestrictedRevenueItems, total: unrestrictedRevTotal },
+      restricted: { items: restrictedRevenueItems, total: restrictedRevTotal },
+      total: unrestrictedRevTotal + restrictedRevTotal
+    },
+    expenses: {
+      unrestricted: { items: unrestrictedExpenseItems, total: unrestrictedExpTotal },
+      restricted: { items: restrictedExpenseItems, total: restrictedExpTotal },
+      total: unrestrictedExpTotal + restrictedExpTotal
+    },
+    changeInNetAssets: {
+      unrestricted: unrestrictedRevTotal - unrestrictedExpTotal,
+      restricted: restrictedRevTotal - restrictedExpTotal,
+      total: (unrestrictedRevTotal + restrictedRevTotal) - (unrestrictedExpTotal + restrictedExpTotal)
+    }
+  };
+}
+
+export async function getStatementOfFinancialPosition(
+  unitId: string,
+  date: Date
+): Promise<StatementOfFinancialPositionReport> {
+  const accounts = await prisma.accountCode.findMany({
+    where: { isActive: true },
+    orderBy: { code: 'asc' },
+  });
+
+  const balances = await prisma.journalEntry.groupBy({
+    by: ['accountId'],
+    where: {
+      unitId,
+      date: { lte: date },
+    },
+    _sum: { debit: true, credit: true },
+  });
+
+  const balanceMap = new Map<string, number>();
+  balances.forEach((b) => {
+    const debit = b._sum.debit?.toNumber() || 0;
+    const credit = b._sum.credit?.toNumber() || 0;
+    balanceMap.set(b.accountId, debit - credit);
+  });
+
+  const buildTree = (type: AccountType) => {
+    const typeAccounts = accounts.filter((a) => a.type === type);
+    const roots = typeAccounts.filter((a) => !a.parentId);
+
+    const buildNode = (account: typeof accounts[0]): any => {
+      const children = typeAccounts.filter(a => a.parentId === account.id).map(buildNode);
+      let directBalance = balanceMap.get(account.id) || 0;
+
+      if (type === AccountType.LIABILITY || type === AccountType.EQUITY || type === AccountType.REVENUE) {
+        directBalance = -directBalance;
+      }
+      const childrenTotal = children.reduce((sum: number, c: any) => sum + c.amount, 0);
+      return {
+        code: account.code,
+        name: account.name,
+        amount: directBalance + childrenTotal,
+        children: children.length > 0 ? children : undefined
+      };
+    };
+
+    return roots.map(buildNode);
+  };
+
+  const assets = buildTree(AccountType.ASSET);
+  const liabilities = buildTree(AccountType.LIABILITY);
+
+  const equityAccounts = accounts.filter(a => a.type === AccountType.EQUITY);
+  const unrestrictedEquityItems: any[] = [];
+  const restrictedEquityItems: any[] = [];
+
+  let unrestrictedEquityTotal = 0;
+  let restrictedEquityTotal = 0;
+
+  for (const acc of equityAccounts) {
+     const debit = (await prisma.journalEntry.aggregate({
+        where: { unitId, accountId: acc.id, date: { lte: date } },
+        _sum: { debit: true, credit: true }
+     }))._sum;
+
+     let amount = (debit.debit?.toNumber() || 0) - (debit.credit?.toNumber() || 0);
+     amount = -amount; // Equity is Credit normal
+
+     const isRestricted = acc.name.toLowerCase().includes('terikat') || acc.name.toLowerCase().includes('restricted');
+
+     if (isRestricted) {
+        restrictedEquityItems.push({ code: acc.code, name: acc.name, amount });
+        restrictedEquityTotal += amount;
+     } else {
+        unrestrictedEquityItems.push({ code: acc.code, name: acc.name, amount });
+        unrestrictedEquityTotal += amount;
+     }
+  }
+
+  const assetTotal = assets.reduce((s, i) => s + i.amount, 0);
+  const liabTotal = liabilities.reduce((s, i) => s + i.amount, 0);
+
+  // Accumulated Surplus Calculation
+  const allRevExp = await prisma.journalEntry.groupBy({
+    by: ['accountId'],
+    where: {
+        unitId,
+        date: { lte: date },
+    },
+    _sum: { debit: true, credit: true }
+  });
+
+  let unresRevExp = 0;
+  let resRevExp = 0;
+
+  const revExpAccountIds = allRevExp.map(a => a.accountId);
+  const revExpAccounts = await prisma.accountCode.findMany({
+    where: {
+      id: { in: revExpAccountIds },
+      type: { in: [AccountType.REVENUE, AccountType.EXPENSE] }
+    }
+  });
+
+  for (const b of allRevExp) {
+     const acc = revExpAccounts.find(a => a.id === b.accountId);
+     if (!acc) continue;
+
+     // Net Debit Balance of Rev/Exp
+     let amt = (b._sum.debit?.toNumber() || 0) - (b._sum.credit?.toNumber() || 0);
+
+     // Contribution to Equity = -NetDebit (because Equity is Credit normal)
+     // Revenue (Credit balance) -> NetDebit is negative -> -(-Val) = +Val (Increases Equity)
+     // Expense (Debit balance) -> NetDebit is positive -> -(Val) = -Val (Decreases Equity)
+
+     const contribution = -amt;
+
+     const isRestricted = acc.name.toLowerCase().includes('terikat') || acc.name.toLowerCase().includes('restricted');
+     if (isRestricted) resRevExp += contribution;
+     else unresRevExp += contribution;
+  }
+
+  if (Math.abs(unresRevExp) > 0.01) {
+     unrestrictedEquityItems.push({ code: 'SURPLUS-U', name: 'Surplus/Defisit Akumulasi (Tanpa Pembatasan)', amount: unresRevExp });
+     unrestrictedEquityTotal += unresRevExp;
+  }
+  if (Math.abs(resRevExp) > 0.01) {
+     restrictedEquityItems.push({ code: 'SURPLUS-R', name: 'Surplus/Defisit Akumulasi (Terikat)', amount: resRevExp });
+     restrictedEquityTotal += resRevExp;
+  }
+
+  return {
+    assets: { title: 'Aset', total: assetTotal, items: assets },
+    liabilities: { title: 'Liabilitas', total: liabTotal, items: liabilities },
+    netAssets: {
+        unrestricted: { title: 'Aset Neto Tanpa Pembatasan', total: unrestrictedEquityTotal, items: unrestrictedEquityItems },
+        restricted: { title: 'Aset Neto Dengan Pembatasan', total: restrictedEquityTotal, items: restrictedEquityItems },
+        total: unrestrictedEquityTotal + restrictedEquityTotal
+    },
+    periodDate: formatDate(date)
+  };
+}

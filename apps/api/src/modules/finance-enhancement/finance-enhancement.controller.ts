@@ -20,6 +20,8 @@ import {
   getGeneralLedger,
   getCashFlowStatement,
   getBudgetRealizationReport,
+  getStatementOfActivities,
+  getStatementOfFinancialPosition,
 } from './reporting.service';
 
 // Helper for parsing pagination params
@@ -366,6 +368,44 @@ export class FinanceEnhancementController {
       }
 
       const result = await getBalanceSheet(unitId as string, new Date(date as string));
+
+      res.json({ success: true, data: result });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getStatementOfActivities(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { unitId, startDate, endDate } = req.query;
+
+      if (!unitId || !startDate || !endDate) {
+        return res
+          .status(400)
+          .json({ success: false, message: 'Unit ID, Start date, and End date are required' });
+      }
+
+      const result = await getStatementOfActivities(
+        unitId as string,
+        new Date(startDate as string),
+        new Date(endDate as string)
+      );
+
+      res.json({ success: true, data: result });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getStatementOfFinancialPosition(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { unitId, date } = req.query;
+
+      if (!unitId || !date) {
+        return res.status(400).json({ success: false, message: 'Unit ID and Date are required' });
+      }
+
+      const result = await getStatementOfFinancialPosition(unitId as string, new Date(date as string));
 
       res.json({ success: true, data: result });
     } catch (error) {

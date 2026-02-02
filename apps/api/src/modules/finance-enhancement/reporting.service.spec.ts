@@ -1,0 +1,96 @@
+
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+
+// Mock dependencies BEFORE importing the SUT
+vi.mock('../../lib/prisma', () => ({
+  prisma: {
+    accountCode: {
+      findMany: vi.fn(),
+    },
+    journalEntry: {
+      groupBy: vi.fn(),
+      aggregate: vi.fn(),
+    },
+  },
+}));
+
+vi.mock('@cipansor/shared', () => ({
+  AccountType: {
+    REVENUE: 'REVENUE',
+    EXPENSE: 'EXPENSE',
+    ASSET: 'ASSET',
+    LIABILITY: 'LIABILITY',
+    EQUITY: 'EQUITY',
+  },
+  CashFlowCategory: {
+    OPERATING: 'OPERATING',
+    INVESTING: 'INVESTING',
+    FINANCING: 'FINANCING',
+  }
+}));
+
+import { getStatementOfActivities } from './reporting.service';
+import { prisma } from '../../lib/prisma';
+import { AccountType } from '@cipansor/shared';
+
+describe('Reporting Service (ISAK 35)', () => {
+  const mockStartDate = new Date('2024-01-01');
+  const mockEndDate = new Date('2024-12-31');
+  const mockUnitId = 'unit-123';
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  describe('getStatementOfActivities', () => {
+    it('should correctly classify restricted and unrestricted revenues and expenses', async () => {
+      // Mock Accounts
+      vi.mocked(prisma.accountCode.findMany).mockResolvedValue([
+        { id: 'acc-1', code: '4101', name: 'Pendapatan SPP', type: AccountType.REVENUE, isActive: true, parentId: null, normalBalance: 'CREDIT', cashFlowCategory: null, createdAt: new Date(), updatedAt: new Date() },
+        { id: 'acc-2', code: '4201', name: 'Hibah Terikat Gedung', type: AccountType.REVENUE, isActive: true, parentId: null, normalBalance: 'CREDIT', cashFlowCategory: null, createdAt: new Date(), updatedAt: new Date() },
+        { id: 'acc-3', code: '5101', name: 'Beban Gaji', type: AccountType.EXPENSE, isActive: true, parentId: null, normalBalance: 'DEBIT', cashFlowCategory: null, createdAt: new Date(), updatedAt: new Date() },
+        { id: 'acc-4', code: '5201', name: 'Beban Pembangunan (Terikat)', type: AccountType.EXPENSE, isActive: true, parentId: null, normalBalance: 'DEBIT', cashFlowCategory: null, createdAt: new Date(), updatedAt: new Date() },
+      ]);
+
+      const mockDecimal = (val: number) => ({ toNumber: () => val });
+
+      // @ts-ignore
+      vi.mocked(prisma.journalEntry.groupBy).mockResolvedValue([
+        { accountId: 'acc-1', _sum: { debit: mockDecimal(0), credit: mockDecimal(1000) } },
+        { accountId: 'acc-2', _sum: { debit: mockDecimal(0), credit: mockDecimal(500) } },
+        { accountId: 'acc-3', _sum: { debit: mockDecimal(400), credit: mockDecimal(0) } },
+        { accountId: 'acc-4', _sum: { debit: mockDecimal(200), credit: mockDecimal(0) } },
+      ]);
+
+      const report = await getStatementOfActivities(mockUnitId, mockStartDate, mockEndDate);
+
+      // Verify Revenue Classification
+      // Unrestricted Revenue (acc-1)
+      expect(report.revenues.unrestricted.items).toHaveLength(1);
+      expect(report.revenues.unrestricted.items[0].code).toBe('4101');
+      expect(report.revenues.unrestricted.total).toBe(1000);
+
+      // Restricted Revenue (acc-2)
+      expect(report.revenues.restricted.items).toHaveLength(1);
+      expect(report.revenues.restricted.items[0].code).toBe('4201');
+      expect(report.revenues.restricted.total).toBe(500);
+
+      // Verify Expense Classification
+      // Unrestricted Expense (acc-3)
+      expect(report.expenses.unrestricted.items).toHaveLength(1);
+      expect(report.expenses.unrestricted.total).toBe(400);
+
+      // Restricted Expense (acc-4)
+      expect(report.expenses.restricted.items).toHaveLength(1);
+      expect(report.expenses.restricted.total).toBe(200);
+
+      // Verify Net Assets Change
+      // Unrestricted: 1000 - 400 = 600
+      expect(report.changeInNetAssets.unrestricted).toBe(600);
+      // Restricted: 500 - 200 = 300
+      expect(report.changeInNetAssets.restricted).toBe(300);
+      // Total: 1500 - 600 = 900
+      expect(report.changeInNetAssets.total).toBe(900);
+    });
+  });
+});

@@ -47,6 +47,37 @@ export {
 export type AccountCodeType = AccountType;
 export type PaymentComponentCategory = PaymentCategory;
 
+// ISAK 35 Types
+export interface StatementOfActivitiesReport {
+  period: { startDate: string; endDate: string };
+  revenues: {
+    unrestricted: { items: any[]; total: number };
+    restricted: { items: any[]; total: number };
+    total: number;
+  };
+  expenses: {
+    unrestricted: { items: any[]; total: number };
+    restricted: { items: any[]; total: number };
+    total: number;
+  };
+  changeInNetAssets: {
+    unrestricted: number;
+    restricted: number;
+    total: number;
+  };
+}
+
+export interface StatementOfFinancialPositionReport {
+  assets: { title: string; total: number; items: any[] };
+  liabilities: { title: string; total: number; items: any[] };
+  netAssets: {
+    unrestricted: { title: string; total: number; items: any[] };
+    restricted: { title: string; total: number; items: any[] };
+    total: number;
+  };
+  periodDate: string;
+}
+
 // ==================== ACCOUNT CODES ====================
 
 interface AccountCodeFilters {
@@ -478,5 +509,51 @@ export function useIncomeExpenseReport(filters: {
       return response.data.data;
     },
     enabled: !!filters.startDate && !!filters.endDate,
+  });
+}
+
+// ISAK 35 Hooks
+
+export function useStatementOfActivitiesReport(filters: {
+  unitId?: string;
+  startDate: string;
+  endDate: string;
+}) {
+  return useQuery({
+    queryKey: ["statement-of-activities-report", filters],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (filters.unitId) params.append("unitId", filters.unitId);
+      params.append("startDate", filters.startDate);
+      params.append("endDate", filters.endDate);
+
+      const response = await api.get<{ data: StatementOfActivitiesReport }>(
+        `/finance-enhancement/reports/statement-of-activities?${params}`,
+      );
+      return response.data.data;
+    },
+    enabled: !!filters.startDate && !!filters.endDate,
+  });
+}
+
+export function useStatementOfFinancialPositionReport(filters: {
+  unitId?: string;
+  date: string;
+}) {
+  return useQuery({
+    queryKey: ["statement-of-financial-position-report", filters],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (filters.unitId) params.append("unitId", filters.unitId);
+      params.append("date", filters.date);
+
+      const response = await api.get<{
+        data: StatementOfFinancialPositionReport;
+      }>(
+        `/finance-enhancement/reports/statement-of-financial-position?${params}`,
+      );
+      return response.data.data;
+    },
+    enabled: !!filters.date,
   });
 }

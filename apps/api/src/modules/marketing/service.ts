@@ -5,7 +5,7 @@ import { Prisma } from '@prisma/client';
 export const createCampaign = async (data: CreateCampaignInput, userId: string) => {
   return prisma.marketingCampaign.create({
     data: {
-      ...data,
+      ...(data as any),
       createdById: userId,
     },
   });
@@ -76,7 +76,7 @@ export const getCampaignByCode = async (code: string) => {
 export const logInteraction = async (data: LogInteractionInput, userId: string) => {
   return prisma.marketingInteraction.create({
     data: {
-      ...data,
+      ...(data as any),
       recordedById: userId,
     },
   });

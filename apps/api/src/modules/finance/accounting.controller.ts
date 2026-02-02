@@ -19,7 +19,14 @@ export async function seedAccounts(req: Request, res: Response, next: NextFuncti
 export async function createAccount(req: Request, res: Response, next: NextFunction) {
   try {
     const data: CreateAccountDto = req.body;
-    const account = await service.createAccount(data);
+    if (!data.code) {
+      // Basic validation or generation logic could be added here
+      // For now, let's assume service handles it or throw if strictly required
+      res.status(400).json({ message: 'Account code is required' });
+      return;
+    }
+    // Cast to ensure type compatibility with service input which expects required fields
+    const account = await service.createAccount(data as any);
     res.status(201).json(account);
   } catch (error) {
     next(error);
@@ -131,8 +138,13 @@ export async function createJournal(req: Request, res: Response, next: NextFunct
       res.status(401).json({ message: 'Unauthorized' });
       return;
     }
+    if (!data.unitId) {
+      res.status(400).json({ message: 'Unit ID is required' });
+      return;
+    }
     const journals = await service.createManualJournal({
       ...data,
+      unitId: data.unitId, // Ensure unitId is passed
       date: new Date(data.date),
       createdById: userId,
     });

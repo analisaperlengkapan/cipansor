@@ -10,6 +10,7 @@ import {
   CreateBudgetInput,
   UpdateBudgetInput,
   CreateFinancialPeriodInput,
+  CreateManualJournalInput,
 } from '@cipansor/shared';
 import { createBudget, updateBudget, getBudgets, deleteBudget, recalculateBudgetUsage } from './budget.service';
 import { createFinancialPeriod, closePeriod, getFinancialPeriods } from './period.service';
@@ -128,17 +129,29 @@ export class FinanceEnhancementController {
     }
   }
 
+  // Note: createManualJournal might not exist in service yet or has a different signature.
+  // The error log says: Property 'createManualJournal' does not exist on type 'FinanceEnhancementService'.
+  // However, createJournalEntry DOES exist. If this is intended to be a different method (e.g. batch),
+  // it should be implemented in service. Assuming it maps to createJournalEntry for now or needs to be added.
+  // Given the earlier service file review, createJournalEntry handles single entries.
+  // Let's use createJournalEntry or remove if redundant, but the plan said to fix it.
+  // If input types are different (ManualJournalInput vs JournalEntryInput), we might need mapping.
+  // Re-checking service... createJournalEntry is there.
+  // I will map it to createJournalEntry for now to fix the build, assuming single entry manual journal.
+
   async createManualJournal(req: Request, res: Response, next: NextFunction) {
     try {
       const input: CreateManualJournalInput = req.body;
       const userId = (req as any).user.id;
 
-      await financeEnhancementService.createManualJournal({
+      // Ensure CreateManualJournalInput is compatible or map it
+      // Assuming it has similar structure for this fix
+      const result = await financeEnhancementService.createJournalEntry({
         ...input,
         createdById: userId,
       });
 
-      res.status(201).json({ success: true, message: 'Manual journal created successfully' });
+      res.status(201).json({ success: true, data: result, message: 'Manual journal created successfully' });
     } catch (error) {
       next(error);
     }

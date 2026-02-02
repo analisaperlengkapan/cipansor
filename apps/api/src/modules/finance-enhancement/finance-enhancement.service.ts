@@ -517,22 +517,30 @@ export class FinanceEnhancementService {
     const resultAccounts = grouped
       .map((group) => {
         const account = accountMap.get(group.accountId);
+        const debit = Number(group._sum.debit || 0);
+        const credit = Number(group._sum.credit || 0);
+        const balance = debit - credit;
         return {
+          accountId: group.accountId,
           code: account?.code || 'UNKNOWN',
           name: account?.name || 'Unknown Account',
           type: account?.type || 'OTHER',
-          debit: Number(group._sum.debit || 0),
-          credit: Number(group._sum.credit || 0),
+          startBalance: 0, // Placeholder, would need previous period calc
+          debit,
+          credit,
+          endBalance: balance, // Simplified logic
         };
       })
       .sort((a, b) => a.code.localeCompare(b.code));
 
     const totals = resultAccounts.reduce(
       (acc, item) => ({
+        startBalance: acc.startBalance + item.startBalance,
         debit: acc.debit + item.debit,
         credit: acc.credit + item.credit,
+        endBalance: acc.endBalance + item.endBalance,
       }),
-      { debit: 0, credit: 0 }
+      { startBalance: 0, debit: 0, credit: 0, endBalance: 0 }
     );
 
     return {

@@ -914,6 +914,7 @@ export async function getRaporPesantrenById(id: string): Promise<RaporPesantren 
         },
       },
       academicYear: true,
+      unit: true, // Fetch unit relation
     },
   });
 

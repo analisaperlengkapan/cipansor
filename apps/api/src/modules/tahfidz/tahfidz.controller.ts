@@ -17,7 +17,7 @@ export class TahfidzController {
         page: Number(req.query.page) || 1,
         limit: Number(req.query.limit) || 10,
         studentId: req.query.studentId as string,
-        activityType: req.query.activityType as string,
+        activityType: req.query.activityType as any,
         startDate: req.query.startDate as string,
         endDate: req.query.endDate as string,
         surah: req.query.surah as string,
@@ -97,7 +97,11 @@ export class TahfidzController {
   generateCertificate = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const createdById = (req as any).user.id;
-      const input: GenerateCertificateInput = req.body;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const input = {
+        ...req.body,
+        issueDate: req.body.issueDate ? new Date(req.body.issueDate) : new Date(),
+      } as any;
       const result = await this.service.generateCertificate(input, createdById);
       res.status(201).json({ success: true, data: result });
     } catch (error) {

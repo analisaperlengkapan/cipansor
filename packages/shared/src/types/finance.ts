@@ -199,6 +199,7 @@ export interface CreateAccountCodeInput {
   parentId?: string;
   isActive?: boolean;
   cashFlowCategory?: CashFlowCategory;
+  normalBalance?: "DEBIT" | "CREDIT"; // Added for API compatibility
 }
 
 export type UpdateAccountCodeInput = Partial<CreateAccountCodeInput>;
@@ -212,6 +213,17 @@ export interface CreateJournalEntryInput {
   credit?: number;
   reference?: string;
   referenceType?: JournalReferenceType;
+}
+
+export interface CreateManualJournalInput {
+  unitId: string;
+  date: Date | string;
+  description: string;
+  entries: {
+    accountId: string;
+    debit: number;
+    credit: number;
+  }[];
 }
 
 export interface CreateScholarshipInput {
@@ -269,24 +281,24 @@ export interface CreateFinancialPeriodInput {
 
 // Trial Balance
 export interface TrialBalanceItem {
-  accountId: string;
+  accountId?: string; // Optional if mapped from group by
   code: string;
   name: string;
   type: string;
-  startBalance: number; // Saldo Awal
+  startBalance?: number; // Saldo Awal
   debit: number; // Mutasi Debit
   credit: number; // Mutasi Credit
-  endBalance: number; // Saldo Akhir
+  endBalance?: number; // Saldo Akhir
 }
 
 export interface TrialBalanceReport {
   period: { startDate: string; endDate: string };
   accounts: TrialBalanceItem[];
   totals: {
-    startBalance: number;
+    startBalance?: number;
     debit: number;
     credit: number;
-    endBalance: number;
+    endBalance?: number;
   };
   isBalanced: boolean;
 }

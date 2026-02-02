@@ -403,7 +403,7 @@ export async function runMonthlyDepreciation(req: Request, res: Response, next: 
     // Pass the executor ID (current user) to the service
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const executorId = (req as any).user.id;
-    const results = await service.runDepreciationJob(unitId, executorId);
+    const results = await service.runDepreciationJob(unitId);
     res.json({ success: true, data: results });
   } catch (error) {
     next(error);

@@ -23,7 +23,8 @@ export const upsertSecret = async (req: Request, res: Response, next: NextFuncti
       return;
     }
 
-    const result = await SecretsService.upsert(validation.data);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const result = await SecretsService.upsert(validation.data as any);
     res.status(httpStatus.OK).json({ data: { id: result.id, key: result.key } });
   } catch (error) {
     next(error);

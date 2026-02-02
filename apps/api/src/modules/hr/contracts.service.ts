@@ -73,12 +73,14 @@ export const contractService = {
     return {
       data,
       meta: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
       },
-    };
+    } as any;
   },
 
   async findByUser(userId: string) {

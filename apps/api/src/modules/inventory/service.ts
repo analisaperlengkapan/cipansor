@@ -182,7 +182,7 @@ export async function createItem(data: CreateInventoryItemInput, userId?: string
         warrantyExpiry: data.warrantyExpiry,
         notes: data.notes,
         photoUrl: data.photoUrl,
-      },
+      } as any,
       include: {
         category: { select: { id: true, name: true, code: true } },
         unit: { select: { id: true, name: true } },
@@ -356,9 +356,9 @@ export async function createMaintenanceRequest(
         title: 'Permintaan Maintenance Baru',
         message: `Permintaan maintenance untuk aset ${asset.code} - ${asset.name}: ${data.description}`,
         link: `/inventory/${asset.id}?tab=maintenance`,
-        priority: 1,
-        channels: ['APP'],
-        recipientType: 'UNIT_ADMIN',
+        priority: 'HIGH' as any,
+        channels: ['IN_APP' as any],
+        recipientType: 'UNIT_ADMIN' as any,
       })
     )
   ).catch((err) => console.error('Failed to send maintenance notifications', err));

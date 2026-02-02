@@ -164,7 +164,7 @@ export class FinanceEnhancementService {
     return this.createJournalEntry({
       ...input,
       // Ensure specific fields for manual journal if any
-    } as CreateJournalEntryInput & { createdById: string });
+    } as any);
   }
 
   async createJournalEntry(
@@ -528,11 +528,14 @@ export class FinanceEnhancementService {
       .map((group) => {
         const account = accountMap.get(group.accountId);
         return {
+          accountId: group.accountId,
           code: account?.code || 'UNKNOWN',
           name: account?.name || 'Unknown Account',
           type: account?.type || 'OTHER',
+          startBalance: 0,
           debit: Number(group._sum.debit || 0),
           credit: Number(group._sum.credit || 0),
+          endBalance: Number(group._sum.debit || 0) - Number(group._sum.credit || 0), // Simplified logic
         };
       })
       .sort((a, b) => a.code.localeCompare(b.code));

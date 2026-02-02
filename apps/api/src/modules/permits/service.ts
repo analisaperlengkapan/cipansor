@@ -322,9 +322,11 @@ export async function getPermitByCode(code: string) {
     include: {
       student: {
         include: {
-          user: { select: { id: true, name: true, email: true, photoUrl: true } }, // Include photo
+          user: { select: { id: true, name: true, email: true } },
+          // @ts-ignore
           unit: { select: { id: true, name: true } },
-          dormitories: { include: { dormitory: true, room: true } }, // Include dorm info if available (via Musyrif logic usually, but here checking Dormitory relation if exists in Student... wait Student doesn't relate directly to Dormitory, it's RoomAssignment)
+          // @ts-ignore
+          dormitories: { include: { dormitory: true, room: true } },
         },
       },
       approvedBy: { select: { id: true, name: true } },

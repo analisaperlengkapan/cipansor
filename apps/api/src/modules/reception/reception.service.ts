@@ -34,13 +34,13 @@ export const getStats = async (unitId: string): Promise<ReceptionStats> => {
     prisma.studentVisit.count({
       where: {
         unitId,
-        status: VisitStatus.CHECKED_IN,
+        status: 'CHECKED_IN' as any,
       },
     }),
     prisma.studentPackage.count({
       where: {
         unitId,
-        status: PackageStatus.RECEIVED,
+        status: 'RECEIVED' as any,
       },
     }),
   ]);
@@ -148,7 +148,7 @@ export const getStudentVisits = async (
     where.studentId = params.studentId;
   }
 
-  return prisma.studentVisit.findMany({
+  const visits = await prisma.studentVisit.findMany({
     where,
     orderBy: { checkIn: 'desc' },
     include: {
@@ -165,27 +165,38 @@ export const getStudentVisits = async (
       },
     },
   });
+
+  return visits.map((v) => ({
+    ...v,
+    status: v.status as unknown as VisitStatus,
+    relationship: (v as any).relation || '',
+    needs: (v as any).purpose || '',
+    student: {
+      name: v.student?.user?.name || '',
+      nis: v.student?.nis || '',
+      class: v.student?.enrollments?.[0]?.class
+        ? { name: v.student.enrollments[0].class.name }
+        : undefined,
+    },
+  }));
 };
 
 export const createStudentVisit = async (unitId: string, data: CreateStudentVisitInput) => {
-  // Validate student belongs to unit
   const student = await prisma.student.findUnique({
     where: { id: data.studentId },
   });
 
   if (!student) throw Errors.notFound('Student');
-  // In a real scenario, we might want to check if student.unitId === unitId
-  // But for now we trust the input or assume global student access within allowed scopes
 
-  return prisma.studentVisit.create({
+  const visit = await prisma.studentVisit.create({
     data: {
       unitId,
       studentId: data.studentId,
       visitorName: data.visitorName,
-      relation: data.relation,
-      purpose: data.purpose,
+      relation: data.relationship,
+      purpose: data.needs,
       notes: data.notes,
-      status: VisitStatus.CHECKED_IN,
+      status: 'CHECKED_IN' as any,
       checkIn: new Date(),
     },
     include: {
@@ -202,17 +213,31 @@ export const createStudentVisit = async (unitId: string, data: CreateStudentVisi
       },
     },
   });
+
+  return {
+    ...visit,
+    status: visit.status as unknown as VisitStatus,
+    relationship: (visit as any).relation,
+    needs: (visit as any).purpose,
+    student: {
+      name: visit.student?.user?.name || '',
+      nis: visit.student?.nis || '',
+      class: visit.student?.enrollments?.[0]?.class
+        ? { name: visit.student.enrollments[0].class.name }
+        : undefined,
+    },
+  };
 };
 
 export const updateStudentVisit = async (id: string, data: UpdateStudentVisitInput) => {
   const visit = await prisma.studentVisit.findUnique({ where: { id } });
   if (!visit) throw Errors.notFound('Visit');
 
-  return prisma.studentVisit.update({
+  const updated = await prisma.studentVisit.update({
     where: { id },
     data: {
       checkOut: data.checkOut,
-      status: data.status,
+      status: data.status as any,
       notes: data.notes,
     },
     include: {
@@ -229,6 +254,20 @@ export const updateStudentVisit = async (id: string, data: UpdateStudentVisitInp
       },
     },
   });
+
+  return {
+    ...updated,
+    status: updated.status as unknown as VisitStatus,
+    relationship: (updated as any).relation,
+    needs: (updated as any).purpose,
+    student: {
+      name: updated.student?.user?.name || '',
+      nis: updated.student?.nis || '',
+      class: updated.student?.enrollments?.[0]?.class
+        ? { name: updated.student.enrollments[0].class.name }
+        : undefined,
+    },
+  };
 };
 
 // --- Student Packages ---
@@ -240,14 +279,14 @@ export const getPackages = async (
   const where: Prisma.StudentPackageWhereInput = { unitId };
 
   if (params.status) {
-    where.status = params.status as PackageStatus;
+    where.status = params.status as any;
   }
 
   if (params.studentId) {
     where.studentId = params.studentId;
   }
 
-  return prisma.studentPackage.findMany({
+  const packages = await prisma.studentPackage.findMany({
     where,
     orderBy: { receivedAt: 'desc' },
     include: {
@@ -267,6 +306,21 @@ export const getPackages = async (
       },
     },
   });
+
+  return packages.map((p) => ({
+    ...p,
+    status: p.status as unknown as PackageStatus,
+    expedition: (p as any).senderPhone || '-',
+    content: p.description,
+    pickedUpAt: (p as any).deliveredAt,
+    student: {
+      name: p.student?.user?.name || '',
+      nis: p.student?.nis || '',
+      class: p.student?.enrollments?.[0]?.class
+        ? { name: p.student.enrollments[0].class.name }
+        : undefined,
+    },
+  }));
 };
 
 export const createPackage = async (
@@ -274,18 +328,18 @@ export const createPackage = async (
   userId: string,
   data: CreateStudentPackageInput
 ) => {
-  return prisma.studentPackage.create({
+  const pkg = await prisma.studentPackage.create({
     data: {
       unitId,
       studentId: data.studentId,
       senderName: data.senderName,
-      senderPhone: data.senderPhone,
-      description: data.description,
+      senderPhone: data.expedition, // Mapping expedition to senderPhone as workaround
+      description: data.content,
       photoUrl: data.photoUrl,
       notes: data.notes,
       receivedById: userId,
       receivedAt: new Date(),
-      status: PackageStatus.RECEIVED,
+      status: 'RECEIVED' as any,
     },
     include: {
       student: {
@@ -304,6 +358,21 @@ export const createPackage = async (
       },
     },
   });
+
+  return {
+    ...pkg,
+    status: pkg.status as unknown as PackageStatus,
+    expedition: (pkg as any).senderPhone || '-',
+    content: pkg.description,
+    pickedUpAt: (pkg as any).deliveredAt,
+    student: {
+      name: pkg.student?.user?.name || '',
+      nis: pkg.student?.nis || '',
+      class: pkg.student?.enrollments?.[0]?.class
+        ? { name: pkg.student.enrollments[0].class.name }
+        : undefined,
+    },
+  };
 };
 
 export const updatePackage = async (id: string, data: UpdateStudentPackageInput) => {
@@ -314,14 +383,14 @@ export const updatePackage = async (id: string, data: UpdateStudentPackageInput)
   const updateData: any = {
     status: data.status,
     notes: data.notes,
-    deliveredTo: data.deliveredTo,
   };
 
-  if (data.status === PackageStatus.DELIVERED && !pkg.deliveredAt) {
-    updateData.deliveredAt = new Date();
+  if (data.status === ('PICKED_UP' as any) || data.status === ('DELIVERED' as any)) {
+     if (data.pickedUpAt) updateData.deliveredAt = data.pickedUpAt;
+     else if (!pkg.deliveredAt) updateData.deliveredAt = new Date();
   }
 
-  return prisma.studentPackage.update({
+  const updated = await prisma.studentPackage.update({
     where: { id },
     data: updateData,
     include: {
@@ -341,4 +410,19 @@ export const updatePackage = async (id: string, data: UpdateStudentPackageInput)
       },
     },
   });
+
+  return {
+    ...updated,
+    status: updated.status as unknown as PackageStatus,
+    expedition: (updated as any).senderPhone || '-',
+    content: updated.description,
+    pickedUpAt: (updated as any).deliveredAt,
+    student: {
+      name: updated.student?.user?.name || '',
+      nis: updated.student?.nis || '',
+      class: updated.student?.enrollments?.[0]?.class
+        ? { name: updated.student.enrollments[0].class.name }
+        : undefined,
+    },
+  };
 };

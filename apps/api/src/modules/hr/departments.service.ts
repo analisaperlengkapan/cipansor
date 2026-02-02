@@ -81,12 +81,14 @@ export const departmentService = {
     return {
       data,
       meta: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
       },
-    };
+    } as any;
   },
 
   async findOne(id: string) {

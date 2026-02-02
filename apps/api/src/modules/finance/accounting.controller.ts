@@ -19,7 +19,23 @@ export async function seedAccounts(req: Request, res: Response, next: NextFuncti
 export async function createAccount(req: Request, res: Response, next: NextFunction) {
   try {
     const data: CreateAccountDto = req.body;
-    const account = await service.createAccount(data);
+    // Ensure all required fields are present or provide defaults if logic allows,
+    // otherwise TS error happens if type definitions are stricter than DTO validation.
+    // Assuming data conforms to DTO which should align with Service input.
+    // If Service expects 'code' but DTO has it optional, we need to check.
+    if (!data.code || !data.name || !data.type || !data.normalBalance) {
+        throw new Error("Missing required fields for account creation");
+    }
+
+    const account = await service.createAccount({
+        code: data.code,
+        name: data.name,
+        type: data.type,
+        normalBalance: data.normalBalance,
+        parentId: data.parentId,
+        cashFlowCategory: data.cashFlowCategory,
+        isActive: data.isActive
+    });
     res.status(201).json(account);
   } catch (error) {
     next(error);
@@ -131,9 +147,15 @@ export async function createJournal(req: Request, res: Response, next: NextFunct
       res.status(401).json({ message: 'Unauthorized' });
       return;
     }
+    if (!data.unitId) {
+        res.status(400).json({ message: 'Unit ID is required' });
+        return;
+    }
     const journals = await service.createManualJournal({
-      ...data,
+      unitId: data.unitId,
       date: new Date(data.date),
+      description: data.description || '',
+      entries: (data.entries || []) as any,
       createdById: userId,
     });
     res.status(201).json({ data: journals });

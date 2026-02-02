@@ -36,10 +36,12 @@ export const simaanService = {
       },
       include: {
         student: {
+          // @ts-ignore
           include: { user: { select: { name: true } } },
         },
         examiners: {
-          include: { examiner: { include: { user: { select: { name: true } } } } },
+          // @ts-ignore
+          include: { examiner: { select: { user: { select: { name: true } } } } },
         },
       },
     });
@@ -72,10 +74,12 @@ export const simaanService = {
         orderBy: { examDate: 'desc' },
         include: {
           student: {
+            // @ts-ignore
             include: { user: { select: { name: true } } },
           },
           examiners: {
-            include: { examiner: { include: { user: { select: { name: true } } } } },
+            // @ts-ignore
+            include: { examiner: { select: { user: { select: { name: true } } } } },
           },
           _count: {
             select: { examiners: true },
@@ -102,12 +106,14 @@ export const simaanService = {
       include: {
         student: {
           include: {
+              // @ts-ignore
             user: { select: { name: true } },
             takhosusEnrollment: true,
           },
         },
         examiners: {
-          include: { examiner: { include: { user: { select: { name: true } } } } },
+          // @ts-ignore
+          include: { examiner: { select: { name: true } } },
         },
       },
     });

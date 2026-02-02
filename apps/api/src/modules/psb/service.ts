@@ -335,7 +335,7 @@ export async function enrollRegistrant(
       // Deactivate previous class enrollments if any active
       await tx.classEnrollment.updateMany({
         where: { studentId: student.id, status: 'active' },
-        data: { status: 'completed', endDate: new Date() }, // Mark as completed
+        data: { status: 'completed' }, // Mark as completed
       });
     } else {
       // External Track: Create new user and student

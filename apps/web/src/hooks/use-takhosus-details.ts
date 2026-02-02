@@ -1,6 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/lib/api";
-import { PaginatedResponse } from "@/types/api";
+import { api, PaginatedResponse } from "@/lib/api";
 import {
   MurojaahRecord,
   SimaanExam,

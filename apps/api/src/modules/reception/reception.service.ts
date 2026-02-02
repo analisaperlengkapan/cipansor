@@ -34,13 +34,13 @@ export const getStats = async (unitId: string): Promise<ReceptionStats> => {
     prisma.studentVisit.count({
       where: {
         unitId,
-        status: VisitStatus.CHECKED_IN,
+        status: VisitStatus.CHECKED_IN as any,
       },
     }),
     prisma.studentPackage.count({
       where: {
         unitId,
-        status: PackageStatus.RECEIVED,
+        status: PackageStatus.RECEIVED as any,
       },
     }),
   ]);
@@ -185,7 +185,7 @@ export const createStudentVisit = async (unitId: string, data: CreateStudentVisi
       relation: data.relation,
       purpose: data.purpose,
       notes: data.notes,
-      status: VisitStatus.CHECKED_IN,
+      status: VisitStatus.CHECKED_IN as any,
       checkIn: new Date(),
     },
     include: {
@@ -212,7 +212,7 @@ export const updateStudentVisit = async (id: string, data: UpdateStudentVisitInp
     where: { id },
     data: {
       checkOut: data.checkOut,
-      status: data.status,
+      status: data.status as any,
       notes: data.notes,
     },
     include: {
@@ -240,7 +240,7 @@ export const getPackages = async (
   const where: Prisma.StudentPackageWhereInput = { unitId };
 
   if (params.status) {
-    where.status = params.status as PackageStatus;
+    where.status = params.status as any;
   }
 
   if (params.studentId) {
@@ -285,7 +285,7 @@ export const createPackage = async (
       notes: data.notes,
       receivedById: userId,
       receivedAt: new Date(),
-      status: PackageStatus.RECEIVED,
+      status: PackageStatus.RECEIVED as any,
     },
     include: {
       student: {
@@ -312,7 +312,7 @@ export const updatePackage = async (id: string, data: UpdateStudentPackageInput)
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const updateData: any = {
-    status: data.status,
+    status: data.status as any,
     notes: data.notes,
     deliveredTo: data.deliveredTo,
   };

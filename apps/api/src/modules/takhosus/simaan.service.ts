@@ -36,7 +36,7 @@ export const simaanService = {
       },
       include: {
         student: {
-          include: { user: { select: { name: true } } },
+          select: { user: { select: { name: true } } },
         },
         examiners: {
           include: { examiner: { include: { user: { select: { name: true } } } } },
@@ -72,7 +72,7 @@ export const simaanService = {
         orderBy: { examDate: 'desc' },
         include: {
           student: {
-            include: { user: { select: { name: true } } },
+            select: { user: { select: { name: true } } },
           },
           examiners: {
             include: { examiner: { include: { user: { select: { name: true } } } } },
@@ -101,7 +101,7 @@ export const simaanService = {
       where: { id },
       include: {
         student: {
-          include: {
+          select: {
             user: { select: { name: true } },
             takhosusEnrollment: true,
           },

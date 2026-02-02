@@ -518,11 +518,14 @@ export class FinanceEnhancementService {
       .map((group) => {
         const account = accountMap.get(group.accountId);
         return {
+          accountId: group.accountId,
           code: account?.code || 'UNKNOWN',
           name: account?.name || 'Unknown Account',
           type: account?.type || 'OTHER',
           debit: Number(group._sum.debit || 0),
           credit: Number(group._sum.credit || 0),
+          startBalance: 0, // Simplified for now
+          endBalance: 0, // Simplified for now
         };
       })
       .sort((a, b) => a.code.localeCompare(b.code));

@@ -55,7 +55,7 @@ export const halaqohService = {
     return {
       data: data.map((h) => ({
         ...h,
-        studentCount: h._count.enrollments,
+        studentCount: h._count?.enrollments ?? 0,
       })),
       pagination: {
         page,
@@ -757,7 +757,7 @@ export const dashboardService = {
           enrollment: {
             include: {
               student: {
-                include: { user: { select: { name: true } } },
+                select: { user: { select: { name: true } } },
               },
             },
           },

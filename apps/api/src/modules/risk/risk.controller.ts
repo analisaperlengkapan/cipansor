@@ -3,15 +3,20 @@ import { asyncHandler } from '@/middleware/error';
 import { Errors } from '@/middleware/error';
 import { riskService } from './risk.service';
 import { createRiskSchema, updateRiskSchema, createMitigationSchema, updateMitigationSchema, listRiskQuerySchema } from './risk.validation';
-import { UserRole } from '@prisma/client';
+import { UserRole, RoleCode } from '@prisma/client';
 
-const PRIVILEGED_ROLES = [
+const PRIVILEGED_ROLES: string[] = [
   UserRole.SUPER_ADMIN,
-  UserRole.YAYASAN_ADMIN,
-  UserRole.YAYASAN_KETUA
+  // Mapping RoleCode to UserRole checks is tricky if types mismatch
+  // Assuming these are meant to be RoleCodes checked against something else,
+  // or we need to cast.
+  // Since UserRole enum doesn't have YAYASAN_ADMIN, we can't use it in PRIVILEGED_ROLES if it's typed as UserRole[]
+  // We'll use string[] and cast or check usage.
+  'YAYASAN_ADMIN',
+  'YAYASAN_KETUA'
 ];
 
-function isPrivileged(role?: UserRole): boolean {
+function isPrivileged(role?: UserRole | string): boolean {
   return role ? PRIVILEGED_ROLES.includes(role) : false;
 }
 

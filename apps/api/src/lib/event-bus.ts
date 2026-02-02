@@ -59,9 +59,23 @@ export interface AppEvents {
 
   // Health Events
   'health:medical-record-created': HealthMedicalRecordCreatedEvent;
+
+  // Message Events
+  'message:sent': MessageSentEvent;
 }
 
 // Event Payload Types
+export interface MessageSentEvent {
+  id: string;
+  senderId: string;
+  recipientId: string;
+  subject: string;
+  content: string;
+  category: string;
+  createdAt: Date;
+  isRead: boolean;
+}
+
 export interface HealthMedicalRecordCreatedEvent {
   id: string;
   studentId: string;

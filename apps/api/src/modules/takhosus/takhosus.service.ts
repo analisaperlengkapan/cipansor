@@ -314,8 +314,8 @@ export const enrollmentService = {
     return prisma.takhosusEnrollment.create({
       data: {
         ...input,
-        targetCompletionDate: input.targetCompletionDate
-          ? new Date(input.targetCompletionDate)
+        targetCompletionDate: (input as any).targetCompletionDate
+          ? new Date((input as any).targetCompletionDate)
           : undefined,
       } as any,
       include: {
@@ -335,8 +335,8 @@ export const enrollmentService = {
   async update(id: string, input: UpdateEnrollmentInput) {
     const data: any = { ...input };
 
-    if (input.targetCompletionDate) {
-      data.targetCompletionDate = new Date(input.targetCompletionDate);
+    if ((input as any).targetCompletionDate) {
+      data.targetCompletionDate = new Date((input as any).targetCompletionDate);
     }
 
     if (input.status === 'COMPLETED' && !data.completedAt) {

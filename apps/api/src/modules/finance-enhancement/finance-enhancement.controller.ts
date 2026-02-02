@@ -11,6 +11,7 @@ import {
   UpdateBudgetInput,
   CreateFinancialPeriodInput,
 } from '@cipansor/shared';
+import { CreateManualJournalInput } from './types';
 import { createBudget, updateBudget, getBudgets, deleteBudget, recalculateBudgetUsage } from './budget.service';
 import { createFinancialPeriod, closePeriod, getFinancialPeriods } from './period.service';
 import {
@@ -133,8 +134,11 @@ export class FinanceEnhancementController {
       const input: CreateManualJournalInput = req.body;
       const userId = (req as any).user.id;
 
-      await financeEnhancementService.createManualJournal({
-        ...input,
+      await financeEnhancementService.createJournalEntry({
+        unitId: input.unitId,
+        date: input.date,
+        description: input.description,
+        entries: input.entries,
         createdById: userId,
       });
 

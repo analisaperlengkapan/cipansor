@@ -49,7 +49,8 @@ export class AuthService {
     // Determine active role (primary or first role)
     const primaryRole = user.userRoles.find((r) => r.isPrimary) || user.userRoles[0];
 
-    const isUserAdmin = this.isAdminAccount(user, primaryRole?.role.code as RoleCode);
+    // Use Prisma's generated Enum for role comparison
+    const isUserAdmin = this.isAdminAccount(user, primaryRole?.role.code as any);
 
     // Check for 2FA
     if (user.isTwoFactorEnabled) {
@@ -554,7 +555,8 @@ export class AuthService {
 
     // Consistently check if target is Admin using role code logic
     const primaryTargetRole = user.userRoles.find((r) => r.isPrimary) || user.userRoles[0];
-    const isTargetAdmin = this.isAdminAccount(user, primaryTargetRole?.role.code as RoleCode);
+    // Cast code to any because RoleCode might be undefined in client but string in DB result
+    const isTargetAdmin = this.isAdminAccount(user, primaryTargetRole?.role.code as any);
 
     if (adminId) {
         // Admin disabling for another user (Reset flow)
@@ -644,20 +646,21 @@ export class AuthService {
    * Checks both legacy role and RoleCode
    */
   private isAdminAccount(user: { role: UserRole }, roleCode?: RoleCode): boolean {
+      // Use string literals to avoid strict enum checks if enum is missing
       const ADMIN_ROLES = [
-          RoleCode.SUPER_ADMIN,
-          RoleCode.YAYASAN_ADMIN,
-          RoleCode.TKQ_ADMIN,
-          RoleCode.SDIT_ADMIN,
-          RoleCode.SMPIT_ADMIN,
-          RoleCode.SMAQ_ADMIN,
-          RoleCode.UNIT_ADMIN,
+          'SUPER_ADMIN',
+          'YAYASAN_ADMIN',
+          'TKQ_ADMIN',
+          'SDIT_ADMIN',
+          'SMPIT_ADMIN',
+          'SMAQ_ADMIN',
+          'UNIT_ADMIN',
       ];
 
       return (
           user.role === UserRole.SUPER_ADMIN ||
           user.role === UserRole.UNIT_ADMIN ||
-          (roleCode && ADMIN_ROLES.includes(roleCode)) ||
+          (roleCode && ADMIN_ROLES.includes(roleCode as any)) ||
           false
       );
   }

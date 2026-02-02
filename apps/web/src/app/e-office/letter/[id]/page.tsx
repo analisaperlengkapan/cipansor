@@ -80,10 +80,10 @@ export default function LetterDetailPage({
   );
 
   // Check if it's user's turn to review
-  const myReview = letter.reviewers?.find((r) => r.reviewerId === user?.id);
+  const myReview = letter?.reviewers?.find((r) => r.reviewerId === user?.id);
   const isMyTurn =
     myReview?.status === "PENDING" &&
-    letter.reviewers
+    letter?.reviewers
       ?.filter((r) => r.order < (myReview.order || 0))
       .every((r) => r.status === "APPROVED");
 

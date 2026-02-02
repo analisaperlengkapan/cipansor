@@ -143,7 +143,7 @@ export const CorrespondenceService = {
       direction?: LetterDirection;
       status?: LetterStatus;
       search?: string;
-      scope?: 'ALL' | 'PERSONAL';
+      scope?: 'ALL' | 'PERSONAL' | 'REVIEW';
       userId?: string;
     }
   ) {

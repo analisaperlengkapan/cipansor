@@ -4,15 +4,16 @@ import { Errors } from '@/middleware/error';
 import { riskService } from './risk.service';
 import { createRiskSchema, updateRiskSchema, createMitigationSchema, updateMitigationSchema, listRiskQuerySchema } from './risk.validation';
 import { UserRole } from '@prisma/client';
+import { RoleCode } from '@cipansor/shared';
 
 const PRIVILEGED_ROLES = [
   UserRole.SUPER_ADMIN,
-  UserRole.YAYASAN_ADMIN,
-  UserRole.YAYASAN_KETUA
+  RoleCode.YAYASAN_ADMIN,
+  RoleCode.YAYASAN_KETUA
 ];
 
-function isPrivileged(role?: UserRole): boolean {
-  return role ? PRIVILEGED_ROLES.includes(role) : false;
+function isPrivileged(role?: UserRole | string): boolean {
+  return role ? (PRIVILEGED_ROLES as string[]).includes(role) : false;
 }
 
 export const listRisks = asyncHandler(async (req: Request, res: Response) => {

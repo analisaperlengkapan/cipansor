@@ -53,12 +53,12 @@ export function useTakhosusDashboard(unitId?: string) {
   return useQuery({
     queryKey: ["takhosus", "dashboard", unitId],
     queryFn: async () => {
-      const { data } = await api.get<TakhosusDashboardStats>(
-        "/takhosus/dashboard-stats",
-        {
-          params: { unitId },
-        },
-      );
+      const { data } = await api.get<{
+        success: boolean;
+        data: TakhosusDashboardStats;
+      }>("/takhosus/dashboard-stats", {
+        params: { unitId },
+      });
       return data.data;
     },
   });

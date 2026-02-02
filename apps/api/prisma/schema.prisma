@@ -348,7 +348,7 @@ model User {
   createdBudgets                    Budget[]                    @relation("BudgetCreator")
   closedPeriods                     FinancialPeriod[]           @relation("PeriodCloser")
   walletTransactions                WalletTransaction[]         @relation("WalletTransactor")
-  bookReservations                  Reservation[]
+  bookReservations                  Reservation[]               @relation("UserReservations")
   // Canteen relations
   canteenTransactions               CanteenTransaction[]        @relation("CanteenCashier")
   canteenStockMovements             CanteenStockMovement[]      @relation("CanteenStockCreator")
@@ -1917,7 +1917,7 @@ model Reservation {
   notes      String?
 
   book Book @relation(fields: [bookId], references: [id], onDelete: Cascade)
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation("UserReservations", fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([bookId])
   @@index([userId])

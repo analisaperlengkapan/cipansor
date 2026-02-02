@@ -39,6 +39,18 @@ export interface Book {
   updatedAt: Date | string;
 }
 
+export interface BookCopy {
+  id: string;
+  bookId: string;
+  code: string;
+  condition: string;
+  status: string;
+  location?: string;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+  book?: Book;
+}
+
 export interface BorrowingStudent {
   name: string;
   nis: string;
@@ -50,6 +62,7 @@ export interface BorrowingStudent {
 export interface Borrowing {
   id: string;
   bookId: string;
+  copyId?: string;
   studentId?: string;
   borrowerId: string; // Legacy/Generic
   borrowerType: string;
@@ -69,6 +82,7 @@ export interface Borrowing {
       name: string;
     };
   };
+  copy?: BookCopy;
   student?: BorrowingStudent;
   processedByUser?: {
     id: string;
@@ -78,6 +92,7 @@ export interface Borrowing {
 
 export interface CreateBorrowingInput {
   bookId: string;
+  copyId?: string;
   studentId?: string;
   borrowerId?: string;
   borrowerType: "STUDENT" | "STAFF" | "TEACHER";
@@ -88,6 +103,7 @@ export interface CreateBorrowingInput {
 export interface ReturnBookInput {
   lateFee?: number;
   notes?: string;
+  condition?: string;
 }
 
 export interface LibraryStats {

@@ -6,12 +6,10 @@ import {
   UpdateStudentVisitInput,
   CreateStudentPackageInput,
   UpdateStudentPackageInput,
-  VisitStatus,
-  PackageStatus,
   ReceptionStats,
 } from '@cipansor/shared';
 import { Errors } from '../../middleware/error';
-import { Prisma } from '@prisma/client';
+import { Prisma, VisitStatus as PrismaVisitStatus, PackageStatus as PrismaPackageStatus } from '@prisma/client';
 
 // --- Stats ---
 
@@ -34,13 +32,13 @@ export const getStats = async (unitId: string): Promise<ReceptionStats> => {
     prisma.studentVisit.count({
       where: {
         unitId,
-        status: VisitStatus.CHECKED_IN,
+        status: PrismaVisitStatus.CHECKED_IN,
       },
     }),
     prisma.studentPackage.count({
       where: {
         unitId,
-        status: PackageStatus.RECEIVED,
+        status: PrismaPackageStatus.RECEIVED,
       },
     }),
   ]);
@@ -69,7 +67,7 @@ export const getGuestBooks = async (unitId: string, params: { date?: string }) =
     };
   }
 
-  return prisma.guestBook.findMany({
+  const result = await prisma.guestBook.findMany({
     where,
     orderBy: { checkIn: 'desc' },
     include: {
@@ -78,6 +76,7 @@ export const getGuestBooks = async (unitId: string, params: { date?: string }) =
       },
     },
   });
+  return result as any;
 };
 
 export const createGuestBook = async (
@@ -85,7 +84,7 @@ export const createGuestBook = async (
   userId: string,
   data: CreateGuestBookInput
 ) => {
-  return prisma.guestBook.create({
+  const result = await prisma.guestBook.create({
     data: {
       unitId,
       name: data.name,
@@ -104,13 +103,14 @@ export const createGuestBook = async (
       },
     },
   });
+  return result as any;
 };
 
 export const updateGuestBook = async (id: string, data: UpdateGuestBookInput) => {
   const guestBook = await prisma.guestBook.findUnique({ where: { id } });
   if (!guestBook) throw Errors.notFound('Guest book entry');
 
-  return prisma.guestBook.update({
+  const result = await prisma.guestBook.update({
     where: { id },
     data: {
       checkOut: data.checkOut,
@@ -122,6 +122,7 @@ export const updateGuestBook = async (id: string, data: UpdateGuestBookInput) =>
       },
     },
   });
+  return result as any;
 };
 
 // --- Student Visits ---
@@ -148,7 +149,7 @@ export const getStudentVisits = async (
     where.studentId = params.studentId;
   }
 
-  return prisma.studentVisit.findMany({
+  const result = await prisma.studentVisit.findMany({
     where,
     orderBy: { checkIn: 'desc' },
     include: {
@@ -165,6 +166,7 @@ export const getStudentVisits = async (
       },
     },
   });
+  return result as any;
 };
 
 export const createStudentVisit = async (unitId: string, data: CreateStudentVisitInput) => {
@@ -177,15 +179,15 @@ export const createStudentVisit = async (unitId: string, data: CreateStudentVisi
   // In a real scenario, we might want to check if student.unitId === unitId
   // But for now we trust the input or assume global student access within allowed scopes
 
-  return prisma.studentVisit.create({
+  const result = await prisma.studentVisit.create({
     data: {
       unitId,
       studentId: data.studentId,
       visitorName: data.visitorName,
-      relation: data.relation,
-      purpose: data.purpose,
+      relation: data.relationship,
+      purpose: data.needs,
       notes: data.notes,
-      status: VisitStatus.CHECKED_IN,
+      status: PrismaVisitStatus.CHECKED_IN,
       checkIn: new Date(),
     },
     include: {
@@ -202,17 +204,18 @@ export const createStudentVisit = async (unitId: string, data: CreateStudentVisi
       },
     },
   });
+  return result as any;
 };
 
 export const updateStudentVisit = async (id: string, data: UpdateStudentVisitInput) => {
   const visit = await prisma.studentVisit.findUnique({ where: { id } });
   if (!visit) throw Errors.notFound('Visit');
 
-  return prisma.studentVisit.update({
+  const result = await prisma.studentVisit.update({
     where: { id },
     data: {
       checkOut: data.checkOut,
-      status: data.status,
+      status: data.status ? (data.status as unknown as PrismaVisitStatus) : undefined,
       notes: data.notes,
     },
     include: {
@@ -229,6 +232,7 @@ export const updateStudentVisit = async (id: string, data: UpdateStudentVisitInp
       },
     },
   });
+  return result as any;
 };
 
 // --- Student Packages ---
@@ -240,14 +244,14 @@ export const getPackages = async (
   const where: Prisma.StudentPackageWhereInput = { unitId };
 
   if (params.status) {
-    where.status = params.status as PackageStatus;
+    where.status = params.status as PrismaPackageStatus;
   }
 
   if (params.studentId) {
     where.studentId = params.studentId;
   }
 
-  return prisma.studentPackage.findMany({
+  const result = await prisma.studentPackage.findMany({
     where,
     orderBy: { receivedAt: 'desc' },
     include: {
@@ -267,6 +271,7 @@ export const getPackages = async (
       },
     },
   });
+  return result as any;
 };
 
 export const createPackage = async (
@@ -274,18 +279,18 @@ export const createPackage = async (
   userId: string,
   data: CreateStudentPackageInput
 ) => {
-  return prisma.studentPackage.create({
+  const result = await prisma.studentPackage.create({
     data: {
       unitId,
       studentId: data.studentId,
       senderName: data.senderName,
-      senderPhone: data.senderPhone,
-      description: data.description,
+      // senderPhone: data.senderPhone, // Not available in DTO
+      description: `[${data.expedition}] ${data.content}`,
       photoUrl: data.photoUrl,
       notes: data.notes,
       receivedById: userId,
       receivedAt: new Date(),
-      status: PackageStatus.RECEIVED,
+      status: PrismaPackageStatus.RECEIVED,
     },
     include: {
       student: {
@@ -304,6 +309,7 @@ export const createPackage = async (
       },
     },
   });
+  return result as any;
 };
 
 export const updatePackage = async (id: string, data: UpdateStudentPackageInput) => {
@@ -312,16 +318,16 @@ export const updatePackage = async (id: string, data: UpdateStudentPackageInput)
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const updateData: any = {
-    status: data.status,
+    status: data.status ? (data.status as unknown as PrismaPackageStatus) : undefined,
     notes: data.notes,
-    deliveredTo: data.deliveredTo,
+    // deliveredTo: data.deliveredTo, // Not available in DTO
   };
 
-  if (data.status === PackageStatus.DELIVERED && !pkg.deliveredAt) {
+  if ((data.status as unknown as PrismaPackageStatus) === PrismaPackageStatus.DELIVERED && !pkg.deliveredAt) {
     updateData.deliveredAt = new Date();
   }
 
-  return prisma.studentPackage.update({
+  const result = await prisma.studentPackage.update({
     where: { id },
     data: updateData,
     include: {
@@ -341,4 +347,5 @@ export const updatePackage = async (id: string, data: UpdateStudentPackageInput)
       },
     },
   });
+  return result as any;
 };

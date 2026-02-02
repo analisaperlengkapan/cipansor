@@ -683,10 +683,7 @@ export const progressService = {
       return null;
     }
 
-    // Cast halaqoh to any to avoid type check errors on 'enrollments' which sometimes Prisma fails to infer with partial select
-    const anyHalaqoh = halaqoh as any;
-
-    const students = anyHalaqoh.enrollments.map((e: any) => ({
+    const students = halaqoh.enrollments.map((e) => ({
       id: e.student.id,
       name: e.student.user.name,
       enrolledAt: e.enrolledAt,
@@ -697,7 +694,7 @@ export const progressService = {
       sanadCount: e.sanadRecords.length,
     }));
 
-    const totalProgress = students.reduce((acc: number, s: any) => acc + s.progressPercentage, 0);
+    const totalProgress = students.reduce((acc, s) => acc + s.progressPercentage, 0);
     const averageProgress = students.length > 0 ? Math.round(totalProgress / students.length) : 0;
 
     return {
@@ -713,7 +710,7 @@ export const progressService = {
       teacher: halaqoh.teacher,
       studentCount: students.length,
       averageProgress,
-      students: students.sort((a: any, b: any) => b.progressPercentage - a.progressPercentage),
+      students: students.sort((a, b) => b.progressPercentage - a.progressPercentage),
     };
   },
 };
@@ -766,6 +763,7 @@ export const dashboardService = {
           },
         },
       }),
+      // FIX: Changed teacher selection to direct access (teacher is User)
       prisma.halaqoh.findMany({
         where: halaqohWhere,
         take: 5,
@@ -782,13 +780,15 @@ export const dashboardService = {
     // Process top halaqohs by avg progress
     const halaqohPerformance = topHalaqohs
       .map((h) => {
-        const totalJuz = h.enrollments.reduce((sum, e) => sum + e.completedJuz, 0);
-        const avgJuz = h.enrollments.length > 0 ? totalJuz / h.enrollments.length : 0;
+        // FIX: Cast h.enrollments or just use it (inference should work with fixed include)
+        const enrollments = h.enrollments || [];
+        const totalJuz = enrollments.reduce((sum, e) => sum + e.completedJuz, 0);
+        const avgJuz = enrollments.length > 0 ? totalJuz / enrollments.length : 0;
         return {
           id: h.id,
           name: h.name,
-          teacherName: h.teacher.name,
-          studentCount: h.enrollments.length,
+          teacherName: h.teacher?.name || 'Unknown',
+          studentCount: enrollments.length,
           averageJuz: avgJuz,
         };
       })

@@ -3,18 +3,35 @@ import { asyncHandler } from '@/middleware/error';
 import { Errors } from '@/middleware/error';
 import { riskService } from './risk.service';
 import { createRiskSchema, updateRiskSchema, createMitigationSchema, updateMitigationSchema, listRiskQuerySchema } from './risk.validation';
-import { UserRole } from '@prisma/client';
+import { UserRole, RiskLikelihood, RiskImpact, RiskLevel } from '@prisma/client';
 
 // Only use roles that exist in the UserRole enum
 const PRIVILEGED_ROLES: UserRole[] = [
   UserRole.SUPER_ADMIN,
-  // UserRole.YAYASAN_ADMIN, // Not in UserRole enum
-  // UserRole.YAYASAN_KETUA  // Not in UserRole enum
+  UserRole.UNIT_ADMIN, // Added UNIT_ADMIN as privileged for unit-scoped operations
 ];
 
 function isPrivileged(role?: UserRole): boolean {
   return role ? PRIVILEGED_ROLES.includes(role) : false;
 }
+
+const RISK_LIKELIHOOD_MAP: Record<string, number> = {
+  RARE: 1, UNLIKELY: 2, POSSIBLE: 3, LIKELY: 4, ALMOST_CERTAIN: 5
+};
+const RISK_IMPACT_MAP: Record<string, number> = {
+  INSIGNIFICANT: 1, MINOR: 2, MODERATE: 3, MAJOR: 4, CATASTROPHIC: 5
+};
+
+const calculateRisk = (likelihood: RiskLikelihood, impact: RiskImpact) => {
+  const l = RISK_LIKELIHOOD_MAP[likelihood] || 0;
+  const i = RISK_IMPACT_MAP[impact] || 0;
+  const score = l * i;
+  let level = RiskLevel.LOW;
+  if (score >= 16) level = RiskLevel.EXTREME;
+  else if (score >= 10) level = RiskLevel.HIGH;
+  else if (score >= 5) level = RiskLevel.MEDIUM;
+  return { riskScore: score, riskLevel: level };
+};
 
 export const listRisks = asyncHandler(async (req: Request, res: Response) => {
   const unitId = req.user?.unitId;
@@ -28,7 +45,6 @@ export const listRisks = asyncHandler(async (req: Request, res: Response) => {
 
   if (!targetUnitId) throw Errors.badRequest('Unit ID required');
 
-  // Validate query parameters to prevent 500 errors on invalid enums
   const query = listRiskQuerySchema.parse({
     category: req.query.category,
     riskLevel: req.query.riskLevel,
@@ -47,7 +63,6 @@ export const getRisk = asyncHandler(async (req: Request, res: Response) => {
     throw Errors.notFound('Risk not found');
   }
 
-  // Authorization Check
   if (!isPrivileged(req.user?.role) && risk.unitId !== req.user?.unitId) {
     throw Errors.forbidden('Access denied');
   }
@@ -59,9 +74,6 @@ export const createRisk = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user?.sub;
   if (!userId) throw Errors.unauthorized('User context missing');
 
-  // Handle unitId resolution:
-  // 1. From User context (default)
-  // 2. From Request body (for SUPER_ADMIN/YAYASAN without unitId)
   const body = createRiskSchema.parse(req.body);
   let targetUnitId = req.user?.unitId;
 
@@ -73,11 +85,15 @@ export const createRisk = asyncHandler(async (req: Request, res: Response) => {
     }
   }
 
-  // Destructure to remove unitId from spread, preventing Prisma conflict
   const { unitId: _, ...rest } = body;
+
+  // Calculate Score & Level
+  const { riskScore, riskLevel } = calculateRisk(rest.likelihood, rest.impact);
 
   const risk = await riskService.createRisk({
     ...rest,
+    riskScore,
+    riskLevel,
     unit: { connect: { id: targetUnitId } },
     createdBy: { connect: { id: userId } },
   });
@@ -96,12 +112,20 @@ export const updateRisk = asyncHandler(async (req: Request, res: Response) => {
   }
 
   const body = updateRiskSchema.parse(req.body);
-
-  // Destructure unitId to prevent unauthorized modification of the risk's unit
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { unitId: _, ...updateData } = body;
 
-  const risk = await riskService.updateRisk(id, updateData);
+  // Recalculate if likelihood or impact changes
+  let calculated: { riskScore?: number, riskLevel?: RiskLevel } = {};
+  if (updateData.likelihood || updateData.impact) {
+    const l = updateData.likelihood || existingRisk.likelihood;
+    const i = updateData.impact || existingRisk.impact;
+    calculated = calculateRisk(l, i);
+  }
+
+  const risk = await riskService.updateRisk(id, {
+    ...updateData,
+    ...calculated
+  });
   res.json({ success: true, data: risk });
 });
 
@@ -127,7 +151,6 @@ export const addMitigation = asyncHandler(async (req: Request, res: Response) =>
   const body = createMitigationSchema.parse(req.body);
   const { picId, riskId, ...rest } = body;
 
-  // Verify Risk Ownership
   const risk = await riskService.getRiskById(riskId);
   if (!risk) throw Errors.notFound('Risk not found');
 
@@ -148,7 +171,6 @@ export const addMitigation = asyncHandler(async (req: Request, res: Response) =>
 export const updateMitigation = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
 
-  // Verify Mitigation Ownership via Risk
   const existingMitigation = await riskService.getMitigationById(id);
   if (!existingMitigation) throw Errors.notFound('Mitigation not found');
 
@@ -163,7 +185,6 @@ export const updateMitigation = asyncHandler(async (req: Request, res: Response)
   if (picId) {
     data.pic = { connect: { id: picId } };
   } else if (picId === null) {
-    // Explicitly null means disconnect
     data.pic = { disconnect: true };
   }
 
@@ -175,7 +196,6 @@ export const updateMitigation = asyncHandler(async (req: Request, res: Response)
 export const deleteMitigation = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
 
-  // Verify Mitigation Ownership via Risk
   const existingMitigation = await riskService.getMitigationById(id);
   if (!existingMitigation) throw Errors.notFound('Mitigation not found');
 

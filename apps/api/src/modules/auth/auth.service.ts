@@ -49,7 +49,9 @@ export class AuthService {
     // Determine active role (primary or first role)
     const primaryRole = user.userRoles.find((r) => r.isPrimary) || user.userRoles[0];
 
-    const isUserAdmin = this.isAdminAccount(user, primaryRole?.role.code as RoleCode);
+    // Determine if admin, handling potential undefined RoleCode
+    const roleCode = primaryRole?.role.code;
+    const isUserAdmin = this.isAdminAccount(user, roleCode as any); // Cast to any if RoleCode enum mismatch persists
 
     // Check for 2FA
     if (user.isTwoFactorEnabled) {
@@ -554,7 +556,10 @@ export class AuthService {
 
     // Consistently check if target is Admin using role code logic
     const primaryTargetRole = user.userRoles.find((r) => r.isPrimary) || user.userRoles[0];
-    const isTargetAdmin = this.isAdminAccount(user, primaryTargetRole?.role.code as RoleCode);
+
+    // Check roleCode safely
+    const roleCode = primaryTargetRole?.role.code;
+    const isTargetAdmin = this.isAdminAccount(user, roleCode as any);
 
     if (adminId) {
         // Admin disabling for another user (Reset flow)
@@ -644,6 +649,7 @@ export class AuthService {
    * Checks both legacy role and RoleCode
    */
   private isAdminAccount(user: { role: UserRole }, roleCode?: RoleCode): boolean {
+      // Manual list or check if RoleCode enum is available
       const ADMIN_ROLES = [
           RoleCode.SUPER_ADMIN,
           RoleCode.YAYASAN_ADMIN,

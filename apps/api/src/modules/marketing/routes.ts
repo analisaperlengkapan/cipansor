@@ -2,6 +2,7 @@ import { Router } from 'express';
 import * as marketingController from './controller';
 import { authenticate, authorize } from '@/middleware/auth';
 import { UserRole } from '@prisma/client';
+import { RoleCode } from '@cipansor/shared';
 
 const router = Router();
 
@@ -14,12 +15,12 @@ router.use(authenticate);
 // Stats
 router.get(
   '/stats',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.YAYASAN_ADMIN),
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, RoleCode.YAYASAN_ADMIN as any),
   marketingController.getStats
 );
 router.get(
   '/leads/recent',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.YAYASAN_ADMIN),
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, RoleCode.YAYASAN_ADMIN as any),
   marketingController.getRecentLeads
 );
 router.get(
@@ -36,12 +37,12 @@ router.post(
 );
 router.get(
   '/campaigns',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.YAYASAN_ADMIN),
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, RoleCode.YAYASAN_ADMIN as any),
   marketingController.getCampaigns
 );
 router.get(
   '/campaigns/:id',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.YAYASAN_ADMIN),
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, RoleCode.YAYASAN_ADMIN as any),
   marketingController.getCampaignById
 );
 router.patch(

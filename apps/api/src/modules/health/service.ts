@@ -64,7 +64,7 @@ export async function getMedicalRecords(query: QueryMedicalRecordInput & { statu
             nis: record.student.nis,
             name: record.student.user.name,
             user: record.student.user,
-            unit: record.student.unit,
+            // unit: record.student.unit, // Removed to match shared type
           }
         : undefined,
       recordedBy: record.recordedBy,
@@ -107,7 +107,7 @@ export async function getMedicalRecordById(id: string) {
       nis: record.student.nis,
       name: record.student.user.name,
       user: record.student.user,
-      unit: record.student.unit,
+      // unit: record.student.unit, // Removed
     },
     recordedBy: record.recordedBy,
   } as unknown as MedicalRecord;

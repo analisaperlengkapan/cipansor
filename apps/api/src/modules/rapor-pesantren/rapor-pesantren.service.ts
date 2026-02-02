@@ -914,6 +914,7 @@ export async function getRaporPesantrenById(id: string): Promise<RaporPesantren 
         },
       },
       academicYear: true,
+      unit: true,
     },
   });
 
@@ -932,7 +933,7 @@ export async function getRaporPesantrenById(id: string): Promise<RaporPesantren 
       address: rapor.unit.address,
       phone: rapor.unit.phone,
       email: rapor.unit.email,
-      website: rapor.unit.website,
+      website: (rapor.unit as any).website || null,
       logoUrl: rapor.unit.logoUrl,
     },
     academicYearId: rapor.academicYearId,
@@ -950,6 +951,7 @@ export async function getRaporPesantrenById(id: string): Promise<RaporPesantren 
         ? { id: currentClass.id, name: currentClass.name }
         : { id: '', name: '-' },
       dormRoom: dormRoom ? { id: dormRoom.id, name: dormRoom.name } : undefined,
+      // Removed unit property which caused error
     },
     academicYear: {
       id: rapor.academicYear.id,

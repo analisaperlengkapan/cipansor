@@ -4,15 +4,16 @@ import { Errors } from '@/middleware/error';
 import { riskService } from './risk.service';
 import { createRiskSchema, updateRiskSchema, createMitigationSchema, updateMitigationSchema, listRiskQuerySchema } from './risk.validation';
 import { UserRole } from '@prisma/client';
+import { RoleCode } from '@cipansor/shared';
 
 const PRIVILEGED_ROLES = [
   UserRole.SUPER_ADMIN,
-  UserRole.YAYASAN_ADMIN,
-  UserRole.YAYASAN_KETUA
+  RoleCode.YAYASAN_ADMIN,
+  RoleCode.YAYASAN_KETUA
 ];
 
 function isPrivileged(role?: UserRole): boolean {
-  return role ? PRIVILEGED_ROLES.includes(role) : false;
+  return role ? PRIVILEGED_ROLES.includes(role as any) : false;
 }
 
 export const listRisks = asyncHandler(async (req: Request, res: Response) => {
@@ -77,6 +78,9 @@ export const createRisk = asyncHandler(async (req: Request, res: Response) => {
 
   const risk = await riskService.createRisk({
     ...rest,
+    riskScore: rest.riskScore ?? 0,
+    riskLevel: rest.riskLevel ?? 'LOW',
+    code: rest.code || 'RSK-DEFAULT',
     unit: { connect: { id: targetUnitId } },
     createdBy: { connect: { id: userId } },
   });
@@ -136,9 +140,11 @@ export const addMitigation = asyncHandler(async (req: Request, res: Response) =>
 
   const mitigation = await riskService.createMitigation({
     ...rest,
+    strategy: rest.strategy ?? 'REDUCE',
     risk: { connect: { id: riskId } },
     createdBy: { connect: { id: userId } },
     pic: picId ? { connect: { id: picId } } : undefined,
+    actionPlan: rest.actionPlan ?? '',
   });
 
   res.status(201).json({ success: true, data: mitigation });

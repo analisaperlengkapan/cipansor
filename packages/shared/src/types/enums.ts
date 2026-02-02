@@ -153,3 +153,17 @@ export enum ComplaintStatus {
   RESOLVED = "RESOLVED",
   REJECTED = "REJECTED",
 }
+
+// Visit Status
+export enum VisitStatus {
+  CHECKED_IN = "CHECKED_IN",
+  CHECKED_OUT = "CHECKED_OUT",
+  CANCELLED = "CANCELLED",
+}
+
+// Package Status
+export enum PackageStatus {
+  RECEIVED = "RECEIVED",
+  DELIVERED = "DELIVERED",
+  RETURNED = "RETURNED",
+}

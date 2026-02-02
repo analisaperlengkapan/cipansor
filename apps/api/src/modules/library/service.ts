@@ -184,8 +184,11 @@ export async function addBookCopy(bookId: string, data: CreateBookCopyInput) {
 
     const copy = await tx.bookCopy.create({
       data: {
-        ...data,
-        bookId,
+        code: data.code,
+        status: data.status,
+        location: data.location,
+        condition: data.condition,
+        book: { connect: { id: bookId } },
       },
     });
 
@@ -211,7 +214,9 @@ export async function getBookCopies(bookId: string) {
         where: { status: BorrowingStatus.ACTIVE },
         take: 1,
         include: {
-           student: { select: { name: true } },
+           student: {
+             select: { user: { select: { name: true } } }
+           },
            book: { select: { title: true } }
         }
       }
@@ -233,7 +238,9 @@ export async function findCopyByCode(code: string) {
         where: { status: BorrowingStatus.ACTIVE },
         take: 1,
         include: {
-           student: true
+           student: {
+             include: { user: { select: { name: true } } }
+           }
         }
       }
     },
@@ -272,7 +279,17 @@ export async function getBorrowings(query: QueryBorrowingInput) {
           },
         },
         copy: true, // Include copy details
-        student: { select: { name: true, nis: true, class: { select: { name: true } } } },
+        student: {
+          select: {
+            user: { select: { name: true } },
+            nis: true,
+            enrollments: {
+              where: { status: 'active' },
+              select: { class: { select: { name: true } } },
+              take: 1,
+            },
+          },
+        },
         processedByUser: { select: { id: true, name: true } },
       },
       orderBy: { borrowedAt: 'desc' },
@@ -355,7 +372,17 @@ export async function createBorrowing(data: CreateBorrowingInput, processedBy: s
       include: {
         book: { select: { id: true, title: true, author: true } },
         copy: true,
-        student: { select: { name: true, nis: true, class: { select: { name: true } } } },
+        student: {
+          select: {
+            user: { select: { name: true } },
+            nis: true,
+            enrollments: {
+              where: { status: 'active' },
+              select: { class: { select: { name: true } } },
+              take: 1,
+            },
+          },
+        },
         processedByUser: { select: { id: true, name: true } },
       },
     });
@@ -383,7 +410,7 @@ export async function returnBook(id: string, data: ReturnBookInput, processedBy:
     throw new Error('Borrowing not found or already returned');
   }
 
-  const isOverdue = new Date() > borrowing.dueDate;
+  const isOverdue = new Date().getTime() > borrowing.dueDate.getTime();
 
   return prisma.$transaction(async (tx) => {
     // 1. Update Borrowing
@@ -482,7 +509,7 @@ export async function getLibraryStats(unitId: string) {
 
   const activeBorrowings = activeBorrowingsData.length;
   const now = new Date();
-  const overdueBorrowings = activeBorrowingsData.filter((b) => b.dueDate < now).length;
+  const overdueBorrowings = activeBorrowingsData.filter((b) => b.dueDate.getTime() < now.getTime()).length;
 
   return {
     totalTitles: totalBooks._count,

@@ -5,7 +5,13 @@ import { Prisma } from '@prisma/client';
 export const createCampaign = async (data: CreateCampaignInput, userId: string) => {
   return prisma.marketingCampaign.create({
     data: {
-      ...data,
+      code: data.code,
+      name: data.name,
+      description: data.description,
+      startDate: new Date(data.startDate),
+      endDate: data.endDate ? new Date(data.endDate) : null,
+      budget: data.budget ? new Prisma.Decimal(data.budget) : null,
+      unitId: data.unitId,
       createdById: userId,
     },
   });
@@ -76,7 +82,11 @@ export const getCampaignByCode = async (code: string) => {
 export const logInteraction = async (data: LogInteractionInput, userId: string) => {
   return prisma.marketingInteraction.create({
     data: {
-      ...data,
+      date: new Date(data.date),
+      type: data.type,
+      notes: data.notes,
+      nextActionDate: data.nextActionDate ? new Date(data.nextActionDate) : null,
+      registrantId: data.registrantId,
       recordedById: userId,
     },
   });

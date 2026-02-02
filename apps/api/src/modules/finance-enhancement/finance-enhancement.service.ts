@@ -157,6 +157,12 @@ export class FinanceEnhancementService {
     };
   }
 
+  async createManualJournal(
+    input: CreateJournalEntryInput & { createdById: string }
+  ): Promise<JournalEntry> {
+    return this.createJournalEntry(input);
+  }
+
   async createJournalEntry(
     input: CreateJournalEntryInput & { createdById: string }
   ): Promise<JournalEntry> {
@@ -518,11 +524,14 @@ export class FinanceEnhancementService {
       .map((group) => {
         const account = accountMap.get(group.accountId);
         return {
+          accountId: group.accountId,
           code: account?.code || 'UNKNOWN',
           name: account?.name || 'Unknown Account',
           type: account?.type || 'OTHER',
+          startBalance: 0, // Placeholder, would need previous period calc
           debit: Number(group._sum.debit || 0),
           credit: Number(group._sum.credit || 0),
+          endBalance: Number(group._sum.debit || 0) - Number(group._sum.credit || 0), // Simplified
         };
       })
       .sort((a, b) => a.code.localeCompare(b.code));

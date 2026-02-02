@@ -1,19 +1,6 @@
 // Reception / Front Office Module Types
 
-export enum VisitStatus {
-  PENDING = "PENDING",
-  APPROVED = "APPROVED",
-  REJECTED = "REJECTED",
-  COMPLETED = "COMPLETED",
-  CANCELLED = "CANCELLED",
-}
-
-export enum PackageStatus {
-  RECEIVED = "RECEIVED",
-  NOTIFIED = "NOTIFIED",
-  PICKED_UP = "PICKED_UP",
-  RETURNED = "RETURNED",
-}
+import { VisitStatus, PackageStatus } from "./enums";
 
 export interface GuestBook {
   id: string;

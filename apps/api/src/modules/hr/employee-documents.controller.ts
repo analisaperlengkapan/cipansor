@@ -16,7 +16,10 @@ export const employeeDocumentController = {
   async create(req: Request, res: Response, next: NextFunction) {
     try {
       const data = createDocumentSchema.parse(req.body);
-      const result = await employeeDocumentService.create(data);
+      const result = await employeeDocumentService.create({
+        ...data,
+        userId: data.userId, // Explicitly pass required field
+      });
       res.status(201).json({ success: true, data: result });
     } catch (error) {
       next(error);

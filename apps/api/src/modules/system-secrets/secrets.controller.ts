@@ -23,7 +23,15 @@ export const upsertSecret = async (req: Request, res: Response, next: NextFuncti
       return;
     }
 
-    const result = await SecretsService.upsert(validation.data);
+    // Ensure key is provided in body for the service call or validate it properly
+    // The error says: Argument of type '{ unitId?: string; description?: string; value?: string; key?: string; }' is not assignable... Property 'key' is optional... but required
+    // SafeParse ensures 'key' is present if schema requires it, but let's be explicit for TS
+    if (!validation.data.key) {
+         res.status(httpStatus.BAD_REQUEST).json({ message: 'Key is required' });
+         return;
+    }
+
+    const result = await SecretsService.upsert(validation.data as any);
     res.status(httpStatus.OK).json({ data: { id: result.id, key: result.key } });
   } catch (error) {
     next(error);

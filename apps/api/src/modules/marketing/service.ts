@@ -3,9 +3,11 @@ import { CreateCampaignInput, LogInteractionInput, UpdateCampaignInput } from '.
 import { Prisma } from '@prisma/client';
 
 export const createCampaign = async (data: CreateCampaignInput, userId: string) => {
+  const { unitId, ...rest } = data;
   return prisma.marketingCampaign.create({
     data: {
-      ...data,
+      ...rest,
+      unitId: unitId ?? undefined,
       createdById: userId,
     },
   });

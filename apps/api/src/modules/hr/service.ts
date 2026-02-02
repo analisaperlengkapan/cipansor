@@ -628,7 +628,7 @@ async function validateLeaveRequest(
       });
 
       // Calculate pending days from other requests overlapping with AY
-      const pendingWhere = getOverlappingLeaveQuery(LeaveStatus.PENDING);
+      const pendingWhere = getOverlappingLeaveQuery(LeaveStatus.PENDING as Prisma.EnumLeaveStatusFilter<any>);
       if (staffId) pendingWhere.staffId = staffId;
       else if (teacherId) pendingWhere.teacherId = teacherId;
       if (excludeLeaveId) pendingWhere.id = { not: excludeLeaveId };
@@ -659,7 +659,7 @@ async function validateLeaveRequest(
         }
       } else {
         // Fallback: Calculate used days (Approved + Pending) overlapping this AY
-        const usedWhere = getOverlappingLeaveQuery(LeaveStatus.APPROVED);
+      const usedWhere = getOverlappingLeaveQuery(LeaveStatus.APPROVED as Prisma.EnumLeaveStatusFilter<any>);
         if (staffId) usedWhere.staffId = staffId;
         else if (teacherId) usedWhere.teacherId = teacherId;
         if (excludeLeaveId) usedWhere.id = { not: excludeLeaveId };

@@ -926,7 +926,7 @@ export async function getRaporPesantrenById(id: string): Promise<RaporPesantren 
     id: rapor.id,
     studentId: rapor.studentId,
     unitId: rapor.unitId,
-    unit: {
+    unit: rapor.unit ? {
       id: rapor.unit.id,
       name: rapor.unit.name,
       address: rapor.unit.address,
@@ -934,7 +934,7 @@ export async function getRaporPesantrenById(id: string): Promise<RaporPesantren 
       email: rapor.unit.email,
       website: rapor.unit.website,
       logoUrl: rapor.unit.logoUrl,
-    },
+    } : undefined,
     academicYearId: rapor.academicYearId,
     semester: rapor.semester,
     status: rapor.status as RaporPesantren['status'],

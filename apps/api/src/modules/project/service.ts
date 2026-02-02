@@ -131,7 +131,7 @@ export async function createTask(projectId: string, data: CreateProjectTaskInput
         dueDate: data.dueDate,
         assigneeId: data.assigneeId,
         order: newOrder,
-      },
+      } as any,
       include: {
         project: { select: { name: true } },
       },

@@ -356,8 +356,8 @@ export async function createMaintenanceRequest(
         message: `Permintaan maintenance untuk aset ${asset.code} - ${asset.name}: ${data.description}`,
         link: `/inventory/${asset.id}?tab=maintenance`,
         priority: 1,
-        channels: ['APP'],
-        recipientType: 'UNIT_ADMIN',
+        channels: ['IN_APP'],
+        recipientType: 'UNIT',
       })
     )
   ).catch((err) => console.error('Failed to send maintenance notifications', err));

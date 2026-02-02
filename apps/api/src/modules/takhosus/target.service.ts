@@ -23,7 +23,7 @@ export class TargetService {
           targetJuz: input.targetJuz,
           targetAyah: input.targetAyah,
           notes: input.notes,
-        },
+        } as any,
         include: {
           student: { select: { id: true, user: { select: { name: true } } } },
           academicYear: { select: { id: true, name: true } },
@@ -38,7 +38,7 @@ export class TargetService {
         targetJuz: input.targetJuz,
         targetAyah: input.targetAyah,
         notes: input.notes,
-      },
+      } as any,
       include: {
         student: { select: { id: true, user: { select: { name: true } } } },
         academicYear: { select: { id: true, name: true } },

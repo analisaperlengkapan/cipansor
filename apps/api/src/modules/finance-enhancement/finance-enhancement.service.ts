@@ -5,6 +5,7 @@ import {
   UpdateAccountCodeInput,
   JournalEntry,
   CreateJournalEntryInput,
+  CreateManualJournalInput,
   Scholarship,
   CreateScholarshipInput,
   ScholarshipRecipient,
@@ -155,6 +156,15 @@ export class FinanceEnhancementService {
         },
       },
     };
+  }
+
+  async createManualJournal(
+    input: CreateManualJournalInput & { createdById: string }
+  ): Promise<JournalEntry> {
+    return this.createJournalEntry({
+      ...input,
+      // Ensure specific fields for manual journal if any
+    } as CreateJournalEntryInput & { createdById: string });
   }
 
   async createJournalEntry(

@@ -59,7 +59,7 @@ export class AttendanceService {
     // Date filtering with timezone safety
     if (date) {
       // query.date is a string (YYYY-MM-DD) from schema
-      const d = new Date(date);
+      const d = new Date(date as string);
       // Use string comparison for date part to avoid timezone shifts if storing as Date
       // OR explicitly set UTC boundaries if the DB stores timestamps
       // Assuming DB stores DateTime (timestamp), we need range coverage
@@ -77,8 +77,8 @@ export class AttendanceService {
       };
     } else if (startDate && endDate) {
       where.date = {
-        gte: new Date(startDate),
-        lte: new Date(endDate),
+        gte: new Date(startDate as string),
+        lte: new Date(endDate as string),
       };
     }
 
@@ -173,7 +173,7 @@ export class AttendanceService {
     }
 
     // Check for duplicate attendance on same date
-    const inputDate = new Date(input.date);
+    const inputDate = new Date(input.date as string);
     const startOfDay = new Date(
       Date.UTC(inputDate.getFullYear(), inputDate.getMonth(), inputDate.getDate(), 0, 0, 0, 0)
     );
@@ -249,7 +249,7 @@ export class AttendanceService {
     // Get all enrolled students
     const enrolledStudentIds = await prisma.classEnrollment
       .findMany({
-        where: { classId: input.classId, status: 'active' },
+        where: { classId: input.classId, status: 'active', student: { deletedAt: null } },
         select: { studentId: true },
       })
       .then((e) => e.map((x) => x.studentId));
@@ -262,7 +262,7 @@ export class AttendanceService {
     }
 
     // Check for existing attendance on this date
-    const targetDate = new Date(input.date);
+    const targetDate = new Date(input.date as string);
     const startOfDay = new Date(
       Date.UTC(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), 0, 0, 0, 0)
     );
@@ -401,8 +401,8 @@ export class AttendanceService {
 
     const where: Prisma.AttendanceWhereInput = {
       date: {
-        gte: new Date(startDate),
-        lte: new Date(endDate),
+        gte: new Date(startDate as string),
+        lte: new Date(endDate as string),
       },
     };
 
@@ -479,7 +479,7 @@ export class AttendanceService {
 
     // Ensure type safety for the return
     return {
-      period: { startDate, endDate },
+      period: { startDate: startDate as string, endDate: endDate as string },
       counts: counts as AttendanceSummary['counts'],
       percentages: percentages as AttendanceSummary['percentages'],
     };

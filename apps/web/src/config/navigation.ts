@@ -802,6 +802,11 @@ const adminNavigation: NavGroup[] = [
         icon: HeartHandshake,
       },
       {
+        title: "Risk Monitoring",
+        href: "/counseling/risk",
+        icon: AlertTriangle,
+      },
+      {
         title: "Piket Santri",
         href: "/duty-roster",
         icon: ClipboardList,

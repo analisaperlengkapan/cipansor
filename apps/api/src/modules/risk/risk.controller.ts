@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { asyncHandler } from '@/middleware/error';
 import { Errors } from '@/middleware/error';
 import { riskService } from './risk.service';
+import { studentRiskService } from './student-risk.service';
 import { createRiskSchema, updateRiskSchema, createMitigationSchema, updateMitigationSchema, listRiskQuerySchema } from './risk.validation';
 import { UserRole } from '@prisma/client';
 
@@ -184,4 +185,29 @@ export const deleteMitigation = asyncHandler(async (req: Request, res: Response)
 
   await riskService.deleteMitigation(id);
   res.json({ success: true, message: 'Mitigation deleted' });
+});
+
+// Student Risk Analysis
+export const getAtRiskStudents = asyncHandler(async (req: Request, res: Response) => {
+  const unitId = req.user?.unitId;
+  const isPrivilegedUser = isPrivileged(req.user?.role);
+
+  if (!unitId && !isPrivilegedUser) throw Errors.unauthorized('Unit ID required');
+
+  const targetUnitId = (isPrivilegedUser && req.query.unitId)
+    ? String(req.query.unitId)
+    : unitId;
+
+  if (!targetUnitId) throw Errors.badRequest('Unit ID required');
+
+  const minScore = req.query.minScore ? Number(req.query.minScore) : 20;
+
+  const students = await studentRiskService.getAtRiskStudents(targetUnitId, minScore);
+  res.json({ success: true, data: students });
+});
+
+export const getStudentRiskProfile = asyncHandler(async (req: Request, res: Response) => {
+  const { studentId } = req.params;
+  const profile = await studentRiskService.calculateStudentRisk(studentId);
+  res.json({ success: true, data: profile });
 });

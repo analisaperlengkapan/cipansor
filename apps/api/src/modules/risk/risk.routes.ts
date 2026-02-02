@@ -19,6 +19,11 @@ router.use(
 
 router.get('/', riskController.listRisks);
 router.post('/', riskController.createRisk);
+
+// Student Risk Routes (Must be before /:id)
+router.get('/students', riskController.getAtRiskStudents);
+router.get('/students/:studentId', riskController.getStudentRiskProfile);
+
 router.get('/:id', riskController.getRisk);
 router.put('/:id', riskController.updateRisk);
 router.delete('/:id', riskController.deleteRisk);

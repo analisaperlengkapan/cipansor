@@ -22,7 +22,7 @@ jobs:
   # Lint and Type Check
   lint:
     name: Lint & Type Check
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     permissions:
       contents: read
     steps:
@@ -60,7 +60,7 @@ jobs:
   # Build API
   build-api:
     name: Build API
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: lint
     permissions:
       contents: read
@@ -96,7 +96,7 @@ jobs:
   # Build Web
   build-web:
     name: Build Web
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: lint
     permissions:
       contents: read
@@ -129,7 +129,7 @@ jobs:
   # Run Tests
   test:
     name: Run Tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: [build-api]
     permissions:
       contents: read
@@ -160,7 +160,7 @@ jobs:
   # Docker Build (on main branch only)
   docker-build:
     name: Docker Build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: [build-api, build-web]
     permissions:
       contents: read

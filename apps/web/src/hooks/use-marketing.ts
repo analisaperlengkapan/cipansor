@@ -101,7 +101,6 @@ export const useCampaign = (id: string) => {
   return useQuery({
     queryKey: ["marketing", "campaigns", id],
     queryFn: async () => {
-      if (!code) throw new Error("Code is required");
       const { data } = await api.get<{
         success: boolean;
         data: MarketingCampaign;
@@ -158,6 +157,7 @@ export const usePublicCampaign = (code?: string | null) => {
   return useQuery({
     queryKey: ["marketing", "public", "campaign", code],
     queryFn: async () => {
+      if (!code) throw new Error("Code is required");
       const { data } = await api.get<{
         success: boolean;
         data: MarketingCampaign;

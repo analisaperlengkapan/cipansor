@@ -313,7 +313,7 @@ export class CBTService {
         gradedAnswers.push(
           prisma.examAnswer.update({
             where: { id: studentAnswer.id },
-            data: { isCorrect, score },
+            data: { isCorrect, score: new Prisma.Decimal(score) },
           })
         );
       }

@@ -18,6 +18,7 @@ interface AuthState {
   switchRole: (roleAssignmentId: string) => Promise<void>;
   clearError: () => void;
   resetAuth: () => void;
+  token: string | null; // Derived from localStorage via get(), but explicit for types
 }
 
 // Custom storage that syncs with cookies for middleware
@@ -56,6 +57,8 @@ export const useAuthStore = create<AuthState>()(
       requiresTwoFactorSetup: false,
       tempToken: null,
 
+      token: null, // Initial state
+
       login: async (credentials: LoginRequest) => {
         set({ isLoading: true, error: null });
         try {
@@ -92,7 +95,7 @@ export const useAuthStore = create<AuthState>()(
           // Also set token in cookie for middleware
           document.cookie = `accessToken=${accessToken}; path=/; max-age=86400; samesite=lax`;
 
-          set({ user, isAuthenticated: true, isLoading: false, requiresTwoFactor: false, requiresTwoFactorSetup: false, tempToken: null });
+          set({ user, isAuthenticated: true, isLoading: false, requiresTwoFactor: false, requiresTwoFactorSetup: false, tempToken: null, token: accessToken });
         } catch (error: unknown) {
           const message =
             error instanceof Error ? error.message : "Login failed";
@@ -129,7 +132,7 @@ export const useAuthStore = create<AuthState>()(
           localStorage.setItem("refreshToken", refreshToken);
           document.cookie = `accessToken=${accessToken}; path=/; max-age=86400; samesite=lax`;
 
-          set({ user, isAuthenticated: true, isLoading: false, requiresTwoFactor: false, tempToken: null });
+          set({ user, isAuthenticated: true, isLoading: false, requiresTwoFactor: false, tempToken: null, token: accessToken });
         } catch (error: unknown) {
            const message =
             error instanceof Error ? error.message : "2FA Verification failed";
@@ -155,18 +158,18 @@ export const useAuthStore = create<AuthState>()(
           // Also remove from cookies
           document.cookie = "accessToken=; path=/; max-age=0";
           document.cookie = "auth-storage=; path=/; max-age=0";
-          set({ user: null, isAuthenticated: false, requiresTwoFactor: false, requiresTwoFactorSetup: false, tempToken: null });
+          set({ user: null, isAuthenticated: false, requiresTwoFactor: false, requiresTwoFactorSetup: false, tempToken: null, token: null });
         }
       },
 
       fetchUser: async () => {
         const token = localStorage.getItem("accessToken");
         if (!token) {
-          set({ isAuthenticated: false, user: null });
+          set({ isAuthenticated: false, user: null, token: null });
           return;
         }
 
-        set({ isLoading: true });
+        set({ isLoading: true, token }); // Ensure token is in state
         try {
           const response = await authApi.me();
           set({
@@ -180,7 +183,7 @@ export const useAuthStore = create<AuthState>()(
           // Also remove from cookies
           document.cookie = "accessToken=; path=/; max-age=0";
           document.cookie = "auth-storage=; path=/; max-age=0";
-          set({ user: null, isAuthenticated: false, isLoading: false });
+          set({ user: null, isAuthenticated: false, isLoading: false, token: null });
         }
       },
 
@@ -197,7 +200,7 @@ export const useAuthStore = create<AuthState>()(
 
           // Fetch updated user data
           const userResponse = await authApi.me();
-          set({ user: userResponse.data.data, isLoading: false });
+          set({ user: userResponse.data.data, isLoading: false, token: accessToken });
 
           // Reload page to refresh navigation and permissions
           window.location.reload();
@@ -220,7 +223,7 @@ export const useAuthStore = create<AuthState>()(
           localStorage.removeItem("refreshToken");
           document.cookie = "accessToken=; path=/; max-age=0";
           document.cookie = "auth-storage=; path=/; max-age=0";
-          set({ user: null, isAuthenticated: false, requiresTwoFactor: false, requiresTwoFactorSetup: false, tempToken: null, error: null });
+          set({ user: null, isAuthenticated: false, requiresTwoFactor: false, requiresTwoFactorSetup: false, tempToken: null, error: null, token: null });
       },
 
       clearError: () => set({ error: null }),

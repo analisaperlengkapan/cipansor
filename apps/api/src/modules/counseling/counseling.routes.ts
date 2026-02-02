@@ -26,6 +26,13 @@ router.get(
   counselingController.getStatistics.bind(counselingController)
 );
 
+// Get at-risk students
+router.get(
+  '/at-risk',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
+  counselingController.getAtRiskStudents.bind(counselingController)
+);
+
 // Get student counseling history
 router.get(
   '/students/:studentId/history',

@@ -149,6 +149,17 @@ export interface CreateSessionInput {
   parentNotified?: boolean;
 }
 
+export interface AtRiskStudent {
+  studentId: string;
+  name: string;
+  className: string;
+  totalPoints: number;
+  lastViolation: {
+    description: string;
+    occurredAt: string;
+  } | null;
+}
+
 // Category config
 export const COUNSELING_CATEGORIES: Array<{
   value: CounselingCategory;
@@ -306,6 +317,18 @@ export function useStudentCounselingHistory(studentId: string) {
       return response.data.data;
     },
     enabled: !!studentId,
+  });
+}
+
+export function useAtRiskStudents() {
+  return useQuery({
+    queryKey: ["counseling-at-risk"],
+    queryFn: async () => {
+      const response = await api.get<ApiResponse<AtRiskStudent[]>>(
+        "/counseling/at-risk"
+      );
+      return response.data.data;
+    },
   });
 }
 

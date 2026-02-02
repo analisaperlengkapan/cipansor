@@ -2,7 +2,7 @@ import { prisma } from '../../lib/prisma';
 import { CreateViolationDto, UpdateViolationDto, QueryViolationDto } from './schema';
 
 export async function createViolation(data: CreateViolationDto, reportedById: string) {
-  return prisma.violation.create({
+  const violation = await prisma.violation.create({
     data: {
       ...data,
       occurredAt: new Date(data.occurredAt),
@@ -17,6 +17,71 @@ export async function createViolation(data: CreateViolationDto, reportedById: st
       reportedBy: { select: { id: true, name: true } },
     },
   });
+
+  // Check for auto-referral logic
+  try {
+    const totalPoints = await getStudentViolationPoints(data.studentId);
+    if (totalPoints >= 50) {
+      const activeSession = await prisma.counselingSession.findFirst({
+        where: {
+          studentId: data.studentId,
+          status: { in: ['SCHEDULED' as any, 'IN_PROGRESS' as any] },
+        },
+      });
+
+      if (!activeSession) {
+        // Determine counselor: Try Reporter (if Teacher) -> Try Homeroom Teacher
+        let counselorId: string | undefined;
+
+        // Check if reporter is a teacher
+        const reporterAsTeacher = await prisma.teacher.findUnique({
+          where: { userId: reportedById },
+        });
+
+        if (reporterAsTeacher) {
+          counselorId = reporterAsTeacher.id;
+        } else {
+          // Check homeroom teacher
+          const enrollment = await prisma.classEnrollment.findFirst({
+            where: { studentId: data.studentId, status: 'active' },
+            include: { class: true },
+          });
+          if (enrollment?.class?.homeroomTeacherId) {
+            counselorId = enrollment.class.homeroomTeacherId;
+          }
+        }
+
+        if (counselorId) {
+          const student = await prisma.student.findUnique({
+            where: { id: data.studentId },
+            select: { unitId: true },
+          });
+
+          if (student) {
+            await prisma.counselingSession.create({
+              data: {
+                unitId: student.unitId,
+                studentId: data.studentId,
+                counselorId: counselorId,
+                category: 'BEHAVIOR' as any,
+                priority: 'HIGH' as any,
+                title: 'Auto-referral: High Violation Points',
+                description: `Student has accumulated ${totalPoints} violation points. Latest violation: ${data.description}`,
+                scheduledAt: new Date(), // Schedule for today/now as placeholder
+                status: 'SCHEDULED' as any,
+                isConfidential: true,
+              },
+            });
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error in auto-referral logic:', error);
+    // Don't block the violation creation
+  }
+
+  return violation;
 }
 
 export async function getViolations(query: QueryViolationDto) {

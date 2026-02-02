@@ -598,6 +598,65 @@ export class CounselingService {
       })),
     };
   }
+
+  /**
+   * Get students at risk (high violation points)
+   */
+  async getAtRiskStudents(currentUser: AuthenticatedUser) {
+    const where: Prisma.ViolationWhereInput = {};
+
+    if (currentUser.role !== UserRole.SUPER_ADMIN && currentUser.unitId) {
+      where.student = { unitId: currentUser.unitId };
+    }
+
+    // Group by student and sum points
+    const aggregated = await prisma.violation.groupBy({
+      by: ['studentId'],
+      where,
+      _sum: { points: true },
+      having: {
+        points: {
+          _sum: {
+            gte: 50,
+          },
+        },
+      },
+      orderBy: {
+        _sum: {
+          points: 'desc',
+        },
+      },
+    });
+
+    const studentIds = aggregated.map((a) => a.studentId);
+
+    const students = await prisma.student.findMany({
+      where: { id: { in: studentIds } },
+      include: {
+        user: { select: { name: true } },
+        enrollments: {
+          where: { status: 'active' },
+          include: { class: { select: { name: true } } },
+        },
+        violations: {
+          orderBy: { occurredAt: 'desc' },
+          take: 1,
+          select: { description: true, occurredAt: true },
+        },
+      },
+    });
+
+    return aggregated.map((agg) => {
+      const student = students.find((s) => s.id === agg.studentId);
+      return {
+        studentId: agg.studentId,
+        name: student?.user.name || 'Unknown',
+        className: student?.enrollments[0]?.class?.name || '-',
+        totalPoints: agg._sum.points || 0,
+        lastViolation: student?.violations[0] || null,
+      };
+    });
+  }
 }
 
 export const counselingService = new CounselingService();

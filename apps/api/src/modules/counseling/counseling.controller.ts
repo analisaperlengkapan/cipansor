@@ -209,6 +209,20 @@ export class CounselingController {
       next(error);
     }
   }
+
+  async getAtRiskStudents(
+    req: Request,
+    res: Response<ApiResponse<any>>,
+    next: NextFunction
+  ) {
+    try {
+      const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
+      const students = await counselingService.getAtRiskStudents(user);
+      res.json({ success: true, data: students });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export const counselingController = new CounselingController();

@@ -15,7 +15,7 @@ interface GetLettersParams {
   direction?: LetterDirection;
   status?: LetterStatus;
   search?: string;
-  scope?: "ALL" | "PERSONAL";
+  scope?: "ALL" | "PERSONAL" | "REVIEW";
 }
 
 export function useCorrespondence(unitId?: string) {

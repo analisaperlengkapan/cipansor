@@ -79,6 +79,14 @@ export default function LetterDetailPage({
     (d) => d.recipientId === user?.id && d.status !== "COMPLETED",
   );
 
+  // Check if it's user's turn to review
+  const myReview = letter.reviewers?.find((r) => r.reviewerId === user?.id);
+  const isMyTurn =
+    myReview?.status === "PENDING" &&
+    letter.reviewers
+      ?.filter((r) => r.order < (myReview.order || 0))
+      .every((r) => r.status === "APPROVED");
+
   const handleUpdateDisposition = async (
     status: "IN_PROGRESS" | "COMPLETED",
     notes?: string,
@@ -512,37 +520,39 @@ export default function LetterDetailPage({
                 Disposisi
               </Button>
 
-              {/* Approval Actions (Mock Logic - should check if user is current reviewer) */}
-              <div className="pt-4 border-t space-y-3">
-                <p className="text-xs font-medium text-muted-foreground mb-2">
-                  Persetujuan
-                </p>
-                <Textarea
-                  placeholder="Catatan persetujuan..."
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  className="mb-2 text-xs"
-                />
-                <div className="flex gap-2">
-                  <Button
-                    className="flex-1 bg-green-600 hover:bg-green-700"
-                    size="sm"
-                    onClick={() => handleReview("APPROVE")}
-                  >
-                    <CheckCircle className="mr-2 h-3 w-3" />
-                    Setuju
-                  </Button>
-                  <Button
-                    className="flex-1"
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => handleReview("REJECT")}
-                  >
-                    <XCircle className="mr-2 h-3 w-3" />
-                    Tolak
-                  </Button>
+              {/* Approval Actions */}
+              {isMyTurn && (
+                <div className="pt-4 border-t space-y-3">
+                  <p className="text-xs font-medium text-muted-foreground mb-2">
+                    Persetujuan
+                  </p>
+                  <Textarea
+                    placeholder="Catatan persetujuan..."
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    className="mb-2 text-xs"
+                  />
+                  <div className="flex gap-2">
+                    <Button
+                      className="flex-1 bg-green-600 hover:bg-green-700"
+                      size="sm"
+                      onClick={() => handleReview("APPROVE")}
+                    >
+                      <CheckCircle className="mr-2 h-3 w-3" />
+                      Setuju
+                    </Button>
+                    <Button
+                      className="flex-1"
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleReview("REJECT")}
+                    >
+                      <XCircle className="mr-2 h-3 w-3" />
+                      Tolak
+                    </Button>
+                  </div>
                 </div>
-              </div>
+              )}
             </CardContent>
           </Card>
 

@@ -173,6 +173,13 @@ export const CorrespondenceService = {
           ],
         },
       ];
+    } else if (params.scope === 'REVIEW' && params.userId) {
+      where.reviewers = {
+        some: {
+          reviewerId: params.userId,
+          status: 'PENDING',
+        },
+      };
     }
 
     const [total, data] = await Promise.all([
@@ -259,6 +266,19 @@ export const CorrespondenceService = {
       });
 
       if (!review) throw new Error('Reviewer not assigned to this letter');
+
+      // 1.5 Check Sequential Order
+      const previousReviewers = await tx.letterReviewer.count({
+        where: {
+          letterId,
+          order: { lt: review.order },
+          status: { not: 'APPROVED' },
+        },
+      });
+
+      if (previousReviewers > 0) {
+        throw new Error('Reviewer sebelumnya belum menyetujui surat ini.');
+      }
 
       const status = action === 'APPROVE' ? 'APPROVED' : 'REJECTED';
       await tx.letterReviewer.update({

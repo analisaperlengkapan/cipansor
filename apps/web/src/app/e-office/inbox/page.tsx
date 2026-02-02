@@ -41,7 +41,7 @@ export default function InboxPage() {
     LetterDirection.INCOMING,
   );
   const [search, setSearch] = useState("");
-  const [scope, setScope] = useState<"ALL" | "PERSONAL">("ALL");
+  const [scope, setScope] = useState<"ALL" | "PERSONAL" | "REVIEW">("ALL");
 
   const { useLetters } = useCorrespondence(user?.unitId);
   const { data, isLoading } = useLetters({
@@ -75,6 +75,7 @@ export default function InboxPage() {
         <TabsList>
           <TabsTrigger value="ALL">Semua Surat (Unit)</TabsTrigger>
           <TabsTrigger value="PERSONAL">Inbox Saya (Disposisi)</TabsTrigger>
+          <TabsTrigger value="REVIEW">Perlu Persetujuan</TabsTrigger>
         </TabsList>
       </Tabs>
 

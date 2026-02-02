@@ -60,7 +60,7 @@ export class CBTService {
     return prisma.questionBank.findMany({
       where,
       include: {
-        teacherRel: { select: { user: { select: { name: true } } } },
+        teacher: { select: { user: { select: { name: true } } } },
         subject: { select: { name: true, code: true } },
         _count: { select: { questions: true, exams: true } },
       },
@@ -73,7 +73,7 @@ export class CBTService {
       where: { id },
       include: {
         questions: { orderBy: { order: 'asc' } },
-        teacherRel: { select: { user: { select: { name: true } } } },
+        teacher: { select: { user: { select: { name: true } } } },
         subject: { select: { name: true, code: true } },
       },
     });

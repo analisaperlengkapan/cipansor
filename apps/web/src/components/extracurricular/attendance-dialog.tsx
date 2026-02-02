@@ -66,7 +66,7 @@ export function AttendanceDialog({ extracurricularId }: AttendanceDialogProps) {
       const initialRecords: Record<string, { status: AttendanceStatus; notes: string }> = {};
       enrollments.forEach((enrollment) => {
         // Only include active students if the API returns mixed statuses despite params
-        if (enrollment.status === 'APPROVED' || enrollment.status === 'ACTIVE') {
+        if (enrollment.status === 'APPROVED') {
            initialRecords[enrollment.studentId] = {
             status: AttendanceStatus.PRESENT,
             notes: "",
@@ -117,7 +117,7 @@ export function AttendanceDialog({ extracurricularId }: AttendanceDialogProps) {
     }
   };
 
-  const activeEnrollments = enrollments?.filter(e => e.status === 'APPROVED' || e.status === 'ACTIVE') || [];
+  const activeEnrollments = enrollments?.filter(e => e.status === 'APPROVED') || [];
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

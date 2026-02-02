@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { asyncHandler } from '@/middleware/error';
 import { authService } from './auth.service';
-import { LoginInput, RegisterInput, RefreshTokenInput, ChangePasswordInput } from './auth.schema';
+import { LoginInput, RegisterInput, RefreshTokenInput, ChangePasswordInput, UpdateProfileInput } from './auth.schema';
 
 /**
  * Login
@@ -10,6 +10,22 @@ import { LoginInput, RegisterInput, RefreshTokenInput, ChangePasswordInput } fro
 export const login = asyncHandler(async (req: Request, res: Response) => {
   const input: LoginInput = req.body;
   const result = await authService.login(input);
+
+  res.json({
+    success: true,
+    data: result,
+  });
+});
+
+/**
+ * Update profile
+ * PATCH /api/auth/profile
+ */
+export const updateProfile = asyncHandler(async (req: Request, res: Response) => {
+  const userId = req.user!.sub;
+  const input: UpdateProfileInput = req.body;
+
+  const result = await authService.updateProfile(userId, input);
 
   res.json({
     success: true,

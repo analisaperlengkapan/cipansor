@@ -71,6 +71,11 @@ const parentNavItems: NavItem[] = [
     href: "/parent/announcements",
     icon: Bell,
   },
+  {
+    title: "Pengaturan",
+    href: "/parent/settings",
+    icon: Settings,
+  },
 ];
 
 // Sidebar content component extracted to avoid re-creation in render

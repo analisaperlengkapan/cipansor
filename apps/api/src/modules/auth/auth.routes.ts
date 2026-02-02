@@ -7,6 +7,7 @@ import {
   registerSchema,
   refreshTokenSchema,
   changePasswordSchema,
+  updateProfileSchema,
 } from './auth.schema';
 import rateLimit from 'express-rate-limit';
 
@@ -20,6 +21,40 @@ const twoFactorLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
+
+/**
+ * @swagger
+ * /api/auth/profile:
+ *   patch:
+ *     summary: Update profile
+ *     description: Update current user's profile information
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name, email]
+ *             properties:
+ *               name:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               phone:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Profile updated successfully
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *       409:
+ *         description: Email already in use
+ */
+router.patch('/profile', validate(updateProfileSchema), controller.updateProfile);
 
 /**
  * @swagger

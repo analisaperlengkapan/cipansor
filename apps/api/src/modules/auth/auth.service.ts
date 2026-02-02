@@ -3,7 +3,7 @@ import { hashPassword, comparePassword } from '@/lib/password';
 import { generateTokenPair, verifyToken, getExpirationDate, generateAccessToken } from '@/lib/jwt';
 import { Errors } from '@/middleware/error';
 import { config } from '@/config';
-import type { LoginInput, RegisterInput, ChangePasswordInput } from './auth.schema';
+import type { LoginInput, RegisterInput, ChangePasswordInput, UpdateProfileInput } from './auth.schema';
 import { UserRole, RoleCode } from '@prisma/client';
 import { authenticator } from 'otplib';
 import * as qrcode from 'qrcode';
@@ -373,6 +373,43 @@ export class AuthService {
     });
 
     return { message: 'Password changed successfully' };
+  }
+
+  /**
+   * Update current user profile
+   */
+  async updateProfile(userId: string, input: UpdateProfileInput) {
+    const user = await prisma.user.findFirst({
+      where: { id: userId, deletedAt: null },
+    });
+
+    if (!user) {
+      throw Errors.notFound('User');
+    }
+
+    // Check if email uniqueness if changed
+    if (input.email !== user.email) {
+      const existing = await prisma.user.findFirst({
+        where: { email: input.email, id: { not: userId } },
+      });
+
+      if (existing) {
+        throw Errors.conflict('Email already in use');
+      }
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        name: input.name,
+        email: input.email,
+        phone: input.phone,
+      },
+    });
+
+    const { passwordHash, twoFactorSecret, twoFactorRecoveryCodes, twoFactorSecretPending, ...userWithoutPassword } = updatedUser;
+
+    return userWithoutPassword;
   }
 
   // ==========================================

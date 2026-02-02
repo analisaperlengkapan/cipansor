@@ -131,7 +131,7 @@ export const DispositionSheetTemplate = forwardRef<HTMLDivElement, DispositionSh
                   <p className="text-xs font-bold text-gray-600">Riwayat Disposisi:</p>
                   {letter.dispositions.map((d, i) => (
                      <div key={i} className="text-xs mt-1">
-                       - {d.recipient?.name} ({format(new Date(d.createdAt), "dd/MM/yy")})
+                       - {d.recipientName} ({format(new Date(d.createdAt), "dd/MM/yy")})
                      </div>
                   ))}
                 </div>

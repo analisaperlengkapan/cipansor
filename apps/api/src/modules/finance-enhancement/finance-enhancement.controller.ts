@@ -130,10 +130,10 @@ export class FinanceEnhancementController {
 
   async createManualJournal(req: Request, res: Response, next: NextFunction) {
     try {
-      const input: CreateManualJournalInput = req.body;
+      const input: CreateJournalEntryInput = req.body;
       const userId = (req as any).user.id;
 
-      await financeEnhancementService.createManualJournal({
+      await financeEnhancementService.createJournalEntry({
         ...input,
         createdById: userId,
       });

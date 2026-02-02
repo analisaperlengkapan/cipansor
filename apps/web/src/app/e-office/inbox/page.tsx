@@ -23,15 +23,19 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LetterStatusBadge } from "@/components/e-office/letter-status-badge";
-import { Plus, Search, Mail, Send } from "lucide-react";
+import { AgendaPrintView } from "@/components/e-office/agenda-print-view"; // New Import
+import { Plus, Search, Mail, Send, Printer } from "lucide-react"; // Added Printer
 import {
   LetterDirection,
   LetterStatus,
   type LetterDetail,
 } from "@cipansor/shared";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
+import { toast } from "sonner";
 
 export default function InboxPage() {
   const router = useRouter();
@@ -44,16 +48,76 @@ export default function InboxPage() {
   const [scope, setScope] = useState<"ALL" | "PERSONAL">("ALL");
 
   const { useLetters } = useCorrespondence(user?.unitId);
+
+  // We might want a separate fetch for printing "All" letters in a period,
+  // but for now we'll print the current view's data
   const { data, isLoading } = useLetters({
     page,
-    limit: 10,
+    limit: 10, // Pagination applies
     direction,
     search,
     scope,
   });
 
+  const agendaRef = useRef<HTMLDivElement>(null);
+
+  const handlePrintAgenda = async () => {
+    if (!agendaRef.current) return;
+
+    try {
+      toast.info("Sedang menyiapkan Buku Agenda...");
+      const canvas = await html2canvas(agendaRef.current, { scale: 2, useCORS: true });
+      const imgData = canvas.toDataURL("image/png");
+
+      // A4 Landscape
+      const pdf = new jsPDF("l", "mm", "a4");
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+
+      const imgWidth = canvas.width;
+      const imgHeight = canvas.height;
+
+      const ratio = pdfWidth / imgWidth;
+      const scaledHeight = imgHeight * ratio;
+
+      let heightLeft = scaledHeight;
+      let position = 0;
+      let page = 1;
+
+      // Add first page
+      pdf.addImage(imgData, "PNG", 0, position, pdfWidth, scaledHeight);
+      heightLeft -= pdfHeight;
+
+      // Add remaining pages
+      while (heightLeft > 0) {
+        position = heightLeft - scaledHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, "PNG", 0, position, pdfWidth, scaledHeight);
+        heightLeft -= pdfHeight;
+        page++;
+      }
+
+      const filename = `Buku-Agenda-${direction}-${format(new Date(), "yyyy-MM-dd")}.pdf`;
+      pdf.save(filename);
+      toast.success("Buku Agenda berhasil diunduh");
+    } catch (error) {
+      console.error(error);
+      toast.error("Gagal mengunduh Buku Agenda");
+    }
+  };
+
   return (
     <div className="space-y-6 p-6">
+      {/* Hidden Print Template */}
+      <div className="fixed left-[-9999px] top-0">
+         <AgendaPrintView
+            ref={agendaRef}
+            letters={data?.data || []}
+            direction={direction}
+            unitName={user?.unit?.name}
+         />
+      </div>
+
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">E-Office</h1>
@@ -61,10 +125,16 @@ export default function InboxPage() {
             Manajemen surat masuk, surat keluar, dan disposisi.
           </p>
         </div>
-        <Button onClick={() => router.push("/e-office/create")}>
-          <Plus className="mr-2 h-4 w-4" />
-          Buat Surat
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handlePrintAgenda} disabled={isLoading || !data?.data.length}>
+            <Printer className="mr-2 h-4 w-4" />
+            Cetak Buku Agenda
+          </Button>
+          <Button onClick={() => router.push("/e-office/create")}>
+            <Plus className="mr-2 h-4 w-4" />
+            Buat Surat
+          </Button>
+        </div>
       </div>
 
       <Tabs

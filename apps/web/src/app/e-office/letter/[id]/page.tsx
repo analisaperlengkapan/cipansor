@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { LetterStatusBadge } from "@/components/e-office/letter-status-badge";
 import { DispositionTimeline } from "@/components/e-office/disposition-timeline";
 import { LetterPDFTemplate } from "@/components/e-office/letter-pdf-template";
+import { DispositionSheetTemplate } from "@/components/e-office/disposition-sheet-template"; // New Import
 import {
   ArrowLeft,
   FileText,
@@ -18,6 +19,7 @@ import {
   XCircle,
   Printer,
   ShieldCheck,
+  FileOutput, // Icon for Disposition Sheet
 } from "lucide-react";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
@@ -41,6 +43,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { LetterDirection } from "@cipansor/shared";
 
 export default function LetterDetailPage({
   params,
@@ -63,6 +66,8 @@ export default function LetterDetailPage({
   const { data: letter, isLoading } = useLetter(params.id);
 
   const pdfRef = useRef<HTMLDivElement>(null);
+  const dispositionSheetRef = useRef<HTMLDivElement>(null); // New Ref
+
   const [notes, setNotes] = useState("");
   const [dispositionOpen, setDispositionOpen] = useState(false);
   const [dispositionData, setDispositionData] = useState({
@@ -96,12 +101,10 @@ export default function LetterDetailPage({
     }
   };
 
-  const handleDownloadPDF = async () => {
-    if (!pdfRef.current) return;
-
+  const generatePDF = async (element: HTMLElement, filename: string) => {
     try {
       toast.info("Sedang menyiapkan PDF...");
-      const canvas = await html2canvas(pdfRef.current, { scale: 2, useCORS: true });
+      const canvas = await html2canvas(element, { scale: 2, useCORS: true });
       const imgData = canvas.toDataURL("image/png");
 
       const pdf = new jsPDF("p", "mm", "a4");
@@ -131,12 +134,22 @@ export default function LetterDetailPage({
         page++;
       }
 
-      pdf.save(`Surat-${letter?.letterNumber || "Draft"}.pdf`);
-      toast.success("Surat berhasil diunduh");
+      pdf.save(filename);
+      toast.success("Dokumen berhasil diunduh");
     } catch (error) {
       console.error(error);
-      toast.error("Gagal mengunduh surat");
+      toast.error("Gagal mengunduh dokumen");
     }
+  };
+
+  const handleDownloadPDF = () => {
+    if (!pdfRef.current) return;
+    generatePDF(pdfRef.current, `Surat-${letter?.letterNumber || "Draft"}.pdf`);
+  };
+
+  const handleDownloadDispositionSheet = () => {
+    if (!dispositionSheetRef.current) return;
+    generatePDF(dispositionSheetRef.current, `Lembar-Disposisi-${letter?.agendaNumber || "Draft"}.pdf`);
   };
 
   const isUpdating = updateDispositionStatus.isPending;
@@ -300,9 +313,10 @@ export default function LetterDetailPage({
         </DialogContent>
       </Dialog>
 
-      {/* Hidden PDF Template */}
+      {/* Hidden PDF Templates */}
       <div className="fixed left-[-9999px] top-0">
         <LetterPDFTemplate ref={pdfRef} letter={letter} />
+        <DispositionSheetTemplate ref={dispositionSheetRef} letter={letter} />
       </div>
 
       <div className="flex items-center gap-4">
@@ -494,14 +508,28 @@ export default function LetterDetailPage({
               <CardTitle>Aksi</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <Button
-                className="w-full"
-                variant="outline"
-                onClick={handleDownloadPDF}
-              >
-                <Printer className="mr-2 h-4 w-4" />
-                Cetak Surat
-              </Button>
+              {/* Conditional Buttons */}
+              {letter.direction === LetterDirection.OUTGOING && (
+                <Button
+                  className="w-full"
+                  variant="outline"
+                  onClick={handleDownloadPDF}
+                >
+                  <Printer className="mr-2 h-4 w-4" />
+                  Cetak Surat
+                </Button>
+              )}
+
+              {letter.direction === LetterDirection.INCOMING && (
+                <Button
+                  className="w-full"
+                  variant="outline"
+                  onClick={handleDownloadDispositionSheet}
+                >
+                  <FileOutput className="mr-2 h-4 w-4" />
+                  Cetak Lembar Disposisi
+                </Button>
+              )}
 
               <Button
                 className="w-full"

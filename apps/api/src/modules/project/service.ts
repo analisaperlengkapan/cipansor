@@ -13,8 +13,8 @@ export async function createProject(data: CreateProjectInput) {
         priority: data.priority as TaskPriority,
         startDate: data.startDate,
         endDate: data.endDate,
-        managerId: data.managerId,
-        unitId: data.unitId,
+        manager: { connect: { id: data.managerId } },
+        unit: { connect: { id: data.unitId } },
         budget: data.budget,
         members: {
           create: {
@@ -63,7 +63,7 @@ export async function getProjectById(id: string) {
           tasks: {
             orderBy: { order: 'asc' },
             include: {
-              assignee: { select: { id: true, name: true, photoUrl: true } },
+              assignee: { select: { id: true, name: true } },
               _count: { select: { comments: true } },
             },
           },
@@ -71,7 +71,7 @@ export async function getProjectById(id: string) {
       },
       members: {
         include: {
-          user: { select: { id: true, name: true, email: true, photoUrl: true } },
+          user: { select: { id: true, name: true, email: true } },
         },
       },
     },
@@ -123,13 +123,13 @@ export async function createTask(projectId: string, data: CreateProjectTaskInput
 
     return tx.projectTask.create({
       data: {
-        projectId,
-        columnId,
+        project: { connect: { id: projectId } },
+        column: columnId ? { connect: { id: columnId } } : undefined,
         title: data.title,
         description: data.description,
         priority: data.priority as TaskPriority,
         dueDate: data.dueDate,
-        assigneeId: data.assigneeId,
+        assignee: data.assigneeId ? { connect: { id: data.assigneeId } } : undefined,
         order: newOrder,
       },
       include: {
@@ -275,8 +275,9 @@ export async function createColumn(projectId: string, data: CreateColumnInput) {
 
   return prisma.projectColumn.create({
     data: {
-      projectId,
+      project: { connect: { id: projectId } },
       ...data,
+      name: data.name,
     },
   });
 }

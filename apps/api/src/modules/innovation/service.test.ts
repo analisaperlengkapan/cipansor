@@ -51,7 +51,7 @@ describe('Innovation Service', () => {
     expect(prisma.innovationProposal.create).toHaveBeenCalledWith({
       data: {
         ...input,
-        submittedById: userId,
+        submittedBy: { connect: { id: userId } },
         status: InnovationStatus.DRAFT,
       },
     });

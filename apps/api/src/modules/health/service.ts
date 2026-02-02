@@ -45,6 +45,7 @@ export async function getMedicalRecords(query: QueryMedicalRecordInput & { statu
             nis: true,
             user: { select: { id: true, name: true } },
             unit: { select: { id: true, name: true } },
+            unitId: true,
           },
         },
         recordedBy: { select: { id: true, name: true } },
@@ -218,8 +219,10 @@ export async function createMedicalRecord(data: CreateMedicalRecordInput, record
     id: record.id,
     studentId: record.studentId,
     studentName: record.student?.user?.name || 'Unknown',
-    unitId: record.student?.unitId || 'unknown',
-    unitName: record.student?.unit?.name || 'Unknown',
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    unitId: (record.student as any)?.unitId || (record.student as any)?.unit?.id || 'unknown',
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    unitName: (record.student as any)?.unit?.name || 'Unknown',
     type: record.type,
     complaint: record.complaint,
     status: record.status || 'UNKNOWN',

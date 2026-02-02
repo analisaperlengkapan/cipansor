@@ -7,9 +7,7 @@ import { UserRole } from '@prisma/client';
 
 const PRIVILEGED_ROLES = [
   UserRole.SUPER_ADMIN,
-  UserRole.YAYASAN_ADMIN,
-  UserRole.YAYASAN_KETUA
-];
+] as UserRole[];
 
 function isPrivileged(role?: UserRole): boolean {
   return role ? PRIVILEGED_ROLES.includes(role) : false;
@@ -77,8 +75,15 @@ export const createRisk = asyncHandler(async (req: Request, res: Response) => {
 
   const risk = await riskService.createRisk({
     ...rest,
+    code: rest.code || 'RISK-' + Date.now(),
+    description: rest.description || '',
+    category: rest.category || 'OTHER',
+    likelihood: 'UNLIKELY',
+    impact: 'MINOR',
     unit: { connect: { id: targetUnitId } },
     createdBy: { connect: { id: userId } },
+    riskScore: 0,
+    riskLevel: 'LOW',
   });
 
   res.status(201).json({ success: true, data: risk });
@@ -136,6 +141,8 @@ export const addMitigation = asyncHandler(async (req: Request, res: Response) =>
 
   const mitigation = await riskService.createMitigation({
     ...rest,
+    strategy: rest.strategy || 'REDUCE',
+    actionPlan: rest.actionPlan || 'TBD',
     risk: { connect: { id: riskId } },
     createdBy: { connect: { id: userId } },
     pic: picId ? { connect: { id: picId } } : undefined,

@@ -1,202 +1,101 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/lib/api";
-import {
-  MarketingCampaign,
-  MarketingStats,
-  CreateCampaignInput,
-  UpdateCampaignInput,
-  LogInteractionInput,
-  MarketingInteraction,
-} from "@cipansor/shared";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { api } from '@/lib/api';
+import { MarketingCampaign, MarketingInteraction } from '@cipansor/shared';
 
-// Stats
-export const useMarketingStats = (unitId?: string) => {
-  return useQuery({
-    queryKey: ["marketing", "stats", unitId],
-    queryFn: async () => {
-      const { data } = await api.get<{
-        success: boolean;
-        data: MarketingStats;
-      }>("/marketing/stats", {
-        params: { unitId },
-      });
-      return data.data;
-    },
-  });
-};
-
-export interface RecentLead {
-  id: string;
-  fullName: string;
-  createdAt: string;
-  status: string;
-  source: string | null;
-  campaign?: {
-    name: string;
-    code: string;
-  } | null;
+interface CampaignStats {
+  totalRegistrants: number;
+  conversionRate: number;
+  channelDistribution: Record<string, number>;
 }
 
-export interface UpcomingFollowUp {
-  id: string;
-  type: string;
-  date: string;
-  notes: string | null;
-  nextActionDate: string;
-  registrant: {
-    id: string;
-    fullName: string;
-    parentPhone: string;
-    status: string;
-  };
-}
-
-export const useRecentLeads = (unitId?: string, limit: number = 5) => {
+export function useMarketingCampaigns(unitId?: string) {
   return useQuery({
-    queryKey: ["marketing", "leads", "recent", unitId, limit],
+    queryKey: ['marketing-campaigns', unitId],
     queryFn: async () => {
-      const { data } = await api.get<{ success: boolean; data: RecentLead[] }>(
-        "/marketing/leads/recent",
-        {
-          params: { unitId, limit },
-        },
-      );
-      return data.data;
-    },
-  });
-};
-
-export const useUpcomingFollowUps = (unitId?: string, limit: number = 5) => {
-  return useQuery({
-    queryKey: ["marketing", "follow-ups", unitId, limit],
-    queryFn: async () => {
-      const { data } = await api.get<{
-        success: boolean;
-        data: UpcomingFollowUp[];
-      }>("/marketing/follow-ups", {
-        params: { unitId, limit },
-      });
-      return data.data;
-    },
-  });
-};
-
-// Campaigns
-export const useCampaigns = (unitId?: string) => {
-  return useQuery({
-    queryKey: ["marketing", "campaigns", unitId],
-    queryFn: async () => {
-      const { data } = await api.get<{
-        success: boolean;
-        data: MarketingCampaign[];
-      }>("/marketing/campaigns", {
+      const { data } = await api.get<MarketingCampaign[]>('/marketing/campaigns', {
         params: { unitId },
       });
-      return data.data;
+      return data;
     },
   });
-};
+}
 
-export const useCampaign = (id: string) => {
+export function useMarketingCampaign(id: string) {
   return useQuery({
-    queryKey: ["marketing", "campaigns", id],
+    queryKey: ['marketing-campaign', id],
     queryFn: async () => {
-      const { data } = await api.get<{
-        success: boolean;
-        data: MarketingCampaign;
-      }>(`/marketing/campaigns/${id}`);
-      return data.data;
+      const { data } = await api.get<MarketingCampaign>(`/marketing/campaigns/${id}`);
+      return data;
     },
     enabled: !!id,
   });
-};
+}
 
-export const useCreateCampaign = () => {
+export function useCreateCampaign() {
   const queryClient = useQueryClient();
+
   return useMutation({
-    mutationFn: async (data: CreateCampaignInput) => {
-      const { data: res } = await api.post<{
-        success: boolean;
-        data: MarketingCampaign;
-      }>("/marketing/campaigns", data);
-      return res.data;
+    mutationFn: async (payload: Partial<MarketingCampaign>) => {
+      const { data } = await api.post<MarketingCampaign>('/marketing/campaigns', payload);
+      return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["marketing", "campaigns"] });
+      queryClient.invalidateQueries({ queryKey: ['marketing-campaigns'] });
     },
   });
-};
+}
 
-export const useUpdateCampaign = () => {
+export function useUpdateCampaign() {
   const queryClient = useQueryClient();
+
   return useMutation({
-    mutationFn: async ({
-      id,
-      data,
-    }: {
-      id: string;
-      data: UpdateCampaignInput;
-    }) => {
-      const { data: res } = await api.patch<{
-        success: boolean;
-        data: MarketingCampaign;
-      }>(`/marketing/campaigns/${id}`, data);
-      return res.data;
+    mutationFn: async ({ id, ...payload }: Partial<MarketingCampaign> & { id: string }) => {
+      const { data } = await api.patch<MarketingCampaign>(`/marketing/campaigns/${id}`, payload);
+      return data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["marketing", "campaigns"] });
-      queryClient.invalidateQueries({
-        queryKey: ["marketing", "campaigns", variables.id],
-      });
+      queryClient.invalidateQueries({ queryKey: ['marketing-campaigns'] });
+      queryClient.invalidateQueries({ queryKey: ['marketing-campaign', variables.id] });
     },
   });
-};
+}
 
-// Public Campaign Lookup
-export const usePublicCampaign = (code?: string | null) => {
+export function useCampaignStats(id: string) {
   return useQuery({
-    queryKey: ["marketing", "public", "campaign", code],
+    queryKey: ['marketing-campaign-stats', id],
+    queryFn: async () => {
+      const { data } = await api.get<CampaignStats>(`/marketing/campaigns/${id}/stats`);
+      return data;
+    },
+    enabled: !!id,
+  });
+}
+
+// Public hooks for landing pages
+export function usePublicCampaign(code: string | null) {
+  return useQuery({
+    queryKey: ['public-campaign', code],
     queryFn: async () => {
       const { data } = await api.get<{
         success: boolean;
         data: MarketingCampaign;
-      }>(`/marketing/public/campaigns/code/${encodeURIComponent(code)}`);
+      }>(`/marketing/public/campaigns/code/${encodeURIComponent(code || "")}`);
       return data.data;
     },
     enabled: !!code,
-    retry: false,
   });
-};
+}
 
-// Interactions
-export const useInteractions = (registrantId: string) => {
-  return useQuery({
-    queryKey: ["marketing", "interactions", registrantId],
-    queryFn: async () => {
-      const { data } = await api.get<{
-        success: boolean;
-        data: MarketingInteraction[];
-      }>(`/marketing/interactions/${registrantId}`);
-      return data.data;
-    },
-    enabled: !!registrantId,
-  });
-};
-
-export const useLogInteraction = () => {
-  const queryClient = useQueryClient();
+export function useRecordInteraction() {
   return useMutation({
-    mutationFn: async (data: LogInteractionInput) => {
-      const { data: res } = await api.post<{
-        success: boolean;
-        data: MarketingInteraction;
-      }>("/marketing/interactions", data);
-      return res.data;
-    },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: ["marketing", "interactions", variables.registrantId],
-      });
+    mutationFn: async (payload: {
+      registrantId: string;
+      type: string;
+      notes?: string;
+      nextActionDate?: Date;
+    }) => {
+      const { data } = await api.post<MarketingInteraction>('/marketing/interactions', payload);
+      return data;
     },
   });
-};
+}

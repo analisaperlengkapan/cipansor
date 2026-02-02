@@ -3,10 +3,15 @@ import { CreateCampaignInput, LogInteractionInput, UpdateCampaignInput } from '.
 import { Prisma } from '@prisma/client';
 
 export const createCampaign = async (data: CreateCampaignInput, userId: string) => {
+  const { unitId, ...rest } = data;
   return prisma.marketingCampaign.create({
     data: {
-      ...data,
-      createdById: userId,
+      ...rest,
+      code: rest.code || 'CMP-' + Date.now(),
+      name: data.name,
+      startDate: data.startDate || new Date(),
+      unit: unitId ? { connect: { id: unitId } } : undefined,
+      createdBy: { connect: { id: userId } },
     },
   });
 };
@@ -74,10 +79,14 @@ export const getCampaignByCode = async (code: string) => {
 };
 
 export const logInteraction = async (data: LogInteractionInput, userId: string) => {
+  const { registrantId, ...rest } = data;
   return prisma.marketingInteraction.create({
     data: {
-      ...data,
-      recordedById: userId,
+      ...rest,
+      date: new Date(),
+      type: rest.type || 'OTHER',
+      registrant: { connect: { id: registrantId } },
+      recordedBy: { connect: { id: userId } },
     },
   });
 };

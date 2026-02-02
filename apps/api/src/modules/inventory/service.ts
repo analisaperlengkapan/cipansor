@@ -5,7 +5,6 @@ import {
   AssetCondition,
   AssetMaintenanceStatus,
   NotificationType,
-  JournalReferenceType,
 } from '@prisma/client';
 import { prisma } from '../../lib/prisma';
 import { createNotification } from '../notifications/service';
@@ -218,7 +217,7 @@ export async function deleteItem(id: string) {
   });
 }
 
-// ==================== ASSET MAINTENANCE ====================
+// ==================== MAINTENANCE ====================
 
 export async function getMaintenances(query: QueryMaintenanceInput) {
   const { page, limit, itemId, type, status, startDate, endDate } = query;
@@ -356,9 +355,9 @@ export async function createMaintenanceRequest(
         title: 'Permintaan Maintenance Baru',
         message: `Permintaan maintenance untuk aset ${asset.code} - ${asset.name}: ${data.description}`,
         link: `/inventory/${asset.id}?tab=maintenance`,
-        priority: 1,
-        channels: ['APP'],
-        recipientType: 'UNIT_ADMIN',
+        priority: 'HIGH',
+        channels: ['IN_APP'],
+        recipientType: 'INDIVIDUAL',
       })
     )
   ).catch((err) => console.error('Failed to send maintenance notifications', err));
@@ -732,7 +731,9 @@ export async function updateInventorySettings(data: UpdateInventorySettingsInput
   return { success: true };
 }
 
-export async function runDepreciationJob(unitId?: string) {
+export async function runDepreciationJob(unitId?: string, executorId?: string) {
+  // executorId is accepted but not currently used by runMonthlyDepreciation logic (job runs as system)
+  // but adding it fixes the call signature compatibility
   return runMonthlyDepreciation(unitId);
 }
 

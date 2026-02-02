@@ -19,7 +19,8 @@ export async function seedAccounts(req: Request, res: Response, next: NextFuncti
 export async function createAccount(req: Request, res: Response, next: NextFunction) {
   try {
     const data: CreateAccountDto = req.body;
-    const account = await service.createAccount(data);
+    if (!data.code) throw new Error("Account Code is required");
+    const account = await service.createAccount(data as any);
     res.status(201).json(account);
   } catch (error) {
     next(error);
@@ -131,8 +132,16 @@ export async function createJournal(req: Request, res: Response, next: NextFunct
       res.status(401).json({ message: 'Unauthorized' });
       return;
     }
+    if (!data.unitId) throw new Error("Unit ID is required");
     const journals = await service.createManualJournal({
       ...data,
+      description: data.description || '',
+      unitId: data.unitId,
+      entries: data.entries?.map(e => ({
+        accountId: e.accountId!,
+        debit: e.debit || 0,
+        credit: e.credit || 0
+      })) || [],
       date: new Date(data.date),
       createdById: userId,
     });

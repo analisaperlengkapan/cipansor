@@ -14,12 +14,12 @@ router.use(authenticate);
 // Stats
 router.get(
   '/stats',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.YAYASAN_ADMIN),
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
   marketingController.getStats
 );
 router.get(
   '/leads/recent',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.YAYASAN_ADMIN),
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
   marketingController.getRecentLeads
 );
 router.get(
@@ -36,12 +36,12 @@ router.post(
 );
 router.get(
   '/campaigns',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.YAYASAN_ADMIN),
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
   marketingController.getCampaigns
 );
 router.get(
   '/campaigns/:id',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.YAYASAN_ADMIN),
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
   marketingController.getCampaignById
 );
 router.patch(

@@ -214,6 +214,17 @@ export interface CreateJournalEntryInput {
   referenceType?: JournalReferenceType;
 }
 
+export interface CreateManualJournalInput {
+  unitId: string;
+  date: Date | string;
+  description: string;
+  entries: {
+    accountId: string;
+    debit: number;
+    credit: number;
+  }[];
+}
+
 export interface CreateScholarshipInput {
   name: string;
   description?: string;

@@ -129,6 +129,7 @@ export const createEnrollmentSchema = z.object({
   halaqohId: z.string().uuid(),
   status: z.string().optional(),
   targetJuz: z.number().int().min(1).max(30).optional(),
+  targetCompletionDate: z.string().optional(), // Added
 });
 
 export const updateEnrollmentSchema = createEnrollmentSchema.partial();
@@ -141,6 +142,8 @@ export const createTargetSchema = z.object({
   studentId: z.string().uuid(),
   academicYearId: z.string().uuid(),
   targetJuz: z.number().int().min(1),
+  targetAyah: z.number().int().optional(), // Added
+  notes: z.string().optional(), // Added
 });
 
 export const updateTargetSchema = createTargetSchema.partial();

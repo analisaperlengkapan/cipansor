@@ -7,7 +7,10 @@ export async function createProposal(data: CreateProposalInput, userId: string) 
   return prisma.innovationProposal.create({
     data: {
       ...data,
-      submittedById: userId,
+      title: data.title,
+      description: data.description || '',
+      type: data.type || InnovationType.OTHER,
+      submittedBy: { connect: { id: userId } },
       status: InnovationStatus.DRAFT,
     },
   });
@@ -21,7 +24,7 @@ export async function getProposals(query: { status?: InnovationStatus; type?: In
       ...(query.userId && { submittedById: query.userId }),
     },
     include: {
-      submittedBy: { select: { id: true, name: true, photoUrl: true } },
+      submittedBy: { select: { id: true, name: true } },
       _count: { select: { reviews: true, comments: true } },
     },
     orderBy: { createdAt: 'desc' },
@@ -32,15 +35,15 @@ export async function getProposalById(id: string) {
   return prisma.innovationProposal.findUnique({
     where: { id },
     include: {
-      submittedBy: { select: { id: true, name: true, photoUrl: true, email: true } },
+      submittedBy: { select: { id: true, name: true, email: true } },
       reviews: {
         include: {
-          reviewer: { select: { id: true, name: true, photoUrl: true } },
+          reviewer: { select: { id: true, name: true } },
         },
       },
       comments: {
         include: {
-          user: { select: { id: true, name: true, photoUrl: true } },
+          user: { select: { id: true, name: true } },
         },
         orderBy: { createdAt: 'asc' },
       },
@@ -66,9 +69,10 @@ export async function submitProposal(id: string) {
 export async function addReview(proposalId: string, reviewerId: string, data: CreateReviewInput) {
   return prisma.innovationReview.create({
     data: {
-      proposalId,
-      reviewerId,
+      proposal: { connect: { id: proposalId } },
+      reviewer: { connect: { id: reviewerId } },
       ...data,
+      score: data.score || 0,
     },
   });
 }
@@ -76,8 +80,8 @@ export async function addReview(proposalId: string, reviewerId: string, data: Cr
 export async function addComment(proposalId: string, userId: string, data: CreateCommentInput) {
   return prisma.innovationComment.create({
     data: {
-      proposalId,
-      userId,
+      proposal: { connect: { id: proposalId } },
+      user: { connect: { id: userId } },
       content: data.content,
     },
   });
@@ -85,9 +89,6 @@ export async function addComment(proposalId: string, userId: string, data: Creat
 
 export async function approveProposal(id: string) {
   // Use transaction to ensure consistency
-  // Note: createProject starts its own transaction, but Prisma 5 supports nested transactions if using $transaction(async (tx) => ...)
-  // However, createProject imports prisma from global. To correctly nest, createProject would need to accept a tx client.
-  // For now, we will do it sequentially. If project creation fails, we revert manually or accept small inconsistency risk in this MVP.
 
   const proposal = await prisma.innovationProposal.findUnique({
       where: { id },

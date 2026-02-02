@@ -6,6 +6,8 @@ export enum VisitStatus {
   REJECTED = "REJECTED",
   COMPLETED = "COMPLETED",
   CANCELLED = "CANCELLED",
+  CHECKED_IN = "CHECKED_IN",
+  CHECKED_OUT = "CHECKED_OUT",
 }
 
 export enum PackageStatus {
@@ -13,6 +15,7 @@ export enum PackageStatus {
   NOTIFIED = "NOTIFIED",
   PICKED_UP = "PICKED_UP",
   RETURNED = "RETURNED",
+  DELIVERED = "DELIVERED", // Added to match likely Prisma enum if needed, or backend logic
 }
 
 export interface GuestBook {
@@ -133,6 +136,7 @@ export interface CreateStudentPackageInput {
 export interface UpdateStudentPackageInput {
   status?: PackageStatus;
   pickedUpAt?: Date;
+  deliveredTo?: string; // Added for backend compatibility
   notes?: string;
 }
 

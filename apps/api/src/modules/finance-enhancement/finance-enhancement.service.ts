@@ -17,6 +17,7 @@ import {
   Pagination,
   AccountType,
   FinanceReportPeriod,
+  CreateManualJournalInput,
 } from '@cipansor/shared';
 import { Prisma } from '@prisma/client';
 import { checkPeriodStatus } from './period.service';
@@ -235,6 +236,81 @@ export class FinanceEnhancementService {
     });
 
     return this.mapToJournalEntry(result);
+  }
+
+  async createManualJournal(
+    input: CreateManualJournalInput & { createdById: string }
+  ): Promise<void> {
+    const entryDate = new Date(input.date);
+    await checkPeriodStatus(input.unitId, entryDate);
+
+    await prisma.$transaction(async (tx) => {
+      // Find academic year for budget update
+      const academicYear = await tx.academicYear.findFirst({
+        where: {
+          startDate: { lte: entryDate },
+          endDate: { gte: entryDate },
+        },
+        orderBy: [
+          { isActive: 'desc' },
+          { startDate: 'desc' },
+        ],
+      });
+
+      for (const item of input.entries) {
+        const account = await tx.accountCode.findUnique({
+          where: { id: item.accountId },
+          select: { normalBalance: true },
+        });
+
+        if (!account) {
+          throw new Error(`Account code not found: ${item.accountId}`);
+        }
+
+        await tx.journalEntry.create({
+          data: {
+            unitId: input.unitId,
+            accountId: item.accountId,
+            date: entryDate,
+            description: input.description,
+            debit: item.debit,
+            credit: item.credit,
+            referenceType: 'MANUAL',
+            createdById: input.createdById,
+          },
+        });
+
+        // Update budget if academic year found
+        if (academicYear) {
+          const budget = await tx.budget.findUnique({
+            where: {
+              unitId_academicYearId_accountId: {
+                unitId: input.unitId,
+                academicYearId: academicYear.id,
+                accountId: item.accountId,
+              },
+            },
+          });
+
+          if (budget) {
+            let delta = 0;
+            if (account.normalBalance === 'CREDIT') {
+              delta = item.credit - item.debit;
+            } else {
+              delta = item.debit - item.credit;
+            }
+
+            if (delta !== 0) {
+              await tx.$executeRaw`
+                UPDATE budgets
+                SET used_amount = GREATEST(0, used_amount + ${delta})
+                WHERE id = ${budget.id}
+              `;
+            }
+          }
+        }
+      }
+    });
   }
 
   async getJournalEntryById(id: string): Promise<JournalEntry | null> {
@@ -517,22 +593,32 @@ export class FinanceEnhancementService {
     const resultAccounts = grouped
       .map((group) => {
         const account = accountMap.get(group.accountId);
+        const debit = Number(group._sum.debit || 0);
+        const credit = Number(group._sum.credit || 0);
+        const startBalance = 0; // TODO: Implement start balance calculation
+        const endBalance = startBalance + debit - credit; // Simplified calculation
+
         return {
+          accountId: group.accountId, // Added accountId
           code: account?.code || 'UNKNOWN',
           name: account?.name || 'Unknown Account',
           type: account?.type || 'OTHER',
-          debit: Number(group._sum.debit || 0),
-          credit: Number(group._sum.credit || 0),
+          startBalance, // Added startBalance
+          debit,
+          credit,
+          endBalance, // Added endBalance
         };
       })
       .sort((a, b) => a.code.localeCompare(b.code));
 
     const totals = resultAccounts.reduce(
       (acc, item) => ({
+        startBalance: acc.startBalance + item.startBalance, // Added
         debit: acc.debit + item.debit,
         credit: acc.credit + item.credit,
+        endBalance: acc.endBalance + item.endBalance, // Added
       }),
-      { debit: 0, credit: 0 }
+      { startBalance: 0, debit: 0, credit: 0, endBalance: 0 }
     );
 
     return {

@@ -1,5 +1,12 @@
 import { prisma } from '../../lib/prisma';
-import { Prisma, AccountCode, JournalReferenceType } from '@prisma/client';
+import { Prisma, AccountCode } from '@prisma/client';
+
+// Local definition if not exported by Prisma
+const JournalReferenceType = {
+  MANUAL: 'MANUAL',
+  PAYROLL: 'PAYROLL',
+  INVOICE: 'INVOICE',
+} as const;
 
 // =====================================
 // COA (CHART OF ACCOUNTS) SERVICE

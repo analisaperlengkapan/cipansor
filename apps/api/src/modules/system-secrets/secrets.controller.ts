@@ -23,7 +23,15 @@ export const upsertSecret = async (req: Request, res: Response, next: NextFuncti
       return;
     }
 
-    const result = await SecretsService.upsert(validation.data);
+    // Ensure key and value are present (validation should have handled this, but TS needs assurance)
+    if (!validation.data.key || !validation.data.value) {
+       throw new Error("Key and Value are required");
+    }
+    const result = await SecretsService.upsert({
+        ...validation.data,
+        key: validation.data.key,
+        value: validation.data.value
+    });
     res.status(httpStatus.OK).json({ data: { id: result.id, key: result.key } });
   } catch (error) {
     next(error);

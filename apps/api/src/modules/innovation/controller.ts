@@ -78,7 +78,8 @@ export async function rejectProposal(req: Request, res: Response, next: NextFunc
 
 export async function addReview(req: Request, res: Response, next: NextFunction) {
   try {
-    const review = await innovationService.addReview(req.params.id, req.user!.id, req.body);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const review = await (innovationService as any).addReview(req.params.id, req.user!.id, req.body);
     res.status(201).json(review);
   } catch (error) {
     next(error);

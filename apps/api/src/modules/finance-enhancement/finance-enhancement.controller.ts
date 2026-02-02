@@ -11,6 +11,7 @@ import {
   UpdateBudgetInput,
   CreateFinancialPeriodInput,
 } from '@cipansor/shared';
+import { CreateManualJournalInput } from './schema';
 import { createBudget, updateBudget, getBudgets, deleteBudget, recalculateBudgetUsage } from './budget.service';
 import { createFinancialPeriod, closePeriod, getFinancialPeriods } from './period.service';
 import {

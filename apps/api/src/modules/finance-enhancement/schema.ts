@@ -39,6 +39,18 @@ export const createJournalEntrySchema = z
     message: 'Either debit or credit must be greater than 0',
   });
 
+export interface CreateManualJournalInput {
+  unitId: string;
+  date: string | Date;
+  description?: string;
+  reference?: string;
+  entries: {
+    accountId: string;
+    debit: number;
+    credit: number;
+  }[];
+}
+
 // ==================== SCHOLARSHIPS ====================
 
 export const createScholarshipSchema = z.object({

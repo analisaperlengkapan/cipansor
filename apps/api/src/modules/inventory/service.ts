@@ -5,8 +5,8 @@ import {
   AssetCondition,
   AssetMaintenanceStatus,
   NotificationType,
-  JournalReferenceType,
 } from '@prisma/client';
+import { JournalReferenceType } from '@cipansor/shared';
 import { prisma } from '../../lib/prisma';
 import { createNotification } from '../notifications/service';
 import { createPurchaseJournal } from './asset-accounting.service';

@@ -55,7 +55,7 @@ export const halaqohService = {
     return {
       data: data.map((h) => ({
         ...h,
-        studentCount: h._count.enrollments,
+        studentCount: h._count?.enrollments || 0,
       })),
       pagination: {
         page,
@@ -779,8 +779,9 @@ export const dashboardService = {
     // Process top halaqohs by avg progress
     const halaqohPerformance = topHalaqohs
       .map((h) => {
-        const totalJuz = h.enrollments.reduce((sum, e) => sum + e.completedJuz, 0);
-        const avgJuz = h.enrollments.length > 0 ? totalJuz / h.enrollments.length : 0;
+        const enrollments = (h as any).enrollments || [];
+        const totalJuz = enrollments.reduce((sum: any, e: any) => sum + e.completedJuz, 0);
+        const avgJuz = enrollments.length > 0 ? totalJuz / enrollments.length : 0;
         return {
           id: h.id,
           name: h.name,

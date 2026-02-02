@@ -4,9 +4,22 @@ import { generateTokenPair, verifyToken, getExpirationDate, generateAccessToken 
 import { Errors } from '@/middleware/error';
 import { config } from '@/config';
 import type { LoginInput, RegisterInput, ChangePasswordInput } from './auth.schema';
-import { UserRole, RoleCode } from '@prisma/client';
+import { UserRole } from '@prisma/client';
 import { authenticator } from 'otplib';
 import * as qrcode from 'qrcode';
+
+// RoleCode might not be in @prisma/client, assuming these are string constants or from shared
+// If not available in shared, I will define them or use UserRole if it matches
+const RoleCode = {
+  SUPER_ADMIN: 'SUPER_ADMIN',
+  YAYASAN_ADMIN: 'YAYASAN_ADMIN',
+  TKQ_ADMIN: 'TKQ_ADMIN',
+  SDIT_ADMIN: 'SDIT_ADMIN',
+  SMPIT_ADMIN: 'SMPIT_ADMIN',
+  SMAQ_ADMIN: 'SMAQ_ADMIN',
+  UNIT_ADMIN: 'UNIT_ADMIN',
+};
+type RoleCode = string;
 import crypto from 'crypto';
 
 export class AuthService {

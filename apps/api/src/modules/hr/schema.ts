@@ -160,6 +160,77 @@ export const queryStaffSchema = z.object({
   search: z.string().optional(),
 });
 
+// Talent Management Schemas
+export const createCompetencySchema = z.object({
+  name: z.string().min(2),
+  description: z.string().optional(),
+  category: z.string().optional(),
+});
+
+export const updateCompetencySchema = z.object({
+  name: z.string().min(2).optional(),
+  description: z.string().optional(),
+  category: z.string().optional(),
+});
+
+export const createTrainingProgramSchema = z.object({
+  name: z.string().min(2),
+  provider: z.string().optional(),
+  description: z.string().optional(),
+  startDate: z.string().datetime(),
+  endDate: z.string().datetime(),
+  hours: z.number().optional(),
+  cost: z.number().optional(),
+  location: z.string().optional(),
+});
+
+export const updateTrainingProgramSchema = createTrainingProgramSchema.partial();
+
+export const createEmployeeCompetencySchema = z.object({
+  userId: z.string().uuid(),
+  competencyId: z.string().uuid(),
+  proficiency: z.number().min(1).max(5),
+  targetLevel: z.number().min(1).max(5).optional(),
+  notes: z.string().optional(),
+});
+
+export const updateEmployeeCompetencySchema = z.object({
+  proficiency: z.number().min(1).max(5).optional(),
+  targetLevel: z.number().min(1).max(5).optional(),
+  notes: z.string().optional(),
+});
+
+export const enrollTrainingSchema = z.object({
+  userId: z.string().uuid(),
+  trainingProgramId: z.string().uuid(),
+  status: z.string().default('ENROLLED'),
+});
+
+export const updateEmployeeTrainingSchema = z.object({
+  status: z.string().optional(),
+  score: z.number().optional(),
+  feedback: z.string().optional(),
+  certificateUrl: z.string().optional(),
+});
+
+export const createPerformanceReviewSchema = z.object({
+  userId: z.string().uuid(),
+  reviewerId: z.string().uuid(),
+  cycleName: z.string(),
+  startDate: z.string().datetime(),
+  endDate: z.string().datetime(),
+  goals: z.string().optional(),
+});
+
+export const updatePerformanceReviewSchema = z.object({
+  status: z.string().optional(),
+  selfRating: z.any().optional(),
+  managerRating: z.any().optional(),
+  finalScore: z.number().optional(),
+  finalGrade: z.string().optional(),
+  feedback: z.string().optional(),
+});
+
 export type CreateStaffAttendanceInput = z.infer<typeof createStaffAttendanceSchema>;
 export type UpdateStaffAttendanceInput = z.infer<typeof updateStaffAttendanceSchema>;
 export type BulkAttendanceInput = z.infer<typeof bulkAttendanceSchema>;
@@ -168,3 +239,14 @@ export type UpdateLeaveInput = z.infer<typeof updateLeaveSchema>;
 export type ApproveLeaveInput = z.infer<typeof approveLeaveSchema>;
 export type CreateEmployeeInput = z.infer<typeof createEmployeeSchema>;
 export type UpdateEmployeeInput = z.infer<typeof updateEmployeeSchema>;
+
+export type CreateCompetencyInput = z.infer<typeof createCompetencySchema>;
+export type UpdateCompetencyInput = z.infer<typeof updateCompetencySchema>;
+export type CreateTrainingProgramInput = z.infer<typeof createTrainingProgramSchema>;
+export type UpdateTrainingProgramInput = z.infer<typeof updateTrainingProgramSchema>;
+export type CreateEmployeeCompetencyInput = z.infer<typeof createEmployeeCompetencySchema>;
+export type UpdateEmployeeCompetencyInput = z.infer<typeof updateEmployeeCompetencySchema>;
+export type EnrollTrainingInput = z.infer<typeof enrollTrainingSchema>;
+export type UpdateEmployeeTrainingInput = z.infer<typeof updateEmployeeTrainingSchema>;
+export type CreatePerformanceReviewInput = z.infer<typeof createPerformanceReviewSchema>;
+export type UpdatePerformanceReviewInput = z.infer<typeof updatePerformanceReviewSchema>;

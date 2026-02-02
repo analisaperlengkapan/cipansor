@@ -6,6 +6,7 @@ import { contractController } from './contracts.controller';
 import { leaveBalanceController } from './leave-balances.controller';
 import { employeeDocumentController } from './employee-documents.controller';
 import { employmentHistoryController } from './employment-history.controller';
+import * as talentController from './talent.controller';
 import { authenticate, authorize } from '../../middleware/auth';
 import { validateQuery } from '../../middleware/error';
 import { queryStaffAttendanceSchema, queryLeaveSchema, queryStaffSchema } from './schema';
@@ -657,6 +658,118 @@ router.patch(
   '/leave-balances/:id',
   authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
   leaveBalanceController.update
+);
+
+// ==================== TALENT MANAGEMENT ====================
+
+// Competencies
+router.get(
+  '/talent/competencies',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF),
+  talentController.getCompetencies
+);
+router.post(
+  '/talent/competencies',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  talentController.createCompetency
+);
+router.patch(
+  '/talent/competencies/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  talentController.updateCompetency
+);
+router.delete(
+  '/talent/competencies/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  talentController.deleteCompetency
+);
+
+// Employee Competencies
+router.get(
+  '/talent/employees/:userId/competencies',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF),
+  talentController.getEmployeeCompetencies
+);
+router.post(
+  '/talent/employees/competencies',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  talentController.addEmployeeCompetency
+);
+router.patch(
+  '/talent/employees/competencies/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  talentController.updateEmployeeCompetency
+);
+router.delete(
+  '/talent/employees/competencies/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  talentController.removeEmployeeCompetency
+);
+
+// Training Programs
+router.get(
+  '/talent/training/programs',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF),
+  talentController.getTrainingPrograms
+);
+router.post(
+  '/talent/training/programs',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  talentController.createTrainingProgram
+);
+router.patch(
+  '/talent/training/programs/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  talentController.updateTrainingProgram
+);
+router.delete(
+  '/talent/training/programs/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  talentController.deleteTrainingProgram
+);
+
+// Employee Training
+router.post(
+  '/talent/training/enroll',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  talentController.enrollEmployeeToTraining
+);
+router.get(
+  '/talent/employees/:userId/training',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF),
+  talentController.getEmployeeTrainings
+);
+router.patch(
+  '/talent/training/participations/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  talentController.updateEmployeeTraining
+);
+
+// Performance Reviews
+router.get(
+  '/talent/reviews',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF),
+  talentController.getPerformanceReviews
+);
+router.get(
+  '/talent/reviews/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF),
+  talentController.getReviewById
+);
+router.post(
+  '/talent/reviews',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  talentController.createPerformanceReview
+);
+router.patch(
+  '/talent/reviews/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  talentController.updatePerformanceReview
+);
+router.delete(
+  '/talent/reviews/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  talentController.deletePerformanceReview
 );
 
 export default router;

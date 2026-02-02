@@ -65,10 +65,10 @@ export class AttendanceService {
       // Assuming DB stores DateTime (timestamp), we need range coverage
       // Using UTC methods to ignore server local timezone
       const startOfDay = new Date(
-        Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 0, 0, 0, 0)
+        Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0)
       );
       const endOfDay = new Date(
-        Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 23, 59, 59, 999)
+        Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999)
       );
 
       where.date = {

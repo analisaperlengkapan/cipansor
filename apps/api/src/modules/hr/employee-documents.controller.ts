@@ -15,7 +15,7 @@ const createDocumentSchema = z.object({
 export const employeeDocumentController = {
   async create(req: Request, res: Response, next: NextFunction) {
     try {
-      const data = createDocumentSchema.parse(req.body);
+      const data = createDocumentSchema.parse(req.body) as any;
       const result = await employeeDocumentService.create(data);
       res.status(201).json({ success: true, data: result });
     } catch (error) {

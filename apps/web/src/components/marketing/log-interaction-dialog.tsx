@@ -62,10 +62,9 @@ export function LogInteractionDialog({
       await mutation.mutateAsync({
         registrantId,
         type: values.type,
-        date: new Date(values.date).toISOString(),
         notes: values.notes,
         nextActionDate: values.nextActionDate
-          ? new Date(values.nextActionDate).toISOString()
+          ? new Date(values.nextActionDate)
           : undefined,
       });
       toast.success("Interaksi dicatat");

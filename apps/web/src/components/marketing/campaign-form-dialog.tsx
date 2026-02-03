@@ -95,7 +95,7 @@ export function CampaignFormDialog({
       };
 
       if (campaign) {
-        await updateMutation.mutateAsync({ id: campaign.id, data: payload });
+        await updateMutation.mutateAsync({ id: campaign.id, ...payload });
         toast.success("Kampanye berhasil diperbarui");
       } else {
         await createMutation.mutateAsync(payload);

@@ -394,9 +394,9 @@ export async function getLibraryStats(unitId: string) {
   const overdueBorrowings = activeBorrowingsData.filter((b) => b.dueDate < now).length;
 
   return {
-    totalTitles: totalBooks._count,
-    totalBooks: totalBooks._sum.quantity || 0,
-    availableBooks: totalBooks._sum.available || 0,
+    totalTitles: totalBooks._count as number,
+    totalBooks: (totalBooks._sum.quantity || 0) as number,
+    availableBooks: (totalBooks._sum.available || 0) as number,
     totalCategories,
     activeBorrowings,
     overdueBorrowings,

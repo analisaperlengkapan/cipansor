@@ -47,6 +47,8 @@ const roleRouteAccess: Record<UserRole, string[]> = {
     "/announcements",
     "/settings",
     "/daily-report",
+    "/marketing",
+    "/innovation",
   ],
   TEACHER: [
     "/teacher",
@@ -108,6 +110,10 @@ function getAuthState(request: NextRequest): {
 // Helper function to check if role can access route
 function canAccessRoute(role: UserRole, pathname: string): boolean {
   const allowedRoutes = roleRouteAccess[role];
+
+  if (!allowedRoutes) {
+    return false;
+  }
 
   // Super admin has access to everything
   if (allowedRoutes.includes("*")) {

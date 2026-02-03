@@ -71,7 +71,8 @@ export async function addReview(proposalId: string, reviewerId: string, data: Cr
     data: {
       proposal: { connect: { id: proposalId } },
       reviewer: { connect: { id: reviewerId } },
-      ...data,
+      status: data.status || 'PENDING',
+      notes: data.notes,
       score: data.score || 0,
     },
   });
@@ -88,21 +89,20 @@ export async function addComment(proposalId: string, userId: string, data: Creat
 }
 
 export async function approveProposal(id: string) {
-  // Use transaction to ensure consistency
-
-  const proposal = await prisma.innovationProposal.findUnique({
+  return prisma.$transaction(async (tx) => {
+    const proposal = await tx.innovationProposal.findUnique({
       where: { id },
       include: { submittedBy: true }
-  });
+    });
 
-  if (!proposal) throw new Error('Proposal not found');
-  if (proposal.status === InnovationStatus.APPROVED) throw new Error('Already approved');
+    if (!proposal) throw new Error('Proposal not found');
+    if (proposal.status === InnovationStatus.APPROVED) throw new Error('Already approved');
 
-  const unitId = proposal.submittedBy.unitId;
-  if (!unitId) throw new Error('Submitter has no unit assigned');
+    const unitId = proposal.submittedBy.unitId;
+    if (!unitId) throw new Error('Submitter has no unit assigned');
 
-  // Create Project
-  const project = await createProject({
+    // Create Project
+    const project = await createProject({
       name: proposal.title,
       description: proposal.description,
       status: ProjectStatus.PLANNING,
@@ -112,15 +112,16 @@ export async function approveProposal(id: string) {
       startDate: new Date(),
       endDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)), // Default 1 year
       budget: 0
-  });
+    }, tx);
 
-  // Update Proposal
-  return prisma.innovationProposal.update({
+    // Update Proposal
+    return tx.innovationProposal.update({
       where: { id },
       data: {
-          status: InnovationStatus.APPROVED,
-          projectId: project.id
+        status: InnovationStatus.APPROVED,
+        projectId: project.id
       }
+    });
   });
 }
 

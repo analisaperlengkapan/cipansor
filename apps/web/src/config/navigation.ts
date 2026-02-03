@@ -51,6 +51,7 @@ import {
   ShoppingBag,
   Key,
   MessageSquareWarning,
+  Lightbulb,
   type LucideIcon,
 } from "lucide-react";
 
@@ -583,6 +584,26 @@ const yayasanNavigation: NavGroup[] = [
     ],
   },
   {
+    title: "Innovation",
+    items: [
+      {
+        title: "Dashboard",
+        href: "/innovation",
+        icon: Lightbulb,
+      },
+      {
+        title: "Proposals",
+        href: "/innovation/proposals",
+        icon: FileText,
+      },
+      {
+        title: "Assessments",
+        href: "/innovation/assessments",
+        icon: ClipboardCheck,
+      },
+    ],
+  },
+  {
     title: "Risk Management",
     items: [
       {
@@ -1011,6 +1032,26 @@ const adminNavigation: NavGroup[] = [
         title: "Kurikulum Merdeka",
         href: "/kurikulum-merdeka",
         icon: BookMarked,
+      },
+    ],
+  },
+  {
+    title: "Innovation",
+    items: [
+      {
+        title: "Dashboard",
+        href: "/innovation",
+        icon: Lightbulb,
+      },
+      {
+        title: "Proposals",
+        href: "/innovation/proposals",
+        icon: FileText,
+      },
+      {
+        title: "Assessments",
+        href: "/innovation/assessments",
+        icon: ClipboardCheck,
       },
     ],
   },

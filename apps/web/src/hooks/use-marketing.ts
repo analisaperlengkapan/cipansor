@@ -20,6 +20,60 @@ export function useMarketingCampaigns(unitId?: string) {
   });
 }
 
+export const useCampaigns = useMarketingCampaigns;
+
+export function useMarketingStats(unitId?: string) {
+  return useQuery({
+    queryKey: ['marketing-stats', unitId],
+    queryFn: async () => {
+      // Return dummy stats if API endpoint doesn't exist yet, or implement real call
+      // Assuming GET /marketing/stats exists based on controller
+      const { data } = await api.get<any>('/marketing/stats', {
+        params: { unitId },
+      });
+      return data;
+    },
+  });
+}
+
+export function useRecentLeads(unitId?: string) {
+  return useQuery({
+    queryKey: ['recent-leads', unitId],
+    queryFn: async () => {
+      const { data } = await api.get<any[]>('/marketing/leads/recent', {
+        params: { unitId },
+      });
+      return data;
+    },
+  });
+}
+
+export function useUpcomingFollowUps(unitId?: string) {
+  return useQuery({
+    queryKey: ['upcoming-follow-ups', unitId],
+    queryFn: async () => {
+      const { data } = await api.get<any[]>('/marketing/interactions/upcoming', {
+        params: { unitId },
+      });
+      return data;
+    },
+  });
+}
+
+// Aliases for compatibility
+export const useInteractions = (registrantId: string) => {
+  return useQuery({
+    queryKey: ['marketing-interactions', registrantId],
+    queryFn: async () => {
+      const { data } = await api.get<MarketingInteraction[]>(`/marketing/interactions/registrant/${registrantId}`);
+      return data;
+    },
+    enabled: !!registrantId,
+  });
+};
+
+export const useLogInteraction = useRecordInteraction;
+
 export function useMarketingCampaign(id: string) {
   return useQuery({
     queryKey: ['marketing-campaign', id],

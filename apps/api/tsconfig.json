@@ -20,7 +20,8 @@
       "@config/*": ["config/*"],
       "@lib/*": ["lib/*"],
       "@middleware/*": ["middleware/*"],
-      "@modules/*": ["modules/*"]
+      "@modules/*": ["modules/*"],
+      "@cipansor/shared": ["../../packages/shared/src/index.ts"]
     },
     "typeRoots": ["./src/types", "./node_modules/@types"]
   },

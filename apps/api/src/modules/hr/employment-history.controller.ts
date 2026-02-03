@@ -17,7 +17,7 @@ const createHistorySchema = z.object({
 export const employmentHistoryController = {
   async create(req: Request, res: Response, next: NextFunction) {
     try {
-      const data = createHistorySchema.parse(req.body);
+      const data = createHistorySchema.parse(req.body) as any;
       const result = await employmentHistoryService.create(data);
       res.status(201).json({ success: true, data: result });
     } catch (error) {

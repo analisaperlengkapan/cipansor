@@ -1,40 +1,45 @@
 import { prisma } from '@/lib/prisma';
-import { ProjectStatus, TaskPriority } from '@prisma/client';
+import { ProjectStatus, TaskPriority, Prisma } from '@prisma/client';
 import { CreateProjectInput, UpdateProjectInput, CreateProjectTaskInput, UpdateProjectTaskInput, UpdateTaskPositionInput, CreateColumnInput, UpdateColumnInput } from './schema';
 import { createNotification } from '../notifications/service';
 
-export async function createProject(data: CreateProjectInput) {
-  return prisma.$transaction(async (tx) => {
-    const project = await tx.project.create({
-      data: {
-        name: data.name,
-        description: data.description,
-        status: data.status || ProjectStatus.PLANNING,
-        priority: data.priority as TaskPriority,
-        startDate: data.startDate,
-        endDate: data.endDate,
-        manager: { connect: { id: data.managerId } },
-        unit: { connect: { id: data.unitId } },
-        budget: data.budget,
-        members: {
-          create: {
-            userId: data.managerId,
-            role: 'MANAGER',
-          },
+async function createProjectInternal(transaction: Prisma.TransactionClient, data: CreateProjectInput) {
+  const project = await transaction.project.create({
+    data: {
+      name: data.name,
+      description: data.description,
+      status: data.status || ProjectStatus.PLANNING,
+      priority: data.priority as TaskPriority,
+      startDate: data.startDate,
+      endDate: data.endDate,
+      manager: { connect: { id: data.managerId } },
+      unit: { connect: { id: data.unitId } },
+      budget: data.budget,
+      members: {
+        create: {
+          userId: data.managerId,
+          role: 'MANAGER',
         },
       },
-    });
-
-    await tx.projectColumn.createMany({
-      data: [
-        { projectId: project.id, name: 'To Do', order: 0, color: '#e2e8f0' },
-        { projectId: project.id, name: 'In Progress', order: 1, color: '#3b82f6' },
-        { projectId: project.id, name: 'Done', order: 2, color: '#22c55e' },
-      ],
-    });
-
-    return project;
+    },
   });
+
+  await transaction.projectColumn.createMany({
+    data: [
+      { projectId: project.id, name: 'To Do', order: 0, color: '#e2e8f0' },
+      { projectId: project.id, name: 'In Progress', order: 1, color: '#3b82f6' },
+      { projectId: project.id, name: 'Done', order: 2, color: '#22c55e' },
+    ],
+  });
+
+  return project;
+}
+
+export async function createProject(data: CreateProjectInput, tx?: Prisma.TransactionClient) {
+  if (tx) {
+    return createProjectInternal(tx, data);
+  }
+  return prisma.$transaction((transaction) => createProjectInternal(transaction, data));
 }
 
 export async function getProjects(query: { unitId?: string; managerId?: string; status?: ProjectStatus }) {

@@ -189,7 +189,7 @@ export default function MarketingDashboard() {
       if (editingCampaign) {
         await updateCampaign.mutateAsync({
           id: editingCampaign.id,
-          data: campaignForm,
+          ...campaignForm,
         });
         toast.success("Kampanye berhasil diperbarui");
       } else {
@@ -289,7 +289,7 @@ export default function MarketingDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {stats?.sources?.reduce((sum, s) => sum + s.count, 0) || 0}
+              {stats?.sources?.reduce((sum: number, s: any) => sum + s.count, 0) || 0}
             </div>
             <p className="text-xs text-muted-foreground">Dari semua sumber</p>
           </CardContent>
@@ -339,7 +339,7 @@ export default function MarketingDashboard() {
                 {stats?.topCampaigns && stats.topCampaigns.length > 0
                 ? Math.round(
                     stats.topCampaigns.reduce(
-                        (sum, c) => sum + ((c as any).conversionRate || 0),
+                        (sum: number, c: any) => sum + ((c as any).conversionRate || 0),
                       0,
                     ) / stats.topCampaigns.length,
                   )
@@ -395,7 +395,7 @@ export default function MarketingDashboard() {
                         dataKey="count"
                         nameKey="source"
                       >
-                        {stats.sources.map((entry, index) => (
+                        {stats.sources.map((entry: any, index: number) => (
                           <Cell
                             key={`cell-${index}`}
                             fill={COLORS[index % COLORS.length]}
@@ -752,7 +752,7 @@ export default function MarketingDashboard() {
                 <CardTitle>Sumber Pendaftar Detail</CardTitle>
               </CardHeader>
               <CardContent>
-                {stats?.sources?.map((source, index) => (
+                {stats?.sources?.map((source: any, index: number) => (
                   <div
                     key={index}
                     className="flex items-center justify-between py-2 border-b last:border-0"
@@ -772,7 +772,7 @@ export default function MarketingDashboard() {
                         {Math.round(
                           (source.count /
                             (stats?.sources?.reduce(
-                              (sum, s) => sum + s.count,
+                              (sum: number, s: any) => sum + s.count,
                               0,
                             ) || 1)) *
                             100,
@@ -790,7 +790,7 @@ export default function MarketingDashboard() {
                 <CardTitle>Top Kampanye Detail</CardTitle>
               </CardHeader>
               <CardContent>
-                {stats?.topCampaigns?.map((campaign, index) => (
+                {stats?.topCampaigns?.map((campaign: any, index: number) => (
                   <div
                     key={index}
                     className="flex items-center justify-between py-2 border-b last:border-0"

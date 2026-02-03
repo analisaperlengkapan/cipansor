@@ -53,7 +53,17 @@ export class ApiError extends Error {
   }
 }
 
-export class AppError extends ApiError {}
+export class AppError extends ApiError {
+    constructor(code: ErrorCode | string, message: string, statusCode?: number) {
+        // Fallback for string codes to BAD_REQUEST if generic, or map if possible
+        const validCode = Object.values(ErrorCode).includes(code as ErrorCode)
+            ? (code as ErrorCode)
+            : ErrorCode.BAD_REQUEST;
+
+        super(validCode, message);
+        this.name = 'AppError';
+    }
+}
 
 // Helper functions to create common errors
 export const Errors = {

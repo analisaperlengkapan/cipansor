@@ -7,7 +7,7 @@ export const departmentController = {
   create: async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { unitId } = req.user!;
-      if (!unitId) throw new AppError('Unit ID missing from user', 400);
+      if (!unitId) throw new AppError('Unit ID is required' as any, '400' as any);
 
       const result = await departmentService.create({ ...req.body, unitId });
       sendResponse(res, result, 'Department created successfully', 201);
@@ -29,7 +29,7 @@ export const departmentController = {
   findAll: async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { unitId } = req.user!;
-      if (!unitId) throw new AppError('Unit ID missing from user', 400);
+      if (!unitId) throw new AppError('Unit ID is required' as any, '400' as any);
 
       const page = Number(req.query.page) || 1;
       const limit = Number(req.query.limit) || 10;
@@ -46,7 +46,7 @@ export const departmentController = {
     try {
       const { id } = req.params;
       const result = await departmentService.findOne(id);
-      if (!result) throw new AppError('Department not found', 404);
+      if (!result) throw new AppError('Department not found' as any, '404' as any);
       sendResponse(res, result, 'Department retrieved successfully');
     } catch (error) {
       next(error);

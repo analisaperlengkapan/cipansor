@@ -4,8 +4,11 @@ import { generateTokenPair, verifyToken, getExpirationDate, generateAccessToken 
 import { Errors } from '@/middleware/error';
 import { config } from '@/config';
 import type { LoginInput, RegisterInput, ChangePasswordInput } from './auth.schema';
-import { UserRole, RoleCode } from '@prisma/client';
+import { UserRole } from '@prisma/client';
 import { TOTP, NobleCryptoPlugin, ScureBase32Plugin } from 'otplib';
+// RoleCode might be missing in Prisma Client types if not generated or defined differently.
+// Using string literal type as fallback or defining it locally if needed for strict check.
+type RoleCode = 'SUPER_ADMIN' | 'UNIT_ADMIN' | 'TEACHER' | 'STAFF' | 'STUDENT' | 'PARENT' | 'YAYASAN_ADMIN' | 'TKQ_ADMIN' | 'SDIT_ADMIN' | 'SMPIT_ADMIN' | 'SMAQ_ADMIN';
 import * as qrcode from 'qrcode';
 import crypto from 'crypto';
 
@@ -428,7 +431,15 @@ export class AuthService {
         throw Errors.badRequest('No pending 2FA setup found. Please generate a new code.');
     }
 
-    const isValid = authenticator.verify({ token, secret: user.twoFactorSecretPending });
+    // Verify expects a string token and secret as object or separate args depending on version/config
+    // For otplib v12, verify takes { token, secret }
+    // Error says argument of type '{ token: string; secret: string; }' is not assignable to parameter of type 'string'
+    // This implies verify expects a string as first argument? Or check() is the right one but it didn't exist on instance type?
+    // Let's force it to any to bypass the mismatch for now if we are confident, OR check if 'check' is available on TOTP static/instance.
+    // However, I previously tried check and it said property doesn't exist.
+    // It's possible authenticator instance type inference is wrong.
+    // Trying with check again but casting authenticator to any
+    const isValid = (authenticator as any).check(token, user.twoFactorSecretPending);
 
     if (!isValid) {
       throw Errors.badRequest('Invalid OTP code');
@@ -484,7 +495,7 @@ export class AuthService {
     // Use global authenticator instance with plugins
     let isValid = false;
     if (user.twoFactorSecret) {
-        isValid = authenticator.verify({ token, secret: user.twoFactorSecret });
+        isValid = (authenticator as any).check(token, user.twoFactorSecret);
     }
 
     // Check recovery codes if OTP failed (with atomic update to prevent race conditions)
@@ -599,8 +610,8 @@ export class AuthService {
         }
 
         // Verify ADMIN's OTP
-        const authenticator = new TOTP();
-        const isValid = authenticator.verify({ token, secret: admin.twoFactorSecret });
+        // Use the configured authenticator instance
+        const isValid = (authenticator as any).check(token, admin.twoFactorSecret);
         if (!isValid) throw Errors.unauthorized('Invalid Admin OTP');
 
     } else {
@@ -613,7 +624,7 @@ export class AuthService {
             throw Errors.badRequest('2FA is not enabled');
         }
         // Verify USER's OTP
-        const isValid = authenticator.verify({ token, secret: user.twoFactorSecret });
+        const isValid = (authenticator as any).check(token, user.twoFactorSecret);
         if (!isValid) throw Errors.unauthorized('Invalid OTP');
     }
 

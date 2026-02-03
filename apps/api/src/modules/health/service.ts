@@ -214,12 +214,14 @@ export async function createMedicalRecord(data: CreateMedicalRecordInput, record
   }
 
   // Emit Event for other listeners (e.g., Dashboard)
+  // Casting student to any to access unitId which might be missing in type definition but present in query
+  const studentAny = record.student as any;
   eventBus.emit('health:medical-record-created', {
     id: record.id,
     studentId: record.studentId,
     studentName: record.student?.user?.name || 'Unknown',
-    unitId: record.student?.unitId || 'unknown',
-    unitName: record.student?.unit?.name || 'Unknown',
+    unitId: studentAny?.unitId || 'unknown',
+    unitName: studentAny?.unit?.name || 'Unknown',
     type: record.type,
     complaint: record.complaint,
     status: record.status || 'UNKNOWN',

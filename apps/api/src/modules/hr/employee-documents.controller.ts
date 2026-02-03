@@ -16,7 +16,15 @@ export const employeeDocumentController = {
   async create(req: Request, res: Response, next: NextFunction) {
     try {
       const data = createDocumentSchema.parse(req.body);
-      const result = await employeeDocumentService.create(data);
+      // Ensure required properties are present and match strict types
+      const createInput = {
+          ...data,
+          userId: data.userId, // Explicitly map
+          name: data.name, // Required
+          type: data.type, // Required
+          fileUrl: data.fileUrl, // Required
+      };
+      const result = await employeeDocumentService.create(createInput);
       res.status(201).json({ success: true, data: result });
     } catch (error) {
       next(error);

@@ -18,7 +18,17 @@ export const employmentHistoryController = {
   async create(req: Request, res: Response, next: NextFunction) {
     try {
       const data = createHistorySchema.parse(req.body);
-      const result = await employmentHistoryService.create(data);
+      const createInput = {
+        userId: data.userId,
+        action: data.action,
+        previousPosition: data.previousPosition,
+        newPosition: data.newPosition,
+        previousDepartment: data.previousDepartment,
+        newDepartment: data.newDepartment,
+        effectiveDate: data.effectiveDate,
+        notes: data.notes,
+      };
+      const result = await employmentHistoryService.create(createInput);
       res.status(201).json({ success: true, data: result });
     } catch (error) {
       next(error);

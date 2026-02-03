@@ -23,7 +23,15 @@ export const upsertSecret = async (req: Request, res: Response, next: NextFuncti
       return;
     }
 
-    const result = await SecretsService.upsert(validation.data);
+    const data = validation.data;
+    if (!data.key) {
+        throw new Error('Key is required');
+    }
+    const result = await SecretsService.upsert({
+        ...data,
+        key: data.key,
+        value: data.value!
+    });
     res.status(httpStatus.OK).json({ data: { id: result.id, key: result.key } });
   } catch (error) {
     next(error);

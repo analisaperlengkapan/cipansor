@@ -678,7 +678,8 @@ async function validateLeaveRequest(
       }
 
       // Helper to check for leaves overlapping with AY
-      const getOverlappingLeaveQuery = (statusFilter: Prisma.EnumLeaveStatusFilter): Prisma.LeaveWhereInput => ({
+      // Cast statusFilter to any to avoid strict enum mismatch in Prisma types
+      const getOverlappingLeaveQuery = (statusFilter: any): Prisma.LeaveWhereInput => ({
         type: LeaveType.ANNUAL,
         status: statusFilter,
         OR: [

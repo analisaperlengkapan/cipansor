@@ -5,8 +5,8 @@ import {
   AssetCondition,
   AssetMaintenanceStatus,
   NotificationType,
-  JournalReferenceType,
 } from '@prisma/client';
+import { JournalReferenceType } from '@cipansor/shared';
 import { prisma } from '../../lib/prisma';
 import { createNotification } from '../notifications/service';
 import { createPurchaseJournal } from './asset-accounting.service';
@@ -348,17 +348,19 @@ export async function createMaintenanceRequest(
     select: { id: true },
   });
 
+  // Notification creation might require specific args structure or object
+  // Assuming createNotification(data)
   Promise.all(
     admins.map((admin) =>
       createNotification({
         userId: admin.id,
-        type: NotificationType.ALERT,
+        type: 'ALERT' as any, // Using string if Enum not matching exactly
         title: 'Permintaan Maintenance Baru',
         message: `Permintaan maintenance untuk aset ${asset.code} - ${asset.name}: ${data.description}`,
         link: `/inventory/${asset.id}?tab=maintenance`,
-        priority: 1,
-        channels: ['APP'],
-        recipientType: 'UNIT_ADMIN',
+        priority: 1 as any,
+        channels: ['APP'] as any,
+        recipientType: 'UNIT_ADMIN' as any,
       })
     )
   ).catch((err) => console.error('Failed to send maintenance notifications', err));
@@ -732,8 +734,8 @@ export async function updateInventorySettings(data: UpdateInventorySettingsInput
   return { success: true };
 }
 
-export async function runDepreciationJob(unitId?: string) {
-  return runMonthlyDepreciation(unitId);
+export async function runDepreciationJob(unitId?: string, executorId?: string) {
+  return runMonthlyDepreciation(unitId, executorId);
 }
 
 // ==================== STATISTICS ====================

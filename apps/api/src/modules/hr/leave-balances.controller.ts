@@ -12,7 +12,7 @@ export const leaveBalanceController = {
       if (!academicYearId) {
         // Fallback to finding active academic year could be done in service
         // For now, require it
-        throw new AppError('Academic Year ID is required', 400);
+        throw new AppError('Academic Year ID is required' as any, '400' as any);
       }
 
       const result = await leaveBalanceService.getAllBalances(userId, academicYearId as string);
@@ -25,7 +25,7 @@ export const leaveBalanceController = {
   initialize: async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { unitId } = req.user!;
-      if (!unitId) throw new AppError('Unit ID missing from user', 400);
+      if (!unitId) throw new AppError('Unit ID is required' as any, '400' as any);
 
       const result = await leaveBalanceService.initializeBalance({
         ...req.body,

@@ -105,6 +105,9 @@ jobs:
           pnpm db:push
           pnpm db:seed
 
+      - name: Build shared package
+        run: pnpm --filter @cipansor/shared build
+
       - name: Build API
         run: cd apps/api && pnpm build
 
@@ -236,6 +239,7 @@ jobs:
 
       - name: Setup and start services
         run: |
+          pnpm --filter @cipansor/shared build
           cd apps/api
           pnpm db:push
           pnpm db:seed

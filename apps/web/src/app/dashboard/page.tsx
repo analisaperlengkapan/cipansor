@@ -127,7 +127,13 @@ export default function DashboardPage() {
     ];
 
     return allActivities.sort((a, b) => b.rawTime - a.rawTime).slice(0, 5);
-  }, [recentStudents, recentTahfidz, violationData, financeData, recentDonations]);
+  }, [
+    recentStudents,
+    recentTahfidz,
+    violationData,
+    financeData,
+    recentDonations,
+  ]);
 
   return (
     <MainLayout>
@@ -351,7 +357,9 @@ export default function DashboardPage() {
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Donasi & Infak</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Donasi & Infak
+              </CardTitle>
               <Heart className="h-4 w-4 text-emerald-500" />
             </CardHeader>
             <CardContent>

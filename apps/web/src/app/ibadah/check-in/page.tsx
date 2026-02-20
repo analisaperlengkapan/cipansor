@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
@@ -112,7 +112,7 @@ export default function IbadahCheckInPage() {
   }, [targets]);
 
   // Initialize checkIns when targets or existing records change
-  useMemo(() => {
+  useEffect(() => {
     if (targets.length > 0 && checkIns.size === 0) {
       const initial = new Map<string, CheckInItem>();
       targets.forEach((target) => {
@@ -131,7 +131,7 @@ export default function IbadahCheckInPage() {
       });
       setCheckIns(initial);
     }
-  }, [targets, existingRecords, checkIns.size]);
+  });
 
   const handleToggleComplete = (targetId: string, target: IbadahTarget) => {
     const current = checkIns.get(targetId);

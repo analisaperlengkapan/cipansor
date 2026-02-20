@@ -119,7 +119,7 @@ function AccountCodesTab() {
     }
     const tree = buildAccountTree(accountCodesData.data as any[]);
     return flattenAccountTree(tree);
-  }, [accountCodesData?.data, search, typeFilter]);
+  }, [accountCodesData, search, typeFilter]);
 
   const createAccountCode = useCreateAccountCode();
 
@@ -298,7 +298,9 @@ function AccountCodesTab() {
                   <TableRow key={account.id}>
                     <TableCell className="font-mono font-medium">
                       <span
-                        style={{ paddingLeft: `${(account.level || 0) * 20}px` }}
+                        style={{
+                          paddingLeft: `${(account.level || 0) * 20}px`,
+                        }}
                       >
                         {account.code}
                       </span>
@@ -1002,9 +1004,14 @@ function AccountingSettingsTab() {
               ))}
 
               <div className="pt-4">
-                <Button onClick={handleSave} disabled={updateMutation.isPending}>
+                <Button
+                  onClick={handleSave}
+                  disabled={updateMutation.isPending}
+                >
                   <Save className="h-4 w-4 mr-2" />
-                  {updateMutation.isPending ? "Menyimpan..." : "Simpan Pengaturan"}
+                  {updateMutation.isPending
+                    ? "Menyimpan..."
+                    : "Simpan Pengaturan"}
                 </Button>
               </div>
             </div>

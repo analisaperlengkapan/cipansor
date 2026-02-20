@@ -202,7 +202,7 @@ export default function UsersPage() {
       return userRoles.some((ur) => ur.role.realm === realmFilter);
     });
     // We explicitly only want to re-run when data or filter changes
-  }, [data?.data, realmFilter]);
+  }, [data, realmFilter]);
 
   const columns: ColumnDef<User>[] = [
     {

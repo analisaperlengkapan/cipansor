@@ -211,7 +211,8 @@ export const dailyReportService = {
         mood: data.morningMood as DailyMood | undefined,
         healthStatus: data.healthNotes,
         temperature: data.temperature,
-        hadBreakfast: data.breakfastConsumption === 'HABIS' || data.breakfastConsumption === 'SETENGAH',
+        hadBreakfast:
+          data.breakfastConsumption === 'HABIS' || data.breakfastConsumption === 'SETENGAH',
         mealStatus: data.lunchConsumption as MealConsumption | undefined,
         snackStatus: data.snackConsumption as MealConsumption | undefined,
         napDuration: data.napDurationMinutes,
@@ -411,9 +412,7 @@ export const dailyReportService = {
                     },
                   });
                 } catch (err) {
-                  logger.error(
-                    `Failed to update Reading Progress for ${report.studentId}: ${err}`
-                  );
+                  logger.error(`Failed to update Reading Progress for ${report.studentId}: ${err}`);
                 }
               } else {
                 logger.warn(
@@ -441,9 +440,7 @@ export const dailyReportService = {
                   },
                 });
               } catch (err) {
-                logger.error(
-                  `Failed to create Tahfidz Record for ${report.studentId}: ${err}`
-                );
+                logger.error(`Failed to create Tahfidz Record for ${report.studentId}: ${err}`);
               }
             }
 

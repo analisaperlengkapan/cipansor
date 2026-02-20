@@ -1,5 +1,11 @@
 import { prisma } from '@/lib/prisma';
-import { ComplaintStatus, ComplaintPriority, ComplaintCategory, Prisma, UserRole } from '@prisma/client';
+import {
+  ComplaintStatus,
+  ComplaintPriority,
+  ComplaintCategory,
+  Prisma,
+  UserRole,
+} from '@prisma/client';
 
 export const complaintsService = {
   create: async (data: {
@@ -28,17 +34,15 @@ export const complaintsService = {
     });
   },
 
-  findAll: async (
-    params: {
-      unitId: string | null;
-      userId: string;
-      role: string;
-      status?: ComplaintStatus;
-      category?: ComplaintCategory;
-      page?: number;
-      limit?: number;
-    }
-  ) => {
+  findAll: async (params: {
+    unitId: string | null;
+    userId: string;
+    role: string;
+    status?: ComplaintStatus;
+    category?: ComplaintCategory;
+    page?: number;
+    limit?: number;
+  }) => {
     const { unitId, userId, role, status, category, page = 1, limit = 10 } = params;
     const skip = (page - 1) * limit;
 
@@ -81,7 +85,7 @@ export const complaintsService = {
           },
           _count: {
             select: { comments: true },
-          }
+          },
         },
         orderBy: { createdAt: 'desc' },
         skip,
@@ -93,12 +97,12 @@ export const complaintsService = {
     // Unmask for SUPER_ADMIN and UNIT_ADMIN (for investigation)
     const canViewAnonymous = role === UserRole.SUPER_ADMIN || role === UserRole.UNIT_ADMIN;
 
-    const sanitizedData = data.map(d => {
+    const sanitizedData = data.map((d) => {
       if (d.isAnonymous && !canViewAnonymous) {
         return {
           ...d,
           user: null, // Hide user details for anonymous complaints
-          userId: null
+          userId: null,
         };
       }
       return d;
@@ -155,7 +159,7 @@ export const complaintsService = {
     // Filter internal comments for non-staff/non-admin
     // Teachers are considered staff-level for visibility but restricted in management actions
     if (!hasFullAccess) {
-      complaint.comments = complaint.comments.filter(c => !c.isInternal);
+      complaint.comments = complaint.comments.filter((c) => !c.isInternal);
     }
 
     // Mask anonymous users logic

@@ -155,6 +155,31 @@ export const waveController = {
       next(error);
     }
   },
+
+  /**
+   * POST /api/ppdb-waves/onboard-registrant
+   * End-to-end Student Onboarding using Orchestrator
+   */
+  async onboardRegistrant(req: Request, res: Response, next: NextFunction) {
+    try {
+      // Lazy load to avoid circular dependencies if any
+      const { StudentOnboardingOrchestrator } = await import('@/services/integration/student-onboarding.orchestrator');
+      
+      const payload = {
+        registrantId: req.body.registrantId,
+        unitId: req.body.unitId,
+        assignedClassId: req.body.assignedClassId,
+        academicYearId: req.body.academicYearId,
+        parentUserId: req.body.parentUserId,
+        actorId: req.user?.id || 'system',
+      };
+
+      const result = await StudentOnboardingOrchestrator.executeOnboarding(payload);
+      res.status(200).json(ApiResponse.success(result, 'Registrant onboarded successfully (E2E Integration complete)'));
+    } catch (error: any) {
+      next(error);
+    }
+  },
 };
 
 export default waveController;

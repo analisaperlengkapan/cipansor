@@ -10,7 +10,7 @@ export class SecretsService {
       orderBy: { key: 'asc' },
     });
 
-    return secrets.map(s => ({
+    return secrets.map((s) => ({
       id: s.id,
       key: s.key,
       description: s.description,
@@ -19,7 +19,12 @@ export class SecretsService {
     }));
   }
 
-  static async upsert(data: { key: string; value: string; description?: string; unitId?: string | null }) {
+  static async upsert(data: {
+    key: string;
+    value: string;
+    description?: string;
+    unitId?: string | null;
+  }) {
     const encryptedValue = encrypt(data.value);
     const targetUnitId = data.unitId || null;
 
@@ -62,13 +67,13 @@ export class SecretsService {
 
   // Internal use only - to get decrypted value
   static async getValue(key: string, unitId: string | null = null) {
-     const secret = await prisma.systemSecret.findFirst({
-        where: {
-            unitId: unitId,
-            key: key
-        }
-     });
-     if (!secret) return null;
-     return decrypt(secret.value);
+    const secret = await prisma.systemSecret.findFirst({
+      where: {
+        unitId: unitId,
+        key: key,
+      },
+    });
+    if (!secret) return null;
+    return decrypt(secret.value);
   }
 }

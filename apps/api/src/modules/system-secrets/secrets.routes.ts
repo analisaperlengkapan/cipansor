@@ -16,10 +16,6 @@ router.use(authorize(UserRole.SUPER_ADMIN));
 
 router.get('/', listSecrets);
 router.post('/', upsertSecret);
-router.delete(
-  '/:id',
-  validateParams(z.object({ id: z.string().uuid() })),
-  deleteSecret
-);
+router.delete('/:id', validateParams(z.object({ id: z.string().uuid() })), deleteSecret);
 
 export default router;

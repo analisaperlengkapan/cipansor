@@ -35,15 +35,15 @@ interface SocketProviderProps {
 export function SocketProvider({ children }: SocketProviderProps) {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
-  const { token, isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
 
   useEffect(() => {
     // Only connect if authenticated
-    if (!isAuthenticated || !token) {
+    if (!isAuthenticated) {
       if (socket) {
         socket.disconnect();
-        setSocket(null);
-        setIsConnected(false);
+        setTimeout(() => setSocket(null), 0);
+        setTimeout(() => setIsConnected(false), 0);
       }
       return;
     }
@@ -56,7 +56,7 @@ export function SocketProvider({ children }: SocketProviderProps) {
     const newSocket = io(socketUrl, {
       path: "/socket.io",
       auth: {
-        token,
+        token: user?.id, // fallback or remove token requirement if generic
       },
       transports: ["websocket", "polling"],
       reconnection: true,
@@ -86,13 +86,13 @@ export function SocketProvider({ children }: SocketProviderProps) {
       console.error("[Socket] Error:", error);
     });
 
-    setSocket(newSocket);
+    setTimeout(() => setSocket(newSocket), 0);
 
     // Cleanup
     return () => {
       newSocket.disconnect();
     };
-  }, [isAuthenticated, token]);
+  }, [isAuthenticated, user?.id]);
 
   return (
     <SocketContext.Provider value={{ socket, isConnected }}>

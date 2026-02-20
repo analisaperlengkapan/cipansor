@@ -285,31 +285,6 @@ export default function ExecutiveDashboardPage() {
     : fallbackAttendanceByUnit;
   const displayAlerts = alerts || [];
 
-  // Connection status indicator
-  const ConnectionStatus = () => (
-    <div className="flex items-center gap-2">
-      <div
-        className={cn(
-          "w-2 h-2 rounded-full",
-          isConnected ? "bg-green-500 animate-pulse" : "bg-red-500",
-        )}
-      />
-      <span className="text-sm text-muted-foreground">
-        {isConnected ? "Terhubung" : "Terputus"}
-      </span>
-      {lastUpdate && (
-        <span className="text-xs text-muted-foreground">
-          • Update {format(lastUpdate, "HH:mm:ss")}
-        </span>
-      )}
-      {!isConnected && (
-        <Button variant="ghost" size="sm" onClick={reconnect}>
-          <RefreshCw className="h-3 w-3" />
-        </Button>
-      )}
-    </div>
-  );
-
   return (
     <MainLayout>
       <div className="space-y-6">
@@ -322,7 +297,27 @@ export default function ExecutiveDashboardPage() {
             />
           </div>
           <div className="flex items-center gap-3">
-            <ConnectionStatus />
+            <div className="flex items-center gap-2">
+              <div
+                className={cn(
+                  "w-2 h-2 rounded-full",
+                  isConnected ? "bg-green-500 animate-pulse" : "bg-red-500",
+                )}
+              />
+              <span className="text-sm text-muted-foreground">
+                {isConnected ? "Terhubung" : "Terputus"}
+              </span>
+              {lastUpdate && (
+                <span className="text-xs text-muted-foreground">
+                  • Update {format(lastUpdate, "HH:mm:ss")}
+                </span>
+              )}
+              {!isConnected && (
+                <Button variant="ghost" size="sm" onClick={reconnect}>
+                  <RefreshCw className="h-3 w-3" />
+                </Button>
+              )}
+            </div>
             <Button variant="outline" size="sm">
               <Download className="mr-2 h-4 w-4" />
               Export

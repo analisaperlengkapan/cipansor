@@ -142,7 +142,12 @@ export const useCreateAudit = () => {
     onSuccess: (_, variables) => {
       toast.success("Audit berhasil dibuat");
       queryClient.invalidateQueries({
-        queryKey: ["quality", "audits", variables.unitId, variables.academicYearId],
+        queryKey: [
+          "quality",
+          "audits",
+          variables.unitId,
+          variables.academicYearId,
+        ],
       });
     },
     onError: (error: any) => {
@@ -173,7 +178,10 @@ export const useUpdateAuditItem = () => {
       itemId: string;
       data: UpdateAuditItemInput;
     }) => {
-      const response = await api.patch(`/api/quality/audits/items/${itemId}`, data);
+      const response = await api.patch(
+        `/api/quality/audits/items/${itemId}`,
+        data,
+      );
       return response.data.data;
     },
     onSuccess: () => {

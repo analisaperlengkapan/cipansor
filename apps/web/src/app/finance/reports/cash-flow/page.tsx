@@ -16,7 +16,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Download, ArrowLeft, TrendingUp, TrendingDown } from "lucide-react";
+import {
+  Loader2,
+  Download,
+  ArrowLeft,
+  TrendingUp,
+  TrendingDown,
+} from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
 
@@ -141,43 +147,52 @@ export default function CashFlowPage() {
                 <div className="text-center mb-8">
                   <h2 className="text-2xl font-bold">Laporan Arus Kas</h2>
                   <p className="text-muted-foreground">
-                    Periode: {format(new Date(report.period.startDate), "dd MMM yyyy")} s/d{" "}
-                    {format(new Date(report.period.endDate), "dd MMM yyyy")}
+                    Periode:{" "}
+                    {format(new Date(report.period.startDate), "dd MMM yyyy")}{" "}
+                    s/d {format(new Date(report.period.endDate), "dd MMM yyyy")}
                   </p>
                 </div>
 
                 {renderSection(
                   report.operatingActivities.title,
                   report.operatingActivities.total,
-                  report.operatingActivities.items
+                  report.operatingActivities.items,
                 )}
 
                 {renderSection(
                   report.investingActivities.title,
                   report.investingActivities.total,
-                  report.investingActivities.items
+                  report.investingActivities.items,
                 )}
 
                 {renderSection(
                   report.financingActivities.title,
                   report.financingActivities.total,
-                  report.financingActivities.items
+                  report.financingActivities.items,
                 )}
 
                 <div className="border-t-2 pt-4 mt-8">
                   <div className="flex justify-between items-center mb-2">
-                    <span className="font-semibold">Kenaikan/(Penurunan) Kas Bersih</span>
-                    <span className={`font-bold font-mono text-lg ${report.netChangeInCash >= 0 ? "text-green-700" : "text-red-700"}`}>
+                    <span className="font-semibold">
+                      Kenaikan/(Penurunan) Kas Bersih
+                    </span>
+                    <span
+                      className={`font-bold font-mono text-lg ${report.netChangeInCash >= 0 ? "text-green-700" : "text-red-700"}`}
+                    >
                       {formatCurrency(report.netChangeInCash)}
                     </span>
                   </div>
                   <div className="flex justify-between items-center text-sm text-muted-foreground">
                     <span>Saldo Kas Awal</span>
-                    <span className="font-mono">{formatCurrency(report.beginningCashBalance)}</span>
+                    <span className="font-mono">
+                      {formatCurrency(report.beginningCashBalance)}
+                    </span>
                   </div>
                   <div className="flex justify-between items-center text-lg font-bold mt-2 bg-muted/20 p-2 rounded">
                     <span>Saldo Kas Akhir</span>
-                    <span className="font-mono">{formatCurrency(report.endingCashBalance)}</span>
+                    <span className="font-mono">
+                      {formatCurrency(report.endingCashBalance)}
+                    </span>
                   </div>
                 </div>
               </div>

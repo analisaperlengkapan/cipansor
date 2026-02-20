@@ -37,8 +37,8 @@ vi.mock('../../src/lib/prisma', () => ({
       aggregate: vi.fn(), // called by getLiveDashboardSummary potentially, but not by getCurrentDashboardMetrics
     },
     dashboardHistory: {
-        create: vi.fn(),
-    }
+      create: vi.fn(),
+    },
   },
 }));
 
@@ -66,9 +66,11 @@ describe('Dashboard Cache Warming Performance', () => {
     (prisma.hafidzStudent.count as any).mockImplementation(() => simulateDbDelay(5));
 
     // Mock aggregate
-    (prisma.murojaahRecord.aggregate as any).mockImplementation(() => simulateDbDelay({
-      _avg: { qualityScore: 85 }
-    }));
+    (prisma.murojaahRecord.aggregate as any).mockImplementation(() =>
+      simulateDbDelay({
+        _avg: { qualityScore: 85 },
+      })
+    );
   });
 
   it('measures execution time for warming cache for 20 units', async () => {
@@ -95,7 +97,7 @@ describe('Dashboard Cache Warming Performance', () => {
       teacher: 1,
       attendance: 1,
       hafidz: 1,
-      murojaah: 1
+      murojaah: 1,
     };
 
     const totalSets = 1 + UNIT_COUNT; // Global + Units

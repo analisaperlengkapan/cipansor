@@ -24,7 +24,7 @@ async function main() {
     const existing = await prisma.kitabKuning.findFirst({
       where: {
         title: name,
-      }
+      },
     });
 
     if (existing) {
@@ -35,7 +35,7 @@ async function main() {
     await prisma.kitabKuning.create({
       data: {
         title: name,
-        author: 'KH. As\'ad Humam',
+        author: "KH. As'ad Humam",
         category: KitabCategory.OTHER, // Using OTHER as Tahsin/Iqra is not in enum
         level: KitabLevel.PEMULA,
         totalPages: book.pages,

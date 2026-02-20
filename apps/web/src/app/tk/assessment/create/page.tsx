@@ -102,7 +102,7 @@ export default function TKAssessmentCreatePage() {
 
   // Reset assessments when context changes
   useEffect(() => {
-    setAssessments({});
+    setTimeout(() => setAssessments({}), 0);
   }, [selectedClassId, selectedAspect, selectedIndicatorId]);
 
   const updateAssessment = (

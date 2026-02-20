@@ -331,8 +331,8 @@ export const donationService = {
       const donation = await tx.donation.findUnique({
         where: { id },
         include: {
-          campaign: true
-        }
+          campaign: true,
+        },
       });
 
       if (!donation) {
@@ -376,41 +376,41 @@ export const donationService = {
         // Check for re-verification (CANCELLED -> VERIFIED)
         // Note: We allow re-verification to correct mistakes (e.g., accidental cancellation).
         if (donation.status === 'CANCELLED') {
-           // Find reversal entries
-           const reversalEntries = await tx.journalEntry.findMany({
-             where: {
-               reference: donation.id,
-               referenceType: 'DONATION_CANCEL',
-             },
-           });
+          // Find reversal entries
+          const reversalEntries = await tx.journalEntry.findMany({
+            where: {
+              reference: donation.id,
+              referenceType: 'DONATION_CANCEL',
+            },
+          });
 
-           if (reversalEntries.length > 0) {
-             // Delete reversal entries to restore original state
-             await tx.journalEntry.deleteMany({
-               where: {
-                 reference: donation.id,
-                 referenceType: 'DONATION_CANCEL',
-               },
-             });
+          if (reversalEntries.length > 0) {
+            // Delete reversal entries to restore original state
+            await tx.journalEntry.deleteMany({
+              where: {
+                reference: donation.id,
+                referenceType: 'DONATION_CANCEL',
+              },
+            });
 
-             // Skip creating new entries
-             return updatedDonation;
-           } else {
-             // Edge case: Cancelled but no reversal entries found (e.g. accounting skipped previously)
-             // Check if original entries exist to avoid duplication
-             const originalEntries = await tx.journalEntry.findMany({
-               where: {
-                 reference: donation.id,
-                 referenceType: 'DONATION',
-               },
-             });
+            // Skip creating new entries
+            return updatedDonation;
+          } else {
+            // Edge case: Cancelled but no reversal entries found (e.g. accounting skipped previously)
+            // Check if original entries exist to avoid duplication
+            const originalEntries = await tx.journalEntry.findMany({
+              where: {
+                reference: donation.id,
+                referenceType: 'DONATION',
+              },
+            });
 
-             if (originalEntries.length > 0) {
-               // Originals exist but no reversals -> Treat as "Restored" without new entries
-               // (This implies the cancellation didn't record reversal, so the original entries are still effectively active in the ledger if we ignore the status mismatch period)
-               return updatedDonation;
-             }
-           }
+            if (originalEntries.length > 0) {
+              // Originals exist but no reversals -> Treat as "Restored" without new entries
+              // (This implies the cancellation didn't record reversal, so the original entries are still effectively active in the ledger if we ignore the status mismatch period)
+              return updatedDonation;
+            }
+          }
         }
 
         const unitId = donation.unitId || donation.campaign?.unitId;
@@ -476,9 +476,7 @@ export const donationService = {
               // I will try to add it.
 
               name: {
-                contains: ['BANK_TRANSFER', 'QRIS', 'EWALLET'].includes(
-                  donation.paymentMethod
-                )
+                contains: ['BANK_TRANSFER', 'QRIS', 'EWALLET'].includes(donation.paymentMethod)
                   ? 'Bank'
                   : 'Kas',
                 mode: 'insensitive',
@@ -514,7 +512,6 @@ export const donationService = {
               // I will Read the schema in this turn.
 
               // ACTUALLY, I will read the schema first.
-
             },
           });
 
@@ -525,11 +522,11 @@ export const donationService = {
             ZAKAT: 'Zakat',
             WAKAF: 'Wakaf',
             BEASISWA: 'Beasiswa',
-            PEMBANGUNAN: 'Pembangunan'
+            PEMBANGUNAN: 'Pembangunan',
           };
 
-          const keyword = Object.keys(revenueKeywords).find(k => donation.type.includes(k))
-            ? revenueKeywords[Object.keys(revenueKeywords).find(k => donation.type.includes(k))!]
+          const keyword = Object.keys(revenueKeywords).find((k) => donation.type.includes(k))
+            ? revenueKeywords[Object.keys(revenueKeywords).find((k) => donation.type.includes(k))!]
             : 'Donasi';
 
           let revenueAccount = await tx.accountCode.findFirst({
@@ -553,13 +550,13 @@ export const donationService = {
 
           // Fallback 2: Last resort, use any Revenue account (starts with '4')
           if (!revenueAccount) {
-             revenueAccount = await tx.accountCode.findFirst({
-               where: {
-                 type: AccountType.REVENUE,
-                 code: { startsWith: '4' },
-                 isActive: true
-               }
-             });
+            revenueAccount = await tx.accountCode.findFirst({
+              where: {
+                type: AccountType.REVENUE,
+                code: { startsWith: '4' },
+                isActive: true,
+              },
+            });
           }
 
           if (assetAccount && revenueAccount) {
@@ -595,7 +592,9 @@ export const donationService = {
               },
             });
           } else {
-            console.warn(`Accounting Integration Skipped for Donation ${id}: Accounts not found. Asset: ${assetAccount?.name}, Revenue: ${revenueAccount?.name}`);
+            console.warn(
+              `Accounting Integration Skipped for Donation ${id}: Accounts not found. Asset: ${assetAccount?.name}, Revenue: ${revenueAccount?.name}`
+            );
           }
         }
       }

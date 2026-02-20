@@ -1,11 +1,14 @@
-'use client';
+"use client";
 
-import { useDroppable } from '@dnd-kit/core';
-import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { TaskCard } from './task-card';
-import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { useDroppable } from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { TaskCard } from "./task-card";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 interface Props {
   column: any;
@@ -28,7 +31,10 @@ export function ProjectColumn({ column, onAddTask }: Props) {
         </div>
       </div>
 
-      <div ref={setNodeRef} className="flex-1 p-2 overflow-y-auto min-h-[150px] space-y-2">
+      <div
+        ref={setNodeRef}
+        className="flex-1 p-2 overflow-y-auto min-h-[150px] space-y-2"
+      >
         <SortableContext
           items={column.tasks.map((t: any) => t.id)}
           strategy={verticalListSortingStrategy}
@@ -40,7 +46,11 @@ export function ProjectColumn({ column, onAddTask }: Props) {
       </div>
 
       <div className="p-2 border-t bg-card rounded-b-lg">
-        <Button variant="ghost" className="w-full justify-start text-muted-foreground" onClick={onAddTask}>
+        <Button
+          variant="ghost"
+          className="w-full justify-start text-muted-foreground"
+          onClick={onAddTask}
+        >
           <Plus className="w-4 h-4 mr-2" />
           Add Task
         </Button>

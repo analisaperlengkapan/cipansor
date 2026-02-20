@@ -221,19 +221,6 @@ export default function TahfidzCertificatePage() {
     }));
   };
 
-  // Trigger print logic when shouldPrint becomes true AND we have a generatedCertNumber
-  useEffect(() => {
-    if (shouldPrint && generatedCertNumber) {
-      // Double check printRef content is ready
-      // Small timeout to ensure state update propagated to DOM
-      const timer = setTimeout(() => {
-        performPrint();
-        setShouldPrint(false); // Reset trigger
-      }, 100);
-      return () => clearTimeout(timer);
-    }
-  }, [shouldPrint, generatedCertNumber]);
-
   const performPrint = () => {
     const printWindow = window.open("", "_blank");
     if (!printWindow) {
@@ -280,6 +267,19 @@ export default function TahfidzCertificatePage() {
     }, 500);
     toast.success("Sertifikat siap dicetak");
   };
+
+  // Trigger print logic when shouldPrint becomes true AND we have a generatedCertNumber
+  useEffect(() => {
+    if (shouldPrint && generatedCertNumber) {
+      // Double check printRef content is ready
+      // Small timeout to ensure state update propagated to DOM
+      const timer = setTimeout(() => {
+        performPrint();
+        setShouldPrint(false); // Reset trigger
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [shouldPrint, generatedCertNumber]);
 
   const handlePrint = async () => {
     if (!selectedStudent) {

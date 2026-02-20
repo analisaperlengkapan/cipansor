@@ -38,7 +38,7 @@ export function LandingNavbar() {
         "fixed top-0 z-50 w-full transition-all duration-300 border-b border-transparent",
         scrolled
           ? "bg-background/80 backdrop-blur-md border-border shadow-sm"
-          : "bg-transparent"
+          : "bg-transparent",
       )}
     >
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -71,9 +71,9 @@ export function LandingNavbar() {
                 </Button>
               </Link>
               <Link href="/public/ppdb">
-                 <Button size="sm" className="bg-primary hover:bg-primary/90">
-                   Daftar PPDB
-                 </Button>
+                <Button size="sm" className="bg-primary hover:bg-primary/90">
+                  Daftar PPDB
+                </Button>
               </Link>
             </div>
           </nav>
@@ -89,12 +89,12 @@ export function LandingNavbar() {
               </SheetTrigger>
               <SheetContent side="right">
                 <SheetHeader>
-                   <SheetTitle className="text-left flex items-center gap-2">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                        <BookOpen className="h-5 w-5" />
-                      </div>
-                      Pesantren Cipansor
-                   </SheetTitle>
+                  <SheetTitle className="text-left flex items-center gap-2">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                      <BookOpen className="h-5 w-5" />
+                    </div>
+                    Pesantren Cipansor
+                  </SheetTitle>
                 </SheetHeader>
                 <div className="flex flex-col gap-4 mt-8">
                   {navItems.map((item) => (
@@ -113,7 +113,7 @@ export function LandingNavbar() {
                       Login Portal
                     </Button>
                   </Link>
-                   <Link href="/public/ppdb">
+                  <Link href="/public/ppdb">
                     <Button className="w-full justify-start">
                       Daftar PPDB
                     </Button>

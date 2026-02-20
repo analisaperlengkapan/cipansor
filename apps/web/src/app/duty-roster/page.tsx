@@ -606,8 +606,8 @@ export default function DutyRosterPage() {
                 <div className="space-y-4">
                   {Object.entries(DUTY_TYPE_LABELS)
                     .slice(0, 6)
-                    .map(([type, label]) => {
-                      const completionRate = Math.random() * 30 + 70; // Demo
+                    .map(([type, label], idx) => {
+                      const completionRate = ((idx * 17) % 30) + 70; // Demo deterministic
                       return (
                         <div key={type} className="space-y-2">
                           <div className="flex justify-between text-sm">

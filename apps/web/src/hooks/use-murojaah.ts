@@ -316,12 +316,18 @@ export function useDeleteMurojaahMistake() {
       murojaahId: string;
       mistakeId: string;
     }) => {
-      const response = await apiClient.delete(`/murojaah/mistakes/${mistakeId}`);
+      const response = await apiClient.delete(
+        `/murojaah/mistakes/${mistakeId}`,
+      );
       return response.data;
     },
     onSuccess: (_, { murojaahId }) => {
-      queryClient.invalidateQueries({ queryKey: murojaahKeys.detail(murojaahId) });
-      queryClient.invalidateQueries({ queryKey: murojaahKeys.mistakes(murojaahId) });
+      queryClient.invalidateQueries({
+        queryKey: murojaahKeys.detail(murojaahId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: murojaahKeys.mistakes(murojaahId),
+      });
     },
   });
 }

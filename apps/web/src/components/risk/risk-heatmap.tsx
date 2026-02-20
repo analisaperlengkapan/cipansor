@@ -69,7 +69,10 @@ export function RiskHeatmap({ risks, onClickCell }: RiskHeatmapProps) {
         {/* Y-Axis Labels (Likelihood) */}
         <div className="flex flex-col justify-between pr-4 py-8 h-[300px] text-sm font-medium text-muted-foreground w-24 text-right">
           {likelihoodLabels.map((l) => (
-            <span key={l.value} className="flex-1 flex items-center justify-end">
+            <span
+              key={l.value}
+              className="flex-1 flex items-center justify-end"
+            >
               {l.label}
             </span>
           ))}
@@ -88,7 +91,7 @@ export function RiskHeatmap({ risks, onClickCell }: RiskHeatmapProps) {
                     key={`${row.value}-${col.value}`}
                     className={cn(
                       "rounded flex items-center justify-center cursor-pointer transition-colors relative border",
-                      getCellColor(score)
+                      getCellColor(score),
                     )}
                     onClick={() => onClickCell?.(row.value, col.value)}
                     title={`Likelihood: ${row.label}, Impact: ${col.label}, Score: ${score}`}
@@ -114,10 +117,18 @@ export function RiskHeatmap({ risks, onClickCell }: RiskHeatmapProps) {
       </div>
 
       <div className="mt-6 flex gap-4 text-xs">
-        <div className="flex items-center gap-1"><div className="w-3 h-3 bg-green-500 rounded"></div> Low (1-4)</div>
-        <div className="flex items-center gap-1"><div className="w-3 h-3 bg-yellow-400 rounded"></div> Medium (5-9)</div>
-        <div className="flex items-center gap-1"><div className="w-3 h-3 bg-orange-500 rounded"></div> High (10-19)</div>
-        <div className="flex items-center gap-1"><div className="w-3 h-3 bg-red-500 rounded"></div> Extreme (20-25)</div>
+        <div className="flex items-center gap-1">
+          <div className="w-3 h-3 bg-green-500 rounded"></div> Low (1-4)
+        </div>
+        <div className="flex items-center gap-1">
+          <div className="w-3 h-3 bg-yellow-400 rounded"></div> Medium (5-9)
+        </div>
+        <div className="flex items-center gap-1">
+          <div className="w-3 h-3 bg-orange-500 rounded"></div> High (10-19)
+        </div>
+        <div className="flex items-center gap-1">
+          <div className="w-3 h-3 bg-red-500 rounded"></div> Extreme (20-25)
+        </div>
       </div>
     </div>
   );

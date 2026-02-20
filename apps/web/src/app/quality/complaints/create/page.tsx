@@ -69,7 +69,8 @@ export default function CreateComplaintPage() {
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Buat Aduan</h1>
             <p className="text-muted-foreground">
-              Sampaikan aspirasi atau keluhan Anda untuk peningkatan kualitas layanan.
+              Sampaikan aspirasi atau keluhan Anda untuk peningkatan kualitas
+              layanan.
             </p>
           </div>
         </div>
@@ -112,7 +113,10 @@ export default function CreateComplaintPage() {
                   <FormItem>
                     <FormLabel>Subjek</FormLabel>
                     <FormControl>
-                      <Input placeholder="Contoh: AC di kelas 7A rusak" {...field} />
+                      <Input
+                        placeholder="Contoh: AC di kelas 7A rusak"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -126,7 +130,10 @@ export default function CreateComplaintPage() {
                   <FormItem>
                     <FormLabel>Lokasi (Opsional)</FormLabel>
                     <FormControl>
-                      <Input placeholder="Contoh: Gedung A Lantai 2" {...field} />
+                      <Input
+                        placeholder="Contoh: Gedung A Lantai 2"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -165,7 +172,8 @@ export default function CreateComplaintPage() {
                     <div className="space-y-1 leading-none">
                       <FormLabel>Kirim Secara Anonim</FormLabel>
                       <FormDescription>
-                        Identitas Anda akan disembunyikan dari petugas (kecuali Super Admin jika diperlukan investigasi).
+                        Identitas Anda akan disembunyikan dari petugas (kecuali
+                        Super Admin jika diperlukan investigasi).
                       </FormDescription>
                     </div>
                   </FormItem>

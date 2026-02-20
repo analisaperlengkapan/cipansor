@@ -131,7 +131,7 @@ export default function IbadahCheckInPage() {
       });
       setCheckIns(initial);
     }
-  });
+  }, [targets, existingRecords, checkIns.size]);
 
   const handleToggleComplete = (targetId: string, target: IbadahTarget) => {
     const current = checkIns.get(targetId);

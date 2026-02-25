@@ -173,7 +173,7 @@ export class CBTService {
 
   static async getStudentExams(studentId: string) {
     // 1. Get student's active class
-    const enrollments = await prisma.classEnrollment.findMany({
+    const enrollment = await prisma.classEnrollment.findFirst({
       where: {
         studentId,
         status: 'active',
@@ -183,19 +183,15 @@ export class CBTService {
       },
     });
 
-    if (enrollments.length === 0) {
+    if (!enrollment) {
       return []; // No active class, no exams
     }
-
-    const classIds = enrollments.map((e) => e.classId);
 
     // 2. Find exams scheduled for this class
     // TODO: Add logic for specific student assignments if needed (not just class)
     const exams = await prisma.exam.findMany({
       where: {
-        classId: { in: classIds },
-        status: { in: ['SCHEDULED', 'ONGOING', 'COMPLETED', 'GRADED'] }, // Show upcoming and past
-      },
+        classId: enrollment.classId,
         status: { in: ['SCHEDULED', 'ONGOING', 'COMPLETED', 'GRADED'] }, // Show upcoming and past
       },
       include: {
@@ -214,7 +210,7 @@ export class CBTService {
     return exams.map((exam) => ({
       ...exam,
       attemptStatus: exam.attempts[0]?.status || null,
-      score: exam.attempts[0]?.score ?? null,
+      score: exam.attempts[0]?.score || null,
       finishedAt: exam.attempts[0]?.finishedAt || null,
     }));
   }
@@ -348,7 +344,10 @@ export class CBTService {
       where: { id: attemptId },
       include: {
         exam: {
-          include: { questionBank: { include: { questions: true } } },
+          include: {
+            questionBank: { include: { questions: true } },
+            teacher: { select: { userId: true } },
+          },
         },
         answers: true,
       },
@@ -421,17 +420,17 @@ export class CBTService {
     // Automatically create a Grade entry?
     // Doing it here ensures integration with Report Card.
     await prisma.grade.create({
-        data: {
-            studentId: attempt.studentId,
-            examId: attempt.examId,
-            academicYearId: attempt.exam.academicYearId,
-            subjectId: attempt.exam.subjectId,
-            type: 'EXAM',
-            score: finalScore,
-            maxScore: attempt.exam.maxScore,
-            gradedById: attempt.exam.teacherId, // Auto-graded but attributed to teacher
-            notes: 'Auto-graded from CBT',
-        }
+      data: {
+        studentId: attempt.studentId,
+        examId: attempt.examId,
+        academicYearId: attempt.exam.academicYearId,
+        subjectId: attempt.exam.subjectId,
+        type: 'EXAM',
+        score: finalScore,
+        maxScore: attempt.exam.maxScore,
+        gradedById: attempt.exam.teacher.userId, // Auto-graded but attributed to teacher
+        notes: 'Auto-graded from CBT',
+      },
     });
 
     return finishedAttempt;

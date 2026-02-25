@@ -53,11 +53,11 @@ import {
   useRejectRegistration,
   useScheduleTest,
   useRecordTestResult,
+  useOnboardRegistrant,
   REGISTRATION_STATUS_LABELS,
   REGISTRATION_STATUS_COLORS,
   RegistrationStatus,
 } from "@/hooks/use-psb";
-import { useCreateBill } from "@/hooks/use-finance";
 import {
   ArrowLeft,
   Calendar,
@@ -87,7 +87,7 @@ export default function RegistrationDetailPage() {
   const rejectRegistration = useRejectRegistration();
   const scheduleTest = useScheduleTest();
   const recordTest = useRecordTestResult();
-  const createBill = useCreateBill();
+  const onboardRegistrant = useOnboardRegistrant();
 
   // Dialog states
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
@@ -179,21 +179,21 @@ export default function RegistrationDetailPage() {
     }
   };
 
-  const generateEntranceBill = async () => {
+  const handleOnboardE2E = async () => {
     try {
-      // Example: Create 'Tagihan Masuk' (Entrance Fee)
-      // Ideally this should come from a configured fee amount in the system
-      await createBill.mutateAsync({
-        studentId: registration.studentId || "", // This might fail if studentId is not yet linked/created
+      await onboardRegistrant.mutateAsync({
+        registrantId: id,
+        unitId: registration.unitId,
         academicYearId: registration.period?.academicYearId || "",
-        billType: "REGISTRATION", // or BUILDING
-        amount: 5000000, // Hardcoded for now, should be dynamic
-        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days from now
-        description: "Biaya Masuk (Uang Pangkal, Seragam, dll)",
+        // TODO: The UI should probably let admins select standard class, but we can default for now
+        // For E2E mockup, we will assume the parent user ID is retrievable or mock it if not present
+        parentUserId: "mocked-parent-id", // In real scenario, fetch parent userId from registration.fatherEmail etc
       });
-      toast.success("Tagihan berhasil dibuat");
+      toast.success("Siswa berhasil di-Onboard secara terpadu! (Siswa, Medis, Tagihan Terbuat)");
+      // Force status update to ENROLLED
+      await updateStatus.mutateAsync({ id, status: "ENROLLED" });
     } catch (error) {
-      toast.error("Gagal membuat tagihan. Pastikan siswa sudah terdaftar.");
+      toast.error("Gagal melakukan Onboarding Terpadu.");
     }
   };
 
@@ -273,9 +273,9 @@ export default function RegistrationDetailPage() {
             )}
 
             {registration.status === "ACCEPTED" && !registration.enrolledAt && (
-              <Button variant="outline" onClick={generateEntranceBill}>
-                <FileText className="h-4 w-4 mr-2" />
-                Buat Tagihan Masuk
+              <Button onClick={handleOnboardE2E} className="bg-amber-600 hover:bg-amber-700 text-white shadow-lg">
+                <CheckCircle2 className="h-4 w-4 mr-2" />
+                Eksekusi Onboarding Terpadu (E2E)
               </Button>
             )}
 

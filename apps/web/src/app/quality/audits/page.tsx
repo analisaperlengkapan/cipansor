@@ -76,7 +76,11 @@ export default function QualityAuditsPage() {
                       <CardTitle className="text-lg">{audit.name}</CardTitle>
                       <CardDescription>{audit.code}</CardDescription>
                     </div>
-                    <Badge variant={audit.status === "COMPLETED" ? "default" : "outline"}>
+                    <Badge
+                      variant={
+                        audit.status === "COMPLETED" ? "default" : "outline"
+                      }
+                    >
                       {audit.status}
                     </Badge>
                   </div>
@@ -85,8 +89,13 @@ export default function QualityAuditsPage() {
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Calendar className="h-4 w-4" />
                     <span>
-                      {format(new Date(audit.startDate), "dd MMM yyyy", { locale: idLocale })} -{" "}
-                      {format(new Date(audit.endDate), "dd MMM yyyy", { locale: idLocale })}
+                      {format(new Date(audit.startDate), "dd MMM yyyy", {
+                        locale: idLocale,
+                      })}{" "}
+                      -{" "}
+                      {format(new Date(audit.endDate), "dd MMM yyyy", {
+                        locale: idLocale,
+                      })}
                     </span>
                   </div>
 
@@ -103,10 +112,11 @@ export default function QualityAuditsPage() {
                   </div>
 
                   <div className="pt-4 mt-auto">
-                    <Link href={`/quality/audits/${audit.id}`} className="w-full">
-                      <Button className="w-full">
-                        Buka Lembar Audit
-                      </Button>
+                    <Link
+                      href={`/quality/audits/${audit.id}`}
+                      className="w-full"
+                    >
+                      <Button className="w-full">Buka Lembar Audit</Button>
                     </Link>
                   </div>
                 </CardContent>
@@ -118,7 +128,8 @@ export default function QualityAuditsPage() {
             <FileCheck className="h-12 w-12 text-muted-foreground mb-4" />
             <h3 className="text-lg font-medium">Belum ada jadwal audit</h3>
             <p className="text-muted-foreground max-w-sm mt-2">
-              Buat jadwal audit baru untuk memulai proses Audit Mutu Internal (AMI).
+              Buat jadwal audit baru untuk memulai proses Audit Mutu Internal
+              (AMI).
             </p>
           </div>
         )}

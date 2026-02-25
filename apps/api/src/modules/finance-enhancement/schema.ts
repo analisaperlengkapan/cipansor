@@ -1,7 +1,7 @@
 import { z } from 'zod';
+import { JournalReferenceType } from '@cipansor/shared';
 import {
   AccountType,
-  JournalReferenceType,
   ScholarshipType,
   ScholarshipSource,
   PaymentCategory,

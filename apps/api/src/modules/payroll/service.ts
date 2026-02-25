@@ -11,7 +11,8 @@
  */
 
 import { prisma } from '../../lib/prisma';
-import { Prisma, SalaryComponentType, PayrollStatus, JournalReferenceType } from '@prisma/client';
+import { Prisma, SalaryComponentType, PayrollStatus } from '@prisma/client';
+import { JournalReferenceType } from '@cipansor/shared';
 import { ACCOUNT_MAPPING_KEYS, getAccountOrFallback } from '../finance/accounting-config.service';
 import {
   CreateSalaryComponentInput,
@@ -708,7 +709,9 @@ export const payrollPeriodService = {
         );
 
         if (!salaryExpenseAcc || !cashAcc) {
-          throw new Error('Konfigurasi Akun Gaji/Kas tidak ditemukan. Mohon cek Chart of Accounts.');
+          throw new Error(
+            'Konfigurasi Akun Gaji/Kas tidak ditemukan. Mohon cek Chart of Accounts.'
+          );
         }
 
         const desc = `Penggajian Periode ${period.name}`;

@@ -98,7 +98,7 @@ export function PhotoUploader({
         onChange([...photos, ...newPhotos]);
       }
     },
-    [photos, maxPhotos, onChange, acceptedTypes, maxSizeMB],
+    [photos, maxPhotos, onChange, acceptedTypes, maxSizeMB, validateFile],
   );
 
   const handleDrop = useCallback(

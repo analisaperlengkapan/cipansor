@@ -35,10 +35,7 @@ export async function createPurchaseJournal(
   // 2. Find Credit Account (Cash/Bank)
   const creditAccount = await tx.accountCode.findFirst({
     where: {
-      OR: [
-        { code: DEFAULT_ACCOUNTS.CASH },
-        { name: { contains: 'Kas', mode: 'insensitive' } },
-      ],
+      OR: [{ code: DEFAULT_ACCOUNTS.CASH }, { name: { contains: 'Kas', mode: 'insensitive' } }],
       isActive: true,
     },
   });

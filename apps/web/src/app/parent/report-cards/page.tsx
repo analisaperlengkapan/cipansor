@@ -71,7 +71,7 @@ export default function ParentReportCardsPage() {
   // Auto-select first child when data loads
   useEffect(() => {
     if (children.length > 0 && !selectedChild) {
-      setSelectedChild(children[0].id);
+      setTimeout(() => setSelectedChild(children[0].id), 0);
     }
   }, [children, selectedChild]);
 

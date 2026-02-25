@@ -1,6 +1,14 @@
 import { prisma } from '@/lib/prisma';
 import { ProjectStatus, TaskPriority } from '@prisma/client';
-import { CreateProjectInput, UpdateProjectInput, CreateProjectTaskInput, UpdateProjectTaskInput, UpdateTaskPositionInput, CreateColumnInput, UpdateColumnInput } from './schema';
+import {
+  CreateProjectInput,
+  UpdateProjectInput,
+  CreateProjectTaskInput,
+  UpdateProjectTaskInput,
+  UpdateTaskPositionInput,
+  CreateColumnInput,
+  UpdateColumnInput,
+} from './schema';
 import { createNotification } from '../notifications/service';
 
 export async function createProject(data: CreateProjectInput) {
@@ -37,7 +45,11 @@ export async function createProject(data: CreateProjectInput) {
   });
 }
 
-export async function getProjects(query: { unitId?: string; managerId?: string; status?: ProjectStatus }) {
+export async function getProjects(query: {
+  unitId?: string;
+  managerId?: string;
+  status?: ProjectStatus;
+}) {
   return prisma.project.findMany({
     where: {
       ...(query.unitId && { unitId: query.unitId }),
@@ -103,7 +115,11 @@ export async function getTaskById(id: string) {
   });
 }
 
-export async function createTask(projectId: string, data: CreateProjectTaskInput, creatorId: string) {
+export async function createTask(
+  projectId: string,
+  data: CreateProjectTaskInput,
+  creatorId: string
+) {
   let columnId = data.columnId;
   if (!columnId) {
     const firstCol = await prisma.projectColumn.findFirst({
@@ -172,8 +188,12 @@ export async function updateTask(id: string, data: UpdateProjectTaskInput, updat
   });
 
   // Only notify if assignee has actually changed and is not the one making the update
-  if (data.assigneeId && data.assigneeId !== updaterId && data.assigneeId !== existingTask?.assigneeId) {
-     await createNotification({
+  if (
+    data.assigneeId &&
+    data.assigneeId !== updaterId &&
+    data.assigneeId !== existingTask?.assigneeId
+  ) {
+    await createNotification({
       userId: data.assigneeId,
       type: 'INFO',
       title: 'Task Assignment Updated',
@@ -199,28 +219,28 @@ export async function updateTaskPosition(id: string, data: UpdateTaskPositionInp
     const newOrder = data.order;
 
     if (oldColId === newColId) {
-        if (oldOrder < newOrder) {
-            await tx.projectTask.updateMany({
-                where: { columnId: oldColId, order: { gt: oldOrder, lte: newOrder } },
-                data: { order: { decrement: 1 } }
-            });
-        } else if (oldOrder > newOrder) {
-            await tx.projectTask.updateMany({
-                where: { columnId: oldColId, order: { gte: newOrder, lt: oldOrder } },
-                data: { order: { increment: 1 } }
-            });
-        }
-    } else {
-        if (oldColId) {
-             await tx.projectTask.updateMany({
-                where: { columnId: oldColId, order: { gt: oldOrder } },
-                data: { order: { decrement: 1 } }
-            });
-        }
+      if (oldOrder < newOrder) {
         await tx.projectTask.updateMany({
-            where: { columnId: newColId, order: { gte: newOrder } },
-            data: { order: { increment: 1 } }
+          where: { columnId: oldColId, order: { gt: oldOrder, lte: newOrder } },
+          data: { order: { decrement: 1 } },
         });
+      } else if (oldOrder > newOrder) {
+        await tx.projectTask.updateMany({
+          where: { columnId: oldColId, order: { gte: newOrder, lt: oldOrder } },
+          data: { order: { increment: 1 } },
+        });
+      }
+    } else {
+      if (oldColId) {
+        await tx.projectTask.updateMany({
+          where: { columnId: oldColId, order: { gt: oldOrder } },
+          data: { order: { decrement: 1 } },
+        });
+      }
+      await tx.projectTask.updateMany({
+        where: { columnId: newColId, order: { gte: newOrder } },
+        data: { order: { increment: 1 } },
+      });
     }
 
     return tx.projectTask.update({

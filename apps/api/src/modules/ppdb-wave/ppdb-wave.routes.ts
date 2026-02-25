@@ -111,4 +111,16 @@ router.post(
   waveController.assignRegistrant
 );
 
+/**
+ * @route POST /api/ppdb-wave/onboard-registrant
+ * @desc Execute E2E sequence processing a successful registrant
+ * @access Private - Admin, Staff
+ */
+router.post(
+  '/onboard-registrant',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  // Typically we'd place a zod schema validation here: validate(onboardRegistrantSchema),
+  waveController.onboardRegistrant
+);
+
 export default router;

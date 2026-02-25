@@ -6,6 +6,7 @@ import {
   cleanupOldSnapshots,
 } from './dashboard-snapshot.job';
 import { aggregateDashboardMetrics } from './dashboard-metrics.job';
+import { runMonthlyAutoBilling } from './finance-billing.job';
 
 /**
  * Scheduler Module
@@ -94,6 +95,24 @@ export function initializeScheduler(): void {
   scheduledTasks.push(cleanupTask);
   logger.info('[Scheduler] Cleanup job scheduled at 03:00 WIB on the 1st of each month');
 
+  // Auto-Billing - Run at 4:00 AM on the 1st of each month
+  const autoBillingTask = cron.schedule(
+    '0 4 1 * *',
+    async () => {
+      logger.info('[Scheduler] Running monthly auto-billing job');
+      try {
+        await runMonthlyAutoBilling();
+      } catch (error) {
+        logger.error('[Scheduler] Auto-billing job failed:', error);
+      }
+    },
+    {
+      timezone: 'Asia/Jakarta',
+    }
+  );
+  scheduledTasks.push(autoBillingTask);
+  logger.info('[Scheduler] Auto-billing job scheduled at 04:00 WIB on the 1st of each month');
+
   logger.info(`[Scheduler] ${scheduledTasks.length} jobs scheduled successfully`);
 }
 
@@ -110,7 +129,7 @@ export function stopScheduler(): void {
  * Run a specific job manually (for testing or manual trigger)
  */
 export async function runJob(
-  jobName: 'dashboard-metrics' | 'daily-snapshot' | 'weekly-summary' | 'cleanup'
+  jobName: 'dashboard-metrics' | 'daily-snapshot' | 'weekly-summary' | 'cleanup' | 'auto-billing'
 ): Promise<void> {
   logger.info(`[Scheduler] Manually running job: ${jobName}`);
 
@@ -126,6 +145,9 @@ export async function runJob(
       break;
     case 'cleanup':
       await cleanupOldSnapshots();
+      break;
+    case 'auto-billing':
+      await runMonthlyAutoBilling();
       break;
     default:
       throw new Error(`Unknown job: ${jobName}`);

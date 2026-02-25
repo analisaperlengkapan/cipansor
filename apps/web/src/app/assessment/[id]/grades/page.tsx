@@ -80,7 +80,7 @@ export default function AssessmentGradesPage() {
         notes: grade.notes ?? "",
       });
     });
-    setGradeEntries(entries);
+    setTimeout(() => setGradeEntries(entries), 0);
   }, [grades]);
 
   const handleScoreChange = useCallback((studentId: string, value: string) => {

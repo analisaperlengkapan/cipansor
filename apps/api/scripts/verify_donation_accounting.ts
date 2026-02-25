@@ -1,4 +1,3 @@
-
 import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
 import { donationService } from '../src/modules/donation/donation.service';
@@ -6,7 +5,7 @@ import { donationService } from '../src/modules/donation/donation.service';
 // Mock AccountType from shared if unavailable
 const AccountType = {
   ASSET: 'ASSET',
-  REVENUE: 'REVENUE'
+  REVENUE: 'REVENUE',
 };
 
 const prisma = new PrismaClient();
@@ -19,8 +18,8 @@ async function main() {
     data: {
       name: 'Test Unit Accounting',
       type: 'PESANTREN',
-      address: 'Test Address'
-    }
+      address: 'Test Address',
+    },
   });
   console.log('Created Unit:', unit.id);
 
@@ -30,8 +29,8 @@ async function main() {
       code: '1-1-01-TEST',
       name: 'Bank BSI Test',
       type: AccountType.ASSET,
-      normalBalance: 'DEBIT'
-    }
+      normalBalance: 'DEBIT',
+    },
   });
   console.log('Created Asset Account:', assetAccount.id);
 
@@ -40,19 +39,19 @@ async function main() {
       code: '4-1-01-TEST',
       name: 'Pendapatan Infak Test',
       type: AccountType.REVENUE,
-      normalBalance: 'CREDIT'
-    }
+      normalBalance: 'CREDIT',
+    },
   });
   console.log('Created Revenue Account:', revenueAccount.id);
 
   // Create Campaign
   const campaign = await prisma.donationCampaign.create({
     data: {
-        title: 'Test Campaign',
-        slug: 'test-campaign-' + Date.now(),
-        targetAmount: 10000000,
-        createdById: 'SYSTEM_TEST_USER' // Assuming createdById is string and not relation here for simplicity, or dummy
-    }
+      title: 'Test Campaign',
+      slug: 'test-campaign-' + Date.now(),
+      targetAmount: 10000000,
+      createdById: 'SYSTEM_TEST_USER', // Assuming createdById is string and not relation here for simplicity, or dummy
+    },
   });
   console.log('Created Campaign:', campaign.id);
 
@@ -65,8 +64,8 @@ async function main() {
       donorName: 'Test Donor',
       status: 'PENDING',
       unitId: unit.id,
-      campaignId: campaign.id
-    }
+      campaignId: campaign.id,
+    },
   });
   console.log('Created Donation:', donation.id);
 
@@ -74,7 +73,7 @@ async function main() {
   console.log('Verifying Donation (1st)...');
   await donationService.verify(donation.id, 'SYSTEM_TEST_USER', {
     status: 'VERIFIED',
-    notes: 'Verified by script'
+    notes: 'Verified by script',
   });
 
   // Check Campaign Totals (Should be 100000)
@@ -85,7 +84,7 @@ async function main() {
   console.log('Testing Cancellation...');
   await donationService.verify(donation.id, 'SYSTEM_TEST_USER', {
     status: 'CANCELLED',
-    notes: 'Cancelled by script'
+    notes: 'Cancelled by script',
   });
 
   // Check Campaign Totals (Should be 0)
@@ -96,7 +95,7 @@ async function main() {
   console.log('Testing Re-verification (Cancelled -> Verified)...');
   await donationService.verify(donation.id, 'SYSTEM_TEST_USER', {
     status: 'VERIFIED',
-    notes: 'Re-verified by script'
+    notes: 'Re-verified by script',
   });
 
   // Check Campaign Totals (Should be 100000, NOT 200000)
@@ -104,9 +103,12 @@ async function main() {
   console.log('Campaign Total (Re-verified):', campaign3?.collectedAmount.toNumber());
 
   if (campaign3?.collectedAmount.toNumber() === 100000) {
-      console.log('SUCCESS: Campaign totals are correct (no double increment).');
+    console.log('SUCCESS: Campaign totals are correct (no double increment).');
   } else {
-      console.error('FAILURE: Campaign totals incorrect. Expected 100000, got', campaign3?.collectedAmount.toNumber());
+    console.error(
+      'FAILURE: Campaign totals incorrect. Expected 100000, got',
+      campaign3?.collectedAmount.toNumber()
+    );
   }
 
   // 5. Test Anonymous Masking
@@ -119,39 +121,41 @@ async function main() {
       donorName: 'Secret Donor',
       isAnonymous: true,
       status: 'VERIFIED',
-      unitId: unit.id
-    }
+      unitId: unit.id,
+    },
   });
 
   // Call getRecent directly via service (mocking controller call)
   const recentDonations = await donationService.getRecent(5);
-  const fetchedAnonymous = recentDonations.find(d => d.id === anonymousDonation.id);
+  const fetchedAnonymous = recentDonations.find((d) => d.id === anonymousDonation.id);
 
   if (fetchedAnonymous?.donorName === 'Hamba Allah') {
-      console.log('SUCCESS: Anonymous donor name is masked.');
+    console.log('SUCCESS: Anonymous donor name is masked.');
   } else {
-      console.error(`FAILURE: Anonymous donor name NOT masked. Got: ${fetchedAnonymous?.donorName}`);
+    console.error(`FAILURE: Anonymous donor name NOT masked. Got: ${fetchedAnonymous?.donorName}`);
   }
 
   // 6. Test Dirty Re-verification (No Reversals)
   console.log('Testing Dirty Re-verification (Cancelled but no reversal)...');
   // Manually delete reversals for the main donation
   await prisma.journalEntry.deleteMany({
-      where: { reference: donation.id, referenceType: 'DONATION_CANCEL' }
+    where: { reference: donation.id, referenceType: 'DONATION_CANCEL' },
   });
 
   // Re-verify again
   await donationService.verify(donation.id, 'SYSTEM_TEST_USER', {
     status: 'VERIFIED',
-    notes: 'Re-verified dirty'
+    notes: 'Re-verified dirty',
   });
 
   // Check that we didn't duplicate original entries (should still be 2 originals, 0 reversals)
   const dirtyJournals = await prisma.journalEntry.findMany({ where: { reference: donation.id } });
   if (dirtyJournals.length === 2) {
-      console.log('SUCCESS: Dirty re-verification prevented duplicate entries.');
+    console.log('SUCCESS: Dirty re-verification prevented duplicate entries.');
   } else {
-      console.error(`FAILURE: Dirty re-verification created duplicates. Count: ${dirtyJournals.length}`);
+    console.error(
+      `FAILURE: Dirty re-verification created duplicates. Count: ${dirtyJournals.length}`
+    );
   }
 
   // 7. Cleanup
@@ -168,7 +172,7 @@ async function main() {
 }
 
 main()
-  .catch(e => {
+  .catch((e) => {
     console.error(e);
     process.exit(1);
   })

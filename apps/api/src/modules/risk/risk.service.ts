@@ -5,7 +5,7 @@ import {
   RiskLikelihood,
   RiskImpact,
   RiskLevel,
-  Prisma
+  Prisma,
 } from '@prisma/client';
 
 export class RiskService {
@@ -22,23 +22,27 @@ export class RiskService {
     });
   }
 
-  async getRisks(unitId: string, query: { category?: any; riskLevel?: any }): Promise<Risk[]> {
+  async getRisks(unitId: string, query: { category?: any; riskLevel?: any; strategicPlanId?: string }): Promise<Risk[]> {
     const where: Prisma.RiskWhereInput = {
       unitId,
     };
 
     if (query.category) where.category = query.category;
     if (query.riskLevel) where.riskLevel = query.riskLevel;
+    if (query.strategicPlanId) where.strategicPlanId = query.strategicPlanId;
 
     return prisma.risk.findMany({
       where,
       include: {
         mitigations: true,
         createdBy: {
-          select: { id: true, name: true }
-        }
+          select: { id: true, name: true },
+        },
+        strategicPlan: {
+          select: { id: true, title: true },
+        },
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
     });
   }
 
@@ -49,14 +53,17 @@ export class RiskService {
         mitigations: {
           include: {
             pic: { select: { id: true, name: true } },
-            createdBy: { select: { id: true, name: true } }
+            createdBy: { select: { id: true, name: true } },
           },
-          orderBy: { createdAt: 'desc' }
+          orderBy: { createdAt: 'desc' },
         },
         createdBy: {
-          select: { id: true, name: true }
+          select: { id: true, name: true },
         },
-      }
+        strategicPlan: {
+          select: { id: true, title: true },
+        },
+      },
     });
   }
 
@@ -77,7 +84,7 @@ export class RiskService {
         ...data,
         riskScore,
         riskLevel,
-      }
+      },
     });
   }
 
@@ -94,11 +101,14 @@ export class RiskService {
   async getMitigationById(id: string): Promise<(RiskMitigation & { risk: Risk }) | null> {
     return prisma.riskMitigation.findUnique({
       where: { id },
-      include: { risk: true }
+      include: { risk: true },
     });
   }
 
-  async updateMitigation(id: string, data: Prisma.RiskMitigationUpdateInput): Promise<RiskMitigation> {
+  async updateMitigation(
+    id: string,
+    data: Prisma.RiskMitigationUpdateInput
+  ): Promise<RiskMitigation> {
     return prisma.riskMitigation.update({
       where: { id },
       data,
@@ -111,32 +121,32 @@ export class RiskService {
 
   // Helpers
   private calculateRiskScore(likelihood: RiskLikelihood, impact: RiskImpact): number {
-     const likelihoodMap: Record<string, number> = {
-       [RiskLikelihood.RARE]: 1,
-       [RiskLikelihood.UNLIKELY]: 2,
-       [RiskLikelihood.POSSIBLE]: 3,
-       [RiskLikelihood.LIKELY]: 4,
-       [RiskLikelihood.ALMOST_CERTAIN]: 5,
-     };
-     const impactMap: Record<string, number> = {
-       [RiskImpact.INSIGNIFICANT]: 1,
-       [RiskImpact.MINOR]: 2,
-       [RiskImpact.MODERATE]: 3,
-       [RiskImpact.MAJOR]: 4,
-       [RiskImpact.CATASTROPHIC]: 5,
-     };
+    const likelihoodMap: Record<string, number> = {
+      [RiskLikelihood.RARE]: 1,
+      [RiskLikelihood.UNLIKELY]: 2,
+      [RiskLikelihood.POSSIBLE]: 3,
+      [RiskLikelihood.LIKELY]: 4,
+      [RiskLikelihood.ALMOST_CERTAIN]: 5,
+    };
+    const impactMap: Record<string, number> = {
+      [RiskImpact.INSIGNIFICANT]: 1,
+      [RiskImpact.MINOR]: 2,
+      [RiskImpact.MODERATE]: 3,
+      [RiskImpact.MAJOR]: 4,
+      [RiskImpact.CATASTROPHIC]: 5,
+    };
 
-     const l = likelihoodMap[likelihood] || 1;
-     const i = impactMap[impact] || 1;
+    const l = likelihoodMap[likelihood] || 1;
+    const i = impactMap[impact] || 1;
 
-     return l * i;
+    return l * i;
   }
 
   private determineRiskLevel(score: number): RiskLevel {
     if (score >= 20) return RiskLevel.EXTREME; // 20, 25
-    if (score >= 10) return RiskLevel.HIGH;    // 10, 12, 15, 16
-    if (score >= 5) return RiskLevel.MEDIUM;   // 5, 6, 8, 9
-    return RiskLevel.LOW;                      // 1, 2, 3, 4
+    if (score >= 10) return RiskLevel.HIGH; // 10, 12, 15, 16
+    if (score >= 5) return RiskLevel.MEDIUM; // 5, 6, 8, 9
+    return RiskLevel.LOW; // 1, 2, 3, 4
   }
 }
 

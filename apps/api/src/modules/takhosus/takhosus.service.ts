@@ -495,10 +495,29 @@ export const sanadService = {
         certifiedAt: input.certifiedAt ? new Date(input.certifiedAt) : new Date(),
       } as any,
       include: {
-        enrollment: true,
+        enrollment: {
+          include: {
+            student: {
+              include: { user: { select: { name: true } } },
+            },
+            halaqoh: { select: { name: true } },
+          },
+        },
         teacher: { select: { id: true, name: true } },
       },
     });
+
+    // Emit event for RaporPesantren integration
+    import('@/lib/event-bus').then(({ eventBus }) => {
+      eventBus.emit('takhosus:sanad_assessed', {
+        studentId: sanad.enrollment.studentId,
+        studentName: sanad.enrollment.student.user?.name || 'Unknown',
+        halaqohName: sanad.enrollment.halaqoh.name,
+        juz: sanad.juz,
+        grade: sanad.grade,
+        certifiedAt: sanad.certifiedAt,
+      });
+    }).catch(console.error);
 
     // Update enrollment progress
     await this.updateEnrollmentProgress(input.enrollmentId);
@@ -517,10 +536,30 @@ export const sanadService = {
         ...(input.certifiedAt && { certifiedAt: new Date(input.certifiedAt) }),
       },
       include: {
-        enrollment: true,
+        enrollment: {
+          include: {
+            student: {
+              include: { user: { select: { name: true } } },
+            },
+            halaqoh: { select: { name: true } },
+          },
+        },
         teacher: { select: { id: true, name: true } },
       },
     });
+
+    // Emit event for RaporPesantren integration
+    import('@/lib/event-bus').then(({ eventBus }) => {
+      eventBus.emit('takhosus:sanad_assessed', {
+        studentId: sanad.enrollment.studentId,
+        studentName: sanad.enrollment.student.user?.name || 'Unknown',
+        halaqohName: sanad.enrollment.halaqoh.name,
+        juz: sanad.juz,
+        score: sanad.score,
+        grade: sanad.grade,
+        assessedAt: sanad.assessedAt,
+      });
+    }).catch(console.error);
 
     // Update enrollment progress
     await this.updateEnrollmentProgress(sanad.enrollmentId);

@@ -1,6 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
 import * as marketingService from './service';
-import { createCampaignSchema, logInteractionSchema, updateCampaignSchema, getCampaignByCodeSchema } from './schema';
+import {
+  createCampaignSchema,
+  logInteractionSchema,
+  updateCampaignSchema,
+  getCampaignByCodeSchema,
+} from './schema';
 
 export const createCampaign = async (req: Request, res: Response, next: NextFunction) => {
   try {

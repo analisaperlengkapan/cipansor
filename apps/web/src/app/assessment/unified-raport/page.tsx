@@ -6,7 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, Printer } from "lucide-react";
+import { useAcademicYears } from "@/hooks/use-academic-years";
+import { useClasses } from "@/hooks/use-classes";
+import { useStudentsByClass } from "@/hooks/use-students";
 
 // Basic API fetcher wrapper if @/lib/api doesn't work as expected in this context,
 // but usually it does. I'll use standard fetch for safety in this snippet.
@@ -23,16 +27,32 @@ const fetchUnifiedRaport = async (
 };
 
 export default function UnifiedRaportPage() {
+  const [classId, setClassId] = useState("");
   const [studentId, setStudentId] = useState("");
   const [academicYearId, setAcademicYearId] = useState("");
   const [semester, setSemester] = useState(1);
   const [shouldFetch, setShouldFetch] = useState(false);
+
+  // Queries for Dropdowns
+  const { data: academicYearsData } = useAcademicYears({ limit: 100 });
+  const academicYears = academicYearsData?.data || [];
+
+  const { data: classesData } = useClasses({ limit: 100 });
+  const classes = classesData?.data || [];
+
+  const { data: students } = useStudentsByClass(classId);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["unified-raport", studentId, academicYearId, semester],
     queryFn: () => fetchUnifiedRaport(studentId, academicYearId, semester),
     enabled: shouldFetch && !!studentId && !!academicYearId,
   });
+
+  const handleClassChange = (newClassId: string) => {
+    setClassId(newClassId);
+    setStudentId("");
+    setShouldFetch(false);
+  };
 
   const handleGenerate = () => {
     if (studentId && academicYearId) {
@@ -71,33 +91,66 @@ export default function UnifiedRaportPage() {
           <CardTitle>Generate Report</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="space-y-2">
-              <Label>Student ID</Label>
-              <Input
-                value={studentId}
-                onChange={(e) => setStudentId(e.target.value)}
-                placeholder="Enter Student UUID"
-              />
+              <Label>Tahun Ajaran</Label>
+              <Select value={academicYearId} onValueChange={setAcademicYearId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Pilih Tahun Ajaran" />
+                </SelectTrigger>
+                <SelectContent>
+                  {academicYears.map((ay) => (
+                    <SelectItem key={ay.id} value={ay.id}>
+                      {ay.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
+            
             <div className="space-y-2">
-              <Label>Academic Year ID</Label>
-              <Input
-                value={academicYearId}
-                onChange={(e) => setAcademicYearId(e.target.value)}
-                placeholder="Enter Academic Year UUID"
-              />
+              <Label>Kelas (Rombel)</Label>
+              <Select value={classId} onValueChange={handleClassChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Pilih Kelas" />
+                </SelectTrigger>
+                <SelectContent>
+                  {classes.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
+
+            <div className="space-y-2">
+              <Label>Siswa</Label>
+              <Select value={studentId} onValueChange={setStudentId} disabled={!classId || students?.length === 0}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Pilih Siswa" />
+                </SelectTrigger>
+                <SelectContent>
+                  {students?.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.name} ({s.nis})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="space-y-2">
               <Label>Semester</Label>
-              <select
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                value={semester}
-                onChange={(e) => setSemester(Number(e.target.value))}
-              >
-                <option value={1}>Semester 1 (Ganjil)</option>
-                <option value={2}>Semester 2 (Genap)</option>
-              </select>
+              <Select value={semester.toString()} onValueChange={(val) => setSemester(Number(val))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Pilih Semester" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">Semester 1 (Ganjil)</SelectItem>
+                  <SelectItem value="2">Semester 2 (Genap)</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <Button onClick={handleGenerate} disabled={isLoading}>

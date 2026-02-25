@@ -54,15 +54,18 @@ export class AuthService {
     // Check for 2FA
     if (user.isTwoFactorEnabled) {
       // Return temporary token for 2FA verification with SHORT expiry
-      const tempToken = generateAccessToken({
-        id: user.id,
-        sub: user.id,
-        email: user.email,
-        role: user.role,
-        unitId: user.unitId,
-        roleId: primaryRole?.roleId,
-        isTemp: true, // Marker for temp token
-      }, '5m'); // 5 minutes expiry
+      const tempToken = generateAccessToken(
+        {
+          id: user.id,
+          sub: user.id,
+          email: user.email,
+          role: user.role,
+          unitId: user.unitId,
+          roleId: primaryRole?.roleId,
+          isTemp: true, // Marker for temp token
+        },
+        '5m'
+      ); // 5 minutes expiry
 
       return {
         requiresTwoFactor: true,
@@ -72,20 +75,23 @@ export class AuthService {
 
     // Force 2FA setup for Admin/Super Admin
     if (isUserAdmin && !user.isTwoFactorEnabled) {
-        const tempToken = generateAccessToken({
-            id: user.id,
-            sub: user.id,
-            email: user.email,
-            role: user.role,
-            unitId: user.unitId,
-            roleId: primaryRole?.roleId,
-            isTemp: true,
-        }, '10m'); // 10 mins for setup
+      const tempToken = generateAccessToken(
+        {
+          id: user.id,
+          sub: user.id,
+          email: user.email,
+          role: user.role,
+          unitId: user.unitId,
+          roleId: primaryRole?.roleId,
+          isTemp: true,
+        },
+        '10m'
+      ); // 10 mins for setup
 
-        return {
-            requiresTwoFactorSetup: true,
-            tempToken,
-        };
+      return {
+        requiresTwoFactorSetup: true,
+        tempToken,
+      };
     }
 
     // Generate tokens with roleId
@@ -125,7 +131,13 @@ export class AuthService {
     });
 
     // Return user without password
-    const { passwordHash, twoFactorSecret, twoFactorSecretPending, twoFactorRecoveryCodes, ...userWithoutPassword } = user;
+    const {
+      passwordHash,
+      twoFactorSecret,
+      twoFactorSecretPending,
+      twoFactorRecoveryCodes,
+      ...userWithoutPassword
+    } = user;
 
     // Get permissions from active role
     const permissions = (primaryRole?.role.permissions as string[]) || [];
@@ -322,7 +334,13 @@ export class AuthService {
     const primaryRole = user.userRoles.find((r) => r.isPrimary) || user.userRoles[0];
     const permissions = (primaryRole?.role.permissions as string[]) || [];
 
-    const { passwordHash, twoFactorSecret, twoFactorSecretPending, twoFactorRecoveryCodes, ...userWithoutPassword } = user;
+    const {
+      passwordHash,
+      twoFactorSecret,
+      twoFactorSecretPending,
+      twoFactorRecoveryCodes,
+      ...userWithoutPassword
+    } = user;
 
     return {
       ...userWithoutPassword,
@@ -396,8 +414,8 @@ export class AuthService {
 
     // BUG FIX: Store pending secret server-side
     await prisma.user.update({
-        where: { id: userId },
-        data: { twoFactorSecretPending: secret },
+      where: { id: userId },
+      data: { twoFactorSecretPending: secret },
     });
 
     return {
@@ -419,7 +437,7 @@ export class AuthService {
 
     // BUG FIX: Verify against pending secret
     if (!user.twoFactorSecretPending) {
-        throw Errors.badRequest('No pending 2FA setup found. Please generate a new code.');
+      throw Errors.badRequest('No pending 2FA setup found. Please generate a new code.');
     }
 
     const isValid = authenticator.verify({ token, secret: user.twoFactorSecretPending });
@@ -522,7 +540,13 @@ export class AuthService {
     });
 
     const activeAcademicYearId = await this.getActiveAcademicYearId();
-    const { passwordHash, twoFactorSecret, twoFactorRecoveryCodes, twoFactorSecretPending, ...userWithoutPassword } = user;
+    const {
+      passwordHash,
+      twoFactorSecret,
+      twoFactorRecoveryCodes,
+      twoFactorSecretPending,
+      ...userWithoutPassword
+    } = user;
 
     // Get permissions from active role
     const permissions = (primaryRole?.role.permissions as string[]) || [];
@@ -542,13 +566,13 @@ export class AuthService {
    */
   async disableTwoFactor(userId: string, token: string, adminId?: string) {
     const user = await prisma.user.findUnique({
-        where: { id: userId },
-        include: {
-            userRoles: {
-                where: { isActive: true },
-                include: { role: true }
-            }
-        }
+      where: { id: userId },
+      include: {
+        userRoles: {
+          where: { isActive: true },
+          include: { role: true },
+        },
+      },
     });
     if (!user) throw Errors.notFound('User');
 
@@ -557,53 +581,52 @@ export class AuthService {
     const isTargetAdmin = this.isAdminAccount(user, primaryTargetRole?.role.code as RoleCode);
 
     if (adminId) {
-        // Admin disabling for another user (Reset flow)
-        const admin = await prisma.user.findUnique({ where: { id: adminId } });
-        if (!admin || !admin.isTwoFactorEnabled || !admin.twoFactorSecret) {
-            throw Errors.unauthorized('Admin must have 2FA enabled to perform this action');
+      // Admin disabling for another user (Reset flow)
+      const admin = await prisma.user.findUnique({ where: { id: adminId } });
+      if (!admin || !admin.isTwoFactorEnabled || !admin.twoFactorSecret) {
+        throw Errors.unauthorized('Admin must have 2FA enabled to perform this action');
+      }
+
+      // Check Admin privileges
+      if (admin.role !== UserRole.SUPER_ADMIN && admin.role !== UserRole.UNIT_ADMIN) {
+        throw Errors.forbidden('Only Admins can disable 2FA for other users');
+      }
+
+      // Fix Privilege Escalation: Prevent UNIT_ADMIN from disabling 2FA for SUPER_ADMIN
+      if (admin.role === UserRole.UNIT_ADMIN) {
+        if (user.role === UserRole.SUPER_ADMIN) {
+          throw Errors.forbidden('UNIT_ADMIN cannot disable 2FA for SUPER_ADMIN');
         }
-
-        // Check Admin privileges
-        if (admin.role !== UserRole.SUPER_ADMIN && admin.role !== UserRole.UNIT_ADMIN) {
-            throw Errors.forbidden('Only Admins can disable 2FA for other users');
+        // Enforce Unit Boundary: UNIT_ADMIN can only manage users in same unit
+        if (admin.unitId !== user.unitId) {
+          throw Errors.forbidden('UNIT_ADMIN can only disable 2FA for users in their own unit');
         }
-
-        // Fix Privilege Escalation: Prevent UNIT_ADMIN from disabling 2FA for SUPER_ADMIN
-        if (admin.role === UserRole.UNIT_ADMIN) {
-            if (user.role === UserRole.SUPER_ADMIN) {
-                throw Errors.forbidden('UNIT_ADMIN cannot disable 2FA for SUPER_ADMIN');
-            }
-            // Enforce Unit Boundary: UNIT_ADMIN can only manage users in same unit
-            if (admin.unitId !== user.unitId) {
-                throw Errors.forbidden('UNIT_ADMIN can only disable 2FA for users in their own unit');
-            }
-            // Enforce Hierarchy: UNIT_ADMIN cannot disable other UNIT_ADMINs (Peer protection)
-            if (user.role === UserRole.UNIT_ADMIN) {
-                throw Errors.forbidden('UNIT_ADMIN cannot disable 2FA for other UNIT_ADMINs');
-            }
+        // Enforce Hierarchy: UNIT_ADMIN cannot disable other UNIT_ADMINs (Peer protection)
+        if (user.role === UserRole.UNIT_ADMIN) {
+          throw Errors.forbidden('UNIT_ADMIN cannot disable 2FA for other UNIT_ADMINs');
         }
+      }
 
-        // Check if target user actually has 2FA enabled
-        if (!user.isTwoFactorEnabled) {
-            throw Errors.badRequest('2FA is not enabled for this user');
-        }
+      // Check if target user actually has 2FA enabled
+      if (!user.isTwoFactorEnabled) {
+        throw Errors.badRequest('2FA is not enabled for this user');
+      }
 
-        // Verify ADMIN's OTP
-        const isValid = authenticator.verify({ token, secret: admin.twoFactorSecret });
-        if (!isValid) throw Errors.unauthorized('Invalid Admin OTP');
-
+      // Verify ADMIN's OTP
+      const isValid = authenticator.verify({ token, secret: admin.twoFactorSecret });
+      if (!isValid) throw Errors.unauthorized('Invalid Admin OTP');
     } else {
-        // User disabling their own
-        if (isTargetAdmin) {
-           throw Errors.forbidden('2FA cannot be disabled for Admin/Super Admin accounts');
-        }
+      // User disabling their own
+      if (isTargetAdmin) {
+        throw Errors.forbidden('2FA cannot be disabled for Admin/Super Admin accounts');
+      }
 
-        if (!user.isTwoFactorEnabled || !user.twoFactorSecret) {
-            throw Errors.badRequest('2FA is not enabled');
-        }
-        // Verify USER's OTP
-        const isValid = authenticator.verify({ token, secret: user.twoFactorSecret });
-        if (!isValid) throw Errors.unauthorized('Invalid OTP');
+      if (!user.isTwoFactorEnabled || !user.twoFactorSecret) {
+        throw Errors.badRequest('2FA is not enabled');
+      }
+      // Verify USER's OTP
+      const isValid = authenticator.verify({ token, secret: user.twoFactorSecret });
+      if (!isValid) throw Errors.unauthorized('Invalid OTP');
     }
 
     await prisma.user.update({
@@ -634,9 +657,7 @@ export class AuthService {
   }
 
   private generateRecoveryCodes(): string[] {
-    return Array.from({ length: 10 }, () =>
-      crypto.randomBytes(5).toString('hex').toUpperCase()
-    );
+    return Array.from({ length: 10 }, () => crypto.randomBytes(5).toString('hex').toUpperCase());
   }
 
   /**
@@ -644,22 +665,22 @@ export class AuthService {
    * Checks both legacy role and RoleCode
    */
   private isAdminAccount(user: { role: UserRole }, roleCode?: RoleCode): boolean {
-      const ADMIN_ROLES = [
-          RoleCode.SUPER_ADMIN,
-          RoleCode.YAYASAN_ADMIN,
-          RoleCode.TKQ_ADMIN,
-          RoleCode.SDIT_ADMIN,
-          RoleCode.SMPIT_ADMIN,
-          RoleCode.SMAQ_ADMIN,
-          RoleCode.UNIT_ADMIN,
-      ];
+    const ADMIN_ROLES = [
+      RoleCode.SUPER_ADMIN,
+      RoleCode.YAYASAN_ADMIN,
+      RoleCode.TKQ_ADMIN,
+      RoleCode.SDIT_ADMIN,
+      RoleCode.SMPIT_ADMIN,
+      RoleCode.SMAQ_ADMIN,
+      RoleCode.UNIT_ADMIN,
+    ];
 
-      return (
-          user.role === UserRole.SUPER_ADMIN ||
-          user.role === UserRole.UNIT_ADMIN ||
-          (roleCode && ADMIN_ROLES.includes(roleCode)) ||
-          false
-      );
+    return (
+      user.role === UserRole.SUPER_ADMIN ||
+      user.role === UserRole.UNIT_ADMIN ||
+      (roleCode && ADMIN_ROLES.includes(roleCode)) ||
+      false
+    );
   }
 }
 

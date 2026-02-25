@@ -81,9 +81,7 @@ export default function ParentChildIbadahPage() {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<IbadahStats | null>(null);
   const [student, setStudent] = useState<StudentProfile | null>(null);
-  const [month, setMonth] = useState<string>(
-    format(new Date(), "yyyy-MM"),
-  );
+  const [month, setMonth] = useState<string>(format(new Date(), "yyyy-MM"));
 
   useEffect(() => {
     const fetchData = async () => {
@@ -268,8 +266,8 @@ export default function ParentChildIbadahPage() {
                       cat.completionRate >= 80
                         ? "bg-green-500"
                         : cat.completionRate >= 60
-                        ? "bg-yellow-500"
-                        : "bg-red-500"
+                          ? "bg-yellow-500"
+                          : "bg-red-500"
                     }
                   />
                 </div>

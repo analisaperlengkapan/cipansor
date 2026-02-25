@@ -535,6 +535,35 @@ export function useEnrollRegistration() {
   });
 }
 
+/**
+ * End-to-End Orchestrator API trigger
+ * Memicu integrasi PPDB -> Finance -> Health -> Akademik
+ */
+export function useOnboardRegistrant() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: {
+      registrantId: string;
+      unitId: string;
+      academicYearId: string;
+      parentUserId: string;
+      assignedClassId?: string;
+    }) => {
+      // Endpoint ini berada di ppdb-wave router sesuai master plan
+      const response = await api.post(`/ppdb-wave/onboard-registrant`, payload);
+      return response.data;
+    },
+    onSuccess: (_, { registrantId }) => {
+      queryClient.invalidateQueries({ queryKey: ["registrations"] });
+      queryClient.invalidateQueries({ queryKey: ["registration", registrantId] });
+      queryClient.invalidateQueries({ queryKey: ["registration-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["students"] });
+      // We might also want to invalidate finance, medical, etc, or just let them fetch fresh data on navigation
+    },
+  });
+}
+
 export function useDeleteRegistration() {
   const queryClient = useQueryClient();
 

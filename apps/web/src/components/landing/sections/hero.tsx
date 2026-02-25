@@ -4,7 +4,10 @@ import { Button } from "@/components/ui/button";
 
 export function HeroSection() {
   return (
-    <section id="hero" className="relative pt-24 pb-12 md:pt-32 md:pb-24 overflow-hidden">
+    <section
+      id="hero"
+      className="relative pt-24 pb-12 md:pt-32 md:pb-24 overflow-hidden"
+    >
       {/* Background decoration */}
       <div className="absolute inset-0 -z-10 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
       <div className="absolute left-0 right-0 top-0 -z-10 m-auto h-[310px] w-[310px] rounded-full bg-primary/20 opacity-20 blur-[100px]"></div>
@@ -16,12 +19,15 @@ export function HeroSection() {
           </div>
 
           <h1 className="text-4xl font-extrabold tracking-tight lg:text-6xl text-foreground">
-            Membangun Generasi <span className="text-primary">Qur'ani</span> <br className="hidden sm:inline" />
+            Membangun Generasi <span className="text-primary">Qur'ani</span>{" "}
+            <br className="hidden sm:inline" />
             Berakhlak Mulia & Berprestasi
           </h1>
 
           <p className="text-xl text-muted-foreground max-w-2xl">
-            Lembaga pendidikan Islam terpadu yang memadukan kurikulum nasional dengan nilai-nilai pesantren untuk mencetak pemimpin masa depan yang hafal Al-Qur'an dan berwawasan global.
+            Lembaga pendidikan Islam terpadu yang memadukan kurikulum nasional
+            dengan nilai-nilai pesantren untuk mencetak pemimpin masa depan yang
+            hafal Al-Qur'an dan berwawasan global.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
@@ -31,7 +37,11 @@ export function HeroSection() {
               </Button>
             </Link>
             <Link href="#about" className="w-full sm:w-auto">
-              <Button size="lg" variant="outline" className="w-full gap-2 text-base h-12">
+              <Button
+                size="lg"
+                variant="outline"
+                className="w-full gap-2 text-base h-12"
+              >
                 <BookOpen className="h-4 w-4" />
                 Pelajari Lebih Lanjut
               </Button>

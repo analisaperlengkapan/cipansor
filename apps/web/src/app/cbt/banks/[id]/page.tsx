@@ -1,364 +1,376 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { MainLayout } from "@/components/layout";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
+import { useParams, useRouter } from "next/navigation";
+import { format } from "date-fns";
+import { id as localeId } from "date-fns/locale";
+import { useQuestionBank, useAddQuestion, useUpdateQuestion, useDeleteQuestion, QuestionType } from "@/hooks/use-cbt";
+import { PageHeader } from "@/components/shared/page-header";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import {
-  useQuestionBank,
-  useAddQuestion,
-  useUpdateQuestion,
-  useDeleteQuestion,
-  Question,
-  QuestionType,
-} from "@/hooks/use-cbt";
-import { QuestionForm } from "@/components/cbt/question-form";
-import {
-  ArrowLeft,
-  Plus,
-  Pencil,
-  Trash2,
-  GripVertical,
-  AlertTriangle,
-} from "lucide-react";
-import { toast } from "sonner";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useForm, useFieldArray } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { ArrowLeft, BookOpen, Clock, FileQuestion, Plus, Trash2, Edit, CheckCircle } from "lucide-react";
 
-export default function BankDetailPage({ params }: { params: { id: string } }) {
+const questionSchema = z.object({
+  type: z.nativeEnum(QuestionType),
+  content: z.string().min(5, "Pertanyaan wajib diisi"),
+  points: z.number().min(1, "Poin minimal 1"),
+  options: z.array(z.object({
+    id: z.string(),
+    text: z.string().min(1, "Opsi tidak boleh kosong"),
+  })).optional(),
+  answerKey: z.string().min(1, "Kunci jawaban wajib diisi"),
+  explanation: z.string().optional(),
+});
+
+export default function ExamBankDetailPage() {
+  const params = useParams();
   const router = useRouter();
-  const { data: bank, isLoading } = useQuestionBank(params.id);
+  const bankId = params.id as string;
+
+  const { data: bank, isLoading } = useQuestionBank(bankId);
   const addQuestion = useAddQuestion();
   const updateQuestion = useUpdateQuestion();
   const deleteQuestion = useDeleteQuestion();
 
-  const [isAdding, setIsAdding] = useState(false);
-  const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
+  const [questionDialogOpen, setQuestionDialogOpen] = useState(false);
+  const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
+
+  const form = useForm<z.infer<typeof questionSchema>>({
+    resolver: zodResolver(questionSchema),
+    defaultValues: { 
+      type: QuestionType.MULTIPLE_CHOICE, 
+      content: "", 
+      points: 10,
+      options: [
+        { id: "A", text: "" },
+        { id: "B", text: "" },
+        { id: "C", text: "" },
+        { id: "D", text: "" },
+      ],
+      answerKey: "A",
+      explanation: ""
+    },
+  });
+
+  const { fields: optionFields, append: appendOption, remove: removeOption } = useFieldArray({
+    control: form.control,
+    name: "options",
+  });
+
+  const questionType = form.watch("type");
 
   if (isLoading) {
     return (
-      <MainLayout>
-        <div className="flex items-center justify-center h-96">
-          <p>Memuat...</p>
-        </div>
-      </MainLayout>
+      <div className="container mx-auto py-6 space-y-6">
+        <Skeleton className="h-12 w-1/3" />
+        <Skeleton className="h-[400px] w-full" />
+      </div>
     );
   }
 
   if (!bank) {
     return (
-      <MainLayout>
-        <div className="flex flex-col items-center justify-center h-96 gap-4">
-          <AlertTriangle className="h-12 w-12 text-yellow-500" />
-          <h2 className="text-xl font-semibold">Bank Soal Tidak Ditemukan</h2>
-          <Button onClick={() => router.push("/cbt/banks")}>Kembali</Button>
-        </div>
-      </MainLayout>
+      <div className="container mx-auto py-20 text-center">
+        <h2 className="text-2xl font-bold mb-2">Bank Soal Tidak Ditemukan</h2>
+        <Button onClick={() => router.back()}>Kembali</Button>
+      </div>
     );
   }
 
-  const handleAdd = async (data: any) => {
-    try {
-      await addQuestion.mutateAsync({
-        bankId: bank.id,
-        data: { ...data, order: (bank.questions?.length || 0) + 1 },
-      });
-      setIsAdding(false);
-      toast.success("Soal berhasil ditambahkan");
-    } catch (error) {
-      toast.error("Gagal menambahkan soal");
-    }
+  const handleEditQuestion = (q: any) => {
+    setEditingQuestionId(q.id);
+    form.reset({
+      type: q.type,
+      content: q.content,
+      points: q.points,
+      options: q.options || [],
+      answerKey: q.answerKey,
+      explanation: q.explanation || "",
+    });
+    setQuestionDialogOpen(true);
   };
 
-  const handleUpdate = async (data: any) => {
-    if (!editingQuestion) return;
+  const handleOpenAdd = () => {
+    setEditingQuestionId(null);
+    form.reset({ 
+      type: QuestionType.MULTIPLE_CHOICE, 
+      content: "", 
+      points: 10,
+      options: [{ id: "A", text: "" }, { id: "B", text: "" }, { id: "C", text: "" }, { id: "D", text: "" }],
+      answerKey: "A",
+    });
+    setQuestionDialogOpen(true);
+  };
+
+  const onQuestionSubmit = async (values: z.infer<typeof questionSchema>) => {
     try {
-      await updateQuestion.mutateAsync({
-        bankId: bank.id,
-        questionId: editingQuestion.id,
-        data,
-      });
-      setEditingQuestion(null);
-      toast.success("Soal berhasil diperbarui");
+      if (editingQuestionId) {
+        await updateQuestion.mutateAsync({
+          bankId,
+          questionId: editingQuestionId,
+          data: values,
+        });
+      } else {
+        await addQuestion.mutateAsync({
+          bankId,
+          data: values,
+        });
+      }
+      setQuestionDialogOpen(false);
     } catch (error) {
-      toast.error("Gagal memperbarui soal");
+      console.error(error);
     }
   };
 
   const handleDelete = async (questionId: string) => {
-    try {
-      await deleteQuestion.mutateAsync({
-        bankId: bank.id,
-        questionId,
-      });
-      toast.success("Soal berhasil dihapus");
-    } catch (error) {
-      toast.error("Gagal menghapus soal");
+    if (confirm("Hapus pertanyaan ini?")) {
+      await deleteQuestion.mutateAsync({ bankId, questionId });
     }
   };
 
   return (
-    <MainLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => router.push("/cbt/banks")}
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold tracking-tight">
-                {bank.title}
-              </h1>
-              {bank.subject && (
-                <Badge variant="outline">{bank.subject.name}</Badge>
-              )}
-            </div>
-            <p className="text-muted-foreground">
-              {bank.description || "Tidak ada deskripsi"}
-            </p>
-          </div>
-          {!isAdding && !editingQuestion && (
-            <Button onClick={() => setIsAdding(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Tambah Soal
-            </Button>
+    <div className="container mx-auto py-6 space-y-6">
+      <Button variant="ghost" className="mb-2 -ml-4" onClick={() => router.back()}>
+        <ArrowLeft className="h-4 w-4 mr-2" />
+        Kembali
+      </Button>
+
+      <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+        <div className="flex-1">
+          <PageHeader title={bank.title} description={`Mata Pelajaran: ${bank.subject?.name || "Umum"}`} />
+        </div>
+        
+        <div className="flex items-center gap-2">
+          {bank.isActive ? (
+            <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-green-200">Aktif (Dapat Digunakan Ujian)</Badge>
+          ) : (
+            <Badge variant="outline" className="text-slate-500">Draft</Badge>
           )}
         </div>
+      </div>
 
-        {/* Editor Mode */}
-        {(isAdding || editingQuestion) && (
-          <Card className="border-primary/50 shadow-md">
-            <CardHeader>
-              <CardTitle>
-                {isAdding ? "Tambah Soal Baru" : "Edit Soal"}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <QuestionForm
-                initialData={editingQuestion || undefined}
-                onSubmit={isAdding ? handleAdd : handleUpdate}
-                onCancel={() => {
-                  setIsAdding(false);
-                  setEditingQuestion(null);
-                }}
-                isLoading={addQuestion.isPending || updateQuestion.isPending}
-              />
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Questions List */}
-        {!isAdding && !editingQuestion && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between text-sm text-muted-foreground">
-              <span>Total: {bank.questions?.length || 0} Soal</span>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="md:col-span-2">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <BookOpen className="w-5 h-5" /> Ringkasan Bank Soal
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm rounded-md leading-relaxed p-4 border bg-muted/20">
+              {bank.description || "Belum ada deskripsi spesifik."}
+            </p>
+            <div className="flex gap-6 mt-4 pt-4 border-t px-2">
+              <div>
+                <span className="text-xs text-muted-foreground block mb-1">Total Pertanyaan</span>
+                <span className="text-2xl font-bold">{bank.questions?.length || 0}</span>
+              </div>
+              <div>
+                <span className="text-xs text-muted-foreground block mb-1">Total Poin Maksimal</span>
+                <span className="text-2xl font-bold text-primary">
+                  {bank.questions?.reduce((acc: number, curr: any) => acc + (curr.points || 0), 0) || 0}
+                </span>
+              </div>
             </div>
+          </CardContent>
+        </Card>
 
-            {bank.questions && bank.questions.length > 0 ? (
-              <Accordion type="multiple" className="space-y-4">
-                {bank.questions.map((question: Question, index: number) => (
-                  <Card key={question.id} className="relative overflow-hidden">
-                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-muted-foreground/20" />
-                    <AccordionItem value={question.id} className="border-0">
-                      <div className="flex items-start p-4 gap-4">
-                        <div className="flex flex-col items-center gap-2 pt-1">
-                          <Badge
-                            variant="secondary"
-                            className="w-8 h-8 flex items-center justify-center rounded-full"
-                          >
-                            {index + 1}
-                          </Badge>
-                          <GripVertical className="h-4 w-4 text-muted-foreground cursor-move" />
+        <Card className="md:col-span-1">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Clock className="w-5 h-5" /> Properti
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4 text-sm">
+            <div className="flex justify-between border-b pb-2">
+              <span className="text-muted-foreground">Pembuat (Guru)</span>
+              <span className="font-medium">{bank.teacherRel?.user?.name || "-"}</span>
+            </div>
+            <div className="flex justify-between border-b pb-2">
+              <span className="text-muted-foreground">Dibuat Pada</span>
+              <span className="font-medium">{format(new Date(bank.createdAt), "dd MMM yyyy", { locale: localeId })}</span>
+            </div>
+            <div className="flex justify-between pb-2">
+              <span className="text-muted-foreground">Level Kelas</span>
+              <span className="font-medium">Semua (Default)</span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div className="space-y-1">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <FileQuestion className="w-5 h-5" /> Daftar Pertanyaan
+            </CardTitle>
+            <CardDescription>Kelola soal-soal latihan dan ujian dalam bank ini.</CardDescription>
+          </div>
+          <Dialog open={questionDialogOpen} onOpenChange={setQuestionDialogOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm" onClick={handleOpenAdd}><Plus className="w-4 h-4 mr-1" /> Tambah Soal</Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>{editingQuestionId ? "Edit Pertanyaan" : "Buat Pertanyaan Baru"}</DialogTitle>
+                <DialogDescription>
+                  Masukkan rincian soal, bobot nilai, dan tentukan kunci jawabannya.
+                </DialogDescription>
+              </DialogHeader>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onQuestionSubmit)} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField control={form.control} name="type" render={({ field }) => (
+                      <FormItem><FormLabel>Tipe Pertanyaan</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl>
+                          <SelectContent>
+                            <SelectItem value={QuestionType.MULTIPLE_CHOICE}>Pilihan Ganda</SelectItem>
+                            <SelectItem value={QuestionType.ESSAY}>Esai (Essay)</SelectItem>
+                            <SelectItem value={QuestionType.TRUE_FALSE}>Benar / Salah</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name="points" render={({ field }) => (
+                      <FormItem><FormLabel>Bobot Nilai (Poin)</FormLabel>
+                      <FormControl><Input type="number" {...field} onChange={(e) => field.onChange(Number(e.target.value))} /></FormControl><FormMessage /></FormItem>
+                    )} />
+                  </div>
+                  
+                  <FormField control={form.control} name="content" render={({ field }) => (
+                    <FormItem><FormLabel>Teks Soal / Pertanyaan</FormLabel>
+                    <FormControl><Textarea placeholder="Tuliskan pertanyaan disini..." rows={4} {...field} /></FormControl><FormMessage /></FormItem>
+                  )} />
+
+                  {/* Dynamic Options for Multiple Choice */}
+                  {questionType === QuestionType.MULTIPLE_CHOICE && (
+                    <div className="space-y-3 p-4 border rounded-md bg-muted/10">
+                      <div className="flex items-center justify-between mb-2">
+                        <FormLabel className="m-0">Pilihan Jawaban (Opsi)</FormLabel>
+                        <Button type="button" variant="outline" size="sm" onClick={() => appendOption({ id: String.fromCharCode(65 + optionFields.length), text: "" })}>Tambah Opsi</Button>
+                      </div>
+                      {optionFields.map((field, index) => (
+                        <div key={field.id} className="flex items-center gap-3">
+                          <span className="font-bold w-6 text-center">{String.fromCharCode(65 + index)}</span>
+                          <FormField control={form.control} name={`options.${index}.text`} render={({ field: inputField }) => (
+                            <FormItem className="flex-1 m-0"><FormControl><Input placeholder={`Teks pilihan ${String.fromCharCode(65 + index)}...`} {...inputField} /></FormControl><FormMessage /></FormItem>
+                          )} />
+                          <Button type="button" variant="ghost" size="icon" className="text-red-500" onClick={() => removeOption(index)}><Trash2 className="w-4 h-4" /></Button>
                         </div>
+                      ))}
+                    </div>
+                  )}
 
-                        <div className="flex-1 space-y-2">
-                          <div className="flex items-center justify-between">
-                            <div className="flex gap-2">
-                              <Badge
-                                variant={
-                                  question.type === QuestionType.MULTIPLE_CHOICE
-                                    ? "default"
-                                    : "secondary"
-                                }
-                              >
-                                {question.type === QuestionType.MULTIPLE_CHOICE
-                                  ? "PG"
-                                  : question.type === QuestionType.ESSAY
-                                    ? "Esai"
-                                    : "B/S"}
-                              </Badge>
-                              <span className="text-sm text-muted-foreground font-medium">
-                                {question.points} Poin
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setEditingQuestion(question)}
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>
-                                      Hapus Soal?
-                                    </AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      Soal ini akan dihapus permanen dari bank
-                                      soal.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Batal</AlertDialogCancel>
-                                    <AlertDialogAction
-                                      onClick={() => handleDelete(question.id)}
-                                      className="bg-red-500 hover:bg-red-600"
-                                    >
-                                      Hapus
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                            </div>
-                          </div>
-
-                          <div className="prose prose-sm max-w-none">
-                            <p className="whitespace-pre-wrap">
-                              {question.content}
-                            </p>
-                          </div>
-
-                          <AccordionTrigger className="py-2 hover:no-underline text-xs text-muted-foreground">
-                            Lihat Detail & Jawaban
-                          </AccordionTrigger>
+                  <FormField control={form.control} name="answerKey" render={({ field }) => (
+                    <FormItem><FormLabel>Kunci Jawaban</FormLabel>
+                      {questionType === QuestionType.MULTIPLE_CHOICE ? (
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl><SelectTrigger><SelectValue placeholder="Pilih Opsi Kunci Jawaban"/></SelectTrigger></FormControl>
+                          <SelectContent>
+                            {optionFields.map((opt, idx) => (
+                               <SelectItem key={opt.id} value={String.fromCharCode(65 + idx)}>Opsi {String.fromCharCode(65 + idx)}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : questionType === QuestionType.TRUE_FALSE ? (
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl><SelectTrigger><SelectValue placeholder="Benar atau Salah?"/></SelectTrigger></FormControl>
+                          <SelectContent>
+                            <SelectItem value="TRUE">Benar (True)</SelectItem>
+                            <SelectItem value="FALSE">Salah (False)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <FormControl><Textarea placeholder="Contoh acuan jawaban benar..." rows={2} {...field} /></FormControl>
+                      )}
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  
+                  <div className="flex justify-end gap-2 pt-4 border-t mt-4">
+                    <Button type="button" variant="outline" onClick={() => setQuestionDialogOpen(false)}>Batal</Button>
+                    <Button type="submit" disabled={addQuestion.isPending || updateQuestion.isPending}>
+                      {(addQuestion.isPending || updateQuestion.isPending) ? "Menyimpan..." : "Simpan Pertanyaan"}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
+        </CardHeader>
+        <CardContent>
+          {bank.questions && bank.questions.length > 0 ? (
+            <div className="space-y-4">
+              {bank.questions.map((q: any, index: number) => (
+                <div key={q.id} className="border rounded-md p-4 group relative hover:border-primary/50 transition-colors">
+                  <div className="absolute right-4 top-4 hidden group-hover:flex gap-2">
+                    <Button variant="outline" size="sm" onClick={() => handleEditQuestion(q)}><Edit className="w-4 h-4 mr-1"/> Edit</Button>
+                    <Button variant="destructive" size="sm" onClick={() => handleDelete(q.id)}><Trash2 className="w-4 h-4 mr-1" /> Hapus</Button>
+                  </div>
+                  
+                  <div className="flex gap-3 items-start pr-32">
+                    <div className="bg-primary/10 text-primary w-8 h-8 rounded-full flex items-center justify-center font-bold shrink-0">
+                      {index + 1}
+                    </div>
+                    <div className="flex-1 space-y-3">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <Badge variant="secondary">{q.type.replace("_", " ")}</Badge>
+                          <span className="text-xs font-semibold text-muted-foreground mr-1">Bobot: {q.points} Poin</span>
                         </div>
+                        <p className="text-sm font-medium whitespace-pre-wrap">{q.content}</p>
                       </div>
 
-                      <AccordionContent className="px-4 pb-4 pl-16">
-                        <div className="space-y-4 pt-2 border-t">
-                          {/* Options / Answer */}
-                          {question.type === QuestionType.MULTIPLE_CHOICE &&
-                            question.options && (
-                              <div className="space-y-2">
-                                <p className="text-sm font-semibold">
-                                  Pilihan Jawaban:
-                                </p>
-                                <div className="grid gap-2">
-                                  {question.options.map((opt: any) => (
-                                    <div
-                                      key={opt.id}
-                                      className={`p-3 rounded-md border text-sm flex items-center gap-2 ${
-                                        question.answerKey === opt.id
-                                          ? "bg-green-50 border-green-200 text-green-700"
-                                          : "bg-muted/20"
-                                      }`}
-                                    >
-                                      <span className="font-mono text-xs">
-                                        {opt.id.split("-").pop()}
-                                      </span>
-                                      <span>{opt.text}</span>
-                                      {question.answerKey === opt.id && (
-                                        <Badge className="ml-auto bg-green-500 hover:bg-green-600">
-                                          Kunci
-                                        </Badge>
-                                      )}
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-
-                          {question.type === QuestionType.TRUE_FALSE && (
-                            <div className="flex items-center gap-4">
-                              <span className="text-sm font-semibold">
-                                Kunci Jawaban:
-                              </span>
-                              <Badge
-                                variant={
-                                  question.answerKey === "true"
-                                      ? "default"
-                                    : "destructive"
-                                }
-                                  className={
-                                    question.answerKey === "true"
-                                      ? "bg-green-600 hover:bg-green-700"
-                                      : ""
-                                  }
-                              >
-                                {question.answerKey === "true"
-                                  ? "BENAR"
-                                  : "SALAH"}
-                              </Badge>
-                            </div>
-                          )}
-
-                          {question.explanation && (
-                            <div className="bg-blue-50 p-3 rounded-md text-sm text-blue-800">
-                              <span className="font-semibold block mb-1">
-                                Pembahasan:
-                              </span>
-                              {question.explanation}
-                            </div>
-                          )}
+                      {q.type === QuestionType.MULTIPLE_CHOICE && q.options && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                          {q.options.map((opt: any, optIdx: number) => {
+                             const letter = String.fromCharCode(65 + optIdx);
+                             const isCorrect = letter === q.answerKey;
+                             return (
+                               <div key={optIdx} className={`text-sm p-2 rounded border flex items-center gap-2 ${isCorrect ? 'bg-green-50 border-green-200' : 'bg-muted/20 border-transparent'}`}>
+                                 <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold ${isCorrect ? 'bg-green-500 text-white' : 'bg-slate-200 text-slate-700'}`}>
+                                    {letter}
+                                 </span>
+                                 <span className={isCorrect ? 'font-medium text-green-900' : 'text-slate-700'}>{opt.text}</span>
+                                 {isCorrect && <CheckCircle className="w-4 h-4 text-green-600 ml-auto" />}
+                               </div>
+                             );
+                          })}
                         </div>
-                      </AccordionContent>
-                    </AccordionItem>
-                  </Card>
-                ))}
-              </Accordion>
-            ) : (
-              <div className="text-center py-12 border-2 border-dashed rounded-lg">
-                <p className="text-muted-foreground mb-4">
-                  Belum ada soal di bank ini
-                </p>
-                <Button onClick={() => setIsAdding(true)}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Mulai Tambah Soal
-                </Button>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-    </MainLayout>
+                      )}
+                      
+                      {q.type !== QuestionType.MULTIPLE_CHOICE && (
+                        <div className="bg-muted/30 border p-3 rounded mt-2">
+                          <span className="text-xs font-bold text-muted-foreground block mb-1">KUNCI JAWABAN:</span>
+                          <span className="text-sm font-medium">{q.answerKey}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-lg">
+              <FileQuestion className="w-12 h-12 mx-auto mb-3 opacity-20" />
+              <p>Belum ada pertanyaan di bank soal ini.</p>
+              <Button variant="outline" className="mt-4" onClick={handleOpenAdd}>Buat Pertanyaan Pertama</Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }

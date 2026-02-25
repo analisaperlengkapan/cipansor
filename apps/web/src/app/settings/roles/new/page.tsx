@@ -10,14 +10,27 @@ import { PageHeader } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { PermissionSelector } from "@/components/roles/permission-selector";
 import { useCreateRole } from "@/hooks/use-roles";
 import { ArrowLeft, Save } from "lucide-react";
 import { toast } from "sonner";
 
 const createRoleSchema = z.object({
-  code: z.string().min(3).regex(/^[A-Z0-9_]+$/, "Code must be uppercase alphanumeric with underscores"),
+  code: z
+    .string()
+    .min(3)
+    .regex(
+      /^[A-Z0-9_]+$/,
+      "Code must be uppercase alphanumeric with underscores",
+    ),
   name: z.string().min(3, "Name is required"),
   description: z.string().optional(),
   permissions: z.array(z.string()).optional(),
@@ -81,7 +94,13 @@ export default function CreateRolePage() {
                   <FormItem>
                     <FormLabel>Role Code (Unique)</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g. FINANCE_STAFF" {...field} onChange={e => field.onChange(e.target.value.toUpperCase())} />
+                      <Input
+                        placeholder="e.g. FINANCE_STAFF"
+                        {...field}
+                        onChange={(e) =>
+                          field.onChange(e.target.value.toUpperCase())
+                        }
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -94,7 +113,10 @@ export default function CreateRolePage() {
                   <FormItem className="md:col-span-2">
                     <FormLabel>Description</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="Describe the role responsibilities..." {...field} />
+                      <Textarea
+                        placeholder="Describe the role responsibilities..."
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -120,7 +142,11 @@ export default function CreateRolePage() {
             />
 
             <div className="flex justify-end gap-4">
-              <Button type="button" variant="outline" onClick={() => router.back()}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.back()}
+              >
                 Cancel
               </Button>
               <Button type="submit" disabled={createRoleMutation.isPending}>

@@ -31,17 +31,13 @@ export const createRoleSchema = z.object({
   name: z.string().min(3),
   description: z.string().optional(),
   realm: z.nativeEnum(Realm).optional(), // Allow explicit realm setting
-  permissions: z
-    .array(z.enum(Object.values(PERMISSIONS) as [string, ...string[]]))
-    .optional(),
+  permissions: z.array(z.enum(Object.values(PERMISSIONS) as [string, ...string[]])).optional(),
 });
 
 export const updateRoleSchema = z.object({
   name: z.string().min(3).optional(),
   description: z.string().optional(),
-  permissions: z
-    .array(z.enum(Object.values(PERMISSIONS) as [string, ...string[]]))
-    .optional(),
+  permissions: z.array(z.enum(Object.values(PERMISSIONS) as [string, ...string[]])).optional(),
 });
 
 export type GetRolesQuery = z.infer<typeof getRolesQuerySchema>;

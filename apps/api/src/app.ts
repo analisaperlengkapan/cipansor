@@ -96,6 +96,16 @@ import marketingRoutes from '@/modules/marketing/routes';
 import { announcementRoutes } from '@/modules/announcements';
 import projectRoutes from '@/modules/project/routes';
 
+// New modules
+import perencanaanRoutes from '@/modules/perencanaan/perencanaan.routes';
+import pengawasanRoutes from '@/modules/pengawasan/pengawasan.routes';
+import syariahRoutes from '@/modules/syariah/syariah.routes';
+import lingkunganRoutes from '@/modules/lingkungan/lingkungan.routes';
+import talentaRoutes from '@/modules/talenta/talenta.routes';
+import organisasiRoutes from '@/modules/organisasi/organisasi.routes';
+import tataLaksanaRoutes from '@/modules/tatalaksana/tatalaksana.routes';
+import litbangRoutes from '@/modules/litbang/litbang.routes';
+
 // Create Express app
 const app = express();
 
@@ -264,6 +274,16 @@ apiRouter.use('/reception', receptionRoutes);
 apiRouter.use('/announcements', announcementRoutes);
 apiRouter.use('/projects', projectRoutes);
 
+// New modules
+apiRouter.use('/perencanaan', perencanaanRoutes);
+apiRouter.use('/pengawasan', pengawasanRoutes);
+apiRouter.use('/syariah', syariahRoutes);
+apiRouter.use('/lingkungan', lingkunganRoutes);
+apiRouter.use('/talenta', talentaRoutes);
+apiRouter.use('/organisasi', organisasiRoutes);
+apiRouter.use('/tata-laksana', tataLaksanaRoutes);
+apiRouter.use('/litbang', litbangRoutes);
+
 // API info
 apiRouter.get('/', (_req, res) => {
   res.json({
@@ -330,6 +350,15 @@ apiRouter.get('/', (_req, res) => {
       raporPesantren: '/api/rapor-pesantren',
       reception: '/api/reception',
       secrets: '/api/secrets',
+      // New modules
+      perencanaan: '/api/perencanaan',
+      pengawasan: '/api/pengawasan',
+      syariah: '/api/syariah',
+      lingkungan: '/api/lingkungan',
+      talenta: '/api/talenta',
+      organisasi: '/api/organisasi',
+      tataLaksana: '/api/tata-laksana',
+      litbang: '/api/litbang',
     },
   });
 });

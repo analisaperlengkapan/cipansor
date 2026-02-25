@@ -9,7 +9,11 @@ interface PermissionGuardProps {
   fallback?: ReactNode;
 }
 
-export function PermissionGuard({ permission, children, fallback = null }: PermissionGuardProps) {
+export function PermissionGuard({
+  permission,
+  children,
+  fallback = null,
+}: PermissionGuardProps) {
   const hasAccess = usePermission(permission);
 
   if (!hasAccess) {

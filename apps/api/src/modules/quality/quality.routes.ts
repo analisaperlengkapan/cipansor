@@ -40,17 +40,9 @@ router.post(
   qualityController.createAudit
 );
 
-router.get(
-  '/audits',
-  authenticate,
-  qualityController.getAudits
-);
+router.get('/audits', authenticate, qualityController.getAudits);
 
-router.get(
-  '/audits/:id',
-  authenticate,
-  qualityController.getAuditDetails
-);
+router.get('/audits/:id', authenticate, qualityController.getAuditDetails);
 
 router.patch(
   '/audits/items/:itemId',

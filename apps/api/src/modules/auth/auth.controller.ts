@@ -136,11 +136,11 @@ export const disableTwoFactor = asyncHandler(async (req: Request, res: Response)
 
   let result;
   if (targetUserId && targetUserId !== userId) {
-      // Admin disabling for another user
-      result = await authService.disableTwoFactor(targetUserId, token, userId);
+    // Admin disabling for another user
+    result = await authService.disableTwoFactor(targetUserId, token, userId);
   } else {
-      // User disabling their own
-      result = await authService.disableTwoFactor(userId, token);
+    // User disabling their own
+    result = await authService.disableTwoFactor(userId, token);
   }
 
   res.json({ success: true, data: result });
@@ -151,7 +151,7 @@ export const disableTwoFactor = asyncHandler(async (req: Request, res: Response)
  * GET /api/auth/2fa/status
  */
 export const getTwoFactorStatus = asyncHandler(async (req: Request, res: Response) => {
-    const userId = req.user!.sub;
-    const result = await authService.getTwoFactorStatus(userId);
-    res.json({ success: true, data: result });
+  const userId = req.user!.sub;
+  const result = await authService.getTwoFactorStatus(userId);
+  res.json({ success: true, data: result });
 });

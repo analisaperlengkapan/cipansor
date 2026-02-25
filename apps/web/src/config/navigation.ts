@@ -546,6 +546,11 @@ const yayasanNavigation: NavGroup[] = [
         icon: Wallet,
       },
       {
+        title: "Billing & Pembayaran",
+        href: "/finance/billing",
+        icon: Receipt,
+      },
+      {
         title: "BOS/BOP",
         href: "/finance/bos",
         icon: Wallet,
@@ -875,6 +880,11 @@ const adminNavigation: NavGroup[] = [
         title: "Finance",
         href: "/finance",
         icon: Wallet,
+      },
+      {
+        title: "Billing",
+        href: "/finance/billing",
+        icon: Receipt,
       },
       {
         title: "BOS/BOP",

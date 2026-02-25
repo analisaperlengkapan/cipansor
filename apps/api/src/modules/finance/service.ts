@@ -597,6 +597,53 @@ export async function getUnitFinanceStats(unitId: string, month?: string) {
   };
 }
 
+export async function getStudentOutstandingBalances(unitId: string) {
+  const invoices = await prisma.invoice.findMany({
+    where: {
+      student: { unitId },
+      status: { in: [PaymentStatus.PENDING, PaymentStatus.PARTIAL] },
+      dueDate: { lt: new Date() },
+    },
+    include: {
+      student: {
+        include: {
+          user: { select: { id: true, name: true } },
+          enrollments: {
+            where: { status: 'ACTIVE' },
+            include: { class: { select: { id: true, name: true } } },
+            take: 1,
+            orderBy: { enrolledAt: 'desc' },
+          },
+        },
+      },
+    },
+  });
+
+  const studentMap = new Map<string, any>();
+
+  for (const inv of invoices) {
+    const unpaidAmount = inv.amount.sub(inv.paidAmount).toNumber();
+    if (unpaidAmount <= 0) continue;
+
+    if (!studentMap.has(inv.studentId)) {
+      studentMap.set(inv.studentId, {
+        studentId: inv.studentId,
+        studentName: inv.student.user.name,
+        nis: inv.student.nis,
+        className: inv.student.enrollments[0]?.class?.name || '-',
+        unpaid_amount: 0,
+        overdueInvoiceCount: 0,
+      });
+    }
+
+    const rec = studentMap.get(inv.studentId);
+    rec.unpaid_amount += unpaidAmount;
+    rec.overdueInvoiceCount += 1;
+  }
+
+  return Array.from(studentMap.values()).sort((a, b) => b.unpaid_amount - a.unpaid_amount);
+}
+
 // =====================================
 // SPP MATRIX - Tampilan bulanan per santri
 // =====================================
@@ -876,4 +923,94 @@ export async function generateBulkSppInvoices(data: {
     skipped: students.length - createdInvoices.length,
     total: students.length,
   };
+}
+
+// Generate recurring bills for all active students (Auto-billing scheduler)
+export async function generateRecurringBills() {
+  const year = new Date().getFullYear();
+  const month = new Date().getMonth();
+  const dueDate = new Date(year, month, 10);
+  const period = `${
+    [
+      'Januari',
+      'Februari',
+      'Maret',
+      'April',
+      'Mei',
+      'Juni',
+      'Juli',
+      'Agustus',
+      'September',
+      'Oktober',
+      'November',
+      'Desember',
+    ][month]
+  } ${year}`;
+
+  let processed = 0;
+  let created = 0;
+  let skipped = 0;
+
+  // 1. Get all recurring payment types
+  const paymentTypes = await prisma.paymentType.findMany({
+    where: { isRecurring: true, isActive: true },
+  });
+
+  if (!paymentTypes.length) {
+    return { processed, created, skipped };
+  }
+
+  // 2. Get all active students
+  const activeStudents = await prisma.student.findMany({
+    where: { status: 'ACTIVE' },
+    select: { id: true, unitId: true, userId: true },
+  });
+
+  if (!activeStudents.length) {
+    return { processed, created, skipped };
+  }
+
+  // Process billing for each student matching payment types
+  for (const student of activeStudents) {
+    // Determine applicable payment types for this student (matching unitId)
+    const applicableTypes = paymentTypes.filter(
+      (pt) => pt.unitId === student.unitId
+    );
+
+    for (const paymentType of applicableTypes) {
+      processed++;
+      
+      // Check if already billed
+      const existing = await prisma.invoice.findFirst({
+        where: {
+          studentId: student.id,
+          paymentTypeId: paymentType.id,
+          dueDate: {
+            gte: new Date(year, month, 1),
+            lt: new Date(year, month + 1, 1),
+          },
+        },
+      });
+
+      if (!existing) {
+        const invoiceNumber = await generateInvoiceNumber();
+        await prisma.invoice.create({
+          data: {
+            studentId: student.id,
+            paymentTypeId: paymentType.id,
+            invoiceNumber,
+            amount: paymentType.amount,
+            dueDate,
+            period,
+            notes: `Tagihan ${paymentType.name} otomatis untuk ${period}`,
+          },
+        });
+        created++;
+      } else {
+        skipped++;
+      }
+    }
+  }
+
+  return { processed, created, skipped };
 }

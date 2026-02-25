@@ -1,4 +1,3 @@
-
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { prisma } from '@/lib/prisma';
 
@@ -66,59 +65,59 @@ describe('Dashboard Metrics Performance (Query Count)', () => {
   it('Optimization: Makes constant number of queries', async () => {
     // Mock return values for bulk queries
     (prisma.student.groupBy as any).mockResolvedValue(
-        units.map(u => ({ unitId: u.id, _count: 50 }))
+      units.map((u) => ({ unitId: u.id, _count: 50 }))
     );
     (prisma.attendance.findMany as any).mockResolvedValue(
-        units.flatMap(u => Array(40).fill({ student: { unitId: u.id } }))
+      units.flatMap((u) => Array(40).fill({ student: { unitId: u.id } }))
     );
 
     // Optimized Logic (Simulated)
     const fetchedUnits = await prisma.unit.findMany({ where: { deletedAt: null } });
-    const unitIds = fetchedUnits.map(u => u.id);
+    const unitIds = fetchedUnits.map((u) => u.id);
 
     // 1. Group active students by unit
     const activeStudentsCounts = await prisma.student.groupBy({
-        by: ['unitId'],
-        where: {
-            status: 'ACTIVE',
-            // In real impl, we might not filter by unitId if we want all,
-            // but for safety/performance on large sets we might.
-            // Let's assume we fetch all active students grouped.
-        },
-        _count: true
+      by: ['unitId'],
+      where: {
+        status: 'ACTIVE',
+        // In real impl, we might not filter by unitId if we want all,
+        // but for safety/performance on large sets we might.
+        // Let's assume we fetch all active students grouped.
+      },
+      _count: true,
     });
 
     // 2. Fetch present attendance
     const presentAttendance = await prisma.attendance.findMany({
-        where: {
-            date: { gte: today },
-            status: 'PRESENT',
+      where: {
+        date: { gte: today },
+        status: 'PRESENT',
+      },
+      select: {
+        student: {
+          select: { unitId: true },
         },
-        select: {
-            student: {
-                select: { unitId: true }
-            }
-        }
+      },
     });
 
     // 3. Aggregate
     const activeMap = new Map<string, number>();
     activeStudentsCounts.forEach((item: any) => {
-        activeMap.set(item.unitId, item._count);
+      activeMap.set(item.unitId, item._count);
     });
 
     const presentMap = new Map<string, number>();
     presentAttendance.forEach((att: any) => {
-        const uid = att.student.unitId;
-        presentMap.set(uid, (presentMap.get(uid) || 0) + 1);
+      const uid = att.student.unitId;
+      presentMap.set(uid, (presentMap.get(uid) || 0) + 1);
     });
 
     // Loop for processing (no DB calls)
     for (const unit of fetchedUnits) {
-        const unitActiveStudents = activeMap.get(unit.id) || 0;
-        const unitPresent = presentMap.get(unit.id) || 0;
-        const rate = unitActiveStudents > 0 ? (unitPresent / unitActiveStudents) * 100 : 0;
-        expect(rate).toBe(80); // 40/50 * 100
+      const unitActiveStudents = activeMap.get(unit.id) || 0;
+      const unitPresent = presentMap.get(unit.id) || 0;
+      const rate = unitActiveStudents > 0 ? (unitPresent / unitActiveStudents) * 100 : 0;
+      expect(rate).toBe(80); // 40/50 * 100
     }
 
     // Assertions

@@ -120,7 +120,16 @@ const demoCredentials = [
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, isLoading, error, clearError, requiresTwoFactor, requiresTwoFactorSetup, verifyTwoFactor, resetAuth } = useAuthStore();
+  const {
+    login,
+    isLoading,
+    error,
+    clearError,
+    requiresTwoFactor,
+    requiresTwoFactorSetup,
+    verifyTwoFactor,
+    resetAuth,
+  } = useAuthStore();
   const [showPassword, setShowPassword] = useState(false);
   const [selectedDemo, setSelectedDemo] = useState<string | null>(null);
 
@@ -144,8 +153,12 @@ export default function LoginPage() {
       // Actually `login` in store throws on error.
       // If requiresTwoFactor is set, we just let the component re-render.
       const state = useAuthStore.getState();
-      if (!state.requiresTwoFactor && !state.requiresTwoFactorSetup && state.isAuthenticated) {
-          router.push("/dashboard");
+      if (
+        !state.requiresTwoFactor &&
+        !state.requiresTwoFactorSetup &&
+        state.isAuthenticated
+      ) {
+        router.push("/dashboard");
       }
     } catch {
       // Error is handled in store
@@ -166,8 +179,12 @@ export default function LoginPage() {
       await login({ email: credential.email, password: credential.password });
 
       const state = useAuthStore.getState();
-      if (!state.requiresTwoFactor && !state.requiresTwoFactorSetup && state.isAuthenticated) {
-          router.push("/dashboard");
+      if (
+        !state.requiresTwoFactor &&
+        !state.requiresTwoFactorSetup &&
+        state.isAuthenticated
+      ) {
+        router.push("/dashboard");
       }
     } catch {
       // Error is handled in store
@@ -175,54 +192,57 @@ export default function LoginPage() {
   };
 
   if (requiresTwoFactorSetup) {
-      return (
-        <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
-            <Card className="w-full max-w-md">
-                <CardHeader>
-                    <CardTitle>Mandatory 2FA Setup</CardTitle>
-                    <CardDescription>
-                        Your account requires Two-Factor Authentication. Please set it up to continue.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <TwoFactorSetup onComplete={() => {
-                        resetAuth();
-                        toast.success("Setup complete. Please sign in again.");
-                    }} />
-                </CardContent>
-            </Card>
-        </div>
-      );
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle>Mandatory 2FA Setup</CardTitle>
+            <CardDescription>
+              Your account requires Two-Factor Authentication. Please set it up
+              to continue.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <TwoFactorSetup
+              onComplete={() => {
+                resetAuth();
+                toast.success("Setup complete. Please sign in again.");
+              }}
+            />
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   if (requiresTwoFactor) {
-      return (
-        <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
-            <Card className="w-full max-w-md">
-                <CardHeader>
-                    <CardTitle>Two-Factor Authentication</CardTitle>
-                    <CardDescription>
-                        Please enter the verification code from your authenticator app.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <TwoFactorVerify
-                        onVerify={async (token) => {
-                            try {
-                                await verifyTwoFactor(token);
-                                router.push("/dashboard");
-                            } catch {}
-                        }}
-                        isLoading={isLoading}
-                        error={error}
-                    />
-                    <Button variant="link" className="mt-4 w-full" onClick={resetAuth}>
-                        Back to Login
-                    </Button>
-                </CardContent>
-            </Card>
-        </div>
-      );
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle>Two-Factor Authentication</CardTitle>
+            <CardDescription>
+              Please enter the verification code from your authenticator app.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <TwoFactorVerify
+              onVerify={async (token) => {
+                try {
+                  await verifyTwoFactor(token);
+                  router.push("/dashboard");
+                } catch {}
+              }}
+              isLoading={isLoading}
+              error={error}
+            />
+            <Button variant="link" className="mt-4 w-full" onClick={resetAuth}>
+              Back to Login
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   return (

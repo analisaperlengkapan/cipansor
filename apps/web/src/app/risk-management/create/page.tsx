@@ -9,15 +9,48 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { PageHeader } from "@/components/shared/page-header";
 import { useAuthStore } from "@/stores/auth";
 import { useQuery } from "@tanstack/react-query";
 
-const RiskCategory = ["STRATEGIC", "FINANCIAL", "OPERATIONAL", "COMPLIANCE", "REPUTATIONAL", "SAFETY", "OTHER"] as const;
-const RiskLikelihood = ["RARE", "UNLIKELY", "POSSIBLE", "LIKELY", "ALMOST_CERTAIN"] as const;
-const RiskImpact = ["INSIGNIFICANT", "MINOR", "MODERATE", "MAJOR", "CATASTROPHIC"] as const;
+const RiskCategory = [
+  "STRATEGIC",
+  "FINANCIAL",
+  "OPERATIONAL",
+  "COMPLIANCE",
+  "REPUTATIONAL",
+  "SAFETY",
+  "OTHER",
+] as const;
+const RiskLikelihood = [
+  "RARE",
+  "UNLIKELY",
+  "POSSIBLE",
+  "LIKELY",
+  "ALMOST_CERTAIN",
+] as const;
+const RiskImpact = [
+  "INSIGNIFICANT",
+  "MINOR",
+  "MODERATE",
+  "MAJOR",
+  "CATASTROPHIC",
+] as const;
 
 const formSchema = z.object({
   code: z.string().min(3, "Code must be at least 3 characters"),
@@ -30,11 +63,7 @@ const formSchema = z.object({
   unitId: z.string().optional(),
 });
 
-const PRIVILEGED_ROLES = [
-  "SUPER_ADMIN",
-  "YAYASAN_ADMIN",
-  "YAYASAN_KETUA"
-];
+const PRIVILEGED_ROLES = ["SUPER_ADMIN", "YAYASAN_ADMIN", "YAYASAN_KETUA"];
 
 export default function CreateRiskPage() {
   const router = useRouter();
@@ -62,7 +91,7 @@ export default function CreateRiskPage() {
       likelihood: "POSSIBLE",
       impact: "MODERATE",
       unitId: "", // Optional, only required for privileged users without context
-    }
+    },
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
@@ -96,8 +125,10 @@ export default function CreateRiskPage() {
       />
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 mt-6 p-6 bg-white rounded-lg border shadow-sm">
-
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="space-y-6 mt-6 p-6 bg-white rounded-lg border shadow-sm"
+        >
           {isPrivileged && (
             <FormField
               control={form.control}
@@ -105,7 +136,10 @@ export default function CreateRiskPage() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Unit</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select unit" />
@@ -113,7 +147,9 @@ export default function CreateRiskPage() {
                     </FormControl>
                     <SelectContent>
                       {units?.map((u: any) => (
-                        <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
+                        <SelectItem key={u.id} value={u.id}>
+                          {u.name}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -129,7 +165,9 @@ export default function CreateRiskPage() {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Risk Code</FormLabel>
-                <FormControl><Input placeholder="e.g. RSK-001" {...field} /></FormControl>
+                <FormControl>
+                  <Input placeholder="e.g. RSK-001" {...field} />
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
@@ -142,7 +180,10 @@ export default function CreateRiskPage() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Category</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select category" />
@@ -150,7 +191,9 @@ export default function CreateRiskPage() {
                     </FormControl>
                     <SelectContent>
                       {RiskCategory.map((cat) => (
-                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                        <SelectItem key={cat} value={cat}>
+                          {cat}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -166,7 +209,9 @@ export default function CreateRiskPage() {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Description</FormLabel>
-                <FormControl><Textarea placeholder="Describe the risk..." {...field} /></FormControl>
+                <FormControl>
+                  <Textarea placeholder="Describe the risk..." {...field} />
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
@@ -179,7 +224,9 @@ export default function CreateRiskPage() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Cause</FormLabel>
-                  <FormControl><Textarea placeholder="Root cause..." {...field} /></FormControl>
+                  <FormControl>
+                    <Textarea placeholder="Root cause..." {...field} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -191,7 +238,9 @@ export default function CreateRiskPage() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Consequence</FormLabel>
-                  <FormControl><Textarea placeholder="Potential impact..." {...field} /></FormControl>
+                  <FormControl>
+                    <Textarea placeholder="Potential impact..." {...field} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -205,7 +254,10 @@ export default function CreateRiskPage() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Likelihood</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select likelihood" />
@@ -213,7 +265,9 @@ export default function CreateRiskPage() {
                     </FormControl>
                     <SelectContent>
                       {RiskLikelihood.map((l) => (
-                        <SelectItem key={l} value={l}>{l}</SelectItem>
+                        <SelectItem key={l} value={l}>
+                          {l}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -228,7 +282,10 @@ export default function CreateRiskPage() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Impact</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select impact" />
@@ -236,7 +293,9 @@ export default function CreateRiskPage() {
                     </FormControl>
                     <SelectContent>
                       {RiskImpact.map((i) => (
-                        <SelectItem key={i} value={i}>{i}</SelectItem>
+                        <SelectItem key={i} value={i}>
+                          {i}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -247,7 +306,13 @@ export default function CreateRiskPage() {
           </div>
 
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => router.back()}>Cancel</Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => router.back()}
+            >
+              Cancel
+            </Button>
             <Button type="submit">Create Risk</Button>
           </div>
         </form>

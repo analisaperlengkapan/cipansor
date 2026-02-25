@@ -101,13 +101,16 @@ export function TwoFactorSettings() {
                 <DialogHeader>
                   <DialogTitle>Setup Two-Factor Authentication</DialogTitle>
                   <DialogDescription>
-                    Scan the QR code with your authenticator app (Google Authenticator, Authy, etc).
+                    Scan the QR code with your authenticator app (Google
+                    Authenticator, Authy, etc).
                   </DialogDescription>
                 </DialogHeader>
-                <TwoFactorSetup onComplete={() => {
+                <TwoFactorSetup
+                  onComplete={() => {
                     setIsSetupOpen(false);
                     fetchStatus();
-                }} />
+                  }}
+                />
               </DialogContent>
             </Dialog>
           ) : (

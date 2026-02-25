@@ -78,12 +78,7 @@ export const ApiResponse = {
   },
 };
 
-export const sendResponse = <T>(
-  res: Response,
-  data: T,
-  message?: string,
-  statusCode = 200
-) => {
+export const sendResponse = <T>(res: Response, data: T, message?: string, statusCode = 200) => {
   return res.status(statusCode).json({
     success: true,
     data,

@@ -52,7 +52,7 @@ export default function HomeroomDashboardPage() {
   // Auto-select first class
   useEffect(() => {
     if (classes && classes.length > 0 && !selectedClassId) {
-      setSelectedClassId(classes[0].id);
+      setTimeout(() => setSelectedClassId(classes[0].id), 0);
     }
   }, [classes, selectedClassId]);
 

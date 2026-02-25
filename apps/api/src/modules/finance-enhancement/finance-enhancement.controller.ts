@@ -11,7 +11,13 @@ import {
   UpdateBudgetInput,
   CreateFinancialPeriodInput,
 } from '@cipansor/shared';
-import { createBudget, updateBudget, getBudgets, deleteBudget, recalculateBudgetUsage } from './budget.service';
+import {
+  createBudget,
+  updateBudget,
+  getBudgets,
+  deleteBudget,
+  recalculateBudgetUsage,
+} from './budget.service';
 import { createFinancialPeriod, closePeriod, getFinancialPeriods } from './period.service';
 import {
   getBalanceSheet,
@@ -128,21 +134,7 @@ export class FinanceEnhancementController {
     }
   }
 
-  async createManualJournal(req: Request, res: Response, next: NextFunction) {
-    try {
-      const input: CreateManualJournalInput = req.body;
-      const userId = (req as any).user.id;
 
-      await financeEnhancementService.createManualJournal({
-        ...input,
-        createdById: userId,
-      });
-
-      res.status(201).json({ success: true, message: 'Manual journal created successfully' });
-    } catch (error) {
-      next(error);
-    }
-  }
 
   async getJournalEntryById(req: Request, res: Response, next: NextFunction) {
     try {
@@ -297,7 +289,10 @@ export class FinanceEnhancementController {
       if (!unitId || !startDate || !endDate || !accountId) {
         return res
           .status(400)
-          .json({ success: false, message: 'Unit ID, Start date, End date, and Account ID are required' });
+          .json({
+            success: false,
+            message: 'Unit ID, Start date, End date, and Account ID are required',
+          });
       }
 
       const result = await getGeneralLedger(
@@ -434,7 +429,9 @@ export class FinanceEnhancementController {
     try {
       const { unitId, academicYearId } = req.body;
       if (!unitId || !academicYearId) {
-        return res.status(400).json({ success: false, message: 'Unit ID and Academic Year ID are required' });
+        return res
+          .status(400)
+          .json({ success: false, message: 'Unit ID and Academic Year ID are required' });
       }
 
       const result = await recalculateBudgetUsage(unitId, academicYearId);

@@ -31,7 +31,10 @@ export function generateAccessToken(payload: Omit<JwtPayload, 'type'>, expiresIn
 /**
  * Generate refresh token
  */
-export function generateRefreshToken(payload: Omit<JwtPayload, 'type'>, expiresIn?: string): string {
+export function generateRefreshToken(
+  payload: Omit<JwtPayload, 'type'>,
+  expiresIn?: string
+): string {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (jwt as any).sign({ ...payload, type: 'refresh' }, config.jwt.secret, {
     expiresIn: expiresIn || config.jwt.refreshExpiresIn,
@@ -41,7 +44,10 @@ export function generateRefreshToken(payload: Omit<JwtPayload, 'type'>, expiresI
 /**
  * Generate both access and refresh tokens
  */
-export function generateTokenPair(payload: Omit<JwtPayload, 'type'>, expiresIn?: string): TokenPair {
+export function generateTokenPair(
+  payload: Omit<JwtPayload, 'type'>,
+  expiresIn?: string
+): TokenPair {
   return {
     accessToken: generateAccessToken(payload, expiresIn),
     refreshToken: generateRefreshToken(payload, expiresIn),

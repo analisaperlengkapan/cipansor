@@ -39,6 +39,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StudentCounselingTab } from "@/components/students/student-counseling-tab";
 import { StudentBehaviorTab } from "@/components/students/student-behavior-tab";
 import { StudentIbadahTab } from "@/components/students/student-ibadah-tab";
+import { StudentKitabTab } from "@/components/students/student-kitab-tab";
+import { StudentTakhosusTab } from "@/components/students/student-takhosus-tab";
 
 const statusColors: Record<string, string> = {
   ACTIVE: "bg-green-100 text-green-800",
@@ -207,6 +209,8 @@ export default function StudentDetailPage() {
             <TabsTrigger value="academic">Academic</TabsTrigger>
             <TabsTrigger value="attendance">Attendance</TabsTrigger>
             <TabsTrigger value="tahfidz">Tahfidz</TabsTrigger>
+            <TabsTrigger value="takhosus">Takhosus</TabsTrigger>
+            <TabsTrigger value="kitab">Kitab Kuning</TabsTrigger>
             <TabsTrigger value="behavior">Behavior</TabsTrigger>
             <TabsTrigger value="counseling">Counseling</TabsTrigger>
             <TabsTrigger value="ibadah">Mutabaah</TabsTrigger>
@@ -444,6 +448,14 @@ export default function StudentDetailPage() {
             </Card>
           </TabsContent>
 
+          <TabsContent value="takhosus">
+            <StudentTakhosusTab studentId={studentId} />
+          </TabsContent>
+
+          <TabsContent value="kitab">
+            <StudentKitabTab studentId={studentId} />
+          </TabsContent>
+
           <TabsContent value="finance">
             <div className="grid gap-4 md:grid-cols-2">
               <Card>
@@ -502,6 +514,76 @@ export default function StudentDetailPage() {
                         : "No transaction history"}
                     </p>
                   </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+          <TabsContent value="finance">
+            <div className="grid gap-4 md:grid-cols-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Wallet className="h-5 w-5" />
+                    Wallet (Uang Saku)
+                  </CardTitle>
+                  <CardDescription>Digital wallet information</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="bg-gradient-to-r from-blue-500 to-indigo-600 p-6 rounded-xl text-white">
+                    <p className="text-sm opacity-80 mb-1">Current Balance</p>
+                    <h3 className="text-3xl font-bold mb-4">
+                      {formatCurrency(summary.walletBalance)}
+                    </h3>
+                    <p className="text-xs opacity-70">
+                      {student.wallet?.lastTopUp
+                        ? `Last top up: ${format(new Date(student.wallet.lastTopUp), "dd MMM yyyy")}`
+                        : "No transaction history"}
+                    </p>
+                  </div>
+                  <Button variant="outline" className="w-full" asChild>
+                    <Link href={`/wallet/${student.id}`}>
+                       Kelola Saldo & Riwayat
+                    </Link>
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    Tagihan & Tunggakan
+                  </CardTitle>
+                  <CardDescription>Informasi status tagihan berjalan</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4 text-center py-6">
+                  {summary.unpaidInvoices.count > 0 ? (
+                    <div>
+                      <AlertTriangle className="h-10 w-10 text-yellow-500 mx-auto mb-3" />
+                      <h3 className="text-xl font-bold text-yellow-600 mb-1">
+                        {summary.unpaidInvoices.count} Tagihan Belum Dibayar
+                      </h3>
+                      <p className="text-muted-foreground mb-4">
+                        Total: <strong>{formatCurrency(summary.unpaidInvoices.total)}</strong>
+                      </p>
+                      <Button variant="default" asChild>
+                         <Link href={`/finance/bills?studentId=${student.id}`}>
+                           Lihat Detail Tagihan
+                         </Link>
+                      </Button>
+                    </div>
+                  ) : (
+                    <div>
+                      <CheckCircle className="h-10 w-10 text-green-500 mx-auto mb-3" />
+                      <h3 className="text-xl font-bold text-green-600 mb-1">Status Lunas</h3>
+                      <p className="text-muted-foreground mb-4">Tidak ada tagihan tertunggak.</p>
+                      <Button variant="outline" asChild>
+                         <Link href={`/finance/payments?studentId=${student.id}`}>
+                           Lihat Riwayat Pembayaran
+                         </Link>
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>

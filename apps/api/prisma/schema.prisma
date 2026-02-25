@@ -163,26 +163,26 @@ enum PaymentMethod {
 /// 6 Aspek Perkembangan Anak (Permendikbud 137/2014)
 enum PAUDAspect {
   NAM // Nilai Agama & Moral
-  FM  // Fisik Motorik
+  FM // Fisik Motorik
   KOG // Kognitif
   BHS // Bahasa
-  SE  // Sosial Emosional
+  SE // Sosial Emosional
   SNI // Seni
 }
 
 /// Capaian Perkembangan PAUD
 enum PAUDAchievementLevel {
-  BB  // Belum Berkembang
-  MB  // Mulai Berkembang
+  BB // Belum Berkembang
+  MB // Mulai Berkembang
   BSH // Berkembang Sesuai Harapan
   BSB // Berkembang Sangat Baik
 }
 
 /// Periode laporan PAUD
 enum PAUDReportPeriod {
-  HARIAN   // Daily
+  HARIAN // Daily
   MINGGUAN // Weekly
-  BULANAN  // Monthly
+  BULANAN // Monthly
   SEMESTER // Semester (Raport)
 }
 
@@ -192,19 +192,19 @@ enum PAUDReportPeriod {
 
 /// Mood indicator for daily report
 enum DailyMood {
-  HAPPY    // 😊 Senang
-  NEUTRAL  // 😐 Biasa
-  SAD      // 😢 Sedih
-  TIRED    // 😴 Lelah
-  EXCITED  // 🤩 Antusias
-  SICK     // 🤒 Sakit
+  HAPPY // 😊 Senang
+  NEUTRAL // 😐 Biasa
+  SAD // 😢 Sedih
+  TIRED // 😴 Lelah
+  EXCITED // 🤩 Antusias
+  SICK // 🤒 Sakit
 }
 
 /// Status konsumsi makan/snack
 enum MealConsumption {
-  HABIS     // Dimakan habis
-  SETENGAH  // Dimakan setengah
-  SEDIKIT   // Dimakan sedikit
+  HABIS // Dimakan habis
+  SETENGAH // Dimakan setengah
+  SEDIKIT // Dimakan sedikit
   TIDAK_MAU // Tidak mau makan
 }
 
@@ -214,28 +214,28 @@ enum MealConsumption {
 
 /// Jenis murojaah hafalan
 enum MurojaahType {
-  YAUMIYAH  // Harian - 1-3 juz terakhir
-  USBUIYAH  // Mingguan - 5 juz terakhir
+  YAUMIYAH // Harian - 1-3 juz terakhir
+  USBUIYAH // Mingguan - 5 juz terakhir
   SYAHRIYAH // Bulanan - Seluruh hafalan
-  TASMI     // Random testing
+  TASMI // Random testing
 }
 
 /// Jenis kesalahan dalam hafalan
 enum TahfidzMistakeType {
-  LAHIN_JALI  // Kesalahan jelas (salah huruf/harakat)
+  LAHIN_JALI // Kesalahan jelas (salah huruf/harakat)
   LAHIN_KHAFI // Kesalahan tersembunyi (mad, ghunnah)
-  TAJWID      // Kesalahan tajwid
-  LUPA        // Lupa ayat
-  URUTAN      // Salah urutan ayat
+  TAJWID // Kesalahan tajwid
+  LUPA // Lupa ayat
+  URUTAN // Salah urutan ayat
 }
 
 /// Jenis simaan/ujian hafalan
 enum SimaanType {
   BIN_NAZHR // Dengan melihat mushaf
   BIL_GHAIB // Tanpa melihat (hafalan)
-  TAHDIR    // Persiapan (juz dipilih)
-  TASMI     // Random testing
-  KHATAM    // Ujian khatam 30 juz
+  TAHDIR // Persiapan (juz dipilih)
+  TASMI // Random testing
+  KHATAM // Ujian khatam 30 juz
 }
 
 // =====================================
@@ -269,22 +269,22 @@ model Foundation {
 
 /// User - All user types in the system
 model User {
-  id           String    @id @default(uuid())
-  name         String
-  email        String    @unique
-  passwordHash String    @map("password_hash")
-  phone        String?
-  role         UserRole // Legacy role - kept for backward compatibility
-  unitId       String?   @map("unit_id")
-  isActive     Boolean   @default(true) @map("is_active")
-  isTwoFactorEnabled Boolean   @default(false) @map("is_two_factor_enabled")
-  twoFactorSecret    String?   @map("two_factor_secret")
-  twoFactorSecretPending String? @map("two_factor_secret_pending")
-  twoFactorRecoveryCodes String[] @default([]) @map("two_factor_recovery_codes")
-  lastLoginAt  DateTime? @map("last_login_at")
-  createdAt    DateTime  @default(now()) @map("created_at")
-  updatedAt    DateTime  @updatedAt @map("updated_at")
-  deletedAt    DateTime? @map("deleted_at")
+  id                     String    @id @default(uuid())
+  name                   String
+  email                  String    @unique
+  passwordHash           String    @map("password_hash")
+  phone                  String?
+  role                   UserRole // Legacy role - kept for backward compatibility
+  unitId                 String?   @map("unit_id")
+  isActive               Boolean   @default(true) @map("is_active")
+  isTwoFactorEnabled     Boolean   @default(false) @map("is_two_factor_enabled")
+  twoFactorSecret        String?   @map("two_factor_secret")
+  twoFactorSecretPending String?   @map("two_factor_secret_pending")
+  twoFactorRecoveryCodes String[]  @default([]) @map("two_factor_recovery_codes")
+  lastLoginAt            DateTime? @map("last_login_at")
+  createdAt              DateTime  @default(now()) @map("created_at")
+  updatedAt              DateTime  @updatedAt @map("updated_at")
+  deletedAt              DateTime? @map("deleted_at")
 
   // Relations
   unit                              Unit?                       @relation(fields: [unitId], references: [id])
@@ -388,26 +388,64 @@ model User {
   approvedDisposals                 AssetDisposal[]             @relation("DisposalApprover")
 
   // Tata Naskah Dinas (E-Office)
-  createdLetters                    Letter[]                    @relation("LetterCreator")
-  letterReviews                     LetterReviewer[]
-  receivedLetters                   LetterRecipient[]
-  sentDispositions                  Disposition[]               @relation("DispositionSender")
-  receivedDispositions              Disposition[]               @relation("DispositionRecipient")
+  createdLetters       Letter[]          @relation("LetterCreator")
+  letterReviews        LetterReviewer[]
+  receivedLetters      LetterRecipient[]
+  sentDispositions     Disposition[]     @relation("DispositionSender")
+  receivedDispositions Disposition[]     @relation("DispositionRecipient")
 
   // Risk Management
-  createdRisks                      Risk[]                      @relation("RiskCreator")
-  assignedMitigations               RiskMitigation[]            @relation("MitigationPIC")
-  createdMitigations                RiskMitigation[]            @relation("MitigationCreator")
+  createdRisks        Risk[]             @relation("RiskCreator")
+  assignedMitigations RiskMitigation[]   @relation("MitigationPIC")
+  createdMitigations  RiskMitigation[]   @relation("MitigationCreator")
   // Complaint Module
-  reportedComplaints                Complaint[]                 @relation("ComplaintReporter")
-  assignedComplaints                Complaint[]                 @relation("ComplaintHandler")
-  complaintComments                 ComplaintComment[]
+  reportedComplaints  Complaint[]        @relation("ComplaintReporter")
+  assignedComplaints  Complaint[]        @relation("ComplaintHandler")
+  complaintComments   ComplaintComment[]
 
   // Project Management
-  managedProjects                   Project[]                   @relation("ProjectManager")
-  projectMemberships                ProjectMember[]
-  assignedTasks                     ProjectTask[]               @relation("TaskAssignee")
-  taskComments                      TaskComment[]
+  managedProjects    Project[]       @relation("ProjectManager")
+  projectMemberships ProjectMember[]
+  assignedTasks      ProjectTask[]   @relation("TaskAssignee")
+  taskComments       TaskComment[]
+
+  // Perencanaan (Strategic Planning)
+  createdPlans       StrategicPlan[] @relation("PlanCreator")
+  approvedPlans      StrategicPlan[] @relation("PlanApprover")
+  assignedActivities PlanActivity[]  @relation("ActivityPIC")
+
+  // Pengawasan (Internal Audit)
+  ledInternalAudits   InternalAudit[] @relation("AuditLead")
+  findingsResponsible AuditFinding[]  @relation("FindingResponsible")
+  verifiedFollowUps   AuditFollowUp[] @relation("FollowUpVerifier")
+
+  // Syariah (Sharia Compliance)
+  shariaReviews ShariaCompliance[] @relation("ShariaReviewer")
+  shariaAudits  ShariaAudit[]      @relation("ShariaAuditor")
+
+  // Lingkungan (Environment)
+  environmentPrograms EnvironmentProgram[] @relation("EnvironmentPIC")
+  wasteRecords        WasteManagement[]    @relation("WasteRecorder")
+
+  // Talenta (Talent Management)
+  talentProfile           TalentProfile?
+  talentAssessments       TalentAssessment[]   @relation("TalentAssessor")
+  successionCurrent       SuccessionPlan[]     @relation("SuccessionCurrent")
+  trainingProgramsCreated TrainingProgram[]    @relation("TrainingCreator")
+  trainingEnrollments     TrainingEnrollment[]
+
+  // Organisasi (Organization Structure)
+  orgPositions OrgPosition[] @relation("PositionHolder")
+
+  // Tata Laksana (SOP Management)
+  sopsCreated   StandardOperatingProcedure[] @relation("SOPCreator")
+  sopsApproved  StandardOperatingProcedure[] @relation("SOPApprover")
+  sopRevisions  SOPRevision[]               @relation("SOPRevisor")
+
+  // Litbang / Inovasi (R&D)
+  researchProjects     ResearchProject[]     @relation("ResearchLeader")
+  innovationsProposed  InnovationProposal[]  @relation("InnovationProposer")
+  innovationsApproved  InnovationProposal[]  @relation("InnovationApprover")
 
   @@index([email])
   @@index([role])
@@ -448,7 +486,7 @@ model Unit {
   deletedAt     DateTime? @map("deleted_at")
 
   // Relations
-  foundation             Foundation?             @relation(fields: [foundationId], references: [id])
+  foundation             Foundation?                 @relation(fields: [foundationId], references: [id])
   users                  User[]
   userRoleAssignments    UserRoleAssignment[] // NEW: Role assignments for this unit
   students               Student[]
@@ -512,7 +550,7 @@ model Unit {
   // Settings and Rapor Pesantren
   settings               Setting[]
   systemSecrets          SystemSecret[]
-  raporPesantren         RaporPesantren[]       @relation("RaporPesantrenUnit")
+  raporPesantren         RaporPesantren[]            @relation("RaporPesantrenUnit")
   // PAUD & Enhancement relations
   paudIndicators         PAUDDevelopmentIndicator[]
   paudAssessments        PAUDDevelopmentAssessment[]
@@ -534,20 +572,49 @@ model Unit {
   departments            Department[]
 
   // Tata Naskah Dinas (E-Office)
-  agendaNumbers          AgendaNumber[]
-  letters                Letter[]
-  receivedLetters        LetterRecipient[]
+  agendaNumbers   AgendaNumber[]
+  letters         Letter[]
+  receivedLetters LetterRecipient[]
 
   // Quality Assurance
-  qualityEvidences       QualityEvidence[]
-  qualityAudits          QualityAudit[]
-  assignments            Assignment[]
-  questionBanks          QuestionBank[]
-  complaints             Complaint[]
+  qualityEvidences QualityEvidence[]
+  qualityAudits    QualityAudit[]
+  assignments      Assignment[]
+  questionBanks    QuestionBank[]
+  complaints       Complaint[]
 
   // Risk Management
-  risks                  Risk[]
-  projects               Project[]
+  risks    Risk[]
+  projects Project[]
+
+  // Perencanaan (Strategic Planning)
+  strategicPlans StrategicPlan[]
+
+  // Pengawasan (Internal Audit)
+  internalAudits InternalAudit[]
+
+  // Syariah (Sharia Compliance)
+  shariaCompliances ShariaCompliance[]
+
+  // Lingkungan (Environment)
+  environmentPrograms   EnvironmentProgram[]
+  wasteManagement       WasteManagement[]
+  greenCampusIndicators GreenCampusIndicator[]
+
+  // Talenta (Talent Management)
+  talentProfiles   TalentProfile[]
+  successionPlans  SuccessionPlan[]
+  trainingPrograms TrainingProgram[]
+
+  // Organisasi (Organization Structure)
+  orgUnits OrgUnit[]
+
+  // Tata Laksana (SOP Management)
+  standardOperatingProcedures StandardOperatingProcedure[]
+
+  // Litbang / Inovasi (R&D)
+  researchProjects     ResearchProject[]
+  innovationProposals  InnovationProposal[]
 
   @@index([type])
   @@index([foundationId])
@@ -663,17 +730,17 @@ model Teacher {
 
 /// Staff - Non-teaching staff
 model Staff {
-  id         String    @id @default(uuid())
-  userId     String    @unique @map("user_id")
-  unitId     String    @map("unit_id")
-  nip        String?   @unique
-  position   String // Jabatan
-  department String? // Bagian
-  departmentId String? @map("department_id")
-  joinDate   DateTime? @map("join_date")
-  createdAt  DateTime  @default(now()) @map("created_at")
-  updatedAt  DateTime  @updatedAt @map("updated_at")
-  deletedAt  DateTime? @map("deleted_at")
+  id           String    @id @default(uuid())
+  userId       String    @unique @map("user_id")
+  unitId       String    @map("unit_id")
+  nip          String?   @unique
+  position     String // Jabatan
+  department   String? // Bagian
+  departmentId String?   @map("department_id")
+  joinDate     DateTime? @map("join_date")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
 
   // Relations
   user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -736,7 +803,7 @@ model AcademicYear {
   assignments           Assignment[]
 
   // Risk Management
-  risks                 Risk[]
+  risks Risk[]
 
   @@index([isActive])
   @@map("academic_years")
@@ -1249,10 +1316,10 @@ model PaymentType {
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   // Relations
-  unit     Unit         @relation(fields: [unitId], references: [id])
-  invoices Invoice[]
-  account  AccountCode? @relation(fields: [accountId], references: [id])
-  accountId String?     @map("account_id")
+  unit      Unit         @relation(fields: [unitId], references: [id])
+  invoices  Invoice[]
+  account   AccountCode? @relation(fields: [accountId], references: [id])
+  accountId String?      @map("account_id")
 
   @@unique([unitId, code])
   @@index([isActive])
@@ -1435,11 +1502,11 @@ model Registrant {
   updatedAt         DateTime        @updatedAt @map("updated_at")
 
   // Relations
-  admissionPeriod AdmissionPeriod      @relation(fields: [admissionPeriodId], references: [id])
-  wave            AdmissionWave?       @relation("WaveRegistrants", fields: [waveId], references: [id])
-  student         Student?             @relation(fields: [studentId], references: [id])
+  admissionPeriod AdmissionPeriod        @relation(fields: [admissionPeriodId], references: [id])
+  wave            AdmissionWave?         @relation("WaveRegistrants", fields: [waveId], references: [id])
+  student         Student?               @relation(fields: [studentId], references: [id])
   documents       RegistrantDocument[]
-  campaign        MarketingCampaign?   @relation(fields: [campaignId], references: [id])
+  campaign        MarketingCampaign?     @relation(fields: [campaignId], references: [id])
   interactions    MarketingInteraction[]
 
   @@index([admissionPeriodId])
@@ -1587,8 +1654,8 @@ model LeaveBalance {
 model Department {
   id          String   @id @default(uuid())
   unitId      String   @map("unit_id")
-  code        String   // Kode departemen
-  name        String   // Nama departemen
+  code        String // Kode departemen
+  name        String // Nama departemen
   description String?
   managerId   String?  @map("manager_id") // Kepala departemen
   isActive    Boolean  @default(true) @map("is_active")
@@ -1596,9 +1663,9 @@ model Department {
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   // Relations
-  unit    Unit      @relation(fields: [unitId], references: [id])
-  manager User?     @relation("DepartmentManager", fields: [managerId], references: [id])
-  staff   Staff[]
+  unit     Unit      @relation(fields: [unitId], references: [id])
+  manager  User?     @relation("DepartmentManager", fields: [managerId], references: [id])
+  staff    Staff[]
   teachers Teacher[]
 
   @@unique([unitId, code])
@@ -1639,17 +1706,17 @@ enum EmploymentAction {
 
 /// EmploymentContract - Kontrak Kerja
 model EmploymentContract {
-  id            String         @id @default(uuid())
-  userId        String         @map("user_id")
-  contractNumber String        @unique @map("contract_number")
-  type          String         // PKWT, PKWTT, Part-Time, Probation
-  startDate     DateTime       @map("start_date")
-  endDate       DateTime?      @map("end_date") // Nullable for permanent employees
-  status        ContractStatus @default(ACTIVE)
-  documentUrl   String?        @map("document_url") // Scan kontrak
-  notes         String?        @db.Text
-  createdAt     DateTime       @default(now()) @map("created_at")
-  updatedAt     DateTime       @updatedAt @map("updated_at")
+  id             String         @id @default(uuid())
+  userId         String         @map("user_id")
+  contractNumber String         @unique @map("contract_number")
+  type           String // PKWT, PKWTT, Part-Time, Probation
+  startDate      DateTime       @map("start_date")
+  endDate        DateTime?      @map("end_date") // Nullable for permanent employees
+  status         ContractStatus @default(ACTIVE)
+  documentUrl    String?        @map("document_url") // Scan kontrak
+  notes          String?        @db.Text
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
 
   // Relations
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -1916,15 +1983,15 @@ model MedicalRecord {
   followUpDate DateTime?         @map("follow_up_date")
 
   // Vitals & Extended Data
-  status        HealthStatus?    @default(HEALTHY)
-  temperature   Float?           // Suhu tubuh (C)
-  bloodPressure String?          @map("blood_pressure") // Tekanan darah (mmHg)
-  heartRate     Int?             @map("heart_rate") // Denyut nadi (bpm)
-  weight        Float?           // Berat badan (kg)
-  height        Float?           // Tinggi badan (cm)
+  status        HealthStatus? @default(HEALTHY)
+  temperature   Float? // Suhu tubuh (C)
+  bloodPressure String?       @map("blood_pressure") // Tekanan darah (mmHg)
+  heartRate     Int?          @map("heart_rate") // Denyut nadi (bpm)
+  weight        Float? // Berat badan (kg)
+  height        Float? // Tinggi badan (cm)
 
-  createdAt    DateTime          @default(now()) @map("created_at")
-  updatedAt    DateTime          @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
   student    Student @relation(fields: [studentId], references: [id])
@@ -2034,17 +2101,17 @@ model Announcement {
 
 /// Notification - Notifikasi Personal
 model Notification {
-  id        String             @id @default(uuid())
-  userId    String             @map("user_id")
-  type      NotificationType
-  title     String
-  message   String             @db.Text
-  link      String? // Deep link ke halaman terkait
-  status    NotificationStatus @default(UNREAD)
-  readAt    DateTime?          @map("read_at")
-  data      Json?              @map("data") // Additional data for extended types
-  scheduledAt DateTime?        @map("scheduled_at")
-  createdAt DateTime           @default(now()) @map("created_at")
+  id          String             @id @default(uuid())
+  userId      String             @map("user_id")
+  type        NotificationType
+  title       String
+  message     String             @db.Text
+  link        String? // Deep link ke halaman terkait
+  status      NotificationStatus @default(UNREAD)
+  readAt      DateTime?          @map("read_at")
+  data        Json?              @map("data") // Additional data for extended types
+  scheduledAt DateTime?          @map("scheduled_at")
+  createdAt   DateTime           @default(now()) @map("created_at")
 
   // Relations
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -2129,7 +2196,7 @@ model AssetCategory {
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   // Relations
-  assets Asset[]
+  assets               Asset[]
   purchaseRequestItems PurchaseRequestItem[]
 
   @@map("asset_categories")
@@ -2137,31 +2204,31 @@ model AssetCategory {
 
 /// Asset - Aset/Inventaris
 model Asset {
-  id             String         @id @default(uuid())
-  unitId         String         @map("unit_id")
-  categoryId     String         @map("category_id")
-  code           String         @unique // Kode inventaris
-  name           String
-  brand          String?
-  model          String?
-  serialNumber   String?        @map("serial_number")
-  purchaseDate   DateTime?      @map("purchase_date")
-  purchasePrice  Decimal?       @map("purchase_price") @db.Decimal(15, 2)
-  supplier       String? // Deprecated: Use supplierId
-  supplierId     String?        @map("supplier_id")
-  location       String? // Lokasi penempatan
-  roomId         String?        @map("room_id")
-  purchaseOrderNo String?       @map("purchase_order_no")
-  usefulLife     Int?           @map("useful_life") // Months
-  residualValue  Decimal?       @map("residual_value") @db.Decimal(15, 2)
-  condition      AssetCondition @default(GOOD)
-  status         AssetStatus    @default(ACTIVE)
-  warrantyExpiry DateTime?      @map("warranty_expiry")
-  notes          String?        @db.Text
-  photoUrl       String?        @map("photo_url")
-  createdAt      DateTime       @default(now()) @map("created_at")
-  updatedAt      DateTime       @updatedAt @map("updated_at")
-  deletedAt      DateTime?      @map("deleted_at")
+  id              String         @id @default(uuid())
+  unitId          String         @map("unit_id")
+  categoryId      String         @map("category_id")
+  code            String         @unique // Kode inventaris
+  name            String
+  brand           String?
+  model           String?
+  serialNumber    String?        @map("serial_number")
+  purchaseDate    DateTime?      @map("purchase_date")
+  purchasePrice   Decimal?       @map("purchase_price") @db.Decimal(15, 2)
+  supplier        String? // Deprecated: Use supplierId
+  supplierId      String?        @map("supplier_id")
+  location        String? // Lokasi penempatan
+  roomId          String?        @map("room_id")
+  purchaseOrderNo String?        @map("purchase_order_no")
+  usefulLife      Int?           @map("useful_life") // Months
+  residualValue   Decimal?       @map("residual_value") @db.Decimal(15, 2)
+  condition       AssetCondition @default(GOOD)
+  status          AssetStatus    @default(ACTIVE)
+  warrantyExpiry  DateTime?      @map("warranty_expiry")
+  notes           String?        @db.Text
+  photoUrl        String?        @map("photo_url")
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+  deletedAt       DateTime?      @map("deleted_at")
 
   // Relations
   unit            Unit               @relation(fields: [unitId], references: [id])
@@ -2251,22 +2318,22 @@ model AssetAuditItem {
 
 /// AssetMaintenance - Log Pemeliharaan Aset
 model AssetMaintenance {
-  id              String    @id @default(uuid())
-  assetId         String    @map("asset_id")
-  maintenanceDate DateTime  @map("maintenance_date")
+  id              String                 @id @default(uuid())
+  assetId         String                 @map("asset_id")
+  maintenanceDate DateTime               @map("maintenance_date")
   type            String // perbaikan, servis, penggantian, dll
-  description     String    @db.Text
+  description     String                 @db.Text
   status          AssetMaintenanceStatus @default(PENDING)
-  cost            Decimal?  @db.Decimal(15, 2)
+  cost            Decimal?               @db.Decimal(15, 2)
   vendor          String?
-  performedBy     String    @map("performed_by")
-  requestedById   String?   @map("requested_by_id")
-  completionDate  DateTime? @map("completion_date")
-  invoiceUrl      String?   @map("invoice_url")
-  nextSchedule    DateTime? @map("next_schedule")
-  notes           String?   @db.Text
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
+  performedBy     String                 @map("performed_by")
+  requestedById   String?                @map("requested_by_id")
+  completionDate  DateTime?              @map("completion_date")
+  invoiceUrl      String?                @map("invoice_url")
+  nextSchedule    DateTime?              @map("next_schedule")
+  notes           String?                @db.Text
+  createdAt       DateTime               @default(now()) @map("created_at")
+  updatedAt       DateTime               @updatedAt @map("updated_at")
 
   // Relations
   asset       Asset @relation(fields: [assetId], references: [id])
@@ -2323,19 +2390,19 @@ enum DayOfWeek {
 
 /// Subject - Mata Pelajaran
 model Subject {
-  id          String      @id @default(uuid())
-  unitId      String      @map("unit_id")
-  code        String // e.g., "MTK", "FIQ", "THF"
-  name        String // e.g., "Matematika", "Fiqih", "Tahfidz Al-Quran"
-  type        SubjectType
-  description String?     @db.Text
-  credits     Int         @default(2) // SKS/Jam pelajaran per minggu
-  level       String? // Level kelas yang diajarkan (7,8,9 atau 1,2,3,4,5,6)
-  passingScore Decimal    @default(70) @map("passing_score") @db.Decimal(5, 2)
-  isActive    Boolean     @default(true) @map("is_active")
-  createdAt   DateTime    @default(now()) @map("created_at")
-  updatedAt   DateTime    @updatedAt @map("updated_at")
-  deletedAt   DateTime?   @map("deleted_at")
+  id           String      @id @default(uuid())
+  unitId       String      @map("unit_id")
+  code         String // e.g., "MTK", "FIQ", "THF"
+  name         String // e.g., "Matematika", "Fiqih", "Tahfidz Al-Quran"
+  type         SubjectType
+  description  String?     @db.Text
+  credits      Int         @default(2) // SKS/Jam pelajaran per minggu
+  level        String? // Level kelas yang diajarkan (7,8,9 atau 1,2,3,4,5,6)
+  passingScore Decimal     @default(70) @map("passing_score") @db.Decimal(5, 2)
+  isActive     Boolean     @default(true) @map("is_active")
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+  deletedAt    DateTime?   @map("deleted_at")
 
   // Relations
   unit               Unit                @relation(fields: [unitId], references: [id])
@@ -2864,12 +2931,12 @@ model TakhosusEnrollment {
   updatedAt            DateTime       @updatedAt @map("updated_at")
 
   // Relations
-  student        Student         @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  halaqoh        Halaqoh?        @relation(fields: [halaqohId], references: [id])
-  sanadRecords   SanadRecord[]
+  student         Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  halaqoh         Halaqoh?         @relation(fields: [halaqohId], references: [id])
+  sanadRecords    SanadRecord[]
   // Tahfidz Enhancement relations
   murojaahRecords MurojaahRecord[]
-  simaanExams    SimaanExam[]
+  simaanExams     SimaanExam[]
 
   @@unique([studentId]) // Satu santri hanya bisa satu enrollment aktif
   @@index([halaqohId])
@@ -4652,8 +4719,8 @@ model AccountCode {
   isActive  Boolean  @default(true) @map("is_active")
   createdAt DateTime @default(now()) @map("created_at")
 
-  normalBalance    String   @default("DEBIT") @map("normal_balance") // DEBIT, CREDIT
-  cashFlowCategory String?  @map("cash_flow_category") // OPERATING, INVESTING, FINANCING
+  normalBalance    String  @default("DEBIT") @map("normal_balance") // DEBIT, CREDIT
+  cashFlowCategory String? @map("cash_flow_category") // OPERATING, INVESTING, FINANCING
 
   // Relations
   parent         AccountCode?   @relation("AccountHierarchy", fields: [parentId], references: [id])
@@ -4680,10 +4747,10 @@ model Budget {
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 
-  unit         Unit         @relation(fields: [unitId], references: [id])
-  academicYear AcademicYear @relation(fields: [academicYearId], references: [id])
-  account      AccountCode  @relation(fields: [accountId], references: [id])
-  createdBy    User         @relation("BudgetCreator", fields: [createdById], references: [id])
+  unit                 Unit                  @relation(fields: [unitId], references: [id])
+  academicYear         AcademicYear          @relation(fields: [academicYearId], references: [id])
+  account              AccountCode           @relation(fields: [accountId], references: [id])
+  createdBy            User                  @relation("BudgetCreator", fields: [createdById], references: [id])
   purchaseRequestItems PurchaseRequestItem[]
 
   @@unique([unitId, academicYearId, accountId])
@@ -4693,17 +4760,17 @@ model Budget {
 
 /// FinancialPeriod - Periode Akuntansi
 model FinancialPeriod {
-  id          String   @id @default(uuid())
-  unitId      String   @map("unit_id")
-  name        String   // "Januari 2025"
-  startDate   DateTime @map("start_date") @db.Date
-  endDate     DateTime @map("end_date") @db.Date
-  isClosed    Boolean  @default(false) @map("is_closed")
-  closedAt    DateTime? @map("closed_at")
-  closedById  String?  @map("closed_by_id")
-  notes       String?
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id         String    @id @default(uuid())
+  unitId     String    @map("unit_id")
+  name       String // "Januari 2025"
+  startDate  DateTime  @map("start_date") @db.Date
+  endDate    DateTime  @map("end_date") @db.Date
+  isClosed   Boolean   @default(false) @map("is_closed")
+  closedAt   DateTime? @map("closed_at")
+  closedById String?   @map("closed_by_id")
+  notes      String?
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
 
   unit     Unit  @relation(fields: [unitId], references: [id])
   closedBy User? @relation("PeriodCloser", fields: [closedById], references: [id])
@@ -5772,13 +5839,13 @@ model SystemSecret {
   id          String   @id @default(uuid())
   unitId      String?  @map("unit_id")
   key         String
-  value       String   // Encrypted value
+  value       String // Encrypted value
   description String?  @db.Text
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   // Relations
-  unit        Unit?    @relation(fields: [unitId], references: [id])
+  unit Unit? @relation(fields: [unitId], references: [id])
 
   @@unique([unitId, key])
   @@index([unitId])
@@ -5797,13 +5864,14 @@ model RaporPesantren {
   status String @default("DRAFT") // DRAFT, FINAL, PUBLISHED
 
   // Component Data (stored as JSON)
-  tahfidzData      Json? @map("tahfidz_data")
-  ibadahData       Json? @map("ibadah_data")
-  muhadhorohData   Json? @map("muhadhoroh_data")
-  muhadatsahData   Json? @map("muhadatsah_data")
+  tahfidzData       Json? @map("tahfidz_data")
+  takhosusData      Json? @map("takhosus_data")
+  ibadahData        Json? @map("ibadah_data")
+  muhadhorohData    Json? @map("muhadhoroh_data")
+  muhadatsahData    Json? @map("muhadatsah_data")
   kitabProgressData Json? @map("kitab_progress_data")
-  akhlakData       Json? @map("akhlak_data")
-  attendanceData   Json? @map("attendance_data")
+  akhlakData        Json? @map("akhlak_data")
+  attendanceData    Json? @map("attendance_data")
 
   // Overall Scores
   overallScore Float?  @map("overall_score")
@@ -5869,7 +5937,7 @@ model PAUDDevelopmentAssessment {
   studentId        String               @map("student_id")
   unitId           String               @map("unit_id")
   academicYearId   String               @map("academic_year_id")
-  semester         String?              // GANJIL, GENAP
+  semester         String? // GANJIL, GENAP
   periodType       PAUDReportPeriod     @map("period_type")
   periodDate       DateTime             @map("period_date") @db.Date
   aspect           PAUDAspect
@@ -5921,7 +5989,7 @@ model PAUDNarrativeReport {
   studentId             String    @map("student_id")
   unitId                String    @map("unit_id")
   academicYearId        String    @map("academic_year_id")
-  semester              String    // GANJIL, GENAP
+  semester              String // GANJIL, GENAP
   narrativeNAM          String?   @map("narrative_nam") @db.Text
   narrativeFM           String?   @map("narrative_fm") @db.Text
   narrativeKOG          String?   @map("narrative_kog") @db.Text
@@ -6017,10 +6085,10 @@ model DailyStudentReport {
   updatedAt         DateTime         @updatedAt @map("updated_at")
 
   // Relations
-  student      Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  unit         Unit              @relation(fields: [unitId], references: [id])
-  academicYear AcademicYear?     @relation(fields: [academicYearId], references: [id])
-  createdBy    User              @relation("DailyReportCreator", fields: [createdById], references: [id])
+  student      Student            @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  unit         Unit               @relation(fields: [unitId], references: [id])
+  academicYear AcademicYear?      @relation(fields: [academicYearId], references: [id])
+  createdBy    User               @relation("DailyReportCreator", fields: [createdById], references: [id])
   photos       DailyReportPhoto[]
   homework     DailyHomework[]
 
@@ -6069,25 +6137,25 @@ model DailyHomework {
 
 /// MurojaahRecord - Detail tracking murojaah hafalan
 model MurojaahRecord {
-  id              String       @id @default(uuid())
-  studentId       String       @map("student_id")
-  enrollmentId    String?      @map("enrollment_id")
-  halaqohId       String?      @map("halaqoh_id")
-  recordedById    String       @map("recorded_by_id")
-  murojaahType    MurojaahType @map("murojaah_type")
-  murojaahDate    DateTime     @map("murojaah_date") @db.Date
-  juzStart        Int          @map("juz_start")
-  juzEnd          Int          @map("juz_end")
-  pagesReviewed   Int          @map("pages_reviewed")
-  durationMinutes Int          @map("duration_minutes")
-  qualityScore    Int          @map("quality_score")
-  mistakeCount    Int          @default(0) @map("mistake_count")
-  fluencyLevel    Int          @default(0) @map("fluency_level")
-  tajwidScore     Int?         @map("tajwid_score")
-  notes           String?      @db.Text
-  improvementAreas String?     @map("improvement_areas") @db.Text
-  createdAt       DateTime     @default(now()) @map("created_at")
-  updatedAt       DateTime     @updatedAt @map("updated_at")
+  id               String       @id @default(uuid())
+  studentId        String       @map("student_id")
+  enrollmentId     String?      @map("enrollment_id")
+  halaqohId        String?      @map("halaqoh_id")
+  recordedById     String       @map("recorded_by_id")
+  murojaahType     MurojaahType @map("murojaah_type")
+  murojaahDate     DateTime     @map("murojaah_date") @db.Date
+  juzStart         Int          @map("juz_start")
+  juzEnd           Int          @map("juz_end")
+  pagesReviewed    Int          @map("pages_reviewed")
+  durationMinutes  Int          @map("duration_minutes")
+  qualityScore     Int          @map("quality_score")
+  mistakeCount     Int          @default(0) @map("mistake_count")
+  fluencyLevel     Int          @default(0) @map("fluency_level")
+  tajwidScore      Int?         @map("tajwid_score")
+  notes            String?      @db.Text
+  improvementAreas String?      @map("improvement_areas") @db.Text
+  createdAt        DateTime     @default(now()) @map("created_at")
+  updatedAt        DateTime     @updatedAt @map("updated_at")
 
   // Relations
   student    Student             @relation(fields: [studentId], references: [id], onDelete: Cascade)
@@ -6179,16 +6247,16 @@ model SimaanExaminer {
 
 /// DashboardMetricSnapshot - Snapshot metrik dashboard untuk caching
 model DashboardMetricSnapshot {
-  id             String       @id @default(uuid())
-  unitId         String?      @map("unit_id")
-  academicYearId String?      @map("academic_year_id")
-  metricType     String       @map("metric_type")
-  metricValue    Float        @map("metric_value")
-  metricData     Json?        @map("metric_data")
-  periodType     String       @map("period_type")
-  periodDate     DateTime     @map("period_date") @db.Date
-  calculatedAt   DateTime     @default(now()) @map("calculated_at")
-  createdById    String?      @map("created_by_id")
+  id             String   @id @default(uuid())
+  unitId         String?  @map("unit_id")
+  academicYearId String?  @map("academic_year_id")
+  metricType     String   @map("metric_type")
+  metricValue    Float    @map("metric_value")
+  metricData     Json?    @map("metric_data")
+  periodType     String   @map("period_type")
+  periodDate     DateTime @map("period_date") @db.Date
+  calculatedAt   DateTime @default(now()) @map("calculated_at")
+  createdById    String?  @map("created_by_id")
 
   // Relations
   unit         Unit?         @relation(fields: [unitId], references: [id])
@@ -6204,16 +6272,16 @@ model DashboardMetricSnapshot {
 
 /// UnitComparisonReport - Perbandingan performa antar unit
 model UnitComparisonReport {
-  id             String       @id @default(uuid())
-  unitId         String?      @map("unit_id")
-  academicYearId String?      @map("academic_year_id")
-  reportType     String       @map("report_type")
-  periodType     String       @map("period_type")
-  periodStart    DateTime     @map("period_start") @db.Date
-  periodEnd      DateTime     @map("period_end") @db.Date
-  reportData     Json         @map("report_data")
-  generatedAt    DateTime     @default(now()) @map("generated_at")
-  generatedById  String?      @map("generated_by_id")
+  id             String   @id @default(uuid())
+  unitId         String?  @map("unit_id")
+  academicYearId String?  @map("academic_year_id")
+  reportType     String   @map("report_type")
+  periodType     String   @map("period_type")
+  periodStart    DateTime @map("period_start") @db.Date
+  periodEnd      DateTime @map("period_end") @db.Date
+  reportData     Json     @map("report_data")
+  generatedAt    DateTime @default(now()) @map("generated_at")
+  generatedById  String?  @map("generated_by_id")
 
   // Relations
   unit         Unit?         @relation(fields: [unitId], references: [id])
@@ -6287,6 +6355,7 @@ model ImmunizationRecord {
   @@index([status])
   @@map("immunization_records")
 }
+
 /// DashboardHistory - High frequency metrics history for realtime charts
 model DashboardHistory {
   id        String   @id @default(uuid())
@@ -6294,7 +6363,7 @@ model DashboardHistory {
   metrics   Json     @map("metrics") // Stores DashboardMetrics object
   createdAt DateTime @default(now()) @map("created_at")
 
-  unit      Unit?    @relation(fields: [unitId], references: [id])
+  unit Unit? @relation(fields: [unitId], references: [id])
 
   @@index([unitId])
   @@index([createdAt])
@@ -6313,7 +6382,7 @@ model Supplier {
   phone         String?
   email         String?
   contactPerson String?  @map("contact_person")
-  category      String?  // STATIONERY, CATERING, SERVICES, etc.
+  category      String? // STATIONERY, CATERING, SERVICES, etc.
   rating        Int?     @default(0) // 1-5
   bankName      String?  @map("bank_name")
   bankAccount   String?  @map("bank_account")
@@ -6330,37 +6399,37 @@ model Supplier {
 }
 
 enum PurchaseRequestStatus {
-  PENDING   // Menunggu persetujuan
-  APPROVED  // Disetujui Kepala/Yayasan
-  REJECTED  // Ditolak
-  ORDERED   // Sudah dipesan
-  RECEIVED  // Barang diterima (Masuk Inventaris)
+  PENDING // Menunggu persetujuan
+  APPROVED // Disetujui Kepala/Yayasan
+  REJECTED // Ditolak
+  ORDERED // Sudah dipesan
+  RECEIVED // Barang diterima (Masuk Inventaris)
   CANCELLED // Dibatalkan
 }
 
 /// PurchaseRequest - Pengajuan Pengadaan Barang
 model PurchaseRequest {
-  id              String                @id @default(uuid())
-  unitId          String                @map("unit_id")
+  id                  String                @id @default(uuid())
+  unitId              String                @map("unit_id")
   code                String                @unique // PR-YYYYMM-XXXX
   requesterId         String                @map("requester_id")
   preferredSupplierId String?               @map("preferred_supplier_id")
   date                DateTime              @default(now())
   description         String?               @db.Text
-  totalEstimated  Decimal               @map("total_estimated") @db.Decimal(15, 2)
-  status          PurchaseRequestStatus @default(PENDING)
+  totalEstimated      Decimal               @map("total_estimated") @db.Decimal(15, 2)
+  status              PurchaseRequestStatus @default(PENDING)
 
   // Approval
-  approvedById    String?               @map("approved_by_id")
-  approvedAt      DateTime?             @map("approved_at")
-  rejectionReason String?               @map("rejection_reason")
+  approvedById    String?   @map("approved_by_id")
+  approvedAt      DateTime? @map("approved_at")
+  rejectionReason String?   @map("rejection_reason")
 
   // Fulfillment
-  orderedAt       DateTime?             @map("ordered_at")
-  receivedAt      DateTime?             @map("received_at")
+  orderedAt  DateTime? @map("ordered_at")
+  receivedAt DateTime? @map("received_at")
 
-  createdAt       DateTime              @default(now()) @map("created_at")
-  updatedAt       DateTime              @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
   unit              Unit                  @relation(fields: [unitId], references: [id])
@@ -6377,19 +6446,19 @@ model PurchaseRequest {
 
 /// PurchaseRequestItem - Item Pengajuan
 model PurchaseRequestItem {
-  id              String   @id @default(uuid())
-  requestId       String   @map("request_id")
-  itemName        String   @map("item_name")
-  quantity        Int
-  unit            String   @default("pcs")
-  estimatedPrice  Decimal  @map("estimated_price") @db.Decimal(15, 2)
-  totalPrice      Decimal  @map("total_price") @db.Decimal(15, 2)
+  id             String  @id @default(uuid())
+  requestId      String  @map("request_id")
+  itemName       String  @map("item_name")
+  quantity       Int
+  unit           String  @default("pcs")
+  estimatedPrice Decimal @map("estimated_price") @db.Decimal(15, 2)
+  totalPrice     Decimal @map("total_price") @db.Decimal(15, 2)
 
   // Link to Asset Category for auto-creation later
-  assetCategoryId String?  @map("asset_category_id")
+  assetCategoryId String? @map("asset_category_id")
 
   // Optional Budget Link (to check availability)
-  budgetId        String?  @map("budget_id")
+  budgetId String? @map("budget_id")
 
   // Relations
   request       PurchaseRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
@@ -6448,7 +6517,7 @@ model StudentVisit {
   studentId   String      @map("student_id")
   unitId      String      @map("unit_id")
   visitorName String      @map("visitor_name")
-  relation    String      // Hubungan dengan santri
+  relation    String // Hubungan dengan santri
   purpose     String?
   checkIn     DateTime    @default(now()) @map("check_in")
   checkOut    DateTime?   @map("check_out")
@@ -6614,29 +6683,29 @@ model AgendaNumber {
 
 /// Letter - Naskah Dinas (Surat Masuk/Keluar)
 model Letter {
-  id               String          @id @default(uuid())
-  unitId           String          @map("unit_id")
-  direction        LetterDirection
-  classificationId String?         @map("classification_id")
+  id                String          @id @default(uuid())
+  unitId            String          @map("unit_id")
+  direction         LetterDirection
+  classificationId  String?         @map("classification_id")
   // Metadata
-  agendaNumber     String?         @map("agenda_number") // Nomor Urut Agenda (Surat Masuk)
-  letterNumber     String?         @map("letter_number") // Nomor Surat (Surat Keluar)
-  date             DateTime        @db.Date // Tanggal Surat
-  receivedAt       DateTime?       @map("received_at") // Tanggal Diterima (Surat Masuk)
+  agendaNumber      String?         @map("agenda_number") // Nomor Urut Agenda (Surat Masuk)
+  letterNumber      String?         @map("letter_number") // Nomor Surat (Surat Keluar)
+  date              DateTime        @db.Date // Tanggal Surat
+  receivedAt        DateTime?       @map("received_at") // Tanggal Diterima (Surat Masuk)
   // Content
-  subject          String // Perihal
-  content          String?         @db.Text // Ringkasan atau Isi Surat
-  fileUrl          String?         @map("file_url") // File Naskah Asli (Scan/PDF)
+  subject           String // Perihal
+  content           String?         @db.Text // Ringkasan atau Isi Surat
+  fileUrl           String?         @map("file_url") // File Naskah Asli (Scan/PDF)
   // Attributes
-  urgency          LetterUrgency   @default(NORMAL)
-  nature           LetterNature    @default(PUBLIC)
-  status           LetterStatus    @default(DRAFT)
+  urgency           LetterUrgency   @default(NORMAL)
+  nature            LetterNature    @default(PUBLIC)
+  status            LetterStatus    @default(DRAFT)
   // External Parties (if not linked to User/Unit)
-  senderName       String?         @map("sender_name") // Pengirim (External)
-  senderTitle      String?         @map("sender_title")
-  senderInstance   String?         @map("sender_instance") // Instansi Pengirim
-  recipientName    String?         @map("recipient_name") // Penerima (External)
-  recipientInstance String?        @map("recipient_instance")
+  senderName        String?         @map("sender_name") // Pengirim (External)
+  senderTitle       String?         @map("sender_title")
+  senderInstance    String?         @map("sender_instance") // Instansi Pengirim
+  recipientName     String?         @map("recipient_name") // Penerima (External)
+  recipientInstance String?         @map("recipient_instance")
 
   // Relations
   unit           Unit                  @relation(fields: [unitId], references: [id])
@@ -6681,13 +6750,13 @@ model LetterReviewer {
 
 /// LetterRecipient - Penerima Surat (Internal)
 model LetterRecipient {
-  id         String    @id @default(uuid())
-  letterId   String    @map("letter_id")
-  userId     String?   @map("user_id") // Penerima Internal User
-  unitId     String?   @map("unit_id") // Penerima Unit
-  isCC       Boolean   @default(false) @map("is_cc") // Tembusan
-  readAt     DateTime? @map("read_at")
-  createdAt  DateTime  @default(now()) @map("created_at")
+  id        String    @id @default(uuid())
+  letterId  String    @map("letter_id")
+  userId    String?   @map("user_id") // Penerima Internal User
+  unitId    String?   @map("unit_id") // Penerima Unit
+  isCC      Boolean   @default(false) @map("is_cc") // Tembusan
+  readAt    DateTime? @map("read_at")
+  createdAt DateTime  @default(now()) @map("created_at")
 
   // Relations
   letter Letter @relation(fields: [letterId], references: [id], onDelete: Cascade)
@@ -6701,25 +6770,25 @@ model LetterRecipient {
 
 /// Disposition - Disposisi Surat
 model Disposition {
-  id             String    @id @default(uuid())
-  letterId       String    @map("letter_id")
-  senderId       String    @map("sender_id") // Pemberi Disposisi
-  recipientId    String    @map("recipient_id") // Penerima Disposisi
-  instruction    String    @db.Text // Isi Instruksi (e.g., "Tindak Lanjuti", "Arsipkan")
-  deadline       DateTime?
-  status         String    @default("PENDING") // PENDING, COMPLETED, IN_PROGRESS
-  notes          String?   @db.Text // Catatan tambahan / Laporan hasil
-  completedAt    DateTime? @map("completed_at")
-  parentDispositionId String? @map("parent_disposition_id") // Untuk disposisi berjenjang
+  id                  String    @id @default(uuid())
+  letterId            String    @map("letter_id")
+  senderId            String    @map("sender_id") // Pemberi Disposisi
+  recipientId         String    @map("recipient_id") // Penerima Disposisi
+  instruction         String    @db.Text // Isi Instruksi (e.g., "Tindak Lanjuti", "Arsipkan")
+  deadline            DateTime?
+  status              String    @default("PENDING") // PENDING, COMPLETED, IN_PROGRESS
+  notes               String?   @db.Text // Catatan tambahan / Laporan hasil
+  completedAt         DateTime? @map("completed_at")
+  parentDispositionId String?   @map("parent_disposition_id") // Untuk disposisi berjenjang
 
-  createdAt      DateTime  @default(now()) @map("created_at")
-  updatedAt      DateTime  @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
-  letter            Letter       @relation("LetterDispositions", fields: [letterId], references: [id], onDelete: Cascade)
-  sender            User         @relation("DispositionSender", fields: [senderId], references: [id])
-  recipient         User         @relation("DispositionRecipient", fields: [recipientId], references: [id])
-  parentDisposition Disposition? @relation("DispositionHierarchy", fields: [parentDispositionId], references: [id])
+  letter            Letter        @relation("LetterDispositions", fields: [letterId], references: [id], onDelete: Cascade)
+  sender            User          @relation("DispositionSender", fields: [senderId], references: [id])
+  recipient         User          @relation("DispositionRecipient", fields: [recipientId], references: [id])
+  parentDisposition Disposition?  @relation("DispositionHierarchy", fields: [parentDispositionId], references: [id])
   childDispositions Disposition[] @relation("DispositionHierarchy")
 
   @@index([letterId])
@@ -6754,34 +6823,34 @@ enum AuditStatus {
 model QualityStandard {
   id          String              @id @default(uuid())
   type        QualityStandardType @unique // One record per standard type
-  name        String              // "Standar Isi", "Standar Proses"
+  name        String // "Standar Isi", "Standar Proses"
   description String?             @db.Text
   createdAt   DateTime            @default(now()) @map("created_at")
   updatedAt   DateTime            @updatedAt @map("updated_at")
 
   // Relations
-  indicators  QualityIndicator[]
+  indicators QualityIndicator[]
 
   @@map("quality_standards")
 }
 
 /// QualityIndicator - Indikator per Standar
 model QualityIndicator {
-  id          String          @id @default(uuid())
-  standardId  String          @map("standard_id")
-  code        String          // "1.1", "1.2"
+  id          String   @id @default(uuid())
+  standardId  String   @map("standard_id")
+  code        String // "1.1", "1.2"
   name        String
-  description String?         @db.Text
-  targetScore Float           @default(100) @map("target_score")
-  isActive    Boolean         @default(true) @map("is_active")
-  sortOrder   Int             @default(0) @map("sort_order")
-  createdAt   DateTime        @default(now()) @map("created_at")
-  updatedAt   DateTime        @updatedAt @map("updated_at")
+  description String?  @db.Text
+  targetScore Float    @default(100) @map("target_score")
+  isActive    Boolean  @default(true) @map("is_active")
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
   // Relations
-  standard    QualityStandard @relation(fields: [standardId], references: [id], onDelete: Cascade)
-  evidences   QualityEvidence[]
-  auditItems  QualityAuditItem[]
+  standard   QualityStandard    @relation(fields: [standardId], references: [id], onDelete: Cascade)
+  evidences  QualityEvidence[]
+  auditItems QualityAuditItem[]
 
   @@index([standardId])
   @@map("quality_indicators")
@@ -6789,22 +6858,22 @@ model QualityIndicator {
 
 /// QualityEvidence - Bukti Fisik Akreditasi
 model QualityEvidence {
-  id          String   @id @default(uuid())
-  unitId      String   @map("unit_id")
-  indicatorId String   @map("indicator_id")
-  academicYearId String @map("academic_year_id")
-  name        String   // "RPP Matematika Kelas 7"
-  fileUrl     String   @map("file_url")
-  description String?  @db.Text
-  uploadedById String  @map("uploaded_by_id")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id             String   @id @default(uuid())
+  unitId         String   @map("unit_id")
+  indicatorId    String   @map("indicator_id")
+  academicYearId String   @map("academic_year_id")
+  name           String // "RPP Matematika Kelas 7"
+  fileUrl        String   @map("file_url")
+  description    String?  @db.Text
+  uploadedById   String   @map("uploaded_by_id")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
 
   // Relations
-  unit        Unit             @relation(fields: [unitId], references: [id])
-  indicator   QualityIndicator @relation(fields: [indicatorId], references: [id])
-  academicYear AcademicYear    @relation(fields: [academicYearId], references: [id])
-  uploadedBy  User             @relation("EvidenceUploader", fields: [uploadedById], references: [id])
+  unit         Unit             @relation(fields: [unitId], references: [id])
+  indicator    QualityIndicator @relation(fields: [indicatorId], references: [id])
+  academicYear AcademicYear     @relation(fields: [academicYearId], references: [id])
+  uploadedBy   User             @relation("EvidenceUploader", fields: [uploadedById], references: [id])
 
   @@index([unitId])
   @@index([indicatorId])
@@ -6817,8 +6886,8 @@ model QualityAudit {
   id             String      @id @default(uuid())
   unitId         String      @map("unit_id")
   academicYearId String      @map("academic_year_id")
-  code           String      // "AMI-2024-01"
-  name           String      // "Audit Mutu Semester Ganjil"
+  code           String // "AMI-2024-01"
+  name           String // "Audit Mutu Semester Ganjil"
   startDate      DateTime    @map("start_date")
   endDate        DateTime    @map("end_date")
   status         AuditStatus @default(PLANNED)
@@ -6828,9 +6897,9 @@ model QualityAudit {
   updatedAt      DateTime    @updatedAt @map("updated_at")
 
   // Relations
-  unit         Unit             @relation(fields: [unitId], references: [id])
-  academicYear AcademicYear     @relation(fields: [academicYearId], references: [id])
-  leadAuditor  User?            @relation("AuditLeader", fields: [leadAuditorId], references: [id])
+  unit         Unit               @relation(fields: [unitId], references: [id])
+  academicYear AcademicYear       @relation(fields: [academicYearId], references: [id])
+  leadAuditor  User?              @relation("AuditLeader", fields: [leadAuditorId], references: [id])
   items        QualityAuditItem[]
 
   @@index([unitId])
@@ -6844,16 +6913,16 @@ model QualityAuditItem {
   id          String   @id @default(uuid())
   auditId     String   @map("audit_id")
   indicatorId String   @map("indicator_id")
-  score       Float?   // Skor hasil audit
+  score       Float? // Skor hasil audit
   notes       String?  @db.Text // Temuan audit
   auditorId   String?  @map("auditor_id")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   // Relations
-  audit       QualityAudit     @relation(fields: [auditId], references: [id], onDelete: Cascade)
-  indicator   QualityIndicator @relation(fields: [indicatorId], references: [id])
-  auditor     User?            @relation("Auditor", fields: [auditorId], references: [id])
+  audit     QualityAudit     @relation(fields: [auditId], references: [id], onDelete: Cascade)
+  indicator QualityIndicator @relation(fields: [indicatorId], references: [id])
+  auditor   User?            @relation("Auditor", fields: [auditorId], references: [id])
 
   @@unique([auditId, indicatorId])
   @@index([auditId])
@@ -6890,9 +6959,9 @@ model QuestionBank {
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   // Relations
-  unit      Unit      @relation(fields: [unitId], references: [id])
-  teacher   Teacher   @relation(fields: [teacherId], references: [id])
-  subject   Subject?  @relation(fields: [subjectId], references: [id])
+  unit      Unit       @relation(fields: [unitId], references: [id])
+  teacher   Teacher    @relation(fields: [teacherId], references: [id])
+  subject   Subject?   @relation(fields: [subjectId], references: [id])
   questions Question[]
   exams     Exam[]
 
@@ -6907,7 +6976,7 @@ model Question {
   bankId      String       @map("bank_id")
   type        QuestionType
   content     String       @db.Text
-  options     Json?        // Array of options for MC
+  options     Json? // Array of options for MC
   answerKey   Json?        @map("answer_key") // Correct answer
   explanation String?      @db.Text
   points      Int          @default(1)
@@ -6951,7 +7020,7 @@ model ExamAnswer {
   id         String   @id @default(uuid())
   attemptId  String   @map("attempt_id")
   questionId String   @map("question_id")
-  answer     Json?    // Student's answer
+  answer     Json? // Student's answer
   isCorrect  Boolean? @map("is_correct")
   score      Decimal? @db.Decimal(5, 2)
   createdAt  DateTime @default(now()) @map("created_at")
@@ -6983,21 +7052,21 @@ enum SubmissionStatus {
 
 /// Assignment - Tugas/Pekerjaan Rumah
 model Assignment {
-  id             String         @id @default(uuid())
-  unitId         String         @map("unit_id")
-  academicYearId String         @map("academic_year_id")
-  teacherId      String         @map("teacher_id")
-  subjectId      String         @map("subject_id")
-  classId        String?        @map("class_id")
+  id             String  @id @default(uuid())
+  unitId         String  @map("unit_id")
+  academicYearId String  @map("academic_year_id")
+  teacherId      String  @map("teacher_id")
+  subjectId      String  @map("subject_id")
+  classId        String? @map("class_id")
 
-  title          String
-  description    String?        @db.Text
-  type           AssignmentType @default(INDIVIDUAL)
-  dueDate        DateTime       @map("due_date")
-  attachments    Json?          // Array of file URLs
+  title       String
+  description String?        @db.Text
+  type        AssignmentType @default(INDIVIDUAL)
+  dueDate     DateTime       @map("due_date")
+  attachments Json? // Array of file URLs
 
-  createdAt      DateTime       @default(now()) @map("created_at")
-  updatedAt      DateTime       @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
   unit         Unit                   @relation(fields: [unitId], references: [id])
@@ -7016,21 +7085,21 @@ model Assignment {
 
 /// AssignmentSubmission - Pengumpulan Tugas
 model AssignmentSubmission {
-  id           String           @id @default(uuid())
-  assignmentId String           @map("assignment_id")
-  studentId    String           @map("student_id")
+  id           String @id @default(uuid())
+  assignmentId String @map("assignment_id")
+  studentId    String @map("student_id")
 
-  content      String?          @db.Text
-  attachments  Json?            // Array of file URLs
+  content     String? @db.Text
+  attachments Json? // Array of file URLs
 
-  submittedAt  DateTime         @default(now()) @map("submitted_at")
-  status       SubmissionStatus @default(SUBMITTED)
+  submittedAt DateTime         @default(now()) @map("submitted_at")
+  status      SubmissionStatus @default(SUBMITTED)
 
-  grade        Decimal?         @db.Decimal(5, 2)
-  feedback     String?          @db.Text
+  grade    Decimal? @db.Decimal(5, 2)
+  feedback String?  @db.Text
 
-  createdAt    DateTime         @default(now()) @map("created_at")
-  updatedAt    DateTime         @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
   assignment Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
@@ -7089,36 +7158,40 @@ enum MitigationStrategy {
 
 /// Risk - Identifikasi dan Analisis Risiko
 model Risk {
-  id              String         @id @default(uuid())
-  unitId          String         @map("unit_id")
-  academicYearId  String?        @map("academic_year_id")
-  code            String         // RSK-001 (Generated or Manual)
-  description     String         @db.Text
-  category        RiskCategory
-  cause           String?        @db.Text
-  consequence     String?        @db.Text
+  id             String       @id @default(uuid())
+  unitId         String       @map("unit_id")
+  academicYearId String?      @map("academic_year_id")
+  code           String // RSK-001 (Generated or Manual)
+  description    String       @db.Text
+  category       RiskCategory
+  cause          String?      @db.Text
+  consequence    String?      @db.Text
 
   // Assessment (Inherent Risk - Before Mitigation)
-  likelihood      RiskLikelihood
-  impact          RiskImpact
-  riskScore       Int            // Calculated (Likelihood * Impact)
-  riskLevel       RiskLevel      // Calculated
+  likelihood RiskLikelihood
+  impact     RiskImpact
+  riskScore  Int // Calculated (Likelihood * Impact)
+  riskLevel  RiskLevel // Calculated
 
   // Owner
-  ownerId         String?        @map("owner_id") // User or Department
+  ownerId String? @map("owner_id") // User or Department
 
   // Status
-  status          String         @default("OPEN") // OPEN, CLOSED, MONITORING
+  status String @default("OPEN") // OPEN, CLOSED, MONITORING
 
-  createdById     String         @map("created_by_id")
-  createdAt       DateTime       @default(now()) @map("created_at")
-  updatedAt       DateTime       @updatedAt @map("updated_at")
+  createdById String   @map("created_by_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  strategicPlanId String? @map("strategic_plan_id")
 
   // Relations
-  unit            Unit           @relation(fields: [unitId], references: [id])
-  academicYear    AcademicYear?  @relation(fields: [academicYearId], references: [id])
-  createdBy       User           @relation("RiskCreator", fields: [createdById], references: [id])
-  mitigations     RiskMitigation[]
+  unit           Unit             @relation(fields: [unitId], references: [id])
+  academicYear   AcademicYear?    @relation(fields: [academicYearId], references: [id])
+  createdBy      User             @relation("RiskCreator", fields: [createdById], references: [id])
+  mitigations    RiskMitigation[]
+  strategicPlan  StrategicPlan?   @relation(fields: [strategicPlanId], references: [id])
+  internalAudits InternalAudit[]
 
   @@index([unitId])
   @@index([category])
@@ -7128,30 +7201,31 @@ model Risk {
 
 /// RiskMitigation - Rencana Penanganan Risiko
 model RiskMitigation {
-  id              String             @id @default(uuid())
-  riskId          String             @map("risk_id")
-  strategy        MitigationStrategy
-  actionPlan      String             @db.Text
-  picId           String?            @map("pic_id") // Person in charge
-  deadline        DateTime?
+  id         String             @id @default(uuid())
+  riskId     String             @map("risk_id")
+  strategy   MitigationStrategy
+  actionPlan String             @db.Text
+  picId      String?            @map("pic_id") // Person in charge
+  deadline   DateTime?
 
   // Status
-  isCompleted     Boolean            @default(false) @map("is_completed")
-  progress        Int                @default(0) // 0-100%
-  notes           String?            @db.Text
+  isCompleted Boolean @default(false) @map("is_completed")
+  progress    Int     @default(0) // 0-100%
+  notes       String? @db.Text
 
-  createdById     String             @map("created_by_id")
-  createdAt       DateTime           @default(now()) @map("created_at")
-  updatedAt       DateTime           @updatedAt @map("updated_at")
+  createdById String   @map("created_by_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
   // Relations
-  risk            Risk               @relation(fields: [riskId], references: [id], onDelete: Cascade)
-  pic             User?              @relation("MitigationPIC", fields: [picId], references: [id])
-  createdBy       User               @relation("MitigationCreator", fields: [createdById], references: [id])
+  risk      Risk  @relation(fields: [riskId], references: [id], onDelete: Cascade)
+  pic       User? @relation("MitigationPIC", fields: [picId], references: [id])
+  createdBy User  @relation("MitigationCreator", fields: [createdById], references: [id])
 
   @@index([riskId])
   @@map("risk_mitigations")
 }
+
 // =====================================
 
 enum ComplaintCategory {
@@ -7179,30 +7253,30 @@ enum ComplaintPriority {
 
 /// Complaint - Modul Aduan & Aspirasi (Part of Quality Assurance)
 model Complaint {
-  id          String   @id @default(uuid())
-  unitId      String   @map("unit_id")
-  userId      String?  @map("user_id") // Optional for anonymous, but better to track
+  id          String            @id @default(uuid())
+  unitId      String            @map("unit_id")
+  userId      String?           @map("user_id") // Optional for anonymous, but better to track
   category    ComplaintCategory
   subject     String
-  description String   @db.Text
+  description String            @db.Text
   location    String?
   status      ComplaintStatus   @default(PENDING)
   priority    ComplaintPriority @default(NORMAL)
-  isAnonymous Boolean  @default(false) @map("is_anonymous")
-  attachments Json?    // Array of strings (URLs)
+  isAnonymous Boolean           @default(false) @map("is_anonymous")
+  attachments Json? // Array of strings (URLs)
 
   // Resolution
   assignedToId String?   @map("assigned_to_id")
   resolution   String?   @db.Text
   resolvedAt   DateTime? @map("resolved_at")
 
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
-  unit       Unit      @relation(fields: [unitId], references: [id])
-  user       User?     @relation("ComplaintReporter", fields: [userId], references: [id])
-  assignedTo User?     @relation("ComplaintHandler", fields: [assignedToId], references: [id])
+  unit       Unit               @relation(fields: [unitId], references: [id])
+  user       User?              @relation("ComplaintReporter", fields: [userId], references: [id])
+  assignedTo User?              @relation("ComplaintHandler", fields: [assignedToId], references: [id])
   comments   ComplaintComment[]
 
   @@index([unitId])
@@ -7213,14 +7287,14 @@ model Complaint {
 }
 
 model ComplaintComment {
-  id          String   @id @default(uuid())
-  complaintId String   @map("complaint_id")
-  userId      String   @map("user_id")
-  content     String   @db.Text
-  isInternal  Boolean  @default(false) @map("is_internal") // Only visible to staff
+  id          String  @id @default(uuid())
+  complaintId String  @map("complaint_id")
+  userId      String  @map("user_id")
+  content     String  @db.Text
+  isInternal  Boolean @default(false) @map("is_internal") // Only visible to staff
 
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
   complaint Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
@@ -7260,15 +7334,15 @@ model Project {
   managerId   String        @map("manager_id")
   budget      Decimal?      @db.Decimal(15, 2)
 
-  createdAt   DateTime      @default(now()) @map("created_at")
-  updatedAt   DateTime      @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
-  unit        Unit            @relation(fields: [unitId], references: [id])
-  manager     User            @relation("ProjectManager", fields: [managerId], references: [id])
-  members     ProjectMember[]
-  columns     ProjectColumn[]
-  tasks       ProjectTask[]
+  unit    Unit            @relation(fields: [unitId], references: [id])
+  manager User            @relation("ProjectManager", fields: [managerId], references: [id])
+  members ProjectMember[]
+  columns ProjectColumn[]
+  tasks   ProjectTask[]
 
   @@index([unitId])
   @@index([status])
@@ -7291,11 +7365,11 @@ model ProjectMember {
 }
 
 model ProjectColumn {
-  id        String   @id @default(uuid())
-  projectId String   @map("project_id")
+  id        String  @id @default(uuid())
+  projectId String  @map("project_id")
   name      String
-  order     Int      @default(0)
-  color     String?  // Hex code
+  order     Int     @default(0)
+  color     String? // Hex code
 
   // Relations
   project Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
@@ -7315,16 +7389,16 @@ model ProjectTask {
   dueDate     DateTime?    @map("due_date")
   assigneeId  String?      @map("assignee_id")
   order       Int          @default(0)
-  checklist   Json?        // Simple checklist array
+  checklist   Json? // Simple checklist array
 
-  createdAt   DateTime     @default(now()) @map("created_at")
-  updatedAt   DateTime     @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
-  project   Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  column    ProjectColumn? @relation(fields: [columnId], references: [id], onDelete: Cascade)
-  assignee  User?          @relation("TaskAssignee", fields: [assigneeId], references: [id])
-  comments  TaskComment[]
+  project  Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  column   ProjectColumn? @relation(fields: [columnId], references: [id], onDelete: Cascade)
+  assignee User?          @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  comments TaskComment[]
 
   @@index([projectId])
   @@index([columnId])
@@ -7345,5 +7419,770 @@ model TaskComment {
 
   @@index([taskId])
   @@map("task_comments")
-
 }
+
+// =====================================
+// PERENCANAAN (STRATEGIC PLANNING)
+// =====================================
+
+enum PlanStatus {
+  DRAFT
+  PROPOSED
+  APPROVED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum PlanPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum PlanType {
+  RENSTRA // Rencana Strategis (5 tahun)
+  RKAS // Rencana Kerja dan Anggaran Sekolah
+  RKT // Rencana Kerja Tahunan
+  PROGRAM // Program kerja
+}
+
+/// StrategicPlan - Rencana strategis yayasan/unit
+model StrategicPlan {
+  id           String     @id @default(uuid())
+  unitId       String     @map("unit_id")
+  title        String
+  description  String?    @db.Text
+  type         PlanType
+  status       PlanStatus @default(DRAFT)
+  startDate    DateTime   @map("start_date")
+  endDate      DateTime   @map("end_date")
+  budget       Decimal?   @db.Decimal(15, 2)
+  progress     Float      @default(0) // 0-100 percentage
+  createdById  String     @map("created_by_id")
+  approvedById String?    @map("approved_by_id")
+  approvedAt   DateTime?  @map("approved_at")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+
+  // Relations
+  unit           Unit            @relation(fields: [unitId], references: [id])
+  createdBy      User            @relation("PlanCreator", fields: [createdById], references: [id])
+  approvedBy     User?           @relation("PlanApprover", fields: [approvedById], references: [id])
+  objectives     PlanObjective[]
+  risks          Risk[]
+  internalAudits InternalAudit[]
+
+  @@index([unitId])
+  @@index([status])
+  @@index([type])
+  @@map("strategic_plans")
+}
+
+/// PlanObjective - Sasaran/tujuan dari rencana
+model PlanObjective {
+  id          String       @id @default(uuid())
+  planId      String       @map("plan_id")
+  title       String
+  description String?      @db.Text
+  priority    PlanPriority @default(MEDIUM)
+  weight      Float        @default(1) // Bobot dalam persentase
+  progress    Float        @default(0) // 0-100
+  order       Int          @default(0)
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  // Relations
+  plan       StrategicPlan   @relation(fields: [planId], references: [id], onDelete: Cascade)
+  indicators PlanIndicator[]
+  activities PlanActivity[]
+
+  @@index([planId])
+  @@map("plan_objectives")
+}
+
+/// PlanIndicator - Indikator Kinerja Utama (IKU)
+model PlanIndicator {
+  id           String   @id @default(uuid())
+  objectiveId  String   @map("objective_id")
+  name         String
+  unit         String // Satuan (%, orang, skor, dll)
+  baseline     Float? // Nilai awal
+  targetValue  Float    @map("target_value")
+  currentValue Float    @default(0) @map("current_value")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  objective PlanObjective @relation(fields: [objectiveId], references: [id], onDelete: Cascade)
+
+  @@index([objectiveId])
+  @@map("plan_indicators")
+}
+
+/// PlanActivity - Kegiatan implementasi
+model PlanActivity {
+  id          String       @id @default(uuid())
+  objectiveId String       @map("objective_id")
+  title       String
+  description String?      @db.Text
+  picId       String?      @map("pic_id") // Person In Charge
+  startDate   DateTime?    @map("start_date")
+  endDate     DateTime?    @map("end_date")
+  budget      Decimal?     @db.Decimal(15, 2)
+  status      PlanStatus   @default(DRAFT)
+  priority    PlanPriority @default(MEDIUM)
+  notes       String?      @db.Text
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  // Relations
+  objective PlanObjective @relation(fields: [objectiveId], references: [id], onDelete: Cascade)
+  pic       User?         @relation("ActivityPIC", fields: [picId], references: [id])
+
+  @@index([objectiveId])
+  @@index([status])
+  @@map("plan_activities")
+}
+
+// =====================================
+// PENGAWASAN (INTERNAL SUPERVISION/AUDIT)
+// =====================================
+
+enum InternalAuditStatus {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum FindingSeverity {
+  OBSERVATION // Observasi
+  MINOR // Temuan minor
+  MAJOR // Temuan major
+  CRITICAL // Temuan kritikal
+}
+
+enum FollowUpStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  VERIFIED
+  OVERDUE
+}
+
+/// InternalAudit - Audit internal / pengawasan
+model InternalAudit {
+  id            String              @id @default(uuid())
+  unitId        String              @map("unit_id")
+  title         String
+  description   String?             @db.Text
+  auditType     String              @map("audit_type") // Akademik, Keuangan, Operasional, Kepatuhan
+  status        InternalAuditStatus @default(PLANNED)
+  plannedDate   DateTime            @map("planned_date")
+  executedDate  DateTime?           @map("executed_date")
+  completedDate DateTime?           @map("completed_date")
+  leadAuditorId String              @map("lead_auditor_id")
+  scope         String?             @db.Text // Ruang lingkup audit
+  methodology   String?             @db.Text // Metodologi
+  conclusion    String?             @db.Text // Kesimpulan
+  createdAt     DateTime            @default(now()) @map("created_at")
+  updatedAt     DateTime            @updatedAt @map("updated_at")
+
+  // GRC Integration Links
+  strategicPlanId String? @map("strategic_plan_id")
+  riskId          String? @map("risk_id")
+
+  // Relations
+  unit          Unit           @relation(fields: [unitId], references: [id])
+  leadAuditor   User           @relation("AuditLead", fields: [leadAuditorId], references: [id])
+  findings      AuditFinding[]
+  strategicPlan StrategicPlan? @relation(fields: [strategicPlanId], references: [id])
+  risk          Risk?          @relation(fields: [riskId], references: [id])
+
+  @@index([unitId])
+  @@index([status])
+  @@map("internal_audits")
+}
+
+/// AuditFinding - Temuan audit
+model AuditFinding {
+  id             String          @id @default(uuid())
+  auditId        String          @map("audit_id")
+  findingNumber  String          @map("finding_number") // Nomor temuan
+  title          String
+  description    String          @db.Text
+  severity       FindingSeverity
+  category       String // Kategori temuan
+  evidence       String?         @db.Text // Bukti
+  rootCause      String?         @map("root_cause") @db.Text
+  recommendation String?         @db.Text // Rekomendasi perbaikan
+  responsibleId  String?         @map("responsible_id")
+  dueDate        DateTime?       @map("due_date")
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+
+  // Relations
+  audit       InternalAudit   @relation(fields: [auditId], references: [id], onDelete: Cascade)
+  responsible User?           @relation("FindingResponsible", fields: [responsibleId], references: [id])
+  followUps   AuditFollowUp[]
+
+  @@index([auditId])
+  @@index([severity])
+  @@map("audit_findings")
+}
+
+/// AuditFollowUp - Tindak lanjut temuan
+model AuditFollowUp {
+  id           String         @id @default(uuid())
+  findingId    String         @map("finding_id")
+  action       String         @db.Text // Tindakan yang dilakukan
+  status       FollowUpStatus @default(OPEN)
+  evidence     String?        @db.Text // Bukti tindak lanjut
+  verifiedById String?        @map("verified_by_id")
+  verifiedAt   DateTime?      @map("verified_at")
+  dueDate      DateTime?      @map("due_date")
+  completedAt  DateTime?      @map("completed_at")
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+
+  // Relations
+  finding    AuditFinding @relation(fields: [findingId], references: [id], onDelete: Cascade)
+  verifiedBy User?        @relation("FollowUpVerifier", fields: [verifiedById], references: [id])
+
+  @@index([findingId])
+  @@index([status])
+  @@map("audit_follow_ups")
+}
+
+// =====================================
+// SYARIAH (SHARIA COMPLIANCE)
+// =====================================
+
+enum ShariaCategory {
+  MUAMALAH // Transaksi keuangan syariah
+  TARBIYAH // Pendidikan Islami
+  IBADAH // Pelaksanaan ibadah
+  AKHLAQ // Etika dan moral
+  GOVERNANCE // Tata kelola syariah
+}
+
+enum ComplianceStatus {
+  COMPLIANT // Sesuai syariah
+  PARTIALLY // Sebagian sesuai
+  NON_COMPLIANT // Tidak sesuai
+  UNDER_REVIEW // Sedang direview
+  NOT_APPLICABLE // Tidak berlaku
+}
+
+/// ShariaCompliance - Item kepatuhan syariah
+model ShariaCompliance {
+  id           String           @id @default(uuid())
+  unitId       String           @map("unit_id")
+  category     ShariaCategory
+  title        String
+  description  String?          @db.Text
+  standard     String?          @db.Text // Standar/dalil rujukan
+  status       ComplianceStatus @default(UNDER_REVIEW)
+  score        Float? // Skor kepatuhan 0-100
+  notes        String?          @db.Text
+  reviewedById String?          @map("reviewed_by_id")
+  reviewedAt   DateTime?        @map("reviewed_at")
+  nextReviewAt DateTime?        @map("next_review_at")
+  createdAt    DateTime         @default(now()) @map("created_at")
+  updatedAt    DateTime         @updatedAt @map("updated_at")
+
+  // Relations
+  unit       Unit          @relation(fields: [unitId], references: [id])
+  reviewedBy User?         @relation("ShariaReviewer", fields: [reviewedById], references: [id])
+  audits     ShariaAudit[]
+
+  @@index([unitId])
+  @@index([category])
+  @@index([status])
+  @@map("sharia_compliances")
+}
+
+/// ShariaAudit - Audit kepatuhan syariah
+model ShariaAudit {
+  id             String   @id @default(uuid())
+  complianceId   String   @map("compliance_id")
+  auditorId      String   @map("auditor_id")
+  auditDate      DateTime @map("audit_date")
+  findings       String   @db.Text
+  recommendation String?  @db.Text
+  score          Float // Skor audit 0-100
+  evidence       String?  @db.Text
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  // Relations
+  compliance ShariaCompliance @relation(fields: [complianceId], references: [id], onDelete: Cascade)
+  auditor    User             @relation("ShariaAuditor", fields: [auditorId], references: [id])
+
+  @@index([complianceId])
+  @@map("sharia_audits")
+}
+
+// =====================================
+// LINGKUNGAN (ENVIRONMENT / GREEN CAMPUS)
+// =====================================
+
+enum EnvironmentProgramStatus {
+  PLANNED
+  ACTIVE
+  COMPLETED
+  SUSPENDED
+}
+
+enum WasteCategory {
+  ORGANIC // Sampah organik
+  INORGANIC // Sampah anorganik
+  B3 // Bahan Berbahaya dan Beracun
+  PAPER // Kertas
+  ELECTRONIC // Elektronik
+  OTHER
+}
+
+/// EnvironmentProgram - Program lingkungan / Adiwiyata
+model EnvironmentProgram {
+  id          String                   @id @default(uuid())
+  unitId      String                   @map("unit_id")
+  title       String
+  description String?                  @db.Text
+  category    String // Penghijauan, Pengelolaan Sampah, Hemat Energi, dll
+  status      EnvironmentProgramStatus @default(PLANNED)
+  startDate   DateTime?                @map("start_date")
+  endDate     DateTime?                @map("end_date")
+  budget      Decimal?                 @db.Decimal(15, 2)
+  picId       String?                  @map("pic_id")
+  progress    Float                    @default(0) // 0-100
+  createdAt   DateTime                 @default(now()) @map("created_at")
+  updatedAt   DateTime                 @updatedAt @map("updated_at")
+
+  // Relations
+  unit Unit  @relation(fields: [unitId], references: [id])
+  pic  User? @relation("EnvironmentPIC", fields: [picId], references: [id])
+
+  @@index([unitId])
+  @@index([status])
+  @@map("environment_programs")
+}
+
+/// WasteManagement - Pencatatan pengelolaan sampah
+model WasteManagement {
+  id           String        @id @default(uuid())
+  unitId       String        @map("unit_id")
+  category     WasteCategory
+  weight       Float // Berat dalam kg
+  method       String // Metode pengelolaan: Daur Ulang, Kompos, TPA
+  recordDate   DateTime      @map("record_date")
+  recordedById String        @map("recorded_by_id")
+  notes        String?       @db.Text
+  createdAt    DateTime      @default(now()) @map("created_at")
+
+  // Relations
+  unit       Unit @relation(fields: [unitId], references: [id])
+  recordedBy User @relation("WasteRecorder", fields: [recordedById], references: [id])
+
+  @@index([unitId])
+  @@index([recordDate])
+  @@map("waste_management")
+}
+
+/// GreenCampusIndicator - Indikator kampus hijau
+model GreenCampusIndicator {
+  id           String   @id @default(uuid())
+  unitId       String   @map("unit_id")
+  name         String
+  category     String // Energi, Air, Sampah, Transportasi, Edukasi
+  targetValue  Float    @map("target_value")
+  currentValue Float    @default(0) @map("current_value")
+  unit         String // Satuan pengukuran
+  period       String // Periode: Bulanan, Semester, Tahunan
+  recordDate   DateTime @map("record_date")
+  notes        String?  @db.Text
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  unitRel Unit @relation(fields: [unitId], references: [id])
+
+  @@index([unitId])
+  @@index([category])
+  @@map("green_campus_indicators")
+}
+
+// =====================================
+// TALENTA (TALENT MANAGEMENT)
+// =====================================
+
+enum TalentCategory {
+  HIGH_POTENTIAL // Berpotensi tinggi
+  KEY_TALENT // Talenta kunci
+  EMERGING // Talenta berkembang
+  SOLID_PERFORMER // Performa stabil
+  NEEDS_DEVELOPMENT // Perlu pengembangan
+}
+
+enum PerformanceRating {
+  OUTSTANDING // Sangat baik
+  EXCEEDS // Melampaui ekspektasi
+  MEETS // Memenuhi ekspektasi
+  BELOW // Di bawah ekspektasi
+  UNSATISFACTORY // Tidak memuaskan
+}
+
+enum TrainingStatus {
+  PLANNED
+  ONGOING
+  COMPLETED
+  CANCELLED
+}
+
+/// TalentProfile - Profil talenta pegawai
+model TalentProfile {
+  id               String         @id @default(uuid())
+  userId           String         @unique @map("user_id")
+  unitId           String         @map("unit_id")
+  category         TalentCategory @default(SOLID_PERFORMER)
+  currentRole      String         @map("current_role")
+  potentialRole    String?        @map("potential_role") // Posisi yang diproyeksikan
+  readinessLevel   String?        @map("readiness_level") // Siap Sekarang, 1-2 Tahun, 3+ Tahun
+  strengths        String?        @db.Text
+  developmentAreas String?        @map("development_areas") @db.Text
+  careerAspiration String?        @map("career_aspiration") @db.Text
+  lastAssessedAt   DateTime?      @map("last_assessed_at")
+  createdAt        DateTime       @default(now()) @map("created_at")
+  updatedAt        DateTime       @updatedAt @map("updated_at")
+
+  // Relations
+  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  unitRel     Unit               @relation(fields: [unitId], references: [id])
+  assessments TalentAssessment[]
+  succession  SuccessionPlan[]   @relation("TalentSuccessor")
+
+  @@index([unitId])
+  @@index([category])
+  @@map("talent_profiles")
+}
+
+/// TalentAssessment - Penilaian talenta
+model TalentAssessment {
+  id                String            @id @default(uuid())
+  talentId          String            @map("talent_id")
+  assessorId        String            @map("assessor_id")
+  period            String // Periode penilaian: "2025 Semester 1"
+  performanceRating PerformanceRating @map("performance_rating")
+  potentialRating   PerformanceRating @map("potential_rating")
+  overallScore      Float             @map("overall_score") // 0-100
+  competencies      Json? // Detail kompetensi per area
+  feedback          String?           @db.Text
+  developmentPlan   String?           @map("development_plan") @db.Text
+  assessedAt        DateTime          @map("assessed_at")
+  createdAt         DateTime          @default(now()) @map("created_at")
+
+  // Relations
+  talent   TalentProfile @relation(fields: [talentId], references: [id], onDelete: Cascade)
+  assessor User          @relation("TalentAssessor", fields: [assessorId], references: [id])
+
+  @@index([talentId])
+  @@index([assessorId])
+  @@map("talent_assessments")
+}
+
+/// SuccessionPlan - Perencanaan suksesi
+model SuccessionPlan {
+  id              String       @id @default(uuid())
+  unitId          String       @map("unit_id")
+  positionTitle   String       @map("position_title")
+  currentHolderId String?      @map("current_holder_id")
+  successorId     String?      @map("successor_id")
+  readinessLevel  String?      @map("readiness_level")
+  priority        PlanPriority @default(MEDIUM)
+  notes           String?      @db.Text
+  targetDate      DateTime?    @map("target_date")
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+
+  // Relations
+  unitRel       Unit           @relation(fields: [unitId], references: [id])
+  currentHolder User?          @relation("SuccessionCurrent", fields: [currentHolderId], references: [id])
+  successor     TalentProfile? @relation("TalentSuccessor", fields: [successorId], references: [id])
+
+  @@index([unitId])
+  @@map("succession_plans")
+}
+
+/// TrainingProgram - Program pelatihan
+model TrainingProgram {
+  id              String         @id @default(uuid())
+  unitId          String         @map("unit_id")
+  title           String
+  description     String?        @db.Text
+  category        String // Pedagogik, Manajerial, Teknis, Keislaman
+  trainer         String? // Nama pelatih/lembaga
+  startDate       DateTime?      @map("start_date")
+  endDate         DateTime?      @map("end_date")
+  maxParticipants Int?           @map("max_participants")
+  budget          Decimal?       @db.Decimal(15, 2)
+  status          TrainingStatus @default(PLANNED)
+  location        String?
+  createdById     String         @map("created_by_id")
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+
+  // Relations
+  unitRel     Unit                 @relation(fields: [unitId], references: [id])
+  createdBy   User                 @relation("TrainingCreator", fields: [createdById], references: [id])
+  enrollments TrainingEnrollment[]
+
+  @@index([unitId])
+  @@index([status])
+  @@map("training_programs")
+}
+
+/// TrainingEnrollment - Pendaftaran pelatihan
+model TrainingEnrollment {
+  id          String    @id @default(uuid())
+  programId   String    @map("program_id")
+  userId      String    @map("user_id")
+  status      String    @default("ENROLLED") // ENROLLED, COMPLETED, DROPPED
+  completedAt DateTime? @map("completed_at")
+  score       Float? // Nilai/skor pelatihan
+  certificate String? // URL sertifikat
+  feedback    String?   @db.Text
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  program TrainingProgram @relation(fields: [programId], references: [id], onDelete: Cascade)
+  user    User            @relation(fields: [userId], references: [id])
+
+  @@unique([programId, userId])
+  @@index([programId])
+  @@index([userId])
+  @@map("training_enrollments")
+}
+
+// =====================================
+// ORGANISASI (ORGANIZATION STRUCTURE)
+// =====================================
+
+enum OrgPositionStatus {
+  ACTIVE
+  INACTIVE
+  VACANT
+}
+
+/// OrgUnit - Unit organisasi / divisi
+model OrgUnit {
+  id          String   @id @default(uuid())
+  unitId      String   @map("unit_id") // Referensi ke unit sekolah
+  name        String
+  code        String   @unique
+  description String?  @db.Text
+  parentId    String?  @map("parent_id")
+  level       Int      @default(0) // 0 = root, 1 = divisi, 2 = subdiv, dst
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  unit     Unit       @relation(fields: [unitId], references: [id])
+  parent   OrgUnit?   @relation("OrgHierarchy", fields: [parentId], references: [id])
+  children OrgUnit[]  @relation("OrgHierarchy")
+  positions OrgPosition[]
+
+  @@index([unitId])
+  @@index([parentId])
+  @@map("org_units")
+}
+
+/// OrgPosition - Jabatan dalam organisasi
+model OrgPosition {
+  id          String            @id @default(uuid())
+  orgUnitId   String            @map("org_unit_id")
+  title       String
+  code        String?
+  level       Int               @default(0) // Eselon / level jabatan
+  status      OrgPositionStatus @default(ACTIVE)
+  holderId    String?           @map("holder_id")
+  description String?           @db.Text
+  requirements String?          @db.Text
+  createdAt   DateTime          @default(now()) @map("created_at")
+  updatedAt   DateTime          @updatedAt @map("updated_at")
+
+  // Relations
+  orgUnit OrgUnit @relation(fields: [orgUnitId], references: [id], onDelete: Cascade)
+  holder  User?   @relation("PositionHolder", fields: [holderId], references: [id])
+
+  @@index([orgUnitId])
+  @@index([holderId])
+  @@map("org_positions")
+}
+
+// =====================================
+// TATA LAKSANA (SOP MANAGEMENT)
+// =====================================
+
+enum SOPStatus {
+  DRAFT
+  REVIEW
+  APPROVED
+  ACTIVE
+  DEPRECATED
+  ARCHIVED
+}
+
+/// StandardOperatingProcedure - SOP / Prosedur Baku
+model StandardOperatingProcedure {
+  id            String    @id @default(uuid())
+  unitId        String    @map("unit_id")
+  documentNumber String   @unique @map("document_number") // Nomor dokumen
+  title         String
+  description   String?   @db.Text
+  category      String    // Akademik, Keuangan, SDM, Operasional, dll
+  version       Int       @default(1)
+  status        SOPStatus @default(DRAFT)
+  effectiveDate DateTime? @map("effective_date")
+  reviewDate    DateTime? @map("review_date") // Tanggal review berikutnya
+  content       String?   @db.Text // Konten SOP lengkap
+  scope         String?   @db.Text // Ruang lingkup
+  responsibility String?  @db.Text // Penanggung jawab
+  createdById   String    @map("created_by_id")
+  approvedById  String?   @map("approved_by_id")
+  approvedAt    DateTime? @map("approved_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  unit       Unit         @relation(fields: [unitId], references: [id])
+  createdBy  User         @relation("SOPCreator", fields: [createdById], references: [id])
+  approvedBy User?        @relation("SOPApprover", fields: [approvedById], references: [id])
+  revisions  SOPRevision[]
+
+  @@index([unitId])
+  @@index([status])
+  @@index([category])
+  @@map("standard_operating_procedures")
+}
+
+/// SOPRevision - Riwayat revisi SOP
+model SOPRevision {
+  id          String   @id @default(uuid())
+  sopId       String   @map("sop_id")
+  version     Int
+  changeNotes String   @map("change_notes") @db.Text
+  revisedById String   @map("revised_by_id")
+  revisedAt   DateTime @default(now()) @map("revised_at")
+  content     String?  @db.Text // Snapshot konten pada versi ini
+
+  // Relations
+  sop       StandardOperatingProcedure @relation(fields: [sopId], references: [id], onDelete: Cascade)
+  revisedBy User                       @relation("SOPRevisor", fields: [revisedById], references: [id])
+
+  @@index([sopId])
+  @@map("sop_revisions")
+}
+
+// =====================================
+// LITBANG / INOVASI (R&D / INNOVATION)
+// =====================================
+
+enum ResearchStatus {
+  PROPOSAL
+  APPROVED
+  IN_PROGRESS
+  COMPLETED
+  PUBLISHED
+  CANCELLED
+}
+
+enum InnovationStatus {
+  IDEA
+  EVALUATION
+  PILOT
+  IMPLEMENTED
+  SCALED
+  REJECTED
+}
+
+/// ResearchProject - Proyek penelitian
+model ResearchProject {
+  id            String         @id @default(uuid())
+  unitId        String         @map("unit_id")
+  title         String
+  abstract      String?        @db.Text
+  category      String         // Pendidikan, Teknologi, Sosial, Agama, dll
+  status        ResearchStatus @default(PROPOSAL)
+  leaderId      String         @map("leader_id")
+  startDate     DateTime?      @map("start_date")
+  endDate       DateTime?      @map("end_date")
+  budget        Decimal?       @db.Decimal(15, 2)
+  fundingSource String?        @map("funding_source")
+  methodology   String?        @db.Text
+  findings      String?        @db.Text
+  publishedUrl  String?        @map("published_url")
+  progress      Float          @default(0) // 0-100
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+
+  // Relations
+  unit       Unit                @relation(fields: [unitId], references: [id])
+  leader     User                @relation("ResearchLeader", fields: [leaderId], references: [id])
+  milestones ResearchMilestone[]
+
+  @@index([unitId])
+  @@index([status])
+  @@index([leaderId])
+  @@map("research_projects")
+}
+
+/// ResearchMilestone - Milestone proyek penelitian
+model ResearchMilestone {
+  id          String    @id @default(uuid())
+  projectId   String    @map("project_id")
+  title       String
+  description String?   @db.Text
+  dueDate     DateTime? @map("due_date")
+  completedAt DateTime? @map("completed_at")
+  status      String    @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED
+  sortOrder   Int       @default(0) @map("sort_order")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  project ResearchProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@map("research_milestones")
+}
+
+/// InnovationProposal - Usulan inovasi
+model InnovationProposal {
+  id          String           @id @default(uuid())
+  unitId      String           @map("unit_id")
+  title       String
+  description String?          @db.Text
+  category    String           // Teknologi, Pedagogi, Administrasi, Layanan
+  status      InnovationStatus @default(IDEA)
+  proposerId  String           @map("proposer_id")
+  impact      String?          @db.Text // Dampak yang diharapkan
+  resources   String?          @db.Text // Sumber daya yang dibutuhkan
+  timeline    String?          // Estimasi waktu implementasi
+  score       Float?           // Skor evaluasi 0-100
+  feedback    String?          @db.Text
+  approvedById String?         @map("approved_by_id")
+  approvedAt  DateTime?        @map("approved_at")
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+
+  // Relations
+  unit       Unit  @relation(fields: [unitId], references: [id])
+  proposer   User  @relation("InnovationProposer", fields: [proposerId], references: [id])
+  approvedBy User? @relation("InnovationApprover", fields: [approvedById], references: [id])
+
+  @@index([unitId])
+  @@index([status])
+  @@map("innovation_proposals")
+}
+

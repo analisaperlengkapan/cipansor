@@ -127,7 +127,7 @@ export default function ImmunizationPage() {
                   type="number"
                   min={1}
                   value={formData.doseNumber}
-                  onChange={(e) => setFormData({ ...formData, doseNumber: parseInt(e.target.value) })}
+                  onChange={(e) => setFormData({ ...formData, doseNumber: parseInt(e.target.value) || 1 })}
                   required
                 />
               </div>

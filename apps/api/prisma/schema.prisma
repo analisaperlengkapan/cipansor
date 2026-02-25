@@ -434,6 +434,19 @@ model User {
   trainingProgramsCreated TrainingProgram[]    @relation("TrainingCreator")
   trainingEnrollments     TrainingEnrollment[]
 
+  // Organisasi (Organization Structure)
+  orgPositions OrgPosition[] @relation("PositionHolder")
+
+  // Tata Laksana (SOP Management)
+  sopsCreated   StandardOperatingProcedure[] @relation("SOPCreator")
+  sopsApproved  StandardOperatingProcedure[] @relation("SOPApprover")
+  sopRevisions  SOPRevision[]               @relation("SOPRevisor")
+
+  // Litbang / Inovasi (R&D)
+  researchProjects     ResearchProject[]     @relation("ResearchLeader")
+  innovationsProposed  InnovationProposal[]  @relation("InnovationProposer")
+  innovationsApproved  InnovationProposal[]  @relation("InnovationApprover")
+
   @@index([email])
   @@index([role])
   @@index([unitId])
@@ -592,6 +605,16 @@ model Unit {
   talentProfiles   TalentProfile[]
   successionPlans  SuccessionPlan[]
   trainingPrograms TrainingProgram[]
+
+  // Organisasi (Organization Structure)
+  orgUnits OrgUnit[]
+
+  // Tata Laksana (SOP Management)
+  standardOperatingProcedures StandardOperatingProcedure[]
+
+  // Litbang / Inovasi (R&D)
+  researchProjects     ResearchProject[]
+  innovationProposals  InnovationProposal[]
 
   @@index([type])
   @@index([foundationId])
@@ -5842,6 +5865,7 @@ model RaporPesantren {
 
   // Component Data (stored as JSON)
   tahfidzData       Json? @map("tahfidz_data")
+  takhosusData      Json? @map("takhosus_data")
   ibadahData        Json? @map("ibadah_data")
   muhadhorohData    Json? @map("muhadhoroh_data")
   muhadatsahData    Json? @map("muhadatsah_data")
@@ -7159,11 +7183,15 @@ model Risk {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
+  strategicPlanId String? @map("strategic_plan_id")
+
   // Relations
-  unit         Unit             @relation(fields: [unitId], references: [id])
-  academicYear AcademicYear?    @relation(fields: [academicYearId], references: [id])
-  createdBy    User             @relation("RiskCreator", fields: [createdById], references: [id])
-  mitigations  RiskMitigation[]
+  unit           Unit             @relation(fields: [unitId], references: [id])
+  academicYear   AcademicYear?    @relation(fields: [academicYearId], references: [id])
+  createdBy      User             @relation("RiskCreator", fields: [createdById], references: [id])
+  mitigations    RiskMitigation[]
+  strategicPlan  StrategicPlan?   @relation(fields: [strategicPlanId], references: [id])
+  internalAudits InternalAudit[]
 
   @@index([unitId])
   @@index([category])
@@ -7439,10 +7467,12 @@ model StrategicPlan {
   updatedAt    DateTime   @updatedAt @map("updated_at")
 
   // Relations
-  unit       Unit            @relation(fields: [unitId], references: [id])
-  createdBy  User            @relation("PlanCreator", fields: [createdById], references: [id])
-  approvedBy User?           @relation("PlanApprover", fields: [approvedById], references: [id])
-  objectives PlanObjective[]
+  unit           Unit            @relation(fields: [unitId], references: [id])
+  createdBy      User            @relation("PlanCreator", fields: [createdById], references: [id])
+  approvedBy     User?           @relation("PlanApprover", fields: [approvedById], references: [id])
+  objectives     PlanObjective[]
+  risks          Risk[]
+  internalAudits InternalAudit[]
 
   @@index([unitId])
   @@index([status])
@@ -7560,10 +7590,16 @@ model InternalAudit {
   createdAt     DateTime            @default(now()) @map("created_at")
   updatedAt     DateTime            @updatedAt @map("updated_at")
 
+  // GRC Integration Links
+  strategicPlanId String? @map("strategic_plan_id")
+  riskId          String? @map("risk_id")
+
   // Relations
-  unit        Unit           @relation(fields: [unitId], references: [id])
-  leadAuditor User           @relation("AuditLead", fields: [leadAuditorId], references: [id])
-  findings    AuditFinding[]
+  unit          Unit           @relation(fields: [unitId], references: [id])
+  leadAuditor   User           @relation("AuditLead", fields: [leadAuditorId], references: [id])
+  findings      AuditFinding[]
+  strategicPlan StrategicPlan? @relation(fields: [strategicPlanId], references: [id])
+  risk          Risk?          @relation(fields: [riskId], references: [id])
 
   @@index([unitId])
   @@index([status])
@@ -7927,3 +7963,226 @@ model TrainingEnrollment {
   @@index([userId])
   @@map("training_enrollments")
 }
+
+// =====================================
+// ORGANISASI (ORGANIZATION STRUCTURE)
+// =====================================
+
+enum OrgPositionStatus {
+  ACTIVE
+  INACTIVE
+  VACANT
+}
+
+/// OrgUnit - Unit organisasi / divisi
+model OrgUnit {
+  id          String   @id @default(uuid())
+  unitId      String   @map("unit_id") // Referensi ke unit sekolah
+  name        String
+  code        String   @unique
+  description String?  @db.Text
+  parentId    String?  @map("parent_id")
+  level       Int      @default(0) // 0 = root, 1 = divisi, 2 = subdiv, dst
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  unit     Unit       @relation(fields: [unitId], references: [id])
+  parent   OrgUnit?   @relation("OrgHierarchy", fields: [parentId], references: [id])
+  children OrgUnit[]  @relation("OrgHierarchy")
+  positions OrgPosition[]
+
+  @@index([unitId])
+  @@index([parentId])
+  @@map("org_units")
+}
+
+/// OrgPosition - Jabatan dalam organisasi
+model OrgPosition {
+  id          String            @id @default(uuid())
+  orgUnitId   String            @map("org_unit_id")
+  title       String
+  code        String?
+  level       Int               @default(0) // Eselon / level jabatan
+  status      OrgPositionStatus @default(ACTIVE)
+  holderId    String?           @map("holder_id")
+  description String?           @db.Text
+  requirements String?          @db.Text
+  createdAt   DateTime          @default(now()) @map("created_at")
+  updatedAt   DateTime          @updatedAt @map("updated_at")
+
+  // Relations
+  orgUnit OrgUnit @relation(fields: [orgUnitId], references: [id], onDelete: Cascade)
+  holder  User?   @relation("PositionHolder", fields: [holderId], references: [id])
+
+  @@index([orgUnitId])
+  @@index([holderId])
+  @@map("org_positions")
+}
+
+// =====================================
+// TATA LAKSANA (SOP MANAGEMENT)
+// =====================================
+
+enum SOPStatus {
+  DRAFT
+  REVIEW
+  APPROVED
+  ACTIVE
+  DEPRECATED
+  ARCHIVED
+}
+
+/// StandardOperatingProcedure - SOP / Prosedur Baku
+model StandardOperatingProcedure {
+  id            String    @id @default(uuid())
+  unitId        String    @map("unit_id")
+  documentNumber String   @unique @map("document_number") // Nomor dokumen
+  title         String
+  description   String?   @db.Text
+  category      String    // Akademik, Keuangan, SDM, Operasional, dll
+  version       Int       @default(1)
+  status        SOPStatus @default(DRAFT)
+  effectiveDate DateTime? @map("effective_date")
+  reviewDate    DateTime? @map("review_date") // Tanggal review berikutnya
+  content       String?   @db.Text // Konten SOP lengkap
+  scope         String?   @db.Text // Ruang lingkup
+  responsibility String?  @db.Text // Penanggung jawab
+  createdById   String    @map("created_by_id")
+  approvedById  String?   @map("approved_by_id")
+  approvedAt    DateTime? @map("approved_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  unit       Unit         @relation(fields: [unitId], references: [id])
+  createdBy  User         @relation("SOPCreator", fields: [createdById], references: [id])
+  approvedBy User?        @relation("SOPApprover", fields: [approvedById], references: [id])
+  revisions  SOPRevision[]
+
+  @@index([unitId])
+  @@index([status])
+  @@index([category])
+  @@map("standard_operating_procedures")
+}
+
+/// SOPRevision - Riwayat revisi SOP
+model SOPRevision {
+  id          String   @id @default(uuid())
+  sopId       String   @map("sop_id")
+  version     Int
+  changeNotes String   @map("change_notes") @db.Text
+  revisedById String   @map("revised_by_id")
+  revisedAt   DateTime @default(now()) @map("revised_at")
+  content     String?  @db.Text // Snapshot konten pada versi ini
+
+  // Relations
+  sop       StandardOperatingProcedure @relation(fields: [sopId], references: [id], onDelete: Cascade)
+  revisedBy User                       @relation("SOPRevisor", fields: [revisedById], references: [id])
+
+  @@index([sopId])
+  @@map("sop_revisions")
+}
+
+// =====================================
+// LITBANG / INOVASI (R&D / INNOVATION)
+// =====================================
+
+enum ResearchStatus {
+  PROPOSAL
+  APPROVED
+  IN_PROGRESS
+  COMPLETED
+  PUBLISHED
+  CANCELLED
+}
+
+enum InnovationStatus {
+  IDEA
+  EVALUATION
+  PILOT
+  IMPLEMENTED
+  SCALED
+  REJECTED
+}
+
+/// ResearchProject - Proyek penelitian
+model ResearchProject {
+  id            String         @id @default(uuid())
+  unitId        String         @map("unit_id")
+  title         String
+  abstract      String?        @db.Text
+  category      String         // Pendidikan, Teknologi, Sosial, Agama, dll
+  status        ResearchStatus @default(PROPOSAL)
+  leaderId      String         @map("leader_id")
+  startDate     DateTime?      @map("start_date")
+  endDate       DateTime?      @map("end_date")
+  budget        Decimal?       @db.Decimal(15, 2)
+  fundingSource String?        @map("funding_source")
+  methodology   String?        @db.Text
+  findings      String?        @db.Text
+  publishedUrl  String?        @map("published_url")
+  progress      Float          @default(0) // 0-100
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+
+  // Relations
+  unit       Unit                @relation(fields: [unitId], references: [id])
+  leader     User                @relation("ResearchLeader", fields: [leaderId], references: [id])
+  milestones ResearchMilestone[]
+
+  @@index([unitId])
+  @@index([status])
+  @@index([leaderId])
+  @@map("research_projects")
+}
+
+/// ResearchMilestone - Milestone proyek penelitian
+model ResearchMilestone {
+  id          String    @id @default(uuid())
+  projectId   String    @map("project_id")
+  title       String
+  description String?   @db.Text
+  dueDate     DateTime? @map("due_date")
+  completedAt DateTime? @map("completed_at")
+  status      String    @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED
+  sortOrder   Int       @default(0) @map("sort_order")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  project ResearchProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@map("research_milestones")
+}
+
+/// InnovationProposal - Usulan inovasi
+model InnovationProposal {
+  id          String           @id @default(uuid())
+  unitId      String           @map("unit_id")
+  title       String
+  description String?          @db.Text
+  category    String           // Teknologi, Pedagogi, Administrasi, Layanan
+  status      InnovationStatus @default(IDEA)
+  proposerId  String           @map("proposer_id")
+  impact      String?          @db.Text // Dampak yang diharapkan
+  resources   String?          @db.Text // Sumber daya yang dibutuhkan
+  timeline    String?          // Estimasi waktu implementasi
+  score       Float?           // Skor evaluasi 0-100
+  feedback    String?          @db.Text
+  approvedById String?         @map("approved_by_id")
+  approvedAt  DateTime?        @map("approved_at")
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+
+  // Relations
+  unit       Unit  @relation(fields: [unitId], references: [id])
+  proposer   User  @relation("InnovationProposer", fields: [proposerId], references: [id])
+  approvedBy User? @relation("InnovationApprover", fields: [approvedById], references: [id])
+
+  @@index([unitId])
+  @@index([status])
+  @@map("innovation_proposals")
+}
+

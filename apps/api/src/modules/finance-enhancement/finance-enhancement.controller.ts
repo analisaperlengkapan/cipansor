@@ -134,21 +134,7 @@ export class FinanceEnhancementController {
     }
   }
 
-  async createManualJournal(req: Request, res: Response, next: NextFunction) {
-    try {
-      const input: CreateManualJournalInput = req.body;
-      const userId = (req as any).user.id;
 
-      await financeEnhancementService.createManualJournal({
-        ...input,
-        createdById: userId,
-      });
-
-      res.status(201).json({ success: true, message: 'Manual journal created successfully' });
-    } catch (error) {
-      next(error);
-    }
-  }
 
   async getJournalEntryById(req: Request, res: Response, next: NextFunction) {
     try {

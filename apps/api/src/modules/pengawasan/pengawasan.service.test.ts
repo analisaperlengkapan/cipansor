@@ -1,0 +1,161 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { prisma } from '../../lib/prisma';
+import { pengawasanService } from './pengawasan.service';
+
+// Mock external dependencies
+vi.mock('../../lib/prisma', () => ({
+  prisma: {
+    internalAudit: {
+      create: vi.fn(),
+      findMany: vi.fn(),
+      findUnique: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+    },
+    auditFinding: {
+      create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+    },
+    auditFollowUp: {
+      create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+    },
+  },
+}));
+
+describe('Pengawasan Service', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  describe('Audits', () => {
+    it('should create an audit', async () => {
+      const dto = {
+        title: 'Audit Keuangan Q1',
+        auditType: 'FINANCIAL',
+        plannedDate: new Date().toISOString(),
+        unitId: 'unit-1',
+        leadAuditorId: 'user-1',
+      };
+
+      vi.mocked(prisma.internalAudit.create).mockResolvedValue({ id: 'audit-1', ...dto } as any);
+
+      const result = await pengawasanService.createAudit(dto);
+
+      expect(prisma.internalAudit.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          title: 'Audit Keuangan Q1',
+          auditType: 'FINANCIAL',
+        }),
+        include: expect.any(Object),
+      });
+
+      expect(result.id).toBe('audit-1');
+    });
+
+    it('should query audits with filter', async () => {
+      vi.mocked(prisma.internalAudit.findMany).mockResolvedValue([{ id: 'audit-1' }] as any);
+
+      await pengawasanService.getAudits('unit-1', { status: 'PLANNED', auditType: 'FINANCIAL' });
+
+      expect(prisma.internalAudit.findMany).toHaveBeenCalledWith({
+        where: { unitId: 'unit-1', status: 'PLANNED', auditType: 'FINANCIAL' },
+        include: expect.any(Object),
+        orderBy: expect.any(Object),
+      });
+    });
+  });
+
+  describe('Audit Findings', () => {
+    it('should create an audit finding', async () => {
+      const dto = {
+        auditId: 'audit-1',
+        findingNumber: 'F01',
+        title: 'Laporan terlambat',
+        description: 'Laporan keuangan disubmit melewati tanggal 5.',
+        severity: 'MINOR' as any,
+        category: 'COMPLIANCE',
+      };
+
+      vi.mocked(prisma.auditFinding.create).mockResolvedValue({ id: 'find-1', ...dto } as any);
+
+      await pengawasanService.createFinding(dto);
+
+      expect(prisma.auditFinding.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          audit: { connect: { id: 'audit-1' } },
+          findingNumber: 'F01',
+          severity: 'MINOR',
+        }),
+        include: expect.any(Object),
+      });
+    });
+
+    it('should handle disconnect responsible user in finding update', async () => {
+      vi.mocked(prisma.auditFinding.update).mockResolvedValue({} as any);
+
+      await pengawasanService.updateFinding('find-1', { responsibleId: null });
+
+      expect(prisma.auditFinding.update).toHaveBeenCalledWith({
+        where: { id: 'find-1' },
+        data: expect.objectContaining({
+          responsible: { disconnect: true },
+        }),
+        include: expect.any(Object),
+      });
+    });
+  });
+
+  describe('Follow-Ups', () => {
+    it('should create follow up action', async () => {
+      const dto = {
+        findingId: 'find-1',
+        action: 'Membuat reminder kalender',
+      };
+
+      vi.mocked(prisma.auditFollowUp.create).mockResolvedValue({ id: 'fu-1' } as any);
+
+      await pengawasanService.createFollowUp(dto);
+
+      expect(prisma.auditFollowUp.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          action: 'Membuat reminder kalender',
+          finding: { connect: { id: 'find-1' } },
+        }),
+      });
+    });
+
+    it('should verify follow up', async () => {
+      vi.mocked(prisma.auditFollowUp.update).mockResolvedValue({ id: 'fu-1' } as any);
+
+      await pengawasanService.updateFollowUp('fu-1', { status: 'VERIFIED' }, 'user-2');
+
+      expect(prisma.auditFollowUp.update).toHaveBeenCalledWith({
+        where: { id: 'fu-1' },
+        data: expect.objectContaining({
+          status: 'VERIFIED',
+          verifiedBy: { connect: { id: 'user-2' } },
+          verifiedAt: expect.any(Date),
+        }),
+        include: expect.any(Object),
+      });
+    });
+
+    it('should mark resolved with completedAt', async () => {
+      vi.mocked(prisma.auditFollowUp.update).mockResolvedValue({ id: 'fu-1' } as any);
+
+      await pengawasanService.updateFollowUp('fu-1', { status: 'RESOLVED' });
+
+      expect(prisma.auditFollowUp.update).toHaveBeenCalledWith({
+        where: { id: 'fu-1' },
+        data: expect.objectContaining({
+          status: 'RESOLVED',
+          completedAt: expect.any(Date),
+        }),
+        include: expect.any(Object),
+      });
+    });
+  });
+});

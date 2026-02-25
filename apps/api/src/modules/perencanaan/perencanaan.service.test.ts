@@ -1,0 +1,166 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { prisma } from '../../lib/prisma';
+import { perencanaanService } from './perencanaan.service';
+
+// Mock external dependencies
+vi.mock('../../lib/prisma', () => ({
+  prisma: {
+    strategicPlan: {
+      create: vi.fn(),
+      findMany: vi.fn(),
+      findUnique: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+    },
+    planObjective: {
+      create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+      findUnique: vi.fn(),
+      findMany: vi.fn(),
+    },
+    planIndicator: {
+      create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+    },
+    planActivity: {
+      create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+    },
+  },
+}));
+
+describe('Perencanaan Service', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  describe('Strategic Plans', () => {
+    it('should create a plan', async () => {
+      const dto = {
+        title: 'Rencana Jangka Panjang',
+        type: 'RENSTRA' as any,
+        startDate: new Date().toISOString(),
+        endDate: new Date().toISOString(),
+        budget: 50000000,
+        unitId: 'unit-1',
+        createdById: 'user-1',
+      };
+
+      vi.mocked(prisma.strategicPlan.create).mockResolvedValue({ id: 'plan-1', ...dto } as any);
+
+      await perencanaanService.createPlan(dto);
+
+      expect(prisma.strategicPlan.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          title: 'Rencana Jangka Panjang',
+          type: 'RENSTRA',
+        }),
+        include: expect.any(Object),
+      });
+    });
+
+    it('should approve plan', async () => {
+      vi.mocked(prisma.strategicPlan.update).mockResolvedValue({ id: 'plan-1' } as any);
+
+      await perencanaanService.approvePlan('plan-1', 'user-2');
+
+      expect(prisma.strategicPlan.update).toHaveBeenCalledWith({
+        where: { id: 'plan-1' },
+        data: expect.objectContaining({
+          status: 'APPROVED',
+          approvedBy: { connect: { id: 'user-2' } },
+        }),
+      });
+    });
+  });
+
+  describe('Objectives and Progress', () => {
+    it('should calculate objective progress and update plan progress', async () => {
+      const objData = {
+        planId: 'plan-1',
+        title: 'Meningkatkan Mutu',
+        weight: 60,
+      };
+
+      vi.mocked(prisma.planObjective.create).mockResolvedValue({ id: 'obj-1', ...objData } as any);
+      
+      // Mocks for progress recalculation
+      vi.mocked(prisma.planObjective.findMany).mockResolvedValue([
+        { weight: 60, progress: 50 },
+        { weight: 40, progress: 100 },
+      ] as any);
+
+      vi.mocked(prisma.strategicPlan.update).mockResolvedValue({} as any);
+
+      await perencanaanService.createObjective(objData);
+
+      expect(prisma.strategicPlan.update).toHaveBeenCalledWith({
+        where: { id: 'plan-1' },
+        // (60*50 + 40*100) / 100 = (3000 + 4000) / 100 = 70
+        data: { progress: 70 },
+      });
+    });
+
+    it('should update progress on objective delete', async () => {
+      vi.mocked(prisma.planObjective.findUnique).mockResolvedValue({ planId: 'plan-1' } as any);
+      vi.mocked(prisma.planObjective.delete).mockResolvedValue({} as any);
+
+      vi.mocked(prisma.planObjective.findMany).mockResolvedValue([
+        { weight: 100, progress: 20 },
+      ] as any);
+
+      await perencanaanService.deleteObjective('obj-1');
+
+      expect(prisma.strategicPlan.update).toHaveBeenCalledWith({
+        where: { id: 'plan-1' },
+        data: { progress: 20 },
+      });
+    });
+  });
+
+  describe('Indicators and Activities', () => {
+    it('should create indicator', async () => {
+      const dto = {
+        objectiveId: 'obj-1',
+        name: 'Nilai UN Average',
+        unit: 'Score',
+        targetValue: 8.5,
+      };
+
+      vi.mocked(prisma.planIndicator.create).mockResolvedValue({ id: 'ind-1' } as any);
+
+      await perencanaanService.createIndicator(dto);
+
+      expect(prisma.planIndicator.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          name: 'Nilai UN Average',
+          targetValue: 8.5,
+        }),
+      });
+    });
+
+    it('should create activity', async () => {
+      const dto = {
+        objectiveId: 'obj-1',
+        title: 'Pemantapan UN',
+        priority: 'HIGH' as any,
+        budget: 5000000,
+      };
+
+      vi.mocked(prisma.planActivity.create).mockResolvedValue({ id: 'act-1' } as any);
+
+      await perencanaanService.createActivity(dto);
+
+      expect(prisma.planActivity.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          title: 'Pemantapan UN',
+          priority: 'HIGH',
+        }),
+        include: expect.any(Object),
+      });
+    });
+  });
+});

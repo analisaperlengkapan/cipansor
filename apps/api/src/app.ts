@@ -102,6 +102,9 @@ import pengawasanRoutes from '@/modules/pengawasan/pengawasan.routes';
 import syariahRoutes from '@/modules/syariah/syariah.routes';
 import lingkunganRoutes from '@/modules/lingkungan/lingkungan.routes';
 import talentaRoutes from '@/modules/talenta/talenta.routes';
+import organisasiRoutes from '@/modules/organisasi/organisasi.routes';
+import tataLaksanaRoutes from '@/modules/tatalaksana/tatalaksana.routes';
+import litbangRoutes from '@/modules/litbang/litbang.routes';
 
 // Create Express app
 const app = express();
@@ -277,6 +280,9 @@ apiRouter.use('/pengawasan', pengawasanRoutes);
 apiRouter.use('/syariah', syariahRoutes);
 apiRouter.use('/lingkungan', lingkunganRoutes);
 apiRouter.use('/talenta', talentaRoutes);
+apiRouter.use('/organisasi', organisasiRoutes);
+apiRouter.use('/tata-laksana', tataLaksanaRoutes);
+apiRouter.use('/litbang', litbangRoutes);
 
 // API info
 apiRouter.get('/', (_req, res) => {
@@ -350,6 +356,9 @@ apiRouter.get('/', (_req, res) => {
       syariah: '/api/syariah',
       lingkungan: '/api/lingkungan',
       talenta: '/api/talenta',
+      organisasi: '/api/organisasi',
+      tataLaksana: '/api/tata-laksana',
+      litbang: '/api/litbang',
     },
   });
 });

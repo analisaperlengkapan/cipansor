@@ -48,7 +48,25 @@ export const useCreateWasteRecord = () => {
   });
 };
 
-export const useCreateGreenIndicator = () => {
+export const useUpdateProgram = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...data }: { id: string } & any) => (await api.put(`/api/lingkungan/programs/${id}`, data)).data,
+    onSuccess: () => { toast.success("Program berhasil diperbarui"); qc.invalidateQueries({ queryKey: ["lingkungan"] }); },
+    onError: (e: any) => { toast.error(e.response?.data?.message || "Gagal memperbarui program"); },
+  });
+};
+
+export const useDeleteProgram = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => (await api.delete(`/api/lingkungan/programs/${id}`)).data,
+    onSuccess: () => { toast.success("Program berhasil dihapus"); qc.invalidateQueries({ queryKey: ["lingkungan"] }); },
+    onError: (e: any) => { toast.error(e.response?.data?.message || "Gagal menghapus program"); },
+  });
+};
+
+export const useCreateIndicator = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (data: any) => (await api.post("/api/lingkungan/indicators", data)).data,
@@ -56,3 +74,6 @@ export const useCreateGreenIndicator = () => {
     onError: (e: any) => { toast.error(e.response?.data?.message || "Gagal menambahkan indikator"); },
   });
 };
+
+// Alias for backwards compatibility
+export const useCreateGreenIndicator = useCreateIndicator;

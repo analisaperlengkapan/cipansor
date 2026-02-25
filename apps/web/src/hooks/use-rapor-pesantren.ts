@@ -41,6 +41,7 @@ export interface RaporPesantren {
     endDate: string;
   };
   tahfidz: TahfidzSummary;
+  takhosus: TakhosusSummary;
   ibadah: IbadahSummary;
   muhadhoroh: MuhadhorohSummary;
   muhadatsah: MuhadatsahSummary;
@@ -78,6 +79,21 @@ export interface TahfidzSummary {
     juz: number;
     type: string;
     grade: string;
+  }>;
+}
+
+export interface TakhosusSummary {
+  enrolledHalaqoh: number;
+  totalSessions: number;
+  averageScore: number;
+  grade: string;
+  score: number;
+  halaqohDetails: Array<{
+    halaqohName: string;
+    status: string;
+    progress: number;
+    latestGrade: string;
+    sessionsCount: number;
   }>;
 }
 
@@ -200,6 +216,7 @@ export interface RaporConfig {
   unitId: string;
   componentWeights: {
     tahfidz: number;
+    takhosus: number;
     ibadah: number;
     muhadhoroh: number;
     muhadatsah: number;
@@ -225,6 +242,9 @@ export interface LegerItem {
 
   tahfidzScore: number;
   tahfidzGrade: string;
+
+  takhosusScore: number;
+  takhosusGrade: string;
 
   ibadahScore: number;
   ibadahGrade: string;
@@ -489,8 +509,9 @@ export const COMPONENT_LABELS = {
 } as const;
 
 export const DEFAULT_WEIGHTS = {
-  tahfidz: 25,
-  ibadah: 20,
+  tahfidz: 20,
+  takhosus: 10,
+  ibadah: 15,
   muhadhoroh: 15,
   muhadatsah: 15,
   kitabProgress: 15,

@@ -51,6 +51,8 @@ export class PerencanaanService {
           },
           orderBy: { order: 'asc' },
         },
+        risks: { select: { id: true, riskLevel: true, status: true } },
+        internalAudits: { select: { id: true, status: true } },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -75,6 +77,8 @@ export class PerencanaanService {
           },
           orderBy: { order: 'asc' },
         },
+        risks: true,
+        internalAudits: true,
       },
     });
   }

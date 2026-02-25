@@ -9,6 +9,7 @@ import {
 
 export const createRiskSchema = z.object({
   unitId: z.string().uuid().optional(),
+  strategicPlanId: z.string().uuid().optional(),
   academicYearId: z.string().uuid().optional(),
   code: z.string().min(3),
   description: z.string().min(10),
@@ -27,6 +28,7 @@ export const listRiskQuerySchema = z.object({
   category: z.nativeEnum(RiskCategory).optional(),
   riskLevel: z.nativeEnum(RiskLevel).optional(),
   unitId: z.string().uuid().optional(),
+  strategicPlanId: z.string().uuid().optional(),
 });
 
 export const createMitigationSchema = z.object({

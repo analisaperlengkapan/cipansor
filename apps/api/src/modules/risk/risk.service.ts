@@ -22,13 +22,14 @@ export class RiskService {
     });
   }
 
-  async getRisks(unitId: string, query: { category?: any; riskLevel?: any }): Promise<Risk[]> {
+  async getRisks(unitId: string, query: { category?: any; riskLevel?: any; strategicPlanId?: string }): Promise<Risk[]> {
     const where: Prisma.RiskWhereInput = {
       unitId,
     };
 
     if (query.category) where.category = query.category;
     if (query.riskLevel) where.riskLevel = query.riskLevel;
+    if (query.strategicPlanId) where.strategicPlanId = query.strategicPlanId;
 
     return prisma.risk.findMany({
       where,
@@ -36,6 +37,9 @@ export class RiskService {
         mitigations: true,
         createdBy: {
           select: { id: true, name: true },
+        },
+        strategicPlan: {
+          select: { id: true, title: true },
         },
       },
       orderBy: { createdAt: 'desc' },
@@ -55,6 +59,9 @@ export class RiskService {
         },
         createdBy: {
           select: { id: true, name: true },
+        },
+        strategicPlan: {
+          select: { id: true, title: true },
         },
       },
     });

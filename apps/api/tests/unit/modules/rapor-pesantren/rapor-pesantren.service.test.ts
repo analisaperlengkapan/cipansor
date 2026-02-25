@@ -1,0 +1,142 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import * as raporService from '../../../../src/modules/rapor-pesantren/rapor-pesantren.service';
+import { prisma } from '../../../../src/lib/prisma';
+
+// Mock prisma and other external dependencies
+vi.mock('@/lib/prisma', () => ({
+  prisma: {
+    setting: {
+      findUnique: vi.fn(),
+    },
+    takhosusEnrollment: {
+      findMany: vi.fn(),
+    },
+    sanadRecord: {
+      findMany: vi.fn(),
+    },
+    student: {
+      findUnique: vi.fn(),
+    },
+    raporPesantren: {
+      findFirst: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+    },
+    academicYear: {
+      findUnique: vi.fn(),
+    }
+  },
+}));
+
+describe('RaporPesantrenService - Kepesantrenan Terpadu', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  describe('getTakhosusSummary', () => {
+    it('should calculate Takhosus progress correctly with only enrollments (no sanad)', async () => {
+      // Mock grade thresholds
+      const mockConfig = {
+        gradeThresholds: {
+          mumtaz: 90,
+          jayyidJiddan: 80,
+          jayyid: 70,
+          maqbul: 60,
+        },
+      } as any;
+
+      // Mock enrollments (No sanad)
+      const mockEnrollments = [
+        {
+          id: 'enr1',
+          halaqohId: 'hal1',
+          studentId: 'stud1',
+          status: 'ACTIVE',
+          targetJuz: 5,
+          completedJuz: 2, // 40% progress
+          halaqoh: { name: 'Takhosus A' },
+          sanadRecords: [],
+        },
+        {
+          id: 'enr2',
+          halaqohId: 'hal2',
+          studentId: 'stud1',
+          status: 'ACTIVE',
+          targetJuz: 10,
+          completedJuz: 8, // 80% progress
+          halaqoh: { name: 'Takhosus B' },
+          sanadRecords: [],
+        }
+      ];
+
+      (prisma.takhosusEnrollment.findMany as any).mockResolvedValue(mockEnrollments);
+      (prisma.sanadRecord.findMany as any).mockResolvedValue([]);
+
+      const result = await raporService.getTakhosusSummary(
+        'stud1',
+        new Date('2024-01-01'),
+        new Date('2024-06-30'),
+        mockConfig
+      );
+
+      // Total average progress = (40 + 80) / 2 = 60
+      expect(result.score).toBe(60);
+      expect(result.enrolledHalaqoh).toBe(2);
+      expect(result.totalSessions).toBe(0); // 0 sanads
+      expect(result.grade).toBe('MAQBUL'); // 60 is Maqbul
+      expect(result.halaqohDetails).toHaveLength(2);
+      expect(result.halaqohDetails[0].progress).toBe(40);
+      expect(result.halaqohDetails[1].progress).toBe(80);
+    });
+
+    it('should calculate Takhosus progress correctly when Sanad records exist', async () => {
+      const mockConfig = {
+        gradeThresholds: {
+          mumtaz: 90,
+          jayyidJiddan: 80,
+          jayyid: 70,
+          maqbul: 60,
+        },
+      } as any;
+
+      const mockSanads = [
+        { id: 's1', enrollmentId: 'enr1', score: 95, grade: 'MUMTAZ' },
+        { id: 's2', enrollmentId: 'enr1', score: 85, grade: 'JAYYID JIDDAN' },
+      ];
+
+      const mockEnrollments = [
+        {
+          id: 'enr1',
+          halaqohId: 'hal1',
+          studentId: 'stud1',
+          status: 'ACTIVE',
+          targetJuz: 5,
+          completedJuz: 2,
+          halaqoh: { name: 'Takhosus A' },
+          sanadRecords: mockSanads,
+        }
+      ];
+
+      (prisma.takhosusEnrollment.findMany as any).mockResolvedValue(mockEnrollments);
+      (prisma.sanadRecord.findMany as any).mockResolvedValue(mockSanads);
+
+      const result = await raporService.getTakhosusSummary(
+        'stud1',
+        new Date('2024-01-01'),
+        new Date('2024-06-30'),
+        mockConfig
+      );
+
+      // Average score of sanads = (95 + 85) / 2 = 90
+      expect(result.score).toBe(90);
+      expect(result.enrolledHalaqoh).toBe(1);
+      expect(result.totalSessions).toBe(2);
+      expect(result.grade).toBe('MUMTAZ'); // 90 is Mumtaz
+      
+      const detail = result.halaqohDetails[0];
+      expect(detail.progress).toBe(40);
+      expect(detail.sessionsCount).toBe(2);
+      expect(detail.latestGrade).toBe('MUMTAZ'); // 90 avg
+    });
+  });
+});

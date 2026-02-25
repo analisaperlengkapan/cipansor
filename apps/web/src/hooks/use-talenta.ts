@@ -75,3 +75,34 @@ export const useCreateSuccession = () => {
     onError: (e: any) => { toast.error(e.response?.data?.message || "Gagal membuat rencana suksesi"); },
   });
 };
+
+export const useDeleteProfile = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => (await api.delete(`/api/talenta/profiles/${id}`)).data,
+    onSuccess: () => { toast.success("Profil talenta berhasil dihapus"); qc.invalidateQueries({ queryKey: ["talenta"] }); },
+    onError: (e: any) => { toast.error(e.response?.data?.message || "Gagal menghapus profil"); },
+  });
+};
+
+export const useDeleteTraining = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => (await api.delete(`/api/talenta/trainings/${id}`)).data,
+    onSuccess: () => { toast.success("Program pelatihan berhasil dihapus"); qc.invalidateQueries({ queryKey: ["talenta"] }); },
+    onError: (e: any) => { toast.error(e.response?.data?.message || "Gagal menghapus pelatihan"); },
+  });
+};
+
+export const useDeleteSuccession = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => (await api.delete(`/api/talenta/successions/${id}`)).data,
+    onSuccess: () => { toast.success("Rencana suksesi berhasil dihapus"); qc.invalidateQueries({ queryKey: ["talenta"] }); },
+    onError: (e: any) => { toast.error(e.response?.data?.message || "Gagal menghapus rencana suksesi"); },
+  });
+};
+
+// Aliases for consistent naming in pages
+export const useCreateProfile = useCreateTalentProfile;
+

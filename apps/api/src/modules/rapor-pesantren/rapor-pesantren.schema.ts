@@ -12,6 +12,7 @@ export type RaporStatus = z.infer<typeof RaporStatus>;
 
 export const ComponentType = z.enum([
   'TAHFIDZ',
+  'TAKHOSUS',
   'IBADAH',
   'MUHADHOROH',
   'MUHADATSAH',
@@ -96,8 +97,9 @@ export type UpdateComponentGradeInput = z.infer<typeof updateComponentGradeSchem
 export const raporConfigSchema = z.object({
   unitId: z.string().uuid('Invalid unit ID'),
   componentWeights: z.object({
-    tahfidz: z.coerce.number().min(0).max(100).default(25),
-    ibadah: z.coerce.number().min(0).max(100).default(20),
+    tahfidz: z.coerce.number().min(0).max(100).default(20),
+    takhosus: z.coerce.number().min(0).max(100).default(10),
+    ibadah: z.coerce.number().min(0).max(100).default(15),
     muhadhoroh: z.coerce.number().min(0).max(100).default(15),
     muhadatsah: z.coerce.number().min(0).max(100).default(15),
     kitabProgress: z.coerce.number().min(0).max(100).default(15),
@@ -139,6 +141,21 @@ export interface TahfidzSummary {
     juz?: number;
     type: string;
     grade: string;
+  }[];
+}
+
+export interface TakhosusSummary {
+  enrolledHalaqoh: number;
+  totalSessions: number;
+  averageScore: number;
+  grade: string;
+  score: number;
+  halaqohDetails: {
+    halaqohName: string;
+    status: string;
+    progress: number;
+    latestGrade: string;
+    sessionsCount: number;
   }[];
 }
 
@@ -273,6 +290,7 @@ export interface RaporPesantren {
 
   // Component Summaries
   tahfidz: TahfidzSummary;
+  takhosus: TakhosusSummary;
   ibadah: IbadahSummary;
   muhadhoroh: MuhadhorohSummary;
   muhadatsah: MuhadatsahSummary;
@@ -317,6 +335,9 @@ export interface LegerItem {
   // Component Scores
   tahfidzScore: number;
   tahfidzGrade: string;
+
+  takhosusScore: number;
+  takhosusGrade: string;
 
   ibadahScore: number;
   ibadahGrade: string;

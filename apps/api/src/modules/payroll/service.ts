@@ -11,7 +11,8 @@
  */
 
 import { prisma } from '../../lib/prisma';
-import { Prisma, SalaryComponentType, PayrollStatus, JournalReferenceType } from '@prisma/client';
+import { Prisma, SalaryComponentType, PayrollStatus } from '@prisma/client';
+import { JournalReferenceType } from '@cipansor/shared';
 import { ACCOUNT_MAPPING_KEYS, getAccountOrFallback } from '../finance/accounting-config.service';
 import {
   CreateSalaryComponentInput,

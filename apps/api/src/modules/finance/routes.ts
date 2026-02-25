@@ -490,6 +490,30 @@ router.get(
   controller.getUnitFinanceStats
 );
 
+/**
+ * @swagger
+ * /api/finance/unit/{unitId}/outstanding:
+ *   get:
+ *     summary: Get all students with outstanding balances in a unit
+ *     tags: [Finance]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: unitId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: List of students with unpaid amounts
+ */
+router.get(
+  '/unit/:unitId/outstanding',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  controller.getStudentOutstandingBalances
+);
+
 // ==================== SPP MATRIX ====================
 
 /**

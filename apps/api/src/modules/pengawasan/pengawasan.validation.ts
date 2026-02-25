@@ -8,6 +8,8 @@ export const createAuditSchema = z.object({
   scope: z.string().optional(),
   methodology: z.string().optional(),
   unitId: z.string().uuid().optional(),
+  strategicPlanId: z.string().uuid().optional(),
+  riskId: z.string().uuid().optional(),
 });
 
 export const updateAuditSchema = z.object({
@@ -66,4 +68,6 @@ export const updateFollowUpSchema = z.object({
 export const listAuditQuerySchema = z.object({
   status: z.enum(['PLANNED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED']).optional(),
   auditType: z.string().optional(),
+  strategicPlanId: z.string().uuid().optional(),
+  riskId: z.string().uuid().optional(),
 });

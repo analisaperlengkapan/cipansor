@@ -9,6 +9,7 @@ import {
   RaporConfig,
   RaporPesantren,
   TahfidzSummary,
+  TakhosusSummary,
   IbadahSummary,
   MuhadhorohSummary,
   MuhadatsahSummary,
@@ -26,8 +27,9 @@ import { createNotification } from '../notifications/service';
 
 const DEFAULT_CONFIG: Omit<RaporConfig, 'unitId'> = {
   componentWeights: {
-    tahfidz: 25,
-    ibadah: 20,
+    tahfidz: 20,
+    takhosus: 10,
+    ibadah: 15,
     muhadhoroh: 15,
     muhadatsah: 15,
     kitabProgress: 15,
@@ -197,6 +199,103 @@ async function getTahfidzSummary(
       type: r.activityType,
       grade: grade,
     })),
+  };
+}
+
+// =====================
+// TAKHOSUS SUMMARY
+// =====================
+
+export async function getTakhosusSummary(
+  studentId: string,
+  startDate: Date,
+  endDate: Date,
+  config: RaporConfig
+): Promise<TakhosusSummary> {
+  // Get all active takhosus enrollments for the student
+  const takhosusEnrollments = await prisma.takhosusEnrollment.findMany({
+    where: {
+      studentId,
+      status: 'ACTIVE',
+      enrolledAt: {
+        lte: endDate,
+      },
+    },
+    include: {
+      halaqoh: {
+        select: { name: true, isActive: true },
+      },
+      sanadRecords: {
+        where: {
+          certifiedAt: {
+            gte: startDate,
+            lte: endDate,
+          },
+        },
+      },
+    },
+  });
+
+  const enrolledHalaqoh = takhosusEnrollments.length;
+
+  if (enrolledHalaqoh === 0) {
+    return {
+      enrolledHalaqoh: 0,
+      totalSessions: 0,
+      averageScore: 0,
+      grade: 'MUMTAZ',
+      score: 100, // No takhosus so score shouldn't negatively impact
+      halaqohDetails: [],
+    };
+  }
+
+  let totalSanadScores = 0;
+  let totalSessions = 0;
+
+  const halaqohDetails = takhosusEnrollments.map((enr) => {
+    const sessionScores = enr.sanadRecords.reduce((sum, s) => {
+      let numericScore = 0;
+      if (s.grade) {
+        const gradeKey = s.grade.toUpperCase().replace(/\s+/g, '_');
+        if (gradeKey === 'MUMTAZ') numericScore = 95;
+        else if (gradeKey === 'JAYYID_JIDDAN') numericScore = 85;
+        else if (gradeKey === 'JAYYID') numericScore = 75;
+        else if (gradeKey === 'MAQBUL') numericScore = 65;
+        else numericScore = 50;
+      }
+      return sum + numericScore;
+    }, 0);
+    const sessions = enr.sanadRecords.length;
+
+    totalSanadScores += sessionScores;
+    totalSessions += sessions;
+
+    const avgScore = sessions > 0 ? sessionScores / sessions : 0;
+
+    return {
+      halaqohName: enr.halaqoh.name,
+      status: enr.status,
+      progress: enr.targetJuz ? Math.round((enr.completedJuz / enr.targetJuz) * 100) : 0,
+      latestGrade: getGradeFromScore(avgScore, config.gradeThresholds),
+      sessionsCount: sessions,
+    };
+  });
+
+  const averageScore = totalSessions > 0 ? totalSanadScores / totalSessions : 0;
+  // Fallback to progress if no sanad tests exist in period
+  const finalScore =
+    totalSessions > 0
+      ? averageScore
+      : takhosusEnrollments.reduce((sum, e) => sum + (e.targetJuz ? Math.round((e.completedJuz / e.targetJuz) * 100) : 0), 0) /
+        enrolledHalaqoh;
+
+  return {
+    enrolledHalaqoh,
+    totalSessions,
+    averageScore,
+    grade: getGradeFromScore(finalScore, config.gradeThresholds),
+    score: finalScore,
+    halaqohDetails,
   };
 }
 
@@ -624,9 +723,10 @@ export async function generateRaporPesantren(query: GetRaporQuery): Promise<Rapo
   const config = await getRaporConfig(unitId || student.unitId);
 
   // Generate all summaries in parallel
-  const [tahfidz, ibadah, muhadhoroh, muhadatsah, kitabProgress, akhlak, attendance] =
+  const [tahfidz, takhosus, ibadah, muhadhoroh, muhadatsah, kitabProgress, akhlak, attendance] =
     await Promise.all([
       getTahfidzSummary(studentId, startDate, endDate, config),
+      getTakhosusSummary(studentId, startDate, endDate, config),
       getIbadahSummary(studentId, startDate, endDate, config),
       getMuhadhorohSummary(studentId, startDate, endDate, config),
       getMuhadatsahSummary(studentId, startDate, endDate, config),
@@ -639,6 +739,7 @@ export async function generateRaporPesantren(query: GetRaporQuery): Promise<Rapo
   const weights = config.componentWeights;
   const overallScore =
     (tahfidz.score * weights.tahfidz) / 100 +
+    (takhosus.score * weights.takhosus) / 100 +
     (ibadah.score * weights.ibadah) / 100 +
     (muhadhoroh.score * weights.muhadhoroh) / 100 +
     (muhadatsah.score * weights.muhadatsah) / 100 +
@@ -663,6 +764,7 @@ export async function generateRaporPesantren(query: GetRaporQuery): Promise<Rapo
     semester,
     status: 'DRAFT' as const,
     tahfidzData: tahfidz as unknown as Prisma.InputJsonValue,
+    takhosusData: takhosus as unknown as Prisma.InputJsonValue,
     ibadahData: ibadah as unknown as Prisma.InputJsonValue,
     muhadhorohData: muhadhoroh as unknown as Prisma.InputJsonValue,
     muhadatsahData: muhadatsah as unknown as Prisma.InputJsonValue,
@@ -701,6 +803,7 @@ export async function generateRaporPesantren(query: GetRaporQuery): Promise<Rapo
       endDate: academicYear.endDate.toISOString(),
     },
     tahfidz,
+    takhosus,
     ibadah,
     muhadhoroh,
     muhadatsah,
@@ -831,6 +934,9 @@ export async function updateRaporPesantren(id: string, data: UpdateRaporInput) {
         createNotification({
           userId: p.parent.id,
           type: 'ACADEMIC',
+          priority: 'HIGH',
+          recipientType: 'PARENT',
+          channels: ['IN_APP', 'EMAIL'],
           title: 'Rapor Pesantren Diterbitkan',
           message: `Rapor Pesantren ananda ${studentName} untuk periode ${period} Semester ${semester} telah diterbitkan. Silakan cek di portal wali santri.`,
           link: `/rapor-pesantren/preview?id=${result.id}`,
@@ -914,6 +1020,7 @@ export async function getRaporPesantrenById(id: string): Promise<RaporPesantren 
         },
       },
       academicYear: true,
+      unit: true,
     },
   });
 
@@ -932,7 +1039,6 @@ export async function getRaporPesantrenById(id: string): Promise<RaporPesantren 
       address: rapor.unit.address,
       phone: rapor.unit.phone,
       email: rapor.unit.email,
-      website: rapor.unit.website,
       logoUrl: rapor.unit.logoUrl,
     },
     academicYearId: rapor.academicYearId,
@@ -958,6 +1064,7 @@ export async function getRaporPesantrenById(id: string): Promise<RaporPesantren 
       endDate: rapor.academicYear.endDate.toISOString(),
     },
     tahfidz: rapor.tahfidzData as unknown as TahfidzSummary,
+    takhosus: rapor.takhosusData as unknown as TakhosusSummary,
     ibadah: rapor.ibadahData as unknown as IbadahSummary,
     muhadhoroh: rapor.muhadhorohData as unknown as MuhadhorohSummary,
     muhadatsah: rapor.muhadatsahData as unknown as MuhadatsahSummary,
@@ -1046,6 +1153,8 @@ export async function getLegerPesantren(query: GetLegerQuery): Promise<LegerItem
         studentNis: student.nis,
         tahfidzScore: 0,
         tahfidzGrade: '-',
+        takhosusScore: 0,
+        takhosusGrade: '-',
         ibadahScore: 0,
         ibadahGrade: '-',
         muhadhorohScore: 0,
@@ -1064,6 +1173,7 @@ export async function getLegerPesantren(query: GetLegerQuery): Promise<LegerItem
     }
 
     const tahfidz = getComponent(rapor.tahfidzData);
+    const takhosus = getComponent(rapor.takhosusData);
     const ibadah = getComponent(rapor.ibadahData);
     const muhadhoroh = getComponent(rapor.muhadhorohData);
     const muhadatsah = getComponent(rapor.muhadatsahData);
@@ -1079,6 +1189,9 @@ export async function getLegerPesantren(query: GetLegerQuery): Promise<LegerItem
 
       tahfidzScore: tahfidz.score,
       tahfidzGrade: tahfidz.grade,
+
+      takhosusScore: takhosus.score,
+      takhosusGrade: takhosus.grade,
 
       ibadahScore: ibadah.score,
       ibadahGrade: ibadah.grade,

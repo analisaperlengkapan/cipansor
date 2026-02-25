@@ -11,6 +11,7 @@ import {
   AlertCircle,
   CheckCircle,
   Users,
+  PieChart,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -132,7 +133,22 @@ export default function FinancePage() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-5">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Collection Ratio</CardTitle>
+            <PieChart className="h-4 w-4 text-blue-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600">
+              {summary && summary.totalBilled > 0
+                ? `${Math.round((summary.totalPaid / summary.totalBilled) * 100)}%`
+                : "0%"}
+            </div>
+            <p className="text-xs text-muted-foreground">Persentase Terkumpul</p>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Total Tagihan</CardTitle>

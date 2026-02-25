@@ -13,6 +13,8 @@ export class PengawasanService {
     methodology?: string;
     unitId: string;
     leadAuditorId: string;
+    strategicPlanId?: string;
+    riskId?: string;
   }) {
     return prisma.internalAudit.create({
       data: {
@@ -24,25 +26,33 @@ export class PengawasanService {
         methodology: data.methodology,
         unit: { connect: { id: data.unitId } },
         leadAuditor: { connect: { id: data.leadAuditorId } },
+        strategicPlan: data.strategicPlanId ? { connect: { id: data.strategicPlanId } } : undefined,
+        risk: data.riskId ? { connect: { id: data.riskId } } : undefined,
       },
       include: {
         unit: { select: { id: true, name: true } },
         leadAuditor: { select: { id: true, name: true } },
+        strategicPlan: { select: { id: true, title: true } },
+        risk: { select: { id: true, code: true, category: true } },
         findings: true,
       },
     });
   }
 
-  async getAudits(unitId: string, query: { status?: string; auditType?: string }) {
+  async getAudits(unitId: string, query: { status?: string; auditType?: string; strategicPlanId?: string; riskId?: string }) {
     const where: Prisma.InternalAuditWhereInput = { unitId };
     if (query.status) where.status = query.status as any;
     if (query.auditType) where.auditType = query.auditType;
+    if (query.strategicPlanId) where.strategicPlanId = query.strategicPlanId;
+    if (query.riskId) where.riskId = query.riskId;
 
     return prisma.internalAudit.findMany({
       where,
       include: {
         unit: { select: { id: true, name: true } },
         leadAuditor: { select: { id: true, name: true } },
+        strategicPlan: { select: { id: true, title: true } },
+        risk: { select: { id: true, code: true, category: true } },
         findings: {
           select: { id: true, severity: true, title: true },
         },
@@ -57,6 +67,8 @@ export class PengawasanService {
       include: {
         unit: { select: { id: true, name: true } },
         leadAuditor: { select: { id: true, name: true } },
+        strategicPlan: { select: { id: true, title: true } },
+        risk: { select: { id: true, code: true, category: true, riskLevel: true } },
         findings: {
           include: {
             responsible: { select: { id: true, name: true } },

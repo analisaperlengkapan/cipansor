@@ -241,6 +241,19 @@ export async function getUnitFinanceStats(req: Request, res: Response, next: Nex
   }
 }
 
+export async function getStudentOutstandingBalances(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { unitId } = req.params;
+    const data = await financeService.getStudentOutstandingBalances(unitId);
+    res.json({
+      success: true,
+      data,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 // =====================================
 // SPP MATRIX CONTROLLERS
 // =====================================

@@ -120,21 +120,91 @@ async function generateInvoiceNumber(unitId?: string): Promise<string> {
   return `INV-${year}${month}-${String(sequence).padStart(5, '0')}`;
 }
 
+async function calculateInvoiceAmounts(
+  studentId: string,
+  paymentTypeId: string,
+  originalAmount: Prisma.Decimal,
+  dueDate: Date
+) {
+  let discount = new Prisma.Decimal(0);
+  const grossAmount = originalAmount;
+
+  // Find active scholarships for the student
+  const recipients = await prisma.scholarshipRecipient.findMany({
+    where: {
+      studentId,
+      status: 'ACTIVE',
+      startDate: { lte: dueDate },
+      OR: [{ endDate: null }, { endDate: { gte: dueDate } }],
+      scholarship: { isActive: true },
+    },
+    include: {
+      scholarship: {
+        include: {
+          discounts: {
+            where: { paymentTypeId },
+          },
+        },
+      },
+    },
+  });
+
+  // Apply discounts
+  for (const recipient of recipients) {
+    for (const d of recipient.scholarship.discounts) {
+      let currentDiscount = new Prisma.Decimal(0);
+      if (d.discountType === 'PERCENTAGE') {
+        // discountValue is rate (e.g., 50 for 50%)
+        currentDiscount = grossAmount.mul(d.discountValue).div(100);
+      } else {
+        // FIXED
+        currentDiscount = d.discountValue;
+      }
+      discount = discount.add(currentDiscount);
+    }
+  }
+
+  // Ensure discount doesn't exceed amount
+  if (discount.gt(grossAmount)) {
+    discount = grossAmount;
+  }
+
+  const netAmount = grossAmount.sub(discount);
+
+  return {
+    originalAmount: grossAmount,
+    discount,
+    amount: netAmount,
+  };
+}
+
 export async function createInvoice(data: CreateInvoiceDto) {
   let invoice;
   let retries = 3;
+
+  const { studentId, paymentTypeId, ...invoiceData } = data;
+  const dueDate = new Date(data.dueDate);
+  const baseAmount = new Prisma.Decimal(data.amount);
+
+  const { originalAmount, discount, amount } = await calculateInvoiceAmounts(
+    studentId,
+    paymentTypeId,
+    baseAmount,
+    dueDate
+  );
 
   while (retries > 0) {
     try {
       const invoiceNumber = await generateInvoiceNumber();
 
-      const { studentId, paymentTypeId, ...invoiceData } = data;
       invoice = await prisma.invoice.create({
         data: {
           ...invoiceData,
           invoiceNumber,
-          amount: new Prisma.Decimal(data.amount),
-          dueDate: new Date(data.dueDate),
+          amount,
+          originalAmount,
+          discount,
+          dueDate,
           student: { connect: { id: studentId } },
           paymentType: { connect: { id: paymentTypeId } },
         },
@@ -889,6 +959,9 @@ export async function generateBulkSppInvoices(data: {
   const createdInvoices = [];
 
   for (const student of students) {
+    // TODO: OPTIMIZATION - Refactor to pre-fetch all scholarship recipients map to avoid N+1 query problem
+    // inside calculateInvoiceAmounts. Currently it queries for each student in the loop.
+
     // Check if invoice already exists for this student/month
     const existing = await prisma.invoice.findFirst({
       where: {
@@ -903,12 +976,22 @@ export async function generateBulkSppInvoices(data: {
 
     if (!existing) {
       const invoiceNumber = await generateInvoiceNumber();
+
+      const { originalAmount, discount, amount } = await calculateInvoiceAmounts(
+        student.id,
+        paymentTypeId,
+        paymentType.amount,
+        dueDate
+      );
+
       const invoice = await prisma.invoice.create({
         data: {
           studentId: student.id,
           paymentTypeId,
           invoiceNumber,
-          amount: paymentType.amount,
+          amount,
+          originalAmount,
+          discount,
           dueDate,
           period,
           notes: `Tagihan ${paymentType.name} untuk ${period}`,
@@ -994,12 +1077,22 @@ export async function generateRecurringBills() {
 
       if (!existing) {
         const invoiceNumber = await generateInvoiceNumber();
+
+        const { originalAmount, discount, amount } = await calculateInvoiceAmounts(
+          student.id,
+          paymentType.id,
+          paymentType.amount,
+          dueDate
+        );
+
         await prisma.invoice.create({
           data: {
             studentId: student.id,
             paymentTypeId: paymentType.id,
             invoiceNumber,
-            amount: paymentType.amount,
+            amount,
+            originalAmount,
+            discount,
             dueDate,
             period,
             notes: `Tagihan ${paymentType.name} otomatis untuk ${period}`,

@@ -1320,6 +1320,7 @@ model PaymentType {
   invoices  Invoice[]
   account   AccountCode? @relation(fields: [accountId], references: [id])
   accountId String?      @map("account_id")
+  scholarshipDiscounts ScholarshipDiscount[]
 
   @@unique([unitId, code])
   @@index([isActive])
@@ -1333,6 +1334,8 @@ model Invoice {
   paymentTypeId String        @map("payment_type_id")
   invoiceNumber String        @unique @map("invoice_number") // e.g., "INV-2024-0001"
   amount        Decimal       @db.Decimal(15, 2)
+  originalAmount Decimal      @default(0) @map("original_amount") @db.Decimal(15, 2)
+  discount      Decimal       @default(0) @db.Decimal(15, 2)
   dueDate       DateTime      @map("due_date")
   status        PaymentStatus @default(PENDING)
   paidAmount    Decimal       @default(0) @map("paid_amount") @db.Decimal(15, 2)
@@ -4669,16 +4672,20 @@ model Scholarship {
 model ScholarshipDiscount {
   id            String   @id @default(uuid())
   scholarshipId String   @map("scholarship_id")
-  componentId   String   @map("component_id")
+  componentId   String?  @map("component_id") // Made optional to support direct paymentType link
+  paymentTypeId String?  @map("payment_type_id") // New: Link directly to payment type
   discountType  String // PERCENTAGE, FIXED
   discountValue Decimal  @map("discount_value") @db.Decimal(15, 2)
   createdAt     DateTime @default(now()) @map("created_at")
 
   // Relations
-  scholarship Scholarship      @relation(fields: [scholarshipId], references: [id])
-  component   PaymentComponent @relation(fields: [componentId], references: [id])
+  scholarship   Scholarship       @relation(fields: [scholarshipId], references: [id])
+  component     PaymentComponent? @relation(fields: [componentId], references: [id])
+  paymentType   PaymentType?      @relation(fields: [paymentTypeId], references: [id])
 
   @@unique([scholarshipId, componentId])
+  @@unique([scholarshipId, paymentTypeId])
+  @@index([paymentTypeId])
   @@map("scholarship_discounts")
 }
 

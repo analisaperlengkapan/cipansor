@@ -214,7 +214,7 @@ export class CBTService {
     return exams.map((exam) => ({
       ...exam,
       attemptStatus: exam.attempts[0]?.status || null,
-      score: exam.attempts[0]?.score || null,
+      score: exam.attempts[0]?.score ?? null,
       finishedAt: exam.attempts[0]?.finishedAt || null,
     }));
   }

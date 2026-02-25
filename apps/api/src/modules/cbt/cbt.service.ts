@@ -362,7 +362,8 @@ export class CBTService {
     let maxPossibleScore = 0;
     const questions = attempt.exam.questionBank?.questions || [];
 
-    const gradedAnswers = [];
+    // Calculate scores and prepare data
+    const gradedAnswersData = [];
 
     for (const question of questions) {
       const studentAnswer = attempt.answers.find((a) => a.questionId === question.id);
@@ -382,57 +383,60 @@ export class CBTService {
       // Essay needs manual grading, score remains 0.
 
       if (studentAnswer) {
-        gradedAnswers.push(
-          prisma.examAnswer.update({
-            where: { id: studentAnswer.id },
-            data: { isCorrect, score },
-          })
-        );
-      } else {
-        // Create empty answer record for unanswered questions if needed, or just ignore.
-        // Better to verify everything is accounted for.
+        gradedAnswersData.push({
+          id: studentAnswer.id,
+          data: { isCorrect, score },
+        });
       }
 
       totalScore += score;
     }
-
-    await prisma.$transaction(gradedAnswers);
 
     // Calculate final score based on Exam maxScore scaling
     // Exam maxScore is typically 100.
     // Raw score = totalScore / maxPossibleScore * exam.maxScore
     let finalScore = new Prisma.Decimal(totalScore);
     if (maxPossibleScore > 0) {
-        const scale = Number(attempt.exam.maxScore) / maxPossibleScore;
-        finalScore = new Prisma.Decimal(totalScore * scale);
+      const scale = Number(attempt.exam.maxScore) / maxPossibleScore;
+      finalScore = new Prisma.Decimal(totalScore * scale);
     }
 
-    // Update attempt
-    const finishedAttempt = await prisma.examAttempt.update({
-      where: { id: attemptId },
-      data: {
-        status: 'COMPLETED',
-        finishedAt: new Date(),
-        score: finalScore,
-      },
-    });
+    // Transactional update
+    return await prisma.$transaction(async (tx) => {
+      // 1. Update individual answers
+      for (const item of gradedAnswersData) {
+        await tx.examAnswer.update({
+          where: { id: item.id },
+          data: item.data,
+        });
+      }
 
-    // Automatically create a Grade entry?
-    // Doing it here ensures integration with Report Card.
-    await prisma.grade.create({
-      data: {
-        studentId: attempt.studentId,
-        examId: attempt.examId,
-        academicYearId: attempt.exam.academicYearId,
-        subjectId: attempt.exam.subjectId,
-        type: 'EXAM',
-        score: finalScore,
-        maxScore: attempt.exam.maxScore,
-        gradedById: attempt.exam.teacher.userId, // Auto-graded but attributed to teacher
-        notes: 'Auto-graded from CBT',
-      },
-    });
+      // 2. Update Attempt
+      const finishedAttempt = await tx.examAttempt.update({
+        where: { id: attemptId },
+        data: {
+          status: 'COMPLETED',
+          finishedAt: new Date(),
+          score: finalScore,
+        },
+      });
 
-    return finishedAttempt;
+      // 3. Create Grade
+      await tx.grade.create({
+        data: {
+          studentId: attempt.studentId,
+          examId: attempt.examId,
+          academicYearId: attempt.exam.academicYearId,
+          subjectId: attempt.exam.subjectId,
+          type: 'EXAM',
+          score: finalScore,
+          maxScore: attempt.exam.maxScore,
+          gradedById: attempt.exam.teacher.userId, // Auto-graded but attributed to teacher
+          notes: 'Auto-graded from CBT',
+        },
+      });
+
+      return finishedAttempt;
+    });
   }
 }

@@ -64,7 +64,10 @@ export default function ImmunizationPage() {
     e.preventDefault();
     try {
       await apiClient.post('/health/immunization', {
-        ...formData,
+        studentId: formData.studentId,
+        vaccineName: formData.vaccineName,
+        doseNumber: formData.doseNumber,
+        ...(formData.scheduledDate ? { scheduledDate: formData.scheduledDate } : {}),
         // In a real app, unitId would come from the user's session or context
         unitId: 'unit-uuid-placeholder',
       });

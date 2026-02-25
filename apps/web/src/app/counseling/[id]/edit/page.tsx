@@ -1,22 +1,19 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { use, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import { Save, Shield, Trash2 } from "lucide-react";
 import Link from "next/link";
-import { toast } from "sonner";
-import {
-  ArrowLeft,
-  Loader2,
-  Save,
-  AlertCircle,
-  User,
-  School,
-} from "lucide-react";
+import { format } from "date-fns";
 
+import { MainLayout } from "@/components/layout/main-layout";
+import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import {
   Card,
   CardContent,
@@ -25,612 +22,331 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { toast } from "sonner";
 
 import {
   useCounselingRecord,
   useUpdateCounselingRecord,
+  useDeleteCounselingRecord,
   COUNSELING_CATEGORIES,
-  COUNSELING_PRIORITIES,
   COUNSELING_STATUSES,
-  CounselingCategory,
-  CounselingPriority,
-  CounselingStatus,
+  COUNSELING_PRIORITIES,
+  type UpdateCounselingInput,
 } from "@/hooks/use-counseling";
 
-// Form schema
-const updateCounselingSchema = z.object({
-  category: z.enum([
-    "ACADEMIC",
-    "SOCIAL",
-    "PERSONAL",
-    "CAREER",
-    "FAMILY",
-    "BEHAVIOR",
-    "RELIGIOUS",
-    "OTHER",
-  ] as const),
-  title: z
-    .string()
-    .min(5, "Judul minimal 5 karakter")
-    .max(200, "Judul maksimal 200 karakter"),
-  description: z
-    .string()
-    .min(20, "Deskripsi minimal 20 karakter")
-    .max(5000, "Deskripsi maksimal 5000 karakter"),
-  priority: z.enum(["LOW", "MEDIUM", "HIGH", "URGENT"] as const),
-  status: z.enum([
-    "OPEN",
-    "IN_PROGRESS",
-    "FOLLOW_UP",
-    "RESOLVED",
-    "REFERRED",
-  ] as const),
-  isConfidential: z.boolean(),
-  reportedBy: z.string().optional(),
-  resolutionNotes: z.string().optional(),
-});
+interface EditCounselingPageProps {
+  params: Promise<{
+    id: string;
+  }>;
+}
 
-type UpdateCounselingFormValues = z.infer<typeof updateCounselingSchema>;
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const typedResolver = zodResolver(updateCounselingSchema) as any;
-
-export default function EditCounselingPage() {
-  const params = useParams();
+export default function EditCounselingPage({
+  params,
+}: EditCounselingPageProps) {
+  const { id } = use(params);
   const router = useRouter();
-  const id = params.id as string;
 
-  // Fetch counseling record
   const { data: record, isLoading, error } = useCounselingRecord(id);
-
-  // Update mutation
   const updateMutation = useUpdateCounselingRecord();
+  const deleteMutation = useDeleteCounselingRecord();
 
-  // Form setup
-  const form = useForm<UpdateCounselingFormValues>({
-    resolver: typedResolver,
-    defaultValues: {
-      category: "ACADEMIC" as CounselingCategory,
-      title: "",
-      description: "",
-      priority: "MEDIUM" as CounselingPriority,
-      status: "OPEN" as CounselingStatus,
-      isConfidential: false,
-      reportedBy: "",
-      resolutionNotes: "",
-    },
-  });
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<UpdateCounselingInput>();
 
-  // Populate form when data loads
+  // Pre-fill form when data is loaded
   useEffect(() => {
     if (record) {
-      form.reset({
-        category: record.category,
+      reset({
         title: record.title,
         description: record.description,
+        category: record.category,
         priority: record.priority,
         status: record.status,
+        scheduledAt: record.scheduledAt ? format(new Date(record.scheduledAt), "yyyy-MM-dd'T'HH:mm") : undefined,
+        duration: record.duration,
+        location: record.location,
+        summary: record.summary,
+        recommendations: record.recommendations,
         isConfidential: record.isConfidential,
-        reportedBy: record.reportedBy || "",
-        resolutionNotes: record.resolutionNotes || "",
       });
     }
-  }, [record, form]);
+  }, [record, reset]);
 
-  // Handle submit
-  const onSubmit = async (values: UpdateCounselingFormValues) => {
+  const isConfidential = watch("isConfidential");
+
+  const onSubmit = async (data: UpdateCounselingInput) => {
     try {
       await updateMutation.mutateAsync({
+        ...data,
         id,
-        ...values,
       });
-      toast.success("Data konseling berhasil diperbarui");
+      toast.success("Catatan konseling berhasil diperbarui");
       router.push(`/counseling/${id}`);
-    } catch (error) {
-      console.error("Error updating counseling record:", error);
-      toast.error("Gagal memperbarui data konseling");
+    } catch {
+      toast.error("Gagal memperbarui catatan konseling");
     }
   };
 
-  // Watch status to show resolution notes
-  const watchStatus = form.watch("status");
-  const showResolutionNotes =
-    watchStatus === "RESOLVED" || watchStatus === "REFERRED";
+  const handleDelete = async () => {
+    if (!confirm("Yakin ingin menghapus sesi konseling ini? Tindakan ini tidak dapat dibatalkan.")) return;
 
-  // Loading state
+    try {
+      await deleteMutation.mutateAsync(id);
+      toast.success("Sesi konseling berhasil dihapus");
+      router.push("/counseling");
+    } catch {
+      toast.error("Gagal menghapus sesi konseling");
+    }
+  };
+
   if (isLoading) {
     return (
-      <div className="container mx-auto py-6 space-y-6">
-        <div className="flex items-center gap-4">
-          <Skeleton className="h-10 w-10" />
-          <Skeleton className="h-8 w-64" />
+      <MainLayout>
+        <div className="space-y-6">
+          <Skeleton className="h-10 w-48" />
+          <Skeleton className="h-[600px] w-full" />
         </div>
-        <div className="grid gap-6 lg:grid-cols-3">
-          <div className="lg:col-span-2 space-y-6">
-            <Skeleton className="h-96" />
-          </div>
-          <div className="space-y-6">
-            <Skeleton className="h-64" />
-          </div>
-        </div>
-      </div>
+      </MainLayout>
     );
   }
 
-  // Error state
   if (error || !record) {
     return (
-      <div className="container mx-auto py-6">
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            {error ? "Gagal memuat data konseling" : "Data tidak ditemukan"}
-          </AlertDescription>
-        </Alert>
-        <div className="mt-4">
-          <Button variant="outline" asChild>
-            <Link href="/counseling">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Kembali ke Daftar
-            </Link>
+      <MainLayout>
+        <div className="flex flex-col items-center justify-center h-[60vh] text-center">
+          <h2 className="text-2xl font-bold mb-2">Data Tidak Ditemukan</h2>
+          <Button asChild className="mt-4">
+            <Link href="/counseling">Kembali ke Daftar</Link>
           </Button>
         </div>
-      </div>
+      </MainLayout>
     );
   }
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" asChild>
-          <Link href={`/counseling/${id}`}>
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-        </Button>
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Edit Konseling</h1>
-          <p className="text-muted-foreground">
-            Kasus: {record.caseNumber} - {record.student?.name}
-          </p>
-        </div>
-      </div>
+    <MainLayout>
+      <PageHeader
+        title="Edit Sesi Konseling"
+        description={`Edit data sesi untuk ${record.student?.user?.name}`}
+        backHref={`/counseling/${id}`}
+      />
 
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
-          <div className="grid gap-6 lg:grid-cols-3">
-            {/* Main Form */}
-            <div className="lg:col-span-2 space-y-6">
-              {/* Basic Information Card */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Informasi Kasus</CardTitle>
-                  <CardDescription>
-                    Perbarui detail dan deskripsi kasus konseling
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  {/* Category */}
-                  <FormField
-                    control={form.control}
-                    name="category"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Kategori</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                          value={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Pilih kategori" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {COUNSELING_CATEGORIES.map((category) => (
-                              <SelectItem
-                                key={category.value}
-                                value={category.value}
-                              >
-                                <div className="flex items-center gap-2">
-                                  <span>{category.icon}</span>
-                                  <span>{category.label}</span>
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <div className="grid gap-6 md:grid-cols-3">
+          <div className="md:col-span-2 space-y-6">
+            {/* Core Info */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Informasi Utama</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="title">Judul Sesi *</Label>
+                  <Input
+                    id="title"
+                    {...register("title", { required: "Judul wajib diisi" })}
                   />
-
-                  {/* Title */}
-                  <FormField
-                    control={form.control}
-                    name="title"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Judul Kasus</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="Masukkan judul kasus"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          Ringkasan singkat masalah yang dialami
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Description */}
-                  <FormField
-                    control={form.control}
-                    name="description"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Deskripsi</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            placeholder="Deskripsikan masalah secara detail..."
-                            className="min-h-[150px]"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          Jelaskan kronologi, latar belakang, dan detail masalah
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Reported By */}
-                  <FormField
-                    control={form.control}
-                    name="reportedBy"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Dilaporkan Oleh</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="Nama pelapor (opsional)"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          Siapa yang melaporkan masalah ini (jika ada)
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </CardContent>
-              </Card>
-
-              {/* Status & Priority Card */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Status & Prioritas</CardTitle>
-                  <CardDescription>
-                    Atur tingkat prioritas dan status penanganan
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="grid gap-6 sm:grid-cols-2">
-                    {/* Priority */}
-                    <FormField
-                      control={form.control}
-                      name="priority"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Prioritas</FormLabel>
-                          <Select
-                            onValueChange={field.onChange}
-                            defaultValue={field.value}
-                            value={field.value}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Pilih prioritas" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {COUNSELING_PRIORITIES.map((priority) => (
-                                <SelectItem
-                                  key={priority.value}
-                                  value={priority.value}
-                                >
-                                  <Badge
-                                    variant="secondary"
-                                    className={priority.color}
-                                  >
-                                    {priority.label}
-                                  </Badge>
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    {/* Status */}
-                    <FormField
-                      control={form.control}
-                      name="status"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Status</FormLabel>
-                          <Select
-                            onValueChange={field.onChange}
-                            defaultValue={field.value}
-                            value={field.value}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Pilih status" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {COUNSELING_STATUSES.map((status) => (
-                                <SelectItem
-                                  key={status.value}
-                                  value={status.value}
-                                >
-                                  <Badge
-                                    variant="secondary"
-                                    className={status.color}
-                                  >
-                                    {status.label}
-                                  </Badge>
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  {/* Resolution Notes - shown when status is RESOLVED or REFERRED */}
-                  {showResolutionNotes && (
-                    <FormField
-                      control={form.control}
-                      name="resolutionNotes"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Catatan Penyelesaian</FormLabel>
-                          <FormControl>
-                            <Textarea
-                              placeholder="Tuliskan catatan penyelesaian atau alasan rujukan..."
-                              className="min-h-[100px]"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            {watchStatus === "RESOLVED"
-                              ? "Jelaskan bagaimana kasus ini diselesaikan"
-                              : "Jelaskan alasan dan tujuan rujukan"}
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                  {errors.title && (
+                    <p className="text-sm text-destructive">{errors.title.message}</p>
                   )}
+                </div>
 
-                  {/* Confidential Toggle */}
-                  <FormField
-                    control={form.control}
-                    name="isConfidential"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                        <div className="space-y-0.5">
-                          <FormLabel className="text-base">
-                            Kasus Rahasia
-                          </FormLabel>
-                          <FormDescription>
-                            Tandai jika kasus ini bersifat sangat sensitif dan
-                            hanya dapat diakses oleh konselor terkait
-                          </FormDescription>
-                        </div>
-                        <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Kategori *</Label>
+                    <Select
+                      defaultValue={record.category}
+                      onValueChange={(v) => setValue("category", v as any)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {COUNSELING_CATEGORIES.map((cat) => (
+                          <SelectItem key={cat.value} value={cat.value}>
+                            {cat.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Status *</Label>
+                    <Select
+                      defaultValue={record.status}
+                      onValueChange={(v) => setValue("status", v as any)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {COUNSELING_STATUSES.map((s) => (
+                          <SelectItem key={s.value} value={s.value}>
+                            {s.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="description">Deskripsi / Keluhan *</Label>
+                  <Textarea
+                    id="description"
+                    rows={5}
+                    {...register("description", { required: "Deskripsi wajib diisi" })}
                   />
-                </CardContent>
-              </Card>
-
-              {/* Form Actions */}
-              <div className="flex items-center gap-4">
-                <Button
-                  type="submit"
-                  disabled={updateMutation.isPending}
-                  className="min-w-[120px]"
-                >
-                  {updateMutation.isPending ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Menyimpan...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="mr-2 h-4 w-4" />
-                      Simpan
-                    </>
+                  {errors.description && (
+                    <p className="text-sm text-destructive">{errors.description.message}</p>
                   )}
-                </Button>
-                <Button type="button" variant="outline" asChild>
-                  <Link href={`/counseling/${id}`}>Batal</Link>
-                </Button>
-              </div>
-            </div>
+                </div>
+              </CardContent>
+            </Card>
 
-            {/* Sidebar - Student Info */}
-            <div className="space-y-6">
-              {/* Student Card */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <User className="h-4 w-4" />
-                    Data Siswa
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {record.student ? (
-                    <>
-                      <div className="flex items-center gap-3">
-                        <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                          <span className="text-lg font-semibold text-primary">
-                            {record.student.name.charAt(0).toUpperCase()}
-                          </span>
-                        </div>
-                        <div>
-                          <p className="font-medium">{record.student.name}</p>
-                          <p className="text-sm text-muted-foreground">
-                            NIS: {record.student.nis}
-                          </p>
-                        </div>
-                      </div>
+            {/* Outcome & Results */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Hasil & Rekomendasi</CardTitle>
+                <CardDescription>Diisi setelah sesi berlangsung</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="summary">Ringkasan & Hasil</Label>
+                  <Textarea
+                    id="summary"
+                    rows={4}
+                    placeholder="Hasil dari sesi konseling..."
+                    {...register("summary")}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="recommendations">Rekomendasi / Tindak Lanjut</Label>
+                  <Textarea
+                    id="recommendations"
+                    rows={4}
+                    placeholder="Langkah selanjutnya..."
+                    {...register("recommendations")}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
-                      <div className="space-y-2 pt-2 border-t">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Kelas:</span>
-                          <span className="font-medium">
-                            {record.student.currentClass?.name || "-"}
-                          </span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">
-                            Jenis Kelamin:
-                          </span>
-                          <span className="font-medium">
-                            {record.student.gender === "MALE"
-                              ? "Laki-laki"
-                              : "Perempuan"}
-                          </span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">
-                            Orang Tua:
-                          </span>
-                          <span className="font-medium">
-                            {record.student.parentName}
-                          </span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">
-                            No. Telp:
-                          </span>
-                          <span className="font-medium">
-                            {record.student.parentPhone}
-                          </span>
-                        </div>
-                      </div>
-                    </>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">
-                      Data siswa tidak tersedia
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
+          <div className="space-y-6">
+            {/* Meta & Settings */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Pengaturan Sesi</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Prioritas</Label>
+                  <Select
+                    defaultValue={record.priority}
+                    onValueChange={(v) => setValue("priority", v as any)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {COUNSELING_PRIORITIES.map((p) => (
+                        <SelectItem key={p.value} value={p.value}>
+                          {p.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              {/* Unit Card */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <School className="h-4 w-4" />
-                    Unit Pendidikan
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="font-medium">
-                    {record.unit?.name || "Tidak diketahui"}
-                  </p>
-                </CardContent>
-              </Card>
+                <div className="space-y-2">
+                  <Label htmlFor="scheduledAt">Jadwal</Label>
+                  <Input
+                    id="scheduledAt"
+                    type="datetime-local"
+                    {...register("scheduledAt")}
+                  />
+                </div>
 
-              {/* Counselor Card */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <User className="h-4 w-4" />
-                    Konselor
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="font-medium">
-                    {record.counselor?.name || "Tidak diketahui"}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Konselor yang ditugaskan menangani kasus ini
-                  </p>
-                </CardContent>
-              </Card>
+                <div className="space-y-2">
+                  <Label htmlFor="duration">Durasi (menit)</Label>
+                  <Input
+                    id="duration"
+                    type="number"
+                    {...register("duration", { valueAsNumber: true })}
+                  />
+                </div>
 
-              {/* Case Info Card */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Info Kasus</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Nomor Kasus:</span>
-                    <Badge variant="outline">{record.caseNumber}</Badge>
+                <div className="space-y-2">
+                  <Label htmlFor="location">Lokasi</Label>
+                  <Input
+                    id="location"
+                    {...register("location")}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between py-2 border-t mt-2">
+                  <div className="flex items-center gap-2">
+                    <Shield className="h-4 w-4 text-muted-foreground" />
+                    <Label htmlFor="confidential" className="cursor-pointer">Rahasia</Label>
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Dilaporkan:</span>
-                    <span>
-                      {new Date(record.reportedAt).toLocaleDateString("id-ID", {
-                        day: "numeric",
-                        month: "long",
-                        year: "numeric",
-                      })}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Sesi:</span>
-                    <span>{record.sessions?.length || 0} sesi</span>
-                  </div>
-                </CardContent>
-              </Card>
+                  <Switch
+                    id="confidential"
+                    checked={isConfidential}
+                    onCheckedChange={(v) => setValue("isConfidential", v)}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Actions */}
+            <div className="flex flex-col gap-3">
+              <Button
+                type="submit"
+                size="lg"
+                disabled={isSubmitting || updateMutation.isPending}
+              >
+                <Save className="h-4 w-4 mr-2" />
+                Simpan Perubahan
+              </Button>
+
+              <Button
+                type="button"
+                variant="outline"
+                asChild
+              >
+                <Link href={`/counseling/${id}`}>
+                  Batal
+                </Link>
+              </Button>
+
+              <Button
+                type="button"
+                variant="ghost"
+                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                onClick={handleDelete}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Hapus Sesi
+              </Button>
             </div>
           </div>
-        </form>
-      </Form>
-    </div>
+        </div>
+      </form>
+    </MainLayout>
   );
 }

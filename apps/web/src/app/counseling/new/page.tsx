@@ -36,7 +36,6 @@ import {
   type CreateCounselingInput,
 } from "@/hooks/use-counseling";
 import { useStudents } from "@/hooks/use-students";
-import { useUnits } from "@/hooks/use-units";
 import { useDebounce } from "@/hooks/use-debounce";
 
 export default function NewCounselingPage() {
@@ -57,10 +56,8 @@ export default function NewCounselingPage() {
     search: debouncedStudentSearch || undefined,
     limit: 10,
   });
-  const { data: unitsData } = useUnits();
 
   const students = studentsData?.data || [];
-  const units = unitsData || [];
 
   const createMutation = useCreateCounselingRecord();
 
@@ -90,18 +87,18 @@ export default function NewCounselingPage() {
         ...data,
         studentId: selectedStudent.id,
       });
-      toast.success("Catatan konseling berhasil dibuat");
+      toast.success("Sesi konseling berhasil dibuat");
       router.push("/counseling");
     } catch {
-      toast.error("Gagal membuat catatan konseling");
+      toast.error("Gagal membuat sesi konseling");
     }
   };
 
   return (
     <MainLayout>
       <PageHeader
-        title="Buat Catatan Konseling"
-        description="Catat kasus bimbingan konseling baru"
+        title="Buat Sesi Konseling"
+        description="Catat sesi bimbingan konseling baru"
         backHref="/counseling"
       />
 
@@ -114,7 +111,7 @@ export default function NewCounselingPage() {
               Informasi Siswa
             </CardTitle>
             <CardDescription>
-              Pilih siswa yang akan dibuat catatan konseling
+              Pilih siswa yang akan dikonseling
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -193,20 +190,20 @@ export default function NewCounselingPage() {
           </CardContent>
         </Card>
 
-        {/* Case Information */}
+        {/* Session Information */}
         <Card>
           <CardHeader>
-            <CardTitle>Informasi Kasus</CardTitle>
+            <CardTitle>Detail Sesi</CardTitle>
             <CardDescription>
-              Detail permasalahan atau kasus yang ditangani
+              Informasi mengenai sesi konseling
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="title">Judul Kasus *</Label>
+              <Label htmlFor="title">Judul Sesi *</Label>
               <Input
                 id="title"
-                placeholder="Ringkasan singkat masalah..."
+                placeholder="Topik utama konseling..."
                 {...register("title", { required: "Judul wajib diisi" })}
               />
               {errors.title && (
@@ -267,11 +264,40 @@ export default function NewCounselingPage() {
               </div>
             </div>
 
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="scheduledAt">Jadwal *</Label>
+                <Input
+                  id="scheduledAt"
+                  type="datetime-local"
+                  {...register("scheduledAt", { required: "Jadwal wajib diisi" })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="duration">Durasi (menit)</Label>
+                <Input
+                  id="duration"
+                  type="number"
+                  placeholder="60"
+                  {...register("duration", { valueAsNumber: true })}
+                />
+              </div>
+            </div>
+
             <div className="space-y-2">
-              <Label htmlFor="description">Deskripsi Kasus *</Label>
+              <Label htmlFor="location">Lokasi</Label>
+              <Input
+                id="location"
+                placeholder="Ruang BK, Online, dll"
+                {...register("location")}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="description">Deskripsi / Keluhan *</Label>
               <Textarea
                 id="description"
-                placeholder="Jelaskan detail permasalahan, kronologi, dan observasi awal..."
+                placeholder="Jelaskan detail permasalahan atau topik yang akan dibahas..."
                 rows={5}
                 {...register("description", {
                   required: "Deskripsi wajib diisi",
@@ -283,47 +309,22 @@ export default function NewCounselingPage() {
                 </p>
               )}
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="reportedBy">Dilaporkan Oleh</Label>
-              <Input
-                id="reportedBy"
-                placeholder="Nama pelapor (guru, wali kelas, dll)"
-                {...register("reportedBy")}
-              />
-            </div>
           </CardContent>
         </Card>
 
-        {/* Unit & Confidentiality */}
+        {/* Confidentiality */}
         <Card>
           <CardHeader>
-            <CardTitle>Pengaturan</CardTitle>
+            <CardTitle>Privasi</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>Unit *</Label>
-              <Select onValueChange={(v) => setValue("unitId", v)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Pilih unit" />
-                </SelectTrigger>
-                <SelectContent>
-                  {units.map((unit) => (
-                    <SelectItem key={unit.id} value={unit.id}>
-                      {unit.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
             <div className="flex items-center justify-between p-4 border rounded-lg">
               <div className="flex items-center gap-3">
                 <Shield
                   className={`h-5 w-5 ${isConfidential ? "text-amber-500" : "text-muted-foreground"}`}
                 />
                 <div>
-                  <p className="font-medium">Kasus Rahasia</p>
+                  <p className="font-medium">Sesi Rahasia</p>
                   <p className="text-sm text-muted-foreground">
                     Hanya konselor dan admin yang bisa melihat
                   </p>
@@ -339,7 +340,7 @@ export default function NewCounselingPage() {
               <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
                 <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5" />
                 <p className="text-sm text-amber-800">
-                  Kasus ini akan ditandai sebagai rahasia. Data hanya dapat
+                  Sesi ini akan ditandai sebagai rahasia. Data hanya dapat
                   diakses oleh konselor dan admin yang berwenang.
                 </p>
               </div>

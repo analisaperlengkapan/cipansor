@@ -53,12 +53,6 @@ describe('CounselingService', () => {
     unitId: 'unit-1',
   };
 
-  const mockAdmin = {
-    sub: 'admin-1',
-    role: UserRole.SUPER_ADMIN,
-    unitId: null,
-  };
-
   describe('createSession', () => {
     const input = {
       studentId: 'student-1',

@@ -8,8 +8,7 @@ export type CounselingCategory =
   | "PERSONAL" // Masalah pribadi
   | "CAREER" // Bimbingan karir
   | "FAMILY" // Masalah keluarga
-  | "BEHAVIOR" // Masalah perilaku
-  | "RELIGIOUS" // Bimbingan keagamaan
+  | "SPIRITUAL" // Bimbingan ibadah, akhlak, spiritual (Replacing BEHAVIOR & RELIGIOUS)
   | "OTHER";
 
 export type CounselingStatus =
@@ -71,8 +70,8 @@ export interface CounselingSession {
 }
 
 export interface CounselingStats {
-  totalSessions: number; // Changed from total
-  byStatus: { status: CounselingStatus; count: number }[]; // Changed to array
+  totalSessions: number;
+  byStatus: { status: CounselingStatus; count: number }[];
   byCategory: { category: CounselingCategory; count: number }[];
   byPriority: { priority: CounselingPriority; count: number }[];
 }
@@ -154,15 +153,8 @@ export const COUNSELING_CATEGORIES: Array<{
     description: "Masalah keluarga, orang tua, ekonomi",
   },
   {
-    value: "BEHAVIOR",
-    label: "Perilaku",
-    icon: "⚠️",
-    color: "bg-red-100 text-red-800",
-    description: "Masalah perilaku, disiplin, kebiasaan buruk",
-  },
-  {
-    value: "RELIGIOUS",
-    label: "Keagamaan",
+    value: "SPIRITUAL",
+    label: "Spiritual",
     icon: "📿",
     color: "bg-emerald-100 text-emerald-800",
     description: "Bimbingan ibadah, akhlak, spiritual",

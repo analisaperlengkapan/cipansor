@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { prisma } from '../../lib/prisma';
 import { perencanaanService } from './perencanaan.service';
+import { Prisma } from '@prisma/client';
 
 // Mock external dependencies
 vi.mock('../../lib/prisma', () => ({
@@ -28,6 +29,9 @@ vi.mock('../../lib/prisma', () => ({
       create: vi.fn(),
       update: vi.fn(),
       delete: vi.fn(),
+    },
+    journalEntry: {
+      groupBy: vi.fn(),
     },
   },
 }));
@@ -160,6 +164,56 @@ describe('Perencanaan Service', () => {
           priority: 'HIGH',
         }),
         include: expect.any(Object),
+      });
+    });
+  });
+
+  describe('Realization', () => {
+    it('should calculate plan realization from journal entries', async () => {
+      const planId = 'plan-1';
+      const plan = {
+        id: planId,
+        startDate: new Date('2024-01-01'),
+        endDate: new Date('2024-12-31'),
+        unitId: 'unit-1',
+        budget: new Prisma.Decimal(1000),
+        objectives: [
+          {
+            activities: [
+              {
+                id: 'act-1',
+                title: 'Activity 1',
+                budget: new Prisma.Decimal(500),
+                accountCodeId: 'acc-1',
+                account: { name: 'Expense 1', code: '501' },
+              },
+            ],
+          },
+        ],
+      };
+
+      vi.mocked(prisma.strategicPlan.findUnique).mockResolvedValue(plan as any);
+
+      vi.mocked(prisma.journalEntry.groupBy).mockResolvedValue([
+        {
+          accountId: 'acc-1',
+          _sum: { debit: new Prisma.Decimal(200), credit: new Prisma.Decimal(0) },
+        },
+      ] as any);
+
+      const result = await perencanaanService.getPlanRealization(planId);
+
+      expect(result).toEqual({
+        planTotalBudget: 1000,
+        activitiesTotalBudget: 500,
+        realizedAmount: 200,
+        details: [
+          expect.objectContaining({
+            activityId: 'act-1',
+            realizedAmount: 200,
+            variance: 300,
+          }),
+        ],
       });
     });
   });

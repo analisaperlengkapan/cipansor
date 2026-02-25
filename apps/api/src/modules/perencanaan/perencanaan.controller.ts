@@ -52,6 +52,13 @@ export const getPlan = asyncHandler(async (req: Request, res: Response) => {
   res.json({ success: true, data: plan });
 });
 
+export const getPlanRealization = asyncHandler(async (req: Request, res: Response) => {
+  const plan = await perencanaanService.getPlanRealization(req.params.id);
+  if (!plan) throw Errors.notFound('Plan not found');
+
+  res.json({ success: true, data: plan });
+});
+
 export const createPlan = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user?.sub;
   if (!userId) throw Errors.unauthorized('User context missing');

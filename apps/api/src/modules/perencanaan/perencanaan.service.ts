@@ -196,6 +196,7 @@ export class PerencanaanService {
     startDate?: string;
     endDate?: string;
     budget?: number;
+    accountCodeId?: string;
     priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
   }) {
     return prisma.planActivity.create({
@@ -208,19 +209,24 @@ export class PerencanaanService {
         endDate: data.endDate ? new Date(data.endDate) : undefined,
         budget: data.budget ? new Prisma.Decimal(data.budget) : undefined,
         priority: data.priority,
+        account: data.accountCodeId ? { connect: { id: data.accountCodeId } } : undefined,
       },
       include: {
         pic: { select: { id: true, name: true } },
+        account: { select: { id: true, code: true, name: true } },
       },
     });
   }
 
   async updateActivity(id: string, data: any) {
-    const { picId, ...rest } = data;
+    const { picId, accountCodeId, ...rest } = data;
     const updateData: any = { ...rest };
 
     if (picId) updateData.pic = { connect: { id: picId } };
     else if (picId === null) updateData.pic = { disconnect: true };
+
+    if (accountCodeId) updateData.account = { connect: { id: accountCodeId } };
+    else if (accountCodeId === null) updateData.account = { disconnect: true };
 
     if (rest.startDate) updateData.startDate = new Date(rest.startDate);
     if (rest.endDate) updateData.endDate = new Date(rest.endDate);
@@ -229,8 +235,102 @@ export class PerencanaanService {
     return prisma.planActivity.update({
       where: { id },
       data: updateData,
-      include: { pic: { select: { id: true, name: true } } },
+      include: {
+        pic: { select: { id: true, name: true } },
+        account: { select: { id: true, code: true, name: true } },
+      },
     });
+  }
+
+  // ==================== REALIZATION ====================
+
+  async getPlanRealization(planId: string) {
+    // 1. Get Plan details
+    const plan = await prisma.strategicPlan.findUnique({
+      where: { id: planId },
+      include: {
+        objectives: {
+          include: {
+            activities: {
+              where: { accountCodeId: { not: null } },
+              include: { account: true },
+            },
+          },
+        },
+      },
+    });
+
+    if (!plan) return null;
+
+    const startDate = plan.startDate;
+    const endDate = plan.endDate;
+    const unitId = plan.unitId;
+
+    // 2. Extract relevant account IDs
+    const activitiesWithAccounts = plan.objectives.flatMap((o) => o.activities);
+    const accountIds = [...new Set(activitiesWithAccounts.map((a) => a.accountCodeId as string))];
+
+    if (accountIds.length === 0) {
+      return {
+        planTotalBudget: plan.budget?.toNumber() || 0,
+        activitiesTotalBudget: 0,
+        realizedAmount: 0,
+        details: [],
+      };
+    }
+
+    // 3. Aggregate Journal Entries for these accounts in the plan period
+    const aggregations = await prisma.journalEntry.groupBy({
+      by: ['accountId'],
+      where: {
+        unitId,
+        accountId: { in: accountIds },
+        date: {
+          gte: startDate,
+          lte: endDate,
+        },
+      },
+      _sum: {
+        debit: true,
+        credit: true,
+      },
+    });
+
+    // 4. Map results
+    const realizationMap = new Map<string, number>();
+
+    aggregations.forEach((agg) => {
+      // For expenses (Debit normal), used = debit - credit
+      // Assuming these are expense accounts. If revenue, it would be credit - debit.
+      // We'll assume standard expense behavior for budgeting.
+      const used = (agg._sum.debit?.toNumber() || 0) - (agg._sum.credit?.toNumber() || 0);
+      realizationMap.set(agg.accountId, used);
+    });
+
+    // 5. Construct details per activity
+    const details = activitiesWithAccounts.map((activity) => {
+      const realized = realizationMap.get(activity.accountCodeId!) || 0;
+      return {
+        activityId: activity.id,
+        activityTitle: activity.title,
+        accountId: activity.accountCodeId,
+        accountName: activity.account?.name,
+        accountCode: activity.account?.code,
+        plannedBudget: activity.budget?.toNumber() || 0,
+        realizedAmount: realized,
+        variance: (activity.budget?.toNumber() || 0) - realized,
+      };
+    });
+
+    const activitiesTotalBudget = details.reduce((sum, d) => sum + d.plannedBudget, 0);
+    const totalRealized = details.reduce((sum, d) => sum + d.realizedAmount, 0);
+
+    return {
+      planTotalBudget: plan.budget?.toNumber() || 0,
+      activitiesTotalBudget,
+      realizedAmount: totalRealized,
+      details,
+    };
   }
 
   async deleteActivity(id: string) {

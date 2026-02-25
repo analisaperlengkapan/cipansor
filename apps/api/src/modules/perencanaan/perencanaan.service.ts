@@ -71,6 +71,7 @@ export class PerencanaanService {
             activities: {
               include: {
                 pic: { select: { id: true, name: true } },
+                account: { select: { id: true, code: true, name: true } },
               },
               orderBy: { createdAt: 'asc' },
             },

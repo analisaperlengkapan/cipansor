@@ -76,7 +76,7 @@ export function ActivityForm({ objectiveId, planId, initialData, onSuccess, onCa
         ...values,
         startDate: values.startDate ? new Date(values.startDate).toISOString() : undefined,
         endDate: values.endDate ? new Date(values.endDate).toISOString() : undefined,
-        accountCodeId: values.accountCodeId && values.accountCodeId !== "no-account" ? values.accountCodeId : null,
+        accountCodeId: values.accountCodeId || null,
       };
 
       if (isEdit) {

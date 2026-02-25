@@ -53,13 +53,6 @@ export const getPlan = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const getPlanRealization = asyncHandler(async (req: Request, res: Response) => {
-  const planData = await perencanaanService.getPlanById(req.params.id);
-  if (!planData) throw Errors.notFound('Plan not found');
-
-  if (!isPrivileged(req.user?.role) && planData.unitId !== req.user?.unitId) {
-    throw Errors.forbidden('Access denied');
-  }
-
   const plan = await perencanaanService.getPlanRealization(req.params.id);
   if (!plan) throw Errors.notFound('Plan not found');
 

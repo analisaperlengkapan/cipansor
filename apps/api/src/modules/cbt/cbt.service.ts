@@ -171,6 +171,50 @@ export class CBTService {
 
   // --- Exam Attempts (Student) ---
 
+  static async getStudentExams(studentId: string) {
+    // 1. Get student's active class
+    const enrollment = await prisma.classEnrollment.findFirst({
+      where: {
+        studentId,
+        status: 'active',
+      },
+      include: {
+        class: true,
+      },
+    });
+
+    if (!enrollment) {
+      return []; // No active class, no exams
+    }
+
+    // 2. Find exams scheduled for this class
+    // TODO: Add logic for specific student assignments if needed (not just class)
+    const exams = await prisma.exam.findMany({
+      where: {
+        classId: enrollment.classId,
+        status: { in: ['SCHEDULED', 'ONGOING', 'COMPLETED', 'GRADED'] }, // Show upcoming and past
+      },
+      include: {
+        subject: {
+          select: { name: true, code: true },
+        },
+        attempts: {
+          where: { studentId },
+          take: 1,
+          select: { status: true, score: true, finishedAt: true },
+        },
+      },
+      orderBy: { scheduledAt: 'desc' },
+    });
+
+    return exams.map((exam) => ({
+      ...exam,
+      attemptStatus: exam.attempts[0]?.status || null,
+      score: exam.attempts[0]?.score || null,
+      finishedAt: exam.attempts[0]?.finishedAt || null,
+    }));
+  }
+
   static async startExamAttempt(examId: string, studentId: string) {
     // 1. Check if exam exists and is open
     const exam = await prisma.exam.findUnique({
@@ -186,9 +230,27 @@ export class CBTService {
     if (!exam.questionBank)
       throw Errors.badRequest('This exam is not configured for CBT (no Question Bank)');
 
-    // Check timing (simplified, ideally check scheduledAt + duration)
-    // For now, allow starting if status is not COMPLETED/GRADED (assuming generic exam status)
-    // Or check if current time is within window.
+    // 2. Validate Student Eligibility (Same Class)
+    const enrollment = await prisma.classEnrollment.findFirst({
+      where: {
+        studentId,
+        status: 'active',
+        classId: exam.classId,
+      },
+    });
+
+    if (!enrollment) {
+      throw Errors.forbidden('You are not enrolled in the class for this exam');
+    }
+
+    // 3. Check Timing
+    const now = new Date();
+    // Assuming simple logic: exam must be 'SCHEDULED' or 'ONGOING' and start time passed
+    // Ideally we check if (now >= scheduledAt && now <= scheduledAt + duration)
+    // For MVP, just check if it's not DRAFT.
+    if (exam.status === 'DRAFT') {
+      throw Errors.forbidden('Exam is not yet published');
+    }
 
     // Check if attempt already exists
     const existingAttempt = await prisma.examAttempt.findUnique({
@@ -201,9 +263,7 @@ export class CBTService {
       if (existingAttempt.status === 'IN_PROGRESS') {
         return existingAttempt; // Resume
       }
-      // If expired or completed, maybe allow retake? For now, block.
-      // throw Errors.badRequest('You have already taken this exam');
-      // Let's just return it, frontend can handle status.
+      // If completed, check if retake is allowed (not implemented yet, default NO)
       return existingAttempt;
     }
 
@@ -225,6 +285,7 @@ export class CBTService {
         answers: true,
         exam: {
           include: {
+            subject: { select: { name: true } },
             questionBank: {
               include: {
                 questions: {
@@ -234,7 +295,7 @@ export class CBTService {
                     content: true,
                     options: true,
                     points: true,
-                    // NO ANSWER KEY
+                    // NO ANSWER KEY sent to frontend!
                   },
                   orderBy: { order: 'asc' },
                 },
@@ -251,7 +312,17 @@ export class CBTService {
     return attempt;
   }
 
-  static async submitAnswer(attemptId: string, questionId: string, answer: any) {
+  static async submitAnswer(attemptId: string, questionId: string, answer: any, studentId: string) {
+    // Verify attempt ownership
+    const attempt = await prisma.examAttempt.findUnique({
+      where: { id: attemptId },
+      select: { studentId: true, status: true },
+    });
+
+    if (!attempt) throw Errors.notFound('Attempt not found');
+    if (attempt.studentId !== studentId) throw Errors.forbidden('Access denied');
+    if (attempt.status !== 'IN_PROGRESS') throw Errors.badRequest('Exam attempt is closed');
+
     // Upsert answer
     return prisma.examAnswer.upsert({
       where: {
@@ -268,7 +339,7 @@ export class CBTService {
     });
   }
 
-  static async finishExamAttempt(attemptId: string) {
+  static async finishExamAttempt(attemptId: string, studentId: string) {
     const attempt = await prisma.examAttempt.findUnique({
       where: { id: attemptId },
       include: {
@@ -280,10 +351,12 @@ export class CBTService {
     });
 
     if (!attempt) throw Errors.notFound('Attempt not found');
+    if (attempt.studentId !== studentId) throw Errors.forbidden('Access denied');
     if (attempt.status !== 'IN_PROGRESS') return attempt;
 
     // Auto grading
     let totalScore = 0;
+    let maxPossibleScore = 0;
     const questions = attempt.exam.questionBank?.questions || [];
 
     const gradedAnswers = [];
@@ -292,13 +365,9 @@ export class CBTService {
       const studentAnswer = attempt.answers.find((a) => a.questionId === question.id);
       let isCorrect = false;
       let score = 0;
+      maxPossibleScore += question.points;
 
       if (question.type === 'MULTIPLE_CHOICE' || question.type === 'TRUE_FALSE') {
-        // Compare answerKey. Assuming answerKey is { optionId: "..." } or simple string
-        // studentAnswer.answer should match structure.
-        // Simple logic: if JSON stringify matches (careful with order) or direct value check.
-        // Assuming answerKey is just the ID of the correct option.
-
         const key = question.answerKey as any; // e.g. "opt-1"
         const studentAns = studentAnswer?.answer as any; // e.g. "opt-1"
 
@@ -307,7 +376,7 @@ export class CBTService {
           score = question.points;
         }
       }
-      // Essay needs manual grading, score remains 0 or null.
+      // Essay needs manual grading, score remains 0.
 
       if (studentAnswer) {
         gradedAnswers.push(
@@ -316,6 +385,9 @@ export class CBTService {
             data: { isCorrect, score },
           })
         );
+      } else {
+        // Create empty answer record for unanswered questions if needed, or just ignore.
+        // Better to verify everything is accounted for.
       }
 
       totalScore += score;
@@ -323,19 +395,40 @@ export class CBTService {
 
     await prisma.$transaction(gradedAnswers);
 
+    // Calculate final score based on Exam maxScore scaling
+    // Exam maxScore is typically 100.
+    // Raw score = totalScore / maxPossibleScore * exam.maxScore
+    let finalScore = new Prisma.Decimal(totalScore);
+    if (maxPossibleScore > 0) {
+        const scale = Number(attempt.exam.maxScore) / maxPossibleScore;
+        finalScore = new Prisma.Decimal(totalScore * scale);
+    }
+
     // Update attempt
     const finishedAttempt = await prisma.examAttempt.update({
       where: { id: attemptId },
       data: {
         status: 'COMPLETED',
         finishedAt: new Date(),
-        score: new Prisma.Decimal(totalScore),
+        score: finalScore,
       },
     });
 
-    // Optionally update Gradebook if configured
-    // This would require checking if a Grade entry exists or creating one.
-    // For now, we store score in Attempt. Syncing to Gradebook can be a separate step or trigger.
+    // Automatically create a Grade entry?
+    // Doing it here ensures integration with Report Card.
+    await prisma.grade.create({
+        data: {
+            studentId: attempt.studentId,
+            examId: attempt.examId,
+            academicYearId: attempt.exam.academicYearId,
+            subjectId: attempt.exam.subjectId,
+            type: 'EXAM',
+            score: finalScore,
+            maxScore: attempt.exam.maxScore,
+            gradedById: attempt.exam.teacherId, // Auto-graded but attributed to teacher
+            notes: 'Auto-graded from CBT',
+        }
+    });
 
     return finishedAttempt;
   }

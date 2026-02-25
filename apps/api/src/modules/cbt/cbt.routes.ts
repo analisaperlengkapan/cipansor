@@ -53,6 +53,15 @@ router.delete(
 );
 
 // --- Student Routes ---
+
+// List Student Exams
+router.get(
+  '/exams/student',
+  authenticate,
+  authorize(UserRole.STUDENT),
+  CBTController.getStudentExams
+);
+
 // Exam Taking
 // Start Exam (examId is the ID of the scheduled Exam)
 router.post(

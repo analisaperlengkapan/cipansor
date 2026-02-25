@@ -158,6 +158,9 @@ describe('CBT Service', () => {
         status: 'IN_PROGRESS',
         exam: {
           maxScore: new Prisma.Decimal(100),
+          academicYearId: 'ay-1',
+          subjectId: 'subj-1',
+          teacher: { userId: 'user-teacher-1' },
           questionBank: {
             questions: [
               { id: 'q-1', type: 'MULTIPLE_CHOICE', answerKey: 'opt-A', points: 10 },

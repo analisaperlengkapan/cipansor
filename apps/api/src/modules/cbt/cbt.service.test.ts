@@ -76,8 +76,8 @@ describe('CBT Service', () => {
 
           const result = await CBTService.getStudentExams('std-1');
 
-          expect(prisma.classEnrollment.findFirst).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ studentId: 'std-1' }) }));
-          expect(prisma.exam.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ classId: 'class-1' }) }));
+          expect(prisma.classEnrollment.findFirst).toHaveBeenCalledWith(expect.objectContaining({ studentId: 'std-1' }));
+          expect(prisma.exam.findMany).toHaveBeenCalledWith(expect.objectContaining({ classId: 'class-1' }));
           expect(result).toHaveLength(1);
       });
 
@@ -158,9 +158,6 @@ describe('CBT Service', () => {
         status: 'IN_PROGRESS',
         exam: {
           maxScore: new Prisma.Decimal(100),
-          academicYearId: 'ay-1',
-          subjectId: 'subj-1',
-          teacher: { userId: 'user-teacher-1' },
           questionBank: {
             questions: [
               { id: 'q-1', type: 'MULTIPLE_CHOICE', answerKey: 'opt-A', points: 10 },

@@ -340,70 +340,70 @@ export class CBTService {
   }
 
   static async finishExamAttempt(attemptId: string, studentId: string) {
-    const attempt = await prisma.examAttempt.findUnique({
-      where: { id: attemptId },
-      include: {
-        exam: {
-          include: {
-            questionBank: { include: { questions: true } },
-            teacher: { select: { userId: true } },
-          },
-        },
-        answers: true,
-      },
-    });
-
-    if (!attempt) throw Errors.notFound('Attempt not found');
-    if (attempt.studentId !== studentId) throw Errors.forbidden('Access denied');
-    if (attempt.status !== 'IN_PROGRESS') return attempt;
-
-    // Auto grading
-    let totalScore = 0;
-    let maxPossibleScore = 0;
-    const questions = attempt.exam.questionBank?.questions || [];
-
-    // Calculate scores and prepare data
-    const gradedAnswersData = [];
-
-    for (const question of questions) {
-      const studentAnswer = attempt.answers.find((a) => a.questionId === question.id);
-      let isCorrect = false;
-      let score = 0;
-      maxPossibleScore += question.points;
-
-      if (question.type === 'MULTIPLE_CHOICE' || question.type === 'TRUE_FALSE') {
-        const key = question.answerKey as any; // e.g. "opt-1"
-        const studentAns = studentAnswer?.answer as any; // e.g. "opt-1"
-
-        if (key && studentAns && key === studentAns) {
-          isCorrect = true;
-          score = question.points;
-        }
-      }
-      // Essay needs manual grading, score remains 0.
-
-      if (studentAnswer) {
-        gradedAnswersData.push({
-          id: studentAnswer.id,
-          data: { isCorrect, score },
-        });
-      }
-
-      totalScore += score;
-    }
-
-    // Calculate final score based on Exam maxScore scaling
-    // Exam maxScore is typically 100.
-    // Raw score = totalScore / maxPossibleScore * exam.maxScore
-    let finalScore = new Prisma.Decimal(totalScore);
-    if (maxPossibleScore > 0) {
-      const scale = Number(attempt.exam.maxScore) / maxPossibleScore;
-      finalScore = new Prisma.Decimal(totalScore * scale);
-    }
-
-    // Transactional update
     return await prisma.$transaction(async (tx) => {
-      // 1. Update individual answers
+      // 1. Fetch attempt inside transaction to lock and prevent race conditions
+      const attempt = await tx.examAttempt.findUnique({
+        where: { id: attemptId },
+        include: {
+          exam: {
+            include: {
+              questionBank: { include: { questions: true } },
+              teacher: { select: { userId: true } },
+            },
+          },
+          answers: true,
+        },
+      });
+
+      if (!attempt) throw Errors.notFound('Attempt not found');
+      if (attempt.studentId !== studentId) throw Errors.forbidden('Access denied');
+      if (attempt.status !== 'IN_PROGRESS') return attempt;
+
+      // Auto grading
+      let totalScore = 0;
+      let maxPossibleScore = 0;
+      const questions = attempt.exam.questionBank?.questions || [];
+
+      // Calculate scores and prepare data
+      const gradedAnswersData = [];
+
+      for (const question of questions) {
+        const studentAnswer = attempt.answers.find((a) => a.questionId === question.id);
+        let isCorrect = false;
+        let score = 0;
+        maxPossibleScore += question.points;
+
+        if (question.type === 'MULTIPLE_CHOICE' || question.type === 'TRUE_FALSE') {
+          const key = question.answerKey as any; // e.g. "opt-1"
+          const studentAns = studentAnswer?.answer as any; // e.g. "opt-1"
+
+          if (key && studentAns && key === studentAns) {
+            isCorrect = true;
+            score = question.points;
+          }
+        }
+        // Essay needs manual grading, score remains 0.
+
+        if (studentAnswer) {
+          gradedAnswersData.push({
+            id: studentAnswer.id,
+            data: { isCorrect, score },
+          });
+        }
+
+        totalScore += score;
+      }
+
+      // Calculate final score based on Exam maxScore scaling
+      // Exam maxScore is typically 100.
+      // Raw score = totalScore / maxPossibleScore * exam.maxScore
+      let finalScore = new Prisma.Decimal(totalScore);
+      if (maxPossibleScore > 0) {
+        const scale = Number(attempt.exam.maxScore) / maxPossibleScore;
+        finalScore = new Prisma.Decimal(totalScore * scale);
+      }
+
+      // 2. Update individual answers
       for (const item of gradedAnswersData) {
         await tx.examAnswer.update({
           where: { id: item.id },
@@ -411,7 +411,7 @@ export class CBTService {
         });
       }
 
-      // 2. Update Attempt
+      // 3. Update Attempt
       const finishedAttempt = await tx.examAttempt.update({
         where: { id: attemptId },
         data: {
@@ -421,7 +421,7 @@ export class CBTService {
         },
       });
 
-      // 3. Create Grade
+      // 4. Create Grade
       await tx.grade.create({
         data: {
           studentId: attempt.studentId,

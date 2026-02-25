@@ -13,41 +13,34 @@ export type CounselingCategory =
   | "OTHER";
 
 export type CounselingStatus =
-  | "OPEN" // Kasus masih terbuka
+  | "SCHEDULED" // Terjadwal
   | "IN_PROGRESS" // Sedang ditangani
-  | "FOLLOW_UP" // Perlu follow up
-  | "RESOLVED" // Selesai
-  | "REFERRED"; // Dirujuk ke pihak lain
+  | "COMPLETED" // Selesai
+  | "CANCELLED" // Dibatalkan
+  | "NO_SHOW"; // Tidak hadir
 
 export type CounselingPriority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
 
-export type SessionType =
-  | "INDIVIDUAL" // Konseling individu
-  | "GROUP" // Konseling kelompok
-  | "PARENT" // Konseling dengan orang tua
-  | "HOME_VISIT" // Kunjungan rumah
-  | "REFERRAL"; // Rujukan eksternal
-
-export interface CounselingRecord {
+export interface CounselingSession {
   id: string;
-  caseNumber: string; // Auto-generated: BK-2024-001
   studentId: string;
   student?: {
     id: string;
     nis: string;
-    name: string;
-    gender: string;
+    user?: {
+      name: string;
+    };
     currentClass?: {
       id: string;
       name: string;
-    };
-    parentName: string;
-    parentPhone: string;
+    } | null;
   };
-  counselorId: string;
+  counselorId?: string;
   counselor?: {
     id: string;
-    name: string;
+    user?: {
+      name: string;
+    };
   };
   category: CounselingCategory;
   title: string;
@@ -55,11 +48,14 @@ export interface CounselingRecord {
   priority: CounselingPriority;
   status: CounselingStatus;
   isConfidential: boolean;
-  reportedBy?: string;
-  reportedAt: string;
-  resolvedAt?: string;
-  resolutionNotes?: string;
-  sessions: CounselingSession[];
+  scheduledAt: string;
+  duration?: number;
+  location?: string;
+  summary?: string;
+  recommendations?: string;
+  startedAt?: string;
+  endedAt?: string;
+
   unitId: string;
   unit?: {
     id: string;
@@ -67,39 +63,18 @@ export interface CounselingRecord {
   };
   createdAt: string;
   updatedAt: string;
-}
 
-export interface CounselingSession {
-  id: string;
-  recordId: string;
-  sessionNumber: number;
-  type: SessionType;
-  date: string;
-  startTime: string;
-  endTime: string;
-  location?: string;
-  attendees: string[]; // Names of people who attended
-  summary: string;
-  findings?: string;
-  recommendations?: string;
-  followUpDate?: string;
-  followUpNotes?: string;
-  parentNotified: boolean;
-  parentNotifiedAt?: string;
-  attachments?: string[];
-  createdBy: string;
-  createdAt: string;
-  updatedAt: string;
+  _count?: {
+    notes: number;
+    referrals: number;
+  };
 }
 
 export interface CounselingStats {
-  total: number;
-  open: number;
-  inProgress: number;
-  resolved: number;
-  byCategory: Record<CounselingCategory, number>;
-  byPriority: Record<CounselingPriority, number>;
-  avgResolutionDays: number;
+  totalSessions: number; // Changed from total
+  byStatus: { status: CounselingStatus; count: number }[]; // Changed to array
+  byCategory: { category: CounselingCategory; count: number }[];
+  byPriority: { priority: CounselingPriority; count: number }[];
 }
 
 export interface CounselingListParams {
@@ -122,31 +97,17 @@ export interface CreateCounselingInput {
   title: string;
   description: string;
   priority: CounselingPriority;
+  scheduledAt: string;
+  duration?: number;
+  location?: string;
   isConfidential?: boolean;
-  reportedBy?: string;
-  unitId: string;
 }
 
 export interface UpdateCounselingInput extends Partial<CreateCounselingInput> {
   id: string;
   status?: CounselingStatus;
-  resolutionNotes?: string;
-}
-
-export interface CreateSessionInput {
-  recordId: string;
-  type: SessionType;
-  date: string;
-  startTime: string;
-  endTime: string;
-  location?: string;
-  attendees: string[];
-  summary: string;
-  findings?: string;
+  summary?: string;
   recommendations?: string;
-  followUpDate?: string;
-  followUpNotes?: string;
-  parentNotified?: boolean;
 }
 
 // Category config
@@ -220,15 +181,11 @@ export const COUNSELING_STATUSES: Array<{
   label: string;
   color: string;
 }> = [
-  { value: "OPEN", label: "Terbuka", color: "bg-yellow-100 text-yellow-800" },
+  { value: "SCHEDULED", label: "Terjadwal", color: "bg-yellow-100 text-yellow-800" },
   { value: "IN_PROGRESS", label: "Proses", color: "bg-blue-100 text-blue-800" },
-  {
-    value: "FOLLOW_UP",
-    label: "Follow Up",
-    color: "bg-purple-100 text-purple-800",
-  },
-  { value: "RESOLVED", label: "Selesai", color: "bg-green-100 text-green-800" },
-  { value: "REFERRED", label: "Dirujuk", color: "bg-gray-100 text-gray-800" },
+  { value: "COMPLETED", label: "Selesai", color: "bg-green-100 text-green-800" },
+  { value: "CANCELLED", label: "Batal", color: "bg-gray-100 text-gray-800" },
+  { value: "NO_SHOW", label: "Tidak Hadir", color: "bg-red-100 text-red-800" },
 ];
 
 export const COUNSELING_PRIORITIES: Array<{
@@ -242,24 +199,12 @@ export const COUNSELING_PRIORITIES: Array<{
   { value: "URGENT", label: "Urgent", color: "bg-red-100 text-red-800" },
 ];
 
-export const SESSION_TYPES: Array<{
-  value: SessionType;
-  label: string;
-  icon: string;
-}> = [
-  { value: "INDIVIDUAL", label: "Konseling Individu", icon: "👤" },
-  { value: "GROUP", label: "Konseling Kelompok", icon: "👥" },
-  { value: "PARENT", label: "Konseling Orang Tua", icon: "👨‍👩‍👧" },
-  { value: "HOME_VISIT", label: "Kunjungan Rumah", icon: "🏠" },
-  { value: "REFERRAL", label: "Rujukan Eksternal", icon: "🏥" },
-];
-
 // Hooks
 export function useCounselingRecords(params: CounselingListParams = {}) {
   return useQuery({
     queryKey: ["counseling-records", params],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<CounselingRecord>>(
+      const response = await api.get<PaginatedResponse<CounselingSession>>(
         "/counseling",
         { params },
       );
@@ -272,7 +217,7 @@ export function useCounselingRecord(id: string) {
   return useQuery({
     queryKey: ["counseling-records", id],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<CounselingRecord>>(
+      const response = await api.get<ApiResponse<CounselingSession>>(
         `/counseling/${id}`,
       );
       return response.data.data;
@@ -286,7 +231,7 @@ export function useCounselingStats(unitId?: string) {
     queryKey: ["counseling-stats", unitId],
     queryFn: async () => {
       const response = await api.get<ApiResponse<CounselingStats>>(
-        "/counseling/stats",
+        "/counseling/statistics",
         {
           params: { unitId },
         },
@@ -300,8 +245,8 @@ export function useStudentCounselingHistory(studentId: string) {
   return useQuery({
     queryKey: ["student-counseling-history", studentId],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<CounselingRecord[]>>(
-        `/counseling/student/${studentId}`,
+      const response = await api.get<ApiResponse<CounselingSession[]>>(
+        `/counseling/students/${studentId}/history`,
       );
       return response.data.data;
     },
@@ -314,7 +259,7 @@ export function useCreateCounselingRecord() {
 
   return useMutation({
     mutationFn: async (data: CreateCounselingInput) => {
-      const response = await api.post<ApiResponse<CounselingRecord>>(
+      const response = await api.post<ApiResponse<CounselingSession>>(
         "/counseling",
         data,
       );
@@ -332,38 +277,9 @@ export function useUpdateCounselingRecord() {
 
   return useMutation({
     mutationFn: async ({ id, ...data }: UpdateCounselingInput) => {
-      const response = await api.put<ApiResponse<CounselingRecord>>(
+      const response = await api.put<ApiResponse<CounselingSession>>(
         `/counseling/${id}`,
         data,
-      );
-      return response.data.data;
-    },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["counseling-records"] });
-      queryClient.invalidateQueries({
-        queryKey: ["counseling-records", variables.id],
-      });
-      queryClient.invalidateQueries({ queryKey: ["counseling-stats"] });
-    },
-  });
-}
-
-export function useResolveCounselingRecord() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({
-      id,
-      resolutionNotes,
-    }: {
-      id: string;
-      resolutionNotes: string;
-    }) => {
-      const response = await api.post<ApiResponse<CounselingRecord>>(
-        `/counseling/${id}/resolve`,
-        {
-          resolutionNotes,
-        },
       );
       return response.data.data;
     },
@@ -391,53 +307,6 @@ export function useDeleteCounselingRecord() {
   });
 }
 
-// Session hooks
-export function useAddCounselingSession() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (data: CreateSessionInput) => {
-      const response = await api.post<ApiResponse<CounselingSession>>(
-        `/counseling/${data.recordId}/sessions`,
-        data,
-      );
-      return response.data.data;
-    },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: ["counseling-records", variables.recordId],
-      });
-    },
-  });
-}
-
-export function useNotifyParent() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({
-      recordId,
-      message,
-    }: {
-      recordId: string;
-      message: string;
-    }) => {
-      const response = await api.post<ApiResponse<void>>(
-        `/counseling/${recordId}/notify-parent`,
-        {
-          message,
-        },
-      );
-      return response.data;
-    },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: ["counseling-records", variables.recordId],
-      });
-    },
-  });
-}
-
 // Helper functions
 export function getCounselingCategoryConfig(category: CounselingCategory) {
   return COUNSELING_CATEGORIES.find((c) => c.value === category);
@@ -449,8 +318,4 @@ export function getCounselingStatusConfig(status: CounselingStatus) {
 
 export function getCounselingPriorityConfig(priority: CounselingPriority) {
   return COUNSELING_PRIORITIES.find((p) => p.value === priority);
-}
-
-export function getCounselingSessionTypeConfig(type: SessionType) {
-  return SESSION_TYPES.find((t) => t.value === type);
 }

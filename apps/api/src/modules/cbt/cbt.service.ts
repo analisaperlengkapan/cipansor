@@ -173,7 +173,7 @@ export class CBTService {
 
   static async getStudentExams(studentId: string) {
     // 1. Get student's active class
-    const enrollment = await prisma.classEnrollment.findFirst({
+    const enrollments = await prisma.classEnrollment.findMany({
       where: {
         studentId,
         status: 'active',
@@ -183,15 +183,19 @@ export class CBTService {
       },
     });
 
-    if (!enrollment) {
+    if (enrollments.length === 0) {
       return []; // No active class, no exams
     }
+
+    const classIds = enrollments.map((e) => e.classId);
 
     // 2. Find exams scheduled for this class
     // TODO: Add logic for specific student assignments if needed (not just class)
     const exams = await prisma.exam.findMany({
       where: {
-        classId: enrollment.classId,
+        classId: { in: classIds },
+        status: { in: ['SCHEDULED', 'ONGOING', 'COMPLETED', 'GRADED'] }, // Show upcoming and past
+      },
         status: { in: ['SCHEDULED', 'ONGOING', 'COMPLETED', 'GRADED'] }, // Show upcoming and past
       },
       include: {

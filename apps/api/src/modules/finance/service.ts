@@ -136,6 +136,7 @@ async function calculateInvoiceAmounts(
       status: 'ACTIVE',
       startDate: { lte: dueDate },
       OR: [{ endDate: null }, { endDate: { gte: dueDate } }],
+      scholarship: { isActive: true },
     },
     include: {
       scholarship: {

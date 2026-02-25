@@ -22,6 +22,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { apiClient } from '@/lib/api-client';
+import { useAuth } from '@/hooks/use-auth';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 
@@ -35,6 +36,7 @@ interface ImmunizationRecord {
 }
 
 export default function ImmunizationPage() {
+  const { user } = useAuth();
   const [data, setData] = useState<ImmunizationRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
@@ -62,14 +64,16 @@ export default function ImmunizationPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!user?.unitId) {
+      toast.error('Unit ID tidak ditemukan. Silakan login ulang.');
+      return;
+    }
+
     try {
       await apiClient.post('/health/immunization', {
-        studentId: formData.studentId,
-        vaccineName: formData.vaccineName,
-        doseNumber: formData.doseNumber,
-        ...(formData.scheduledDate ? { scheduledDate: formData.scheduledDate } : {}),
-        // In a real app, unitId would come from the user's session or context
-        unitId: 'unit-uuid-placeholder',
+        ...formData,
+        unitId: user.unitId,
       });
       toast.success('Data berhasil ditambahkan');
       setOpen(false);
@@ -127,7 +131,7 @@ export default function ImmunizationPage() {
                   type="number"
                   min={1}
                   value={formData.doseNumber}
-                  onChange={(e) => setFormData({ ...formData, doseNumber: parseInt(e.target.value) || 1 })}
+                  onChange={(e) => setFormData({ ...formData, doseNumber: parseInt(e.target.value) })}
                   required
                 />
               </div>

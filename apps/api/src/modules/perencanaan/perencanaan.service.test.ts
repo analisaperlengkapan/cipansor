@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { prisma } from '../../lib/prisma';
 import { perencanaanService } from './perencanaan.service';
+import { Prisma } from '@prisma/client';
 
 // Mock external dependencies
 vi.mock('../../lib/prisma', () => ({
@@ -28,6 +29,9 @@ vi.mock('../../lib/prisma', () => ({
       create: vi.fn(),
       update: vi.fn(),
       delete: vi.fn(),
+    },
+    journalEntry: {
+      groupBy: vi.fn(),
     },
   },
 }));
@@ -161,6 +165,112 @@ describe('Perencanaan Service', () => {
         }),
         include: expect.any(Object),
       });
+    });
+  });
+
+  describe('Realization', () => {
+    it('should calculate plan realization from journal entries', async () => {
+      const planId = 'plan-1';
+      const plan = {
+        id: planId,
+        startDate: new Date('2024-01-01'),
+        endDate: new Date('2024-12-31'),
+        unitId: 'unit-1',
+        budget: new Prisma.Decimal(1000),
+        objectives: [
+          {
+            activities: [
+              {
+                id: 'act-1',
+                title: 'Activity 1',
+                budget: new Prisma.Decimal(500),
+                accountCodeId: 'acc-1',
+                account: { name: 'Expense 1', code: '501' },
+              },
+            ],
+          },
+        ],
+      };
+
+      vi.mocked(prisma.strategicPlan.findUnique).mockResolvedValue(plan as any);
+
+      vi.mocked(prisma.journalEntry.groupBy).mockResolvedValue([
+        {
+          accountId: 'acc-1',
+          _sum: { debit: new Prisma.Decimal(200), credit: new Prisma.Decimal(0) },
+        },
+      ] as any);
+
+      const result = await perencanaanService.getPlanRealization(planId);
+
+      expect(result).toEqual({
+        planTotalBudget: 1000,
+        activitiesTotalBudget: 500,
+        realizedAmount: 200,
+        details: [
+          expect.objectContaining({
+            activityId: 'act-1',
+            realizedAmount: 200,
+            variance: 300,
+          }),
+        ],
+      });
+    });
+
+    it('should pro-rate realized amount when multiple activities share the same account', async () => {
+      const planId = 'plan-shared';
+      const plan = {
+        id: planId,
+        startDate: new Date('2024-01-01'),
+        endDate: new Date('2024-12-31'),
+        unitId: 'unit-1',
+        budget: new Prisma.Decimal(1000),
+        objectives: [
+          {
+            activities: [
+              {
+                id: 'act-1',
+                title: 'Activity 1',
+                budget: new Prisma.Decimal(600), // 60% of account budget
+                accountCodeId: 'acc-shared',
+                account: { name: 'Shared Expense', code: '502' },
+              },
+              {
+                id: 'act-2',
+                title: 'Activity 2',
+                budget: new Prisma.Decimal(400), // 40% of account budget
+                accountCodeId: 'acc-shared',
+                account: { name: 'Shared Expense', code: '502' },
+              },
+            ],
+          },
+        ],
+      };
+
+      vi.mocked(prisma.strategicPlan.findUnique).mockResolvedValue(plan as any);
+
+      // Total realized for account 'acc-shared' is 200
+      vi.mocked(prisma.journalEntry.groupBy).mockResolvedValue([
+        {
+          accountId: 'acc-shared',
+          _sum: { debit: new Prisma.Decimal(200), credit: new Prisma.Decimal(0) },
+        },
+      ] as any);
+
+      const result = await perencanaanService.getPlanRealization(planId);
+
+      // Expected:
+      // Act 1: 600/1000 * 200 = 120
+      // Act 2: 400/1000 * 200 = 80
+      // Total Realized: 200 (not 400)
+
+      expect(result?.realizedAmount).toBe(200);
+
+      const act1 = result?.details.find(d => d.activityId === 'act-1');
+      const act2 = result?.details.find(d => d.activityId === 'act-2');
+
+      expect(act1?.realizedAmount).toBe(120);
+      expect(act2?.realizedAmount).toBe(80);
     });
   });
 });

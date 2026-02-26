@@ -4735,6 +4735,7 @@ model AccountCode {
   journalEntries JournalEntry[]
   paymentTypes   PaymentType[]
   budgets        Budget[]
+  planActivities PlanActivity[]
 
   @@index([type])
   @@map("account_codes")
@@ -7541,12 +7542,14 @@ model PlanActivity {
   status      PlanStatus   @default(DRAFT)
   priority    PlanPriority @default(MEDIUM)
   notes       String?      @db.Text
+  accountCodeId String?    @map("account_code_id")
   createdAt   DateTime     @default(now()) @map("created_at")
   updatedAt   DateTime     @updatedAt @map("updated_at")
 
   // Relations
   objective PlanObjective @relation(fields: [objectiveId], references: [id], onDelete: Cascade)
   pic       User?         @relation("ActivityPIC", fields: [picId], references: [id])
+  account   AccountCode?  @relation(fields: [accountCodeId], references: [id])
 
   @@index([objectiveId])
   @@index([status])

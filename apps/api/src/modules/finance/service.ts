@@ -180,9 +180,13 @@ async function calculateInvoiceAmounts(
   };
 }
 
-export async function createInvoice(data: CreateInvoiceDto & { registrantId?: string }) {
+export async function createInvoice(
+  data: CreateInvoiceDto & { registrantId?: string },
+  tx?: Prisma.TransactionClient
+) {
   let invoice;
   let retries = 3;
+  const client = tx || prisma;
 
   const { studentId, registrantId, paymentTypeId, ...invoiceData } = data;
   const dueDate = new Date(data.dueDate);
@@ -197,7 +201,7 @@ export async function createInvoice(data: CreateInvoiceDto & { registrantId?: st
 
   while (retries > 0) {
     try {
-      const invoiceNumber = await generateInvoiceNumber();
+      const invoiceNumber = await generateInvoiceNumber(); // Assuming this is safe or can be made safe within tx
 
       const createData: any = {
         ...invoiceData,
@@ -215,7 +219,7 @@ export async function createInvoice(data: CreateInvoiceDto & { registrantId?: st
         createData.registrant = { connect: { id: registrantId } };
       }
 
-      invoice = await prisma.invoice.create({
+      invoice = await client.invoice.create({
         data: createData,
         include: {
           student: {

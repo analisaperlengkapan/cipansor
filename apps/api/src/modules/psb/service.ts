@@ -244,57 +244,79 @@ export async function getRegistrantById(id: string) {
 export async function createRegistrant(data: CreateRegistrantExtendedInput) {
   const registrationNo = await generateRegistrationNo(data.admissionPeriodId);
 
-  const registrant = await prisma.registrant.create({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    data: {
-      ...data,
-      registrationNo,
-      gender: data.gender as Gender,
-      birthDate: new Date(data.birthDate),
-    } as any,
-    include: {
-      admissionPeriod: true,
-      wave: true,
-    },
-  });
-
-  // Check for registration fee
-  // Prefer wave fee if exists, otherwise period fee
-  const fee = registrant.wave?.registrationFee || registrant.admissionPeriod.registrationFee;
-
-  if (fee && fee.gt(0)) {
-    // Find or create Payment Type "REGISTRATION"
-    let paymentType = await prisma.paymentType.findFirst({
-      where: {
-        code: 'REGISTRATION',
-        unitId: registrant.admissionPeriod.unitId,
+  // Wrap registrant creation and invoice generation in a transaction
+  return prisma.$transaction(async (tx) => {
+    const registrant = await tx.registrant.create({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      data: {
+        ...data,
+        registrationNo,
+        gender: data.gender as Gender,
+        birthDate: new Date(data.birthDate),
+      } as any,
+      include: {
+        admissionPeriod: true,
+        wave: true,
       },
     });
 
-    if (!paymentType) {
-      paymentType = await prisma.paymentType.create({
-        data: {
-          unitId: registrant.admissionPeriod.unitId,
-          name: 'Biaya Pendaftaran',
+    // Check for registration fee
+    // Prefer wave fee if exists, otherwise period fee
+    const fee = registrant.wave?.registrationFee || registrant.admissionPeriod.registrationFee;
+
+    if (fee && fee.gt(0)) {
+      // Find or create Payment Type "REGISTRATION"
+      // Use race-condition-safe pattern
+      let paymentType = await tx.paymentType.findFirst({
+        where: {
           code: 'REGISTRATION',
-          amount: fee,
-          isActive: true,
-          isRecurring: false,
+          unitId: registrant.admissionPeriod.unitId,
         },
       });
+
+      if (!paymentType) {
+        try {
+          paymentType = await tx.paymentType.create({
+            data: {
+              unitId: registrant.admissionPeriod.unitId,
+              name: 'Biaya Pendaftaran',
+              code: 'REGISTRATION',
+              amount: fee,
+              isActive: true,
+              isRecurring: false,
+            },
+          });
+        } catch (error) {
+          if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+            // If unique constraint violation, try finding it again
+            paymentType = await tx.paymentType.findFirst({
+              where: {
+                code: 'REGISTRATION',
+                unitId: registrant.admissionPeriod.unitId,
+              },
+            });
+            if (!paymentType) throw error;
+          } else {
+            throw error;
+          }
+        }
+      }
+
+      // Create Invoice using the transaction client
+      await financeService.createInvoice(
+        {
+          registrantId: registrant.id,
+          paymentTypeId: paymentType.id,
+          amount: fee.toNumber(),
+          dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days due
+          notes: `Biaya Pendaftaran PSB ${registrant.registrationNo}`,
+        },
+        tx
+      );
     }
 
-    // Create Invoice
-    await financeService.createInvoice({
-      registrantId: registrant.id,
-      paymentTypeId: paymentType.id,
-      amount: fee.toNumber(),
-      dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days due
-      notes: `Biaya Pendaftaran PSB ${registrant.registrationNo}`,
-    });
-  }
-
-  return registrant;
+    return registrant;
+  });
 }
 
 export async function updateRegistrant(id: string, data: UpdateRegistrantInput) {

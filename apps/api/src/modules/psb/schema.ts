@@ -35,7 +35,11 @@ export const createRegistrantSchema = z.object({
   nickname: z.string().optional(),
   gender: z.enum(['MALE', 'FEMALE']),
   birthPlace: z.string().min(2).max(100),
-  birthDate: z.string().datetime(),
+  // Accept both ISO datetime or YYYY-MM-DD date string
+  birthDate: z.union([
+    z.string().datetime(),
+    z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
+  ]),
   address: z.string().min(5),
 
   // Optional identity fields

@@ -1330,7 +1330,8 @@ model PaymentType {
 /// Invoice - Tagihan pembayaran
 model Invoice {
   id            String        @id @default(uuid())
-  studentId     String        @map("student_id")
+  studentId     String?       @map("student_id") // Optional, can be null for Registrant invoices
+  registrantId  String?       @map("registrant_id") // Link to Registrant (PSB)
   paymentTypeId String        @map("payment_type_id")
   invoiceNumber String        @unique @map("invoice_number") // e.g., "INV-2024-0001"
   amount        Decimal       @db.Decimal(15, 2)
@@ -1345,11 +1346,13 @@ model Invoice {
   updatedAt     DateTime      @updatedAt @map("updated_at")
 
   // Relations
-  student     Student     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  student     Student?    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  registrant  Registrant? @relation(fields: [registrantId], references: [id], onDelete: Cascade)
   paymentType PaymentType @relation(fields: [paymentTypeId], references: [id])
   payments    Payment[]
 
   @@index([studentId])
+  @@index([registrantId])
   @@index([status])
   @@index([dueDate])
   @@map("invoices")
@@ -1511,6 +1514,7 @@ model Registrant {
   documents       RegistrantDocument[]
   campaign        MarketingCampaign?     @relation(fields: [campaignId], references: [id])
   interactions    MarketingInteraction[]
+  invoices        Invoice[]
 
   @@index([admissionPeriodId])
   @@index([campaignId])

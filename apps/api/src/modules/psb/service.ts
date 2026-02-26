@@ -1,4 +1,5 @@
 import { prisma } from '../../lib/prisma';
+import * as financeService from '../finance/service';
 import { Prisma, AdmissionStatus, Gender } from '@prisma/client';
 import {
   CreateAdmissionPeriodInput,
@@ -232,6 +233,10 @@ export async function getRegistrantById(id: string) {
       },
       documents: { orderBy: { createdAt: 'desc' } },
       student: { select: { id: true, nis: true, userId: true } },
+      invoices: {
+        include: { paymentType: true },
+        orderBy: { createdAt: 'desc' },
+      },
     },
   });
 }
@@ -239,7 +244,7 @@ export async function getRegistrantById(id: string) {
 export async function createRegistrant(data: CreateRegistrantExtendedInput) {
   const registrationNo = await generateRegistrationNo(data.admissionPeriodId);
 
-  return prisma.registrant.create({
+  const registrant = await prisma.registrant.create({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     data: {
       ...data,
@@ -247,7 +252,49 @@ export async function createRegistrant(data: CreateRegistrantExtendedInput) {
       gender: data.gender as Gender,
       birthDate: new Date(data.birthDate),
     } as any,
+    include: {
+      admissionPeriod: true,
+      wave: true,
+    },
   });
+
+  // Check for registration fee
+  // Prefer wave fee if exists, otherwise period fee
+  const fee = registrant.wave?.registrationFee || registrant.admissionPeriod.registrationFee;
+
+  if (fee && fee.gt(0)) {
+    // Find or create Payment Type "REGISTRATION"
+    let paymentType = await prisma.paymentType.findFirst({
+      where: {
+        code: 'REGISTRATION',
+        unitId: registrant.admissionPeriod.unitId,
+      },
+    });
+
+    if (!paymentType) {
+      paymentType = await prisma.paymentType.create({
+        data: {
+          unitId: registrant.admissionPeriod.unitId,
+          name: 'Biaya Pendaftaran',
+          code: 'REGISTRATION',
+          amount: fee,
+          isActive: true,
+          isRecurring: false,
+        },
+      });
+    }
+
+    // Create Invoice
+    await financeService.createInvoice({
+      registrantId: registrant.id,
+      paymentTypeId: paymentType.id,
+      amount: fee.toNumber(),
+      dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days due
+      notes: `Biaya Pendaftaran PSB ${registrant.registrationNo}`,
+    });
+  }
+
+  return registrant;
 }
 
 export async function updateRegistrant(id: string, data: UpdateRegistrantInput) {

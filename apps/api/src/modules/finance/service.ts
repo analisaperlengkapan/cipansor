@@ -100,11 +100,15 @@ export async function deletePaymentType(id: string) {
 // INVOICE SERVICE
 // =====================================
 
-async function generateInvoiceNumber(unitId?: string): Promise<string> {
+async function generateInvoiceNumber(
+  client?: Prisma.TransactionClient,
+  unitId?: string
+): Promise<string> {
   const year = new Date().getFullYear();
   const month = String(new Date().getMonth() + 1).padStart(2, '0');
+  const db = client || prisma;
 
-  const lastInvoice = await prisma.invoice.findFirst({
+  const lastInvoice = await db.invoice.findFirst({
     where: {
       invoiceNumber: { startsWith: `INV-${year}${month}` },
     },
@@ -201,7 +205,7 @@ export async function createInvoice(
 
   while (retries > 0) {
     try {
-      const invoiceNumber = await generateInvoiceNumber(); // Assuming this is safe or can be made safe within tx
+      const invoiceNumber = await generateInvoiceNumber(client);
 
       const createData: any = {
         ...invoiceData,
@@ -441,7 +445,7 @@ export async function createPayment(data: CreatePaymentDto, userId: string = 'SY
     // INTEGRATION: Create Journal Entry for Accounting
     // =================================================================
     const unitId = invoice.student?.unitId || invoice.registrant?.admissionPeriod?.unitId;
-    const payerName = invoice.student?.user?.name || invoice.registrant?.fullName || invoice.registrant?.name || 'Unknown Payer';
+    const payerName = invoice.student?.user?.name || invoice.registrant?.name || 'Unknown Payer';
 
     if (invoice.paymentType.accountId && unitId) {
       // 1. Determine Debit Account (Asset) based on Payment Method

@@ -254,11 +254,26 @@ export async function createRegistrant(data: CreateRegistrantExtendedInput) {
     throw new Error('Admission period not found');
   }
 
+  // Pre-fetch wave fee if waveId is provided
+  let waveFee = new Prisma.Decimal(0);
+  if (data.waveId) {
+    const wave = await prisma.admissionWave.findUnique({
+      where: { id: data.waveId },
+      select: { registrationFee: true }
+    });
+    if (wave && wave.registrationFee) {
+      waveFee = wave.registrationFee;
+    }
+  }
+
+  // Determine potential fee (either period or wave fee could trigger payment type need)
+  const potentialFee = waveFee.gt(0) ? waveFee : admissionPeriod.registrationFee;
+
   // Ensure PaymentType "REGISTRATION" exists BEFORE starting the transaction
   // This avoids transaction aborts due to unique constraint violations (P2002) in race conditions
   let paymentTypeId: string | undefined;
 
-  if (admissionPeriod.registrationFee.gt(0)) {
+  if (potentialFee.gt(0)) {
     let paymentType = await prisma.paymentType.findFirst({
       where: {
         code: 'REGISTRATION',

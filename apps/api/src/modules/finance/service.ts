@@ -560,7 +560,7 @@ export async function createPayment(data: CreatePaymentDto, userId: string = 'SY
             id: payment.id,
             invoiceId: payment.invoiceId,
             studentId: payment.invoice.studentId,
-            studentName: payment.invoice.student.user.name,
+            studentName: payment.invoice.student?.user?.name || 'Unknown',
             unitId: studentWithUnit.unitId,
             unitName: studentWithUnit.unit?.name || '',
             amount: payment.amount.toNumber(),

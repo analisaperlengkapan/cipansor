@@ -58,7 +58,7 @@ export default function RegistrationPage() {
 
       const periodId = periodData.data[0].id;
 
-      const response = await fetch('/api/psb/registrations', {
+      const response = await fetch('/api/psb/registrants', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

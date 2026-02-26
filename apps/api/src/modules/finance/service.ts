@@ -117,8 +117,20 @@ async function generateInvoiceNumber(
 
   let sequence = 1;
   if (lastInvoice) {
-    const lastSeq = parseInt(lastInvoice.invoiceNumber.split('-')[2]);
-    sequence = lastSeq + 1;
+    const parts = lastInvoice.invoiceNumber.split('-');
+    if (parts.length >= 3) {
+      const lastSeq = parseInt(parts[2]);
+      if (!isNaN(lastSeq)) {
+        sequence = lastSeq + 1;
+      }
+    }
+  }
+
+  // If using a transaction client, add a random suffix to reduce collision probability
+  // since retry logic will abort the transaction
+  if (client) {
+    const randomSuffix = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    return `INV-${year}${month}-${String(sequence).padStart(5, '0')}-${randomSuffix}`;
   }
 
   return `INV-${year}${month}-${String(sequence).padStart(5, '0')}`;

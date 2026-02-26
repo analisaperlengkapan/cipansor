@@ -49,7 +49,7 @@ export default function RegistrationPage() {
     try {
       // Fetch active admission period first (simplified for this context)
       // Ideally this should be server-side or fetched on load
-      const periodResponse = await fetch('/api/psb/admission-periods?isActive=true&limit=1');
+      const periodResponse = await fetch('/api/psb/periods?isActive=true&limit=1');
       const periodData = await periodResponse.json();
 
       if (!periodData.success || !periodData.data || periodData.data.length === 0) {

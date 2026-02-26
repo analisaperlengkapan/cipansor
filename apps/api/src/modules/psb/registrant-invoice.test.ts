@@ -7,6 +7,7 @@ import { AdmissionStatus, Gender } from '@prisma/client';
 // Mock dependencies
 vi.mock('../../lib/prisma', () => ({
   prisma: {
+    $transaction: vi.fn().mockImplementation(async (cb) => cb(prisma)),
     admissionPeriod: {
       findUnique: vi.fn(),
     },
@@ -83,7 +84,8 @@ describe('PSB Service - Create Registrant', () => {
         registrantId: 'reg-1',
         paymentTypeId: 'pt-1',
         amount: 100000,
-      })
+      }),
+      expect.anything()
     );
   });
 

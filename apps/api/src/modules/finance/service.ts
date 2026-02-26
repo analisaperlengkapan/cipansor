@@ -441,7 +441,7 @@ export async function createPayment(data: CreatePaymentDto, userId: string = 'SY
     // INTEGRATION: Create Journal Entry for Accounting
     // =================================================================
     const unitId = invoice.student?.unitId || invoice.registrant?.admissionPeriod?.unitId;
-    const payerName = invoice.student?.user?.name || invoice.registrant?.name || 'Unknown Payer';
+    const payerName = invoice.student?.user?.name || invoice.registrant?.fullName || invoice.registrant?.name || 'Unknown Payer';
 
     if (invoice.paymentType.accountId && unitId) {
       // 1. Determine Debit Account (Asset) based on Payment Method

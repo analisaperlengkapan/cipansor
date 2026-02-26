@@ -244,6 +244,57 @@ export async function getRegistrantById(id: string) {
 export async function createRegistrant(data: CreateRegistrantExtendedInput) {
   const registrationNo = await generateRegistrationNo(data.admissionPeriodId);
 
+  // Pre-fetch admission period to get unitId for payment type check
+  const admissionPeriod = await prisma.admissionPeriod.findUnique({
+    where: { id: data.admissionPeriodId },
+    select: { unitId: true, registrationFee: true }
+  });
+
+  if (!admissionPeriod) {
+    throw new Error('Admission period not found');
+  }
+
+  // Ensure PaymentType "REGISTRATION" exists BEFORE starting the transaction
+  // This avoids transaction aborts due to unique constraint violations (P2002) in race conditions
+  let paymentTypeId: string | undefined;
+
+  if (admissionPeriod.registrationFee.gt(0)) {
+    let paymentType = await prisma.paymentType.findFirst({
+      where: {
+        code: 'REGISTRATION',
+        unitId: admissionPeriod.unitId,
+      },
+    });
+
+    if (!paymentType) {
+      try {
+        paymentType = await prisma.paymentType.create({
+          data: {
+            unitId: admissionPeriod.unitId,
+            name: 'Biaya Pendaftaran',
+            code: 'REGISTRATION',
+            amount: admissionPeriod.registrationFee,
+            isActive: true,
+            isRecurring: false,
+          },
+        });
+      } catch (error) {
+        // If race condition occurred, fetch the one created by another request
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+          paymentType = await prisma.paymentType.findFirst({
+            where: {
+              code: 'REGISTRATION',
+              unitId: admissionPeriod.unitId,
+            },
+          });
+        }
+
+        if (!paymentType) throw error;
+      }
+    }
+    paymentTypeId = paymentType.id;
+  }
+
   // Wrap registrant creation and invoice generation in a transaction
   return prisma.$transaction(async (tx) => {
     const registrant = await tx.registrant.create({
@@ -264,49 +315,12 @@ export async function createRegistrant(data: CreateRegistrantExtendedInput) {
     // Prefer wave fee if exists, otherwise period fee
     const fee = registrant.wave?.registrationFee || registrant.admissionPeriod.registrationFee;
 
-    if (fee && fee.gt(0)) {
-      // Find or create Payment Type "REGISTRATION"
-      // Use race-condition-safe pattern
-      let paymentType = await tx.paymentType.findFirst({
-        where: {
-          code: 'REGISTRATION',
-          unitId: registrant.admissionPeriod.unitId,
-        },
-      });
-
-      if (!paymentType) {
-        try {
-          paymentType = await tx.paymentType.create({
-            data: {
-              unitId: registrant.admissionPeriod.unitId,
-              name: 'Biaya Pendaftaran',
-              code: 'REGISTRATION',
-              amount: fee,
-              isActive: true,
-              isRecurring: false,
-            },
-          });
-        } catch (error) {
-          if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-            // If unique constraint violation, try finding it again
-            paymentType = await tx.paymentType.findFirst({
-              where: {
-                code: 'REGISTRATION',
-                unitId: registrant.admissionPeriod.unitId,
-              },
-            });
-            if (!paymentType) throw error;
-          } else {
-            throw error;
-          }
-        }
-      }
-
+    if (fee && fee.gt(0) && paymentTypeId) {
       // Create Invoice using the transaction client
       await financeService.createInvoice(
         {
           registrantId: registrant.id,
-          paymentTypeId: paymentType.id,
+          paymentTypeId: paymentTypeId,
           amount: fee.toNumber(),
           dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days due
           notes: `Biaya Pendaftaran PSB ${registrant.registrationNo}`,

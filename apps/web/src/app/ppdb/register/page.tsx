@@ -64,10 +64,14 @@ export default function RegistrationPage() {
         body: JSON.stringify({
           ...values,
           admissionPeriodId: periodId,
+          // Map to correct fields expected by backend schema
+          parentName: values.parentName,
+          parentPhone: values.parentPhone,
+          parentEmail: values.email,
+          // Keep extended fields if needed, but primary mapping is to parent* fields
           fatherName: values.parentName,
           fatherPhone: values.parentPhone,
           fatherEmail: values.email,
-          motherName: "-", // Optional/Default
         })
       });
 

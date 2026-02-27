@@ -63,12 +63,18 @@ export const createRegistrantSchema = z.object({
   graduationYear: z.number().int().optional(),
 
   // Parents
-  fatherName: z.string().min(1).max(100),
+  parentName: z.string().min(1).max(100),
+  parentPhone: z.string().max(20).optional(),
+  parentEmail: z.string().email().optional().or(z.literal('')),
+  parentOccupation: z.string().optional(),
+
+  // Extended Parent Info (optional for mapping)
+  fatherName: z.string().min(1).max(100).optional(),
   fatherOccupation: z.string().optional(),
   fatherPhone: z.string().optional(),
   fatherEmail: z.string().email().optional().or(z.literal('')),
 
-  motherName: z.string().min(1).max(100),
+  motherName: z.string().min(1).max(100).optional(),
   motherOccupation: z.string().optional(),
   motherPhone: z.string().optional(),
 

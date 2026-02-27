@@ -64,7 +64,7 @@ export const createRegistrantSchema = z.object({
 
   // Parents
   parentName: z.string().min(1).max(100),
-  parentPhone: z.string().max(20).optional(),
+  parentPhone: z.string().min(1).max(20),
   parentEmail: z.string().email().optional().or(z.literal('')),
   parentOccupation: z.string().optional(),
 

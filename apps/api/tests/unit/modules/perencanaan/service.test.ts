@@ -37,6 +37,26 @@ vi.mock('@prisma/client', () => ({
     planActivity = mockPlanActivity;
   },
   Prisma: { Decimal: class { constructor(v: number) { return v; } } },
+  PlanStatus: {
+    DRAFT: 'DRAFT',
+    PROPOSED: 'PROPOSED',
+    APPROVED: 'APPROVED',
+    IN_PROGRESS: 'IN_PROGRESS',
+    COMPLETED: 'COMPLETED',
+    CANCELLED: 'CANCELLED',
+  },
+  PlanPriority: {
+    LOW: 'LOW',
+    MEDIUM: 'MEDIUM',
+    HIGH: 'HIGH',
+    CRITICAL: 'CRITICAL',
+  },
+  PlanType: {
+    RENSTRA: 'RENSTRA',
+    RKAS: 'RKAS',
+    RKT: 'RKT',
+    PROGRAM: 'PROGRAM',
+  },
 }));
 
 vi.mock('../../../../../src/lib/prisma', () => ({

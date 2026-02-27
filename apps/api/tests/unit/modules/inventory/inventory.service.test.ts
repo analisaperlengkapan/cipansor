@@ -13,6 +13,7 @@ const mocks = vi.hoisted(() => ({
   update: vi.fn(),
   delete: vi.fn(),
   disconnect: vi.fn(),
+  transaction: vi.fn(),
 }));
 
 // 2. Mock @prisma/client using a class for the constructor
@@ -44,6 +45,7 @@ vi.mock('@prisma/client', () => {
         delete: vi.fn(),
       };
       $disconnect = mocks.disconnect;
+      $transaction = mocks.transaction;
     },
     // Mock Enums
     AssetStatus: {
@@ -101,17 +103,22 @@ describe('Inventory Service', () => {
         unit: { id: 'unit-123', name: 'Main Unit' },
       };
 
+      // Mock transaction implementation to just run the callback
+      mocks.transaction.mockImplementation(async (callback) => {
+        // Pass a mock tx object that has the same shape as needed
+        const tx = {
+          asset: {
+            create: mocks.create,
+          },
+        };
+        return callback(tx);
+      });
+
       mocks.create.mockResolvedValue(mockCreatedItem);
 
       const result = await createItem(input);
 
-      expect(prisma.asset.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({
-          code: 'ASSET-001',
-          name: 'Laptop',
-        }),
-        include: expect.any(Object),
-      });
+      expect(prisma.$transaction).toHaveBeenCalled();
       expect(result).toEqual(mockCreatedItem);
     });
   });

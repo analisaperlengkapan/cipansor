@@ -329,7 +329,8 @@ export async function createRegistrant(data: CreateRegistrantExtendedInput) {
 
     // Check for registration fee
     // Prefer wave fee if exists, otherwise period fee
-    const fee = registrant.wave?.registrationFee || registrant.admissionPeriod.registrationFee;
+    const waveFeeValue = registrant.wave?.registrationFee;
+    const fee = (waveFeeValue && waveFeeValue.gt(0)) ? waveFeeValue : registrant.admissionPeriod.registrationFee;
 
     if (fee && fee.gt(0) && paymentTypeId) {
       // Create Invoice using the transaction client

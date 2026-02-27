@@ -205,6 +205,23 @@ export default function PPDBPage() {
                 </Link>
               </CardContent>
             </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Link Pendaftaran Publik</CardTitle>
+                <CardDescription>Bagikan link ini kepada calon wali santri</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-2">
+                  <div className="bg-slate-100 p-2 rounded flex-1 text-sm font-mono truncate">
+                    /ppdb/register
+                  </div>
+                  <Link href="/ppdb/register" target="_blank">
+                    <Button variant="outline" size="sm">Buka Form</Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="registration" className="space-y-4">

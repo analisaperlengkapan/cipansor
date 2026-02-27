@@ -34,12 +34,16 @@ export const queryPaymentTypeSchema = z.object({
 // =====================================
 
 export const createInvoiceSchema = z.object({
-  studentId: z.string().uuid('Invalid student ID'),
+  studentId: z.string().uuid('Invalid student ID').optional(),
+  registrantId: z.string().uuid('Invalid registrant ID').optional(),
   paymentTypeId: z.string().uuid('Invalid payment type ID'),
   amount: z.number().positive('Amount must be positive'),
   dueDate: z.string().datetime('Invalid due date'),
   period: z.string().optional(),
   notes: z.string().optional(),
+}).refine(data => data.studentId || data.registrantId, {
+  message: "Either studentId or registrantId is required",
+  path: ["studentId"],
 });
 
 export const updateInvoiceSchema = z.object({

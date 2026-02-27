@@ -100,11 +100,15 @@ export async function deletePaymentType(id: string) {
 // INVOICE SERVICE
 // =====================================
 
-async function generateInvoiceNumber(unitId?: string): Promise<string> {
+async function generateInvoiceNumber(
+  client?: Prisma.TransactionClient,
+  unitId?: string
+): Promise<string> {
   const year = new Date().getFullYear();
   const month = String(new Date().getMonth() + 1).padStart(2, '0');
+  const db = client || prisma;
 
-  const lastInvoice = await prisma.invoice.findFirst({
+  const lastInvoice = await db.invoice.findFirst({
     where: {
       invoiceNumber: { startsWith: `INV-${year}${month}` },
     },
@@ -113,15 +117,27 @@ async function generateInvoiceNumber(unitId?: string): Promise<string> {
 
   let sequence = 1;
   if (lastInvoice) {
-    const lastSeq = parseInt(lastInvoice.invoiceNumber.split('-')[2]);
-    sequence = lastSeq + 1;
+    const parts = lastInvoice.invoiceNumber.split('-');
+    if (parts.length >= 3) {
+      const lastSeq = parseInt(parts[2]);
+      if (!isNaN(lastSeq)) {
+        sequence = lastSeq + 1;
+      }
+    }
+  }
+
+  // If using a transaction client, add a random suffix to reduce collision probability
+  // since retry logic will abort the transaction
+  if (client) {
+    const randomSuffix = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    return `INV-${year}${month}-${String(sequence).padStart(5, '0')}-${randomSuffix}`;
   }
 
   return `INV-${year}${month}-${String(sequence).padStart(5, '0')}`;
 }
 
 async function calculateInvoiceAmounts(
-  studentId: string,
+  studentId: string | undefined,
   paymentTypeId: string,
   originalAmount: Prisma.Decimal,
   dueDate: Date
@@ -129,38 +145,40 @@ async function calculateInvoiceAmounts(
   let discount = new Prisma.Decimal(0);
   const grossAmount = originalAmount;
 
-  // Find active scholarships for the student
-  const recipients = await prisma.scholarshipRecipient.findMany({
-    where: {
-      studentId,
-      status: 'ACTIVE',
-      startDate: { lte: dueDate },
-      OR: [{ endDate: null }, { endDate: { gte: dueDate } }],
-      scholarship: { isActive: true },
-    },
-    include: {
-      scholarship: {
-        include: {
-          discounts: {
-            where: { paymentTypeId },
+  if (studentId) {
+    // Find active scholarships for the student
+    const recipients = await prisma.scholarshipRecipient.findMany({
+      where: {
+        studentId,
+        status: 'ACTIVE',
+        startDate: { lte: dueDate },
+        OR: [{ endDate: null }, { endDate: { gte: dueDate } }],
+        scholarship: { isActive: true },
+      },
+      include: {
+        scholarship: {
+          include: {
+            discounts: {
+              where: { paymentTypeId },
+            },
           },
         },
       },
-    },
-  });
+    });
 
-  // Apply discounts
-  for (const recipient of recipients) {
-    for (const d of recipient.scholarship.discounts) {
-      let currentDiscount = new Prisma.Decimal(0);
-      if (d.discountType === 'PERCENTAGE') {
-        // discountValue is rate (e.g., 50 for 50%)
-        currentDiscount = grossAmount.mul(d.discountValue).div(100);
-      } else {
-        // FIXED
-        currentDiscount = d.discountValue;
+    // Apply discounts
+    for (const recipient of recipients) {
+      for (const d of recipient.scholarship.discounts) {
+        let currentDiscount = new Prisma.Decimal(0);
+        if (d.discountType === 'PERCENTAGE') {
+          // discountValue is rate (e.g., 50 for 50%)
+          currentDiscount = grossAmount.mul(d.discountValue).div(100);
+        } else {
+          // FIXED
+          currentDiscount = d.discountValue;
+        }
+        discount = discount.add(currentDiscount);
       }
-      discount = discount.add(currentDiscount);
     }
   }
 
@@ -178,11 +196,15 @@ async function calculateInvoiceAmounts(
   };
 }
 
-export async function createInvoice(data: CreateInvoiceDto) {
+export async function createInvoice(
+  data: CreateInvoiceDto & { registrantId?: string },
+  tx?: Prisma.TransactionClient
+) {
   let invoice;
   let retries = 3;
+  const client = tx || prisma;
 
-  const { studentId, paymentTypeId, ...invoiceData } = data;
+  const { studentId, registrantId, paymentTypeId, ...invoiceData } = data;
   const dueDate = new Date(data.dueDate);
   const baseAmount = new Prisma.Decimal(data.amount);
 
@@ -195,25 +217,35 @@ export async function createInvoice(data: CreateInvoiceDto) {
 
   while (retries > 0) {
     try {
-      const invoiceNumber = await generateInvoiceNumber();
+      const invoiceNumber = await generateInvoiceNumber(client);
 
-      invoice = await prisma.invoice.create({
-        data: {
-          ...invoiceData,
-          invoiceNumber,
-          amount,
-          originalAmount,
-          discount,
-          dueDate,
-          student: { connect: { id: studentId } },
-          paymentType: { connect: { id: paymentTypeId } },
-        },
+      const createData: any = {
+        ...invoiceData,
+        invoiceNumber,
+        amount,
+        originalAmount,
+        discount,
+        dueDate,
+        paymentType: { connect: { id: paymentTypeId } },
+      };
+
+      if (studentId) {
+        createData.student = { connect: { id: studentId } };
+      } else if (registrantId) {
+        createData.registrant = { connect: { id: registrantId } };
+      }
+
+      invoice = await client.invoice.create({
+        data: createData,
         include: {
           student: {
             include: {
               user: { select: { id: true, name: true, email: true } },
               unit: { select: { id: true, name: true } },
             },
+          },
+          registrant: {
+             include: { admissionPeriod: { include: { unit: true } } }
           },
           paymentType: { select: { id: true, name: true, code: true } },
         },
@@ -229,7 +261,7 @@ export async function createInvoice(data: CreateInvoiceDto) {
     }
   }
 
-  if (invoice) {
+  if (invoice && invoice.student) {
     try {
       const formatter = new Intl.NumberFormat('id-ID', {
         style: 'currency',
@@ -366,6 +398,9 @@ export async function createPayment(data: CreatePaymentDto, userId: string = 'SY
             user: { select: { name: true } }, // Fetch user name for description
           },
         },
+        registrant: {
+           include: { admissionPeriod: { select: { unitId: true } } }
+        },
         paymentType: { select: { id: true, name: true, accountId: true } },
       },
     });
@@ -391,6 +426,7 @@ export async function createPayment(data: CreatePaymentDto, userId: string = 'SY
                 user: { select: { id: true, name: true } },
               },
             },
+            registrant: true,
             paymentType: { select: { id: true, name: true } },
           },
         },
@@ -420,7 +456,10 @@ export async function createPayment(data: CreatePaymentDto, userId: string = 'SY
     // =================================================================
     // INTEGRATION: Create Journal Entry for Accounting
     // =================================================================
-    if (invoice.paymentType.accountId && invoice.student.unitId) {
+    const unitId = invoice.student?.unitId || invoice.registrant?.admissionPeriod?.unitId;
+    const payerName = invoice.student?.user?.name || invoice.registrant?.fullName || 'Unknown Payer';
+
+    if (invoice.paymentType.accountId && unitId) {
       // 1. Determine Debit Account (Asset) based on Payment Method
       const isBank = ['BANK_TRANSFER', 'VIRTUAL_ACCOUNT', 'QRIS', 'EWALLET'].includes(
         payment.method
@@ -430,7 +469,7 @@ export async function createPayment(data: CreatePaymentDto, userId: string = 'SY
       const fallbackName = isBank ? 'Bank' : 'Kas';
 
       const assetAccount = await getAccountOrFallback(
-        invoice.student.unitId,
+        unitId,
         mappingKey,
         fallbackCode,
         fallbackName
@@ -442,7 +481,7 @@ export async function createPayment(data: CreatePaymentDto, userId: string = 'SY
         // Debit Entry (Asset increases)
         await tx.journalEntry.create({
           data: {
-            unitId: invoice.student.unitId,
+            unitId,
             accountId: assetAccount.id,
             date: new Date(),
             description: `${descriptionPrefix} (${payment.method})`,
@@ -457,10 +496,10 @@ export async function createPayment(data: CreatePaymentDto, userId: string = 'SY
         // Credit Entry (Revenue increases)
         await tx.journalEntry.create({
           data: {
-            unitId: invoice.student.unitId,
+            unitId,
             accountId: invoice.paymentType.accountId,
             date: new Date(),
-            description: `Pendapatan ${invoice.paymentType.name} - ${invoice.student.user.name}`,
+            description: `Pendapatan ${invoice.paymentType.name} - ${payerName}`,
             debit: 0,
             credit: payment.amount,
             reference: payment.id,
@@ -471,7 +510,7 @@ export async function createPayment(data: CreatePaymentDto, userId: string = 'SY
       } else {
         // If no account found, we must throw error to maintain integrity
         console.warn(
-          `Accounting Integration: No Asset Account found for method ${payment.method} in unit ${invoice.student.unitId}`
+          `Accounting Integration: No Asset Account found for method ${payment.method} in unit ${unitId}`
         );
       }
     }
@@ -487,43 +526,58 @@ export async function createPayment(data: CreatePaymentDto, userId: string = 'SY
       minimumFractionDigits: 0,
     });
 
-    await notificationService.createNotification({
-      userId: payment.invoice.student.user.id,
-      title: 'Pembayaran Berhasil',
-      message: `Pembayaran untuk tagihan ${payment.invoice.paymentType.name} sebesar ${formatter.format(
-        payment.amount.toNumber()
-      )} telah diterima.`,
-      type: NotificationType.PAYMENT,
-      link: `/finance/bills/${payment.invoice.id}`,
-      priority: 'HIGH',
-      channels: ['IN_APP', 'EMAIL'],
-      recipientType: 'INDIVIDUAL',
-    });
+    if (payment.invoice.student && payment.invoice.student.user) {
+        await notificationService.createNotification({
+        userId: payment.invoice.student.user.id,
+        title: 'Pembayaran Berhasil',
+        message: `Pembayaran untuk tagihan ${payment.invoice.paymentType.name} sebesar ${formatter.format(
+            payment.amount.toNumber()
+        )} telah diterima.`,
+        type: NotificationType.PAYMENT,
+        link: `/finance/bills/${payment.invoice.id}`,
+        priority: 'HIGH',
+        channels: ['IN_APP', 'EMAIL'],
+        recipientType: 'INDIVIDUAL',
+        });
+    }
+    // TODO: Send email for registrant (external user)
+
   } catch (error) {
     console.error('Failed to send payment notification:', error);
   }
 
   // Emit event for cross-module integration (dashboard real-time updates)
   try {
-    // We need to fetch student unit info for the event
-    const studentWithUnit = await prisma.student.findUnique({
-      where: { id: payment.invoice.studentId },
-      include: { unit: { select: { id: true, name: true } } },
-    });
+    if (payment.invoice.studentId) {
+        // We need to fetch student unit info for the event
+        const studentWithUnit = await prisma.student.findUnique({
+        where: { id: payment.invoice.studentId },
+        include: { unit: { select: { id: true, name: true } } },
+        });
 
-    if (studentWithUnit) {
-      eventBus.emit('finance:payment-received', {
-        id: payment.id,
-        invoiceId: payment.invoiceId,
-        studentId: payment.invoice.studentId,
-        studentName: payment.invoice.student.user.name,
-        unitId: studentWithUnit.unitId,
-        unitName: studentWithUnit.unit?.name || '',
-        amount: payment.amount.toNumber(),
-        paymentMethod: payment.method,
-        paidAt: payment.paidAt || new Date(),
-        processedById: 'SYSTEM',
-      });
+        if (studentWithUnit) {
+        eventBus.emit('finance:payment-received', {
+            id: payment.id,
+            invoiceId: payment.invoiceId,
+            studentId: payment.invoice.studentId,
+            studentName: payment.invoice.student?.user?.name || 'Unknown Student',
+            unitId: studentWithUnit.unitId,
+            unitName: studentWithUnit.unit?.name || '',
+            amount: payment.amount.toNumber(),
+            paymentMethod: payment.method,
+            paidAt: payment.paidAt || new Date(),
+            processedById: 'SYSTEM',
+        });
+        }
+    } else if (payment.invoice.registrantId) {
+        // Emit event for registrant payment
+        eventBus.emit('finance:registrant-payment-received', {
+             id: payment.id,
+             invoiceId: payment.invoiceId,
+             registrantId: payment.invoice.registrantId,
+             amount: payment.amount.toNumber(),
+             paidAt: payment.paidAt || new Date(),
+        })
     }
   } catch (error) {
     console.error('Failed to emit payment event:', error);

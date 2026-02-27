@@ -317,6 +317,7 @@ export async function createRegistrant(data: CreateRegistrantExtendedInput) {
       data: {
         ...data,
         registrationNo,
+        name: data.fullName, // Sync name field for backward compatibility
         gender: data.gender as Gender,
         birthDate: new Date(data.birthDate),
       } as any,

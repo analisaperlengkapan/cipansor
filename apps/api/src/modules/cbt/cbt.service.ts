@@ -555,7 +555,7 @@ export class CBTService {
         status: 'COMPLETED'
       },
       include: {
-        student: { select: { name: true, nis: true } },
+        student: { select: { user: { select: { name: true } }, nis: true } },
         exam: { select: { title: true, maxScore: true, subject: { select: { name: true } } } },
       },
       orderBy: { finishedAt: 'desc' }

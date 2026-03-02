@@ -448,7 +448,8 @@ export class CBTService {
   static async gradeManualAnswers(
     attemptId: string,
     teacherUserId: string,
-    grades: { answerId: string; score: number }[]
+    grades: { answerId: string; score: number }[],
+    userRole: string = 'TEACHER'
   ) {
     return prisma.$transaction(async (tx) => {
       const attempt = await tx.examAttempt.findUnique({
@@ -469,10 +470,7 @@ export class CBTService {
       });
 
       if (!attempt) throw Errors.notFound('Exam attempt not found');
-      if (attempt.status !== 'COMPLETED') {
-        throw Errors.badRequest('Only completed attempts can be graded');
-      }
-      if (attempt.exam.teacher.userId !== teacherUserId) {
+      if (attempt.exam.teacher.userId !== teacherUserId && !userRole.includes('ADMIN')) {
         throw Errors.forbidden('Only the assigned teacher can grade this exam');
       }
 

@@ -169,7 +169,8 @@ export class CBTController {
       if (!Array.isArray(grades)) {
           throw Errors.badRequest('Grades must be an array of objects containing answerId and score');
       }
-      const result = await CBTService.gradeManualAnswers(attemptId, (req as any).user.id, grades);
+      const user = (req as any).user;
+      const result = await CBTService.gradeManualAnswers(attemptId, user.id, grades, user.role);
       res.json({ message: 'Exam graded successfully', data: result });
     } catch (error) {
       next(error);

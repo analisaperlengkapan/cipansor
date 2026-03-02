@@ -95,4 +95,26 @@ router.post(
   CBTController.finishExam
 );
 
+// Teacher Grading Endpoints
+router.get(
+  '/teacher/attempts',
+  authenticate,
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
+  CBTController.getAttemptsForGrading
+);
+
+router.get(
+  '/teacher/attempts/:attemptId',
+  authenticate,
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
+  CBTController.getTeacherAttempt
+);
+
+// Grade Attempt
+router.post(
+  '/attempts/:attemptId/grade',
+  authenticate,
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
+  CBTController.gradeAttempt
+);
 export const cbtRoutes = router;

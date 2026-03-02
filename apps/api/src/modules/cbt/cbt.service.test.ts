@@ -36,6 +36,8 @@ vi.mock('../../lib/prisma', () => ({
     },
     grade: {
         create: vi.fn(),
+        findFirst: vi.fn(),
+        update: vi.fn(),
     },
     $transaction: vi.fn((arg) => {
         if (typeof arg === 'function') return arg(prisma);
@@ -76,8 +78,8 @@ describe('CBT Service', () => {
 
           const result = await CBTService.getStudentExams('std-1');
 
-          expect(prisma.classEnrollment.findFirst).toHaveBeenCalledWith(expect.objectContaining({ studentId: 'std-1' }));
-          expect(prisma.exam.findMany).toHaveBeenCalledWith(expect.objectContaining({ classId: 'class-1' }));
+          expect(prisma.classEnrollment.findFirst).toHaveBeenCalledWith(expect.objectContaining({ where: { studentId: 'std-1', status: 'active' } }));
+          expect(prisma.exam.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ classId: 'class-1' }) }));
           expect(result).toHaveLength(1);
       });
 
@@ -157,13 +159,16 @@ describe('CBT Service', () => {
         studentId: 'std-1',
         status: 'IN_PROGRESS',
         exam: {
-          maxScore: new Prisma.Decimal(100),
+          maxScore: 100,
           questionBank: {
             questions: [
               { id: 'q-1', type: 'MULTIPLE_CHOICE', answerKey: 'opt-A', points: 10 },
               { id: 'q-2', type: 'MULTIPLE_CHOICE', answerKey: 'opt-C', points: 10 },
             ],
           },
+          teacher: {
+              userId: 'teacher-1'
+          }
         },
         answers: [
           { id: 'ans-1', questionId: 'q-1', answer: 'opt-A' }, // correct
@@ -194,5 +199,75 @@ describe('CBT Service', () => {
         data: { isCorrect: false, score: 0 },
       });
     });
-  });
+
+  describe('Manual Grading', () => {
+    it('should allow teacher to grade manual answers', async () => {
+      vi.mocked(prisma.examAttempt.findUnique).mockResolvedValue({
+        id: 'attempt-essay',
+        studentId: 'std-1',
+        status: 'COMPLETED',
+        examId: 'exam-1',
+        exam: {
+          maxScore: 100,
+          academicYearId: 'ay-1',
+          subjectId: 'sub-1',
+          teacher: { userId: 'teacher-1' },
+          questionBank: {
+            questions: [
+              { id: 'q-1', type: 'ESSAY', points: 100 },
+            ],
+          },
+        },
+        answers: [
+          { id: 'ans-1', questionId: 'q-1', answer: 'Essay content' },
+        ],
+      } as any);
+
+      vi.mocked(prisma.grade.findFirst).mockResolvedValue(null);
+
+      const result = await CBTService.gradeManualAnswers('attempt-essay', 'teacher-1', [
+        { answerId: 'ans-1', score: 85 }
+      ]);
+
+      expect(prisma.examAnswer.update).toHaveBeenCalledWith(expect.objectContaining({
+          where: { id: 'ans-1' },
+          data: { score: 85, isCorrect: true }
+      }));
+
+      expect(prisma.examAttempt.update).toHaveBeenCalledWith(expect.objectContaining({
+          where: { id: 'attempt-essay' },
+          data: { score: 85 }
+      }));
+
+      expect(prisma.grade.create).toHaveBeenCalledWith(expect.objectContaining({
+          data: expect.objectContaining({ score: 85, gradedById: 'teacher-1' })
+      }));
+    });
+
+    it('should forbid non-teacher from manual grading', async () => {
+      vi.mocked(prisma.examAttempt.findUnique).mockResolvedValue({
+        id: 'attempt-essay',
+        studentId: 'std-1',
+        status: 'COMPLETED',
+        examId: 'exam-1',
+        exam: {
+          teacher: { userId: 'teacher-1' },
+        },
+      } as any);
+
+      await expect(CBTService.gradeManualAnswers('attempt-essay', 'teacher-OTHER', [], 'TEACHER'))
+        .rejects.toThrow('Only the assigned teacher can grade this exam');
+    });
+
+    it('should allow admin to grade manual answers even if not assigned teacher', async () => {
+      vi.mocked(prisma.examAttempt.findUnique).mockResolvedValue({
+        id: 'attempt-essay', studentId: 'std-1', examId: 'exam-1',
+        status: 'COMPLETED',
+        exam: { teacher: { userId: 'teacher-1' }, maxScore: 100, questionBank: { questions: [] } },
+        answers: [],
+      } as any);
+      await expect(CBTService.gradeManualAnswers('attempt-essay', 'admin-1', [], 'SUPER_ADMIN')).resolves.toBeDefined();
+    });
+});
+});
 });

@@ -161,4 +161,39 @@ export class CBTController {
       next(error);
     }
   }
+
+  static async gradeAttempt(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { attemptId } = req.params;
+      const grades = req.body.grades;
+      if (!Array.isArray(grades)) {
+          throw Errors.badRequest('Grades must be an array of objects containing answerId and score');
+      }
+      const user = (req as any).user;
+      const result = await CBTService.gradeManualAnswers(attemptId, user.id, grades, user.role);
+      res.json({ message: 'Exam graded successfully', data: result });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getAttemptsForGrading(req: Request, res: Response, next: NextFunction) {
+      try {
+          const user = (req as any).user;
+          const result = await CBTService.getTeacherAttemptsForGrading(user.id, user.role);
+          res.json({ data: result });
+      } catch (error) {
+          next(error);
+      }
+  }
+
+  static async getTeacherAttempt(req: Request, res: Response, next: NextFunction) {
+      try {
+          const user = (req as any).user;
+          const result = await CBTService.getTeacherAttemptDetail(req.params.attemptId, user.id, user.role);
+          res.json({ data: result });
+      } catch (error) {
+          next(error);
+      }
+  }
 }

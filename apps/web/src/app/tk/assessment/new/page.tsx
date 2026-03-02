@@ -194,7 +194,7 @@ export default function CreateTKAssessmentPage() {
       }
 
       toast.success("Penilaian berhasil disimpan");
-      router.push("/paud/assessment");
+      router.push("/tk/assessment");
     } catch (error) {
       toast.error("Gagal menyimpan penilaian");
     }

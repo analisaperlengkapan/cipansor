@@ -537,21 +537,15 @@ export class CBTService {
     });
 }
 
-  static async getTeacherAttemptsForGrading(teacherUserId: string, userRole: string = 'TEACHER') {
-    const isAdmin = userRole.includes('ADMIN');
-    let teacherId: string | undefined = undefined;
-
-    if (!isAdmin) {
-      const teacher = await prisma.teacher.findUnique({ where: { userId: teacherUserId } });
-      if (!teacher) throw Errors.forbidden('User is not a teacher');
-      teacherId = teacher.id;
-    }
+  static async getTeacherAttemptsForGrading(teacherUserId: string) {
+    const teacher = await prisma.teacher.findUnique({ where: { userId: teacherUserId } });
+    if (!teacher) throw Errors.forbidden('User is not a teacher');
 
     // Get attempts for exams owned by this teacher that have ESSAY questions
     const attempts = await prisma.examAttempt.findMany({
       where: {
         exam: {
-          ...(teacherId ? { teacherId } : {}),
+          teacherId: teacher.id,
           questionBank: {
             questions: {
               some: { type: 'ESSAY' }
@@ -569,7 +563,7 @@ export class CBTService {
     return attempts;
   }
 
-  static async getTeacherAttemptDetail(attemptId: string, teacherUserId: string, userRole: string = 'TEACHER') {
+  static async getTeacherAttemptDetail(attemptId: string, teacherUserId: string) {
      const attempt = await prisma.examAttempt.findUnique({
          where: { id: attemptId },
          include: {
@@ -579,9 +573,7 @@ export class CBTService {
          }
      });
      if (!attempt) throw Errors.notFound('Attempt not found');
-     if (attempt.exam.teacher.userId !== teacherUserId && !userRole.includes('ADMIN')) {
-         throw Errors.forbidden('Only the assigned teacher can view this');
-     }
+     if (attempt.exam.teacher.userId !== teacherUserId) throw Errors.forbidden('Only the assigned teacher can view this');
 
      return attempt;
   }

@@ -561,7 +561,7 @@ export class CBTService {
         status: 'COMPLETED'
       },
       include: {
-        student: { select: { name: true, nis: true } },
+        student: { select: { user: { select: { name: true } }, nis: true } },
         exam: { select: { title: true, maxScore: true, subject: { select: { name: true } } } },
       },
       orderBy: { finishedAt: 'desc' }
@@ -569,7 +569,7 @@ export class CBTService {
 
     // Filter out attempts that already have a grade manually created for them
     const gradedAttempts = await prisma.grade.findMany({
-        where: { examId: { in: attempts.map(a => a.examId) }, notes: { contains: 'Manually graded' } }
+        where: { examId: { in: attempts.map(a => a.examId) }, studentId: { in: attempts.map(a => a.studentId) } }
     });
     return attempts.filter(a => !gradedAttempts.some(g => g.examId === a.examId && g.studentId === a.studentId));
   }
@@ -593,7 +593,7 @@ export class CBTService {
                  }
              },
              answers: { select: { id: true, questionId: true, answer: true, score: true } },
-             student: { select: { id: true, name: true, nis: true, userId: true } },
+             student: { select: { id: true, user: { select: { name: true } }, nis: true, userId: true } },
          }
      });
      if (!attempt) throw Errors.notFound('Attempt not found');

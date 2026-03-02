@@ -179,7 +179,7 @@ export default function ClassDailyReportsPage() {
             variant="ghost"
             size="icon"
             onClick={() =>
-              router.push(`/paud/daily-reports/${row.original.id}`)
+              router.push(`/tk/daily-reports/${row.original.id}`)
             }
           >
             <Eye className="h-4 w-4" />
@@ -188,7 +188,7 @@ export default function ClassDailyReportsPage() {
             variant="ghost"
             size="icon"
             onClick={() =>
-              router.push(`/paud/daily-reports/${row.original.id}/edit`)
+              router.push(`/tk/daily-reports/${row.original.id}/edit`)
             }
           >
             <FileEdit className="h-4 w-4" />
@@ -336,7 +336,7 @@ export default function ClassDailyReportsPage() {
                   </p>
                   <Button
                     className="mt-4"
-                    onClick={() => router.push("/paud/daily-reports/check-in")}
+                    onClick={() => router.push("/tk/daily-reports/check-in")}
                   >
                     Buat Laporan
                   </Button>

@@ -28,6 +28,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TKRadarChart } from "@/components/tk/RadarChart";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useAuthStore } from "@/stores/auth";
@@ -128,6 +129,46 @@ export default function TKProgressDashboardPage() {
   }, [progressData]);
 
   // Calculate class-wide statistics
+
+  const radarData = useMemo(() => {
+    if (!progressData || progressData.length === 0) return null;
+
+    // Calculate average level for each aspect
+    const data = {} as Record<string, any>;
+
+    const aspects = ["NAM", "FM", "KOG", "BHS", "SE", "SNI"];
+    aspects.forEach(aspect => {
+      let sum = 0;
+      let count = 0;
+
+      progressData.forEach(student => {
+        const studentAspect = student.summary.find(s => s.aspect === aspect);
+        if (studentAspect && studentAspect.latestLevel) {
+           const score = studentAspect.latestLevel === "BSB" ? 4 :
+                         studentAspect.latestLevel === "BSH" ? 3 :
+                         studentAspect.latestLevel === "MB" ? 2 : 1;
+           sum += score;
+           count++;
+        }
+      });
+
+      const avgScore = count > 0 ? sum / count : 0;
+      let latestLevel = null;
+      if (avgScore >= 3.5) latestLevel = "BSB";
+      else if (avgScore >= 2.5) latestLevel = "BSH";
+      else if (avgScore >= 1.5) latestLevel = "MB";
+      else if (avgScore > 0) latestLevel = "BB";
+
+      data[aspect] = {
+        latestLevel,
+        assessmentCount: count,
+        progressTrend: "NONE"
+      };
+    });
+
+    return data;
+  }, [progressData]);
+
   const classStats = useMemo(() => {
     const totalStudents = progressData?.length || 0;
     const overallProgress =
@@ -196,79 +237,93 @@ export default function TKProgressDashboardPage() {
         {selectedClass ? (
           <>
             {/* Overview Stats */}
+
             <div className="grid gap-4 md:grid-cols-4">
-              <Card className="glass-card">
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    Total Siswa
-                  </CardTitle>
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {classStats.totalStudents}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    siswa terdaftar
-                  </p>
-                </CardContent>
-              </Card>
+              <div className="col-span-1 md:col-span-1 space-y-4">
+                  <Card className="glass-card">
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                      <CardTitle className="text-sm font-medium">
+                        Total Siswa
+                      </CardTitle>
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">
+                        {classStats.totalStudents}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        siswa terdaftar
+                      </p>
+                    </CardContent>
+                  </Card>
 
-              <Card className="glass-card">
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    Rata-rata Perkembangan
-                  </CardTitle>
-                  <BarChart3 className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {classStats.overallProgress}%
-                  </div>
-                  <Progress
-                    value={classStats.overallProgress}
-                    className="mt-2"
+                  <Card className="glass-card">
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                      <CardTitle className="text-sm font-medium">
+                        Rata-rata Perkembangan
+                      </CardTitle>
+                      <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">
+                        {classStats.overallProgress}%
+                      </div>
+                      <Progress
+                        value={classStats.overallProgress}
+                        className="mt-2"
+                      />
+                    </CardContent>
+                  </Card>
+              </div>
+
+              <div className="col-span-1 md:col-span-2">
+                {radarData && (
+                  <TKRadarChart
+                    data={radarData as any}
+                    className="h-full"
                   />
-                </CardContent>
-              </Card>
+                )}
+              </div>
 
-              <Card className="glass-card border-green-500/30">
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-green-600">
-                    Aspek Terbaik
-                  </CardTitle>
-                  <Sparkles className="h-4 w-4 text-green-500" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-lg font-bold">
-                    {classStats.bestAspect
-                      ? ASPECT_LABELS[classStats.bestAspect.aspect]
-                      : "-"}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {classStats.bestAspect?.averageScore || 0}% rata-rata
-                  </p>
-                </CardContent>
-              </Card>
+              <div className="col-span-1 md:col-span-1 space-y-4">
+                  <Card className="glass-card border-green-500/30 h-[48%]">
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                      <CardTitle className="text-sm font-medium text-green-600">
+                        Aspek Terbaik
+                      </CardTitle>
+                      <Sparkles className="h-4 w-4 text-green-500" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-lg font-bold">
+                        {classStats.bestAspect
+                          ? ASPECT_LABELS[classStats.bestAspect.aspect]
+                          : "-"}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {classStats.bestAspect?.averageScore || 0}% rata-rata
+                      </p>
+                    </CardContent>
+                  </Card>
 
-              <Card className="glass-card border-orange-500/30">
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-orange-600">
-                    Perlu Perhatian
-                  </CardTitle>
-                  <TrendingUp className="h-4 w-4 text-orange-500" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-lg font-bold">
-                    {classStats.needsAttention
-                      ? ASPECT_LABELS[classStats.needsAttention.aspect]
-                      : "-"}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {classStats.needsAttention?.averageScore || 0}% rata-rata
-                  </p>
-                </CardContent>
-              </Card>
+                  <Card className="glass-card border-orange-500/30 h-[48%]">
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                      <CardTitle className="text-sm font-medium text-orange-600">
+                        Perlu Perhatian
+                      </CardTitle>
+                      <TrendingUp className="h-4 w-4 text-orange-500" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-lg font-bold">
+                        {classStats.needsAttention
+                          ? ASPECT_LABELS[classStats.needsAttention.aspect]
+                          : "-"}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {classStats.needsAttention?.averageScore || 0}% rata-rata
+                      </p>
+                    </CardContent>
+                  </Card>
+              </div>
             </div>
 
             {/* Aspect Cards */}

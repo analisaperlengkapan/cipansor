@@ -191,7 +191,7 @@ export default function BulkCheckInPage() {
       await bulkCreateMutation.mutateAsync(payload);
 
       toast.success(`${selectedStudents.length} siswa berhasil check-in`);
-      router.push("/paud/daily-reports");
+      router.push("/tk/daily-reports");
     } catch (error) {
       toast.error("Gagal melakukan bulk check-in");
       console.error(error);

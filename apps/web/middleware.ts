@@ -33,6 +33,7 @@ const roleRouteAccess: Record<UserRole, string[]> = {
   SUPER_ADMIN: ["*"], // Access to all routes
   UNIT_ADMIN: [
     "/dashboard",
+    "/tk",
     "/students",
     "/classes",
     "/teachers",
@@ -50,6 +51,7 @@ const roleRouteAccess: Record<UserRole, string[]> = {
   ],
   TEACHER: [
     "/teacher",
+    "/tk",
     "/tahfidz",
     "/classes",
     "/students",

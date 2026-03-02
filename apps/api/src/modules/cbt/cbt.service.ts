@@ -558,6 +558,9 @@ export class CBTService {
             }
           }
         },
+        grades: {
+            none: { notes: 'Manually graded via CBT' }
+        },
         status: 'COMPLETED'
       },
       include: {
@@ -573,9 +576,22 @@ export class CBTService {
      const attempt = await prisma.examAttempt.findUnique({
          where: { id: attemptId },
          include: {
-             exam: { include: { teacher: true, questionBank: { include: { questions: true } } } },
-             answers: true,
-             student: true,
+             exam: {
+                 select: {
+                     id: true,
+                     title: true, maxScore: true,
+                     teacher: { select: { userId: true, name: true } },
+                     questionBank: {
+                         select: {
+                             questions: {
+                                 select: { id: true, type: true, content: true, points: true }
+                             }
+                         }
+                     }
+                 }
+             },
+             answers: { select: { id: true, questionId: true, answer: true, score: true } },
+             student: { select: { id: true, name: true, nis: true, userId: true } },
          }
      });
      if (!attempt) throw Errors.notFound('Attempt not found');

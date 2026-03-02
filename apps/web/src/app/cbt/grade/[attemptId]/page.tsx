@@ -37,6 +37,12 @@ export default function GradeExamPage() {
       try {
         const res = await api.get(`/cbt/teacher/attempts/${attemptId}`);
         setAttempt(res.data.data);
+
+        // Initialize grades with existing scores if any
+        if (res.data.data?.answers) {
+          const initialGrades = res.data.data.answers.map((a: Answer) => ({ answerId: a.id, score: a.score || 0 }));
+          setGrades(initialGrades);
+        }
       } catch (err: any) {
         toast({ title: "Error", description: "Failed to load attempt", variant: "destructive" });
       } finally {

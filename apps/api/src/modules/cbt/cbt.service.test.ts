@@ -205,6 +205,7 @@ describe('CBT Service', () => {
       vi.mocked(prisma.examAttempt.findUnique).mockResolvedValue({
         id: 'attempt-essay',
         studentId: 'std-1',
+        status: 'COMPLETED',
         examId: 'exam-1',
         exam: {
           maxScore: 100,
@@ -247,6 +248,7 @@ describe('CBT Service', () => {
       vi.mocked(prisma.examAttempt.findUnique).mockResolvedValue({
         id: 'attempt-essay',
         studentId: 'std-1',
+        status: 'COMPLETED',
         examId: 'exam-1',
         exam: {
           teacher: { userId: 'teacher-1' },
@@ -260,6 +262,7 @@ describe('CBT Service', () => {
     it('should allow admin to grade manual answers even if not assigned teacher', async () => {
       vi.mocked(prisma.examAttempt.findUnique).mockResolvedValue({
         id: 'attempt-essay', studentId: 'std-1', examId: 'exam-1',
+        status: 'COMPLETED',
         exam: { teacher: { userId: 'teacher-1' }, maxScore: 100, questionBank: { questions: [] } },
         answers: [],
       } as any);

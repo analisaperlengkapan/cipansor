@@ -485,6 +485,9 @@ export class CBTService {
             const manualGrade = grades.find((g) => g.answerId === studentAnswer.id);
 
             if (manualGrade !== undefined && question.type === 'ESSAY') {
+                 if (manualGrade.score < 0 || manualGrade.score > question.points) {
+                     throw Errors.badRequest(`Score for answer ${studentAnswer.id} must be between 0 and ${question.points}`);
+                 }
                  await tx.examAnswer.update({
                     where: { id: studentAnswer.id },
                     data: { score: manualGrade.score, isCorrect: manualGrade.score > 0 }

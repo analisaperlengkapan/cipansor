@@ -95,4 +95,12 @@ router.post(
   CBTController.finishExam
 );
 
+
+// Grade Attempt
+router.post(
+  '/attempts/:attemptId/grade',
+  authenticate,
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
+  CBTController.gradeAttempt
+);
 export const cbtRoutes = router;

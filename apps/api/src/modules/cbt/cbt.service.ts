@@ -366,6 +366,7 @@ export class CBTService {
 
       // Calculate scores and prepare data
       const gradedAnswersData = [];
+      let needsManualGrading = false;
 
       for (const question of questions) {
         const studentAnswer = attempt.answers.find((a) => a.questionId === question.id);
@@ -381,6 +382,8 @@ export class CBTService {
             isCorrect = true;
             score = question.points;
           }
+        } else if (question.type === 'ESSAY') {
+          needsManualGrading = true;
         }
         // Essay needs manual grading, score remains 0.
 
@@ -397,10 +400,10 @@ export class CBTService {
       // Calculate final score based on Exam maxScore scaling
       // Exam maxScore is typically 100.
       // Raw score = totalScore / maxPossibleScore * exam.maxScore
-      let finalScore = new Prisma.Decimal(totalScore);
+      let finalScore: number = totalScore;
       if (maxPossibleScore > 0) {
         const scale = Number(attempt.exam.maxScore) / maxPossibleScore;
-        finalScore = new Prisma.Decimal(totalScore * scale);
+        finalScore = totalScore * scale;
       }
 
       // 2. Update individual answers
@@ -422,21 +425,114 @@ export class CBTService {
       });
 
       // 4. Create Grade
-      await tx.grade.create({
-        data: {
-          studentId: attempt.studentId,
-          examId: attempt.examId,
-          academicYearId: attempt.exam.academicYearId,
-          subjectId: attempt.exam.subjectId,
-          type: 'EXAM',
-          score: finalScore,
-          maxScore: attempt.exam.maxScore,
-          gradedById: attempt.exam.teacher.userId, // Auto-graded but attributed to teacher
-          notes: 'Auto-graded from CBT',
-        },
-      });
+      if (!needsManualGrading) {
+        await tx.grade.create({
+          data: {
+            studentId: attempt.studentId,
+            examId: attempt.examId,
+            academicYearId: attempt.exam.academicYearId,
+            subjectId: attempt.exam.subjectId,
+            type: 'EXAM',
+            score: finalScore,
+            maxScore: attempt.exam.maxScore,
+            gradedById: attempt.exam.teacher.userId, // Auto-graded but attributed to teacher
+            notes: 'Auto-graded from CBT',
+          },
+        });
+      }
 
       return finishedAttempt;
     });
   }
+
+  static async gradeManualAnswers(
+    attemptId: string,
+    teacherUserId: string,
+    grades: { answerId: string; score: number }[]
+  ) {
+    return prisma.$transaction(async (tx) => {
+      const attempt = await tx.examAttempt.findUnique({
+        where: { id: attemptId },
+        include: {
+          exam: {
+            include: {
+              teacher: true,
+              questionBank: {
+                include: {
+                  questions: true,
+                },
+              },
+            },
+          },
+          answers: true,
+        },
+      });
+
+      if (!attempt) throw Errors.notFound('Exam attempt not found');
+      if (attempt.exam.teacher.userId !== teacherUserId) {
+        throw Errors.forbidden('Only the assigned teacher can grade this exam');
+      }
+
+      let totalScore = 0;
+      let maxPossibleScore = 0;
+      const questions = attempt.exam.questionBank?.questions || [];
+
+      for (const question of questions) {
+        maxPossibleScore += question.points;
+        const studentAnswer = attempt.answers.find((a) => a.questionId === question.id);
+
+        if (studentAnswer) {
+            const manualGrade = grades.find((g) => g.answerId === studentAnswer.id);
+
+            if (manualGrade !== undefined && question.type === 'ESSAY') {
+                 await tx.examAnswer.update({
+                    where: { id: studentAnswer.id },
+                    data: { score: manualGrade.score, isCorrect: manualGrade.score > 0 }
+                 });
+                 totalScore += manualGrade.score;
+            } else {
+                 totalScore += Number(studentAnswer.score || 0);
+            }
+        }
+      }
+
+      let finalScore: number = totalScore;
+      if (maxPossibleScore > 0) {
+        const scale = Number(attempt.exam.maxScore) / maxPossibleScore;
+        finalScore = totalScore * scale;
+      }
+
+      const updatedAttempt = await tx.examAttempt.update({
+        where: { id: attemptId },
+        data: { score: finalScore },
+      });
+
+      const gradeExists = await tx.grade.findFirst({
+        where: { studentId: attempt.studentId, examId: attempt.examId }
+      });
+
+      if (gradeExists) {
+          await tx.grade.update({
+              where: { id: gradeExists.id },
+              data: { score: finalScore, gradedById: teacherUserId, notes: 'Manually graded via CBT' }
+          });
+      } else {
+          await tx.grade.create({
+              data: {
+                  studentId: attempt.studentId,
+                  examId: attempt.examId,
+                  academicYearId: attempt.exam.academicYearId,
+                  subjectId: attempt.exam.subjectId,
+                  type: 'EXAM',
+                  score: finalScore,
+                  maxScore: attempt.exam.maxScore,
+                  gradedById: teacherUserId,
+                  notes: 'Manually graded via CBT',
+              }
+          });
+      }
+
+      return updatedAttempt;
+    });
+}
 }

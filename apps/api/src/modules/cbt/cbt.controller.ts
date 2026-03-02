@@ -175,4 +175,22 @@ export class CBTController {
       next(error);
     }
   }
+
+  static async getAttemptsForGrading(req: Request, res: Response, next: NextFunction) {
+      try {
+          const result = await CBTService.getTeacherAttemptsForGrading((req as any).user.id);
+          res.json({ data: result });
+      } catch (error) {
+          next(error);
+      }
+  }
+
+  static async getTeacherAttempt(req: Request, res: Response, next: NextFunction) {
+      try {
+          const result = await CBTService.getTeacherAttemptDetail(req.params.attemptId, (req as any).user.id);
+          res.json({ data: result });
+      } catch (error) {
+          next(error);
+      }
+  }
 }

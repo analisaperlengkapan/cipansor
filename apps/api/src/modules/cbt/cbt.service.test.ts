@@ -199,8 +199,6 @@ describe('CBT Service', () => {
         data: { isCorrect: false, score: 0 },
       });
     });
-  });
-});
 
   describe('Manual Grading', () => {
     it('should allow teacher to grade manual answers', async () => {
@@ -259,3 +257,5 @@ describe('CBT Service', () => {
         .rejects.toThrow('Only the assigned teacher can grade this exam');
     });
   });
+});
+});

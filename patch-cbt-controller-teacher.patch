@@ -1,0 +1,25 @@
+--- apps/api/src/modules/cbt/cbt.controller.ts
++++ apps/api/src/modules/cbt/cbt.controller.ts
+@@ -204,4 +204,22 @@
+       next(error);
+     }
+   }
++
++  static async getAttemptsForGrading(req: Request, res: Response, next: NextFunction) {
++      try {
++          const result = await CBTService.getTeacherAttemptsForGrading((req as any).user.id);
++          res.json({ data: result });
++      } catch (error) {
++          next(error);
++      }
++  }
++
++  static async getTeacherAttempt(req: Request, res: Response, next: NextFunction) {
++      try {
++          const result = await CBTService.getTeacherAttemptDetail(req.params.attemptId, (req as any).user.id);
++          res.json({ data: result });
++      } catch (error) {
++          next(error);
++      }
++  }
+ }

@@ -166,8 +166,8 @@ export class CBTController {
     try {
       const { attemptId } = req.params;
       const grades = req.body.grades;
-      if (!Array.isArray(grades) || !grades.every((g: any) => typeof g.answerId === 'string' && typeof g.score === 'number' && isFinite(g.score))) {
-          throw Errors.badRequest('Grades must be an array of objects containing answerId (string) and score (finite number)');
+      if (!Array.isArray(grades)) {
+          throw Errors.badRequest('Grades must be an array of objects containing answerId and score');
       }
       const user = (req as any).user;
       const result = await CBTService.gradeManualAnswers(attemptId, user.id, grades, user.role);

@@ -469,6 +469,9 @@ export class CBTService {
       });
 
       if (!attempt) throw Errors.notFound('Exam attempt not found');
+      if (attempt.status !== 'COMPLETED') {
+        throw Errors.badRequest('Only completed attempts can be graded');
+      }
       if (attempt.exam.teacher.userId !== teacherUserId) {
         throw Errors.forbidden('Only the assigned teacher can grade this exam');
       }

@@ -137,7 +137,7 @@ export default function EditTKReportPage() {
         },
       });
       toast.success("Raport berhasil diperbarui");
-      router.push(`/paud/reports/${reportId}`);
+      router.push(`/tk/reports/${reportId}`);
     } catch {
       toast.error("Gagal memperbarui raport");
     }
@@ -163,7 +163,7 @@ export default function EditTKReportPage() {
           <p className="text-muted-foreground mb-4">
             Raport yang Anda cari tidak ada atau telah dihapus.
           </p>
-          <Button onClick={() => router.push("/paud/reports")}>
+          <Button onClick={() => router.push("/tk/reports")}>
             Kembali ke Daftar
           </Button>
         </div>
@@ -182,7 +182,7 @@ export default function EditTKReportPage() {
           <p className="text-muted-foreground mb-4">
             Raport yang sudah difinalisasi atau dicetak tidak dapat diedit.
           </p>
-          <Button onClick={() => router.push(`/paud/reports/${reportId}`)}>
+          <Button onClick={() => router.push(`/tk/reports/${reportId}`)}>
             Lihat Detail
           </Button>
         </div>

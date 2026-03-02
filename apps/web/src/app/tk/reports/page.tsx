@@ -197,7 +197,7 @@ export default function TKReportListPage() {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem
-              onClick={() => router.push(`/paud/reports/${row.original.id}`)}
+              onClick={() => router.push(`/tk/reports/${row.original.id}`)}
             >
               <Eye className="mr-2 h-4 w-4" />
               Lihat Detail
@@ -205,7 +205,7 @@ export default function TKReportListPage() {
             {row.original.status === "DRAFT" && (
               <DropdownMenuItem
                 onClick={() =>
-                  router.push(`/paud/reports/${row.original.id}/edit`)
+                  router.push(`/tk/reports/${row.original.id}/edit`)
                 }
               >
                 <Pencil className="mr-2 h-4 w-4" />
@@ -246,14 +246,14 @@ export default function TKReportListPage() {
             <div className="flex gap-2">
               <Button
                 variant="outline"
-                onClick={() => router.push("/paud/reports/generate")}
+                onClick={() => router.push("/tk/reports/generate")}
                 className="transition-all hover:shadow-md hover:-translate-y-0.5 group"
               >
                 <Sparkles className="mr-2 h-4 w-4 transition-transform group-hover:rotate-12 group-hover:scale-110" />
                 Generate Raport
               </Button>
               <Button
-                onClick={() => router.push("/paud/reports/new")}
+                onClick={() => router.push("/tk/reports/new")}
                 className="transition-all hover:shadow-md hover:-translate-y-0.5"
               >
                 <Plus className="mr-2 h-4 w-4" />

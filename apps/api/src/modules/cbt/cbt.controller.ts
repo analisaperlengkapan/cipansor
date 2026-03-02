@@ -171,6 +171,7 @@ export class CBTController {
       }
       const user = (req as any).user;
       const result = await CBTService.gradeManualAnswers(attemptId, user.id, grades, user.role);
+      res.json({ message: 'Exam graded successfully', data: result });
     } catch (error) {
       next(error);
     }

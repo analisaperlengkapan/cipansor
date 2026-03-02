@@ -556,10 +556,7 @@ export class CBTService {
             questions: {
               some: { type: 'ESSAY' }
             }
-          }
-        },
-        grades: {
-            none: { notes: 'Manually graded via CBT' }
+          },
         },
         status: 'COMPLETED'
       },
@@ -569,7 +566,12 @@ export class CBTService {
       },
       orderBy: { finishedAt: 'desc' }
     });
-    return attempts;
+
+    // Filter out attempts that already have a grade manually created for them
+    const gradedAttempts = await prisma.grade.findMany({
+        where: { examId: { in: attempts.map(a => a.examId) }, notes: { contains: 'Manually graded' } }
+    });
+    return attempts.filter(a => !gradedAttempts.some(g => g.examId === a.examId && g.studentId === a.studentId));
   }
 
   static async getTeacherAttemptDetail(attemptId: string, teacherUserId: string, userRole: string = 'TEACHER') {

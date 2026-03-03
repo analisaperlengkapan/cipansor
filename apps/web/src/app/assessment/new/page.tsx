@@ -75,7 +75,7 @@ const assessmentSchema = z.object({
   passingScore: z.coerce.number().min(0).max(100).optional(),
   weight: z.coerce.number().min(0.1).max(10).optional(),
   description: z.string().optional(),
-  questionBankId: z.string().uuid().optional().or(z.literal("")),
+  questionBankId: z.string().uuid().optional().or(z.literal("")).or(z.literal("none")).transform(v => v === "none" ? "" : v),
 });
 
 type AssessmentFormData = z.infer<typeof assessmentSchema>;

@@ -42,6 +42,7 @@ export interface Exam {
   passingScore: number;
   weight: number;
   instructions?: string;
+  questionBankId?: string | null;
   status: ExamStatus;
   createdAt: Date | string;
   updatedAt: Date | string;

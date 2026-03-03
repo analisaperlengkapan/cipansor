@@ -2554,6 +2554,7 @@ model Exam {
   teacherId      String     @map("teacher_id")
   type           ExamType
   title          String
+  semester       Int?
   description    String?    @db.Text
   scheduledAt    DateTime   @map("scheduled_at")
   duration       Int        @default(60) // Durasi dalam menit

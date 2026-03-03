@@ -38,8 +38,17 @@ export default function GradeExamPage() {
         setAttempt(res.data.data);
 
         // Initialize grades with existing scores if any
-        if (res.data.data?.answers) {
-          const initialGrades = res.data.data.answers.map((a: Answer) => ({ answerId: a.id, score: a.score || 0 }));
+        // We only want to grade ESSAY questions manually here.
+        // We shouldn't send back non-essay answers to prevent overwriting auto-graded scores.
+        if (res.data.data?.answers && res.data.data?.exam?.questionBank?.questions) {
+          const essayQuestionIds = res.data.data.exam.questionBank.questions
+            .filter((q: Question) => q.type === "ESSAY")
+            .map((q: Question) => q.id);
+
+          const initialGrades = res.data.data.answers
+            .filter((a: Answer) => essayQuestionIds.includes(a.questionId))
+            .map((a: Answer) => ({ answerId: a.id, score: a.score || 0 }));
+
           setGrades(initialGrades);
         }
       } catch (err: any) {
@@ -85,7 +94,7 @@ export default function GradeExamPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>{attempt.exam?.title}</CardTitle>
+          <CardTitle>{attempt.exam.title}</CardTitle>
           <p className="text-sm text-muted-foreground">Student: {attempt.student?.user?.name || attempt.studentId} ({attempt.student?.nis})</p>
         </CardHeader>
         <CardContent className="space-y-8">
@@ -93,7 +102,7 @@ export default function GradeExamPage() {
             <p>No essay questions to grade.</p>
           ) : (
             essayQuestions.map((q: Question) => {
-              const answer = attempt.answers?.find((a: Answer) => a.questionId === q.id);
+              const answer = attempt.answers.find((a: Answer) => a.questionId === q.id);
               const currentGrade = grades.find(g => g.answerId === answer?.id)?.score ?? 0;
 
               return (

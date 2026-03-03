@@ -116,6 +116,7 @@ export async function createExam(data: CreateExamInput): Promise<Exam> {
       teacherId: data.teacherId,
       type: data.type as any, // Prisma enum
       title: data.title,
+      semester: data.semester,
       description: data.description,
       scheduledAt: new Date(data.scheduledAt),
       duration: data.duration ?? 60,
@@ -140,6 +141,7 @@ export async function updateExam(id: string, data: UpdateExamInput): Promise<Exa
   const updateData: Prisma.ExamUpdateInput = {};
 
   if (data.title) updateData.title = data.title;
+  if (data.semester !== undefined) updateData.semester = data.semester;
   if (data.description !== undefined) updateData.description = data.description;
   if (data.scheduledAt) updateData.scheduledAt = new Date(data.scheduledAt);
   if (data.duration !== undefined) updateData.duration = data.duration;
@@ -730,6 +732,7 @@ function mapToExam(data: any): Exam {
     passingScore: Number(data.passingScore),
     weight: Number(data.weight),
     instructions: data.instructions ?? undefined,
+    questionBankId: data.questionBankId ?? null,
     status: data.status as ExamStatus,
     createdAt: data.createdAt,
     updatedAt: data.updatedAt,

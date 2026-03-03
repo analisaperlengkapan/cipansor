@@ -22,6 +22,7 @@ export const createExamSchema = z.object({
 });
 
 export const updateExamSchema = createExamSchema.partial().extend({
+  questionBankId: z.string().uuid().nullable().optional(),
   status: z.nativeEnum(ExamStatus).optional(),
 });
 

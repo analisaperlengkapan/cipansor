@@ -125,7 +125,7 @@ export async function createExam(data: CreateExamInput): Promise<Exam> {
       weight: new Decimal(data.weight ?? 1),
       instructions: data.instructions,
       questionBankId: data.questionBankId,
-      status: 'SCHEDULED' as any, // Default status
+      status: 'DRAFT' as any, // Default status
     },
     include: {
       subject: { select: { id: true, name: true, code: true } },

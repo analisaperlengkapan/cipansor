@@ -107,13 +107,21 @@ export async function getExamById(id: string): Promise<Exam | null> {
 }
 
 export async function createExam(data: CreateExamInput): Promise<Exam> {
+  // If teacherId provided is actually a userId, try to resolve the correct teacher record.
+  // Otherwise, use the provided ID.
+  const teacher = await prisma.teacher.findUnique({
+    where: { userId: data.teacherId }
+  }).catch(() => null);
+
+  const finalTeacherId = teacher ? teacher.id : data.teacherId;
+
   const exam = await prisma.exam.create({
     data: {
       unitId: data.unitId,
       academicYearId: data.academicYearId,
       subjectId: data.subjectId,
       classId: data.classId,
-      teacherId: data.teacherId,
+      teacherId: finalTeacherId,
       type: data.type as any, // Prisma enum
       title: data.title,
       semester: data.semester,

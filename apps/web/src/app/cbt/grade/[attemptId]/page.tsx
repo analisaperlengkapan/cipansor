@@ -85,7 +85,7 @@ export default function GradeExamPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>{attempt.exam.title}</CardTitle>
+          <CardTitle>{attempt.exam?.title}</CardTitle>
           <p className="text-sm text-muted-foreground">Student: {attempt.student?.user?.name || attempt.studentId} ({attempt.student?.nis})</p>
         </CardHeader>
         <CardContent className="space-y-8">

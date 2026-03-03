@@ -75,7 +75,7 @@ const assessmentSchema = z.object({
   passingScore: z.coerce.number().min(0).max(100).optional(),
   weight: z.coerce.number().min(0.1).max(10).optional(),
   description: z.string().optional(),
-  questionBankId: z.string().optional(),
+  questionBankId: z.string().uuid().optional().or(z.literal("")),
 });
 
 type AssessmentFormData = z.infer<typeof assessmentSchema>;
@@ -121,6 +121,7 @@ export default function NewAssessmentPage() {
     try {
       await createAssessment.mutateAsync({
         ...data,
+        questionBankId: data.questionBankId || undefined,
         unitId: user.unitId || "",
         teacherId: user.id,
         scheduledAt: new Date(data.scheduledAt).toISOString(),

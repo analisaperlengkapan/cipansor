@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/componen
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 import { api } from "@/lib/api";
 
 interface Question {
@@ -26,7 +26,6 @@ interface Answer {
 export default function GradeExamPage() {
   const { attemptId } = useParams();
   const router = useRouter();
-  const { toast } = useToast();
 
   const [attempt, setAttempt] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -39,18 +38,27 @@ export default function GradeExamPage() {
         setAttempt(res.data.data);
 
         // Initialize grades with existing scores if any
-        if (res.data.data?.answers) {
-          const initialGrades = res.data.data.answers.map((a: Answer) => ({ answerId: a.id, score: a.score || 0 }));
+        // We only want to grade ESSAY questions manually here.
+        // We shouldn't send back non-essay answers to prevent overwriting auto-graded scores.
+        if (res.data.data?.answers && res.data.data?.exam?.questionBank?.questions) {
+          const essayQuestionIds = res.data.data.exam.questionBank.questions
+            .filter((q: Question) => q.type === "ESSAY")
+            .map((q: Question) => q.id);
+
+          const initialGrades = res.data.data.answers
+            .filter((a: Answer) => essayQuestionIds.includes(a.questionId))
+            .map((a: Answer) => ({ answerId: a.id, score: a.score || 0 }));
+
           setGrades(initialGrades);
         }
       } catch (err: any) {
-        toast({ title: "Error", description: "Failed to load attempt", variant: "destructive" });
+        toast.error("Failed to load attempt");
       } finally {
         setLoading(false);
       }
     };
     if (attemptId) fetchAttempt();
-  }, [attemptId, toast]);
+  }, [attemptId]);
 
   const handleGradeChange = (answerId: string, score: number) => {
     setGrades(prev => {
@@ -65,17 +73,17 @@ export default function GradeExamPage() {
   const submitGrades = async () => {
     try {
       await api.post(`/cbt/attempts/${attemptId}/grade`, { grades });
-      toast({ title: "Success", description: "Grades submitted successfully" });
+      toast.success("Grades submitted successfully");
       router.push("/cbt/exams");
     } catch (err: any) {
-      toast({ title: "Error", description: err.response?.data?.message || "Failed to submit grades", variant: "destructive" });
+      toast.error(err.response?.data?.message || "Failed to submit grades");
     }
   };
 
   if (loading) return <div className="p-8">Loading...</div>;
   if (!attempt) return <div className="p-8">Attempt not found</div>;
 
-  const essayQuestions = attempt.exam.questionBank.questions.filter((q: Question) => q.type === "ESSAY");
+  const essayQuestions = attempt.exam?.questionBank?.questions?.filter((q: Question) => q.type === "ESSAY") || [];
 
   return (
     <div className="p-8 max-w-4xl mx-auto space-y-6">

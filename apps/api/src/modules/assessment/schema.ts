@@ -18,9 +18,11 @@ export const createExamSchema = z.object({
   passingScore: z.number().min(0).max(1000).default(70),
   weight: z.number().min(0).max(10).default(1),
   instructions: z.string().optional(),
+  questionBankId: z.string().uuid().optional(),
 });
 
 export const updateExamSchema = createExamSchema.partial().extend({
+  questionBankId: z.string().uuid().nullable().optional(),
   status: z.nativeEnum(ExamStatus).optional(),
 });
 

@@ -71,6 +71,7 @@ export interface CreateExamInput {
   passingScore?: number;
   weight?: number;
   instructions?: string;
+  questionBankId?: string;
 }
 
 export interface UpdateExamInput extends Partial<CreateExamInput> {

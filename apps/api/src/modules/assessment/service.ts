@@ -123,6 +123,7 @@ export async function createExam(data: CreateExamInput): Promise<Exam> {
       passingScore: new Decimal(data.passingScore ?? 70),
       weight: new Decimal(data.weight ?? 1),
       instructions: data.instructions,
+      questionBankId: data.questionBankId,
       status: 'SCHEDULED' as any, // Default status
     },
     include: {
@@ -146,6 +147,7 @@ export async function updateExam(id: string, data: UpdateExamInput): Promise<Exa
   if (data.passingScore !== undefined) updateData.passingScore = new Decimal(data.passingScore);
   if (data.weight !== undefined) updateData.weight = new Decimal(data.weight);
   if (data.instructions !== undefined) updateData.instructions = data.instructions;
+  if (data.questionBankId !== undefined) updateData.questionBankId = data.questionBankId;
   if (data.status) updateData.status = data.status as any;
   if (data.type) updateData.type = data.type as any;
 

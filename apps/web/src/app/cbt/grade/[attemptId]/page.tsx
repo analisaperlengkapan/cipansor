@@ -93,7 +93,7 @@ export default function GradeExamPage() {
             <p>No essay questions to grade.</p>
           ) : (
             essayQuestions.map((q: Question) => {
-              const answer = attempt.answers.find((a: Answer) => a.questionId === q.id);
+              const answer = attempt.answers?.find((a: Answer) => a.questionId === q.id);
               const currentGrade = grades.find(g => g.answerId === answer?.id)?.score ?? 0;
 
               return (

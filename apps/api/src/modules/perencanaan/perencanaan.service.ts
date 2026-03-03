@@ -196,7 +196,6 @@ export class PerencanaanService {
     startDate?: string;
     endDate?: string;
     budget?: number;
-    accountCodeId?: string;
     priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
   }) {
     return prisma.planActivity.create({
@@ -209,24 +208,19 @@ export class PerencanaanService {
         endDate: data.endDate ? new Date(data.endDate) : undefined,
         budget: data.budget ? new Prisma.Decimal(data.budget) : undefined,
         priority: data.priority,
-        account: data.accountCodeId ? { connect: { id: data.accountCodeId } } : undefined,
       },
       include: {
         pic: { select: { id: true, name: true } },
-        account: { select: { id: true, code: true, name: true } },
       },
     });
   }
 
   async updateActivity(id: string, data: any) {
-    const { picId, accountCodeId, ...rest } = data;
+    const { picId, ...rest } = data;
     const updateData: any = { ...rest };
 
     if (picId) updateData.pic = { connect: { id: picId } };
     else if (picId === null) updateData.pic = { disconnect: true };
-
-    if (accountCodeId) updateData.account = { connect: { id: accountCodeId } };
-    else if (accountCodeId === null) updateData.account = { disconnect: true };
 
     if (rest.startDate) updateData.startDate = new Date(rest.startDate);
     if (rest.endDate) updateData.endDate = new Date(rest.endDate);
@@ -235,130 +229,8 @@ export class PerencanaanService {
     return prisma.planActivity.update({
       where: { id },
       data: updateData,
-      include: {
-        pic: { select: { id: true, name: true } },
-        account: { select: { id: true, code: true, name: true } },
-      },
+      include: { pic: { select: { id: true, name: true } } },
     });
-  }
-
-  // ==================== REALIZATION ====================
-
-  async getPlanRealization(planId: string) {
-    // 1. Get Plan details
-    const plan = await prisma.strategicPlan.findUnique({
-      where: { id: planId },
-      include: {
-        objectives: {
-          include: {
-            activities: {
-              where: { accountCodeId: { not: null } },
-              include: { account: true },
-            },
-          },
-        },
-      },
-    });
-
-    if (!plan) return null;
-
-    const startDate = plan.startDate;
-    const endDate = plan.endDate;
-    const unitId = plan.unitId;
-
-    // 2. Extract relevant account IDs
-    const activitiesWithAccounts = plan.objectives.flatMap((o) => o.activities);
-    const accountIds = [...new Set(activitiesWithAccounts.map((a) => a.accountCodeId as string))];
-
-    if (accountIds.length === 0) {
-      return {
-        planTotalBudget: plan.budget?.toNumber() || 0,
-        activitiesTotalBudget: 0,
-        realizedAmount: 0,
-        details: [],
-      };
-    }
-
-    // 3. Aggregate Journal Entries for these accounts in the plan period
-    const aggregations = await prisma.journalEntry.groupBy({
-      by: ['accountId'],
-      where: {
-        unitId,
-        accountId: { in: accountIds },
-        date: {
-          gte: startDate,
-          lte: endDate,
-        },
-      },
-      _sum: {
-        debit: true,
-        credit: true,
-      },
-    });
-
-    // 4. Map results & Calculate total budget per account for pro-rating
-    const realizationMap = new Map<string, number>();
-    const accountBudgetMap = new Map<string, number>();
-
-    // Calculate total budget per account to handle shared accounts
-    activitiesWithAccounts.forEach((activity) => {
-      if (activity.accountCodeId) {
-        const currentTotal = accountBudgetMap.get(activity.accountCodeId) || 0;
-        accountBudgetMap.set(
-          activity.accountCodeId,
-          currentTotal + (activity.budget?.toNumber() || 0)
-        );
-      }
-    });
-
-    aggregations.forEach((agg) => {
-      // For expenses (Debit normal), used = debit - credit
-      const used = (agg._sum.debit?.toNumber() || 0) - (agg._sum.credit?.toNumber() || 0);
-      realizationMap.set(agg.accountId, used);
-    });
-
-    // 5. Construct details per activity with pro-rating
-    const details = activitiesWithAccounts.map((activity) => {
-      const accountId = activity.accountCodeId!;
-      const totalAccountRealized = realizationMap.get(accountId) || 0;
-      const totalAccountBudget = accountBudgetMap.get(accountId) || 0;
-      const activityBudget = activity.budget?.toNumber() || 0;
-
-      // Pro-rate realization based on budget share
-      // If total budget for account is 0, split evenly or assign 0 (here we assign 0 to avoid div/0)
-      let allocatedRealization = 0;
-      if (totalAccountBudget > 0) {
-        allocatedRealization = (activityBudget / totalAccountBudget) * totalAccountRealized;
-      } else if (totalAccountRealized > 0) {
-        // Fallback: if budget is 0 but there is spending, we can't pro-rate by budget.
-        // We could split evenly, but for now let's keep it simple:
-        // if budget is 0, we can't attribute "planned" share.
-        // Let's count it as 0 variance for this specific activity view or handle it?
-        // Better approach: if budget is 0, maybe allocate 0.
-        allocatedRealization = 0;
-      }
-
-      return {
-        activityId: activity.id,
-        activityTitle: activity.title,
-        accountId: activity.accountCodeId,
-        accountName: activity.account?.name,
-        accountCode: activity.account?.code,
-        plannedBudget: activityBudget,
-        realizedAmount: allocatedRealization,
-        variance: activityBudget - allocatedRealization,
-      };
-    });
-
-    const activitiesTotalBudget = details.reduce((sum, d) => sum + d.plannedBudget, 0);
-    const totalRealized = details.reduce((sum, d) => sum + d.realizedAmount, 0);
-
-    return {
-      planTotalBudget: plan.budget?.toNumber() || 0,
-      activitiesTotalBudget,
-      realizedAmount: totalRealized,
-      details,
-    };
   }
 
   async deleteActivity(id: string) {

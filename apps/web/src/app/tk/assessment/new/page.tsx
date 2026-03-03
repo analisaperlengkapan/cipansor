@@ -194,7 +194,7 @@ export default function CreateTKAssessmentPage() {
       }
 
       toast.success("Penilaian berhasil disimpan");
-      router.push("/tk/assessment");
+      router.push("/paud/assessment");
     } catch (error) {
       toast.error("Gagal menyimpan penilaian");
     }
@@ -220,7 +220,7 @@ export default function CreateTKAssessmentPage() {
         <PageHeader
           title="Tambah Penilaian Baru"
           description="Isi form untuk mencatat perkembangan anak"
-          backHref="/tk/assessment"
+          backHref="/paud/assessment"
         />
 
         {/* Progress Bar */}

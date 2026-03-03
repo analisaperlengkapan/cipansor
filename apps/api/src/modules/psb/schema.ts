@@ -35,11 +35,7 @@ export const createRegistrantSchema = z.object({
   nickname: z.string().optional(),
   gender: z.enum(['MALE', 'FEMALE']),
   birthPlace: z.string().min(2).max(100),
-  // Accept both ISO datetime or YYYY-MM-DD date string
-  birthDate: z.union([
-    z.string().datetime(),
-    z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
-  ]),
+  birthDate: z.string().datetime(),
   address: z.string().min(5),
 
   // Optional identity fields
@@ -63,18 +59,12 @@ export const createRegistrantSchema = z.object({
   graduationYear: z.number().int().optional(),
 
   // Parents
-  parentName: z.string().min(1).max(100),
-  parentPhone: z.string().min(1).max(20),
-  parentEmail: z.string().email().optional().or(z.literal('')),
-  parentOccupation: z.string().optional(),
-
-  // Extended Parent Info (optional for mapping)
-  fatherName: z.string().min(1).max(100).optional(),
+  fatherName: z.string().min(1).max(100),
   fatherOccupation: z.string().optional(),
   fatherPhone: z.string().optional(),
   fatherEmail: z.string().email().optional().or(z.literal('')),
 
-  motherName: z.string().min(1).max(100).optional(),
+  motherName: z.string().min(1).max(100),
   motherOccupation: z.string().optional(),
   motherPhone: z.string().optional(),
 

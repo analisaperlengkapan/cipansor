@@ -228,7 +228,7 @@ export default function EditTKAssessmentPage() {
       }
 
       toast.success("Penilaian berhasil diperbarui");
-      router.push("/tk/assessment");
+      router.push("/paud/assessment");
     } catch (error: unknown) {
       const message =
         error instanceof Error ? error.message : "Gagal memperbarui penilaian";

@@ -372,25 +372,9 @@ export default function BillDetailPage({
           <CardTitle>Ringkasan Pembayaran</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className={`grid gap-4 ${bill.discount > 0 ? 'md:grid-cols-2 lg:grid-cols-5' : 'md:grid-cols-3'}`}>
-            {bill.discount > 0 && (
-              <>
-                <div className="rounded-lg bg-muted p-4">
-                  <p className="text-sm text-muted-foreground">Tagihan Awal</p>
-                  <p className="text-2xl font-bold line-through text-muted-foreground/70">
-                    {formatCurrency(bill.originalAmount || (bill.amount + bill.discount))}
-                  </p>
-                </div>
-                <div className="rounded-lg bg-blue-50 p-4">
-                  <p className="text-sm text-blue-600">Potongan Beasiswa</p>
-                  <p className="text-2xl font-bold text-blue-600">
-                    {formatCurrency(bill.discount)}
-                  </p>
-                </div>
-              </>
-            )}
+          <div className="grid gap-4 md:grid-cols-3">
             <div className="rounded-lg bg-muted p-4">
-              <p className="text-sm text-muted-foreground">Total Tagihan {bill.discount > 0 ? '(Net)' : ''}</p>
+              <p className="text-sm text-muted-foreground">Total Tagihan</p>
               <p className="text-2xl font-bold">
                 {formatCurrency(bill.amount)}
               </p>

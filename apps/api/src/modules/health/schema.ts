@@ -103,33 +103,6 @@ export const queryGrowthRecordSchema = z.object({
   endDate: z.coerce.date().optional(),
 });
 
-// Immunization Record schemas
-export const createImmunizationRecordSchema = z.object({
-  studentId: z.string().uuid(),
-  unitId: z.string().uuid(),
-  vaccineName: z.string().min(1),
-  vaccineCode: z.string().optional(),
-  doseNumber: z.number().int().positive(),
-  scheduledDate: z.coerce.date().optional(),
-  administeredDate: z.coerce.date().optional(),
-  administeredAt: z.string().optional(),
-  batchNumber: z.string().optional(),
-  notes: z.string().optional(),
-  status: z.string().optional(),
-});
-
-export const updateImmunizationRecordSchema = createImmunizationRecordSchema
-  .partial()
-  .omit({ studentId: true, unitId: true });
-
-export const queryImmunizationRecordSchema = z.object({
-  page: z.coerce.number().int().positive().default(1),
-  limit: z.coerce.number().int().positive().max(100).default(20),
-  studentId: z.string().uuid().optional(),
-  unitId: z.string().uuid().optional(),
-  status: z.string().optional(),
-});
-
 export type CreateMedicalRecordInput = z.infer<typeof createMedicalRecordSchema>;
 export type UpdateMedicalRecordInput = z.infer<typeof updateMedicalRecordSchema>;
 export type QueryMedicalRecordInput = z.infer<typeof queryMedicalRecordSchema>;
@@ -140,6 +113,3 @@ export type CreateMedicationUsageInput = z.infer<typeof createMedicationUsageSch
 export type QueryMedicationUsageInput = z.infer<typeof queryMedicationUsageSchema>;
 export type CreateGrowthRecordInput = z.infer<typeof createGrowthRecordSchema>;
 export type QueryGrowthRecordInput = z.infer<typeof queryGrowthRecordSchema>;
-export type CreateImmunizationRecordInput = z.infer<typeof createImmunizationRecordSchema>;
-export type UpdateImmunizationRecordInput = z.infer<typeof updateImmunizationRecordSchema>;
-export type QueryImmunizationRecordInput = z.infer<typeof queryImmunizationRecordSchema>;

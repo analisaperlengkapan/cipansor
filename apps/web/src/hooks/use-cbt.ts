@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api, SharedPaginatedResponse, ApiResponse } from "@/lib/api";
+import { api, SharedPaginatedResponse } from "@/lib/api";
 
 // Types
 export enum QuestionType {
@@ -36,22 +36,6 @@ export interface QuestionBank {
   _count?: { questions: number; exams: number };
 }
 
-export interface Exam {
-  id: string;
-  title: string;
-  description?: string;
-  scheduledAt: string;
-  duration: number;
-  maxScore: number;
-  subject?: {
-    name: string;
-    code: string;
-  };
-  attemptStatus?: "IN_PROGRESS" | "COMPLETED" | "EXPIRED";
-  score?: number;
-  finishedAt?: string;
-}
-
 export interface ExamAttempt {
   id: string;
   examId: string;
@@ -60,20 +44,8 @@ export interface ExamAttempt {
   finishedAt?: string;
   score?: number;
   status: "IN_PROGRESS" | "COMPLETED" | "EXPIRED";
-  exam: {
-    id: string;
-    title: string;
-    duration: number;
-    maxScore?: number;
-    questionBank: {
-      questions: Question[];
-    };
-  };
-  answers: {
-    id: string;
-    questionId: string;
-    answer: any;
-  }[];
+  exam?: any;
+  answers?: any[];
 }
 
 // Hooks
@@ -186,28 +158,11 @@ export const useDeleteQuestion = () => {
 
 // Student Exam
 
-/**
- * Get available exams for the logged-in student
- */
-export function useStudentExams() {
-  return useQuery({
-    queryKey: ["cbt", "exams", "student"],
-    queryFn: async () => {
-      const response = await api.get<ApiResponse<Exam[]>>("/cbt/exams/student");
-      return response.data.data;
-    },
-  });
-}
-
 export const useStartExam = () => {
-  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (examId: string) => {
       const { data } = await api.post(`/cbt/exams/${examId}/start`);
       return data.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["cbt", "exams", "student"] });
     },
   });
 };
@@ -220,8 +175,8 @@ export const useExamAttempt = (attemptId: string) => {
       return data.data;
     },
     enabled: !!attemptId,
+    // Disable refetch on window focus to avoid resetting UI state unexpectedly
     refetchOnWindowFocus: false,
-    staleTime: 0,
   });
 };
 
@@ -253,7 +208,6 @@ export const useFinishExam = () => {
     },
     onSuccess: (data, attemptId) => {
       queryClient.invalidateQueries({ queryKey: ["exam-attempt", attemptId] });
-      queryClient.invalidateQueries({ queryKey: ["cbt", "exams", "student"] });
     },
   });
 };

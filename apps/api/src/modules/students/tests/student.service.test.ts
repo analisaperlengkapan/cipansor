@@ -15,7 +15,6 @@ vi.mock('@/lib/prisma', () => ({
     user: {
       findFirst: vi.fn(),
       create: vi.fn(),
-      findUnique: vi.fn(),
     },
     unit: {
       findFirst: vi.fn(),
@@ -47,10 +46,9 @@ describe('StudentService', () => {
       (prisma.student.findMany as any).mockResolvedValue(mockStudents);
       (prisma.student.count as any).mockResolvedValue(2);
 
-      // Use a known UserRole if ADMIN is not available in the enum, or cast as any if testing logic agnostic to exact enum
       const result = await service.findAll(
         { page: 1, limit: 10, unitId: 'unit-1' },
-        { role: 'UNIT_ADMIN' as UserRole, unitId: 'unit-1' }
+        { role: UserRole.ADMIN, unitId: 'unit-1' }
       );
 
       expect(prisma.student.findMany).toHaveBeenCalledWith(

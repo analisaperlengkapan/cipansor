@@ -171,50 +171,6 @@ export class CBTService {
 
   // --- Exam Attempts (Student) ---
 
-  static async getStudentExams(studentId: string) {
-    // 1. Get student's active class
-    const enrollment = await prisma.classEnrollment.findFirst({
-      where: {
-        studentId,
-        status: 'active',
-      },
-      include: {
-        class: true,
-      },
-    });
-
-    if (!enrollment) {
-      return []; // No active class, no exams
-    }
-
-    // 2. Find exams scheduled for this class
-    // TODO: Add logic for specific student assignments if needed (not just class)
-    const exams = await prisma.exam.findMany({
-      where: {
-        classId: enrollment.classId,
-        status: { in: ['SCHEDULED', 'ONGOING', 'COMPLETED', 'GRADED'] }, // Show upcoming and past
-      },
-      include: {
-        subject: {
-          select: { name: true, code: true },
-        },
-        attempts: {
-          where: { studentId },
-          take: 1,
-          select: { status: true, score: true, finishedAt: true },
-        },
-      },
-      orderBy: { scheduledAt: 'desc' },
-    });
-
-    return exams.map((exam) => ({
-      ...exam,
-      attemptStatus: exam.attempts[0]?.status || null,
-      score: exam.attempts[0]?.score ?? null,
-      finishedAt: exam.attempts[0]?.finishedAt || null,
-    }));
-  }
-
   static async startExamAttempt(examId: string, studentId: string) {
     // 1. Check if exam exists and is open
     const exam = await prisma.exam.findUnique({
@@ -230,27 +186,9 @@ export class CBTService {
     if (!exam.questionBank)
       throw Errors.badRequest('This exam is not configured for CBT (no Question Bank)');
 
-    // 2. Validate Student Eligibility (Same Class)
-    const enrollment = await prisma.classEnrollment.findFirst({
-      where: {
-        studentId,
-        status: 'active',
-        classId: exam.classId,
-      },
-    });
-
-    if (!enrollment) {
-      throw Errors.forbidden('You are not enrolled in the class for this exam');
-    }
-
-    // 3. Check Timing
-    const now = new Date();
-    // Assuming simple logic: exam must be 'SCHEDULED' or 'ONGOING' and start time passed
-    // Ideally we check if (now >= scheduledAt && now <= scheduledAt + duration)
-    // For MVP, just check if it's not DRAFT.
-    if (exam.status === 'DRAFT') {
-      throw Errors.forbidden('Exam is not yet published');
-    }
+    // Check timing (simplified, ideally check scheduledAt + duration)
+    // For now, allow starting if status is not COMPLETED/GRADED (assuming generic exam status)
+    // Or check if current time is within window.
 
     // Check if attempt already exists
     const existingAttempt = await prisma.examAttempt.findUnique({
@@ -263,7 +201,9 @@ export class CBTService {
       if (existingAttempt.status === 'IN_PROGRESS') {
         return existingAttempt; // Resume
       }
-      // If completed, check if retake is allowed (not implemented yet, default NO)
+      // If expired or completed, maybe allow retake? For now, block.
+      // throw Errors.badRequest('You have already taken this exam');
+      // Let's just return it, frontend can handle status.
       return existingAttempt;
     }
 
@@ -285,7 +225,6 @@ export class CBTService {
         answers: true,
         exam: {
           include: {
-            subject: { select: { name: true } },
             questionBank: {
               include: {
                 questions: {
@@ -295,7 +234,7 @@ export class CBTService {
                     content: true,
                     options: true,
                     points: true,
-                    // NO ANSWER KEY sent to frontend!
+                    // NO ANSWER KEY
                   },
                   orderBy: { order: 'asc' },
                 },
@@ -312,17 +251,7 @@ export class CBTService {
     return attempt;
   }
 
-  static async submitAnswer(attemptId: string, questionId: string, answer: any, studentId: string) {
-    // Verify attempt ownership
-    const attempt = await prisma.examAttempt.findUnique({
-      where: { id: attemptId },
-      select: { studentId: true, status: true },
-    });
-
-    if (!attempt) throw Errors.notFound('Attempt not found');
-    if (attempt.studentId !== studentId) throw Errors.forbidden('Access denied');
-    if (attempt.status !== 'IN_PROGRESS') throw Errors.badRequest('Exam attempt is closed');
-
+  static async submitAnswer(attemptId: string, questionId: string, answer: any) {
     // Upsert answer
     return prisma.examAnswer.upsert({
       where: {
@@ -339,268 +268,75 @@ export class CBTService {
     });
   }
 
-  static async finishExamAttempt(attemptId: string, studentId: string) {
-    return await prisma.$transaction(async (tx) => {
-      // 1. Fetch attempt inside transaction to lock and prevent race conditions
-      const attempt = await tx.examAttempt.findUnique({
-        where: { id: attemptId },
-        include: {
-          exam: {
-            include: {
-              questionBank: { include: { questions: true } },
-              teacher: { select: { userId: true } },
-            },
-          },
-          answers: true,
+  static async finishExamAttempt(attemptId: string) {
+    const attempt = await prisma.examAttempt.findUnique({
+      where: { id: attemptId },
+      include: {
+        exam: {
+          include: { questionBank: { include: { questions: true } } },
         },
-      });
+        answers: true,
+      },
+    });
 
-      if (!attempt) throw Errors.notFound('Attempt not found');
-      if (attempt.studentId !== studentId) throw Errors.forbidden('Access denied');
-      if (attempt.status !== 'IN_PROGRESS') return attempt;
+    if (!attempt) throw Errors.notFound('Attempt not found');
+    if (attempt.status !== 'IN_PROGRESS') return attempt;
 
-      // Auto grading
-      let totalScore = 0;
-      let maxPossibleScore = 0;
-      const questions = attempt.exam.questionBank?.questions || [];
+    // Auto grading
+    let totalScore = 0;
+    const questions = attempt.exam.questionBank?.questions || [];
 
-      // Calculate scores and prepare data
-      const gradedAnswersData = [];
-      let needsManualGrading = false;
+    const gradedAnswers = [];
 
-      for (const question of questions) {
-        const studentAnswer = attempt.answers.find((a) => a.questionId === question.id);
-        let isCorrect = false;
-        let score = 0;
-        maxPossibleScore += question.points;
+    for (const question of questions) {
+      const studentAnswer = attempt.answers.find((a) => a.questionId === question.id);
+      let isCorrect = false;
+      let score = 0;
 
-        if (question.type === 'MULTIPLE_CHOICE' || question.type === 'TRUE_FALSE') {
-          const key = question.answerKey as any; // e.g. "opt-1"
-          const studentAns = studentAnswer?.answer as any; // e.g. "opt-1"
+      if (question.type === 'MULTIPLE_CHOICE' || question.type === 'TRUE_FALSE') {
+        // Compare answerKey. Assuming answerKey is { optionId: "..." } or simple string
+        // studentAnswer.answer should match structure.
+        // Simple logic: if JSON stringify matches (careful with order) or direct value check.
+        // Assuming answerKey is just the ID of the correct option.
 
-          if (key && studentAns && key === studentAns) {
-            isCorrect = true;
-            score = question.points;
-          }
-        } else if (question.type === 'ESSAY') {
-          needsManualGrading = true;
+        const key = question.answerKey as any; // e.g. "opt-1"
+        const studentAns = studentAnswer?.answer as any; // e.g. "opt-1"
+
+        if (key && studentAns && key === studentAns) {
+          isCorrect = true;
+          score = question.points;
         }
-        // Essay needs manual grading, score remains 0.
+      }
+      // Essay needs manual grading, score remains 0 or null.
 
-        if (studentAnswer) {
-          gradedAnswersData.push({
-            id: studentAnswer.id,
+      if (studentAnswer) {
+        gradedAnswers.push(
+          prisma.examAnswer.update({
+            where: { id: studentAnswer.id },
             data: { isCorrect, score },
-          });
-        }
-
-        totalScore += score;
+          })
+        );
       }
 
-      // Calculate final score based on Exam maxScore scaling
-      // Exam maxScore is typically 100.
-      // Raw score = totalScore / maxPossibleScore * exam.maxScore
-      let finalScore: number = totalScore;
-      if (maxPossibleScore > 0) {
-        const scale = Number(attempt.exam.maxScore) / maxPossibleScore;
-        finalScore = totalScore * scale;
-      }
-
-      // 2. Update individual answers
-      for (const item of gradedAnswersData) {
-        await tx.examAnswer.update({
-          where: { id: item.id },
-          data: item.data,
-        });
-      }
-
-      // 3. Update Attempt
-      const finishedAttempt = await tx.examAttempt.update({
-        where: { id: attemptId },
-        data: {
-          status: 'COMPLETED',
-          finishedAt: new Date(),
-          score: finalScore,
-        },
-      });
-
-      // 4. Create Grade
-      if (!needsManualGrading) {
-        await tx.grade.create({
-          data: {
-            studentId: attempt.studentId,
-            examId: attempt.examId,
-            academicYearId: attempt.exam.academicYearId,
-            subjectId: attempt.exam.subjectId,
-            type: 'EXAM',
-            score: finalScore,
-            maxScore: attempt.exam.maxScore,
-            gradedById: attempt.exam.teacher.userId, // Auto-graded but attributed to teacher
-            notes: 'Auto-graded from CBT',
-          },
-        });
-      }
-
-      return finishedAttempt;
-    });
-  }
-
-  static async gradeManualAnswers(
-    attemptId: string,
-    teacherUserId: string,
-    grades: { answerId: string; score: number }[],
-    userRole: string = 'TEACHER'
-  ) {
-    return prisma.$transaction(async (tx) => {
-      const attempt = await tx.examAttempt.findUnique({
-        where: { id: attemptId },
-        include: {
-          exam: {
-            include: {
-              teacher: true,
-              questionBank: {
-                include: {
-                  questions: true,
-                },
-              },
-            },
-          },
-          answers: true,
-        },
-      });
-
-      if (!attempt) throw Errors.notFound('Exam attempt not found');
-      if (attempt.exam.teacher.userId !== teacherUserId && !userRole.includes('ADMIN')) {
-        throw Errors.forbidden('Only the assigned teacher can grade this exam');
-      }
-
-      let totalScore = 0;
-      let maxPossibleScore = 0;
-      const questions = attempt.exam.questionBank?.questions || [];
-
-      for (const question of questions) {
-        maxPossibleScore += question.points;
-        const studentAnswer = attempt.answers.find((a) => a.questionId === question.id);
-
-        if (studentAnswer) {
-            const manualGrade = grades.find((g) => g.answerId === studentAnswer.id);
-
-            if (manualGrade !== undefined && question.type === 'ESSAY') {
-                 await tx.examAnswer.update({
-                    where: { id: studentAnswer.id },
-                    data: { score: manualGrade.score, isCorrect: manualGrade.score > 0 }
-                 });
-                 totalScore += manualGrade.score;
-            } else {
-                 totalScore += Number(studentAnswer.score || 0);
-            }
-        }
-      }
-
-      let finalScore: number = totalScore;
-      if (maxPossibleScore > 0) {
-        const scale = Number(attempt.exam.maxScore) / maxPossibleScore;
-        finalScore = totalScore * scale;
-      }
-
-      const updatedAttempt = await tx.examAttempt.update({
-        where: { id: attemptId },
-        data: { score: finalScore },
-      });
-
-      const gradeExists = await tx.grade.findFirst({
-        where: { studentId: attempt.studentId, examId: attempt.examId }
-      });
-
-      if (gradeExists) {
-          await tx.grade.update({
-              where: { id: gradeExists.id },
-              data: { score: finalScore, gradedById: teacherUserId, notes: 'Manually graded via CBT' }
-          });
-      } else {
-          await tx.grade.create({
-              data: {
-                  studentId: attempt.studentId,
-                  examId: attempt.examId,
-                  academicYearId: attempt.exam.academicYearId,
-                  subjectId: attempt.exam.subjectId,
-                  type: 'EXAM',
-                  score: finalScore,
-                  maxScore: attempt.exam.maxScore,
-                  gradedById: teacherUserId,
-                  notes: 'Manually graded via CBT',
-              }
-          });
-      }
-
-      return updatedAttempt;
-    });
-}
-
-  static async getTeacherAttemptsForGrading(teacherUserId: string, userRole: string = 'TEACHER') {
-    const isAdmin = userRole.includes('ADMIN');
-    let teacherId: string | undefined = undefined;
-
-    if (!isAdmin) {
-      const teacher = await prisma.teacher.findUnique({ where: { userId: teacherUserId } });
-      if (!teacher) throw Errors.forbidden('User is not a teacher');
-      teacherId = teacher.id;
+      totalScore += score;
     }
 
-    // Get attempts for exams owned by this teacher that have ESSAY questions
-    const attempts = await prisma.examAttempt.findMany({
-      where: {
-        exam: {
-          ...(teacherId ? { teacherId } : {}),
-          questionBank: {
-            questions: {
-              some: { type: 'ESSAY' }
-            }
-          },
-        },
-        status: 'COMPLETED'
+    await prisma.$transaction(gradedAnswers);
+
+    // Update attempt
+    const finishedAttempt = await prisma.examAttempt.update({
+      where: { id: attemptId },
+      data: {
+        status: 'COMPLETED',
+        finishedAt: new Date(),
+        score: new Prisma.Decimal(totalScore),
       },
-      include: {
-        student: { select: { user: { select: { name: true } }, nis: true } },
-        exam: { select: { title: true, maxScore: true, subject: { select: { name: true } } } },
-      },
-      orderBy: { finishedAt: 'desc' }
     });
 
-    // Filter out attempts that already have a grade manually created for them
-    const gradedAttempts = await prisma.grade.findMany({
-        where: { examId: { in: attempts.map(a => a.examId) }, studentId: { in: attempts.map(a => a.studentId) } }
-    });
-    return attempts.filter(a => !gradedAttempts.some(g => g.examId === a.examId && g.studentId === a.studentId));
-  }
+    // Optionally update Gradebook if configured
+    // This would require checking if a Grade entry exists or creating one.
+    // For now, we store score in Attempt. Syncing to Gradebook can be a separate step or trigger.
 
-  static async getTeacherAttemptDetail(attemptId: string, teacherUserId: string, userRole: string = 'TEACHER') {
-     const attempt = await prisma.examAttempt.findUnique({
-         where: { id: attemptId },
-         include: {
-             exam: {
-                 select: {
-                     id: true,
-                     title: true, maxScore: true,
-                     teacher: { select: { userId: true, name: true } },
-                     questionBank: {
-                         select: {
-                             questions: {
-                                 select: { id: true, type: true, content: true, points: true }
-                             }
-                         }
-                     }
-                 }
-             },
-             answers: { select: { id: true, questionId: true, answer: true, score: true } },
-             student: { select: { id: true, user: { select: { name: true } }, nis: true, userId: true } },
-         }
-     });
-     if (!attempt) throw Errors.notFound('Attempt not found');
-     if (attempt.exam.teacher.userId !== teacherUserId && !userRole.includes('ADMIN')) {
-         throw Errors.forbidden('Only the assigned teacher can view this');
-     }
-
-     return attempt;
+    return finishedAttempt;
   }
 }

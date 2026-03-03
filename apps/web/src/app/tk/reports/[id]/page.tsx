@@ -94,7 +94,7 @@ export default function TKReportDetailPage() {
           <p className="text-muted-foreground mb-4">
             Raport yang Anda cari tidak ada atau telah dihapus.
           </p>
-          <Button onClick={() => router.push("/tk/reports")}>
+          <Button onClick={() => router.push("/paud/reports")}>
             Kembali ke Daftar
           </Button>
         </div>
@@ -128,7 +128,7 @@ export default function TKReportDetailPage() {
                   <Button
                     variant="outline"
                     onClick={() =>
-                      router.push(`/tk/reports/${reportId}/edit`)
+                      router.push(`/paud/reports/${reportId}/edit`)
                     }
                   >
                     <Pencil className="mr-2 h-4 w-4" />

@@ -107,24 +107,15 @@ export async function getExamById(id: string): Promise<Exam | null> {
 }
 
 export async function createExam(data: CreateExamInput): Promise<Exam> {
-  // If teacherId provided is actually a userId, try to resolve the correct teacher record.
-  // Otherwise, use the provided ID.
-  const teacher = await prisma.teacher.findUnique({
-    where: { userId: data.teacherId }
-  }).catch(() => null);
-
-  const finalTeacherId = teacher ? teacher.id : data.teacherId;
-
   const exam = await prisma.exam.create({
     data: {
       unitId: data.unitId,
       academicYearId: data.academicYearId,
       subjectId: data.subjectId,
       classId: data.classId,
-      teacherId: finalTeacherId,
+      teacherId: data.teacherId,
       type: data.type as any, // Prisma enum
       title: data.title,
-      semester: data.semester,
       description: data.description,
       scheduledAt: new Date(data.scheduledAt),
       duration: data.duration ?? 60,
@@ -132,8 +123,7 @@ export async function createExam(data: CreateExamInput): Promise<Exam> {
       passingScore: new Decimal(data.passingScore ?? 70),
       weight: new Decimal(data.weight ?? 1),
       instructions: data.instructions,
-      questionBankId: data.questionBankId,
-      status: 'DRAFT' as any, // Default status
+      status: 'SCHEDULED' as any, // Default status
     },
     include: {
       subject: { select: { id: true, name: true, code: true } },
@@ -149,7 +139,6 @@ export async function updateExam(id: string, data: UpdateExamInput): Promise<Exa
   const updateData: Prisma.ExamUpdateInput = {};
 
   if (data.title) updateData.title = data.title;
-  if (data.semester !== undefined) updateData.semester = data.semester;
   if (data.description !== undefined) updateData.description = data.description;
   if (data.scheduledAt) updateData.scheduledAt = new Date(data.scheduledAt);
   if (data.duration !== undefined) updateData.duration = data.duration;
@@ -157,7 +146,6 @@ export async function updateExam(id: string, data: UpdateExamInput): Promise<Exa
   if (data.passingScore !== undefined) updateData.passingScore = new Decimal(data.passingScore);
   if (data.weight !== undefined) updateData.weight = new Decimal(data.weight);
   if (data.instructions !== undefined) updateData.instructions = data.instructions;
-  if (data.questionBankId !== undefined) updateData.questionBankId = data.questionBankId;
   if (data.status) updateData.status = data.status as any;
   if (data.type) updateData.type = data.type as any;
 
@@ -740,7 +728,6 @@ function mapToExam(data: any): Exam {
     passingScore: Number(data.passingScore),
     weight: Number(data.weight),
     instructions: data.instructions ?? undefined,
-    questionBankId: data.questionBankId ?? null,
     status: data.status as ExamStatus,
     createdAt: data.createdAt,
     updatedAt: data.updatedAt,

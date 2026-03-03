@@ -115,7 +115,7 @@ export default function GenerateTKReportPage() {
         semester,
       });
       toast.success("Raport berhasil digenerate");
-      router.push(`/tk/reports/${result.id}`);
+      router.push(`/paud/reports/${result.id}`);
     } catch (error: unknown) {
       const message =
         error instanceof Error ? error.message : "Gagal generate raport";
@@ -474,7 +474,7 @@ export default function GenerateTKReportPage() {
                               variant="ghost"
                               size="sm"
                               onClick={() =>
-                                router.push(`/tk/reports/${result.reportId}`)
+                                router.push(`/paud/reports/${result.reportId}`)
                               }
                             >
                               <FileText className="h-4 w-4 mr-1" />

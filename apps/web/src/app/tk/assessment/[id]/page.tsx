@@ -58,7 +58,7 @@ export default function TKAssessmentDetailPage() {
     try {
       await deleteMutation.mutateAsync(id);
       toast.success("Penilaian berhasil dihapus");
-      router.push("/tk/assessment");
+      router.push("/paud/assessment");
     } catch {
       toast.error("Gagal menghapus penilaian");
     }
@@ -89,7 +89,7 @@ export default function TKAssessmentDetailPage() {
           <p className="text-muted-foreground mb-4">
             Data penilaian yang Anda cari tidak tersedia.
           </p>
-          <Button onClick={() => router.push("/tk/assessment")}>
+          <Button onClick={() => router.push("/paud/assessment")}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Kembali ke Daftar
           </Button>
@@ -112,7 +112,7 @@ export default function TKAssessmentDetailPage() {
               </Button>
               <Button
                 variant="outline"
-                onClick={() => router.push(`/tk/assessment/${id}/edit`)}
+                onClick={() => router.push(`/paud/assessment/${id}/edit`)}
               >
                 <Pencil className="mr-2 h-4 w-4" />
                 Edit

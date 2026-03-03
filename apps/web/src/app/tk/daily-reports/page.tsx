@@ -222,7 +222,7 @@ export default function DailyReportListPage() {
           <DropdownMenuContent align="end">
             <DropdownMenuItem
               onClick={() =>
-                router.push(`/tk/daily-reports/${row.original.id}`)
+                router.push(`/paud/daily-reports/${row.original.id}`)
               }
             >
               <Eye className="mr-2 h-4 w-4" />
@@ -230,7 +230,7 @@ export default function DailyReportListPage() {
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() =>
-                router.push(`/tk/daily-reports/${row.original.id}/edit`)
+                router.push(`/paud/daily-reports/${row.original.id}/edit`)
               }
             >
               <Pencil className="mr-2 h-4 w-4" />
@@ -260,12 +260,12 @@ export default function DailyReportListPage() {
             <div className="flex gap-2">
               <Button
                 variant="outline"
-                onClick={() => router.push("/tk/daily-reports/check-in")}
+                onClick={() => router.push("/paud/daily-reports/check-in")}
               >
                 <Users className="mr-2 h-4 w-4" />
                 Check-in Kelas
               </Button>
-              <Button onClick={() => router.push("/tk/daily-reports/new")}>
+              <Button onClick={() => router.push("/paud/daily-reports/new")}>
                 <Plus className="mr-2 h-4 w-4" />
                 Buat Laporan
               </Button>

@@ -64,17 +64,6 @@ export const usePlan = (id: string) => {
   });
 };
 
-export const usePlanRealization = (id: string) => {
-  return useQuery({
-    queryKey: ["plan-realization", id],
-    queryFn: async () => {
-      const res = await api.get(`/api/perencanaan/${id}/realization`);
-      return res.data.data;
-    },
-    enabled: !!id,
-  });
-};
-
 export const useCreatePlan = () => {
   const queryClient = useQueryClient();
   return useMutation({

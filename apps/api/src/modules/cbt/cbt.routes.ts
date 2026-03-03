@@ -53,15 +53,6 @@ router.delete(
 );
 
 // --- Student Routes ---
-
-// List Student Exams
-router.get(
-  '/exams/student',
-  authenticate,
-  authorize(UserRole.STUDENT),
-  CBTController.getStudentExams
-);
-
 // Exam Taking
 // Start Exam (examId is the ID of the scheduled Exam)
 router.post(
@@ -95,26 +86,4 @@ router.post(
   CBTController.finishExam
 );
 
-// Teacher Grading Endpoints
-router.get(
-  '/teacher/attempts',
-  authenticate,
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
-  CBTController.getAttemptsForGrading
-);
-
-router.get(
-  '/teacher/attempts/:attemptId',
-  authenticate,
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
-  CBTController.getTeacherAttempt
-);
-
-// Grade Attempt
-router.post(
-  '/attempts/:attemptId/grade',
-  authenticate,
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
-  CBTController.gradeAttempt
-);
 export const cbtRoutes = router;

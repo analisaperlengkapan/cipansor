@@ -135,7 +135,7 @@ export default function EditDailyReportPage() {
         },
       });
       toast.success("Laporan harian berhasil diperbarui");
-      router.push("/tk/daily-reports");
+      router.push("/paud/daily-reports");
     } catch {
       toast.error("Gagal memperbarui laporan harian");
     }

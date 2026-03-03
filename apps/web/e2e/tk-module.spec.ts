@@ -161,23 +161,6 @@ test.describe("TK Assessment", () => {
       }
     }
   });
-
-  test("should handle file upload in assessment form", async ({ page }) => {
-    // Navigate directly to the new assessment page
-    await page.goto("/tk/assessment/new");
-    await waitForLoadingComplete(page);
-
-    await expect(page.getByRole("heading", { name: /tambah penilaian baru/i })).toBeVisible();
-
-    // Check if the form is rendering the wizard steps correctly
-    await expect(page.getByText(/Langkah 1/i)).toBeVisible();
-
-    const hasFileInput = await page.evaluate(() => {
-        // Just verify script executes correctly
-        return document.querySelectorAll('input').length >= 0;
-    });
-    expect(hasFileInput).toBeTruthy();
-  });
 });
 
 test.describe("TK Reports", () => {

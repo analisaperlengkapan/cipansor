@@ -19,7 +19,6 @@ router.use(
 router.get('/', perencanaanController.listPlans);
 router.post('/', perencanaanController.createPlan);
 router.get('/:id', perencanaanController.getPlan);
-router.get('/:id/realization', perencanaanController.getPlanRealization);
 router.put('/:id', perencanaanController.updatePlan);
 router.post('/:id/approve', perencanaanController.approvePlan);
 router.delete('/:id', perencanaanController.deletePlan);

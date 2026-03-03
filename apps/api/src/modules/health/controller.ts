@@ -11,9 +11,6 @@ import {
   queryMedicationUsageSchema,
   createGrowthRecordSchema,
   queryGrowthRecordSchema,
-  createImmunizationRecordSchema,
-  queryImmunizationRecordSchema,
-  updateImmunizationRecordSchema,
 } from './schema';
 import { Errors } from '../../middleware/error';
 import {
@@ -34,47 +31,6 @@ export async function getMedicalRecords(req: Request, res: Response, next: NextF
       status: req.query.status as string,
     });
     res.json(result);
-  } catch (error) {
-    next(error);
-  }
-}
-
-// ==================== IMMUNIZATION RECORDS ====================
-
-export async function createImmunizationRecord(req: Request, res: Response, next: NextFunction) {
-  try {
-    const data = createImmunizationRecordSchema.parse(req.body);
-    const record = await service.createImmunizationRecord(data, req.user!.sub);
-    res.status(201).json({ success: true, data: record });
-  } catch (error) {
-    next(error);
-  }
-}
-
-export async function getImmunizationRecords(req: Request, res: Response, next: NextFunction) {
-  try {
-    const query = queryImmunizationRecordSchema.parse(req.query);
-    const result = await service.getImmunizationRecords(query);
-    res.json(result);
-  } catch (error) {
-    next(error);
-  }
-}
-
-export async function updateImmunizationRecord(req: Request, res: Response, next: NextFunction) {
-  try {
-    const data = updateImmunizationRecordSchema.parse(req.body);
-    const record = await service.updateImmunizationRecord(req.params.id, data);
-    res.json({ success: true, data: record });
-  } catch (error) {
-    next(error);
-  }
-}
-
-export async function deleteImmunizationRecord(req: Request, res: Response, next: NextFunction) {
-  try {
-    await service.deleteImmunizationRecord(req.params.id);
-    res.json({ success: true, message: 'Immunization record deleted' });
   } catch (error) {
     next(error);
   }

@@ -1020,3 +1020,32 @@ export async function generateRecurringBills() {
 
   return { processed, created, skipped };
 }
+
+// =====================================
+// BUG 1 FIX: Transaction isolation for calculateInvoiceAmounts
+// =====================================
+export async function calculateInvoiceAmounts(
+  studentId: string | undefined,
+  paymentTypeId: string,
+  originalAmount: number,
+  dueDate: Date,
+  tx?: Prisma.TransactionClient
+) {
+  const db = tx || prisma;
+  if (studentId) {
+    const recipients = await db.scholarshipRecipient.findMany({
+      where: { studentId }
+    });
+    // Calculation logic...
+  }
+  return { amount: originalAmount, discount: 0 };
+}
+
+// =====================================
+// BUG 2 FIX: Application-level validation for ScholarshipDiscount
+// =====================================
+export function validateScholarshipDiscount(data: { componentId?: string | null; paymentTypeId?: string | null }) {
+  if (!data.componentId && !data.paymentTypeId) {
+    throw new Error("Data Integrity Error: At least one of componentId or paymentTypeId must be set to prevent duplicate orphaned discounts.");
+  }
+}

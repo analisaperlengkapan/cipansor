@@ -71,6 +71,7 @@ export default function NewCounselingPage() {
     defaultValues: {
       isConfidential: false,
       priority: "MEDIUM",
+      category: "ACADEMIC",
     },
   });
 
@@ -79,6 +80,10 @@ export default function NewCounselingPage() {
   const onSubmit = async (data: CreateCounselingInput) => {
     if (!selectedStudent) {
       toast.error("Pilih siswa terlebih dahulu");
+      return;
+    }
+    if (!data.category) {
+      toast.error("Pilih kategori konseling terlebih dahulu");
       return;
     }
 
@@ -217,12 +222,13 @@ export default function NewCounselingPage() {
               <div className="space-y-2">
                 <Label>Kategori *</Label>
                 <Select
+                  defaultValue="ACADEMIC"
                   onValueChange={(v) =>
-                    setValue("category", v as CreateCounselingInput["category"])
+                    setValue("category", v as CreateCounselingInput["category"], { shouldValidate: true })
                   }
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Pilih kategori" />
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     {COUNSELING_CATEGORIES.map((cat) => (

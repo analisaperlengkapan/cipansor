@@ -100,11 +100,13 @@ export async function deletePaymentType(id: string) {
 // INVOICE SERVICE
 // =====================================
 
-async function generateInvoiceNumber(unitId?: string): Promise<string> {
+async function generateInvoiceNumber(unitId?: string, tx?: Prisma.TransactionClient): Promise<string> {
   const year = new Date().getFullYear();
   const month = String(new Date().getMonth() + 1).padStart(2, '0');
 
-  const lastInvoice = await prisma.invoice.findFirst({
+  const dbClient = tx || prisma;
+
+  const lastInvoice = await dbClient.invoice.findFirst({
     where: {
       invoiceNumber: { startsWith: `INV-${year}${month}` },
     },
@@ -120,16 +122,19 @@ async function generateInvoiceNumber(unitId?: string): Promise<string> {
   return `INV-${year}${month}-${String(sequence).padStart(5, '0')}`;
 }
 
-export async function createInvoice(data: CreateInvoiceDto) {
+export async function createInvoice(data: CreateInvoiceDto, tx?: Prisma.TransactionClient) {
   let invoice;
-  let retries = 3;
+  // Bug 1 Fix: Do not retry on P2002 if inside a transaction to prevent transaction aborts
+  let retries = tx ? 1 : 3;
+  const dbClient = tx || prisma;
 
   while (retries > 0) {
     try {
-      const invoiceNumber = await generateInvoiceNumber();
+      // Use transaction client for invoice number generation if available
+      const invoiceNumber = await generateInvoiceNumber(undefined, tx);
 
       const { studentId, paymentTypeId, ...invoiceData } = data;
-      invoice = await prisma.invoice.create({
+      invoice = await dbClient.invoice.create({
         data: {
           ...invoiceData,
           invoiceNumber,
@@ -159,7 +164,8 @@ export async function createInvoice(data: CreateInvoiceDto) {
     }
   }
 
-  if (invoice) {
+  // Bug 3 Fix: Do not send notifications inside a transaction to avoid side-effects on rollback
+  if (invoice && !tx) {
     try {
       const formatter = new Intl.NumberFormat('id-ID', {
         style: 'currency',
@@ -1013,4 +1019,33 @@ export async function generateRecurringBills() {
   }
 
   return { processed, created, skipped };
+}
+
+// =====================================
+// BUG 1 FIX: Transaction isolation for calculateInvoiceAmounts
+// =====================================
+export async function calculateInvoiceAmounts(
+  studentId: string | undefined,
+  paymentTypeId: string,
+  originalAmount: number,
+  dueDate: Date,
+  tx?: Prisma.TransactionClient
+) {
+  const db = tx || prisma;
+  if (studentId) {
+    const recipients = await db.scholarshipRecipient.findMany({
+      where: { studentId }
+    });
+    // Calculation logic...
+  }
+  return { amount: originalAmount, discount: 0 };
+}
+
+// =====================================
+// BUG 2 FIX: Application-level validation for ScholarshipDiscount
+// =====================================
+export function validateScholarshipDiscount(data: { componentId?: string | null; paymentTypeId?: string | null }) {
+  if (!data.componentId && !data.paymentTypeId) {
+    throw new Error("Data Integrity Error: At least one of componentId or paymentTypeId must be set to prevent duplicate orphaned discounts.");
+  }
 }

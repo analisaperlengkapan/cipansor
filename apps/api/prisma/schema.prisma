@@ -4678,6 +4678,9 @@ model ScholarshipDiscount {
   scholarship Scholarship      @relation(fields: [scholarshipId], references: [id])
   component   PaymentComponent @relation(fields: [componentId], references: [id])
 
+  // Bug 2 Fix: Added application-level validation in finance/service.ts
+  // to ensure at least one of componentId or paymentTypeId is set,
+  // compensating for PostgreSQL NULL uniqueness limitations.
   @@unique([scholarshipId, componentId])
   @@map("scholarship_discounts")
 }

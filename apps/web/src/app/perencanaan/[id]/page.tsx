@@ -171,7 +171,7 @@ export default function PerencanaanDetailPage() {
                           <Progress value={obj.progress} className="h-2 w-24 mt-1" />
                         </div>
                       </div>
-                      
+
                       {obj.indicators && obj.indicators.length > 0 && (
                         <div className="mt-3 bg-slate-50 border rounded-md p-3">
                           <h5 className="text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wider flex items-center gap-1">

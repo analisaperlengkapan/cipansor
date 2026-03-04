@@ -150,6 +150,7 @@ export class CounselingService {
           },
           orderBy: { referredAt: 'desc' },
         },
+        _count: { select: { notes: true, referrals: true } },
       },
     });
 

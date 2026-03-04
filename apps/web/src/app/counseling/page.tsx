@@ -7,18 +7,15 @@ import { id as localeId } from "date-fns/locale";
 import {
   Plus,
   Search,
-  Filter,
-  Users,
-  AlertTriangle,
-  CheckCircle2,
+  FileText,
   Clock,
+  MessageSquare,
+  CheckCircle2,
+  TrendingUp,
   MoreHorizontal,
+  Eye,
   Edit,
   Trash2,
-  Eye,
-  MessageSquare,
-  FileText,
-  TrendingUp,
 } from "lucide-react";
 
 import { MainLayout } from "@/components/layout/main-layout";
@@ -29,7 +26,6 @@ import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -56,7 +52,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 
 import {
@@ -105,30 +100,36 @@ export default function CounselingPage() {
   const records = data?.data || [];
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Yakin ingin menghapus catatan konseling ini?")) return;
+    if (!confirm("Yakin ingin menghapus sesi konseling ini?")) return;
 
     try {
       await deleteMutation.mutateAsync(id);
-      toast.success("Catatan konseling berhasil dihapus");
+      toast.success("Sesi konseling berhasil dihapus");
     } catch {
-      toast.error("Gagal menghapus catatan konseling");
+      toast.error("Gagal menghapus sesi konseling");
     }
   };
+
+  // Calculate stats from new structure
+  const totalSessions = stats?.totalSessions || 0;
+  const countScheduled = stats?.byStatus.find(s => s.status === 'SCHEDULED')?.count || 0;
+  const countInProgress = stats?.byStatus.find(s => s.status === 'IN_PROGRESS')?.count || 0;
+  const countCompleted = stats?.byStatus.find(s => s.status === 'COMPLETED')?.count || 0;
 
   return (
     <MainLayout>
       <PageHeader
         title="Bimbingan Konseling"
-        description="Kelola catatan konseling dan bimbingan siswa"
+        description="Kelola sesi konseling dan bimbingan siswa"
         action={{
-          label: "Buat Catatan",
+          label: "Buat Sesi",
           icon: <Plus className="h-4 w-4" />,
           href: "/counseling/new",
         }}
       />
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-5 mb-6">
+      <div className="grid gap-4 md:grid-cols-4 mb-6">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
@@ -136,9 +137,9 @@ export default function CounselingPage() {
                 <FileText className="h-4 w-4 text-blue-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Total Kasus</p>
+                <p className="text-sm text-muted-foreground">Total Sesi</p>
                 <p className="text-2xl font-bold">
-                  {statsLoading ? "-" : stats?.total || 0}
+                  {statsLoading ? "-" : totalSessions}
                 </p>
               </div>
             </div>
@@ -151,9 +152,9 @@ export default function CounselingPage() {
                 <Clock className="h-4 w-4 text-yellow-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Terbuka</p>
+                <p className="text-sm text-muted-foreground">Terjadwal</p>
                 <p className="text-2xl font-bold">
-                  {statsLoading ? "-" : stats?.open || 0}
+                  {statsLoading ? "-" : countScheduled}
                 </p>
               </div>
             </div>
@@ -168,7 +169,7 @@ export default function CounselingPage() {
               <div>
                 <p className="text-sm text-muted-foreground">Proses</p>
                 <p className="text-2xl font-bold">
-                  {statsLoading ? "-" : stats?.inProgress || 0}
+                  {statsLoading ? "-" : countInProgress}
                 </p>
               </div>
             </div>
@@ -183,22 +184,7 @@ export default function CounselingPage() {
               <div>
                 <p className="text-sm text-muted-foreground">Selesai</p>
                 <p className="text-2xl font-bold">
-                  {statsLoading ? "-" : stats?.resolved || 0}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <div className="p-2 bg-amber-100 rounded-lg">
-                <TrendingUp className="h-4 w-4 text-amber-600" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Avg. Resolusi</p>
-                <p className="text-2xl font-bold">
-                  {statsLoading ? "-" : `${stats?.avgResolutionDays || 0} hari`}
+                  {statsLoading ? "-" : countCompleted}
                 </p>
               </div>
             </div>
@@ -214,7 +200,7 @@ export default function CounselingPage() {
         <CardContent>
           <div className="grid grid-cols-4 md:grid-cols-8 gap-2">
             {COUNSELING_CATEGORIES.map((cat) => {
-              const count = stats?.byCategory?.[cat.value] || 0;
+              const count = stats?.byCategory?.find(c => c.category === cat.value)?.count || 0;
               return (
                 <button
                   key={cat.value}
@@ -239,7 +225,7 @@ export default function CounselingPage() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Cari siswa atau nomor kasus..."
+                placeholder="Cari siswa atau judul..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-10"
@@ -334,15 +320,15 @@ export default function CounselingPage() {
             <div className="p-12 text-center">
               <MessageSquare className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
               <h3 className="text-lg font-semibold mb-2">
-                Belum Ada Catatan Konseling
+                Belum Ada Sesi Konseling
               </h3>
               <p className="text-muted-foreground mb-4">
-                Buat catatan konseling pertama untuk memulai
+                Buat sesi konseling pertama untuk memulai
               </p>
               <Button asChild>
                 <Link href="/counseling/new">
                   <Plus className="h-4 w-4 mr-2" />
-                  Buat Catatan
+                  Buat Sesi
                 </Link>
               </Button>
             </div>
@@ -350,13 +336,12 @@ export default function CounselingPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>No. Kasus</TableHead>
                   <TableHead>Siswa</TableHead>
                   <TableHead>Kategori</TableHead>
                   <TableHead>Judul</TableHead>
                   <TableHead>Prioritas</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Sesi</TableHead>
+                  <TableHead>Catatan</TableHead>
                   <TableHead>Tanggal</TableHead>
                   <TableHead>Aksi</TableHead>
                 </TableRow>
@@ -374,20 +359,13 @@ export default function CounselingPage() {
                   return (
                     <TableRow key={record.id}>
                       <TableCell>
-                        <div className="flex items-center gap-2">
-                          {record.isConfidential && (
-                            <span title="Rahasia" className="text-amber-500">
-                              🔒
-                            </span>
-                          )}
-                          <span className="font-mono text-sm">
-                            {record.caseNumber}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
                         <div>
-                          <p className="font-medium">{record.student?.name}</p>
+                          <p className="font-medium flex items-center gap-2">
+                            {record.student?.user?.name || "Unknown"}
+                            {record.isConfidential && (
+                              <span title="Rahasia" className="text-xs">🔒</span>
+                            )}
+                          </p>
                           <p className="text-xs text-muted-foreground">
                             {record.student?.nis} •{" "}
                             {record.student?.currentClass?.name || "-"}
@@ -400,7 +378,7 @@ export default function CounselingPage() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <p className="max-w-xs truncate">{record.title}</p>
+                        <p className="max-w-xs truncate" title={record.title}>{record.title}</p>
                       </TableCell>
                       <TableCell>
                         <Badge className={priorityConfig?.color}>
@@ -414,12 +392,12 @@ export default function CounselingPage() {
                       </TableCell>
                       <TableCell>
                         <span className="text-sm">
-                          {record.sessions?.length || 0} sesi
+                          {record._count?.notes || 0}
                         </span>
                       </TableCell>
                       <TableCell>
                         <span className="text-sm">
-                          {format(new Date(record.reportedAt), "dd MMM yyyy", {
+                          {format(new Date(record.scheduledAt), "dd MMM yyyy", {
                             locale: localeId,
                           })}
                         </span>

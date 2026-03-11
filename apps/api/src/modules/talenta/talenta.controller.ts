@@ -47,7 +47,7 @@ export const getProfile = asyncHandler(async (req: Request, res: Response) => {
 export const createProfile = asyncHandler(async (req: Request, res: Response) => {
   const body = createTalentProfileSchema.parse(req.body);
   const unitId = resolveUnitId(req, body.unitId);
-  const profile = await talentaService.createProfile({ ...body, unitId });
+  const profile = await talentaService.createProfile({ ...body, unitId, userId: body.userId as string, currentRole: body.currentRole as string });
   res.status(201).json({ success: true, data: profile });
 });
 

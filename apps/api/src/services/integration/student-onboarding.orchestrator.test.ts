@@ -27,7 +27,6 @@ describe('StudentOnboardingOrchestrator', () => {
         StudentOnboardingOrchestrator.processEnrollment(
           'non-existent',
           'unit-1',
-          'year-1',
           'admin-1'
         )
       ).rejects.toThrow('Registrant not found');
@@ -82,7 +81,6 @@ describe('StudentOnboardingOrchestrator', () => {
       const result = await StudentOnboardingOrchestrator.processEnrollment(
         'reg-1',
         'unit-1',
-        'year-2026',
         'admin-1'
       );
 

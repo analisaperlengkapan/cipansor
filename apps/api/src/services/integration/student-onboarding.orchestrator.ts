@@ -30,12 +30,14 @@ export class StudentOnboardingOrchestrator {
       }
 
       // 2. Create User Account for Student
-      const defaultPassword = 'Password123!';
+      const crypto = await import('crypto');
       const { hashPassword } = await import('@/lib/password');
+
+      const defaultPassword = crypto.randomBytes(8).toString('hex');
       const passwordHash = await hashPassword(defaultPassword);
 
       // Extract parts of name to create a safe email
-      const cleanName = registrant.fullName.toLowerCase().replace(/[^a-z0-9]/g, '') || 'student';
+      const cleanName = registrant.fullName.toLowerCase().replace(/[^a-z0-9]/g, '');
 
       // 3. Create Student Record (Generate NIS first so we can use it for email)
       const nis = await generateNis(unitId, tx as any);
@@ -60,7 +62,7 @@ export class StudentOnboardingOrchestrator {
           status: 'active',
           unitId,
           nis,
-          entryYear: new Date().getFullYear(), // Integer year, not academic year ID
+          entryYear: academicYearId, // Link to academic year per PR feedback
 
           // Core Data mapping from registrant
           gender: registrant.gender,
@@ -91,13 +93,15 @@ export class StudentOnboardingOrchestrator {
         });
 
         if (!parentUser) {
+          const defaultParentPassword = crypto.randomBytes(8).toString('hex');
+          const parentPasswordHash = await hashPassword(defaultParentPassword);
           const parentEmail = registrant.parentEmail || `parent.${registrant.parentPhone}@parent.cipansor.local`;
           parentUser = await (tx.user.create as any)({
             data: {
               name: registrant.parentName,
               email: parentEmail,
               phone: registrant.parentPhone,
-              passwordHash,
+              passwordHash: parentPasswordHash,
               role: 'PARENT',
               isActive: true,
             }
@@ -146,18 +150,6 @@ export class StudentOnboardingOrchestrator {
           studentId: student.id
         }
       });
-
-      // 8. Generate Registration Invoice (If not already created)
-      // Check if registration fee invoice exists for this registrant
-      const existingInvoice = await tx.invoice.findFirst({
-        where: {
-          // @ts-ignore - Ignore type error as Prisma types might be lagging behind schema
-          registrantId: registrant.id
-        }
-      });
-
-      // We only generate invoice if we have a payment type configured for this unit
-      // This is simplified for this orchestrator, in real scenario we'd query paymentTypes
 
       return {
         success: true,

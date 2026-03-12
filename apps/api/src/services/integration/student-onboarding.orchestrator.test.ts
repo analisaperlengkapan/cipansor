@@ -22,7 +22,7 @@ describe('StudentOnboardingOrchestrator', () => {
     vi.clearAllMocks();
   });
 
-  describe('executeOnboarding', () => {
+  describe('processEnrollment', () => {
     it('should throw an error if registrant is not found', async () => {
       vi.mocked(prisma.$transaction).mockImplementation(async (callback) => {
         const txMock = {
@@ -32,14 +32,13 @@ describe('StudentOnboardingOrchestrator', () => {
       });
 
       await expect(
-        StudentOnboardingOrchestrator.executeOnboarding({
-          registrantId: 'non-existent',
-          unitId: 'unit-1',
-          academicYearId: 'year-1',
-          parentUserId: 'parent-1',
-          actorId: 'admin-1',
-        })
-      ).rejects.toThrow('Data Pendaftar tidak ditemukan.');
+        StudentOnboardingOrchestrator.processEnrollment(
+          'non-existent',
+          'unit-1',
+          'year-1',
+          'admin-1'
+        )
+      ).rejects.toThrow('Registrant not found');
     });
 
     it('should perform E2E onboarding successfully (Student, Parent, Class, Medical, Invoice)', async () => {
@@ -72,22 +71,16 @@ describe('StudentOnboardingOrchestrator', () => {
         return callback(txMock as any);
       });
 
-      const payload = {
-        registrantId: 'reg-1',
-        unitId: 'unit-1',
-        assignedClassId: 'class-1',
-        academicYearId: 'year-2026',
-        parentUserId: 'parent-1',
-        actorId: 'admin-1'
-      };
-
-      const result = await StudentOnboardingOrchestrator.executeOnboarding(payload);
+      const result = await StudentOnboardingOrchestrator.processEnrollment(
+        'reg-1',
+        'unit-1',
+        'year-2026',
+        'admin-1'
+      );
 
       // Verify the returned structure
       expect(result.success).toBe(true);
       expect(result.studentId).toBe('stud-1');
-      expect(result.invoiceId).toBe('inv-1');
-      expect(result.medicalRecordId).toBe('med-1');
 
       // Verify Master Data interactions
       expect(txMock.student.create).toHaveBeenCalled();

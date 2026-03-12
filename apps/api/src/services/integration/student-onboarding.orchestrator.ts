@@ -72,7 +72,7 @@ export class StudentOnboardingOrchestrator {
       const results = await tx.$queryRaw<Array<{ max_seq: number | null }>>`
         SELECT MAX(CAST(SUBSTRING(nis FROM ${prefixLen}) AS INTEGER)) as max_seq
         FROM "students"
-        WHERE nis LIKE ${prefix + '%'}
+        WHERE "unit_id" = ${unitId} AND nis LIKE ${prefix + '%'}
       `;
 
       let maxSeq = 0;
@@ -93,7 +93,7 @@ export class StudentOnboardingOrchestrator {
           name: registrant.fullName,
           email,
           passwordHash,
-          resetTokenHash: await hashPassword(resetToken),
+          resetTokenHash: crypto.createHash('sha256').update(resetToken).digest('hex'),
           resetTokenExpiresAt: resetTokenExpiry,
           role: 'STUDENT',
           unitId,
@@ -153,7 +153,7 @@ export class StudentOnboardingOrchestrator {
               email: parentEmail,
               phone: registrant.parentPhone,
               passwordHash: parentPasswordHash,
-              resetTokenHash: await hashPassword(parentResetToken),
+              resetTokenHash: crypto.createHash('sha256').update(parentResetToken).digest('hex'),
               resetTokenExpiresAt: parentResetTokenExpiry,
               role: 'PARENT',
               isActive: true,

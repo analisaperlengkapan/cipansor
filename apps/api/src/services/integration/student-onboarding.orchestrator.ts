@@ -129,7 +129,7 @@ export class StudentOnboardingOrchestrator {
           where: {
             OR: [
               ...(registrant.parentPhone ? [{ phone: registrant.parentPhone, role: 'PARENT' as const }] : []),
-              ...(registrant.parentEmail ? [{ email: registrant.parentEmail, role: 'PARENT' as const }] : [])
+              ...(registrant.parentEmail ? [{ email: registrant.parentEmail }] : [])
             ]
           }
         });

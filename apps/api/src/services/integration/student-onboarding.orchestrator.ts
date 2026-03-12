@@ -59,8 +59,8 @@ export class StudentOnboardingOrchestrator {
       // Concurrency-safe: raw SQL with FOR UPDATE row locking
       const results = await tx.$queryRaw<Array<{ nis: string }>>`
         SELECT nis
-        FROM "Student"
-        WHERE "unitId" = ${unitId} AND nis LIKE ${prefix + '%'}
+        FROM "students"
+        WHERE "unit_id" = ${unitId} AND nis LIKE ${prefix + '%'}
         ORDER BY nis DESC
         LIMIT 1
         FOR UPDATE

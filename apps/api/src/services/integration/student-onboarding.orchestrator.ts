@@ -36,8 +36,11 @@ export class StudentOnboardingOrchestrator {
 
       // Extract parts of name to create a safe email
       const cleanName = registrant.fullName.toLowerCase().replace(/[^a-z0-9]/g, '');
-      const uniqueSuffix = Math.floor(1000 + Math.random() * 9000);
-      const email = `${cleanName}${uniqueSuffix}@student.cipansor.local`;
+
+      // 3. Create Student Record (Generate NIS first so we can use it for email)
+      const nis = await generateNis(unitId, tx as any);
+
+      const email = `${cleanName}.${nis}@student.cipansor.local`;
 
       const user = await tx.user.create({
         data: {
@@ -50,8 +53,6 @@ export class StudentOnboardingOrchestrator {
         },
       });
 
-      // 3. Create Student Record
-      const nis = await generateNis(unitId, tx as any);
 
       const student = await (tx.student.create as any)({
         data: {
@@ -59,7 +60,7 @@ export class StudentOnboardingOrchestrator {
           status: 'active',
           unitId,
           nis,
-
+          entryYear: academicYearId, // Link to academic year per PR feedback
 
           // Core Data mapping from registrant
           gender: registrant.gender,
@@ -78,10 +79,15 @@ export class StudentOnboardingOrchestrator {
       });
 
       // 4. Create Parent User Account
-      if (registrant.parentPhone) {
-        // Try to find existing parent by phone
+      if (registrant.parentPhone || registrant.parentEmail) {
+        // Try to find existing parent by phone or email
         let parentUser = await tx.user.findFirst({
-          where: { phone: registrant.parentPhone, role: 'PARENT' }
+          where: {
+            OR: [
+              ...(registrant.parentPhone ? [{ phone: registrant.parentPhone, role: 'PARENT' as const }] : []),
+              ...(registrant.parentEmail ? [{ email: registrant.parentEmail, role: 'PARENT' as const }] : [])
+            ]
+          }
         });
 
         if (!parentUser) {

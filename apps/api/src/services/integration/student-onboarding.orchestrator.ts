@@ -21,7 +21,7 @@ export class StudentOnboardingOrchestrator {
       });
 
       if (!registrant) {
-        throw Errors.notFound('Registrant not found');
+        throw Errors.notFound('Registrant');
       }
 
       if (registrant.status !== 'ACCEPTED') {

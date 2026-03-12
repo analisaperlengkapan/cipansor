@@ -221,7 +221,7 @@ export class StudentOnboardingOrchestrator {
       // We do NOT generate plaintext passwords anymore. We notify users to set their passwords via tokens.
       process.nextTick(() => {
         try {
-          const { eventBus } = require('@/lib/event-bus'); // Must use require or await import properly
+          // eventBus is already available from line 90 via closure
           eventBus.emit('student:created', {
             id: student.id,
             name: registrant.fullName,

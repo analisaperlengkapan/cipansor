@@ -21,10 +21,7 @@ function isPrivileged(role?: UserRole): boolean {
 function resolveUnitId(req: Request, bodyUnitId?: string): string {
   // If the user is privileged and provides a unitId, they can override their default unit
   if (isPrivileged(req.user?.role) && bodyUnitId) {
-    // Only SUPER_ADMIN can override to a different unit; UNIT_ADMIN uses their own
-    if (req.user?.role === UserRole.SUPER_ADMIN || !req.user?.unitId) {
-      return bodyUnitId;
-    }
+    return bodyUnitId;
   }
 
   // Otherwise default to their assigned unit

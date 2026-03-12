@@ -11,7 +11,9 @@ export class StudentOnboardingOrchestrator {
   static async processEnrollment(
     registrantId: string,
     unitId: string,
-    processedById: string
+    processedById: string,
+    assignedClassId?: string,
+    academicYearId?: string
   ) {
     return await prisma.$transaction(async (tx) => {
       // 1. Get registrant data
@@ -72,7 +74,7 @@ export class StudentOnboardingOrchestrator {
       const results = await tx.$queryRaw<Array<{ max_seq: number | null }>>`
         SELECT MAX(CAST(SUBSTRING(nis FROM ${prefixLen}) AS INTEGER)) as max_seq
         FROM "students"
-        WHERE "unit_id" = ${unitId} AND nis LIKE ${prefix + '%'}
+        WHERE "unit_id" = ${unitId} AND nis LIKE ${prefix + '%'} AND SUBSTRING(nis FROM ${prefixLen}) ~ '^[0-9]+$'
       `;
 
       let maxSeq = 0;
@@ -194,7 +196,20 @@ export class StudentOnboardingOrchestrator {
         }
       });
 
-      // 7. Update Registrant Status
+      // 7. Optional: Enroll in specific class if provided
+      if (assignedClassId && academicYearId) {
+        await tx.classEnrollment.create({
+          data: {
+            studentId: student.id,
+            classId: assignedClassId,
+            academicYearId,
+            status: 'ACTIVE',
+            semester: 'GANJIL', // default assumption for new enrollment
+          }
+        });
+      }
+
+      // 8. Update Registrant Status
       await tx.registrant.update({
         where: { id: registrant.id },
         data: {
@@ -204,19 +219,27 @@ export class StudentOnboardingOrchestrator {
         }
       });
 
-      // 8. Distribute Reset Tokens asynchronously via secure channels
+      // 9. Distribute Reset Tokens asynchronously via secure channels
       // We do NOT generate plaintext passwords anymore. We notify users to set their passwords via tokens.
       process.nextTick(() => {
         try {
+          const { eventBus } = require('@/lib/event-bus'); // Must use require or await import properly
           eventBus.emit('student:created', {
             id: student.id,
             name: registrant.fullName,
             unitId,
+            unitName: unitCode, // Fulfils AppEvents interface
           });
 
           eventBus.emit('health:medical-record-created', {
+            id: 'auto-generated',
             studentId: student.id,
+            studentName: registrant.fullName,
+            unitName: unitCode,
             type: 'CHECKUP',
+            complaint: 'Initial Checkup',
+            status: 'HEALTHY',
+            recordedAt: new Date(),
             unitId,
           });
 

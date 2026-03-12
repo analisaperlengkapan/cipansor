@@ -169,15 +169,20 @@ export const waveController = {
       const onboardSchema = z.object({
         registrantId: z.string().min(1, 'Registrant ID is required'),
         unitId: z.string().min(1, 'Unit ID is required'),
+        assignedClassId: z.string().optional(),
+        academicYearId: z.string().optional(),
+        parentUserId: z.string().optional(), // accepted for contract compatibility, but unused here as orchestrator discovers/creates parent inherently
       });
 
-      const { registrantId, unitId } = onboardSchema.parse(req.body);
+      const { registrantId, unitId, assignedClassId, academicYearId } = onboardSchema.parse(req.body);
       const processedById = req.user?.id || 'system';
 
       const result = await StudentOnboardingOrchestrator.processEnrollment(
         registrantId,
         unitId,
-        processedById
+        processedById,
+        assignedClassId,
+        academicYearId
       );
       res.status(200).json(ApiResponse.success(result, 'Registrant onboarded successfully (E2E Integration complete)'));
     } catch (error: any) {

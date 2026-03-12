@@ -1,8 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { StudentOnboardingOrchestrator } from './student-onboarding.orchestrator';
 import { prisma } from '../../lib/prisma';
+import { eventBus } from '../../lib/event-bus';
 
 // Mock dependencies
+vi.mock('../../lib/event-bus', () => ({
+  eventBus: {
+    emit: vi.fn()
+  }
+}));
+
 vi.mock('../../lib/prisma', () => ({
   prisma: {
     $transaction: vi.fn(),
@@ -67,6 +74,9 @@ describe('StudentOnboardingOrchestrator', () => {
         studentParent: { 
           create: vi.fn().mockResolvedValue({ id: 'sp-1' }) 
         },
+        classEnrollment: {
+          create: vi.fn().mockResolvedValue({ id: 'ce-1' })
+        },
         medicalRecord: { 
           create: vi.fn().mockResolvedValue({ id: 'med-1' }) 
         },
@@ -82,7 +92,9 @@ describe('StudentOnboardingOrchestrator', () => {
       const result = await StudentOnboardingOrchestrator.processEnrollment(
         'reg-1',
         'unit-1',
-        'admin-1'
+        'admin-1',
+        'class-1',
+        'ay-1'
       );
 
       // Verify the returned structure
@@ -103,6 +115,11 @@ describe('StudentOnboardingOrchestrator', () => {
         })
       }));
 
+      // Verify class enrollment setup
+      expect(txMock.classEnrollment.create).toHaveBeenCalledWith(expect.objectContaining({
+        data: expect.objectContaining({ studentId: 'stud-1', classId: 'class-1', academicYearId: 'ay-1' })
+      }));
+
       // Verify health setup
       expect(txMock.medicalRecord.create).toHaveBeenCalledWith(expect.objectContaining({
         data: expect.objectContaining({ studentId: 'stud-1', type: 'CHECKUP', recordedById: 'admin-1' })
@@ -118,6 +135,14 @@ describe('StudentOnboardingOrchestrator', () => {
         where: { id: 'reg-1' },
         data: expect.objectContaining({ status: 'ENROLLED', studentId: 'stud-1' })
       }));
+
+      // Flush nextTick to check event bus
+      await new Promise(process.nextTick);
+
+      expect(eventBus.emit).toHaveBeenCalledWith('student:created', expect.objectContaining({ id: 'stud-1', unitName: 'SMP' }));
+      expect(eventBus.emit).toHaveBeenCalledWith('health:medical-record-created', expect.objectContaining({ studentId: 'stud-1' }));
+      expect(eventBus.emit).toHaveBeenCalledWith('notification:send', expect.objectContaining({ userId: 'user-stud-1', type: 'INFO' }));
+      expect(eventBus.emit).toHaveBeenCalledWith('email:send_reset_token', expect.objectContaining({ userId: 'user-stud-1' }));
     });
   });
 });

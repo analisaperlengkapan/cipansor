@@ -133,12 +133,12 @@ export class StudentOnboardingOrchestrator {
       let parentResetToken: string | undefined;
       let parentUser: any = null;
       if (registrant.parentPhone || registrant.parentEmail) {
-        // Try to find existing parent by phone or email
+        // Try to find existing user by phone or email (regardless of their current role)
         parentUser = await tx.user.findFirst({
           where: {
             OR: [
-              ...(registrant.parentPhone ? [{ phone: registrant.parentPhone, role: 'PARENT' as const }] : []),
-              ...(registrant.parentEmail ? [{ email: registrant.parentEmail, role: 'PARENT' as const }] : [])
+              ...(registrant.parentPhone ? [{ phone: registrant.parentPhone }] : []),
+              ...(registrant.parentEmail ? [{ email: registrant.parentEmail }] : [])
             ]
           }
         });
@@ -221,7 +221,7 @@ export class StudentOnboardingOrchestrator {
       // We do NOT generate plaintext passwords anymore. We notify users to set their passwords via tokens.
       process.nextTick(() => {
         try {
-          // eventBus is already available from line 90 via closure
+          const { eventBus } = require('@/lib/event-bus'); // Must use require or await import properly
           eventBus.emit('student:created', {
             id: student.id,
             name: registrant.fullName,

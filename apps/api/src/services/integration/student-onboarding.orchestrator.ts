@@ -202,9 +202,7 @@ export class StudentOnboardingOrchestrator {
           data: {
             studentId: student.id,
             classId: assignedClassId,
-            academicYearId,
-            status: 'ACTIVE',
-            semester: 'GANJIL', // default assumption for new enrollment
+            status: 'active',
           }
         });
       }

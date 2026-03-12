@@ -117,7 +117,7 @@ describe('StudentOnboardingOrchestrator', () => {
 
       // Verify class enrollment setup
       expect(txMock.classEnrollment.create).toHaveBeenCalledWith(expect.objectContaining({
-        data: expect.objectContaining({ studentId: 'stud-1', classId: 'class-1', academicYearId: 'ay-1' })
+        data: expect.objectContaining({ studentId: 'stud-1', classId: 'class-1', status: 'active' })
       }));
 
       // Verify health setup

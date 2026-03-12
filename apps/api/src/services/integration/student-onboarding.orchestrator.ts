@@ -21,7 +21,7 @@ export class StudentOnboardingOrchestrator {
       });
 
       if (!registrant) {
-        throw Errors.notFound('Registrant');
+        throw Errors.notFound('Registrant not found');
       }
 
       if (registrant.status !== 'ACCEPTED') {
@@ -32,30 +32,38 @@ export class StudentOnboardingOrchestrator {
       const crypto = await import('crypto');
       const { hashPassword } = await import('@/lib/password');
 
-      const defaultPassword = crypto.randomBytes(8).toString('hex');
-      const passwordHash = await hashPassword(defaultPassword);
+      // Use crypto for password reset token generation
+      const resetToken = crypto.randomBytes(32).toString('hex');
+      const passwordHash = await hashPassword(crypto.randomBytes(8).toString('hex')); // Dummy secure hash, user will reset it
 
       // Extract parts of name to create a safe email
-      const cleanName = registrant.fullName.toLowerCase().replace(/[^a-z0-9]/g, '');
+      let cleanName = registrant.fullName.toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (!cleanName) {
+        cleanName = 'student'; // Fallback for non-Latin names
+      }
 
       // 3. Create Student Record (Generate NIS first so we can use it for email)
-      // Since generateNis util doesn't exist, we inline a robust generator
       const year = new Date().getFullYear();
-      const lastStudent = await tx.student.findFirst({
-        where: { unitId },
-        orderBy: { nis: 'desc' },
-        select: { nis: true }
+
+      // Instead of using `desc` which sorts lexicographically and breaks on old formats,
+      // we count existing students to determine the sequence.
+      const studentCount = await tx.student.count({
+        where: { unitId }
       });
-      let nextSeq = 1;
-      if (lastStudent?.nis && lastStudent.nis.includes('-')) {
-        const parts = lastStudent.nis.split('-');
-        const lastSeq = parseInt(parts[parts.length - 1], 10);
-        if (!isNaN(lastSeq)) nextSeq = lastSeq + 1;
+      const nextSeq = studentCount + 1;
+
+      // Look up unit code dynamically, fallback to UNK
+      let unitCode = 'UNK';
+      const unit = await tx.unit.findUnique({ where: { id: unitId }, select: { code: true } });
+      if (unit && unit.code) {
+        unitCode = unit.code.toUpperCase();
       }
-      const unitCode = unitId.length >= 3 ? unitId.substring(0, 3).toUpperCase() : 'UNK';
+
       const nis = `NIS-${year}-${unitCode}-${String(nextSeq).padStart(4, '0')}`;
 
       const email = `${cleanName}.${nis.toLowerCase()}@student.cipansor.local`;
+
+      const { eventBus } = await import('@/lib/event-bus');
 
       const user = await tx.user.create({
         data: {
@@ -108,8 +116,9 @@ export class StudentOnboardingOrchestrator {
         });
 
         if (!parentUser) {
-          parentDefaultPassword = crypto.randomBytes(8).toString('hex');
-          const parentPasswordHash = await hashPassword(parentDefaultPassword);
+          const parentResetToken = crypto.randomBytes(32).toString('hex');
+          // Assign a dummy unguessable password hash, parent will reset via token
+          const parentPasswordHash = await hashPassword(crypto.randomBytes(16).toString('hex'));
           const parentEmail = registrant.parentEmail || `parent.${registrant.parentPhone}@parent.cipansor.local`;
           parentUser = await (tx.user.create as any)({
             data: {
@@ -166,28 +175,38 @@ export class StudentOnboardingOrchestrator {
         }
       });
 
-      // 8. Distribute Credentials asynchronously via secure channels (e.g., email / SMS)
-      // We do NOT return the plaintext passwords in the HTTP response body for security reasons.
-      process.nextTick(async () => {
+      // 8. Distribute Reset Tokens asynchronously via secure channels
+      // We do NOT generate plaintext passwords anymore. We notify users to set their passwords via tokens.
+      process.nextTick(() => {
         try {
-          const { eventBus } = await import('@/lib/event-bus');
+          eventBus.emit('student:created', {
+            id: student.id,
+            name: registrant.fullName,
+            unitId,
+          });
+
+          eventBus.emit('health:medical-record-created', {
+            studentId: student.id,
+            type: 'CHECKUP',
+          });
+
           eventBus.emit('notification:send', {
             type: 'CREDENTIALS',
-            title: 'Your Account Credentials',
-            message: `Student account created. Email: ${email}, Password: ${defaultPassword}`,
+            title: 'Your Account has been created',
+            message: `Student account created. Email: ${email}. Please use the password reset link to set your password. Token: ${resetToken}`,
             userId: user.id,
           });
 
-          if (parentUser && parentDefaultPassword) {
+          if (parentUser) {
             eventBus.emit('notification:send', {
               type: 'CREDENTIALS',
-              title: 'Your Parent Account Credentials',
-              message: `Parent account created. Password: ${parentDefaultPassword}`,
+              title: 'Your Parent Account has been created',
+              message: `Parent account created. Please use the password reset link to set your password.`,
               userId: parentUser.id,
             });
           }
         } catch (err) {
-          console.error('Failed to dispatch credentials notification', err);
+          console.error('Failed to dispatch events', err);
         }
       });
 

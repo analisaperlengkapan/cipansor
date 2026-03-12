@@ -68,8 +68,8 @@ export class StudentOnboardingOrchestrator {
       // Find the absolute maximum sequence number for this unit and year (ignoring legacy formats)
       const results = await tx.$queryRaw<Array<{ nis: string }>>`
         SELECT nis
-        FROM "Student"
-        WHERE "unitId" = ${unitId} AND nis LIKE ${prefix + '%'}
+        FROM "students"
+        WHERE "unit_id" = ${unitId} AND nis LIKE ${prefix + '%'}
         ORDER BY nis DESC
         LIMIT 1
       `;

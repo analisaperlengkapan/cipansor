@@ -155,7 +155,8 @@ export class StudentOnboardingOrchestrator {
         success: true,
         studentId: student.id,
         userId: user.id,
-        nis
+        nis,
+        defaultPassword,
       };
     });
   }

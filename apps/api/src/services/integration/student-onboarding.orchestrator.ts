@@ -65,22 +65,19 @@ export class StudentOnboardingOrchestrator {
       // Acquire a transaction-level advisory lock (released automatically at transaction end)
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(${lockKey})`;
 
-      // Find the absolute maximum sequence number for this unit and year (ignoring legacy formats)
-      const results = await tx.$queryRaw<Array<{ nis: string }>>`
-        SELECT nis
+      // Find the absolute maximum sequence number for this unit and year (ignoring legacy formats).
+      // We parse the integer value directly in the SQL to handle numbers > 9999 properly.
+      // Note: The table name in Prisma PostgreSQL is typically "students" or "Student" mapped.
+      const prefixLen = prefix.length + 1; // +1 for SQL substring which is 1-indexed
+      const results = await tx.$queryRaw<Array<{ max_seq: number | null }>>`
+        SELECT MAX(CAST(SUBSTRING(nis FROM ${prefixLen}) AS INTEGER)) as max_seq
         FROM "students"
         WHERE "unit_id" = ${unitId} AND nis LIKE ${prefix + '%'}
-        ORDER BY nis DESC
-        LIMIT 1
       `;
 
       let maxSeq = 0;
-      if (results && results.length > 0 && results[0].nis) {
-        const parts = results[0].nis.split('-');
-        const seqNum = parseInt(parts[parts.length - 1], 10);
-        if (!isNaN(seqNum)) {
-          maxSeq = seqNum;
-        }
+      if (results && results.length > 0 && results[0].max_seq != null) {
+        maxSeq = Number(results[0].max_seq);
       }
 
       const nextSeq = maxSeq + 1;

@@ -56,19 +56,21 @@ export class StudentOnboardingOrchestrator {
       // Find the absolute maximum sequence number for this unit and year (ignoring legacy formats)
       // This is monotonically increasing and resistant to row deletions.
       const prefix = `NIS-${year}-${unitCode}-`;
-      const students = await tx.student.findMany({
-        where: {
-          unitId,
-          nis: { startsWith: prefix }
-        },
-        select: { nis: true }
-      });
+      // Concurrency-safe: raw SQL with FOR UPDATE row locking
+      const results = await tx.$queryRaw<Array<{ nis: string }>>`
+        SELECT nis
+        FROM "Student"
+        WHERE "unitId" = ${unitId} AND nis LIKE ${prefix + '%'}
+        ORDER BY nis DESC
+        LIMIT 1
+        FOR UPDATE
+      `;
 
       let maxSeq = 0;
-      for (const s of students) {
-        const parts = s.nis.split('-');
+      if (results && results.length > 0 && results[0].nis) {
+        const parts = results[0].nis.split('-');
         const seqNum = parseInt(parts[parts.length - 1], 10);
-        if (!isNaN(seqNum) && seqNum > maxSeq) {
+        if (!isNaN(seqNum)) {
           maxSeq = seqNum;
         }
       }
@@ -101,7 +103,7 @@ export class StudentOnboardingOrchestrator {
           status: 'active',
           unitId,
           nis,
-          entryYear: academicYearId, // Link to academic year per PR feedback
+          entryYear: year, // entryYear requires an Int, using current year
 
           // Core Data mapping from registrant
           gender: registrant.gender,
@@ -129,7 +131,7 @@ export class StudentOnboardingOrchestrator {
           where: {
             OR: [
               ...(registrant.parentPhone ? [{ phone: registrant.parentPhone, role: 'PARENT' as const }] : []),
-              ...(registrant.parentEmail ? [{ email: registrant.parentEmail }] : [])
+              ...(registrant.parentEmail ? [{ email: registrant.parentEmail, role: 'PARENT' as const }] : [])
             ]
           }
         });

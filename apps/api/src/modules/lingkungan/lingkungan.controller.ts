@@ -18,7 +18,10 @@ function isPrivileged(role?: UserRole): boolean {
 
 function resolveUnitId(req: Request, bodyUnitId?: string): string {
   if (isPrivileged(req.user?.role) && bodyUnitId) {
-    return bodyUnitId;
+    // Only SUPER_ADMIN can override to a different unit; UNIT_ADMIN uses their own
+    if (req.user?.role === UserRole.SUPER_ADMIN || !req.user?.unitId) {
+      return bodyUnitId;
+    }
   }
 
   const unitId = req.user?.unitId;

@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { Errors } from '@/middleware/error';
-import { } from '@prisma/client';
+import { PaymentStatus, Registrant } from '@prisma/client';
 import { generateNis } from '@/utils/nis-generator';
 
 export class StudentOnboardingOrchestrator {

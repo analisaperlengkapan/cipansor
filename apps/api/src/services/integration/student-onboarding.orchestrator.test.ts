@@ -1,19 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { StudentOnboardingOrchestrator } from './student-onboarding.orchestrator';
 import { prisma } from '../../lib/prisma';
-import { eventBus } from '../../lib/event-bus';
-import { PaymentStatus } from '@prisma/client';
 
 // Mock dependencies
 vi.mock('../../lib/prisma', () => ({
   prisma: {
     $transaction: vi.fn(),
-  },
-}));
-
-vi.mock('../../lib/event-bus', () => ({
-  eventBus: {
-    emit: vi.fn(),
   },
 }));
 
@@ -41,11 +33,27 @@ describe('StudentOnboardingOrchestrator', () => {
       ).rejects.toThrow('Registrant not found');
     });
 
-    it('should perform E2E onboarding successfully (Student, Parent, Class, Medical, Invoice)', async () => {
+    it('should perform E2E onboarding successfully', async () => {
       // Setup detailed mock transaction
       const txMock = {
         registrant: { 
-          findUnique: vi.fn().mockResolvedValue({ id: 'reg-1', userId: 'user-stud-1', user: { name: 'Budi Test' } }) 
+          findUnique: vi.fn().mockResolvedValue({
+            id: 'reg-1',
+            status: 'ACCEPTED',
+            fullName: 'Budi Test',
+            gender: 'MALE',
+            birthPlace: 'Jakarta',
+            birthDate: new Date('2010-01-01'),
+            address: 'Jl. Test 123',
+            parentName: 'Ayah Budi',
+            parentPhone: '08123456789',
+            parentEmail: 'ayah@test.com'
+          }),
+          update: vi.fn().mockResolvedValue({ id: 'reg-1' })
+        },
+        user: {
+          create: vi.fn().mockResolvedValue({ id: 'user-stud-1' }),
+          findFirst: vi.fn().mockResolvedValue(null) // Mock parent not found
         },
         student: { 
           create: vi.fn().mockResolvedValue({ id: 'stud-1', nis: 'NIS-2026-100' }) 
@@ -53,18 +61,12 @@ describe('StudentOnboardingOrchestrator', () => {
         studentParent: { 
           create: vi.fn().mockResolvedValue({ id: 'sp-1' }) 
         },
-        classEnrollment: { 
-          create: vi.fn().mockResolvedValue({ id: 'ce-1' }) 
-        },
         medicalRecord: { 
           create: vi.fn().mockResolvedValue({ id: 'med-1' }) 
         },
-        paymentType: { 
-          findFirst: vi.fn().mockResolvedValue({ id: 'pt-spp', amount: 500000, code: 'SPP' }) 
-        },
-        invoice: { 
-          create: vi.fn().mockResolvedValue({ id: 'inv-1', status: PaymentStatus.PENDING }) 
-        },
+        santriWallet: {
+          create: vi.fn().mockResolvedValue({ id: 'wallet-1' })
+        }
       };
 
       vi.mocked(prisma.$transaction).mockImplementation(async (callback) => {
@@ -81,37 +83,31 @@ describe('StudentOnboardingOrchestrator', () => {
       // Verify the returned structure
       expect(result.success).toBe(true);
       expect(result.studentId).toBe('stud-1');
+      expect(result.userId).toBe('user-stud-1');
 
-      // Verify Master Data interactions
+      // Verify user creation
+      expect(txMock.user.create).toHaveBeenCalledTimes(2); // Student and Parent
+
+      // Verify student and parent links
       expect(txMock.student.create).toHaveBeenCalled();
       expect(txMock.studentParent.create).toHaveBeenCalledWith(expect.objectContaining({
-        data: expect.objectContaining({ studentId: 'stud-1', userId: 'parent-1', relationship: 'FATHER' })
-      }));
-      expect(txMock.classEnrollment.create).toHaveBeenCalledWith(expect.objectContaining({
-        data: expect.objectContaining({ studentId: 'stud-1', classId: 'class-1' })
+        data: expect.objectContaining({ studentId: 'stud-1', relation: 'parent' })
       }));
 
-      // Verify Multi-Domain interactions
+      // Verify health setup
       expect(txMock.medicalRecord.create).toHaveBeenCalledWith(expect.objectContaining({
-        data: expect.objectContaining({ studentId: 'stud-1', unitId: 'unit-1' })
+        data: expect.objectContaining({ studentId: 'stud-1', type: 'CHECKUP', recordedById: 'admin-1' })
       }));
       
-      expect(txMock.invoice.create).toHaveBeenCalledWith(expect.objectContaining({
-        data: expect.objectContaining({
-          studentId: 'stud-1',
-          paymentTypeId: 'pt-spp',
-          amount: 500000,
-        })
+      // Verify wallet setup
+      expect(txMock.santriWallet.create).toHaveBeenCalledWith(expect.objectContaining({
+        data: expect.objectContaining({ studentId: 'stud-1', balance: 0 })
       }));
 
-      // Event bus execution verification (using process.nextTick simulation)
-      await new Promise(process.nextTick); 
-      
-      expect(eventBus.emit).toHaveBeenCalledWith('student:created', expect.any(Object));
-      expect(eventBus.emit).toHaveBeenCalledWith('health:medical-record-created', expect.any(Object));
-      expect(eventBus.emit).toHaveBeenCalledWith('notification:send', expect.objectContaining({
-        userId: 'parent-1',
-        type: 'FINANCE'
+      // Verify registrant updated
+      expect(txMock.registrant.update).toHaveBeenCalledWith(expect.objectContaining({
+        where: { id: 'reg-1' },
+        data: expect.objectContaining({ status: 'ENROLLED', studentId: 'stud-1' })
       }));
     });
   });

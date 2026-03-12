@@ -34,6 +34,7 @@ export class StudentOnboardingOrchestrator {
 
       // Use crypto for password reset token generation
       const resetToken = crypto.randomBytes(32).toString('hex');
+      const resetTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
       const passwordHash = await hashPassword(crypto.randomBytes(8).toString('hex')); // Dummy secure hash, user will reset it
 
       // Extract parts of name to create a safe email
@@ -65,11 +66,14 @@ export class StudentOnboardingOrchestrator {
 
       const { eventBus } = await import('@/lib/event-bus');
 
+      // @ts-ignore - Ignore type error as Prisma types might be lagging behind schema for password reset
       const user = await tx.user.create({
         data: {
           name: registrant.fullName,
           email,
           passwordHash,
+          resetTokenHash: await hashPassword(resetToken),
+          resetTokenExpiresAt: resetTokenExpiry,
           role: 'STUDENT',
           unitId,
           isActive: true,
@@ -103,6 +107,7 @@ export class StudentOnboardingOrchestrator {
 
       // 4. Create Parent User Account
       let parentDefaultPassword;
+      let parentResetToken: string | undefined;
       let parentUser: any = null;
       if (registrant.parentPhone || registrant.parentEmail) {
         // Try to find existing parent by phone or email
@@ -116,7 +121,8 @@ export class StudentOnboardingOrchestrator {
         });
 
         if (!parentUser) {
-          const parentResetToken = crypto.randomBytes(32).toString('hex');
+          parentResetToken = crypto.randomBytes(32).toString('hex');
+          const parentResetTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
           // Assign a dummy unguessable password hash, parent will reset via token
           const parentPasswordHash = await hashPassword(crypto.randomBytes(16).toString('hex'));
           const parentEmail = registrant.parentEmail || `parent.${registrant.parentPhone}@parent.cipansor.local`;
@@ -126,6 +132,8 @@ export class StudentOnboardingOrchestrator {
               email: parentEmail,
               phone: registrant.parentPhone,
               passwordHash: parentPasswordHash,
+              resetTokenHash: await hashPassword(parentResetToken),
+              resetTokenExpiresAt: parentResetTokenExpiry,
               role: 'PARENT',
               isActive: true,
             }
@@ -193,15 +201,22 @@ export class StudentOnboardingOrchestrator {
           eventBus.emit('notification:send', {
             type: 'CREDENTIALS',
             title: 'Your Account has been created',
-            message: `Student account created. Email: ${email}. Please use the password reset link to set your password. Token: ${resetToken}`,
+            message: `Student account created. Email: ${email}. Please use the password reset link to set your password: https://app.cipansor.local/reset-password?token=${resetToken}`,
             userId: user.id,
           });
 
-          if (parentUser) {
+          if (parentUser && parentResetToken) {
             eventBus.emit('notification:send', {
               type: 'CREDENTIALS',
               title: 'Your Parent Account has been created',
-              message: `Parent account created. Please use the password reset link to set your password.`,
+              message: `Parent account created. Please use the password reset link to set your password: https://app.cipansor.local/reset-password?token=${parentResetToken}`,
+              userId: parentUser.id,
+            });
+          } else if (parentUser) {
+            eventBus.emit('notification:send', {
+              type: 'INFO',
+              title: 'Your Parent Account has been linked',
+              message: `Your existing parent account has been linked to the new student.`,
               userId: parentUser.id,
             });
           }

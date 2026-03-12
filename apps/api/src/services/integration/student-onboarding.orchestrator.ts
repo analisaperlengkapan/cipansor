@@ -37,7 +37,8 @@ export class StudentOnboardingOrchestrator {
       const passwordHash = await hashPassword(defaultPassword);
 
       // Extract parts of name to create a safe email
-      const cleanName = registrant.fullName.toLowerCase().replace(/[^a-z0-9]/g, '');
+      // Extract parts of name to create a safe email
+      const cleanName = registrant.fullName.toLowerCase().replace(/[^a-z0-9]/g, '') || 'student';
 
       // 3. Create Student Record (Generate NIS first so we can use it for email)
       const nis = await generateNis(unitId, tx as any);

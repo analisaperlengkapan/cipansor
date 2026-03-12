@@ -72,7 +72,7 @@ export class StudentOnboardingOrchestrator {
       const results = await tx.$queryRaw<Array<{ max_seq: number | null }>>`
         SELECT MAX(CAST(SUBSTRING(nis FROM ${prefixLen}) AS INTEGER)) as max_seq
         FROM "students"
-        WHERE "unit_id" = ${unitId} AND nis LIKE ${prefix + '%'}
+        WHERE nis LIKE ${prefix + '%'}
       `;
 
       let maxSeq = 0;

@@ -46,11 +46,11 @@ export class StudentOnboardingOrchestrator {
       // 3. Create Student Record (Generate NIS first so we can use it for email)
       const year = new Date().getFullYear();
 
-      // Look up unit code dynamically, fallback to UNK
+      // Look up unit dynamically, fallback to UNK
       let unitCode = 'UNK';
-      const unit = await tx.unit.findUnique({ where: { id: unitId }, select: { code: true } });
-      if (unit && unit.code) {
-        unitCode = unit.code.toUpperCase();
+      const unit = await tx.unit.findUnique({ where: { id: unitId }, select: { type: true } });
+      if (unit && unit.type) {
+        unitCode = unit.type.toUpperCase();
       }
 
       // Find the absolute maximum sequence number for this unit and year (ignoring legacy formats)
@@ -101,7 +101,7 @@ export class StudentOnboardingOrchestrator {
           status: 'active',
           unitId,
           nis,
-          entryYear: new Date().getFullYear(), // Integer year, academicYearId is used elsewhere
+          entryYear: academicYearId, // Link to academic year per PR feedback
 
           // Core Data mapping from registrant
           gender: registrant.gender,
@@ -210,6 +210,7 @@ export class StudentOnboardingOrchestrator {
           eventBus.emit('health:medical-record-created', {
             studentId: student.id,
             type: 'CHECKUP',
+            unitId,
           });
 
           // Secure delivery: We only notify the user to check their email.

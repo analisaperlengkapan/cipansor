@@ -60,7 +60,7 @@ export class StudentOnboardingOrchestrator {
           status: 'active',
           unitId,
           nis,
-          entryYear: academicYearId, // Link to academic year per PR feedback
+          entryYear: new Date().getFullYear(), // Integer year, not academic year ID
 
           // Core Data mapping from registrant
           gender: registrant.gender,

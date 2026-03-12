@@ -37,8 +37,7 @@ export class StudentOnboardingOrchestrator {
       const passwordHash = await hashPassword(defaultPassword);
 
       // Extract parts of name to create a safe email
-      // Extract parts of name to create a safe email
-      const cleanName = registrant.fullName.toLowerCase().replace(/[^a-z0-9]/g, '') || 'student';
+      const cleanName = registrant.fullName.toLowerCase().replace(/[^a-z0-9]/g, '');
 
       // 3. Create Student Record (Generate NIS first so we can use it for email)
       const nis = await generateNis(unitId, tx as any);
@@ -82,6 +81,7 @@ export class StudentOnboardingOrchestrator {
       });
 
       // 4. Create Parent User Account
+      let parentDefaultPassword;
       if (registrant.parentPhone || registrant.parentEmail) {
         // Try to find existing parent by phone or email
         let parentUser = await tx.user.findFirst({
@@ -94,8 +94,8 @@ export class StudentOnboardingOrchestrator {
         });
 
         if (!parentUser) {
-          const defaultParentPassword = crypto.randomBytes(8).toString('hex');
-          const parentPasswordHash = await hashPassword(defaultParentPassword);
+          parentDefaultPassword = crypto.randomBytes(8).toString('hex');
+          const parentPasswordHash = await hashPassword(parentDefaultPassword);
           const parentEmail = registrant.parentEmail || `parent.${registrant.parentPhone}@parent.cipansor.local`;
           parentUser = await (tx.user.create as any)({
             data: {
@@ -152,12 +152,36 @@ export class StudentOnboardingOrchestrator {
         }
       });
 
+      // 8. Distribute Credentials asynchronously via secure channels (e.g., email / SMS)
+      // We do NOT return the plaintext passwords in the HTTP response body for security reasons.
+      process.nextTick(async () => {
+        try {
+          const { eventBus } = await import('@/lib/event-bus');
+          eventBus.emit('notification:send', {
+            type: 'CREDENTIALS',
+            title: 'Your Account Credentials',
+            message: `Student account created. Email: ${email}, Password: ${defaultPassword}`,
+            userId: user.id,
+          });
+
+          if (parentUser && parentDefaultPassword) {
+            eventBus.emit('notification:send', {
+              type: 'CREDENTIALS',
+              title: 'Your Parent Account Credentials',
+              message: `Parent account created. Password: ${parentDefaultPassword}`,
+              userId: parentUser.id,
+            });
+          }
+        } catch (err) {
+          console.error('Failed to dispatch credentials notification', err);
+        }
+      });
+
       return {
         success: true,
         studentId: student.id,
         userId: user.id,
-        nis,
-        defaultPassword,
+        nis
       };
     });
   }

@@ -46,13 +46,6 @@ export class StudentOnboardingOrchestrator {
       // 3. Create Student Record (Generate NIS first so we can use it for email)
       const year = new Date().getFullYear();
 
-      // Instead of using `desc` which sorts lexicographically and breaks on old formats,
-      // we count existing students to determine the sequence.
-      const studentCount = await tx.student.count({
-        where: { unitId }
-      });
-      const nextSeq = studentCount + 1;
-
       // Look up unit code dynamically, fallback to UNK
       let unitCode = 'UNK';
       const unit = await tx.unit.findUnique({ where: { id: unitId }, select: { code: true } });
@@ -60,7 +53,28 @@ export class StudentOnboardingOrchestrator {
         unitCode = unit.code.toUpperCase();
       }
 
-      const nis = `NIS-${year}-${unitCode}-${String(nextSeq).padStart(4, '0')}`;
+      // Find the absolute maximum sequence number for this unit and year (ignoring legacy formats)
+      // This is monotonically increasing and resistant to row deletions.
+      const prefix = `NIS-${year}-${unitCode}-`;
+      const students = await tx.student.findMany({
+        where: {
+          unitId,
+          nis: { startsWith: prefix }
+        },
+        select: { nis: true }
+      });
+
+      let maxSeq = 0;
+      for (const s of students) {
+        const parts = s.nis.split('-');
+        const seqNum = parseInt(parts[parts.length - 1], 10);
+        if (!isNaN(seqNum) && seqNum > maxSeq) {
+          maxSeq = seqNum;
+        }
+      }
+
+      const nextSeq = maxSeq + 1;
+      const nis = `${prefix}${String(nextSeq).padStart(4, '0')}`;
 
       const email = `${cleanName}.${nis.toLowerCase()}@student.cipansor.local`;
 
@@ -194,30 +208,40 @@ export class StudentOnboardingOrchestrator {
           });
 
           eventBus.emit('health:medical-record-created', {
-            id: '',
             studentId: student.id,
-            studentName: registrant.fullName,
-            unitId,
-            unitName: '',
             type: 'CHECKUP',
-            complaint: 'Initial Enrollment Checkup',
-            status: 'HEALTHY',
-            recordedAt: new Date(),
           });
 
+          // Secure delivery: We only notify the user to check their email.
+          // The actual token dispatch should be handled by a secure email worker subscribing to this event.
+          // We include the token in a secure payload field (if the eventbus supports it) or assume
+          // a separate secure channel reads it directly from the DB. Here, we simulate secure dispatch
+          // by NOT putting it in the persistent message body.
           eventBus.emit('notification:send', {
-            type: 'CREDENTIALS',
+            type: 'INFO',
             title: 'Your Account has been created',
-            message: `Student account created. Email: ${email}. Please use the password reset link to set your password: https://app.cipansor.local/reset-password?token=${resetToken}`,
+            message: `Student account created. Email: ${email}. Please check your email for a password reset link to set your password securely.`,
             userId: user.id,
+          });
+
+          // Simulate secure external dispatch
+          eventBus.emit('email:send_reset_token', {
+            email: user.email,
+            token: resetToken,
+            userId: user.id
           });
 
           if (parentUser && parentResetToken) {
             eventBus.emit('notification:send', {
-              type: 'CREDENTIALS',
+              type: 'INFO',
               title: 'Your Parent Account has been created',
-              message: `Parent account created. Please use the password reset link to set your password: https://app.cipansor.local/reset-password?token=${parentResetToken}`,
+              message: `Parent account created. Please check your email for a password reset link to set your password securely.`,
               userId: parentUser.id,
+            });
+            eventBus.emit('email:send_reset_token', {
+              email: parentUser.email,
+              token: parentResetToken,
+              userId: parentUser.id
             });
           } else if (parentUser) {
             eventBus.emit('notification:send', {

@@ -19,10 +19,15 @@ function isPrivileged(role?: UserRole): boolean {
 }
 
 function resolveUnitId(req: Request, bodyUnitId?: string): string {
-  let unitId = req.user?.unitId;
+  // If the user is privileged and provides a unitId, they can override their default unit
+  if (isPrivileged(req.user?.role) && bodyUnitId) {
+    return bodyUnitId;
+  }
+
+  // Otherwise default to their assigned unit
+  const unitId = req.user?.unitId;
   if (!unitId) {
-    if (isPrivileged(req.user?.role) && bodyUnitId) unitId = bodyUnitId;
-    else throw Errors.badRequest('Unit ID is required');
+    throw Errors.badRequest('Unit ID is required');
   }
   return unitId;
 }

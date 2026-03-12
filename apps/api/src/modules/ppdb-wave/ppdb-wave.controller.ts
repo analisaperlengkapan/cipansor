@@ -165,9 +165,14 @@ export const waveController = {
       // Lazy load to avoid circular dependencies if any
       const { StudentOnboardingOrchestrator } = await import('@/services/integration/student-onboarding.orchestrator');
       
-      const registrantId = req.body.registrantId;
-      const unitId = req.body.unitId;
-      const academicYearId = req.body.academicYearId;
+      const { z } = await import('zod');
+      const onboardSchema = z.object({
+        registrantId: z.string().min(1, 'Registrant ID is required'),
+        unitId: z.string().min(1, 'Unit ID is required'),
+        academicYearId: z.string().min(1, 'Academic Year ID is required'),
+      });
+
+      const { registrantId, unitId, academicYearId } = onboardSchema.parse(req.body);
       const processedById = req.user?.id || 'system';
 
       const result = await StudentOnboardingOrchestrator.processEnrollment(

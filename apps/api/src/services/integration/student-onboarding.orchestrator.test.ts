@@ -52,7 +52,9 @@ describe('StudentOnboardingOrchestrator', () => {
           update: vi.fn().mockResolvedValue({ id: 'reg-1' })
         },
         user: {
-          create: vi.fn().mockResolvedValue({ id: 'user-stud-1' }),
+          create: vi.fn()
+            .mockResolvedValueOnce({ id: 'user-stud-1' }) // 1st call: student
+            .mockResolvedValueOnce({ id: 'user-parent-1' }), // 2nd call: parent
           findFirst: vi.fn().mockResolvedValue(null) // Mock parent not found
         },
         student: { 
@@ -91,7 +93,11 @@ describe('StudentOnboardingOrchestrator', () => {
       // Verify student and parent links
       expect(txMock.student.create).toHaveBeenCalled();
       expect(txMock.studentParent.create).toHaveBeenCalledWith(expect.objectContaining({
-        data: expect.objectContaining({ studentId: 'stud-1', relation: 'parent' })
+        data: expect.objectContaining({
+          studentId: 'stud-1',
+          parentId: 'user-parent-1',
+          relation: 'parent'
+        })
       }));
 
       // Verify health setup

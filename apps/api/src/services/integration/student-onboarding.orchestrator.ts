@@ -1,7 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { Errors } from '@/middleware/error';
 import { PaymentStatus, Registrant } from '@prisma/client';
-import { generateNis } from '@/utils/nis-generator';
 
 export class StudentOnboardingOrchestrator {
   /**
@@ -40,9 +39,23 @@ export class StudentOnboardingOrchestrator {
       const cleanName = registrant.fullName.toLowerCase().replace(/[^a-z0-9]/g, '');
 
       // 3. Create Student Record (Generate NIS first so we can use it for email)
-      const nis = await generateNis(unitId, tx as any);
+      // Since generateNis util doesn't exist, we inline a robust generator
+      const year = new Date().getFullYear();
+      const lastStudent = await tx.student.findFirst({
+        where: { unitId },
+        orderBy: { nis: 'desc' },
+        select: { nis: true }
+      });
+      let nextSeq = 1;
+      if (lastStudent?.nis && lastStudent.nis.includes('-')) {
+        const parts = lastStudent.nis.split('-');
+        const lastSeq = parseInt(parts[parts.length - 1], 10);
+        if (!isNaN(lastSeq)) nextSeq = lastSeq + 1;
+      }
+      const unitCode = unitId.length >= 3 ? unitId.substring(0, 3).toUpperCase() : 'UNK';
+      const nis = `NIS-${year}-${unitCode}-${String(nextSeq).padStart(4, '0')}`;
 
-      const email = `${cleanName}.${nis}@student.cipansor.local`;
+      const email = `${cleanName}.${nis.toLowerCase()}@student.cipansor.local`;
 
       const user = await tx.user.create({
         data: {
@@ -82,9 +95,10 @@ export class StudentOnboardingOrchestrator {
 
       // 4. Create Parent User Account
       let parentDefaultPassword;
+      let parentUser: any = null;
       if (registrant.parentPhone || registrant.parentEmail) {
         // Try to find existing parent by phone or email
-        let parentUser = await tx.user.findFirst({
+        parentUser = await tx.user.findFirst({
           where: {
             OR: [
               ...(registrant.parentPhone ? [{ phone: registrant.parentPhone, role: 'PARENT' as const }] : []),

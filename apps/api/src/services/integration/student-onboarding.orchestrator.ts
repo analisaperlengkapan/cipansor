@@ -52,17 +52,26 @@ export class StudentOnboardingOrchestrator {
         unitCode = unit.type.toUpperCase();
       }
 
-      // Find the absolute maximum sequence number for this unit and year (ignoring legacy formats)
-      // This is monotonically increasing and resistant to row deletions.
+      // Use Postgres advisory locks to serialize NIS generation for the same unit + year
       const prefix = `NIS-${year}-${unitCode}-`;
-      // Concurrency-safe: raw SQL with FOR UPDATE row locking
+
+      // Hash the prefix into an integer for the pg_advisory_xact_lock
+      let lockKey = 0;
+      for (let i = 0; i < prefix.length; i++) {
+        lockKey = ((lockKey << 5) - lockKey) + prefix.charCodeAt(i);
+        lockKey = lockKey & lockKey; // Convert to 32bit integer
+      }
+
+      // Acquire a transaction-level advisory lock (released automatically at transaction end)
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(${lockKey})`;
+
+      // Find the absolute maximum sequence number for this unit and year (ignoring legacy formats)
       const results = await tx.$queryRaw<Array<{ nis: string }>>`
         SELECT nis
         FROM "Student"
         WHERE "unitId" = ${unitId} AND nis LIKE ${prefix + '%'}
         ORDER BY nis DESC
         LIMIT 1
-        FOR UPDATE
       `;
 
       let maxSeq = 0;

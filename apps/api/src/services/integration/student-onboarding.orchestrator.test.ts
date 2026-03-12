@@ -60,6 +60,7 @@ describe('StudentOnboardingOrchestrator', () => {
           findUnique: vi.fn().mockResolvedValue({ type: 'SMP' })
         },
         $queryRaw: vi.fn().mockResolvedValue([]),
+        $executeRaw: vi.fn().mockResolvedValue(1),
         student: { 
           create: vi.fn().mockResolvedValue({ id: 'stud-1', nis: 'NIS-2026-SMP-0001' }),
         },

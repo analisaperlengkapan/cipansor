@@ -59,7 +59,7 @@ export class StudentOnboardingOrchestrator {
           status: 'active',
           unitId,
           nis,
-          status: 'active',
+
 
           // Core Data mapping from registrant
           gender: registrant.gender,

@@ -194,8 +194,15 @@ export class StudentOnboardingOrchestrator {
           });
 
           eventBus.emit('health:medical-record-created', {
+            id: '',
             studentId: student.id,
+            studentName: registrant.fullName,
+            unitId,
+            unitName: '',
             type: 'CHECKUP',
+            complaint: 'Initial Enrollment Checkup',
+            status: 'HEALTHY',
+            recordedAt: new Date(),
           });
 
           eventBus.emit('notification:send', {

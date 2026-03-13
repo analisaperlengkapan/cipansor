@@ -60,8 +60,9 @@ describe('StudentOnboardingOrchestrator', () => {
         user: {
           create: vi.fn()
             .mockResolvedValueOnce({ id: 'user-stud-1' }) // 1st call: student
-            .mockResolvedValueOnce({ id: 'user-parent-1' }), // 2nd call: parent
-          findFirst: vi.fn().mockResolvedValue(null) // Mock parent not found
+            .mockResolvedValueOnce({ id: 'user-parent-1', email: 'ayah@test.com' }), // 2nd call: parent
+          findUnique: vi.fn().mockResolvedValue(null), // Mock parent not found by email
+          findFirst: vi.fn().mockResolvedValue(null) // Mock parent not found by phone
         },
         unit: {
           findUnique: vi.fn().mockResolvedValue({ type: 'SMP' })

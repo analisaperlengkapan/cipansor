@@ -149,7 +149,9 @@ export async function getExamAnalytics(id: string): Promise<ExamAnalyticsData> {
       },
       class: {
         include: {
-          students: true
+          _count: {
+            select: { students: true }
+          }
         }
       }
     }
@@ -163,7 +165,7 @@ export async function getExamAnalytics(id: string): Promise<ExamAnalyticsData> {
   const maxScore = Number(exam.maxScore || 100);
   const grades = exam.grades;
 
-  const totalStudents = exam.class?.students.length || grades.length;
+  const totalStudents = exam.class?._count?.students || grades.length;
   const gradedCount = grades.length;
 
   if (gradedCount === 0) {

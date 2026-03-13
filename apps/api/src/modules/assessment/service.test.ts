@@ -27,7 +27,7 @@ describe('Assessment Service - getExamAnalytics', () => {
       id: 'exam-1',
       passingScore: 70,
       maxScore: 100,
-      class: { students: [{ id: 's1' }, { id: 's2' }] },
+      class: { _count: { students: 2 } },
       grades: [],
     };
     (prisma.exam.findUnique as any).mockResolvedValue(mockExam);
@@ -53,7 +53,7 @@ describe('Assessment Service - getExamAnalytics', () => {
       id: 'exam-2',
       passingScore: 75,
       maxScore: 100,
-      class: { students: [{ id: 's1' }, { id: 's2' }, { id: 's3' }, { id: 's4' }] },
+      class: { _count: { students: 4 } },
       grades: [
         { studentId: 's1', score: 80, student: { user: { name: 'Alice' } } },
         { studentId: 's2', score: 60, student: { user: { name: 'Bob' } } },

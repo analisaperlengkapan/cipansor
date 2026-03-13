@@ -16,10 +16,11 @@ describe('Assessment Service - getExamAnalytics', () => {
     vi.clearAllMocks();
   });
 
-  it('should throw an error if exam is not found', async () => {
+  it('should return null if exam is not found', async () => {
     (prisma.exam.findUnique as any).mockResolvedValue(null);
 
-    await expect(getExamAnalytics('exam-1')).rejects.toThrow('Exam not found');
+    const result = await getExamAnalytics('exam-1');
+    expect(result).toBeNull();
   });
 
   it('should return zeros for analytics if no grades exist', async () => {

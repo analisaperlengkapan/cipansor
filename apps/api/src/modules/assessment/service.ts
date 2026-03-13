@@ -136,7 +136,7 @@ export async function createExam(data: CreateExamInput): Promise<Exam> {
   return mapToExam(exam);
 }
 
-export async function getExamAnalytics(id: string): Promise<ExamAnalyticsData> {
+export async function getExamAnalytics(id: string): Promise<ExamAnalyticsData | null> {
   const exam = await prisma.exam.findUnique({
     where: { id },
     include: {
@@ -162,7 +162,7 @@ export async function getExamAnalytics(id: string): Promise<ExamAnalyticsData> {
   });
 
   if (!exam) {
-    throw new Error('Exam not found');
+    return null;
   }
 
   const passingScore = Number(exam.passingScore || 70);

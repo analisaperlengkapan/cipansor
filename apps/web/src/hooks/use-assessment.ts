@@ -158,7 +158,7 @@ export function useUpdateExam() {
       queryClient.invalidateQueries({ queryKey: ["exams"] });
       queryClient.invalidateQueries({ queryKey: ["exam-analytics", variables.id] });
     },
-}
+  });
 
 export function useUpdateExamStatus() {
   const queryClient = useQueryClient();

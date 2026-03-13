@@ -17,12 +17,15 @@ function isPrivileged(role?: UserRole): boolean {
 }
 
 function resolveUnitId(req: Request, bodyUnitId?: string): string {
-  if (isPrivileged(req.user?.role) && bodyUnitId) {
+  // Only SUPER_ADMIN can arbitrarily override unitId. UNIT_ADMIN is restricted to their own.
+  if (req.user?.role === UserRole.SUPER_ADMIN && bodyUnitId) {
     return bodyUnitId;
   }
 
   const unitId = req.user?.unitId;
   if (!unitId) {
+    // If they have no unitId but are privileged, they must supply one
+    if (isPrivileged(req.user?.role) && bodyUnitId) return bodyUnitId;
     throw Errors.badRequest('Unit ID is required');
   }
   return unitId;

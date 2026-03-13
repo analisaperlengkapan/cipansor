@@ -241,11 +241,11 @@ export async function getExamAnalytics(id: string): Promise<ExamAnalyticsData | 
   const topStudents = studentScores.slice(0, 5);
 
   const scoreDistribution = [
-    { range: '0-59%', count: distributionCounts['0-59%'] },
-    { range: '60-69%', count: distributionCounts['60-69%'] },
-    { range: '70-79%', count: distributionCounts['70-79%'] },
-    { range: '80-89%', count: distributionCounts['80-89%'] },
-    { range: '90-100%', count: distributionCounts['90-100%'] },
+    { range: '0-59%', count: distributionCounts['0-59'] },
+    { range: '60-69%', count: distributionCounts['60-69'] },
+    { range: '70-79%', count: distributionCounts['70-79'] },
+    { range: '80-89%', count: distributionCounts['80-89'] },
+    { range: '90-100%', count: distributionCounts['90-100'] },
   ];
 
   return {

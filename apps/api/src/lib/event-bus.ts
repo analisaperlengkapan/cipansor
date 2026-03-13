@@ -215,6 +215,9 @@ export interface NotificationSendEvent {
   unitId?: string;
   broadcast?: boolean;
   type: string;
+  title: string;
+  message: string;
+  data?: Record<string, any>;
 }
 
 export interface EmailSendResetTokenEvent {

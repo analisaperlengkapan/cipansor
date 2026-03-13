@@ -219,11 +219,11 @@ export async function getExamAnalytics(id: string): Promise<ExamAnalyticsData | 
 
     // Distribution logic assuming 100 is max score typical
     const pct = (score / maxScore) * 100;
-    if (pct < 60) distributionCounts['0-59%']++;
-    else if (pct < 70) distributionCounts['60-69%']++;
-    else if (pct < 80) distributionCounts['70-79%']++;
-    else if (pct < 90) distributionCounts['80-89%']++;
-    else distributionCounts['90-100%']++;
+    if (pct < 60) distributionCounts['0-59']++;
+    else if (pct < 70) distributionCounts['60-69']++;
+    else if (pct < 80) distributionCounts['70-79']++;
+    else if (pct < 90) distributionCounts['80-89']++;
+    else distributionCounts['90-100']++;
 
     studentScores.push({
       studentId: grade.studentId,

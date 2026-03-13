@@ -87,7 +87,7 @@ export class StudentOnboardingOrchestrator {
 
       const email = `${cleanName}.${nis.toLowerCase()}@student.cipansor.local`;
 
-      const { eventBus } = await import('@/lib/event-bus');
+
 
       // @ts-ignore - Ignore type error as Prisma types might be lagging behind schema for password reset
       const user = await tx.user.create({

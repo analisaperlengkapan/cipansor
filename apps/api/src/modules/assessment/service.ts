@@ -200,11 +200,11 @@ export async function getExamAnalytics(id: string): Promise<ExamAnalyticsData | 
   let passCount = 0;
 
   const distributionCounts = {
-    '0-59': 0,
-    '60-69': 0,
-    '70-79': 0,
-    '80-89': 0,
-    '90-100': 0,
+    '0-59%': 0,
+    '60-69%': 0,
+    '70-79%': 0,
+    '80-89%': 0,
+    '90-100%': 0,
   };
 
   const studentScores: { studentId: string; studentName: string; score: number }[] = [];

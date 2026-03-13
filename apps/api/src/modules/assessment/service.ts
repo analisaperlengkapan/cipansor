@@ -184,11 +184,11 @@ export async function getExamAnalytics(id: string): Promise<ExamAnalyticsData | 
       failCount: 0,
       passRate: 0,
       scoreDistribution: [
-        { range: '0-59%', count: 0 },
-        { range: '60-69%', count: 0 },
-        { range: '70-79%', count: 0 },
-        { range: '80-89%', count: 0 },
-        { range: '90-100%', count: 0 },
+        { range: '0-59', count: 0 },
+        { range: '60-69', count: 0 },
+        { range: '70-79', count: 0 },
+        { range: '80-89', count: 0 },
+        { range: '90-100', count: 0 },
       ],
       topStudents: []
     };
@@ -219,11 +219,11 @@ export async function getExamAnalytics(id: string): Promise<ExamAnalyticsData | 
 
     // Distribution logic assuming 100 is max score typical
     const pct = (score / maxScore) * 100;
-    if (pct < 60) distributionCounts['0-59']++;
-    else if (pct < 70) distributionCounts['60-69']++;
-    else if (pct < 80) distributionCounts['70-79']++;
-    else if (pct < 90) distributionCounts['80-89']++;
-    else distributionCounts['90-100']++;
+    if (pct < 60) distributionCounts['0-59%']++;
+    else if (pct < 70) distributionCounts['60-69%']++;
+    else if (pct < 80) distributionCounts['70-79%']++;
+    else if (pct < 90) distributionCounts['80-89%']++;
+    else distributionCounts['90-100%']++;
 
     studentScores.push({
       studentId: grade.studentId,
@@ -241,11 +241,11 @@ export async function getExamAnalytics(id: string): Promise<ExamAnalyticsData | 
   const topStudents = studentScores.slice(0, 5);
 
   const scoreDistribution = [
-    { range: '0-59%', count: distributionCounts['0-59'] },
-    { range: '60-69%', count: distributionCounts['60-69'] },
-    { range: '70-79%', count: distributionCounts['70-79'] },
-    { range: '80-89%', count: distributionCounts['80-89'] },
-    { range: '90-100%', count: distributionCounts['90-100'] },
+    { range: '0-59%', count: distributionCounts['0-59%'] },
+    { range: '60-69%', count: distributionCounts['60-69%'] },
+    { range: '70-79%', count: distributionCounts['70-79%'] },
+    { range: '80-89%', count: distributionCounts['80-89%'] },
+    { range: '90-100%', count: distributionCounts['90-100%'] },
   ];
 
   return {

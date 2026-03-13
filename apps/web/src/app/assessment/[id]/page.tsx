@@ -149,24 +149,29 @@ export default function AssessmentDetailPage() {
 
   // Calculate statistics from grades
   const stats = grades?.length
-    ? {
-        totalStudents: grades.length,
-        graded: grades.filter((g) => g.score !== null).length,
-        average:
-          grades
-            .filter((g) => g.score !== null)
-            .reduce((sum, g) => sum + (g.score ?? 0), 0) /
-            grades.filter((g) => g.score !== null).length || 0,
-        highest: Math.max(
-          ...grades.filter((g) => g.score !== null).map((g) => g.score ?? 0),
-        ),
-        lowest: Math.min(
-          ...grades.filter((g) => g.score !== null).map((g) => g.score ?? 0),
-        ),
-        passed: grades.filter(
+    ? (() => {
+        const gradedCount = grades.filter((g) => g.score !== null).length;
+        const passedCount = grades.filter(
           (g) => (g.score ?? 0) >= (assessment.passingScore ?? 70),
-        ).length,
-      }
+        ).length;
+        return {
+          totalStudents: grades.length,
+          graded: gradedCount,
+          average:
+            grades
+              .filter((g) => g.score !== null)
+              .reduce((sum, g) => sum + (g.score ?? 0), 0) /
+              gradedCount || 0,
+          highest: Math.max(
+            ...grades.filter((g) => g.score !== null).map((g) => g.score ?? 0),
+          ),
+          lowest: Math.min(
+            ...grades.filter((g) => g.score !== null).map((g) => g.score ?? 0),
+          ),
+          passed: passedCount,
+          passRate: gradedCount > 0 ? (passedCount / gradedCount) * 100 : 0,
+        };
+      })()
     : null;
 
   const getGradeColor = (score: number | null) => {

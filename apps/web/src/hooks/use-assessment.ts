@@ -154,9 +154,8 @@ export function useUpdateExam() {
       const response = await api.put(`/assessment/exams/${id}`, data);
       return response.data.data;
     },
-    onSuccess: (_, variables) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["exams"] });
-      queryClient.invalidateQueries({ queryKey: ["exam-analytics", variables.id] });
     },
   });
 }

@@ -325,10 +325,10 @@ export default function AssessmentDetailPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {stats?.totalStudents ?? 0}
+                {analytics?.totalStudents ?? stats?.totalStudents ?? 0}
               </div>
               <p className="text-xs text-muted-foreground">
-                {stats?.graded ?? 0} sudah dinilai
+                {analytics?.gradedCount ?? stats?.graded ?? 0} sudah dinilai
               </p>
             </CardContent>
           </Card>
@@ -339,10 +339,10 @@ export default function AssessmentDetailPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {stats?.average.toFixed(1) ?? "-"}
+                {analytics?.averageScore.toFixed(1) ?? stats?.average.toFixed(1) ?? "-"}
               </div>
               <p className="text-xs text-muted-foreground">
-                {stats?.passed ?? 0} santri lulus
+                {(analytics?.passRate ?? stats?.passRate ?? 0).toFixed(1)}% Lulus
               </p>
             </CardContent>
           </Card>

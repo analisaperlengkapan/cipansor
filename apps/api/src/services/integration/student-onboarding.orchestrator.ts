@@ -197,7 +197,7 @@ export class StudentOnboardingOrchestrator {
       });
 
       // 7. Optional: Enroll in specific class if provided
-      if (assignedClassId && academicYearId) {
+      if (assignedClassId) {
         await tx.classEnrollment.create({
           data: {
             studentId: student.id,

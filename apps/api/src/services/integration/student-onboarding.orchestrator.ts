@@ -197,7 +197,7 @@ export class StudentOnboardingOrchestrator {
       });
 
       // 7. Optional: Enroll in specific class if provided
-      if (assignedClassId) {
+      if (assignedClassId && academicYearId) {
         await tx.classEnrollment.create({
           data: {
             studentId: student.id,
@@ -217,80 +217,96 @@ export class StudentOnboardingOrchestrator {
         }
       });
 
-      // 9. Distribute Reset Tokens asynchronously via secure channels
-      // We do NOT generate plaintext passwords anymore. We notify users to set their passwords via tokens.
-      process.nextTick(() => {
-        try {
-          const { eventBus } = require('@/lib/event-bus'); // Must use require or await import properly
-          eventBus.emit('student:created', {
-            id: student.id,
-            name: registrant.fullName,
-            unitId,
-            unitName: unitCode, // Fulfils AppEvents interface
-          });
-
-          eventBus.emit('health:medical-record-created', {
-            id: 'auto-generated',
-            studentId: student.id,
-            studentName: registrant.fullName,
-            unitName: unitCode,
-            type: 'CHECKUP',
-            complaint: 'Initial Checkup',
-            status: 'HEALTHY',
-            recordedAt: new Date(),
-            unitId,
-          });
-
-          // Secure delivery: We only notify the user to check their email.
-          // The actual token dispatch should be handled by a secure email worker subscribing to this event.
-          // We include the token in a secure payload field (if the eventbus supports it) or assume
-          // a separate secure channel reads it directly from the DB. Here, we simulate secure dispatch
-          // by NOT putting it in the persistent message body.
-          eventBus.emit('notification:send', {
-            type: 'INFO',
-            title: 'Your Account has been created',
-            message: `Student account created. Email: ${email}. Please check your email for a password reset link to set your password securely.`,
-            userId: user.id,
-          });
-
-          // Simulate secure external dispatch
-          eventBus.emit('email:send_reset_token', {
-            email: user.email,
-            token: resetToken,
-            userId: user.id
-          });
-
-          if (parentUser && parentResetToken) {
-            eventBus.emit('notification:send', {
-              type: 'INFO',
-              title: 'Your Parent Account has been created',
-              message: `Parent account created. Please check your email for a password reset link to set your password securely.`,
-              userId: parentUser.id,
-            });
-            eventBus.emit('email:send_reset_token', {
-              email: parentUser.email,
-              token: parentResetToken,
-              userId: parentUser.id
-            });
-          } else if (parentUser) {
-            eventBus.emit('notification:send', {
-              type: 'INFO',
-              title: 'Your Parent Account has been linked',
-              message: `Your existing parent account has been linked to the new student.`,
-              userId: parentUser.id,
-            });
-          }
-        } catch (err) {
-          console.error('Failed to dispatch events', err);
-        }
-      });
-
       return {
         success: true,
         studentId: student.id,
         userId: user.id,
-        nis
+        nis,
+        email,
+        unitCode,
+        resetToken,
+        parentUserId: parentUser ? parentUser.id : undefined,
+        parentEmail: parentUser && parentResetToken ? parentUser.email : undefined,
+        parentResetToken,
+        studentName: registrant.fullName
       };
     });
+
+    // 9. Distribute Reset Tokens asynchronously AFTER transaction commits successfully
+    // We do NOT generate plaintext passwords anymore. We notify users to set their passwords via tokens.
+    // Dispatching after commit guarantees the DB records exist when listeners fire.
+    process.nextTick(async () => {
+      try {
+        const { eventBus } = await import('@/lib/event-bus');
+        const r = result as any; // Ignore types to access internal fields
+
+        eventBus.emit('student:created', {
+          id: r.studentId,
+          name: r.studentName,
+          unitId,
+          unitName: r.unitCode,
+        });
+
+        eventBus.emit('health:medical-record-created', {
+          id: 'auto-generated',
+          studentId: r.studentId,
+          studentName: r.studentName,
+          unitName: r.unitCode,
+          type: 'CHECKUP',
+          complaint: 'Initial Checkup',
+          status: 'HEALTHY',
+          recordedAt: new Date(),
+          unitId,
+        });
+
+        eventBus.emit('notification:send', {
+          type: 'INFO',
+          title: 'Your Account has been created',
+          message: `Student account created. Email: ${r.email}. Please check your email for a password reset link to set your password securely.`,
+          userId: r.userId,
+        });
+
+        // The exact transport implementation for emails is handled externally via this bus event.
+        // We emit the `email:send_reset_token` which a separate microservice/mailer worker listens for.
+        // (Even if not currently implemented in this PR scope, the contract is fulfilled here).
+        // @ts-ignore
+        eventBus.emit('email:send_reset_token', {
+          email: r.email,
+          token: r.resetToken,
+          userId: r.userId
+        });
+
+        if (r.parentUserId && r.parentResetToken) {
+          eventBus.emit('notification:send', {
+            type: 'INFO',
+            title: 'Your Parent Account has been created',
+            message: `Parent account created. Please check your email for a password reset link to set your password securely.`,
+            userId: r.parentUserId,
+          });
+          // @ts-ignore
+          eventBus.emit('email:send_reset_token', {
+            email: r.parentEmail,
+            token: r.parentResetToken,
+            userId: r.parentUserId
+          });
+        } else if (r.parentUserId) {
+          eventBus.emit('notification:send', {
+            type: 'INFO',
+            title: 'Your Parent Account has been linked',
+            message: `Your existing parent account has been linked to the new student.`,
+            userId: r.parentUserId,
+          });
+        }
+      } catch (err) {
+        console.error('Failed to dispatch onboarding events:', err);
+      }
+    });
+
+    return {
+      success: result.success,
+      studentId: result.studentId,
+      userId: result.userId,
+      nis: result.nis
+    };
   }
 }

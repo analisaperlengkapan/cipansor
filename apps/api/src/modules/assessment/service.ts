@@ -143,7 +143,7 @@ export async function getExamAnalytics(id: string): Promise<ExamAnalyticsData> {
       grades: {
         include: {
           student: {
-            include: { user: true }
+            include: { user: { select: { id: true, name: true } } }
           }
         }
       },

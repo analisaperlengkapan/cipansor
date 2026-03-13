@@ -165,16 +165,29 @@ export const waveController = {
       // Lazy load to avoid circular dependencies if any
       const { StudentOnboardingOrchestrator } = await import('@/services/integration/student-onboarding.orchestrator');
       
-      const payload = {
-        registrantId: req.body.registrantId,
-        unitId: req.body.unitId,
-        assignedClassId: req.body.assignedClassId,
-        academicYearId: req.body.academicYearId,
-        parentUserId: req.body.parentUserId,
-        actorId: req.user?.id || 'system',
-      };
+      const { z } = await import('zod');
+      const onboardSchema = z.object({
+        registrantId: z.string().min(1, 'Registrant ID is required'),
+        unitId: z.string().min(1, 'Unit ID is required'),
+        assignedClassId: z.string().optional(),
+        academicYearId: z.string().optional(),
+        parentUserId: z.string().optional(), // accepted for contract compatibility, but unused here as orchestrator discovers/creates parent inherently
+      });
 
-      const result = await StudentOnboardingOrchestrator.executeOnboarding(payload);
+      const { registrantId, unitId, assignedClassId, academicYearId } = onboardSchema.parse(req.body);
+
+      if (!req.user?.id) {
+        throw Errors.unauthorized('User not authenticated');
+      }
+      const processedById = req.user.id;
+
+      const result = await StudentOnboardingOrchestrator.processEnrollment(
+        registrantId,
+        unitId,
+        processedById,
+        assignedClassId,
+        academicYearId
+      );
       res.status(200).json(ApiResponse.success(result, 'Registrant onboarded successfully (E2E Integration complete)'));
     } catch (error: any) {
       next(error);

@@ -19,10 +19,17 @@ function isPrivileged(role?: UserRole): boolean {
 }
 
 function resolveUnitId(req: Request, bodyUnitId?: string): string {
-  let unitId = req.user?.unitId;
+  // Only SUPER_ADMIN can arbitrarily override unitId. UNIT_ADMIN is restricted to their own.
+  if (req.user?.role === UserRole.SUPER_ADMIN && bodyUnitId) {
+    return bodyUnitId;
+  }
+
+  // Otherwise default to their assigned unit
+  const unitId = req.user?.unitId;
   if (!unitId) {
-    if (isPrivileged(req.user?.role) && bodyUnitId) unitId = bodyUnitId;
-    else throw Errors.badRequest('Unit ID is required');
+    // If they have no unitId but are privileged, they must supply one
+    if (isPrivileged(req.user?.role) && bodyUnitId) return bodyUnitId;
+    throw Errors.badRequest('Unit ID is required');
   }
   return unitId;
 }
@@ -47,7 +54,7 @@ export const getProfile = asyncHandler(async (req: Request, res: Response) => {
 export const createProfile = asyncHandler(async (req: Request, res: Response) => {
   const body = createTalentProfileSchema.parse(req.body);
   const unitId = resolveUnitId(req, body.unitId);
-  const profile = await talentaService.createProfile({ ...body, unitId });
+  const profile = await talentaService.createProfile({ ...body, unitId, userId: body.userId as string, currentRole: body.currentRole as string });
   res.status(201).json({ success: true, data: profile });
 });
 

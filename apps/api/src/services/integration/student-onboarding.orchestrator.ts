@@ -1,156 +1,315 @@
-/**
- * Student Onboarding Orchestrator
- * Integrasi End-to-End: PPDB -> Akademik -> Finance -> Medical -> Mutu
- * 
- * Skenario: Saat Santri Baru menyelesaikan Pendaftaran (PPDB) dan dibayar Lunas / Dinyatakan Lulus,
- * orkestrator ini menghubungkan 5 domain berbeda secara efisien dan rapih tanpa tight-coupling.
- */
-
-import { prisma } from '../../lib/prisma';
-import { eventBus } from '../../lib/event-bus';
-import { logger } from '../../lib/logger';
-import { PaymentStatus } from '@prisma/client';
-
-export interface OnboardingPayload {
-  registrantId: string;
-  unitId: string;
-  assignedClassId?: string;
-  academicYearId: string;
-  parentUserId: string;
-  actorId: string;
-}
+import { prisma } from '@/lib/prisma';
+import { Errors } from '@/middleware/error';
+import { PaymentStatus, Registrant } from '@prisma/client';
 
 export class StudentOnboardingOrchestrator {
-  
   /**
-   * Mengeksekusi keseluruhan integrasi ketika siswa baru lulus PPDB.
+   * Process a registrant to become a full student
+   * This is an integration point touching multiple domains:
+   * PSB -> HR/User -> Academic -> Health -> Finance
    */
-  static async executeOnboarding(payload: OnboardingPayload) {
-    logger.info(`Memulai Onboarding Santri End-to-End untuk Registrant: ${payload.registrantId}`);
-
-    return await prisma.$transaction(async (tx) => {
-      // 1. Validasi Registrant (Domain: PPDB / Marketing)
+  static async processEnrollment(
+    registrantId: string,
+    unitId: string,
+    processedById: string,
+    assignedClassId?: string,
+    academicYearId?: string
+  ) {
+    const result = await prisma.$transaction(async (tx) => {
+      // 1. Get registrant data
       const registrant = await tx.registrant.findUnique({
-        where: { id: payload.registrantId },
-        include: { user: true }
+        where: { id: registrantId },
       });
 
       if (!registrant) {
-        throw new Error('Data Pendaftar tidak ditemukan.');
+        throw Errors.notFound('Registrant');
       }
 
-      // 2. Pembuatan Master Data Siswa (Domain: Akademik Dasar)
-      // Mentransfer user dari calon siswa menjadi Siswa aktif.
-      const newStudent = await tx.student.create({
+      if (registrant.status !== 'ACCEPTED') {
+        throw Errors.badRequest('Only ACCEPTED registrants can be enrolled');
+      }
+
+      // 2. Create User Account for Student
+      const crypto = await import('crypto');
+      const { hashPassword } = await import('@/lib/password');
+
+      // Use crypto for password reset token generation
+      const resetToken = crypto.randomBytes(32).toString('hex');
+      const resetTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+      const passwordHash = await hashPassword(crypto.randomBytes(8).toString('hex')); // Dummy secure hash, user will reset it
+
+      // Extract parts of name to create a safe email
+      let cleanName = registrant.fullName.toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (!cleanName) {
+        cleanName = 'student'; // Fallback for non-Latin names
+      }
+
+      // 3. Create Student Record (Generate NIS first so we can use it for email)
+      const year = new Date().getFullYear();
+
+      // Look up unit dynamically, fallback to UNK
+      let unitCode = 'UNK';
+      const unit = await tx.unit.findUnique({ where: { id: unitId }, select: { type: true } });
+      if (unit && unit.type) {
+        unitCode = unit.type.toUpperCase();
+      }
+
+      // Use Postgres advisory locks to serialize NIS generation for the same unit + year
+      const prefix = `NIS-${year}-${unitCode}-`;
+
+      // Hash the prefix into an integer for the pg_advisory_xact_lock
+      let lockKey = 0;
+      for (let i = 0; i < prefix.length; i++) {
+        lockKey = ((lockKey << 5) - lockKey) + prefix.charCodeAt(i);
+        lockKey = lockKey & lockKey; // Convert to 32bit integer
+      }
+
+      // Acquire a transaction-level advisory lock (released automatically at transaction end)
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(${lockKey})`;
+
+      // Find the absolute maximum sequence number for this unit and year (ignoring legacy formats).
+      // We parse the integer value directly in the SQL to handle numbers > 9999 properly.
+      // Note: The table name in Prisma PostgreSQL is typically "students" or "Student" mapped.
+      const prefixLen = prefix.length + 1; // +1 for SQL substring which is 1-indexed
+      const results = await tx.$queryRaw<Array<{ max_seq: number | null }>>`
+        SELECT MAX(CAST(SUBSTRING(nis FROM ${prefixLen}) AS INTEGER)) as max_seq
+        FROM "students"
+        WHERE "unit_id" = ${unitId} AND nis LIKE ${prefix + '%'} AND SUBSTRING(nis FROM ${prefixLen}) ~ '^[0-9]+$'
+      `;
+
+      let maxSeq = 0;
+      if (results && results.length > 0 && results[0].max_seq != null) {
+        maxSeq = Number(results[0].max_seq);
+      }
+
+      const nextSeq = maxSeq + 1;
+      const nis = `${prefix}${String(nextSeq).padStart(4, '0')}`;
+
+      const email = `${cleanName}.${nis.toLowerCase()}@student.cipansor.local`;
+
+      const { eventBus } = await import('@/lib/event-bus');
+
+      // @ts-ignore - Ignore type error as Prisma types might be lagging behind schema for password reset
+      const user = await tx.user.create({
         data: {
-          userId: registrant.userId,
-          unitId: payload.unitId,
-          nis: `NIS-${new Date().getFullYear()}-${Math.floor(Math.random() * 10000)}`, // Generate NIS
-          status: 'ACTIVE',
-        }
+          name: registrant.fullName,
+          email,
+          passwordHash,
+          resetTokenHash: crypto.createHash('sha256').update(resetToken).digest('hex'),
+          resetTokenExpiresAt: resetTokenExpiry,
+          role: 'STUDENT',
+          unitId,
+          isActive: true,
+        },
       });
 
-      // Hubungkan orang tua ke siswa
-      await tx.studentParent.create({
-        data: {
-          studentId: newStudent.id,
-          userId: payload.parentUserId,
-          relationship: 'FATHER', // Asumsi default, dapat dimodifikasi
-          isPrimary: true
-        }
-      });
 
-      // 3. Pendaftaran Kelas (Domain: Kurikulum / Akademik)
-      if (payload.assignedClassId) {
-        await tx.classEnrollment.create({
-          data: {
-            studentId: newStudent.id,
-            classId: payload.assignedClassId,
-            status: 'ACTIVE'
+      const student = await (tx.student.create as any)({
+        data: {
+          userId: user.id,
+          status: 'active',
+          unitId,
+          nis,
+          entryYear: year, // entryYear requires an Int, using current year
+
+          // Core Data mapping from registrant
+          gender: registrant.gender,
+          birthPlace: registrant.birthPlace,
+          birthDate: registrant.birthDate,
+          address: registrant.address,
+          parentName: registrant.parentName,
+          parentPhone: registrant.parentPhone,
+          parentEmail: registrant.parentEmail,
+
+          // Link back
+          registrant: {
+            connect: { id: registrant.id }
           }
-        });
-        logger.info(`Siswa dialokasikan ke kelas: ${payload.assignedClassId}`);
-      }
-
-      // 4. Inisialisasi Rekam Medis Kosong (Domain: Kesehatan / UKS)
-      // Memastikan setiap siswa punya template kesehatan untuk diisi dokter sekolah.
-      const medicalRecord = await tx.medicalRecord.create({
-        data: {
-          studentId: newStudent.id,
-          unitId: payload.unitId,
-          bloodType: 'UNKNOWN',
-          weight: 0,
-          height: 0,
-          history: 'Belum ada riwayat tercatat (Gen otomatis via Onboarding)',
-          allergies: 'Belum dicek'
-        }
+        },
       });
 
-      // 5. Inisiasi Tagihan SPP Pertama (Domain: Finance)
-      // Mencari tipe pembayaran SPP reguler untuk unit ini.
-      const sppPaymentType = await tx.paymentType.findFirst({
-        where: { unitId: payload.unitId, code: 'SPP', isActive: true }
-      });
-
-      let invoice = null;
-      if (sppPaymentType) {
-        invoice = await tx.invoice.create({
-          data: {
-            invoiceNumber: `INV-SPP-${newStudent.nis}`,
-            studentId: newStudent.id,
-            paymentTypeId: sppPaymentType.id,
-            amount: sppPaymentType.amount,
-            status: PaymentStatus.PENDING,
-            dueDate: new Date(new Date().setMonth(new Date().getMonth() + 1)), // Jatuh tempo bulan deoan
-            title: `SPP Bulan Pertama - ${registrant.user.name}`
-          }
-        });
-      }
-
-      // 6. Alokasi Asrama (Jika Boarding School) - Domain: Pesantren/Asrama
-      // Implementasi dapat ditempatkan pada Event Subscriber terpisah agar tidak membebani transaksi.
-
-      // 7. Emitasi Event Lintas Modul (Event-Bus)
-      // Trigger Notifikasi dan Dashboard Update di luar transaksi kritis.
-      process.nextTick(() => {
-        eventBus.emit('student:created', {
-          id: newStudent.id,
-          name: registrant.user.name,
-          unitId: payload.unitId,
-          unitName: 'Sistem Onboarding Terpusat',
-          classId: payload.assignedClassId,
-        });
-
-        eventBus.emit('health:medical-record-created', {
-          id: medicalRecord.id,
-          studentId: newStudent.id,
-          studentName: registrant.user.name,
-          unitId: payload.unitId,
-          unitName: 'UKS',
-          type: 'Pemeriksaan Awal Dasar',
-          complaint: 'Skrining Awal',
-          status: 'Dijadwalkan',
-          recordedAt: new Date()
-        });
-
-        if (invoice) {
-          eventBus.emit('notification:send', {
-            userId: payload.parentUserId,
-            type: 'FINANCE',
-            title: 'Tagihan SPP Pertama Terbit',
-            message: `Selamat, Ananda ${registrant.user.name} resmi terdaftar. Mohon lunasi tagihan bulan pertama.`
+      // 4. Create Parent User Account
+      let parentDefaultPassword;
+      let parentResetToken: string | undefined;
+      let parentUser: any = null;
+      if (registrant.parentPhone || registrant.parentEmail) {
+        // Prefer matching by email first since it is unique
+        if (registrant.parentEmail) {
+          parentUser = await tx.user.findUnique({
+            where: { email: registrant.parentEmail }
           });
         }
+
+        // If not found by email, try finding by phone
+        if (!parentUser && registrant.parentPhone) {
+          parentUser = await tx.user.findFirst({
+            where: { phone: registrant.parentPhone }
+          });
+        }
+
+        if (!parentUser) {
+          parentResetToken = crypto.randomBytes(32).toString('hex');
+          const parentResetTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+          // Assign a dummy unguessable password hash, parent will reset via token
+          const parentPasswordHash = await hashPassword(crypto.randomBytes(16).toString('hex'));
+          const parentEmail = registrant.parentEmail || `parent.${registrant.parentPhone}@parent.cipansor.local`;
+          parentUser = await (tx.user.create as any)({
+            data: {
+              name: registrant.parentName,
+              email: parentEmail,
+              phone: registrant.parentPhone,
+              passwordHash: parentPasswordHash,
+              resetTokenHash: crypto.createHash('sha256').update(parentResetToken).digest('hex'),
+              resetTokenExpiresAt: parentResetTokenExpiry,
+              role: 'PARENT',
+              isActive: true,
+            }
+          });
+        }
+
+        // Link student and parent
+        await tx.studentParent.create({
+          data: {
+            studentId: student.id,
+            parentId: parentUser.id,
+            relation: 'parent',
+            isPrimary: true,
+          }
+        });
+      }
+
+      // 5. Setup initial Health/UKS record (Empty but ready)
+      await (tx.medicalRecord.create as any)({
+        data: {
+          studentId: student.id,
+          type: 'CHECKUP',
+          visitDate: new Date(),
+          complaint: 'Initial Enrollment Checkup',
+          diagnosis: 'Healthy',
+          notes: 'Auto-generated during enrollment',
+          recordedById: processedById,
+          status: 'HEALTHY'
+        }
       });
 
-      logger.info(`Onboarding E2E berhasil untuk: ${registrant.user.name}. Siswa ID: ${newStudent.id}`);
+      // 6. Setup Student Wallet
+      await tx.santriWallet.create({
+        data: {
+          studentId: student.id,
+          balance: 0,
+        }
+      });
+
+      // 7. Optional: Enroll in specific class if provided
+      if (assignedClassId && academicYearId) {
+        await tx.classEnrollment.create({
+          data: {
+            studentId: student.id,
+            classId: assignedClassId,
+            status: 'active',
+          }
+        });
+      }
+
+      // 8. Update Registrant Status
+      await tx.registrant.update({
+        where: { id: registrant.id },
+        data: {
+          status: 'ENROLLED',
+          enrolledAt: new Date(),
+          studentId: student.id
+        }
+      });
 
       return {
         success: true,
-        studentId: newStudent.id,
-        invoiceId: invoice?.id,
-        medicalRecordId: medicalRecord.id
+        studentId: student.id,
+        userId: user.id,
+        nis,
+        email,
+        unitCode,
+        resetToken,
+        parentUserId: parentUser ? parentUser.id : undefined,
+        parentEmail: parentUser && parentResetToken ? parentUser.email : undefined,
+        parentResetToken,
+        studentName: registrant.fullName
       };
     });
+
+    // 9. Distribute Reset Tokens asynchronously AFTER transaction commits successfully
+    // We do NOT generate plaintext passwords anymore. We notify users to set their passwords via tokens.
+    // Dispatching after commit guarantees the DB records exist when listeners fire.
+    process.nextTick(async () => {
+      try {
+        const { eventBus } = await import('@/lib/event-bus');
+        const r = result as any; // Ignore types to access internal fields
+
+        eventBus.emit('student:created', {
+          id: r.studentId,
+          name: r.studentName,
+          unitId,
+          unitName: r.unitCode,
+        });
+
+        eventBus.emit('health:medical-record-created', {
+          id: 'auto-generated',
+          studentId: r.studentId,
+          studentName: r.studentName,
+          unitName: r.unitCode,
+          type: 'CHECKUP',
+          complaint: 'Initial Checkup',
+          status: 'HEALTHY',
+          recordedAt: new Date(),
+          unitId,
+        });
+
+        eventBus.emit('notification:send', {
+          type: 'INFO',
+          title: 'Your Account has been created',
+          message: `Student account created. Email: ${r.email}. Please check your email for a password reset link to set your password securely.`,
+          userId: r.userId,
+        });
+
+        // The exact transport implementation for emails is handled externally via this bus event.
+        // We emit the `email:send_reset_token` which a separate microservice/mailer worker listens for.
+        eventBus.emit('email:send_reset_token', {
+          email: r.email,
+          token: r.resetToken,
+          userId: r.userId
+        });
+
+        if (r.parentUserId && r.parentResetToken) {
+          eventBus.emit('notification:send', {
+            type: 'INFO',
+            title: 'Your Parent Account has been created',
+            message: `Parent account created. Please check your email for a password reset link to set your password securely.`,
+            userId: r.parentUserId,
+          });
+          eventBus.emit('email:send_reset_token', {
+            email: r.parentEmail,
+            token: r.parentResetToken,
+            userId: r.parentUserId
+          });
+        } else if (r.parentUserId) {
+          eventBus.emit('notification:send', {
+            type: 'INFO',
+            title: 'Your Parent Account has been linked',
+            message: `Your existing parent account has been linked to the new student.`,
+            userId: r.parentUserId,
+          });
+        }
+      } catch (err) {
+        console.error('Failed to dispatch onboarding events:', err);
+        // Do not throw here, as the transaction has already committed successfully
+        // We want the HTTP request to succeed even if side-effect emissions fail.
+      }
+    });
+
+    return {
+      success: result.success,
+      studentId: result.studentId,
+      userId: result.userId,
+      nis: result.nis
+    };
   }
 }

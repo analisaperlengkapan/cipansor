@@ -273,6 +273,8 @@ model User {
   name                   String
   email                  String    @unique
   passwordHash           String    @map("password_hash")
+  resetTokenHash         String?   @map("reset_token_hash")
+  resetTokenExpiresAt    DateTime? @map("reset_token_expires_at")
   phone                  String?
   role                   UserRole // Legacy role - kept for backward compatibility
   unitId                 String?   @map("unit_id")

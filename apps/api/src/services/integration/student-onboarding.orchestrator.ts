@@ -15,7 +15,7 @@ export class StudentOnboardingOrchestrator {
     assignedClassId?: string,
     academicYearId?: string
   ) {
-    return await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx) => {
       // 1. Get registrant data
       const registrant = await tx.registrant.findUnique({
         where: { id: registrantId },

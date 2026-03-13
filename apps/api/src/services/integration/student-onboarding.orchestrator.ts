@@ -15,7 +15,7 @@ export class StudentOnboardingOrchestrator {
     assignedClassId?: string,
     academicYearId?: string
   ) {
-    return await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx) => {
       // 1. Get registrant data
       const registrant = await tx.registrant.findUnique({
         where: { id: registrantId },
@@ -74,7 +74,7 @@ export class StudentOnboardingOrchestrator {
       const results = await tx.$queryRaw<Array<{ max_seq: number | null }>>`
         SELECT MAX(CAST(SUBSTRING(nis FROM ${prefixLen}) AS INTEGER)) as max_seq
         FROM "students"
-        WHERE nis LIKE ${prefix + '%'} AND SUBSTRING(nis FROM ${prefixLen}) ~ '^[0-9]+$'
+        WHERE "unit_id" = ${unitId} AND nis LIKE ${prefix + '%'} AND SUBSTRING(nis FROM ${prefixLen}) ~ '^[0-9]+$'
       `;
 
       let maxSeq = 0;
@@ -87,7 +87,7 @@ export class StudentOnboardingOrchestrator {
 
       const email = `${cleanName}.${nis.toLowerCase()}@student.cipansor.local`;
 
-
+      const { eventBus } = await import('@/lib/event-bus');
 
       // @ts-ignore - Ignore type error as Prisma types might be lagging behind schema for password reset
       const user = await tx.user.create({
@@ -197,7 +197,7 @@ export class StudentOnboardingOrchestrator {
       });
 
       // 7. Optional: Enroll in specific class if provided
-      if (assignedClassId) {
+      if (assignedClassId && academicYearId) {
         await tx.classEnrollment.create({
           data: {
             studentId: student.id,

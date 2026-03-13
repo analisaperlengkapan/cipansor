@@ -91,11 +91,11 @@ test.describe("Assessment Analytics", () => {
             failCount: 5,
             passRate: 80,
             scoreDistribution: [
-              { range: "0-59", count: 0 },
-              { range: "60-69", count: 5 },
-              { range: "70-79", count: 8 },
-              { range: "80-89", count: 10 },
-              { range: "90-100", count: 2 },
+              { range: "0-59%", count: 0 },
+              { range: "60-69%", count: 5 },
+              { range: "70-79%", count: 8 },
+              { range: "80-89%", count: 10 },
+              { range: "90-100%", count: 2 },
             ],
             topStudents: [
               { studentId: "s1", studentName: "Ahmad", score: 98 },

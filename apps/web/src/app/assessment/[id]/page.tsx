@@ -342,7 +342,7 @@ export default function AssessmentDetailPage() {
                 {analytics?.averageScore.toFixed(1) ?? stats?.average.toFixed(1) ?? "-"}
               </div>
               <p className="text-xs text-muted-foreground">
-                {(analytics?.passRate ?? (stats && stats.graded > 0 ? (stats.passed / stats.graded) * 100 : 0)).toFixed(1)}% Lulus
+                {(analytics?.passRate ?? stats?.passRate ?? 0).toFixed(1)}% Lulus
               </p>
             </CardContent>
           </Card>

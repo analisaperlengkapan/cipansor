@@ -37,7 +37,7 @@ export async function getExamAnalytics(req: Request, res: Response, next: NextFu
   try {
     const { id } = req.params;
     const result = await assessmentService.getExamAnalytics(id);
-    res.json({ data: result });
+    res.json({ success: true, data: result });
   } catch (error) {
     next(error);
   }

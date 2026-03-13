@@ -133,15 +133,19 @@ export class StudentOnboardingOrchestrator {
       let parentResetToken: string | undefined;
       let parentUser: any = null;
       if (registrant.parentPhone || registrant.parentEmail) {
-        // Try to find existing user by phone or email (regardless of their current role)
-        parentUser = await tx.user.findFirst({
-          where: {
-            OR: [
-              ...(registrant.parentPhone ? [{ phone: registrant.parentPhone }] : []),
-              ...(registrant.parentEmail ? [{ email: registrant.parentEmail }] : [])
-            ]
-          }
-        });
+        // Prefer matching by email first since it is unique
+        if (registrant.parentEmail) {
+          parentUser = await tx.user.findUnique({
+            where: { email: registrant.parentEmail }
+          });
+        }
+
+        // If not found by email, try finding by phone
+        if (!parentUser && registrant.parentPhone) {
+          parentUser = await tx.user.findFirst({
+            where: { phone: registrant.parentPhone }
+          });
+        }
 
         if (!parentUser) {
           parentResetToken = crypto.randomBytes(32).toString('hex');
@@ -268,8 +272,6 @@ export class StudentOnboardingOrchestrator {
 
         // The exact transport implementation for emails is handled externally via this bus event.
         // We emit the `email:send_reset_token` which a separate microservice/mailer worker listens for.
-        // (Even if not currently implemented in this PR scope, the contract is fulfilled here).
-        // @ts-ignore
         eventBus.emit('email:send_reset_token', {
           email: r.email,
           token: r.resetToken,
@@ -283,7 +285,6 @@ export class StudentOnboardingOrchestrator {
             message: `Parent account created. Please check your email for a password reset link to set your password securely.`,
             userId: r.parentUserId,
           });
-          // @ts-ignore
           eventBus.emit('email:send_reset_token', {
             email: r.parentEmail,
             token: r.parentResetToken,
@@ -299,6 +300,8 @@ export class StudentOnboardingOrchestrator {
         }
       } catch (err) {
         console.error('Failed to dispatch onboarding events:', err);
+        // Do not throw here, as the transaction has already committed successfully
+        // We want the HTTP request to succeed even if side-effect emissions fail.
       }
     });
 

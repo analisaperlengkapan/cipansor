@@ -215,6 +215,12 @@ export interface NotificationSendEvent {
   unitId?: string;
   broadcast?: boolean;
   type: string;
+}
+
+export interface EmailSendResetTokenEvent {
+  email: string;
+  token: string;
+  userId: string;
   title: string;
   message: string;
   data?: Record<string, any>;

@@ -175,7 +175,11 @@ export const waveController = {
       });
 
       const { registrantId, unitId, assignedClassId, academicYearId } = onboardSchema.parse(req.body);
-      const processedById = req.user?.id || 'system';
+
+      if (!req.user?.id) {
+        throw Errors.unauthorized('User not authenticated');
+      }
+      const processedById = req.user.id;
 
       const result = await StudentOnboardingOrchestrator.processEnrollment(
         registrantId,

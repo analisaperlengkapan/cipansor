@@ -14,6 +14,7 @@ import {
   BulkCreateGradesInput,
   CreateReportCardInput,
   UpdateReportCardInput,
+  ExamAnalyticsData,
 } from "@cipansor/shared";
 
 // Re-export constants for UI consumption
@@ -115,6 +116,17 @@ export function useExam(id: string) {
     queryFn: async () => {
       const response = await api.get(`/assessment/exams/${id}`);
       return response.data.data as Exam;
+    },
+    enabled: !!id,
+  });
+}
+
+export function useExamAnalytics(id: string) {
+  return useQuery({
+    queryKey: ["exam-analytics", id],
+    queryFn: async () => {
+      const response = await api.get(`/assessment/exams/${id}/analytics`);
+      return response.data.data as ExamAnalyticsData;
     },
     enabled: !!id,
   });

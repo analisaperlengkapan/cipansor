@@ -13,6 +13,8 @@ router.use(authenticate);
 
 // ==================== EXAMS ====================
 
+router.get('/exams/:id/analytics', controller.getExamAnalytics);
+
 /**
  * @swagger
  * /api/assessment/exams:

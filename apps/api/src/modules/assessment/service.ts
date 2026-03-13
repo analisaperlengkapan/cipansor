@@ -19,6 +19,7 @@ import {
 } from '@cipansor/shared';
 import { Prisma } from '@prisma/client';
 import type { ExamQuery, GradeQuery, ReportCardQuery } from './schema';
+import { ExamAnalyticsData } from '@cipansor/shared';
 
 // =====================================
 // EXAM SERVICES
@@ -133,6 +134,127 @@ export async function createExam(data: CreateExamInput): Promise<Exam> {
   });
 
   return mapToExam(exam);
+}
+
+export async function getExamAnalytics(id: string): Promise<ExamAnalyticsData> {
+  const exam = await prisma.exam.findUnique({
+    where: { id },
+    include: {
+      grades: {
+        include: {
+          student: {
+            include: { user: true }
+          }
+        }
+      },
+      class: {
+        include: {
+          students: true
+        }
+      }
+    }
+  });
+
+  if (!exam) {
+    throw new Error('Exam not found');
+  }
+
+  const passingScore = Number(exam.passingScore || 70);
+  const maxScore = Number(exam.maxScore || 100);
+  const grades = exam.grades;
+
+  const totalStudents = exam.class?.students.length || grades.length;
+  const gradedCount = grades.length;
+
+  if (gradedCount === 0) {
+    return {
+      examId: id,
+      totalStudents,
+      gradedCount: 0,
+      averageScore: 0,
+      highestScore: 0,
+      lowestScore: 0,
+      passCount: 0,
+      failCount: 0,
+      passRate: 0,
+      scoreDistribution: [
+        { range: '0-59', count: 0 },
+        { range: '60-69', count: 0 },
+        { range: '70-79', count: 0 },
+        { range: '80-89', count: 0 },
+        { range: '90-100', count: 0 },
+      ],
+      topStudents: []
+    };
+  }
+
+  let totalScore = 0;
+  let highestScore = -1;
+  let lowestScore = Infinity;
+  let passCount = 0;
+
+  const distributionCounts = {
+    '0-59': 0,
+    '60-69': 0,
+    '70-79': 0,
+    '80-89': 0,
+    '90-100': 0,
+  };
+
+  const studentScores: { studentId: string; studentName: string; score: number }[] = [];
+
+  for (const grade of grades) {
+    const score = Number(grade.score);
+    totalScore += score;
+
+    if (score > highestScore) highestScore = score;
+    if (score < lowestScore) lowestScore = score;
+    if (score >= passingScore) passCount++;
+
+    // Distribution logic assuming 100 is max score typical
+    const pct = (score / maxScore) * 100;
+    if (pct < 60) distributionCounts['0-59']++;
+    else if (pct < 70) distributionCounts['60-69']++;
+    else if (pct < 80) distributionCounts['70-79']++;
+    else if (pct < 90) distributionCounts['80-89']++;
+    else distributionCounts['90-100']++;
+
+    studentScores.push({
+      studentId: grade.studentId,
+      studentName: grade.student?.user?.name || grade.studentId,
+      score
+    });
+  }
+
+  const averageScore = Number((totalScore / gradedCount).toFixed(2));
+  const failCount = gradedCount - passCount;
+  const passRate = Number(((passCount / gradedCount) * 100).toFixed(2));
+
+  // Sort and get top 5
+  studentScores.sort((a, b) => b.score - a.score);
+  const topStudents = studentScores.slice(0, 5);
+
+  const scoreDistribution = [
+    { range: '0-59', count: distributionCounts['0-59'] },
+    { range: '60-69', count: distributionCounts['60-69'] },
+    { range: '70-79', count: distributionCounts['70-79'] },
+    { range: '80-89', count: distributionCounts['80-89'] },
+    { range: '90-100', count: distributionCounts['90-100'] },
+  ];
+
+  return {
+    examId: id,
+    totalStudents,
+    gradedCount,
+    averageScore,
+    highestScore,
+    lowestScore,
+    passCount,
+    failCount,
+    passRate,
+    scoreDistribution,
+    topStudents
+  };
 }
 
 export async function updateExam(id: string, data: UpdateExamInput): Promise<Exam> {

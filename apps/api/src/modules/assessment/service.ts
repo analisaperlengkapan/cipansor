@@ -184,11 +184,11 @@ export async function getExamAnalytics(id: string): Promise<ExamAnalyticsData | 
       failCount: 0,
       passRate: 0,
       scoreDistribution: [
-        { range: '0-59%', count: 0 },
-        { range: '60-69%', count: 0 },
-        { range: '70-79%', count: 0 },
-        { range: '80-89%', count: 0 },
-        { range: '90-100%', count: 0 },
+        { range: '0-59', count: 0 },
+        { range: '60-69', count: 0 },
+        { range: '70-79', count: 0 },
+        { range: '80-89', count: 0 },
+        { range: '90-100', count: 0 },
       ],
       topStudents: []
     };
@@ -200,11 +200,11 @@ export async function getExamAnalytics(id: string): Promise<ExamAnalyticsData | 
   let passCount = 0;
 
   const distributionCounts = {
-    '0-59%': 0,
-    '60-69%': 0,
-    '70-79%': 0,
-    '80-89%': 0,
-    '90-100%': 0,
+    '0-59': 0,
+    '60-69': 0,
+    '70-79': 0,
+    '80-89': 0,
+    '90-100': 0,
   };
 
   const studentScores: { studentId: string; studentName: string; score: number }[] = [];

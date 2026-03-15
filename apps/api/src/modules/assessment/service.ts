@@ -152,10 +152,12 @@ export async function getExamAnalytics(id: string): Promise<ExamAnalyticsData | 
         }
       },
       class: {
+        include: {
           _count: {
             select: { enrollments: { where: { status: 'active' } } }
           }
         }
+      }
       }
     }
   });

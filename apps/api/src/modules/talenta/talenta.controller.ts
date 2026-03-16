@@ -104,6 +104,7 @@ export const listTrainings = asyncHandler(async (req: Request, res: Response) =>
 export const getTraining = asyncHandler(async (req: Request, res: Response) => {
   const training = await talentaService.getTrainingById(req.params.id);
   if (!training) throw Errors.notFound('Training program not found');
+  checkOwnership(req, training.unitId);
   res.json({ success: true, data: training });
 });
 

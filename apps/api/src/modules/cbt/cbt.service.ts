@@ -338,7 +338,7 @@ export class CBTService {
     const attempt = await prisma.examAttempt.findUnique({
       where: { id: attemptId },
       include: {
-        exam: { select: { teacher: { select: { userId: true } } } },
+        exam: { select: { questionBankId: true, teacher: { select: { userId: true } } } },
       },
     });
 
@@ -355,8 +355,17 @@ export class CBTService {
     const question = await prisma.question.findUnique({ where: { id: questionId } });
     if (!question) throw Errors.notFound('Question not found');
 
-    if (grading.score < 0 || grading.score > question.points) {
-      throw Errors.badRequest(`Score must be between 0 and ${question.points}`);
+    if (question.bankId !== attempt.exam.questionBankId) {
+      throw Errors.badRequest('Question does not belong to this exam');
+    }
+
+    if (
+      typeof grading.score !== 'number' ||
+      Number.isNaN(grading.score) ||
+      grading.score < 0 ||
+      grading.score > question.points
+    ) {
+      throw Errors.badRequest(`Score must be a valid number between 0 and ${question.points}`);
     }
 
     return prisma.$transaction(async (tx) => {

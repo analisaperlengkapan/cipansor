@@ -1,3 +1,4 @@
+import { Edit } from "lucide-react";
 "use client";
 
 import { useState } from "react";
@@ -350,26 +351,43 @@ function TrainingFormDialog({ onClose }: { onClose: () => void }) {
 }
 
 // ─── Succession Dialog ──────────────────────────────
-function SuccessionFormDialog({ onClose }: { onClose: () => void }) {
+function SuccessionFormDialog({ onClose, initialData }: { onClose: () => void; initialData?: any }) {
   const createSuccession = useCreateSuccession();
+  const updateSuccession = useUpdateSuccession();
+
+  const isEdit = !!initialData;
+  const isPending = createSuccession.isPending || updateSuccession.isPending;
+
   const form = useForm<z.infer<typeof successionFormSchema>>({
     resolver: zodResolver(successionFormSchema),
-    defaultValues: { positionTitle: "", priority: undefined, readinessLevel: "", notes: "", targetDate: "" },
+    defaultValues: {
+      positionTitle: initialData?.positionTitle || "",
+      priority: initialData?.priority || undefined,
+      readinessLevel: initialData?.readinessLevel || "",
+      notes: initialData?.notes || "",
+      targetDate: initialData?.targetDate ? new Date(initialData.targetDate).toISOString().split('T')[0] : ""
+    },
   });
 
   const onSubmit = async (values: z.infer<typeof successionFormSchema>) => {
-    await createSuccession.mutateAsync({
+    const payload = {
       ...values,
       targetDate: values.targetDate ? new Date(values.targetDate).toISOString() : undefined,
-    });
+    };
+
+    if (isEdit) {
+      await updateSuccession.mutateAsync({ id: initialData.id, data: payload });
+    } else {
+      await createSuccession.mutateAsync(payload);
+    }
     onClose();
   };
 
   return (
     <DialogContent className="sm:max-w-[480px]">
       <DialogHeader>
-        <DialogTitle>Tambah Rencana Suksesi</DialogTitle>
-        <DialogDescription>Buat rencana suksesi untuk posisi kunci di lembaga.</DialogDescription>
+        <DialogTitle>{isEdit ? "Edit Rencana Suksesi" : "Tambah Rencana Suksesi"}</DialogTitle>
+        <DialogDescription>{isEdit ? "Perbarui" : "Buat"} rencana suksesi untuk posisi kunci di lembaga.</DialogDescription>
       </DialogHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -404,7 +422,7 @@ function SuccessionFormDialog({ onClose }: { onClose: () => void }) {
           )} />
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="outline" onClick={onClose}>Batal</Button>
-            <Button type="submit" disabled={createSuccession.isPending}>{createSuccession.isPending ? "Menyimpan…" : "Simpan"}</Button>
+            <Button type="submit" disabled={isPending}>{isPending ? "Menyimpan…" : "Simpan"}</Button>
           </div>
         </form>
       </Form>
@@ -418,6 +436,7 @@ export default function TalentaPage() {
   const [assessmentDialogOpen, setAssessmentDialogOpen] = useState(false);
   const [trainingDialogOpen, setTrainingDialogOpen] = useState(false);
   const [successionDialogOpen, setSuccessionDialogOpen] = useState(false);
+  const [editingSuccession, setEditingSuccession] = useState<any>(null);
   const [deleteState, setDeleteState] = useState<{ type: string; id: string } | null>(null);
 
   const { data: profiles, isLoading: loadingProfiles } = useTalentProfiles();
@@ -601,11 +620,17 @@ export default function TalentaPage() {
         {/* Succession Tab */}
         <TabsContent value="succession" className="space-y-4">
           <div className="flex justify-end">
-            <Dialog open={successionDialogOpen} onOpenChange={setSuccessionDialogOpen}>
+            <Dialog open={successionDialogOpen} onOpenChange={(open) => {
+              if (!open) setEditingSuccession(null);
+              setSuccessionDialogOpen(open);
+            }}>
               <DialogTrigger asChild>
-                <Button className="gap-1"><Plus className="h-4 w-4" /> Tambah Suksesi</Button>
+                <Button className="gap-1" onClick={() => setEditingSuccession(null)}><Plus className="h-4 w-4" /> Tambah Suksesi</Button>
               </DialogTrigger>
-              <SuccessionFormDialog onClose={() => setSuccessionDialogOpen(false)} />
+              <SuccessionFormDialog
+                onClose={() => { setSuccessionDialogOpen(false); setEditingSuccession(null); }}
+                initialData={editingSuccession}
+              />
             </Dialog>
           </div>
           {successions?.length === 0 || !successions ? (
@@ -624,7 +649,14 @@ export default function TalentaPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       {succ.priority && <Badge className={priorityColor[succ.priority]}>{succ.priority}</Badge>}
-                      <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                        <Button size="icon" variant="ghost" className="h-8 w-8 text-blue-500"
+                          onClick={() => {
+                            setEditingSuccession(succ);
+                            setSuccessionDialogOpen(true);
+                          }}>
+                          <Edit className="h-4 w-4" />
+                        </Button>
                         <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive"
                           onClick={() => setDeleteState({ type: "succession", id: succ.id })}>
                           <Trash2 className="h-4 w-4" />

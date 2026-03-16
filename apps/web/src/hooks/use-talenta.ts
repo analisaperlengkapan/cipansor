@@ -76,6 +76,15 @@ export const useCreateSuccession = () => {
   });
 };
 
+export const useUpdateSuccession = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => (await api.put(`/api/talenta/successions/${id}`, data)).data,
+    onSuccess: () => { toast.success("Rencana suksesi berhasil diperbarui"); qc.invalidateQueries({ queryKey: ["talenta"] }); },
+    onError: (e: any) => { toast.error(e.response?.data?.message || "Gagal memperbarui rencana suksesi"); },
+  });
+};
+
 export const useDeleteProfile = () => {
   const qc = useQueryClient();
   return useMutation({

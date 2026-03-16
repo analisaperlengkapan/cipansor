@@ -28,6 +28,8 @@ vi.mock('../../lib/prisma', () => ({
     successionPlan: {
       create: vi.fn(),
       findMany: vi.fn(),
+      findUnique: vi.fn(),
+      update: vi.fn(),
       delete: vi.fn(),
     },
     $transaction: vi.fn((callback) => callback(prisma)),
@@ -159,6 +161,28 @@ describe('Talenta Service', () => {
           positionTitle: 'Kepala Sekolah',
           currentHolder: { connect: { id: 'user-1' } },
           successor: { connect: { id: 'user-2' } },
+        }),
+        include: expect.any(Object),
+      });
+    });
+
+    it('should update succession plan and handle relations', async () => {
+      const updateDto = {
+        positionTitle: 'Direktur Utama',
+        currentHolderId: 'user-3',
+        successorId: null, // this should cause disconnect
+      };
+
+      vi.mocked(prisma.successionPlan.update).mockResolvedValue({ id: 'succ-1', ...updateDto } as any);
+
+      await talentaService.updateSuccession('succ-1', updateDto);
+
+      expect(prisma.successionPlan.update).toHaveBeenCalledWith({
+        where: { id: 'succ-1' },
+        data: expect.objectContaining({
+          positionTitle: 'Direktur Utama',
+          currentHolder: { connect: { id: 'user-3' } },
+          successor: { disconnect: true },
         }),
         include: expect.any(Object),
       });

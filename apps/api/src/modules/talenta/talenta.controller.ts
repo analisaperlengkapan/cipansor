@@ -10,6 +10,7 @@ import {
   updateTrainingSchema,
   enrollTrainingSchema,
   createSuccessionSchema,
+  updateSuccessionSchema,
 } from './talenta.validation';
 import { UserRole } from '@prisma/client';
 
@@ -142,7 +143,25 @@ export const createSuccession = asyncHandler(async (req: Request, res: Response)
   res.status(201).json({ success: true, data: succession });
 });
 
+export const updateSuccession = asyncHandler(async (req: Request, res: Response) => {
+  const existing = await talentaService.getSuccessionById(req.params.id);
+  if (!existing) throw Errors.notFound('Succession plan not found');
+  if (!isPrivileged(req.user?.role) && existing.unitId !== req.user?.unitId) {
+    throw Errors.forbidden('Access denied');
+  }
+
+  const body = updateSuccessionSchema.parse(req.body);
+  const succession = await talentaService.updateSuccession(req.params.id, body);
+  res.json({ success: true, data: succession });
+});
+
 export const deleteSuccession = asyncHandler(async (req: Request, res: Response) => {
+  const existing = await talentaService.getSuccessionById(req.params.id);
+  if (!existing) throw Errors.notFound('Succession plan not found');
+  if (!isPrivileged(req.user?.role) && existing.unitId !== req.user?.unitId) {
+    throw Errors.forbidden('Access denied');
+  }
+
   await talentaService.deleteSuccession(req.params.id);
   res.json({ success: true, message: 'Succession plan deleted' });
 });

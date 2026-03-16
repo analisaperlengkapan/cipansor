@@ -14,8 +14,7 @@ export class CBTController {
       const banks = await CBTService.getQuestionBanks({
         unitId: unitId as string,
         subjectId: subjectId as string,
-        teacherId: user.role.includes('ADMIN') ? undefined : user.id, // Admins see all, teachers see theirs? Or maybe filtered by unit.
-        // For now, let's allow filtering.
+        teacherUserId: user.role.includes('ADMIN') ? undefined : user.id, // Admins see all, teachers see theirs
         search: search as string,
       });
 
@@ -29,15 +28,21 @@ export class CBTController {
     try {
       const user = (req as any).user;
 
-      const teacher = await prisma.teacher.findUnique({ where: { userId: user.id } });
-      if (!teacher) {
-        throw Errors.badRequest('No teacher profile found for this user');
+      let teacherId = req.body.teacherId;
+      if (!user.role.includes('ADMIN')) {
+        const teacher = await prisma.teacher.findUnique({ where: { userId: user.id } });
+        if (!teacher) {
+          throw Errors.badRequest('No teacher profile found for this user');
+        }
+        teacherId = teacher.id;
+      } else if (!teacherId) {
+        throw Errors.badRequest('teacherId is required for admins to create a question bank');
       }
 
       const bank = await CBTService.createQuestionBank({
         ...req.body,
-        teacherId: teacher.id, // Force creator
-        unitId: user.unitId || req.body.unitId, // Fallback if user has no unit
+        teacherId,
+        unitId: user.unitId || req.body.unitId,
       });
       res.status(201).json({ success: true, data: bank });
     } catch (error) {
@@ -124,16 +129,22 @@ export class CBTController {
     try {
       const user = (req as any).user;
 
-      const teacher = await prisma.teacher.findUnique({ where: { userId: user.id } });
-      if (!teacher) {
-        throw Errors.badRequest('No teacher profile found for this user');
+      let teacherId = req.body.teacherId;
+      if (!user.role.includes('ADMIN')) {
+        const teacher = await prisma.teacher.findUnique({ where: { userId: user.id } });
+        if (!teacher) {
+          throw Errors.badRequest('No teacher profile found for this user');
+        }
+        teacherId = teacher.id;
+      } else if (!teacherId) {
+        throw Errors.badRequest('teacherId is required for admins to create an exam');
       }
 
       const exam = await CBTService.createExam(
         {
           ...req.body,
-          teacherId: teacher.id,
-          unitId: req.body.unitId || user.unitId,
+          teacherId,
+          unitId: user.unitId || req.body.unitId,
         },
         user
       );

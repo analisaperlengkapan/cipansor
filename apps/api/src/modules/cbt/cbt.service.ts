@@ -61,7 +61,7 @@ export class CBTService {
 
   static async getQuestionBanks(query: {
     unitId?: string;
-    teacherId?: string;
+    teacherUserId?: string;
     subjectId?: string;
     search?: string;
   }) {
@@ -70,7 +70,7 @@ export class CBTService {
     };
 
     if (query.unitId) where.unitId = query.unitId;
-    if (query.teacherId) where.teacherId = query.teacherId;
+    if (query.teacherUserId) where.teacher = { userId: query.teacherUserId };
     if (query.subjectId) where.subjectId = query.subjectId;
     if (query.search) {
       where.title = { contains: query.search, mode: 'insensitive' };

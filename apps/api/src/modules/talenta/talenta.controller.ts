@@ -33,8 +33,6 @@ function resolveUnitId(req: Request, bodyUnitId?: string): string {
   // Otherwise default to their assigned unit
   const unitId = req.user?.unitId;
   if (!unitId) {
-    // If they have no unitId but are SUPER_ADMIN, they must supply one
-    // SUPER_ADMIN with bodyUnitId is already handled above
     throw Errors.badRequest('Unit ID is required');
   }
   return unitId;

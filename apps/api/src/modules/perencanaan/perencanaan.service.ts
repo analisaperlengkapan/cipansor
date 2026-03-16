@@ -1,10 +1,14 @@
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
+
+// Note: Re-declaring the enum here is a workaround for Vitest
+// failing to mock Enums off of `@prisma/client` properly without throwing
+// 'undefined is not a constructor' or missing property errors.
 const PlanStatus = {
   DRAFT: 'DRAFT',
-  PROPOSED: 'PROPOSED',
+  REVIEW: 'REVIEW',
   APPROVED: 'APPROVED',
-  IN_PROGRESS: 'IN_PROGRESS',
+  ACTIVE: 'ACTIVE',
   COMPLETED: 'COMPLETED',
   CANCELLED: 'CANCELLED',
 };

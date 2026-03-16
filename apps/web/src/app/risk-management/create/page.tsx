@@ -110,8 +110,14 @@ export default function CreateRiskPage() {
       return;
     }
 
+    // Strip empty string so backend UUID validation passes
+    const payload = { ...values };
+    if (payload.unitId === "") {
+      delete payload.unitId;
+    }
+
     try {
-      await createRisk.mutateAsync(values);
+      await createRisk.mutateAsync(payload);
       router.push(strategicPlanId ? `/perencanaan/${strategicPlanId}` : "/risk-management");
     } catch (error) {
       console.error(error);

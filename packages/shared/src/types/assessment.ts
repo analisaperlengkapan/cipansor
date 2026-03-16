@@ -209,3 +209,29 @@ export interface CreateReportCardInput {
 export interface UpdateReportCardInput extends Partial<CreateReportCardInput> {
   isPublished?: boolean;
 }
+
+export interface GradeStats {
+  examId: string;
+  totalStudents: number;
+  gradedCount: number;
+  averageScore: number;
+  highestScore: number;
+  lowestScore: number;
+  passCount: number;
+  failCount: number;
+  passRate: number;
+}
+
+export interface ScoreDistribution {
+  range: string;
+  count: number;
+}
+
+export interface ExamAnalyticsData extends GradeStats {
+  scoreDistribution: ScoreDistribution[];
+  topStudents: {
+    studentId: string;
+    studentName: string;
+    score: number;
+  }[];
+}

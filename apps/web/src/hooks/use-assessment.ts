@@ -14,6 +14,7 @@ import {
   BulkCreateGradesInput,
   CreateReportCardInput,
   UpdateReportCardInput,
+  ExamAnalyticsData,
 } from "@cipansor/shared";
 
 // Re-export constants for UI consumption
@@ -115,6 +116,17 @@ export function useExam(id: string) {
     queryFn: async () => {
       const response = await api.get(`/assessment/exams/${id}`);
       return response.data.data as Exam;
+    },
+    enabled: !!id,
+  });
+}
+
+export function useExamAnalytics(id: string) {
+  return useQuery({
+    queryKey: ["exam-analytics", id],
+    queryFn: async () => {
+      const response = await api.get(`/assessment/exams/${id}/analytics`);
+      return response.data.data as ExamAnalyticsData;
     },
     enabled: !!id,
   });
@@ -246,8 +258,13 @@ export function useCreateGrade() {
       const response = await api.post("/assessment/grades", data);
       return response.data.data;
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["grades"] });
+      if (variables.examId) {
+        queryClient.invalidateQueries({ queryKey: ["exam-analytics", variables.examId] });
+      } else {
+        queryClient.invalidateQueries({ queryKey: ["exam-analytics"] });
+      }
     },
   });
 }
@@ -266,6 +283,11 @@ export function useBulkCreateGrades() {
         queryClient.invalidateQueries({
           queryKey: ["exam-grades", variables.examId],
         });
+        queryClient.invalidateQueries({
+          queryKey: ["exam-analytics", variables.examId],
+        });
+      } else {
+        queryClient.invalidateQueries({ queryKey: ["exam-analytics"] });
       }
     },
   });
@@ -285,8 +307,13 @@ export function useUpdateGrade() {
       const response = await api.put(`/assessment/grades/${id}`, data);
       return response.data.data;
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["grades"] });
+      if (variables.data.examId) {
+        queryClient.invalidateQueries({ queryKey: ["exam-analytics", variables.data.examId] });
+      } else {
+        queryClient.invalidateQueries({ queryKey: ["exam-analytics"] });
+      }
     },
   });
 }
@@ -300,6 +327,7 @@ export function useDeleteGrade() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["grades"] });
+      queryClient.invalidateQueries({ queryKey: ["exam-analytics"] });
     },
   });
 }

@@ -40,7 +40,18 @@ import {
   ASSESSMENT_TYPE_LABELS,
   ExamType,
   type AssessmentType,
+  useExamAnalytics,
 } from "@/hooks";
+import {
+  BarChart as RechartsBarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
 import {
   ArrowLeft,
   Calendar,
@@ -74,6 +85,7 @@ export default function AssessmentDetailPage() {
   const { data: grades, isLoading: loadingGrades } = useGrades({
     examId: assessmentId,
   });
+  const { data: analytics, isLoading: loadingAnalytics } = useExamAnalytics(assessmentId);
   const deleteAssessment = useDeleteAssessment();
   const publishAssessment = usePublishAssessment();
 
@@ -137,24 +149,29 @@ export default function AssessmentDetailPage() {
 
   // Calculate statistics from grades
   const stats = grades?.length
-    ? {
-        totalStudents: grades.length,
-        graded: grades.filter((g) => g.score !== null).length,
-        average:
-          grades
-            .filter((g) => g.score !== null)
-            .reduce((sum, g) => sum + (g.score ?? 0), 0) /
-            grades.filter((g) => g.score !== null).length || 0,
-        highest: Math.max(
-          ...grades.filter((g) => g.score !== null).map((g) => g.score ?? 0),
-        ),
-        lowest: Math.min(
-          ...grades.filter((g) => g.score !== null).map((g) => g.score ?? 0),
-        ),
-        passed: grades.filter(
+    ? (() => {
+        const gradedCount = grades.filter((g) => g.score !== null).length;
+        const passedCount = grades.filter(
           (g) => (g.score ?? 0) >= (assessment.passingScore ?? 70),
-        ).length,
-      }
+        ).length;
+        return {
+          totalStudents: grades.length,
+          graded: gradedCount,
+          average:
+            grades
+              .filter((g) => g.score !== null)
+              .reduce((sum, g) => sum + (g.score ?? 0), 0) /
+              gradedCount || 0,
+          highest: Math.max(
+            ...grades.filter((g) => g.score !== null).map((g) => g.score ?? 0),
+          ),
+          lowest: Math.min(
+            ...grades.filter((g) => g.score !== null).map((g) => g.score ?? 0),
+          ),
+          passed: passedCount,
+          passRate: gradedCount > 0 ? (passedCount / gradedCount) * 100 : 0,
+        };
+      })()
     : null;
 
   const getGradeColor = (score: number | null) => {
@@ -313,10 +330,10 @@ export default function AssessmentDetailPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {stats?.totalStudents ?? 0}
+                {analytics?.totalStudents ?? stats?.totalStudents ?? 0}
               </div>
               <p className="text-xs text-muted-foreground">
-                {stats?.graded ?? 0} sudah dinilai
+                {analytics?.gradedCount ?? stats?.graded ?? 0} sudah dinilai
               </p>
             </CardContent>
           </Card>
@@ -327,10 +344,10 @@ export default function AssessmentDetailPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {stats?.average.toFixed(1) ?? "-"}
+                {analytics?.averageScore.toFixed(1) ?? stats?.average.toFixed(1) ?? "-"}
               </div>
               <p className="text-xs text-muted-foreground">
-                {stats?.passed ?? 0} santri lulus
+                {(analytics?.passRate ?? stats?.passRate ?? 0).toFixed(1)}% Lulus
               </p>
             </CardContent>
           </Card>
@@ -436,7 +453,11 @@ export default function AssessmentDetailPage() {
 
           {/* Statistics Tab */}
           <TabsContent value="statistics" className="space-y-4">
-            {stats && stats.graded > 0 ? (
+            {loadingAnalytics ? (
+              <div className="flex items-center justify-center h-64">
+                <Loader2 className="h-8 w-8 animate-spin" />
+              </div>
+            ) : analytics && analytics.gradedCount > 0 ? (
               <div className="grid gap-4 md:grid-cols-2">
                 <Card>
                   <CardHeader>
@@ -450,7 +471,7 @@ export default function AssessmentDetailPage() {
                           Nilai Tertinggi
                         </p>
                         <p className="text-2xl font-bold text-green-600">
-                          {stats.highest}
+                          {analytics.highestScore}
                         </p>
                       </div>
                       <div className="p-4 bg-muted rounded-lg">
@@ -458,7 +479,7 @@ export default function AssessmentDetailPage() {
                           Nilai Terendah
                         </p>
                         <p className="text-2xl font-bold text-red-600">
-                          {stats.lowest}
+                          {analytics.lowestScore}
                         </p>
                       </div>
                       <div className="p-4 bg-muted rounded-lg">
@@ -466,7 +487,7 @@ export default function AssessmentDetailPage() {
                           Rata-rata
                         </p>
                         <p className="text-2xl font-bold text-blue-600">
-                          {stats.average.toFixed(1)}
+                          {analytics.averageScore.toFixed(1)}
                         </p>
                       </div>
                       <div className="p-4 bg-muted rounded-lg">
@@ -474,7 +495,7 @@ export default function AssessmentDetailPage() {
                           Persentase Lulus
                         </p>
                         <p className="text-2xl font-bold">
-                          {((stats.passed / stats.graded) * 100).toFixed(0)}%
+                          {analytics.passRate.toFixed(0)}%
                         </p>
                       </div>
                     </div>
@@ -487,65 +508,57 @@ export default function AssessmentDetailPage() {
                     <CardDescription>Berdasarkan rentang nilai</CardDescription>
                   </CardHeader>
                   <CardContent>
+                    <div className="h-[250px] w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <RechartsBarChart
+                          data={analytics.scoreDistribution}
+                          margin={{ top: 20, right: 30, left: 0, bottom: 5 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                          <XAxis dataKey="range" />
+                          <YAxis allowDecimals={false} />
+                          <Tooltip
+                            cursor={{ fill: 'rgba(0,0,0,0.05)' }}
+                            contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}
+                          />
+                          <Bar
+                            dataKey="count"
+                            name="Jumlah Santri"
+                            fill="#3b82f6"
+                            radius={[4, 4, 0, 0]}
+                          />
+                        </RechartsBarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="md:col-span-2">
+                  <CardHeader>
+                    <CardTitle>Santri Nilai Tertinggi</CardTitle>
+                    <CardDescription>Top 5 santri dengan nilai terbaik</CardDescription>
+                  </CardHeader>
+                  <CardContent>
                     <div className="space-y-4">
-                      {[
-                        {
-                          label: "A (90-100)",
-                          min: 90,
-                          max: 100,
-                          color: "bg-green-500",
-                        },
-                        {
-                          label: "B (80-89)",
-                          min: 80,
-                          max: 89,
-                          color: "bg-blue-500",
-                        },
-                        {
-                          label: "C (70-79)",
-                          min: 70,
-                          max: 79,
-                          color: "bg-yellow-500",
-                        },
-                        {
-                          label: "D (60-69)",
-                          min: 60,
-                          max: 69,
-                          color: "bg-orange-500",
-                        },
-                        {
-                          label: "E (<60)",
-                          min: 0,
-                          max: 59,
-                          color: "bg-red-500",
-                        },
-                      ].map((range) => {
-                        const count =
-                          grades?.filter(
-                            (g) =>
-                              g.score !== null &&
-                              g.score >= range.min &&
-                              g.score <= range.max,
-                          ).length ?? 0;
-                        const percentage =
-                          stats.graded > 0 ? (count / stats.graded) * 100 : 0;
-                        return (
-                          <div key={range.label} className="space-y-2">
-                            <div className="flex justify-between text-sm">
-                              <span>{range.label}</span>
-                              <span>
-                                {count} santri ({percentage.toFixed(0)}%)
-                              </span>
+                      {analytics.topStudents.map((student, index) => (
+                        <div key={student.studentId} className="flex items-center justify-between border-b pb-2 last:border-0 last:pb-0">
+                          <div className="flex items-center gap-4">
+                            <div className={`flex items-center justify-center w-8 h-8 rounded-full font-bold text-xs ${
+                              index === 0 ? 'bg-yellow-100 text-yellow-700' :
+                              index === 1 ? 'bg-gray-100 text-gray-700' :
+                              index === 2 ? 'bg-orange-100 text-orange-700' :
+                              'bg-muted text-muted-foreground'
+                            }`}>
+                              #{index + 1}
                             </div>
-                            <div className="h-2 bg-muted rounded-full overflow-hidden">
-                              <div
-                                className={`h-full ${range.color} rounded-full transition-all`}
-                                style={{ width: `${percentage}%` }}
-                              />
-                            </div>
+                            <span className="font-medium">{student.studentName}</span>
                           </div>
-                        );
-                      })}
+                          <span className="font-bold">{student.score}</span>
+                        </div>
+                      ))}
+                      {analytics.topStudents.length === 0 && (
+                        <p className="text-sm text-muted-foreground text-center py-4">Belum ada data nilai.</p>
+                      )}
                     </div>
                   </CardContent>
                 </Card>

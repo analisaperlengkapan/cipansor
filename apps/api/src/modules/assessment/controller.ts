@@ -33,6 +33,19 @@ export async function getExams(req: Request, res: Response, next: NextFunction) 
   }
 }
 
+export async function getExamAnalytics(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { id } = req.params;
+    const result = await assessmentService.getExamAnalytics(id);
+    if (!result) {
+      return res.status(404).json({ success: false, error: 'Exam not found' });
+    }
+    res.json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function getExamById(req: Request, res: Response, next: NextFunction) {
   try {
     const { id } = req.params;

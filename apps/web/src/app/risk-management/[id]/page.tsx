@@ -1,7 +1,5 @@
 "use client";
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/lib/api";
 import { useParams, useRouter } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Badge } from "@/components/ui/badge";
@@ -17,9 +15,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useState } from "react";
-import { toast } from "sonner";
 import { Trash, CheckCircle, Clock } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import { useRisk, useDeleteRisk, useCreateMitigation, useDeleteMitigation } from "@/hooks/use-risk";
 
 const MitigationStrategy = ["AVOID", "REDUCE", "SHARE", "ACCEPT"] as const;
 
@@ -31,23 +29,15 @@ const mitigationSchema = z.object({
 });
 
 export default function RiskDetailPage() {
-  const { id } = useParams();
-  const queryClient = useQueryClient();
+  const params = useParams();
+  const id = params?.id as string;
   const [open, setOpen] = useState(false);
   const router = useRouter();
 
-  const { data: risk, isLoading } = useQuery({
-    queryKey: ["risk", id],
-    queryFn: async () => {
-      try {
-        const res = await api.get(`/risk/${id}`);
-        return res.data.data;
-      } catch (e) {
-        return null;
-      }
-    },
-    enabled: !!id,
-  });
+  const { data: risk, isLoading } = useRisk(id);
+  const deleteRisk = useDeleteRisk();
+  const addMitigation = useCreateMitigation();
+  const removeMitigation = useDeleteMitigation();
 
   const form = useForm<z.infer<typeof mitigationSchema>>({
     resolver: zodResolver(mitigationSchema),
@@ -59,24 +49,11 @@ export default function RiskDetailPage() {
     }
   });
 
-  const addMitigation = useMutation({
-    mutationFn: (data: z.infer<typeof mitigationSchema>) => api.post("/risk/mitigation", { ...data, riskId: id }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["risk", id] });
-      setOpen(false);
-      form.reset();
-      toast.success("Mitigation added");
-    },
-    onError: () => toast.error("Failed to add mitigation")
-  });
-
-  const deleteMitigation = useMutation({
-    mutationFn: (mitigationId: string) => api.delete(`/risk/mitigation/${mitigationId}`),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["risk", id] });
-      toast.success("Mitigation deleted");
-    }
-  });
+  const handleAddMitigation = async (data: z.infer<typeof mitigationSchema>) => {
+    await addMitigation.mutateAsync({ ...data, riskId: id });
+    setOpen(false);
+    form.reset();
+  };
 
   if (isLoading) return <div className="p-8">Loading...</div>;
   if (!risk) return <div className="p-8">Risk not found</div>;
@@ -93,13 +70,8 @@ export default function RiskDetailPage() {
             </Button>
             <Button variant="destructive" size="sm" onClick={async () => {
               if(confirm("Delete this risk?")) {
-                try {
-                  await api.delete(`/risk/${id}`);
-                  toast.success("Risk deleted");
-                  router.push("/risk-management");
-                } catch (error) {
-                  toast.error("Failed to delete risk");
-                }
+                await deleteRisk.mutateAsync(id);
+                router.push("/risk-management");
               }
             }}>Delete Risk</Button>
           </div>
@@ -161,7 +133,7 @@ export default function RiskDetailPage() {
                     <DialogTitle>Add Mitigation Plan</DialogTitle>
                   </DialogHeader>
                   <Form {...form}>
-                    <form onSubmit={form.handleSubmit((data) => addMitigation.mutate(data))} className="space-y-4">
+                    <form onSubmit={form.handleSubmit(handleAddMitigation)} className="space-y-4">
                       <FormField
                         control={form.control}
                         name="strategy"
@@ -225,7 +197,7 @@ export default function RiskDetailPage() {
                           <div className="text-xs text-muted-foreground mt-1">Deadline: {new Date(m.deadline).toLocaleDateString()}</div>
                         )}
                       </div>
-                      <Button variant="ghost" size="icon" onClick={() => deleteMitigation.mutate(m.id)}>
+                      <Button variant="ghost" size="icon" onClick={() => removeMitigation.mutate({ id: m.id, riskId: id })}>
                         <Trash className="w-4 h-4 text-red-500" />
                       </Button>
                     </div>

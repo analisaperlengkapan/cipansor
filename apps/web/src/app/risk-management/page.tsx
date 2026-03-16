@@ -1,19 +1,12 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import { api } from "@/lib/api";
 import { RiskHeatmap } from "@/components/risk/risk-heatmap";
 import { RiskList } from "./risk-list";
 import { PageHeader } from "@/components/shared/page-header";
+import { useRisks } from "@/hooks/use-risk";
 
 export default function RiskManagementPage() {
-  const { data: risks } = useQuery({
-    queryKey: ["risks"],
-    queryFn: async () => {
-      const res = await api.get("/risk");
-      return res.data.data;
-    },
-  });
+  const { data: risks } = useRisks();
 
   return (
     <div className="container mx-auto py-6 space-y-8">

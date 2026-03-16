@@ -120,33 +120,33 @@ export class RiskService {
   }
 
   // Helpers
-  private calculateRiskScore(likelihood: RiskLikelihood, impact: RiskImpact): number {
+  private calculateRiskScore(likelihood: string, impact: string): number {
     const likelihoodMap: Record<string, number> = {
-      [RiskLikelihood.RARE]: 1,
-      [RiskLikelihood.UNLIKELY]: 2,
-      [RiskLikelihood.POSSIBLE]: 3,
-      [RiskLikelihood.LIKELY]: 4,
-      [RiskLikelihood.ALMOST_CERTAIN]: 5,
+      RARE: 1,
+      UNLIKELY: 2,
+      POSSIBLE: 3,
+      LIKELY: 4,
+      ALMOST_CERTAIN: 5,
     };
     const impactMap: Record<string, number> = {
-      [RiskImpact.INSIGNIFICANT]: 1,
-      [RiskImpact.MINOR]: 2,
-      [RiskImpact.MODERATE]: 3,
-      [RiskImpact.MAJOR]: 4,
-      [RiskImpact.CATASTROPHIC]: 5,
+      INSIGNIFICANT: 1,
+      MINOR: 2,
+      MODERATE: 3,
+      MAJOR: 4,
+      CATASTROPHIC: 5,
     };
 
-    const l = likelihoodMap[likelihood] || 1;
-    const i = impactMap[impact] || 1;
+    const l = likelihoodMap[likelihood as string] || 1;
+    const i = impactMap[impact as string] || 1;
 
     return l * i;
   }
 
   private determineRiskLevel(score: number): RiskLevel {
-    if (score >= 20) return RiskLevel.EXTREME; // 20, 25
-    if (score >= 10) return RiskLevel.HIGH; // 10, 12, 15, 16
-    if (score >= 5) return RiskLevel.MEDIUM; // 5, 6, 8, 9
-    return RiskLevel.LOW; // 1, 2, 3, 4
+    if (score >= 20) return 'EXTREME' as RiskLevel; // 20, 25
+    if (score >= 10) return 'HIGH' as RiskLevel; // 10, 12, 15, 16
+    if (score >= 5) return 'MEDIUM' as RiskLevel; // 5, 6, 8, 9
+    return 'LOW' as RiskLevel; // 1, 2, 3, 4
   }
 }
 

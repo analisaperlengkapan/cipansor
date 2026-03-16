@@ -1,8 +1,7 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import { api } from "@/lib/api";
 import { DataTable } from "@/components/shared/data-table";
+import { useRisks } from "@/hooks/use-risk";
 import { RiskStatusBadge, RiskLevelBadge } from "@/components/risk/risk-badges";
 import { Button } from "@/components/ui/button";
 import { Plus, Eye } from "lucide-react";
@@ -58,13 +57,7 @@ const columns: ColumnDef<Risk>[] = [
 ];
 
 export function RiskList() {
-  const { data, isLoading } = useQuery({
-    queryKey: ["risks"],
-    queryFn: async () => {
-      const res = await api.get("/risk");
-      return res.data.data;
-    },
-  });
+  const { data, isLoading } = useRisks();
 
   return (
     <div className="space-y-4">

@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { api } from "@/lib/api";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +27,9 @@ import {
 import { PageHeader } from "@/components/shared/page-header";
 import { useAuthStore } from "@/stores/auth";
 import { useQuery } from "@tanstack/react-query";
+import { useCreateRisk } from "@/hooks/use-risk";
+import { InfoIcon } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const RiskCategory = [
   "STRATEGIC",
@@ -61,13 +64,17 @@ const formSchema = z.object({
   likelihood: z.enum(RiskLikelihood),
   impact: z.enum(RiskImpact),
   unitId: z.string().optional(),
+  strategicPlanId: z.string().optional(),
 });
 
 const PRIVILEGED_ROLES = ["SUPER_ADMIN", "YAYASAN_ADMIN", "YAYASAN_KETUA"];
 
 export default function CreateRiskPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const strategicPlanId = searchParams?.get("strategicPlanId") || undefined;
   const { user } = useAuthStore();
+  const createRisk = useCreateRisk();
 
   const isPrivileged = user?.role && PRIVILEGED_ROLES.includes(user.role);
 
@@ -91,6 +98,7 @@ export default function CreateRiskPage() {
       likelihood: "POSSIBLE",
       impact: "MODERATE",
       unitId: "", // Optional, only required for privileged users without context
+      strategicPlanId,
     },
   });
 
@@ -103,12 +111,10 @@ export default function CreateRiskPage() {
     }
 
     try {
-      await api.post("/risk", values);
-      toast.success("Risk created successfully");
-      router.push("/risk-management");
+      await createRisk.mutateAsync(values);
+      router.push(strategicPlanId ? `/perencanaan/${strategicPlanId}` : "/risk-management");
     } catch (error) {
       console.error(error);
-      toast.error("Failed to create risk");
     }
   }
 
@@ -129,6 +135,16 @@ export default function CreateRiskPage() {
           onSubmit={form.handleSubmit(onSubmit)}
           className="space-y-6 mt-6 p-6 bg-white rounded-lg border shadow-sm"
         >
+          {strategicPlanId && (
+            <Alert className="bg-blue-50 border-blue-200">
+              <InfoIcon className="h-4 w-4 text-blue-600" />
+              <AlertTitle className="text-blue-800">Ditautkan ke Perencanaan Strategis</AlertTitle>
+              <AlertDescription className="text-blue-700">
+                Risiko ini akan secara otomatis ditautkan dengan rencana strategis yang sedang Anda kelola.
+              </AlertDescription>
+            </Alert>
+          )}
+
           {isPrivileged && (
             <FormField
               control={form.control}

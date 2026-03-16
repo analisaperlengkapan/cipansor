@@ -31,6 +31,7 @@ export const listRisks = asyncHandler(async (req: Request, res: Response) => {
   const query = listRiskQuerySchema.parse({
     category: req.query.category,
     riskLevel: req.query.riskLevel,
+    strategicPlanId: req.query.strategicPlanId,
     unitId: targetUnitId,
   });
 
@@ -72,13 +73,15 @@ export const createRisk = asyncHandler(async (req: Request, res: Response) => {
     }
   }
 
-  // Destructure to remove unitId from spread, preventing Prisma conflict
-  const { unitId: _, ...rest } = body;
+  // Destructure to remove unitId and strategicPlanId from spread
+  // to explicitly use relation connect syntax for consistency
+  const { unitId: _, strategicPlanId, ...rest } = body;
 
   const risk = await riskService.createRisk({
     ...rest,
     unit: { connect: { id: targetUnitId } },
     createdBy: { connect: { id: userId } },
+    ...(strategicPlanId ? { strategicPlan: { connect: { id: strategicPlanId } } } : {}),
   });
 
   res.status(201).json({ success: true, data: risk });
@@ -97,10 +100,17 @@ export const updateRisk = asyncHandler(async (req: Request, res: Response) => {
   const body = updateRiskSchema.parse(req.body);
 
   // Destructure unitId to prevent unauthorized modification of the risk's unit
+  // Also destructure strategicPlanId to handle connect syntax properly if provided
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { unitId: _, ...updateData } = body;
+  const { unitId: _, strategicPlanId, ...updateData } = body;
 
-  const risk = await riskService.updateRisk(id, updateData);
+  const risk = await riskService.updateRisk(id, {
+    ...updateData,
+    ...(strategicPlanId !== undefined ?
+      { strategicPlan: strategicPlanId ? { connect: { id: strategicPlanId } } : { disconnect: true } }
+      : {}
+    ),
+  });
   res.json({ success: true, data: risk });
 });
 

@@ -1,7 +1,29 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { prisma } from '../../lib/prisma';
 import { riskService } from './risk.service';
-import { RiskLikelihood, RiskImpact, RiskLevel } from '@prisma/client';
+
+const RiskLikelihood = {
+  RARE: 'RARE',
+  UNLIKELY: 'UNLIKELY',
+  POSSIBLE: 'POSSIBLE',
+  LIKELY: 'LIKELY',
+  ALMOST_CERTAIN: 'ALMOST_CERTAIN',
+};
+
+const RiskImpact = {
+  INSIGNIFICANT: 'INSIGNIFICANT',
+  MINOR: 'MINOR',
+  MODERATE: 'MODERATE',
+  MAJOR: 'MAJOR',
+  CATASTROPHIC: 'CATASTROPHIC',
+};
+
+const RiskLevel = {
+  LOW: 'LOW',
+  MEDIUM: 'MEDIUM',
+  HIGH: 'HIGH',
+  EXTREME: 'EXTREME',
+};
 
 // Mock all external dependencies
 vi.mock('../../lib/prisma', () => ({
@@ -32,7 +54,7 @@ describe('Risk Service', () => {
       const dto = {
         unitId: 'unit-1',
         title: 'Network Outage',
-        category: 'OPERASIONAL',
+        category: 'OPERATIONAL',
         likelihood: RiskLikelihood.LIKELY, // 4
         impact: RiskImpact.MAJOR, // 4 -> score 16 -> HIGH
         createdById: 'user-1',
@@ -114,15 +136,32 @@ describe('Risk Service', () => {
       vi.mocked(prisma.risk.findMany).mockResolvedValue([] as any);
 
       await riskService.getRisks('unit-1', {
-        category: 'FINANSIAL',
+        category: 'FINANCIAL',
         riskLevel: 'HIGH',
       });
 
       expect(prisma.risk.findMany).toHaveBeenCalledWith({
         where: {
           unitId: 'unit-1',
-          category: 'FINANSIAL',
+          category: 'FINANCIAL',
           riskLevel: 'HIGH',
+        },
+        include: expect.any(Object),
+        orderBy: { createdAt: 'desc' },
+      });
+    });
+
+    it('should filter risks by strategicPlanId', async () => {
+      vi.mocked(prisma.risk.findMany).mockResolvedValue([] as any);
+
+      await riskService.getRisks('unit-1', {
+        strategicPlanId: 'plan-123',
+      });
+
+      expect(prisma.risk.findMany).toHaveBeenCalledWith({
+        where: {
+          unitId: 'unit-1',
+          strategicPlanId: 'plan-123',
         },
         include: expect.any(Object),
         orderBy: { createdAt: 'desc' },

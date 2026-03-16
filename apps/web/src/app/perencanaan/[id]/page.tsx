@@ -12,7 +12,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Target, Calendar, CheckCircle2, TrendingUp, Activity, BarChart, ShieldAlert, ClipboardCheck } from "lucide-react";
+import { ArrowLeft, Target, Calendar, CheckCircle2, TrendingUp, Activity, BarChart, ShieldAlert, ClipboardCheck, ArrowRight } from "lucide-react";
+import { RiskLevelBadge } from "@/components/risk/risk-badges";
+import Link from "next/link";
 
 export default function PerencanaanDetailPage() {
   const params = useParams();
@@ -48,8 +50,10 @@ export default function PerencanaanDetailPage() {
 
   const statusColor = {
     DRAFT: "bg-slate-100 text-slate-700",
+    PROPOSED: "bg-yellow-100 text-yellow-700",
     REVIEW: "bg-yellow-100 text-yellow-700",
     APPROVED: "bg-green-100 text-green-700",
+    IN_PROGRESS: "bg-blue-100 text-blue-700",
     ACTIVE: "bg-blue-100 text-blue-700",
     COMPLETED: "bg-purple-100 text-purple-700",
   }[plan.status as string] || "bg-gray-100 text-gray-700";
@@ -72,7 +76,7 @@ export default function PerencanaanDetailPage() {
         </div>
         
         <div className="flex items-center gap-2">
-          {(plan.status === "DRAFT" || plan.status === "REVIEW") && (
+          {(plan.status === "DRAFT" || plan.status === "PROPOSED" || plan.status === "REVIEW") && (
             <Button onClick={handleApprove} disabled={approvePlan.isPending}>
               <CheckCircle2 className="w-4 h-4 mr-2" />
               Setujui Rencana
@@ -230,12 +234,15 @@ export default function PerencanaanDetailPage() {
                   {plan.risks.map((risk: any) => (
                     <div key={risk.id} className="p-4 border rounded-lg bg-white flex justify-between items-center">
                       <div className="flex items-center gap-3">
-                        <Badge variant="outline" className="bg-rose-50 text-rose-700 border-rose-200">
-                          {risk.riskLevel || 'UNKNOWN'}
-                        </Badge>
-                        <span className="font-medium text-slate-800">Resiko Terkait Perencanaan Ini</span>
+                        <RiskLevelBadge level={risk.riskLevel || 'UNKNOWN'} />
+                        <div>
+                          <p className="font-medium text-slate-800">{risk.code} - {risk.category}</p>
+                          <p className="text-xs text-muted-foreground">{risk.status}</p>
+                        </div>
                       </div>
-                      <Button size="sm" variant="ghost">Lihat Detail Mitigasi</Button>
+                      <Link href={`/risk-management/${risk.id}`}>
+                        <Button size="sm" variant="ghost">Lihat Detail Mitigasi <ArrowRight className="w-4 h-4 ml-1" /></Button>
+                      </Link>
                     </div>
                   ))}
                 </div>
@@ -243,9 +250,13 @@ export default function PerencanaanDetailPage() {
                 <div className="text-center py-12 text-muted-foreground">
                   <ShieldAlert className="w-12 h-12 mx-auto mb-3 opacity-30 text-rose-400" />
                   <p>Belum ada risiko yang dipetakan pada rencana ini.</p>
-                  <Button variant="outline" className="mt-4 border-rose-200 text-rose-600 hover:bg-rose-50">Identifikasi Risiko Baru</Button>
                 </div>
               )}
+              <div className="mt-4 flex justify-end">
+                <Link href={`/risk-management/create?strategicPlanId=${plan.id}`}>
+                  <Button variant="outline" className="border-rose-200 text-rose-600 hover:bg-rose-50">Identifikasi Risiko Baru</Button>
+                </Link>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -271,7 +282,9 @@ export default function PerencanaanDetailPage() {
                         </Badge>
                         <span className="font-medium text-slate-800">Audit Terkait Perencanaan</span>
                       </div>
-                      <Button size="sm" variant="ghost">Buka Detail Audit</Button>
+                      <Link href={`/pengawasan/${audit.id}`}>
+                        <Button size="sm" variant="ghost">Buka Detail Audit <ArrowRight className="w-4 h-4 ml-1" /></Button>
+                      </Link>
                     </div>
                   ))}
                 </div>
@@ -279,9 +292,13 @@ export default function PerencanaanDetailPage() {
                 <div className="text-center py-12 text-muted-foreground">
                   <ClipboardCheck className="w-12 h-12 mx-auto mb-3 opacity-30 text-blue-400" />
                   <p>Belum ada rekaman audit internal yang dikaitkan.</p>
-                  <Button variant="outline" className="mt-4 border-blue-200 text-blue-600 hover:bg-blue-50">Jadwalkan Audit Internal</Button>
                 </div>
               )}
+              <div className="mt-4 flex justify-end">
+                 <Link href={`/pengawasan?strategicPlanId=${plan.id}&create=true`}>
+                   <Button variant="outline" className="border-blue-200 text-blue-600 hover:bg-blue-50">Jadwalkan Audit Internal</Button>
+                 </Link>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

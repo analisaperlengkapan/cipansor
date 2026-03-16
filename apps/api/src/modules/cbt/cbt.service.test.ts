@@ -123,6 +123,7 @@ describe('CBT Service', () => {
       vi.mocked(prisma.question.findUnique).mockResolvedValue({
         id: 'q-1',
         points: 10,
+        type: 'ESSAY',
       } as any);
 
       vi.mocked(prisma.examAnswer.upsert).mockResolvedValue({ id: 'ans-1' } as any);

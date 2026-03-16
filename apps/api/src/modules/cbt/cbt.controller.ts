@@ -12,6 +12,11 @@ export class CBTController {
       const user = (req as any).user;
 
       const isAdmin = user.role === 'SUPER_ADMIN' || user.role === 'UNIT_ADMIN';
+
+      if (user.role !== 'SUPER_ADMIN' && !user.unitId) {
+        throw Errors.badRequest('User has no unit assigned');
+      }
+
       const filterUnitId = user.role === 'SUPER_ADMIN' ? (unitId as string) : user.unitId;
 
       const banks = await CBTService.getQuestionBanks({
@@ -43,10 +48,19 @@ export class CBTController {
         throw Errors.badRequest('teacherId is required for admins to create a question bank');
       }
 
+      if (user.role !== 'SUPER_ADMIN' && !user.unitId) {
+        throw Errors.badRequest('User has no unit assigned');
+      }
+
+      const unitId = user.role === 'SUPER_ADMIN' ? req.body.unitId : user.unitId;
+      if (!unitId) {
+        throw Errors.badRequest('unitId is required');
+      }
+
       const bank = await CBTService.createQuestionBank({
         ...req.body,
         teacherId,
-        unitId: user.unitId || req.body.unitId,
+        unitId,
       });
       res.status(201).json({ success: true, data: bank });
     } catch (error) {
@@ -117,10 +131,12 @@ export class CBTController {
       const { unitId, academicYearId, subjectId, search, status } = req.query;
 
       const isAdmin = user.role === 'SUPER_ADMIN' || user.role === 'UNIT_ADMIN';
-      const filterUnitId = user.role === 'SUPER_ADMIN' ? (unitId as string) : user.unitId;
-      if (!filterUnitId && user.role === 'UNIT_ADMIN') {
-        return res.json({ success: true, data: [] });
+
+      if (user.role !== 'SUPER_ADMIN' && !user.unitId) {
+        throw Errors.badRequest('User has no unit assigned');
       }
+
+      const filterUnitId = user.role === 'SUPER_ADMIN' ? (unitId as string) : user.unitId;
 
       const exams = await CBTService.getExams({
         teacherUserId: isAdmin ? undefined : user.id,
@@ -152,11 +168,20 @@ export class CBTController {
         throw Errors.badRequest('teacherId is required for admins to create an exam');
       }
 
+      if (user.role !== 'SUPER_ADMIN' && !user.unitId) {
+        throw Errors.badRequest('User has no unit assigned');
+      }
+
+      const unitId = user.role === 'SUPER_ADMIN' ? req.body.unitId : user.unitId;
+      if (!unitId) {
+        throw Errors.badRequest('unitId is required');
+      }
+
       const exam = await CBTService.createExam(
         {
           ...req.body,
           teacherId,
-          unitId: user.unitId || req.body.unitId,
+          unitId,
         },
         user
       );

@@ -61,6 +61,7 @@ function GradeQuestionForm({
       <div className="space-y-2 flex-1">
         <label className="text-sm font-medium">Nilai / Poin</label>
         <Input
+          name="score"
           type="number"
           value={score}
           onChange={(e) => setScore(e.target.value)}

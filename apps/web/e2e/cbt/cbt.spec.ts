@@ -40,7 +40,7 @@ test.describe("CBT Exams & Grading", () => {
               class: { name: "Kelas 10A" },
               scheduledAt: new Date().toISOString(),
               duration: 90,
-              status: "ACTIVE",
+              status: "ONGOING",
               _count: { attempts: 2 },
             },
           ],
@@ -116,7 +116,7 @@ test.describe("CBT Exams & Grading", () => {
           data: {
             id: "exam-1",
             title: "Ujian Akhir Semester Ganjil",
-            status: "ACTIVE",
+            status: "ONGOING",
             attempts: [
               {
                 id: "attempt-1",

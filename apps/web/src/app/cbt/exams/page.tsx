@@ -106,9 +106,9 @@ export default function ExamsPage() {
                       <TableCell>
                         <Badge
                           variant={
-                            exam.status === "COMPLETED"
+                            exam.status === "COMPLETED" || exam.status === "GRADED"
                               ? "default"
-                              : exam.status === "ACTIVE"
+                              : exam.status === "ONGOING"
                                 ? "secondary"
                                 : "outline"
                           }

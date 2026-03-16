@@ -112,12 +112,24 @@ export const createTraining = asyncHandler(async (req: Request, res: Response) =
 });
 
 export const updateTraining = asyncHandler(async (req: Request, res: Response) => {
+  const existing = await talentaService.getTrainingById(req.params.id);
+  if (!existing) throw Errors.notFound('Training program not found');
+  if (!isPrivileged(req.user?.role) && existing.unitId !== req.user?.unitId) {
+    throw Errors.forbidden('Access denied');
+  }
+
   const body = updateTrainingSchema.parse(req.body);
   const training = await talentaService.updateTraining(req.params.id, body);
   res.json({ success: true, data: training });
 });
 
 export const deleteTraining = asyncHandler(async (req: Request, res: Response) => {
+  const existing = await talentaService.getTrainingById(req.params.id);
+  if (!existing) throw Errors.notFound('Training program not found');
+  if (!isPrivileged(req.user?.role) && existing.unitId !== req.user?.unitId) {
+    throw Errors.forbidden('Access denied');
+  }
+
   await talentaService.deleteTraining(req.params.id);
   res.json({ success: true, message: 'Training program deleted' });
 });

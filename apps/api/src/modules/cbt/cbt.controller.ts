@@ -94,6 +94,79 @@ export class CBTController {
     }
   }
 
+  // --- Exam Scheduling ---
+  static async getExams(req: Request, res: Response, next: NextFunction) {
+    try {
+      const user = (req as any).user;
+      const { unitId, academicYearId, subjectId, search, status } = req.query;
+      const exams = await CBTService.getExams({
+        teacherId: user.role.includes('ADMIN') ? undefined : user.id,
+        unitId: unitId as string,
+        academicYearId: academicYearId as string,
+        subjectId: subjectId as string,
+        search: search as string,
+        status: status as any,
+      });
+      res.json({ success: true, data: exams });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async createExam(req: Request, res: Response, next: NextFunction) {
+    try {
+      const user = (req as any).user;
+      const exam = await CBTService.createExam(
+        {
+          ...req.body,
+          teacherId: user.id,
+          unitId: req.body.unitId || user.unitId,
+        },
+        user
+      );
+      res.status(201).json({ success: true, data: exam });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getExamMonitoring(req: Request, res: Response, next: NextFunction) {
+    try {
+      const user = (req as any).user;
+      const monitoringData = await CBTService.getExamMonitoring(req.params.examId, user);
+      res.json({ success: true, data: monitoringData });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // --- Teacher Grading ---
+  static async getAttemptForGrading(req: Request, res: Response, next: NextFunction) {
+    try {
+      const user = (req as any).user;
+      const attempt = await CBTService.getAttemptForGrading(req.params.attemptId, user);
+      res.json({ success: true, data: attempt });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async gradeEssayAnswer(req: Request, res: Response, next: NextFunction) {
+    try {
+      const user = (req as any).user;
+      const { questionId, score, isCorrect } = req.body;
+      const result = await CBTService.gradeEssayAnswer(
+        req.params.attemptId,
+        questionId,
+        { score, isCorrect },
+        user
+      );
+      res.json({ success: true, data: result });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   // --- Exam Taking ---
   static async startExam(req: Request, res: Response, next: NextFunction) {
     try {

@@ -52,6 +52,40 @@ router.delete(
   CBTController.deleteQuestion
 );
 
+// --- Exam Scheduling ---
+router.get(
+  '/exams',
+  authenticate,
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
+  CBTController.getExams
+);
+router.post(
+  '/exams',
+  authenticate,
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
+  CBTController.createExam
+);
+router.get(
+  '/exams/:examId/monitoring',
+  authenticate,
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
+  CBTController.getExamMonitoring
+);
+
+// --- Teacher Grading ---
+router.get(
+  '/attempts/:attemptId/grading',
+  authenticate,
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
+  CBTController.getAttemptForGrading
+);
+router.post(
+  '/attempts/:attemptId/grade',
+  authenticate,
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
+  CBTController.gradeEssayAnswer
+);
+
 // --- Student Routes ---
 // Exam Taking
 // Start Exam (examId is the ID of the scheduled Exam)

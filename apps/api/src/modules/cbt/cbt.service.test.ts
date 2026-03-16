@@ -18,6 +18,8 @@ vi.mock('../../lib/prisma', () => ({
       findUnique: vi.fn(),
     },
     exam: {
+      create: vi.fn(),
+      findMany: vi.fn(),
       findUnique: vi.fn(),
     },
     examAttempt: {
@@ -28,6 +30,7 @@ vi.mock('../../lib/prisma', () => ({
     examAnswer: {
       upsert: vi.fn(),
       update: vi.fn(),
+      findMany: vi.fn(),
     },
     $transaction: vi.fn((callback) => callback(prisma)),
   },
@@ -86,6 +89,62 @@ describe('CBT Service', () => {
           { id: 'user-1', role: 'TEACHER' }
         )
       ).rejects.toThrow('You do not have permission');
+    });
+  });
+
+  describe('Exam Scheduling & Grading', () => {
+    it('should create an exam if authorized', async () => {
+      vi.mocked(prisma.questionBank.findUnique).mockResolvedValue({ id: 'bank-1', teacherId: 'user-1' } as any);
+      vi.mocked(prisma.exam.create).mockResolvedValue({ id: 'exam-1' } as any);
+
+      const dto = {
+        unitId: 'unit-1',
+        academicYearId: 'ay-1',
+        subjectId: 'sub-1',
+        classId: 'cls-1',
+        teacherId: 'user-1',
+        type: 'MIDTERM' as any,
+        title: 'UTS Matematika',
+        scheduledAt: new Date(),
+        questionBankId: 'bank-1',
+      };
+
+      await CBTService.createExam(dto, { id: 'user-1', role: 'TEACHER' });
+
+      expect(prisma.exam.create).toHaveBeenCalled();
+    });
+
+    it('should allow teacher to grade essay answers and recalculate total score', async () => {
+      vi.mocked(prisma.examAttempt.findUnique).mockResolvedValue({
+        id: 'attempt-1',
+        exam: { teacherId: 'user-1' },
+      } as any);
+
+      vi.mocked(prisma.examAnswer.upsert).mockResolvedValue({ id: 'ans-1' } as any);
+      vi.mocked(prisma.examAnswer.findMany).mockResolvedValue([
+        { id: 'ans-1', score: 10 },
+        { id: 'ans-2', score: 20 },
+      ] as any);
+      vi.mocked(prisma.examAttempt.update).mockResolvedValue({ id: 'attempt-1', score: 30 } as any);
+
+      const result = await CBTService.gradeEssayAnswer(
+        'attempt-1',
+        'q-1',
+        { score: 10, isCorrect: true },
+        { id: 'user-1', role: 'TEACHER' }
+      );
+
+      expect(prisma.examAnswer.upsert).toHaveBeenCalledWith({
+        where: { attemptId_questionId: { attemptId: 'attempt-1', questionId: 'q-1' } },
+        create: expect.any(Object),
+        update: expect.any(Object),
+      });
+
+      expect(prisma.examAttempt.update).toHaveBeenCalledWith({
+        where: { id: 'attempt-1' },
+        data: { score: 30 },
+      });
+      expect(result.score).toBe(30);
     });
   });
 

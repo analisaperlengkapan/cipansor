@@ -158,7 +158,6 @@ export async function getExamAnalytics(id: string): Promise<ExamAnalyticsData | 
           }
         }
       }
-      }
     }
   });
 

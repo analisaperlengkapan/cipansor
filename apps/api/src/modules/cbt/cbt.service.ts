@@ -31,6 +31,25 @@ interface UpdateQuestionInput {
   order?: number;
 }
 
+interface CreateExamInput {
+  unitId: string;
+  academicYearId: string;
+  subjectId: string;
+  classId: string;
+  teacherId: string;
+  type: any; // ExamType
+  title: string;
+  description?: string;
+  scheduledAt: Date | string;
+  duration?: number;
+  maxScore?: number;
+  passingScore?: number;
+  weight?: number;
+  status?: any; // ExamStatus
+  instructions?: string;
+  questionBankId: string;
+}
+
 export class CBTService {
   // --- Question Banks ---
 
@@ -166,6 +185,190 @@ export class CBTService {
 
     return prisma.question.delete({
       where: { id },
+    });
+  }
+
+  // --- Exam Scheduling ---
+
+  static async getExams(query: {
+    unitId?: string;
+    academicYearId?: string;
+    subjectId?: string;
+    teacherId?: string;
+    search?: string;
+    status?: any;
+  }) {
+    const where: Prisma.ExamWhereInput = {};
+
+    if (query.unitId) where.unitId = query.unitId;
+    if (query.academicYearId) where.academicYearId = query.academicYearId;
+    if (query.subjectId) where.subjectId = query.subjectId;
+    if (query.teacherId) where.teacherId = query.teacherId;
+    if (query.status) where.status = query.status;
+    if (query.search) {
+      where.title = { contains: query.search, mode: 'insensitive' };
+    }
+
+    return prisma.exam.findMany({
+      where,
+      include: {
+        subject: { select: { name: true } },
+        class: { select: { name: true } },
+        questionBank: { select: { title: true, _count: { select: { questions: true } } } },
+        _count: { select: { attempts: true } },
+      },
+      orderBy: { scheduledAt: 'desc' },
+    });
+  }
+
+  static async createExam(data: CreateExamInput, user: { id: string; role: string }) {
+    // Check question bank
+    const bank = await prisma.questionBank.findUnique({
+      where: { id: data.questionBankId },
+      include: { questions: true },
+    });
+    if (!bank) throw Errors.notFound('Question Bank not found');
+
+    if (
+      !user.role.includes('SUPER_ADMIN') &&
+      !user.role.includes('UNIT_ADMIN') &&
+      bank.teacherId !== user.id
+    ) {
+      throw Errors.forbidden('You do not have permission to use this Question Bank');
+    }
+
+    return prisma.exam.create({
+      data: {
+        unitId: data.unitId,
+        academicYearId: data.academicYearId,
+        subjectId: data.subjectId,
+        classId: data.classId,
+        teacherId: data.teacherId,
+        type: data.type || 'MIDTERM',
+        title: data.title,
+        description: data.description,
+        scheduledAt: new Date(data.scheduledAt),
+        duration: data.duration ?? 60,
+        maxScore: (data.maxScore ?? 100) as any,
+        passingScore: (data.passingScore ?? 70) as any,
+        weight: (data.weight ?? 1) as any,
+        status: data.status || 'DRAFT',
+        instructions: data.instructions,
+        questionBankId: data.questionBankId,
+      },
+    });
+  }
+
+  static async getExamMonitoring(examId: string, user: { id: string; role: string }) {
+    const exam = await prisma.exam.findUnique({
+      where: { id: examId },
+      include: {
+        attempts: {
+          include: {
+            student: { select: { id: true, user: { select: { name: true } } } },
+          },
+        },
+      },
+    });
+
+    if (!exam) throw Errors.notFound('Exam not found');
+
+    if (
+      !user.role.includes('SUPER_ADMIN') &&
+      !user.role.includes('UNIT_ADMIN') &&
+      exam.teacherId !== user.id
+    ) {
+      throw Errors.forbidden('You do not have permission to view this exam');
+    }
+
+    return exam;
+  }
+
+  // --- Teacher Grading ---
+
+  static async getAttemptForGrading(attemptId: string, user: { id: string; role: string }) {
+    const attempt = await prisma.examAttempt.findUnique({
+      where: { id: attemptId },
+      include: {
+        student: { select: { id: true, user: { select: { name: true } } } },
+        exam: {
+          include: {
+            questionBank: {
+              include: { questions: true },
+            },
+          },
+        },
+        answers: true,
+      },
+    });
+
+    if (!attempt) throw Errors.notFound('Attempt not found');
+
+    if (
+      !user.role.includes('SUPER_ADMIN') &&
+      !user.role.includes('UNIT_ADMIN') &&
+      attempt.exam.teacherId !== user.id
+    ) {
+      throw Errors.forbidden('You do not have permission to grade this attempt');
+    }
+
+    return attempt;
+  }
+
+  static async gradeEssayAnswer(
+    attemptId: string,
+    questionId: string,
+    grading: { score: number; isCorrect: boolean },
+    user: { id: string; role: string }
+  ) {
+    const attempt = await prisma.examAttempt.findUnique({
+      where: { id: attemptId },
+      include: {
+        exam: { select: { teacherId: true } },
+      },
+    });
+
+    if (!attempt) throw Errors.notFound('Attempt not found');
+
+    if (
+      !user.role.includes('SUPER_ADMIN') &&
+      !user.role.includes('UNIT_ADMIN') &&
+      attempt.exam.teacherId !== user.id
+    ) {
+      throw Errors.forbidden('You do not have permission to grade this attempt');
+    }
+
+    // Update the answer
+    await prisma.examAnswer.upsert({
+      where: {
+        attemptId_questionId: { attemptId, questionId },
+      },
+      create: {
+        attemptId,
+        questionId,
+        answer: null, // Should already exist realistically
+        isCorrect: grading.isCorrect,
+        score: grading.score as any,
+      },
+      update: {
+        isCorrect: grading.isCorrect,
+        score: grading.score as any,
+      },
+    });
+
+    // Recalculate total score for attempt
+    const allAnswers = await prisma.examAnswer.findMany({
+      where: { attemptId },
+    });
+
+    const totalScore = allAnswers.reduce((sum, ans) => {
+      const s = ans.score ? Number(ans.score) : 0;
+      return sum + s;
+    }, 0);
+
+    return prisma.examAttempt.update({
+      where: { id: attemptId },
+      data: { score: totalScore as any },
     });
   }
 
@@ -329,7 +532,7 @@ export class CBTService {
       data: {
         status: 'COMPLETED',
         finishedAt: new Date(),
-        score: new Prisma.Decimal(totalScore),
+        score: totalScore as any,
       },
     });
 

@@ -60,6 +60,82 @@ export const useQuestionBanks = (params?: any) => {
   });
 };
 
+// Exam Scheduling
+
+export const useExams = (params?: any) => {
+  return useQuery({
+    queryKey: ["cbt-exams", params],
+    queryFn: async () => {
+      const { data } = await api.get("/cbt/exams", { params });
+      return data;
+    },
+  });
+};
+
+export const useCreateExam = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: any) => {
+      const { data: res } = await api.post("/cbt/exams", data);
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["cbt-exams"] });
+    },
+  });
+};
+
+export const useExamMonitoring = (examId: string) => {
+  return useQuery({
+    queryKey: ["exam-monitoring", examId],
+    queryFn: async () => {
+      const { data } = await api.get(`/cbt/exams/${examId}/monitoring`);
+      return data.data;
+    },
+    enabled: !!examId,
+  });
+};
+
+// Teacher Grading
+
+export const useAttemptGrading = (attemptId: string) => {
+  return useQuery({
+    queryKey: ["attempt-grading", attemptId],
+    queryFn: async () => {
+      const { data } = await api.get(`/cbt/attempts/${attemptId}/grading`);
+      return data.data;
+    },
+    enabled: !!attemptId,
+  });
+};
+
+export const useGradeAnswer = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      attemptId,
+      questionId,
+      score,
+      isCorrect,
+    }: {
+      attemptId: string;
+      questionId: string;
+      score: number;
+      isCorrect: boolean;
+    }) => {
+      const { data } = await api.post(`/cbt/attempts/${attemptId}/grade`, {
+        questionId,
+        score,
+        isCorrect,
+      });
+      return data.data;
+    },
+    onSuccess: (_, { attemptId }) => {
+      queryClient.invalidateQueries({ queryKey: ["attempt-grading", attemptId] });
+    },
+  });
+};
+
 export const useQuestionBank = (id: string) => {
   return useQuery({
     queryKey: ["question-bank", id],

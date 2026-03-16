@@ -265,6 +265,49 @@ export class TalentaService {
     });
   }
 
+  async getSuccessionById(id: string) {
+    return prisma.successionPlan.findUnique({
+      where: { id },
+    });
+  }
+
+  async updateSuccession(id: string, data: any) {
+    const updateData: any = { ...data };
+
+    // Convert targetDate if provided
+    if (data.targetDate) {
+      updateData.targetDate = new Date(data.targetDate);
+    } else if (data.targetDate === null) {
+      updateData.targetDate = null;
+    }
+
+    // Handle relations
+    if (data.currentHolderId !== undefined) {
+      updateData.currentHolder = data.currentHolderId
+        ? { connect: { id: data.currentHolderId } }
+        : { disconnect: true };
+      delete updateData.currentHolderId;
+    }
+
+    if (data.successorId !== undefined) {
+      updateData.successor = data.successorId
+        ? { connect: { id: data.successorId } }
+        : { disconnect: true };
+      delete updateData.successorId;
+    }
+
+    return prisma.successionPlan.update({
+      where: { id },
+      data: updateData,
+      include: {
+        currentHolder: { select: { id: true, name: true } },
+        successor: {
+          include: { user: { select: { id: true, name: true } } },
+        },
+      },
+    });
+  }
+
   async deleteSuccession(id: string) {
     return prisma.successionPlan.delete({ where: { id } });
   }

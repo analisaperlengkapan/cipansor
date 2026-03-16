@@ -75,3 +75,13 @@ export const createSuccessionSchema = z.object({
   targetDate: z.string().datetime().optional(),
   unitId: z.string().uuid().optional(),
 });
+
+export const updateSuccessionSchema = z.object({
+  positionTitle: z.string().min(1).optional(),
+  currentHolderId: z.string().uuid().nullable().optional(),
+  successorId: z.string().uuid().nullable().optional(),
+  readinessLevel: z.string().optional(),
+  priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']).optional(),
+  notes: z.string().optional(),
+  targetDate: z.string().datetime().nullable().optional(),
+});

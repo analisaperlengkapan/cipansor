@@ -10,12 +10,18 @@ import {
   updateTrainingSchema,
   enrollTrainingSchema,
   createSuccessionSchema,
+  updateSuccessionSchema,
 } from './talenta.validation';
 import { UserRole } from '@prisma/client';
 
-const PRIVILEGED_ROLES: UserRole[] = [UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN];
-function isPrivileged(role?: UserRole): boolean {
-  return role ? PRIVILEGED_ROLES.includes(role) : false;
+function checkOwnership(req: Request, resourceUnitId: string): void {
+  // SUPER_ADMIN can access anything
+  if (req.user?.role === UserRole.SUPER_ADMIN) return;
+
+  // Everyone else (including UNIT_ADMIN) is restricted to their own unit
+  if (resourceUnitId !== req.user?.unitId) {
+    throw Errors.forbidden('Access denied');
+  }
 }
 
 function resolveUnitId(req: Request, bodyUnitId?: string): string {
@@ -27,8 +33,6 @@ function resolveUnitId(req: Request, bodyUnitId?: string): string {
   // Otherwise default to their assigned unit
   const unitId = req.user?.unitId;
   if (!unitId) {
-    // If they have no unitId but are privileged, they must supply one
-    if (isPrivileged(req.user?.role) && bodyUnitId) return bodyUnitId;
     throw Errors.badRequest('Unit ID is required');
   }
   return unitId;
@@ -47,7 +51,7 @@ export const listProfiles = asyncHandler(async (req: Request, res: Response) => 
 export const getProfile = asyncHandler(async (req: Request, res: Response) => {
   const profile = await talentaService.getProfileById(req.params.id);
   if (!profile) throw Errors.notFound('Talent profile not found');
-  if (!isPrivileged(req.user?.role) && profile.unitId !== req.user?.unitId) throw Errors.forbidden('Access denied');
+  checkOwnership(req, profile.unitId);
   res.json({ success: true, data: profile });
 });
 
@@ -61,7 +65,7 @@ export const createProfile = asyncHandler(async (req: Request, res: Response) =>
 export const updateProfile = asyncHandler(async (req: Request, res: Response) => {
   const existing = await talentaService.getProfileById(req.params.id);
   if (!existing) throw Errors.notFound('Talent profile not found');
-  if (!isPrivileged(req.user?.role) && existing.unitId !== req.user?.unitId) throw Errors.forbidden('Access denied');
+  checkOwnership(req, existing.unitId);
   const body = updateTalentProfileSchema.parse(req.body);
   const profile = await talentaService.updateProfile(req.params.id, body);
   res.json({ success: true, data: profile });
@@ -70,7 +74,7 @@ export const updateProfile = asyncHandler(async (req: Request, res: Response) =>
 export const deleteProfile = asyncHandler(async (req: Request, res: Response) => {
   const existing = await talentaService.getProfileById(req.params.id);
   if (!existing) throw Errors.notFound('Talent profile not found');
-  if (!isPrivileged(req.user?.role) && existing.unitId !== req.user?.unitId) throw Errors.forbidden('Access denied');
+  checkOwnership(req, existing.unitId);
   await talentaService.deleteProfile(req.params.id);
   res.json({ success: true, message: 'Talent profile deleted' });
 });
@@ -98,6 +102,7 @@ export const listTrainings = asyncHandler(async (req: Request, res: Response) =>
 export const getTraining = asyncHandler(async (req: Request, res: Response) => {
   const training = await talentaService.getTrainingById(req.params.id);
   if (!training) throw Errors.notFound('Training program not found');
+  checkOwnership(req, training.unitId);
   res.json({ success: true, data: training });
 });
 
@@ -111,18 +116,31 @@ export const createTraining = asyncHandler(async (req: Request, res: Response) =
 });
 
 export const updateTraining = asyncHandler(async (req: Request, res: Response) => {
+  const existing = await talentaService.getTrainingById(req.params.id);
+  if (!existing) throw Errors.notFound('Training program not found');
+  checkOwnership(req, existing.unitId);
+
   const body = updateTrainingSchema.parse(req.body);
   const training = await talentaService.updateTraining(req.params.id, body);
   res.json({ success: true, data: training });
 });
 
 export const deleteTraining = asyncHandler(async (req: Request, res: Response) => {
+  const existing = await talentaService.getTrainingById(req.params.id);
+  if (!existing) throw Errors.notFound('Training program not found');
+  checkOwnership(req, existing.unitId);
+
   await talentaService.deleteTraining(req.params.id);
   res.json({ success: true, message: 'Training program deleted' });
 });
 
 export const enrollTraining = asyncHandler(async (req: Request, res: Response) => {
   const body = enrollTrainingSchema.parse(req.body);
+
+  const program = await talentaService.getTrainingById(body.programId);
+  if (!program) throw Errors.notFound('Training program not found');
+  checkOwnership(req, program.unitId);
+
   const enrollment = await talentaService.enrollUser(body.programId, body.userId);
   res.status(201).json({ success: true, data: enrollment });
 });
@@ -142,7 +160,21 @@ export const createSuccession = asyncHandler(async (req: Request, res: Response)
   res.status(201).json({ success: true, data: succession });
 });
 
+export const updateSuccession = asyncHandler(async (req: Request, res: Response) => {
+  const existing = await talentaService.getSuccessionById(req.params.id);
+  if (!existing) throw Errors.notFound('Succession plan not found');
+  checkOwnership(req, existing.unitId);
+
+  const body = updateSuccessionSchema.parse(req.body);
+  const succession = await talentaService.updateSuccession(req.params.id, body);
+  res.json({ success: true, data: succession });
+});
+
 export const deleteSuccession = asyncHandler(async (req: Request, res: Response) => {
+  const existing = await talentaService.getSuccessionById(req.params.id);
+  if (!existing) throw Errors.notFound('Succession plan not found');
+  checkOwnership(req, existing.unitId);
+
   await talentaService.deleteSuccession(req.params.id);
   res.json({ success: true, message: 'Succession plan deleted' });
 });

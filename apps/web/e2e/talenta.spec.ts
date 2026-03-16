@@ -1,89 +1,175 @@
-import { test, expect } from "./fixtures/auth.fixture";
-import { LoginPage } from "./page-objects";
+import { test, expect } from '@playwright/test';
 
-test.describe("Talenta - Navigation", () => {
-  test("should navigate to talenta page", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
-    await page.waitForTimeout(2000);
-    await page.goto("/talenta");
-    await page.waitForLoadState("domcontentloaded", { timeout: 10000 });
-    expect(page.url()).toMatch(/talenta/);
+// Helper function to mock user login directly via local storage
+async function loginAsAdmin(page: any) {
+  await page.addInitScript(() => {
+    window.localStorage.setItem('accessToken', 'mock-token-admin');
+    window.localStorage.setItem('auth-storage', JSON.stringify({
+      state: {
+        user: { id: "user-1", name: "Admin Test", role: "SUPER_ADMIN", unitId: "unit-1" },
+        isAuthenticated: true,
+      },
+      version: 0
+    }));
+  });
+}
+
+test.describe('Talenta Module End-to-End', () => {
+
+  test.beforeEach(async ({ page }) => {
+    await loginAsAdmin(page);
+
+    // Intercept requests to mock data
+    await page.route('**/api/talenta/profiles*', async (route) => {
+      await route.fulfill({
+        status: 200,
+        json: { success: true, data: [] }
+      });
+    });
+
+    await page.route('**/api/talenta/trainings*', async (route) => {
+      await route.fulfill({
+        status: 200,
+        json: { success: true, data: [] }
+      });
+    });
+
+    await page.route('**/api/talenta/successions', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          json: {
+            success: true,
+            data: [{
+              id: 'succ-test-1',
+              positionTitle: 'Kepala IT',
+              priority: 'HIGH',
+              readinessLevel: 'Siap Sekarang',
+              targetDate: new Date().toISOString(),
+              notes: 'Perlu transisi cepat',
+              currentHolder: null,
+              successor: null
+            }]
+          }
+        });
+      } else if (route.request().method() === 'POST') {
+        await route.fulfill({
+          status: 201,
+          json: { success: true, data: { id: 'new-succ' } }
+        });
+      } else {
+        await route.continue();
+      }
+    });
+
+    await page.route('**/api/talenta/successions/*', async (route) => {
+      if (route.request().method() === 'PUT') {
+        await route.fulfill({
+          status: 200,
+          json: { success: true, data: { id: 'succ-test-1' } }
+        });
+      } else if (route.request().method() === 'DELETE') {
+        await route.fulfill({
+          status: 200,
+          json: { success: true }
+        });
+      } else {
+        await route.continue();
+      }
+    });
+
+    await page.goto('/talenta');
   });
 
-  test("should display talenta content", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
-    await page.waitForTimeout(2000);
-    await page.goto("/talenta");
-    await page.waitForLoadState("domcontentloaded", { timeout: 10000 });
-    const content = await page.content();
-    expect(content.length).toBeGreaterThan(1000);
-    expect(content).toContain("Manajemen Talenta");
-  });
-});
+  test('should render Talenta page properly and navigate tabs', async ({ page }) => {
+    await expect(page.getByRole('heading', { name: 'Manajemen Talenta' })).toBeVisible();
 
-test.describe("Talenta - Features", () => {
-  test("should display talent summary stats", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
-    await page.waitForTimeout(2000);
-    await page.goto("/talenta");
-    await page.waitForLoadState("domcontentloaded", { timeout: 10000 });
+    // Tab Profil Talenta
+    const tabProfiles = page.getByRole('tab', { name: 'Profil Talenta' });
+    await expect(tabProfiles).toBeVisible();
+    await tabProfiles.click();
+    await expect(page.getByRole('button', { name: 'Tambah Profil' })).toBeVisible();
 
-    const hasStats = await page
-      .locator('text="Total Talenta"')
-      .isVisible({ timeout: 5000 })
-      .catch(() => false);
+    // Tab Suksesi
+    const tabSuccession = page.getByRole('tab', { name: 'Suksesi' });
+    await expect(tabSuccession).toBeVisible();
+    await tabSuccession.click();
 
-    expect(hasStats || page.url().includes("talenta")).toBeTruthy();
+    // Check if mocked data is rendered
+    await expect(page.getByText('Kepala IT')).toBeVisible();
+    await expect(page.getByText('HIGH')).toBeVisible();
   });
 
-  test("should display tabs for profiles, trainings, and succession", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
-    await page.waitForTimeout(2000);
-    await page.goto("/talenta");
-    await page.waitForLoadState("domcontentloaded", { timeout: 10000 });
+  test('should open dialog and submit new succession plan', async ({ page }) => {
+    await page.getByRole('tab', { name: 'Suksesi' }).click();
 
-    const hasTabs = await page
-      .locator('text="Profil Talenta"')
-      .isVisible({ timeout: 5000 })
-      .catch(() => false);
+    // Open create dialog
+    await page.getByRole('button', { name: 'Tambah Suksesi' }).click();
+    await expect(page.getByRole('dialog')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Tambah Rencana Suksesi' })).toBeVisible();
 
-    expect(hasTabs || page.url().includes("talenta")).toBeTruthy();
+    // Fill the form
+    await page.getByLabel('Jabatan').fill('Direktur Operasional');
+    await page.getByRole('combobox', { name: 'Opsional' }).click();
+    await page.getByRole('option', { name: 'Tinggi' }).click();
+
+    // Submit
+    await page.getByRole('button', { name: 'Simpan' }).click();
+
+    // Verify toast success
+    await expect(page.getByText('Rencana suksesi berhasil dibuat')).toBeVisible();
+    await expect(page.getByRole('dialog')).not.toBeVisible();
   });
 
-  test("should switch between tabs", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
-    await page.waitForTimeout(2000);
-    await page.goto("/talenta");
-    await page.waitForLoadState("domcontentloaded", { timeout: 10000 });
+  test('should open dialog and update existing succession plan', async ({ page }) => {
+    await page.getByRole('tab', { name: 'Suksesi' }).click();
 
-    const trainingsTab = page.locator('text="Pelatihan"').first();
-    if (await trainingsTab.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await trainingsTab.click();
-      await page.waitForTimeout(500);
-    }
-    expect(page.url()).toMatch(/talenta/);
+    // Ensure item exists
+    await expect(page.getByText('Kepala IT')).toBeVisible();
+
+    // Hover over card and click edit button. Since we use Lucide Edit icon, let's find the button within the card.
+    const card = page.locator('.group').filter({ hasText: 'Kepala IT' });
+    await card.hover();
+
+    // Click the Edit button (it should be visible on hover)
+    const editBtn = card.locator('button.text-blue-500');
+    await editBtn.click();
+
+    // Dialog should be open with correct title
+    await expect(page.getByRole('dialog')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Edit Rencana Suksesi' })).toBeVisible();
+
+    // Expect the input to be pre-filled
+    await expect(page.getByLabel('Jabatan')).toHaveValue('Kepala IT');
+
+    // Change value
+    await page.getByLabel('Jabatan').fill('Kepala IT (Updated)');
+    await page.getByRole('button', { name: 'Simpan' }).click();
+
+    // Verify toast success
+    await expect(page.getByText('Rencana suksesi berhasil diperbarui')).toBeVisible();
+    await expect(page.getByRole('dialog')).not.toBeVisible();
   });
-});
 
-test.describe("Talenta - Performance", () => {
-  test("should load page within timeout", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
-    await page.waitForTimeout(2000);
-    const startTime = Date.now();
-    await page.goto("/talenta");
-    await page.waitForLoadState("domcontentloaded", { timeout: 15000 });
-    expect(Date.now() - startTime).toBeLessThan(15000);
+  test('should open confirm dialog and delete succession plan', async ({ page }) => {
+    await page.getByRole('tab', { name: 'Suksesi' }).click();
+
+    // Hover over card and click delete button.
+    const card = page.locator('.group').filter({ hasText: 'Kepala IT' });
+    await card.hover();
+
+    // Click the Delete button
+    const deleteBtn = card.locator('button.text-destructive');
+    await deleteBtn.click();
+
+    // Confirm Dialog should be open
+    await expect(page.getByRole('dialog')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Hapus Data?' })).toBeVisible();
+
+    // Confirm deletion
+    await page.getByRole('button', { name: 'Hapus' }).click();
+
+    // Verify toast success
+    await expect(page.getByText('Rencana suksesi berhasil dihapus')).toBeVisible();
   });
 });

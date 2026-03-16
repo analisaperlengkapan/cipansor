@@ -346,37 +346,39 @@ export class CBTService {
       throw Errors.forbidden('You do not have permission to grade this attempt');
     }
 
-    // Update the answer
-    await prisma.examAnswer.upsert({
-      where: {
-        attemptId_questionId: { attemptId, questionId },
-      },
-      create: {
-        attemptId,
-        questionId,
-        answer: null, // Should already exist realistically
-        isCorrect: grading.isCorrect,
-        score: grading.score as any,
-      },
-      update: {
-        isCorrect: grading.isCorrect,
-        score: grading.score as any,
-      },
-    });
+    return prisma.$transaction(async (tx) => {
+      // Update the answer
+      await tx.examAnswer.upsert({
+        where: {
+          attemptId_questionId: { attemptId, questionId },
+        },
+        create: {
+          attemptId,
+          questionId,
+          answer: null, // Should already exist realistically
+          isCorrect: grading.isCorrect,
+          score: grading.score as any,
+        },
+        update: {
+          isCorrect: grading.isCorrect,
+          score: grading.score as any,
+        },
+      });
 
-    // Recalculate total score for attempt
-    const allAnswers = await prisma.examAnswer.findMany({
-      where: { attemptId },
-    });
+      // Recalculate total score for attempt
+      const allAnswers = await tx.examAnswer.findMany({
+        where: { attemptId },
+      });
 
-    const totalScore = allAnswers.reduce((sum, ans) => {
-      const s = ans.score ? Number(ans.score) : 0;
-      return sum + s;
-    }, 0);
+      const totalScore = allAnswers.reduce((sum, ans) => {
+        const s = ans.score ? Number(ans.score) : 0;
+        return sum + s;
+      }, 0);
 
-    return prisma.examAttempt.update({
-      where: { id: attemptId },
-      data: { score: totalScore as any },
+      return tx.examAttempt.update({
+        where: { id: attemptId },
+        data: { score: totalScore as any },
+      });
     });
   }
 

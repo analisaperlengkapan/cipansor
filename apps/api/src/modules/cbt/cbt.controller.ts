@@ -29,15 +29,14 @@ export class CBTController {
     try {
       const user = (req as any).user;
 
-      let teacherId = user.id; // fallback or error later
       const teacher = await prisma.teacher.findUnique({ where: { userId: user.id } });
-      if (teacher) {
-        teacherId = teacher.id;
+      if (!teacher) {
+        throw Errors.badRequest('No teacher profile found for this user');
       }
 
       const bank = await CBTService.createQuestionBank({
         ...req.body,
-        teacherId, // Force creator
+        teacherId: teacher.id, // Force creator
         unitId: user.unitId || req.body.unitId, // Fallback if user has no unit
       });
       res.status(201).json({ success: true, data: bank });
@@ -125,16 +124,15 @@ export class CBTController {
     try {
       const user = (req as any).user;
 
-      let teacherId = user.id; // fallback or error later
       const teacher = await prisma.teacher.findUnique({ where: { userId: user.id } });
-      if (teacher) {
-        teacherId = teacher.id;
+      if (!teacher) {
+        throw Errors.badRequest('No teacher profile found for this user');
       }
 
       const exam = await CBTService.createExam(
         {
           ...req.body,
-          teacherId,
+          teacherId: teacher.id,
           unitId: req.body.unitId || user.unitId,
         },
         user

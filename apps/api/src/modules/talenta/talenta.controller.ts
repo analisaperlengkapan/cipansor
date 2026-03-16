@@ -136,6 +136,11 @@ export const deleteTraining = asyncHandler(async (req: Request, res: Response) =
 
 export const enrollTraining = asyncHandler(async (req: Request, res: Response) => {
   const body = enrollTrainingSchema.parse(req.body);
+
+  const program = await talentaService.getTrainingById(body.programId);
+  if (!program) throw Errors.notFound('Training program not found');
+  checkOwnership(req, program.unitId);
+
   const enrollment = await talentaService.enrollUser(body.programId, body.userId);
   res.status(201).json({ success: true, data: enrollment });
 });

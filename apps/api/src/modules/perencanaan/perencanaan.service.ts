@@ -2,9 +2,9 @@ import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 const PlanStatus = {
   DRAFT: 'DRAFT',
-  REVIEW: 'REVIEW',
+  PROPOSED: 'PROPOSED',
   APPROVED: 'APPROVED',
-  ACTIVE: 'ACTIVE',
+  IN_PROGRESS: 'IN_PROGRESS',
   COMPLETED: 'COMPLETED',
   CANCELLED: 'CANCELLED',
 };

@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { CBTService } from './cbt.service';
 import { Errors } from '@/middleware/error';
+import { prisma } from '@/lib/prisma';
 
 export class CBTController {
   // --- Banks ---
@@ -27,9 +28,16 @@ export class CBTController {
   static async createQuestionBank(req: Request, res: Response, next: NextFunction) {
     try {
       const user = (req as any).user;
+
+      let teacherId = user.id; // fallback or error later
+      const teacher = await prisma.teacher.findUnique({ where: { userId: user.id } });
+      if (teacher) {
+        teacherId = teacher.id;
+      }
+
       const bank = await CBTService.createQuestionBank({
         ...req.body,
-        teacherId: user.id, // Force creator
+        teacherId, // Force creator
         unitId: user.unitId || req.body.unitId, // Fallback if user has no unit
       });
       res.status(201).json({ success: true, data: bank });
@@ -100,7 +108,7 @@ export class CBTController {
       const user = (req as any).user;
       const { unitId, academicYearId, subjectId, search, status } = req.query;
       const exams = await CBTService.getExams({
-        teacherId: user.role.includes('ADMIN') ? undefined : user.id,
+        teacherUserId: user.role.includes('ADMIN') ? undefined : user.id,
         unitId: unitId as string,
         academicYearId: academicYearId as string,
         subjectId: subjectId as string,
@@ -116,10 +124,17 @@ export class CBTController {
   static async createExam(req: Request, res: Response, next: NextFunction) {
     try {
       const user = (req as any).user;
+
+      let teacherId = user.id; // fallback or error later
+      const teacher = await prisma.teacher.findUnique({ where: { userId: user.id } });
+      if (teacher) {
+        teacherId = teacher.id;
+      }
+
       const exam = await CBTService.createExam(
         {
           ...req.body,
-          teacherId: user.id,
+          teacherId,
           unitId: req.body.unitId || user.unitId,
         },
         user

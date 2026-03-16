@@ -102,13 +102,16 @@ export class CBTService {
   }
 
   static async deleteQuestionBank(id: string, user: { id: string; role: string }) {
-    const bank = await prisma.questionBank.findUnique({ where: { id } });
+    const bank = await prisma.questionBank.findUnique({
+      where: { id },
+      include: { teacher: { select: { userId: true } } },
+    });
     if (!bank) throw Errors.notFound('Question Bank not found');
 
     if (
       !user.role.includes('SUPER_ADMIN') &&
       !user.role.includes('UNIT_ADMIN') &&
-      bank.teacherId !== user.id
+      bank.teacher.userId !== user.id
     ) {
       throw Errors.forbidden('You do not have permission to delete this Question Bank');
     }
@@ -123,13 +126,16 @@ export class CBTService {
   // --- Questions ---
 
   static async addQuestion(data: CreateQuestionInput, user: { id: string; role: string }) {
-    const bank = await prisma.questionBank.findUnique({ where: { id: data.bankId } });
+    const bank = await prisma.questionBank.findUnique({
+      where: { id: data.bankId },
+      include: { teacher: { select: { userId: true } } },
+    });
     if (!bank) throw Errors.notFound('Question Bank not found');
 
     if (
       !user.role.includes('SUPER_ADMIN') &&
       !user.role.includes('UNIT_ADMIN') &&
-      bank.teacherId !== user.id
+      bank.teacher.userId !== user.id
     ) {
       throw Errors.forbidden('You do not have permission to add questions to this Question Bank');
     }
@@ -150,14 +156,14 @@ export class CBTService {
   ) {
     const question = await prisma.question.findUnique({
       where: { id },
-      include: { bank: true },
+      include: { bank: { include: { teacher: { select: { userId: true } } } } },
     });
     if (!question) throw Errors.notFound('Question not found');
 
     if (
       !user.role.includes('SUPER_ADMIN') &&
       !user.role.includes('UNIT_ADMIN') &&
-      question.bank.teacherId !== user.id
+      question.bank.teacher.userId !== user.id
     ) {
       throw Errors.forbidden('You do not have permission to update this question');
     }
@@ -171,14 +177,14 @@ export class CBTService {
   static async deleteQuestion(id: string, user: { id: string; role: string }) {
     const question = await prisma.question.findUnique({
       where: { id },
-      include: { bank: true },
+      include: { bank: { include: { teacher: { select: { userId: true } } } } },
     });
     if (!question) throw Errors.notFound('Question not found');
 
     if (
       !user.role.includes('SUPER_ADMIN') &&
       !user.role.includes('UNIT_ADMIN') &&
-      question.bank.teacherId !== user.id
+      question.bank.teacher.userId !== user.id
     ) {
       throw Errors.forbidden('You do not have permission to delete this question');
     }
@@ -194,7 +200,7 @@ export class CBTService {
     unitId?: string;
     academicYearId?: string;
     subjectId?: string;
-    teacherId?: string;
+    teacherUserId?: string;
     search?: string;
     status?: any;
   }) {
@@ -203,7 +209,7 @@ export class CBTService {
     if (query.unitId) where.unitId = query.unitId;
     if (query.academicYearId) where.academicYearId = query.academicYearId;
     if (query.subjectId) where.subjectId = query.subjectId;
-    if (query.teacherId) where.teacherId = query.teacherId;
+    if (query.teacherUserId) where.teacher = { userId: query.teacherUserId };
     if (query.status) where.status = query.status;
     if (query.search) {
       where.title = { contains: query.search, mode: 'insensitive' };
@@ -225,14 +231,14 @@ export class CBTService {
     // Check question bank
     const bank = await prisma.questionBank.findUnique({
       where: { id: data.questionBankId },
-      include: { questions: true },
+      include: { questions: true, teacher: { select: { userId: true } } },
     });
     if (!bank) throw Errors.notFound('Question Bank not found');
 
     if (
       !user.role.includes('SUPER_ADMIN') &&
       !user.role.includes('UNIT_ADMIN') &&
-      bank.teacherId !== user.id
+      bank.teacher.userId !== user.id
     ) {
       throw Errors.forbidden('You do not have permission to use this Question Bank');
     }
@@ -263,6 +269,7 @@ export class CBTService {
     const exam = await prisma.exam.findUnique({
       where: { id: examId },
       include: {
+        teacher: { select: { userId: true } },
         attempts: {
           include: {
             student: { select: { id: true, user: { select: { name: true } } } },
@@ -276,7 +283,7 @@ export class CBTService {
     if (
       !user.role.includes('SUPER_ADMIN') &&
       !user.role.includes('UNIT_ADMIN') &&
-      exam.teacherId !== user.id
+      exam.teacher.userId !== user.id
     ) {
       throw Errors.forbidden('You do not have permission to view this exam');
     }
@@ -293,6 +300,7 @@ export class CBTService {
         student: { select: { id: true, user: { select: { name: true } } } },
         exam: {
           include: {
+            teacher: { select: { userId: true } },
             questionBank: {
               include: { questions: true },
             },
@@ -307,7 +315,7 @@ export class CBTService {
     if (
       !user.role.includes('SUPER_ADMIN') &&
       !user.role.includes('UNIT_ADMIN') &&
-      attempt.exam.teacherId !== user.id
+      attempt.exam.teacher.userId !== user.id
     ) {
       throw Errors.forbidden('You do not have permission to grade this attempt');
     }
@@ -324,7 +332,7 @@ export class CBTService {
     const attempt = await prisma.examAttempt.findUnique({
       where: { id: attemptId },
       include: {
-        exam: { select: { teacherId: true } },
+        exam: { select: { teacher: { select: { userId: true } } } },
       },
     });
 
@@ -333,7 +341,7 @@ export class CBTService {
     if (
       !user.role.includes('SUPER_ADMIN') &&
       !user.role.includes('UNIT_ADMIN') &&
-      attempt.exam.teacherId !== user.id
+      attempt.exam.teacher.userId !== user.id
     ) {
       throw Errors.forbidden('You do not have permission to grade this attempt');
     }

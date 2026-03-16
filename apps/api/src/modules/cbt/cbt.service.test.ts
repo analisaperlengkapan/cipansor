@@ -57,7 +57,7 @@ describe('CBT Service', () => {
     });
 
     it('should add question to bank if authorized', async () => {
-      vi.mocked(prisma.questionBank.findUnique).mockResolvedValue({ id: 'bank-1', teacherId: 'user-1' } as any);
+      vi.mocked(prisma.questionBank.findUnique).mockResolvedValue({ id: 'bank-1', teacher: { userId: 'user-1' } } as any);
       vi.mocked(prisma.question.create).mockResolvedValue({ id: 'q-1' } as any);
 
       const dto = {
@@ -81,7 +81,7 @@ describe('CBT Service', () => {
     });
 
     it('should throw error if unauthorized to add question', async () => {
-      vi.mocked(prisma.questionBank.findUnique).mockResolvedValue({ id: 'bank-1', teacherId: 'user-2' } as any);
+      vi.mocked(prisma.questionBank.findUnique).mockResolvedValue({ id: 'bank-1', teacher: { userId: 'user-2' } } as any);
 
       await expect(
         CBTService.addQuestion(
@@ -94,7 +94,7 @@ describe('CBT Service', () => {
 
   describe('Exam Scheduling & Grading', () => {
     it('should create an exam if authorized', async () => {
-      vi.mocked(prisma.questionBank.findUnique).mockResolvedValue({ id: 'bank-1', teacherId: 'user-1' } as any);
+      vi.mocked(prisma.questionBank.findUnique).mockResolvedValue({ id: 'bank-1', teacher: { userId: 'user-1' } } as any);
       vi.mocked(prisma.exam.create).mockResolvedValue({ id: 'exam-1' } as any);
 
       const dto = {
@@ -117,7 +117,7 @@ describe('CBT Service', () => {
     it('should allow teacher to grade essay answers and recalculate total score', async () => {
       vi.mocked(prisma.examAttempt.findUnique).mockResolvedValue({
         id: 'attempt-1',
-        exam: { teacherId: 'user-1' },
+        exam: { teacher: { userId: 'user-1' } },
       } as any);
 
       vi.mocked(prisma.examAnswer.upsert).mockResolvedValue({ id: 'ans-1' } as any);

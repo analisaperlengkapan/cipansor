@@ -1,17 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { Prisma } from '@prisma/client';
-
-// Note: Re-declaring the enum here is a workaround for Vitest
-// failing to mock Enums off of `@prisma/client` properly without throwing
-// 'undefined is not a constructor' or missing property errors.
-const PlanStatus = {
-  DRAFT: 'DRAFT',
-  REVIEW: 'REVIEW',
-  APPROVED: 'APPROVED',
-  ACTIVE: 'ACTIVE',
-  COMPLETED: 'COMPLETED',
-  CANCELLED: 'CANCELLED',
-};
+import { Prisma, PlanStatus } from '@prisma/client';
 
 export class PerencanaanService {
   // ==================== STRATEGIC PLANS ====================
@@ -111,7 +99,8 @@ export class PerencanaanService {
     return prisma.strategicPlan.update({
       where: { id },
       data: {
-        status: PlanStatus.APPROVED as any,
+        // String casting allows the update without triggering Vitest Prisma Enum mock issues
+        status: 'APPROVED' as PlanStatus,
         approvedBy: { connect: { id: approvedById } },
         approvedAt: new Date(),
       },

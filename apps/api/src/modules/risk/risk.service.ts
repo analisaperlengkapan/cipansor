@@ -120,9 +120,10 @@ export class RiskService {
   }
 
   // Helpers
-  // Note: Parameter types were reverted to standard strings rather than
-  // Prisma Enums (RiskLikelihood, RiskImpact) to avoid Vitest mock instantiation errors.
-  private calculateRiskScore(likelihood: string, impact: string): number {
+  private calculateRiskScore(likelihood: RiskLikelihood, impact: RiskImpact): number {
+    // Note: We use a string key lookup here (`likelihood as string`) instead of directly
+    // referencing Prisma Enums as object keys to prevent Vitest mocking issues during testing,
+    // while still maintaining the strong typings for the method parameters in production code.
     const likelihoodMap: Record<string, number> = {
       RARE: 1,
       UNLIKELY: 2,
@@ -144,8 +145,9 @@ export class RiskService {
     return l * i;
   }
 
-  // Note: Return type manually casted to avoid Vitest mock errors with RiskLevel Enum.
   private determineRiskLevel(score: number): RiskLevel {
+    // Using string casting to 'RiskLevel' to satisfy Prisma types in production
+    // without triggering enum initialization crashes in vitest mocks.
     if (score >= 20) return 'EXTREME' as RiskLevel; // 20, 25
     if (score >= 10) return 'HIGH' as RiskLevel; // 10, 12, 15, 16
     if (score >= 5) return 'MEDIUM' as RiskLevel; // 5, 6, 8, 9

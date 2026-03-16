@@ -37,6 +37,7 @@ import { useAuthStore } from "@/stores/auth";
 const examSchema = z.object({
   title: z.string().min(3, "Judul minimal 3 karakter"),
   description: z.string().optional(),
+  type: z.enum(["DAILY_TEST", "MIDTERM", "FINAL", "PRACTICE"]).default("MIDTERM"),
   unitId: z.string().min(1, "Unit harus diisi"),
   academicYearId: z.string().min(1, "Tahun Ajaran harus diisi"),
   subjectId: z.string().min(1, "Mata Pelajaran harus diisi"),
@@ -76,6 +77,7 @@ export default function NewExamPage() {
     defaultValues: {
       title: "",
       description: "",
+      type: "MIDTERM",
       unitId: "",
       academicYearId: "",
       subjectId: "",
@@ -127,19 +129,45 @@ export default function NewExamPage() {
                 onSubmit={form.handleSubmit(onSubmit)}
                 className="space-y-6"
               >
-                <FormField
-                  control={form.control}
-                  name="title"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Judul Ujian</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Contoh: UTS Matematika Ganjil" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="title"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Judul Ujian</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Contoh: UTS Matematika Ganjil" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="type"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Tipe Ujian</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Pilih Tipe Ujian" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="DAILY_TEST">Ulangan Harian</SelectItem>
+                            <SelectItem value="MIDTERM">Ujian Tengah Semester (UTS)</SelectItem>
+                            <SelectItem value="FINAL">Ujian Akhir Semester (UAS)</SelectItem>
+                            <SelectItem value="PRACTICE">Latihan/Simulasi</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <FormField

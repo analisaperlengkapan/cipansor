@@ -11,10 +11,13 @@ export class CBTController {
       const { unitId, subjectId, search } = req.query;
       const user = (req as any).user;
 
+      const isAdmin = user.role === 'SUPER_ADMIN' || user.role === 'UNIT_ADMIN';
+      const filterUnitId = user.role === 'SUPER_ADMIN' ? (unitId as string) : user.unitId;
+
       const banks = await CBTService.getQuestionBanks({
-        unitId: unitId as string,
+        unitId: filterUnitId,
         subjectId: subjectId as string,
-        teacherUserId: user.role.includes('ADMIN') ? undefined : user.id, // Admins see all, teachers see theirs
+        teacherUserId: isAdmin ? undefined : user.id, // Admins see all in their scope, teachers see theirs
         search: search as string,
       });
 
@@ -27,9 +30,10 @@ export class CBTController {
   static async createQuestionBank(req: Request, res: Response, next: NextFunction) {
     try {
       const user = (req as any).user;
+      const isAdmin = user.role === 'SUPER_ADMIN' || user.role === 'UNIT_ADMIN';
 
       let teacherId = req.body.teacherId;
-      if (!user.role.includes('ADMIN')) {
+      if (!isAdmin) {
         const teacher = await prisma.teacher.findUnique({ where: { userId: user.id } });
         if (!teacher) {
           throw Errors.badRequest('No teacher profile found for this user');
@@ -111,9 +115,13 @@ export class CBTController {
     try {
       const user = (req as any).user;
       const { unitId, academicYearId, subjectId, search, status } = req.query;
+
+      const isAdmin = user.role === 'SUPER_ADMIN' || user.role === 'UNIT_ADMIN';
+      const filterUnitId = user.role === 'SUPER_ADMIN' ? (unitId as string) : user.unitId;
+
       const exams = await CBTService.getExams({
-        teacherUserId: user.role.includes('ADMIN') ? undefined : user.id,
-        unitId: unitId as string,
+        teacherUserId: isAdmin ? undefined : user.id,
+        unitId: filterUnitId,
         academicYearId: academicYearId as string,
         subjectId: subjectId as string,
         search: search as string,
@@ -128,9 +136,10 @@ export class CBTController {
   static async createExam(req: Request, res: Response, next: NextFunction) {
     try {
       const user = (req as any).user;
+      const isAdmin = user.role === 'SUPER_ADMIN' || user.role === 'UNIT_ADMIN';
 
       let teacherId = req.body.teacherId;
-      if (!user.role.includes('ADMIN')) {
+      if (!isAdmin) {
         const teacher = await prisma.teacher.findUnique({ where: { userId: user.id } });
         if (!teacher) {
           throw Errors.badRequest('No teacher profile found for this user');

@@ -240,7 +240,6 @@ export class CBTService {
       include: { questions: true, teacher: { select: { userId: true } } },
     });
     if (!bank) throw Errors.notFound('Question Bank not found');
-    if (!bank.isActive) throw Errors.badRequest('This Question Bank has been deactivated');
 
     if (
       !user.role.includes('SUPER_ADMIN') &&
@@ -358,6 +357,10 @@ export class CBTService {
 
     if (question.bankId !== attempt.exam.questionBankId) {
       throw Errors.badRequest('Question does not belong to this exam');
+    }
+
+    if (question.type !== 'ESSAY') {
+      throw Errors.badRequest('Only ESSAY questions can be manually graded');
     }
 
     if (

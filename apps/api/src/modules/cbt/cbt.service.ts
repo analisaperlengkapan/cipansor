@@ -240,6 +240,7 @@ export class CBTService {
       include: { questions: true, teacher: { select: { userId: true } } },
     });
     if (!bank) throw Errors.notFound('Question Bank not found');
+    if (!bank.isActive) throw Errors.badRequest('This Question Bank has been deactivated');
 
     if (
       !user.role.includes('SUPER_ADMIN') &&

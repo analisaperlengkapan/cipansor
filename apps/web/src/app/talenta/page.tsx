@@ -1,7 +1,7 @@
-import { Edit } from "lucide-react";
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { Edit } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -368,6 +368,16 @@ function SuccessionFormDialog({ onClose, initialData }: { onClose: () => void; i
       targetDate: initialData?.targetDate ? new Date(initialData.targetDate).toISOString().split('T')[0] : ""
     },
   });
+
+  useEffect(() => {
+    form.reset({
+      positionTitle: initialData?.positionTitle || "",
+      priority: initialData?.priority || undefined,
+      readinessLevel: initialData?.readinessLevel || "",
+      notes: initialData?.notes || "",
+      targetDate: initialData?.targetDate ? new Date(initialData.targetDate).toISOString().split('T')[0] : ""
+    });
+  }, [initialData, form]);
 
   const onSubmit = async (values: z.infer<typeof successionFormSchema>) => {
     const payload = {

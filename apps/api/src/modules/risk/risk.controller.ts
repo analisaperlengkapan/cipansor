@@ -31,6 +31,7 @@ export const listRisks = asyncHandler(async (req: Request, res: Response) => {
   const query = listRiskQuerySchema.parse({
     category: req.query.category,
     riskLevel: req.query.riskLevel,
+    strategicPlanId: req.query.strategicPlanId,
     unitId: targetUnitId,
   });
 

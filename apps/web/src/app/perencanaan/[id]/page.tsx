@@ -50,8 +50,10 @@ export default function PerencanaanDetailPage() {
 
   const statusColor = {
     DRAFT: "bg-slate-100 text-slate-700",
+    PROPOSED: "bg-yellow-100 text-yellow-700",
     REVIEW: "bg-yellow-100 text-yellow-700",
     APPROVED: "bg-green-100 text-green-700",
+    IN_PROGRESS: "bg-blue-100 text-blue-700",
     ACTIVE: "bg-blue-100 text-blue-700",
     COMPLETED: "bg-purple-100 text-purple-700",
   }[plan.status as string] || "bg-gray-100 text-gray-700";
@@ -74,7 +76,7 @@ export default function PerencanaanDetailPage() {
         </div>
         
         <div className="flex items-center gap-2">
-          {(plan.status === "DRAFT" || plan.status === "REVIEW") && (
+          {(plan.status === "DRAFT" || plan.status === "PROPOSED" || plan.status === "REVIEW") && (
             <Button onClick={handleApprove} disabled={approvePlan.isPending}>
               <CheckCircle2 className="w-4 h-4 mr-2" />
               Setujui Rencana

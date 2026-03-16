@@ -118,6 +118,9 @@ export class CBTController {
 
       const isAdmin = user.role === 'SUPER_ADMIN' || user.role === 'UNIT_ADMIN';
       const filterUnitId = user.role === 'SUPER_ADMIN' ? (unitId as string) : user.unitId;
+      if (!filterUnitId && user.role === 'UNIT_ADMIN') {
+        return res.json({ success: true, data: [] });
+      }
 
       const exams = await CBTService.getExams({
         teacherUserId: isAdmin ? undefined : user.id,

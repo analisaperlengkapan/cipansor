@@ -408,7 +408,7 @@ function SuccessionFormDialog({ onClose, initialData }: { onClose: () => void; i
             <FormField control={form.control} name="priority" render={({ field }) => (
               <FormItem>
                 <FormLabel>Prioritas</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl><SelectTrigger><SelectValue placeholder="Opsional" /></SelectTrigger></FormControl>
                   <SelectContent>
                     <SelectItem value="LOW">Rendah</SelectItem>

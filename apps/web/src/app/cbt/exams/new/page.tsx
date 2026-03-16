@@ -27,6 +27,10 @@ import {
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useCreateExam, useQuestionBanks } from "@/hooks/use-cbt";
+import { useUnits } from "@/hooks/use-units";
+import { useAcademicYears } from "@/hooks/use-academic-years";
+import { useSubjects } from "@/hooks/use-curriculum";
+import { useClasses } from "@/hooks/use-classes";
 
 const examSchema = z.object({
   title: z.string().min(3, "Judul minimal 3 karakter"),
@@ -48,17 +52,26 @@ export default function NewExamPage() {
   const createExam = useCreateExam();
   const { data: banksRes } = useQuestionBanks();
 
+  const { data: unitsRes } = useUnits({ limit: 100 });
+  const { data: academicYearsRes } = useAcademicYears({ limit: 100 });
+  const { data: subjectsRes } = useSubjects();
+  const { data: classesRes } = useClasses({ limit: 100 });
+
   const banks = banksRes?.data || [];
+  const units = Array.isArray(unitsRes) ? unitsRes : ((unitsRes as any)?.data || []);
+  const academicYears = academicYearsRes?.data || [];
+  const subjects = Array.isArray(subjectsRes) ? subjectsRes : ((subjectsRes as any)?.data || []);
+  const classes = classesRes?.data || [];
 
   const form = useForm<z.infer<typeof examSchema>>({
     resolver: zodResolver(examSchema) as any,
     defaultValues: {
       title: "",
       description: "",
-      unitId: "cb021d7f-2b36-42d4-9d58-941ea5d8a9e8", // placeholder for local dev
-      academicYearId: "c20ad411-b0e5-4d7a-85b3-855728a0edce",
-      subjectId: "f47b2c01-8b3d-4c3d-bc8e-170f806e0c7a",
-      classId: "ab9d1e8c-84d4-4a8b-98a4-0ef66e85d4d3",
+      unitId: "",
+      academicYearId: "",
+      subjectId: "",
+      classId: "",
       questionBankId: "",
       scheduledAt: "",
       duration: 60,
@@ -114,6 +127,100 @@ export default function NewExamPage() {
                     </FormItem>
                   )}
                 />
+
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="unitId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Unit</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Pilih Unit" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {units.map((item: any) => (
+                              <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="academicYearId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Tahun Ajaran</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Pilih Tahun Ajaran" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {academicYears.map((item: any) => (
+                              <SelectItem key={item.id} value={item.id}>{item.name} ({item.semester})</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="subjectId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Mata Pelajaran</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Pilih Mata Pelajaran" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {subjects.map((item: any) => (
+                              <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="classId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Kelas</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Pilih Kelas" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {classes.map((item: any) => (
+                              <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
                 <FormField
                   control={form.control}

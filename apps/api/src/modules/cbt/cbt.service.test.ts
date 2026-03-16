@@ -120,6 +120,11 @@ describe('CBT Service', () => {
         exam: { teacher: { userId: 'user-1' } },
       } as any);
 
+      vi.mocked(prisma.question.findUnique).mockResolvedValue({
+        id: 'q-1',
+        points: 10,
+      } as any);
+
       vi.mocked(prisma.examAnswer.upsert).mockResolvedValue({ id: 'ans-1' } as any);
       vi.mocked(prisma.examAnswer.findMany).mockResolvedValue([
         { id: 'ans-1', score: 10 },

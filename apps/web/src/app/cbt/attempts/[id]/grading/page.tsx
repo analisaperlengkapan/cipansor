@@ -12,6 +12,85 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
 
+import { useEffect } from "react";
+
+function GradeQuestionForm({
+  attemptId,
+  question,
+  answerData,
+  gradeAnswer,
+  onSuccess,
+}: {
+  attemptId: string;
+  question: any;
+  answerData: any;
+  gradeAnswer: any;
+  onSuccess: () => void;
+}) {
+  const [score, setScore] = useState<string>(answerData?.score ? String(parseFloat(answerData.score)) : "0");
+  const [isCorrect, setIsCorrect] = useState<boolean>(answerData?.isCorrect === true);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Sync state if answerData updates from refetch
+  useEffect(() => {
+    setScore(answerData?.score ? String(parseFloat(answerData.score)) : "0");
+    setIsCorrect(answerData?.isCorrect === true);
+  }, [answerData]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setIsLoading(true);
+      await gradeAnswer.mutateAsync({
+        attemptId,
+        questionId: question.id,
+        score: Number(score),
+        isCorrect,
+      });
+      toast.success("Nilai berhasil disimpan");
+      onSuccess();
+    } catch (error: any) {
+      toast.error(error.message || "Gagal menyimpan nilai");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="flex flex-col md:flex-row items-end gap-4">
+      <div className="space-y-2 flex-1">
+        <label className="text-sm font-medium">Nilai / Poin</label>
+        <Input
+          type="number"
+          value={score}
+          onChange={(e) => setScore(e.target.value)}
+          max={question.points}
+          min={0}
+          step={0.1}
+          required
+        />
+      </div>
+      <div className="flex items-center space-x-2 flex-1 pb-3">
+        <Checkbox
+          id={`correct-${question.id}`}
+          checked={isCorrect}
+          onCheckedChange={(c) => setIsCorrect(c === true)}
+        />
+        <label
+          htmlFor={`correct-${question.id}`}
+          className="text-sm font-medium leading-none"
+        >
+          Tandai Benar
+        </label>
+      </div>
+      <Button type="submit" disabled={isLoading}>
+        {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+        Simpan Nilai
+      </Button>
+    </form>
+  );
+}
+
 export default function AttemptGradingPage({
   params,
 }: {
@@ -20,8 +99,6 @@ export default function AttemptGradingPage({
   const { id } = use(params);
   const { data: attempt, isLoading, refetch } = useAttemptGrading(id);
   const gradeAnswer = useGradeAnswer();
-
-  const [loadingIds, setLoadingIds] = useState<Record<string, boolean>>({});
 
   if (isLoading) {
     return (
@@ -40,28 +117,6 @@ export default function AttemptGradingPage({
       </MainLayout>
     );
   }
-
-  const handleGrade = async (
-    questionId: string,
-    score: number,
-    isCorrect: boolean
-  ) => {
-    try {
-      setLoadingIds((prev) => ({ ...prev, [questionId]: true }));
-      await gradeAnswer.mutateAsync({
-        attemptId: attempt.id,
-        questionId,
-        score,
-        isCorrect,
-      });
-      toast.success("Nilai berhasil disimpan");
-      refetch();
-    } catch (error: any) {
-      toast.error(error.message || "Gagal menyimpan nilai");
-    } finally {
-      setLoadingIds((prev) => ({ ...prev, [questionId]: false }));
-    }
-  };
 
   const questions = attempt.exam.questionBank?.questions || [];
   const answers = attempt.answers || [];
@@ -128,55 +183,13 @@ export default function AttemptGradingPage({
                       <h4 className="font-semibold text-sm mb-4">
                         Area Penilaian Guru
                       </h4>
-                      <form
-                        onSubmit={(e) => {
-                          e.preventDefault();
-                          const formData = new FormData(e.currentTarget);
-                          const score = Number(formData.get("score"));
-                          const isCorrect = formData.get("isCorrect") === "on";
-                          handleGrade(question.id, score, isCorrect);
-                        }}
-                        className="flex flex-col md:flex-row items-end gap-4"
-                      >
-                        <div className="space-y-2 flex-1">
-                          <label className="text-sm font-medium">Nilai / Poin</label>
-                          <Input
-                            type="number"
-                            name="score"
-                            defaultValue={
-                              answerData?.score
-                                ? parseFloat(answerData.score)
-                                : 0
-                            }
-                            max={question.points}
-                            min={0}
-                            step={0.1}
-                            required
-                          />
-                        </div>
-                        <div className="flex items-center space-x-2 flex-1 pb-3">
-                          <Checkbox
-                            id={`correct-${question.id}`}
-                            name="isCorrect"
-                            defaultChecked={answerData?.isCorrect === true}
-                          />
-                          <label
-                            htmlFor={`correct-${question.id}`}
-                            className="text-sm font-medium leading-none"
-                          >
-                            Tandai Benar
-                          </label>
-                        </div>
-                        <Button
-                          type="submit"
-                          disabled={loadingIds[question.id]}
-                        >
-                          {loadingIds[question.id] && (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          )}
-                          Simpan Nilai
-                        </Button>
-                      </form>
+                      <GradeQuestionForm
+                        attemptId={attempt.id}
+                        question={question}
+                        answerData={answerData}
+                        gradeAnswer={gradeAnswer}
+                        onSuccess={() => refetch()}
+                      />
                     </div>
                   )}
 

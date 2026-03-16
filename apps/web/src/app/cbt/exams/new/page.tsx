@@ -31,6 +31,8 @@ import { useUnits } from "@/hooks/use-units";
 import { useAcademicYears } from "@/hooks/use-academic-years";
 import { useSubjects } from "@/hooks/use-curriculum";
 import { useClasses } from "@/hooks/use-classes";
+import { useTeachers } from "@/hooks/use-teachers";
+import { useAuthStore } from "@/stores/auth";
 
 const examSchema = z.object({
   title: z.string().min(3, "Judul minimal 3 karakter"),
@@ -39,6 +41,7 @@ const examSchema = z.object({
   academicYearId: z.string().min(1, "Tahun Ajaran harus diisi"),
   subjectId: z.string().min(1, "Mata Pelajaran harus diisi"),
   classId: z.string().min(1, "Kelas harus diisi"),
+  teacherId: z.string().optional(),
   questionBankId: z.string().min(1, "Bank Soal harus dipilih"),
   scheduledAt: z.string().min(1, "Waktu Pelaksanaan harus diisi"),
   duration: z.coerce.number().min(10, "Durasi minimal 10 menit"),
@@ -49,6 +52,9 @@ const examSchema = z.object({
 
 export default function NewExamPage() {
   const router = useRouter();
+  const { user } = useAuthStore();
+  const isAdmin = user?.role?.includes("ADMIN");
+
   const createExam = useCreateExam();
   const { data: banksRes } = useQuestionBanks();
 
@@ -56,12 +62,14 @@ export default function NewExamPage() {
   const { data: academicYearsRes } = useAcademicYears({ limit: 100 });
   const { data: subjectsRes } = useSubjects();
   const { data: classesRes } = useClasses({ limit: 100 });
+  const { data: teachersRes } = useTeachers({ limit: 100 });
 
   const banks = banksRes?.data || [];
   const units = Array.isArray(unitsRes) ? unitsRes : ((unitsRes as any)?.data || []);
   const academicYears = academicYearsRes?.data || [];
   const subjects = Array.isArray(subjectsRes) ? subjectsRes : ((subjectsRes as any)?.data || []);
   const classes = classesRes?.data || [];
+  const teachers = teachersRes?.data || [];
 
   const form = useForm<z.infer<typeof examSchema>>({
     resolver: zodResolver(examSchema) as any,
@@ -72,6 +80,7 @@ export default function NewExamPage() {
       academicYearId: "",
       subjectId: "",
       classId: "",
+      teacherId: "",
       questionBankId: "",
       scheduledAt: "",
       duration: 60,
@@ -82,6 +91,10 @@ export default function NewExamPage() {
   });
 
   async function onSubmit(values: z.infer<typeof examSchema>) {
+    if (isAdmin && !values.teacherId) {
+      toast.error("Guru Pengampu harus dipilih");
+      return;
+    }
     try {
       await createExam.mutateAsync({
         ...values,
@@ -220,6 +233,33 @@ export default function NewExamPage() {
                       </FormItem>
                     )}
                   />
+
+                  {isAdmin && (
+                    <FormField
+                      control={form.control}
+                      name="teacherId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Guru Pengampu (Admin Only)</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Pilih Guru" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {teachers.map((t: any) => (
+                                <SelectItem key={t.id} value={t.id}>
+                                  {t.user?.name || t.id}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
                 </div>
 
                 <FormField

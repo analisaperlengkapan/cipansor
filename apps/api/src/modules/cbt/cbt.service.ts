@@ -55,7 +55,13 @@ export class CBTService {
 
   static async createQuestionBank(data: CreateQuestionBankInput) {
     return prisma.questionBank.create({
-      data,
+      data: {
+        unitId: data.unitId,
+        teacherId: data.teacherId,
+        title: data.title,
+        description: data.description,
+        subjectId: data.subjectId,
+      },
     });
   }
 
@@ -344,6 +350,13 @@ export class CBTService {
       attempt.exam.teacher.userId !== user.id
     ) {
       throw Errors.forbidden('You do not have permission to grade this attempt');
+    }
+
+    const question = await prisma.question.findUnique({ where: { id: questionId } });
+    if (!question) throw Errors.notFound('Question not found');
+
+    if (grading.score < 0 || grading.score > question.points) {
+      throw Errors.badRequest(`Score must be between 0 and ${question.points}`);
     }
 
     return prisma.$transaction(async (tx) => {

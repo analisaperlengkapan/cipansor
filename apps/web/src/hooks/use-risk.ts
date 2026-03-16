@@ -46,6 +46,8 @@ export const useCreateRisk = () => {
     onSuccess: () => {
       toast.success("Risk created successfully");
       queryClient.invalidateQueries({ queryKey: ["risks"] });
+      // Ensure that any linked strategic plan data on the UI is refetched
+      queryClient.invalidateQueries({ queryKey: ["perencanaan"] });
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || "Failed to create risk");
@@ -64,6 +66,7 @@ export const useUpdateRisk = () => {
       toast.success("Risk updated successfully");
       queryClient.invalidateQueries({ queryKey: ["risks"] });
       queryClient.invalidateQueries({ queryKey: ["risk", variables.id] });
+      queryClient.invalidateQueries({ queryKey: ["perencanaan"] });
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || "Failed to update risk");

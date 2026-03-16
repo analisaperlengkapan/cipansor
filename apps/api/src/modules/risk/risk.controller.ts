@@ -100,10 +100,17 @@ export const updateRisk = asyncHandler(async (req: Request, res: Response) => {
   const body = updateRiskSchema.parse(req.body);
 
   // Destructure unitId to prevent unauthorized modification of the risk's unit
+  // Also destructure strategicPlanId to handle connect syntax properly if provided
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { unitId: _, ...updateData } = body;
+  const { unitId: _, strategicPlanId, ...updateData } = body;
 
-  const risk = await riskService.updateRisk(id, updateData);
+  const risk = await riskService.updateRisk(id, {
+    ...updateData,
+    ...(strategicPlanId !== undefined ?
+      { strategicPlan: strategicPlanId ? { connect: { id: strategicPlanId } } : { disconnect: true } }
+      : {}
+    ),
+  });
   res.json({ success: true, data: risk });
 });
 

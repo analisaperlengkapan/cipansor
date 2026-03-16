@@ -70,10 +70,8 @@ export default function RiskDetailPage() {
             </Button>
             <Button variant="destructive" size="sm" onClick={async () => {
               if(confirm("Delete this risk?")) {
-                try {
-                  await deleteRisk.mutateAsync(id);
-                  router.push("/risk-management");
-                } catch { /* handled by useDeleteRisk onError */ }
+                await deleteRisk.mutateAsync(id);
+                router.push("/risk-management");
               }
             }}>Delete Risk</Button>
           </div>

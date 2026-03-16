@@ -54,7 +54,7 @@ describe('Risk Service', () => {
       const dto = {
         unitId: 'unit-1',
         title: 'Network Outage',
-        category: 'OPERASIONAL',
+        category: 'OPERATIONAL',
         likelihood: RiskLikelihood.LIKELY, // 4
         impact: RiskImpact.MAJOR, // 4 -> score 16 -> HIGH
         createdById: 'user-1',
@@ -136,14 +136,14 @@ describe('Risk Service', () => {
       vi.mocked(prisma.risk.findMany).mockResolvedValue([] as any);
 
       await riskService.getRisks('unit-1', {
-        category: 'FINANSIAL',
+        category: 'FINANCIAL',
         riskLevel: 'HIGH',
       });
 
       expect(prisma.risk.findMany).toHaveBeenCalledWith({
         where: {
           unitId: 'unit-1',
-          category: 'FINANSIAL',
+          category: 'FINANCIAL',
           riskLevel: 'HIGH',
         },
         include: expect.any(Object),

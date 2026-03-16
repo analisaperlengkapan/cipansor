@@ -34,7 +34,7 @@ function resolveUnitId(req: Request, bodyUnitId?: string): string {
   const unitId = req.user?.unitId;
   if (!unitId) {
     // If they have no unitId but are SUPER_ADMIN, they must supply one
-    if (req.user?.role === UserRole.SUPER_ADMIN && bodyUnitId) return bodyUnitId;
+    // SUPER_ADMIN with bodyUnitId is already handled above
     throw Errors.badRequest('Unit ID is required');
   }
   return unitId;

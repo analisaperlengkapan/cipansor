@@ -84,7 +84,6 @@ export const useDeleteRisk = () => {
     onSuccess: () => {
       toast.success("Risk deleted successfully");
       queryClient.invalidateQueries({ queryKey: ["risks"] });
-      queryClient.invalidateQueries({ queryKey: ["perencanaan"] });
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || "Failed to delete risk");

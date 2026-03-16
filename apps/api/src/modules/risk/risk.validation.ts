@@ -22,7 +22,9 @@ export const createRiskSchema = z.object({
   status: z.string().optional(),
 });
 
-export const updateRiskSchema = createRiskSchema.partial();
+export const updateRiskSchema = createRiskSchema.partial().extend({
+  strategicPlanId: z.string().uuid().nullable().optional(),
+});
 
 export const listRiskQuerySchema = z.object({
   category: z.nativeEnum(RiskCategory).optional(),

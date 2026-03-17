@@ -248,12 +248,12 @@ export class CBTService {
   }) {
     const where: Prisma.ExamWhereInput = {};
 
-    // Always apply unitId filter when provided for data isolation
-    if (query.unitId) where.unitId = query.unitId;
     // If teacherUserId is set (non-admin), unitId must also be set for isolation
     if (query.teacherUserId && !query.unitId) {
       throw Errors.badRequest('unitId is required for data isolation');
     }
+    // Always apply unitId filter when provided for data isolation
+    if (query.unitId) where.unitId = query.unitId;
     if (query.academicYearId) where.academicYearId = query.academicYearId;
     if (query.subjectId) where.subjectId = query.subjectId;
     if (query.teacherUserId) where.teacher = { userId: query.teacherUserId };
@@ -669,17 +669,23 @@ export class CBTService {
           })
         );
       } else if (question.type === 'ESSAY') {
-        // Create an empty answer record for unanswered essay questions
+        // Upsert an empty answer record for unanswered essay questions
         // so teachers can grade them later via gradeEssayAnswer.
+        // Using upsert instead of create to be idempotent if finishExamAttempt
+        // is called concurrently (avoids unique constraint violation).
         gradedAnswers.push(
-          prisma.examAnswer.create({
-            data: {
+          prisma.examAnswer.upsert({
+            where: {
+              attemptId_questionId: { attemptId, questionId: question.id },
+            },
+            create: {
               attemptId,
               questionId: question.id,
               answer: null,
               isCorrect: null,
               score: null,
             },
+            update: {},
           })
         );
       }

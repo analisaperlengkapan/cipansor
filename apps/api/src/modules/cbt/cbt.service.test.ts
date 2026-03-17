@@ -270,7 +270,7 @@ describe('CBT Service', () => {
       } as any);
 
       vi.mocked(prisma.examAttempt.update).mockResolvedValue({} as any);
-      vi.mocked(prisma.examAnswer.create).mockResolvedValue({ id: 'ans-2' } as any);
+      vi.mocked(prisma.examAnswer.upsert).mockResolvedValue({ id: 'ans-2' } as any);
 
       let transactionCalls: any[] = [];
       vi.mocked(prisma.$transaction).mockImplementation((promises) => {
@@ -280,15 +280,19 @@ describe('CBT Service', () => {
 
       await CBTService.finishExamAttempt('attempt-1', 'std-1');
 
-      // Should create an empty answer record for the unanswered essay
-      expect(prisma.examAnswer.create).toHaveBeenCalledWith({
-        data: {
+      // Should upsert an empty answer record for the unanswered essay
+      expect(prisma.examAnswer.upsert).toHaveBeenCalledWith({
+        where: {
+          attemptId_questionId: { attemptId: 'attempt-1', questionId: 'q-2' },
+        },
+        create: {
           attemptId: 'attempt-1',
           questionId: 'q-2',
           answer: null,
           isCorrect: null,
           score: null,
         },
+        update: {},
       });
 
       // Status should be NEEDS_REVIEW because of essay question

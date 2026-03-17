@@ -640,14 +640,12 @@ export class CBTService {
       // Essay needs manual grading, score remains 0 or null.
 
       if (studentAnswer) {
-        const isEssay = question.type === 'ESSAY';
         gradedAnswers.push(
           prisma.examAnswer.update({
             where: { id: studentAnswer.id },
-            data: { isCorrect: isEssay ? null : isCorrect, score: isEssay ? null : score },
+            data: { isCorrect, score },
           })
         );
-      }
       }
 
       totalScore += score;

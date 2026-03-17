@@ -148,16 +148,17 @@ export default function ExamMonitoringPage({
                       {attempt.score ? parseFloat(attempt.score).toFixed(2) : "0"}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        disabled={attempt.status === "IN_PROGRESS"}
-                        asChild
-                      >
-                        <Link href={`/cbt/attempts/${attempt.id}/grading`}>
+                      {attempt.status === "IN_PROGRESS" ? (
+                        <Button variant="outline" size="sm" disabled>
                           Nilai (Manual)
-                        </Link>
-                      </Button>
+                        </Button>
+                      ) : (
+                        <Button variant="outline" size="sm" asChild>
+                          <Link href={`/cbt/attempts/${attempt.id}/grading`}>
+                            Nilai (Manual)
+                          </Link>
+                        </Button>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}

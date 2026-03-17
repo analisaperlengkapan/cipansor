@@ -43,7 +43,7 @@ export interface ExamAttempt {
   startedAt: string;
   finishedAt?: string;
   score?: number;
-  status: "IN_PROGRESS" | "COMPLETED" | "EXPIRED";
+  status: "IN_PROGRESS" | "COMPLETED" | "EXPIRED" | "NEEDS_REVIEW";
   exam?: any;
   answers?: any[];
 }

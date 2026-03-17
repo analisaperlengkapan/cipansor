@@ -258,7 +258,11 @@ export class CBTController {
   static async startExam(req: Request, res: Response, next: NextFunction) {
     try {
       const user = (req as any).user;
-      const attempt = await CBTService.startExamAttempt(req.params.examId, user.studentId);
+      const student = await prisma.student.findUnique({ where: { userId: user.id } });
+      if (!student) {
+        throw Errors.unauthorized('User is not a student');
+      }
+      const attempt = await CBTService.startExamAttempt(req.params.examId, student.id);
       res.status(201).json({ success: true, data: attempt });
     } catch (error) {
       next(error);
@@ -268,7 +272,11 @@ export class CBTController {
   static async getAttempt(req: Request, res: Response, next: NextFunction) {
     try {
       const user = (req as any).user;
-      const attempt = await CBTService.getAttempt(req.params.attemptId, user.studentId);
+      const student = await prisma.student.findUnique({ where: { userId: user.id } });
+      if (!student) {
+        throw Errors.unauthorized('User is not a student');
+      }
+      const attempt = await CBTService.getAttempt(req.params.attemptId, student.id);
       res.json({ success: true, data: attempt });
     } catch (error) {
       next(error);
@@ -280,12 +288,12 @@ export class CBTController {
       const { questionId, answer } = req.body;
       const user = (req as any).user;
 
-      const studentId = user.studentId;
-      if (!studentId) {
+      const student = await prisma.student.findUnique({ where: { userId: user.id } });
+      if (!student) {
         throw Errors.unauthorized('User is not a student');
       }
 
-      await CBTService.submitAnswer(req.params.attemptId, questionId, answer, studentId);
+      await CBTService.submitAnswer(req.params.attemptId, questionId, answer, student.id);
       res.json({ success: true });
     } catch (error) {
       next(error);
@@ -296,12 +304,12 @@ export class CBTController {
     try {
       const user = (req as any).user;
 
-      const studentId = user.studentId;
-      if (!studentId) {
+      const student = await prisma.student.findUnique({ where: { userId: user.id } });
+      if (!student) {
         throw Errors.unauthorized('User is not a student');
       }
 
-      const attempt = await CBTService.finishExamAttempt(req.params.attemptId, studentId);
+      const attempt = await CBTService.finishExamAttempt(req.params.attemptId, student.id);
       res.json({ success: true, data: attempt });
     } catch (error) {
       next(error);

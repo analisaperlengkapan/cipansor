@@ -176,9 +176,13 @@ describe('CBT Service', () => {
     });
 
     it('should submit an answer using upsert', async () => {
+      vi.mocked(prisma.examAttempt.findUnique).mockResolvedValue({
+        id: 'attempt-1',
+        studentId: 'std-1',
+      } as any);
       vi.mocked(prisma.examAnswer.upsert).mockResolvedValue({ id: 'ans-1' } as any);
 
-      await CBTService.submitAnswer('attempt-1', 'q-1', 'opt-B');
+      await CBTService.submitAnswer('attempt-1', 'q-1', 'opt-B', 'std-1');
 
       expect(prisma.examAnswer.upsert).toHaveBeenCalledWith({
         where: {
@@ -192,6 +196,7 @@ describe('CBT Service', () => {
     it('should grade and finish exam attempt', async () => {
       vi.mocked(prisma.examAttempt.findUnique).mockResolvedValue({
         id: 'attempt-1',
+        studentId: 'std-1',
         status: 'IN_PROGRESS',
         exam: {
           questionBank: {
@@ -216,7 +221,7 @@ describe('CBT Service', () => {
         return Promise.resolve() as any;
       });
 
-      await CBTService.finishExamAttempt('attempt-1');
+      await CBTService.finishExamAttempt('attempt-1', 'std-1');
 
       // (We mock $transaction above, which receives arrays of promises or Prisma operations)
       

@@ -128,7 +128,7 @@ export class CBTController {
   static async getExams(req: Request, res: Response, next: NextFunction) {
     try {
       const user = (req as any).user;
-      const { unitId, academicYearId, subjectId, search, status } = req.query;
+      const { unitId, academicYearId, subjectId, search, status, page, limit } = req.query;
 
       const isAdmin = user.role === 'SUPER_ADMIN' || user.role === 'UNIT_ADMIN';
 
@@ -138,7 +138,12 @@ export class CBTController {
 
       const filterUnitId = user.role === 'SUPER_ADMIN' ? (unitId as string) : user.unitId;
 
-      const exams = await CBTService.getExams({
+      const pageNum = page ? parseInt(page as string, 10) : 1;
+      const limitNum = limit ? parseInt(limit as string, 10) : 20;
+
+      const result = await CBTService.getExams({
+        page: pageNum,
+        limit: limitNum,
         teacherUserId: isAdmin ? undefined : user.id,
         unitId: filterUnitId,
         academicYearId: academicYearId as string,
@@ -146,7 +151,7 @@ export class CBTController {
         search: search as string,
         status: status as any,
       });
-      res.json({ success: true, data: exams });
+      res.json({ success: true, data: result.data, meta: result.meta });
     } catch (error) {
       next(error);
     }
@@ -252,10 +257,14 @@ export class CBTController {
   static async submitAnswer(req: Request, res: Response, next: NextFunction) {
     try {
       const { questionId, answer } = req.body;
-      // We should verify attempt belongs to user
       const user = (req as any).user;
-      // Basic check done in service usually, but let's trust attemptId for now or add check
-      await CBTService.submitAnswer(req.params.attemptId, questionId, answer);
+
+      const studentId = user.studentId;
+      if (!studentId) {
+        throw Errors.unauthorized('User is not a student');
+      }
+
+      await CBTService.submitAnswer(req.params.attemptId, questionId, answer, studentId);
       res.json({ success: true });
     } catch (error) {
       next(error);
@@ -264,7 +273,14 @@ export class CBTController {
 
   static async finishExam(req: Request, res: Response, next: NextFunction) {
     try {
-      const attempt = await CBTService.finishExamAttempt(req.params.attemptId);
+      const user = (req as any).user;
+
+      const studentId = user.studentId;
+      if (!studentId) {
+        throw Errors.unauthorized('User is not a student');
+      }
+
+      const attempt = await CBTService.finishExamAttempt(req.params.attemptId, studentId);
       res.json({ success: true, data: attempt });
     } catch (error) {
       next(error);

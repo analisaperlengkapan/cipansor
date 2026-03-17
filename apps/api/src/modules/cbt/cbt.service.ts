@@ -93,17 +93,30 @@ export class CBTService {
     });
   }
 
-  static async getQuestionBankById(id: string) {
+  static async getQuestionBankById(id: string, user: { id: string; role: string; unitId?: string }) {
     const bank = await prisma.questionBank.findUnique({
       where: { id },
       include: {
         questions: { orderBy: { order: 'asc' } },
-        teacher: { select: { user: { select: { name: true } } } },
+        teacher: { select: { userId: true, user: { select: { name: true } } } },
         subject: { select: { name: true, code: true } },
       },
     });
 
     if (!bank) throw Errors.notFound('Question Bank not found');
+
+    if (user.role === 'UNIT_ADMIN' && bank.unitId !== user.unitId) {
+      throw Errors.forbidden('You do not have permission to view Question Banks outside your unit');
+    }
+
+    if (
+      user.role !== 'SUPER_ADMIN' &&
+      user.role !== 'UNIT_ADMIN' &&
+      bank.teacher.userId !== user.id
+    ) {
+      throw Errors.forbidden('You do not have permission to view this Question Bank');
+    }
+
     return bank;
   }
 
@@ -272,13 +285,17 @@ export class CBTService {
     };
   }
 
-  static async createExam(data: CreateExamInput, user: { id: string; role: string }) {
+  static async createExam(data: CreateExamInput, user: { id: string; role: string; unitId?: string }) {
     // Check question bank
     const bank = await prisma.questionBank.findUnique({
       where: { id: data.questionBankId },
       include: { questions: true, teacher: { select: { userId: true } } },
     });
     if (!bank) throw Errors.notFound('Question Bank not found');
+
+    if (user.role === 'UNIT_ADMIN' && bank.unitId !== user.unitId) {
+      throw Errors.forbidden('You do not have permission to use Question Banks outside your unit');
+    }
 
     if (
       user.role !== 'SUPER_ADMIN' &&
@@ -385,7 +402,7 @@ export class CBTService {
     const attempt = await prisma.examAttempt.findUnique({
       where: { id: attemptId },
       include: {
-        exam: { select: { unitId: true, questionBankId: true, teacher: { select: { userId: true } } } },
+        exam: { select: { questionBankId: true, teacher: { select: { userId: true } } } },
       },
     });
 
@@ -545,6 +562,10 @@ export class CBTService {
     const attempt = await prisma.examAttempt.findUnique({ where: { id: attemptId } });
     if (!attempt) throw Errors.notFound('Attempt not found');
     if (attempt.studentId !== studentId) throw Errors.forbidden('Access denied');
+
+    if (attempt.status !== 'IN_PROGRESS') {
+      throw Errors.badRequest('Cannot submit answer for a completed or expired attempt');
+    }
 
     // Upsert answer
     return prisma.examAnswer.upsert({

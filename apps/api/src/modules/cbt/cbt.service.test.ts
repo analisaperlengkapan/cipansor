@@ -179,6 +179,7 @@ describe('CBT Service', () => {
       vi.mocked(prisma.examAttempt.findUnique).mockResolvedValue({
         id: 'attempt-1',
         studentId: 'std-1',
+        status: 'IN_PROGRESS',
       } as any);
       vi.mocked(prisma.examAnswer.upsert).mockResolvedValue({ id: 'ans-1' } as any);
 

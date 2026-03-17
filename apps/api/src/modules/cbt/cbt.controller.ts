@@ -70,7 +70,8 @@ export class CBTController {
 
   static async getQuestionBankById(req: Request, res: Response, next: NextFunction) {
     try {
-      const bank = await CBTService.getQuestionBankById(req.params.id);
+      const user = (req as any).user;
+      const bank = await CBTService.getQuestionBankById(req.params.id, user);
       res.json({ success: true, data: bank });
     } catch (error) {
       next(error);

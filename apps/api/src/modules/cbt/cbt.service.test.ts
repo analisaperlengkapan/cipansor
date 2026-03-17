@@ -31,6 +31,7 @@ vi.mock('../../lib/prisma', () => ({
       upsert: vi.fn(),
       update: vi.fn(),
       findMany: vi.fn(),
+      findUnique: vi.fn(),
     },
     $transaction: vi.fn((callback) => callback(prisma)),
   },
@@ -126,7 +127,10 @@ describe('CBT Service', () => {
         type: 'ESSAY',
       } as any);
 
-      vi.mocked(prisma.examAnswer.upsert).mockResolvedValue({ id: 'ans-1' } as any);
+      vi.mocked(prisma.examAnswer.findUnique).mockResolvedValue({
+        id: 'ans-1',
+      } as any);
+      vi.mocked(prisma.examAnswer.update).mockResolvedValue({ id: 'ans-1' } as any);
       vi.mocked(prisma.examAnswer.findMany).mockResolvedValue([
         { id: 'ans-1', score: 10 },
         { id: 'ans-2', score: 20 },
@@ -140,10 +144,9 @@ describe('CBT Service', () => {
         { id: 'user-1', role: 'TEACHER' }
       );
 
-      expect(prisma.examAnswer.upsert).toHaveBeenCalledWith({
+      expect(prisma.examAnswer.update).toHaveBeenCalledWith({
         where: { attemptId_questionId: { attemptId: 'attempt-1', questionId: 'q-1' } },
-        create: expect.any(Object),
-        update: expect.any(Object),
+        data: expect.any(Object),
       });
 
       expect(prisma.examAttempt.update).toHaveBeenCalledWith({

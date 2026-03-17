@@ -76,7 +76,8 @@ test.describe("CBT Exams & Grading", () => {
 
     // Mock create exam POST
     await page.route("**/api/cbt/exams", async (route) => {
-      expect(route.request().method()).toBe("POST");
+      if (route.request().method() !== "POST") return route.fallback();
+
       await route.fulfill({
         status: 201,
         contentType: "application/json",

@@ -34,6 +34,10 @@ export class CBTController {
 
   static async createQuestionBank(req: Request, res: Response, next: NextFunction) {
     try {
+      if (!req.body.title) {
+        throw Errors.badRequest('title is required');
+      }
+
       const user = (req as any).user;
       const isAdmin = user.role === 'SUPER_ADMIN' || user.role === 'UNIT_ADMIN';
 
@@ -160,6 +164,14 @@ export class CBTController {
 
   static async createExam(req: Request, res: Response, next: NextFunction) {
     try {
+      if (!req.body.questionBankId) {
+        throw Errors.badRequest('questionBankId is required');
+      }
+
+      if (!req.body.title) {
+        throw Errors.badRequest('title is required');
+      }
+
       const user = (req as any).user;
       const isAdmin = user.role === 'SUPER_ADMIN' || user.role === 'UNIT_ADMIN';
 

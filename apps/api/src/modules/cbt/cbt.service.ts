@@ -320,7 +320,7 @@ export class CBTService {
         maxScore: (data.maxScore ?? 100) as any,
         passingScore: (data.passingScore ?? 70) as any,
         weight: (data.weight ?? 1) as any,
-        status: data.status || 'DRAFT',
+        status: ['DRAFT', 'SCHEDULED'].includes(data.status) ? data.status : 'DRAFT',
         instructions: data.instructions,
         questionBankId: data.questionBankId,
       },
@@ -441,19 +441,21 @@ export class CBTService {
         throw Errors.badRequest(`Score must be a valid number between 0 and ${question.points}`);
       }
 
+      // Ensure answer exists
+      const existingAnswer = await tx.examAnswer.findUnique({
+        where: { attemptId_questionId: { attemptId, questionId } },
+      });
+
+      if (!existingAnswer) {
+        throw Errors.badRequest('Cannot grade an unanswered question');
+      }
+
       // Update the answer
-      await tx.examAnswer.upsert({
+      await tx.examAnswer.update({
         where: {
           attemptId_questionId: { attemptId, questionId },
         },
-        create: {
-          attemptId,
-          questionId,
-          answer: null, // Should already exist realistically
-          isCorrect: grading.isCorrect,
-          score: grading.score as any,
-        },
-        update: {
+        data: {
           isCorrect: grading.isCorrect,
           score: grading.score as any,
         },

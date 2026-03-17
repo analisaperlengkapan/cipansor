@@ -19,6 +19,10 @@ export class CBTController {
 
       const filterUnitId = user.role === 'SUPER_ADMIN' ? (unitId as string) : user.unitId;
 
+      if (user.role !== 'SUPER_ADMIN' && !filterUnitId) {
+        throw Errors.badRequest('unitId is required for data isolation');
+      }
+
       const banks = await CBTService.getQuestionBanks({
         unitId: filterUnitId,
         subjectId: subjectId as string,
@@ -142,6 +146,10 @@ export class CBTController {
       }
 
       const filterUnitId = user.role === 'SUPER_ADMIN' ? (unitId as string) : user.unitId;
+
+      if (user.role !== 'SUPER_ADMIN' && !filterUnitId) {
+        throw Errors.badRequest('unitId is required for data isolation');
+      }
 
       const pageNum = page ? parseInt(page as string, 10) : 1;
       const limitNum = limit ? parseInt(limit as string, 10) : 20;

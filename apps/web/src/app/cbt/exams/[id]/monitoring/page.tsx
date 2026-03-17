@@ -75,7 +75,7 @@ export default function ExamMonitoringPage({
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {exam.attempts?.filter((a: any) => a.status === "COMPLETED").length || 0}
+                {exam.attempts?.filter((a: any) => a.status === "COMPLETED" || a.status === "NEEDS_REVIEW").length || 0}
               </div>
             </CardContent>
           </Card>

@@ -293,6 +293,10 @@ export class CBTService {
     });
     if (!bank) throw Errors.notFound('Question Bank not found');
 
+    if (!bank.isActive) {
+      throw Errors.badRequest('This Question Bank has been deactivated');
+    }
+
     if (user.role === 'UNIT_ADMIN' && bank.unitId !== user.unitId) {
       throw Errors.forbidden('You do not have permission to use Question Banks outside your unit');
     }
@@ -402,11 +406,15 @@ export class CBTService {
     const attempt = await prisma.examAttempt.findUnique({
       where: { id: attemptId },
       include: {
-        exam: { select: { questionBankId: true, teacher: { select: { userId: true } } } },
+        exam: { select: { unitId: true, questionBankId: true, teacher: { select: { userId: true } } } },
       },
     });
 
     if (!attempt) throw Errors.notFound('Attempt not found');
+
+    if (attempt.status === 'IN_PROGRESS') {
+      throw Errors.badRequest('Cannot grade an attempt that is still in progress');
+    }
 
     if (user.role === 'UNIT_ADMIN' && attempt.exam.unitId !== user.unitId) {
       throw Errors.forbidden('You do not have permission to grade exams outside your unit');
@@ -640,10 +648,14 @@ export class CBTService {
       // Essay needs manual grading, score remains 0 or null.
 
       if (studentAnswer) {
+        const isEssay = question.type === 'ESSAY';
         gradedAnswers.push(
           prisma.examAnswer.update({
             where: { id: studentAnswer.id },
-            data: { isCorrect, score },
+            data: {
+              isCorrect: isEssay ? null : isCorrect,
+              score: isEssay ? null : score,
+            },
           })
         );
       }

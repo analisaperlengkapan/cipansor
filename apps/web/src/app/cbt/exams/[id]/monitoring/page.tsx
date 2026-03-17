@@ -128,6 +128,8 @@ export default function ExamMonitoringPage({
                         variant={
                           attempt.status === "COMPLETED"
                             ? "default"
+                            : attempt.status === "NEEDS_REVIEW"
+                            ? "destructive"
                             : attempt.status === "IN_PROGRESS"
                             ? "secondary"
                             : "outline"
@@ -135,6 +137,8 @@ export default function ExamMonitoringPage({
                       >
                         {attempt.status === "COMPLETED"
                           ? "Selesai"
+                          : attempt.status === "NEEDS_REVIEW"
+                          ? "Butuh Review"
                           : attempt.status === "IN_PROGRESS"
                           ? "Sedang Mengerjakan"
                           : attempt.status}
@@ -147,7 +151,7 @@ export default function ExamMonitoringPage({
                       <Button
                         variant="outline"
                         size="sm"
-                        disabled={attempt.status !== "COMPLETED"}
+                        disabled={attempt.status === "IN_PROGRESS"}
                         asChild
                       >
                         <Link href={`/cbt/attempts/${attempt.id}/grading`}>

@@ -48,7 +48,7 @@ const examSchema = z.object({
   duration: z.coerce.number().min(10, "Durasi minimal 10 menit"),
   maxScore: z.coerce.number().min(1, "Nilai maksimal harus lebih dari 0"),
   passingScore: z.coerce.number().min(1, "KKM harus lebih dari 0"),
-  status: z.enum(["DRAFT", "SCHEDULED", "ONGOING", "COMPLETED", "GRADED"]).default("DRAFT"),
+  status: z.enum(["DRAFT", "SCHEDULED"]).default("DRAFT"),
 });
 
 export default function NewExamPage() {
@@ -379,8 +379,6 @@ export default function NewExamPage() {
                           <SelectContent>
                             <SelectItem value="DRAFT">Draft</SelectItem>
                             <SelectItem value="SCHEDULED">Terjadwal</SelectItem>
-                            <SelectItem value="ONGOING">Sedang Berjalan</SelectItem>
-                            <SelectItem value="COMPLETED">Selesai</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />

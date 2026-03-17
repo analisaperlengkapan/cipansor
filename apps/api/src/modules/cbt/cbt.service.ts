@@ -464,6 +464,7 @@ export class CBTService {
       // Recalculate total score for attempt
       const allAnswers = await tx.examAnswer.findMany({
         where: { attemptId },
+        include: { question: true },
       });
 
       const totalScore = allAnswers.reduce((sum, ans) => {
@@ -471,9 +472,17 @@ export class CBTService {
         return sum + s;
       }, 0);
 
+      // Check if any ESSAY answer is still lacking a score to decide status
+      const hasUngradedEssay = allAnswers.some(
+        (ans) => ans.question.type === 'ESSAY' && ans.score === null
+      );
+
       return tx.examAttempt.update({
         where: { id: attemptId },
-        data: { score: totalScore as any },
+        data: {
+          score: totalScore as any,
+          status: hasUngradedEssay ? 'NEEDS_REVIEW' : 'COMPLETED'
+        },
       });
     });
   }
@@ -602,6 +611,7 @@ export class CBTService {
 
     // Auto grading
     let totalScore = 0;
+    let hasEssay = false;
     const questions = attempt.exam.questionBank?.questions || [];
 
     const gradedAnswers = [];
@@ -624,6 +634,8 @@ export class CBTService {
           isCorrect = true;
           score = question.points;
         }
+      } else if (question.type === 'ESSAY') {
+        hasEssay = true;
       }
       // Essay needs manual grading, score remains 0 or null.
 
@@ -645,7 +657,7 @@ export class CBTService {
     const finishedAttempt = await prisma.examAttempt.update({
       where: { id: attemptId },
       data: {
-        status: 'COMPLETED',
+        status: hasEssay ? 'NEEDS_REVIEW' : 'COMPLETED',
         finishedAt: new Date(),
         score: totalScore as any,
       },

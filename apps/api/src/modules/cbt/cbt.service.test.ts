@@ -132,8 +132,8 @@ describe('CBT Service', () => {
       } as any);
       vi.mocked(prisma.examAnswer.update).mockResolvedValue({ id: 'ans-1' } as any);
       vi.mocked(prisma.examAnswer.findMany).mockResolvedValue([
-        { id: 'ans-1', score: 10 },
-        { id: 'ans-2', score: 20 },
+        { id: 'ans-1', score: 10, question: { type: 'ESSAY' } },
+        { id: 'ans-2', score: 20, question: { type: 'MULTIPLE_CHOICE' } },
       ] as any);
       vi.mocked(prisma.examAttempt.update).mockResolvedValue({ id: 'attempt-1', score: 30 } as any);
 
@@ -151,7 +151,7 @@ describe('CBT Service', () => {
 
       expect(prisma.examAttempt.update).toHaveBeenCalledWith({
         where: { id: 'attempt-1' },
-        data: { score: 30 },
+        data: { score: 30, status: 'COMPLETED' },
       });
       expect(result.score).toBe(30);
     });

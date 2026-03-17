@@ -385,7 +385,7 @@ export class CBTService {
     const attempt = await prisma.examAttempt.findUnique({
       where: { id: attemptId },
       include: {
-        exam: { select: { questionBankId: true, teacher: { select: { userId: true } } } },
+        exam: { select: { unitId: true, questionBankId: true, teacher: { select: { userId: true } } } },
       },
     });
 

@@ -29,6 +29,7 @@ vi.mock('../../lib/prisma', () => ({
     },
     examAnswer: {
       upsert: vi.fn(),
+      create: vi.fn(),
       update: vi.fn(),
       findMany: vi.fn(),
       findUnique: vi.fn(),
@@ -234,7 +235,7 @@ describe('CBT Service', () => {
         where: { id: 'attempt-1' },
         data: expect.objectContaining({
           status: 'COMPLETED',
-          score: expect.objectContaining({} as any), // new Prisma.Decimal(10)
+          score: 10,
         }),
       });
 
@@ -246,6 +247,57 @@ describe('CBT Service', () => {
       expect(prisma.examAnswer.update).toHaveBeenCalledWith({
         where: { id: 'ans-2' },
         data: { isCorrect: false, score: 0 },
+      });
+    });
+
+    it('should create answer records for unanswered essay questions and set NEEDS_REVIEW', async () => {
+      vi.mocked(prisma.examAttempt.findUnique).mockResolvedValue({
+        id: 'attempt-1',
+        studentId: 'std-1',
+        status: 'IN_PROGRESS',
+        exam: {
+          questionBank: {
+            questions: [
+              { id: 'q-1', type: 'MULTIPLE_CHOICE', answerKey: 'opt-A', points: 10 },
+              { id: 'q-2', type: 'ESSAY', answerKey: null, points: 20 },
+            ],
+          },
+        },
+        answers: [
+          { id: 'ans-1', questionId: 'q-1', answer: 'opt-A' }, // answered MC
+          // q-2 (ESSAY) not answered
+        ],
+      } as any);
+
+      vi.mocked(prisma.examAttempt.update).mockResolvedValue({} as any);
+      vi.mocked(prisma.examAnswer.create).mockResolvedValue({ id: 'ans-2' } as any);
+
+      let transactionCalls: any[] = [];
+      vi.mocked(prisma.$transaction).mockImplementation((promises) => {
+        transactionCalls = promises as any[];
+        return Promise.resolve() as any;
+      });
+
+      await CBTService.finishExamAttempt('attempt-1', 'std-1');
+
+      // Should create an empty answer record for the unanswered essay
+      expect(prisma.examAnswer.create).toHaveBeenCalledWith({
+        data: {
+          attemptId: 'attempt-1',
+          questionId: 'q-2',
+          answer: null,
+          isCorrect: null,
+          score: null,
+        },
+      });
+
+      // Status should be NEEDS_REVIEW because of essay question
+      expect(prisma.examAttempt.update).toHaveBeenCalledWith({
+        where: { id: 'attempt-1' },
+        data: expect.objectContaining({
+          status: 'NEEDS_REVIEW',
+          score: 10, // only MC score
+        }),
       });
     });
   });

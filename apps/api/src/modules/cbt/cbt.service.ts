@@ -75,7 +75,12 @@ export class CBTService {
       isActive: true,
     };
 
+    // Always apply unitId filter when provided for data isolation
     if (query.unitId) where.unitId = query.unitId;
+    // If teacherUserId is set (non-admin), unitId must also be set for isolation
+    if (query.teacherUserId && !query.unitId) {
+      throw Errors.badRequest('unitId is required for data isolation');
+    }
     if (query.teacherUserId) where.teacher = { userId: query.teacherUserId };
     if (query.subjectId) where.subjectId = query.subjectId;
     if (query.search) {
@@ -243,7 +248,12 @@ export class CBTService {
   }) {
     const where: Prisma.ExamWhereInput = {};
 
+    // Always apply unitId filter when provided for data isolation
     if (query.unitId) where.unitId = query.unitId;
+    // If teacherUserId is set (non-admin), unitId must also be set for isolation
+    if (query.teacherUserId && !query.unitId) {
+      throw Errors.badRequest('unitId is required for data isolation');
+    }
     if (query.academicYearId) where.academicYearId = query.academicYearId;
     if (query.subjectId) where.subjectId = query.subjectId;
     if (query.teacherUserId) where.teacher = { userId: query.teacherUserId };
@@ -655,6 +665,20 @@ export class CBTService {
             data: {
               isCorrect: isEssay ? null : isCorrect,
               score: isEssay ? null : score,
+            },
+          })
+        );
+      } else if (question.type === 'ESSAY') {
+        // Create an empty answer record for unanswered essay questions
+        // so teachers can grade them later via gradeEssayAnswer.
+        gradedAnswers.push(
+          prisma.examAnswer.create({
+            data: {
+              attemptId,
+              questionId: question.id,
+              answer: null,
+              isCorrect: null,
+              score: null,
             },
           })
         );

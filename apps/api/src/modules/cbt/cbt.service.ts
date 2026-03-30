@@ -307,7 +307,15 @@ export class CBTService {
 
   static async createExam(data: CreateExamInput, user: { id: string; role: string; unitId?: string }) {
     // Enforce unit scope for non-SUPER_ADMIN users
-    if (user.role !== 'SUPER_ADMIN' && user.unitId && data.unitId !== user.unitId) {
+    if (user.role === 'UNIT_ADMIN' && data.unitId !== user.unitId) {
+      throw Errors.forbidden('You do not have permission to create exams outside your unit');
+    }
+
+    if (
+      user.role !== 'SUPER_ADMIN' &&
+      user.role !== 'UNIT_ADMIN' &&
+      data.unitId !== user.unitId
+    ) {
       throw Errors.forbidden('You do not have permission to create exams outside your unit');
     }
 

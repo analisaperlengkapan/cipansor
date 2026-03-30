@@ -52,7 +52,7 @@ const examSchema = z.object({
 export default function NewExamPage() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const isAdmin = user?.role?.includes("ADMIN");
+  const isAdmin = user?.role === "SUPER_ADMIN" || user?.role === "UNIT_ADMIN";
 
   const createExam = useCreateExam();
   const { data: banksRes } = useQuestionBanks();

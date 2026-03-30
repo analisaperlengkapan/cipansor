@@ -448,6 +448,8 @@ export class CBTService {
       throw Errors.forbidden('You do not have permission to grade this attempt');
     }
 
+    // Use SERIALIZABLE isolation to prevent concurrent grading calls from
+    // reading stale answer data and overwriting each other's total score.
     return prisma.$transaction(async (tx) => {
       const question = await tx.question.findUnique({ where: { id: questionId } });
       if (!question) throw Errors.notFound('Question not found');
@@ -512,7 +514,7 @@ export class CBTService {
           status: hasUngradedEssay ? 'NEEDS_REVIEW' : 'COMPLETED'
         },
       });
-    });
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
   }
 
   // --- Exam Attempts (Student) ---
@@ -635,7 +637,15 @@ export class CBTService {
 
     if (!attempt) throw Errors.notFound('Attempt not found');
     if (attempt.studentId !== studentId) throw Errors.forbidden('Access denied');
-    if (attempt.status !== 'IN_PROGRESS') return attempt;
+    if (attempt.status !== 'IN_PROGRESS') {
+      // Strip answer keys before returning to the student to prevent leaking correct answers
+      if (attempt.exam?.questionBank?.questions) {
+        attempt.exam.questionBank.questions = attempt.exam.questionBank.questions.map(
+          ({ answerKey, ...rest }) => rest
+        ) as any;
+      }
+      return attempt;
+    }
 
     // Auto grading
     let totalScore = 0;

@@ -34,7 +34,10 @@ vi.mock('../../lib/prisma', () => ({
       findMany: vi.fn(),
       findUnique: vi.fn(),
     },
-    $transaction: vi.fn((callback) => callback(prisma)),
+    $transaction: vi.fn((callbackOrPromises, _options?) => {
+      if (typeof callbackOrPromises === 'function') return callbackOrPromises(prisma);
+      return Promise.resolve(callbackOrPromises);
+    }),
   },
 }));
 

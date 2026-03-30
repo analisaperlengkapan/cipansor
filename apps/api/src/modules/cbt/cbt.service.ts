@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
-import { Prisma, QuestionType, ExamAttemptStatus } from '@prisma/client';
+import { Prisma, QuestionType } from '@prisma/client';
+import { Decimal } from '@prisma/client/runtime/library';
 import { Errors } from '@/middleware/error';
 
 // Types for inputs (can be moved to shared types later)
@@ -31,18 +32,43 @@ interface UpdateQuestionInput {
   order?: number;
 }
 
+interface CreateExamInput {
+  unitId: string;
+  academicYearId: string;
+  subjectId: string;
+  classId: string;
+  teacherId: string;
+  type: any; // ExamType
+  title: string;
+  description?: string;
+  scheduledAt: Date | string;
+  duration?: number;
+  maxScore?: number;
+  passingScore?: number;
+  weight?: number;
+  status?: any; // ExamStatus
+  instructions?: string;
+  questionBankId: string;
+}
+
 export class CBTService {
   // --- Question Banks ---
 
   static async createQuestionBank(data: CreateQuestionBankInput) {
     return prisma.questionBank.create({
-      data,
+      data: {
+        unitId: data.unitId,
+        teacherId: data.teacherId,
+        title: data.title,
+        description: data.description,
+        subjectId: data.subjectId,
+      },
     });
   }
 
   static async getQuestionBanks(query: {
     unitId?: string;
-    teacherId?: string;
+    teacherUserId?: string;
     subjectId?: string;
     search?: string;
   }) {
@@ -50,8 +76,13 @@ export class CBTService {
       isActive: true,
     };
 
+    // Always apply unitId filter when provided for data isolation
     if (query.unitId) where.unitId = query.unitId;
-    if (query.teacherId) where.teacherId = query.teacherId;
+    // If teacherUserId is set (non-admin), unitId must also be set for isolation
+    if (query.teacherUserId && !query.unitId) {
+      throw Errors.badRequest('unitId is required for data isolation');
+    }
+    if (query.teacherUserId) where.teacher = { userId: query.teacherUserId };
     if (query.subjectId) where.subjectId = query.subjectId;
     if (query.search) {
       where.title = { contains: query.search, mode: 'insensitive' };
@@ -68,28 +99,48 @@ export class CBTService {
     });
   }
 
-  static async getQuestionBankById(id: string) {
+  static async getQuestionBankById(id: string, user: { id: string; role: string; unitId?: string }) {
     const bank = await prisma.questionBank.findUnique({
       where: { id },
       include: {
         questions: { orderBy: { order: 'asc' } },
-        teacher: { select: { user: { select: { name: true } } } },
+        teacher: { select: { userId: true, user: { select: { name: true } } } },
         subject: { select: { name: true, code: true } },
       },
     });
 
-    if (!bank) throw Errors.notFound('Question Bank not found');
+    if (!bank) throw Errors.notFound('Question Bank');
+
+    if (user.role === 'UNIT_ADMIN' && bank.unitId !== user.unitId) {
+      throw Errors.forbidden('You do not have permission to view Question Banks outside your unit');
+    }
+
+    if (
+      user.role !== 'SUPER_ADMIN' &&
+      user.role !== 'UNIT_ADMIN' &&
+      bank.teacher.userId !== user.id
+    ) {
+      throw Errors.forbidden('You do not have permission to view this Question Bank');
+    }
+
     return bank;
   }
 
-  static async deleteQuestionBank(id: string, user: { id: string; role: string }) {
-    const bank = await prisma.questionBank.findUnique({ where: { id } });
-    if (!bank) throw Errors.notFound('Question Bank not found');
+  static async deleteQuestionBank(id: string, user: { id: string; role: string; unitId?: string }) {
+    const bank = await prisma.questionBank.findUnique({
+      where: { id },
+      include: { teacher: { select: { userId: true } } },
+    });
+    if (!bank) throw Errors.notFound('Question Bank');
+
+    if (user.role === 'UNIT_ADMIN' && bank.unitId !== user.unitId) {
+      throw Errors.forbidden('You do not have permission to delete Question Banks outside your unit');
+    }
 
     if (
-      !user.role.includes('SUPER_ADMIN') &&
-      !user.role.includes('UNIT_ADMIN') &&
-      bank.teacherId !== user.id
+      user.role !== 'SUPER_ADMIN' &&
+      user.role !== 'UNIT_ADMIN' &&
+      bank.teacher.userId !== user.id
     ) {
       throw Errors.forbidden('You do not have permission to delete this Question Bank');
     }
@@ -103,21 +154,33 @@ export class CBTService {
 
   // --- Questions ---
 
-  static async addQuestion(data: CreateQuestionInput, user: { id: string; role: string }) {
-    const bank = await prisma.questionBank.findUnique({ where: { id: data.bankId } });
-    if (!bank) throw Errors.notFound('Question Bank not found');
+  static async addQuestion(data: CreateQuestionInput, user: { id: string; role: string; unitId?: string }) {
+    const bank = await prisma.questionBank.findUnique({
+      where: { id: data.bankId },
+      include: { teacher: { select: { userId: true } } },
+    });
+    if (!bank) throw Errors.notFound('Question Bank');
+
+    if (user.role === 'UNIT_ADMIN' && bank.unitId !== user.unitId) {
+      throw Errors.forbidden('You do not have permission to modify Question Banks outside your unit');
+    }
 
     if (
-      !user.role.includes('SUPER_ADMIN') &&
-      !user.role.includes('UNIT_ADMIN') &&
-      bank.teacherId !== user.id
+      user.role !== 'SUPER_ADMIN' &&
+      user.role !== 'UNIT_ADMIN' &&
+      bank.teacher.userId !== user.id
     ) {
       throw Errors.forbidden('You do not have permission to add questions to this Question Bank');
     }
 
     return prisma.question.create({
       data: {
-        ...data,
+        bankId: data.bankId,
+        type: data.type,
+        content: data.content,
+        options: data.options,
+        answerKey: data.answerKey,
+        explanation: data.explanation,
         points: data.points ?? 1,
         order: data.order ?? 0,
       },
@@ -127,18 +190,22 @@ export class CBTService {
   static async updateQuestion(
     id: string,
     data: UpdateQuestionInput,
-    user: { id: string; role: string }
+    user: { id: string; role: string; unitId?: string }
   ) {
     const question = await prisma.question.findUnique({
       where: { id },
-      include: { bank: true },
+      include: { bank: { include: { teacher: { select: { userId: true } } } } },
     });
-    if (!question) throw Errors.notFound('Question not found');
+    if (!question) throw Errors.notFound('Question');
+
+    if (user.role === 'UNIT_ADMIN' && question.bank.unitId !== user.unitId) {
+      throw Errors.forbidden('You do not have permission to modify questions outside your unit');
+    }
 
     if (
-      !user.role.includes('SUPER_ADMIN') &&
-      !user.role.includes('UNIT_ADMIN') &&
-      question.bank.teacherId !== user.id
+      user.role !== 'SUPER_ADMIN' &&
+      user.role !== 'UNIT_ADMIN' &&
+      question.bank.teacher.userId !== user.id
     ) {
       throw Errors.forbidden('You do not have permission to update this question');
     }
@@ -149,17 +216,21 @@ export class CBTService {
     });
   }
 
-  static async deleteQuestion(id: string, user: { id: string; role: string }) {
+  static async deleteQuestion(id: string, user: { id: string; role: string; unitId?: string }) {
     const question = await prisma.question.findUnique({
       where: { id },
-      include: { bank: true },
+      include: { bank: { include: { teacher: { select: { userId: true } } } } },
     });
-    if (!question) throw Errors.notFound('Question not found');
+    if (!question) throw Errors.notFound('Question');
+
+    if (user.role === 'UNIT_ADMIN' && question.bank.unitId !== user.unitId) {
+      throw Errors.forbidden('You do not have permission to modify questions outside your unit');
+    }
 
     if (
-      !user.role.includes('SUPER_ADMIN') &&
-      !user.role.includes('UNIT_ADMIN') &&
-      question.bank.teacherId !== user.id
+      user.role !== 'SUPER_ADMIN' &&
+      user.role !== 'UNIT_ADMIN' &&
+      question.bank.teacher.userId !== user.id
     ) {
       throw Errors.forbidden('You do not have permission to delete this question');
     }
@@ -169,6 +240,345 @@ export class CBTService {
     });
   }
 
+  // --- Exam Scheduling ---
+
+  static async getExams(query: {
+    page?: number;
+    limit?: number;
+    unitId?: string;
+    academicYearId?: string;
+    subjectId?: string;
+    teacherUserId?: string;
+    search?: string;
+    status?: any;
+    requireUnitScope?: boolean;
+  }) {
+    const where: Prisma.ExamWhereInput = {};
+
+    // unitId is required for all non-SUPER_ADMIN queries for data isolation
+    if (query.teacherUserId && !query.unitId) {
+      throw Errors.badRequest('unitId is required for data isolation');
+    }
+    if (query.requireUnitScope && !query.unitId) {
+      throw Errors.badRequest('unitId is required for data isolation');
+    }
+    // Always apply unitId filter when provided for data isolation
+    if (query.unitId) where.unitId = query.unitId;
+    if (query.academicYearId) where.academicYearId = query.academicYearId;
+    if (query.subjectId) where.subjectId = query.subjectId;
+    if (query.teacherUserId) where.teacher = { userId: query.teacherUserId };
+    if (query.status) where.status = query.status;
+    if (query.search) {
+      where.title = { contains: query.search, mode: 'insensitive' };
+    }
+
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
+    const skip = (page - 1) * limit;
+
+    const [total, data] = await prisma.$transaction([
+      prisma.exam.count({ where }),
+      prisma.exam.findMany({
+        where,
+        include: {
+          subject: { select: { name: true } },
+          class: { select: { name: true } },
+          questionBank: { select: { title: true, _count: { select: { questions: true } } } },
+          _count: { select: { attempts: true } },
+        },
+        orderBy: { scheduledAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+    ]);
+
+    return {
+      data,
+      meta: {
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
+      },
+    };
+  }
+
+  static async createExam(data: CreateExamInput, user: { id: string; role: string; unitId?: string }) {
+    // Enforce unit scope for non-SUPER_ADMIN users
+    if (user.role === 'UNIT_ADMIN' && data.unitId !== user.unitId) {
+      throw Errors.forbidden('You do not have permission to create exams outside your unit');
+    }
+
+    if (
+      user.role !== 'SUPER_ADMIN' &&
+      user.role !== 'UNIT_ADMIN' &&
+      data.unitId !== user.unitId
+    ) {
+      throw Errors.forbidden('You do not have permission to create exams outside your unit');
+    }
+
+    // Check question bank
+    const bank = await prisma.questionBank.findUnique({
+      where: { id: data.questionBankId },
+      include: { teacher: { select: { userId: true } } },
+    });
+    if (!bank) throw Errors.notFound('Question Bank');
+
+    if (!bank.isActive) {
+      throw Errors.badRequest('This Question Bank has been deactivated');
+    }
+
+    if (user.role === 'UNIT_ADMIN' && bank.unitId !== user.unitId) {
+      throw Errors.forbidden('You do not have permission to use Question Banks outside your unit');
+    }
+
+    if (
+      user.role !== 'SUPER_ADMIN' &&
+      user.role !== 'UNIT_ADMIN' &&
+      bank.teacher.userId !== user.id
+    ) {
+      throw Errors.forbidden('You do not have permission to use this Question Bank');
+    }
+
+    // Validate status before creating
+    const validStatuses = ['DRAFT', 'SCHEDULED'];
+    if (data.status && !validStatuses.includes(data.status)) {
+      throw Errors.badRequest(`Invalid exam status: ${data.status}. Must be DRAFT or SCHEDULED.`);
+    }
+    const status = data.status || 'DRAFT';
+
+    return prisma.exam.create({
+      data: {
+        unitId: data.unitId,
+        academicYearId: data.academicYearId,
+        subjectId: data.subjectId,
+        classId: data.classId,
+        teacherId: data.teacherId,
+        type: data.type || 'MIDTERM',
+        title: data.title,
+        description: data.description,
+        scheduledAt: new Date(data.scheduledAt),
+        duration: data.duration ?? 60,
+        maxScore: new Decimal(data.maxScore ?? 100),
+        passingScore: new Decimal(data.passingScore ?? 70),
+        weight: new Decimal(data.weight ?? 1),
+        status,
+        instructions: data.instructions,
+        questionBankId: data.questionBankId,
+      },
+    });
+  }
+
+  static async getExamMonitoring(examId: string, user: { id: string; role: string; unitId?: string }) {
+    const exam = await prisma.exam.findUnique({
+      where: { id: examId },
+      include: {
+        teacher: { select: { userId: true } },
+        attempts: {
+          include: {
+            student: { select: { id: true, user: { select: { name: true } } } },
+          },
+        },
+      },
+    });
+
+    if (!exam) throw Errors.notFound('Exam');
+
+    if (user.role === 'UNIT_ADMIN' && exam.unitId !== user.unitId) {
+      throw Errors.forbidden('You do not have permission to view exams outside your unit');
+    }
+
+    if (
+      user.role !== 'SUPER_ADMIN' &&
+      user.role !== 'UNIT_ADMIN' &&
+      exam.teacher.userId !== user.id
+    ) {
+      throw Errors.forbidden('You do not have permission to view this exam');
+    }
+
+    return exam;
+  }
+
+  // --- Teacher Grading ---
+
+  static async getAttemptForGrading(attemptId: string, user: { id: string; role: string; unitId?: string }) {
+    const attempt = await prisma.examAttempt.findUnique({
+      where: { id: attemptId },
+      include: {
+        student: { select: { id: true, user: { select: { name: true } } } },
+        exam: {
+          include: {
+            teacher: { select: { userId: true } },
+            questionBank: {
+              include: { questions: { orderBy: { order: 'asc' } } },
+            },
+          },
+        },
+        answers: true,
+      },
+    });
+
+    if (!attempt) throw Errors.notFound('Attempt');
+
+    if (user.role === 'UNIT_ADMIN' && attempt.exam.unitId !== user.unitId) {
+      throw Errors.forbidden('You do not have permission to grade exams outside your unit');
+    }
+
+    if (
+      user.role !== 'SUPER_ADMIN' &&
+      user.role !== 'UNIT_ADMIN' &&
+      attempt.exam.teacher.userId !== user.id
+    ) {
+      throw Errors.forbidden('You do not have permission to grade this attempt');
+    }
+
+    return attempt;
+  }
+
+  static async gradeEssayAnswer(
+    attemptId: string,
+    questionId: string,
+    grading: { score: number; isCorrect: boolean },
+    user: { id: string; role: string; unitId?: string }
+  ) {
+    // Fetch attempt outside the transaction for authorization checks.
+    // The status check is repeated inside the transaction to close the TOCTOU gap.
+    const attempt = await prisma.examAttempt.findUnique({
+      where: { id: attemptId },
+      include: {
+        exam: { select: { unitId: true, questionBankId: true, teacher: { select: { userId: true } } } },
+      },
+    });
+
+    if (!attempt) throw Errors.notFound('Attempt');
+
+    if (attempt.status === 'IN_PROGRESS') {
+      throw Errors.badRequest('Cannot grade an attempt that is still in progress');
+    }
+
+    if (attempt.status === 'EXPIRED') {
+      throw Errors.badRequest('Cannot grade an expired attempt');
+    }
+
+    if (user.role === 'UNIT_ADMIN' && attempt.exam.unitId !== user.unitId) {
+      throw Errors.forbidden('You do not have permission to grade exams outside your unit');
+    }
+
+    if (
+      user.role !== 'SUPER_ADMIN' &&
+      user.role !== 'UNIT_ADMIN' &&
+      attempt.exam.teacher.userId !== user.id
+    ) {
+      throw Errors.forbidden('You do not have permission to grade this attempt');
+    }
+
+    // Use SERIALIZABLE isolation to prevent concurrent grading calls from
+    // reading stale answer data and overwriting each other's total score.
+    // Retry up to 2 times on serialization failures (deadlocks/conflicts).
+    const MAX_RETRIES = 2;
+    let lastError: any;
+
+    for (let retryCount = 0; retryCount <= MAX_RETRIES; retryCount++) {
+      try {
+        return await prisma.$transaction(async (tx) => {
+          // Re-check status inside the transaction to close the TOCTOU gap:
+          // between the check above and entering this serializable transaction,
+          // a concurrent operation could have changed the attempt's status.
+          const freshAttempt = await tx.examAttempt.findUnique({
+            where: { id: attemptId },
+            select: { status: true },
+          });
+          if (!freshAttempt) throw Errors.notFound('Attempt');
+          if (freshAttempt.status === 'IN_PROGRESS') {
+            throw Errors.badRequest('Cannot grade an attempt that is still in progress');
+          }
+          if (freshAttempt.status === 'EXPIRED') {
+            throw Errors.badRequest('Cannot grade an expired attempt');
+          }
+
+          const question = await tx.question.findUnique({ where: { id: questionId } });
+          if (!question) throw Errors.notFound('Question');
+
+          if (question.bankId !== attempt.exam.questionBankId) {
+            throw Errors.badRequest('Question does not belong to this exam');
+          }
+
+          if (question.type !== 'ESSAY') {
+            throw Errors.badRequest('Only ESSAY questions can be manually graded');
+          }
+
+          if (
+            typeof grading.score !== 'number' ||
+            Number.isNaN(grading.score) ||
+            grading.score < 0 ||
+            grading.score > question.points
+          ) {
+            throw Errors.badRequest(`Score must be a valid number between 0 and ${question.points}`);
+          }
+
+          // Ensure answer exists
+          const existingAnswer = await tx.examAnswer.findUnique({
+            where: { attemptId_questionId: { attemptId, questionId } },
+          });
+
+          if (!existingAnswer) {
+            throw Errors.badRequest('Cannot grade an unanswered question');
+          }
+
+          // Update the answer
+          await tx.examAnswer.update({
+            where: {
+              attemptId_questionId: { attemptId, questionId },
+            },
+            data: {
+              isCorrect: grading.isCorrect,
+              score: new Decimal(grading.score),
+            },
+          });
+
+          // Recalculate total score for attempt
+          const allAnswers = await tx.examAnswer.findMany({
+            where: { attemptId },
+            include: { question: true },
+          });
+
+          const totalScore = allAnswers.reduce((sum, ans) => {
+            const s = ans.score !== null ? Number(ans.score) : 0;
+            return sum + s;
+          }, 0);
+
+          // Check if any ESSAY answer is still lacking a score to decide status
+          const hasUngradedEssay = allAnswers.some(
+            (ans) => ans.question.type === 'ESSAY' && ans.score === null
+          );
+
+          return tx.examAttempt.update({
+            where: { id: attemptId },
+            data: {
+              score: new Decimal(totalScore),
+              status: hasUngradedEssay ? 'NEEDS_REVIEW' : 'COMPLETED',
+            },
+          });
+        }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+      } catch (error: any) {
+        lastError = error;
+        // Retry only on serialization failures (P2034) or deadlocks (40001/40P01)
+        const isSerializationError =
+          error?.code === 'P2034' ||
+          error?.meta?.code === '40001' ||
+          error?.meta?.code === '40P01';
+        if (isSerializationError && retryCount < MAX_RETRIES) {
+          continue;
+        }
+        throw error;
+      }
+    }
+
+    throw lastError;
+  }
+
   // --- Exam Attempts (Student) ---
 
   static async startExamAttempt(examId: string, studentId: string) {
@@ -176,13 +586,11 @@ export class CBTService {
     const exam = await prisma.exam.findUnique({
       where: { id: examId },
       include: {
-        questionBank: {
-          include: { questions: true },
-        },
+        questionBank: { select: { id: true } },
       },
     });
 
-    if (!exam) throw Errors.notFound('Exam not found');
+    if (!exam) throw Errors.notFound('Exam');
     if (!exam.questionBank)
       throw Errors.badRequest('This exam is not configured for CBT (no Question Bank)');
 
@@ -207,15 +615,26 @@ export class CBTService {
       return existingAttempt;
     }
 
-    // Create new attempt
-    return prisma.examAttempt.create({
-      data: {
-        examId,
-        studentId,
-        startedAt: new Date(),
-        status: 'IN_PROGRESS',
-      },
-    });
+    // Create new attempt. Catch unique constraint violation (P2002) from
+    // concurrent requests (e.g. double-click) and return the existing attempt.
+    try {
+      return await prisma.examAttempt.create({
+        data: {
+          examId,
+          studentId,
+          startedAt: new Date(),
+          status: 'IN_PROGRESS',
+        },
+      });
+    } catch (error: any) {
+      if (error?.code === 'P2002') {
+        const existing = await prisma.examAttempt.findUnique({
+          where: { examId_studentId: { examId, studentId } },
+        });
+        if (existing) return existing;
+      }
+      throw error;
+    }
   }
 
   static async getAttempt(attemptId: string, studentId: string) {
@@ -245,13 +664,35 @@ export class CBTService {
       },
     });
 
-    if (!attempt) throw Errors.notFound('Attempt not found');
+    if (!attempt) throw Errors.notFound('Attempt');
     if (attempt.studentId !== studentId) throw Errors.forbidden('Access denied');
 
     return attempt;
   }
 
-  static async submitAnswer(attemptId: string, questionId: string, answer: any) {
+  static async submitAnswer(attemptId: string, questionId: string, answer: any, studentId: string) {
+    const attempt = await prisma.examAttempt.findUnique({
+      where: { id: attemptId },
+      include: { exam: { select: { questionBankId: true } } },
+    });
+    if (!attempt) throw Errors.notFound('Attempt');
+    if (attempt.studentId !== studentId) throw Errors.forbidden('Access denied');
+
+    if (attempt.status !== 'IN_PROGRESS') {
+      throw Errors.badRequest('Cannot submit answer for a completed or expired attempt');
+    }
+
+    // Validate that the question belongs to this exam's question bank
+    if (!attempt.exam.questionBankId) {
+      throw Errors.badRequest('This exam is not configured for CBT (no Question Bank)');
+    }
+
+    const question = await prisma.question.findUnique({ where: { id: questionId } });
+    if (!question) throw Errors.notFound('Question');
+    if (question.bankId !== attempt.exam.questionBankId) {
+      throw Errors.badRequest('Question does not belong to this exam');
+    }
+
     // Upsert answer
     return prisma.examAnswer.upsert({
       where: {
@@ -268,22 +709,35 @@ export class CBTService {
     });
   }
 
-  static async finishExamAttempt(attemptId: string) {
+  static async finishExamAttempt(attemptId: string, studentId: string) {
     const attempt = await prisma.examAttempt.findUnique({
       where: { id: attemptId },
       include: {
         exam: {
-          include: { questionBank: { include: { questions: true } } },
+          include: { questionBank: { include: { questions: { orderBy: { order: 'asc' } } } } },
         },
         answers: true,
       },
     });
 
-    if (!attempt) throw Errors.notFound('Attempt not found');
-    if (attempt.status !== 'IN_PROGRESS') return attempt;
+    if (!attempt) throw Errors.notFound('Attempt');
+    if (attempt.studentId !== studentId) throw Errors.forbidden('Access denied');
+    if (attempt.status !== 'IN_PROGRESS') {
+      // Strip sensitive fields before returning to the student to prevent leaking
+      // correct answers and explanations. Only expose the same fields as getAttempt.
+      if (attempt.exam?.questionBank?.questions) {
+        attempt.exam.questionBank.questions = attempt.exam.questionBank.questions
+          .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+          .map(
+            ({ id, type, content, options, points }) => ({ id, type, content, options, points })
+          ) as any;
+      }
+      return attempt;
+    }
 
     // Auto grading
     let totalScore = 0;
+    let hasEssay = false;
     const questions = attempt.exam.questionBank?.questions || [];
 
     const gradedAnswers = [];
@@ -302,18 +756,46 @@ export class CBTService {
         const key = question.answerKey as any; // e.g. "opt-1"
         const studentAns = studentAnswer?.answer as any; // e.g. "opt-1"
 
-        if (key && studentAns && key === studentAns) {
+        // Use JSON.stringify for comparison to handle both primitive and
+        // object JSON values (Prisma Json fields may be deserialized objects).
+        if (key != null && studentAns != null && JSON.stringify(key) === JSON.stringify(studentAns)) {
           isCorrect = true;
           score = question.points;
         }
+      } else if (question.type === 'ESSAY') {
+        hasEssay = true;
       }
       // Essay needs manual grading, score remains 0 or null.
 
       if (studentAnswer) {
+        const isEssay = question.type === 'ESSAY';
         gradedAnswers.push(
           prisma.examAnswer.update({
             where: { id: studentAnswer.id },
-            data: { isCorrect, score },
+            data: {
+              isCorrect: isEssay ? null : isCorrect,
+              score: isEssay ? null : score,
+            },
+          })
+        );
+      } else if (question.type === 'ESSAY') {
+        // Upsert an empty answer record for unanswered essay questions
+        // so teachers can grade them later via gradeEssayAnswer.
+        // Using upsert instead of create to be idempotent if finishExamAttempt
+        // is called concurrently (avoids unique constraint violation).
+        gradedAnswers.push(
+          prisma.examAnswer.upsert({
+            where: {
+              attemptId_questionId: { attemptId, questionId: question.id },
+            },
+            create: {
+              attemptId,
+              questionId: question.id,
+              answer: null,
+              isCorrect: null,
+              score: null,
+            },
+            update: {},
           })
         );
       }
@@ -321,21 +803,50 @@ export class CBTService {
       totalScore += score;
     }
 
+    // Include the attempt status update in the same transaction as answer grading
+    // to avoid a race condition where answers are graded but the attempt stays IN_PROGRESS.
+    gradedAnswers.push(
+      prisma.examAttempt.update({
+        where: { id: attemptId },
+        data: {
+          status: hasEssay ? 'NEEDS_REVIEW' : 'COMPLETED',
+          finishedAt: new Date(),
+          score: new Decimal(totalScore),
+        },
+      })
+    );
+
     await prisma.$transaction(gradedAnswers);
 
-    // Update attempt
-    const finishedAttempt = await prisma.examAttempt.update({
+    // Re-fetch the attempt using Prisma `select` on questions to avoid
+    // leaking sensitive fields (answerKey, explanation) to the student.
+    // This matches the same shape used by getAttempt.
+    const finishedAttempt = await prisma.examAttempt.findUnique({
       where: { id: attemptId },
-      data: {
-        status: 'COMPLETED',
-        finishedAt: new Date(),
-        score: new Prisma.Decimal(totalScore),
+      include: {
+        answers: true,
+        exam: {
+          include: {
+            questionBank: {
+              include: {
+                questions: {
+                  select: {
+                    id: true,
+                    type: true,
+                    content: true,
+                    options: true,
+                    points: true,
+                  },
+                  orderBy: { order: 'asc' },
+                },
+              },
+            },
+          },
+        },
       },
     });
 
-    // Optionally update Gradebook if configured
-    // This would require checking if a Grade entry exists or creating one.
-    // For now, we store score in Attempt. Syncing to Gradebook can be a separate step or trigger.
+    if (!finishedAttempt) throw Errors.notFound('Attempt');
 
     return finishedAttempt;
   }

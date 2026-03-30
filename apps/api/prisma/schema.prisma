@@ -6949,6 +6949,7 @@ enum ExamAttemptStatus {
   IN_PROGRESS
   COMPLETED
   EXPIRED
+  NEEDS_REVIEW
 }
 
 /// QuestionBank - Bank Soal

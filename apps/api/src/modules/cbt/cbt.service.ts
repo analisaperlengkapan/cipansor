@@ -175,7 +175,12 @@ export class CBTService {
 
     return prisma.question.create({
       data: {
-        ...data,
+        bankId: data.bankId,
+        type: data.type,
+        content: data.content,
+        options: data.options,
+        answerKey: data.answerKey,
+        explanation: data.explanation,
         points: data.points ?? 1,
         order: data.order ?? 0,
       },

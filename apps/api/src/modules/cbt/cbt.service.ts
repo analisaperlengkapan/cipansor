@@ -245,11 +245,15 @@ export class CBTService {
     teacherUserId?: string;
     search?: string;
     status?: any;
+    requireUnitScope?: boolean;
   }) {
     const where: Prisma.ExamWhereInput = {};
 
-    // If teacherUserId is set (non-admin), unitId must also be set for isolation
+    // unitId is required for all non-SUPER_ADMIN queries for data isolation
     if (query.teacherUserId && !query.unitId) {
+      throw Errors.badRequest('unitId is required for data isolation');
+    }
+    if (query.requireUnitScope && !query.unitId) {
       throw Errors.badRequest('unitId is required for data isolation');
     }
     // Always apply unitId filter when provided for data isolation
@@ -334,7 +338,9 @@ export class CBTService {
         maxScore: (data.maxScore ?? 100) as any,
         passingScore: (data.passingScore ?? 70) as any,
         weight: (data.weight ?? 1) as any,
-        status: ['DRAFT', 'SCHEDULED'].includes(data.status) ? data.status : 'DRAFT',
+        status: !data.status || data.status === 'DRAFT' ? 'DRAFT'
+          : data.status === 'SCHEDULED' ? 'SCHEDULED'
+          : (() => { throw Errors.badRequest(`Invalid exam status: ${data.status}. Must be DRAFT or SCHEDULED.`); })(),
         instructions: data.instructions,
         questionBankId: data.questionBankId,
       },
@@ -424,6 +430,10 @@ export class CBTService {
 
     if (attempt.status === 'IN_PROGRESS') {
       throw Errors.badRequest('Cannot grade an attempt that is still in progress');
+    }
+
+    if (attempt.status === 'EXPIRED') {
+      throw Errors.badRequest('Cannot grade an expired attempt');
     }
 
     if (user.role === 'UNIT_ADMIN' && attempt.exam.unitId !== user.unitId) {
@@ -693,17 +703,21 @@ export class CBTService {
       totalScore += score;
     }
 
-    await prisma.$transaction(gradedAnswers);
+    // Include the attempt status update in the same transaction as answer grading
+    // to avoid a race condition where answers are graded but the attempt stays IN_PROGRESS.
+    gradedAnswers.push(
+      prisma.examAttempt.update({
+        where: { id: attemptId },
+        data: {
+          status: hasEssay ? 'NEEDS_REVIEW' : 'COMPLETED',
+          finishedAt: new Date(),
+          score: totalScore as any,
+        },
+      })
+    );
 
-    // Update attempt
-    const finishedAttempt = await prisma.examAttempt.update({
-      where: { id: attemptId },
-      data: {
-        status: hasEssay ? 'NEEDS_REVIEW' : 'COMPLETED',
-        finishedAt: new Date(),
-        score: totalScore as any,
-      },
-    });
+    const results = await prisma.$transaction(gradedAnswers);
+    const finishedAttempt = results[results.length - 1];
 
     // Optionally update Gradebook if configured
     // This would require checking if a Grade entry exists or creating one.

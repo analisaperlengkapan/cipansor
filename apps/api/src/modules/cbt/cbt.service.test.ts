@@ -199,7 +199,7 @@ describe('CBT Service', () => {
       });
     });
 
-    it('should grade and finish exam attempt', async () => {
+    it('should grade and finish exam attempt atomically', async () => {
       vi.mocked(prisma.examAttempt.findUnique).mockResolvedValue({
         id: 'attempt-1',
         studentId: 'std-1',
@@ -220,17 +220,14 @@ describe('CBT Service', () => {
 
       vi.mocked(prisma.examAttempt.update).mockResolvedValue({} as any);
 
-      // We expect the transaction to run the updates for answers
-      let transactionCalls: any[] = [];
+      // The transaction now includes both answer grading and attempt status update
       vi.mocked(prisma.$transaction).mockImplementation((promises) => {
-        transactionCalls = promises as any[];
-        return Promise.resolve() as any;
+        return Promise.resolve(promises) as any;
       });
 
       await CBTService.finishExamAttempt('attempt-1', 'std-1');
 
-      // (We mock $transaction above, which receives arrays of promises or Prisma operations)
-      
+      // Attempt update is now inside the transaction batch
       expect(prisma.examAttempt.update).toHaveBeenCalledWith({
         where: { id: 'attempt-1' },
         data: expect.objectContaining({
@@ -272,10 +269,9 @@ describe('CBT Service', () => {
       vi.mocked(prisma.examAttempt.update).mockResolvedValue({} as any);
       vi.mocked(prisma.examAnswer.upsert).mockResolvedValue({ id: 'ans-2' } as any);
 
-      let transactionCalls: any[] = [];
+      // The transaction now includes both answer grading and attempt status update
       vi.mocked(prisma.$transaction).mockImplementation((promises) => {
-        transactionCalls = promises as any[];
-        return Promise.resolve() as any;
+        return Promise.resolve(promises) as any;
       });
 
       await CBTService.finishExamAttempt('attempt-1', 'std-1');

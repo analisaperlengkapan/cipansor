@@ -66,7 +66,9 @@ export class CBTController {
       }
 
       const bank = await CBTService.createQuestionBank({
-        ...req.body,
+        title: req.body.title,
+        description: req.body.description,
+        subjectId: req.body.subjectId,
         teacherId,
         unitId,
       });
@@ -163,6 +165,7 @@ export class CBTController {
         subjectId: subjectId as string,
         search: search as string,
         status: status as any,
+        requireUnitScope: user.role === 'UNIT_ADMIN',
       });
       res.json({ success: true, data: result.data, meta: result.meta });
     } catch (error) {
@@ -205,7 +208,20 @@ export class CBTController {
 
       const exam = await CBTService.createExam(
         {
-          ...req.body,
+          title: req.body.title,
+          description: req.body.description,
+          type: req.body.type,
+          academicYearId: req.body.academicYearId,
+          subjectId: req.body.subjectId,
+          classId: req.body.classId,
+          questionBankId: req.body.questionBankId,
+          scheduledAt: req.body.scheduledAt,
+          duration: req.body.duration,
+          maxScore: req.body.maxScore,
+          passingScore: req.body.passingScore,
+          weight: req.body.weight,
+          status: req.body.status,
+          instructions: req.body.instructions,
           teacherId,
           unitId,
         },

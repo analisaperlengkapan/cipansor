@@ -694,7 +694,9 @@ export class CBTService {
         const key = question.answerKey as any; // e.g. "opt-1"
         const studentAns = studentAnswer?.answer as any; // e.g. "opt-1"
 
-        if (key && studentAns && key === studentAns) {
+        // Use JSON.stringify for comparison to handle both primitive and
+        // object JSON values (Prisma Json fields may be deserialized objects).
+        if (key != null && studentAns != null && JSON.stringify(key) === JSON.stringify(studentAns)) {
           isCorrect = true;
           score = question.points;
         }

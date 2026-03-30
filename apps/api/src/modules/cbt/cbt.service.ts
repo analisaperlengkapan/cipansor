@@ -658,9 +658,11 @@ export class CBTService {
       // Strip sensitive fields before returning to the student to prevent leaking
       // correct answers and explanations. Only expose the same fields as getAttempt.
       if (attempt.exam?.questionBank?.questions) {
-        attempt.exam.questionBank.questions = attempt.exam.questionBank.questions.map(
-          ({ id, type, content, options, points }) => ({ id, type, content, options, points })
-        ) as any;
+        attempt.exam.questionBank.questions = attempt.exam.questionBank.questions
+          .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+          .map(
+            ({ id, type, content, options, points }) => ({ id, type, content, options, points })
+          ) as any;
       }
       return attempt;
     }
@@ -753,7 +755,7 @@ export class CBTService {
       include: {
         answers: true,
         exam: {
-          include: { questionBank: { include: { questions: true } } },
+          include: { questionBank: { include: { questions: { orderBy: { order: 'asc' } } } } },
         },
       },
     });

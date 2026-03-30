@@ -264,7 +264,7 @@ describe('CBT Service', () => {
         include: {
           answers: true,
           exam: {
-            include: { questionBank: { include: { questions: true } } },
+            include: { questionBank: { include: { questions: { orderBy: { order: 'asc' } } } } },
           },
         },
       });

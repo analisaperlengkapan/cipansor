@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,9 +20,19 @@ import Link from "next/link";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedValue(value), delay);
+    return () => clearTimeout(timer);
+  }, [value, delay]);
+  return debouncedValue;
+}
+
 export default function ExamsPage() {
   const [search, setSearch] = useState("");
-  const { data: response, isLoading } = useExams({ search });
+  const debouncedSearch = useDebounce(search, 300);
+  const { data: response, isLoading } = useExams({ search: debouncedSearch });
 
   const exams = response?.data || [];
 

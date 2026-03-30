@@ -141,6 +141,8 @@ export default function ExamMonitoringPage({
                           ? "Butuh Review"
                           : attempt.status === "IN_PROGRESS"
                           ? "Sedang Mengerjakan"
+                          : attempt.status === "EXPIRED"
+                          ? "Kedaluwarsa"
                           : attempt.status}
                       </Badge>
                     </TableCell>
@@ -148,12 +150,16 @@ export default function ExamMonitoringPage({
                       {attempt.score ? parseFloat(attempt.score).toFixed(2) : "0"}
                     </TableCell>
                     <TableCell className="text-right">
-                      {attempt.status === "COMPLETED" || attempt.status === "NEEDS_REVIEW" ? (
+                      {(attempt.status === "COMPLETED" || attempt.status === "NEEDS_REVIEW") ? (
                         <Link href={`/cbt/attempts/${attempt.id}/grading`}>
                           <Button variant="outline" size="sm">
                             Nilai (Manual)
                           </Button>
                         </Link>
+                      ) : attempt.status === "EXPIRED" ? (
+                        <Button variant="outline" size="sm" disabled title="Tidak dapat menilai ujian yang sudah kedaluwarsa">
+                          Kedaluwarsa
+                        </Button>
                       ) : (
                         <Button variant="outline" size="sm" disabled>
                           Nilai (Manual)

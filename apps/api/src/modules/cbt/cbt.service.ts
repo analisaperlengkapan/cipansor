@@ -325,10 +325,10 @@ export class CBTService {
 
     // Validate status before creating
     const validStatuses = ['DRAFT', 'SCHEDULED'];
-    const status = data.status && validStatuses.includes(data.status) ? data.status : 'DRAFT';
     if (data.status && !validStatuses.includes(data.status)) {
       throw Errors.badRequest(`Invalid exam status: ${data.status}. Must be DRAFT or SCHEDULED.`);
     }
+    const status = data.status || 'DRAFT';
 
     return prisma.exam.create({
       data: {
@@ -605,12 +605,24 @@ export class CBTService {
   }
 
   static async submitAnswer(attemptId: string, questionId: string, answer: any, studentId: string) {
-    const attempt = await prisma.examAttempt.findUnique({ where: { id: attemptId } });
+    const attempt = await prisma.examAttempt.findUnique({
+      where: { id: attemptId },
+      include: { exam: { select: { questionBankId: true } } },
+    });
     if (!attempt) throw Errors.notFound('Attempt not found');
     if (attempt.studentId !== studentId) throw Errors.forbidden('Access denied');
 
     if (attempt.status !== 'IN_PROGRESS') {
       throw Errors.badRequest('Cannot submit answer for a completed or expired attempt');
+    }
+
+    // Validate that the question belongs to this exam's question bank
+    if (attempt.exam.questionBankId) {
+      const question = await prisma.question.findUnique({ where: { id: questionId } });
+      if (!question) throw Errors.notFound('Question not found');
+      if (question.bankId !== attempt.exam.questionBankId) {
+        throw Errors.badRequest('Question does not belong to this exam');
+      }
     }
 
     // Upsert answer

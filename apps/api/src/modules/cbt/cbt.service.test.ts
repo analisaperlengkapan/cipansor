@@ -190,6 +190,11 @@ describe('CBT Service', () => {
         id: 'attempt-1',
         studentId: 'std-1',
         status: 'IN_PROGRESS',
+        exam: { questionBankId: 'bank-1' },
+      } as any);
+      vi.mocked(prisma.question.findUnique).mockResolvedValue({
+        id: 'q-1',
+        bankId: 'bank-1',
       } as any);
       vi.mocked(prisma.examAnswer.upsert).mockResolvedValue({ id: 'ans-1' } as any);
 

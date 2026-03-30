@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,8 +11,6 @@ import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
-
-import { useEffect } from "react";
 
 function GradeQuestionForm({
   attemptId,
@@ -165,10 +163,9 @@ export default function AttemptGradingPage({
                   </div>
                 </CardHeader>
                 <CardContent className="pt-6 space-y-4">
-                  <div
-                    className="prose prose-sm max-w-none mb-4"
-                    dangerouslySetInnerHTML={{ __html: question.content }}
-                  />
+                  <div className="prose prose-sm max-w-none mb-4">
+                    <p>{question.content}</p>
+                  </div>
 
                   <div className="bg-muted/30 p-4 rounded-md border">
                     <p className="text-sm font-semibold mb-2">Jawaban Siswa:</p>

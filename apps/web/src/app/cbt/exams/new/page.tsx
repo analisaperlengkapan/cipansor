@@ -35,7 +35,7 @@ import { useAuthStore } from "@/stores/auth";
 const examSchema = z.object({
   title: z.string().min(3, "Judul minimal 3 karakter"),
   description: z.string().optional(),
-  type: z.enum(["DAILY_TEST", "MIDTERM", "FINAL", "PRACTICE"]).default("MIDTERM"),
+  type: z.enum(["DAILY_TEST", "QUIZ", "MIDTERM", "FINAL", "PRACTICAL", "PROJECT", "TAHFIDZ_TEST"]).default("MIDTERM"),
   unitId: z.string().min(1, "Unit harus diisi"),
   academicYearId: z.string().min(1, "Tahun Ajaran harus diisi"),
   subjectId: z.string().min(1, "Mata Pelajaran harus diisi"),
@@ -156,9 +156,12 @@ export default function NewExamPage() {
                           </FormControl>
                           <SelectContent>
                             <SelectItem value="DAILY_TEST">Ulangan Harian</SelectItem>
+                            <SelectItem value="QUIZ">Kuis</SelectItem>
                             <SelectItem value="MIDTERM">Ujian Tengah Semester (UTS)</SelectItem>
                             <SelectItem value="FINAL">Ujian Akhir Semester (UAS)</SelectItem>
-                            <SelectItem value="PRACTICE">Latihan/Simulasi</SelectItem>
+                            <SelectItem value="PRACTICAL">Praktik</SelectItem>
+                            <SelectItem value="PROJECT">Proyek</SelectItem>
+                            <SelectItem value="TAHFIDZ_TEST">Ujian Tahfidz</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />

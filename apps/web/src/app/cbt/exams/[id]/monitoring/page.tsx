@@ -153,11 +153,11 @@ export default function ExamMonitoringPage({
                           Nilai (Manual)
                         </Button>
                       ) : (
-                        <Link href={`/cbt/attempts/${attempt.id}/grading`}>
-                          <Button variant="outline" size="sm">
+                        <Button variant="outline" size="sm" asChild>
+                          <Link href={`/cbt/attempts/${attempt.id}/grading`}>
                             Nilai (Manual)
-                          </Button>
-                        </Link>
+                          </Link>
+                        </Button>
                       )}
                     </TableCell>
                   </TableRow>

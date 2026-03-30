@@ -116,17 +116,22 @@ describe('CBT Service', () => {
         questionBankId: 'bank-1',
       };
 
-      await CBTService.createExam(dto, { id: 'user-1', role: 'TEACHER' });
+      await CBTService.createExam(dto, { id: 'user-1', role: 'TEACHER', unitId: 'unit-1' });
 
       expect(prisma.exam.create).toHaveBeenCalled();
     });
 
     it('should allow teacher to grade essay answers and recalculate total score', async () => {
-      vi.mocked(prisma.examAttempt.findUnique).mockResolvedValue({
-        id: 'attempt-1',
-        status: 'NEEDS_REVIEW',
-        exam: { unitId: 'unit-1', questionBankId: 'bank-1', teacher: { userId: 'user-1' } },
-      } as any);
+      vi.mocked(prisma.examAttempt.findUnique)
+        .mockResolvedValueOnce({
+          id: 'attempt-1',
+          status: 'NEEDS_REVIEW',
+          exam: { unitId: 'unit-1', questionBankId: 'bank-1', teacher: { userId: 'user-1' } },
+        } as any)
+        // Second call is the fresh status re-check inside the transaction
+        .mockResolvedValueOnce({
+          status: 'NEEDS_REVIEW',
+        } as any);
 
       vi.mocked(prisma.question.findUnique).mockResolvedValue({
         id: 'q-1',

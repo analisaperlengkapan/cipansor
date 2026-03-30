@@ -443,6 +443,8 @@ export class CBTService {
     grading: { score: number; isCorrect: boolean },
     user: { id: string; role: string; unitId?: string }
   ) {
+    // Fetch attempt outside the transaction for authorization checks.
+    // The status check is repeated inside the transaction to close the TOCTOU gap.
     const attempt = await prisma.examAttempt.findUnique({
       where: { id: attemptId },
       include: {
@@ -475,6 +477,21 @@ export class CBTService {
     // Use SERIALIZABLE isolation to prevent concurrent grading calls from
     // reading stale answer data and overwriting each other's total score.
     return prisma.$transaction(async (tx) => {
+      // Re-check status inside the transaction to close the TOCTOU gap:
+      // between the check above and entering this serializable transaction,
+      // a concurrent operation could have changed the attempt's status.
+      const freshAttempt = await tx.examAttempt.findUnique({
+        where: { id: attemptId },
+        select: { status: true },
+      });
+      if (!freshAttempt) throw Errors.notFound('Attempt');
+      if (freshAttempt.status === 'IN_PROGRESS') {
+        throw Errors.badRequest('Cannot grade an attempt that is still in progress');
+      }
+      if (freshAttempt.status === 'EXPIRED') {
+        throw Errors.badRequest('Cannot grade an expired attempt');
+      }
+
       const question = await tx.question.findUnique({ where: { id: questionId } });
       if (!question) throw Errors.notFound('Question');
 
@@ -548,9 +565,7 @@ export class CBTService {
     const exam = await prisma.exam.findUnique({
       where: { id: examId },
       include: {
-        questionBank: {
-          include: { questions: true },
-        },
+        questionBank: { select: { id: true } },
       },
     });
 

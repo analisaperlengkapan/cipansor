@@ -148,7 +148,7 @@ export default function ExamMonitoringPage({
                       {attempt.score ? parseFloat(attempt.score).toFixed(2) : "0"}
                     </TableCell>
                     <TableCell className="text-right">
-                      {attempt.status === "IN_PROGRESS" ? (
+                      {attempt.status === "IN_PROGRESS" || attempt.status === "EXPIRED" ? (
                         <Button variant="outline" size="sm" disabled>
                           Nilai (Manual)
                         </Button>

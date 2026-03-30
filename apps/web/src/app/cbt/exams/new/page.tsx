@@ -102,8 +102,8 @@ export default function NewExamPage() {
       });
       toast.success("Jadwal ujian berhasil dibuat");
       router.push("/cbt/exams");
-    } catch (error: any) {
-      toast.error(error.message || "Gagal membuat jadwal ujian");
+    } catch {
+      // Error toast is already shown by the global Axios interceptor
     }
   }
 
@@ -208,7 +208,7 @@ export default function NewExamPage() {
                           </FormControl>
                           <SelectContent>
                             {academicYears.map((item: any) => (
-                              <SelectItem key={item.id} value={item.id}>{item.name} ({item.semester})</SelectItem>
+                              <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>
                             ))}
                           </SelectContent>
                         </Select>

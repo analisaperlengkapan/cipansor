@@ -47,8 +47,8 @@ function GradeQuestionForm({
       });
       toast.success("Nilai berhasil disimpan");
       onSuccess();
-    } catch (error: any) {
-      toast.error(error.message || "Gagal menyimpan nilai");
+    } catch {
+      // Error toast is already shown by the global Axios interceptor
     } finally {
       setIsLoading(false);
     }

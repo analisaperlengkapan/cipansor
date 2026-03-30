@@ -191,6 +191,25 @@ describe('CBT Service', () => {
       });
     });
 
+    it('should handle concurrent startExamAttempt (P2002) gracefully', async () => {
+      vi.mocked(prisma.exam.findUnique).mockResolvedValue({
+        id: 'exam-1',
+        questionBank: {},
+      } as any);
+
+      vi.mocked(prisma.examAttempt.findUnique)
+        .mockResolvedValueOnce(null) // First call: no existing attempt
+        .mockResolvedValueOnce({ id: 'attempt-1', status: 'IN_PROGRESS' } as any); // Retry after P2002
+
+      const p2002Error = new Error('Unique constraint failed') as any;
+      p2002Error.code = 'P2002';
+      vi.mocked(prisma.examAttempt.create).mockRejectedValue(p2002Error);
+
+      const result = await CBTService.startExamAttempt('exam-1', 'std-1');
+
+      expect(result).toEqual({ id: 'attempt-1', status: 'IN_PROGRESS' });
+    });
+
     it('should reject submitAnswer when exam has no question bank', async () => {
       vi.mocked(prisma.examAttempt.findUnique).mockResolvedValue({
         id: 'attempt-1',

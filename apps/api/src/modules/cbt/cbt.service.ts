@@ -476,86 +476,107 @@ export class CBTService {
 
     // Use SERIALIZABLE isolation to prevent concurrent grading calls from
     // reading stale answer data and overwriting each other's total score.
-    return prisma.$transaction(async (tx) => {
-      // Re-check status inside the transaction to close the TOCTOU gap:
-      // between the check above and entering this serializable transaction,
-      // a concurrent operation could have changed the attempt's status.
-      const freshAttempt = await tx.examAttempt.findUnique({
-        where: { id: attemptId },
-        select: { status: true },
-      });
-      if (!freshAttempt) throw Errors.notFound('Attempt');
-      if (freshAttempt.status === 'IN_PROGRESS') {
-        throw Errors.badRequest('Cannot grade an attempt that is still in progress');
+    // Retry up to 2 times on serialization failures (deadlocks/conflicts).
+    const MAX_RETRIES = 2;
+    let lastError: any;
+
+    for (let retryCount = 0; retryCount <= MAX_RETRIES; retryCount++) {
+      try {
+        return await prisma.$transaction(async (tx) => {
+          // Re-check status inside the transaction to close the TOCTOU gap:
+          // between the check above and entering this serializable transaction,
+          // a concurrent operation could have changed the attempt's status.
+          const freshAttempt = await tx.examAttempt.findUnique({
+            where: { id: attemptId },
+            select: { status: true },
+          });
+          if (!freshAttempt) throw Errors.notFound('Attempt');
+          if (freshAttempt.status === 'IN_PROGRESS') {
+            throw Errors.badRequest('Cannot grade an attempt that is still in progress');
+          }
+          if (freshAttempt.status === 'EXPIRED') {
+            throw Errors.badRequest('Cannot grade an expired attempt');
+          }
+
+          const question = await tx.question.findUnique({ where: { id: questionId } });
+          if (!question) throw Errors.notFound('Question');
+
+          if (question.bankId !== attempt.exam.questionBankId) {
+            throw Errors.badRequest('Question does not belong to this exam');
+          }
+
+          if (question.type !== 'ESSAY') {
+            throw Errors.badRequest('Only ESSAY questions can be manually graded');
+          }
+
+          if (
+            typeof grading.score !== 'number' ||
+            Number.isNaN(grading.score) ||
+            grading.score < 0 ||
+            grading.score > question.points
+          ) {
+            throw Errors.badRequest(`Score must be a valid number between 0 and ${question.points}`);
+          }
+
+          // Ensure answer exists
+          const existingAnswer = await tx.examAnswer.findUnique({
+            where: { attemptId_questionId: { attemptId, questionId } },
+          });
+
+          if (!existingAnswer) {
+            throw Errors.badRequest('Cannot grade an unanswered question');
+          }
+
+          // Update the answer
+          await tx.examAnswer.update({
+            where: {
+              attemptId_questionId: { attemptId, questionId },
+            },
+            data: {
+              isCorrect: grading.isCorrect,
+              score: new Decimal(grading.score),
+            },
+          });
+
+          // Recalculate total score for attempt
+          const allAnswers = await tx.examAnswer.findMany({
+            where: { attemptId },
+            include: { question: true },
+          });
+
+          const totalScore = allAnswers.reduce((sum, ans) => {
+            const s = ans.score !== null ? Number(ans.score) : 0;
+            return sum + s;
+          }, 0);
+
+          // Check if any ESSAY answer is still lacking a score to decide status
+          const hasUngradedEssay = allAnswers.some(
+            (ans) => ans.question.type === 'ESSAY' && ans.score === null
+          );
+
+          return tx.examAttempt.update({
+            where: { id: attemptId },
+            data: {
+              score: new Decimal(totalScore),
+              status: hasUngradedEssay ? 'NEEDS_REVIEW' : 'COMPLETED',
+            },
+          });
+        }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+      } catch (error: any) {
+        lastError = error;
+        // Retry only on serialization failures (P2034) or deadlocks (40001/40P01)
+        const isSerializationError =
+          error?.code === 'P2034' ||
+          error?.meta?.code === '40001' ||
+          error?.meta?.code === '40P01';
+        if (isSerializationError && retryCount < MAX_RETRIES) {
+          continue;
+        }
+        throw error;
       }
-      if (freshAttempt.status === 'EXPIRED') {
-        throw Errors.badRequest('Cannot grade an expired attempt');
-      }
+    }
 
-      const question = await tx.question.findUnique({ where: { id: questionId } });
-      if (!question) throw Errors.notFound('Question');
-
-      if (question.bankId !== attempt.exam.questionBankId) {
-        throw Errors.badRequest('Question does not belong to this exam');
-      }
-
-      if (question.type !== 'ESSAY') {
-        throw Errors.badRequest('Only ESSAY questions can be manually graded');
-      }
-
-      if (
-        typeof grading.score !== 'number' ||
-        Number.isNaN(grading.score) ||
-        grading.score < 0 ||
-        grading.score > question.points
-      ) {
-        throw Errors.badRequest(`Score must be a valid number between 0 and ${question.points}`);
-      }
-
-      // Ensure answer exists
-      const existingAnswer = await tx.examAnswer.findUnique({
-        where: { attemptId_questionId: { attemptId, questionId } },
-      });
-
-      if (!existingAnswer) {
-        throw Errors.badRequest('Cannot grade an unanswered question');
-      }
-
-      // Update the answer
-      await tx.examAnswer.update({
-        where: {
-          attemptId_questionId: { attemptId, questionId },
-        },
-        data: {
-          isCorrect: grading.isCorrect,
-          score: new Decimal(grading.score),
-        },
-      });
-
-      // Recalculate total score for attempt
-      const allAnswers = await tx.examAnswer.findMany({
-        where: { attemptId },
-        include: { question: true },
-      });
-
-      const totalScore = allAnswers.reduce((sum, ans) => {
-        const s = ans.score !== null ? Number(ans.score) : 0;
-        return sum + s;
-      }, 0);
-
-      // Check if any ESSAY answer is still lacking a score to decide status
-      const hasUngradedEssay = allAnswers.some(
-        (ans) => ans.question.type === 'ESSAY' && ans.score === null
-      );
-
-      return tx.examAttempt.update({
-        where: { id: attemptId },
-        data: {
-          score: new Decimal(totalScore),
-          status: hasUngradedEssay ? 'NEEDS_REVIEW' : 'COMPLETED',
-        },
-      });
-    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+    throw lastError;
   }
 
   // --- Exam Attempts (Student) ---
@@ -594,15 +615,26 @@ export class CBTService {
       return existingAttempt;
     }
 
-    // Create new attempt
-    return prisma.examAttempt.create({
-      data: {
-        examId,
-        studentId,
-        startedAt: new Date(),
-        status: 'IN_PROGRESS',
-      },
-    });
+    // Create new attempt. Catch unique constraint violation (P2002) from
+    // concurrent requests (e.g. double-click) and return the existing attempt.
+    try {
+      return await prisma.examAttempt.create({
+        data: {
+          examId,
+          studentId,
+          startedAt: new Date(),
+          status: 'IN_PROGRESS',
+        },
+      });
+    } catch (error: any) {
+      if (error?.code === 'P2002') {
+        const existing = await prisma.examAttempt.findUnique({
+          where: { examId_studentId: { examId, studentId } },
+        });
+        if (existing) return existing;
+      }
+      throw error;
+    }
   }
 
   static async getAttempt(attemptId: string, studentId: string) {

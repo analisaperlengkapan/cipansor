@@ -91,7 +91,7 @@ test.describe("CBT Exams & Grading", () => {
         contentType: "application/json",
         body: JSON.stringify({
           success: true,
-          data: [{ id: "ay-1", name: "2024/2025", semester: "Ganjil" }],
+          data: [{ id: "ay-1", name: "2024/2025" }],
         }),
       });
     });
@@ -115,7 +115,7 @@ test.describe("CBT Exams & Grading", () => {
         }),
       });
     });
-    await page.route("**/api/teachers*", async (route) => {
+    await page.route("**/api/hr/teachers*", async (route) => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -163,7 +163,7 @@ test.describe("CBT Exams & Grading", () => {
 
     // Select Academic Year
     await page.click("text=Pilih Tahun Ajaran");
-    await page.click("text=2024/2025 (Ganjil)");
+    await page.click("text=2024/2025");
 
     // Select Subject
     await page.click("text=Pilih Mata Pelajaran");

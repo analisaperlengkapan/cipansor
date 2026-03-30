@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { Prisma, QuestionType, ExamAttemptStatus } from '@prisma/client';
+import { Decimal } from '@prisma/client/runtime/library';
 import { Errors } from '@/middleware/error';
 
 // Types for inputs (can be moved to shared types later)
@@ -342,9 +343,9 @@ export class CBTService {
         description: data.description,
         scheduledAt: new Date(data.scheduledAt),
         duration: data.duration ?? 60,
-        maxScore: (data.maxScore ?? 100) as any,
-        passingScore: (data.passingScore ?? 70) as any,
-        weight: (data.weight ?? 1) as any,
+        maxScore: new Decimal(data.maxScore ?? 100),
+        passingScore: new Decimal(data.passingScore ?? 70),
+        weight: new Decimal(data.weight ?? 1),
         status,
         instructions: data.instructions,
         questionBankId: data.questionBankId,
@@ -492,7 +493,7 @@ export class CBTService {
         },
         data: {
           isCorrect: grading.isCorrect,
-          score: grading.score as any,
+          score: new Decimal(grading.score),
         },
       });
 
@@ -515,7 +516,7 @@ export class CBTService {
       return tx.examAttempt.update({
         where: { id: attemptId },
         data: {
-          score: totalScore as any,
+          score: new Decimal(totalScore),
           status: hasUngradedEssay ? 'NEEDS_REVIEW' : 'COMPLETED'
         },
       });
@@ -741,7 +742,7 @@ export class CBTService {
         data: {
           status: hasEssay ? 'NEEDS_REVIEW' : 'COMPLETED',
           finishedAt: new Date(),
-          score: totalScore as any,
+          score: new Decimal(totalScore),
         },
       })
     );

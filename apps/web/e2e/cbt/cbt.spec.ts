@@ -26,7 +26,7 @@ test.describe("CBT Exams & Grading", () => {
 
   test("Should navigate to exams page and view list", async ({ page }) => {
     // Mock the exams list API
-    await page.route("**/api/cbt/exams*", async (route) => {
+    await page.route(/\/api\/cbt\/exams(\?.*)?$/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -74,8 +74,60 @@ test.describe("CBT Exams & Grading", () => {
       });
     });
 
+    // Mock reference data APIs used by the form
+    await page.route("**/api/units*", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          success: true,
+          data: [{ id: "unit-1", name: "Unit Satu" }],
+        }),
+      });
+    });
+    await page.route("**/api/academic-years*", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          success: true,
+          data: [{ id: "ay-1", name: "2024/2025", semester: "Ganjil" }],
+        }),
+      });
+    });
+    await page.route("**/api/curriculum/subjects*", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          success: true,
+          data: [{ id: "sub-1", name: "Sejarah Kebudayaan Islam" }],
+        }),
+      });
+    });
+    await page.route("**/api/classes*", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          success: true,
+          data: [{ id: "cls-1", name: "Kelas 10A" }],
+        }),
+      });
+    });
+    await page.route("**/api/teachers*", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          success: true,
+          data: [{ id: "teacher-1", user: { name: "Pak Guru" } }],
+        }),
+      });
+    });
+
     // Mock exams API for both GET (list after redirect) and POST (create)
-    await page.route("**/api/cbt/exams*", async (route) => {
+    await page.route(/\/api\/cbt\/exams(\?.*)?$/, async (route) => {
       if (route.request().method() === "POST") {
         await route.fulfill({
           status: 201,

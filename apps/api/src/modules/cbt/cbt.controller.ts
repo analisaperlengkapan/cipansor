@@ -200,6 +200,22 @@ export class CBTController {
         throw Errors.badRequest('title is required');
       }
 
+      if (!req.body.academicYearId) {
+        throw Errors.badRequest('academicYearId is required');
+      }
+
+      if (!req.body.subjectId) {
+        throw Errors.badRequest('subjectId is required');
+      }
+
+      if (!req.body.classId) {
+        throw Errors.badRequest('classId is required');
+      }
+
+      if (!req.body.scheduledAt) {
+        throw Errors.badRequest('scheduledAt is required');
+      }
+
       const user = (req as any).user;
       const isAdmin = user.role === 'SUPER_ADMIN' || user.role === 'UNIT_ADMIN';
 
@@ -283,10 +299,15 @@ export class CBTController {
         throw Errors.badRequest('score is required');
       }
 
+      const numericScore = Number(score);
+      if (Number.isNaN(numericScore)) {
+        throw Errors.badRequest('score must be a valid number');
+      }
+
       const result = await CBTService.gradeEssayAnswer(
         req.params.attemptId,
         questionId,
-        { score, isCorrect: isCorrect ?? false },
+        { score: numericScore, isCorrect: isCorrect ?? false },
         user
       );
       res.json({ success: true, data: result });

@@ -186,6 +186,19 @@ describe('CBT Service', () => {
       });
     });
 
+    it('should reject submitAnswer when exam has no question bank', async () => {
+      vi.mocked(prisma.examAttempt.findUnique).mockResolvedValue({
+        id: 'attempt-1',
+        studentId: 'std-1',
+        status: 'IN_PROGRESS',
+        exam: { questionBankId: null },
+      } as any);
+
+      await expect(
+        CBTService.submitAnswer('attempt-1', 'q-1', 'opt-B', 'std-1')
+      ).rejects.toThrow('not configured for CBT');
+    });
+
     it('should submit an answer using upsert', async () => {
       vi.mocked(prisma.examAttempt.findUnique).mockResolvedValue({
         id: 'attempt-1',

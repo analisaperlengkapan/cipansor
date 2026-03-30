@@ -306,6 +306,11 @@ export class CBTService {
   }
 
   static async createExam(data: CreateExamInput, user: { id: string; role: string; unitId?: string }) {
+    // Enforce unit scope for non-SUPER_ADMIN users
+    if (user.role === 'UNIT_ADMIN' && data.unitId !== user.unitId) {
+      throw Errors.forbidden('You do not have permission to create exams outside your unit');
+    }
+
     // Check question bank
     const bank = await prisma.questionBank.findUnique({
       where: { id: data.questionBankId },
@@ -623,12 +628,14 @@ export class CBTService {
     }
 
     // Validate that the question belongs to this exam's question bank
-    if (attempt.exam.questionBankId) {
-      const question = await prisma.question.findUnique({ where: { id: questionId } });
-      if (!question) throw Errors.notFound('Question');
-      if (question.bankId !== attempt.exam.questionBankId) {
-        throw Errors.badRequest('Question does not belong to this exam');
-      }
+    if (!attempt.exam.questionBankId) {
+      throw Errors.badRequest('This exam is not configured for CBT (no Question Bank)');
+    }
+
+    const question = await prisma.question.findUnique({ where: { id: questionId } });
+    if (!question) throw Errors.notFound('Question');
+    if (question.bankId !== attempt.exam.questionBankId) {
+      throw Errors.badRequest('Question does not belong to this exam');
     }
 
     // Upsert answer
@@ -768,8 +775,10 @@ export class CBTService {
       },
     });
 
+    if (!finishedAttempt) throw Errors.notFound('Attempt');
+
     // Strip sensitive fields before returning to the student
-    if (finishedAttempt?.exam?.questionBank?.questions) {
+    if (finishedAttempt.exam?.questionBank?.questions) {
       finishedAttempt.exam.questionBank.questions = finishedAttempt.exam.questionBank.questions.map(
         ({ id, type, content, options, points }) => ({ id, type, content, options, points })
       ) as any;

@@ -126,7 +126,7 @@ test.describe("CBT Exams & Grading", () => {
       });
     });
 
-    // Mock exams API for both GET (list after redirect) and POST (create)
+    // Mock POST for creating exam
     await page.route(/\/api\/cbt\/exams(\?.*)?$/, async (route) => {
       if (route.request().method() === "POST") {
         await route.fulfill({
@@ -137,7 +137,8 @@ test.describe("CBT Exams & Grading", () => {
             data: { id: "new-exam-1" },
           }),
         });
-      } else {
+      } else if (route.request().method() === "GET") {
+        // GET for list page after redirect
         await route.fulfill({
           status: 200,
           contentType: "application/json",
@@ -146,6 +147,8 @@ test.describe("CBT Exams & Grading", () => {
             data: [],
           }),
         });
+      } else {
+        await route.continue();
       }
     });
 

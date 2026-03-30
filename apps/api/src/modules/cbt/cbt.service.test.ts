@@ -271,13 +271,28 @@ describe('CBT Service', () => {
         data: { isCorrect: false, score: 0 },
       });
 
-      // Re-fetches the attempt after transaction
+      // Re-fetches the attempt after transaction with safe select on questions
       expect(prisma.examAttempt.findUnique).toHaveBeenCalledWith({
         where: { id: 'attempt-1' },
         include: {
           answers: true,
           exam: {
-            include: { questionBank: { include: { questions: { orderBy: { order: 'asc' } } } } },
+            include: {
+              questionBank: {
+                include: {
+                  questions: {
+                    select: {
+                      id: true,
+                      type: true,
+                      content: true,
+                      options: true,
+                      points: true,
+                    },
+                    orderBy: { order: 'asc' },
+                  },
+                },
+              },
+            },
           },
         },
       });

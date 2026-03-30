@@ -157,6 +157,26 @@ test.describe("CBT Exams & Grading", () => {
 
     await page.fill('input[name="title"]', "UTS Sejarah Kebudayaan Islam");
 
+    // Select Unit
+    await page.click("text=Pilih Unit");
+    await page.click("text=Unit Satu");
+
+    // Select Academic Year
+    await page.click("text=Pilih Tahun Ajaran");
+    await page.click("text=2024/2025 (Ganjil)");
+
+    // Select Subject
+    await page.click("text=Pilih Mata Pelajaran");
+    await page.click("text=Sejarah Kebudayaan Islam");
+
+    // Select Class
+    await page.click("text=Pilih Kelas");
+    await page.click("text=Kelas 10A");
+
+    // Select Teacher (required for admin)
+    await page.click("text=Pilih Guru");
+    await page.click("text=Pak Guru");
+
     // Select question bank
     await page.click("text=Pilih Bank Soal");
     await page.click("text=Bank Soal PAI Kelas 10 (10 Soal)");

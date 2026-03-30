@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { Prisma, QuestionType, ExamAttemptStatus } from '@prisma/client';
+import { Prisma, QuestionType } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 import { Errors } from '@/middleware/error';
 
@@ -307,14 +307,14 @@ export class CBTService {
 
   static async createExam(data: CreateExamInput, user: { id: string; role: string; unitId?: string }) {
     // Enforce unit scope for non-SUPER_ADMIN users
-    if (user.role === 'UNIT_ADMIN' && data.unitId !== user.unitId) {
+    if (user.role !== 'SUPER_ADMIN' && user.unitId && data.unitId !== user.unitId) {
       throw Errors.forbidden('You do not have permission to create exams outside your unit');
     }
 
     // Check question bank
     const bank = await prisma.questionBank.findUnique({
       where: { id: data.questionBankId },
-      include: { questions: true, teacher: { select: { userId: true } } },
+      include: { teacher: { select: { userId: true } } },
     });
     if (!bank) throw Errors.notFound('Question Bank');
 
@@ -527,7 +527,7 @@ export class CBTService {
         where: { id: attemptId },
         data: {
           score: new Decimal(totalScore),
-          status: hasUngradedEssay ? 'NEEDS_REVIEW' : 'COMPLETED'
+          status: hasUngradedEssay ? 'NEEDS_REVIEW' : 'COMPLETED',
         },
       });
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
@@ -763,26 +763,35 @@ export class CBTService {
 
     await prisma.$transaction(gradedAnswers);
 
-    // Re-fetch the attempt with the same shape as the early-return path
-    // to ensure a consistent response for the frontend.
+    // Re-fetch the attempt using Prisma `select` on questions to avoid
+    // leaking sensitive fields (answerKey, explanation) to the student.
+    // This matches the same shape used by getAttempt.
     const finishedAttempt = await prisma.examAttempt.findUnique({
       where: { id: attemptId },
       include: {
         answers: true,
         exam: {
-          include: { questionBank: { include: { questions: { orderBy: { order: 'asc' } } } } },
+          include: {
+            questionBank: {
+              include: {
+                questions: {
+                  select: {
+                    id: true,
+                    type: true,
+                    content: true,
+                    options: true,
+                    points: true,
+                  },
+                  orderBy: { order: 'asc' },
+                },
+              },
+            },
+          },
         },
       },
     });
 
     if (!finishedAttempt) throw Errors.notFound('Attempt');
-
-    // Strip sensitive fields before returning to the student
-    if (finishedAttempt.exam?.questionBank?.questions) {
-      finishedAttempt.exam.questionBank.questions = finishedAttempt.exam.questionBank.questions.map(
-        ({ id, type, content, options, points }) => ({ id, type, content, options, points })
-      ) as any;
-    }
 
     return finishedAttempt;
   }

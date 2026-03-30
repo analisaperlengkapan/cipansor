@@ -104,8 +104,14 @@ export class CBTController {
       const user = (req as any).user;
       const question = await CBTService.addQuestion(
         {
-          ...req.body,
           bankId: req.params.id,
+          type: req.body.type,
+          content: req.body.content,
+          options: req.body.options,
+          answerKey: req.body.answerKey,
+          explanation: req.body.explanation,
+          points: req.body.points,
+          order: req.body.order,
         },
         user
       );
@@ -118,7 +124,18 @@ export class CBTController {
   static async updateQuestion(req: Request, res: Response, next: NextFunction) {
     try {
       const user = (req as any).user;
-      const question = await CBTService.updateQuestion(req.params.questionId, req.body, user);
+      const question = await CBTService.updateQuestion(
+        req.params.questionId,
+        {
+          content: req.body.content,
+          options: req.body.options,
+          answerKey: req.body.answerKey,
+          explanation: req.body.explanation,
+          points: req.body.points,
+          order: req.body.order,
+        },
+        user
+      );
       res.json({ success: true, data: question });
     } catch (error) {
       next(error);

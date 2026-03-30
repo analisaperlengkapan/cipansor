@@ -74,8 +74,8 @@ test.describe("CBT Exams & Grading", () => {
       });
     });
 
-    // Mock create exam POST
-    await page.route("**/api/cbt/exams", async (route) => {
+    // Mock exams API for both GET (list after redirect) and POST (create)
+    await page.route("**/api/cbt/exams*", async (route) => {
       if (route.request().method() === "POST") {
         await route.fulfill({
           status: 201,
@@ -86,13 +86,6 @@ test.describe("CBT Exams & Grading", () => {
           }),
         });
       } else {
-        return route.fallback();
-      }
-    });
-
-    // Mock GET for exams list (after navigation)
-    await page.route("**/api/cbt/exams?*", async (route) => {
-      if (route.request().method() === "GET") {
         await route.fulfill({
           status: 200,
           contentType: "application/json",
@@ -101,8 +94,6 @@ test.describe("CBT Exams & Grading", () => {
             data: [],
           }),
         });
-      } else {
-        return route.fallback();
       }
     });
 

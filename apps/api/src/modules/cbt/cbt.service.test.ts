@@ -130,6 +130,7 @@ describe('CBT Service', () => {
 
       vi.mocked(prisma.question.findUnique).mockResolvedValue({
         id: 'q-1',
+        bankId: 'bank-1',
         points: 10,
         type: 'ESSAY',
       } as any);
@@ -210,7 +211,7 @@ describe('CBT Service', () => {
     });
 
     it('should grade and finish exam attempt atomically', async () => {
-      vi.mocked(prisma.examAttempt.findUnique).mockResolvedValue({
+      const attemptData = {
         id: 'attempt-1',
         studentId: 'std-1',
         status: 'IN_PROGRESS',
@@ -226,8 +227,9 @@ describe('CBT Service', () => {
           { id: 'ans-1', questionId: 'q-1', answer: 'opt-A' }, // correct
           { id: 'ans-2', questionId: 'q-2', answer: 'opt-B' }, // wrong
         ],
-      } as any);
+      };
 
+      vi.mocked(prisma.examAttempt.findUnique).mockResolvedValue(attemptData as any);
       vi.mocked(prisma.examAttempt.update).mockResolvedValue({} as any);
 
       // The transaction now includes both answer grading and attempt status update
@@ -255,10 +257,21 @@ describe('CBT Service', () => {
         where: { id: 'ans-2' },
         data: { isCorrect: false, score: 0 },
       });
+
+      // Re-fetches the attempt after transaction
+      expect(prisma.examAttempt.findUnique).toHaveBeenCalledWith({
+        where: { id: 'attempt-1' },
+        include: {
+          answers: true,
+          exam: {
+            include: { questionBank: { include: { questions: true } } },
+          },
+        },
+      });
     });
 
     it('should create answer records for unanswered essay questions and set NEEDS_REVIEW', async () => {
-      vi.mocked(prisma.examAttempt.findUnique).mockResolvedValue({
+      const attemptData = {
         id: 'attempt-1',
         studentId: 'std-1',
         status: 'IN_PROGRESS',
@@ -274,8 +287,9 @@ describe('CBT Service', () => {
           { id: 'ans-1', questionId: 'q-1', answer: 'opt-A' }, // answered MC
           // q-2 (ESSAY) not answered
         ],
-      } as any);
+      };
 
+      vi.mocked(prisma.examAttempt.findUnique).mockResolvedValue(attemptData as any);
       vi.mocked(prisma.examAttempt.update).mockResolvedValue({} as any);
       vi.mocked(prisma.examAnswer.upsert).mockResolvedValue({ id: 'ans-2' } as any);
 

@@ -744,12 +744,26 @@ export class CBTService {
       })
     );
 
-    const results = await prisma.$transaction(gradedAnswers);
-    const finishedAttempt = results[results.length - 1];
+    await prisma.$transaction(gradedAnswers);
 
-    // Optionally update Gradebook if configured
-    // This would require checking if a Grade entry exists or creating one.
-    // For now, we store score in Attempt. Syncing to Gradebook can be a separate step or trigger.
+    // Re-fetch the attempt with the same shape as the early-return path
+    // to ensure a consistent response for the frontend.
+    const finishedAttempt = await prisma.examAttempt.findUnique({
+      where: { id: attemptId },
+      include: {
+        answers: true,
+        exam: {
+          include: { questionBank: { include: { questions: true } } },
+        },
+      },
+    });
+
+    // Strip sensitive fields before returning to the student
+    if (finishedAttempt?.exam?.questionBank?.questions) {
+      finishedAttempt.exam.questionBank.questions = finishedAttempt.exam.questionBank.questions.map(
+        ({ id, type, content, options, points }) => ({ id, type, content, options, points })
+      ) as any;
+    }
 
     return finishedAttempt;
   }

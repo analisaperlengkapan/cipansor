@@ -109,7 +109,7 @@ export class CBTService {
       },
     });
 
-    if (!bank) throw Errors.notFound('Question Bank not found');
+    if (!bank) throw Errors.notFound('Question Bank');
 
     if (user.role === 'UNIT_ADMIN' && bank.unitId !== user.unitId) {
       throw Errors.forbidden('You do not have permission to view Question Banks outside your unit');
@@ -131,7 +131,7 @@ export class CBTService {
       where: { id },
       include: { teacher: { select: { userId: true } } },
     });
-    if (!bank) throw Errors.notFound('Question Bank not found');
+    if (!bank) throw Errors.notFound('Question Bank');
 
     if (user.role === 'UNIT_ADMIN' && bank.unitId !== user.unitId) {
       throw Errors.forbidden('You do not have permission to delete Question Banks outside your unit');
@@ -159,7 +159,7 @@ export class CBTService {
       where: { id: data.bankId },
       include: { teacher: { select: { userId: true } } },
     });
-    if (!bank) throw Errors.notFound('Question Bank not found');
+    if (!bank) throw Errors.notFound('Question Bank');
 
     if (user.role === 'UNIT_ADMIN' && bank.unitId !== user.unitId) {
       throw Errors.forbidden('You do not have permission to modify Question Banks outside your unit');
@@ -196,7 +196,7 @@ export class CBTService {
       where: { id },
       include: { bank: { include: { teacher: { select: { userId: true } } } } },
     });
-    if (!question) throw Errors.notFound('Question not found');
+    if (!question) throw Errors.notFound('Question');
 
     if (user.role === 'UNIT_ADMIN' && question.bank.unitId !== user.unitId) {
       throw Errors.forbidden('You do not have permission to modify questions outside your unit');
@@ -221,7 +221,7 @@ export class CBTService {
       where: { id },
       include: { bank: { include: { teacher: { select: { userId: true } } } } },
     });
-    if (!question) throw Errors.notFound('Question not found');
+    if (!question) throw Errors.notFound('Question');
 
     if (user.role === 'UNIT_ADMIN' && question.bank.unitId !== user.unitId) {
       throw Errors.forbidden('You do not have permission to modify questions outside your unit');
@@ -311,7 +311,7 @@ export class CBTService {
       where: { id: data.questionBankId },
       include: { questions: true, teacher: { select: { userId: true } } },
     });
-    if (!bank) throw Errors.notFound('Question Bank not found');
+    if (!bank) throw Errors.notFound('Question Bank');
 
     if (!bank.isActive) {
       throw Errors.badRequest('This Question Bank has been deactivated');
@@ -371,7 +371,7 @@ export class CBTService {
       },
     });
 
-    if (!exam) throw Errors.notFound('Exam not found');
+    if (!exam) throw Errors.notFound('Exam');
 
     if (user.role === 'UNIT_ADMIN' && exam.unitId !== user.unitId) {
       throw Errors.forbidden('You do not have permission to view exams outside your unit');
@@ -399,7 +399,7 @@ export class CBTService {
           include: {
             teacher: { select: { userId: true } },
             questionBank: {
-              include: { questions: true },
+              include: { questions: { orderBy: { order: 'asc' } } },
             },
           },
         },
@@ -407,7 +407,7 @@ export class CBTService {
       },
     });
 
-    if (!attempt) throw Errors.notFound('Attempt not found');
+    if (!attempt) throw Errors.notFound('Attempt');
 
     if (user.role === 'UNIT_ADMIN' && attempt.exam.unitId !== user.unitId) {
       throw Errors.forbidden('You do not have permission to grade exams outside your unit');
@@ -437,7 +437,7 @@ export class CBTService {
       },
     });
 
-    if (!attempt) throw Errors.notFound('Attempt not found');
+    if (!attempt) throw Errors.notFound('Attempt');
 
     if (attempt.status === 'IN_PROGRESS') {
       throw Errors.badRequest('Cannot grade an attempt that is still in progress');
@@ -463,7 +463,7 @@ export class CBTService {
     // reading stale answer data and overwriting each other's total score.
     return prisma.$transaction(async (tx) => {
       const question = await tx.question.findUnique({ where: { id: questionId } });
-      if (!question) throw Errors.notFound('Question not found');
+      if (!question) throw Errors.notFound('Question');
 
       if (question.bankId !== attempt.exam.questionBankId) {
         throw Errors.badRequest('Question does not belong to this exam');
@@ -541,7 +541,7 @@ export class CBTService {
       },
     });
 
-    if (!exam) throw Errors.notFound('Exam not found');
+    if (!exam) throw Errors.notFound('Exam');
     if (!exam.questionBank)
       throw Errors.badRequest('This exam is not configured for CBT (no Question Bank)');
 
@@ -604,7 +604,7 @@ export class CBTService {
       },
     });
 
-    if (!attempt) throw Errors.notFound('Attempt not found');
+    if (!attempt) throw Errors.notFound('Attempt');
     if (attempt.studentId !== studentId) throw Errors.forbidden('Access denied');
 
     return attempt;
@@ -615,7 +615,7 @@ export class CBTService {
       where: { id: attemptId },
       include: { exam: { select: { questionBankId: true } } },
     });
-    if (!attempt) throw Errors.notFound('Attempt not found');
+    if (!attempt) throw Errors.notFound('Attempt');
     if (attempt.studentId !== studentId) throw Errors.forbidden('Access denied');
 
     if (attempt.status !== 'IN_PROGRESS') {
@@ -625,7 +625,7 @@ export class CBTService {
     // Validate that the question belongs to this exam's question bank
     if (attempt.exam.questionBankId) {
       const question = await prisma.question.findUnique({ where: { id: questionId } });
-      if (!question) throw Errors.notFound('Question not found');
+      if (!question) throw Errors.notFound('Question');
       if (question.bankId !== attempt.exam.questionBankId) {
         throw Errors.badRequest('Question does not belong to this exam');
       }
@@ -652,13 +652,13 @@ export class CBTService {
       where: { id: attemptId },
       include: {
         exam: {
-          include: { questionBank: { include: { questions: true } } },
+          include: { questionBank: { include: { questions: { orderBy: { order: 'asc' } } } } },
         },
         answers: true,
       },
     });
 
-    if (!attempt) throw Errors.notFound('Attempt not found');
+    if (!attempt) throw Errors.notFound('Attempt');
     if (attempt.studentId !== studentId) throw Errors.forbidden('Access denied');
     if (attempt.status !== 'IN_PROGRESS') {
       // Strip sensitive fields before returning to the student to prevent leaking

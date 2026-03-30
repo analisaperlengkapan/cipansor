@@ -323,6 +323,13 @@ export class CBTService {
       throw Errors.forbidden('You do not have permission to use this Question Bank');
     }
 
+    // Validate status before creating
+    const validStatuses = ['DRAFT', 'SCHEDULED'];
+    const status = data.status && validStatuses.includes(data.status) ? data.status : 'DRAFT';
+    if (data.status && !validStatuses.includes(data.status)) {
+      throw Errors.badRequest(`Invalid exam status: ${data.status}. Must be DRAFT or SCHEDULED.`);
+    }
+
     return prisma.exam.create({
       data: {
         unitId: data.unitId,
@@ -338,9 +345,7 @@ export class CBTService {
         maxScore: (data.maxScore ?? 100) as any,
         passingScore: (data.passingScore ?? 70) as any,
         weight: (data.weight ?? 1) as any,
-        status: !data.status || data.status === 'DRAFT' ? 'DRAFT'
-          : data.status === 'SCHEDULED' ? 'SCHEDULED'
-          : (() => { throw Errors.badRequest(`Invalid exam status: ${data.status}. Must be DRAFT or SCHEDULED.`); })(),
+        status,
         instructions: data.instructions,
         questionBankId: data.questionBankId,
       },
@@ -498,7 +503,7 @@ export class CBTService {
       });
 
       const totalScore = allAnswers.reduce((sum, ans) => {
-        const s = ans.score ? Number(ans.score) : 0;
+        const s = ans.score !== null ? Number(ans.score) : 0;
         return sum + s;
       }, 0);
 

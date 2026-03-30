@@ -258,10 +258,18 @@ export class CBTController {
     try {
       const user = (req as any).user;
       const { questionId, score, isCorrect } = req.body;
+
+      if (!questionId) {
+        throw Errors.badRequest('questionId is required');
+      }
+      if (score === undefined || score === null) {
+        throw Errors.badRequest('score is required');
+      }
+
       const result = await CBTService.gradeEssayAnswer(
         req.params.attemptId,
         questionId,
-        { score, isCorrect },
+        { score, isCorrect: isCorrect ?? false },
         user
       );
       res.json({ success: true, data: result });
@@ -303,6 +311,10 @@ export class CBTController {
     try {
       const { questionId, answer } = req.body;
       const user = (req as any).user;
+
+      if (!questionId) {
+        throw Errors.badRequest('questionId is required');
+      }
 
       const student = await prisma.student.findUnique({ where: { userId: user.id } });
       if (!student) {

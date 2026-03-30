@@ -74,18 +74,29 @@ test.describe("CBT Exams & Grading", () => {
       });
     });
 
-    // Mock create exam POST
+    // Mock create exam POST and GET (for navigation after creation)
     await page.route("**/api/cbt/exams", async (route) => {
-      if (route.request().method() !== "POST") return route.fallback();
-
-      await route.fulfill({
-        status: 201,
-        contentType: "application/json",
-        body: JSON.stringify({
-          success: true,
-          data: { id: "new-exam-1" },
-        }),
-      });
+      if (route.request().method() === "POST") {
+        await route.fulfill({
+          status: 201,
+          contentType: "application/json",
+          body: JSON.stringify({
+            success: true,
+            data: { id: "new-exam-1" },
+          }),
+        });
+      } else if (route.request().method() === "GET") {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            success: true,
+            data: [],
+          }),
+        });
+      } else {
+        return route.fallback();
+      }
     });
 
     await page.goto("/cbt/exams/new");

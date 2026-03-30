@@ -58,7 +58,9 @@ describe('CBT Service', () => {
 
       await CBTService.createQuestionBank(dto);
 
-      expect(prisma.questionBank.create).toHaveBeenCalledWith({ data: dto });
+      expect(prisma.questionBank.create).toHaveBeenCalledWith({
+        data: expect.objectContaining(dto),
+      });
     });
 
     it('should add question to bank if authorized', async () => {

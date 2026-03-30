@@ -638,10 +638,11 @@ export class CBTService {
     if (!attempt) throw Errors.notFound('Attempt not found');
     if (attempt.studentId !== studentId) throw Errors.forbidden('Access denied');
     if (attempt.status !== 'IN_PROGRESS') {
-      // Strip answer keys before returning to the student to prevent leaking correct answers
+      // Strip sensitive fields before returning to the student to prevent leaking
+      // correct answers and explanations. Only expose the same fields as getAttempt.
       if (attempt.exam?.questionBank?.questions) {
         attempt.exam.questionBank.questions = attempt.exam.questionBank.questions.map(
-          ({ answerKey, ...rest }) => rest
+          ({ id, type, content, options, points }) => ({ id, type, content, options, points })
         ) as any;
       }
       return attempt;

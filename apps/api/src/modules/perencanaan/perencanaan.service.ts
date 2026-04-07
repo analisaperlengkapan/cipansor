@@ -71,6 +71,11 @@ export class PerencanaanService {
             activities: {
               include: {
                 pic: { select: { id: true, name: true } },
+                budgetRel: {
+                  include: {
+                    account: { select: { code: true, name: true } },
+                  },
+                },
               },
               orderBy: { createdAt: 'asc' },
             },
@@ -197,6 +202,7 @@ export class PerencanaanService {
     startDate?: string;
     endDate?: string;
     budget?: number;
+    budgetId?: string;
     priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
   }) {
     return prisma.planActivity.create({
@@ -205,6 +211,7 @@ export class PerencanaanService {
         title: data.title,
         description: data.description,
         pic: data.picId ? { connect: { id: data.picId } } : undefined,
+        budgetRel: data.budgetId ? { connect: { id: data.budgetId } } : undefined,
         startDate: data.startDate ? new Date(data.startDate) : undefined,
         endDate: data.endDate ? new Date(data.endDate) : undefined,
         budget: data.budget ? (data.budget as any) : undefined,
@@ -212,16 +219,24 @@ export class PerencanaanService {
       },
       include: {
         pic: { select: { id: true, name: true } },
+        budgetRel: {
+          include: {
+            account: { select: { code: true, name: true } },
+          },
+        },
       },
     });
   }
 
   async updateActivity(id: string, data: any) {
-    const { picId, ...rest } = data;
+    const { picId, budgetId, ...rest } = data;
     const updateData: any = { ...rest };
 
     if (picId) updateData.pic = { connect: { id: picId } };
     else if (picId === null) updateData.pic = { disconnect: true };
+
+    if (budgetId) updateData.budgetRel = { connect: { id: budgetId } };
+    else if (budgetId === null) updateData.budgetRel = { disconnect: true };
 
     if (rest.startDate) updateData.startDate = new Date(rest.startDate);
     if (rest.endDate) updateData.endDate = new Date(rest.endDate);
@@ -230,7 +245,14 @@ export class PerencanaanService {
     return prisma.planActivity.update({
       where: { id },
       data: updateData,
-      include: { pic: { select: { id: true, name: true } } },
+      include: {
+        pic: { select: { id: true, name: true } },
+        budgetRel: {
+          include: {
+            account: { select: { code: true, name: true } },
+          },
+        },
+      },
     });
   }
 

@@ -312,6 +312,41 @@ export class TalentaService {
     return prisma.successionPlan.delete({ where: { id } });
   }
 
+  // ==================== ANALYTICS ====================
+
+  async getTalentAnalytics(unitId: string) {
+    const profiles = await prisma.talentProfile.findMany({
+      where: { unitId },
+      select: { category: true },
+    });
+
+    const distribution: Record<string, number> = {
+      HIGH_POTENTIAL: 0,
+      KEY_TALENT: 0,
+      EMERGING: 0,
+      SOLID_PERFORMER: 0,
+      NEEDS_DEVELOPMENT: 0,
+    };
+
+    profiles.forEach((p) => {
+      if (p.category && distribution[p.category] !== undefined) {
+        distribution[p.category]++;
+      }
+    });
+
+    const total = profiles.length;
+    const percentages = Object.keys(distribution).reduce((acc, key) => {
+      acc[key] = total > 0 ? Math.round((distribution[key] / total) * 100) : 0;
+      return acc;
+    }, {} as Record<string, number>);
+
+    return {
+      total,
+      distribution,
+      percentages,
+    };
+  }
+
   // ==================== HELPERS ====================
 
   private determineTalentCategory(

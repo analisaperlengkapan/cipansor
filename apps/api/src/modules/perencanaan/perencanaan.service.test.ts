@@ -142,12 +142,13 @@ describe('Perencanaan Service', () => {
       });
     });
 
-    it('should create activity', async () => {
+    it('should create activity with budget linkage', async () => {
       const dto = {
         objectiveId: 'obj-1',
         title: 'Pemantapan UN',
         priority: 'HIGH' as any,
         budget: 5000000,
+        budgetId: 'budget-123',
       };
 
       vi.mocked(prisma.planActivity.create).mockResolvedValue({ id: 'act-1' } as any);
@@ -158,6 +159,29 @@ describe('Perencanaan Service', () => {
         data: expect.objectContaining({
           title: 'Pemantapan UN',
           priority: 'HIGH',
+          budgetRel: { connect: { id: 'budget-123' } },
+        }),
+        include: expect.objectContaining({
+          budgetRel: expect.any(Object),
+        }),
+      });
+    });
+
+    it('should update activity with budget linkage', async () => {
+      const dto = {
+        title: 'Pemantapan UN Updated',
+        budgetId: 'budget-456',
+      };
+
+      vi.mocked(prisma.planActivity.update).mockResolvedValue({ id: 'act-1' } as any);
+
+      await perencanaanService.updateActivity('act-1', dto);
+
+      expect(prisma.planActivity.update).toHaveBeenCalledWith({
+        where: { id: 'act-1' },
+        data: expect.objectContaining({
+          title: 'Pemantapan UN Updated',
+          budgetRel: { connect: { id: 'budget-456' } },
         }),
         include: expect.any(Object),
       });

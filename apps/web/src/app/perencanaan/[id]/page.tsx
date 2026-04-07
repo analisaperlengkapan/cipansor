@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
-import { usePlan, useApprovePlan } from "@/hooks/use-perencanaan";
+import { usePlan, useApprovePlan, useDeleteActivity } from "@/hooks/use-perencanaan";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -12,9 +12,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Target, Calendar, CheckCircle2, TrendingUp, Activity, BarChart, ShieldAlert, ClipboardCheck, ArrowRight } from "lucide-react";
+import { ArrowLeft, Target, Calendar, CheckCircle2, TrendingUp, Activity, BarChart, ShieldAlert, ClipboardCheck, ArrowRight, Pencil, Trash2, Wallet } from "lucide-react";
 import { RiskLevelBadge } from "@/components/risk/risk-badges";
 import Link from "next/link";
+import { ActivityDialog } from "./activity-dialog";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 
 export default function PerencanaanDetailPage() {
   const params = useParams();
@@ -23,6 +25,12 @@ export default function PerencanaanDetailPage() {
 
   const { data: plan, isLoading } = usePlan(planId);
   const approvePlan = useApprovePlan();
+  const deleteActivity = useDeleteActivity();
+
+  const [activityDialogOpen, setActivityDialogOpen] = useState(false);
+  const [selectedObjectiveId, setSelectedObjectiveId] = useState<string>("");
+  const [editActivityData, setEditActivityData] = useState<any>(null);
+  const [deleteActivityId, setDeleteActivityId] = useState<string | null>(null);
 
   if (isLoading) {
     return (
@@ -210,10 +218,93 @@ export default function PerencanaanDetailPage() {
 
         <TabsContent value="activities">
           <Card>
-            <CardContent className="py-12 text-center text-muted-foreground">
-              <Activity className="w-12 h-12 mx-auto mb-3 opacity-30" />
-              <p>Daftar kegiatan terkait rencana ini akan ditampilkan di sini.</p>
-              <Button variant="outline" className="mt-4">Petakan Kegiatan Baru</Button>
+            <CardHeader className="flex flex-row items-center justify-between pb-2 border-b">
+              <CardTitle className="text-lg">Daftar Program & Kegiatan</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              {plan.objectives && plan.objectives.length > 0 ? (
+                <div className="divide-y">
+                  {plan.objectives.map((obj: any) => (
+                    <div key={obj.id} className="p-4">
+                      <div className="flex items-center gap-2 mb-4 bg-slate-50 p-2 rounded border">
+                        <Target className="w-4 h-4 text-primary" />
+                        <span className="text-sm font-semibold">{obj.title}</span>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="ml-auto h-7 text-xs"
+                          onClick={() => {
+                            setSelectedObjectiveId(obj.id);
+                            setEditActivityData(null);
+                            setActivityDialogOpen(true);
+                          }}
+                        >
+                          + Tambah Kegiatan
+                        </Button>
+                      </div>
+
+                      {obj.activities && obj.activities.length > 0 ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 ml-4">
+                          {obj.activities.map((act: any) => (
+                            <Card key={act.id} className="shadow-none border-dashed bg-slate-50/30">
+                              <CardContent className="p-4">
+                                <div className="flex justify-between items-start mb-2">
+                                  <h5 className="font-medium text-sm">{act.title}</h5>
+                                  <div className="flex gap-1">
+                                    <Button
+                                      size="icon"
+                                      variant="ghost"
+                                      className="h-7 w-7"
+                                      onClick={() => {
+                                        setSelectedObjectiveId(obj.id);
+                                        setEditActivityData(act);
+                                        setActivityDialogOpen(true);
+                                      }}
+                                    >
+                                      <Pencil className="h-3 w-3" />
+                                    </Button>
+                                    <Button
+                                      size="icon"
+                                      variant="ghost"
+                                      className="h-7 w-7 text-destructive"
+                                      onClick={() => setDeleteActivityId(act.id)}
+                                    >
+                                      <Trash2 className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                </div>
+                                <div className="flex flex-wrap gap-2 text-xs text-muted-foreground mt-2">
+                                  <Badge variant="outline" className="text-[10px]">{act.status}</Badge>
+                                  <Badge variant="outline" className="text-[10px]">{act.priority}</Badge>
+                                  {act.pic && (
+                                    <span className="flex items-center gap-1">
+                                      <CheckCircle2 className="w-3 h-3" /> {act.pic.name}
+                                    </span>
+                                  )}
+                                </div>
+                                {act.budgetRel && (
+                                  <div className="mt-3 pt-3 border-t flex items-center gap-2 text-xs text-emerald-700">
+                                    <Wallet className="w-3 h-3" />
+                                    <span className="font-semibold">{act.budgetRel.account?.code}</span>
+                                    <span>{act.budgetRel.account?.name}</span>
+                                  </div>
+                                )}
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-muted-foreground italic ml-6 py-2">Belum ada kegiatan untuk sasaran ini.</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Activity className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                  <p>Tambahkan sasaran strategis terlebih dahulu sebelum memetakan kegiatan.</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -303,6 +394,29 @@ export default function PerencanaanDetailPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {activityDialogOpen && (
+        <ActivityDialog
+          open={activityDialogOpen}
+          onOpenChange={setActivityDialogOpen}
+          objectiveId={selectedObjectiveId}
+          editData={editActivityData}
+        />
+      )}
+
+      <ConfirmDialog
+        open={!!deleteActivityId}
+        onOpenChange={(open) => !open && setDeleteActivityId(null)}
+        title="Hapus Kegiatan?"
+        description="Apakah Anda yakin ingin menghapus kegiatan ini? Tindakan ini tidak dapat dibatalkan."
+        onConfirm={async () => {
+          if (deleteActivityId) {
+            await deleteActivity.mutateAsync(deleteActivityId);
+            setDeleteActivityId(null);
+          }
+        }}
+        isLoading={deleteActivity.isPending}
+      />
     </div>
   );
 }

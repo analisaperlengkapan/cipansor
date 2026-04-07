@@ -39,7 +39,18 @@ export interface PlanIndicator {
 export interface PlanActivity {
   id: string;
   title: string;
+  description?: string;
   status: string;
+  priority: string;
+  startDate?: string;
+  endDate?: string;
+  budget?: number;
+  budgetId?: string;
+  budgetRel?: {
+    id: string;
+    amount: number;
+    account: { code: string; name: string };
+  };
   pic?: { id: string; name: string };
 }
 
@@ -49,6 +60,57 @@ export const usePlans = (params?: { type?: string; status?: string }) => {
     queryFn: async () => {
       const res = await api.get("/api/perencanaan", { params });
       return res.data.data as StrategicPlan[];
+    },
+  });
+};
+
+export const useCreateActivity = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: any) => {
+      const res = await api.post("/api/perencanaan/activities", data);
+      return res.data;
+    },
+    onSuccess: () => {
+      toast.success("Kegiatan berhasil dibuat");
+      queryClient.invalidateQueries({ queryKey: ["perencanaan"] });
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Gagal membuat kegiatan");
+    },
+  });
+};
+
+export const useUpdateActivity = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...data }: { id: string } & any) => {
+      const res = await api.put(`/api/perencanaan/activities/${id}`, data);
+      return res.data;
+    },
+    onSuccess: () => {
+      toast.success("Kegiatan berhasil diperbarui");
+      queryClient.invalidateQueries({ queryKey: ["perencanaan"] });
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Gagal memperbarui kegiatan");
+    },
+  });
+};
+
+export const useDeleteActivity = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const res = await api.delete(`/api/perencanaan/activities/${id}`);
+      return res.data;
+    },
+    onSuccess: () => {
+      toast.success("Kegiatan berhasil dihapus");
+      queryClient.invalidateQueries({ queryKey: ["perencanaan"] });
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Gagal menghapus kegiatan");
     },
   });
 };

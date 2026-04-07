@@ -204,7 +204,7 @@ export function ActivityDialog({
                       <SelectItem value="none">Tanpa Anggaran Keuangan</SelectItem>
                       {budgets?.map((b: any) => (
                         <SelectItem key={b.id} value={b.id}>
-                          {b.account?.code} - {b.account?.name} (Tersedia: Rp {b.amount.toLocaleString()})
+                          {b.account?.code} - {b.account?.name} (Tersedia: Rp {Number(b.amount || 0).toLocaleString('id-ID')})
                         </SelectItem>
                       ))}
                     </SelectContent>

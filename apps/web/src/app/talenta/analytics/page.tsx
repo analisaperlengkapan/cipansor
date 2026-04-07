@@ -5,7 +5,7 @@ import { api } from "@/lib/api";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Users, TrendingUp, Target, Award, Info } from "lucide-react";
+import { Users, TrendingUp, Target, Award } from "lucide-react";
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Cell, Pie, PieChart } from "recharts";
 
 export default function TalentAnalyticsPage() {
@@ -30,7 +30,7 @@ export default function TalentAnalyticsPage() {
   }
 
   const chartData = analytics ? Object.keys(analytics.distribution).map(key => ({
-    name: key.replace("_", " "),
+    name: key.replaceAll("_", " "),
     count: analytics.distribution[key],
     percentage: analytics.percentages[key]
   })) : [];
@@ -78,7 +78,7 @@ export default function TalentAnalyticsPage() {
                 <YAxis dataKey="name" type="category" width={150} tick={{ fontSize: 12 }} />
                 <Tooltip />
                 <Bar dataKey="count" radius={[0, 4, 4, 0]}>
-                  {chartData.map((entry, index) => (
+                  {chartData.map((_entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Bar>
@@ -103,7 +103,7 @@ export default function TalentAnalyticsPage() {
                   paddingAngle={5}
                   dataKey="count"
                 >
-                  {chartData.map((entry, index) => (
+                  {chartData.map((_entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>

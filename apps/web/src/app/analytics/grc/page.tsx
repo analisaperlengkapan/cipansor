@@ -138,8 +138,8 @@ export default function GRCDashboardPage() {
                 <YAxis />
                 <Tooltip />
                 <Bar dataKey="count" radius={[4, 4, 0, 0]}>
-                  {riskLevels.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  {riskLevels.map((level, index) => (
+                    <Cell key={`cell-${index}`} fill={level.color} />
                   ))}
                 </Bar>
               </BarChart>
@@ -166,8 +166,8 @@ export default function GRCDashboardPage() {
                   paddingAngle={5}
                   dataKey="value"
                 >
-                  {auditStatus.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  {auditStatus.map((status, index) => (
+                    <Cell key={`cell-${index}`} fill={status.color} />
                   ))}
                 </Pie>
                 <Tooltip />

@@ -29,7 +29,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 
 const activitySchema = z.object({
@@ -86,7 +85,7 @@ export function ActivityDialog({
       title: editData?.title || "",
       description: editData?.description || "",
       picId: editData?.picId || "",
-      budgetId: editData?.budgetId || "",
+      budgetId: editData?.budgetId || "none",
       priority: editData?.priority || "MEDIUM",
       startDate: editData?.startDate ? new Date(editData.startDate).toISOString().split("T")[0] : "",
       endDate: editData?.endDate ? new Date(editData.endDate).toISOString().split("T")[0] : "",
@@ -99,7 +98,7 @@ export function ActivityDialog({
       ...values,
       objectiveId,
       picId: values.picId || null,
-      budgetId: values.budgetId || null,
+      budgetId: values.budgetId && values.budgetId !== "none" ? values.budgetId : null,
       budget: values.budget ? Number(values.budget) : undefined,
       startDate: values.startDate ? new Date(values.startDate).toISOString() : undefined,
       endDate: values.endDate ? new Date(values.endDate).toISOString() : undefined,
@@ -202,7 +201,7 @@ export function ActivityDialog({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">Tanpa Anggaran Keuangan</SelectItem>
+                      <SelectItem value="none">Tanpa Anggaran Keuangan</SelectItem>
                       {budgets?.map((b: any) => (
                         <SelectItem key={b.id} value={b.id}>
                           {b.account?.code} - {b.account?.name} (Tersedia: Rp {b.amount.toLocaleString()})

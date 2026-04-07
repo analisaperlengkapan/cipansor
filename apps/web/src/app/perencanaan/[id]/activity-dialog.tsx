@@ -84,7 +84,7 @@ export function ActivityDialog({
     defaultValues: {
       title: editData?.title || "",
       description: editData?.description || "",
-      picId: editData?.picId || "",
+      picId: editData?.picId || "none",
       budgetId: editData?.budgetId || "none",
       priority: editData?.priority || "MEDIUM",
       startDate: editData?.startDate ? new Date(editData.startDate).toISOString().split("T")[0] : "",
@@ -97,7 +97,7 @@ export function ActivityDialog({
     const payload = {
       ...values,
       objectiveId,
-      picId: values.picId || null,
+      picId: values.picId && values.picId !== "none" ? values.picId : null,
       budgetId: values.budgetId && values.budgetId !== "none" ? values.budgetId : null,
       budget: values.budget ? Number(values.budget) : undefined,
       startDate: values.startDate ? new Date(values.startDate).toISOString() : undefined,
@@ -176,6 +176,7 @@ export function ActivityDialog({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
+                      <SelectItem value="none">Tanpa PIC</SelectItem>
                       {users?.map((u: any) => (
                         <SelectItem key={u.id} value={u.id}>
                           {u.name}

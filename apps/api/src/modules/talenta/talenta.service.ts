@@ -362,7 +362,7 @@ export class TalentaService {
         currentRole: p.currentRole,
         performanceScore: latest ? (ratingToScore[latest.performanceRating] || 0) : 0,
         potentialScore: latest ? (ratingToScore[latest.potentialRating] || 0) : 0,
-        category: p.category || 'EMERGING',
+        category: p.category || 'SOLID_PERFORMER',
       };
     });
 

@@ -204,7 +204,7 @@ export default function GrcDashboardPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
             {Object.entries(grc.sharia.statusDistribution).map(([status, count]) => (
               <div key={status} className="p-4 rounded-xl border border-slate-100 bg-white shadow-sm flex flex-col items-center">
-                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">{status.replace('_', ' ')}</span>
+                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">{status.replace(/_/g, ' ')}</span>
                 <span className="text-2xl font-bold text-slate-900">{count as number}</span>
               </div>
             ))}

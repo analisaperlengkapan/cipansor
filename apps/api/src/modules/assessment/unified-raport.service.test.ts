@@ -26,40 +26,59 @@ describe('UnifiedRaportService Integration', () => {
     vi.clearAllMocks();
   });
 
-  it('should combine merdeka and pesantren data into a single object', async () => {
-    const mockStudent = {
-      id: 's1',
-      user: { name: 'Ahmad' },
-      unit: { name: 'SD IT Cipansor', address: 'Cianjur', logoUrl: '/logo.png', id: 'u1' },
-      nis: '1001',
-      unitId: 'u1',
-      enrollments: [
-        {
-          class: {
-            name: 'Kelas 4A',
-            level: '4',
-            homeroomTeacher: { user: { name: 'Ustadz Fulan' } },
-          },
+  const mockStudent = {
+    id: 's1',
+    user: { name: 'Ahmad' },
+    unit: { name: 'SD IT Cipansor', address: 'Cianjur', logoUrl: '/logo.png', id: 'u1' },
+    nis: '1001',
+    unitId: 'u1',
+    enrollments: [
+      {
+        class: {
+          name: 'Kelas 4A',
+          level: '4',
+          homeroomTeacher: { user: { name: 'Ustadz Fulan' } },
         },
-      ],
-    };
+      },
+    ],
+  };
 
-    const mockMerdeka = {
-      tahunAjaran: { tahun: '2024/2025' },
-      intrakurikuler: [{ subjectName: 'Matematika', finalScore: 85 }],
-      projekP5: [],
-      ekstrakurikuler: [],
-      kehadiran: { sick: 0, excused: 1, absent: 0 },
-    };
+  const mockMerdeka = {
+    tahunAjaran: { tahun: '2024/2025' },
+    intrakurikuler: [{ subjectName: 'Matematika', finalScore: 85 }],
+    projekP5: [],
+    ekstrakurikuler: [],
+    kehadiran: { sick: 0, excused: 1, absent: 0 },
+  };
 
-    const mockPesantren = {
-      tahfidz: { totalJuz: 5, latestSurah: 'An-Naba' },
-      ibadah: { grade: 'A', score: 95 },
-      akhlak: {},
-      overallGrade: 'MUMTAZ',
-      overallScore: 92,
-    };
+  const mockPesantren = {
+    tahfidz: { totalJuz: 5, latestSurah: 'An-Naba' },
+    ibadah: { grade: 'A', score: 95 },
+    akhlak: {},
+    overallGrade: 'MUMTAZ',
+    overallScore: 92,
+  };
 
+  it('should throw an error if student is not found', async () => {
+    (prisma.student.findUnique as any).mockResolvedValue(null);
+
+    await expect(
+      UnifiedRaportService.generateUnifiedRaport('s1', 'ay1', 1)
+    ).rejects.toThrow('Siswa tidak ditemukan');
+  });
+
+  it('should throw an error if enrollment data is missing', async () => {
+    (prisma.student.findUnique as any).mockResolvedValue({
+      ...mockStudent,
+      enrollments: [],
+    });
+
+    await expect(
+      UnifiedRaportService.generateUnifiedRaport('s1', 'ay1', 1)
+    ).rejects.toThrow('Data enrollment tidak ditemukan untuk tahun ajaran ini');
+  });
+
+  it('should combine merdeka and pesantren data into a single object', async () => {
     (prisma.student.findUnique as any).mockResolvedValue(mockStudent);
     (RaportMerdekaService.generateRaportMerdeka as any).mockResolvedValue(mockMerdeka);
     (raporPesantrenService.generateRaporPesantren as any).mockResolvedValue(mockPesantren);
@@ -71,5 +90,14 @@ describe('UnifiedRaportService Integration', () => {
     expect(result.islamic.tahfidz.totalJuz).toBe(5);
     expect(result.remarks).toBeDefined();
     expect(result.signatures.homeroomTeacher).toBe('Ustadz Fulan');
+
+    // Verify parallel execution with correct parameters
+    expect(RaportMerdekaService.generateRaportMerdeka).toHaveBeenCalledWith('s1', 'ay1', 1);
+    expect(raporPesantrenService.generateRaporPesantren).toHaveBeenCalledWith({
+      studentId: 's1',
+      academicYearId: 'ay1',
+      semester: 1,
+      unitId: 'u1',
+    });
   });
 });

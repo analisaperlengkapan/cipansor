@@ -102,6 +102,19 @@ export function useExams(params?: {
   });
 }
 
+export function useUnifiedRaport(studentId: string, academicYearId: string, semester: number) {
+  return useQuery({
+    queryKey: ["unified-raport", studentId, academicYearId, semester],
+    queryFn: async () => {
+      const response = await api.get(`/assessment/unified-raport/${studentId}`, {
+        params: { academicYearId, semester },
+      });
+      return response.data.data;
+    },
+    enabled: !!studentId && !!academicYearId && !!semester,
+  });
+}
+
 // Alias for backward compatibility or clarity
 export const useAssessments = useExams;
 export const useAssessment = useExam;

@@ -245,3 +245,25 @@ export interface AlertTrigger {
   message: string;
   triggeredAt: string;
 }
+
+export interface GRCStats {
+  plans: {
+    activeCount: number;
+    averageProgress: number;
+  };
+  risks: {
+    total: number;
+    byLevel: Record<string, number>;
+    criticalCount: number;
+  };
+  audits: {
+    totalFindings: number;
+    unresolvedCount: number;
+    resolvedCount: number;
+    resolutionRate: number;
+  };
+  sharia: {
+    complianceRate: number;
+    statusDistribution: Record<string, number>;
+  };
+}

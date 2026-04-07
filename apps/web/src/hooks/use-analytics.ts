@@ -12,6 +12,7 @@ import {
   HealthSummary,
   ViolationSummary,
   DashboardSummary,
+  GRCStats,
 } from "@cipansor/shared";
 
 export type {
@@ -26,6 +27,7 @@ export type {
   HealthSummary,
   ViolationSummary,
   DashboardSummary,
+  GRCStats,
 };
 
 // Constants
@@ -183,6 +185,18 @@ export function useViolationSummaryAnalytics(filter?: ReportFilter) {
         },
       );
       return data;
+    },
+  });
+}
+
+export function useGRCStats(unitId?: string) {
+  return useQuery({
+    queryKey: ["analytics", "grc", unitId],
+    queryFn: async () => {
+      const { data } = await api.get<{ data: GRCStats }>("/analytics/grc", {
+        params: { unitId },
+      });
+      return data.data;
     },
   });
 }

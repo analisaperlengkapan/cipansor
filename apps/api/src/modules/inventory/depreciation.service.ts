@@ -61,7 +61,7 @@ export async function runMonthlyDepreciation(unitId: string, date: Date, userId:
           results.journals++;
           results.processed++;
         } catch (error: any) {
-          results.errors.push(`Asset ${asset.code}: ${error.message}`);
+          results.errors.push(`Failed to process asset ${asset.code}: ${error.message}`);
           // Decide: Do we want to fail the whole batch or partial?
           // Bug report says "partial data commits if an error occurs mid-process".
           // If we want atomic batch, we should throw here.

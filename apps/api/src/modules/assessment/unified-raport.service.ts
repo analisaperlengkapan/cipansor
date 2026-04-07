@@ -3,6 +3,10 @@ import { ApiError, ErrorCode } from '@/middleware/error';
 import RaportMerdekaService from './raport-merdeka.service';
 import { generateRaporPesantren } from '../rapor-pesantren/rapor-pesantren.service';
 
+/**
+ * Service to generate a unified report combining academic (Merdeka)
+ * and religious (Pesantren) data.
+ */
 export class UnifiedRaportService {
   /**
    * Generate Unified SD IT Raport
@@ -38,23 +42,24 @@ export class UnifiedRaportService {
 
     const enrollment = student.enrollments[0];
     if (!enrollment) {
-      throw new ApiError(ErrorCode.NOT_FOUND, 'Data enrollment tidak ditemukan');
+      throw new ApiError(ErrorCode.NOT_FOUND, 'Data enrollment tidak ditemukan untuk tahun ajaran ini');
     }
 
-    // 2. Run Generators in Parallel
+    // 2. Run Generators in Parallel for efficiency
+    // These services handle their own internal data aggregation
     const [raportMerdeka, raporPesantren] = await Promise.all([
       RaportMerdekaService.generateRaportMerdeka(studentId, academicYearId, semester),
       generateRaporPesantren({ studentId, academicYearId, semester, unitId: student.unitId }),
     ]);
 
     // 3. Structure the Unified Data
-    // This structure is designed to be easily consumed by a PDF generator or Frontend View
+    // Combines both worlds into a single cohesive structure for the frontend/PDF
     return {
       meta: {
         generatedAt: new Date(),
         semester,
-        academicYear: raportMerdeka.tahunAjaran.tahun,
-        formatVersion: '1.0.0',
+        academicYear: raportMerdeka.tahunAjaran?.tahun || 'Unknown',
+        formatVersion: '1.1.0',
       },
       school: {
         name: student.unit.name,
@@ -70,14 +75,14 @@ export class UnifiedRaportService {
         gradeLevel: enrollment.class.level,
       },
       academic: {
-        // From Raport Merdeka
+        // From Raport Merdeka (Kurikulum Merdeka Standard)
         intrakurikuler: raportMerdeka.intrakurikuler,
         p5: raportMerdeka.projekP5,
         extracurricular: raportMerdeka.ekstrakurikuler,
         attendance: raportMerdeka.kehadiran,
       },
       islamic: {
-        // From Rapor Pesantren
+        // From Rapor Pesantren (Religious/Character Standard)
         tahfidz: raporPesantren.tahfidz,
         ibadah: raporPesantren.ibadah,
         akhlak: raporPesantren.akhlak,
@@ -95,7 +100,7 @@ export class UnifiedRaportService {
       },
       signatures: {
         homeroomTeacher: enrollment.class.homeroomTeacher?.user.name,
-        principal: 'Kepala Sekolah', // Should be fetched from Unit/Staff structure
+        principal: 'Kepala Sekolah',
         guardian: 'Orang Tua / Wali',
         date: new Date(),
       },
@@ -103,18 +108,19 @@ export class UnifiedRaportService {
   }
 
   /**
-   * Get formatted Unified Raport for print
+   * Get formatted Unified Raport with print layout options
    */
   static async getPrintData(studentId: string, academicYearId: string, semester: number) {
     const data = await this.generateUnifiedRaport(studentId, academicYearId, semester);
 
-    // Add layout configuration or specific print formatting logic here if needed
     return {
       ...data,
       layout: {
         paperSize: 'A4',
         orientation: 'portrait',
         margins: { top: 20, right: 20, bottom: 20, left: 20 },
+        showSchoolLogo: true,
+        showIslamicSeal: true,
       },
     };
   }

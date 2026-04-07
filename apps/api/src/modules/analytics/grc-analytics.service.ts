@@ -26,7 +26,7 @@ export interface GRCStats {
 export async function getGRCStats(unitId?: string): Promise<GRCStats> {
   const whereClause = unitId ? { unitId } : {};
 
-  const [plans, risks, findings, followUps, compliances] = await Promise.all([
+  const [plans, risks, findings, resolvedFindings, compliances] = await Promise.all([
     // 1. Strategic Plans
     prisma.strategicPlan.findMany({
       where: {
@@ -45,16 +45,17 @@ export async function getGRCStats(unitId?: string): Promise<GRCStats> {
       select: { riskLevel: true },
     }),
 
-    // 3. Audit Findings & Follow Ups
+    // 3. Audit Findings & Resolved Findings
     prisma.auditFinding.count({
       where: {
         audit: { unitId: unitId || undefined },
       },
     }),
-    prisma.auditFollowUp.count({
+    // Count distinct findings that have at least one verified follow-up
+    prisma.auditFinding.count({
       where: {
-        finding: { audit: { unitId: unitId || undefined } },
-        status: 'VERIFIED',
+        audit: { unitId: unitId || undefined },
+        followUps: { some: { status: 'VERIFIED' } },
       },
     }),
 
@@ -111,9 +112,9 @@ export async function getGRCStats(unitId?: string): Promise<GRCStats> {
     },
     audits: {
       totalFindings: findings,
-      resolvedCount: followUps,
-      unresolvedCount: findings - followUps,
-      resolutionRate: findings > 0 ? Math.round((followUps / findings) * 10000) / 100 : 100,
+      resolvedCount: Math.min(resolvedFindings, findings),
+      unresolvedCount: Math.max(0, findings - resolvedFindings),
+      resolutionRate: findings > 0 ? Math.min(100, Math.round((resolvedFindings / findings) * 10000) / 100) : 100,
     },
     sharia: {
       complianceRate: Math.round(avgShariaScore * 100) / 100,

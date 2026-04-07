@@ -29,7 +29,6 @@ vi.mock('../../lib/prisma', () => ({
     strategicPlan: { findMany: vi.fn() },
     risk: { findMany: vi.fn() },
     auditFinding: { count: vi.fn() },
-    auditFollowUp: { count: vi.fn() },
     shariaCompliance: { findMany: vi.fn() },
   },
 }));
@@ -49,8 +48,9 @@ describe('GRCAnalyticsService', () => {
       { riskLevel: 'EXTREME' },
       { riskLevel: 'LOW' },
     ]);
-    (prisma.auditFinding.count as any).mockResolvedValue(10);
-    (prisma.auditFollowUp.count as any).mockResolvedValue(4);
+    (prisma.auditFinding.count as any)
+      .mockResolvedValueOnce(10)  // total findings
+      .mockResolvedValueOnce(4);  // resolved findings (with verified follow-ups)
     (prisma.shariaCompliance.findMany as any).mockResolvedValue([
       { score: 90, status: 'COMPLIANT' },
       { score: 70, status: 'PARTIALLY' },

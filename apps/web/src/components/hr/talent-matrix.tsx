@@ -31,7 +31,9 @@ export function TalentMatrix({ profiles }: TalentMatrixProps) {
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
         {/* Talent categories mapped from backend's 5-value TalentCategory enum */}
         {GRID_CELLS.map((cell) => {
-          const cellProfiles = profiles.filter(p => p.category === cell.id);
+          const cellProfiles = profiles
+            .filter(p => p.category === cell.id)
+            .sort((a, b) => (b.performanceScore + b.potentialScore) - (a.performanceScore + a.potentialScore));
 
           return (
             <Card key={cell.id} className={`p-4 border-2 min-h-[150px] ${cell.color}`}>

@@ -186,6 +186,25 @@ router.get('/library', controller.getLibraryStats);
  */
 router.get('/psb', controller.getPSBStats);
 
+/**
+ * @swagger
+ * /api/analytics/grc:
+ *   get:
+ *     summary: Get GRC (Governance, Risk, Compliance) statistics
+ *     tags: [Analytics]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: unitId
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: GRC statistics (plans, risks, audits, sharia compliance)
+ */
+router.get('/grc', controller.getGRCStats);
+
 // ============================================
 // FORECAST ENDPOINTS (Predictive Analytics)
 // ============================================

@@ -106,7 +106,7 @@ export function useUnifiedRaport(studentId: string, academicYearId: string, seme
   return useQuery({
     queryKey: ["unified-raport", studentId, academicYearId, semester],
     queryFn: async () => {
-      const response = await api.get(`/assessment/unified-raport/${studentId}`, {
+      const response = await api.get(`/assessment/unified-raport/students/${studentId}`, {
         params: { academicYearId, semester },
       });
       return response.data.data;

@@ -60,11 +60,11 @@ export const createActivitySchema = z.object({
   objectiveId: z.string().uuid(),
   title: z.string().min(3),
   description: z.string().optional(),
-  picId: z.string().uuid().optional(),
+  picId: z.string().uuid().nullable().optional(),
   startDate: z.string().datetime().optional(),
   endDate: z.string().datetime().optional(),
   budget: z.number().positive().optional(),
-  budgetId: z.string().uuid().optional(),
+  budgetId: z.string().uuid().nullable().optional(),
   priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']).optional(),
 });
 

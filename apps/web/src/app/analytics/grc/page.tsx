@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/api";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -12,27 +13,24 @@ export default function GRCDashboardPage() {
   const { data: risks, isLoading: loadingRisks } = useQuery({
     queryKey: ["risks"],
     queryFn: async () => {
-      const res = await fetch("/api/risks");
-      const json = await res.json();
-      return json.data || [];
+      const res = await api.get("/api/risks");
+      return res.data.data || [];
     },
   });
 
   const { data: audits, isLoading: loadingAudits } = useQuery({
     queryKey: ["internal-audits"],
     queryFn: async () => {
-      const res = await fetch("/api/internal-audits");
-      const json = await res.json();
-      return json.data || [];
+      const res = await api.get("/api/internal-audits");
+      return res.data.data || [];
     },
   });
 
   const { data: quality, isLoading: loadingQuality } = useQuery({
     queryKey: ["quality-audits"],
     queryFn: async () => {
-      const res = await fetch("/api/quality/audits");
-      const json = await res.json();
-      return json.data || [];
+      const res = await api.get("/api/quality/audits");
+      return res.data.data || [];
     },
   });
 

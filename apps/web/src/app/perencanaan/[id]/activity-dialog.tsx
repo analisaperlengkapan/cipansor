@@ -98,6 +98,8 @@ export function ActivityDialog({
     const payload = {
       ...values,
       objectiveId,
+      picId: values.picId || null,
+      budgetId: values.budgetId || null,
       budget: values.budget ? Number(values.budget) : undefined,
       startDate: values.startDate ? new Date(values.startDate).toISOString() : undefined,
       endDate: values.endDate ? new Date(values.endDate).toISOString() : undefined,

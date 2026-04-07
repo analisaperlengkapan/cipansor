@@ -71,6 +71,11 @@ export class PerencanaanService {
             activities: {
               include: {
                 pic: { select: { id: true, name: true } },
+                budgetRel: {
+                  include: {
+                    account: { select: { code: true, name: true } },
+                  },
+                },
               },
               orderBy: { createdAt: 'asc' },
             },

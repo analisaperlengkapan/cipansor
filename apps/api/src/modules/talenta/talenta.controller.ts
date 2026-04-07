@@ -178,3 +178,11 @@ export const deleteSuccession = asyncHandler(async (req: Request, res: Response)
   await talentaService.deleteSuccession(req.params.id);
   res.json({ success: true, message: 'Succession plan deleted' });
 });
+
+// ==================== ANALYTICS ====================
+
+export const getTalentAnalytics = asyncHandler(async (req: Request, res: Response) => {
+  const unitId = resolveUnitId(req, req.query.unitId as string);
+  const analytics = await talentaService.getTalentAnalytics(unitId);
+  res.json({ success: true, data: analytics });
+});

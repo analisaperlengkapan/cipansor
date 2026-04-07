@@ -9,6 +9,7 @@ router.use(authenticate);
 router.use(authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF));
 
 // Talent Profiles
+router.get('/analytics', talentaController.getTalentAnalytics);
 router.get('/profiles', talentaController.listProfiles);
 router.post('/profiles', talentaController.createProfile);
 router.get('/profiles/:id', talentaController.getProfile);

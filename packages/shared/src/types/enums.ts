@@ -101,7 +101,7 @@ export enum ComplaintStatus {
   REJECTED = "REJECTED",
 }
 
-// Talent Categories (9-Box Grid)
+// Talent Categories
 export enum TalentCategory {
   HIGH_POTENTIAL = "HIGH_POTENTIAL",
   KEY_TALENT = "KEY_TALENT",

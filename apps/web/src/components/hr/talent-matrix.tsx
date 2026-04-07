@@ -18,23 +18,18 @@ interface TalentMatrixProps {
 }
 
 const GRID_CELLS = [
-  { id: 'KEY_TALENT', label: 'Key Talent', performance: 'High', potential: 'High', color: 'bg-emerald-100 border-emerald-500' },
-  { id: 'HIGH_POTENTIAL', label: 'High Potential', performance: 'Moderate', potential: 'High', color: 'bg-blue-100 border-blue-500' },
-  { id: 'DIAMOND_IN_ROUGH', label: 'Diamond in Rough', performance: 'Low', potential: 'High', color: 'bg-purple-100 border-purple-500' },
-  { id: 'HIGH_PERFORMER', label: 'High Performer', performance: 'High', potential: 'Moderate', color: 'bg-emerald-50 border-emerald-400' },
-  { id: 'CORE_EMPLOYEE', label: 'Core Employee', performance: 'Moderate', potential: 'Moderate', color: 'bg-slate-100 border-slate-400' },
-  { id: 'INCONSISTENT', label: 'Inconsistent', performance: 'Low', potential: 'Moderate', color: 'bg-amber-50 border-amber-400' },
+  { id: 'HIGH_POTENTIAL', label: 'High Potential', performance: 'High', potential: 'High', color: 'bg-emerald-100 border-emerald-500' },
+  { id: 'KEY_TALENT', label: 'Key Talent', performance: 'Moderate', potential: 'High', color: 'bg-blue-100 border-blue-500' },
+  { id: 'EMERGING', label: 'Emerging', performance: 'Moderate', potential: 'Moderate', color: 'bg-slate-100 border-slate-400' },
   { id: 'SOLID_PERFORMER', label: 'Solid Performer', performance: 'High', potential: 'Low', color: 'bg-emerald-50 border-emerald-300' },
-  { id: 'AVERAGE_PERFORMER', label: 'Average Performer', performance: 'Moderate', potential: 'Low', color: 'bg-slate-50 border-slate-300' },
-  { id: 'LOW_PERFORMER', label: 'Under Performer', performance: 'Low', potential: 'Low', color: 'bg-red-100 border-red-500' },
+  { id: 'NEEDS_DEVELOPMENT', label: 'Needs Development', performance: 'Low', potential: 'Low', color: 'bg-red-100 border-red-500' },
 ];
 
 export function TalentMatrix({ profiles }: TalentMatrixProps) {
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-3 gap-4">
-        {/* Potensi di sumbu Y (kiri), Performa di sumbu X (bawah) */}
-        {/* Render grid dari High Potential ke Low Potential */}
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+        {/* Talent categories mapped from backend's 5-value TalentCategory enum */}
         {GRID_CELLS.map((cell) => {
           const cellProfiles = profiles.filter(p => p.category === cell.id);
 
@@ -69,10 +64,8 @@ export function TalentMatrix({ profiles }: TalentMatrixProps) {
         })}
       </div>
 
-      <div className="flex justify-between text-xs font-medium text-muted-foreground px-2">
-        <span>Low Performance</span>
-        <span>Moderate Performance</span>
-        <span>High Performance</span>
+      <div className="text-center text-xs font-medium text-muted-foreground px-2">
+        <span>Ordered by performance + potential score (highest → lowest)</span>
       </div>
     </div>
   );

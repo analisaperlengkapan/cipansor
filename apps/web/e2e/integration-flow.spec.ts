@@ -55,7 +55,7 @@ test.describe('Integrated School Management Flow', () => {
     await expect(page.locator('text=MUMTAZ')).toBeVisible();
   });
 
-  test('Talent Management - Display 9-Box Grid', async ({ page }) => {
+  test('Talent Management - Display Talent Matrix', async ({ page }) => {
     // Mock Talent Analytics API
     await page.route('**/api/talenta/analytics*', async (route) => {
       await route.fulfill({
@@ -64,8 +64,9 @@ test.describe('Integrated School Management Flow', () => {
         body: JSON.stringify({
           success: true,
           data: {
-            totalProfiles: 1,
-            categoryDistribution: { KEY_TALENT: 1 },
+            total: 1,
+            distribution: { KEY_TALENT: 1, HIGH_POTENTIAL: 0, EMERGING: 0, SOLID_PERFORMER: 0, NEEDS_DEVELOPMENT: 0 },
+            percentages: { KEY_TALENT: 100, HIGH_POTENTIAL: 0, EMERGING: 0, SOLID_PERFORMER: 0, NEEDS_DEVELOPMENT: 0 },
             profiles: [
               {
                 id: 'p1',

@@ -28,7 +28,7 @@ export default function TalentPage() {
     <div className="container mx-auto py-8 space-y-8">
       <PageHeader
         title="Manajemen Talenta"
-        description="Analisis Sembilan Kotak (9-Box Grid) dan Perencanaan Suksesi"
+        description="Analisis Kategori Talenta dan Perencanaan Suksesi"
       />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -38,7 +38,7 @@ export default function TalentPage() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{analytics?.totalProfiles || 0}</div>
+            <div className="text-2xl font-bold">{analytics?.total || 0}</div>
           </CardContent>
         </Card>
         <Card>
@@ -47,7 +47,7 @@ export default function TalentPage() {
             <Award className="h-4 w-4 text-emerald-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{analytics?.categoryDistribution?.KEY_TALENT || 0}</div>
+            <div className="text-2xl font-bold">{analytics?.distribution?.KEY_TALENT || 0}</div>
           </CardContent>
         </Card>
         <Card>
@@ -56,14 +56,14 @@ export default function TalentPage() {
             <TrendingUp className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{analytics?.categoryDistribution?.HIGH_POTENTIAL || 0}</div>
+            <div className="text-2xl font-bold">{analytics?.distribution?.HIGH_POTENTIAL || 0}</div>
           </CardContent>
         </Card>
       </div>
 
       <Card className="shadow-md">
         <CardHeader>
-          <CardTitle>Matriks Talenta (9-Box Grid)</CardTitle>
+          <CardTitle>Matriks Talenta</CardTitle>
           <CardDescription>Pemetaan pegawai berdasarkan performa dan potensi</CardDescription>
         </CardHeader>
         <CardContent>

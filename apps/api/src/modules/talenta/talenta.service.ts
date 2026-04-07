@@ -315,9 +315,19 @@ export class TalentaService {
   // ==================== ANALYTICS ====================
 
   async getTalentAnalytics(unitId: string) {
-    const profiles = await prisma.talentProfile.findMany({
+    const talentProfiles = await prisma.talentProfile.findMany({
       where: { unitId },
-      select: { category: true },
+      select: {
+        id: true,
+        category: true,
+        currentRole: true,
+        user: { select: { id: true, name: true } },
+        assessments: {
+          orderBy: { assessedAt: 'desc' },
+          take: 1,
+          select: { performanceRating: true, potentialRating: true, overallScore: true },
+        },
+      },
     });
 
     const distribution: Record<string, number> = {
@@ -328,22 +338,39 @@ export class TalentaService {
       NEEDS_DEVELOPMENT: 0,
     };
 
-    profiles.forEach((p) => {
+    talentProfiles.forEach((p) => {
       if (p.category && distribution[p.category] !== undefined) {
         distribution[p.category]++;
       }
     });
 
-    const total = profiles.length;
+    const total = talentProfiles.length;
     const percentages = Object.keys(distribution).reduce((acc, key) => {
       acc[key] = total > 0 ? Math.round((distribution[key] / total) * 100) : 0;
       return acc;
     }, {} as Record<string, number>);
 
+    const ratingToScore: Record<string, number> = {
+      OUTSTANDING: 100, EXCEEDS: 80, MEETS: 60, BELOW: 40, UNSATISFACTORY: 20,
+    };
+
+    const profiles = talentProfiles.map((p) => {
+      const latest = p.assessments[0];
+      return {
+        id: p.id,
+        name: p.user.name,
+        currentRole: p.currentRole,
+        performanceScore: latest ? (ratingToScore[latest.performanceRating] || 0) : 0,
+        potentialScore: latest ? (ratingToScore[latest.potentialRating] || 0) : 0,
+        category: p.category || 'EMERGING',
+      };
+    });
+
     return {
       total,
       distribution,
       percentages,
+      profiles,
     };
   }
 

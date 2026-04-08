@@ -109,7 +109,7 @@ export function useUnifiedRaport(studentId: string, academicYearId: string, seme
       const response = await api.get(`/assessment/unified-raport/students/${studentId}`, {
         params: { academicYearId, semester },
       });
-      return response.data.data;
+      return response.data;
     },
     enabled: !!studentId && !!academicYearId && !!semester,
   });

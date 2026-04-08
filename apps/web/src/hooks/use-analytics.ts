@@ -196,7 +196,7 @@ export function useGRCStats(unitId?: string) {
       const { data } = await api.get<{ data: GRCStats }>("/analytics/grc", {
         params: { unitId },
       });
-      return data.data;
+      return data;
     },
   });
 }

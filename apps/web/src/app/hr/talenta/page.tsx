@@ -8,13 +8,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Loader2, Users, Award, TrendingUp } from "lucide-react";
 
 export default function TalentPage() {
-  const { data: analytics, isLoading } = useQuery({
+  const { data: analyticsResponse, isLoading } = useQuery({
     queryKey: ["talent-analytics"],
     queryFn: async () => {
       const { data } = await api.get("/talenta/analytics");
-      return data.data;
+      return data;
     }
   });
+  const analytics = analyticsResponse?.data;
 
   if (isLoading) {
     return (

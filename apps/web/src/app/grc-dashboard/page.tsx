@@ -18,7 +18,8 @@ import {
 } from "recharts";
 
 export default function GrcDashboardPage() {
-  const { data: grc, isLoading, error } = useGRCStats();
+  const { data: grcResponse, isLoading, error } = useGRCStats();
+  const grc = grcResponse?.data;
 
   if (isLoading) {
     return (

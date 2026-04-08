@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Printer, Download, BookOpen, Heart, Award } from "lucide-react";
+import { Loader2, Printer, Download, BookOpen, Award } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import React from "react";
 
@@ -16,7 +16,8 @@ export default function UnifiedRaportPage({ params: paramsPromise }: { params: P
   const academicYearId = searchParams.get("academicYearId") || "";
   const semester = parseInt(searchParams.get("semester") || "1");
 
-  const { data: raport, isLoading, error } = useUnifiedRaport(params.studentId, academicYearId, semester);
+  const { data: raportResponse, isLoading, error } = useUnifiedRaport(params.studentId, academicYearId, semester);
+  const raport = raportResponse?.data;
 
   if (isLoading) {
     return (

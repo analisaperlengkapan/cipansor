@@ -223,7 +223,7 @@ export class PengawasanService {
     const suggestions = await Promise.all(
       highRisks.map(async (risk) => {
         const existingAudit = await prisma.internalAudit.findFirst({
-          where: { riskId: risk.id },
+          where: { riskId: risk.id, status: { not: 'CANCELLED' } },
         });
 
         if (existingAudit) return null;

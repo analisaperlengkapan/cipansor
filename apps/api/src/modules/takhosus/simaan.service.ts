@@ -128,52 +128,57 @@ export const simaanService = {
       throw new ApiError(ErrorCode.NOT_FOUND, 'Simaan exam not found');
     }
 
-    const updatedExam = await prisma.simaanExam.update({
-      where: { id },
-      data: {
-        overallScore: data.overallScore,
-        tajwidScore: data.tajwidScore,
-        fashohaScore: data.fashohaScore,
-        tartilScore: data.tartilScore,
-        grade: data.grade,
-        passed: data.passed,
-        notes: data.notes,
-        recommendations: data.recommendations,
-        // @ts-ignore
-        status: data.passed ? 'PASSED' : 'FAILED',
-      },
-    });
-
-    // 1. Level-up trigger: If passed 30 juz simaan, mark enrollment as COMPLETED and eligible for certificate
-    if (data.passed && exam.student.takhosusEnrollment && exam.juzEnd === 30 && exam.juzStart === 1) {
-      await prisma.takhosusEnrollment.update({
-        where: { studentId: exam.studentId },
+    const updatedExam = await prisma.$transaction(async (tx) => {
+      const result = await tx.simaanExam.update({
+        where: { id },
         data: {
-          status: 'COMPLETED',
-          completedAt: new Date(),
-          notes: `Lulus Simaan 30 Juz pada ${new Date().toLocaleDateString()}`
-        }
-      });
-
-      // 2. Auto-record Hafidz status
-      await prisma.hafidzStudent.upsert({
-        where: { studentId: exam.studentId },
-        create: {
-          studentId: exam.studentId,
-          completedAt: new Date(),
-          notes: 'Lulus program Takhosus'
+          overallScore: data.overallScore,
+          tajwidScore: data.tajwidScore,
+          fashohaScore: data.fashohaScore,
+          tartilScore: data.tartilScore,
+          grade: data.grade,
+          passed: data.passed,
+          notes: data.notes,
+          recommendations: data.recommendations,
+          // @ts-ignore
+          status: data.passed ? 'PASSED' : 'FAILED',
         },
-        update: { completedAt: new Date() }
       });
-    }
 
-    // 3. Update current juz progress in enrollment if passed a juz simaan
-    if (data.passed && exam.student.takhosusEnrollment && exam.juzEnd >= (exam.student.takhosusEnrollment.currentJuz || 0)) {
-       await prisma.takhosusEnrollment.update({
-         where: { studentId: exam.studentId },
-         data: { currentJuz: Math.min(30, exam.juzEnd + 1) }
-       });
-    }
+      if (data.passed && exam.student.takhosusEnrollment) {
+        // 1. Level-up trigger: If passed 30 juz simaan, mark enrollment as COMPLETED and eligible for certificate
+        if (exam.juzEnd === 30 && exam.juzStart === 1) {
+          await tx.takhosusEnrollment.update({
+            where: { studentId: exam.studentId },
+            data: {
+              status: 'COMPLETED',
+              completedAt: new Date(),
+              currentJuz: 30,
+              notes: `Lulus Simaan 30 Juz pada ${new Date().toLocaleDateString()}`
+            }
+          });
+
+          // 2. Auto-record Hafidz status
+          await tx.hafidzStudent.upsert({
+            where: { studentId: exam.studentId },
+            create: {
+              studentId: exam.studentId,
+              completedAt: new Date(),
+              notes: 'Lulus program Takhosus'
+            },
+            update: { completedAt: new Date() }
+          });
+        } else if (exam.juzEnd >= (exam.student.takhosusEnrollment.currentJuz || 0)) {
+          // 3. Update current juz progress in enrollment if passed a juz simaan
+          await tx.takhosusEnrollment.update({
+            where: { studentId: exam.studentId },
+            data: { currentJuz: Math.min(30, exam.juzEnd + 1) }
+          });
+        }
+      }
+
+      return result;
+    });
 
     return updatedExam;
   },

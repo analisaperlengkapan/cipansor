@@ -185,11 +185,10 @@ describe('Pengawasan Service', () => {
         },
       ] as any);
 
-      // risk-1 already has audit, risk-2 does not
-      vi.mocked(prisma.internalAudit.findFirst).mockImplementation(({ where }: any) => {
-        if (where.riskId === 'risk-1') return Promise.resolve({ id: 'audit-1' } as any);
-        return Promise.resolve(null);
-      });
+      // risk-1 already has a non-cancelled audit, risk-2 does not
+      vi.mocked(prisma.internalAudit.findMany).mockResolvedValue([
+        { riskId: 'risk-1' },
+      ] as any);
 
       const suggestions = await pengawasanService.suggestAuditSchedules('unit-1');
 

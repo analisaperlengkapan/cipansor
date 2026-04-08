@@ -28,7 +28,7 @@ export interface GRCStats {
 export async function getGRCStats(unitId?: string): Promise<GRCStats> {
   const whereClause = unitId ? { unitId } : {};
 
-  const [plans, risks, findings, resolvedFindings, compliances] = await Promise.all([
+  const [plans, risks, findings, resolvedFindings, compliances, auditSuggestions] = await Promise.all([
     // 1. Strategic Plans
     prisma.strategicPlan.findMany({
       where: {
@@ -67,6 +67,9 @@ export async function getGRCStats(unitId?: string): Promise<GRCStats> {
       where: whereClause,
       select: { score: true, status: true },
     }),
+
+    // 5. Audit Suggestions (parallelized, gracefully degrades on error)
+    unitId ? pengawasanService.suggestAuditSchedules(unitId).catch(() => []) : Promise.resolve([]),
   ]);
 
   // Plans Processing
@@ -127,6 +130,6 @@ export async function getGRCStats(unitId?: string): Promise<GRCStats> {
       complianceRate: Math.round(avgShariaScore * 100) / 100,
       statusDistribution: shariaStatusDist,
     },
-    auditSuggestions: unitId ? await pengawasanService.suggestAuditSchedules(unitId).catch(() => []) : [],
+    auditSuggestions,
   };
 }

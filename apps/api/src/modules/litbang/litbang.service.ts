@@ -108,19 +108,21 @@ export class LitbangService {
     const completed = milestones.filter((m) => m.status === "COMPLETED").length;
     const progress = Math.round((completed / milestones.length) * 100);
 
-    await prisma.researchProject.update({ where: { id: projectId }, data: { progress } });
-
-    // If project is 100% complete, potentially trigger an innovation proposal suggestion
     if (progress === 100) {
-       const project = await prisma.researchProject.findUnique({ where: { id: projectId } });
-       if (project && project.status !== 'COMPLETED') {
-          await prisma.researchProject.update({
-            where: { id: projectId },
-            data: { status: 'COMPLETED' }
-          });
-          // In a real system, we might create a notification or a draft proposal here
-          console.log(`Research Project ${projectId} completed. Suggested for Innovation Proposal.`);
-       }
+      // Auto-complete only if the project is still in a progression state.
+      // This avoids overriding intentional statuses like PUBLISHED or ON_HOLD.
+      const progressionStatuses = ['DRAFT', 'IN_PROGRESS', 'PROPOSED'];
+      await prisma.researchProject.updateMany({
+        where: { id: projectId, status: { in: progressionStatuses } },
+        data: { progress, status: 'COMPLETED' },
+      });
+      // For projects already in a terminal state, only update progress
+      await prisma.researchProject.updateMany({
+        where: { id: projectId, status: { notIn: progressionStatuses } },
+        data: { progress },
+      });
+    } else {
+      await prisma.researchProject.update({ where: { id: projectId }, data: { progress } });
     }
   }
 

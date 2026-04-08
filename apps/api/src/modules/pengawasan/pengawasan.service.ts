@@ -219,29 +219,32 @@ export class PengawasanService {
       },
     });
 
-    // 2. Suggest audits for risks that don't have a linked internal audit yet
-    const suggestions = await Promise.all(
-      highRisks.map(async (risk) => {
-        const existingAudit = await prisma.internalAudit.findFirst({
-          where: { riskId: risk.id, status: { not: 'CANCELLED' } },
-        });
+    if (highRisks.length === 0) return [];
 
-        if (existingAudit) return null;
+    // 2. Batch-query all non-cancelled audits linked to these risks (avoids N+1)
+    const riskIds = highRisks.map((r) => r.id);
+    const existingAudits = await prisma.internalAudit.findMany({
+      where: {
+        riskId: { in: riskIds },
+        status: { not: 'CANCELLED' },
+      },
+      select: { riskId: true },
+    });
+    const coveredRiskIds = new Set(existingAudits.map((a) => a.riskId));
 
-        return {
-          riskId: risk.id,
-          riskCode: risk.code,
-          riskLevel: risk.riskLevel,
-          suggestedTitle: `Audit Kepatuhan & Mitigasi: ${risk.code}`,
-          suggestedDescription: `Audit internal khusus untuk memverifikasi efektivitas mitigasi risiko: ${risk.description}`,
-          strategicPlanId: risk.strategicPlanId,
-          strategicPlanTitle: risk.strategicPlan?.title,
-          priority: risk.riskLevel === 'EXTREME' ? 'URGENT' : 'HIGH',
-        };
-      })
-    );
-
-    return suggestions.filter((s) => s !== null);
+    // 3. Suggest audits for risks that don't have a linked internal audit yet
+    return highRisks
+      .filter((risk) => !coveredRiskIds.has(risk.id))
+      .map((risk) => ({
+        riskId: risk.id,
+        riskCode: risk.code,
+        riskLevel: risk.riskLevel,
+        suggestedTitle: `Audit Kepatuhan & Mitigasi: ${risk.code}`,
+        suggestedDescription: `Audit internal khusus untuk memverifikasi efektivitas mitigasi risiko: ${risk.description}`,
+        strategicPlanId: risk.strategicPlanId,
+        strategicPlanTitle: risk.strategicPlan?.title,
+        priority: risk.riskLevel === 'EXTREME' ? 'URGENT' : 'HIGH',
+      }));
   }
 }
 

@@ -120,15 +120,25 @@ export const simaanService = {
   },
 
   async updateResult(id: string, data: UpdateSimaanResultInput) {
-    const exam = await prisma.simaanExam.findUnique({
+    // Lightweight existence check outside the transaction
+    const examExists = await prisma.simaanExam.findUnique({
       where: { id },
-      include: { student: { include: { takhosusEnrollment: true } } }
+      select: { id: true },
     });
-    if (!exam) {
+    if (!examExists) {
       throw new ApiError(ErrorCode.NOT_FOUND, 'Simaan exam not found');
     }
 
     const updatedExam = await prisma.$transaction(async (tx) => {
+      // Re-read inside transaction for a consistent snapshot of enrollment data
+      const exam = await tx.simaanExam.findUnique({
+        where: { id },
+        include: { student: { include: { takhosusEnrollment: true } } },
+      });
+      if (!exam) {
+        throw new ApiError(ErrorCode.NOT_FOUND, 'Simaan exam not found');
+      }
+
       const result = await tx.simaanExam.update({
         where: { id },
         data: {

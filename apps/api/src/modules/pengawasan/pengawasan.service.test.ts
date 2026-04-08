@@ -192,6 +192,11 @@ describe('Pengawasan Service', () => {
 
       const suggestions = await pengawasanService.suggestAuditSchedules('unit-1');
 
+      // Existing-audit query must be scoped to the same unitId
+      expect(prisma.internalAudit.findMany).toHaveBeenCalledWith(expect.objectContaining({
+        where: expect.objectContaining({ unitId: 'unit-1' }),
+      }));
+
       expect(suggestions).toHaveLength(1);
       expect(suggestions[0]).toMatchObject({
         riskId: 'risk-2',

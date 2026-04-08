@@ -225,6 +225,7 @@ export class PengawasanService {
     const riskIds = highRisks.map((r) => r.id);
     const existingAudits = await prisma.internalAudit.findMany({
       where: {
+        unitId,
         riskId: { in: riskIds },
         status: { not: 'CANCELLED' },
       },

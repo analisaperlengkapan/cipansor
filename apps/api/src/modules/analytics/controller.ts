@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import * as service from './service';
+import { getGRCStats as getGRCStatsService } from './grc-analytics.service';
 import type {
   ApiResponse,
   DashboardSummary,
@@ -8,6 +9,7 @@ import type {
   FinanceReport,
   AnalyticsAttendanceSummary,
   AcademicPerformance,
+  GRCStats,
 } from '@cipansor/shared';
 
 export async function getDashboardStats(
@@ -117,6 +119,20 @@ export async function getPSBStats(req: Request, res: Response, next: NextFunctio
   try {
     const { unitId } = req.query;
     const stats = await service.getPSBStats(unitId as string | undefined);
+    res.json({ success: true, data: stats });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getGRCStats(
+  req: Request,
+  res: Response<ApiResponse<GRCStats>>,
+  next: NextFunction
+) {
+  try {
+    const { unitId } = req.query;
+    const stats = await getGRCStatsService(unitId as string | undefined);
     res.json({ success: true, data: stats });
   } catch (error) {
     next(error);

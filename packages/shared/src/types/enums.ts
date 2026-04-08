@@ -100,3 +100,12 @@ export enum ComplaintStatus {
   RESOLVED = "RESOLVED",
   REJECTED = "REJECTED",
 }
+
+// Talent Categories
+export enum TalentCategory {
+  HIGH_POTENTIAL = "HIGH_POTENTIAL",
+  KEY_TALENT = "KEY_TALENT",
+  EMERGING = "EMERGING",
+  SOLID_PERFORMER = "SOLID_PERFORMER",
+  NEEDS_DEVELOPMENT = "NEEDS_DEVELOPMENT",
+}

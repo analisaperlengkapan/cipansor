@@ -111,7 +111,7 @@ export class LitbangService {
     if (progress === 100) {
       // Auto-complete only if the project is still in a progression state.
       // This avoids overriding intentional statuses like PUBLISHED or ON_HOLD.
-      const progressionStatuses = ['DRAFT', 'IN_PROGRESS', 'PROPOSED'];
+      const progressionStatuses = ['PROPOSAL', 'IN_PROGRESS', 'APPROVED'];
       await prisma.researchProject.updateMany({
         where: { id: projectId, status: { in: progressionStatuses } },
         data: { progress, status: 'COMPLETED' },

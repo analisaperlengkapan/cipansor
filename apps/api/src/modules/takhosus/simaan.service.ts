@@ -192,12 +192,28 @@ export const simaanService = {
         if (exam.juzEnd === 30 && exam.juzStart === 1) {
           // Revert 30-juz completion: reset enrollment back to ACTIVE
           if (enrollment.status === 'COMPLETED') {
+            // Derive the correct currentJuz from other passed simaan exams
+            // instead of blindly resetting to exam.juzStart (which is always 1 for 30-juz)
+            const otherPassedExams = await tx.simaanExam.findMany({
+              where: {
+                studentId: exam.studentId,
+                id: { not: exam.id },
+                passed: true,
+              },
+              select: { juzEnd: true },
+              orderBy: { juzEnd: 'desc' },
+              take: 1,
+            });
+            const derivedCurrentJuz = otherPassedExams.length > 0
+              ? Math.min(30, otherPassedExams[0].juzEnd + 1)
+              : 1;
+
             await tx.takhosusEnrollment.update({
               where: { studentId: exam.studentId },
               data: {
                 status: 'ACTIVE',
                 completedAt: null,
-                currentJuz: exam.juzStart,
+                currentJuz: derivedCurrentJuz,
                 notes: null,
               }
             });

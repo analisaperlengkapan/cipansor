@@ -175,7 +175,7 @@ export default function GrcDashboardPage() {
                   </div>
                   <Progress
                     value={(tier.count / (grc.risks.total || 1)) * 100}
-                    className={`h-2 ${tier.color.replace('bg-', 'bg-opacity-20 bg-')}`}
+                    className="h-2"
                   />
                 </div>
               ))}

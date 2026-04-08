@@ -731,7 +731,7 @@ function TahfidzProgressChartWrapper() {
   const chartData = (progressData?.data?.monthlyProgress || []).map((item: any) => ({
     date: item.month,
     juz: 0, // Placeholder as analytics might not have this specific juz count
-    totalAyah: item.totalAyah || 0
+    totalAyah: (item.newMemorization || 0) + (item.murajaah || 0)
   }));
 
   return <TahfidzProgressChart data={chartData} />;

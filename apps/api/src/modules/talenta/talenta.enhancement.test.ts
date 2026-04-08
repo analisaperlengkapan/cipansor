@@ -40,6 +40,21 @@ describe('Talenta Service Enhancement', () => {
       expect(result.distribution.KEY_TALENT).toBe(1);
       expect(result.percentages.HIGH_POTENTIAL).toBe(29); // 2/7 * 100
       expect(result.percentages.NEEDS_DEVELOPMENT).toBe(14); // 1/7 * 100
+
+      // profiles should exclude INVALID category entries
+      expect(result.profiles).toHaveLength(6);
+      expect(result.profiles.find((p: any) => p.category === 'INVALID')).toBeUndefined();
+
+      // Verify score mapping for profiles with assessments
+      const user1 = result.profiles.find((p: any) => p.id === '1');
+      expect(user1.name).toBe('User 1');
+      expect(user1.performanceScore).toBe(100); // OUTSTANDING
+      expect(user1.potentialScore).toBe(100);   // OUTSTANDING
+
+      // Verify profiles without assessments default to 0
+      const user3 = result.profiles.find((p: any) => p.id === '3');
+      expect(user3.performanceScore).toBe(0);
+      expect(user3.potentialScore).toBe(0);
     });
 
     it('should handle empty profiles', async () => {
@@ -50,6 +65,7 @@ describe('Talenta Service Enhancement', () => {
       expect(result.total).toBe(0);
       expect(result.distribution.HIGH_POTENTIAL).toBe(0);
       expect(result.percentages.HIGH_POTENTIAL).toBe(0);
+      expect(result.profiles).toHaveLength(0);
     });
   });
 });

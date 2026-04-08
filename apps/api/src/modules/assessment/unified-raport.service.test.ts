@@ -31,6 +31,7 @@ describe('UnifiedRaportService Integration', () => {
     user: { name: 'Ahmad' },
     unit: { name: 'SD IT Cipansor', address: 'Cianjur', logoUrl: '/logo.png', id: 'u1' },
     nis: '1001',
+    nisn: '0012345678',
     unitId: 'u1',
     enrollments: [
       {
@@ -49,14 +50,21 @@ describe('UnifiedRaportService Integration', () => {
     projekP5: [],
     ekstrakurikuler: [],
     kehadiran: { sick: 0, excused: 1, absent: 0 },
+    catatanWaliKelas: 'Pertahankan prestasinya',
+    catatanKepalaSekolah: 'Bagus',
   };
 
   const mockPesantren = {
     tahfidz: { totalJuz: 5, latestSurah: 'An-Naba' },
     ibadah: { grade: 'A', score: 95 },
     akhlak: {},
+    kitabProgress: [],
+    muhadhoroh: null,
+    muhadatsah: null,
     overallGrade: 'MUMTAZ',
     overallScore: 92,
+    notes: 'Rajin sholat dhuha',
+    musyrifNotes: 'Kamar selalu rapi',
   };
 
   it('should throw an error if student is not found', async () => {
@@ -86,9 +94,18 @@ describe('UnifiedRaportService Integration', () => {
     const result = await UnifiedRaportService.generateUnifiedRaport('s1', 'ay1', 1);
 
     expect(result.student.name).toBe('Ahmad');
+    expect(result.student.nis).toBe('1001');
+    expect(result.student.nisn).toBe('0012345678');
+    expect(result.school.name).toBe('SD IT Cipansor');
+    expect(result.meta.academicYear).toBe('2024/2025');
     expect(result.academic.intrakurikuler[0].subjectName).toBe('Matematika');
     expect(result.islamic.tahfidz.totalJuz).toBe(5);
-    expect(result.remarks).toBeDefined();
+    expect(result.islamic.grade).toBe('MUMTAZ');
+    expect(result.islamic.score).toBe(92);
+    expect(result.remarks.academic).toBe('Pertahankan prestasinya');
+    expect(result.remarks.principal).toBe('Bagus');
+    expect(result.remarks.islamic).toBe('Rajin sholat dhuha');
+    expect(result.remarks.musyrif).toBe('Kamar selalu rapi');
     expect(result.signatures.homeroomTeacher).toBe('Ustadz Fulan');
 
     // Verify parallel execution with correct parameters

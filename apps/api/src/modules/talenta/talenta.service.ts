@@ -354,17 +354,21 @@ export class TalentaService {
       OUTSTANDING: 100, EXCEEDS: 80, MEETS: 60, BELOW: 40, UNSATISFACTORY: 20,
     };
 
-    const profiles = talentProfiles.map((p) => {
-      const latest = p.assessments[0];
-      return {
-        id: p.id,
-        name: p.user.name,
-        currentRole: p.currentRole,
-        performanceScore: latest ? (ratingToScore[latest.performanceRating] || 0) : 0,
-        potentialScore: latest ? (ratingToScore[latest.potentialRating] || 0) : 0,
-        category: p.category || 'SOLID_PERFORMER',
-      };
-    });
+    const validCategories = new Set(Object.keys(distribution));
+
+    const profiles = talentProfiles
+      .filter((p) => p.category && validCategories.has(p.category))
+      .map((p) => {
+        const latest = p.assessments[0];
+        return {
+          id: p.id,
+          name: p.user.name,
+          currentRole: p.currentRole,
+          performanceScore: latest ? (ratingToScore[latest.performanceRating] || 0) : 0,
+          potentialScore: latest ? (ratingToScore[latest.potentialRating] || 0) : 0,
+          category: p.category || 'SOLID_PERFORMER',
+        };
+      });
 
     return {
       total,

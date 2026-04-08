@@ -124,7 +124,10 @@ export class LitbangService {
         });
       }
     } else {
-      await prisma.researchProject.update({ where: { id: projectId }, data: { progress } });
+      await prisma.researchProject.updateMany({
+        where: { id: projectId, status: { not: 'CANCELLED' } },
+        data: { progress },
+      });
     }
   }
 

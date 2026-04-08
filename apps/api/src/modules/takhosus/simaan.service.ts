@@ -185,6 +185,39 @@ export const simaanService = {
             data: { currentJuz: Math.min(30, exam.juzEnd + 1) }
           });
         }
+      } else if (!data.passed && exam.student.takhosusEnrollment) {
+        // Revert side-effects when re-grading from passed to failed
+        const enrollment = exam.student.takhosusEnrollment;
+
+        if (exam.juzEnd === 30 && exam.juzStart === 1) {
+          // Revert 30-juz completion: reset enrollment back to ACTIVE
+          if (enrollment.status === 'COMPLETED') {
+            await tx.takhosusEnrollment.update({
+              where: { studentId: exam.studentId },
+              data: {
+                status: 'ACTIVE',
+                completedAt: null,
+                currentJuz: exam.juzStart,
+                notes: null,
+              }
+            });
+          }
+
+          // Remove Hafidz record if it was auto-created
+          await tx.hafidzStudent.deleteMany({
+            where: { studentId: exam.studentId }
+          });
+        } else if (exam.juzEnd >= (enrollment.currentJuz || 0) - 1) {
+          // Revert currentJuz bump: set back to juzStart of this exam
+          // Only revert if the enrollment's currentJuz was likely set by this exam
+          const revertedJuz = Math.max(1, exam.juzStart);
+          if ((enrollment.currentJuz || 0) === Math.min(30, exam.juzEnd + 1)) {
+            await tx.takhosusEnrollment.update({
+              where: { studentId: exam.studentId },
+              data: { currentJuz: revertedJuz }
+            });
+          }
+        }
       }
 
       return result;

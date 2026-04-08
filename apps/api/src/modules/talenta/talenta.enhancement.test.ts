@@ -35,7 +35,7 @@ describe('Talenta Service Enhancement', () => {
 
       const result = await talentaService.getTalentAnalytics('unit-1');
 
-      expect(result.total).toBe(7);
+      expect(result.total).toBe(6); // INVALID excluded from total
       expect(result.distribution.HIGH_POTENTIAL).toBe(2);
       expect(result.distribution.KEY_TALENT).toBe(1);
       expect(result.percentages.HIGH_POTENTIAL).toBe(33); // 2/6 * 100 (INVALID excluded from denominator)

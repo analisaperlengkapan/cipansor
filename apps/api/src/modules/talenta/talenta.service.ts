@@ -344,8 +344,8 @@ export class TalentaService {
       }
     });
 
-    const total = talentProfiles.length;
     const validTotal = Object.values(distribution).reduce((sum, count) => sum + count, 0);
+    const total = validTotal;
     const percentages = Object.keys(distribution).reduce((acc, key) => {
       acc[key] = validTotal > 0 ? Math.round((distribution[key] / validTotal) * 100) : 0;
       return acc;

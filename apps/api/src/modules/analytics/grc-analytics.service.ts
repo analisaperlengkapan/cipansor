@@ -127,6 +127,6 @@ export async function getGRCStats(unitId?: string): Promise<GRCStats> {
       complianceRate: Math.round(avgShariaScore * 100) / 100,
       statusDistribution: shariaStatusDist,
     },
-    auditSuggestions: unitId ? await pengawasanService.suggestAuditSchedules(unitId) : [],
+    auditSuggestions: unitId ? await pengawasanService.suggestAuditSchedules(unitId).catch(() => []) : [],
   };
 }

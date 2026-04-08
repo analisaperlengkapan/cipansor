@@ -145,7 +145,7 @@ export const simaanService = {
     });
 
     // 1. Level-up trigger: If passed 30 juz simaan, mark enrollment as COMPLETED and eligible for certificate
-    if (data.passed && exam.juzEnd === 30 && exam.juzStart === 1) {
+    if (data.passed && exam.student.takhosusEnrollment && exam.juzEnd === 30 && exam.juzStart === 1) {
       await prisma.takhosusEnrollment.update({
         where: { studentId: exam.studentId },
         data: {
@@ -168,7 +168,7 @@ export const simaanService = {
     }
 
     // 3. Update current juz progress in enrollment if passed a juz simaan
-    if (data.passed && exam.juzEnd >= (exam.student.takhosusEnrollment?.currentJuz || 0)) {
+    if (data.passed && exam.student.takhosusEnrollment && exam.juzEnd >= (exam.student.takhosusEnrollment.currentJuz || 0)) {
        await prisma.takhosusEnrollment.update({
          where: { studentId: exam.studentId },
          data: { currentJuz: Math.min(30, exam.juzEnd + 1) }

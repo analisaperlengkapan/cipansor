@@ -77,7 +77,7 @@ export const createPlan = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const updatePlan = asyncHandler(async (req: Request, res: Response) => {
-  const existing = await perencanaanService.getPlanById(req.params.id);
+  const existing = await perencanaanService.getPlanForAuth(req.params.id);
   if (!existing) throw Errors.notFound('Plan not found');
 
   if (!isPrivileged(req.user?.role) && existing.unitId !== req.user?.unitId) {
@@ -102,7 +102,7 @@ export const approvePlan = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const deletePlan = asyncHandler(async (req: Request, res: Response) => {
-  const existing = await perencanaanService.getPlanById(req.params.id);
+  const existing = await perencanaanService.getPlanForAuth(req.params.id);
   if (!existing) throw Errors.notFound('Plan not found');
 
   if (!isPrivileged(req.user?.role) && existing.unitId !== req.user?.unitId) {

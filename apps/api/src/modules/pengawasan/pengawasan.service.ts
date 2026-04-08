@@ -152,7 +152,10 @@ export class PengawasanService {
     return prisma.auditFinding.update({
       where: { id },
       data: updateData,
-      include: { responsible: { select: { id: true, name: true } } },
+      include: {
+        responsible: { select: { id: true, name: true } },
+        planObjective: { select: { id: true, title: true } },
+      },
     });
   }
 

@@ -159,6 +159,16 @@ export class PerencanaanService {
     };
   }
 
+  /**
+   * Lightweight lookup for authorization checks — no journal aggregation.
+   */
+  async getPlanForAuth(id: string) {
+    return prisma.strategicPlan.findUnique({
+      where: { id },
+      select: { id: true, unitId: true },
+    });
+  }
+
   async updatePlan(id: string, data: Prisma.StrategicPlanUpdateInput) {
     return prisma.strategicPlan.update({
       where: { id },

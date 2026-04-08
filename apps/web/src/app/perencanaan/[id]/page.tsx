@@ -289,9 +289,11 @@ export default function PerencanaanDetailPage() {
                                 <div className="flex flex-wrap gap-2 text-xs text-muted-foreground mt-2">
                                   <Badge variant="outline" className="text-[10px]">{act.status}</Badge>
                                   <Badge variant="outline" className="text-[10px]">{act.priority}</Badge>
+                                  {Number(act.budget) > 0 && (
                                   <Badge variant="secondary" className="text-[10px] bg-emerald-50 text-emerald-700 border-emerald-100">
-                                    Realisasi: {Math.round((act.realization / (act.budget || 1)) * 100)}%
+                                    Realisasi: {Math.round((act.realization / Number(act.budget)) * 100)}%
                                   </Badge>
+                                  )}
                                   {act.pic && (
                                     <span className="flex items-center gap-1">
                                       <CheckCircle2 className="w-3 h-3" /> {act.pic.name}

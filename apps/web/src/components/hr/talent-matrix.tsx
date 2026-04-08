@@ -47,7 +47,7 @@ export function TalentMatrix({ profiles }: TalentMatrixProps) {
                     <Tooltip key={profile.id}>
                       <TooltipTrigger asChild>
                         <div className="w-8 h-8 rounded-full bg-white border flex items-center justify-center text-[10px] font-bold cursor-help shadow-sm">
-                          {profile.name.split(' ').map(n => n[0]).join('').substring(0, 2)}
+                          {(profile.name || '?').split(' ').map(n => n[0]).join('').substring(0, 2)}
                         </div>
                       </TooltipTrigger>
                       <TooltipContent>

@@ -46,15 +46,16 @@ export async function getGRCStats(unitId?: string): Promise<GRCStats> {
     }),
 
     // 3. Audit Findings & Resolved Findings
+    // Note: AuditFinding has no direct unitId — filter through the audit relation
     prisma.auditFinding.count({
       where: {
-        audit: { unitId: unitId || undefined },
+        ...(unitId ? { audit: { unitId } } : {}),
       },
     }),
     // Count distinct findings that have at least one verified follow-up
     prisma.auditFinding.count({
       where: {
-        audit: { unitId: unitId || undefined },
+        ...(unitId ? { audit: { unitId } } : {}),
         followUps: { some: { status: 'VERIFIED' } },
       },
     }),

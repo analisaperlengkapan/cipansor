@@ -38,8 +38,8 @@ describe('Talenta Service Enhancement', () => {
       expect(result.total).toBe(7);
       expect(result.distribution.HIGH_POTENTIAL).toBe(2);
       expect(result.distribution.KEY_TALENT).toBe(1);
-      expect(result.percentages.HIGH_POTENTIAL).toBe(29); // 2/7 * 100
-      expect(result.percentages.NEEDS_DEVELOPMENT).toBe(14); // 1/7 * 100
+      expect(result.percentages.HIGH_POTENTIAL).toBe(33); // 2/6 * 100 (INVALID excluded from denominator)
+      expect(result.percentages.NEEDS_DEVELOPMENT).toBe(17); // 1/6 * 100
 
       // profiles should exclude INVALID category entries
       expect(result.profiles).toHaveLength(6);

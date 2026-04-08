@@ -16,8 +16,17 @@ export default function UnifiedRaportPage({ params: paramsPromise }: { params: P
   const academicYearId = searchParams.get("academicYearId") || "";
   const semester = parseInt(searchParams.get("semester") || "1");
 
+  const isQueryEnabled = !!params.studentId && !!academicYearId && !!semester;
   const { data: raportResponse, isLoading, error } = useUnifiedRaport(params.studentId, academicYearId, semester);
   const raport = raportResponse?.data;
+
+  if (!isQueryEnabled) {
+    return (
+      <div className="container mx-auto py-8 text-center">
+        <p className="text-destructive">Parameter tidak lengkap. Pastikan academicYearId dan semester tersedia di URL.</p>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (

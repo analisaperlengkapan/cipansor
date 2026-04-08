@@ -229,5 +229,56 @@ describe('Perencanaan Service', () => {
         where: expect.objectContaining({ accountId: 'acc-1' })
       }));
     });
+
+    it('should not double-count realization when activities share the same budget account', async () => {
+      const planId = 'plan-shared';
+      const mockPlan = {
+        id: planId,
+        unitId: 'unit-1',
+        startDate: new Date('2024-01-01'),
+        endDate: new Date('2024-12-31'),
+        objectives: [
+          {
+            id: 'obj-1',
+            activities: [
+              {
+                id: 'act-1',
+                budget: { toNumber: () => 600000 },
+                budgetRel: {
+                  accountId: 'acc-shared',
+                  account: { normalBalance: 'DEBIT' }
+                }
+              },
+              {
+                id: 'act-2',
+                budget: { toNumber: () => 400000 },
+                budgetRel: {
+                  accountId: 'acc-shared',
+                  account: { normalBalance: 'DEBIT' }
+                }
+              }
+            ]
+          }
+        ]
+      };
+
+      vi.mocked(prisma.strategicPlan.findUnique).mockResolvedValue(mockPlan as any);
+      vi.mocked(prisma.journalEntry.aggregate).mockResolvedValue({
+        _sum: { debit: { toNumber: () => 500000 }, credit: { toNumber: () => 0 } }
+      } as any);
+
+      const result = await perencanaanService.getPlanById(planId);
+
+      // Journal aggregate should be called only ONCE for the shared account
+      expect(prisma.journalEntry.aggregate).toHaveBeenCalledTimes(1);
+
+      // Total realization should equal the account total (500k), NOT 500k * 2
+      expect(result.totalRealization).toBe(500000);
+
+      // Realization distributed proportionally: act-1 gets 60%, act-2 gets 40%
+      const activities = result.objectives[0].activities;
+      expect(activities[0].realization).toBe(300000); // 500k * (600k / 1m)
+      expect(activities[1].realization).toBe(200000); // 500k * (400k / 1m)
+    });
   });
 });

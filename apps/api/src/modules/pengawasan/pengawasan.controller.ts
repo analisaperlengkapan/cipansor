@@ -144,7 +144,8 @@ export const deleteFollowUp = asyncHandler(async (req: Request, res: Response) =
 // ==================== SUGGESTIONS ====================
 
 export const getAuditSuggestions = asyncHandler(async (req: Request, res: Response) => {
-  const unitId = req.user?.unitId;
+  const isPrivilegedUser = isPrivileged(req.user?.role);
+  const unitId = req.user?.unitId || (isPrivilegedUser && req.query.unitId ? String(req.query.unitId) : undefined);
   if (!unitId) throw Errors.badRequest('Unit ID required');
 
   const suggestions = await pengawasanService.suggestAuditSchedules(unitId);

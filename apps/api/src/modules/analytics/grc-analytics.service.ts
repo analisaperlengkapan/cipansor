@@ -78,10 +78,22 @@ export async function getGRCStats(unitId?: string): Promise<GRCStats> {
     }),
 
     // 5. Audit Suggestions (parallelized, gracefully degrades on error)
+    // When unitId is provided, suggest for that unit; otherwise aggregate across all units
     unitId ? pengawasanService.suggestAuditSchedules(unitId).catch((err) => {
       console.error('[GRC] suggestAuditSchedules failed, returning empty suggestions:', err?.message || err);
       return [];
-    }) : Promise.resolve([]),
+    }) : (async () => {
+      try {
+        const allUnits = await prisma.unit.findMany({ select: { id: true } });
+        const allSuggestions = await Promise.all(
+          allUnits.map((u) => pengawasanService.suggestAuditSchedules(u.id).catch(() => []))
+        );
+        return allSuggestions.flat();
+      } catch (err: any) {
+        console.error('[GRC] suggestAuditSchedules (all units) failed:', err?.message || err);
+        return [];
+      }
+    })(),
   ]);
 
   // Plans Processing

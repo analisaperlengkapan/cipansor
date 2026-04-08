@@ -116,10 +116,10 @@ export class LitbangService {
         where: { id: projectId, status: { in: progressionStatuses } },
         data: { progress, status: 'COMPLETED' },
       });
-      // For projects already in a terminal state, only update progress
+      // For projects already in a non-progression state (except CANCELLED), only update progress
       if (result.count === 0) {
         await prisma.researchProject.updateMany({
-          where: { id: projectId, status: { notIn: progressionStatuses } },
+          where: { id: projectId, status: { notIn: [...progressionStatuses, 'CANCELLED'] } },
           data: { progress },
         });
       }

@@ -78,7 +78,10 @@ export async function getGRCStats(unitId?: string): Promise<GRCStats> {
     }),
 
     // 5. Audit Suggestions (parallelized, gracefully degrades on error)
-    unitId ? pengawasanService.suggestAuditSchedules(unitId).catch(() => []) : Promise.resolve([]),
+    unitId ? pengawasanService.suggestAuditSchedules(unitId).catch((err) => {
+      console.error('[GRC] suggestAuditSchedules failed, returning empty suggestions:', err?.message || err);
+      return [];
+    }) : Promise.resolve([]),
   ]);
 
   // Plans Processing

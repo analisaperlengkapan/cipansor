@@ -611,7 +611,8 @@ export const sanadService = {
   },
 
   /**
-   * Automatically check and suggest certificates based on progress
+   * Automatically check and suggest certificates based on progress.
+   * Currently logs eligibility — integrate with notification service for production use.
    */
   async checkCertificateEligibility(studentId: string) {
     const enrollment = await prisma.takhosusEnrollment.findUnique({
@@ -629,21 +630,21 @@ export const sanadService = {
       { count: 1, juz: 30, type: 'TAHFIDZ_JUZ_AMMA', title: 'Hafidz Juz Amma' },
     ];
 
+    // Check highest eligible target first, then break to avoid unnecessary queries
     for (const target of targets) {
       const eligible = target.juz
         ? enrollment.sanadRecords.some(s => s.juz === target.juz)
         : count >= target.count;
 
       if (eligible) {
-        // Check if already has certificate
         const existing = await prisma.digitalCertificate.findFirst({
           where: { studentId, certificateType: target.type }
         });
 
         if (!existing) {
-          // Notify musyrif/admin about eligibility
-          // Note: In real world, we might auto-generate or just notify
-          console.log(`Student ${studentId} is eligible for ${target.title}`);
+          // TODO: Replace with actual notification/event emission for production
+          console.log(`[Takhosus] Student ${studentId} is eligible for certificate: ${target.title}`);
+          break; // Only flag the highest eligible milestone to reduce DB queries
         }
       }
     }

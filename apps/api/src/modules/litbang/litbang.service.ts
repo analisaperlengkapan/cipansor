@@ -112,15 +112,17 @@ export class LitbangService {
       // Auto-complete only if the project is still in a progression state.
       // This avoids overriding intentional statuses like PUBLISHED or ON_HOLD.
       const progressionStatuses = ['PROPOSAL', 'IN_PROGRESS', 'APPROVED'];
-      await prisma.researchProject.updateMany({
+      const result = await prisma.researchProject.updateMany({
         where: { id: projectId, status: { in: progressionStatuses } },
         data: { progress, status: 'COMPLETED' },
       });
       // For projects already in a terminal state, only update progress
-      await prisma.researchProject.updateMany({
-        where: { id: projectId, status: { notIn: progressionStatuses } },
-        data: { progress },
-      });
+      if (result.count === 0) {
+        await prisma.researchProject.updateMany({
+          where: { id: projectId, status: { notIn: progressionStatuses } },
+          data: { progress },
+        });
+      }
     } else {
       await prisma.researchProject.update({ where: { id: projectId }, data: { progress } });
     }

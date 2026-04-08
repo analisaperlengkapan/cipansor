@@ -55,11 +55,6 @@ export default function GrcDashboardPage() {
     { name: 'Sharia Compliance', expected: 100, actual: grc.sharia.complianceRate },
   ];
 
-  const auditReadiness = [
-    { name: 'Resolved', value: grc.audits.resolvedCount, fill: '#10b981' },
-    { name: 'Unresolved', value: grc.audits.unresolvedCount, fill: '#f59e0b' },
-  ];
-
   return (
     <div className="container mx-auto py-8 space-y-8">
       <PageHeader 

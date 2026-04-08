@@ -22,7 +22,16 @@ export interface GRCStats {
     complianceRate: number;
     statusDistribution: Record<ComplianceStatus, number>;
   };
-  auditSuggestions?: any[];
+  auditSuggestions?: {
+    riskId: string;
+    riskCode: string;
+    riskLevel: string;
+    suggestedTitle: string;
+    suggestedDescription: string;
+    strategicPlanId?: string | null;
+    strategicPlanTitle?: string;
+    priority: string;
+  }[];
 }
 
 export async function getGRCStats(unitId?: string): Promise<GRCStats> {

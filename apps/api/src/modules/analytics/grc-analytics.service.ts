@@ -94,11 +94,15 @@ export async function getGRCStats(unitId?: string): Promise<GRCStats> {
     NOT_APPLICABLE: 0,
   };
   let totalScore = 0;
+  let scoredCount = 0;
   compliances.forEach((c) => {
     shariaStatusDist[c.status]++;
-    totalScore += c.score || 0;
+    if (c.score != null) {
+      totalScore += c.score;
+      scoredCount++;
+    }
   });
-  const avgShariaScore = compliances.length > 0 ? totalScore / compliances.length : 0;
+  const avgShariaScore = scoredCount > 0 ? totalScore / scoredCount : 0;
 
   return {
     plans: {

@@ -155,7 +155,7 @@ export const simaanService = {
         },
       });
 
-      if (data.passed && exam.student.takhosusEnrollment) {
+      if (data.passed && !exam.passed && exam.student.takhosusEnrollment) {
         // 1. Level-up trigger: If passed 30 juz simaan, mark enrollment as COMPLETED and eligible for certificate
         if (exam.juzEnd === 30 && exam.juzStart === 1) {
           await tx.takhosusEnrollment.update({
@@ -185,7 +185,7 @@ export const simaanService = {
             data: { currentJuz: Math.min(30, exam.juzEnd + 1) }
           });
         }
-      } else if (!data.passed && exam.student.takhosusEnrollment) {
+      } else if (!data.passed && exam.passed && exam.student.takhosusEnrollment) {
         // Revert side-effects when re-grading from passed to failed
         const enrollment = exam.student.takhosusEnrollment;
 

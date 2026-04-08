@@ -7504,6 +7504,7 @@ model PlanObjective {
   plan       StrategicPlan   @relation(fields: [planId], references: [id], onDelete: Cascade)
   indicators PlanIndicator[]
   activities PlanActivity[]
+  auditFindings AuditFinding[]
 
   @@index([planId])
   @@map("plan_objectives")
@@ -7636,6 +7637,9 @@ model AuditFinding {
   audit       InternalAudit   @relation(fields: [auditId], references: [id], onDelete: Cascade)
   responsible User?           @relation("FindingResponsible", fields: [responsibleId], references: [id])
   followUps   AuditFollowUp[]
+
+  planObjectiveId String?       @map("plan_objective_id")
+  planObjective   PlanObjective? @relation(fields: [planObjectiveId], references: [id])
 
   @@index([auditId])
   @@index([severity])

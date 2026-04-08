@@ -29,6 +29,9 @@ vi.mock('../../lib/prisma', () => ({
       update: vi.fn(),
       delete: vi.fn(),
     },
+    journalEntry: {
+      aggregate: vi.fn(),
+    },
   },
 }));
 
@@ -185,6 +188,46 @@ describe('Perencanaan Service', () => {
         }),
         include: expect.any(Object),
       });
+    });
+  });
+
+  describe('Budget Realization', () => {
+    it('should calculate budget realization from journal entries', async () => {
+      const planId = 'plan-123';
+      const mockPlan = {
+        id: planId,
+        unitId: 'unit-1',
+        startDate: new Date('2024-01-01'),
+        endDate: new Date('2024-12-31'),
+        objectives: [
+          {
+            id: 'obj-1',
+            activities: [
+              {
+                id: 'act-1',
+                budget: { toNumber: () => 1000000 },
+                budgetRel: {
+                  accountId: 'acc-1',
+                  account: { normalBalance: 'DEBIT' }
+                }
+              }
+            ]
+          }
+        ]
+      };
+
+      vi.mocked(prisma.strategicPlan.findUnique).mockResolvedValue(mockPlan as any);
+      vi.mocked(prisma.journalEntry.aggregate).mockResolvedValue({
+        _sum: { debit: { toNumber: () => 500000 }, credit: { toNumber: () => 100000 } }
+      } as any);
+
+      const result = await perencanaanService.getPlanById(planId);
+
+      expect(result.totalRealization).toBe(400000); // 500k - 100k
+      expect(result.financialProgress).toBe(40); // 400k / 1m
+      expect(prisma.journalEntry.aggregate).toHaveBeenCalledWith(expect.objectContaining({
+        where: expect.objectContaining({ accountId: 'acc-1' })
+      }));
     });
   });
 });

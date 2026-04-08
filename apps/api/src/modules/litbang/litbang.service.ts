@@ -109,6 +109,19 @@ export class LitbangService {
     const progress = Math.round((completed / milestones.length) * 100);
 
     await prisma.researchProject.update({ where: { id: projectId }, data: { progress } });
+
+    // If project is 100% complete, potentially trigger an innovation proposal suggestion
+    if (progress === 100) {
+       const project = await prisma.researchProject.findUnique({ where: { id: projectId } });
+       if (project && project.status !== 'COMPLETED') {
+          await prisma.researchProject.update({
+            where: { id: projectId },
+            data: { status: 'COMPLETED' }
+          });
+          // In a real system, we might create a notification or a draft proposal here
+          console.log(`Research Project ${projectId} completed. Suggested for Innovation Proposal.`);
+       }
+    }
   }
 
   // ── Innovation Proposals ──────────────────────────

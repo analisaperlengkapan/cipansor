@@ -24,6 +24,9 @@ vi.mock('@/lib/prisma', () => ({
     },
     academicYear: {
       findUnique: vi.fn(),
+    },
+    simaanExam: {
+      findMany: vi.fn(),
     }
   },
 }));
@@ -71,6 +74,7 @@ describe('RaporPesantrenService - Kepesantrenan Terpadu', () => {
 
       (prisma.takhosusEnrollment.findMany as any).mockResolvedValue(mockEnrollments);
       (prisma.sanadRecord.findMany as any).mockResolvedValue([]);
+      (prisma.simaanExam.findMany as any).mockResolvedValue([]);
 
       const result = await raporService.getTakhosusSummary(
         'stud1',
@@ -119,6 +123,7 @@ describe('RaporPesantrenService - Kepesantrenan Terpadu', () => {
 
       (prisma.takhosusEnrollment.findMany as any).mockResolvedValue(mockEnrollments);
       (prisma.sanadRecord.findMany as any).mockResolvedValue(mockSanads);
+      (prisma.simaanExam.findMany as any).mockResolvedValue([]);
 
       const result = await raporService.getTakhosusSummary(
         'stud1',

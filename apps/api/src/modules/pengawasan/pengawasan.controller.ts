@@ -140,3 +140,13 @@ export const deleteFollowUp = asyncHandler(async (req: Request, res: Response) =
   await pengawasanService.deleteFollowUp(req.params.id);
   res.json({ success: true, message: 'Follow-up deleted' });
 });
+
+// ==================== SUGGESTIONS ====================
+
+export const getAuditSuggestions = asyncHandler(async (req: Request, res: Response) => {
+  const unitId = req.user?.unitId;
+  if (!unitId) throw Errors.badRequest('Unit ID required');
+
+  const suggestions = await pengawasanService.suggestAuditSchedules(unitId);
+  res.json({ success: true, data: suggestions });
+});

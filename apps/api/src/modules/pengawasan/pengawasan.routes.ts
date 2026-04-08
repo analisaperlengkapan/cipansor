@@ -11,6 +11,7 @@ router.use(
 );
 
 // Audits
+router.get('/suggestions', pengawasanController.getAuditSuggestions);
 router.get('/', pengawasanController.listAudits);
 router.post('/', pengawasanController.createAudit);
 router.get('/:id', pengawasanController.getAudit);

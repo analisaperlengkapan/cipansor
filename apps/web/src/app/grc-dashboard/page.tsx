@@ -55,6 +55,11 @@ export default function GrcDashboardPage() {
     { name: 'Sharia Compliance', expected: 100, actual: grc.sharia.complianceRate },
   ];
 
+  const auditReadiness = [
+    { name: 'Resolved', value: grc.audits.resolvedCount, fill: '#10b981' },
+    { name: 'Unresolved', value: grc.audits.unresolvedCount, fill: '#f59e0b' },
+  ];
+
   return (
     <div className="container mx-auto py-8 space-y-8">
       <PageHeader 
@@ -192,26 +197,63 @@ export default function GrcDashboardPage() {
         </Card>
       </div>
 
-      {/* Sharia Compliance Breakdown */}
-      <Card className="shadow-md border-slate-200">
-        <CardHeader className="bg-slate-50/50 border-b">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Scale className="h-5 w-5 text-slate-700" />
-            Sharia Compliance Distribution
-          </CardTitle>
-          <CardDescription>Status across all compliance categories</CardDescription>
-        </CardHeader>
-        <CardContent className="pt-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            {Object.entries(grc.sharia.statusDistribution).map(([status, count]) => (
-              <div key={status} className="p-4 rounded-xl border border-slate-100 bg-white shadow-sm flex flex-col items-center">
-                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">{status.replace(/_/g, ' ')}</span>
-                <span className="text-2xl font-bold text-slate-900">{count as number}</span>
+      {/* GRC Recommendations & Insights */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Sharia Compliance Breakdown */}
+        <Card className="shadow-md border-slate-200 lg:col-span-2">
+          <CardHeader className="bg-slate-50/50 border-b">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Scale className="h-5 w-5 text-slate-700" />
+              Sharia Compliance Distribution
+            </CardTitle>
+            <CardDescription>Status across all compliance categories</CardDescription>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+              {Object.entries(grc.sharia.statusDistribution).map(([status, count]) => (
+                <div key={status} className="p-4 rounded-xl border border-slate-100 bg-white shadow-sm flex flex-col items-center">
+                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">{status.replace(/_/g, ' ')}</span>
+                  <span className="text-2xl font-bold text-slate-900">{count as number}</span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Audit Suggestions Engine */}
+        <Card className="shadow-md border-slate-200">
+          <CardHeader className="bg-slate-50/50 border-b">
+            <CardTitle className="text-lg flex items-center gap-2 text-amber-800">
+              <ClipboardCheck className="h-5 w-5" />
+              AI Audit Advisor
+            </CardTitle>
+            <CardDescription>Smart suggestions based on Risk module</CardDescription>
+          </CardHeader>
+          <CardContent className="pt-6">
+            {grc.auditSuggestions && grc.auditSuggestions.length > 0 ? (
+              <div className="space-y-4">
+                {grc.auditSuggestions.map((sug: any, i: number) => (
+                  <div key={i} className="p-3 border rounded-lg bg-amber-50/30 border-amber-100 space-y-1">
+                    <div className="flex justify-between items-start">
+                      <Badge variant="outline" className="text-[10px] uppercase font-bold text-amber-700 border-amber-200">
+                        {sug.priority}
+                      </Badge>
+                      <span className="text-[10px] font-mono text-slate-500">{sug.riskCode}</span>
+                    </div>
+                    <p className="text-xs font-bold text-slate-800">{sug.suggestedTitle}</p>
+                    <p className="text-[10px] text-slate-600 line-clamp-2">{sug.suggestedDescription}</p>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+            ) : (
+              <div className="text-center py-10">
+                <CheckCircle2 className="h-10 w-10 mx-auto text-emerald-500 mb-2 opacity-50" />
+                <p className="text-sm text-slate-500">No high-priority audits suggested.</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

@@ -522,6 +522,9 @@ export const sanadService = {
     // Update enrollment progress
     await this.updateEnrollmentProgress(input.enrollmentId);
 
+    // Certificate eligibility check: if certain juz count reached
+    await this.checkCertificateEligibility(sanad.enrollment.studentId);
+
     return sanad;
   },
 
@@ -555,9 +558,8 @@ export const sanadService = {
         studentName: sanad.enrollment.student.user?.name || 'Unknown',
         halaqohName: sanad.enrollment.halaqoh.name,
         juz: sanad.juz,
-        score: sanad.score,
         grade: sanad.grade,
-        assessedAt: sanad.assessedAt,
+        certifiedAt: sanad.certifiedAt,
       });
     }).catch(console.error);
 
@@ -607,6 +609,45 @@ export const sanadService = {
       },
     });
   },
+
+  /**
+   * Automatically check and suggest certificates based on progress
+   */
+  async checkCertificateEligibility(studentId: string) {
+    const enrollment = await prisma.takhosusEnrollment.findUnique({
+      where: { studentId },
+      include: { sanadRecords: true },
+    });
+
+    if (!enrollment) return;
+
+    const count = enrollment.sanadRecords.length;
+    const targets = [
+      { count: 30, type: 'TAHFIDZ_30_JUZ', title: 'Hafidz 30 Juz' },
+      { count: 10, type: 'TAHFIDZ_10_JUZ', title: 'Hafidz 10 Juz' },
+      { count: 5, type: 'TAHFIDZ_5_JUZ', title: 'Hafidz 5 Juz' },
+      { count: 1, juz: 30, type: 'TAHFIDZ_JUZ_AMMA', title: 'Hafidz Juz Amma' },
+    ];
+
+    for (const target of targets) {
+      const eligible = target.juz
+        ? enrollment.sanadRecords.some(s => s.juz === target.juz)
+        : count >= target.count;
+
+      if (eligible) {
+        // Check if already has certificate
+        const existing = await prisma.digitalCertificate.findFirst({
+          where: { studentId, certificateType: target.type }
+        });
+
+        if (!existing) {
+          // Notify musyrif/admin about eligibility
+          // Note: In real world, we might auto-generate or just notify
+          console.log(`Student ${studentId} is eligible for ${target.title}`);
+        }
+      }
+    }
+  }
 };
 
 // =====================================

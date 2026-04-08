@@ -41,6 +41,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   useHalaqohs,
   useDeleteHalaqoh,
@@ -58,6 +59,8 @@ import { useTakhosusDashboard } from "@/hooks/use-takhosus-details";
 import { MurojaahList } from "@/components/takhosus/murojaah/murojaah-list";
 import { SimaanList } from "@/components/takhosus/simaan/simaan-list";
 import { MurojaahFormDialog } from "@/components/takhosus/murojaah/murojaah-form-dialog";
+import { TahfidzProgressChart } from "@/components/takhosus/tahfidz-progress-chart";
+import { useTahfidzProgress } from "@/hooks/use-analytics";
 
 export default function TakhosusPage() {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -256,8 +259,24 @@ export default function TakhosusPage() {
         </div>
 
         {/* Dashboard Tab */}
-        <TabsContent value="dashboard">
+        <TabsContent value="dashboard" className="space-y-6">
           <TakhosusDashboard stats={dashboardStats} isLoading={statsLoading} />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+             <div className="lg:col-span-2">
+                <TahfidzProgressChartWrapper />
+             </div>
+             <div>
+                <Card className="h-full">
+                   <CardHeader>
+                      <CardTitle className="text-base">Target Hafalan Unit</CardTitle>
+                   </CardHeader>
+                   <CardContent>
+                      <p className="text-sm text-muted-foreground italic">Target unit ditetapkan berdasarkan tahun ajaran aktif.</p>
+                      {/* Additional unit-specific target info could go here */}
+                   </CardContent>
+                </Card>
+             </div>
+          </div>
         </TabsContent>
 
         {/* Murojaah Tab */}
@@ -701,4 +720,19 @@ export default function TakhosusPage() {
       />
     </MainLayout>
   );
+}
+
+function TahfidzProgressChartWrapper() {
+  const { data: progressData, isLoading } = useTahfidzProgress();
+
+  if (isLoading) return <Skeleton className="h-[400px] w-full" />;
+
+  // Map analytics data to chart format
+  const chartData = (progressData?.data?.monthlyProgress || []).map((item: any) => ({
+    date: item.month,
+    juz: 0, // Placeholder as analytics might not have this specific juz count
+    totalAyah: item.totalAyah || 0
+  }));
+
+  return <TahfidzProgressChart data={chartData} />;
 }

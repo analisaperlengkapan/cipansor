@@ -114,6 +114,7 @@ export class PengawasanService {
     recommendation?: string;
     responsibleId?: string;
     dueDate?: string;
+    planObjectiveId?: string;
   }) {
     return prisma.auditFinding.create({
       data: {
@@ -128,19 +129,24 @@ export class PengawasanService {
         recommendation: data.recommendation,
         responsible: data.responsibleId ? { connect: { id: data.responsibleId } } : undefined,
         dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
+        planObjective: data.planObjectiveId ? { connect: { id: data.planObjectiveId } } : undefined,
       },
       include: {
         responsible: { select: { id: true, name: true } },
+        planObjective: { select: { id: true, title: true } },
       },
     });
   }
 
   async updateFinding(id: string, data: any) {
-    const { responsibleId, ...rest } = data;
+    const { responsibleId, planObjectiveId, ...rest } = data;
     const updateData: any = { ...rest };
 
     if (responsibleId) updateData.responsible = { connect: { id: responsibleId } };
     else if (responsibleId === null) updateData.responsible = { disconnect: true };
+
+    if (planObjectiveId) updateData.planObjective = { connect: { id: planObjectiveId } };
+    else if (planObjectiveId === null) updateData.planObjective = { disconnect: true };
     if (rest.dueDate) updateData.dueDate = new Date(rest.dueDate);
 
     return prisma.auditFinding.update({
@@ -193,6 +199,46 @@ export class PengawasanService {
 
   async deleteFollowUp(id: string) {
     return prisma.auditFollowUp.delete({ where: { id } });
+  }
+
+  // ==================== SUGGESTION ENGINE ====================
+
+  async suggestAuditSchedules(unitId: string) {
+    // 1. Get high risks from the Risk module
+    const highRisks = await prisma.risk.findMany({
+      where: {
+        unitId,
+        status: 'OPEN',
+        riskLevel: { in: ['HIGH', 'EXTREME'] },
+      },
+      include: {
+        strategicPlan: { select: { id: true, title: true } },
+      },
+    });
+
+    // 2. Suggest audits for risks that don't have a linked internal audit yet
+    const suggestions = await Promise.all(
+      highRisks.map(async (risk) => {
+        const existingAudit = await prisma.internalAudit.findFirst({
+          where: { riskId: risk.id },
+        });
+
+        if (existingAudit) return null;
+
+        return {
+          riskId: risk.id,
+          riskCode: risk.code,
+          riskLevel: risk.riskLevel,
+          suggestedTitle: `Audit Kepatuhan & Mitigasi: ${risk.code}`,
+          suggestedDescription: `Audit internal khusus untuk memverifikasi efektivitas mitigasi risiko: ${risk.description}`,
+          strategicPlanId: risk.strategicPlanId,
+          strategicPlanTitle: risk.strategicPlan?.title,
+          priority: risk.riskLevel === 'EXTREME' ? 'URGENT' : 'HIGH',
+        };
+      })
+    );
+
+    return suggestions.filter((s) => s !== null);
   }
 }
 

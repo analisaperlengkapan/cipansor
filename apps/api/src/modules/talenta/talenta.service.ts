@@ -268,7 +268,42 @@ export class TalentaService {
   async getSuccessionById(id: string) {
     return prisma.successionPlan.findUnique({
       where: { id },
+      include: {
+        currentHolder: { select: { id: true, name: true } },
+        successor: {
+          include: { user: { select: { id: true, name: true } } },
+        },
+      },
     });
+  }
+
+  /**
+   * Automatically suggest potential successors based on Talent Matrix
+   */
+  async suggestSuccessors(positionTitle: string, unitId: string) {
+    // 1. Find the current holder's profile if any
+    // 2. Search for high-potential talents in the same or relevant departments
+    // For this engine, we search for 'HIGH_POTENTIAL' or 'KEY_TALENT'
+    const topTalents = await prisma.talentProfile.findMany({
+      where: {
+        unitId,
+        category: { in: ['HIGH_POTENTIAL', 'KEY_TALENT'] },
+      },
+      include: {
+        user: { select: { id: true, name: true } },
+      },
+      orderBy: { updatedAt: 'desc' },
+      take: 10,
+    });
+
+    return topTalents.map((t) => ({
+      talentProfileId: t.id,
+      name: t.user.name,
+      currentRole: t.currentRole,
+      category: t.category,
+      readiness: t.category === 'HIGH_POTENTIAL' ? 'READY_NOW' : 'READY_IN_1_YEAR',
+      matchScore: t.category === 'HIGH_POTENTIAL' ? 95 : 80,
+    }));
   }
 
   async updateSuccession(id: string, data: any) {

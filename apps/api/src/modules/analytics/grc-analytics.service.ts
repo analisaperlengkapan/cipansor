@@ -1,5 +1,6 @@
 import { prisma } from '../../lib/prisma';
 import { RiskLevel, PlanStatus, ComplianceStatus } from '@prisma/client';
+import { pengawasanService } from '../pengawasan/pengawasan.service';
 
 export interface GRCStats {
   plans: {
@@ -21,6 +22,7 @@ export interface GRCStats {
     complianceRate: number;
     statusDistribution: Record<ComplianceStatus, number>;
   };
+  auditSuggestions?: any[];
 }
 
 export async function getGRCStats(unitId?: string): Promise<GRCStats> {
@@ -125,5 +127,6 @@ export async function getGRCStats(unitId?: string): Promise<GRCStats> {
       complianceRate: Math.round(avgShariaScore * 100) / 100,
       statusDistribution: shariaStatusDist,
     },
+    auditSuggestions: unitId ? await pengawasanService.suggestAuditSchedules(unitId) : [],
   };
 }

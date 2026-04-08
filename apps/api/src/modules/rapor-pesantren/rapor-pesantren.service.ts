@@ -252,6 +252,18 @@ export async function getTakhosusSummary(
   let totalSanadScores = 0;
   let totalSessions = 0;
 
+  // Also include Simaan Exams in the period
+  const simaanExams = await prisma.simaanExam.findMany({
+    where: {
+      studentId,
+      passed: true,
+      examDate: {
+        gte: startDate,
+        lte: endDate,
+      },
+    },
+  });
+
   const halaqohDetails = takhosusEnrollments.map((enr) => {
     const sessionScores = enr.sanadRecords.reduce((sum, s) => {
       let numericScore = 0;
@@ -282,12 +294,17 @@ export async function getTakhosusSummary(
   });
 
   const averageScore = totalSessions > 0 ? totalSanadScores / totalSessions : 0;
+
+  // Simaan bonus: Each passed simaan exam adds to the score
+  const simaanBonus = simaanExams.length * 5;
+
   // Fallback to progress if no sanad tests exist in period
-  const finalScore =
-    totalSessions > 0
+  const finalScore = Math.min(100,
+    (totalSessions > 0
       ? averageScore
       : takhosusEnrollments.reduce((sum, e) => sum + (e.targetJuz ? Math.round((e.completedJuz / e.targetJuz) * 100) : 0), 0) /
-        enrolledHalaqoh;
+        enrolledHalaqoh) + simaanBonus
+  );
 
   return {
     enrolledHalaqoh,

@@ -120,12 +120,15 @@ export const simaanService = {
   },
 
   async updateResult(id: string, data: UpdateSimaanResultInput) {
-    const exam = await prisma.simaanExam.findUnique({ where: { id } });
+    const exam = await prisma.simaanExam.findUnique({
+      where: { id },
+      include: { student: { include: { takhosusEnrollment: true } } }
+    });
     if (!exam) {
       throw new ApiError(ErrorCode.NOT_FOUND, 'Simaan exam not found');
     }
 
-    return prisma.simaanExam.update({
+    const updatedExam = await prisma.simaanExam.update({
       where: { id },
       data: {
         overallScore: data.overallScore,
@@ -140,6 +143,39 @@ export const simaanService = {
         status: data.passed ? 'PASSED' : 'FAILED',
       },
     });
+
+    // 1. Level-up trigger: If passed 30 juz simaan, mark enrollment as COMPLETED and eligible for certificate
+    if (data.passed && exam.juzEnd === 30 && exam.juzStart === 1) {
+      await prisma.takhosusEnrollment.update({
+        where: { studentId: exam.studentId },
+        data: {
+          status: 'COMPLETED',
+          completedAt: new Date(),
+          notes: `Lulus Simaan 30 Juz pada ${new Date().toLocaleDateString()}`
+        }
+      });
+
+      // 2. Auto-record Hafidz status
+      await prisma.hafidzStudent.upsert({
+        where: { studentId: exam.studentId },
+        create: {
+          studentId: exam.studentId,
+          completedAt: new Date(),
+          notes: 'Lulus program Takhosus'
+        },
+        update: { completedAt: new Date() }
+      });
+    }
+
+    // 3. Update current juz progress in enrollment if passed a juz simaan
+    if (data.passed && exam.juzEnd >= (exam.student.takhosusEnrollment?.currentJuz || 0)) {
+       await prisma.takhosusEnrollment.update({
+         where: { studentId: exam.studentId },
+         data: { currentJuz: Math.min(30, exam.juzEnd + 1) }
+       });
+    }
+
+    return updatedExam;
   },
 
   async delete(id: string) {

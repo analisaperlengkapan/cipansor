@@ -59,7 +59,7 @@ export class PerencanaanService {
   }
 
   async getPlanById(id: string) {
-    return prisma.strategicPlan.findUnique({
+    const plan = await prisma.strategicPlan.findUnique({
       where: { id },
       include: {
         unit: { select: { id: true, name: true } },
@@ -73,7 +73,7 @@ export class PerencanaanService {
                 pic: { select: { id: true, name: true } },
                 budgetRel: {
                   include: {
-                    account: { select: { code: true, name: true } },
+                    account: { select: { id: true, code: true, name: true, normalBalance: true } },
                   },
                 },
               },
@@ -86,6 +86,77 @@ export class PerencanaanService {
         internalAudits: true,
       },
     });
+
+    if (!plan) return null;
+
+    // Calculate realization for each activity and objective
+    const objectivesWithRealization = await Promise.all(
+      plan.objectives.map(async (obj) => {
+        const activitiesWithRealization = await Promise.all(
+          obj.activities.map(async (act) => {
+            let realization = 0;
+            if (act.budgetRel) {
+              const journalAggregates = await prisma.journalEntry.aggregate({
+                where: {
+                  accountId: act.budgetRel.accountId,
+                  unitId: plan.unitId,
+                  date: {
+                    gte: plan.startDate,
+                    lte: plan.endDate,
+                  },
+                },
+                _sum: {
+                  debit: true,
+                  credit: true,
+                },
+              });
+
+              if (act.budgetRel.account.normalBalance === 'DEBIT') {
+                realization =
+                  (journalAggregates._sum.debit?.toNumber() || 0) -
+                  (journalAggregates._sum.credit?.toNumber() || 0);
+              } else {
+                realization =
+                  (journalAggregates._sum.credit?.toNumber() || 0) -
+                  (journalAggregates._sum.debit?.toNumber() || 0);
+              }
+            }
+            return { ...act, realization: Math.max(0, realization) };
+          })
+        );
+
+        const totalBudget = activitiesWithRealization.reduce(
+          (sum, act) => sum + (act.budget?.toNumber() || 0),
+          0
+        );
+        const totalRealization = activitiesWithRealization.reduce(
+          (sum, act) => sum + act.realization,
+          0
+        );
+
+        return {
+          ...obj,
+          activities: activitiesWithRealization,
+          totalBudget,
+          totalRealization,
+          financialProgress: totalBudget > 0 ? (totalRealization / totalBudget) * 100 : 0,
+        };
+      })
+    );
+
+    const totalPlanBudget = objectivesWithRealization.reduce((sum, obj) => sum + obj.totalBudget, 0);
+    const totalPlanRealization = objectivesWithRealization.reduce(
+      (sum, obj) => sum + obj.totalRealization,
+      0
+    );
+
+    return {
+      ...plan,
+      objectives: objectivesWithRealization,
+      totalBudget: totalPlanBudget,
+      totalRealization: totalPlanRealization,
+      financialProgress: totalPlanBudget > 0 ? (totalPlanRealization / totalPlanBudget) * 100 : 0,
+    };
   }
 
   async updatePlan(id: string, data: Prisma.StrategicPlanUpdateInput) {

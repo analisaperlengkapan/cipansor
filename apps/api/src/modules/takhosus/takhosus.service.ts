@@ -648,7 +648,8 @@ export const sanadService = {
 
         if (!existing) {
           // TODO: Emit notification or create certificate record
-          break;
+          // Note: Do NOT break here — check all eligible milestones so lower
+          // milestones (10, 5, 1 juz) are also awarded when 30 is reached.
         }
       }
     }

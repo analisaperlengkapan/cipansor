@@ -7638,11 +7638,12 @@ model AuditFinding {
   responsible User?           @relation("FindingResponsible", fields: [responsibleId], references: [id])
   followUps   AuditFollowUp[]
 
-  planObjectiveId String?       @map("plan_objective_id")
+  planObjectiveId String?        @map("plan_objective_id")
   planObjective   PlanObjective? @relation(fields: [planObjectiveId], references: [id])
 
   @@index([auditId])
   @@index([severity])
+  @@index([planObjectiveId])
   @@map("audit_findings")
 }
 

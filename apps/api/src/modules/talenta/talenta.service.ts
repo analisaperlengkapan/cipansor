@@ -278,12 +278,11 @@ export class TalentaService {
   }
 
   /**
-   * Automatically suggest potential successors based on Talent Matrix
+   * Automatically suggest potential successors based on Talent Matrix.
+   * Filters by unit and talent category. When positionTitle is provided,
+   * candidates whose currentRole contains the position keywords are ranked higher.
    */
   async suggestSuccessors(positionTitle: string, unitId: string) {
-    // 1. Find the current holder's profile if any
-    // 2. Search for high-potential talents in the same or relevant departments
-    // For this engine, we search for 'HIGH_POTENTIAL' or 'KEY_TALENT'
     const topTalents = await prisma.talentProfile.findMany({
       where: {
         unitId,
@@ -296,14 +295,29 @@ export class TalentaService {
       take: 10,
     });
 
-    return topTalents.map((t) => ({
-      talentProfileId: t.id,
-      name: t.user.name,
-      currentRole: t.currentRole,
-      category: t.category,
-      readiness: t.category === 'HIGH_POTENTIAL' ? 'READY_NOW' : 'READY_IN_1_YEAR',
-      matchScore: t.category === 'HIGH_POTENTIAL' ? 95 : 80,
-    }));
+    // Compute a basic keyword match score against the position title
+    const positionKeywords = positionTitle
+      .toLowerCase()
+      .split(/\s+/)
+      .filter((w) => w.length > 2);
+
+    return topTalents.map((t) => {
+      const roleWords = (t.currentRole || '').toLowerCase();
+      const keywordMatches = positionKeywords.filter((kw) => roleWords.includes(kw)).length;
+      const keywordBonus = positionKeywords.length > 0
+        ? Math.round((keywordMatches / positionKeywords.length) * 10)
+        : 0;
+
+      const baseScore = t.category === 'HIGH_POTENTIAL' ? 85 : 70;
+      return {
+        talentProfileId: t.id,
+        name: t.user.name,
+        currentRole: t.currentRole,
+        category: t.category,
+        readiness: t.category === 'HIGH_POTENTIAL' ? 'READY_NOW' : 'READY_IN_1_YEAR',
+        matchScore: Math.min(100, baseScore + keywordBonus),
+      };
+    }).sort((a, b) => b.matchScore - a.matchScore);
   }
 
   async updateSuccession(id: string, data: any) {

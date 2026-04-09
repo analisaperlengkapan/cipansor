@@ -598,14 +598,20 @@ export const sanadService = {
     if (!enrollment) return;
 
     const completedJuz = sanadCount;
-    const status = completedJuz >= enrollment.targetJuz ? 'COMPLETED' : enrollment.status;
+
+    // Only auto-complete via sanad count if the enrollment is still in ACTIVE state.
+    // If simaan grading already set it to COMPLETED (or any other terminal state),
+    // we should not overwrite the status — only update completedJuz.
+    const shouldAutoComplete =
+      enrollment.status === 'ACTIVE' && completedJuz >= enrollment.targetJuz;
+    const status = shouldAutoComplete ? 'COMPLETED' : enrollment.status;
 
     await prisma.takhosusEnrollment.update({
       where: { id: enrollmentId },
       data: {
         completedJuz,
         status,
-        ...(status === 'COMPLETED' && !enrollment.completedAt && { completedAt: new Date() }),
+        ...(shouldAutoComplete && !enrollment.completedAt && { completedAt: new Date() }),
       },
     });
   },

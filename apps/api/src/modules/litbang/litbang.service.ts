@@ -124,8 +124,14 @@ export class LitbangService {
         });
       }
     } else {
+      // If progress drops below 100 and the project was auto-completed, revert to IN_PROGRESS
       await prisma.researchProject.updateMany({
-        where: { id: projectId, status: { not: 'CANCELLED' } },
+        where: { id: projectId, status: 'COMPLETED' },
+        data: { progress, status: 'IN_PROGRESS' },
+      });
+      // For all other non-cancelled statuses, just update progress
+      await prisma.researchProject.updateMany({
+        where: { id: projectId, status: { notIn: ['COMPLETED', 'CANCELLED'] } },
         data: { progress },
       });
     }

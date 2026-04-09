@@ -84,7 +84,8 @@ export async function getGRCStats(unitId?: string): Promise<GRCStats> {
       return [];
     }) : (async () => {
       try {
-        const allUnits = await prisma.unit.findMany({ select: { id: true } });
+        // Limit to first 20 units to avoid unbounded O(2N) DB queries
+        const allUnits = await prisma.unit.findMany({ select: { id: true }, take: 20 });
         const allSuggestions = await Promise.all(
           allUnits.map((u) => pengawasanService.suggestAuditSchedules(u.id).catch(() => []))
         );

@@ -253,7 +253,7 @@ export async function getTakhosusSummary(
   let totalSessions = 0;
 
   // Also include Simaan Exams in the period
-  const simaanExams = await prisma.simaanExam.findMany({
+  const simaanExamCount = await prisma.simaanExam.count({
     where: {
       studentId,
       passed: true,
@@ -296,7 +296,7 @@ export async function getTakhosusSummary(
   const averageScore = totalSessions > 0 ? totalSanadScores / totalSessions : 0;
 
   // Simaan bonus: Each passed simaan exam adds to the score
-  const simaanBonus = simaanExams.length * 5;
+  const simaanBonus = simaanExamCount * 5;
 
   // Fallback to progress if no sanad tests exist in period
   const finalScore = Math.min(100,

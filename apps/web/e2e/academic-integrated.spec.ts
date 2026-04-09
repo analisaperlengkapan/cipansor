@@ -49,7 +49,7 @@ test.describe('Academic Integrated Flow', () => {
       await route.fulfill({ status: 200, body: JSON.stringify({ success: true, data: [], meta: { page: 1, limit: 10, total: 0, totalPages: 0 } }) });
     });
 
-    // Mock analytics for tahfidz progress
+    // Mock analytics for tahfidz progress (fields must match TahfidzProgress.monthlyProgress type)
     await page.route(/.*\/api\/analytics\/tahfidz.*/, async (route) => {
       await route.fulfill({
         status: 200,
@@ -58,9 +58,9 @@ test.describe('Academic Integrated Flow', () => {
           success: true,
           data: {
             monthlyProgress: [
-              { month: '2024-01', totalAyah: 100 },
-              { month: '2024-02', totalAyah: 250 },
-              { month: '2024-03', totalAyah: 400 }
+              { month: '2024-01', newMemorization: 60, murajaah: 40 },
+              { month: '2024-02', newMemorization: 150, murajaah: 100 },
+              { month: '2024-03', newMemorization: 250, murajaah: 150 }
             ]
           }
         })

@@ -13,6 +13,9 @@ export interface StrategicPlan {
   endDate: string;
   budget?: number;
   progress: number;
+  totalBudget?: number;
+  totalRealization?: number;
+  financialProgress?: number;
   createdBy: { id: string; name: string };
   approvedBy?: { id: string; name: string };
   objectives: PlanObjective[];
@@ -24,6 +27,9 @@ export interface PlanObjective {
   priority: string;
   weight: number;
   progress: number;
+  totalBudget?: number;
+  totalRealization?: number;
+  financialProgress?: number;
   indicators: PlanIndicator[];
   activities: PlanActivity[];
 }
@@ -46,6 +52,7 @@ export interface PlanActivity {
   endDate?: string;
   budget?: number;
   budgetId?: string;
+  realization?: number;
   budgetRel?: {
     id: string;
     amount: number;

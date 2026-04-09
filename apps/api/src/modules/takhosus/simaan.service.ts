@@ -190,39 +190,52 @@ export const simaanService = {
         const enrollment = exam.student.takhosusEnrollment;
 
         if (exam.juzEnd === 30 && exam.juzStart === 1) {
-          // Revert 30-juz completion: reset enrollment back to ACTIVE
-          if (enrollment.status === 'COMPLETED') {
-            // Derive the correct currentJuz from other passed simaan exams
-            // instead of blindly resetting to exam.juzStart (which is always 1 for 30-juz)
-            const otherPassedExams = await tx.simaanExam.findMany({
-              where: {
-                studentId: exam.studentId,
-                id: { not: exam.id },
-                passed: true,
-              },
-              select: { juzEnd: true },
-              orderBy: { juzEnd: 'desc' },
-              take: 1,
-            });
-            const derivedCurrentJuz = otherPassedExams.length > 0
-              ? Math.min(30, otherPassedExams[0].juzEnd + 1)
-              : 1;
+          // Check if another passed 30-juz exam exists for this student
+          const otherPassed30JuzExam = await tx.simaanExam.findFirst({
+            where: {
+              studentId: exam.studentId,
+              id: { not: exam.id },
+              passed: true,
+              juzStart: 1,
+              juzEnd: 30,
+            },
+            select: { id: true },
+          });
 
-            await tx.takhosusEnrollment.update({
-              where: { studentId: exam.studentId },
-              data: {
-                status: 'ACTIVE',
-                completedAt: null,
-                currentJuz: derivedCurrentJuz,
-                notes: null,
-              }
+          // Only revert if no other passed 30-juz exam justifies the completion
+          if (!otherPassed30JuzExam) {
+            if (enrollment.status === 'COMPLETED') {
+              // Derive the correct currentJuz from other passed simaan exams
+              const otherPassedExams = await tx.simaanExam.findMany({
+                where: {
+                  studentId: exam.studentId,
+                  id: { not: exam.id },
+                  passed: true,
+                },
+                select: { juzEnd: true },
+                orderBy: { juzEnd: 'desc' },
+                take: 1,
+              });
+              const derivedCurrentJuz = otherPassedExams.length > 0
+                ? Math.min(30, otherPassedExams[0].juzEnd + 1)
+                : 1;
+
+              await tx.takhosusEnrollment.update({
+                where: { studentId: exam.studentId },
+                data: {
+                  status: 'ACTIVE',
+                  completedAt: null,
+                  currentJuz: derivedCurrentJuz,
+                  notes: null,
+                }
+              });
+            }
+
+            // Remove Hafidz record only if no other 30-juz pass exists
+            await tx.hafidzStudent.deleteMany({
+              where: { studentId: exam.studentId }
             });
           }
-
-          // Remove Hafidz record if it was auto-created
-          await tx.hafidzStudent.deleteMany({
-            where: { studentId: exam.studentId }
-          });
         } else if (exam.juzEnd >= (enrollment.currentJuz || 0) - 1) {
           // Revert currentJuz bump: set back to juzStart of this exam
           // Only revert if the enrollment's currentJuz was likely set by this exam

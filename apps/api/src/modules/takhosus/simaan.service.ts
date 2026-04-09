@@ -204,7 +204,14 @@ export const simaanService = {
 
           // Only revert if no other passed 30-juz exam justifies the completion
           if (!otherPassed30JuzExam) {
-            if (enrollment.status === 'COMPLETED') {
+            // Check if sanad records independently justify the completion
+            // (i.e., the enrollment was completed via updateEnrollmentProgress, not just simaan)
+            const sanadCount = enrollment.id
+              ? await tx.sanadRecord.count({ where: { enrollmentId: enrollment.id } })
+              : 0;
+            const sanadJustifiesCompletion = sanadCount >= enrollment.targetJuz;
+
+            if (enrollment.status === 'COMPLETED' && !sanadJustifiesCompletion) {
               // Derive the correct currentJuz from other passed simaan exams
               const otherPassedExams = await tx.simaanExam.findMany({
                 where: {
@@ -231,10 +238,12 @@ export const simaanService = {
               });
             }
 
-            // Remove Hafidz record only if no other 30-juz pass exists
-            await tx.hafidzStudent.deleteMany({
-              where: { studentId: exam.studentId }
-            });
+            // Remove Hafidz record only if no other 30-juz pass AND sanad records don't justify it
+            if (!sanadJustifiesCompletion) {
+              await tx.hafidzStudent.deleteMany({
+                where: { studentId: exam.studentId }
+              });
+            }
           }
         } else if ((enrollment.currentJuz || 0) === Math.min(30, exam.juzEnd + 1)) {
           // Revert currentJuz bump: derive correct value from remaining passed exams

@@ -236,16 +236,27 @@ export const simaanService = {
               where: { studentId: exam.studentId }
             });
           }
-        } else if (exam.juzEnd >= (enrollment.currentJuz || 0) - 1) {
-          // Revert currentJuz bump: set back to juzStart of this exam
+        } else if ((enrollment.currentJuz || 0) === Math.min(30, exam.juzEnd + 1)) {
+          // Revert currentJuz bump: derive correct value from remaining passed exams
           // Only revert if the enrollment's currentJuz was likely set by this exam
-          const revertedJuz = Math.max(1, exam.juzStart);
-          if ((enrollment.currentJuz || 0) === Math.min(30, exam.juzEnd + 1)) {
-            await tx.takhosusEnrollment.update({
-              where: { studentId: exam.studentId },
-              data: { currentJuz: revertedJuz }
-            });
-          }
+          const otherPassedExams = await tx.simaanExam.findMany({
+            where: {
+              studentId: exam.studentId,
+              id: { not: exam.id },
+              passed: true,
+            },
+            select: { juzEnd: true },
+            orderBy: { juzEnd: 'desc' },
+            take: 1,
+          });
+          const derivedCurrentJuz = otherPassedExams.length > 0
+            ? Math.min(30, otherPassedExams[0].juzEnd + 1)
+            : 1;
+
+          await tx.takhosusEnrollment.update({
+            where: { studentId: exam.studentId },
+            data: { currentJuz: derivedCurrentJuz }
+          });
         }
       }
 

@@ -188,7 +188,7 @@ export class PerencanaanService {
           activities: activitiesWithRealization,
           totalBudget,
           totalRealization,
-          financialProgress: totalBudget > 0 ? (totalRealization / totalBudget) * 100 : 0,
+          financialProgress: totalBudget > 0 ? Math.min((totalRealization / totalBudget) * 100, 100) : 0,
         };
       });
 
@@ -203,7 +203,7 @@ export class PerencanaanService {
         objectives: objectivesWithRealization,
         totalBudget: totalPlanBudget,
         totalRealization: totalPlanRealization,
-        financialProgress: totalPlanBudget > 0 ? (totalPlanRealization / totalPlanBudget) * 100 : 0,
+        financialProgress: totalPlanBudget > 0 ? Math.min((totalPlanRealization / totalPlanBudget) * 100, 100) : 0,
       };
     } catch (err: any) {
       console.error('[Perencanaan] Journal aggregation failed, returning plan without financial data:', err?.message || err);

@@ -2,16 +2,27 @@ import { test, expect } from '@playwright/test';
 
 test.describe('GRC Integrated Flow', () => {
   test.beforeEach(async ({ page }) => {
-    // Mock auth
-    await page.goto('/');
-    await page.evaluate(() => {
-      localStorage.setItem('accessToken', 'mock-token');
-      localStorage.setItem('auth-storage', JSON.stringify({
+    // Mock auth and user data BEFORE navigation to prevent redirects
+    await page.addInitScript(() => {
+      window.localStorage.setItem('accessToken', 'mock-token');
+      window.localStorage.setItem('auth-storage', JSON.stringify({
         state: {
-          user: { id: '1', name: 'Admin', role: 'SUPER_ADMIN' },
+          user: { id: '1', name: 'Admin', role: 'SUPER_ADMIN', unitId: 'unit-1' },
           isAuthenticated: true
         }
       }));
+    });
+
+    // Mock initial check profile request
+    await page.route('**/api/auth/me', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: { id: '1', name: 'Admin', role: 'SUPER_ADMIN', unitId: 'unit-1' }
+        })
+      });
     });
   });
 

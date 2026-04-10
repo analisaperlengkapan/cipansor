@@ -124,22 +124,15 @@ export class LitbangService {
         });
       }
     } else {
-      // If progress drops below 100 and the project was auto-completed, revert to IN_PROGRESS.
-      // Note: We scope this to projects that are COMPLETED *and* were likely auto-completed
-      // (i.e., not manually set to COMPLETED via updateProject). Since we cannot distinguish
-      // auto- vs manual completion without a schema change, we accept this trade-off.
-      const reverted = await prisma.researchProject.updateMany({
-        where: { id: projectId, status: 'COMPLETED' },
-        data: { progress, status: 'IN_PROGRESS' },
+      // When progress drops below 100, do NOT auto-revert COMPLETED status.
+      // We cannot distinguish auto-completed (via recalculateProgress) from
+      // manually-completed (via updateProject) without a schema change, and
+      // unconditionally reverting would destroy intentional manual completions.
+      // Instead, just update the progress number for all non-cancelled statuses.
+      await prisma.researchProject.updateMany({
+        where: { id: projectId, status: { not: 'CANCELLED' } },
+        data: { progress },
       });
-      // For all other non-cancelled statuses, just update progress.
-      // Skip if the revert already updated the row (avoids redundant DB write).
-      if (reverted.count === 0) {
-        await prisma.researchProject.updateMany({
-          where: { id: projectId, status: { notIn: ['COMPLETED', 'CANCELLED'] } },
-          data: { progress },
-        });
-      }
     }
   }
 

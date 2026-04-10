@@ -158,15 +158,19 @@ export const simaanService = {
       if (data.passed && !exam.passed && exam.student.takhosusEnrollment) {
         // 1. Level-up trigger: If passed 30 juz simaan, mark enrollment as COMPLETED and eligible for certificate
         if (exam.juzEnd === 30 && exam.juzStart === 1) {
-          await tx.takhosusEnrollment.update({
-            where: { studentId: exam.studentId },
-            data: {
-              status: 'COMPLETED',
-              completedAt: new Date(),
-              currentJuz: 30,
-              notes: `Lulus Simaan 30 Juz pada ${new Date().toLocaleDateString()}`
-            }
-          });
+          // Only update enrollment if not already COMPLETED (e.g., by sanad auto-completion)
+          // to avoid overwriting existing completedAt/notes metadata
+          if (exam.student.takhosusEnrollment.status !== 'COMPLETED') {
+            await tx.takhosusEnrollment.update({
+              where: { studentId: exam.studentId },
+              data: {
+                status: 'COMPLETED',
+                completedAt: new Date(),
+                currentJuz: 30,
+                notes: `Lulus Simaan 30 Juz pada ${new Date().toLocaleDateString()}`
+              }
+            });
+          }
 
           // 2. Auto-record Hafidz status
           await tx.hafidzStudent.upsert({

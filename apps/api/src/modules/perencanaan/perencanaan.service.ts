@@ -174,8 +174,10 @@ export class PerencanaanService {
           return { ...act, realization: Math.max(0, realization) };
         });
 
+        // Only include activities with a budgetRel link in the total budget
+        // so that untracked activities don't dilute the financial progress.
         const totalBudget = activitiesWithRealization.reduce(
-          (sum, act) => sum + (act.budget?.toNumber() || 0),
+          (sum, act) => sum + (act.budgetRel ? (act.budget?.toNumber() || 0) : 0),
           0
         );
         const totalRealization = activitiesWithRealization.reduce(
@@ -211,7 +213,7 @@ export class PerencanaanService {
       const fallbackObjectives = plan.objectives.map((obj) => ({
         ...obj,
         activities: obj.activities.map((act) => ({ ...act, realization: 0 })),
-        totalBudget: obj.activities.reduce((sum, act) => sum + (act.budget?.toNumber() || 0), 0),
+        totalBudget: obj.activities.reduce((sum, act) => sum + (act.budgetRel ? (act.budget?.toNumber() || 0) : 0), 0),
         totalRealization: 0,
         financialProgress: 0,
       }));

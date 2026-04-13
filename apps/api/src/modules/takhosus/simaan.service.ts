@@ -120,15 +120,6 @@ export const simaanService = {
   },
 
   async updateResult(id: string, data: UpdateSimaanResultInput) {
-    // Lightweight existence check outside the transaction
-    const examExists = await prisma.simaanExam.findUnique({
-      where: { id },
-      select: { id: true },
-    });
-    if (!examExists) {
-      throw new ApiError(ErrorCode.NOT_FOUND, 'Simaan exam not found');
-    }
-
     const updatedExam = await prisma.$transaction(async (tx) => {
       // Re-read inside transaction for a consistent snapshot of enrollment data
       const exam = await tx.simaanExam.findUnique({
@@ -236,18 +227,13 @@ export const simaanService = {
                 ? Math.min(30, otherPassedExams[0].juzEnd + 1)
                 : 1;
 
-              // Derive completedJuz from remaining sanad records
-              const remainingSanadCount = enrollment.id
-                ? await tx.sanadRecord.count({ where: { enrollmentId: enrollment.id } })
-                : 0;
-
               await tx.takhosusEnrollment.update({
                 where: { studentId: exam.studentId },
                 data: {
                   status: 'ACTIVE',
                   completedAt: null,
                   currentJuz: derivedCurrentJuz,
-                  completedJuz: remainingSanadCount,
+                  completedJuz: sanadCount,
                   notes: null,
                 }
               });

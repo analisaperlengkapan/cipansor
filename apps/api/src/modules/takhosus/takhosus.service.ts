@@ -597,13 +597,31 @@ export const sanadService = {
 
     if (!enrollment) return;
 
-    // When the enrollment was already completed (e.g., via 30-juz simaan pass),
-    // completedJuz may have been set to targetJuz. Avoid regressing it below
-    // the stored value — use the higher of sanadCount and the existing value.
-    const completedJuz =
-      enrollment.status === 'COMPLETED'
-        ? Math.max(sanadCount, enrollment.completedJuz)
-        : sanadCount;
+    // When the enrollment was completed via a 30-juz simaan pass, completedJuz
+    // was set to targetJuz by simaan.service. We must not regress it below that
+    // value. However, if the enrollment was completed purely via sanad count
+    // (i.e., no simaan involved), we should reflect the actual sanad count so
+    // that deletions are properly tracked.
+    //
+    // Heuristic: check if a passed 30-juz simaan exam exists for this student.
+    // If so, the simaan is the authoritative source for completedJuz and we
+    // preserve the higher value. Otherwise, use the actual sanad count.
+    let completedJuz = sanadCount;
+    if (enrollment.status === 'COMPLETED' && enrollment.completedJuz > sanadCount) {
+      // Only preserve the inflated completedJuz if a passed 30-juz simaan justifies it
+      const has30JuzSimaan = await prisma.simaanExam.findFirst({
+        where: {
+          studentId: enrollment.studentId,
+          passed: true,
+          juzStart: 1,
+          juzEnd: 30,
+        },
+        select: { id: true },
+      });
+      if (has30JuzSimaan) {
+        completedJuz = Math.max(sanadCount, enrollment.completedJuz);
+      }
+    }
 
     // Only auto-complete via sanad count if the enrollment is still in ACTIVE state.
     // If simaan grading already set it to COMPLETED (or any other terminal state),

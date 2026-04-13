@@ -3,6 +3,98 @@ import { Prisma } from '@prisma/client';
 import { ApiError, ErrorCode } from '@/middleware/error';
 import { CreateSimaanInput, UpdateSimaanResultInput, ListSimaanQuery } from './takhosus.schema';
 
+/**
+ * Shared helper to revert side-effects when a passed simaan exam is invalidated
+ * (either re-graded to failed or deleted). Must be called within a Prisma transaction.
+ */
+async function revertSimaanSideEffects(
+  tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0],
+  exam: { id: string; studentId: string; juzStart: number; juzEnd: number },
+  enrollment: { id: string; studentId: string; status: string; currentJuz: number; targetJuz: number; completedJuz: number; completedAt: Date | null },
+  /** When reverting a delete, the exam is already gone — skip the `id: { not: exam.id }` filter */
+  examAlreadyDeleted = false,
+) {
+  const idFilter = examAlreadyDeleted ? {} : { id: { not: exam.id } };
+
+  if (exam.juzEnd === 30 && exam.juzStart === 1) {
+    // Check if another passed 30-juz exam exists for this student
+    const otherPassed30JuzExam = await tx.simaanExam.findFirst({
+      where: {
+        studentId: exam.studentId,
+        ...idFilter,
+        passed: true,
+        juzStart: 1,
+        juzEnd: 30,
+      },
+      select: { id: true },
+    });
+
+    // Only revert if no other passed 30-juz exam justifies the completion
+    if (!otherPassed30JuzExam) {
+      const sanadCount = enrollment.id
+        ? await tx.sanadRecord.count({ where: { enrollmentId: enrollment.id } })
+        : 0;
+      const sanadJustifiesCompletion = sanadCount >= enrollment.targetJuz;
+
+      if (enrollment.status === 'COMPLETED' && !sanadJustifiesCompletion) {
+        // Derive the correct currentJuz from other passed simaan exams
+        const otherPassedExams = await tx.simaanExam.findMany({
+          where: {
+            studentId: exam.studentId,
+            ...idFilter,
+            passed: true,
+          },
+          select: { juzEnd: true },
+          orderBy: { juzEnd: 'desc' },
+          take: 1,
+        });
+        const derivedCurrentJuz = otherPassedExams.length > 0
+          ? Math.min(30, otherPassedExams[0].juzEnd + 1)
+          : 1;
+
+        await tx.takhosusEnrollment.update({
+          where: { studentId: exam.studentId },
+          data: {
+            status: 'ACTIVE',
+            completedAt: null,
+            currentJuz: derivedCurrentJuz,
+            completedJuz: sanadCount,
+            notes: null,
+          },
+        });
+      }
+
+      // Remove Hafidz record only if no other 30-juz pass AND sanad records don't justify it
+      if (!sanadJustifiesCompletion) {
+        await tx.hafidzStudent.deleteMany({
+          where: { studentId: exam.studentId },
+        });
+      }
+    }
+  } else if ((enrollment.currentJuz || 0) === Math.min(30, exam.juzEnd + 1)) {
+    // Revert currentJuz bump: derive correct value from remaining passed exams
+    // Only revert if the enrollment's currentJuz was likely set by this exam
+    const otherPassedExams = await tx.simaanExam.findMany({
+      where: {
+        studentId: exam.studentId,
+        ...idFilter,
+        passed: true,
+      },
+      select: { juzEnd: true },
+      orderBy: { juzEnd: 'desc' },
+      take: 1,
+    });
+    const derivedCurrentJuz = otherPassedExams.length > 0
+      ? Math.min(30, otherPassedExams[0].juzEnd + 1)
+      : 1;
+
+    await tx.takhosusEnrollment.update({
+      where: { studentId: exam.studentId },
+      data: { currentJuz: derivedCurrentJuz },
+    });
+  }
+}
+
 export const simaanService = {
   async create(data: CreateSimaanInput, creatorId: string) {
     // Verify student exists
@@ -187,87 +279,7 @@ export const simaanService = {
         }
       } else if (!data.passed && exam.passed && exam.student.takhosusEnrollment) {
         // Revert side-effects when re-grading from passed to failed
-        const enrollment = exam.student.takhosusEnrollment;
-
-        if (exam.juzEnd === 30 && exam.juzStart === 1) {
-          // Check if another passed 30-juz exam exists for this student
-          const otherPassed30JuzExam = await tx.simaanExam.findFirst({
-            where: {
-              studentId: exam.studentId,
-              id: { not: exam.id },
-              passed: true,
-              juzStart: 1,
-              juzEnd: 30,
-            },
-            select: { id: true },
-          });
-
-          // Only revert if no other passed 30-juz exam justifies the completion
-          if (!otherPassed30JuzExam) {
-            // Check if sanad records independently justify the completion
-            // (i.e., the enrollment was completed via updateEnrollmentProgress, not just simaan)
-            const sanadCount = enrollment.id
-              ? await tx.sanadRecord.count({ where: { enrollmentId: enrollment.id } })
-              : 0;
-            const sanadJustifiesCompletion = sanadCount >= enrollment.targetJuz;
-
-            if (enrollment.status === 'COMPLETED' && !sanadJustifiesCompletion) {
-              // Derive the correct currentJuz from other passed simaan exams
-              const otherPassedExams = await tx.simaanExam.findMany({
-                where: {
-                  studentId: exam.studentId,
-                  id: { not: exam.id },
-                  passed: true,
-                },
-                select: { juzEnd: true },
-                orderBy: { juzEnd: 'desc' },
-                take: 1,
-              });
-              const derivedCurrentJuz = otherPassedExams.length > 0
-                ? Math.min(30, otherPassedExams[0].juzEnd + 1)
-                : 1;
-
-              await tx.takhosusEnrollment.update({
-                where: { studentId: exam.studentId },
-                data: {
-                  status: 'ACTIVE',
-                  completedAt: null,
-                  currentJuz: derivedCurrentJuz,
-                  completedJuz: sanadCount,
-                  notes: null,
-                }
-              });
-            }
-
-            // Remove Hafidz record only if no other 30-juz pass AND sanad records don't justify it
-            if (!sanadJustifiesCompletion) {
-              await tx.hafidzStudent.deleteMany({
-                where: { studentId: exam.studentId }
-              });
-            }
-          }
-        } else if ((enrollment.currentJuz || 0) === Math.min(30, exam.juzEnd + 1)) {
-          // Revert currentJuz bump: derive correct value from remaining passed exams
-          // Only revert if the enrollment's currentJuz was likely set by this exam
-          const otherPassedExams = await tx.simaanExam.findMany({
-            where: {
-              studentId: exam.studentId,
-              id: { not: exam.id },
-              passed: true,
-            },
-            select: { juzEnd: true },
-            orderBy: { juzEnd: 'desc' },
-            take: 1,
-          });
-          const derivedCurrentJuz = otherPassedExams.length > 0
-            ? Math.min(30, otherPassedExams[0].juzEnd + 1)
-            : 1;
-
-          await tx.takhosusEnrollment.update({
-            where: { studentId: exam.studentId },
-            data: { currentJuz: derivedCurrentJuz }
-          });
-        }
+        await revertSimaanSideEffects(tx, exam, exam.student.takhosusEnrollment);
       }
 
       return result;
@@ -290,78 +302,8 @@ export const simaanService = {
 
       // Revert side-effects if the deleted exam was passed
       if (exam.passed && exam.student.takhosusEnrollment) {
-        const enrollment = exam.student.takhosusEnrollment;
-
-        if (exam.juzEnd === 30 && exam.juzStart === 1) {
-          // Check if another passed 30-juz exam still exists
-          const otherPassed30JuzExam = await tx.simaanExam.findFirst({
-            where: {
-              studentId: exam.studentId,
-              passed: true,
-              juzStart: 1,
-              juzEnd: 30,
-            },
-            select: { id: true },
-          });
-
-          if (!otherPassed30JuzExam) {
-            const sanadCount = enrollment.id
-              ? await tx.sanadRecord.count({ where: { enrollmentId: enrollment.id } })
-              : 0;
-            const sanadJustifiesCompletion = sanadCount >= enrollment.targetJuz;
-
-            if (enrollment.status === 'COMPLETED' && !sanadJustifiesCompletion) {
-              const otherPassedExams = await tx.simaanExam.findMany({
-                where: {
-                  studentId: exam.studentId,
-                  passed: true,
-                },
-                select: { juzEnd: true },
-                orderBy: { juzEnd: 'desc' },
-                take: 1,
-              });
-              const derivedCurrentJuz = otherPassedExams.length > 0
-                ? Math.min(30, otherPassedExams[0].juzEnd + 1)
-                : 1;
-
-              await tx.takhosusEnrollment.update({
-                where: { studentId: exam.studentId },
-                data: {
-                  status: 'ACTIVE',
-                  completedAt: null,
-                  currentJuz: derivedCurrentJuz,
-                  completedJuz: sanadCount,
-                  notes: null,
-                },
-              });
-            }
-
-            if (!sanadJustifiesCompletion) {
-              await tx.hafidzStudent.deleteMany({
-                where: { studentId: exam.studentId },
-              });
-            }
-          }
-        } else if ((enrollment.currentJuz || 0) === Math.min(30, exam.juzEnd + 1)) {
-          // Revert currentJuz bump for partial-juz exams
-          const otherPassedExams = await tx.simaanExam.findMany({
-            where: {
-              studentId: exam.studentId,
-              passed: true,
-            },
-            select: { juzEnd: true },
-            orderBy: { juzEnd: 'desc' },
-            take: 1,
-          });
-          const derivedCurrentJuz = otherPassedExams.length > 0
-            ? Math.min(30, otherPassedExams[0].juzEnd + 1)
-            : 1;
-
-          await tx.takhosusEnrollment.update({
-            where: { studentId: exam.studentId },
-            data: { currentJuz: derivedCurrentJuz },
-          });
-        }
+        // examAlreadyDeleted=true so the helper won't filter by `id: { not: exam.id }`
+        await revertSimaanSideEffects(tx, exam, exam.student.takhosusEnrollment, true);
       }
     });
 

@@ -212,29 +212,41 @@ export async function getTakhosusSummary(
   endDate: Date,
   config: RaporConfig
 ): Promise<TakhosusSummary> {
-  // Get all active takhosus enrollments for the student
-  const takhosusEnrollments = await prisma.takhosusEnrollment.findMany({
-    where: {
-      studentId,
-      status: 'ACTIVE',
-      enrolledAt: {
-        lte: endDate,
+  // Get all active takhosus enrollments and simaan exam count in parallel
+  const [takhosusEnrollments, simaanExamCount] = await Promise.all([
+    prisma.takhosusEnrollment.findMany({
+      where: {
+        studentId,
+        status: 'ACTIVE',
+        enrolledAt: {
+          lte: endDate,
+        },
       },
-    },
-    include: {
-      halaqoh: {
-        select: { name: true, isActive: true },
-      },
-      sanadRecords: {
-        where: {
-          certifiedAt: {
-            gte: startDate,
-            lte: endDate,
+      include: {
+        halaqoh: {
+          select: { name: true, isActive: true },
+        },
+        sanadRecords: {
+          where: {
+            certifiedAt: {
+              gte: startDate,
+              lte: endDate,
+            },
           },
         },
       },
-    },
-  });
+    }),
+    prisma.simaanExam.count({
+      where: {
+        studentId,
+        passed: true,
+        examDate: {
+          gte: startDate,
+          lte: endDate,
+        },
+      },
+    }),
+  ]);
 
   const enrolledHalaqoh = takhosusEnrollments.length;
 
@@ -251,18 +263,6 @@ export async function getTakhosusSummary(
 
   let totalSanadScores = 0;
   let totalSessions = 0;
-
-  // Also include Simaan Exams in the period
-  const simaanExamCount = await prisma.simaanExam.count({
-    where: {
-      studentId,
-      passed: true,
-      examDate: {
-        gte: startDate,
-        lte: endDate,
-      },
-    },
-  });
 
   const halaqohDetails = takhosusEnrollments.map((enr) => {
     const sessionScores = enr.sanadRecords.reduce((sum, s) => {

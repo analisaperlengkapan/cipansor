@@ -72,6 +72,7 @@ export class PengawasanService {
         findings: {
           include: {
             responsible: { select: { id: true, name: true } },
+            planObjective: { select: { id: true, title: true } },
             followUps: {
               include: {
                 verifiedBy: { select: { id: true, name: true } },

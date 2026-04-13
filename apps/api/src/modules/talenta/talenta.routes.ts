@@ -29,6 +29,7 @@ router.post('/trainings/enroll', talentaController.enrollTraining);
 
 // Succession Planning
 router.get('/successions', talentaController.listSuccessions);
+router.get('/successions/suggest', talentaController.suggestSuccessors);
 router.post('/successions', talentaController.createSuccession);
 router.put('/successions/:id', talentaController.updateSuccession);
 router.delete('/successions/:id', talentaController.deleteSuccession);

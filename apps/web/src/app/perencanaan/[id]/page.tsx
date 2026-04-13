@@ -291,7 +291,7 @@ export default function PerencanaanDetailPage() {
                                   <Badge variant="outline" className="text-[10px]">{act.priority}</Badge>
                                   {Number(act.budget) > 0 && (
                                   <Badge variant="secondary" className="text-[10px] bg-emerald-50 text-emerald-700 border-emerald-100">
-                                    Realisasi: {Math.round(((act.realization || 0) / Number(act.budget)) * 100)}%
+                                    Realisasi: {Math.min(100, Math.round(((act.realization || 0) / Number(act.budget)) * 100))}%
                                   </Badge>
                                   )}
                                   {act.pic && (

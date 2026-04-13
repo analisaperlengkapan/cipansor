@@ -1,15 +1,21 @@
 "use client";
 
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { PageHeader } from "@/components/shared/page-header";
 import { TalentMatrix } from "@/components/hr/talent-matrix";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Users, Award, TrendingUp, GitMerge, UserCheck, ShieldCheck } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Loader2, Users, Award, TrendingUp, GitMerge, UserCheck, ShieldCheck, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function TalentPage() {
+  const [positionQuery, setPositionQuery] = useState("");
+  const [searchTrigger, setSearchTrigger] = useState("");
+
   const { data: analyticsResponse, isLoading } = useQuery({
     queryKey: ["talent-analytics"],
     queryFn: async () => {
@@ -18,6 +24,18 @@ export default function TalentPage() {
     }
   });
   const analytics = analyticsResponse?.data;
+
+  const { data: suggestionsResponse, isLoading: isSuggestionsLoading } = useQuery({
+    queryKey: ["succession-suggestions", searchTrigger],
+    queryFn: async () => {
+      const { data } = await api.get("/talenta/successions/suggest", {
+        params: { positionTitle: searchTrigger },
+      });
+      return data;
+    },
+    enabled: !!searchTrigger,
+  });
+  const suggestions = suggestionsResponse?.data || [];
 
   if (isLoading) {
     return (
@@ -90,59 +108,62 @@ export default function TalentPage() {
           <Card className="shadow-md">
             <CardHeader>
               <CardTitle>AI-Driven Succession Recommendations</CardTitle>
-              <CardDescription>Rekomendasi suksesi pemegang jabatan berdasarkan kriteria talenta terbaik.</CardDescription>
+              <CardDescription>Cari posisi jabatan untuk mendapatkan rekomendasi suksesi berdasarkan data talenta.</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Demo interactive items or real data mapping if available */}
-                <div className="p-5 border-2 border-dashed rounded-xl space-y-4">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="font-bold text-slate-800">Kepala Sekolah (SMA Q)</h3>
-                      <p className="text-xs text-muted-foreground">Critical Position • Current: Dr. Ahmad S.</p>
-                    </div>
-                    <Badge className="bg-rose-100 text-rose-700 hover:bg-rose-100 border-none">Urgent</Badge>
-                  </div>
+              <div className="flex gap-2 mb-6">
+                <Input
+                  placeholder="Masukkan nama jabatan, misal: Kepala Sekolah"
+                  value={positionQuery}
+                  onChange={(e) => setPositionQuery(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter" && positionQuery.trim()) setSearchTrigger(positionQuery.trim()); }}
+                />
+                <Button
+                  onClick={() => { if (positionQuery.trim()) setSearchTrigger(positionQuery.trim()); }}
+                  disabled={!positionQuery.trim() || isSuggestionsLoading}
+                >
+                  {isSuggestionsLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                </Button>
+              </div>
 
-                  <div className="space-y-2">
-                    <p className="text-xs font-semibold text-slate-500 uppercase">Recommended Successors:</p>
-                    <div className="flex items-center gap-3 p-2 rounded-lg bg-emerald-50 border border-emerald-100">
-                      <div className="h-10 w-10 rounded-full bg-emerald-500 flex items-center justify-center text-white font-bold">UM</div>
-                      <div className="flex-1">
-                        <p className="text-sm font-bold text-emerald-900">Ustadz Mansur</p>
-                        <p className="text-[10px] text-emerald-700">Category: HIGH_POTENTIAL • Match: 95%</p>
+              {!searchTrigger ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <GitMerge className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                  <p className="text-sm">Masukkan nama jabatan di atas untuk melihat rekomendasi suksesi.</p>
+                </div>
+              ) : isSuggestionsLoading ? (
+                <div className="flex justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : suggestions.length > 0 ? (
+                <div className="space-y-3">
+                  <p className="text-xs font-semibold text-slate-500 uppercase">
+                    Rekomendasi untuk &ldquo;{searchTrigger}&rdquo;:
+                  </p>
+                  {suggestions.map((sug: any, i: number) => (
+                    <div key={sug.talentProfileId || i} className="flex items-center gap-3 p-3 rounded-lg bg-emerald-50 border border-emerald-100">
+                      <div className="h-10 w-10 rounded-full bg-emerald-500 flex items-center justify-center text-white font-bold text-sm">
+                        {(sug.name || "?").split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase()}
                       </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-bold text-emerald-900">{sug.name}</p>
+                        <p className="text-[10px] text-emerald-700">
+                          {sug.currentRole} • {sug.category} • Readiness: {sug.readiness}
+                        </p>
+                      </div>
+                      <Badge variant="outline" className="text-emerald-700 border-emerald-200">
+                        Match: {sug.matchScore}%
+                      </Badge>
                       <ShieldCheck className="h-5 w-5 text-emerald-600" />
                     </div>
-                  </div>
+                  ))}
                 </div>
-
-                <div className="p-5 border-2 border-dashed rounded-xl space-y-4 opacity-80">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="font-bold text-slate-800">Bendahara Yayasan</h3>
-                      <p className="text-xs text-muted-foreground">Finance Domain • Current: Hj. Fatimah</p>
-                    </div>
-                    <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 border-none">Strategic</Badge>
-                  </div>
-
-                  <div className="space-y-2">
-                    <p className="text-xs font-semibold text-slate-500 uppercase">Potential Candidates:</p>
-                    <div className="flex items-center gap-3 p-2 rounded-lg bg-blue-50 border border-blue-100">
-                      <div className="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold">BK</div>
-                      <div className="flex-1">
-                        <p className="text-sm font-bold text-blue-900">Budi Kurniawan, M.Ak</p>
-                        <p className="text-[10px] text-blue-700">Category: KEY_TALENT • Match: 88%</p>
-                      </div>
-                      <UserCheck className="h-5 w-5 text-blue-600" />
-                    </div>
-                  </div>
+              ) : (
+                <div className="text-center py-12 text-muted-foreground">
+                  <UserCheck className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                  <p className="text-sm">Tidak ditemukan kandidat suksesi untuk jabatan ini.</p>
                 </div>
-              </div>
-
-              <div className="mt-8 p-4 bg-slate-50 rounded-lg text-center">
-                <p className="text-sm text-slate-600 italic">Klik pada posisi untuk membuka modul pemetaan suksesi lengkap.</p>
-              </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

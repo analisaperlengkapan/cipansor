@@ -167,6 +167,7 @@ export const simaanService = {
                 status: 'COMPLETED',
                 completedAt: new Date(),
                 currentJuz: 30,
+                completedJuz: exam.student.takhosusEnrollment.targetJuz,
                 notes: `Lulus Simaan 30 Juz pada ${new Date().toLocaleDateString()}`
               }
             });
@@ -235,12 +236,18 @@ export const simaanService = {
                 ? Math.min(30, otherPassedExams[0].juzEnd + 1)
                 : 1;
 
+              // Derive completedJuz from remaining sanad records
+              const remainingSanadCount = enrollment.id
+                ? await tx.sanadRecord.count({ where: { enrollmentId: enrollment.id } })
+                : 0;
+
               await tx.takhosusEnrollment.update({
                 where: { studentId: exam.studentId },
                 data: {
                   status: 'ACTIVE',
                   completedAt: null,
                   currentJuz: derivedCurrentJuz,
+                  completedJuz: remainingSanadCount,
                   notes: null,
                 }
               });

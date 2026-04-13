@@ -113,14 +113,40 @@ test.describe('Academic Integrated Flow', () => {
         });
      });
 
+     // Mock succession suggestions API
+     await page.route('**/api/talenta/successions/suggest*', async (route) => {
+        await route.fulfill({
+           status: 200,
+           contentType: 'application/json',
+           body: JSON.stringify({
+              success: true,
+              data: [
+                 {
+                    talentProfileId: 'tp-1',
+                    name: 'Ustadz Mansur',
+                    currentRole: 'Wakil Kepala Sekolah',
+                    category: 'HIGH_POTENTIAL',
+                    readiness: 'READY_NOW',
+                    matchScore: 95
+                 }
+              ]
+           })
+        });
+     });
+
      await page.goto('/hr/talenta');
 
      // Click Succession Planning tab
      await page.click('text=Succession Planning');
 
-     // Verify recommendation card
+     // Verify the search UI is visible
      await expect(page.locator('text=AI-Driven Succession Recommendations')).toBeVisible();
-     await expect(page.locator('text=Kepala Sekolah (SMA Q)')).toBeVisible();
+
+     // Search for a position
+     await page.fill('input[placeholder*="Masukkan nama jabatan"]', 'Kepala Sekolah');
+     await page.keyboard.press('Enter');
+
+     // Verify recommendation from API
      await expect(page.locator('text=Ustadz Mansur')).toBeVisible();
      await expect(page.locator('text=Match: 95%')).toBeVisible();
   });

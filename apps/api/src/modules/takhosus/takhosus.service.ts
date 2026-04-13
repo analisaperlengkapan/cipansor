@@ -597,7 +597,13 @@ export const sanadService = {
 
     if (!enrollment) return;
 
-    const completedJuz = sanadCount;
+    // When the enrollment was already completed (e.g., via 30-juz simaan pass),
+    // completedJuz may have been set to targetJuz. Avoid regressing it below
+    // the stored value — use the higher of sanadCount and the existing value.
+    const completedJuz =
+      enrollment.status === 'COMPLETED'
+        ? Math.max(sanadCount, enrollment.completedJuz)
+        : sanadCount;
 
     // Only auto-complete via sanad count if the enrollment is still in ACTIVE state.
     // If simaan grading already set it to COMPLETED (or any other terminal state),

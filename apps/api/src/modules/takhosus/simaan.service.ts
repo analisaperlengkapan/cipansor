@@ -172,16 +172,20 @@ export const simaanService = {
             });
           }
 
-          // 2. Auto-record Hafidz status
-          await tx.hafidzStudent.upsert({
+          // 2. Auto-record Hafidz status (preserve existing completedAt if already recorded)
+          const existingHafidz = await tx.hafidzStudent.findUnique({
             where: { studentId: exam.studentId },
-            create: {
-              studentId: exam.studentId,
-              completedAt: new Date(),
-              notes: 'Lulus program Takhosus'
-            },
-            update: { completedAt: new Date() }
+            select: { id: true },
           });
+          if (!existingHafidz) {
+            await tx.hafidzStudent.create({
+              data: {
+                studentId: exam.studentId,
+                completedAt: new Date(),
+                notes: 'Lulus program Takhosus'
+              },
+            });
+          }
         } else if (exam.juzEnd >= (exam.student.takhosusEnrollment.currentJuz || 0)) {
           // 3. Update current juz progress in enrollment if passed a juz simaan
           await tx.takhosusEnrollment.update({

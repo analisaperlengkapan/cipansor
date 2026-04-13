@@ -277,7 +277,94 @@ export const simaanService = {
   },
 
   async delete(id: string) {
-    await prisma.simaanExam.delete({ where: { id } });
+    await prisma.$transaction(async (tx) => {
+      const exam = await tx.simaanExam.findUnique({
+        where: { id },
+        include: { student: { include: { takhosusEnrollment: true } } },
+      });
+      if (!exam) {
+        throw new ApiError(ErrorCode.NOT_FOUND, 'Simaan exam not found');
+      }
+
+      await tx.simaanExam.delete({ where: { id } });
+
+      // Revert side-effects if the deleted exam was passed
+      if (exam.passed && exam.student.takhosusEnrollment) {
+        const enrollment = exam.student.takhosusEnrollment;
+
+        if (exam.juzEnd === 30 && exam.juzStart === 1) {
+          // Check if another passed 30-juz exam still exists
+          const otherPassed30JuzExam = await tx.simaanExam.findFirst({
+            where: {
+              studentId: exam.studentId,
+              passed: true,
+              juzStart: 1,
+              juzEnd: 30,
+            },
+            select: { id: true },
+          });
+
+          if (!otherPassed30JuzExam) {
+            const sanadCount = enrollment.id
+              ? await tx.sanadRecord.count({ where: { enrollmentId: enrollment.id } })
+              : 0;
+            const sanadJustifiesCompletion = sanadCount >= enrollment.targetJuz;
+
+            if (enrollment.status === 'COMPLETED' && !sanadJustifiesCompletion) {
+              const otherPassedExams = await tx.simaanExam.findMany({
+                where: {
+                  studentId: exam.studentId,
+                  passed: true,
+                },
+                select: { juzEnd: true },
+                orderBy: { juzEnd: 'desc' },
+                take: 1,
+              });
+              const derivedCurrentJuz = otherPassedExams.length > 0
+                ? Math.min(30, otherPassedExams[0].juzEnd + 1)
+                : 1;
+
+              await tx.takhosusEnrollment.update({
+                where: { studentId: exam.studentId },
+                data: {
+                  status: 'ACTIVE',
+                  completedAt: null,
+                  currentJuz: derivedCurrentJuz,
+                  completedJuz: sanadCount,
+                  notes: null,
+                },
+              });
+            }
+
+            if (!sanadJustifiesCompletion) {
+              await tx.hafidzStudent.deleteMany({
+                where: { studentId: exam.studentId },
+              });
+            }
+          }
+        } else if ((enrollment.currentJuz || 0) === Math.min(30, exam.juzEnd + 1)) {
+          // Revert currentJuz bump for partial-juz exams
+          const otherPassedExams = await tx.simaanExam.findMany({
+            where: {
+              studentId: exam.studentId,
+              passed: true,
+            },
+            select: { juzEnd: true },
+            orderBy: { juzEnd: 'desc' },
+            take: 1,
+          });
+          const derivedCurrentJuz = otherPassedExams.length > 0
+            ? Math.min(30, otherPassedExams[0].juzEnd + 1)
+            : 1;
+
+          await tx.takhosusEnrollment.update({
+            where: { studentId: exam.studentId },
+            data: { currentJuz: derivedCurrentJuz },
+          });
+        }
+      }
+    });
+
     return { success: true };
   },
 };

@@ -108,19 +108,23 @@ export class LitbangService {
     const completed = milestones.filter((m) => m.status === "COMPLETED").length;
     const progress = Math.round((completed / milestones.length) * 100);
 
+    // Prisma's @updatedAt only auto-sets for create/update, NOT updateMany.
+    // We must explicitly set updatedAt so that getProjects (orderBy: updatedAt desc) stays correct.
+    const now = new Date();
+
     if (progress === 100) {
       // Auto-complete only if the project is still in a progression state.
       // This avoids overriding intentional statuses like PUBLISHED or ON_HOLD.
       const progressionStatuses = ['PROPOSAL', 'IN_PROGRESS', 'APPROVED'];
       const result = await prisma.researchProject.updateMany({
         where: { id: projectId, status: { in: progressionStatuses } },
-        data: { progress, status: 'COMPLETED' },
+        data: { progress, status: 'COMPLETED', updatedAt: now },
       });
       // For projects already in a non-progression state (except CANCELLED), only update progress
       if (result.count === 0) {
         await prisma.researchProject.updateMany({
           where: { id: projectId, status: { notIn: [...progressionStatuses, 'CANCELLED'] } },
-          data: { progress },
+          data: { progress, updatedAt: now },
         });
       }
     } else {
@@ -131,7 +135,7 @@ export class LitbangService {
       // Instead, just update the progress number for all non-cancelled statuses.
       await prisma.researchProject.updateMany({
         where: { id: projectId, status: { not: 'CANCELLED' } },
-        data: { progress },
+        data: { progress, updatedAt: now },
       });
     }
   }

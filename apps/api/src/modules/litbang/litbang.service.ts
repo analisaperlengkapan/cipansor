@@ -103,7 +103,15 @@ export class LitbangService {
 
   private async recalculateProgress(projectId: string) {
     const milestones = await prisma.researchMilestone.findMany({ where: { projectId } });
-    if (milestones.length === 0) return;
+    if (milestones.length === 0) {
+      // Reset progress to 0 when all milestones are removed.
+      // Do NOT revert COMPLETED status — same rationale as the < 100 branch below.
+      await prisma.researchProject.updateMany({
+        where: { id: projectId, status: { not: 'CANCELLED' } },
+        data: { progress: 0, updatedAt: new Date() },
+      });
+      return;
+    }
 
     const completed = milestones.filter((m) => m.status === "COMPLETED").length;
     const progress = Math.round((completed / milestones.length) * 100);

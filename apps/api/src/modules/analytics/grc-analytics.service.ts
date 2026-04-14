@@ -89,7 +89,13 @@ export async function getGRCStats(unitId?: string): Promise<GRCStats> {
         const allSuggestions = await Promise.all(
           allUnits.map((u) => pengawasanService.suggestAuditSchedules(u.id).catch(() => []))
         );
-        return allSuggestions.flat();
+        // Deduplicate by riskId — the same risk can appear from multiple unit queries
+        const seen = new Set<string>();
+        return allSuggestions.flat().filter((s) => {
+          if (seen.has(s.riskId)) return false;
+          seen.add(s.riskId);
+          return true;
+        });
       } catch (err: any) {
         console.error('[GRC] suggestAuditSchedules (all units) failed:', err?.message || err);
         return [];

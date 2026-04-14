@@ -51,7 +51,13 @@ export function TahfidzProgressChart({ data }: TahfidzProgressChartProps) {
                 tickLine={false}
                 tickFormatter={(str) => {
                   try {
-                    return new Date(str).toLocaleDateString('id-ID', { month: 'short', day: 'numeric' });
+                    // monthlyProgress data uses "YYYY-MM" format — parse as month/year only
+                    const [year, month] = str.split('-');
+                    if (year && month) {
+                      const d = new Date(Number(year), Number(month) - 1);
+                      return d.toLocaleDateString('id-ID', { month: 'short', year: 'numeric' });
+                    }
+                    return new Date(str).toLocaleDateString('id-ID', { month: 'short', year: 'numeric' });
                   } catch {
                     return str;
                   }
@@ -60,7 +66,18 @@ export function TahfidzProgressChart({ data }: TahfidzProgressChartProps) {
               <YAxis tick={{fontSize: 10, fill: '#64748b'}} axisLine={false} tickLine={false} />
               <Tooltip
                 contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                labelFormatter={(label) => new Date(label).toLocaleDateString('id-ID', { dateStyle: 'full' })}
+                labelFormatter={(label) => {
+                  try {
+                    const [year, month] = String(label).split('-');
+                    if (year && month) {
+                      const d = new Date(Number(year), Number(month) - 1);
+                      return d.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+                    }
+                    return String(label);
+                  } catch {
+                    return String(label);
+                  }
+                }}
               />
               <Area
                 type="monotone"

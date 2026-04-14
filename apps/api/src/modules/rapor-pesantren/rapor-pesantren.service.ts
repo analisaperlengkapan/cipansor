@@ -295,16 +295,18 @@ export async function getTakhosusSummary(
 
   const averageScore = totalSessions > 0 ? totalSanadScores / totalSessions : 0;
 
-  // Simaan bonus: Each passed simaan exam adds to the score (capped at 20 points)
+  // Simaan bonus: Each passed simaan exam adds to the score (capped at 20 points).
+  // NOTE: This changes the scoring formula compared to pre-simaan rapor generations.
+  // Existing rapor scores will change retroactively when regenerated. If cross-period
+  // comparability is required, consider storing the formula version in raporData.
   const simaanBonus = Math.min(simaanExamCount * 5, 20);
 
   // Fallback to progress if no sanad tests exist in period
-  const finalScore = Math.min(100,
-    (totalSessions > 0
-      ? averageScore
-      : takhosusEnrollments.reduce((sum, e) => sum + (e.targetJuz ? Math.round((e.completedJuz / e.targetJuz) * 100) : 0), 0) /
-        enrolledHalaqoh) + simaanBonus
-  );
+  const baseScore = totalSessions > 0
+    ? averageScore
+    : takhosusEnrollments.reduce((sum, e) => sum + (e.targetJuz ? Math.round((e.completedJuz / e.targetJuz) * 100) : 0), 0) /
+      enrolledHalaqoh;
+  const finalScore = Math.min(100, baseScore + simaanBonus);
 
   return {
     enrolledHalaqoh,

@@ -91,6 +91,18 @@ export class PerencanaanService {
 
     // Financial realization: gracefully degrade on error so the plan detail
     // is still returned even when journal aggregation fails.
+    //
+    // KNOWN LIMITATIONS:
+    // 1. Journal entries are aggregated at the account level, not activity level.
+    //    If an account (e.g., '5-1-01 General Office Expenses') has journal entries
+    //    from business processes unrelated to this plan, those amounts will be included
+    //    in the realization figure. This is an architectural limitation — there is no
+    //    direct FK between JournalEntry and PlanActivity in the current schema.
+    // 2. The date range filter uses the plan's startDate/endDate, not the Budget
+    //    model's academicYearId. For multi-year RENSTRA plans, realization will span
+    //    multiple academic years, while the linked Budget may only cover one year.
+    //    Short-lived plans (RKAS, RKT, PROGRAM) are typically aligned with a single
+    //    academic year so this mismatch is less impactful for them.
     try {
       // 1. Collect all unique accountIds and their normalBalance across every activity
       const accountMap = new Map<string, { normalBalance: string }>();

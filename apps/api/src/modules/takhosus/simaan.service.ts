@@ -278,8 +278,14 @@ export const simaanService = {
               },
             });
           }
-        } else if (exam.juzEnd >= (exam.student.takhosusEnrollment.currentJuz || 0)) {
-          // 3. Update current juz progress in enrollment if passed a juz simaan
+        } else if (
+          exam.juzStart <= (exam.student.takhosusEnrollment.currentJuz || 1) &&
+          exam.juzEnd >= (exam.student.takhosusEnrollment.currentJuz || 0)
+        ) {
+          // 3. Update current juz progress in enrollment if passed a contiguous juz simaan.
+          //    The juzStart <= currentJuz guard ensures we only advance when the simaan
+          //    covers the student's current position (or earlier), preventing non-sequential
+          //    exams (e.g., juz 20-25 when currentJuz=5) from skipping intermediate juz.
           await tx.takhosusEnrollment.update({
             where: { studentId: exam.studentId },
             data: { currentJuz: Math.min(30, exam.juzEnd + 1) }

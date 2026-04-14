@@ -584,59 +584,65 @@ export const sanadService = {
   },
 
   /**
-   * Update enrollment progress based on sanad records
+   * Update enrollment progress based on sanad records.
+   *
+   * Uses a Prisma interactive transaction to ensure the enrollment read,
+   * simaan check, and enrollment update are consistent — preventing stale
+   * reads when simaanService.updateResult runs concurrently.
    */
   async updateEnrollmentProgress(enrollmentId: string) {
-    const sanadCount = await prisma.sanadRecord.count({
-      where: { enrollmentId },
-    });
-
-    const enrollment = await prisma.takhosusEnrollment.findUnique({
-      where: { id: enrollmentId },
-    });
-
-    if (!enrollment) return;
-
-    // When the enrollment was completed via a 30-juz simaan pass, completedJuz
-    // was set to targetJuz by simaan.service. We must not regress it below that
-    // value. However, if the enrollment was completed purely via sanad count
-    // (i.e., no simaan involved), we should reflect the actual sanad count so
-    // that deletions are properly tracked.
-    //
-    // Heuristic: check if a passed 30-juz simaan exam exists for this student.
-    // If so, the simaan is the authoritative source for completedJuz and we
-    // preserve the higher value. Otherwise, use the actual sanad count.
-    let completedJuz = sanadCount;
-    if (enrollment.status === 'COMPLETED' && enrollment.completedJuz > sanadCount) {
-      // Only preserve the inflated completedJuz if a passed 30-juz simaan justifies it
-      const has30JuzSimaan = await prisma.simaanExam.findFirst({
-        where: {
-          studentId: enrollment.studentId,
-          passed: true,
-          juzStart: 1,
-          juzEnd: 30,
-        },
-        select: { id: true },
+    await prisma.$transaction(async (tx) => {
+      const sanadCount = await tx.sanadRecord.count({
+        where: { enrollmentId },
       });
-      if (has30JuzSimaan) {
-        completedJuz = Math.max(sanadCount, enrollment.completedJuz);
+
+      const enrollment = await tx.takhosusEnrollment.findUnique({
+        where: { id: enrollmentId },
+      });
+
+      if (!enrollment) return;
+
+      // When the enrollment was completed via a 30-juz simaan pass, completedJuz
+      // was set to targetJuz by simaan.service. We must not regress it below that
+      // value. However, if the enrollment was completed purely via sanad count
+      // (i.e., no simaan involved), we should reflect the actual sanad count so
+      // that deletions are properly tracked.
+      //
+      // Heuristic: check if a passed 30-juz simaan exam exists for this student.
+      // If so, the simaan is the authoritative source for completedJuz and we
+      // preserve the higher value. Otherwise, use the actual sanad count.
+      let completedJuz = sanadCount;
+      if (enrollment.status === 'COMPLETED' && enrollment.completedJuz > sanadCount) {
+        // Only preserve the inflated completedJuz if a passed 30-juz simaan justifies it
+        const has30JuzSimaan = await tx.simaanExam.findFirst({
+          where: {
+            studentId: enrollment.studentId,
+            passed: true,
+            juzStart: 1,
+            juzEnd: 30,
+          },
+          select: { id: true },
+        });
+        if (has30JuzSimaan) {
+          completedJuz = Math.max(sanadCount, enrollment.completedJuz);
+        }
       }
-    }
 
-    // Only auto-complete via sanad count if the enrollment is still in ACTIVE state.
-    // If simaan grading already set it to COMPLETED (or any other terminal state),
-    // we should not overwrite the status — only update completedJuz.
-    const shouldAutoComplete =
-      enrollment.status === 'ACTIVE' && completedJuz >= enrollment.targetJuz;
-    const status = shouldAutoComplete ? 'COMPLETED' : enrollment.status;
+      // Only auto-complete via sanad count if the enrollment is still in ACTIVE state.
+      // If simaan grading already set it to COMPLETED (or any other terminal state),
+      // we should not overwrite the status — only update completedJuz.
+      const shouldAutoComplete =
+        enrollment.status === 'ACTIVE' && completedJuz >= enrollment.targetJuz;
+      const status = shouldAutoComplete ? 'COMPLETED' : enrollment.status;
 
-    await prisma.takhosusEnrollment.update({
-      where: { id: enrollmentId },
-      data: {
-        completedJuz,
-        status,
-        ...(shouldAutoComplete && !enrollment.completedAt && { completedAt: new Date() }),
-      },
+      await tx.takhosusEnrollment.update({
+        where: { id: enrollmentId },
+        data: {
+          completedJuz,
+          status,
+          ...(shouldAutoComplete && !enrollment.completedAt && { completedAt: new Date() }),
+        },
+      });
     });
   },
 

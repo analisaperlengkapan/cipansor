@@ -36,7 +36,14 @@ async function revertSimaanSideEffects(
         : 0;
       const sanadJustifiesCompletion = sanadCount >= enrollment.targetJuz;
 
-      if (enrollment.status === 'COMPLETED' && !sanadJustifiesCompletion) {
+      // Re-read enrollment status inside the transaction to avoid stale snapshot
+      const freshEnrollment = await tx.takhosusEnrollment.findUnique({
+        where: { studentId: exam.studentId },
+        select: { status: true },
+      });
+      const currentStatus = freshEnrollment?.status ?? enrollment.status;
+
+      if (currentStatus === 'COMPLETED' && !sanadJustifiesCompletion) {
         // Derive the correct currentJuz from other passed simaan exams
         const otherPassedExams = await tx.simaanExam.findMany({
           where: {
@@ -79,7 +86,15 @@ async function revertSimaanSideEffects(
         });
       }
     }
-  } else if ((enrollment.currentJuz || 0) === Math.min(30, exam.juzEnd + 1)) {
+  } else {
+    // Re-read currentJuz to avoid stale snapshot
+    const freshEnrollmentForJuz = await tx.takhosusEnrollment.findUnique({
+      where: { studentId: exam.studentId },
+      select: { currentJuz: true },
+    });
+    const currentJuz = freshEnrollmentForJuz?.currentJuz ?? enrollment.currentJuz ?? 0;
+
+    if (currentJuz === Math.min(30, exam.juzEnd + 1)) {
     // Revert currentJuz bump: derive correct value from remaining passed exams
     // Only revert if the enrollment's currentJuz was likely set by this exam
     const otherPassedExams = await tx.simaanExam.findMany({
@@ -100,6 +115,7 @@ async function revertSimaanSideEffects(
       where: { studentId: exam.studentId },
       data: { currentJuz: derivedCurrentJuz },
     });
+    }
   }
 }
 

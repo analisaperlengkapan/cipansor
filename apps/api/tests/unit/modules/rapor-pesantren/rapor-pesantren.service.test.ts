@@ -49,7 +49,7 @@ describe('RaporPesantrenService - Kepesantrenan Terpadu', () => {
         },
       } as any;
 
-      // Mock enrollments (No sanad)
+      // Mock enrollment (1 per student — schema has @@unique([studentId]))
       const mockEnrollments = [
         {
           id: 'enr1',
@@ -61,16 +61,6 @@ describe('RaporPesantrenService - Kepesantrenan Terpadu', () => {
           halaqoh: { name: 'Takhosus A' },
           sanadRecords: [],
         },
-        {
-          id: 'enr2',
-          halaqohId: 'hal2',
-          studentId: 'stud1',
-          status: 'ACTIVE',
-          targetJuz: 10,
-          completedJuz: 8, // 80% progress
-          halaqoh: { name: 'Takhosus B' },
-          sanadRecords: [],
-        }
       ];
 
       (prisma.takhosusEnrollment.findMany as any).mockResolvedValue(mockEnrollments);
@@ -84,14 +74,13 @@ describe('RaporPesantrenService - Kepesantrenan Terpadu', () => {
         mockConfig
       );
 
-      // Total average progress = (40 + 80) / 2 = 60
-      expect(result.score).toBe(60);
-      expect(result.enrolledHalaqoh).toBe(2);
+      // Single enrollment: progress = 40% (2/5 * 100)
+      expect(result.score).toBe(40);
+      expect(result.enrolledHalaqoh).toBe(1);
       expect(result.totalSessions).toBe(0); // 0 sanads
-      expect(result.grade).toBe('MAQBUL'); // 60 is Maqbul
-      expect(result.halaqohDetails).toHaveLength(2);
+      expect(result.grade).toBe('RASIB'); // 40 < 60 (maqbul threshold) → RASIB
+      expect(result.halaqohDetails).toHaveLength(1);
       expect(result.halaqohDetails[0].progress).toBe(40);
-      expect(result.halaqohDetails[1].progress).toBe(80);
     });
 
     it('should calculate Takhosus progress correctly when Sanad records exist', async () => {

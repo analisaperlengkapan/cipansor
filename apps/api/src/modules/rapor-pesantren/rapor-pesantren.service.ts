@@ -296,9 +296,6 @@ export async function getTakhosusSummary(
   const averageScore = totalSessions > 0 ? totalSanadScores / totalSessions : 0;
 
   // Simaan bonus: Each passed simaan exam adds to the score (capped at 20 points).
-  // NOTE: This changes the scoring formula compared to pre-simaan rapor generations.
-  // Existing rapor scores will change retroactively when regenerated. If cross-period
-  // comparability is required, consider storing the formula version in raporData.
   const simaanBonus = Math.min(simaanExamCount * 5, 20);
 
   // Fallback to progress if no sanad tests exist in period
@@ -315,6 +312,12 @@ export async function getTakhosusSummary(
     grade: getGradeFromScore(finalScore, config.gradeThresholds),
     score: finalScore,
     halaqohDetails,
+    // Store formula metadata so that rapor scores can be compared fairly across
+    // periods even when the scoring formula changes. Consumers can use
+    // formulaVersion to decide whether two rapor scores are directly comparable.
+    formulaVersion: 2, // v1 = base score only; v2 = base + simaan bonus (max 20)
+    simaanBonus,
+    simaanExamCount,
   };
 }
 

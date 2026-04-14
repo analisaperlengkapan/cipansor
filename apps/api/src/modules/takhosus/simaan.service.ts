@@ -294,18 +294,24 @@ export const simaanService = {
               },
             });
           }
-        } else if (
-          exam.juzStart <= (exam.student.takhosusEnrollment.currentJuz || 1) &&
-          exam.juzEnd >= (exam.student.takhosusEnrollment.currentJuz || 0)
-        ) {
+        } else {
           // 3. Update current juz progress in enrollment if passed a contiguous juz simaan.
-          //    The juzStart <= currentJuz guard ensures we only advance when the simaan
-          //    covers the student's current position (or earlier), preventing non-sequential
-          //    exams (e.g., juz 20-25 when currentJuz=5) from skipping intermediate juz.
-          await tx.takhosusEnrollment.update({
-            where: { studentId: exam.studentId },
-            data: { currentJuz: Math.min(30, exam.juzEnd + 1) }
-          });
+          //    Both guards are required to ensure strict contiguous progression:
+          //    - juzStart <= currentJuz: the simaan starts at or before the student's
+          //      current position (covers their frontier)
+          //    - juzEnd < currentJuz is skipped: only advance, never regress
+          //    - juzStart must be adjacent: the gap between currentJuz and juzStart
+          //      must be zero (exact match) or the simaan must overlap currentJuz.
+          //    This prevents non-sequential exams (e.g., juz 20-25 when currentJuz=5)
+          //    from skipping intermediate juz.
+          const currentJuz = exam.student.takhosusEnrollment.currentJuz || 1;
+          const coversCurrentPosition = exam.juzStart <= currentJuz && exam.juzEnd >= currentJuz;
+          if (coversCurrentPosition) {
+            await tx.takhosusEnrollment.update({
+              where: { studentId: exam.studentId },
+              data: { currentJuz: Math.min(30, exam.juzEnd + 1) }
+            });
+          }
         }
       } else if (!data.passed && exam.passed && exam.student.takhosusEnrollment) {
         // Revert side-effects when re-grading from passed to failed

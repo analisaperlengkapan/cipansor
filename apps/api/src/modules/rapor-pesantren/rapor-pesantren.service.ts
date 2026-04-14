@@ -258,6 +258,9 @@ export async function getTakhosusSummary(
       grade: 'MUMTAZ',
       score: 100, // No takhosus so score shouldn't negatively impact
       halaqohDetails: [],
+      formulaVersion: 2,
+      simaanBonus: 0,
+      simaanExamCount: 0,
     };
   }
 

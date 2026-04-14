@@ -157,6 +157,12 @@ export interface TakhosusSummary {
     latestGrade: string;
     sessionsCount: number;
   }[];
+  /** v1 = base score only; v2 = base + simaan bonus (max 20) */
+  formulaVersion?: number;
+  /** Bonus points added from passed simaan exams (capped at 20) */
+  simaanBonus?: number;
+  /** Number of passed simaan exams in the period */
+  simaanExamCount?: number;
 }
 
 export interface IbadahSummary {

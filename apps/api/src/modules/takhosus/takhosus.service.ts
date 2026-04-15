@@ -489,25 +489,75 @@ export const sanadService = {
       throw new Error(`Sanad for Juz ${input.juz} already exists`);
     }
 
-    const sanad = await prisma.sanadRecord.create({
-      data: {
-        ...input,
-        certifiedAt: input.certifiedAt ? new Date(input.certifiedAt) : new Date(),
-      } as any,
-      include: {
-        enrollment: {
-          include: {
-            student: {
-              include: { user: { select: { name: true } } },
+    // Wrap sanad creation and enrollment progress update in a single transaction
+    // to prevent race conditions with concurrent simaanService.updateResult calls.
+    // Previously, these were separate operations — the sanad was created outside any
+    // transaction, and updateEnrollmentProgress had its own transaction, leaving a
+    // window where concurrent simaan grading could see inconsistent state.
+    const sanad = await prisma.$transaction(async (tx) => {
+      const created = await tx.sanadRecord.create({
+        data: {
+          ...input,
+          certifiedAt: input.certifiedAt ? new Date(input.certifiedAt) : new Date(),
+        } as any,
+        include: {
+          enrollment: {
+            include: {
+              student: {
+                include: { user: { select: { name: true } } },
+              },
+              halaqoh: { select: { name: true } },
             },
-            halaqoh: { select: { name: true } },
           },
+          teacher: { select: { id: true, name: true } },
         },
-        teacher: { select: { id: true, name: true } },
-      },
+      });
+
+      // Update enrollment progress within the same transaction
+      const enrollmentId = input.enrollmentId;
+      const sanadCount = await tx.sanadRecord.count({
+        where: { enrollmentId },
+      });
+
+      const enrollment = await tx.takhosusEnrollment.findUnique({
+        where: { id: enrollmentId },
+      });
+
+      if (enrollment) {
+        let completedJuz = sanadCount;
+        if (enrollment.status === 'COMPLETED' && enrollment.completedJuz > sanadCount) {
+          const has30JuzSimaan = await tx.simaanExam.findFirst({
+            where: {
+              studentId: enrollment.studentId,
+              passed: true,
+              juzStart: 1,
+              juzEnd: 30,
+            },
+            select: { id: true },
+          });
+          if (has30JuzSimaan) {
+            completedJuz = Math.max(sanadCount, enrollment.completedJuz);
+          }
+        }
+
+        const shouldAutoComplete =
+          enrollment.status === 'ACTIVE' && completedJuz >= enrollment.targetJuz;
+        const status = shouldAutoComplete ? 'COMPLETED' : enrollment.status;
+
+        await tx.takhosusEnrollment.update({
+          where: { id: enrollmentId },
+          data: {
+            completedJuz,
+            status,
+            ...(shouldAutoComplete && !enrollment.completedAt && { completedAt: new Date() }),
+          },
+        });
+      }
+
+      return created;
     });
 
-    // Emit event for RaporPesantren integration
+    // Emit event for RaporPesantren integration (fire-and-forget, outside transaction)
     import('@/lib/event-bus').then(({ eventBus }) => {
       eventBus.emit('takhosus:sanad_assessed', {
         studentId: sanad.enrollment.studentId,
@@ -518,9 +568,6 @@ export const sanadService = {
         certifiedAt: sanad.certifiedAt,
       });
     }).catch(console.error);
-
-    // Update enrollment progress
-    await this.updateEnrollmentProgress(input.enrollmentId);
 
     // Certificate eligibility check: if certain juz count reached
     await this.checkCertificateEligibility(sanad.enrollment.studentId);
@@ -563,7 +610,7 @@ export const sanadService = {
       });
     }).catch(console.error);
 
-    // Update enrollment progress
+    // Update enrollment progress (grade/juz changes may affect completedJuz)
     await this.updateEnrollmentProgress(sanad.enrollmentId);
 
     return sanad;
@@ -573,12 +620,55 @@ export const sanadService = {
    * Delete sanad record
    */
   async delete(id: string) {
-    const sanad = await prisma.sanadRecord.delete({
-      where: { id },
-    });
+    // Wrap delete and enrollment progress update in a single transaction
+    // to prevent race conditions with concurrent simaan grading.
+    const sanad = await prisma.$transaction(async (tx) => {
+      const deleted = await tx.sanadRecord.delete({
+        where: { id },
+      });
 
-    // Update enrollment progress
-    await this.updateEnrollmentProgress(sanad.enrollmentId);
+      const enrollmentId = deleted.enrollmentId;
+      const sanadCount = await tx.sanadRecord.count({
+        where: { enrollmentId },
+      });
+
+      const enrollment = await tx.takhosusEnrollment.findUnique({
+        where: { id: enrollmentId },
+      });
+
+      if (enrollment) {
+        let completedJuz = sanadCount;
+        if (enrollment.status === 'COMPLETED' && enrollment.completedJuz > sanadCount) {
+          const has30JuzSimaan = await tx.simaanExam.findFirst({
+            where: {
+              studentId: enrollment.studentId,
+              passed: true,
+              juzStart: 1,
+              juzEnd: 30,
+            },
+            select: { id: true },
+          });
+          if (has30JuzSimaan) {
+            completedJuz = Math.max(sanadCount, enrollment.completedJuz);
+          }
+        }
+
+        const shouldAutoComplete =
+          enrollment.status === 'ACTIVE' && completedJuz >= enrollment.targetJuz;
+        const status = shouldAutoComplete ? 'COMPLETED' : enrollment.status;
+
+        await tx.takhosusEnrollment.update({
+          where: { id: enrollmentId },
+          data: {
+            completedJuz,
+            status,
+            ...(shouldAutoComplete && !enrollment.completedAt && { completedAt: new Date() }),
+          },
+        });
+      }
+
+      return deleted;
+    });
 
     return sanad;
   },

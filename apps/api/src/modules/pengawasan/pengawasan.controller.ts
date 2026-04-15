@@ -149,8 +149,9 @@ export const getAuditSuggestions = asyncHandler(async (req: Request, res: Respon
 
   if (!unitId && !isPrivilegedUser) throw Errors.unauthorized('Unit ID required');
   const targetUnitId = isPrivilegedUser && req.query.unitId ? String(req.query.unitId) : unitId;
-  if (!targetUnitId) throw Errors.badRequest('Unit ID required');
 
+  // Privileged users without a unitId and no query param get cross-unit suggestions (undefined unitId).
+  // Non-privileged users always have a unitId from their token.
   const suggestions = await pengawasanService.suggestAuditSchedules(targetUnitId);
   res.json({ success: true, data: suggestions });
 });

@@ -271,18 +271,31 @@ export const simaanService = {
       });
 
       if (data.passed === true && exam.passed === false && exam.student.takhosusEnrollment) {
+        // Re-read enrollment inside the transaction for a consistent snapshot,
+        // matching the revert path which also re-reads (see revertSimaanSideEffects).
+        // Without this, a concurrent sanad operation could auto-complete the enrollment
+        // between the exam read (line 249) and the status check below, causing us to
+        // overwrite completedAt/notes or regress currentJuz.
+        const freshEnrollment = await tx.takhosusEnrollment.findUnique({
+          where: { studentId: exam.studentId },
+        });
+        if (!freshEnrollment) {
+          // Enrollment was deleted concurrently — skip side-effects
+          return result;
+        }
+
         // 1. Level-up trigger: If passed 30 juz simaan, mark enrollment as COMPLETED and eligible for certificate
         if (exam.juzEnd === 30 && exam.juzStart === 1) {
           // Only update enrollment if not already COMPLETED (e.g., by sanad auto-completion)
           // to avoid overwriting existing completedAt/notes metadata
-          if (exam.student.takhosusEnrollment.status !== 'COMPLETED') {
+          if (freshEnrollment.status !== 'COMPLETED') {
             await tx.takhosusEnrollment.update({
               where: { studentId: exam.studentId },
               data: {
                 status: 'COMPLETED',
                 completedAt: new Date(),
                 currentJuz: 30,
-                completedJuz: exam.student.takhosusEnrollment.targetJuz,
+                completedJuz: freshEnrollment.targetJuz,
                 notes: `Lulus Simaan 30 Juz pada ${new Date().toLocaleDateString()}`
               }
             });
@@ -312,7 +325,7 @@ export const simaanService = {
           //      must be zero (exact match) or the simaan must overlap currentJuz.
           //    This prevents non-sequential exams (e.g., juz 20-25 when currentJuz=5)
           //    from skipping intermediate juz.
-          const currentJuz = exam.student.takhosusEnrollment.currentJuz || 1;
+          const currentJuz = freshEnrollment.currentJuz || 1;
           const coversCurrentPosition = exam.juzStart <= currentJuz && exam.juzEnd >= currentJuz;
           if (coversCurrentPosition) {
             await tx.takhosusEnrollment.update({

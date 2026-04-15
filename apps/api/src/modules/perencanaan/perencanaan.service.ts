@@ -122,7 +122,7 @@ export class PerencanaanService {
       //    if endDate is stored as midnight UTC (e.g., 2024-12-31T00:00:00Z),
       //    any entry after midnight on that day would be excluded by the `lte` filter.
       const endOfDay = new Date(plan.endDate);
-      endOfDay.setHours(23, 59, 59, 999);
+      endOfDay.setUTCHours(23, 59, 59, 999);
 
       const accountRealizationMap = new Map<string, number>();
       await Promise.all(

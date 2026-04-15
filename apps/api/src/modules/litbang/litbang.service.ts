@@ -87,10 +87,44 @@ export class LitbangService {
     status: string;
     sortOrder: number;
   }>) {
-    const milestone = await prisma.researchMilestone.update({ where: { id }, data });
+    // Wrap update and progress recalculation in a transaction so the project's
+    // progress is always consistent with its milestones (matching deleteMilestone).
+    const milestone = await prisma.$transaction(async (tx) => {
+      const updated = await tx.researchMilestone.update({ where: { id }, data });
 
-    // Recalculate project progress based on milestones
-    await this.recalculateProgress(milestone.projectId);
+      // Inline recalculation using the transaction client
+      const milestones = await tx.researchMilestone.findMany({ where: { projectId: updated.projectId } });
+      const now = new Date();
+      if (milestones.length === 0) {
+        await tx.researchProject.updateMany({
+          where: { id: updated.projectId, status: { not: 'CANCELLED' } },
+          data: { progress: 0, updatedAt: now },
+        });
+        return updated;
+      }
+      const completed = milestones.filter((m) => m.status === "COMPLETED").length;
+      const progress = Math.round((completed / milestones.length) * 100);
+      if (progress === 100) {
+        const progressionStatuses = ['PROPOSAL', 'IN_PROGRESS', 'APPROVED'];
+        const result = await tx.researchProject.updateMany({
+          where: { id: updated.projectId, status: { in: progressionStatuses } },
+          data: { progress, status: 'COMPLETED', updatedAt: now },
+        });
+        if (result.count === 0) {
+          await tx.researchProject.updateMany({
+            where: { id: updated.projectId, status: { notIn: [...progressionStatuses, 'CANCELLED'] } },
+            data: { progress, updatedAt: now },
+          });
+        }
+      } else {
+        await tx.researchProject.updateMany({
+          where: { id: updated.projectId, status: { not: 'CANCELLED' } },
+          data: { progress, updatedAt: now },
+        });
+      }
+
+      return updated;
+    });
 
     return milestone;
   }

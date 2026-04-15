@@ -475,26 +475,24 @@ export const sanadService = {
    * Create sanad record
    */
   async create(input: CreateSanadInput) {
-    // Check if sanad for this juz already exists
-    const existing = await prisma.sanadRecord.findUnique({
-      where: {
-        enrollmentId_juz: {
-          enrollmentId: input.enrollmentId,
-          juz: input.juz,
-        },
-      },
-    });
-
-    if (existing) {
-      throw new Error(`Sanad for Juz ${input.juz} already exists`);
-    }
-
     // Wrap sanad creation and enrollment progress update in a single transaction
-    // to prevent race conditions with concurrent simaanService.updateResult calls.
-    // Previously, these were separate operations — the sanad was created outside any
-    // transaction, and updateEnrollmentProgress had its own transaction, leaving a
-    // window where concurrent simaan grading could see inconsistent state.
+    // to prevent race conditions with concurrent simaanService.updateResult calls
+    // and to ensure the uniqueness check is consistent with the create.
     const sanad = await prisma.$transaction(async (tx) => {
+      // Check if sanad for this juz already exists (inside transaction to prevent TOCTOU race)
+      const existing = await tx.sanadRecord.findUnique({
+        where: {
+          enrollmentId_juz: {
+            enrollmentId: input.enrollmentId,
+            juz: input.juz,
+          },
+        },
+      });
+
+      if (existing) {
+        throw new Error(`Sanad for Juz ${input.juz} already exists`);
+      }
+
       const created = await tx.sanadRecord.create({
         data: {
           ...input,

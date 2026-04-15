@@ -248,7 +248,7 @@ export class PengawasanService {
     // 4. Suggest audits for risks that don't have a linked internal audit
     //    in their own unit yet.
     return highRisks
-      .filter((risk) => !coveredKeys.has(`${risk.id}::${(risk as any).unitId}`))
+      .filter((risk) => !coveredKeys.has(`${risk.id}::${risk.unitId}`))
       .map((risk) => ({
         riskId: risk.id,
         riskCode: risk.code,

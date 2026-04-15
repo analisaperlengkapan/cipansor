@@ -130,10 +130,10 @@ export class LitbangService {
   }
 
   async deleteMilestone(id: string) {
-    const milestone = await prisma.researchMilestone.findUniqueOrThrow({ where: { id } });
     // Wrap delete and progress recalculation in a transaction so the project's
     // progress is always consistent with its milestones.
     await prisma.$transaction(async (tx) => {
+      const milestone = await tx.researchMilestone.findUniqueOrThrow({ where: { id } });
       await tx.researchMilestone.delete({ where: { id } });
       // Inline recalculation using the transaction client
       const milestones = await tx.researchMilestone.findMany({ where: { projectId: milestone.projectId } });
@@ -168,52 +168,6 @@ export class LitbangService {
     });
   }
 
-  private async recalculateProgress(projectId: string) {
-    const milestones = await prisma.researchMilestone.findMany({ where: { projectId } });
-    if (milestones.length === 0) {
-      // Reset progress to 0 when all milestones are removed.
-      // Do NOT revert COMPLETED status — same rationale as the < 100 branch below.
-      await prisma.researchProject.updateMany({
-        where: { id: projectId, status: { not: 'CANCELLED' } },
-        data: { progress: 0, updatedAt: new Date() },
-      });
-      return;
-    }
-
-    const completed = milestones.filter((m) => m.status === "COMPLETED").length;
-    const progress = Math.round((completed / milestones.length) * 100);
-
-    // Prisma's @updatedAt only auto-sets for create/update, NOT updateMany.
-    // We must explicitly set updatedAt so that getProjects (orderBy: updatedAt desc) stays correct.
-    const now = new Date();
-
-    if (progress === 100) {
-      // Auto-complete only if the project is still in a progression state.
-      // This avoids overriding intentional statuses like PUBLISHED or ON_HOLD.
-      const progressionStatuses = ['PROPOSAL', 'IN_PROGRESS', 'APPROVED'];
-      const result = await prisma.researchProject.updateMany({
-        where: { id: projectId, status: { in: progressionStatuses } },
-        data: { progress, status: 'COMPLETED', updatedAt: now },
-      });
-      // For projects already in a non-progression state (except CANCELLED), only update progress
-      if (result.count === 0) {
-        await prisma.researchProject.updateMany({
-          where: { id: projectId, status: { notIn: [...progressionStatuses, 'CANCELLED'] } },
-          data: { progress, updatedAt: now },
-        });
-      }
-    } else {
-      // When progress drops below 100, do NOT auto-revert COMPLETED status.
-      // We cannot distinguish auto-completed (via recalculateProgress) from
-      // manually-completed (via updateProject) without a schema change, and
-      // unconditionally reverting would destroy intentional manual completions.
-      // Instead, just update the progress number for all non-cancelled statuses.
-      await prisma.researchProject.updateMany({
-        where: { id: projectId, status: { not: 'CANCELLED' } },
-        data: { progress, updatedAt: now },
-      });
-    }
-  }
 
   // ── Innovation Proposals ──────────────────────────
   async getProposals(params: {

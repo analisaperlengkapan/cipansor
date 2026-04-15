@@ -207,11 +207,15 @@ export class PengawasanService {
 
   // ==================== SUGGESTION ENGINE ====================
 
-  async suggestAuditSchedules(unitId: string) {
+  async suggestAuditSchedules(unitId?: string) {
+    // When unitId is omitted, query across all units in a single pair of DB queries
+    // instead of fanning out per-unit (which caused up to 40+ queries).
+    const unitFilter = unitId ? { unitId } : {};
+
     // 1. Get high risks from the Risk module
     const highRisks = await prisma.risk.findMany({
       where: {
-        unitId,
+        ...unitFilter,
         status: 'OPEN',
         riskLevel: { in: ['HIGH', 'EXTREME'] },
       },
@@ -226,7 +230,7 @@ export class PengawasanService {
     const riskIds = highRisks.map((r) => r.id);
     const existingAudits = await prisma.internalAudit.findMany({
       where: {
-        unitId,
+        ...unitFilter,
         riskId: { in: riskIds },
         status: { not: 'CANCELLED' },
       },

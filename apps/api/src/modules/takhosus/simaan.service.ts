@@ -258,11 +258,11 @@ export const simaanService = {
           notes: data.notes,
           recommendations: data.recommendations,
           // @ts-ignore
-          status: data.passed ? 'PASSED' : 'FAILED',
+          status: data.passed === true ? 'PASSED' : 'FAILED',
         },
       });
 
-      if (data.passed && !exam.passed && exam.student.takhosusEnrollment) {
+      if (data.passed === true && exam.passed === false && exam.student.takhosusEnrollment) {
         // 1. Level-up trigger: If passed 30 juz simaan, mark enrollment as COMPLETED and eligible for certificate
         if (exam.juzEnd === 30 && exam.juzStart === 1) {
           // Only update enrollment if not already COMPLETED (e.g., by sanad auto-completion)
@@ -313,7 +313,7 @@ export const simaanService = {
             });
           }
         }
-      } else if (!data.passed && exam.passed && exam.student.takhosusEnrollment) {
+      } else if (data.passed === false && exam.passed === true && exam.student.takhosusEnrollment) {
         // Revert side-effects when re-grading from passed to failed
         await revertSimaanSideEffects(tx, exam, exam.student.takhosusEnrollment);
       }

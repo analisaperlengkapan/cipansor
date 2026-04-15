@@ -259,6 +259,7 @@ export async function getTakhosusSummary(
       score: 100, // No takhosus so score shouldn't negatively impact
       halaqohDetails: [],
       formulaVersion: 2,
+      baseScore: 100,
       simaanBonus: 0,
       simaanExamCount: 0,
     };
@@ -319,6 +320,7 @@ export async function getTakhosusSummary(
     // periods even when the scoring formula changes. Consumers can use
     // formulaVersion to decide whether two rapor scores are directly comparable.
     formulaVersion: 2, // v1 = base score only; v2 = base + simaan bonus (max 20)
+    baseScore,
     simaanBonus,
     simaanExamCount,
   };

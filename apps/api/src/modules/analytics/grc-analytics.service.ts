@@ -77,30 +77,15 @@ export async function getGRCStats(unitId?: string): Promise<GRCStats> {
       select: { score: true, status: true },
     }),
 
-    // 5. Audit Suggestions (parallelized, gracefully degrades on error)
-    // When unitId is provided, suggest for that unit; otherwise aggregate across all units
-    unitId ? pengawasanService.suggestAuditSchedules(unitId).catch((err) => {
+    // 5. Audit Suggestions (gracefully degrades on error)
+    // When unitId is provided, suggest for that unit; otherwise run a single cross-unit query.
+    // Previous implementation fanned out across up to 20 units (2 queries each = 40 DB round-trips).
+    // Now pengawasanService.suggestAuditSchedules accepts an optional unitId and handles
+    // cross-unit aggregation in a single pair of queries when unitId is omitted.
+    pengawasanService.suggestAuditSchedules(unitId).catch((err) => {
       console.error('[GRC] suggestAuditSchedules failed, returning empty suggestions:', err?.message || err);
       return [];
-    }) : (async () => {
-      try {
-        // Limit to first 20 units to avoid unbounded O(2N) DB queries
-        const allUnits = await prisma.unit.findMany({ select: { id: true }, take: 20, orderBy: { createdAt: 'asc' } });
-        const allSuggestions = await Promise.all(
-          allUnits.map((u) => pengawasanService.suggestAuditSchedules(u.id).catch(() => []))
-        );
-        // Deduplicate by riskId — the same risk can appear from multiple unit queries
-        const seen = new Set<string>();
-        return allSuggestions.flat().filter((s) => {
-          if (seen.has(s.riskId)) return false;
-          seen.add(s.riskId);
-          return true;
-        });
-      } catch (err: any) {
-        console.error('[GRC] suggestAuditSchedules (all units) failed:', err?.message || err);
-        return [];
-      }
-    })(),
+    }),
   ]);
 
   // Plans Processing

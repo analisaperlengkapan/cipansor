@@ -159,6 +159,8 @@ export interface TakhosusSummary {
   }[];
   /** v1 = base score only; v2 = base + simaan bonus (max 20) */
   formulaVersion?: number;
+  /** Base score before simaan bonus (sanad average or progress fallback) */
+  baseScore?: number;
   /** Bonus points added from passed simaan exams (capped at 20) */
   simaanBonus?: number;
   /** Number of passed simaan exams in the period */

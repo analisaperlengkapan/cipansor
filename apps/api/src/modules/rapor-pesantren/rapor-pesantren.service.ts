@@ -299,14 +299,16 @@ export async function getTakhosusSummary(
 
   const averageScore = totalSessions > 0 ? totalSanadScores / totalSessions : 0;
 
-  // Simaan bonus: Each passed simaan exam adds to the score (capped at 20 points).
-  const simaanBonus = Math.min(simaanExamCount * 5, 20);
-
   // Fallback to progress if no sanad tests exist in period
   const baseScore = totalSessions > 0
     ? averageScore
     : takhosusEnrollments.reduce((sum, e) => sum + (e.targetJuz ? Math.round((e.completedJuz / e.targetJuz) * 100) : 0), 0) /
       enrolledHalaqoh;
+
+  // Simaan bonus: Each passed simaan exam adds to the score (capped at 20 points).
+  // Only apply when the student has a non-zero base score to prevent inflating
+  // a student with no sanad/progress data purely from simaan passes.
+  const simaanBonus = baseScore > 0 ? Math.min(simaanExamCount * 5, 20) : 0;
   const finalScore = Math.min(100, baseScore + simaanBonus);
 
   return {

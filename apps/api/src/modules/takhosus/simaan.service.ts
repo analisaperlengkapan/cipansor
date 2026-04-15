@@ -236,6 +236,14 @@ export const simaanService = {
   },
 
   async updateResult(id: string, data: UpdateSimaanResultInput) {
+    // Defensive: ensure `passed` is an explicit boolean before running side-effects.
+    // The Zod schema enforces `z.boolean()` today, but if it ever becomes optional,
+    // an undefined value would silently skip the pass branch while the status write
+    // (line below) would set 'FAILED'. This guard makes the contract explicit.
+    if (typeof data.passed !== 'boolean') {
+      throw new ApiError(ErrorCode.BAD_REQUEST, 'passed must be a boolean');
+    }
+
     const updatedExam = await prisma.$transaction(async (tx) => {
       // Re-read inside transaction for a consistent snapshot of enrollment data
       const exam = await tx.simaanExam.findUnique({

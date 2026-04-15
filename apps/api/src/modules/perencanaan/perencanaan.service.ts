@@ -117,6 +117,13 @@ export class PerencanaanService {
       }
 
       // 2. Aggregate journal entries once per unique accountId
+      //    Extend endDate to end-of-day (23:59:59.999) so that journal entries
+      //    recorded on the last day of the plan period are included. Without this,
+      //    if endDate is stored as midnight UTC (e.g., 2024-12-31T00:00:00Z),
+      //    any entry after midnight on that day would be excluded by the `lte` filter.
+      const endOfDay = new Date(plan.endDate);
+      endOfDay.setHours(23, 59, 59, 999);
+
       const accountRealizationMap = new Map<string, number>();
       await Promise.all(
         Array.from(accountMap.entries()).map(async ([accountId, meta]) => {
@@ -126,7 +133,7 @@ export class PerencanaanService {
               unitId: plan.unitId,
               date: {
                 gte: plan.startDate,
-                lte: plan.endDate,
+                lte: endOfDay,
               },
             },
             _sum: {

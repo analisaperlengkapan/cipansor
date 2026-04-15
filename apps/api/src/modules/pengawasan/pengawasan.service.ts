@@ -234,13 +234,21 @@ export class PengawasanService {
         riskId: { in: riskIds },
         status: { not: 'CANCELLED' },
       },
-      select: { riskId: true },
+      select: { riskId: true, unitId: true },
     });
-    const coveredRiskIds = new Set(existingAudits.map((a) => a.riskId));
 
-    // 3. Suggest audits for risks that don't have a linked internal audit yet
+    // 3. Build a set of covered (riskId, unitId) pairs so that cross-unit queries
+    //    correctly treat each unit independently. A risk in unit A is only "covered"
+    //    if unit A itself has a non-cancelled audit for it — an audit in unit B
+    //    should not suppress the suggestion for unit A.
+    const coveredKeys = new Set(
+      existingAudits.map((a) => `${a.riskId}::${a.unitId}`),
+    );
+
+    // 4. Suggest audits for risks that don't have a linked internal audit
+    //    in their own unit yet.
     return highRisks
-      .filter((risk) => !coveredRiskIds.has(risk.id))
+      .filter((risk) => !coveredKeys.has(`${risk.id}::${(risk as any).unitId}`))
       .map((risk) => ({
         riskId: risk.id,
         riskCode: risk.code,

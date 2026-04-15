@@ -169,6 +169,7 @@ describe('Pengawasan Service', () => {
       vi.mocked(prisma.risk.findMany).mockResolvedValue([
         {
           id: 'risk-1',
+          unitId: 'unit-1',
           code: 'RSK-001',
           description: 'Kebocoran data',
           riskLevel: 'EXTREME',
@@ -177,6 +178,7 @@ describe('Pengawasan Service', () => {
         },
         {
           id: 'risk-2',
+          unitId: 'unit-1',
           code: 'RSK-002',
           description: 'Keterlambatan SPP',
           riskLevel: 'HIGH',
@@ -185,9 +187,9 @@ describe('Pengawasan Service', () => {
         },
       ] as any);
 
-      // risk-1 already has a non-cancelled audit, risk-2 does not
+      // risk-1 already has a non-cancelled audit in the same unit, risk-2 does not
       vi.mocked(prisma.internalAudit.findMany).mockResolvedValue([
-        { riskId: 'risk-1' },
+        { riskId: 'risk-1', unitId: 'unit-1' },
       ] as any);
 
       const suggestions = await pengawasanService.suggestAuditSchedules('unit-1');

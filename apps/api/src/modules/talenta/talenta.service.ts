@@ -365,6 +365,60 @@ export class TalentaService {
 
   // ==================== ANALYTICS ====================
 
+  async getCompetencyGap(userId: string, targetPositionId?: string) {
+    const userProfile = await prisma.talentProfile.findUnique({
+      where: { userId },
+      include: {
+        assessments: {
+          orderBy: { assessedAt: 'desc' },
+          take: 1,
+        },
+        user: {
+          include: {
+            orgPositions: {
+              include: { orgUnit: true },
+              take: 1,
+            },
+          },
+        },
+      },
+    });
+
+    if (!userProfile) throw new Error('Talent profile not found');
+
+    const targetPosition = targetPositionId
+      ? await prisma.orgPosition.findUnique({ where: { id: targetPositionId } })
+      : userProfile.user.orgPositions[0];
+
+    if (!targetPosition || !targetPosition.requirements) {
+      return { gap: [], score: 100 };
+    }
+
+    // Requirements are stored as text (e.g., "Skill A, Skill B") or JSON
+    const requirements = targetPosition.requirements.split(',').map((r) => r.trim());
+    const userCompetencies = (userProfile.assessments[0]?.competencies as any) || {};
+
+    const gaps = requirements.map((req) => {
+      const userLevel = userCompetencies[req] || 0;
+      const targetLevel = 4; // Assuming scale of 5, target is 4
+      return {
+        competency: req,
+        userLevel,
+        targetLevel,
+        gap: targetLevel - userLevel,
+      };
+    });
+
+    const averageGap = gaps.reduce((sum, g) => sum + g.gap, 0) / gaps.length;
+    const matchScore = Math.max(0, 100 - averageGap * 20);
+
+    return {
+      position: targetPosition.title,
+      gaps,
+      matchScore,
+    };
+  }
+
   async getTalentAnalytics(unitId: string) {
     const talentProfiles = await prisma.talentProfile.findMany({
       where: { unitId },

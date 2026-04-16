@@ -8,6 +8,11 @@ vi.mock('@/lib/prisma', () => ({
   prisma: {
     student: { findUnique: vi.fn() },
     academicYear: { findUnique: vi.fn() },
+    grade: { aggregate: vi.fn() },
+    tahfidzRecord: { aggregate: vi.fn() },
+    violation: { aggregate: vi.fn() },
+    attendance: { groupBy: vi.fn() },
+    dailyIbadahRecord: { aggregate: vi.fn() },
   },
 }));
 
@@ -90,6 +95,13 @@ describe('UnifiedRaportService Integration', () => {
     (prisma.student.findUnique as any).mockResolvedValue(mockStudent);
     (RaportMerdekaService.generateRaportMerdeka as any).mockResolvedValue(mockMerdeka);
     (raporPesantrenService.generateRaporPesantren as any).mockResolvedValue(mockPesantren);
+
+    // Mock analytics dependencies
+    (prisma.grade.aggregate as any).mockResolvedValue({ _avg: { percentage: 85 } });
+    (prisma.tahfidzRecord.aggregate as any).mockResolvedValue({ _sum: { totalAyah: 100 }, _max: { juz: 5 } });
+    (prisma.violation.aggregate as any).mockResolvedValue({ _sum: { points: 0 } });
+    (prisma.attendance.groupBy as any).mockResolvedValue([{ status: 'PRESENT', _count: 10 }]);
+    (prisma.dailyIbadahRecord.aggregate as any).mockResolvedValue({ _sum: { pointsEarned: 1000 } });
 
     const result = await UnifiedRaportService.generateUnifiedRaport('s1', 'ay1', 1);
 

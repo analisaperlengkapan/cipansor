@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Target, Calendar, CheckCircle2, TrendingUp, Activity, BarChart, ShieldAlert, ClipboardCheck, ArrowRight, Pencil, Trash2, Wallet, PieChart } from "lucide-react";
+import { ArrowLeft, Target, Calendar, CheckCircle2, TrendingUp, Activity, BarChart, ShieldAlert, ClipboardCheck, ArrowRight, Pencil, Trash2, Wallet, PieChart, LayoutDashboard } from "lucide-react";
 import { RiskLevelBadge } from "@/components/risk/risk-badges";
 import Link from "next/link";
 import { ActivityDialog } from "./activity-dialog";
@@ -171,6 +171,9 @@ export default function PerencanaanDetailPage() {
             </TabsTrigger>
             <TabsTrigger value="audits" className="flex items-center gap-2 text-blue-600 data-[state=active]:text-blue-700">
               <ClipboardCheck className="w-4 h-4" /> Jejak Audit & Temuan
+            </TabsTrigger>
+            <TabsTrigger value="strategy-map" className="flex items-center gap-2 text-indigo-600 data-[state=active]:text-indigo-700">
+              <LayoutDashboard className="w-4 h-4" /> Strategy Map
             </TabsTrigger>
           </TabsList>
         </div>
@@ -365,6 +368,57 @@ export default function PerencanaanDetailPage() {
                 <Link href={`/risk-management/create?strategicPlanId=${plan.id}`}>
                   <Button variant="outline" className="border-rose-200 text-rose-600 hover:bg-rose-50">Identifikasi Risiko Baru</Button>
                 </Link>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="strategy-map">
+          <Card className="border-indigo-100 shadow-sm">
+            <CardHeader className="bg-indigo-50/50 border-b pb-4">
+              <CardTitle className="text-lg flex items-center gap-2 text-indigo-800">
+                <LayoutDashboard className="w-5 h-5" /> Balanced Scorecard Strategy Map
+              </CardTitle>
+              <CardDescription>
+                Visualisasi aliran strategi dari pembelajaran hingga hasil finansial.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="flex flex-col gap-6 max-w-4xl mx-auto">
+                {['FINANCIAL', 'CUSTOMER', 'PROCESS', 'LEARNING'].map((p) => {
+                  const objectives = plan.objectives?.filter((o: any) => o.perspective === p) || [];
+                  const colors = {
+                    FINANCIAL: 'bg-emerald-50 border-emerald-200 text-emerald-800',
+                    CUSTOMER: 'bg-blue-50 border-blue-200 text-blue-800',
+                    PROCESS: 'bg-amber-50 border-amber-200 text-amber-800',
+                    LEARNING: 'bg-indigo-50 border-indigo-200 text-indigo-800',
+                  }[p] || 'bg-slate-50 border-slate-200';
+
+                  return (
+                    <div key={p} className={`p-4 rounded-xl border-2 ${colors} relative`}>
+                      <div className="flex items-center justify-between mb-4">
+                        <h4 className="font-bold text-sm uppercase tracking-widest opacity-70">{p}</h4>
+                        <Badge variant="outline" className="text-[10px] uppercase font-bold">{objectives.length} Items</Badge>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {objectives.length > 0 ? objectives.map((o: any) => (
+                          <div key={o.id} className="p-3 bg-white/80 rounded-lg shadow-sm border border-current/20 flex flex-col gap-2">
+                             <p className="text-xs font-semibold leading-tight">{o.title}</p>
+                             <div className="flex items-center justify-between">
+                               <Progress value={o.progress} className="h-1.5 flex-1 mr-2" />
+                               <span className="text-[10px] font-bold">{o.progress}%</span>
+                             </div>
+                          </div>
+                        )) : <p className="text-xs italic opacity-50 py-2">Belum ada sasaran untuk perspektif ini.</p>}
+                      </div>
+                      {p !== 'FINANCIAL' && (
+                        <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-white rounded-full p-1 border shadow-sm z-10">
+                          <TrendingUp className="w-3 h-3 text-slate-400 rotate-0" />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </CardContent>
           </Card>

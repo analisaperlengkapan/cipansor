@@ -168,6 +168,48 @@ describe('CBT Service', () => {
       });
       expect(result.score).toBe(30);
     });
+
+    it('should calculate topic mastery analytics correctly', async () => {
+      const mockExam = {
+        id: 'exam-1',
+        questionBank: {
+          questions: [
+            {
+              id: 'q1',
+              points: 10,
+              learningObjectiveId: 'lo1',
+              learningObjective: { id: 'lo1', code: 'TP1', description: 'Desc 1' }
+            },
+            {
+              id: 'q2',
+              points: 10,
+              learningObjectiveId: 'lo1',
+              learningObjective: { id: 'lo1', code: 'TP1', description: 'Desc 1' }
+            }
+          ]
+        },
+        attempts: [
+          {
+            id: 'att1',
+            status: 'COMPLETED',
+            answers: [
+              { questionId: 'q1', score: 10 },
+              { questionId: 'q2', score: 5 }
+            ]
+          }
+        ]
+      };
+
+      vi.mocked(prisma.exam.findUnique).mockResolvedValue(mockExam as any);
+
+      const result = await CBTService.getTopicMasteryAnalytics('exam-1');
+
+      expect(result).toHaveLength(1);
+      expect(result![0].code).toBe('TP1');
+      expect(result![0].totalPoints).toBe(20); // 10+10 for 1 student
+      expect(result![0].earnedPoints).toBe(15); // 10+5
+      expect(result![0].masteryLevel).toBe(75);
+    });
   });
 
   describe('Exam Attempts', () => {

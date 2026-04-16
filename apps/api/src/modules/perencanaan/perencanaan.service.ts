@@ -290,6 +290,7 @@ export class PerencanaanService {
     planId: string;
     title: string;
     description?: string;
+    perspective?: 'FINANCIAL' | 'CUSTOMER' | 'PROCESS' | 'LEARNING';
     priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
     weight?: number;
     order?: number;
@@ -299,6 +300,7 @@ export class PerencanaanService {
         plan: { connect: { id: data.planId } },
         title: data.title,
         description: data.description,
+        perspective: data.perspective,
         priority: data.priority,
         weight: data.weight,
         order: data.order,
@@ -314,7 +316,10 @@ export class PerencanaanService {
   async updateObjective(id: string, data: Prisma.PlanObjectiveUpdateInput) {
     const objective = await prisma.planObjective.update({
       where: { id },
-      data,
+      data: {
+        ...data,
+        perspective: data.perspective ? data.perspective : undefined,
+      },
       include: { plan: { select: { id: true } } },
     });
 

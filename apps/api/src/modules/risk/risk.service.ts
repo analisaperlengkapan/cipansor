@@ -109,10 +109,15 @@ export class RiskService {
     id: string,
     data: Prisma.RiskMitigationUpdateInput
   ): Promise<RiskMitigation> {
-    return prisma.riskMitigation.update({
+    const mitigation = await prisma.riskMitigation.update({
       where: { id },
       data,
     });
+
+    // After updating mitigation, recalculate residual risk
+    await this.recalculateResidualRisk(mitigation.riskId);
+
+    return mitigation;
   }
 
   async deleteMitigation(id: string): Promise<RiskMitigation> {
@@ -120,6 +125,70 @@ export class RiskService {
   }
 
   // Helpers
+  private async recalculateResidualRisk(riskId: string) {
+    const risk = await prisma.risk.findUnique({
+      where: { id: riskId },
+      include: { mitigations: true },
+    });
+
+    if (!risk) return;
+
+    // Logic: Mitigation progress reduces likelihood and impact
+    // Avg progress of all mitigations
+    const avgProgress = risk.mitigations.length > 0
+      ? risk.mitigations.reduce((sum, m) => sum + (m.progress || 0), 0) / risk.mitigations.length
+      : 0;
+
+    // Reduction factor: 0% progress = 1.0, 100% progress = 0.4 (capped reduction)
+    const factor = 1 - (avgProgress / 100) * 0.6;
+
+    const lVal = this.getEnumWeight(risk.likelihood);
+    const iVal = this.getEnumWeight(risk.impact);
+
+    const residualLVal = Math.max(1, Math.round(lVal * factor));
+    const residualIVal = Math.max(1, Math.round(iVal * factor));
+
+    const residualLikelihood = this.getWeightToLikelihood(residualLVal);
+    const residualImpact = this.getWeightToImpact(residualIVal);
+    const residualScore = residualLVal * residualIVal;
+    const residualLevel = this.determineRiskLevel(residualScore);
+
+    await prisma.risk.update({
+      where: { id: riskId },
+      data: {
+        residualLikelihood,
+        residualImpact,
+        residualScore,
+        residualLevel,
+      },
+    });
+  }
+
+  private getEnumWeight(val: string): number {
+    const map: Record<string, number> = {
+      RARE: 1, INSIGNIFICANT: 1,
+      UNLIKELY: 2, MINOR: 2,
+      POSSIBLE: 3, MODERATE: 3,
+      LIKELY: 4, MAJOR: 4,
+      ALMOST_CERTAIN: 5, CATASTROPHIC: 5,
+    };
+    return map[val] || 1;
+  }
+
+  private getWeightToLikelihood(w: number): RiskLikelihood {
+    const map: Record<number, RiskLikelihood> = {
+      1: 'RARE', 2: 'UNLIKELY', 3: 'POSSIBLE', 4: 'LIKELY', 5: 'ALMOST_CERTAIN',
+    };
+    return map[w] || 'RARE';
+  }
+
+  private getWeightToImpact(w: number): RiskImpact {
+    const map: Record<number, RiskImpact> = {
+      1: 'INSIGNIFICANT', 2: 'MINOR', 3: 'MODERATE', 4: 'MAJOR', 5: 'CATASTROPHIC',
+    };
+    return map[w] || 'INSIGNIFICANT';
+  }
+
   private calculateRiskScore(likelihood: RiskLikelihood, impact: RiskImpact): number {
     // Note: We use a string key lookup here (`likelihood as string`) instead of directly
     // referencing Prisma Enums as object keys to prevent Vitest mocking issues during testing,

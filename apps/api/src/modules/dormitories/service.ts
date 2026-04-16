@@ -375,6 +375,60 @@ export async function getRoomOccupancy(roomId: string) {
   };
 }
 
+export async function getRoomSocialAnalytics(roomId: string) {
+  const room = await prisma.room.findUnique({
+    where: { id: roomId },
+    include: {
+      assignments: {
+        where: { isActive: true },
+        include: {
+          student: {
+            include: {
+              violations: {
+                where: { status: 'VERIFIED' },
+                orderBy: { createdAt: 'desc' },
+                take: 5
+              },
+              healthRecords: {
+                orderBy: { visitDate: 'desc' },
+                take: 1
+              }
+            }
+          }
+        }
+      }
+    }
+  });
+
+  if (!room) return null;
+
+  const members = room.assignments.map(a => {
+    const s = a.student;
+    const violationPoints = s.violations.reduce((sum, v) => sum + Number(v.points), 0);
+
+    return {
+      studentId: s.id,
+      name: s.user?.name,
+      riskScore: violationPoints,
+      lastHealthStatus: s.healthRecords[0]?.diagnosis || 'Sehat',
+      recentViolations: s.violations.length
+    };
+  });
+
+  // Calculate room harmony score (simplified)
+  // Higher violations = lower harmony
+  const totalViolations = members.reduce((sum, m) => sum + m.riskScore, 0);
+  const harmonyScore = Math.max(0, 100 - (totalViolations / Math.max(1, members.length)));
+
+  return {
+    roomId,
+    roomName: room.name,
+    harmonyScore,
+    members,
+    status: harmonyScore > 80 ? 'KONDUSIF' : harmonyScore > 50 ? 'PERLU_PENGAWASAN' : 'RAWAN_KONFLIK'
+  };
+}
+
 export async function getDormitoryStats(dormitoryId: string) {
   const dormitory = await prisma.dormitory.findUnique({
     where: { id: dormitoryId },

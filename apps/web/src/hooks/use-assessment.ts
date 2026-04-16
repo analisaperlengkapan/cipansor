@@ -115,6 +115,32 @@ export function useUnifiedRaport(studentId: string, academicYearId: string, seme
   });
 }
 
+export function useStudentHolisticAnalytics(studentId: string, academicYearId: string) {
+  return useQuery({
+    queryKey: ["student-holistic-analytics", studentId, academicYearId],
+    queryFn: async () => {
+      const response = await api.get(`/assessment/students/${studentId}/holistic`, {
+        params: { academicYearId },
+      });
+      return response.data.data;
+    },
+    enabled: !!studentId && !!academicYearId,
+  });
+}
+
+export function useUnitEducationAnalytics(unitId: string, academicYearId: string) {
+  return useQuery({
+    queryKey: ["unit-education-analytics", unitId, academicYearId],
+    queryFn: async () => {
+      const response = await api.get(`/assessment/units/${unitId}/analytics`, {
+        params: { academicYearId },
+      });
+      return response.data.data;
+    },
+    enabled: !!unitId && !!academicYearId,
+  });
+}
+
 // Alias for backward compatibility or clarity
 export const useAssessments = useExams;
 export const useAssessment = useExam;

@@ -709,6 +709,72 @@ export class CBTService {
     });
   }
 
+  static async getTopicMasteryAnalytics(examId: string) {
+    const exam = await prisma.exam.findUnique({
+      where: { id: examId },
+      include: {
+        questionBank: {
+          include: {
+            questions: {
+              include: {
+                learningObjective: true,
+              },
+            },
+          },
+        },
+        attempts: {
+          where: { status: 'COMPLETED' },
+          include: {
+            answers: true,
+          },
+        },
+      },
+    });
+
+    if (!exam || !exam.questionBank) return null;
+
+    const topicMastery: Record<string, {
+      objectiveId: string,
+      code: string,
+      description: string,
+      totalPoints: number,
+      earnedPoints: number
+    }> = {};
+
+    // Map objectives
+    exam.questionBank.questions.forEach(q => {
+      if (q.learningObjective) {
+        const obj = q.learningObjective;
+        if (!topicMastery[obj.id]) {
+          topicMastery[obj.id] = {
+            objectiveId: obj.id,
+            code: obj.code,
+            description: obj.description,
+            totalPoints: 0,
+            earnedPoints: 0
+          };
+        }
+        // Multiply by number of attempts to get total possible points across class
+        topicMastery[obj.id].totalPoints += q.points * exam.attempts.length;
+      }
+    });
+
+    // Aggregate earned points
+    exam.attempts.forEach(attempt => {
+      attempt.answers.forEach(answer => {
+        const question = exam.questionBank!.questions.find(q => q.id === answer.questionId);
+        if (question?.learningObjectiveId && topicMastery[question.learningObjectiveId]) {
+          topicMastery[question.learningObjectiveId].earnedPoints += Number(answer.score || 0);
+        }
+      });
+    });
+
+    return Object.values(topicMastery).map(m => ({
+      ...m,
+      masteryLevel: m.totalPoints > 0 ? (m.earnedPoints / m.totalPoints) * 100 : 0
+    })).sort((a, b) => a.masteryLevel - b.masteryLevel); // Weakest topics first
+  }
+
   static async finishExamAttempt(attemptId: string, studentId: string) {
     const attempt = await prisma.examAttempt.findUnique({
       where: { id: attemptId },

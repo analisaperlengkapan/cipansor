@@ -14,6 +14,8 @@ router.use(authenticate);
 // ==================== EXAMS ====================
 
 router.get('/exams/:id/analytics', controller.getExamAnalytics);
+router.get('/units/:unitId/analytics', controller.getUnitEducationAnalytics);
+router.get('/students/:studentId/holistic', controller.getStudentHolisticAnalytics);
 
 /**
  * @swagger

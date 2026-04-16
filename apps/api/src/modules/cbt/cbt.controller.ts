@@ -36,6 +36,16 @@ export class CBTController {
     }
   }
 
+  static async getTopicMasteryAnalytics(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { examId } = req.params;
+      const analytics = await CBTService.getTopicMasteryAnalytics(examId);
+      res.json({ success: true, data: analytics });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async createQuestionBank(req: Request, res: Response, next: NextFunction) {
     try {
       if (!req.body.title) {

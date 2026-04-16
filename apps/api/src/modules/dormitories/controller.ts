@@ -172,6 +172,22 @@ export async function getRoomById(req: Request, res: Response, next: NextFunctio
   }
 }
 
+export async function getRoomSocialAnalytics(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { id } = req.params;
+    const analytics = await dormitoryService.getRoomSocialAnalytics(id);
+    if (!analytics) {
+      throw Errors.notFound('Room not found');
+    }
+    res.json({
+      success: true,
+      data: analytics,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function getRoomOccupancy(req: Request, res: Response, next: NextFunction) {
   try {
     const { id } = req.params;

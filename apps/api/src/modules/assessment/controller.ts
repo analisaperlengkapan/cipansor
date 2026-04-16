@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import * as assessmentService from './service';
+import { AssessmentAnalyticsService } from './analytics.service';
 import {
   createExamSchema,
   updateExamSchema,
@@ -28,6 +29,40 @@ export async function getExams(req: Request, res: Response, next: NextFunction) 
     const query = examQuerySchema.parse(req.query);
     const result = await assessmentService.getExams(query);
     res.json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getUnitEducationAnalytics(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { unitId } = req.params;
+    const { academicYearId } = req.query;
+    if (!academicYearId) {
+      return res.status(400).json({ success: false, error: 'academicYearId is required' });
+    }
+    const result = await AssessmentAnalyticsService.getUnitEducationAnalytics(
+      unitId,
+      academicYearId as string
+    );
+    res.json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getStudentHolisticAnalytics(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { studentId } = req.params;
+    const { academicYearId } = req.query;
+    if (!academicYearId) {
+      return res.status(400).json({ success: false, error: 'academicYearId is required' });
+    }
+    const result = await AssessmentAnalyticsService.getStudentHolisticAnalytics(
+      studentId,
+      academicYearId as string
+    );
+    res.json({ success: true, data: result });
   } catch (error) {
     next(error);
   }

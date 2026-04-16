@@ -24,7 +24,17 @@ const { mockPrisma } = vi.hoisted(() => {
         findMany: vi.fn(),
         count: vi.fn(),
       },
+      invoice: {
+        findMany: vi.fn(),
+      },
+      purchaseRequest: {
+        findMany: vi.fn(),
+      },
+      budget: {
+        findMany: vi.fn(),
+      },
       $queryRaw: vi.fn(),
+      $transaction: vi.fn().mockImplementation((cb) => cb(mockPrisma)),
     },
   };
 });
@@ -130,6 +140,34 @@ describe('Finance Enhancement Service', () => {
         expense: 2000000,
         net: 3000000,
       });
+    });
+  });
+
+  describe('getCashFlowForecast', () => {
+    it('should aggregate income from invoices and expenses from budgets/PRs', async () => {
+      const mockUnitId = 'unit-1';
+
+      // Mock Invoices (Income)
+      mockPrisma.invoice.findMany.mockResolvedValue([
+        { amount: 10000000 },
+        { amount: 5000000 }
+      ]);
+
+      // Mock Purchase Requests (Committed Expense)
+      mockPrisma.purchaseRequest.findMany.mockResolvedValue([
+        { totalEstimated: 3000000 }
+      ]);
+
+      // Mock Budgets (Projected Expense)
+      mockPrisma.budget.findMany.mockResolvedValue([
+        { amount: 5000000, usedAmount: 2000000 } // 3M remaining
+      ]);
+
+      const result = await financeEnhancementService.getCashFlowForecast(mockUnitId);
+
+      expect(result.projectedIncome).toBe(15000000);
+      expect(result.projectedExpense).toBe(6000000); // 3M PR + 3M budget
+      expect(result.netCashFlow).toBe(9000000);
     });
   });
 });

@@ -116,8 +116,9 @@ export class PengawasanService {
     responsibleId?: string;
     dueDate?: string;
     planObjectiveId?: string;
+    linkToRiskId?: string;
   }) {
-    return prisma.auditFinding.create({
+    const finding = await prisma.auditFinding.create({
       data: {
         audit: { connect: { id: data.auditId } },
         findingNumber: data.findingNumber,
@@ -133,10 +134,34 @@ export class PengawasanService {
         planObjective: data.planObjectiveId ? { connect: { id: data.planObjectiveId } } : undefined,
       },
       include: {
+        audit: true,
         responsible: { select: { id: true, name: true } },
         planObjective: { select: { id: true, title: true } },
       },
     });
+
+    // If linked to a risk, update risk status/notes
+    if (data.linkToRiskId) {
+      await prisma.risk.update({
+        where: { id: data.linkToRiskId },
+        data: {
+          status: 'MONITORING',
+          consequence: `Updated by Audit Finding ${data.findingNumber}: ${data.title}`,
+        },
+      });
+    }
+
+    // If linked to a strategic objective, update its progress (conservative decrement if critical finding)
+    if (data.planObjectiveId && data.severity === 'CRITICAL') {
+      await prisma.planObjective.update({
+        where: { id: data.planObjectiveId },
+        data: {
+          progress: { decrement: 5 },
+        },
+      });
+    }
+
+    return finding;
   }
 
   async updateFinding(id: string, data: any) {

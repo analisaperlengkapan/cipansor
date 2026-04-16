@@ -96,6 +96,17 @@ export const useExamMonitoring = (examId: string) => {
   });
 };
 
+export const useTopicMastery = (examId: string) => {
+  return useQuery({
+    queryKey: ["exam-topic-mastery", examId],
+    queryFn: async () => {
+      const { data } = await api.get(`/cbt/exams/${examId}/topic-mastery`);
+      return data.data;
+    },
+    enabled: !!examId,
+  });
+};
+
 // Teacher Grading
 
 export const useAttemptGrading = (attemptId: string) => {

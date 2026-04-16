@@ -13,8 +13,18 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { useExamMonitoring } from "@/hooks/use-cbt";
-import { Loader2, UserCheck, Pencil, Calendar } from "lucide-react";
+import { useExamMonitoring, useTopicMastery } from "@/hooks/use-cbt";
+import { Loader2, UserCheck, Pencil, Calendar, BarChart2 } from "lucide-react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Cell
+} from "recharts";
 import Link from "next/link";
 
 export default function ExamMonitoringPage({
@@ -24,8 +34,9 @@ export default function ExamMonitoringPage({
 }) {
   const { id } = use(params);
   const { data: exam, isLoading } = useExamMonitoring(id);
+  const { data: topicMastery, isLoading: loadingTopics } = useTopicMastery(id);
 
-  if (isLoading) {
+  if (isLoading || loadingTopics) {
     return (
       <MainLayout>
         <div className="flex justify-center py-12">
@@ -102,6 +113,67 @@ export default function ExamMonitoringPage({
             </CardContent>
           </Card>
         </div>
+
+        {topicMastery && topicMastery.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <BarChart2 className="w-5 h-5 text-indigo-600" />
+                  <div>
+                    <CardTitle>Analisis Penguasaan Materi (Topic Mastery)</CardTitle>
+                    <CardDescription>Rata-rata persentase jawaban benar per Tujuan Pembelajaran (TP)</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[300px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={topicMastery} layout="vertical" margin={{ left: 120 }}>
+                      <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
+                      <XAxis type="number" domain={[0, 100]} hide />
+                      <YAxis
+                        dataKey="code"
+                        type="category"
+                        tick={{fontSize: 12, fontWeight: 'bold'}}
+                        width={100}
+                      />
+                      <Tooltip
+                        formatter={(value: number) => [`${value.toFixed(1)}%`, 'Tingkat Penguasaan']}
+                        labelFormatter={(label) => `TP: ${label}`}
+                      />
+                      <Bar dataKey="masteryLevel" radius={[0, 4, 4, 0]} barSize={20}>
+                        {topicMastery.map((entry: any, index: number) => (
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={entry.masteryLevel < 60 ? '#f43f5e' : entry.masteryLevel < 80 ? '#f59e0b' : '#10b981'}
+                          />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+
+                <div className="mt-4 grid grid-cols-1 gap-2">
+                   {topicMastery.slice(0, 3).map((topic: any) => (
+                     <div key={topic.objectiveId} className={`p-3 rounded-lg border flex items-center justify-between ${topic.masteryLevel < 60 ? 'bg-rose-50 border-rose-100' : 'bg-slate-50 border-slate-100'}`}>
+                        <div className="flex-1">
+                           <p className="text-xs font-bold text-slate-900">{topic.code}</p>
+                           <p className="text-xs text-slate-600 line-clamp-1">{topic.description}</p>
+                        </div>
+                        <div className="text-right ml-4">
+                           <Badge variant={topic.masteryLevel < 60 ? "destructive" : "outline"}>
+                             {topic.masteryLevel.toFixed(1)}%
+                           </Badge>
+                           {topic.masteryLevel < 60 && <p className="text-[10px] text-rose-600 font-bold mt-1 uppercase">Perlu Remedial</p>}
+                        </div>
+                     </div>
+                   ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         <Card>
           <CardHeader>

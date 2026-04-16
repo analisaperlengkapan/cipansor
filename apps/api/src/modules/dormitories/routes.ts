@@ -227,6 +227,12 @@ router.get(
   controller.getDormitoryStats
 );
 
+router.get(
+  '/rooms/:id/social-analytics',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
+  controller.getRoomSocialAnalytics
+);
+
 /**
  * @swagger
  * /api/dormitories/{id}:

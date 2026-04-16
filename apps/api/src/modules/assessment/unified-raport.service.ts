@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { ApiError, ErrorCode } from '@/middleware/error';
 import RaportMerdekaService from './raport-merdeka.service';
 import { generateRaporPesantren } from '../rapor-pesantren/rapor-pesantren.service';
+import { AssessmentAnalyticsService } from './analytics.service';
 
 /**
  * Service to generate a unified report combining academic (Merdeka)
@@ -52,7 +53,10 @@ export class UnifiedRaportService {
       generateRaporPesantren({ studentId, academicYearId, semester, unitId: student.unitId }),
     ]);
 
-    // 3. Structure the Unified Data
+    // 3. Get Holistic Analytics for Recommendation
+    const holistic = await AssessmentAnalyticsService.getStudentHolisticAnalytics(studentId, academicYearId);
+
+    // 4. Structure the Unified Data
     // Combines both worlds into a single cohesive structure for the frontend/PDF
     return {
       meta: {
@@ -97,6 +101,8 @@ export class UnifiedRaportService {
         islamic: raporPesantren.notes,
         principal: raportMerdeka.catatanKepalaSekolah,
         musyrif: raporPesantren.musyrifNotes,
+        holistic: holistic.interpretation,
+        recommendation: this.generateDevelopmentRecommendation(holistic),
       },
       signatures: {
         homeroomTeacher: enrollment.class.homeroomTeacher?.user.name,
@@ -110,6 +116,21 @@ export class UnifiedRaportService {
   /**
    * Get formatted Unified Raport with print layout options
    */
+  private static generateDevelopmentRecommendation(holistic: any): string {
+    const { breakdown } = holistic;
+    const lowest = Object.entries(breakdown).reduce((a: any, b: any) => a[1] < b[1] ? a : b);
+
+    const recommendations: Record<string, string> = {
+      academic: "Fokus pada peningkatan jam belajar mandiri dan konsultasi dengan guru mata pelajaran yang nilainya masih di bawah KKM.",
+      tahfidz: "Tingkatkan intensitas murojaah harian dan pastikan setoran ziyadah konsisten sesuai target juz per semester.",
+      behavior: "Perlu bimbingan intensif dalam kedisiplinan dan kepatuhan terhadap tata tertib pesantren.",
+      attendance: "Tingkatkan kedisiplinan dalam kehadiran di kelas dan kegiatan wajib lainnya.",
+      ibadah: "Meningkatkan kesadaran dalam menjalankan ibadah yaumiyah secara mandiri dan tepat waktu."
+    };
+
+    return recommendations[lowest[0]] || "Pertahankan prestasi dan terus kembangkan potensi diri di segala aspek.";
+  }
+
   static async getPrintData(studentId: string, academicYearId: string, semester: number) {
     const data = await this.generateUnifiedRaport(studentId, academicYearId, semester);
 

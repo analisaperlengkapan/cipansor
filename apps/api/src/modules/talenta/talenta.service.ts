@@ -283,6 +283,9 @@ export class TalentaService {
    * candidates whose currentRole contains the position keywords are ranked higher.
    */
   async suggestSuccessors(positionTitle: string, unitId: string) {
+    // Fetch ALL eligible talent profiles first, then score and rank them.
+    // Previously `take: 10` was applied BEFORE scoring, which could exclude
+    // the best keyword matches if they weren't among the 10 most recently updated.
     const topTalents = await prisma.talentProfile.findMany({
       where: {
         unitId,
@@ -292,7 +295,6 @@ export class TalentaService {
         user: { select: { id: true, name: true } },
       },
       orderBy: { updatedAt: 'desc' },
-      take: 10,
     });
 
     // Compute a basic keyword match score against the position title
@@ -317,7 +319,7 @@ export class TalentaService {
         readiness: t.category === 'HIGH_POTENTIAL' ? 'READY_NOW' : 'READY_IN_1_YEAR',
         matchScore: Math.min(100, baseScore + keywordBonus),
       };
-    }).sort((a, b) => b.matchScore - a.matchScore);
+    }).sort((a, b) => b.matchScore - a.matchScore).slice(0, 10);
   }
 
   async updateSuccession(id: string, data: any) {

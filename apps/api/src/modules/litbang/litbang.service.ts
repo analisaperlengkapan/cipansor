@@ -95,13 +95,9 @@ export class LitbangService {
       // Inline recalculation using the transaction client
       const milestones = await tx.researchMilestone.findMany({ where: { projectId: updated.projectId } });
       const now = new Date();
-      if (milestones.length === 0) {
-        await tx.researchProject.updateMany({
-          where: { id: updated.projectId, status: { not: 'CANCELLED' } },
-          data: { progress: 0, updatedAt: now },
-        });
-        return updated;
-      }
+      // Note: milestones.length === 0 is unreachable here because we just updated
+      // a milestone above, so at least one always exists. The guard is kept in
+      // deleteMilestone where it IS reachable.
       const completed = milestones.filter((m) => m.status === "COMPLETED").length;
       const progress = Math.round((completed / milestones.length) * 100);
       if (progress === 100) {

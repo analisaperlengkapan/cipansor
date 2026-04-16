@@ -681,24 +681,40 @@ export const sanadService = {
 
       if (enrollment) {
         let completedJuz = sanadCount;
+        let status: string = enrollment.status;
+
+        // Check once whether a passed 30-juz simaan justifies the COMPLETED state
+        const has30JuzSimaan = enrollment.status === 'COMPLETED'
+          ? await tx.simaanExam.findFirst({
+              where: {
+                studentId: enrollment.studentId,
+                passed: true,
+                juzStart: 1,
+                juzEnd: 30,
+              },
+              select: { id: true },
+            })
+          : null;
+
         if (enrollment.status === 'COMPLETED' && enrollment.completedJuz > sanadCount) {
-          const has30JuzSimaan = await tx.simaanExam.findFirst({
-            where: {
-              studentId: enrollment.studentId,
-              passed: true,
-              juzStart: 1,
-              juzEnd: 30,
-            },
-            select: { id: true },
-          });
           if (has30JuzSimaan) {
             completedJuz = Math.max(sanadCount, enrollment.completedJuz);
           }
         }
 
+        // If the enrollment was completed purely via sanad count (no simaan)
+        // and the count has now dropped below the target, revert to ACTIVE.
+        if (enrollment.status === 'COMPLETED' && completedJuz < enrollment.targetJuz) {
+          if (!has30JuzSimaan) {
+            status = 'ACTIVE';
+          }
+        }
+
         const shouldAutoComplete =
           enrollment.status === 'ACTIVE' && completedJuz >= enrollment.targetJuz;
-        const status = shouldAutoComplete ? 'COMPLETED' : enrollment.status;
+        if (shouldAutoComplete) {
+          status = 'COMPLETED';
+        }
 
         await tx.takhosusEnrollment.update({
           where: { id: enrollmentId },
@@ -706,6 +722,7 @@ export const sanadService = {
             completedJuz,
             status,
             ...(shouldAutoComplete && !enrollment.completedAt && { completedAt: new Date() }),
+            ...(status === 'ACTIVE' && enrollment.status === 'COMPLETED' && { completedAt: null }),
           },
         });
       }
@@ -745,19 +762,33 @@ export const sanadService = {
       // If so, the simaan is the authoritative source for completedJuz and we
       // preserve the higher value. Otherwise, use the actual sanad count.
       let completedJuz = sanadCount;
+      let status: string = enrollment.status;
+
+      // Check once whether a passed 30-juz simaan justifies the COMPLETED state
+      const has30JuzSimaan = enrollment.status === 'COMPLETED'
+        ? await tx.simaanExam.findFirst({
+            where: {
+              studentId: enrollment.studentId,
+              passed: true,
+              juzStart: 1,
+              juzEnd: 30,
+            },
+            select: { id: true },
+          })
+        : null;
+
       if (enrollment.status === 'COMPLETED' && enrollment.completedJuz > sanadCount) {
         // Only preserve the inflated completedJuz if a passed 30-juz simaan justifies it
-        const has30JuzSimaan = await tx.simaanExam.findFirst({
-          where: {
-            studentId: enrollment.studentId,
-            passed: true,
-            juzStart: 1,
-            juzEnd: 30,
-          },
-          select: { id: true },
-        });
         if (has30JuzSimaan) {
           completedJuz = Math.max(sanadCount, enrollment.completedJuz);
+        }
+      }
+
+      // If the enrollment was completed purely via sanad count (no simaan)
+      // and the count has now dropped below the target, revert to ACTIVE.
+      if (enrollment.status === 'COMPLETED' && completedJuz < enrollment.targetJuz) {
+        if (!has30JuzSimaan) {
+          status = 'ACTIVE';
         }
       }
 
@@ -766,7 +797,9 @@ export const sanadService = {
       // we should not overwrite the status — only update completedJuz.
       const shouldAutoComplete =
         enrollment.status === 'ACTIVE' && completedJuz >= enrollment.targetJuz;
-      const status = shouldAutoComplete ? 'COMPLETED' : enrollment.status;
+      if (shouldAutoComplete) {
+        status = 'COMPLETED';
+      }
 
       await tx.takhosusEnrollment.update({
         where: { id: enrollmentId },
@@ -774,6 +807,7 @@ export const sanadService = {
           completedJuz,
           status,
           ...(shouldAutoComplete && !enrollment.completedAt && { completedAt: new Date() }),
+          ...(status === 'ACTIVE' && enrollment.status === 'COMPLETED' && { completedAt: null }),
         },
       });
     });

@@ -7,7 +7,6 @@ import { Medal } from "lucide-react";
 interface TahfidzProgressChartProps {
   data: {
     date: string;
-    juz: number;
     totalAyah: number;
   }[];
 }

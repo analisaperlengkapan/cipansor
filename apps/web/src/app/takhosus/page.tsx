@@ -731,8 +731,7 @@ function TahfidzProgressChartWrapper() {
   // Only count newMemorization as "total ayat" — murajaah (review) is not new memorization
   const chartData = (progressData?.data?.monthlyProgress || []).map((item: any) => ({
     date: item.month,
-    juz: 0, // Placeholder as analytics might not have this specific juz count
-    totalAyah: item.newMemorization || 0
+    totalAyah: item.newMemorization || 0,
   }));
 
   return <TahfidzProgressChart data={chartData} />;

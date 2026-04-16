@@ -76,7 +76,39 @@ export class LitbangService {
     dueDate?: Date;
     sortOrder?: number;
   }) {
-    return prisma.researchMilestone.create({ data });
+    // Wrap create and progress recalculation in a transaction so the project's
+    // progress is always consistent with its milestones. Without this, adding a
+    // new non-COMPLETED milestone to a project that was auto-COMPLETED (100%
+    // progress) would leave the progress and status stale.
+    return prisma.$transaction(async (tx) => {
+      const created = await tx.researchMilestone.create({ data });
+
+      // Inline recalculation using the transaction client
+      const milestones = await tx.researchMilestone.findMany({ where: { projectId: created.projectId } });
+      const now = new Date();
+      const completed = milestones.filter((m) => m.status === "COMPLETED").length;
+      const progress = Math.round((completed / milestones.length) * 100);
+      if (progress === 100) {
+        const progressionStatuses = ['PROPOSAL', 'IN_PROGRESS', 'APPROVED'];
+        const result = await tx.researchProject.updateMany({
+          where: { id: created.projectId, status: { in: progressionStatuses } },
+          data: { progress, status: 'COMPLETED', updatedAt: now },
+        });
+        if (result.count === 0) {
+          await tx.researchProject.updateMany({
+            where: { id: created.projectId, status: { notIn: [...progressionStatuses, 'CANCELLED'] } },
+            data: { progress, updatedAt: now },
+          });
+        }
+      } else {
+        await tx.researchProject.updateMany({
+          where: { id: created.projectId, status: { not: 'CANCELLED' } },
+          data: { progress, updatedAt: now },
+        });
+      }
+
+      return created;
+    });
   }
 
   async updateMilestone(id: string, data: Partial<{
@@ -87,29 +119,83 @@ export class LitbangService {
     status: string;
     sortOrder: number;
   }>) {
-    const milestone = await prisma.researchMilestone.update({ where: { id }, data });
+    // Wrap update and progress recalculation in a transaction so the project's
+    // progress is always consistent with its milestones (matching deleteMilestone).
+    const milestone = await prisma.$transaction(async (tx) => {
+      const updated = await tx.researchMilestone.update({ where: { id }, data });
 
-    // Recalculate project progress based on milestones
-    await this.recalculateProgress(milestone.projectId);
+      // Inline recalculation using the transaction client
+      const milestones = await tx.researchMilestone.findMany({ where: { projectId: updated.projectId } });
+      const now = new Date();
+      // Note: milestones.length === 0 is unreachable here because we just updated
+      // a milestone above, so at least one always exists. The guard is kept in
+      // deleteMilestone where it IS reachable.
+      const completed = milestones.filter((m) => m.status === "COMPLETED").length;
+      const progress = Math.round((completed / milestones.length) * 100);
+      if (progress === 100) {
+        const progressionStatuses = ['PROPOSAL', 'IN_PROGRESS', 'APPROVED'];
+        const result = await tx.researchProject.updateMany({
+          where: { id: updated.projectId, status: { in: progressionStatuses } },
+          data: { progress, status: 'COMPLETED', updatedAt: now },
+        });
+        if (result.count === 0) {
+          await tx.researchProject.updateMany({
+            where: { id: updated.projectId, status: { notIn: [...progressionStatuses, 'CANCELLED'] } },
+            data: { progress, updatedAt: now },
+          });
+        }
+      } else {
+        await tx.researchProject.updateMany({
+          where: { id: updated.projectId, status: { not: 'CANCELLED' } },
+          data: { progress, updatedAt: now },
+        });
+      }
+
+      return updated;
+    });
 
     return milestone;
   }
 
   async deleteMilestone(id: string) {
-    const milestone = await prisma.researchMilestone.findUniqueOrThrow({ where: { id } });
-    await prisma.researchMilestone.delete({ where: { id } });
-    await this.recalculateProgress(milestone.projectId);
+    // Wrap delete and progress recalculation in a transaction so the project's
+    // progress is always consistent with its milestones.
+    await prisma.$transaction(async (tx) => {
+      const milestone = await tx.researchMilestone.findUniqueOrThrow({ where: { id } });
+      await tx.researchMilestone.delete({ where: { id } });
+      // Inline recalculation using the transaction client
+      const milestones = await tx.researchMilestone.findMany({ where: { projectId: milestone.projectId } });
+      const now = new Date();
+      if (milestones.length === 0) {
+        await tx.researchProject.updateMany({
+          where: { id: milestone.projectId, status: { not: 'CANCELLED' } },
+          data: { progress: 0, updatedAt: now },
+        });
+        return;
+      }
+      const completed = milestones.filter((m) => m.status === "COMPLETED").length;
+      const progress = Math.round((completed / milestones.length) * 100);
+      if (progress === 100) {
+        const progressionStatuses = ['PROPOSAL', 'IN_PROGRESS', 'APPROVED'];
+        const result = await tx.researchProject.updateMany({
+          where: { id: milestone.projectId, status: { in: progressionStatuses } },
+          data: { progress, status: 'COMPLETED', updatedAt: now },
+        });
+        if (result.count === 0) {
+          await tx.researchProject.updateMany({
+            where: { id: milestone.projectId, status: { notIn: [...progressionStatuses, 'CANCELLED'] } },
+            data: { progress, updatedAt: now },
+          });
+        }
+      } else {
+        await tx.researchProject.updateMany({
+          where: { id: milestone.projectId, status: { not: 'CANCELLED' } },
+          data: { progress, updatedAt: now },
+        });
+      }
+    });
   }
 
-  private async recalculateProgress(projectId: string) {
-    const milestones = await prisma.researchMilestone.findMany({ where: { projectId } });
-    if (milestones.length === 0) return;
-
-    const completed = milestones.filter((m) => m.status === "COMPLETED").length;
-    const progress = Math.round((completed / milestones.length) * 100);
-
-    await prisma.researchProject.update({ where: { id: projectId }, data: { progress } });
-  }
 
   // ── Innovation Proposals ──────────────────────────
   async getProposals(params: {

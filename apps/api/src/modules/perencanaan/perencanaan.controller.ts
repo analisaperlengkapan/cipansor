@@ -42,12 +42,16 @@ export const listPlans = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const getPlan = asyncHandler(async (req: Request, res: Response) => {
-  const plan = await perencanaanService.getPlanById(req.params.id);
-  if (!plan) throw Errors.notFound('Plan not found');
+  // Lightweight auth check first to avoid expensive journal aggregation for unauthorized users
+  const planAuth = await perencanaanService.getPlanForAuth(req.params.id);
+  if (!planAuth) throw Errors.notFound('Plan not found');
 
-  if (!isPrivileged(req.user?.role) && plan.unitId !== req.user?.unitId) {
+  if (!isPrivileged(req.user?.role) && planAuth.unitId !== req.user?.unitId) {
     throw Errors.forbidden('Access denied');
   }
+
+  const plan = await perencanaanService.getPlanById(req.params.id);
+  if (!plan) throw Errors.notFound('Plan not found');
 
   res.json({ success: true, data: plan });
 });
@@ -77,7 +81,7 @@ export const createPlan = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const updatePlan = asyncHandler(async (req: Request, res: Response) => {
-  const existing = await perencanaanService.getPlanById(req.params.id);
+  const existing = await perencanaanService.getPlanForAuth(req.params.id);
   if (!existing) throw Errors.notFound('Plan not found');
 
   if (!isPrivileged(req.user?.role) && existing.unitId !== req.user?.unitId) {
@@ -102,7 +106,7 @@ export const approvePlan = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const deletePlan = asyncHandler(async (req: Request, res: Response) => {
-  const existing = await perencanaanService.getPlanById(req.params.id);
+  const existing = await perencanaanService.getPlanForAuth(req.params.id);
   if (!existing) throw Errors.notFound('Plan not found');
 
   if (!isPrivileged(req.user?.role) && existing.unitId !== req.user?.unitId) {

@@ -59,7 +59,7 @@ export class PerencanaanService {
   }
 
   async getPlanById(id: string) {
-    return prisma.strategicPlan.findUnique({
+    const plan = await prisma.strategicPlan.findUnique({
       where: { id },
       include: {
         unit: { select: { id: true, name: true } },
@@ -73,7 +73,7 @@ export class PerencanaanService {
                 pic: { select: { id: true, name: true } },
                 budgetRel: {
                   include: {
-                    account: { select: { code: true, name: true } },
+                    account: { select: { id: true, code: true, name: true, normalBalance: true } },
                   },
                 },
               },
@@ -85,6 +85,174 @@ export class PerencanaanService {
         risks: true,
         internalAudits: true,
       },
+    });
+
+    if (!plan) return null;
+
+    // Financial realization: gracefully degrade on error so the plan detail
+    // is still returned even when journal aggregation fails.
+    //
+    // KNOWN LIMITATIONS:
+    // 1. Journal entries are aggregated at the account level, not activity level.
+    //    If an account (e.g., '5-1-01 General Office Expenses') has journal entries
+    //    from business processes unrelated to this plan, those amounts will be included
+    //    in the realization figure. This is an architectural limitation — there is no
+    //    direct FK between JournalEntry and PlanActivity in the current schema.
+    // 2. The date range filter uses the plan's startDate/endDate, not the Budget
+    //    model's academicYearId. For multi-year RENSTRA plans, realization will span
+    //    multiple academic years, while the linked Budget may only cover one year.
+    //    Short-lived plans (RKAS, RKT, PROGRAM) are typically aligned with a single
+    //    academic year so this mismatch is less impactful for them.
+    try {
+      // 1. Collect all unique accountIds and their normalBalance across every activity
+      const accountMap = new Map<string, { normalBalance: string }>();
+      for (const obj of plan.objectives) {
+        for (const act of obj.activities) {
+          if (act.budgetRel && !accountMap.has(act.budgetRel.accountId)) {
+            accountMap.set(act.budgetRel.accountId, {
+              normalBalance: act.budgetRel.account.normalBalance,
+            });
+          }
+        }
+      }
+
+      // 2. Aggregate journal entries once per unique accountId
+      //    Extend endDate to end-of-day (23:59:59.999) so that journal entries
+      //    recorded on the last day of the plan period are included. Without this,
+      //    if endDate is stored as midnight UTC (e.g., 2024-12-31T00:00:00Z),
+      //    any entry after midnight on that day would be excluded by the `lte` filter.
+      const endOfDay = new Date(plan.endDate);
+      endOfDay.setUTCHours(23, 59, 59, 999);
+
+      const accountRealizationMap = new Map<string, number>();
+      await Promise.all(
+        Array.from(accountMap.entries()).map(async ([accountId, meta]) => {
+          const journalAggregates = await prisma.journalEntry.aggregate({
+            where: {
+              accountId,
+              unitId: plan.unitId,
+              date: {
+                gte: plan.startDate,
+                lte: endOfDay,
+              },
+            },
+            _sum: {
+              debit: true,
+              credit: true,
+            },
+          });
+
+          let realization: number;
+          if (meta.normalBalance === 'DEBIT') {
+            realization =
+              (journalAggregates._sum.debit?.toNumber() || 0) -
+              (journalAggregates._sum.credit?.toNumber() || 0);
+          } else {
+            realization =
+              (journalAggregates._sum.credit?.toNumber() || 0) -
+              (journalAggregates._sum.debit?.toNumber() || 0);
+          }
+          accountRealizationMap.set(accountId, Math.max(0, realization));
+        })
+      );
+
+      // 3. For each account, compute the total budget across all activities sharing it
+      //    so we can distribute realization proportionally.
+      const accountTotalBudget = new Map<string, number>();
+      for (const obj of plan.objectives) {
+        for (const act of obj.activities) {
+          if (act.budgetRel) {
+            const accId = act.budgetRel.accountId;
+            const actBudget = act.budget?.toNumber() || 0;
+            accountTotalBudget.set(accId, (accountTotalBudget.get(accId) || 0) + actBudget);
+          }
+        }
+      }
+
+      // 4. Calculate realization for each activity and objective
+      const objectivesWithRealization = plan.objectives.map((obj) => {
+        const activitiesWithRealization = obj.activities.map((act) => {
+          let realization = 0;
+          if (act.budgetRel) {
+            const accId = act.budgetRel.accountId;
+            const accountTotal = accountRealizationMap.get(accId) || 0;
+            const totalBudgetForAccount = accountTotalBudget.get(accId) || 0;
+            const actBudget = act.budget?.toNumber() || 0;
+
+            // Distribute the account's realization proportionally by budget share
+            if (totalBudgetForAccount > 0 && actBudget > 0) {
+              realization = accountTotal * (actBudget / totalBudgetForAccount);
+            } else if (totalBudgetForAccount === 0) {
+              // All activities have zero budget — split evenly as fallback
+              const actCount = [...plan.objectives]
+                .flatMap((o) => o.activities)
+                .filter((a) => a.budgetRel?.accountId === accId).length;
+              realization = actCount > 0 ? accountTotal / actCount : 0;
+            }
+          }
+          return { ...act, realization: Math.max(0, realization) };
+        });
+
+        // Only include activities with a budgetRel link in the total budget
+        // so that untracked activities don't dilute the financial progress.
+        const totalBudget = activitiesWithRealization.reduce(
+          (sum, act) => sum + (act.budgetRel ? (act.budget?.toNumber() || 0) : 0),
+          0
+        );
+        const totalRealization = activitiesWithRealization.reduce(
+          (sum, act) => sum + act.realization,
+          0
+        );
+
+        return {
+          ...obj,
+          activities: activitiesWithRealization,
+          totalBudget,
+          totalRealization,
+          financialProgress: totalBudget > 0 ? Math.min((totalRealization / totalBudget) * 100, 100) : 0,
+        };
+      });
+
+      const totalPlanBudget = objectivesWithRealization.reduce((sum, obj) => sum + obj.totalBudget, 0);
+      const totalPlanRealization = objectivesWithRealization.reduce(
+        (sum, obj) => sum + obj.totalRealization,
+        0
+      );
+
+      return {
+        ...plan,
+        objectives: objectivesWithRealization,
+        totalBudget: totalPlanBudget,
+        totalRealization: totalPlanRealization,
+        financialProgress: totalPlanBudget > 0 ? Math.min((totalPlanRealization / totalPlanBudget) * 100, 100) : 0,
+      };
+    } catch (err: any) {
+      console.error('[Perencanaan] Journal aggregation failed, returning plan without financial data:', err?.message || err);
+      // Return the plan with zero realization so the page still renders
+      const fallbackObjectives = plan.objectives.map((obj) => ({
+        ...obj,
+        activities: obj.activities.map((act) => ({ ...act, realization: 0 })),
+        totalBudget: obj.activities.reduce((sum, act) => sum + (act.budgetRel ? (act.budget?.toNumber() || 0) : 0), 0),
+        totalRealization: 0,
+        financialProgress: 0,
+      }));
+      return {
+        ...plan,
+        objectives: fallbackObjectives,
+        totalBudget: fallbackObjectives.reduce((sum, obj) => sum + obj.totalBudget, 0),
+        totalRealization: 0,
+        financialProgress: 0,
+      };
+    }
+  }
+
+  /**
+   * Lightweight lookup for authorization checks — no journal aggregation.
+   */
+  async getPlanForAuth(id: string) {
+    return prisma.strategicPlan.findUnique({
+      where: { id },
+      select: { id: true, unitId: true },
     });
   }
 

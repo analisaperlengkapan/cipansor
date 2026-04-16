@@ -246,6 +246,17 @@ export interface AlertTrigger {
   triggeredAt: string;
 }
 
+export interface AuditSuggestion {
+  riskId: string;
+  riskCode: string;
+  riskLevel: string;
+  suggestedTitle: string;
+  suggestedDescription: string;
+  strategicPlanId?: string | null;
+  strategicPlanTitle?: string;
+  priority: string;
+}
+
 export interface GRCStats {
   plans: {
     activeCount: number;
@@ -266,4 +277,5 @@ export interface GRCStats {
     complianceRate: number;
     statusDistribution: Record<string, number>;
   };
+  auditSuggestions?: AuditSuggestion[];
 }

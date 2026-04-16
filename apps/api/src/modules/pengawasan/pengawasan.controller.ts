@@ -140,3 +140,31 @@ export const deleteFollowUp = asyncHandler(async (req: Request, res: Response) =
   await pengawasanService.deleteFollowUp(req.params.id);
   res.json({ success: true, message: 'Follow-up deleted' });
 });
+
+// ==================== SUGGESTIONS ====================
+
+export const getAuditSuggestions = asyncHandler(async (req: Request, res: Response) => {
+  const isPrivilegedUser = isPrivileged(req.user?.role);
+  const unitId = req.user?.unitId;
+
+  if (!unitId && !isPrivilegedUser) throw Errors.unauthorized('Unit ID required');
+
+  // Privileged users can:
+  //   - pass ?unitId=<uuid> to scope to a specific unit
+  //   - pass ?unitId=all   to get cross-unit suggestions (global view)
+  //   - omit ?unitId       to default to their own token unitId (or cross-unit if token has none)
+  // Non-privileged users always use their token unitId.
+  let targetUnitId: string | undefined = unitId;
+  if (isPrivilegedUser) {
+    const queryUnitId = req.query.unitId ? String(req.query.unitId) : undefined;
+    if (queryUnitId === 'all') {
+      targetUnitId = undefined;
+    } else if (queryUnitId) {
+      targetUnitId = queryUnitId;
+    }
+    // else: no query param → falls through to token unitId (may be undefined for tokenless admins)
+  }
+
+  const suggestions = await pengawasanService.suggestAuditSchedules(targetUnitId);
+  res.json({ success: true, data: suggestions });
+});

@@ -212,29 +212,41 @@ export async function getTakhosusSummary(
   endDate: Date,
   config: RaporConfig
 ): Promise<TakhosusSummary> {
-  // Get all active takhosus enrollments for the student
-  const takhosusEnrollments = await prisma.takhosusEnrollment.findMany({
-    where: {
-      studentId,
-      status: 'ACTIVE',
-      enrolledAt: {
-        lte: endDate,
+  // Get all active takhosus enrollments and simaan exam count in parallel
+  const [takhosusEnrollments, simaanExamCount] = await Promise.all([
+    prisma.takhosusEnrollment.findMany({
+      where: {
+        studentId,
+        status: 'ACTIVE',
+        enrolledAt: {
+          lte: endDate,
+        },
       },
-    },
-    include: {
-      halaqoh: {
-        select: { name: true, isActive: true },
-      },
-      sanadRecords: {
-        where: {
-          certifiedAt: {
-            gte: startDate,
-            lte: endDate,
+      include: {
+        halaqoh: {
+          select: { name: true, isActive: true },
+        },
+        sanadRecords: {
+          where: {
+            certifiedAt: {
+              gte: startDate,
+              lte: endDate,
+            },
           },
         },
       },
-    },
-  });
+    }),
+    prisma.simaanExam.count({
+      where: {
+        studentId,
+        passed: true,
+        examDate: {
+          gte: startDate,
+          lte: endDate,
+        },
+      },
+    }),
+  ]);
 
   const enrolledHalaqoh = takhosusEnrollments.length;
 
@@ -246,6 +258,10 @@ export async function getTakhosusSummary(
       grade: 'MUMTAZ',
       score: 100, // No takhosus so score shouldn't negatively impact
       halaqohDetails: [],
+      formulaVersion: 2,
+      baseScore: 100,
+      simaanBonus: 0,
+      simaanExamCount: 0,
     };
   }
 
@@ -282,12 +298,18 @@ export async function getTakhosusSummary(
   });
 
   const averageScore = totalSessions > 0 ? totalSanadScores / totalSessions : 0;
+
   // Fallback to progress if no sanad tests exist in period
-  const finalScore =
-    totalSessions > 0
-      ? averageScore
-      : takhosusEnrollments.reduce((sum, e) => sum + (e.targetJuz ? Math.round((e.completedJuz / e.targetJuz) * 100) : 0), 0) /
-        enrolledHalaqoh;
+  const baseScore = totalSessions > 0
+    ? averageScore
+    : takhosusEnrollments.reduce((sum, e) => sum + (e.targetJuz ? Math.round((e.completedJuz / e.targetJuz) * 100) : 0), 0) /
+      enrolledHalaqoh;
+
+  // Simaan bonus: Each passed simaan exam adds to the score (capped at 20 points).
+  // Only apply when the student has a non-zero base score to prevent inflating
+  // a student with no sanad/progress data purely from simaan passes.
+  const simaanBonus = baseScore > 0 ? Math.min(simaanExamCount * 5, 20) : 0;
+  const finalScore = Math.min(100, baseScore + simaanBonus);
 
   return {
     enrolledHalaqoh,
@@ -296,6 +318,13 @@ export async function getTakhosusSummary(
     grade: getGradeFromScore(finalScore, config.gradeThresholds),
     score: finalScore,
     halaqohDetails,
+    // Store formula metadata so that rapor scores can be compared fairly across
+    // periods even when the scoring formula changes. Consumers can use
+    // formulaVersion to decide whether two rapor scores are directly comparable.
+    formulaVersion: 2, // v1 = base score only; v2 = base + simaan bonus (max 20)
+    baseScore,
+    simaanBonus,
+    simaanExamCount,
   };
 }
 

@@ -268,7 +268,58 @@ export class TalentaService {
   async getSuccessionById(id: string) {
     return prisma.successionPlan.findUnique({
       where: { id },
+      include: {
+        currentHolder: { select: { id: true, name: true } },
+        successor: {
+          include: { user: { select: { id: true, name: true } } },
+        },
+      },
     });
+  }
+
+  /**
+   * Automatically suggest potential successors based on Talent Matrix.
+   * Filters by unit and talent category. When positionTitle is provided,
+   * candidates whose currentRole contains the position keywords are ranked higher.
+   */
+  async suggestSuccessors(positionTitle: string, unitId: string) {
+    // Fetch ALL eligible talent profiles first, then score and rank them.
+    // Previously `take: 10` was applied BEFORE scoring, which could exclude
+    // the best keyword matches if they weren't among the 10 most recently updated.
+    const topTalents = await prisma.talentProfile.findMany({
+      where: {
+        unitId,
+        category: { in: ['HIGH_POTENTIAL', 'KEY_TALENT'] },
+      },
+      include: {
+        user: { select: { id: true, name: true } },
+      },
+      orderBy: { updatedAt: 'desc' },
+    });
+
+    // Compute a basic keyword match score against the position title
+    const positionKeywords = positionTitle
+      .toLowerCase()
+      .split(/\s+/)
+      .filter((w) => w.length > 2);
+
+    return topTalents.map((t) => {
+      const roleWords = (t.currentRole || '').toLowerCase();
+      const keywordMatches = positionKeywords.filter((kw) => roleWords.includes(kw)).length;
+      const keywordBonus = positionKeywords.length > 0
+        ? Math.round((keywordMatches / positionKeywords.length) * 10)
+        : 0;
+
+      const baseScore = t.category === 'HIGH_POTENTIAL' ? 85 : 70;
+      return {
+        talentProfileId: t.id,
+        name: t.user.name,
+        currentRole: t.currentRole,
+        category: t.category,
+        readiness: t.category === 'HIGH_POTENTIAL' ? 'READY_NOW' : 'READY_IN_1_YEAR',
+        matchScore: Math.min(100, baseScore + keywordBonus),
+      };
+    }).sort((a, b) => b.matchScore - a.matchScore).slice(0, 10);
   }
 
   async updateSuccession(id: string, data: any) {

@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Target, Calendar, CheckCircle2, TrendingUp, Activity, BarChart, ShieldAlert, ClipboardCheck, ArrowRight, Pencil, Trash2, Wallet } from "lucide-react";
+import { ArrowLeft, Target, Calendar, CheckCircle2, TrendingUp, Activity, BarChart, ShieldAlert, ClipboardCheck, ArrowRight, Pencil, Trash2, Wallet, PieChart } from "lucide-react";
 import { RiskLevelBadge } from "@/components/risk/risk-badges";
 import Link from "next/link";
 import { ActivityDialog } from "./activity-dialog";
@@ -105,14 +105,27 @@ export default function PerencanaanDetailPage() {
               {plan.description || "Belum ada deskripsi."}
             </p>
             
-            <div className="pt-4 border-t">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm font-semibold flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4" /> Progres Keseluruhan Rencana
-                </span>
-                <span className="text-sm font-bold text-primary">{plan.progress}%</span>
+            <div className="pt-4 border-t space-y-4">
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm font-semibold flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4" /> Progres Capaian Target
+                  </span>
+                  <span className="text-sm font-bold text-primary">{plan.progress}%</span>
+                </div>
+                <Progress value={plan.progress} className="h-3" />
               </div>
-              <Progress value={plan.progress} className="h-3" />
+
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm font-semibold flex items-center gap-2">
+                    <PieChart className="w-4 h-4" /> Realisasi Anggaran (Financial Realization)
+                  </span>
+                  <span className="text-sm font-bold text-emerald-600">{Math.round(plan.financialProgress || 0)}%</span>
+                </div>
+                <Progress value={plan.financialProgress} className="h-3 bg-slate-100" />
+                <p className="text-[10px] text-muted-foreground mt-1">Dihitung otomatis berdasarkan Jurnal Akuntansi yang relevan.</p>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -276,6 +289,11 @@ export default function PerencanaanDetailPage() {
                                 <div className="flex flex-wrap gap-2 text-xs text-muted-foreground mt-2">
                                   <Badge variant="outline" className="text-[10px]">{act.status}</Badge>
                                   <Badge variant="outline" className="text-[10px]">{act.priority}</Badge>
+                                  {Number(act.budget) > 0 && (
+                                  <Badge variant="secondary" className="text-[10px] bg-emerald-50 text-emerald-700 border-emerald-100">
+                                    Realisasi: {Math.min(100, Math.round(((act.realization || 0) / Number(act.budget)) * 100))}%
+                                  </Badge>
+                                  )}
                                   {act.pic && (
                                     <span className="flex items-center gap-1">
                                       <CheckCircle2 className="w-3 h-3" /> {act.pic.name}

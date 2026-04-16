@@ -179,6 +179,16 @@ export const deleteSuccession = asyncHandler(async (req: Request, res: Response)
   res.json({ success: true, message: 'Succession plan deleted' });
 });
 
+// ==================== SUGGESTIONS ====================
+
+export const suggestSuccessors = asyncHandler(async (req: Request, res: Response) => {
+  const unitId = resolveUnitId(req, req.query.unitId as string);
+  const positionTitle = req.query.positionTitle as string;
+  if (!positionTitle) throw Errors.badRequest('positionTitle query parameter is required');
+  const suggestions = await talentaService.suggestSuccessors(positionTitle, unitId);
+  res.json({ success: true, data: suggestions });
+});
+
 // ==================== ANALYTICS ====================
 
 export const getTalentAnalytics = asyncHandler(async (req: Request, res: Response) => {

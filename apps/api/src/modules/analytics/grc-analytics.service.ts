@@ -1,5 +1,6 @@
 import { prisma } from '../../lib/prisma';
 import { RiskLevel, PlanStatus, ComplianceStatus } from '@prisma/client';
+import { pengawasanService } from '../pengawasan/pengawasan.service';
 
 export interface GRCStats {
   plans: {
@@ -21,12 +22,22 @@ export interface GRCStats {
     complianceRate: number;
     statusDistribution: Record<ComplianceStatus, number>;
   };
+  auditSuggestions?: {
+    riskId: string;
+    riskCode: string;
+    riskLevel: string;
+    suggestedTitle: string;
+    suggestedDescription: string;
+    strategicPlanId?: string | null;
+    strategicPlanTitle?: string;
+    priority: string;
+  }[];
 }
 
 export async function getGRCStats(unitId?: string): Promise<GRCStats> {
   const whereClause = unitId ? { unitId } : {};
 
-  const [plans, risks, findings, resolvedFindings, compliances] = await Promise.all([
+  const [plans, risks, findings, resolvedFindings, compliances, auditSuggestions] = await Promise.all([
     // 1. Strategic Plans
     prisma.strategicPlan.findMany({
       where: {
@@ -64,6 +75,16 @@ export async function getGRCStats(unitId?: string): Promise<GRCStats> {
     prisma.shariaCompliance.findMany({
       where: whereClause,
       select: { score: true, status: true },
+    }),
+
+    // 5. Audit Suggestions (gracefully degrades on error)
+    // When unitId is provided, suggest for that unit; otherwise run a single cross-unit query.
+    // Previous implementation fanned out across up to 20 units (2 queries each = 40 DB round-trips).
+    // Now pengawasanService.suggestAuditSchedules accepts an optional unitId and handles
+    // cross-unit aggregation in a single pair of queries when unitId is omitted.
+    pengawasanService.suggestAuditSchedules(unitId).catch((err) => {
+      console.error('[GRC] suggestAuditSchedules failed, returning empty suggestions:', err?.message || err);
+      return [];
     }),
   ]);
 
@@ -125,5 +146,6 @@ export async function getGRCStats(unitId?: string): Promise<GRCStats> {
       complianceRate: Math.round(avgShariaScore * 100) / 100,
       statusDistribution: shariaStatusDist,
     },
+    auditSuggestions,
   };
 }

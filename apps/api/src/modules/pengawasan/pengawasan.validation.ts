@@ -37,6 +37,7 @@ export const createFindingSchema = z.object({
   recommendation: z.string().optional(),
   responsibleId: z.string().uuid().optional(),
   dueDate: z.string().datetime().optional(),
+  planObjectiveId: z.string().uuid().optional(),
 });
 
 export const updateFindingSchema = z.object({
@@ -49,6 +50,7 @@ export const updateFindingSchema = z.object({
   recommendation: z.string().optional(),
   responsibleId: z.string().uuid().nullable().optional(),
   dueDate: z.string().datetime().optional(),
+  planObjectiveId: z.string().uuid().nullable().optional(),
 });
 
 export const createFollowUpSchema = z.object({

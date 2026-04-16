@@ -72,6 +72,7 @@ export class PengawasanService {
         findings: {
           include: {
             responsible: { select: { id: true, name: true } },
+            planObjective: { select: { id: true, title: true } },
             followUps: {
               include: {
                 verifiedBy: { select: { id: true, name: true } },
@@ -114,6 +115,7 @@ export class PengawasanService {
     recommendation?: string;
     responsibleId?: string;
     dueDate?: string;
+    planObjectiveId?: string;
   }) {
     return prisma.auditFinding.create({
       data: {
@@ -128,25 +130,33 @@ export class PengawasanService {
         recommendation: data.recommendation,
         responsible: data.responsibleId ? { connect: { id: data.responsibleId } } : undefined,
         dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
+        planObjective: data.planObjectiveId ? { connect: { id: data.planObjectiveId } } : undefined,
       },
       include: {
         responsible: { select: { id: true, name: true } },
+        planObjective: { select: { id: true, title: true } },
       },
     });
   }
 
   async updateFinding(id: string, data: any) {
-    const { responsibleId, ...rest } = data;
+    const { responsibleId, planObjectiveId, ...rest } = data;
     const updateData: any = { ...rest };
 
     if (responsibleId) updateData.responsible = { connect: { id: responsibleId } };
     else if (responsibleId === null) updateData.responsible = { disconnect: true };
+
+    if (planObjectiveId) updateData.planObjective = { connect: { id: planObjectiveId } };
+    else if (planObjectiveId === null) updateData.planObjective = { disconnect: true };
     if (rest.dueDate) updateData.dueDate = new Date(rest.dueDate);
 
     return prisma.auditFinding.update({
       where: { id },
       data: updateData,
-      include: { responsible: { select: { id: true, name: true } } },
+      include: {
+        responsible: { select: { id: true, name: true } },
+        planObjective: { select: { id: true, title: true } },
+      },
     });
   }
 
@@ -193,6 +203,62 @@ export class PengawasanService {
 
   async deleteFollowUp(id: string) {
     return prisma.auditFollowUp.delete({ where: { id } });
+  }
+
+  // ==================== SUGGESTION ENGINE ====================
+
+  async suggestAuditSchedules(unitId?: string) {
+    // When unitId is omitted, query across all units in a single pair of DB queries
+    // instead of fanning out per-unit (which caused up to 40+ queries).
+    const unitFilter = unitId ? { unitId } : {};
+
+    // 1. Get high risks from the Risk module
+    const highRisks = await prisma.risk.findMany({
+      where: {
+        ...unitFilter,
+        status: 'OPEN',
+        riskLevel: { in: ['HIGH', 'EXTREME'] },
+      },
+      include: {
+        strategicPlan: { select: { id: true, title: true } },
+      },
+    });
+
+    if (highRisks.length === 0) return [];
+
+    // 2. Batch-query all non-cancelled audits linked to these risks (avoids N+1)
+    const riskIds = highRisks.map((r) => r.id);
+    const existingAudits = await prisma.internalAudit.findMany({
+      where: {
+        ...unitFilter,
+        riskId: { in: riskIds },
+        status: { not: 'CANCELLED' },
+      },
+      select: { riskId: true, unitId: true },
+    });
+
+    // 3. Build a set of covered (riskId, unitId) pairs so that cross-unit queries
+    //    correctly treat each unit independently. A risk in unit A is only "covered"
+    //    if unit A itself has a non-cancelled audit for it — an audit in unit B
+    //    should not suppress the suggestion for unit A.
+    const coveredKeys = new Set(
+      existingAudits.map((a) => `${a.riskId}::${a.unitId}`),
+    );
+
+    // 4. Suggest audits for risks that don't have a linked internal audit
+    //    in their own unit yet.
+    return highRisks
+      .filter((risk) => !coveredKeys.has(`${risk.id}::${risk.unitId}`))
+      .map((risk) => ({
+        riskId: risk.id,
+        riskCode: risk.code,
+        riskLevel: risk.riskLevel,
+        suggestedTitle: `Audit Kepatuhan & Mitigasi: ${risk.code}`,
+        suggestedDescription: `Audit internal khusus untuk memverifikasi efektivitas mitigasi risiko: ${risk.description}`,
+        strategicPlanId: risk.strategicPlanId,
+        strategicPlanTitle: risk.strategicPlan?.title,
+        priority: risk.riskLevel === 'EXTREME' ? 'URGENT' : 'HIGH',
+      }));
   }
 }
 

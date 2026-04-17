@@ -36,7 +36,7 @@ export class AssessmentAnalyticsService {
       prisma.attendance.groupBy({
         by: ['status'],
         where: { studentId },
-        _count: { _all: true }
+        _count: { _all: true },
       }),
 
       // 5. Ibadah: Points from daily ibadah records
@@ -58,7 +58,7 @@ export class AssessmentAnalyticsService {
     const behaviorScore = Math.max(0, 100 - violationPoints);
 
     // Attendance score
-    const attMap = attendance.reduce((acc, curr) => ({ ...acc, [curr.status]: curr._count._all }), {} as Record<string, number>);
+    const attMap = attendance.reduce((acc: Record<string, number>, curr: any) => ({ ...acc, [curr.status]: curr._count._all }), {} as Record<string, number>);
     const totalDays = Object.values(attMap).reduce((a, b) => a + b, 0);
     const presentDays = (attMap['PRESENT'] || 0) + (attMap['LATE'] || 0);
     const attendanceScore = totalDays > 0 ? (presentDays / totalDays) * 100 : 0;

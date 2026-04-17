@@ -8,6 +8,8 @@ import {
   Prisma,
 } from '@prisma/client';
 
+type TransactionClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
+
 export class RiskService {
   async createRisk(data: Prisma.RiskCreateInput): Promise<Risk> {
     const riskScore = this.calculateRiskScore(data.likelihood, data.impact);
@@ -93,14 +95,16 @@ export class RiskService {
   }
 
   async createMitigation(data: Prisma.RiskMitigationCreateInput): Promise<RiskMitigation> {
-    const mitigation = await prisma.riskMitigation.create({
-      data,
+    return prisma.$transaction(async (tx) => {
+      const mitigation = await tx.riskMitigation.create({
+        data,
+      });
+
+      // After creating mitigation, recalculate residual risk
+      await this.recalculateResidualRisk(mitigation.riskId, tx);
+
+      return mitigation;
     });
-
-    // After creating mitigation, recalculate residual risk
-    await this.recalculateResidualRisk(mitigation.riskId);
-
-    return mitigation;
   }
 
   async getMitigationById(id: string): Promise<(RiskMitigation & { risk: Risk }) | null> {
@@ -114,29 +118,33 @@ export class RiskService {
     id: string,
     data: Prisma.RiskMitigationUpdateInput
   ): Promise<RiskMitigation> {
-    const mitigation = await prisma.riskMitigation.update({
-      where: { id },
-      data,
+    return prisma.$transaction(async (tx) => {
+      const mitigation = await tx.riskMitigation.update({
+        where: { id },
+        data,
+      });
+
+      // After updating mitigation, recalculate residual risk
+      await this.recalculateResidualRisk(mitigation.riskId, tx);
+
+      return mitigation;
     });
-
-    // After updating mitigation, recalculate residual risk
-    await this.recalculateResidualRisk(mitigation.riskId);
-
-    return mitigation;
   }
 
   async deleteMitigation(id: string): Promise<RiskMitigation> {
-    const mitigation = await prisma.riskMitigation.delete({ where: { id } });
+    return prisma.$transaction(async (tx) => {
+      const mitigation = await tx.riskMitigation.delete({ where: { id } });
 
-    // After deleting mitigation, recalculate residual risk
-    await this.recalculateResidualRisk(mitigation.riskId);
+      // After deleting mitigation, recalculate residual risk
+      await this.recalculateResidualRisk(mitigation.riskId, tx);
 
-    return mitigation;
+      return mitigation;
+    });
   }
 
   // Helpers
-  private async recalculateResidualRisk(riskId: string) {
-    const risk = await prisma.risk.findUnique({
+  private async recalculateResidualRisk(riskId: string, tx: TransactionClient = prisma) {
+    const risk = await tx.risk.findUnique({
       where: { id: riskId },
       include: { mitigations: true },
     });
@@ -163,7 +171,7 @@ export class RiskService {
     const residualScore = residualLVal * residualIVal;
     const residualLevel = this.determineRiskLevel(residualScore);
 
-    await prisma.risk.update({
+    await tx.risk.update({
       where: { id: riskId },
       data: {
         residualLikelihood,

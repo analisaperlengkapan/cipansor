@@ -575,11 +575,15 @@ export class FinanceEnhancementService {
       0
     );
 
+    // Use the greater of committed PRs or remaining budget to avoid double-counting,
+    // since approved PRs will draw from the same monthly budgets.
+    const projectedExpense = Math.max(projectedPRExpense, remainingBudget);
+
     return {
       period: 'Next 30 Days',
       projectedIncome,
-      projectedExpense: projectedPRExpense + remainingBudget,
-      netCashFlow: projectedIncome - (projectedPRExpense + remainingBudget),
+      projectedExpense,
+      netCashFlow: projectedIncome - projectedExpense,
       confidence: 0.8,
     };
   }

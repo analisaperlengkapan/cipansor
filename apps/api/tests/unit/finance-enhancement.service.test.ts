@@ -166,8 +166,8 @@ describe('Finance Enhancement Service', () => {
       const result = await financeEnhancementService.getCashFlowForecast(mockUnitId);
 
       expect(result.projectedIncome).toBe(15000000);
-      expect(result.projectedExpense).toBe(6000000); // 3M PR + 3M budget
-      expect(result.netCashFlow).toBe(9000000);
+      expect(result.projectedExpense).toBe(3000000); // max(3M PR, 3M budget) to avoid double-counting
+      expect(result.netCashFlow).toBe(12000000);
     });
   });
 });

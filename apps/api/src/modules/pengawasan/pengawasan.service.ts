@@ -140,13 +140,22 @@ export class PengawasanService {
       },
     });
 
-    // If linked to a risk, update risk status/notes
+    // If linked to a risk, update risk status and append audit reference to consequence
     if (data.linkToRiskId) {
+      const existingRisk = await prisma.risk.findUnique({
+        where: { id: data.linkToRiskId },
+        select: { consequence: true },
+      });
+      const auditNote = `[Audit Finding ${data.findingNumber}: ${data.title}]`;
+      const updatedConsequence = existingRisk?.consequence
+        ? `${existingRisk.consequence}\n\n${auditNote}`
+        : auditNote;
+
       await prisma.risk.update({
         where: { id: data.linkToRiskId },
         data: {
           status: 'MONITORING',
-          consequence: `Updated by Audit Finding ${data.findingNumber}: ${data.title}`,
+          consequence: updatedConsequence,
         },
       });
     }

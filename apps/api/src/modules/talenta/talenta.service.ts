@@ -391,7 +391,7 @@ export class TalentaService {
       : userProfile.user.orgPositions[0];
 
     if (!targetPosition || !targetPosition.requirements) {
-      return { gap: [], score: 100 };
+      return { position: null, gaps: [], matchScore: 100 };
     }
 
     // Requirements are stored as text (e.g., "Skill A, Skill B") or JSON

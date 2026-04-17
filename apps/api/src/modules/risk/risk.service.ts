@@ -93,9 +93,14 @@ export class RiskService {
   }
 
   async createMitigation(data: Prisma.RiskMitigationCreateInput): Promise<RiskMitigation> {
-    return prisma.riskMitigation.create({
+    const mitigation = await prisma.riskMitigation.create({
       data,
     });
+
+    // After creating mitigation, recalculate residual risk
+    await this.recalculateResidualRisk(mitigation.riskId);
+
+    return mitigation;
   }
 
   async getMitigationById(id: string): Promise<(RiskMitigation & { risk: Risk }) | null> {

@@ -38,6 +38,7 @@ export const createFindingSchema = z.object({
   responsibleId: z.string().uuid().optional(),
   dueDate: z.string().datetime().optional(),
   planObjectiveId: z.string().uuid().optional(),
+  linkToRiskId: z.string().uuid().optional(),
 });
 
 export const updateFindingSchema = z.object({

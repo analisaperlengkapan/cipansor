@@ -62,7 +62,7 @@ export default function Student360Page() {
   const { data: tahfidz, isLoading: loadingTahfidz } = useStudentTahfidzProgress(studentId);
 
   // New Education Enhancement Hooks
-  const { data: holistic, isLoading: loadingHolistic } = useStudentHolisticAnalytics(studentId, student?.academicYearId || "");
+  const { data: holistic, isLoading: loadingHolistic } = useStudentHolisticAnalytics(studentId, student?.currentClass?.academicYear?.id || "");
   const { data: ibadah, isLoading: loadingIbadah } = useStudentIbadahStats({ studentId });
   const { data: quranMap, isLoading: loadingQuranMap } = useStudentTahfidzProgress(studentId); // Reusing hook or if there's specific one
 
@@ -228,7 +228,7 @@ export default function Student360Page() {
         {/* Right Column - Main Dashboard */}
         <div className="md:col-span-3">
           <Tabs defaultValue="overview" className="w-full">
-            <TabsList className="grid w-full grid-cols-7 bg-slate-100/50 mb-6">
+            <TabsList className="grid w-full grid-cols-8 bg-slate-100/50 mb-6">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="academic">Akademik</TabsTrigger>
               <TabsTrigger value="tahfidz">Tahfidz</TabsTrigger>

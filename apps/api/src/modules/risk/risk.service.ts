@@ -121,7 +121,12 @@ export class RiskService {
   }
 
   async deleteMitigation(id: string): Promise<RiskMitigation> {
-    return prisma.riskMitigation.delete({ where: { id } });
+    const mitigation = await prisma.riskMitigation.delete({ where: { id } });
+
+    // After deleting mitigation, recalculate residual risk
+    await this.recalculateResidualRisk(mitigation.riskId);
+
+    return mitigation;
   }
 
   // Helpers

@@ -224,7 +224,12 @@ export default function EducationAnalyticsPage() {
                           paddingAngle={5}
                           dataKey="value"
                        >
-                          {unitKpiData.map((entry, index) => (
+                          {[
+                            { name: 'TK', value: 150 },
+                            { name: 'SD', value: 450 },
+                            { name: 'SMP', value: 380 },
+                            { name: 'SMA', value: 270 },
+                          ].map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                           ))}
                        </Pie>

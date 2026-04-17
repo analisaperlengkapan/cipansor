@@ -153,12 +153,18 @@ export class PengawasanService {
 
     // If linked to a strategic objective, update its progress (conservative decrement if critical finding)
     if (data.planObjectiveId && data.severity === 'CRITICAL') {
-      await prisma.planObjective.update({
+      const objective = await prisma.planObjective.findUnique({
         where: { id: data.planObjectiveId },
-        data: {
-          progress: { decrement: 5 },
-        },
+        select: { progress: true },
       });
+      if (objective && objective.progress > 0) {
+        await prisma.planObjective.update({
+          where: { id: data.planObjectiveId },
+          data: {
+            progress: Math.max(0, objective.progress - 5),
+          },
+        });
+      }
     }
 
     return finding;

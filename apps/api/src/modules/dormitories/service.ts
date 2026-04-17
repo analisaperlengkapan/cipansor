@@ -384,12 +384,12 @@ export async function getRoomSocialAnalytics(roomId: string) {
         include: {
           student: {
             include: {
+              user: { select: { id: true, name: true } },
               violations: {
-                where: { status: 'VERIFIED' },
                 orderBy: { createdAt: 'desc' },
                 take: 5
               },
-              healthRecords: {
+              medicalRecords: {
                 orderBy: { visitDate: 'desc' },
                 take: 1
               }
@@ -410,7 +410,7 @@ export async function getRoomSocialAnalytics(roomId: string) {
       studentId: s.id,
       name: s.user?.name,
       riskScore: violationPoints,
-      lastHealthStatus: s.healthRecords[0]?.diagnosis || 'Sehat',
+      lastHealthStatus: s.medicalRecords[0]?.diagnosis || 'Sehat',
       recentViolations: s.violations.length
     };
   });

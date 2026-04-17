@@ -100,7 +100,7 @@ describe('UnifiedRaportService Integration', () => {
     (prisma.grade.aggregate as any).mockResolvedValue({ _avg: { percentage: 85 } });
     (prisma.tahfidzRecord.aggregate as any).mockResolvedValue({ _sum: { totalAyah: 100 }, _max: { juz: 5 } });
     (prisma.violation.aggregate as any).mockResolvedValue({ _sum: { points: 0 } });
-    (prisma.attendance.groupBy as any).mockResolvedValue([{ status: 'PRESENT', _count: 10 }]);
+    (prisma.attendance.groupBy as any).mockResolvedValue([{ status: 'PRESENT', _count: { _all: 10 } }]);
     (prisma.dailyIbadahRecord.aggregate as any).mockResolvedValue({ _sum: { pointsEarned: 1000 } });
 
     const result = await UnifiedRaportService.generateUnifiedRaport('s1', 'ay1', 1);

@@ -36,8 +36,8 @@ describe('AssessmentAnalyticsService', () => {
 
     // Mock Attendance (9/10 days = 90%)
     (prisma.attendance.groupBy as any).mockResolvedValue([
-      { status: 'PRESENT', _count: 9 },
-      { status: 'ABSENT', _count: 1 }
+      { status: 'PRESENT', _count: { _all: 9 } },
+      { status: 'ABSENT', _count: { _all: 1 } }
     ]);
 
     // Mock Ibadah (1500 points / 3000 target = 50%)

@@ -118,65 +118,67 @@ export class PengawasanService {
     planObjectiveId?: string;
     linkToRiskId?: string;
   }) {
-    const finding = await prisma.auditFinding.create({
-      data: {
-        audit: { connect: { id: data.auditId } },
-        findingNumber: data.findingNumber,
-        title: data.title,
-        description: data.description,
-        severity: data.severity,
-        category: data.category,
-        evidence: data.evidence,
-        rootCause: data.rootCause,
-        recommendation: data.recommendation,
-        responsible: data.responsibleId ? { connect: { id: data.responsibleId } } : undefined,
-        dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
-        planObjective: data.planObjectiveId ? { connect: { id: data.planObjectiveId } } : undefined,
-      },
-      include: {
-        audit: true,
-        responsible: { select: { id: true, name: true } },
-        planObjective: { select: { id: true, title: true } },
-      },
-    });
-
-    // If linked to a risk, update risk status and append audit reference to consequence
-    if (data.linkToRiskId) {
-      const existingRisk = await prisma.risk.findUnique({
-        where: { id: data.linkToRiskId },
-        select: { consequence: true },
-      });
-      const auditNote = `[Audit Finding ${data.findingNumber}: ${data.title}]`;
-      const updatedConsequence = existingRisk?.consequence
-        ? `${existingRisk.consequence}\n\n${auditNote}`
-        : auditNote;
-
-      await prisma.risk.update({
-        where: { id: data.linkToRiskId },
+    return prisma.$transaction(async (tx) => {
+      const finding = await tx.auditFinding.create({
         data: {
-          status: 'MONITORING',
-          consequence: updatedConsequence,
+          audit: { connect: { id: data.auditId } },
+          findingNumber: data.findingNumber,
+          title: data.title,
+          description: data.description,
+          severity: data.severity,
+          category: data.category,
+          evidence: data.evidence,
+          rootCause: data.rootCause,
+          recommendation: data.recommendation,
+          responsible: data.responsibleId ? { connect: { id: data.responsibleId } } : undefined,
+          dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
+          planObjective: data.planObjectiveId ? { connect: { id: data.planObjectiveId } } : undefined,
+        },
+        include: {
+          audit: true,
+          responsible: { select: { id: true, name: true } },
+          planObjective: { select: { id: true, title: true } },
         },
       });
-    }
 
-    // If linked to a strategic objective, update its progress (conservative decrement if critical finding)
-    if (data.planObjectiveId && data.severity === 'CRITICAL') {
-      const objective = await prisma.planObjective.findUnique({
-        where: { id: data.planObjectiveId },
-        select: { progress: true },
-      });
-      if (objective && objective.progress > 0) {
-        await prisma.planObjective.update({
-          where: { id: data.planObjectiveId },
+      // If linked to a risk, update risk status and append audit reference to consequence
+      if (data.linkToRiskId) {
+        const existingRisk = await tx.risk.findUnique({
+          where: { id: data.linkToRiskId },
+          select: { consequence: true },
+        });
+        const auditNote = `[Audit Finding ${data.findingNumber}: ${data.title}]`;
+        const updatedConsequence = existingRisk?.consequence
+          ? `${existingRisk.consequence}\n\n${auditNote}`
+          : auditNote;
+
+        await tx.risk.update({
+          where: { id: data.linkToRiskId },
           data: {
-            progress: Math.max(0, objective.progress - 5),
+            status: 'MONITORING',
+            consequence: updatedConsequence,
           },
         });
       }
-    }
 
-    return finding;
+      // If linked to a strategic objective, update its progress (conservative decrement if critical finding)
+      if (data.planObjectiveId && data.severity === 'CRITICAL') {
+        const objective = await tx.planObjective.findUnique({
+          where: { id: data.planObjectiveId },
+          select: { progress: true },
+        });
+        if (objective && objective.progress > 0) {
+          await tx.planObjective.update({
+            where: { id: data.planObjectiveId },
+            data: {
+              progress: Math.max(0, objective.progress - 5),
+            },
+          });
+        }
+      }
+
+      return finding;
+    });
   }
 
   async updateFinding(id: string, data: any) {

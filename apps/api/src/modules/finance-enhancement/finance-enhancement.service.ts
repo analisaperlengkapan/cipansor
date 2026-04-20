@@ -548,6 +548,7 @@ export class FinanceEnhancementService {
 
   async getCashFlowForecast(unitId: string) {
     const today = new Date();
+    today.setHours(0, 0, 0, 0);
     const nextMonth = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
 
     // 1. Projected Income from Pending Invoices

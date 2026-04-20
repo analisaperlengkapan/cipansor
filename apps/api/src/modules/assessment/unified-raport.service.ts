@@ -128,7 +128,11 @@ export class UnifiedRaportService {
    */
   private static generateDevelopmentRecommendation(holistic: any): string {
     const { breakdown } = holistic;
-    const lowest = Object.entries(breakdown).reduce((a: any, b: any) => a[1] < b[1] ? a : b);
+    const entries = Object.entries(breakdown);
+    if (entries.length === 0) {
+      return "Pertahankan prestasi dan terus kembangkan potensi diri di segala aspek.";
+    }
+    const lowest = entries.reduce((a: any, b: any) => a[1] < b[1] ? a : b);
 
     const recommendations: Record<string, string> = {
       academic: "Fokus pada peningkatan jam belajar mandiri dan konsultasi dengan guru mata pelajaran yang nilainya masih di bawah KKM.",

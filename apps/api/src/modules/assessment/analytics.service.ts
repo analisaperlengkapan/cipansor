@@ -12,8 +12,12 @@ export class AssessmentAnalyticsService {
       select: { startDate: true, endDate: true },
     });
 
-    const yearStart = academicYear?.startDate;
-    const yearEnd = academicYear?.endDate;
+    if (!academicYear) {
+      throw new Error(`Academic year with id ${academicYearId} not found`);
+    }
+
+    const yearStart = academicYear.startDate;
+    const yearEnd = academicYear.endDate;
 
     const [
       academicGrades,

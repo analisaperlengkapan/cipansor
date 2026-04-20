@@ -173,7 +173,7 @@ export class PengawasanService {
       if (data.planObjectiveId && data.severity === 'CRITICAL') {
         const objective = await tx.planObjective.findUnique({
           where: { id: data.planObjectiveId },
-          select: { progress: true },
+          select: { progress: true, planId: true },
         });
         if (objective && objective.progress > 0) {
           await tx.planObjective.update({
@@ -182,6 +182,23 @@ export class PengawasanService {
               progress: Math.max(0, objective.progress - 5),
             },
           });
+
+          // Recalculate parent plan's weighted progress to keep it in sync
+          const objectives = await tx.planObjective.findMany({
+            where: { planId: objective.planId },
+            select: { weight: true, progress: true },
+          });
+          if (objectives.length > 0) {
+            const totalWeight = objectives.reduce((sum, obj) => sum + obj.weight, 0);
+            const weightedProgress = objectives.reduce(
+              (sum, obj) => sum + (obj.progress * obj.weight) / (totalWeight || 1),
+              0
+            );
+            await tx.strategicPlan.update({
+              where: { id: objective.planId },
+              data: { progress: Math.round(weightedProgress * 100) / 100 },
+            });
+          }
         }
       }
 

@@ -368,6 +368,23 @@ export class FinanceEnhancementController {
     }
   }
 
+  // ==================== CASH FLOW FORECAST ====================
+
+  async getCashFlowForecast(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { unitId } = req.query;
+
+      if (!unitId) {
+        return res.status(400).json({ success: false, message: 'Unit ID is required' });
+      }
+
+      const result = await financeEnhancementService.getCashFlowForecast(unitId as string);
+      res.json({ success: true, data: result });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   // ==================== BUDGETS ====================
 
   async getBudgets(req: Request, res: Response, next: NextFunction) {

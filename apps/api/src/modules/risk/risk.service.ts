@@ -151,11 +151,23 @@ export class RiskService {
 
     if (!risk) return;
 
+    // If no mitigations exist, clear residual fields (null = no assessment performed)
+    if (risk.mitigations.length === 0) {
+      await tx.risk.update({
+        where: { id: riskId },
+        data: {
+          residualLikelihood: null,
+          residualImpact: null,
+          residualScore: null,
+          residualLevel: null,
+        },
+      });
+      return;
+    }
+
     // Logic: Mitigation progress reduces likelihood and impact
     // Avg progress of all mitigations
-    const avgProgress = risk.mitigations.length > 0
-      ? risk.mitigations.reduce((sum, m) => sum + (m.progress || 0), 0) / risk.mitigations.length
-      : 0;
+    const avgProgress = risk.mitigations.reduce((sum, m) => sum + (m.progress || 0), 0) / risk.mitigations.length;
 
     // Reduction factor: 0% progress = 1.0, 100% progress = 0.4 (capped reduction)
     const factor = 1 - (avgProgress / 100) * 0.6;

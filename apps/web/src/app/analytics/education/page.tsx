@@ -18,10 +18,6 @@ import {
   Legend
 } from "recharts";
 import {
-  GraduationCap,
-  BookOpen,
-  Trophy,
-  Users,
   TrendingUp,
   Target,
   Award
@@ -30,7 +26,7 @@ import { useUnits } from "@/hooks/use-units";
 import { useActiveAcademicYear } from "@/hooks/use-academic-years";
 import { useUnitEducationAnalytics } from "@/hooks/use-assessment";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Select,
   SelectContent,
@@ -49,7 +45,25 @@ export default function EducationAnalyticsPage() {
     activeYear?.id ?? ""
   );
 
-  // Fallback/Mock for multi-unit comparison
+  // Derive subject performance from API data when available, fall back to mock
+  const subjectPerformance = useMemo(() => {
+    if (unitAnalytics?.subjectAverages?.length > 0) {
+      return unitAnalytics.subjectAverages.map((s: any) => ({
+        subject: s.subjectId,
+        score: s.averagePercentage,
+      }));
+    }
+    return [
+      { subject: 'Tahfidz', score: 88 },
+      { subject: 'B. Arab', score: 82 },
+      { subject: 'Matematika', score: 78 },
+      { subject: 'B. Inggris', score: 85 },
+      { subject: 'PAI', score: 92 },
+      { subject: 'IPA', score: 76 },
+    ];
+  }, [unitAnalytics]);
+
+  // Fallback/Mock for multi-unit comparison (requires multi-unit API not yet available)
   const unitKpiData = [
     { name: 'TK Quran', avgScore: 92, tahfidzTarget: 85, attendance: 96 },
     { name: 'SD IT', avgScore: 88, tahfidzTarget: 78, attendance: 94 },
@@ -64,15 +78,6 @@ export default function EducationAnalyticsPage() {
     { month: 'Apr', students: 1215 },
     { month: 'May', students: 1230 },
     { month: 'Jun', students: 1250 },
-  ];
-
-  const subjectPerformance = [
-    { subject: 'Tahfidz', score: 88 },
-    { subject: 'B. Arab', score: 82 },
-    { subject: 'Matematika', score: 78 },
-    { subject: 'B. Inggris', score: 85 },
-    { subject: 'PAI', score: 92 },
-    { subject: 'IPA', score: 76 },
   ];
 
   const COLORS = ['#4f46e5', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
@@ -108,37 +113,41 @@ export default function EducationAnalyticsPage() {
                  <CardTitle className="text-sm font-medium opacity-80">Rata-rata Skor Unit</CardTitle>
               </CardHeader>
               <CardContent>
-                 <div className="text-3xl font-bold">86.4</div>
+                 <div className="text-3xl font-bold">
+                   {unitAnalytics?.subjectAverages?.length > 0
+                     ? (unitAnalytics.subjectAverages.reduce((sum: number, s: any) => sum + s.averagePercentage, 0) / unitAnalytics.subjectAverages.length).toFixed(1)
+                     : '—'}
+                 </div>
                  <p className="text-xs mt-1 opacity-70 flex items-center gap-1">
-                    <TrendingUp className="w-3 h-3" /> +2.4% dari semester lalu
+                    <TrendingUp className="w-3 h-3" /> Unit terpilih
                  </p>
               </CardContent>
            </Card>
            <Card>
               <CardHeader className="pb-2 text-muted-foreground">
-                 <CardTitle className="text-sm font-medium">Pencapaian Tahfidz</CardTitle>
+                 <CardTitle className="text-sm font-medium">Rata-rata Tahfidz (Juz)</CardTitle>
               </CardHeader>
               <CardContent>
-                 <div className="text-3xl font-bold">75.2%</div>
-                 <p className="text-xs mt-1 text-emerald-600 font-bold uppercase">Sesuai Target</p>
+                 <div className="text-3xl font-bold">{unitAnalytics?.averageJuz ?? '—'}</div>
+                 <p className="text-xs mt-1 text-emerald-600 font-bold uppercase">Rata-rata unit</p>
               </CardContent>
            </Card>
            <Card>
               <CardHeader className="pb-2 text-muted-foreground">
-                 <CardTitle className="text-sm font-medium">Tingkat Kehadiran</CardTitle>
+                 <CardTitle className="text-sm font-medium">Jumlah Santri Aktif</CardTitle>
               </CardHeader>
               <CardContent>
-                 <div className="text-3xl font-bold">94.8%</div>
-                 <p className="text-xs mt-1 text-slate-500">Rata-rata seluruh unit</p>
+                 <div className="text-3xl font-bold">{unitAnalytics?.studentCount ?? '—'}</div>
+                 <p className="text-xs mt-1 text-slate-500">Unit terpilih</p>
               </CardContent>
            </Card>
            <Card>
               <CardHeader className="pb-2 text-muted-foreground">
-                 <CardTitle className="text-sm font-medium">Siswa Berprestasi</CardTitle>
+                 <CardTitle className="text-sm font-medium">Jumlah Mata Pelajaran</CardTitle>
               </CardHeader>
               <CardContent>
-                 <div className="text-3xl font-bold">42</div>
-                 <p className="text-xs mt-1 text-indigo-600 font-bold">Tingkat Nasional/Intl</p>
+                 <div className="text-3xl font-bold">{unitAnalytics?.subjectAverages?.length ?? '—'}</div>
+                 <p className="text-xs mt-1 text-indigo-600 font-bold">Dengan data nilai</p>
               </CardContent>
            </Card>
         </div>

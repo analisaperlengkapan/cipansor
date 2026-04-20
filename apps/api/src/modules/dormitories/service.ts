@@ -376,6 +376,10 @@ export async function getRoomOccupancy(roomId: string) {
 }
 
 export async function getRoomSocialAnalytics(roomId: string) {
+  // Only consider violations from the last 6 months for current room dynamics
+  const sixMonthsAgo = new Date();
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
   const room = await prisma.room.findUnique({
     where: { id: roomId },
     include: {
@@ -386,6 +390,7 @@ export async function getRoomSocialAnalytics(roomId: string) {
             include: {
               user: { select: { id: true, name: true } },
               violations: {
+                where: { occurredAt: { gte: sixMonthsAgo } },
                 orderBy: { createdAt: 'desc' },
               },
               medicalRecords: {

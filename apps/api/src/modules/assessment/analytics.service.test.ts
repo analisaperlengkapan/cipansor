@@ -66,6 +66,17 @@ describe('AssessmentAnalyticsService', () => {
     expect(result.interpretation).toContain('Jayyid');
   });
 
+  it('should throw error for non-existent academic year', async () => {
+    const studentId = 's1';
+    const academicYearId = 'non-existent';
+
+    (prisma.academicYear.findUnique as any).mockResolvedValue(null);
+
+    await expect(
+      AssessmentAnalyticsService.getStudentHolisticAnalytics(studentId, academicYearId)
+    ).rejects.toThrow('Academic year with id non-existent not found');
+  });
+
   it('should calculate unit education analytics correctly', async () => {
     const unitId = 'u1';
     const academicYearId = 'ay1';

@@ -36,7 +36,7 @@ export default function ExamMonitoringPage({
   const { data: exam, isLoading } = useExamMonitoring(id);
   const { data: topicMastery, isLoading: loadingTopics } = useTopicMastery(id);
 
-  if (isLoading || loadingTopics) {
+  if (isLoading) {
     return (
       <MainLayout>
         <div className="flex justify-center py-12">
@@ -114,7 +114,15 @@ export default function ExamMonitoringPage({
           </Card>
         </div>
 
-        {topicMastery && topicMastery.length > 0 && (
+        {loadingTopics && (
+          <Card>
+            <CardContent className="flex justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </CardContent>
+          </Card>
+        )}
+
+        {!loadingTopics && topicMastery && topicMastery.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
             <Card>
               <CardHeader>

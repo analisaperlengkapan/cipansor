@@ -33,6 +33,9 @@ const { mockPrisma } = vi.hoisted(() => {
       budget: {
         findMany: vi.fn(),
       },
+      academicYear: {
+        findFirst: vi.fn(),
+      },
       $queryRaw: vi.fn(),
       $transaction: vi.fn().mockImplementation((cb) => cb(mockPrisma)),
     },
@@ -146,6 +149,9 @@ describe('Finance Enhancement Service', () => {
   describe('getCashFlowForecast', () => {
     it('should aggregate income from invoices and expenses from budgets/PRs', async () => {
       const mockUnitId = 'unit-1';
+
+      // Mock Academic Year (no active year)
+      mockPrisma.academicYear.findFirst.mockResolvedValue(null);
 
       // Mock Invoices (Income)
       mockPrisma.invoice.findMany.mockResolvedValue([

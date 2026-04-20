@@ -71,13 +71,16 @@ export default function Student360Page() {
 
   const holisticRadarData = useMemo(() => {
     if (!holistic?.breakdown) return [];
+    // Only include dimensions that have actual data (non-null).
+    // This prevents the radar chart from showing misleading 0 for dimensions
+    // where no records exist yet (e.g., a new student).
     return [
       { subject: 'Akademik', A: holistic.breakdown.academic, fullMark: 100 },
       { subject: 'Tahfidz', A: holistic.breakdown.tahfidz, fullMark: 100 },
       { subject: 'Karakter', A: holistic.breakdown.behavior, fullMark: 100 },
       { subject: 'Kehadiran', A: holistic.breakdown.attendance, fullMark: 100 },
       { subject: 'Ibadah', A: holistic.breakdown.ibadah, fullMark: 100 },
-    ];
+    ].filter(d => d.A !== null && d.A !== undefined);
   }, [holistic]);
 
   if (isLoading) {

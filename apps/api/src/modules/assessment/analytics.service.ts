@@ -70,11 +70,18 @@ export class AssessmentAnalyticsService {
     ]);
 
     // Calculate sub-scores (scaled 0-100)
-    const academicScore = Number(academicGrades._avg.percentage || 0);
+    // Use null for dimensions without data so consumers can distinguish
+    // "no data" from "genuinely scored 0". Only non-null dimensions
+    // participate in the weighted holistic score.
+    const hasAcademicData = academicGrades._avg.percentage !== null;
+    const hasTahfidzData = tahfidzProgress._max.juz !== null;
+    const hasAttendanceData = attendance.length > 0;
+    const hasIbadahData = ibadahPoints._sum.pointsEarned !== null && Number(ibadahPoints._sum.pointsEarned) > 0;
 
-    // Tahfidz score: assuming 30 juz is 100% for high level, but let's use a relative target
-    const totalJuz = tahfidzProgress._max.juz || 0;
-    const tahfidzScore = Math.min(100, (totalJuz / 30) * 100);
+    const academicScore = hasAcademicData ? Number(academicGrades._avg.percentage) : null;
+
+    // Tahfidz score: assuming 30 juz is 100% for high level
+    const tahfidzScore = hasTahfidzData ? Math.min(100, ((tahfidzProgress._max.juz || 0) / 30) * 100) : null;
 
     // Behavior score: starting at 100, subtract points
     const violationPoints = Number(violations._sum.points || 0);
@@ -87,41 +94,44 @@ export class AssessmentAnalyticsService {
     const totalDays = Object.values(attMap).reduce((a, b) => a + b, 0);
     const presentDays = (attMap['PRESENT'] || 0) + (attMap['LATE'] || 0);
     const excusedDays = (attMap['SICK'] || 0) + (attMap['EXCUSED'] || 0);
-    const attendanceScore = totalDays > 0 ? ((presentDays + excusedDays * 0.5) / totalDays) * 100 : 0;
+    const attendanceScore = hasAttendanceData ? ((presentDays + excusedDays * 0.5) / totalDays) * 100 : null;
 
-    // Ibadah score (relative to an arbitrary monthly target of 3000 pts)
-    const totalIbadahPoints = Number(ibadahPoints._sum.pointsEarned || 0);
-    const ibadahScore = Math.min(100, (totalIbadahPoints / 3000) * 100);
+    // Ibadah score (relative to an arbitrary yearly target of 3000 pts)
+    const ibadahScore = hasIbadahData ? Math.min(100, (Number(ibadahPoints._sum.pointsEarned) / 3000) * 100) : null;
 
-    // Holistic Score (Weighted)
-    // 30% Academic, 25% Tahfidz, 20% Behavior, 15% Attendance, 10% Ibadah
-    const holisticScore = (
-      (academicScore * 0.3) +
-      (tahfidzScore * 0.25) +
-      (behaviorScore * 0.2) +
-      (attendanceScore * 0.15) +
-      (ibadahScore * 0.1)
-    );
+    // Holistic Score (Weighted) — only include dimensions that have actual data.
+    // This prevents a new student with no records from being scored as 0%.
+    const weights: { score: number | null; weight: number }[] = [
+      { score: academicScore, weight: 0.3 },
+      { score: tahfidzScore, weight: 0.25 },
+      { score: behaviorScore, weight: 0.2 },
+      { score: attendanceScore, weight: 0.15 },
+      { score: ibadahScore, weight: 0.1 },
+    ];
+    const activeWeights = weights.filter(w => w.score !== null);
+    const totalWeight = activeWeights.reduce((sum, w) => sum + w.weight, 0);
+    // Re-normalize: divide each weight by totalWeight so partial data is scaled
+    // back to 0-100 instead of being penalized for missing dimensions.
+    const normalizedScore = totalWeight > 0
+      ? activeWeights.reduce((sum, w) => sum + (w.score! * (w.weight / totalWeight)), 0)
+      : 0;
 
-    // Count how many dimensions have actual data
-    const hasAcademicData = academicGrades._avg.percentage !== null;
-    const hasTahfidzData = tahfidzProgress._max.juz !== null;
-    const hasAttendanceData = totalDays > 0;
-    const hasIbadahData = ibadahPoints._sum.pointsEarned !== null && Number(ibadahPoints._sum.pointsEarned) > 0;
     const dimensionsWithData = [hasAcademicData, hasTahfidzData, hasAttendanceData, hasIbadahData].filter(Boolean).length;
+
+    const roundOrNull = (v: number | null) => v !== null ? Math.round(v * 100) / 100 : null;
 
     return {
       studentId,
-      holisticScore: Math.round(holisticScore * 100) / 100,
+      holisticScore: Math.round(normalizedScore * 100) / 100,
       breakdown: {
-        academic: Math.round(academicScore * 100) / 100,
-        tahfidz: Math.round(tahfidzScore * 100) / 100,
+        academic: roundOrNull(academicScore),
+        tahfidz: roundOrNull(tahfidzScore),
         behavior: Math.round(behaviorScore * 100) / 100,
-        attendance: Math.round(attendanceScore * 100) / 100,
-        ibadah: Math.round(ibadahScore * 100) / 100
+        attendance: roundOrNull(attendanceScore),
+        ibadah: roundOrNull(ibadahScore)
       },
       dataCompleteness: dimensionsWithData >= 4 ? 'COMPLETE' : dimensionsWithData >= 2 ? 'PARTIAL' : 'INSUFFICIENT',
-      interpretation: this.getHolisticInterpretation(Math.round(holisticScore * 100) / 100)
+      interpretation: this.getHolisticInterpretation(Math.round(normalizedScore * 100) / 100)
     };
   }
 

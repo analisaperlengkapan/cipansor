@@ -50,7 +50,7 @@ export class UnifiedRaportService {
     // These services handle their own internal data aggregation
     const holisticFallback = {
       holisticScore: 0,
-      breakdown: { academic: 0, tahfidz: 0, behavior: 0, attendance: 0, ibadah: 0 },
+      breakdown: { academic: null, tahfidz: null, behavior: 0, attendance: null, ibadah: null },
       interpretation: 'Data tidak tersedia',
     };
     const [raportMerdeka, raporPesantren, holistic] = await Promise.all([
@@ -123,9 +123,11 @@ export class UnifiedRaportService {
    */
   private static generateDevelopmentRecommendation(holistic: any): string {
     const { breakdown } = holistic;
-    const entries: [string, number][] = Object.entries(breakdown).map(
-      ([k, v]) => [k, Number(v)] as [string, number]
-    );
+    // Filter out null values (dimensions without data) before finding the lowest.
+    // This prevents null→NaN from being treated as the weakest dimension.
+    const entries: [string, number][] = Object.entries(breakdown)
+      .filter(([, v]) => v !== null && v !== undefined)
+      .map(([k, v]) => [k, Number(v)] as [string, number]);
     if (entries.length === 0 || holistic.interpretation === 'Data tidak tersedia') {
       return "Pertahankan prestasi dan terus kembangkan potensi diri di segala aspek.";
     }

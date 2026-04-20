@@ -140,7 +140,9 @@ export class PengawasanService {
         },
       });
 
-      // If linked to a risk, update risk status and append audit reference to consequence
+      // If linked to a risk, update risk status and append audit reference to consequence.
+      // Also store the linkToRiskId on the finding's evidence field as structured metadata
+      // so the relationship can be queried later (AuditFinding has no riskId FK).
       if (data.linkToRiskId) {
         const existingRisk = await tx.risk.findUnique({
           where: { id: data.linkToRiskId },
@@ -151,21 +153,38 @@ export class PengawasanService {
           throw new Error(`Risk with id ${data.linkToRiskId} not found`);
         }
 
-        const auditNote = `[Audit Finding ${data.findingNumber}: ${data.title}]`;
-        const updatedConsequence = existingRisk.consequence
-          ? `${existingRisk.consequence}\n\n${auditNote}`
-          : auditNote;
-
-        // Only set to MONITORING if the risk is not already CLOSED
-        const newStatus = existingRisk.status === 'CLOSED' ? 'CLOSED' : 'MONITORING';
-
-        await tx.risk.update({
-          where: { id: data.linkToRiskId },
+        // Store the risk link on the finding so it can be traced back without parsing text
+        const linkedRiskMeta = `\n[Linked Risk: ${data.linkToRiskId}]`;
+        await tx.auditFinding.update({
+          where: { id: finding.id },
           data: {
-            status: newStatus,
-            consequence: updatedConsequence,
+            evidence: finding.evidence
+              ? `${finding.evidence}${linkedRiskMeta}`
+              : linkedRiskMeta.trim(),
           },
         });
+
+        const auditNote = `[Audit Finding ${data.findingNumber}: ${data.title}]`;
+
+        // Guard against duplicate notes if createFinding is called twice with the same data
+        const alreadyLinked = existingRisk.consequence?.includes(`[Audit Finding ${data.findingNumber}:`) ?? false;
+
+        if (!alreadyLinked) {
+          const updatedConsequence = existingRisk.consequence
+            ? `${existingRisk.consequence}\n\n${auditNote}`
+            : auditNote;
+
+          // Only set to MONITORING if the risk is not already CLOSED
+          const newStatus = existingRisk.status === 'CLOSED' ? 'CLOSED' : 'MONITORING';
+
+          await tx.risk.update({
+            where: { id: data.linkToRiskId },
+            data: {
+              status: newStatus,
+              consequence: updatedConsequence,
+            },
+          });
+        }
       }
 
       // If linked to a strategic objective, update its progress (conservative decrement if critical finding)

@@ -83,10 +83,13 @@ export class AssessmentAnalyticsService {
     // Tahfidz score: assuming 30 juz is 100% for high level
     const tahfidzScore = hasTahfidzData ? Math.min(100, ((tahfidzProgress._max.juz || 0) / 30) * 100) : null;
 
-    // Behavior score: starting at 100, subtract points
-    // When _sum.points is null, no violation records exist for this period.
-    // Treat as "no data" (null) so it doesn't inflate the holistic score.
-    const hasBehaviorData = violations._sum.points !== null;
+    // Behavior score: starting at 100, subtract points.
+    // Unlike grades or attendance (where records are created per student),
+    // violations are only recorded when infractions occur. The absence of
+    // violation records means the student has a clean record, NOT that they
+    // haven't been assessed. Therefore behavior data is always considered
+    // present for enrolled students.
+    const hasBehaviorData = true;
     const violationPoints = Number(violations._sum.points || 0);
     const behaviorScore = hasBehaviorData ? Math.max(0, 100 - violationPoints) : null;
 

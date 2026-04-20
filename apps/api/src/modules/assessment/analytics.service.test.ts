@@ -66,6 +66,51 @@ describe('AssessmentAnalyticsService', () => {
     expect(result.interpretation).toContain('Jayyid');
   });
 
+  it('should score behavior as 100 for students with zero violations', async () => {
+    const studentId = 's2';
+    const academicYearId = 'ay1';
+
+    (prisma.academicYear.findUnique as any).mockResolvedValue({
+      startDate: new Date('2024-07-01'),
+      endDate: new Date('2025-06-30'),
+    });
+
+    // Mock Academic (80%)
+    (prisma.grade.aggregate as any).mockResolvedValue({ _avg: { percentage: 80 } });
+
+    // Mock Tahfidz (15 juz = 50%)
+    (prisma.tahfidzRecord.aggregate as any).mockResolvedValue({
+      _sum: { totalAyah: 1000 },
+      _max: { juz: 15 }
+    });
+
+    // Mock Behavior: zero violations — Prisma returns _sum.points as null
+    (prisma.violation.aggregate as any).mockResolvedValue({ _sum: { points: null } });
+
+    // Mock Attendance (10/10 days = 100%)
+    (prisma.attendance.groupBy as any).mockResolvedValue([
+      { status: 'PRESENT', _count: { _all: 10 } }
+    ]);
+
+    // Mock Ibadah (1500 points / 3000 target = 50%)
+    (prisma.dailyIbadahRecord.aggregate as any).mockResolvedValue({ _sum: { pointsEarned: 1500 } });
+
+    const result = await AssessmentAnalyticsService.getStudentHolisticAnalytics(studentId, academicYearId);
+
+    // Behavior should be 100 (clean record), not null (excluded)
+    expect(result.breakdown.behavior).toBe(100);
+    expect(result.dataCompleteness).toBe('COMPLETE');
+
+    // Expected Calculation with all 5 dimensions:
+    // Academic: 80 * 0.3 = 24
+    // Tahfidz: 50 * 0.25 = 12.5
+    // Behavior: 100 * 0.2 = 20
+    // Attendance: 100 * 0.15 = 15
+    // Ibadah: 50 * 0.1 = 5
+    // Total: 24 + 12.5 + 20 + 15 + 5 = 76.5
+    expect(result.holisticScore).toBe(76.5);
+  });
+
   it('should throw error for non-existent academic year', async () => {
     const studentId = 's1';
     const academicYearId = 'non-existent';

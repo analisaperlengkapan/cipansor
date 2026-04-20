@@ -754,11 +754,12 @@ export class CBTService {
       };
     });
 
-    // Aggregate earned points
+    // Aggregate earned points (skip answers with null score to avoid
+    // counting ungraded essay questions as 0, which would distort mastery)
     exam.attempts.forEach(attempt => {
       attempt.answers.forEach(answer => {
-        if (topicMastery[answer.questionId]) {
-          topicMastery[answer.questionId].earnedPoints += Number(answer.score || 0);
+        if (topicMastery[answer.questionId] && answer.score !== null) {
+          topicMastery[answer.questionId].earnedPoints += Number(answer.score);
         }
       });
     });

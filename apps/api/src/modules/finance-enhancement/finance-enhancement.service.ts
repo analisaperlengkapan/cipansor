@@ -564,9 +564,18 @@ export class FinanceEnhancementService {
     });
     const projectedPRExpense = approvedPRs.reduce((sum, pr) => sum + Number(pr.totalEstimated), 0);
 
-    // 3. Planned Expenses from Budget (pro-rated monthly)
+    // 3. Planned Expenses from Budget (pro-rated monthly, scoped to active academic year)
+    const activeAcademicYear = await prisma.academicYear.findFirst({
+      where: { isActive: true },
+      select: { id: true },
+    });
+
     const monthlyBudget = await prisma.budget.findMany({
-      where: { unitId, periodType: 'MONTHLY' },
+      where: {
+        unitId,
+        periodType: 'MONTHLY',
+        ...(activeAcademicYear ? { academicYearId: activeAcademicYear.id } : {}),
+      },
       select: { amount: true, usedAmount: true },
     });
     const remainingBudget = monthlyBudget.reduce(

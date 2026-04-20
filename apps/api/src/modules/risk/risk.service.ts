@@ -80,13 +80,20 @@ export class RiskService {
     const riskScore = this.calculateRiskScore(likelihood, impact);
     const riskLevel = this.determineRiskLevel(riskScore);
 
-    return prisma.risk.update({
-      where: { id },
-      data: {
-        ...data,
-        riskScore,
-        riskLevel,
-      },
+    return prisma.$transaction(async (tx) => {
+      const updated = await tx.risk.update({
+        where: { id },
+        data: {
+          ...data,
+          riskScore,
+          riskLevel,
+        },
+      });
+
+      // Recalculate residual risk when inherent likelihood/impact changes
+      await this.recalculateResidualRisk(id, tx);
+
+      return updated;
     });
   }
 

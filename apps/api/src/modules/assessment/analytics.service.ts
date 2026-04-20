@@ -28,7 +28,7 @@ export class AssessmentAnalyticsService {
 
       // 3. Behavior: Total violation points (inverted)
       prisma.violation.aggregate({
-        where: { studentId, status: 'VERIFIED' },
+        where: { studentId },
         _sum: { points: true }
       }),
 

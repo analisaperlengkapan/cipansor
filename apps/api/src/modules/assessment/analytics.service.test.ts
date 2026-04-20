@@ -111,6 +111,43 @@ describe('AssessmentAnalyticsService', () => {
     expect(result.holisticScore).toBe(76.5);
   });
 
+  it('should return score 0 for students with only behavior data (insufficient)', async () => {
+    const studentId = 's3';
+    const academicYearId = 'ay1';
+
+    (prisma.academicYear.findUnique as any).mockResolvedValue({
+      startDate: new Date('2024-07-01'),
+      endDate: new Date('2025-06-30'),
+    });
+
+    // No academic data
+    (prisma.grade.aggregate as any).mockResolvedValue({ _avg: { percentage: null } });
+
+    // No tahfidz data
+    (prisma.tahfidzRecord.aggregate as any).mockResolvedValue({
+      _sum: { totalAyah: null },
+      _max: { juz: null }
+    });
+
+    // No violations (behavior score = 100, but it's the only dimension)
+    (prisma.violation.aggregate as any).mockResolvedValue({ _sum: { points: null } });
+
+    // No attendance data
+    (prisma.attendance.groupBy as any).mockResolvedValue([]);
+
+    // No ibadah data
+    (prisma.dailyIbadahRecord.aggregate as any).mockResolvedValue({ _sum: { pointsEarned: null } });
+
+    const result = await AssessmentAnalyticsService.getStudentHolisticAnalytics(studentId, academicYearId);
+
+    // Should return 0 instead of misleading 100
+    expect(result.holisticScore).toBe(0);
+    expect(result.dataCompleteness).toBe('INSUFFICIENT');
+    expect(result.breakdown.behavior).toBe(100);
+    expect(result.breakdown.academic).toBeNull();
+    expect(result.interpretation).toContain('Dhoif');
+  });
+
   it('should throw error for non-existent academic year', async () => {
     const studentId = 's1';
     const academicYearId = 'non-existent';

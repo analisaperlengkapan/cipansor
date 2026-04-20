@@ -373,9 +373,15 @@ export class FinanceEnhancementController {
   async getCashFlowForecast(req: Request, res: Response, next: NextFunction) {
     try {
       const { unitId } = req.query;
+      const user = (req as any).user;
 
       if (!unitId) {
         return res.status(400).json({ success: false, message: 'Unit ID is required' });
+      }
+
+      // Unit-level authorization: non-SUPER_ADMIN users can only access their own unit
+      if (user.role !== 'SUPER_ADMIN' && user.unitId !== unitId) {
+        return res.status(403).json({ success: false, message: 'Access to this unit is not allowed' });
       }
 
       const result = await financeEnhancementService.getCashFlowForecast(unitId as string);

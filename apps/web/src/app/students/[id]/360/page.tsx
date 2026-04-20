@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { useStudent } from "@/hooks/use-students";
 import { useStudentGrades, useStudentHolisticAnalytics } from "@/hooks/use-assessment";
+import { useActiveAcademicYear } from "@/hooks/use-academic-years";
 import { useStudentHealthRecords } from "@/hooks/use-health";
 import { useStudentViolations } from "@/hooks/use-violations";
 import { useStudentFinancialSummary } from "@/hooks/use-finance";
@@ -55,8 +56,12 @@ export default function Student360Page() {
   const { data: finance, isLoading: loadingFinance } = useStudentFinancialSummary(studentId);
   const { data: tahfidz, isLoading: loadingTahfidz } = useStudentTahfidzProgress(studentId);
 
+  // Fallback to active academic year when student.currentClass.academicYear is not populated
+  const { data: activeYear } = useActiveAcademicYear();
+  const academicYearId = student?.currentClass?.academicYear?.id || activeYear?.id || "";
+
   // New Education Enhancement Hooks
-  const { data: holistic, isLoading: loadingHolistic } = useStudentHolisticAnalytics(studentId, student?.currentClass?.academicYear?.id || "");
+  const { data: holistic, isLoading: loadingHolistic } = useStudentHolisticAnalytics(studentId, academicYearId);
   const { data: ibadah, isLoading: loadingIbadah } = useStudentIbadahStats({ studentId });
 
   const isLoading = loadingStudent || loadingGrades || loadingHealth || loadingViolations || loadingFinance || loadingTahfidz || loadingHolistic || loadingIbadah;

@@ -250,6 +250,21 @@ export class PengawasanService {
     else if (planObjectiveId === null) updateData.planObjective = { disconnect: true };
     if (rest.dueDate) updateData.dueDate = new Date(rest.dueDate);
 
+    // Preserve risk-link metadata in evidence field if the caller is updating evidence.
+    // The [Linked Risk: <uuid>] suffix is appended by createFinding and must not be lost.
+    if (updateData.evidence !== undefined) {
+      const existing = await prisma.auditFinding.findUnique({
+        where: { id },
+        select: { evidence: true },
+      });
+      const riskLinkMatch = existing?.evidence?.match(/\n?\[Linked Risk: [^\]]+\]/);
+      if (riskLinkMatch) {
+        updateData.evidence = updateData.evidence
+          ? `${updateData.evidence}${riskLinkMatch[0].startsWith('\n') ? riskLinkMatch[0] : `\n${riskLinkMatch[0]}`}`
+          : riskLinkMatch[0].trim();
+      }
+    }
+
     return prisma.auditFinding.update({
       where: { id },
       data: updateData,

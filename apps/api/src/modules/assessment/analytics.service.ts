@@ -123,12 +123,17 @@ export class AssessmentAnalyticsService {
       : 0;
 
     const dimensionsWithData = [hasAcademicData, hasTahfidzData, hasBehaviorData, hasAttendanceData, hasIbadahData].filter(Boolean).length;
+    const dataCompleteness = dimensionsWithData >= 4 ? 'COMPLETE' : dimensionsWithData >= 2 ? 'PARTIAL' : 'INSUFFICIENT';
 
     const roundOrNull = (v: number | null) => v !== null ? Math.round(v * 100) / 100 : null;
 
+    // When data is insufficient (only behavior with no other dimensions),
+    // return 0 instead of a misleading renormalized score.
+    const finalScore = dataCompleteness === 'INSUFFICIENT' ? 0 : Math.round(normalizedScore * 100) / 100;
+
     return {
       studentId,
-      holisticScore: Math.round(normalizedScore * 100) / 100,
+      holisticScore: finalScore,
       breakdown: {
         academic: roundOrNull(academicScore),
         tahfidz: roundOrNull(tahfidzScore),
@@ -136,8 +141,10 @@ export class AssessmentAnalyticsService {
         attendance: roundOrNull(attendanceScore),
         ibadah: roundOrNull(ibadahScore)
       },
-      dataCompleteness: dimensionsWithData >= 4 ? 'COMPLETE' : dimensionsWithData >= 2 ? 'PARTIAL' : 'INSUFFICIENT',
-      interpretation: this.getHolisticInterpretation(Math.round(normalizedScore * 100) / 100)
+      dataCompleteness,
+      interpretation: dataCompleteness === 'INSUFFICIENT'
+        ? 'Dhoif (Perlu Bimbingan/Needs Improvement)'
+        : this.getHolisticInterpretation(finalScore)
     };
   }
 

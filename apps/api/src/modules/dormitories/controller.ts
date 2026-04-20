@@ -12,6 +12,7 @@ import {
   queryRoomAssignmentSchema,
 } from './schema';
 import { ApiError, Errors } from '../../middleware/error';
+import { prisma } from '../../lib/prisma';
 
 // =====================================
 // DORMITORY CONTROLLERS
@@ -175,6 +176,22 @@ export async function getRoomById(req: Request, res: Response, next: NextFunctio
 export async function getRoomSocialAnalytics(req: Request, res: Response, next: NextFunction) {
   try {
     const { id } = req.params;
+    const user = (req as any).user;
+
+    // Unit-level authorization: verify the room belongs to the user's unit
+    if (user.role !== 'SUPER_ADMIN') {
+      const room = await prisma.room.findUnique({
+        where: { id },
+        select: { dormitory: { select: { unitId: true } } },
+      });
+      if (!room) {
+        throw Errors.notFound('Room not found');
+      }
+      if (room.dormitory.unitId !== user.unitId) {
+        throw Errors.forbidden('Access to this room is not allowed');
+      }
+    }
+
     const analytics = await dormitoryService.getRoomSocialAnalytics(id);
     if (!analytics) {
       throw Errors.notFound('Room not found');

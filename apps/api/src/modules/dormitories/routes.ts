@@ -198,6 +198,12 @@ router.post('/', authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controlle
  *         description: Dormitory not found
  */
 router.get(
+  '/rooms/:id/social-analytics',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
+  controller.getRoomSocialAnalytics
+);
+
+router.get(
   '/:id',
   authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
   controller.getDormitoryById
@@ -225,12 +231,6 @@ router.get(
   '/:id/stats',
   authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
   controller.getDormitoryStats
-);
-
-router.get(
-  '/rooms/:id/social-analytics',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
-  controller.getRoomSocialAnalytics
 );
 
 /**

@@ -387,7 +387,6 @@ export async function getRoomSocialAnalytics(roomId: string) {
               user: { select: { id: true, name: true } },
               violations: {
                 orderBy: { createdAt: 'desc' },
-                take: 5
               },
               medicalRecords: {
                 orderBy: { visitDate: 'desc' },
@@ -410,7 +409,7 @@ export async function getRoomSocialAnalytics(roomId: string) {
       studentId: s.id,
       name: s.user?.name,
       riskScore: violationPoints,
-      lastHealthStatus: s.medicalRecords[0]?.diagnosis || 'Sehat',
+      lastHealthStatus: s.medicalRecords.length > 0 ? 'Tercatat' : 'Sehat',
       recentViolations: s.violations.length
     };
   });

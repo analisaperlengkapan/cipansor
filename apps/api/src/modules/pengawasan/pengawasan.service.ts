@@ -145,17 +145,25 @@ export class PengawasanService {
       if (data.linkToRiskId) {
         const existingRisk = await tx.risk.findUnique({
           where: { id: data.linkToRiskId },
-          select: { consequence: true },
+          select: { consequence: true, status: true },
         });
+
+        if (!existingRisk) {
+          throw new Error(`Risk with id ${data.linkToRiskId} not found`);
+        }
+
         const auditNote = `[Audit Finding ${data.findingNumber}: ${data.title}]`;
-        const updatedConsequence = existingRisk?.consequence
+        const updatedConsequence = existingRisk.consequence
           ? `${existingRisk.consequence}\n\n${auditNote}`
           : auditNote;
+
+        // Only set to MONITORING if the risk is not already CLOSED
+        const newStatus = existingRisk.status === 'CLOSED' ? 'CLOSED' : 'MONITORING';
 
         await tx.risk.update({
           where: { id: data.linkToRiskId },
           data: {
-            status: 'MONITORING',
+            status: newStatus,
             consequence: updatedConsequence,
           },
         });

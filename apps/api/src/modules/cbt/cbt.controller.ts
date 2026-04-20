@@ -40,6 +40,9 @@ export class CBTController {
     try {
       const { examId } = req.params;
       const analytics = await CBTService.getTopicMasteryAnalytics(examId);
+      if (analytics === null) {
+        throw Errors.notFound('Exam or Question Bank');
+      }
       res.json({ success: true, data: analytics });
     } catch (error) {
       next(error);

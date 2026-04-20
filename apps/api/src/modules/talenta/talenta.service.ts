@@ -395,7 +395,19 @@ export class TalentaService {
     }
 
     // Requirements are stored as text (e.g., "Skill A, Skill B") or JSON
-    const requirements = targetPosition.requirements.split(',').map((r) => r.trim());
+    let requirements: string[];
+    try {
+      const parsed = JSON.parse(targetPosition.requirements);
+      requirements = Array.isArray(parsed) ? parsed.map((r: any) => String(r).trim()) : targetPosition.requirements.split(',').map((r) => r.trim());
+    } catch {
+      requirements = targetPosition.requirements.split(',').map((r) => r.trim());
+    }
+    requirements = requirements.filter((r) => r.length > 0);
+
+    if (requirements.length === 0) {
+      return { position: targetPosition.title, gaps: [], matchScore: 100 };
+    }
+
     const userCompetencies = (userProfile.assessments[0]?.competencies as any) || {};
 
     const gaps = requirements.map((req) => {

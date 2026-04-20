@@ -53,8 +53,18 @@ export class UnifiedRaportService {
       generateRaporPesantren({ studentId, academicYearId, semester, unitId: student.unitId }),
     ]);
 
-    // 3. Get Holistic Analytics for Recommendation
-    const holistic = await AssessmentAnalyticsService.getStudentHolisticAnalytics(studentId, academicYearId);
+    // 3. Get Holistic Analytics for Recommendation (graceful fallback if it fails)
+    let holistic: any = null;
+    try {
+      holistic = await AssessmentAnalyticsService.getStudentHolisticAnalytics(studentId, academicYearId);
+    } catch {
+      // Analytics failure should not block raport generation
+      holistic = {
+        holisticScore: 0,
+        breakdown: { academic: 0, tahfidz: 0, behavior: 0, attendance: 0, ibadah: 0 },
+        interpretation: 'Data tidak tersedia',
+      };
+    }
 
     // 4. Structure the Unified Data
     // Combines both worlds into a single cohesive structure for the frontend/PDF

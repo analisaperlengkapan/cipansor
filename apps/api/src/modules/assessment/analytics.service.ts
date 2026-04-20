@@ -87,7 +87,7 @@ export class AssessmentAnalyticsService {
         attendance: Math.round(attendanceScore * 100) / 100,
         ibadah: Math.round(ibadahScore * 100) / 100
       },
-      interpretation: this.getHolisticInterpretation(holisticScore)
+      interpretation: this.getHolisticInterpretation(Math.round(holisticScore * 100) / 100)
     };
   }
 

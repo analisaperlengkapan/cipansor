@@ -128,7 +128,7 @@ export class UnifiedRaportService {
     const entries: [string, number][] = Object.entries(breakdown)
       .filter(([, v]) => v !== null && v !== undefined)
       .map(([k, v]) => [k, Number(v)] as [string, number]);
-    if (entries.length === 0 || holistic.interpretation === 'Data tidak tersedia') {
+    if (entries.length === 0 || holistic.interpretation === 'Data tidak tersedia' || holistic.dataCompleteness === 'INSUFFICIENT') {
       return "Pertahankan prestasi dan terus kembangkan potensi diri di segala aspek.";
     }
     const lowest = entries.reduce((a, b) => a[1] <= b[1] ? a : b, entries[0]);

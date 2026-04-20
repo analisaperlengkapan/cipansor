@@ -46,27 +46,22 @@ export class UnifiedRaportService {
       throw new ApiError(ErrorCode.NOT_FOUND, 'Data enrollment tidak ditemukan untuk tahun ajaran ini');
     }
 
-    // 2. Run Generators in Parallel for efficiency
+    // 2. Run Generators and Holistic Analytics in Parallel for efficiency
     // These services handle their own internal data aggregation
-    const [raportMerdeka, raporPesantren] = await Promise.all([
+    const holisticFallback = {
+      holisticScore: 0,
+      breakdown: { academic: 0, tahfidz: 0, behavior: 0, attendance: 0, ibadah: 0 },
+      interpretation: 'Data tidak tersedia',
+    };
+    const [raportMerdeka, raporPesantren, holistic] = await Promise.all([
       RaportMerdekaService.generateRaportMerdeka(studentId, academicYearId, semester),
       generateRaporPesantren({ studentId, academicYearId, semester, unitId: student.unitId }),
+      // Holistic analytics failure should not block raport generation
+      AssessmentAnalyticsService.getStudentHolisticAnalytics(studentId, academicYearId)
+        .catch(() => holisticFallback),
     ]);
 
-    // 3. Get Holistic Analytics for Recommendation (graceful fallback if it fails)
-    let holistic: any = null;
-    try {
-      holistic = await AssessmentAnalyticsService.getStudentHolisticAnalytics(studentId, academicYearId);
-    } catch {
-      // Analytics failure should not block raport generation
-      holistic = {
-        holisticScore: 0,
-        breakdown: { academic: 0, tahfidz: 0, behavior: 0, attendance: 0, ibadah: 0 },
-        interpretation: 'Data tidak tersedia',
-      };
-    }
-
-    // 4. Structure the Unified Data
+    // 3. Structure the Unified Data
     // Combines both worlds into a single cohesive structure for the frontend/PDF
     return {
       meta: {
@@ -128,11 +123,13 @@ export class UnifiedRaportService {
    */
   private static generateDevelopmentRecommendation(holistic: any): string {
     const { breakdown } = holistic;
-    const entries = Object.entries(breakdown);
+    const entries: [string, number][] = Object.entries(breakdown).map(
+      ([k, v]) => [k, Number(v)] as [string, number]
+    );
     if (entries.length === 0 || holistic.interpretation === 'Data tidak tersedia') {
       return "Pertahankan prestasi dan terus kembangkan potensi diri di segala aspek.";
     }
-    const lowest = entries.reduce((a: any, b: any) => a[1] < b[1] ? a : b);
+    const lowest = entries.reduce((a, b) => a[1] <= b[1] ? a : b);
 
     const recommendations: Record<string, string> = {
       academic: "Fokus pada peningkatan jam belajar mandiri dan konsultasi dengan guru mata pelajaran yang nilainya masih di bawah KKM.",

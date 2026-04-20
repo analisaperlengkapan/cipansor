@@ -10,6 +10,7 @@ router.use(authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER
 
 // Talent Profiles
 router.get('/analytics', talentaController.getTalentAnalytics);
+router.get('/competency-gap/:userId', talentaController.getCompetencyGap);
 router.get('/profiles', talentaController.listProfiles);
 router.post('/profiles', talentaController.createProfile);
 router.get('/profiles/:id', talentaController.getProfile);

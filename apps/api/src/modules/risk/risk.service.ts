@@ -94,7 +94,18 @@ export class RiskService {
       await this.recalculateResidualRisk(id, tx);
 
       // Re-fetch to include the freshly-calculated residual risk fields
-      const freshRisk = await tx.risk.findUniqueOrThrow({ where: { id } });
+      const freshRisk = await tx.risk.findUniqueOrThrow({
+        where: { id },
+        include: {
+          mitigations: true,
+          createdBy: {
+            select: { id: true, name: true },
+          },
+          strategicPlan: {
+            select: { id: true, title: true },
+          },
+        },
+      });
       return freshRisk;
     });
   }

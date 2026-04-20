@@ -316,10 +316,7 @@ export class PerencanaanService {
   async updateObjective(id: string, data: Prisma.PlanObjectiveUpdateInput) {
     const objective = await prisma.planObjective.update({
       where: { id },
-      data: {
-        ...data,
-        perspective: data.perspective ? data.perspective : undefined,
-      },
+      data,
       include: { plan: { select: { id: true } } },
     });
 

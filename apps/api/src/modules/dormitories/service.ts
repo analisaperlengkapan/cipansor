@@ -377,8 +377,7 @@ export async function getRoomOccupancy(roomId: string) {
 
 export async function getRoomSocialAnalytics(roomId: string) {
   // Only consider violations from the last 6 months for current room dynamics
-  const sixMonthsAgo = new Date();
-  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+  const sixMonthsAgo = new Date(Date.now() - 180 * 24 * 60 * 60 * 1000);
 
   const room = await prisma.room.findUnique({
     where: { id: roomId },
@@ -394,6 +393,7 @@ export async function getRoomSocialAnalytics(roomId: string) {
                 orderBy: { createdAt: 'desc' },
               },
               medicalRecords: {
+                select: { id: true },
                 orderBy: { visitDate: 'desc' },
                 take: 1
               }
@@ -422,7 +422,7 @@ export async function getRoomSocialAnalytics(roomId: string) {
   // Calculate room harmony score (simplified)
   // Higher violations = lower harmony
   const totalViolations = members.reduce((sum, m) => sum + m.riskScore, 0);
-  const harmonyScore = Math.max(0, 100 - (totalViolations / Math.max(1, members.length)));
+  const harmonyScore = Math.round(Math.max(0, 100 - (totalViolations / Math.max(1, members.length))) * 100) / 100;
 
   return {
     roomId,

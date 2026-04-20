@@ -196,3 +196,10 @@ export const getTalentAnalytics = asyncHandler(async (req: Request, res: Respons
   const analytics = await talentaService.getTalentAnalytics(unitId);
   res.json({ success: true, data: analytics });
 });
+
+export const getCompetencyGap = asyncHandler(async (req: Request, res: Response) => {
+  const { userId } = req.params;
+  const targetPositionId = req.query.targetPositionId as string | undefined;
+  const result = await talentaService.getCompetencyGap(userId, targetPositionId);
+  res.json({ success: true, data: result });
+});

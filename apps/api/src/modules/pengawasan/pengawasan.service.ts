@@ -135,7 +135,6 @@ export class PengawasanService {
           planObjective: data.planObjectiveId ? { connect: { id: data.planObjectiveId } } : undefined,
         },
         include: {
-          audit: true,
           responsible: { select: { id: true, name: true } },
           planObjective: { select: { id: true, title: true } },
         },

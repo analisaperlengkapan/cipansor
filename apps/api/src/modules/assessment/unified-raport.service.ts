@@ -129,7 +129,7 @@ export class UnifiedRaportService {
   private static generateDevelopmentRecommendation(holistic: any): string {
     const { breakdown } = holistic;
     const entries = Object.entries(breakdown);
-    if (entries.length === 0) {
+    if (entries.length === 0 || holistic.interpretation === 'Data tidak tersedia') {
       return "Pertahankan prestasi dan terus kembangkan potensi diri di segala aspek.";
     }
     const lowest = entries.reduce((a: any, b: any) => a[1] < b[1] ? a : b);

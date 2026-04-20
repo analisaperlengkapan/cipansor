@@ -740,7 +740,8 @@ export class CBTService {
       code: string,
       description: string,
       totalPoints: number,
-      earnedPoints: number
+      earnedPoints: number,
+      gradedCount: number
     }> = {};
 
     // Group by individual question (each question acts as its own "topic")
@@ -749,22 +750,36 @@ export class CBTService {
         objectiveId: q.id,
         code: `Q${idx + 1}`,
         description: q.content.substring(0, 100),
-        totalPoints: q.points * exam.attempts.length,
+        totalPoints: 0,
         earnedPoints: 0,
+        gradedCount: 0,
       };
     });
 
-    // Aggregate earned points (skip answers with null score to avoid
-    // counting ungraded essay questions as 0, which would distort mastery)
+    // Aggregate earned points and totalPoints only for graded answers
+    // (skip answers with null score to avoid counting ungraded essay
+    // questions as 0, which would distort mastery)
     exam.attempts.forEach(attempt => {
       attempt.answers.forEach(answer => {
-        if (topicMastery[answer.questionId] && answer.score !== null) {
-          topicMastery[answer.questionId].earnedPoints += Number(answer.score);
+        const entry = topicMastery[answer.questionId];
+        if (entry && answer.score !== null) {
+          entry.earnedPoints += Number(answer.score);
+          entry.gradedCount += 1;
         }
       });
     });
 
-    return Object.values(topicMastery).map(m => ({
+    // Compute totalPoints from gradedCount so the denominator only
+    // reflects attempts that were actually scored.
+    const questions = exam.questionBank.questions;
+    questions.forEach(q => {
+      const entry = topicMastery[q.id];
+      if (entry) {
+        entry.totalPoints = q.points * entry.gradedCount;
+      }
+    });
+
+    return Object.values(topicMastery).map(({ gradedCount: _gc, ...m }) => ({
       ...m,
       masteryLevel: m.totalPoints > 0 ? (m.earnedPoints / m.totalPoints) * 100 : 0
     })).sort((a, b) => a.masteryLevel - b.masteryLevel); // Weakest topics first

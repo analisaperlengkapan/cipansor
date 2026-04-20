@@ -422,7 +422,7 @@ export class TalentaService {
     });
 
     const averageGap = gaps.reduce((sum, g) => sum + g.gap, 0) / gaps.length;
-    const matchScore = Math.max(0, 100 - averageGap * 20);
+    const matchScore = Math.min(100, Math.max(0, 100 - averageGap * 20));
 
     return {
       position: targetPosition.title,

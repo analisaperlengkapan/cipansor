@@ -68,6 +68,13 @@ export class TalentaService {
     });
   }
 
+  async getProfileByUserId(userId: string) {
+    return prisma.talentProfile.findUnique({
+      where: { userId },
+      select: { id: true, unitId: true },
+    });
+  }
+
   async updateProfile(id: string, data: Prisma.TalentProfileUpdateInput) {
     return prisma.talentProfile.update({
       where: { id },

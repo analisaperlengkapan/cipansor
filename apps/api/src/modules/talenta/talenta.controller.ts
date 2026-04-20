@@ -200,6 +200,12 @@ export const getTalentAnalytics = asyncHandler(async (req: Request, res: Respons
 export const getCompetencyGap = asyncHandler(async (req: Request, res: Response) => {
   const { userId } = req.params;
   const targetPositionId = req.query.targetPositionId as string | undefined;
+
+  // Verify unit-level access before returning competency data
+  const profile = await talentaService.getProfileByUserId(userId);
+  if (!profile) throw Errors.notFound('Talent profile not found');
+  checkOwnership(req, profile.unitId);
+
   const result = await talentaService.getCompetencyGap(userId, targetPositionId);
   res.json({ success: true, data: result });
 });

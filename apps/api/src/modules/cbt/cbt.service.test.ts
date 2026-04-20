@@ -177,14 +177,12 @@ describe('CBT Service', () => {
             {
               id: 'q1',
               points: 10,
-              learningObjectiveId: 'lo1',
-              learningObjective: { id: 'lo1', code: 'TP1', description: 'Desc 1' }
+              content: 'Question 1 content',
             },
             {
               id: 'q2',
               points: 10,
-              learningObjectiveId: 'lo1',
-              learningObjective: { id: 'lo1', code: 'TP1', description: 'Desc 1' }
+              content: 'Question 2 content',
             }
           ]
         },
@@ -204,11 +202,16 @@ describe('CBT Service', () => {
 
       const result = await CBTService.getTopicMasteryAnalytics('exam-1');
 
-      expect(result).toHaveLength(1);
-      expect(result![0].code).toBe('TP1');
-      expect(result![0].totalPoints).toBe(20); // 10+10 for 1 student
-      expect(result![0].earnedPoints).toBe(15); // 10+5
-      expect(result![0].masteryLevel).toBe(75);
+      expect(result).toHaveLength(2);
+      // Sorted weakest first: q2 (50%) before q1 (100%)
+      expect(result![0].objectiveId).toBe('q2');
+      expect(result![0].totalPoints).toBe(10); // 10 points * 1 attempt
+      expect(result![0].earnedPoints).toBe(5);
+      expect(result![0].masteryLevel).toBe(50);
+      expect(result![1].objectiveId).toBe('q1');
+      expect(result![1].totalPoints).toBe(10);
+      expect(result![1].earnedPoints).toBe(10);
+      expect(result![1].masteryLevel).toBe(100);
     });
   });
 

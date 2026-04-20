@@ -710,15 +710,16 @@ export class CBTService {
   }
 
   static async getTopicMasteryAnalytics(examId: string) {
+    // Topic mastery analytics: aggregate per-question performance across all
+    // completed attempts.  The Question model does not have a
+    // learningObjective relation, so we group by individual question instead.
     const exam = await prisma.exam.findUnique({
       where: { id: examId },
       include: {
         questionBank: {
           include: {
             questions: {
-              include: {
-                learningObjective: true,
-              },
+              orderBy: { order: 'asc' },
             },
           },
         },
@@ -732,6 +733,7 @@ export class CBTService {
     });
 
     if (!exam || !exam.questionBank) return null;
+    if (exam.attempts.length === 0) return [];
 
     const topicMastery: Record<string, {
       objectiveId: string,
@@ -741,30 +743,22 @@ export class CBTService {
       earnedPoints: number
     }> = {};
 
-    // Map objectives
-    exam.questionBank.questions.forEach(q => {
-      if (q.learningObjective) {
-        const obj = q.learningObjective;
-        if (!topicMastery[obj.id]) {
-          topicMastery[obj.id] = {
-            objectiveId: obj.id,
-            code: obj.code,
-            description: obj.description,
-            totalPoints: 0,
-            earnedPoints: 0
-          };
-        }
-        // Multiply by number of attempts to get total possible points across class
-        topicMastery[obj.id].totalPoints += q.points * exam.attempts.length;
-      }
+    // Group by individual question (each question acts as its own "topic")
+    exam.questionBank.questions.forEach((q, idx) => {
+      topicMastery[q.id] = {
+        objectiveId: q.id,
+        code: `Q${idx + 1}`,
+        description: q.content.substring(0, 100),
+        totalPoints: q.points * exam.attempts.length,
+        earnedPoints: 0,
+      };
     });
 
     // Aggregate earned points
     exam.attempts.forEach(attempt => {
       attempt.answers.forEach(answer => {
-        const question = exam.questionBank!.questions.find(q => q.id === answer.questionId);
-        if (question?.learningObjectiveId && topicMastery[question.learningObjectiveId]) {
-          topicMastery[question.learningObjectiveId].earnedPoints += Number(answer.score || 0);
+        if (topicMastery[answer.questionId]) {
+          topicMastery[answer.questionId].earnedPoints += Number(answer.score || 0);
         }
       });
     });

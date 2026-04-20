@@ -4,6 +4,7 @@ import { AssessmentAnalyticsService } from './analytics.service';
 
 vi.mock('@/lib/prisma', () => ({
   prisma: {
+    academicYear: { findUnique: vi.fn() },
     grade: { aggregate: vi.fn(), groupBy: vi.fn() },
     tahfidzRecord: { aggregate: vi.fn() },
     violation: { aggregate: vi.fn() },
@@ -21,6 +22,12 @@ describe('AssessmentAnalyticsService', () => {
   it('should calculate student holistic score correctly', async () => {
     const studentId = 's1';
     const academicYearId = 'ay1';
+
+    // Mock Academic Year date range
+    (prisma.academicYear.findUnique as any).mockResolvedValue({
+      startDate: new Date('2024-07-01'),
+      endDate: new Date('2025-06-30'),
+    });
 
     // Mock Academic (80%)
     (prisma.grade.aggregate as any).mockResolvedValue({ _avg: { percentage: 80 } });

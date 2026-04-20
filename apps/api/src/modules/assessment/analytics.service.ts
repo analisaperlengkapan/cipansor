@@ -6,6 +6,15 @@ export class AssessmentAnalyticsService {
    * Integrates Academic, Tahfidz, Behavior (Violations), Attendance, and Ibadah.
    */
   static async getStudentHolisticAnalytics(studentId: string, academicYearId: string) {
+    // Look up the academic year's date range to scope all queries
+    const academicYear = await prisma.academicYear.findUnique({
+      where: { id: academicYearId },
+      select: { startDate: true, endDate: true },
+    });
+
+    const yearStart = academicYear?.startDate;
+    const yearEnd = academicYear?.endDate;
+
     const [
       academicGrades,
       tahfidzProgress,
@@ -19,29 +28,39 @@ export class AssessmentAnalyticsService {
         _avg: { percentage: true }
       }),
 
-      // 2. Tahfidz: Progress against target
+      // 2. Tahfidz: Progress against target (cumulative, not year-scoped)
       prisma.tahfidzRecord.aggregate({
         where: { studentId },
         _sum: { totalAyah: true },
         _max: { juz: true }
       }),
 
-      // 3. Behavior: Total violation points (inverted)
+      // 3. Behavior: Total violation points within academic year (inverted)
       prisma.violation.aggregate({
-        where: { studentId },
+        where: {
+          studentId,
+          ...(yearStart && yearEnd ? { occurredAt: { gte: yearStart, lte: yearEnd } } : {}),
+        },
         _sum: { points: true }
       }),
 
-      // 4. Attendance: Presence percentage
+      // 4. Attendance: Presence percentage within academic year
       prisma.attendance.groupBy({
         by: ['status'],
-        where: { studentId },
+        where: {
+          studentId,
+          class: { academicYearId },
+        },
         _count: { _all: true },
       }),
 
-      // 5. Ibadah: Points from daily ibadah records
+      // 5. Ibadah: Points from daily ibadah records within academic year
       prisma.dailyIbadahRecord.aggregate({
-        where: { studentId, isCompleted: true },
+        where: {
+          studentId,
+          isCompleted: true,
+          ...(yearStart && yearEnd ? { date: { gte: yearStart, lte: yearEnd } } : {}),
+        },
         _sum: { pointsEarned: true }
       })
     ]);

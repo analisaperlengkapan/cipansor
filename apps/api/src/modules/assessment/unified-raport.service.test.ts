@@ -97,6 +97,10 @@ describe('UnifiedRaportService Integration', () => {
     (raporPesantrenService.generateRaporPesantren as any).mockResolvedValue(mockPesantren);
 
     // Mock analytics dependencies
+    (prisma.academicYear.findUnique as any).mockResolvedValue({
+      startDate: new Date('2024-07-01'),
+      endDate: new Date('2025-06-30'),
+    });
     (prisma.grade.aggregate as any).mockResolvedValue({ _avg: { percentage: 85 } });
     (prisma.tahfidzRecord.aggregate as any).mockResolvedValue({ _sum: { totalAyah: 100 }, _max: { juz: 5 } });
     (prisma.violation.aggregate as any).mockResolvedValue({ _sum: { points: 0 } });

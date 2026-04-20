@@ -187,6 +187,19 @@ export class PengawasanService {
         }
       }
 
+      // Re-fetch the finding if evidence was updated with risk link metadata,
+      // so the returned object reflects the current database state.
+      if (data.linkToRiskId) {
+        const updatedFinding = await tx.auditFinding.findUniqueOrThrow({
+          where: { id: finding.id },
+          include: {
+            responsible: { select: { id: true, name: true } },
+            planObjective: { select: { id: true, title: true } },
+          },
+        });
+        Object.assign(finding, updatedFinding);
+      }
+
       // If linked to a strategic objective, update its progress (conservative decrement if critical finding)
       if (data.planObjectiveId && data.severity === 'CRITICAL') {
         const objective = await tx.planObjective.findUnique({

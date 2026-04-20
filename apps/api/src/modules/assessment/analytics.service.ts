@@ -84,8 +84,11 @@ export class AssessmentAnalyticsService {
     const tahfidzScore = hasTahfidzData ? Math.min(100, ((tahfidzProgress._max.juz || 0) / 30) * 100) : null;
 
     // Behavior score: starting at 100, subtract points
+    // When _sum.points is null, no violation records exist for this period.
+    // Treat as "no data" (null) so it doesn't inflate the holistic score.
+    const hasBehaviorData = violations._sum.points !== null;
     const violationPoints = Number(violations._sum.points || 0);
-    const behaviorScore = Math.max(0, 100 - violationPoints);
+    const behaviorScore = hasBehaviorData ? Math.max(0, 100 - violationPoints) : null;
 
     // Attendance score
     // SICK and EXCUSED are counted as partial presence (50% weight) since they are
@@ -116,7 +119,7 @@ export class AssessmentAnalyticsService {
       ? activeWeights.reduce((sum, w) => sum + (w.score! * (w.weight / totalWeight)), 0)
       : 0;
 
-    const dimensionsWithData = [hasAcademicData, hasTahfidzData, hasAttendanceData, hasIbadahData].filter(Boolean).length;
+    const dimensionsWithData = [hasAcademicData, hasTahfidzData, hasBehaviorData, hasAttendanceData, hasIbadahData].filter(Boolean).length;
 
     const roundOrNull = (v: number | null) => v !== null ? Math.round(v * 100) / 100 : null;
 
@@ -126,7 +129,7 @@ export class AssessmentAnalyticsService {
       breakdown: {
         academic: roundOrNull(academicScore),
         tahfidz: roundOrNull(tahfidzScore),
-        behavior: Math.round(behaviorScore * 100) / 100,
+        behavior: roundOrNull(behaviorScore),
         attendance: roundOrNull(attendanceScore),
         ibadah: roundOrNull(ibadahScore)
       },

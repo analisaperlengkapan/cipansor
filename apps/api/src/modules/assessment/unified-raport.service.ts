@@ -50,7 +50,7 @@ export class UnifiedRaportService {
     // These services handle their own internal data aggregation
     const holisticFallback = {
       holisticScore: 0,
-      breakdown: { academic: null, tahfidz: null, behavior: 0, attendance: null, ibadah: null },
+      breakdown: { academic: null, tahfidz: null, behavior: null, attendance: null, ibadah: null },
       interpretation: 'Data tidak tersedia',
     };
     const [raportMerdeka, raporPesantren, holistic] = await Promise.all([

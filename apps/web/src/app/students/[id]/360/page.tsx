@@ -273,9 +273,9 @@ export default function Student360Page() {
                             </h4>
                             <p className="text-sm text-slate-600 italic leading-relaxed">
                               "Berdasarkan profil pencapaian saat ini, santri disarankan untuk {
-                                holistic.breakdown.academic < 75 ? "meningkatkan fokus belajar pada mata pelajaran eksakta" :
-                                holistic.breakdown.tahfidz < 80 ? "lebih intensif dalam murojaah hafalan lama" :
-                                holistic.breakdown.ibadah < 80 ? "meningkatkan konsistensi ibadah sunnah harian" :
+                                holistic.breakdown.academic != null && holistic.breakdown.academic < 75 ? "meningkatkan fokus belajar pada mata pelajaran eksakta" :
+                                holistic.breakdown.tahfidz != null && holistic.breakdown.tahfidz < 80 ? "lebih intensif dalam murojaah hafalan lama" :
+                                holistic.breakdown.ibadah != null && holistic.breakdown.ibadah < 80 ? "meningkatkan konsistensi ibadah sunnah harian" :
                                 "mempertahankan performa dan mulai mengambil peran kepemimpinan di organisasi santri"
                               }. Tetap semangat!"
                             </p>

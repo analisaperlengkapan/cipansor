@@ -19,6 +19,8 @@ import {
   BulkCreateGradesInput,
   CreateReportCardInput,
 } from '@cipansor/shared';
+import { Errors } from '@/middleware/error';
+import { prisma } from '@/lib/prisma';
 
 // =====================================
 // EXAM CONTROLLERS
@@ -38,6 +40,13 @@ export async function getUnitEducationAnalytics(req: Request, res: Response, nex
   try {
     const { unitId } = req.params;
     const { academicYearId } = req.query;
+    const user = (req as any).user;
+
+    // Unit-level authorization: non-SUPER_ADMIN users can only access their own unit
+    if (user.role !== 'SUPER_ADMIN' && user.unitId !== unitId) {
+      throw Errors.forbidden('Access to this unit is not allowed');
+    }
+
     if (!academicYearId) {
       return res.status(400).json({ success: false, error: 'academicYearId is required' });
     }
@@ -55,6 +64,22 @@ export async function getStudentHolisticAnalytics(req: Request, res: Response, n
   try {
     const { studentId } = req.params;
     const { academicYearId } = req.query;
+    const user = (req as any).user;
+
+    // Unit-level authorization: verify the student belongs to the user's unit
+    if (user.role !== 'SUPER_ADMIN') {
+      const student = await prisma.student.findUnique({
+        where: { id: studentId },
+        select: { unitId: true },
+      });
+      if (!student) {
+        throw Errors.notFound('Student');
+      }
+      if (student.unitId !== user.unitId) {
+        throw Errors.forbidden('Access to this student is not allowed');
+      }
+    }
+
     if (!academicYearId) {
       return res.status(400).json({ success: false, error: 'academicYearId is required' });
     }

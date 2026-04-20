@@ -81,10 +81,13 @@ export class AssessmentAnalyticsService {
     const behaviorScore = Math.max(0, 100 - violationPoints);
 
     // Attendance score
+    // SICK and EXCUSED are counted as partial presence (50% weight) since they are
+    // legitimate absences that shouldn't penalize students the same as unexcused ones.
     const attMap = attendance.reduce((acc: Record<string, number>, curr: any) => ({ ...acc, [curr.status]: curr._count._all }), {} as Record<string, number>);
     const totalDays = Object.values(attMap).reduce((a, b) => a + b, 0);
     const presentDays = (attMap['PRESENT'] || 0) + (attMap['LATE'] || 0);
-    const attendanceScore = totalDays > 0 ? (presentDays / totalDays) * 100 : 0;
+    const excusedDays = (attMap['SICK'] || 0) + (attMap['EXCUSED'] || 0);
+    const attendanceScore = totalDays > 0 ? ((presentDays + excusedDays * 0.5) / totalDays) * 100 : 0;
 
     // Ibadah score (relative to an arbitrary monthly target of 3000 pts)
     const totalIbadahPoints = Number(ibadahPoints._sum.pointsEarned || 0);
@@ -100,6 +103,13 @@ export class AssessmentAnalyticsService {
       (ibadahScore * 0.1)
     );
 
+    // Count how many dimensions have actual data
+    const hasAcademicData = academicGrades._avg.percentage !== null;
+    const hasTahfidzData = tahfidzProgress._max.juz !== null;
+    const hasAttendanceData = totalDays > 0;
+    const hasIbadahData = ibadahPoints._sum.pointsEarned !== null && Number(ibadahPoints._sum.pointsEarned) > 0;
+    const dimensionsWithData = [hasAcademicData, hasTahfidzData, hasAttendanceData, hasIbadahData].filter(Boolean).length;
+
     return {
       studentId,
       holisticScore: Math.round(holisticScore * 100) / 100,
@@ -110,6 +120,7 @@ export class AssessmentAnalyticsService {
         attendance: Math.round(attendanceScore * 100) / 100,
         ibadah: Math.round(ibadahScore * 100) / 100
       },
+      dataCompleteness: dimensionsWithData >= 4 ? 'COMPLETE' : dimensionsWithData >= 2 ? 'PARTIAL' : 'INSUFFICIENT',
       interpretation: this.getHolisticInterpretation(Math.round(holisticScore * 100) / 100)
     };
   }

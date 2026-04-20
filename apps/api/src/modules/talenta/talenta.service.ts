@@ -394,11 +394,24 @@ export class TalentaService {
       return { position: null, gaps: [], matchScore: 100 };
     }
 
-    // Requirements are stored as text (e.g., "Skill A, Skill B") or JSON
+    // Requirements are stored as text (e.g., "Skill A, Skill B") or JSON.
+    // If stored as JSON object with levels (e.g., {"Skill A": 3, "Skill B": 5}),
+    // use those as per-competency target levels. Otherwise default to 4 (scale of 5).
     let requirements: string[];
+    let requirementLevels: Record<string, number> = {};
     try {
       const parsed = JSON.parse(targetPosition.requirements);
-      requirements = Array.isArray(parsed) ? parsed.map((r: any) => String(r).trim()) : targetPosition.requirements.split(',').map((r) => r.trim());
+      if (Array.isArray(parsed)) {
+        requirements = parsed.map((r: any) => String(r).trim());
+      } else if (typeof parsed === 'object' && parsed !== null) {
+        // Object format: {"Skill A": 3, "Skill B": 5}
+        requirements = Object.keys(parsed).map((r) => r.trim());
+        requirementLevels = Object.fromEntries(
+          Object.entries(parsed).map(([k, v]) => [k.trim(), Number(v) || 4])
+        );
+      } else {
+        requirements = targetPosition.requirements.split(',').map((r) => r.trim());
+      }
     } catch {
       requirements = targetPosition.requirements.split(',').map((r) => r.trim());
     }
@@ -409,10 +422,11 @@ export class TalentaService {
     }
 
     const userCompetencies = (userProfile.assessments[0]?.competencies as any) || {};
+    const DEFAULT_TARGET_LEVEL = 4; // Default target on a scale of 5
 
     const gaps = requirements.map((req) => {
       const userLevel = userCompetencies[req] || 0;
-      const targetLevel = 4; // Assuming scale of 5, target is 4
+      const targetLevel = requirementLevels[req] || DEFAULT_TARGET_LEVEL;
       return {
         competency: req,
         userLevel,

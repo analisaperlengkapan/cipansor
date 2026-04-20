@@ -565,19 +565,23 @@ export class FinanceEnhancementService {
     const projectedPRExpense = approvedPRs.reduce((sum, pr) => sum + Number(pr.totalEstimated), 0);
 
     // 3. Planned Expenses from Budget (pro-rated monthly, scoped to active academic year)
+    // NOTE: When no active academic year is found, we return 0 remaining budget rather
+    // than querying all budgets across all years, which would inflate the forecast.
     const activeAcademicYear = await prisma.academicYear.findFirst({
       where: { isActive: true },
       select: { id: true },
     });
 
-    const monthlyBudget = await prisma.budget.findMany({
-      where: {
-        unitId,
-        periodType: 'MONTHLY',
-        ...(activeAcademicYear ? { academicYearId: activeAcademicYear.id } : {}),
-      },
-      select: { amount: true, usedAmount: true },
-    });
+    const monthlyBudget = activeAcademicYear
+      ? await prisma.budget.findMany({
+          where: {
+            unitId,
+            periodType: 'MONTHLY',
+            academicYearId: activeAcademicYear.id,
+          },
+          select: { amount: true, usedAmount: true },
+        })
+      : [];
     const remainingBudget = monthlyBudget.reduce(
       (sum, b) => sum + Math.max(0, Number(b.amount) - Number(b.usedAmount)),
       0

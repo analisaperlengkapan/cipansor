@@ -183,6 +183,8 @@ export class PengawasanService {
           });
 
           // Recalculate parent plan's weighted progress to keep it in sync
+          // NOTE: This formula duplicates PerencanaanService.recalculatePlanProgress.
+          // Keep both in sync if the weighting logic changes.
           const objectives = await tx.planObjective.findMany({
             where: { planId: objective.planId },
             select: { weight: true, progress: true },

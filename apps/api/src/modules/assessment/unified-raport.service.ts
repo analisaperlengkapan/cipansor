@@ -129,7 +129,7 @@ export class UnifiedRaportService {
     if (entries.length === 0 || holistic.interpretation === 'Data tidak tersedia') {
       return "Pertahankan prestasi dan terus kembangkan potensi diri di segala aspek.";
     }
-    const lowest = entries.reduce((a, b) => a[1] <= b[1] ? a : b);
+    const lowest = entries.reduce((a, b) => a[1] <= b[1] ? a : b, entries[0]);
 
     const recommendations: Record<string, string> = {
       academic: "Fokus pada peningkatan jam belajar mandiri dan konsultasi dengan guru mata pelajaran yang nilainya masih di bawah KKM.",

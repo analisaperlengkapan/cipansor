@@ -45,7 +45,7 @@ export default function EducationAnalyticsPage() {
     activeYear?.id ?? ""
   );
 
-  // Derive subject performance from API data when available, fall back to mock
+  // Derive subject performance from API data when available
   const subjectPerformance = useMemo(() => {
     if (unitAnalytics?.subjectAverages?.length > 0) {
       return unitAnalytics.subjectAverages.map((s: any) => ({
@@ -53,17 +53,12 @@ export default function EducationAnalyticsPage() {
         score: s.averagePercentage,
       }));
     }
-    return [
-      { subject: 'Tahfidz', score: 88 },
-      { subject: 'B. Arab', score: 82 },
-      { subject: 'Matematika', score: 78 },
-      { subject: 'B. Inggris', score: 85 },
-      { subject: 'PAI', score: 92 },
-      { subject: 'IPA', score: 76 },
-    ];
+    return [];
   }, [unitAnalytics]);
 
-  // Fallback/Mock for multi-unit comparison (requires multi-unit API not yet available)
+  const hasSubjectData = subjectPerformance.length > 0;
+
+  // Placeholder data for multi-unit comparison (requires multi-unit API not yet available)
   const unitKpiData = [
     { name: 'TK Quran', avgScore: 92, tahfidzTarget: 85, attendance: 96 },
     { name: 'SD IT', avgScore: 88, tahfidzTarget: 78, attendance: 94 },
@@ -71,6 +66,7 @@ export default function EducationAnalyticsPage() {
     { name: 'SMA Qur\'an', avgScore: 82, tahfidzTarget: 68, attendance: 90 },
   ];
 
+  // Placeholder data for enrollment trend (requires enrollment history API)
   const enrollmentTrend = [
     { month: 'Jan', students: 1200 },
     { month: 'Feb', students: 1210 },
@@ -158,7 +154,7 @@ export default function EducationAnalyticsPage() {
                  <CardTitle className="text-base flex items-center gap-2">
                    <Target className="w-4 h-4 text-indigo-600" /> Performa Unit Pendidikan
                  </CardTitle>
-                 <CardDescription>Perbandingan Skor Akademik vs Target Tahfidz</CardDescription>
+                 <CardDescription>Perbandingan Skor Akademik vs Target Tahfidz <span className="text-amber-500 font-medium">(Data contoh)</span></CardDescription>
               </CardHeader>
               <CardContent className="h-[300px]">
                  <ResponsiveContainer width="100%" height="100%">
@@ -183,15 +179,21 @@ export default function EducationAnalyticsPage() {
                  <CardDescription>Rata-rata nilai per kategori mata pelajaran</CardDescription>
               </CardHeader>
               <CardContent className="h-[300px]">
-                 <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={subjectPerformance} layout="vertical">
-                       <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
-                       <XAxis type="number" domain={[0, 100]} hide />
-                       <YAxis dataKey="subject" type="category" />
-                       <Tooltip />
-                       <Bar dataKey="score" fill="#8b5cf6" radius={[0, 4, 4, 0]} barSize={20} />
-                    </BarChart>
-                 </ResponsiveContainer>
+                 {hasSubjectData ? (
+                   <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={subjectPerformance} layout="vertical">
+                         <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
+                         <XAxis type="number" domain={[0, 100]} hide />
+                         <YAxis dataKey="subject" type="category" />
+                         <Tooltip />
+                         <Bar dataKey="score" fill="#8b5cf6" radius={[0, 4, 4, 0]} barSize={20} />
+                      </BarChart>
+                   </ResponsiveContainer>
+                 ) : (
+                   <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
+                     Pilih unit dengan data nilai untuk melihat grafik.
+                   </div>
+                 )}
               </CardContent>
            </Card>
         </div>
@@ -199,7 +201,7 @@ export default function EducationAnalyticsPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
            <Card className="md:col-span-2">
               <CardHeader>
-                 <CardTitle className="text-base">Tren Jumlah Santri Aktif</CardTitle>
+                 <CardTitle className="text-base">Tren Jumlah Santri Aktif <span className="text-xs font-normal text-amber-500">(Data contoh)</span></CardTitle>
               </CardHeader>
               <CardContent className="h-[250px]">
                  <ResponsiveContainer width="100%" height="100%">
@@ -216,7 +218,7 @@ export default function EducationAnalyticsPage() {
 
            <Card>
               <CardHeader>
-                 <CardTitle className="text-base">Sebaran Jenjang Pendidikan</CardTitle>
+                 <CardTitle className="text-base">Sebaran Jenjang Pendidikan <span className="text-xs font-normal text-amber-500">(Data contoh)</span></CardTitle>
               </CardHeader>
               <CardContent className="h-[250px]">
                  <ResponsiveContainer width="100%" height="100%">

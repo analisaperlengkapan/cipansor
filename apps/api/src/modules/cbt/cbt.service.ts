@@ -713,6 +713,10 @@ export class CBTService {
     // Topic mastery analytics: aggregate per-question performance across all
     // completed attempts.  The Question model does not have a
     // learningObjective relation, so we group by individual question instead.
+    //
+    // NOTE: This eagerly loads all answers for all completed attempts into memory.
+    // For exams with very large numbers of students, consider migrating to a
+    // database-level aggregation (groupBy or raw SQL) for better scalability.
     const exam = await prisma.exam.findUnique({
       where: { id: examId },
       include: {
@@ -725,6 +729,7 @@ export class CBTService {
         },
         attempts: {
           where: { status: 'COMPLETED' },
+          take: 1000, // Safety limit to prevent excessive memory usage
           include: {
             answers: true,
           },

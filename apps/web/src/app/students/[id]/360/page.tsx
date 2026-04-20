@@ -3,7 +3,6 @@
 import { useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
-import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -14,12 +13,10 @@ import {
   ArrowLeft,
   User,
   GraduationCap,
-  BookOpen,
   HeartPulse,
   ShieldAlert,
   Wallet,
   LineChart,
-  Calendar,
   AlertTriangle,
   CheckCircle2,
   FileText
@@ -39,9 +36,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
   Radar,
   RadarChart,
   PolarGrid,
@@ -64,9 +58,8 @@ export default function Student360Page() {
   // New Education Enhancement Hooks
   const { data: holistic, isLoading: loadingHolistic } = useStudentHolisticAnalytics(studentId, student?.currentClass?.academicYear?.id || "");
   const { data: ibadah, isLoading: loadingIbadah } = useStudentIbadahStats({ studentId });
-  const { data: quranMap, isLoading: loadingQuranMap } = useStudentTahfidzProgress(studentId); // Reusing hook or if there's specific one
 
-  const isLoading = loadingStudent || loadingGrades || loadingHealth || loadingViolations || loadingFinance || loadingTahfidz || loadingHolistic || loadingIbadah || loadingQuranMap;
+  const isLoading = loadingStudent || loadingGrades || loadingHealth || loadingViolations || loadingFinance || loadingTahfidz || loadingHolistic || loadingIbadah;
 
   const academicData = useMemo(() => {
     if (!grades?.data) return [];
@@ -203,18 +196,18 @@ export default function Student360Page() {
                 <div>
                   <div className="flex justify-between text-xs mb-1">
                     <span>Average Score</span>
-                    <span className="font-bold">88.5</span>
+                    <span className="font-bold">{holistic?.breakdown?.academic ?? '—'}</span>
                   </div>
-                  <Progress value={88.5} className="h-1.5 bg-blue-400" />
+                  <Progress value={holistic?.breakdown?.academic ?? 0} className="h-1.5 bg-blue-400" />
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-center pt-2">
                   <div className="bg-blue-500/50 rounded-lg p-2">
                     <p className="text-[10px] opacity-70">Att. Rate</p>
-                    <p className="text-lg font-bold">96%</p>
+                    <p className="text-lg font-bold">{holistic?.breakdown?.attendance != null ? `${Math.round(holistic.breakdown.attendance)}%` : '—'}</p>
                   </div>
                   <div className="bg-blue-500/50 rounded-lg p-2">
-                    <p className="text-[10px] opacity-70">Pass Rate</p>
-                    <p className="text-lg font-bold">100%</p>
+                    <p className="text-[10px] opacity-70">Holistic</p>
+                    <p className="text-lg font-bold">{holistic?.holisticScore ?? '—'}</p>
                   </div>
                 </div>
               </div>
@@ -329,31 +322,30 @@ export default function Student360Page() {
                   <CardContent className="space-y-4 pt-4">
                     <div className="flex items-center justify-between p-3 rounded-lg bg-emerald-50 border border-emerald-100">
                       <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-full bg-white flex items-center justify-center text-emerald-600 shadow-sm font-bold">A</div>
+                        <div className="h-10 w-10 rounded-full bg-white flex items-center justify-center text-emerald-600 shadow-sm font-bold">
+                          {student.bloodType || '—'}
+                        </div>
                         <div>
                           <p className="text-xs font-bold text-emerald-800">GOLONGAN DARAH</p>
-                          <p className="text-xs text-emerald-600">Rhesus Positif</p>
+                          <p className="text-xs text-emerald-600">{student.bloodType ? 'Tercatat' : 'Belum tercatat'}</p>
                         </div>
                       </div>
-                      <Badge className="bg-emerald-600">IDEAL</Badge>
+                      <Badge className="bg-emerald-600">{health?.data?.length > 0 ? 'TERCATAT' : 'SEHAT'}</Badge>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="p-3 border rounded-lg">
-                        <p className="text-[10px] text-muted-foreground uppercase font-bold">Tinggi Badan</p>
-                        <p className="text-lg font-bold">165 <span className="text-xs font-normal">cm</span></p>
-                      </div>
-                      <div className="p-3 border rounded-lg">
-                        <p className="text-[10px] text-muted-foreground uppercase font-bold">Berat Badan</p>
-                        <p className="text-lg font-bold">58 <span className="text-xs font-normal">kg</span></p>
-                      </div>
+                    <div className="text-center p-4 border rounded-lg bg-slate-50">
+                      <p className="text-xs text-muted-foreground">
+                        {health?.data?.length > 0
+                          ? `${health.data.length} kunjungan medis tercatat`
+                          : 'Belum ada data pemeriksaan rutin'}
+                      </p>
                     </div>
 
                     <div className="p-3 border rounded-lg bg-slate-50">
                        <p className="text-xs font-bold flex items-center gap-2 mb-1">
                          <ShieldAlert className="w-3 h-3 text-rose-500" /> Riwayat Alergi
                        </p>
-                       <p className="text-xs text-muted-foreground">Kacang-kacangan, Debu ruangan</p>
+                       <p className="text-xs text-muted-foreground">{student.allergies || 'Tidak ada data alergi tercatat'}</p>
                     </div>
                   </CardContent>
                 </Card>
@@ -519,16 +511,7 @@ export default function Student360Page() {
                    <CardDescription>Catatan perkembangan psikologis dan pembinaan</CardDescription>
                  </CardHeader>
                  <CardContent>
-                    <div className="space-y-4">
-                       <div className="p-4 border rounded-lg bg-amber-50 border-amber-100">
-                          <div className="flex justify-between items-start mb-2">
-                             <h5 className="font-bold text-amber-900">Konsultasi Minat & Bakat</h5>
-                             <Badge>Selesai</Badge>
-                          </div>
-                          <p className="text-sm text-amber-800">Santri menunjukkan ketertarikan tinggi pada bidang sains dan teknologi. Disarankan mengikuti ekskul robotik.</p>
-                          <p className="text-[10px] text-amber-600 mt-2 uppercase">12 Feb 2024 • Konselor: Ibu Maya, S.Psi</p>
-                       </div>
-                    </div>
+                    <p className="text-sm text-muted-foreground py-10 text-center">Modul Bimbingan & Konseling dalam Pengembangan.</p>
                  </CardContent>
                </Card>
             </TabsContent>
@@ -540,36 +523,7 @@ export default function Student360Page() {
                    <CardDescription>Informasi kamar dan dinamika sosial</CardDescription>
                  </CardHeader>
                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                       <div className="p-6 border rounded-xl bg-slate-50">
-                          <h4 className="font-bold text-slate-900 mb-2">Informasi Kamar</h4>
-                          <div className="space-y-2 text-sm">
-                             <div className="flex justify-between">
-                                <span className="text-muted-foreground">Nama Gedung</span>
-                                <span className="font-medium">Gedung Al-Fatih</span>
-                             </div>
-                             <div className="flex justify-between">
-                                <span className="text-muted-foreground">Nomor Kamar</span>
-                                <span className="font-medium">302 (Lantai 3)</span>
-                             </div>
-                             <div className="flex justify-between">
-                                <span className="text-muted-foreground">Musyrif Kamar</span>
-                                <span className="font-medium">Ust. Zulkifli</span>
-                             </div>
-                          </div>
-                       </div>
-
-                       <div className="p-6 border rounded-xl bg-indigo-50 border-indigo-100">
-                          <h4 className="font-bold text-indigo-900 mb-2">Social Harmony Score</h4>
-                          <div className="flex items-end gap-3 mb-4">
-                             <span className="text-4xl font-black text-indigo-700">92</span>
-                             <Badge className="mb-1 bg-emerald-600">SANGAT KONDUSIF</Badge>
-                          </div>
-                          <p className="text-xs text-indigo-800 italic">
-                            "Kamar ini menunjukkan tingkat harmoni yang tinggi. Minim pelanggaran dan interaksi antar santri sangat baik."
-                          </p>
-                       </div>
-                    </div>
+                    <p className="text-sm text-muted-foreground py-10 text-center">Data asrama akan tersedia setelah integrasi modul kamar santri.</p>
                  </CardContent>
                </Card>
             </TabsContent>

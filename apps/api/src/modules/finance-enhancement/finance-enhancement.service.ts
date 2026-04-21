@@ -571,6 +571,7 @@ export class FinanceEnhancementService {
     const activeAcademicYear = await prisma.academicYear.findFirst({
       where: { isActive: true },
       select: { id: true },
+      orderBy: { startDate: 'desc' },
     });
 
     const monthlyBudget = activeAcademicYear

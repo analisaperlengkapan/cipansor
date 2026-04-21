@@ -64,7 +64,9 @@ export default function Student360Page() {
   const { data: holistic, isLoading: loadingHolistic } = useStudentHolisticAnalytics(studentId, academicYearId);
   const { data: ibadah, isLoading: loadingIbadah } = useStudentIbadahStats({ studentId });
 
-  const isLoading = loadingStudent || loadingGrades || loadingHealth || loadingViolations || loadingFinance || loadingTahfidz || loadingHolistic || loadingIbadah;
+  // Only gate on primary data — holistic and ibadah are supplementary and
+  // should not block the entire page from rendering.
+  const isLoading = loadingStudent || loadingGrades || loadingHealth || loadingViolations || loadingFinance || loadingTahfidz;
 
   const academicData = useMemo(() => {
     if (!grades?.data) return [];
@@ -242,15 +244,28 @@ export default function Student360Page() {
 
             <TabsContent value="overview" className="space-y-6">
               {/* Holistic Recommendation Card */}
-              {holistic && (
+              {loadingHolistic && (
+                <Card className="bg-gradient-to-r from-indigo-50 to-blue-50 border-indigo-100">
+                  <CardContent className="flex justify-center py-12">
+                    <Skeleton className="h-[200px] w-full" />
+                  </CardContent>
+                </Card>
+              )}
+              {!loadingHolistic && holistic && (
                 <Card className="bg-gradient-to-r from-indigo-50 to-blue-50 border-indigo-100">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-indigo-900 flex items-center gap-2">
                       <LineChart className="w-5 h-5" />
                       Analisis Perkembangan Holistik
                     </CardTitle>
-                    <CardDescription className="text-indigo-700 font-medium">
+                    <CardDescription className="text-indigo-700 font-medium flex items-center gap-2">
                       Status: {holistic.interpretation}
+                      {holistic.dataCompleteness === 'PARTIAL' && (
+                        <Badge variant="outline" className="text-amber-600 border-amber-300 text-[10px]">Data Sebagian</Badge>
+                      )}
+                      {holistic.dataCompleteness === 'INSUFFICIENT' && (
+                        <Badge variant="outline" className="text-rose-600 border-rose-300 text-[10px]">Data Tidak Cukup</Badge>
+                      )}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -470,6 +485,13 @@ export default function Student360Page() {
             </TabsContent>
 
             <TabsContent value="ibadah">
+               {loadingIbadah ? (
+                 <Card>
+                   <CardContent className="flex justify-center py-12">
+                     <Skeleton className="h-[250px] w-full" />
+                   </CardContent>
+                 </Card>
+               ) : (
                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                  <Card className="md:col-span-1">
                    <CardHeader>
@@ -510,6 +532,7 @@ export default function Student360Page() {
                    </CardContent>
                  </Card>
                </div>
+               )}
             </TabsContent>
 
             <TabsContent value="counseling">

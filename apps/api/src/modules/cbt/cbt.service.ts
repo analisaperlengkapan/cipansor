@@ -740,6 +740,9 @@ export class CBTService {
     if (!exam || !exam.questionBank) return null;
     if (exam.attempts.length === 0) return [];
 
+    // Warn if the safety limit was hit — analytics may be based on a subset
+    const truncated = exam.attempts.length >= 1000;
+
     const topicMastery: Record<string, {
       objectiveId: string,
       code: string,
@@ -784,10 +787,23 @@ export class CBTService {
       }
     });
 
-    return Object.values(topicMastery).map(({ gradedCount: _gc, ...m }) => ({
+    const results = Object.values(topicMastery).map(({ gradedCount: _gc, ...m }) => ({
       ...m,
       masteryLevel: m.totalPoints > 0 ? (m.earnedPoints / m.totalPoints) * 100 : 0
     })).sort((a, b) => a.masteryLevel - b.masteryLevel); // Weakest topics first
+
+    // When truncated, attach metadata so callers know the data is partial.
+    // The array is returned directly for backward compatibility; consumers
+    // that don't check _meta will still work fine.
+    if (truncated) {
+      (results as any)._meta = {
+        truncated: true,
+        analyzedAttempts: exam.attempts.length,
+        message: 'Results based on first 1000 completed attempts only',
+      };
+    }
+
+    return results;
   }
 
   static async finishExamAttempt(attemptId: string, studentId: string) {

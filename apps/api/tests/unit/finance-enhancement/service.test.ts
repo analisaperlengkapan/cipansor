@@ -40,11 +40,18 @@ vi.mock('../../../src/lib/prisma', () => ({
       count: vi.fn(),
       create: vi.fn(),
     },
+    invoice: {
+      findMany: vi.fn(),
+    },
+    purchaseRequest: {
+      findMany: vi.fn(),
+    },
     academicYear: {
       findFirst: vi.fn(),
     },
     budget: {
       findUnique: vi.fn(),
+      findMany: vi.fn(),
     },
     $queryRaw: vi.fn(),
     $executeRaw: vi.fn(),

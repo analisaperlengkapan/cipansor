@@ -70,17 +70,20 @@ export class RiskService {
   }
 
   async updateRisk(id: string, data: Prisma.RiskUpdateInput): Promise<Risk> {
-    const current = await this.getRiskById(id);
-    if (!current) throw new Error('Risk not found');
-
-    // Use current values if not provided in update
-    const likelihood = (data.likelihood as RiskLikelihood) || current.likelihood;
-    const impact = (data.impact as RiskImpact) || current.impact;
-
-    const riskScore = this.calculateRiskScore(likelihood, impact);
-    const riskLevel = this.determineRiskLevel(riskScore);
-
     return prisma.$transaction(async (tx) => {
+      // Read current risk inside the transaction to prevent stale-read race
+      // conditions when concurrent updates change likelihood/impact between
+      // the read and the write.
+      const current = await tx.risk.findUnique({ where: { id } });
+      if (!current) throw new Error('Risk not found');
+
+      // Use current values if not provided in update
+      const likelihood = (data.likelihood as RiskLikelihood) || current.likelihood;
+      const impact = (data.impact as RiskImpact) || current.impact;
+
+      const riskScore = this.calculateRiskScore(likelihood, impact);
+      const riskLevel = this.determineRiskLevel(riskScore);
+
       await tx.risk.update({
         where: { id },
         data: {
@@ -214,6 +217,9 @@ export class RiskService {
     });
   }
 
+  // Shared enum-to-numeric mapping used by both calculateRiskScore and
+  // recalculateResidualRisk. Likelihood and Impact enums are combined in a
+  // single map because their string values don't overlap.
   private getEnumWeight(val: string): number {
     const map: Record<string, number> = {
       RARE: 1, INSIGNIFICANT: 1,
@@ -240,26 +246,11 @@ export class RiskService {
   }
 
   private calculateRiskScore(likelihood: RiskLikelihood, impact: RiskImpact): number {
-    // Note: We use a string key lookup here (`likelihood as string`) instead of directly
-    // referencing Prisma Enums as object keys to prevent Vitest mocking issues during testing,
-    // while still maintaining the strong typings for the method parameters in production code.
-    const likelihoodMap: Record<string, number> = {
-      RARE: 1,
-      UNLIKELY: 2,
-      POSSIBLE: 3,
-      LIKELY: 4,
-      ALMOST_CERTAIN: 5,
-    };
-    const impactMap: Record<string, number> = {
-      INSIGNIFICANT: 1,
-      MINOR: 2,
-      MODERATE: 3,
-      MAJOR: 4,
-      CATASTROPHIC: 5,
-    };
-
-    const l = likelihoodMap[likelihood as string] || 1;
-    const i = impactMap[impact as string] || 1;
+    // Delegates to getEnumWeight which holds the single source of truth for
+    // enum-to-numeric mappings. String casting prevents Vitest mocking issues
+    // with Prisma Enums while maintaining strong typings for method parameters.
+    const l = this.getEnumWeight(likelihood as string);
+    const i = this.getEnumWeight(impact as string);
 
     return l * i;
   }

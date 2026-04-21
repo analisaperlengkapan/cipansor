@@ -142,8 +142,8 @@ export class PengawasanService {
       });
 
       // If linked to a risk, update risk status and append audit reference to consequence.
-      // Also store the linkToRiskId on the finding's evidence field as structured metadata
-      // so the relationship can be queried later (AuditFinding has no riskId FK).
+      // The linkToRiskId is stored on the finding's riskId FK column so the relationship
+      // can be queried directly without fragile text parsing.
       if (data.linkToRiskId) {
         const existingRisk = await tx.risk.findUnique({
           where: { id: data.linkToRiskId },
@@ -154,15 +154,10 @@ export class PengawasanService {
           throw new Error(`Risk with id ${data.linkToRiskId} not found`);
         }
 
-        // Store the risk link on the finding so it can be traced back without parsing text
-        const linkedRiskMeta = `\n[Linked Risk: ${data.linkToRiskId}]`;
+        // Store the risk link as a proper FK on the finding
         await tx.auditFinding.update({
           where: { id: finding.id },
-          data: {
-            evidence: finding.evidence
-              ? `${finding.evidence}${linkedRiskMeta}`
-              : linkedRiskMeta.trim(),
-          },
+          data: { riskId: data.linkToRiskId },
         });
 
         const auditNote = `[Audit Finding ${data.findingNumber}: ${data.title}]`;
@@ -186,11 +181,8 @@ export class PengawasanService {
             },
           });
         }
-      }
 
-      // Re-fetch the finding if evidence was updated with risk link metadata,
-      // so the returned object reflects the current database state.
-      if (data.linkToRiskId) {
+        // Re-fetch so the returned object reflects the riskId FK
         const updatedFinding = await tx.auditFinding.findUniqueOrThrow({
           where: { id: finding.id },
           include: {
@@ -235,21 +227,6 @@ export class PengawasanService {
     if (planObjectiveId) updateData.planObjective = { connect: { id: planObjectiveId } };
     else if (planObjectiveId === null) updateData.planObjective = { disconnect: true };
     if (rest.dueDate) updateData.dueDate = new Date(rest.dueDate);
-
-    // Preserve risk-link metadata in evidence field if the caller is updating evidence.
-    // The [Linked Risk: <uuid>] suffix is appended by createFinding and must not be lost.
-    if (updateData.evidence !== undefined) {
-      const existing = await prisma.auditFinding.findUnique({
-        where: { id },
-        select: { evidence: true },
-      });
-      const riskLinkMatch = existing?.evidence?.match(/\n?\[Linked Risk: [^\]]+\]/);
-      if (riskLinkMatch) {
-        updateData.evidence = updateData.evidence
-          ? `${updateData.evidence}${riskLinkMatch[0].startsWith('\n') ? riskLinkMatch[0] : `\n${riskLinkMatch[0]}`}`
-          : riskLinkMatch[0].trim();
-      }
-    }
 
     return prisma.auditFinding.update({
       where: { id },

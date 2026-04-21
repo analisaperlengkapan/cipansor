@@ -166,7 +166,7 @@ export class RiskService {
   }
 
   // Helpers
-  private async recalculateResidualRisk(riskId: string, tx: TransactionClient | typeof prisma = prisma) {
+  private async recalculateResidualRisk(riskId: string, tx: TransactionClient | typeof prisma = prisma): Promise<void> {
     const risk = await tx.risk.findUnique({
       where: { id: riskId },
       include: { mitigations: true },

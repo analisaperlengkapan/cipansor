@@ -372,7 +372,7 @@ export default function Student360Page() {
                        <p className="text-xs font-bold flex items-center gap-2 mb-1">
                          <ShieldAlert className="w-3 h-3 text-rose-500" /> Riwayat Alergi
                        </p>
-                       <p className="text-xs text-muted-foreground">{student.allergies || 'Tidak ada data alergi tercatat'}</p>
+                       <p className="text-xs text-muted-foreground">{student.specialNeeds || 'Tidak ada data alergi tercatat'}</p>
                     </div>
                   </CardContent>
                 </Card>

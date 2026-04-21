@@ -738,7 +738,7 @@ export class CBTService {
     });
 
     if (!exam || !exam.questionBank) return null;
-    if (exam.attempts.length === 0) return [];
+    if (exam.attempts.length === 0) return { items: [], _meta: { truncated: false } };
 
     // Warn if the safety limit was hit — analytics may be based on a subset
     const truncated = exam.attempts.length >= 1000;
@@ -792,18 +792,19 @@ export class CBTService {
       masteryLevel: m.totalPoints > 0 ? (m.earnedPoints / m.totalPoints) * 100 : 0
     })).sort((a, b) => a.masteryLevel - b.masteryLevel); // Weakest topics first
 
-    // When truncated, attach metadata so callers know the data is partial.
-    // The array is returned directly for backward compatibility; consumers
-    // that don't check _meta will still work fine.
-    if (truncated) {
-      (results as any)._meta = {
-        truncated: true,
-        analyzedAttempts: exam.attempts.length,
-        message: 'Results based on first 1000 completed attempts only',
-      };
-    }
-
-    return results;
+    // Return an object with items and metadata so truncation info survives
+    // JSON serialization (named properties on arrays are silently dropped
+    // by JSON.stringify).
+    return {
+      items: results,
+      _meta: truncated
+        ? {
+            truncated: true,
+            analyzedAttempts: exam.attempts.length,
+            message: 'Results based on first 1000 completed attempts only',
+          }
+        : { truncated: false },
+    };
   }
 
   static async finishExamAttempt(attemptId: string, studentId: string) {

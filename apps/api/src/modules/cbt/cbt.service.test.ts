@@ -202,16 +202,18 @@ describe('CBT Service', () => {
 
       const result = await CBTService.getTopicMasteryAnalytics('exam-1');
 
-      expect(result).toHaveLength(2);
+      expect(result).not.toBeNull();
+      expect(result!.items).toHaveLength(2);
+      expect(result!._meta.truncated).toBe(false);
       // Sorted weakest first: q2 (50%) before q1 (100%)
-      expect(result![0].objectiveId).toBe('q2');
-      expect(result![0].totalPoints).toBe(10); // 10 points * 1 attempt
-      expect(result![0].earnedPoints).toBe(5);
-      expect(result![0].masteryLevel).toBe(50);
-      expect(result![1].objectiveId).toBe('q1');
-      expect(result![1].totalPoints).toBe(10);
-      expect(result![1].earnedPoints).toBe(10);
-      expect(result![1].masteryLevel).toBe(100);
+      expect(result!.items[0].objectiveId).toBe('q2');
+      expect(result!.items[0].totalPoints).toBe(10); // 10 points * 1 attempt
+      expect(result!.items[0].earnedPoints).toBe(5);
+      expect(result!.items[0].masteryLevel).toBe(50);
+      expect(result!.items[1].objectiveId).toBe('q1');
+      expect(result!.items[1].totalPoints).toBe(10);
+      expect(result!.items[1].earnedPoints).toBe(10);
+      expect(result!.items[1].masteryLevel).toBe(100);
     });
   });
 

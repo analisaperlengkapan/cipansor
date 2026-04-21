@@ -62,7 +62,7 @@ export class CBTController {
       if (analytics === null) {
         throw Errors.notFound('Exam or Question Bank');
       }
-      res.json({ success: true, data: analytics });
+      res.json({ success: true, data: analytics.items, _meta: analytics._meta });
     } catch (error) {
       next(error);
     }

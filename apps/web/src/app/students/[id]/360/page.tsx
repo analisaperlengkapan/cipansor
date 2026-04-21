@@ -302,7 +302,9 @@ export default function Student360Page() {
                             </div>
                             <div className="text-center p-2 rounded-lg bg-emerald-100/50">
                                <p className="text-[10px] text-emerald-700 font-bold uppercase">Potensi</p>
-                               <p className="text-xl font-black text-emerald-900">Tinggi</p>
+                               <p className="text-xl font-black text-emerald-900">
+                               {holistic.dataCompleteness === 'INSUFFICIENT' ? '—' : holistic.holisticScore >= 80 ? 'Tinggi' : holistic.holisticScore >= 60 ? 'Sedang' : 'Perlu Perhatian'}
+                             </p>
                             </div>
                          </div>
                       </div>

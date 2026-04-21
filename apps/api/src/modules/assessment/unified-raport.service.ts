@@ -61,7 +61,10 @@ export class UnifiedRaportService {
       generateRaporPesantren({ studentId, academicYearId, semester, unitId: student.unitId }),
       // Holistic analytics failure should not block raport generation
       AssessmentAnalyticsService.getStudentHolisticAnalytics(studentId, academicYearId)
-        .catch(() => holisticFallback),
+        .catch((err) => {
+          console.error('[UnifiedRaport] Holistic analytics failed, using fallback:', err?.message || err);
+          return holisticFallback;
+        }),
     ]);
 
     // 3. Structure the Unified Data

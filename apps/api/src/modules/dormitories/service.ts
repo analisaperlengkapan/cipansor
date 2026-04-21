@@ -425,7 +425,7 @@ export async function getRoomSocialAnalytics(roomId: string) {
   // doesn't crash the score to 0 for the entire room.
   const totalViolations = members.reduce((sum, m) => sum + m.riskScore, 0);
   const avgViolationPoints = totalViolations / Math.max(1, members.length);
-  // Scale: 0 pts → 100, ~10 pts → ~80, ~50 pts → ~40, 100+ pts → ~0
+  // Scale: 0 pts → 100, ~10 pts → ~82, ~50 pts → ~37, ~100 pts → ~14, ~250+ pts → ~0
   const harmonyScore = Math.round(Math.max(0, 100 * Math.exp(-avgViolationPoints / 50)) * 100) / 100;
 
   return {

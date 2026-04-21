@@ -69,12 +69,19 @@ export default function Student360Page() {
   const isLoading = loadingStudent || loadingGrades || loadingHealth || loadingViolations || loadingFinance || loadingTahfidz;
 
   const academicData = useMemo(() => {
-    if (!grades?.data) return [];
-    return grades.data.slice(0, 5).map((g: any) => ({
+    if (!Array.isArray(grades) || grades.length === 0) return [];
+    return grades.slice(0, 5).map((g: any) => ({
       name: g.subject?.name || "Unknown",
       score: Number(g.score)
     }));
   }, [grades]);
+
+  // Derive violation total points from the violations array
+  // useStudentViolations returns Violation[] directly, not {data: {totalPoints, items}}
+  const violationTotalPoints = useMemo(() => {
+    if (!Array.isArray(violations)) return 0;
+    return violations.reduce((sum: number, v: any) => sum + (v.violationType?.points || 0), 0);
+  }, [violations]);
 
   const holisticRadarData = useMemo(() => {
     if (!holistic?.breakdown) return [];
@@ -148,15 +155,15 @@ export default function Student360Page() {
           <Card className="flex-1 md:w-32 bg-slate-50 border-none shadow-none">
             <CardContent className="p-3 text-center">
                <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Poin Pelanggaran</p>
-               <p className={`text-xl font-bold mt-1 ${violations?.data?.totalPoints > 50 ? 'text-rose-600' : 'text-slate-900'}`}>
-                 {violations?.data?.totalPoints || 0}
+               <p className={`text-xl font-bold mt-1 ${violationTotalPoints > 50 ? 'text-rose-600' : 'text-slate-900'}`}>
+                 {violationTotalPoints}
                </p>
             </CardContent>
           </Card>
           <Card className="flex-1 md:w-32 bg-slate-50 border-none shadow-none">
             <CardContent className="p-3 text-center">
                <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Hafalan (Juz)</p>
-               <p className="text-xl font-bold mt-1 text-indigo-600">{tahfidz?.data?.totalJuz || 0}</p>
+               <p className="text-xl font-bold mt-1 text-indigo-600">{tahfidz?.totalJuz || 0}</p>
             </CardContent>
           </Card>
         </div>
@@ -191,7 +198,7 @@ export default function Student360Page() {
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-xs font-medium">Keuangan (Saldo)</span>
-                  <span className="text-xs font-bold">Rp {Number(finance?.data?.balance || 0).toLocaleString('id-ID')}</span>
+                  <span className="text-xs font-bold">Rp {Number(finance?.totalOutstanding || 0).toLocaleString('id-ID')}</span>
                 </div>
               </div>
             </CardContent>
@@ -350,13 +357,13 @@ export default function Student360Page() {
                           <p className="text-xs text-emerald-600">{student.bloodType ? 'Tercatat' : 'Belum tercatat'}</p>
                         </div>
                       </div>
-                      <Badge className="bg-emerald-600">{health?.data?.length > 0 ? 'TERCATAT' : 'SEHAT'}</Badge>
+                      <Badge className="bg-emerald-600">{Array.isArray(health) && health.length > 0 ? 'TERCATAT' : 'SEHAT'}</Badge>
                     </div>
 
                     <div className="text-center p-4 border rounded-lg bg-slate-50">
                       <p className="text-xs text-muted-foreground">
-                        {health?.data?.length > 0
-                          ? `${health.data.length} kunjungan medis tercatat`
+                        {Array.isArray(health) && health.length > 0
+                          ? `${health.length} kunjungan medis tercatat`
                           : 'Belum ada data pemeriksaan rutin'}
                       </p>
                     </div>
@@ -380,15 +387,15 @@ export default function Student360Page() {
                        </CardTitle>
                     </CardHeader>
                     <CardContent className="p-0">
-                       {violations?.data?.items?.length > 0 ? (
+                       {Array.isArray(violations) && violations.length > 0 ? (
                          <div className="divide-y">
-                           {violations.data.items.slice(0, 3).map((v: any) => (
+                           {violations.slice(0, 3).map((v: any) => (
                              <div key={v.id} className="p-3 px-6 flex justify-between items-center text-sm">
                                 <div>
-                                  <p className="font-semibold">{v.category}</p>
+                                  <p className="font-semibold">{v.violationType?.category || v.category}</p>
                                   <p className="text-xs text-muted-foreground line-clamp-1">{v.description}</p>
                                 </div>
-                                <Badge variant="outline" className="text-rose-600 border-rose-200">-{v.points}</Badge>
+                                <Badge variant="outline" className="text-rose-600 border-rose-200">-{v.violationType?.points || v.points}</Badge>
                              </div>
                            ))}
                          </div>
@@ -411,7 +418,7 @@ export default function Student360Page() {
                        <div className="flex justify-between items-center mb-4">
                           <div>
                             <p className="text-xs text-muted-foreground">Tunggakan Aktif</p>
-                            <p className="text-2xl font-bold text-rose-600">Rp 0</p>
+                            <p className="text-2xl font-bold text-rose-600">Rp {Number(finance?.totalOutstanding || 0).toLocaleString('id-ID')}</p>
                           </div>
                           <CheckCircle2 className="w-8 h-8 text-emerald-500" />
                        </div>
@@ -444,12 +451,12 @@ export default function Student360Page() {
                  <CardContent className="space-y-6">
                    <div className="flex justify-between items-end">
                       <div>
-                        <p className="text-3xl font-bold text-indigo-700">{tahfidz?.data?.totalJuz || 0} <span className="text-sm font-normal text-slate-500">Juz</span></p>
+                        <p className="text-3xl font-bold text-indigo-700">{tahfidz?.totalJuz || 0} <span className="text-sm font-normal text-slate-500">Juz</span></p>
                         <p className="text-xs text-muted-foreground">Total Hafalan Saat Ini</p>
                       </div>
                       <div className="text-right">
                         <p className="text-sm font-bold">Target: 30 Juz</p>
-                        <Progress value={((tahfidz?.data?.totalJuz || 0) / 30) * 100} className="h-2 w-32 mt-1" />
+                        <Progress value={((tahfidz?.totalJuz || 0) / 30) * 100} className="h-2 w-32 mt-1" />
                       </div>
                    </div>
 
@@ -564,8 +571,8 @@ export default function Student360Page() {
                  </CardHeader>
                  <CardContent>
                     <div className="space-y-4">
-                      {health?.data?.length > 0 ? (
-                        health.data.map((h: any) => (
+                      {Array.isArray(health) && health.length > 0 ? (
+                        health.map((h: any) => (
                           <div key={h.id} className="p-4 border rounded-lg flex gap-4">
                             <div className="h-10 w-10 rounded bg-slate-100 flex items-center justify-center shrink-0">
                               <HeartPulse className="w-5 h-5 text-rose-500" />

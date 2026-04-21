@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { Errors } from '@/middleware/error';
 
 export class AssessmentAnalyticsService {
   /**
@@ -13,7 +14,7 @@ export class AssessmentAnalyticsService {
     });
 
     if (!academicYear) {
-      throw new Error(`Academic year with id ${academicYearId} not found`);
+      throw Errors.notFound(`Academic year with id ${academicYearId}`);
     }
 
     const yearStart = academicYear.startDate;

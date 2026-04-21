@@ -174,6 +174,19 @@ export function useStudentViolations(studentId: string) {
   return useQuery({
     queryKey: ["violations", "student", studentId],
     queryFn: async () => {
+      const response = await api.get<Violation[]>(
+        `/violations/student/${studentId}`,
+      );
+      return response.data;
+    },
+    enabled: !!studentId,
+  });
+}
+
+export function useStudentViolationSummary(studentId: string) {
+  return useQuery({
+    queryKey: ["violations", "student-summary", studentId],
+    queryFn: async () => {
       const response = await api.get<{
         success: boolean;
         data: {

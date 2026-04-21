@@ -25,7 +25,7 @@ import { useStudent } from "@/hooks/use-students";
 import { useStudentGrades, useStudentHolisticAnalytics } from "@/hooks/use-assessment";
 import { useActiveAcademicYear } from "@/hooks/use-academic-years";
 import { useStudentHealthRecords } from "@/hooks/use-health";
-import { useStudentViolations } from "@/hooks/use-violations";
+import { useStudentViolationSummary } from "@/hooks/use-violations";
 import { useStudentFinancialSummary } from "@/hooks/use-finance";
 import { useStudentTahfidzProgress } from "@/hooks/use-tahfidz";
 import { useStudentIbadahStats } from "@/hooks/use-ibadah";
@@ -52,7 +52,7 @@ export default function Student360Page() {
   const { data: student, isLoading: loadingStudent } = useStudent(studentId);
   const { data: grades, isLoading: loadingGrades } = useStudentGrades(studentId);
   const { data: health, isLoading: loadingHealth } = useStudentHealthRecords(studentId);
-  const { data: violations, isLoading: loadingViolations } = useStudentViolations(studentId);
+  const { data: violations, isLoading: loadingViolations } = useStudentViolationSummary(studentId);
   const { data: finance, isLoading: loadingFinance } = useStudentFinancialSummary(studentId);
   const { data: tahfidz, isLoading: loadingTahfidz } = useStudentTahfidzProgress(studentId);
 
@@ -76,7 +76,7 @@ export default function Student360Page() {
     }));
   }, [grades]);
 
-  // useStudentViolations now returns the summary object with totalPoints and recentViolations
+  // useStudentViolationSummary returns the summary object with totalPoints and recentViolations
   const violationTotalPoints = violations?.totalPoints ?? 0;
   const recentViolations = violations?.recentViolations ?? [];
 

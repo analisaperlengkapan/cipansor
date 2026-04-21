@@ -34,7 +34,9 @@ export default function ExamMonitoringPage({
 }) {
   const { id } = use(params);
   const { data: exam, isLoading } = useExamMonitoring(id);
-  const { data: topicMastery, isLoading: loadingTopics } = useTopicMastery(id);
+  const { data: topicMasteryData, isLoading: loadingTopics } = useTopicMastery(id);
+  const topicMastery = topicMasteryData?.items;
+  const topicMasteryMeta = topicMasteryData?._meta;
 
   if (isLoading) {
     return (
@@ -130,7 +132,14 @@ export default function ExamMonitoringPage({
                   <BarChart2 className="w-5 h-5 text-indigo-600" />
                   <div>
                     <CardTitle>Analisis Penguasaan Materi (Topic Mastery)</CardTitle>
-                    <CardDescription>Rata-rata persentase jawaban benar per Tujuan Pembelajaran (TP)</CardDescription>
+                    <CardDescription>
+                      Rata-rata persentase jawaban benar per Tujuan Pembelajaran (TP)
+                      {topicMasteryMeta?.truncated && (
+                        <span className="ml-2 text-amber-600 font-medium">
+                          (Berdasarkan {topicMasteryMeta.analyzedAttempts} percobaan pertama)
+                        </span>
+                      )}
+                    </CardDescription>
                   </div>
                 </div>
               </CardHeader>

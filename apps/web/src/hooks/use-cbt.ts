@@ -101,7 +101,7 @@ export const useTopicMastery = (examId: string) => {
     queryKey: ["exam-topic-mastery", examId],
     queryFn: async () => {
       const { data } = await api.get(`/cbt/exams/${examId}/topic-mastery`);
-      return data.data;
+      return { items: data.data, _meta: data._meta };
     },
     enabled: !!examId,
   });

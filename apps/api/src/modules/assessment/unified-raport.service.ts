@@ -51,6 +51,7 @@ export class UnifiedRaportService {
     const holisticFallback = {
       holisticScore: 0,
       breakdown: { academic: null, tahfidz: null, behavior: null, attendance: null, ibadah: null },
+      dataCompleteness: 'INSUFFICIENT' as const,
       interpretation: 'Data tidak tersedia',
     };
     const [raportMerdeka, raporPesantren, holistic] = await Promise.all([

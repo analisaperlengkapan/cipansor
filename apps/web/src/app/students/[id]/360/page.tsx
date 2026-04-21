@@ -76,12 +76,9 @@ export default function Student360Page() {
     }));
   }, [grades]);
 
-  // Derive violation total points from the violations array
-  // useStudentViolations returns Violation[] directly, not {data: {totalPoints, items}}
-  const violationTotalPoints = useMemo(() => {
-    if (!Array.isArray(violations)) return 0;
-    return violations.reduce((sum: number, v: any) => sum + (v.violationType?.points || 0), 0);
-  }, [violations]);
+  // useStudentViolations now returns the summary object with totalPoints and recentViolations
+  const violationTotalPoints = violations?.totalPoints ?? 0;
+  const recentViolations = violations?.recentViolations ?? [];
 
   const holisticRadarData = useMemo(() => {
     if (!holistic?.breakdown) return [];
@@ -387,15 +384,15 @@ export default function Student360Page() {
                        </CardTitle>
                     </CardHeader>
                     <CardContent className="p-0">
-                       {Array.isArray(violations) && violations.length > 0 ? (
+                       {recentViolations.length > 0 ? (
                          <div className="divide-y">
-                           {violations.slice(0, 3).map((v: any) => (
+                           {recentViolations.slice(0, 3).map((v: any) => (
                              <div key={v.id} className="p-3 px-6 flex justify-between items-center text-sm">
                                 <div>
-                                  <p className="font-semibold">{v.violationType?.category || v.category}</p>
+                                  <p className="font-semibold">{v.category}</p>
                                   <p className="text-xs text-muted-foreground line-clamp-1">{v.description}</p>
                                 </div>
-                                <Badge variant="outline" className="text-rose-600 border-rose-200">-{v.violationType?.points || v.points}</Badge>
+                                <Badge variant="outline" className="text-rose-600 border-rose-200">-{v.points}</Badge>
                              </div>
                            ))}
                          </div>

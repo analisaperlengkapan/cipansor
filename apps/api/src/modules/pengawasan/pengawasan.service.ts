@@ -134,6 +134,7 @@ export class PengawasanService {
           responsible: data.responsibleId ? { connect: { id: data.responsibleId } } : undefined,
           dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
           planObjective: data.planObjectiveId ? { connect: { id: data.planObjectiveId } } : undefined,
+          risk: data.linkToRiskId ? { connect: { id: data.linkToRiskId } } : undefined,
         },
         include: {
           responsible: { select: { id: true, name: true } },
@@ -153,12 +154,6 @@ export class PengawasanService {
         if (!existingRisk) {
           throw new Error(`Risk with id ${data.linkToRiskId} not found`);
         }
-
-        // Store the risk link as a proper FK on the finding
-        await tx.auditFinding.update({
-          where: { id: finding.id },
-          data: { riskId: data.linkToRiskId },
-        });
 
         const auditNote = `[Audit Finding ${data.findingNumber}: ${data.title}]`;
 
@@ -182,15 +177,6 @@ export class PengawasanService {
           });
         }
 
-        // Re-fetch so the returned object reflects the riskId FK
-        const updatedFinding = await tx.auditFinding.findUniqueOrThrow({
-          where: { id: finding.id },
-          include: {
-            responsible: { select: { id: true, name: true } },
-            planObjective: { select: { id: true, title: true } },
-          },
-        });
-        Object.assign(finding, updatedFinding);
       }
 
       // If linked to a strategic objective, update its progress (conservative decrement if critical finding)

@@ -131,21 +131,60 @@ export class AssessmentAnalyticsService {
     // return 0 instead of a misleading renormalized score.
     const finalScore = dataCompleteness === 'INSUFFICIENT' ? 0 : Math.round(normalizedScore * 100) / 100;
 
+    const interpretation = dataCompleteness === 'INSUFFICIENT'
+      ? 'Dhoif (Perlu Bimbingan/Needs Improvement)'
+      : this.getHolisticInterpretation(finalScore);
+
+    const breakdown = {
+      academic: roundOrNull(academicScore),
+      tahfidz: roundOrNull(tahfidzScore),
+      behavior: roundOrNull(behaviorScore),
+      attendance: roundOrNull(attendanceScore),
+      ibadah: roundOrNull(ibadahScore)
+    };
+
     return {
       studentId,
       holisticScore: finalScore,
-      breakdown: {
-        academic: roundOrNull(academicScore),
-        tahfidz: roundOrNull(tahfidzScore),
-        behavior: roundOrNull(behaviorScore),
-        attendance: roundOrNull(attendanceScore),
-        ibadah: roundOrNull(ibadahScore)
-      },
+      breakdown,
       dataCompleteness,
-      interpretation: dataCompleteness === 'INSUFFICIENT'
-        ? 'Dhoif (Perlu Bimbingan/Needs Improvement)'
-        : this.getHolisticInterpretation(finalScore)
+      interpretation,
+      recommendation: this.generateRecommendation(breakdown, dataCompleteness),
     };
+  }
+
+  /**
+   * Generate a development recommendation based on the holistic breakdown.
+   * This is the single source of truth for recommendation text — the frontend
+   * should use the `recommendation` field from the API response instead of
+   * duplicating this logic.
+   */
+  private static generateRecommendation(
+    breakdown: Record<string, number | null>,
+    dataCompleteness: string
+  ): string {
+    const genericMessage = "Pertahankan prestasi dan terus kembangkan potensi diri di segala aspek.";
+    const entries: [string, number][] = Object.entries(breakdown)
+      .filter(([, v]) => v !== null && v !== undefined)
+      .map(([k, v]) => [k, Number(v)] as [string, number]);
+    if (entries.length === 0 || dataCompleteness === 'INSUFFICIENT') {
+      return genericMessage;
+    }
+    const lowest = entries.reduce((a, b) => a[1] <= b[1] ? a : b, entries[0]);
+
+    if (lowest[1] >= 80) {
+      return genericMessage;
+    }
+
+    const recommendations: Record<string, string> = {
+      academic: "Fokus pada peningkatan jam belajar mandiri dan konsultasi dengan guru mata pelajaran yang nilainya masih di bawah KKM.",
+      tahfidz: "Tingkatkan intensitas murojaah harian dan pastikan setoran ziyadah konsisten sesuai target juz per semester.",
+      behavior: "Perlu bimbingan intensif dalam kedisiplinan dan kepatuhan terhadap tata tertib pesantren.",
+      attendance: "Tingkatkan kedisiplinan dalam kehadiran di kelas dan kegiatan wajib lainnya.",
+      ibadah: "Meningkatkan kesadaran dalam menjalankan ibadah yaumiyah secara mandiri dan tepat waktu."
+    };
+
+    return recommendations[lowest[0]] || genericMessage;
   }
 
   private static getHolisticInterpretation(score: number): string {

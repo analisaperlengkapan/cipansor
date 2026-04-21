@@ -432,8 +432,13 @@ export class PerencanaanService {
 
   // ==================== HELPERS ====================
 
-  private async recalculatePlanProgress(planId: string) {
-    const objectives = await prisma.planObjective.findMany({
+  /**
+   * Recalculate a plan's weighted progress from its objectives.
+   * Accepts an optional transaction client so it can be called from within
+   * other services' transactions (e.g., PengawasanService.createFinding).
+   */
+  async recalculatePlanProgress(planId: string, tx: typeof prisma = prisma) {
+    const objectives = await tx.planObjective.findMany({
       where: { planId },
       select: { weight: true, progress: true },
     });
@@ -446,7 +451,7 @@ export class PerencanaanService {
       0
     );
 
-    await prisma.strategicPlan.update({
+    await tx.strategicPlan.update({
       where: { id: planId },
       data: { progress: Math.round(weightedProgress * 100) / 100 },
     });

@@ -64,6 +64,8 @@ describe('AssessmentAnalyticsService', () => {
     expect(result.breakdown.academic).toBe(80);
     expect(result.breakdown.tahfidz).toBe(50);
     expect(result.interpretation).toContain('Jayyid');
+    expect(result.recommendation).toBeDefined();
+    expect(typeof result.recommendation).toBe('string');
   });
 
   it('should score behavior as 100 for students with zero violations', async () => {
@@ -146,6 +148,8 @@ describe('AssessmentAnalyticsService', () => {
     expect(result.breakdown.behavior).toBe(100);
     expect(result.breakdown.academic).toBeNull();
     expect(result.interpretation).toContain('Dhoif');
+    // Recommendation should be the generic message, not a behavior-specific one
+    expect(result.recommendation).toBe('Pertahankan prestasi dan terus kembangkan potensi diri di segala aspek.');
   });
 
   it('should throw error for non-existent academic year', async () => {

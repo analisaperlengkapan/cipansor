@@ -48,11 +48,13 @@ export class UnifiedRaportService {
 
     // 2. Run Generators and Holistic Analytics in Parallel for efficiency
     // These services handle their own internal data aggregation
+    const genericRecommendation = "Pertahankan prestasi dan terus kembangkan potensi diri di segala aspek.";
     const holisticFallback = {
       holisticScore: 0,
       breakdown: { academic: null, tahfidz: null, behavior: null, attendance: null, ibadah: null },
       dataCompleteness: 'INSUFFICIENT' as const,
       interpretation: 'Data tidak tersedia',
+      recommendation: genericRecommendation,
     };
     const [raportMerdeka, raporPesantren, holistic] = await Promise.all([
       RaportMerdekaService.generateRaportMerdeka(studentId, academicYearId, semester),
@@ -108,7 +110,7 @@ export class UnifiedRaportService {
         principal: raportMerdeka.catatanKepalaSekolah,
         musyrif: raporPesantren.musyrifNotes,
         holistic: holistic.interpretation,
-        recommendation: this.generateDevelopmentRecommendation(holistic),
+        recommendation: holistic.recommendation,
       },
       signatures: {
         homeroomTeacher: enrollment.class.homeroomTeacher?.user.name,
@@ -117,41 +119,6 @@ export class UnifiedRaportService {
         date: new Date(),
       },
     };
-  }
-
-  /**
-   * Get formatted Unified Raport with print layout options
-   */
-  private static generateDevelopmentRecommendation(holistic: any): string {
-    const { breakdown } = holistic;
-    const genericMessage = "Pertahankan prestasi dan terus kembangkan potensi diri di segala aspek.";
-    // Filter out null values (dimensions without data) before finding the lowest.
-    // This prevents null→NaN from being treated as the weakest dimension.
-    const entries: [string, number][] = Object.entries(breakdown)
-      .filter(([, v]) => v !== null && v !== undefined)
-      .map(([k, v]) => [k, Number(v)] as [string, number]);
-    if (entries.length === 0 || holistic.interpretation === 'Data tidak tersedia' || holistic.dataCompleteness === 'INSUFFICIENT') {
-      return genericMessage;
-    }
-    const lowest = entries.reduce((a, b) => a[1] <= b[1] ? a : b, entries[0]);
-
-    // If the weakest dimension already scores >= 80, the student is performing
-    // well across all available dimensions — return a generic encouragement
-    // instead of a misleading improvement recommendation (e.g., recommending
-    // behavior improvement when behaviorScore is 100).
-    if (lowest[1] >= 80) {
-      return genericMessage;
-    }
-
-    const recommendations: Record<string, string> = {
-      academic: "Fokus pada peningkatan jam belajar mandiri dan konsultasi dengan guru mata pelajaran yang nilainya masih di bawah KKM.",
-      tahfidz: "Tingkatkan intensitas murojaah harian dan pastikan setoran ziyadah konsisten sesuai target juz per semester.",
-      behavior: "Perlu bimbingan intensif dalam kedisiplinan dan kepatuhan terhadap tata tertib pesantren.",
-      attendance: "Tingkatkan kedisiplinan dalam kehadiran di kelas dan kegiatan wajib lainnya.",
-      ibadah: "Meningkatkan kesadaran dalam menjalankan ibadah yaumiyah secara mandiri dan tepat waktu."
-    };
-
-    return recommendations[lowest[0]] || genericMessage;
   }
 
   static async getPrintData(studentId: string, academicYearId: string, semester: number) {

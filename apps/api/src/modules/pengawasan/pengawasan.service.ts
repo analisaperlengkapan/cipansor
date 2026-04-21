@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
+import { perencanaanService } from '../perencanaan/perencanaan.service';
 
 export class PengawasanService {
   // ==================== AUDITS ====================
@@ -214,24 +215,9 @@ export class PengawasanService {
             },
           });
 
-          // Recalculate parent plan's weighted progress to keep it in sync
-          // NOTE: This formula duplicates PerencanaanService.recalculatePlanProgress.
-          // Keep both in sync if the weighting logic changes.
-          const objectives = await tx.planObjective.findMany({
-            where: { planId: objective.planId },
-            select: { weight: true, progress: true },
-          });
-          if (objectives.length > 0) {
-            const totalWeight = objectives.reduce((sum, obj) => sum + obj.weight, 0);
-            const weightedProgress = objectives.reduce(
-              (sum, obj) => sum + (obj.progress * obj.weight) / (totalWeight || 1),
-              0
-            );
-            await tx.strategicPlan.update({
-              where: { id: objective.planId },
-              data: { progress: Math.round(weightedProgress * 100) / 100 },
-            });
-          }
+          // Recalculate parent plan's weighted progress to keep it in sync.
+          // Uses the canonical PerencanaanService method to avoid formula duplication.
+          await perencanaanService.recalculatePlanProgress(objective.planId, tx as any);
         }
       }
 

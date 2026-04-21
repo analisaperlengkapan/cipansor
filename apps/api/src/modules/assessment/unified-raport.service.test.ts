@@ -122,6 +122,8 @@ describe('UnifiedRaportService Integration', () => {
     expect(result.remarks.principal).toBe('Bagus');
     expect(result.remarks.islamic).toBe('Rajin sholat dhuha');
     expect(result.remarks.musyrif).toBe('Kamar selalu rapi');
+    expect(result.remarks.recommendation).toBeDefined();
+    expect(typeof result.remarks.recommendation).toBe('string');
     expect(result.signatures.homeroomTeacher).toBe('Ustadz Fulan');
 
     // Verify parallel execution with correct parameters

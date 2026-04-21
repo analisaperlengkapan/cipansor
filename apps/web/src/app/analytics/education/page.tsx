@@ -40,8 +40,10 @@ export default function EducationAnalyticsPage() {
   const { data: activeYear } = useActiveAcademicYear();
   const [selectedUnitId, setSelectedUnitId] = useState<string>("");
 
+  const unitList = Array.isArray(units) ? units : (units as any)?.data ?? [];
+
   const { data: unitAnalytics, isLoading: loadingAnalytics } = useUnitEducationAnalytics(
-    selectedUnitId || (units?.data?.[0]?.id ?? ""),
+    selectedUnitId || (unitList[0]?.id ?? ""),
     activeYear?.id ?? ""
   );
 
@@ -88,14 +90,14 @@ export default function EducationAnalyticsPage() {
           </div>
           <div className="w-full md:w-64">
              <Select
-               value={selectedUnitId || (units?.data?.[0]?.id ?? "")}
+               value={selectedUnitId || (unitList[0]?.id ?? "")}
                onValueChange={setSelectedUnitId}
              >
                 <SelectTrigger>
                    <SelectValue placeholder="Pilih Unit" />
                 </SelectTrigger>
                 <SelectContent>
-                   {units?.data?.map((u: any) => (
+                   {unitList.map((u: any) => (
                      <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
                    ))}
                 </SelectContent>

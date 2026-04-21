@@ -217,7 +217,7 @@ export class PengawasanService {
 
           // Recalculate parent plan's weighted progress to keep it in sync.
           // Uses the canonical PerencanaanService method to avoid formula duplication.
-          await perencanaanService.recalculatePlanProgress(objective.planId, tx as any);
+          await perencanaanService.recalculatePlanProgress(objective.planId, tx);
         }
       }
 

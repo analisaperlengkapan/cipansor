@@ -1,6 +1,8 @@
 import { prisma } from '@/lib/prisma';
 import { Prisma, PlanStatus } from '@prisma/client';
 
+type TransactionClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
+
 export class PerencanaanService {
   // ==================== STRATEGIC PLANS ====================
 
@@ -437,7 +439,7 @@ export class PerencanaanService {
    * Accepts an optional transaction client so it can be called from within
    * other services' transactions (e.g., PengawasanService.createFinding).
    */
-  async recalculatePlanProgress(planId: string, tx: typeof prisma = prisma) {
+  async recalculatePlanProgress(planId: string, tx: TransactionClient | typeof prisma = prisma) {
     const objectives = await tx.planObjective.findMany({
       where: { planId },
       select: { weight: true, progress: true },

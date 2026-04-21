@@ -2,7 +2,7 @@ import { prisma } from '@/lib/prisma';
 
 export class AssessmentAnalyticsService {
   /**
-   * Calculate a holistic holistic score for a student.
+   * Calculate a holistic score for a student.
    * Integrates Academic, Tahfidz, Behavior (Violations), Attendance, and Ibadah.
    */
   static async getStudentHolisticAnalytics(studentId: string, academicYearId: string) {

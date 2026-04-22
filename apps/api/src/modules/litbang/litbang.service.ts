@@ -296,7 +296,10 @@ export class LitbangService {
 
     if (!project.startDate) return { budget: Number(project.budget || 0), realization: 0, percentage: 0 };
 
-    // Realization is sum of debits - credits for expense/asset accounts in that unit/period
+    // NOTE: Realization is computed at the unit level — it aggregates ALL expense/asset
+    // journal entries for the unit during the project period. If the unit has multiple
+    // concurrent projects, the realization figure will include expenses from all of them.
+    // A project-level FK on journal entries would be needed for project-specific tracking.
     const aggregates = await prisma.journalEntry.aggregate({
       where: {
         unitId: project.unitId,

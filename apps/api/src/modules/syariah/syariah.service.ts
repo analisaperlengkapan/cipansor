@@ -93,33 +93,41 @@ export class SyariahService {
     score: number;
     evidence?: string;
   }) {
-    const audit = await prisma.shariaAudit.create({
-      data: {
-        compliance: { connect: { id: data.complianceId } },
-        auditor: { connect: { id: data.auditorId } },
-        auditDate: new Date(data.auditDate),
-        findings: data.findings,
-        recommendation: data.recommendation,
-        score: data.score,
-        evidence: data.evidence,
-      },
-      include: {
-        auditor: { select: { id: true, name: true } },
-        compliance: { select: { unitId: true, title: true } },
-      },
+    // Wrap audit creation and compliance update in a transaction to ensure
+    // consistency — if the compliance update fails, the audit is rolled back.
+    const audit = await prisma.$transaction(async (tx) => {
+      const created = await tx.shariaAudit.create({
+        data: {
+          compliance: { connect: { id: data.complianceId } },
+          auditor: { connect: { id: data.auditorId } },
+          auditDate: new Date(data.auditDate),
+          findings: data.findings,
+          recommendation: data.recommendation,
+          score: data.score,
+          evidence: data.evidence,
+        },
+        include: {
+          auditor: { select: { id: true, name: true } },
+          compliance: { select: { unitId: true, title: true } },
+        },
+      });
+
+      // Update compliance score with latest audit result
+      await tx.shariaCompliance.update({
+        where: { id: data.complianceId },
+        data: {
+          score: data.score,
+          reviewedAt: new Date(),
+          status: data.score >= 80 ? 'COMPLIANT' : data.score >= 50 ? 'PARTIALLY' : 'NON_COMPLIANT',
+        },
+      });
+
+      return created;
     });
 
-    // Update compliance score with latest audit result
-    await prisma.shariaCompliance.update({
-      where: { id: data.complianceId },
-      data: {
-        score: data.score,
-        reviewedAt: new Date(),
-        status: data.score >= 80 ? 'COMPLIANT' : data.score >= 50 ? 'PARTIALLY' : 'NON_COMPLIANT',
-      },
-    });
-
-    // If score is low, automatically create an audit finding in Pengawasan module
+    // If score is low, automatically create an audit finding in Pengawasan module.
+    // This runs outside the transaction intentionally — the audit is already saved,
+    // so a failure here is logged but does not roll back the primary operation.
     if (data.score < 70) {
       try {
         const unitId = audit.compliance.unitId;
@@ -165,6 +173,7 @@ export class SyariahService {
       select: { status: true, category: true, score: true },
     });
 
+    const scoredCompliances = compliances.filter((c) => c.score != null);
     const summary = {
       total: compliances.length,
       compliant: compliances.filter((c) => c.status === 'COMPLIANT').length,
@@ -172,8 +181,8 @@ export class SyariahService {
       nonCompliant: compliances.filter((c) => c.status === 'NON_COMPLIANT').length,
       underReview: compliances.filter((c) => c.status === 'UNDER_REVIEW').length,
       averageScore:
-        compliances.length > 0
-          ? compliances.reduce((sum, c) => sum + (c.score || 0), 0) / compliances.length
+        scoredCompliances.length > 0
+          ? scoredCompliances.reduce((sum, c) => sum + (c.score || 0), 0) / scoredCompliances.length
           : 0,
       byCategory: {} as Record<string, { total: number; averageScore: number }>,
     };
@@ -181,9 +190,10 @@ export class SyariahService {
     const categories = ['MUAMALAH', 'TARBIYAH', 'IBADAH', 'AKHLAQ', 'GOVERNANCE'];
     for (const cat of categories) {
       const items = compliances.filter((c) => c.category === cat);
+      const scoredItems = items.filter((i) => i.score != null);
       summary.byCategory[cat] = {
         total: items.length,
-        averageScore: items.length > 0 ? items.reduce((s, i) => s + (i.score || 0), 0) / items.length : 0,
+        averageScore: scoredItems.length > 0 ? scoredItems.reduce((s, i) => s + (i.score || 0), 0) / scoredItems.length : 0,
       };
     }
 

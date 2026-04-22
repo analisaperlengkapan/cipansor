@@ -99,7 +99,9 @@ describe('Litbang Service', () => {
         data: expect.objectContaining({ progress: 50 }),
       });
     });
+  });
 
+  describe('Project Financial Status', () => {
     it('should calculate project financial status', async () => {
       const mockProject = {
         id: 'proj-1',

@@ -178,5 +178,29 @@ describe('Syariah Service', () => {
       expect(result.byCategory['IBADAH'].total).toBe(2);
       expect(result.byCategory['IBADAH'].averageScore).toBe(70); // (40 + 100) / 2
     });
+
+    it('should exclude null scores from averageScore calculations', async () => {
+      vi.mocked(prisma.shariaCompliance.findMany).mockResolvedValue([
+        { status: 'COMPLIANT', category: 'MUAMALAH', score: 90 },
+        { status: 'UNDER_REVIEW', category: 'MUAMALAH', score: null },
+        { status: 'COMPLIANT', category: 'IBADAH', score: 80 },
+      ] as any);
+
+      const result = await syariahService.getComplianceSummary('unit-1');
+
+      // Overall: only scored items (90 + 80) / 2 = 85, not (90 + 0 + 80) / 3
+      expect(result.averageScore).toBe(85);
+
+      // MUAMALAH: only scored item (90) / 1 = 90, not (90 + 0) / 2
+      expect(result.byCategory['MUAMALAH'].total).toBe(2);
+      expect(result.byCategory['MUAMALAH'].averageScore).toBe(90);
+
+      // IBADAH: single scored item
+      expect(result.byCategory['IBADAH'].averageScore).toBe(80);
+
+      // Empty categories should have averageScore 0
+      expect(result.byCategory['TARBIYAH'].total).toBe(0);
+      expect(result.byCategory['TARBIYAH'].averageScore).toBe(0);
+    });
   });
 });

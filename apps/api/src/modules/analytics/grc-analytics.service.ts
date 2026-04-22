@@ -129,18 +129,17 @@ export async function getGRCStats(unitId?: string): Promise<GRCStats> {
   });
   const avgShariaScore = scoredCount > 0 ? totalScore / scoredCount : 0;
 
-  // Sharia by-category breakdown
+  // Sharia by-category breakdown (always includes all 5 categories for consistency
+  // with syariahService.getComplianceSummary — empty categories get total: 0, averageScore: 0)
   const byCategory: Record<string, { total: number; averageScore: number }> = {};
   const categories = ['MUAMALAH', 'TARBIYAH', 'IBADAH', 'AKHLAQ', 'GOVERNANCE'];
   for (const cat of categories) {
     const items = compliances.filter((c) => c.category === cat);
-    if (items.length > 0) {
-      const scoredItems = items.filter((i) => i.score != null);
-      byCategory[cat] = {
-        total: items.length,
-        averageScore: scoredItems.length > 0 ? scoredItems.reduce((s, i) => s + (i.score || 0), 0) / scoredItems.length : 0,
-      };
-    }
+    const scoredItems = items.filter((i) => i.score != null);
+    byCategory[cat] = {
+      total: items.length,
+      averageScore: scoredItems.length > 0 ? scoredItems.reduce((s, i) => s + (i.score || 0), 0) / scoredItems.length : 0,
+    };
   }
 
   return {

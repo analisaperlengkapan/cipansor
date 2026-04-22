@@ -215,7 +215,7 @@ export default function GrcDashboardPage() {
               </div>
 
               {grc.sharia.summary?.byCategory && <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                {Object.entries(grc.sharia.summary.byCategory).map(([category, stats]: [string, any]) => (
+                {Object.entries(grc.sharia.summary.byCategory).filter(([, stats]: [string, any]) => stats.total > 0).map(([category, stats]: [string, any]) => (
                   <div key={category} className="p-4 rounded-lg border bg-slate-50/50 space-y-2">
                     <div className="flex justify-between items-center">
                       <span className="text-sm font-bold text-slate-700">{category}</span>

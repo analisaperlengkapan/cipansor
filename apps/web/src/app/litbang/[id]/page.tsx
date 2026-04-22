@@ -197,7 +197,7 @@ export default function LitbangProjectDetailPage() {
                   <Progress value={finances.percentage} className="h-2 bg-emerald-100" />
                 </div>
                 <p className="text-[10px] text-muted-foreground mt-2 italic">
-                  * Dihitung berdasarkan entri jurnal beban/aset pada unit terkait selama periode proyek.
+                  * Dihitung berdasarkan seluruh entri jurnal beban/aset pada unit terkait selama periode proyek. Jika unit memiliki beberapa proyek aktif, angka ini mencakup semua pengeluaran unit.
                 </p>
               </>
             ) : (

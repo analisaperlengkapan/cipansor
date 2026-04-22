@@ -1,5 +1,7 @@
 import { prisma } from '../../lib/prisma';
 
+type TransactionClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
+
 export const ACCOUNT_MAPPING_KEYS = {
   CASH: 'ACCOUNT_MAPPING_CASH',
   BANK: 'ACCOUNT_MAPPING_BANK',
@@ -11,8 +13,8 @@ export const ACCOUNT_MAPPING_KEYS = {
   COGS: 'ACCOUNT_MAPPING_COGS',
 };
 
-export async function getAccountMapping(unitId: string, key: string): Promise<string | null> {
-  const setting = await prisma.setting.findUnique({
+export async function getAccountMapping(unitId: string, key: string, tx: TransactionClient | typeof prisma = prisma): Promise<string | null> {
+  const setting = await tx.setting.findUnique({
     where: {
       unitId_key: {
         unitId,
@@ -49,24 +51,27 @@ export async function setAccountMapping(unitId: string, key: string, accountId: 
 
 /**
  * Helper to get a mapped account or fallback to a default code/search
- * This helps maintain backward compatibility or default behaviors
+ * This helps maintain backward compatibility or default behaviors.
+ * Accepts an optional transaction client to ensure reads participate
+ * in the caller's transaction when used inside prisma.$transaction.
  */
 export async function getAccountOrFallback(
   unitId: string,
   key: string,
   fallbackCode?: string,
-  fallbackNameSearch?: string
+  fallbackNameSearch?: string,
+  tx: TransactionClient | typeof prisma = prisma
 ) {
   // 1. Try Mapping
-  const mappedId = await getAccountMapping(unitId, key);
+  const mappedId = await getAccountMapping(unitId, key, tx);
   if (mappedId) {
-    const account = await prisma.accountCode.findUnique({ where: { id: mappedId } });
+    const account = await tx.accountCode.findUnique({ where: { id: mappedId } });
     if (account) return account;
   }
 
   // 2. Try Fallback Code
   if (fallbackCode) {
-    const account = await prisma.accountCode.findFirst({
+    const account = await tx.accountCode.findFirst({
       where: { code: fallbackCode, isActive: true },
     });
     if (account) return account;
@@ -74,7 +79,7 @@ export async function getAccountOrFallback(
 
   // 3. Try Name Search
   if (fallbackNameSearch) {
-    const account = await prisma.accountCode.findFirst({
+    const account = await tx.accountCode.findFirst({
       where: {
         name: { contains: fallbackNameSearch, mode: 'insensitive' },
         isActive: true,

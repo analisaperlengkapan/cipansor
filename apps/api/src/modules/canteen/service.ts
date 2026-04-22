@@ -469,35 +469,40 @@ export const transactionService = {
         unitId,
         `${accountPrefix}${ACCOUNT_MAPPING_KEYS.SALES_REVENUE}`,
         '4101',
-        'Pendapatan Kantin'
+        'Pendapatan Kantin',
+        tx
       );
 
       const inventoryAccount = await getAccountOrFallback(
         unitId,
         `${accountPrefix}${ACCOUNT_MAPPING_KEYS.INVENTORY_ASSET}`,
         '1104',
-        'Persediaan'
+        'Persediaan',
+        tx
       );
 
       const cogsAccount = await getAccountOrFallback(
         unitId,
         `${accountPrefix}${ACCOUNT_MAPPING_KEYS.COGS}`,
         '5101',
-        'Beban Pokok Penjualan Kantin'
+        'Beban Pokok Penjualan Kantin',
+        tx
       );
 
       const cashAccount = await getAccountOrFallback(
         unitId,
         ACCOUNT_MAPPING_KEYS.CASH,
         '1101',
-        'Kas'
+        'Kas',
+        tx
       );
 
       const walletLiabilityAccount = await getAccountOrFallback(
         unitId,
         ACCOUNT_MAPPING_KEYS.WALLET_LIABILITY,
         '2101',
-        'Utang Wallet Santri'
+        'Utang Wallet Santri',
+        tx
       );
 
       // 1. Record Revenue & Cash/Wallet Receipt

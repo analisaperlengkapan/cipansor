@@ -11,11 +11,11 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   useUnits,
-  useFinancialSummary,
   useFoundation,
   useTalentAnalytics,
   useRecentAnnouncements,
 } from "@/hooks";
+import { useFoundationFinancialSummary } from "@/hooks/use-foundation";
 import {
   BarChart,
   Bar,
@@ -49,7 +49,7 @@ import { id } from "date-fns/locale";
 export default function ExecutiveDashboard() {
   const { data: foundation } = useFoundation();
   const { data: units, isLoading: unitsLoading } = useUnits();
-  const { data: financialSummary, isLoading: financeLoading } = useFinancialSummary(foundation?.id);
+  const { data: financialSummary, isLoading: financeLoading } = useFoundationFinancialSummary(foundation?.id);
   const { data: talentStats } = useTalentAnalytics();
   const { data: announcements } = useRecentAnnouncements();
 
@@ -101,8 +101,8 @@ export default function ExecutiveDashboard() {
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className={`text-2xl font-bold ${(financialSummary as any)?.currentMonth?.net >= 0 ? "text-green-600" : "text-red-600"}`}>
-                {formatCurrency((financialSummary as any)?.currentMonth?.net || 0)}
+              <div className={`text-2xl font-bold ${financialSummary?.currentMonth?.net != null && financialSummary.currentMonth.net >= 0 ? "text-green-600" : "text-red-600"}`}>
+                {formatCurrency(financialSummary?.currentMonth?.net || 0)}
               </div>
               <p className="text-xs text-muted-foreground">Bulan Berjalan</p>
             </CardContent>
@@ -149,7 +149,7 @@ export default function ExecutiveDashboard() {
                 <CardContent className="pl-2">
                   <div className="h-[350px]">
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={(financialSummary as any)?.byUnit || []}>
+                      <BarChart data={financialSummary?.byUnit || []}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} />
                         <XAxis dataKey="unitName" fontSize={12} tickLine={false} axisLine={false} />
                         <YAxis

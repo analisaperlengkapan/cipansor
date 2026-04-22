@@ -69,6 +69,16 @@ export const businessUnitService = {
     managerId: string;
     isActive: boolean;
   }>) {
+    if (data.code) {
+      const existing = await prisma.businessUnit.findUnique({
+        where: { code: data.code },
+      });
+
+      if (existing && existing.id !== id) {
+        throw Errors.badRequest('Business unit code already exists');
+      }
+    }
+
     return prisma.businessUnit.update({
       where: { id },
       data,

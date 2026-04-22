@@ -475,8 +475,13 @@ export class PerencanaanService {
     }
 
     const totalProgress = objective.indicators.reduce((sum, ind) => {
-      const target = ind.targetValue || 1;
+      const target = ind.targetValue;
       const current = ind.currentValue || 0;
+      // When target is 0, the goal is "reduce to zero". If current is also 0
+      // (or less), the goal is fully met → 100%. Otherwise 0%.
+      if (target === 0 || target === null) {
+        return sum + (current <= 0 ? 100 : 0);
+      }
       const progress = (current / target) * 100;
       return sum + Math.min(100, progress); // Cap indicator progress at 100%
     }, 0);

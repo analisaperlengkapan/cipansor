@@ -711,17 +711,18 @@ export const transactionService = {
         }
       }
 
-      // ─── REVERSING JOURNAL ENTRIES FOR REFUND ───
+      // ─── REVERSING JOURNAL ENTRIES FOR REFUND / CANCELLATION ───
       // Look up the *original* journal entries by transaction reference so that
       // reversals always target the exact same accounts and amounts that were
       // recorded at sale time, even if account mappings have been changed since.
       //
-      // Reversal entries use a `REFUND:` prefix on the reference field so they
-      // are distinguishable from the originals.  This prevents a (now-unlikely
-      // but still theoretically possible) double-reversal if a second refund
-      // request were to read both originals and prior reversals.
-      if (data.status === 'REFUNDED') {
-        const refundReference = `REFUND:${transaction.id}`;
+      // Reversal entries use a `REFUND:` / `CANCEL:` prefix on the reference
+      // field so they are distinguishable from the originals.  This prevents a
+      // (now-unlikely but still theoretically possible) double-reversal if a
+      // second request were to read both originals and prior reversals.
+      if (data.status === 'REFUNDED' || (data.status === 'CANCELLED' && lockedRows[0].status === 'COMPLETED')) {
+        const reversalPrefix = data.status === 'REFUNDED' ? 'REFUND' : 'CANCEL';
+        const refundReference = `${reversalPrefix}:${transaction.id}`;
 
         const originalEntries = await tx.journalEntry.findMany({
           where: {

@@ -145,6 +145,7 @@ const api = {
   createTransaction: async (data: {
     studentId?: string;
     customerName?: string;
+    businessUnitId?: string;
     items: Array<{ itemId: string; quantity: number }>;
     discount: number;
     paymentMethod: string;

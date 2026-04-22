@@ -319,7 +319,7 @@ export class LitbangService {
 
     const budget = Number(project.budget || 0);
     const realization = (aggregates._sum.debit?.toNumber() || 0) - (aggregates._sum.credit?.toNumber() || 0);
-    const percentage = budget > 0 ? (realization / budget) * 100 : 0;
+    const percentage = budget > 0 ? Math.min(100, Math.max(0, (realization / budget) * 100)) : 0;
 
     return {
       budget,

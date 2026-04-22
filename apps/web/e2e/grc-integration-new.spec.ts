@@ -63,10 +63,7 @@ test.describe('GRC Integrated Workflow', () => {
     // 3. Perform audit (simulated via API mock above)
     // In a real test, we'd fill the form. Here we verify the resulting finding in Pengawasan.
 
-    // 4. Navigate to Pengawasan module to see the integrated finding
-    await page.goto('/pengawasan');
-
-    // The Pengawasan page loads audits via /api/pengawasan
+    // 4. Register Pengawasan mock BEFORE navigating so the initial request is intercepted
     await page.route('**/api/pengawasan', async (route) => {
       await route.fulfill({
         status: 200,
@@ -89,7 +86,7 @@ test.describe('GRC Integrated Workflow', () => {
       });
     });
 
-    await page.reload();
+    await page.goto('/pengawasan');
     await expect(page.getByText('Ketidakpatuhan Syariah: Zakat Management')).toBeVisible();
   });
 

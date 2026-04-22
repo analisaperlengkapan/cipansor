@@ -194,7 +194,7 @@ export class SyariahService {
       underReview: compliances.filter((c) => c.status === 'UNDER_REVIEW').length,
       averageScore:
         scoredCompliances.length > 0
-          ? scoredCompliances.reduce((sum, c) => sum + (c.score || 0), 0) / scoredCompliances.length
+          ? Math.round(scoredCompliances.reduce((sum, c) => sum + (c.score || 0), 0) / scoredCompliances.length * 100) / 100
           : 0,
       byCategory: {} as Record<string, { total: number; averageScore: number }>,
     };
@@ -204,7 +204,7 @@ export class SyariahService {
       const scoredItems = items.filter((i) => i.score != null);
       summary.byCategory[cat] = {
         total: items.length,
-        averageScore: scoredItems.length > 0 ? scoredItems.reduce((s, i) => s + (i.score || 0), 0) / scoredItems.length : 0,
+        averageScore: scoredItems.length > 0 ? Math.round(scoredItems.reduce((s, i) => s + (i.score || 0), 0) / scoredItems.length * 100) / 100 : 0,
       };
     }
 

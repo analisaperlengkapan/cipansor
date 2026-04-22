@@ -140,6 +140,7 @@ export const businessUnitService = {
         where: {
           businessUnitId: id,
           status: 'DELIVERED',
+          paymentStatus: 'PAID',
           createdAt: { gte: startDate, lte: endDate },
         },
         _sum: { total: true },

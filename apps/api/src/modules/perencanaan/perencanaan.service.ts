@@ -463,7 +463,16 @@ export class PerencanaanService {
       include: { indicators: true },
     });
 
-    if (!objective || objective.indicators.length === 0) return;
+    if (!objective) return;
+
+    if (objective.indicators.length === 0) {
+      await tx.planObjective.update({
+        where: { id: objectiveId },
+        data: { progress: 0 },
+      });
+      await this.recalculatePlanProgress(objective.planId, tx);
+      return;
+    }
 
     const totalProgress = objective.indicators.reduce((sum, ind) => {
       const target = ind.targetValue || 1;

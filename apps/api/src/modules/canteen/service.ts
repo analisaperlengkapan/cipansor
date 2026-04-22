@@ -682,6 +682,128 @@ export const transactionService = {
         }
       }
 
+      // ─── REVERSING JOURNAL ENTRIES FOR REFUND ───
+      if (data.status === 'REFUNDED') {
+        const accountPrefix = transaction.businessUnitId ? `BU_${transaction.businessUnitId}_` : '';
+
+        const salesAccount = await getAccountOrFallback(
+          unitId,
+          `${accountPrefix}SALES_REVENUE`,
+          '4101',
+          'Pendapatan Kantin'
+        );
+
+        const inventoryAccount = await getAccountOrFallback(
+          unitId,
+          `${accountPrefix}${ACCOUNT_MAPPING_KEYS.INVENTORY_ASSET}`,
+          '1104',
+          'Persediaan'
+        );
+
+        const cogsAccount = await getAccountOrFallback(
+          unitId,
+          `${accountPrefix}COGS`,
+          '5101',
+          'Beban Pokok Penjualan Kantin'
+        );
+
+        const cashAccount = await getAccountOrFallback(
+          unitId,
+          ACCOUNT_MAPPING_KEYS.CASH,
+          '1101',
+          'Kas'
+        );
+
+        const walletLiabilityAccount = await getAccountOrFallback(
+          unitId,
+          ACCOUNT_MAPPING_KEYS.WALLET_LIABILITY,
+          '2101',
+          'Utang Wallet Santri'
+        );
+
+        // 1. Reverse Revenue & Cash/Wallet Receipt
+        if (salesAccount && (cashAccount || walletLiabilityAccount)) {
+          const paymentAccount = transaction.walletId ? walletLiabilityAccount : cashAccount;
+
+          if (paymentAccount) {
+            // Credit Cash/Wallet (reverse of original debit)
+            await tx.journalEntry.create({
+              data: {
+                unitId,
+                accountId: paymentAccount.id,
+                date: new Date(),
+                description: `Refund Penjualan Kantin #${transaction.transactionNo}`,
+                debit: 0,
+                credit: transaction.total,
+                reference: transaction.id,
+                referenceType: JournalReferenceType.CANTEEN as any,
+                createdById: userId,
+              },
+            });
+
+            // Debit Revenue (reverse of original credit)
+            await tx.journalEntry.create({
+              data: {
+                unitId,
+                accountId: salesAccount.id,
+                date: new Date(),
+                description: `Refund Penjualan Kantin #${transaction.transactionNo}`,
+                debit: transaction.total,
+                credit: 0,
+                reference: transaction.id,
+                referenceType: JournalReferenceType.CANTEEN as any,
+                createdById: userId,
+              },
+            });
+          }
+        }
+
+        // 2. Reverse COGS & Inventory Reduction
+        // Reconstruct totalCogs from transaction items' cost prices
+        let totalCogs = new Prisma.Decimal(0);
+        for (const txItem of transaction.items) {
+          const item = await tx.canteenItem.findUnique({
+            where: { id: txItem.itemId },
+            select: { costPrice: true },
+          });
+          if (item?.costPrice) {
+            totalCogs = totalCogs.add(item.costPrice.mul(txItem.quantity));
+          }
+        }
+
+        if (cogsAccount && inventoryAccount && totalCogs.gt(0)) {
+          // Credit COGS (reverse of original debit)
+          await tx.journalEntry.create({
+            data: {
+              unitId,
+              accountId: cogsAccount.id,
+              date: new Date(),
+              description: `Refund BPP Penjualan Kantin #${transaction.transactionNo}`,
+              debit: 0,
+              credit: totalCogs,
+              reference: transaction.id,
+              referenceType: JournalReferenceType.CANTEEN as any,
+              createdById: userId,
+            },
+          });
+
+          // Debit Inventory (reverse of original credit)
+          await tx.journalEntry.create({
+            data: {
+              unitId,
+              accountId: inventoryAccount.id,
+              date: new Date(),
+              description: `Refund Pengurangan Stok Kantin #${transaction.transactionNo}`,
+              debit: totalCogs,
+              credit: 0,
+              reference: transaction.id,
+              referenceType: JournalReferenceType.CANTEEN as any,
+              createdById: userId,
+            },
+          });
+        }
+      }
+
       return tx.canteenTransaction.update({
         where: { id },
         data: {

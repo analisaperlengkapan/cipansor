@@ -31,7 +31,8 @@ router.get('/categories', authenticate, async (req: Request, res: Response, next
       return res.status(400).json(ApiResponse.error('Unit ID tidak ditemukan', 'UNIT_REQUIRED'));
     }
 
-    const categories = await categoryService.getAll(unitId);
+    const businessUnitId = req.query.businessUnitId as string | undefined;
+    const categories = await categoryService.getAll(unitId, businessUnitId);
     return res.json(ApiResponse.success(categories, 'Berhasil mengambil data kategori'));
   } catch (err) {
     next(err);

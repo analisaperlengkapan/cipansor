@@ -36,6 +36,7 @@ export const UpdateItemSchema = CreateItemSchema.partial();
 
 export const ListItemsQuerySchema = z.object({
   categoryId: z.string().uuid().optional(),
+  businessUnitId: z.string().uuid().optional(),
   search: z.string().optional(),
   isAvailable: z.enum(['true', 'false']).optional(),
   isActive: z.enum(['true', 'false']).optional(),

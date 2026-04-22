@@ -20,9 +20,12 @@ import type {
 // =============================================================================
 
 export const categoryService = {
-  async getAll(unitId: string) {
+  async getAll(unitId: string, businessUnitId?: string) {
     return prisma.canteenCategory.findMany({
-      where: { unitId },
+      where: {
+        unitId,
+        ...(businessUnitId && { businessUnitId }),
+      },
       include: {
         _count: { select: { items: true } },
       },
@@ -91,6 +94,7 @@ export const itemService = {
     const where: Prisma.CanteenItemWhereInput = {
       unitId,
       ...(query.categoryId && { categoryId: query.categoryId }),
+      ...(query.businessUnitId && { businessUnitId: query.businessUnitId }),
       ...(query.search && {
         OR: [
           { name: { contains: query.search, mode: 'insensitive' } },
@@ -614,9 +618,24 @@ export const transactionService = {
     data: UpdateTransactionStatusInput
   ) {
     return prisma.$transaction(async (tx) => {
-      // Re-read the transaction *inside* the transaction so that the status
-      // check is protected by the row-level lock, preventing concurrent
-      // refund requests from both passing the guard.
+      // Acquire an exclusive row lock via SELECT ... FOR UPDATE to prevent
+      // concurrent refund requests from both passing the status guard.
+      // Prisma doesn't support FOR UPDATE natively, so we use $queryRaw.
+      const lockedRows = await tx.$queryRaw<Array<{ id: string; status: string }>>`
+        SELECT id, status FROM canteen_transactions
+        WHERE id = ${id} AND unit_id = ${unitId}
+        FOR UPDATE
+      `;
+
+      if (lockedRows.length === 0) {
+        throw new Error('Transaksi tidak ditemukan');
+      }
+
+      if (data.status === 'REFUNDED' && lockedRows[0].status !== 'COMPLETED') {
+        throw new Error('Hanya transaksi COMPLETED yang dapat di-refund');
+      }
+
+      // Now safe to read the full transaction — the row is locked.
       const transaction = await tx.canteenTransaction.findFirst({
         where: { id, unitId },
         include: { items: true },
@@ -624,10 +643,6 @@ export const transactionService = {
 
       if (!transaction) {
         throw new Error('Transaksi tidak ditemukan');
-      }
-
-      if (data.status === 'REFUNDED' && transaction.status !== 'COMPLETED') {
-        throw new Error('Hanya transaksi COMPLETED yang dapat di-refund');
       }
 
       // Handle refund

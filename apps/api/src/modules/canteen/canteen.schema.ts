@@ -9,6 +9,7 @@ export const CreateCategorySchema = z.object({
   description: z.string().optional(),
   sortOrder: z.number().int().default(0),
   isActive: z.boolean().default(true),
+  businessUnitId: z.string().uuid().optional().nullable(),
 });
 
 export const UpdateCategorySchema = CreateCategorySchema.partial();
@@ -19,6 +20,7 @@ export const UpdateCategorySchema = CreateCategorySchema.partial();
 
 export const CreateItemSchema = z.object({
   categoryId: z.string().uuid('Category ID tidak valid'),
+  businessUnitId: z.string().uuid().optional().nullable(),
   code: z.string().optional(),
   name: z.string().min(1, 'Nama item wajib diisi'),
   description: z.string().optional(),

@@ -54,14 +54,23 @@ export const categoryService = {
         description: data.description,
         sortOrder: data.sortOrder,
         isActive: data.isActive,
+        ...(data.businessUnitId && { businessUnit: { connect: { id: data.businessUnitId } } }),
       },
     });
   },
 
   async update(id: string, unitId: string, data: UpdateCategoryInput) {
+    const { businessUnitId, ...rest } = data;
     return prisma.canteenCategory.update({
       where: { id },
-      data,
+      data: {
+        ...rest,
+        ...(businessUnitId !== undefined && {
+          businessUnit: businessUnitId
+            ? { connect: { id: businessUnitId } }
+            : { disconnect: true },
+        }),
+      },
     });
   },
 
@@ -172,6 +181,7 @@ export const itemService = {
       data: {
         unitRel: { connect: { id: unitId } },
         category: { connect: { id: data.categoryId } },
+        ...(data.businessUnitId && { businessUnit: { connect: { id: data.businessUnitId } } }),
         code: data.code,
         name: data.name,
         description: data.description,
@@ -194,6 +204,11 @@ export const itemService = {
     const updateData: Prisma.CanteenItemUpdateInput = {};
 
     if (data.categoryId !== undefined) updateData.category = { connect: { id: data.categoryId } };
+    if (data.businessUnitId !== undefined) {
+      updateData.businessUnit = data.businessUnitId
+        ? { connect: { id: data.businessUnitId } }
+        : { disconnect: true };
+    }
     if (data.code !== undefined) updateData.code = data.code;
     if (data.name !== undefined) updateData.name = data.name;
     if (data.description !== undefined) updateData.description = data.description;

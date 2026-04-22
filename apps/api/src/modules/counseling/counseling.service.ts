@@ -285,17 +285,23 @@ export class CounselingService {
     });
 
     // ─── NOTIFICATION INTEGRATION ───
-    // If session is completed, notify primary parents
+    // If session is completed, notify primary parents.
+    // Wrapped in try/catch so a non-critical notification failure
+    // does not cause the already-persisted session update to appear failed.
     if (input.status === CounselingStatus.COMPLETED) {
-      const primaryParent = updated.student.parents.find(p => p.isPrimary) || updated.student.parents[0];
-      if (primaryParent) {
-        await createNotification({
-          userId: primaryParent.parentId,
-          type: 'INFO',
-          title: 'Sesi Konseling Selesai',
-          message: `Sesi konseling untuk ${updated.student.user.name} telah selesai dilaksanakan. Silakan cek portal wali untuk detailnya.`,
-          link: `/parent/counseling/${updated.id}`,
-        } as any);
+      try {
+        const primaryParent = updated.student.parents.find(p => p.isPrimary) || updated.student.parents[0];
+        if (primaryParent) {
+          await createNotification({
+            userId: primaryParent.parentId,
+            type: 'INFO',
+            title: 'Sesi Konseling Selesai',
+            message: `Sesi konseling untuk ${updated.student.user.name} telah selesai dilaksanakan. Silakan cek portal wali untuk detailnya.`,
+            link: `/parent/counseling/${updated.id}`,
+          } as any);
+        }
+      } catch (err) {
+        console.error('Failed to send counseling completion notification:', err);
       }
     }
 

@@ -2,6 +2,9 @@ import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 import { Errors } from '@/middleware/error';
 
+/** Well-known UUID for the seeded SYSTEM user (see prisma/seed.ts) */
+const SYSTEM_USER_ID = '00000000-0000-0000-0000-000000000000';
+
 export class TalentaService {
   // ==================== TALENT PROFILES ====================
 
@@ -181,7 +184,7 @@ export class TalentaService {
 
     return this.createAssessment({
       talentId: talentProfile.id,
-      assessorId: evaluation.assessorId || 'SYSTEM',
+      assessorId: evaluation.assessorId || SYSTEM_USER_ID,
       period: `PKG Sync: ${periodId}`,
       performanceRating,
       potentialRating,

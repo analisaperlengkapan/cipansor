@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 import { Errors } from '@/middleware/error';
 import { perencanaanService } from '../perencanaan/perencanaan.service';
+import { riskService } from '../risk/risk.service';
 
 export class PengawasanService {
   // ==================== AUDITS ====================
@@ -175,28 +176,32 @@ export class PengawasanService {
           // Only set to MONITORING if the risk is not already CLOSED
           const newStatus = existingRisk.status === 'CLOSED' ? 'CLOSED' : 'MONITORING';
 
-          // Best Practice: If finding is CRITICAL, escalate risk level
-          let riskLevelUpdate: any = {};
+          // Best Practice: If finding is CRITICAL or MAJOR, escalate risk impact.
+          // Delegate to RiskService.updateRisk so riskScore, riskLevel, and
+          // residualRisk are all recalculated consistently.
+          let impactEscalation: { impact: string } | undefined;
           if (data.severity === 'CRITICAL') {
-            riskLevelUpdate = {
-              riskLevel: 'EXTREME',
-              impact: 'CATASTROPHIC',
-            };
+            impactEscalation = { impact: 'CATASTROPHIC' };
           } else if (data.severity === 'MAJOR') {
-            riskLevelUpdate = {
-              riskLevel: 'HIGH',
-              impact: 'MAJOR',
-            };
+            impactEscalation = { impact: 'MAJOR' };
           }
 
-          await tx.risk.update({
-            where: { id: data.linkToRiskId },
-            data: {
+          if (impactEscalation) {
+            // updateRisk recalculates riskScore, riskLevel, and residualRisk
+            await riskService.updateRisk(data.linkToRiskId!, {
               status: newStatus,
               consequence: updatedConsequence,
-              ...riskLevelUpdate,
-            },
-          });
+              ...impactEscalation,
+            });
+          } else {
+            await tx.risk.update({
+              where: { id: data.linkToRiskId },
+              data: {
+                status: newStatus,
+                consequence: updatedConsequence,
+              },
+            });
+          }
         }
 
       }

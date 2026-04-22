@@ -179,6 +179,32 @@ router.post('/', authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controlle
 
 /**
  * @swagger
+ * /api/dormitories/rooms/{id}/social-analytics:
+ *   get:
+ *     summary: Get room social analytics (harmony score, violation summary)
+ *     tags: [Dormitories]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Room social analytics
+ *       404:
+ *         description: Room not found
+ */
+router.get(
+  '/rooms/:id/social-analytics',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
+  controller.getRoomSocialAnalytics
+);
+
+/**
+ * @swagger
  * /api/dormitories/{id}:
  *   get:
  *     summary: Get dormitory by ID
@@ -197,12 +223,6 @@ router.post('/', authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controlle
  *       404:
  *         description: Dormitory not found
  */
-router.get(
-  '/rooms/:id/social-analytics',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
-  controller.getRoomSocialAnalytics
-);
-
 router.get(
   '/:id',
   authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),

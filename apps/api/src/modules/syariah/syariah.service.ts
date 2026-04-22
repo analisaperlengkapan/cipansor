@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
+import { SHARIA_CATEGORIES } from '@cipansor/shared';
 import { pengawasanService } from '../pengawasan/pengawasan.service';
 
 export class SyariahService {
@@ -132,21 +133,32 @@ export class SyariahService {
       try {
         const unitId = audit.compliance.unitId;
 
-        // Find or create a "Sharia Monitoring" audit record for this unit to satisfy FK constraints
+        // Find or create a "Sharia Monitoring" audit record for this unit to satisfy FK constraints.
+        // The find-then-create is not atomic, so concurrent requests could race.
+        // We handle this by retrying the find if the create fails (e.g., unique constraint).
         let internalAudit = await prisma.internalAudit.findFirst({
           where: { unitId, title: 'Monitoring Kepatuhan Syariah Terintegrasi' },
           select: { id: true }
         });
 
         if (!internalAudit) {
-          internalAudit = await pengawasanService.createAudit({
-            title: 'Monitoring Kepatuhan Syariah Terintegrasi',
-            description: 'Audit otomatis untuk menampung temuan dari modul Kepatuhan Syariah.',
-            auditType: 'Kepatuhan',
-            plannedDate: new Date().toISOString(),
-            unitId,
-            leadAuditorId: data.auditorId,
-          });
+          try {
+            internalAudit = await pengawasanService.createAudit({
+              title: 'Monitoring Kepatuhan Syariah Terintegrasi',
+              description: 'Audit otomatis untuk menampung temuan dari modul Kepatuhan Syariah.',
+              auditType: 'Kepatuhan',
+              plannedDate: new Date().toISOString(),
+              unitId,
+              leadAuditorId: data.auditorId,
+            });
+          } catch {
+            // A concurrent request likely created it first — retry the lookup
+            internalAudit = await prisma.internalAudit.findFirst({
+              where: { unitId, title: 'Monitoring Kepatuhan Syariah Terintegrasi' },
+              select: { id: true }
+            });
+            if (!internalAudit) throw new Error('Failed to find or create Sharia Monitoring audit');
+          }
         }
 
         await pengawasanService.createFinding({
@@ -187,8 +199,7 @@ export class SyariahService {
       byCategory: {} as Record<string, { total: number; averageScore: number }>,
     };
 
-    const categories = ['MUAMALAH', 'TARBIYAH', 'IBADAH', 'AKHLAQ', 'GOVERNANCE'];
-    for (const cat of categories) {
+    for (const cat of SHARIA_CATEGORIES) {
       const items = compliances.filter((c) => c.category === cat);
       const scoredItems = items.filter((i) => i.score != null);
       summary.byCategory[cat] = {

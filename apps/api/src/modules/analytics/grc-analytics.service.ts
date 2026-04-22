@@ -1,5 +1,6 @@
 import { prisma } from '../../lib/prisma';
 import { RiskLevel, PlanStatus, ComplianceStatus } from '@prisma/client';
+import { SHARIA_CATEGORIES } from '@cipansor/shared';
 import { pengawasanService } from '../pengawasan/pengawasan.service';
 
 export interface GRCStats {
@@ -132,8 +133,7 @@ export async function getGRCStats(unitId?: string): Promise<GRCStats> {
   // Sharia by-category breakdown (always includes all 5 categories for consistency
   // with syariahService.getComplianceSummary — empty categories get total: 0, averageScore: 0)
   const byCategory: Record<string, { total: number; averageScore: number }> = {};
-  const categories = ['MUAMALAH', 'TARBIYAH', 'IBADAH', 'AKHLAQ', 'GOVERNANCE'];
-  for (const cat of categories) {
+  for (const cat of SHARIA_CATEGORIES) {
     const items = compliances.filter((c) => c.category === cat);
     const scoredItems = items.filter((i) => i.score != null);
     byCategory[cat] = {

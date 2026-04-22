@@ -2,6 +2,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { getGRCStats } from './grc-analytics.service';
 import { prisma } from '../../lib/prisma';
 
+vi.mock('../pengawasan/pengawasan.service', () => ({
+  pengawasanService: {
+    suggestAuditSchedules: vi.fn().mockResolvedValue([]),
+  },
+}));
+
 // Mock Prisma Client Enums
 vi.mock('@prisma/client', () => ({
   RiskLevel: {
@@ -56,8 +62,8 @@ describe('GRCAnalyticsService', () => {
       .mockResolvedValueOnce(10)  // 1st call: total findings
       .mockResolvedValueOnce(4);  // 2nd call: findings with verified follow-ups
     (prisma.shariaCompliance.findMany as any).mockResolvedValue([
-      { score: 90, status: 'COMPLIANT' },
-      { score: 70, status: 'PARTIALLY' },
+      { score: 90, status: 'COMPLIANT', category: 'MUAMALAH' },
+      { score: 70, status: 'PARTIALLY', category: 'IBADAH' },
     ]);
 
     const stats = await getGRCStats();
@@ -74,6 +80,11 @@ describe('GRCAnalyticsService', () => {
     expect(stats.sharia.complianceRate).toBe(80);
     expect(stats.sharia.statusDistribution.COMPLIANT).toBe(1);
     expect(stats.sharia.statusDistribution.PARTIALLY).toBe(1);
+
+    // Verify byCategory breakdown
+    expect(stats.sharia.summary.byCategory.MUAMALAH).toEqual({ total: 1, averageScore: 90 });
+    expect(stats.sharia.summary.byCategory.IBADAH).toEqual({ total: 1, averageScore: 70 });
+    expect(stats.sharia.summary.byCategory.TARBIYAH).toEqual({ total: 0, averageScore: 0 });
   });
 
   it('should handle null sharia scores without deflating compliance rate', async () => {
@@ -83,9 +94,9 @@ describe('GRCAnalyticsService', () => {
       .mockResolvedValueOnce(0)
       .mockResolvedValueOnce(0);
     (prisma.shariaCompliance.findMany as any).mockResolvedValue([
-      { score: 90, status: 'COMPLIANT' },
-      { score: null, status: 'UNDER_REVIEW' },
-      { score: null, status: 'NOT_APPLICABLE' },
+      { score: 90, status: 'COMPLIANT', category: 'MUAMALAH' },
+      { score: null, status: 'UNDER_REVIEW', category: 'MUAMALAH' },
+      { score: null, status: 'NOT_APPLICABLE', category: 'GOVERNANCE' },
     ]);
 
     const stats = await getGRCStats();
@@ -95,6 +106,10 @@ describe('GRCAnalyticsService', () => {
     expect(stats.sharia.statusDistribution.COMPLIANT).toBe(1);
     expect(stats.sharia.statusDistribution.UNDER_REVIEW).toBe(1);
     expect(stats.sharia.statusDistribution.NOT_APPLICABLE).toBe(1);
+
+    // byCategory should also exclude null scores from averages
+    expect(stats.sharia.summary.byCategory.MUAMALAH).toEqual({ total: 2, averageScore: 90 });
+    expect(stats.sharia.summary.byCategory.GOVERNANCE).toEqual({ total: 1, averageScore: 0 });
   });
 
   it('should return 100% resolution rate when there are zero findings', async () => {

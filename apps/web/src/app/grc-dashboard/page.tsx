@@ -199,18 +199,41 @@ export default function GrcDashboardPage() {
           <CardHeader className="bg-slate-50/50 border-b">
             <CardTitle className="text-lg flex items-center gap-2">
               <Scale className="h-5 w-5 text-slate-700" />
-              Sharia Compliance Distribution
+              Sharia Compliance Detailed Breakdown
             </CardTitle>
-            <CardDescription>Status across all compliance categories</CardDescription>
+            <CardDescription>Performance score by category</CardDescription>
           </CardHeader>
           <CardContent className="pt-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-              {Object.entries(grc.sharia.statusDistribution).map(([status, count]) => (
-                <div key={status} className="p-4 rounded-xl border border-slate-100 bg-white shadow-sm flex flex-col items-center">
-                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">{status.replace(/_/g, ' ')}</span>
-                  <span className="text-2xl font-bold text-slate-900">{count as number}</span>
-                </div>
-              ))}
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                {Object.entries(grc.sharia.statusDistribution).map(([status, count]) => (
+                  <div key={status} className="p-3 rounded-xl border border-slate-100 bg-white shadow-sm flex flex-col items-center">
+                    <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1">{status.replace(/_/g, ' ')}</span>
+                    <span className="text-xl font-bold text-slate-900">{count as number}</span>
+                  </div>
+                ))}
+              </div>
+
+              {grc.sharia.summary?.byCategory && <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                {Object.entries(grc.sharia.summary.byCategory).filter(([, stats]: [string, any]) => stats.total > 0).map(([category, stats]: [string, any]) => (
+                  <div key={category} className="p-4 rounded-lg border bg-slate-50/50 space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-bold text-slate-700">{category}</span>
+                      <Badge variant="outline" className="bg-white">{stats.total} Items</Badge>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-muted-foreground">Compliance Score</span>
+                        <span className="font-medium">{stats.averageScore.toFixed(1)}%</span>
+                      </div>
+                      <Progress
+                        value={stats.averageScore}
+                        className={`h-1.5 ${stats.averageScore >= 80 ? 'bg-emerald-100' : stats.averageScore >= 50 ? 'bg-yellow-100' : 'bg-rose-100'}`}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>}
             </div>
           </CardContent>
         </Card>

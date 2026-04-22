@@ -1,5 +1,6 @@
 import { prisma } from '../../lib/prisma';
 import { RiskLevel, PlanStatus, ComplianceStatus } from '@prisma/client';
+import { SHARIA_CATEGORIES } from '@cipansor/shared';
 import { pengawasanService } from '../pengawasan/pengawasan.service';
 
 export interface GRCStats {
@@ -21,6 +22,9 @@ export interface GRCStats {
   sharia: {
     complianceRate: number;
     statusDistribution: Record<ComplianceStatus, number>;
+    summary: {
+      byCategory: Record<string, { total: number; averageScore: number }>;
+    };
   };
   auditSuggestions?: {
     riskId: string;
@@ -74,7 +78,7 @@ export async function getGRCStats(unitId?: string): Promise<GRCStats> {
     // 4. Sharia Compliance
     prisma.shariaCompliance.findMany({
       where: whereClause,
-      select: { score: true, status: true },
+      select: { score: true, status: true, category: true },
     }),
 
     // 5. Audit Suggestions (gracefully degrades on error)
@@ -126,6 +130,18 @@ export async function getGRCStats(unitId?: string): Promise<GRCStats> {
   });
   const avgShariaScore = scoredCount > 0 ? totalScore / scoredCount : 0;
 
+  // Sharia by-category breakdown (always includes all 5 categories for consistency
+  // with syariahService.getComplianceSummary — empty categories get total: 0, averageScore: 0)
+  const byCategory: Record<string, { total: number; averageScore: number }> = {};
+  for (const cat of SHARIA_CATEGORIES) {
+    const items = compliances.filter((c) => c.category === cat);
+    const scoredItems = items.filter((i) => i.score != null);
+    byCategory[cat] = {
+      total: items.length,
+      averageScore: scoredItems.length > 0 ? Math.round(scoredItems.reduce((s, i) => s + (i.score || 0), 0) / scoredItems.length * 100) / 100 : 0,
+    };
+  }
+
   return {
     plans: {
       activeCount: activePlansCount,
@@ -145,6 +161,9 @@ export async function getGRCStats(unitId?: string): Promise<GRCStats> {
     sharia: {
       complianceRate: Math.round(avgShariaScore * 100) / 100,
       statusDistribution: shariaStatusDist,
+      summary: {
+        byCategory,
+      },
     },
     auditSuggestions,
   };

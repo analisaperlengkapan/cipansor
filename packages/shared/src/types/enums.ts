@@ -101,6 +101,17 @@ export enum ComplaintStatus {
   REJECTED = "REJECTED",
 }
 
+// Sharia Categories
+export const SHARIA_CATEGORIES = [
+  'MUAMALAH',
+  'TARBIYAH',
+  'IBADAH',
+  'AKHLAQ',
+  'GOVERNANCE',
+] as const;
+
+export type ShariaCategory = (typeof SHARIA_CATEGORIES)[number];
+
 // Talent Categories
 export enum TalentCategory {
   HIGH_POTENTIAL = "HIGH_POTENTIAL",

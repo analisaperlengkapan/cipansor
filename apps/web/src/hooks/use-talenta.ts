@@ -9,6 +9,13 @@ export const useTalentProfiles = (params?: { category?: string }) => {
   });
 };
 
+export const useTalentAnalytics = () => {
+  return useQuery({
+    queryKey: ["talenta", "analytics"],
+    queryFn: async () => (await api.get("/api/talenta/analytics")).data.data,
+  });
+};
+
 export const useTalentProfile = (id: string) => {
   return useQuery({
     queryKey: ["talenta", "profiles", id],
@@ -114,4 +121,3 @@ export const useDeleteSuccession = () => {
 
 // Aliases for consistent naming in pages
 export const useCreateProfile = useCreateTalentProfile;
-

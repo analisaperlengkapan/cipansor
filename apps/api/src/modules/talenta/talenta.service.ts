@@ -300,7 +300,16 @@ export class TalentaService {
         category: { in: ['HIGH_POTENTIAL', 'KEY_TALENT'] },
       },
       include: {
-        user: { select: { id: true, name: true } },
+        user: {
+          select: {
+            id: true,
+            name: true,
+            trainingEnrollments: {
+              where: { status: 'COMPLETED' },
+              select: { id: true },
+            },
+          },
+        },
       },
       orderBy: { updatedAt: 'desc' },
     });
@@ -318,14 +327,17 @@ export class TalentaService {
         ? Math.round((keywordMatches / positionKeywords.length) * 10)
         : 0;
 
-      const baseScore = t.category === 'HIGH_POTENTIAL' ? 85 : 70;
+      const completedTrainings = t.user.trainingEnrollments?.length || 0;
+      const trainingBonus = Math.min(15, completedTrainings * 5); // Max 15 points for training
+
+      const baseScore = t.category === 'HIGH_POTENTIAL' ? 80 : 65;
       return {
         talentProfileId: t.id,
         name: t.user.name,
         currentRole: t.currentRole,
         category: t.category,
         readiness: t.category === 'HIGH_POTENTIAL' ? 'READY_NOW' : 'READY_IN_1_YEAR',
-        matchScore: Math.min(100, baseScore + keywordBonus),
+        matchScore: Math.min(100, baseScore + keywordBonus + trainingBonus),
       };
     }).sort((a, b) => b.matchScore - a.matchScore).slice(0, 10);
   }

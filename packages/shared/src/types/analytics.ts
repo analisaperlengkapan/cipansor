@@ -276,6 +276,9 @@ export interface GRCStats {
   sharia: {
     complianceRate: number;
     statusDistribution: Record<string, number>;
+    summary: {
+      byCategory: Record<string, { total: number; averageScore: number }>;
+    };
   };
   auditSuggestions?: AuditSuggestion[];
 }

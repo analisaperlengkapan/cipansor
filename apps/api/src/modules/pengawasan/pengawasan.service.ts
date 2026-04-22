@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
+import { Errors } from '@/middleware/error';
 import { perencanaanService } from '../perencanaan/perencanaan.service';
 
 export class PengawasanService {
@@ -152,7 +153,7 @@ export class PengawasanService {
         });
 
         if (!existingRisk) {
-          throw new Error(`Risk with id ${data.linkToRiskId} not found`);
+          throw Errors.notFound(`Risk with id ${data.linkToRiskId}`);
         }
 
         const auditNote = `[Audit Finding ${data.findingNumber}: ${data.title}]`;

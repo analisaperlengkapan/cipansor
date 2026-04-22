@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
+import { Errors } from '@/middleware/error';
 
 export class TalentaService {
   // ==================== TALENT PROFILES ====================
@@ -391,7 +392,7 @@ export class TalentaService {
       },
     });
 
-    if (!userProfile) throw new Error('Talent profile not found');
+    if (!userProfile) throw Errors.notFound('Talent profile');
 
     const targetPosition = targetPositionId
       ? await prisma.orgPosition.findUnique({ where: { id: targetPositionId } })

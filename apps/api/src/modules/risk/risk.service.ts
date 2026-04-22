@@ -7,6 +7,7 @@ import {
   RiskLevel,
   Prisma,
 } from '@prisma/client';
+import { Errors } from '@/middleware/error';
 
 type TransactionClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
 
@@ -75,7 +76,7 @@ export class RiskService {
       // conditions when concurrent updates change likelihood/impact between
       // the read and the write.
       const current = await tx.risk.findUnique({ where: { id } });
-      if (!current) throw new Error('Risk not found');
+      if (!current) throw Errors.notFound('Risk');
 
       // Use current values if not provided in update
       const likelihood = (data.likelihood as RiskLikelihood) || current.likelihood;

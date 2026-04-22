@@ -608,20 +608,23 @@ export const transactionService = {
     userId: string,
     data: UpdateTransactionStatusInput
   ) {
-    const transaction = await prisma.canteenTransaction.findFirst({
-      where: { id, unitId },
-      include: { items: true },
-    });
-
-    if (!transaction) {
-      throw new Error('Transaksi tidak ditemukan');
-    }
-
-    if (data.status === 'REFUNDED' && transaction.status !== 'COMPLETED') {
-      throw new Error('Hanya transaksi COMPLETED yang dapat di-refund');
-    }
-
     return prisma.$transaction(async (tx) => {
+      // Re-read the transaction *inside* the transaction so that the status
+      // check is protected by the row-level lock, preventing concurrent
+      // refund requests from both passing the guard.
+      const transaction = await tx.canteenTransaction.findFirst({
+        where: { id, unitId },
+        include: { items: true },
+      });
+
+      if (!transaction) {
+        throw new Error('Transaksi tidak ditemukan');
+      }
+
+      if (data.status === 'REFUNDED' && transaction.status !== 'COMPLETED') {
+        throw new Error('Hanya transaksi COMPLETED yang dapat di-refund');
+      }
+
       // Handle refund
       if (data.status === 'REFUNDED') {
         // Refund to wallet if original payment was wallet
@@ -686,7 +689,14 @@ export const transactionService = {
       // Look up the *original* journal entries by transaction reference so that
       // reversals always target the exact same accounts and amounts that were
       // recorded at sale time, even if account mappings have been changed since.
+      //
+      // Reversal entries use a `REFUND:` prefix on the reference field so they
+      // are distinguishable from the originals.  This prevents a (now-unlikely
+      // but still theoretically possible) double-reversal if a second refund
+      // request were to read both originals and prior reversals.
       if (data.status === 'REFUNDED') {
+        const refundReference = `REFUND:${transaction.id}`;
+
         const originalEntries = await tx.journalEntry.findMany({
           where: {
             reference: transaction.id,
@@ -705,7 +715,7 @@ export const transactionService = {
               description: `Refund ${entry.description || ''} #${transaction.transactionNo}`,
               debit: entry.credit,
               credit: entry.debit,
-              reference: transaction.id,
+              reference: refundReference,
               referenceType: JournalReferenceType.CANTEEN as any,
               createdById: userId,
             },

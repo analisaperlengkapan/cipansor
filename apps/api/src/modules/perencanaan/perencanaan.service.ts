@@ -345,7 +345,7 @@ export class PerencanaanService {
     baseline?: number;
     targetValue: number;
   }) {
-    return prisma.planIndicator.create({
+    const indicator = await prisma.planIndicator.create({
       data: {
         objective: { connect: { id: data.objectiveId } },
         name: data.name,
@@ -354,6 +354,9 @@ export class PerencanaanService {
         targetValue: data.targetValue,
       },
     });
+
+    await this.recalculateObjectiveProgress(data.objectiveId);
+    return indicator;
   }
 
   async updateIndicator(id: string, data: Prisma.PlanIndicatorUpdateInput) {

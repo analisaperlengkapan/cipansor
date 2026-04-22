@@ -32,24 +32,28 @@ const PERSPECTIVE_CONFIG = {
   FINANCIAL: {
     label: "Financial",
     color: "bg-emerald-500",
+    cssColor: "#10b981",
     icon: TrendingUp,
     description: "Untuk mencapai keberlanjutan finansial, bagaimana kita harus tampil di hadapan donatur/yayasan?"
   },
   CUSTOMER: {
     label: "Customer (Wali Murid/Siswa)",
     color: "bg-blue-500",
+    cssColor: "#3b82f6",
     icon: Users,
     description: "Untuk mencapai visi, bagaimana kita harus tampil di hadapan siswa dan orang tua?"
   },
   PROCESS: {
     label: "Internal Process",
     color: "bg-orange-500",
+    cssColor: "#f97316",
     icon: Settings,
     description: "Untuk memuaskan stakeholders, proses bisnis apa yang harus kita unggulkan?"
   },
   LEARNING: {
     label: "Learning & Growth",
     color: "bg-purple-500",
+    cssColor: "#a855f7",
     icon: GraduationCap,
     description: "Untuk mencapai visi, bagaimana kita memelihara kemampuan untuk berubah dan berkembang?"
   }
@@ -137,7 +141,7 @@ export default function StrategyMapPage() {
                     <div className="col-span-9 flex flex-wrap gap-4 justify-center py-4 px-8 min-h-[120px] rounded-xl border-2 border-dashed border-muted bg-muted/20">
                        {objectives.length > 0 ? (
                          objectives.map(obj => (
-                           <Card key={obj.id} className="w-[220px] border-l-4 shadow-sm" style={{ borderLeftColor: config.color.replace('bg-', '') }}>
+                           <Card key={obj.id} className="w-[220px] border-l-4 shadow-sm" style={{ borderLeftColor: config.cssColor }}>
                              <CardHeader className="p-3">
                                <div className="flex justify-between items-start gap-2">
                                   <CardTitle className="text-xs leading-tight font-bold">{obj.title}</CardTitle>

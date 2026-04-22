@@ -3,9 +3,9 @@ import { Prisma, BusinessUnitType } from '@prisma/client';
 import { Errors } from '@/middleware/error';
 
 export const businessUnitService = {
-  async list(params: { unitId?: string; type?: BusinessUnitType; isActive?: boolean }) {
+  async list(params: { unitId: string; type?: BusinessUnitType; isActive?: boolean }) {
     const where: Prisma.BusinessUnitWhereInput = {
-      ...(params.unitId && { unitId: params.unitId }),
+      unitId: params.unitId,
       ...(params.type && { type: params.type }),
       ...(params.isActive !== undefined && { isActive: params.isActive }),
     };

@@ -683,125 +683,28 @@ export const transactionService = {
       }
 
       // ─── REVERSING JOURNAL ENTRIES FOR REFUND ───
+      // Look up the *original* journal entries by transaction reference so that
+      // reversals always target the exact same accounts and amounts that were
+      // recorded at sale time, even if account mappings have been changed since.
       if (data.status === 'REFUNDED') {
-        const accountPrefix = transaction.businessUnitId ? `BU_${transaction.businessUnitId}_` : '';
+        const originalEntries = await tx.journalEntry.findMany({
+          where: {
+            reference: transaction.id,
+            referenceType: JournalReferenceType.CANTEEN as any,
+          },
+          select: { accountId: true, debit: true, credit: true, description: true },
+        });
 
-        const salesAccount = await getAccountOrFallback(
-          unitId,
-          `${accountPrefix}${ACCOUNT_MAPPING_KEYS.SALES_REVENUE}`,
-          '4101',
-          'Pendapatan Kantin'
-        );
-
-        const inventoryAccount = await getAccountOrFallback(
-          unitId,
-          `${accountPrefix}${ACCOUNT_MAPPING_KEYS.INVENTORY_ASSET}`,
-          '1104',
-          'Persediaan'
-        );
-
-        const cogsAccount = await getAccountOrFallback(
-          unitId,
-          `${accountPrefix}${ACCOUNT_MAPPING_KEYS.COGS}`,
-          '5101',
-          'Beban Pokok Penjualan Kantin'
-        );
-
-        const cashAccount = await getAccountOrFallback(
-          unitId,
-          ACCOUNT_MAPPING_KEYS.CASH,
-          '1101',
-          'Kas'
-        );
-
-        const walletLiabilityAccount = await getAccountOrFallback(
-          unitId,
-          ACCOUNT_MAPPING_KEYS.WALLET_LIABILITY,
-          '2101',
-          'Utang Wallet Santri'
-        );
-
-        // 1. Reverse Revenue & Cash/Wallet Receipt
-        if (salesAccount && (cashAccount || walletLiabilityAccount)) {
-          const paymentAccount = transaction.walletId ? walletLiabilityAccount : cashAccount;
-
-          if (paymentAccount) {
-            // Credit Cash/Wallet (reverse of original debit)
-            await tx.journalEntry.create({
-              data: {
-                unitId,
-                accountId: paymentAccount.id,
-                date: new Date(),
-                description: `Refund Penjualan Kantin #${transaction.transactionNo}`,
-                debit: 0,
-                credit: transaction.total,
-                reference: transaction.id,
-                referenceType: JournalReferenceType.CANTEEN as any,
-                createdById: userId,
-              },
-            });
-
-            // Debit Revenue (reverse of original credit)
-            await tx.journalEntry.create({
-              data: {
-                unitId,
-                accountId: salesAccount.id,
-                date: new Date(),
-                description: `Refund Penjualan Kantin #${transaction.transactionNo}`,
-                debit: transaction.total,
-                credit: 0,
-                reference: transaction.id,
-                referenceType: JournalReferenceType.CANTEEN as any,
-                createdById: userId,
-              },
-            });
-          }
-        }
-
-        // 2. Reverse COGS & Inventory Reduction
-        // Look up the original COGS debit journal entry to get the exact amount
-        // that was recorded at sale time. This avoids using the current costPrice,
-        // which may have changed since the original transaction.
-        let totalCogs = new Prisma.Decimal(0);
-        if (cogsAccount) {
-          const originalCogsEntry = await tx.journalEntry.findFirst({
-            where: {
-              reference: transaction.id,
-              accountId: cogsAccount.id,
-              debit: { gt: 0 },
-            },
-            select: { debit: true },
-          });
-          if (originalCogsEntry) {
-            totalCogs = originalCogsEntry.debit;
-          }
-        }
-
-        if (cogsAccount && inventoryAccount && totalCogs.gt(0)) {
-          // Credit COGS (reverse of original debit)
+        for (const entry of originalEntries) {
+          // Swap debit ↔ credit to create the reversing entry
           await tx.journalEntry.create({
             data: {
               unitId,
-              accountId: cogsAccount.id,
+              accountId: entry.accountId,
               date: new Date(),
-              description: `Refund BPP Penjualan Kantin #${transaction.transactionNo}`,
-              debit: 0,
-              credit: totalCogs,
-              reference: transaction.id,
-              referenceType: JournalReferenceType.CANTEEN as any,
-              createdById: userId,
-            },
-          });
-
-          // Debit Inventory (reverse of original credit)
-          await tx.journalEntry.create({
-            data: {
-              unitId,
-              accountId: inventoryAccount.id,
-              date: new Date(),
-              description: `Refund Pengurangan Stok Kantin #${transaction.transactionNo}`,
-              debit: totalCogs,
-              credit: 0,
+              description: `Refund ${entry.description || ''} #${transaction.transactionNo}`,
+              debit: entry.credit,
+              credit: entry.debit,
               reference: transaction.id,
               referenceType: JournalReferenceType.CANTEEN as any,
               createdById: userId,

@@ -70,8 +70,8 @@ export class RiskService {
     });
   }
 
-  async updateRisk(id: string, data: Prisma.RiskUpdateInput): Promise<Risk> {
-    return prisma.$transaction(async (tx) => {
+  async updateRisk(id: string, data: Prisma.RiskUpdateInput, externalTx?: TransactionClient): Promise<Risk> {
+    const perform = async (tx: TransactionClient) => {
       // Read current risk inside the transaction to prevent stale-read race
       // conditions when concurrent updates change likelihood/impact between
       // the read and the write.
@@ -111,7 +111,14 @@ export class RiskService {
         },
       });
       return freshRisk;
-    });
+    };
+
+    // If an external transaction client is provided, run within it;
+    // otherwise create our own transaction.
+    if (externalTx) {
+      return perform(externalTx);
+    }
+    return prisma.$transaction(async (tx) => perform(tx));
   }
 
   async deleteRisk(id: string): Promise<Risk> {

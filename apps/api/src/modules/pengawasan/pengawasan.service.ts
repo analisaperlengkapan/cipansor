@@ -187,12 +187,13 @@ export class PengawasanService {
           }
 
           if (impactEscalation) {
-            // updateRisk recalculates riskScore, riskLevel, and residualRisk
+            // updateRisk recalculates riskScore, riskLevel, and residualRisk.
+            // Pass `tx` so the risk update participates in the same transaction.
             await riskService.updateRisk(data.linkToRiskId!, {
               status: newStatus,
               consequence: updatedConsequence,
               ...impactEscalation,
-            });
+            }, tx);
           } else {
             await tx.risk.update({
               where: { id: data.linkToRiskId },

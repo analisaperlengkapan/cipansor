@@ -57,6 +57,7 @@ export const TransactionItemSchema = z.object({
 export const CreateTransactionSchema = z.object({
   studentId: z.string().uuid().optional().nullable(), // Optional untuk non-santri
   customerName: z.string().optional().nullable(),
+  businessUnitId: z.string().uuid().optional().nullable(), // Optional Business Unit association
   items: z.array(TransactionItemSchema).min(1, 'Minimal 1 item'),
   discount: z.number().min(0).default(0),
   paymentMethod: z.enum(['WALLET', 'CASH']),

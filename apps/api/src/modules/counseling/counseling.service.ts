@@ -288,7 +288,7 @@ export class CounselingService {
     // If session is completed, notify primary parents.
     // Wrapped in try/catch so a non-critical notification failure
     // does not cause the already-persisted session update to appear failed.
-    if (input.status === CounselingStatus.COMPLETED) {
+    if (input.status === CounselingStatus.COMPLETED && session.status !== CounselingStatus.COMPLETED) {
       try {
         const primaryParent = updated.student.parents.find(p => p.isPrimary) || updated.student.parents[0];
         if (primaryParent) {

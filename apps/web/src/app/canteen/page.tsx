@@ -53,6 +53,7 @@ import {
   List,
   Wallet,
   Banknote,
+  Store,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -111,12 +112,15 @@ const api = {
     categoryId?: string;
     search?: string;
     isAvailable?: string;
+    businessUnitId?: string;
   }): Promise<{ data: CanteenItem[]; pagination: { total: number } }> => {
     const searchParams = new URLSearchParams();
     if (params?.categoryId) searchParams.set("categoryId", params.categoryId);
     if (params?.search) searchParams.set("search", params.search);
     if (params?.isAvailable)
       searchParams.set("isAvailable", params.isAvailable);
+    if (params?.businessUnitId)
+      searchParams.set("businessUnitId", params.businessUnitId);
     searchParams.set("limit", "100");
 
     const res = await fetch(`/api/canteen/items?${searchParams}`);
@@ -245,6 +249,8 @@ export default function CanteenPage() {
             : undefined,
         search: search || undefined,
         isAvailable: "true",
+        businessUnitId:
+          selectedBUId !== "ALL" ? selectedBUId : undefined,
       }),
   });
 

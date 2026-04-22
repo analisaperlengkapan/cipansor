@@ -651,8 +651,15 @@ export const transactionService = {
         throw new Error('Transaksi tidak ditemukan');
       }
 
-      // Handle refund
-      if (data.status === 'REFUNDED') {
+      // Handle refund or cancellation of a COMPLETED transaction.
+      // Both cases need to restore wallet balance and stock so that the
+      // physical inventory and wallet ledger stay in sync with the
+      // reversing journal entries created further below.
+      const shouldReverse =
+        data.status === 'REFUNDED' ||
+        (data.status === 'CANCELLED' && lockedRows[0].status === 'COMPLETED');
+
+      if (shouldReverse) {
         // Refund to wallet if original payment was wallet
         if (transaction.walletId) {
           const wallet = await tx.santriWallet.findUnique({
@@ -675,7 +682,7 @@ export const transactionService = {
                 balanceAfter: newBalance,
                 reference: transaction.id,
                 referenceType: 'CANTEEN',
-                description: `Refund transaksi #${transaction.transactionNo}`,
+                description: `${data.status === 'REFUNDED' ? 'Refund' : 'Pembatalan'} transaksi #${transaction.transactionNo}`,
                 createdById: userId,
               },
             });
@@ -703,7 +710,7 @@ export const transactionService = {
                 stockBefore: currentItem.stock,
                 stockAfter: newStock,
                 reference: transaction.id,
-                notes: `Refund transaksi #${transaction.transactionNo}`,
+                notes: `${data.status === 'REFUNDED' ? 'Refund' : 'Pembatalan'} transaksi #${transaction.transactionNo}`,
                 createdById: userId,
               },
             });

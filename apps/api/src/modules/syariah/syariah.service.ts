@@ -121,35 +121,39 @@ export class SyariahService {
 
     // If score is low, automatically create an audit finding in Pengawasan module
     if (data.score < 70) {
-      const unitId = audit.compliance.unitId;
+      try {
+        const unitId = audit.compliance.unitId;
 
-      // Find or create a "Sharia Monitoring" audit record for this unit to satisfy FK constraints
-      let internalAudit = await prisma.internalAudit.findFirst({
-        where: { unitId, title: 'Monitoring Kepatuhan Syariah Terintegrasi' },
-        select: { id: true }
-      });
-
-      if (!internalAudit) {
-        internalAudit = await pengawasanService.createAudit({
-          title: 'Monitoring Kepatuhan Syariah Terintegrasi',
-          description: 'Audit otomatis untuk menampung temuan dari modul Kepatuhan Syariah.',
-          auditType: 'Kepatuhan',
-          plannedDate: new Date().toISOString(),
-          unitId,
-          leadAuditorId: data.auditorId,
+        // Find or create a "Sharia Monitoring" audit record for this unit to satisfy FK constraints
+        let internalAudit = await prisma.internalAudit.findFirst({
+          where: { unitId, title: 'Monitoring Kepatuhan Syariah Terintegrasi' },
+          select: { id: true }
         });
-      }
 
-      await pengawasanService.createFinding({
-        auditId: internalAudit.id,
-        findingNumber: `SHR-${Date.now()}`,
-        title: `Ketidakpatuhan Syariah: ${audit.compliance.title}`,
-        description: `Audit syariah pada ${data.auditDate} memberikan skor ${data.score}. Temuan: ${data.findings}`,
-        severity: data.score < 40 ? 'MAJOR' : 'MINOR',
-        category: 'SYARIAH',
-        recommendation: data.recommendation,
-        linkToRiskId: undefined,
-      });
+        if (!internalAudit) {
+          internalAudit = await pengawasanService.createAudit({
+            title: 'Monitoring Kepatuhan Syariah Terintegrasi',
+            description: 'Audit otomatis untuk menampung temuan dari modul Kepatuhan Syariah.',
+            auditType: 'Kepatuhan',
+            plannedDate: new Date().toISOString(),
+            unitId,
+            leadAuditorId: data.auditorId,
+          });
+        }
+
+        await pengawasanService.createFinding({
+          auditId: internalAudit.id,
+          findingNumber: `SHR-${Date.now()}`,
+          title: `Ketidakpatuhan Syariah: ${audit.compliance.title}`,
+          description: `Audit syariah pada ${data.auditDate} memberikan skor ${data.score}. Temuan: ${data.findings}`,
+          severity: data.score < 40 ? 'MAJOR' : 'MINOR',
+          category: 'SYARIAH',
+          recommendation: data.recommendation,
+          linkToRiskId: undefined,
+        });
+      } catch (err: any) {
+        console.error('[Syariah] Failed to create Pengawasan finding, audit was saved successfully:', err?.message || err);
+      }
     }
 
     return audit;

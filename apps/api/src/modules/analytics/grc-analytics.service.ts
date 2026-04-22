@@ -135,9 +135,10 @@ export async function getGRCStats(unitId?: string): Promise<GRCStats> {
   for (const cat of categories) {
     const items = compliances.filter((c) => c.category === cat);
     if (items.length > 0) {
+      const scoredItems = items.filter((i) => i.score != null);
       byCategory[cat] = {
         total: items.length,
-        averageScore: items.reduce((s, i) => s + (i.score || 0), 0) / items.length,
+        averageScore: scoredItems.length > 0 ? scoredItems.reduce((s, i) => s + (i.score || 0), 0) / scoredItems.length : 0,
       };
     }
   }

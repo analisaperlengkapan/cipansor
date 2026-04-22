@@ -121,6 +121,21 @@ export class PengawasanService {
     linkToRiskId?: string;
   }) {
     return prisma.$transaction(async (tx) => {
+      // Validate the linked risk exists BEFORE creating the finding so we get a
+      // friendly 404 instead of a raw Prisma P2025 from the `connect` call.
+      // We also read consequence/status here to use in the side-effect below,
+      // avoiding a redundant second query.
+      let existingRisk: { consequence: string | null; status: string } | null = null;
+      if (data.linkToRiskId) {
+        existingRisk = await tx.risk.findUnique({
+          where: { id: data.linkToRiskId },
+          select: { consequence: true, status: true },
+        });
+        if (!existingRisk) {
+          throw Errors.notFound(`Risk with id ${data.linkToRiskId}`);
+        }
+      }
+
       const finding = await tx.auditFinding.create({
         data: {
           audit: { connect: { id: data.auditId } },
@@ -146,16 +161,7 @@ export class PengawasanService {
       // If linked to a risk, update risk status and append audit reference to consequence.
       // The linkToRiskId is stored on the finding's riskId FK column so the relationship
       // can be queried directly without fragile text parsing.
-      if (data.linkToRiskId) {
-        const existingRisk = await tx.risk.findUnique({
-          where: { id: data.linkToRiskId },
-          select: { consequence: true, status: true },
-        });
-
-        if (!existingRisk) {
-          throw Errors.notFound(`Risk with id ${data.linkToRiskId}`);
-        }
-
+      if (data.linkToRiskId && existingRisk) {
         const auditNote = `[Audit Finding ${data.findingNumber}: ${data.title}]`;
 
         // Guard against duplicate notes if createFinding is called twice with the same data

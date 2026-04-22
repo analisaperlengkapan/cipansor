@@ -80,6 +80,13 @@ export default function EducationAnalyticsPage() {
 
   const COLORS = ['#4f46e5', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
+  const gradeDistributionData = [
+    { name: 'TK', value: 150 },
+    { name: 'SD', value: 450 },
+    { name: 'SMP', value: 380 },
+    { name: 'SMA', value: 270 },
+  ];
+
   return (
     <MainLayout>
       <div className="space-y-6">
@@ -226,23 +233,13 @@ export default function EducationAnalyticsPage() {
                  <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                        <Pie
-                          data={[
-                            { name: 'TK', value: 150 },
-                            { name: 'SD', value: 450 },
-                            { name: 'SMP', value: 380 },
-                            { name: 'SMA', value: 270 },
-                          ]}
+                          data={gradeDistributionData}
                           innerRadius={60}
                           outerRadius={80}
                           paddingAngle={5}
                           dataKey="value"
                        >
-                          {[
-                            { name: 'TK', value: 150 },
-                            { name: 'SD', value: 450 },
-                            { name: 'SMP', value: 380 },
-                            { name: 'SMA', value: 270 },
-                          ].map((entry, index) => (
+                          {gradeDistributionData.map((_entry, index) => (
                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                           ))}
                        </Pie>

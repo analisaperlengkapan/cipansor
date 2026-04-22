@@ -26,12 +26,13 @@ const RiskLevel = {
 };
 
 // Mock all external dependencies
-vi.mock('../../lib/prisma', () => ({
-  prisma: {
+const { mockPrisma } = vi.hoisted(() => {
+  const mock = {
     risk: {
       create: vi.fn(),
       findMany: vi.fn(),
       findUnique: vi.fn(),
+      findUniqueOrThrow: vi.fn(),
       update: vi.fn(),
       delete: vi.fn(),
     },
@@ -41,7 +42,13 @@ vi.mock('../../lib/prisma', () => ({
       update: vi.fn(),
       delete: vi.fn(),
     },
-  },
+    $transaction: vi.fn().mockImplementation((cb: any) => cb(mock)),
+  };
+  return { mockPrisma: mock };
+});
+
+vi.mock('../../lib/prisma', () => ({
+  prisma: mockPrisma,
 }));
 
 describe('Risk Service', () => {
@@ -115,10 +122,20 @@ describe('Risk Service', () => {
         likelihood: RiskLikelihood.LIKELY, // 4 -> score 12 -> HIGH
       };
 
-      vi.mocked(prisma.risk.findUnique).mockResolvedValue(existingRisk as any);
+      // First findUnique: read current risk inside transaction
+      // Second findUnique: called by recalculateResidualRisk (with mitigations)
+      vi.mocked(prisma.risk.findUnique)
+        .mockResolvedValueOnce(existingRisk as any)
+        .mockResolvedValueOnce({ ...existingRisk, mitigations: [] } as any);
       vi.mocked(prisma.risk.update).mockResolvedValue({} as any);
+      vi.mocked((prisma.risk as any).findUniqueOrThrow).mockResolvedValue({
+        ...existingRisk,
+        ...dto,
+        riskScore: 12,
+        riskLevel: RiskLevel.HIGH,
+      } as any);
 
-      await riskService.updateRisk(id, dto as any);
+      const result = await riskService.updateRisk(id, dto as any);
 
       expect(prisma.risk.update).toHaveBeenCalledWith({
         where: { id },
@@ -128,6 +145,8 @@ describe('Risk Service', () => {
           riskLevel: RiskLevel.HIGH,
         }),
       });
+      expect(result.riskScore).toBe(12);
+      expect(result.riskLevel).toBe(RiskLevel.HIGH);
     });
   });
 
@@ -170,7 +189,7 @@ describe('Risk Service', () => {
   });
 
   describe('Mitigation', () => {
-    it('should create mitigation', async () => {
+    it('should create mitigation and recalculate residual risk', async () => {
       const dto = {
         riskId: 'risk-1',
         description: 'New firewall',
@@ -180,12 +199,24 @@ describe('Risk Service', () => {
       };
 
       vi.mocked(prisma.riskMitigation.create).mockResolvedValue(dto as any);
+      // recalculateResidualRisk reads the risk with mitigations
+      vi.mocked(prisma.risk.findUnique).mockResolvedValue({
+        id: 'risk-1',
+        likelihood: RiskLikelihood.POSSIBLE,
+        impact: RiskImpact.MODERATE,
+        mitigations: [{ ...dto, progress: 0 }],
+      } as any);
+      vi.mocked(prisma.risk.update).mockResolvedValue({} as any);
 
       await riskService.createMitigation(dto as any);
 
       expect(prisma.riskMitigation.create).toHaveBeenCalledWith({
         data: dto,
       });
+      // Verify residual risk recalculation was triggered
+      expect(prisma.risk.findUnique).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { id: 'risk-1' } })
+      );
     });
   });
 });

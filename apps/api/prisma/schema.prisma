@@ -7180,6 +7180,15 @@ model Risk {
   riskScore  Int // Calculated (Likelihood * Impact)
   riskLevel  RiskLevel // Calculated
 
+  // Residual Risk (After Mitigation)
+  residualLikelihood RiskLikelihood? @map("residual_likelihood")
+  residualImpact     RiskImpact?     @map("residual_impact")
+  residualScore      Int?            @map("residual_score")
+  residualLevel      RiskLevel?      @map("residual_level")
+
+  // Audit Finding ↔ Risk linking
+  auditFindings AuditFinding[] @relation("FindingRisk")
+
   // Owner
   ownerId String? @map("owner_id") // User or Department
 
@@ -7448,6 +7457,13 @@ enum PlanPriority {
   CRITICAL
 }
 
+enum BSCPerspective {
+  FINANCIAL
+  CUSTOMER
+  PROCESS
+  LEARNING
+}
+
 enum PlanType {
   RENSTRA // Rencana Strategis (5 tahun)
   RKAS // Rencana Kerja dan Anggaran Sekolah
@@ -7491,6 +7507,7 @@ model StrategicPlan {
 model PlanObjective {
   id          String       @id @default(uuid())
   planId      String       @map("plan_id")
+  perspective BSCPerspective @default(PROCESS)
   title       String
   description String?      @db.Text
   priority    PlanPriority @default(MEDIUM)
@@ -7644,6 +7661,11 @@ model AuditFinding {
   @@index([auditId])
   @@index([severity])
   @@index([planObjectiveId])
+  // Risk link
+  riskId String? @map("risk_id")
+  risk   Risk?   @relation("FindingRisk", fields: [riskId], references: [id])
+
+  @@index([riskId])
   @@map("audit_findings")
 }
 

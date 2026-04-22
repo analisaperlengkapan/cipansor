@@ -216,4 +216,10 @@ router.get(
   financeEnhancementController.getBalanceSheet
 );
 
+router.get(
+  '/reports/cash-flow-forecast',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  financeEnhancementController.getCashFlowForecast
+);
+
 export default router;

@@ -168,6 +168,100 @@ describe('CBT Service', () => {
       });
       expect(result.score).toBe(30);
     });
+
+    it('should calculate topic mastery analytics correctly', async () => {
+      const mockExam = {
+        id: 'exam-1',
+        questionBank: {
+          questions: [
+            {
+              id: 'q1',
+              points: 10,
+              content: 'Question 1 content',
+            },
+            {
+              id: 'q2',
+              points: 10,
+              content: 'Question 2 content',
+            }
+          ]
+        },
+        attempts: [
+          {
+            id: 'att1',
+            status: 'COMPLETED',
+            answers: [
+              { questionId: 'q1', score: 10 },
+              { questionId: 'q2', score: 5 }
+            ]
+          }
+        ]
+      };
+
+      vi.mocked(prisma.exam.findUnique).mockResolvedValue(mockExam as any);
+
+      const result = await CBTService.getTopicMasteryAnalytics('exam-1');
+
+      expect(result).not.toBeNull();
+      expect(result!.items).toHaveLength(2);
+      expect(result!._meta.truncated).toBe(false);
+      // Sorted weakest first: q2 (50%) before q1 (100%)
+      expect(result!.items[0].objectiveId).toBe('q2');
+      expect(result!.items[0].totalPoints).toBe(10); // 10 points * 1 attempt
+      expect(result!.items[0].earnedPoints).toBe(5);
+      expect(result!.items[0].masteryLevel).toBe(50);
+      expect(result!.items[1].objectiveId).toBe('q1');
+      expect(result!.items[1].totalPoints).toBe(10);
+      expect(result!.items[1].earnedPoints).toBe(10);
+      expect(result!.items[1].masteryLevel).toBe(100);
+    });
+
+    it('should include NEEDS_REVIEW attempts in topic mastery (MC/TF answers already graded)', async () => {
+      const mockExam = {
+        id: 'exam-2',
+        questionBank: {
+          questions: [
+            { id: 'q1', points: 10, content: 'MC Question' },
+            { id: 'q2', points: 20, content: 'Essay Question' },
+          ]
+        },
+        attempts: [
+          {
+            id: 'att1',
+            status: 'NEEDS_REVIEW',
+            answers: [
+              { questionId: 'q1', score: 10 },  // MC auto-graded
+              { questionId: 'q2', score: null },  // Essay ungraded
+            ]
+          },
+          {
+            id: 'att2',
+            status: 'COMPLETED',
+            answers: [
+              { questionId: 'q1', score: 10 },
+              { questionId: 'q2', score: 15 },
+            ]
+          }
+        ]
+      };
+
+      vi.mocked(prisma.exam.findUnique).mockResolvedValue(mockExam as any);
+
+      const result = await CBTService.getTopicMasteryAnalytics('exam-2');
+
+      expect(result).not.toBeNull();
+      expect(result!.items).toHaveLength(2);
+      // q1: both attempts graded → 2 graded, 20 earned / 20 total = 100%
+      const q1 = result!.items.find((i: any) => i.objectiveId === 'q1');
+      expect(q1!.earnedPoints).toBe(20);
+      expect(q1!.totalPoints).toBe(20);
+      expect(q1!.masteryLevel).toBe(100);
+      // q2: only COMPLETED attempt has score → 1 graded, 15 earned / 20 total = 75%
+      const q2 = result!.items.find((i: any) => i.objectiveId === 'q2');
+      expect(q2!.earnedPoints).toBe(15);
+      expect(q2!.totalPoints).toBe(20);
+      expect(q2!.masteryLevel).toBe(75);
+    });
   });
 
   describe('Exam Attempts', () => {

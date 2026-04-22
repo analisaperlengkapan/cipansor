@@ -1,5 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
+import { Errors } from '@/middleware/error';
+import { perencanaanService } from '../perencanaan/perencanaan.service';
 
 export class PengawasanService {
   // ==================== AUDITS ====================
@@ -116,26 +118,95 @@ export class PengawasanService {
     responsibleId?: string;
     dueDate?: string;
     planObjectiveId?: string;
+    linkToRiskId?: string;
   }) {
-    return prisma.auditFinding.create({
-      data: {
-        audit: { connect: { id: data.auditId } },
-        findingNumber: data.findingNumber,
-        title: data.title,
-        description: data.description,
-        severity: data.severity,
-        category: data.category,
-        evidence: data.evidence,
-        rootCause: data.rootCause,
-        recommendation: data.recommendation,
-        responsible: data.responsibleId ? { connect: { id: data.responsibleId } } : undefined,
-        dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
-        planObjective: data.planObjectiveId ? { connect: { id: data.planObjectiveId } } : undefined,
-      },
-      include: {
-        responsible: { select: { id: true, name: true } },
-        planObjective: { select: { id: true, title: true } },
-      },
+    return prisma.$transaction(async (tx) => {
+      // Validate the linked risk exists BEFORE creating the finding so we get a
+      // friendly 404 instead of a raw Prisma P2025 from the `connect` call.
+      // We also read consequence/status here to use in the side-effect below,
+      // avoiding a redundant second query.
+      let existingRisk: { consequence: string | null; status: string } | null = null;
+      if (data.linkToRiskId) {
+        existingRisk = await tx.risk.findUnique({
+          where: { id: data.linkToRiskId },
+          select: { consequence: true, status: true },
+        });
+        if (!existingRisk) {
+          throw Errors.notFound(`Risk with id ${data.linkToRiskId}`);
+        }
+      }
+
+      const finding = await tx.auditFinding.create({
+        data: {
+          audit: { connect: { id: data.auditId } },
+          findingNumber: data.findingNumber,
+          title: data.title,
+          description: data.description,
+          severity: data.severity,
+          category: data.category,
+          evidence: data.evidence,
+          rootCause: data.rootCause,
+          recommendation: data.recommendation,
+          responsible: data.responsibleId ? { connect: { id: data.responsibleId } } : undefined,
+          dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
+          planObjective: data.planObjectiveId ? { connect: { id: data.planObjectiveId } } : undefined,
+          risk: data.linkToRiskId ? { connect: { id: data.linkToRiskId } } : undefined,
+        },
+        include: {
+          responsible: { select: { id: true, name: true } },
+          planObjective: { select: { id: true, title: true } },
+        },
+      });
+
+      // If linked to a risk, update risk status and append audit reference to consequence.
+      // The linkToRiskId is stored on the finding's riskId FK column so the relationship
+      // can be queried directly without fragile text parsing.
+      if (data.linkToRiskId && existingRisk) {
+        const auditNote = `[Audit Finding ${data.findingNumber}: ${data.title}]`;
+
+        // Guard against duplicate notes if createFinding is called twice with the same data
+        const alreadyLinked = existingRisk.consequence?.includes(`[Audit Finding ${data.findingNumber}:`) ?? false;
+
+        if (!alreadyLinked) {
+          const updatedConsequence = existingRisk.consequence
+            ? `${existingRisk.consequence}\n\n${auditNote}`
+            : auditNote;
+
+          // Only set to MONITORING if the risk is not already CLOSED
+          const newStatus = existingRisk.status === 'CLOSED' ? 'CLOSED' : 'MONITORING';
+
+          await tx.risk.update({
+            where: { id: data.linkToRiskId },
+            data: {
+              status: newStatus,
+              consequence: updatedConsequence,
+            },
+          });
+        }
+
+      }
+
+      // If linked to a strategic objective, update its progress (conservative decrement if critical finding)
+      if (data.planObjectiveId && data.severity === 'CRITICAL') {
+        const objective = await tx.planObjective.findUnique({
+          where: { id: data.planObjectiveId },
+          select: { progress: true, planId: true },
+        });
+        if (objective && objective.progress > 0) {
+          await tx.planObjective.update({
+            where: { id: data.planObjectiveId },
+            data: {
+              progress: Math.max(0, objective.progress - 5),
+            },
+          });
+
+          // Recalculate parent plan's weighted progress to keep it in sync.
+          // Uses the canonical PerencanaanService method to avoid formula duplication.
+          await perencanaanService.recalculatePlanProgress(objective.planId, tx);
+        }
+      }
+
+      return finding;
     });
   }
 

@@ -29,6 +29,7 @@ export const createObjectiveSchema = z.object({
   priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']).optional(),
   weight: z.number().min(0).max(100).optional(),
   order: z.number().int().optional(),
+  perspective: z.enum(['FINANCIAL', 'CUSTOMER', 'PROCESS', 'LEARNING']).optional(),
 });
 
 export const updateObjectiveSchema = z.object({
@@ -38,6 +39,7 @@ export const updateObjectiveSchema = z.object({
   weight: z.number().min(0).max(100).optional(),
   progress: z.number().min(0).max(100).optional(),
   order: z.number().int().optional(),
+  perspective: z.enum(['FINANCIAL', 'CUSTOMER', 'PROCESS', 'LEARNING']).optional(),
 });
 
 export const createIndicatorSchema = z.object({

@@ -18,6 +18,8 @@ export interface Student {
   fatherName?: string;
   motherName?: string;
   photoUrl?: string;
+  bloodType?: string;
+  specialNeeds?: string;
   status: "ACTIVE" | "INACTIVE" | "GRADUATED" | "DROPPED_OUT";
   enrollmentDate: string;
   unitId: string;

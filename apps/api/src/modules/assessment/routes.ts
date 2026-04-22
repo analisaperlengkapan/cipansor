@@ -4,7 +4,8 @@ import * as reportsController from './reports.controller';
 import { RaportMerdekaController } from './raport-merdeka.controller';
 import { P5ProjectController } from './p5-project.controller';
 import { UnifiedRaportController } from './unified-raport.controller';
-import { authenticate } from '@/middleware/auth';
+import { authenticate, authorize } from '@/middleware/auth';
+import { UserRole } from '@prisma/client';
 
 const router = Router();
 
@@ -14,6 +15,8 @@ router.use(authenticate);
 // ==================== EXAMS ====================
 
 router.get('/exams/:id/analytics', controller.getExamAnalytics);
+router.get('/units/:unitId/analytics', authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER), controller.getUnitEducationAnalytics);
+router.get('/students/:studentId/holistic', authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER), controller.getStudentHolisticAnalytics);
 
 /**
  * @swagger

@@ -36,6 +36,38 @@ export class CBTController {
     }
   }
 
+  static async getTopicMasteryAnalytics(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { examId } = req.params;
+      const user = (req as any).user;
+
+      // Unit-level authorization: verify the exam belongs to the user's unit
+      if (user.role !== 'SUPER_ADMIN') {
+        if (!user.unitId) {
+          throw Errors.badRequest('User has no unit assigned');
+        }
+        const exam = await prisma.exam.findUnique({
+          where: { id: examId },
+          select: { unitId: true },
+        });
+        if (!exam) {
+          throw Errors.notFound('Exam or Question Bank');
+        }
+        if (exam.unitId !== user.unitId) {
+          throw Errors.forbidden('Access to this exam is not allowed');
+        }
+      }
+
+      const analytics = await CBTService.getTopicMasteryAnalytics(examId);
+      if (analytics === null) {
+        throw Errors.notFound('Exam or Question Bank');
+      }
+      res.json({ success: true, data: analytics.items, _meta: analytics._meta });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async createQuestionBank(req: Request, res: Response, next: NextFunction) {
     try {
       if (!req.body.title) {

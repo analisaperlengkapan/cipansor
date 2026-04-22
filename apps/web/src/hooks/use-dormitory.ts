@@ -100,6 +100,17 @@ export function useDormitory(id: string) {
   });
 }
 
+export function useRoomSocialAnalytics(id: string) {
+  return useQuery({
+    queryKey: ["room-social-analytics", id],
+    queryFn: async () => {
+      const response = await api.get(`/dormitories/rooms/${id}/social-analytics`);
+      return response.data.data;
+    },
+    enabled: !!id,
+  });
+}
+
 export interface CreateDormitoryData {
   name: string;
   code: string;

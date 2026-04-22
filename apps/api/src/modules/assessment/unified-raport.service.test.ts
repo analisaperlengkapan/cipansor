@@ -8,6 +8,11 @@ vi.mock('@/lib/prisma', () => ({
   prisma: {
     student: { findUnique: vi.fn() },
     academicYear: { findUnique: vi.fn() },
+    grade: { aggregate: vi.fn() },
+    tahfidzRecord: { aggregate: vi.fn() },
+    violation: { aggregate: vi.fn() },
+    attendance: { groupBy: vi.fn() },
+    dailyIbadahRecord: { aggregate: vi.fn() },
   },
 }));
 
@@ -91,6 +96,17 @@ describe('UnifiedRaportService Integration', () => {
     (RaportMerdekaService.generateRaportMerdeka as any).mockResolvedValue(mockMerdeka);
     (raporPesantrenService.generateRaporPesantren as any).mockResolvedValue(mockPesantren);
 
+    // Mock analytics dependencies
+    (prisma.academicYear.findUnique as any).mockResolvedValue({
+      startDate: new Date('2024-07-01'),
+      endDate: new Date('2025-06-30'),
+    });
+    (prisma.grade.aggregate as any).mockResolvedValue({ _avg: { percentage: 85 } });
+    (prisma.tahfidzRecord.aggregate as any).mockResolvedValue({ _sum: { totalAyah: 100 }, _max: { juz: 5 } });
+    (prisma.violation.aggregate as any).mockResolvedValue({ _sum: { points: 0 } });
+    (prisma.attendance.groupBy as any).mockResolvedValue([{ status: 'PRESENT', _count: { _all: 10 } }]);
+    (prisma.dailyIbadahRecord.aggregate as any).mockResolvedValue({ _sum: { pointsEarned: 1000 } });
+
     const result = await UnifiedRaportService.generateUnifiedRaport('s1', 'ay1', 1);
 
     expect(result.student.name).toBe('Ahmad');
@@ -106,6 +122,8 @@ describe('UnifiedRaportService Integration', () => {
     expect(result.remarks.principal).toBe('Bagus');
     expect(result.remarks.islamic).toBe('Rajin sholat dhuha');
     expect(result.remarks.musyrif).toBe('Kamar selalu rapi');
+    expect(result.remarks.recommendation).toBeDefined();
+    expect(typeof result.remarks.recommendation).toBe('string');
     expect(result.signatures.homeroomTeacher).toBe('Ustadz Fulan');
 
     // Verify parallel execution with correct parameters

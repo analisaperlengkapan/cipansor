@@ -24,7 +24,20 @@ const { mockPrisma } = vi.hoisted(() => {
         findMany: vi.fn(),
         count: vi.fn(),
       },
+      invoice: {
+        findMany: vi.fn(),
+      },
+      purchaseRequest: {
+        findMany: vi.fn(),
+      },
+      budget: {
+        findMany: vi.fn(),
+      },
+      academicYear: {
+        findFirst: vi.fn(),
+      },
       $queryRaw: vi.fn(),
+      $transaction: vi.fn().mockImplementation((cb) => cb(mockPrisma)),
     },
   };
 });
@@ -130,6 +143,35 @@ describe('Finance Enhancement Service', () => {
         expense: 2000000,
         net: 3000000,
       });
+    });
+  });
+
+  describe('getCashFlowForecast', () => {
+    it('should aggregate income from invoices and expenses from budgets/PRs', async () => {
+      const mockUnitId = 'unit-1';
+
+      // Mock Academic Year (no active year — budget query should be skipped)
+      mockPrisma.academicYear.findFirst.mockResolvedValue(null);
+
+      // Mock Invoices (Income)
+      mockPrisma.invoice.findMany.mockResolvedValue([
+        { amount: 10000000 },
+        { amount: 5000000 }
+      ]);
+
+      // Mock Purchase Requests (Committed Expense)
+      mockPrisma.purchaseRequest.findMany.mockResolvedValue([
+        { totalEstimated: 3000000 }
+      ]);
+
+      const result = await financeEnhancementService.getCashFlowForecast(mockUnitId);
+
+      expect(result.projectedIncome).toBe(15000000);
+      // No active academic year → remainingBudget=0, so expense = max(3M PR, 0) = 3M
+      expect(result.projectedExpense).toBe(3000000);
+      expect(result.netCashFlow).toBe(12000000);
+      // Budget query should NOT be called when no active academic year
+      expect(mockPrisma.budget.findMany).not.toHaveBeenCalled();
     });
   });
 });

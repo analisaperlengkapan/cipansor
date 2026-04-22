@@ -546,6 +546,62 @@ export class FinanceEnhancementService {
     };
   }
 
+  async getCashFlowForecast(unitId: string) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const nextMonth = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+    // 1. Projected Income from Pending Invoices
+    const pendingInvoices = await prisma.invoice.findMany({
+      where: { student: { unitId }, status: 'PENDING', dueDate: { gte: today, lte: nextMonth } },
+      select: { amount: true },
+    });
+    const projectedIncome = pendingInvoices.reduce((sum, inv) => sum + Number(inv.amount), 0);
+
+    // 2. Projected Expenses from Approved Purchase Requests
+    const approvedPRs = await prisma.purchaseRequest.findMany({
+      where: { unitId, status: 'APPROVED', orderedAt: null },
+      select: { totalEstimated: true },
+    });
+    const projectedPRExpense = approvedPRs.reduce((sum, pr) => sum + Number(pr.totalEstimated), 0);
+
+    // 3. Planned Expenses from Budget (pro-rated monthly, scoped to active academic year)
+    // NOTE: When no active academic year is found, we return 0 remaining budget rather
+    // than querying all budgets across all years, which would inflate the forecast.
+    const activeAcademicYear = await prisma.academicYear.findFirst({
+      where: { isActive: true },
+      select: { id: true },
+      orderBy: { startDate: 'desc' },
+    });
+
+    const monthlyBudget = activeAcademicYear
+      ? await prisma.budget.findMany({
+          where: {
+            unitId,
+            periodType: 'MONTHLY',
+            academicYearId: activeAcademicYear.id,
+          },
+          select: { amount: true, usedAmount: true },
+        })
+      : [];
+    const remainingBudget = monthlyBudget.reduce(
+      (sum, b) => sum + Math.max(0, Number(b.amount) - Number(b.usedAmount)),
+      0
+    );
+
+    // Use the greater of committed PRs or remaining budget to avoid double-counting,
+    // since approved PRs will draw from the same monthly budgets.
+    const projectedExpense = Math.max(projectedPRExpense, remainingBudget);
+
+    return {
+      period: 'Next 30 Days',
+      projectedIncome,
+      projectedExpense,
+      netCashFlow: projectedIncome - projectedExpense,
+      confidence: 0.8,
+    };
+  }
+
   async getIncomeExpenseReport(params: {
     unitId?: string;
     startDate: Date;

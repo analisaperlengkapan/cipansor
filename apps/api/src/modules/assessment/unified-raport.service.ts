@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { ApiError, ErrorCode } from '@/middleware/error';
 import RaportMerdekaService from './raport-merdeka.service';
 import { generateRaporPesantren } from '../rapor-pesantren/rapor-pesantren.service';
+import { AssessmentAnalyticsService } from './analytics.service';
 
 /**
  * Service to generate a unified report combining academic (Merdeka)
@@ -45,11 +46,25 @@ export class UnifiedRaportService {
       throw new ApiError(ErrorCode.NOT_FOUND, 'Data enrollment tidak ditemukan untuk tahun ajaran ini');
     }
 
-    // 2. Run Generators in Parallel for efficiency
+    // 2. Run Generators and Holistic Analytics in Parallel for efficiency
     // These services handle their own internal data aggregation
-    const [raportMerdeka, raporPesantren] = await Promise.all([
+    const genericRecommendation = "Pertahankan prestasi dan terus kembangkan potensi diri di segala aspek.";
+    const holisticFallback = {
+      holisticScore: 0,
+      breakdown: { academic: null, tahfidz: null, behavior: null, attendance: null, ibadah: null },
+      dataCompleteness: 'INSUFFICIENT' as const,
+      interpretation: 'Data tidak tersedia',
+      recommendation: genericRecommendation,
+    };
+    const [raportMerdeka, raporPesantren, holistic] = await Promise.all([
       RaportMerdekaService.generateRaportMerdeka(studentId, academicYearId, semester),
       generateRaporPesantren({ studentId, academicYearId, semester, unitId: student.unitId }),
+      // Holistic analytics failure should not block raport generation
+      AssessmentAnalyticsService.getStudentHolisticAnalytics(studentId, academicYearId)
+        .catch((err) => {
+          console.error('[UnifiedRaport] Holistic analytics failed, using fallback:', err?.message || err);
+          return holisticFallback;
+        }),
     ]);
 
     // 3. Structure the Unified Data
@@ -97,6 +112,8 @@ export class UnifiedRaportService {
         islamic: raporPesantren.notes,
         principal: raportMerdeka.catatanKepalaSekolah,
         musyrif: raporPesantren.musyrifNotes,
+        holistic: holistic.interpretation,
+        recommendation: holistic.recommendation,
       },
       signatures: {
         homeroomTeacher: enrollment.class.homeroomTeacher?.user.name,
@@ -107,9 +124,6 @@ export class UnifiedRaportService {
     };
   }
 
-  /**
-   * Get formatted Unified Raport with print layout options
-   */
   static async getPrintData(studentId: string, academicYearId: string, semester: number) {
     const data = await this.generateUnifiedRaport(studentId, academicYearId, semester);
 

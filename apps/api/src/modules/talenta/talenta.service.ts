@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
+import { Errors } from '@/middleware/error';
 
 export class TalentaService {
   // ==================== TALENT PROFILES ====================
@@ -65,6 +66,13 @@ export class TalentaService {
         },
         succession: true,
       },
+    });
+  }
+
+  async getProfileByUserId(userId: string) {
+    return prisma.talentProfile.findUnique({
+      where: { userId },
+      select: { id: true, unitId: true },
     });
   }
 
@@ -364,6 +372,86 @@ export class TalentaService {
   }
 
   // ==================== ANALYTICS ====================
+
+  async getCompetencyGap(userId: string, targetPositionId?: string) {
+    const userProfile = await prisma.talentProfile.findUnique({
+      where: { userId },
+      include: {
+        assessments: {
+          orderBy: { assessedAt: 'desc' },
+          take: 1,
+        },
+        user: {
+          include: {
+            orgPositions: {
+              include: { orgUnit: true },
+              take: 1,
+            },
+          },
+        },
+      },
+    });
+
+    if (!userProfile) throw Errors.notFound('Talent profile');
+
+    const targetPosition = targetPositionId
+      ? await prisma.orgPosition.findUnique({ where: { id: targetPositionId } })
+      : userProfile.user.orgPositions[0];
+
+    if (!targetPosition || !targetPosition.requirements) {
+      return { position: targetPosition?.title || null, gaps: [], matchScore: 100 };
+    }
+
+    // Requirements are stored as text (e.g., "Skill A, Skill B") or JSON.
+    // If stored as JSON object with levels (e.g., {"Skill A": 3, "Skill B": 5}),
+    // use those as per-competency target levels. Otherwise default to 4 (scale of 5).
+    let requirements: string[];
+    let requirementLevels: Record<string, number> = {};
+    try {
+      const parsed = JSON.parse(targetPosition.requirements);
+      if (Array.isArray(parsed)) {
+        requirements = parsed.map((r: any) => String(r).trim());
+      } else if (typeof parsed === 'object' && parsed !== null) {
+        // Object format: {"Skill A": 3, "Skill B": 5}
+        requirements = Object.keys(parsed).map((r) => r.trim());
+        requirementLevels = Object.fromEntries(
+          Object.entries(parsed).map(([k, v]) => [k.trim(), Number(v) || 4])
+        );
+      } else {
+        requirements = targetPosition.requirements.split(',').map((r) => r.trim());
+      }
+    } catch {
+      requirements = targetPosition.requirements.split(',').map((r) => r.trim());
+    }
+    requirements = requirements.filter((r) => r.length > 0);
+
+    if (requirements.length === 0) {
+      return { position: targetPosition.title, gaps: [], matchScore: 100 };
+    }
+
+    const userCompetencies = (userProfile.assessments[0]?.competencies as any) || {};
+    const DEFAULT_TARGET_LEVEL = 4; // Default target on a scale of 5
+
+    const gaps = requirements.map((req) => {
+      const userLevel = userCompetencies[req] ?? 0;
+      const targetLevel = requirementLevels[req] || DEFAULT_TARGET_LEVEL;
+      return {
+        competency: req,
+        userLevel,
+        targetLevel,
+        gap: targetLevel - userLevel,
+      };
+    });
+
+    const averageGap = gaps.reduce((sum, g) => sum + g.gap, 0) / gaps.length;
+    const matchScore = Math.min(100, Math.max(0, 100 - averageGap * 20));
+
+    return {
+      position: targetPosition.title,
+      gaps,
+      matchScore,
+    };
+  }
 
   async getTalentAnalytics(unitId: string) {
     const talentProfiles = await prisma.talentProfile.findMany({

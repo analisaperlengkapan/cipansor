@@ -709,6 +709,107 @@ export class CBTService {
     });
   }
 
+  static async getTopicMasteryAnalytics(examId: string) {
+    // Topic mastery analytics: aggregate per-question performance across all
+    // completed and needs-review attempts.  NEEDS_REVIEW attempts are included
+    // because their MC/TF answers are already auto-graded; ungraded essay
+    // answers (score === null) are safely skipped by the aggregation loop.
+    // The Question model does not have a learningObjective relation, so we
+    // group by individual question instead.
+    //
+    // NOTE: This eagerly loads all answers for all matching attempts into memory.
+    // For exams with very large numbers of students, consider migrating to a
+    // database-level aggregation (groupBy or raw SQL) for better scalability.
+    const exam = await prisma.exam.findUnique({
+      where: { id: examId },
+      include: {
+        questionBank: {
+          include: {
+            questions: {
+              orderBy: { order: 'asc' },
+            },
+          },
+        },
+        attempts: {
+          where: { status: { in: ['COMPLETED', 'NEEDS_REVIEW'] } },
+          take: 1000, // Safety limit to prevent excessive memory usage
+          include: {
+            answers: true,
+          },
+        },
+      },
+    });
+
+    if (!exam || !exam.questionBank) return null;
+    if (exam.attempts.length === 0) return { items: [], _meta: { truncated: false } };
+
+    // Warn if the safety limit was hit — analytics may be based on a subset
+    const truncated = exam.attempts.length >= 1000;
+
+    const topicMastery: Record<string, {
+      objectiveId: string,
+      code: string,
+      description: string,
+      totalPoints: number,
+      earnedPoints: number,
+      gradedCount: number
+    }> = {};
+
+    // Group by individual question (each question acts as its own "topic")
+    exam.questionBank.questions.forEach((q, idx) => {
+      topicMastery[q.id] = {
+        objectiveId: q.id,
+        code: `Q${idx + 1}`,
+        description: q.content.substring(0, 100),
+        totalPoints: 0,
+        earnedPoints: 0,
+        gradedCount: 0,
+      };
+    });
+
+    // Aggregate earned points and totalPoints only for graded answers
+    // (skip answers with null score to avoid counting ungraded essay
+    // questions as 0, which would distort mastery)
+    exam.attempts.forEach(attempt => {
+      attempt.answers.forEach(answer => {
+        const entry = topicMastery[answer.questionId];
+        if (entry && answer.score !== null) {
+          entry.earnedPoints += Number(answer.score);
+          entry.gradedCount += 1;
+        }
+      });
+    });
+
+    // Compute totalPoints from gradedCount so the denominator only
+    // reflects attempts that were actually scored.
+    const questions = exam.questionBank.questions;
+    questions.forEach(q => {
+      const entry = topicMastery[q.id];
+      if (entry) {
+        entry.totalPoints = q.points * entry.gradedCount;
+      }
+    });
+
+    const results = Object.values(topicMastery).map(({ gradedCount: _gc, ...m }) => ({
+      ...m,
+      masteryLevel: m.totalPoints > 0 ? (m.earnedPoints / m.totalPoints) * 100 : 0
+    })).sort((a, b) => a.masteryLevel - b.masteryLevel); // Weakest topics first
+
+    // Return an object with items and metadata so truncation info survives
+    // JSON serialization (named properties on arrays are silently dropped
+    // by JSON.stringify).
+    return {
+      items: results,
+      _meta: truncated
+        ? {
+            truncated: true,
+            analyzedAttempts: exam.attempts.length,
+            message: 'Results based on first 1000 attempts only',
+          }
+        : { truncated: false },
+    };
+  }
+
   static async finishExamAttempt(attemptId: string, studentId: string) {
     const attempt = await prisma.examAttempt.findUnique({
       where: { id: attemptId },

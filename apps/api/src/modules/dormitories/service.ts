@@ -375,6 +375,69 @@ export async function getRoomOccupancy(roomId: string) {
   };
 }
 
+export async function getRoomSocialAnalytics(roomId: string) {
+  // Only consider violations from the last 6 months for current room dynamics
+  const sixMonthsAgo = new Date(Date.now() - 180 * 24 * 60 * 60 * 1000);
+
+  const room = await prisma.room.findUnique({
+    where: { id: roomId },
+    include: {
+      assignments: {
+        where: { isActive: true },
+        include: {
+          student: {
+            include: {
+              user: { select: { id: true, name: true } },
+              violations: {
+                where: { occurredAt: { gte: sixMonthsAgo } },
+                orderBy: { createdAt: 'desc' },
+                take: 50, // Limit per student to prevent excessive memory usage
+              },
+              medicalRecords: {
+                select: { id: true },
+                orderBy: { visitDate: 'desc' },
+                take: 1
+              }
+            }
+          }
+        }
+      }
+    }
+  });
+
+  if (!room) return null;
+
+  const members = room.assignments.map(a => {
+    const s = a.student;
+    const violationPoints = s.violations.reduce((sum, v) => sum + Number(v.points), 0);
+
+    return {
+      studentId: s.id,
+      name: s.user?.name,
+      riskScore: violationPoints,
+      lastHealthStatus: s.medicalRecords.length > 0 ? 'Tercatat' : 'Sehat',
+      recentViolations: s.violations.length
+    };
+  });
+
+  // Calculate room harmony score (simplified)
+  // Higher violations = lower harmony.
+  // Use a logarithmic-inspired scale so a single high-violation member
+  // doesn't crash the score to 0 for the entire room.
+  const totalViolations = members.reduce((sum, m) => sum + m.riskScore, 0);
+  const avgViolationPoints = totalViolations / Math.max(1, members.length);
+  // Scale: 0 pts → 100, ~10 pts → ~82, ~50 pts → ~37, ~100 pts → ~14, ~250+ pts → ~0
+  const harmonyScore = Math.round(Math.max(0, 100 * Math.exp(-avgViolationPoints / 50)) * 100) / 100;
+
+  return {
+    roomId,
+    roomName: room.name,
+    harmonyScore,
+    members,
+    status: harmonyScore > 80 ? 'KONDUSIF' : harmonyScore > 50 ? 'PERLU_PENGAWASAN' : 'RAWAN_KONFLIK'
+  };
+}
+
 export async function getDormitoryStats(dormitoryId: string) {
   const dormitory = await prisma.dormitory.findUnique({
     where: { id: dormitoryId },

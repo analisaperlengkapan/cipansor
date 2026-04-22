@@ -40,7 +40,22 @@ vi.mock('../../../src/lib/prisma', () => ({
       count: vi.fn(),
       create: vi.fn(),
     },
+    invoice: {
+      findMany: vi.fn(),
+    },
+    purchaseRequest: {
+      findMany: vi.fn(),
+    },
+    academicYear: {
+      findFirst: vi.fn(),
+    },
+    budget: {
+      findUnique: vi.fn(),
+      findMany: vi.fn(),
+    },
     $queryRaw: vi.fn(),
+    $executeRaw: vi.fn(),
+    $transaction: vi.fn((cb) => cb(prisma)),
   },
 }));
 
@@ -97,18 +112,25 @@ describe('FinanceEnhancementService', () => {
 
       // Mock period check
       (prisma.financialPeriod.findFirst as any).mockResolvedValue(null); // No closed period
+      // Mock academic year lookup
+      (prisma.academicYear.findFirst as any).mockResolvedValue(null);
 
       (prisma.journalEntry.create as any).mockResolvedValue({
         id: '1',
-        ...input,
+        unitId: input.unitId,
+        accountId: input.accountId,
+        date: input.date,
         debit: 1000,
         credit: 0,
+        createdById: input.createdById,
+        account: { normalBalance: 'DEBIT' }
       });
 
       const result = await service.createJournalEntry(input);
 
       expect(result.debit).toBe(1000);
       expect(prisma.journalEntry.create).toHaveBeenCalled();
+      expect(prisma.$transaction).toHaveBeenCalled();
     });
   });
 

@@ -7,6 +7,9 @@ import {
   RiskLevel,
   Prisma,
 } from '@prisma/client';
+import { Errors } from '@/middleware/error';
+
+type TransactionClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
 
 export class RiskService {
   async createRisk(data: Prisma.RiskCreateInput): Promise<Risk> {
@@ -68,23 +71,46 @@ export class RiskService {
   }
 
   async updateRisk(id: string, data: Prisma.RiskUpdateInput): Promise<Risk> {
-    const current = await this.getRiskById(id);
-    if (!current) throw new Error('Risk not found');
+    return prisma.$transaction(async (tx) => {
+      // Read current risk inside the transaction to prevent stale-read race
+      // conditions when concurrent updates change likelihood/impact between
+      // the read and the write.
+      const current = await tx.risk.findUnique({ where: { id } });
+      if (!current) throw Errors.notFound('Risk');
 
-    // Use current values if not provided in update
-    const likelihood = (data.likelihood as RiskLikelihood) || current.likelihood;
-    const impact = (data.impact as RiskImpact) || current.impact;
+      // Use current values if not provided in update
+      const likelihood = (data.likelihood as RiskLikelihood) || current.likelihood;
+      const impact = (data.impact as RiskImpact) || current.impact;
 
-    const riskScore = this.calculateRiskScore(likelihood, impact);
-    const riskLevel = this.determineRiskLevel(riskScore);
+      const riskScore = this.calculateRiskScore(likelihood, impact);
+      const riskLevel = this.determineRiskLevel(riskScore);
 
-    return prisma.risk.update({
-      where: { id },
-      data: {
-        ...data,
-        riskScore,
-        riskLevel,
-      },
+      await tx.risk.update({
+        where: { id },
+        data: {
+          ...data,
+          riskScore,
+          riskLevel,
+        },
+      });
+
+      // Recalculate residual risk when inherent likelihood/impact changes
+      await this.recalculateResidualRisk(id, tx);
+
+      // Re-fetch to include the freshly-calculated residual risk fields
+      const freshRisk = await tx.risk.findUniqueOrThrow({
+        where: { id },
+        include: {
+          mitigations: true,
+          createdBy: {
+            select: { id: true, name: true },
+          },
+          strategicPlan: {
+            select: { id: true, title: true },
+          },
+        },
+      });
+      return freshRisk;
     });
   }
 
@@ -93,8 +119,15 @@ export class RiskService {
   }
 
   async createMitigation(data: Prisma.RiskMitigationCreateInput): Promise<RiskMitigation> {
-    return prisma.riskMitigation.create({
-      data,
+    return prisma.$transaction(async (tx) => {
+      const mitigation = await tx.riskMitigation.create({
+        data,
+      });
+
+      // After creating mitigation, recalculate residual risk
+      await this.recalculateResidualRisk(mitigation.riskId, tx);
+
+      return mitigation;
     });
   }
 
@@ -109,38 +142,116 @@ export class RiskService {
     id: string,
     data: Prisma.RiskMitigationUpdateInput
   ): Promise<RiskMitigation> {
-    return prisma.riskMitigation.update({
-      where: { id },
-      data,
+    return prisma.$transaction(async (tx) => {
+      const mitigation = await tx.riskMitigation.update({
+        where: { id },
+        data,
+      });
+
+      // After updating mitigation, recalculate residual risk
+      await this.recalculateResidualRisk(mitigation.riskId, tx);
+
+      return mitigation;
     });
   }
 
   async deleteMitigation(id: string): Promise<RiskMitigation> {
-    return prisma.riskMitigation.delete({ where: { id } });
+    return prisma.$transaction(async (tx) => {
+      const mitigation = await tx.riskMitigation.delete({ where: { id } });
+
+      // After deleting mitigation, recalculate residual risk
+      await this.recalculateResidualRisk(mitigation.riskId, tx);
+
+      return mitigation;
+    });
   }
 
   // Helpers
-  private calculateRiskScore(likelihood: RiskLikelihood, impact: RiskImpact): number {
-    // Note: We use a string key lookup here (`likelihood as string`) instead of directly
-    // referencing Prisma Enums as object keys to prevent Vitest mocking issues during testing,
-    // while still maintaining the strong typings for the method parameters in production code.
-    const likelihoodMap: Record<string, number> = {
-      RARE: 1,
-      UNLIKELY: 2,
-      POSSIBLE: 3,
-      LIKELY: 4,
-      ALMOST_CERTAIN: 5,
-    };
-    const impactMap: Record<string, number> = {
-      INSIGNIFICANT: 1,
-      MINOR: 2,
-      MODERATE: 3,
-      MAJOR: 4,
-      CATASTROPHIC: 5,
-    };
+  private async recalculateResidualRisk(riskId: string, tx: TransactionClient | typeof prisma = prisma): Promise<void> {
+    const risk = await tx.risk.findUnique({
+      where: { id: riskId },
+      include: { mitigations: true },
+    });
 
-    const l = likelihoodMap[likelihood as string] || 1;
-    const i = impactMap[impact as string] || 1;
+    if (!risk) return;
+
+    // If no mitigations exist, clear residual fields (null = no assessment performed)
+    if (risk.mitigations.length === 0) {
+      await tx.risk.update({
+        where: { id: riskId },
+        data: {
+          residualLikelihood: null,
+          residualImpact: null,
+          residualScore: null,
+          residualLevel: null,
+        },
+      });
+      return;
+    }
+
+    // Logic: Mitigation progress reduces likelihood and impact
+    // Avg progress of all mitigations
+    const avgProgress = risk.mitigations.reduce((sum, m) => sum + (m.progress || 0), 0) / risk.mitigations.length;
+
+    // Reduction factor: 0% progress = 1.0, 100% progress = 0.4 (capped reduction)
+    const factor = 1 - (avgProgress / 100) * 0.6;
+
+    const lVal = this.getEnumWeight(risk.likelihood);
+    const iVal = this.getEnumWeight(risk.impact);
+
+    const residualLVal = Math.max(1, Math.round(lVal * factor));
+    const residualIVal = Math.max(1, Math.round(iVal * factor));
+
+    const residualLikelihood = this.getWeightToLikelihood(residualLVal);
+    const residualImpact = this.getWeightToImpact(residualIVal);
+    const residualScore = residualLVal * residualIVal;
+    const residualLevel = this.determineRiskLevel(residualScore);
+
+    await tx.risk.update({
+      where: { id: riskId },
+      data: {
+        residualLikelihood,
+        residualImpact,
+        residualScore,
+        residualLevel,
+      },
+    });
+  }
+
+  // Shared enum-to-numeric mapping used by both calculateRiskScore and
+  // recalculateResidualRisk. Likelihood and Impact enums are combined in a
+  // single map because their string values don't overlap.
+  private getEnumWeight(val: string): number {
+    const map: Record<string, number> = {
+      RARE: 1, INSIGNIFICANT: 1,
+      UNLIKELY: 2, MINOR: 2,
+      POSSIBLE: 3, MODERATE: 3,
+      LIKELY: 4, MAJOR: 4,
+      ALMOST_CERTAIN: 5, CATASTROPHIC: 5,
+    };
+    return map[val] || 1;
+  }
+
+  private getWeightToLikelihood(w: number): RiskLikelihood {
+    const map: Record<number, RiskLikelihood> = {
+      1: 'RARE', 2: 'UNLIKELY', 3: 'POSSIBLE', 4: 'LIKELY', 5: 'ALMOST_CERTAIN',
+    };
+    return map[w] || 'RARE';
+  }
+
+  private getWeightToImpact(w: number): RiskImpact {
+    const map: Record<number, RiskImpact> = {
+      1: 'INSIGNIFICANT', 2: 'MINOR', 3: 'MODERATE', 4: 'MAJOR', 5: 'CATASTROPHIC',
+    };
+    return map[w] || 'INSIGNIFICANT';
+  }
+
+  private calculateRiskScore(likelihood: RiskLikelihood, impact: RiskImpact): number {
+    // Delegates to getEnumWeight which holds the single source of truth for
+    // enum-to-numeric mappings. String casting prevents Vitest mocking issues
+    // with Prisma Enums while maintaining strong typings for method parameters.
+    const l = this.getEnumWeight(likelihood as string);
+    const i = this.getEnumWeight(impact as string);
 
     return l * i;
   }

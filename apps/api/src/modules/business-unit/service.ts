@@ -81,7 +81,10 @@ export const businessUnitService = {
       include: {
         _count: {
           select: {
+            canteenCategories: true,
+            canteenItems: true,
             canteenTransactions: true,
+            laundryPricings: true,
             laundryTransactions: true,
           },
         },
@@ -92,6 +95,10 @@ export const businessUnitService = {
 
     if (bu._count.canteenTransactions > 0 || bu._count.laundryTransactions > 0) {
       throw Errors.badRequest('Cannot delete business unit with existing transactions');
+    }
+
+    if (bu._count.canteenCategories > 0 || bu._count.canteenItems > 0 || bu._count.laundryPricings > 0) {
+      throw Errors.badRequest('Cannot delete business unit with linked categories, items, or pricings. Remove them first.');
     }
 
     return prisma.businessUnit.delete({ where: { id } });

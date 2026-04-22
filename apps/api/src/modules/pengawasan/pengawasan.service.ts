@@ -179,10 +179,22 @@ export class PengawasanService {
           // Best Practice: If finding is CRITICAL or MAJOR, escalate risk impact.
           // Delegate to RiskService.updateRisk so riskScore, riskLevel, and
           // residualRisk are all recalculated consistently.
+          // Only escalate if the new impact is actually higher than the current one
+          // to avoid accidentally downgrading a risk (e.g. CATASTROPHIC → MAJOR).
+          const IMPACT_WEIGHTS: Record<string, number> = {
+            INSIGNIFICANT: 1, MINOR: 2, MODERATE: 3, MAJOR: 4, CATASTROPHIC: 5,
+          };
+
+          const currentRisk = await tx.risk.findUnique({
+            where: { id: data.linkToRiskId },
+            select: { impact: true },
+          });
+          const currentImpactWeight = currentRisk ? (IMPACT_WEIGHTS[currentRisk.impact] || 0) : 0;
+
           let impactEscalation: { impact: string } | undefined;
-          if (data.severity === 'CRITICAL') {
+          if (data.severity === 'CRITICAL' && currentImpactWeight < 5) {
             impactEscalation = { impact: 'CATASTROPHIC' };
-          } else if (data.severity === 'MAJOR') {
+          } else if (data.severity === 'MAJOR' && currentImpactWeight < 4) {
             impactEscalation = { impact: 'MAJOR' };
           }
 

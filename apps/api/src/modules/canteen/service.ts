@@ -236,12 +236,12 @@ export const itemService = {
 // TRANSACTION SERVICE
 // =============================================================================
 
-const generateTransactionNo = async (unitId: string): Promise<string> => {
+const generateTransactionNo = async (unitId: string, tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0] = prisma): Promise<string> => {
   const today = new Date();
   const dateStr = today.toISOString().slice(0, 10).replace(/-/g, '');
   const prefix = `CNT-${dateStr}`;
 
-  const lastTransaction = await prisma.canteenTransaction.findFirst({
+  const lastTransaction = await tx.canteenTransaction.findFirst({
     where: { transactionNo: { startsWith: prefix } },
     orderBy: { transactionNo: 'desc' },
     select: { transactionNo: true },
@@ -406,8 +406,8 @@ export const transactionService = {
         walletId = wallet.id;
       }
 
-      // Generate transaction number
-      const transactionNo = await generateTransactionNo(unitId);
+      // Generate transaction number (inside tx to reduce race window)
+      const transactionNo = await generateTransactionNo(unitId, tx);
 
       // Create transaction
       const transaction = await tx.canteenTransaction.create({
@@ -467,7 +467,7 @@ export const transactionService = {
 
       const salesAccount = await getAccountOrFallback(
         unitId,
-        `${accountPrefix}SALES_REVENUE`,
+        `${accountPrefix}${ACCOUNT_MAPPING_KEYS.SALES_REVENUE}`,
         '4101',
         'Pendapatan Kantin'
       );
@@ -481,7 +481,7 @@ export const transactionService = {
 
       const cogsAccount = await getAccountOrFallback(
         unitId,
-        `${accountPrefix}COGS`,
+        `${accountPrefix}${ACCOUNT_MAPPING_KEYS.COGS}`,
         '5101',
         'Beban Pokok Penjualan Kantin'
       );
@@ -688,7 +688,7 @@ export const transactionService = {
 
         const salesAccount = await getAccountOrFallback(
           unitId,
-          `${accountPrefix}SALES_REVENUE`,
+          `${accountPrefix}${ACCOUNT_MAPPING_KEYS.SALES_REVENUE}`,
           '4101',
           'Pendapatan Kantin'
         );
@@ -702,7 +702,7 @@ export const transactionService = {
 
         const cogsAccount = await getAccountOrFallback(
           unitId,
-          `${accountPrefix}COGS`,
+          `${accountPrefix}${ACCOUNT_MAPPING_KEYS.COGS}`,
           '5101',
           'Beban Pokok Penjualan Kantin'
         );
@@ -759,15 +759,21 @@ export const transactionService = {
         }
 
         // 2. Reverse COGS & Inventory Reduction
-        // Reconstruct totalCogs from transaction items' cost prices
+        // Look up the original COGS debit journal entry to get the exact amount
+        // that was recorded at sale time. This avoids using the current costPrice,
+        // which may have changed since the original transaction.
         let totalCogs = new Prisma.Decimal(0);
-        for (const txItem of transaction.items) {
-          const item = await tx.canteenItem.findUnique({
-            where: { id: txItem.itemId },
-            select: { costPrice: true },
+        if (cogsAccount) {
+          const originalCogsEntry = await tx.journalEntry.findFirst({
+            where: {
+              reference: transaction.id,
+              accountId: cogsAccount.id,
+              debit: { gt: 0 },
+            },
+            select: { debit: true },
           });
-          if (item?.costPrice) {
-            totalCogs = totalCogs.add(item.costPrice.mul(txItem.quantity));
+          if (originalCogsEntry) {
+            totalCogs = originalCogsEntry.debit;
           }
         }
 

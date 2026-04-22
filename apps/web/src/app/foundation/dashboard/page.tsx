@@ -125,8 +125,9 @@ export default function ExecutiveDashboard() {
               <GraduationCap className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">248</div>
-              <p className="text-xs text-muted-foreground">+12% dari minggu lalu</p>
+              {/* TODO: Wire to PSB/Admission API */}
+              <div className="text-2xl font-bold text-muted-foreground">—</div>
+              <p className="text-xs text-muted-foreground">Belum tersedia</p>
             </CardContent>
           </Card>
         </div>
@@ -239,13 +240,12 @@ export default function ExecutiveDashboard() {
                         <div key={unit.id} className="flex items-center justify-between border-b pb-2">
                           <div className="space-y-1">
                             <p className="text-sm font-medium">{unit.name}</p>
-                            <div className="flex gap-2">
-                              <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700">2 High Risks</span>
-                              <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700">5 Audit Findings</span>
-                            </div>
+                            {/* TODO: Wire to Risk & Pengawasan APIs */}
+                            <p className="text-xs text-muted-foreground italic">Data risiko & audit belum tersedia</p>
                           </div>
                           <div className="text-right">
-                             <div className="text-sm font-bold text-green-600">85.4%</div>
+                             {/* TODO: Wire to Quality Assurance API */}
+                             <div className="text-sm font-bold text-muted-foreground">—</div>
                              <p className="text-[10px] text-muted-foreground">Quality Score</p>
                           </div>
                         </div>

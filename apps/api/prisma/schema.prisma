@@ -449,6 +449,9 @@ model User {
   innovationsProposed  InnovationProposal[]  @relation("InnovationProposer")
   innovationsApproved  InnovationProposal[]  @relation("InnovationApprover")
 
+  // Business Unit Management
+  managedBusinessUnits BusinessUnit[]        @relation("BusinessUnitManager")
+
   @@index([email])
   @@index([role])
   @@index([unitId])
@@ -5092,6 +5095,7 @@ model BusinessUnit {
 
   // Relations
   unit                 Unit                  @relation(fields: [unitId], references: [id])
+  manager              User?                 @relation("BusinessUnitManager", fields: [managerId], references: [id])
   canteenCategories    CanteenCategory[]
   canteenItems         CanteenItem[]
   canteenTransactions  CanteenTransaction[]
@@ -5099,6 +5103,7 @@ model BusinessUnit {
   laundryTransactions  LaundryTransaction[]
 
   @@index([unitId])
+  @@index([managerId])
   @@map("business_units")
 }
 

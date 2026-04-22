@@ -76,7 +76,7 @@ export class AssessmentAnalyticsService {
     // participate in the weighted holistic score.
     const hasAcademicData = academicGrades._avg.percentage !== null;
     const hasTahfidzData = tahfidzProgress._max.juz !== null;
-    const hasAttendanceData = attendance.length > 0;
+    const hasRawAttendanceData = attendance.length > 0;
     const hasIbadahData = ibadahPoints._sum.pointsEarned !== null && Number(ibadahPoints._sum.pointsEarned) > 0;
 
     const academicScore = hasAcademicData ? Number(academicGrades._avg.percentage) : null;
@@ -101,6 +101,7 @@ export class AssessmentAnalyticsService {
     const totalDays = Object.values(attMap).reduce((a, b) => a + b, 0);
     const presentDays = (attMap['PRESENT'] || 0) + (attMap['LATE'] || 0);
     const excusedDays = (attMap['SICK'] || 0) + (attMap['EXCUSED'] || 0);
+    const hasAttendanceData = hasRawAttendanceData && totalDays > 0;
     const attendanceScore = hasAttendanceData ? ((presentDays + excusedDays * 0.5) / totalDays) * 100 : null;
 
     // Ibadah score (relative to an arbitrary yearly target of 3000 pts)
@@ -132,9 +133,12 @@ export class AssessmentAnalyticsService {
     // return 0 instead of a misleading renormalized score.
     const finalScore = dataCompleteness === 'INSUFFICIENT' ? 0 : Math.round(normalizedScore * 100) / 100;
 
+    const baseInterpretation = this.getHolisticInterpretation(finalScore);
     const interpretation = dataCompleteness === 'INSUFFICIENT'
       ? 'Dhoif (Perlu Bimbingan/Needs Improvement)'
-      : this.getHolisticInterpretation(finalScore);
+      : dataCompleteness === 'PARTIAL'
+        ? `${baseInterpretation} — Data Sebagian (${dimensionsWithData}/5 dimensi)`
+        : baseInterpretation;
 
     const breakdown = {
       academic: roundOrNull(academicScore),

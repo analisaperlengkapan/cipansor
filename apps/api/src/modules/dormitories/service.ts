@@ -391,6 +391,7 @@ export async function getRoomSocialAnalytics(roomId: string) {
               violations: {
                 where: { occurredAt: { gte: sixMonthsAgo } },
                 orderBy: { createdAt: 'desc' },
+                take: 50, // Limit per student to prevent excessive memory usage
               },
               medicalRecords: {
                 select: { id: true },

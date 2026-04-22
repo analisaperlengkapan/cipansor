@@ -25,7 +25,6 @@ import {
 import { useUnits } from "@/hooks/use-units";
 import { useActiveAcademicYear } from "@/hooks/use-academic-years";
 import { useUnitEducationAnalytics } from "@/hooks/use-assessment";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useMemo, useState } from "react";
 import {
   Select,
@@ -36,13 +35,13 @@ import {
 } from "@/components/ui/select";
 
 export default function EducationAnalyticsPage() {
-  const { data: units, isLoading: loadingUnits } = useUnits();
+  const { data: units } = useUnits();
   const { data: activeYear } = useActiveAcademicYear();
   const [selectedUnitId, setSelectedUnitId] = useState<string>("");
 
   const unitList = Array.isArray(units) ? units : (units as any)?.data ?? [];
 
-  const { data: unitAnalytics, isLoading: loadingAnalytics } = useUnitEducationAnalytics(
+  const { data: unitAnalytics } = useUnitEducationAnalytics(
     selectedUnitId || (unitList[0]?.id ?? ""),
     activeYear?.id ?? ""
   );

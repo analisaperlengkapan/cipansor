@@ -433,7 +433,7 @@ export class TalentaService {
     const DEFAULT_TARGET_LEVEL = 4; // Default target on a scale of 5
 
     const gaps = requirements.map((req) => {
-      const userLevel = userCompetencies[req] || 0;
+      const userLevel = userCompetencies[req] ?? 0;
       const targetLevel = requirementLevels[req] || DEFAULT_TARGET_LEVEL;
       return {
         competency: req,

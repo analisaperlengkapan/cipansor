@@ -192,8 +192,8 @@ export function useStudentViolationSummary(studentId: string) {
         data: {
           totalPoints: number;
           recentViolations: Violation[];
-          byType: { type: string; _count: number }[];
-          byCategory: { category: string; _count: number }[];
+          byType: { type: string; _count: { _all: number } }[];
+          byCategory: { category: string; _count: { _all: number } }[];
         };
       }>(`/violations/student/${studentId}/summary`);
       return response.data.data;

@@ -618,6 +618,9 @@ model Unit {
   researchProjects     ResearchProject[]
   innovationProposals  InnovationProposal[]
 
+  // Business Units (Unit Usaha)
+  businessUnits        BusinessUnit[]
+
   @@index([type])
   @@index([foundationId])
   @@map("units")
@@ -3334,6 +3337,7 @@ enum CounselingCategory {
   SOCIAL // Sosial (hubungan teman, bullying)
   FAMILY // Keluarga
   SPIRITUAL // Spiritual/keagamaan
+  PSYCHOLOGICAL_OBSERVATION // Observasi Psikologis (Psikometri, dll)
   OTHER // Lainnya
 }
 
@@ -5061,14 +5065,49 @@ model WalletTransaction {
 }
 
 // ============================================
-// CANTEEN / KOPERASI (Kantin Pesantren)
+// BUSINESS UNIT / UNIT USAHA (Kantin, Koperasi, Laundry, dll)
 // ============================================
+
+enum BusinessUnitType {
+  CANTEEN
+  LAUNDRY
+  COOPERATIVE
+  BOOKSTORE
+  CATERING
+  OTHER
+}
+
+/// BusinessUnit - Manajemen Unit Usaha Yayasan
+model BusinessUnit {
+  id           String           @id @default(uuid())
+  unitId       String           @map("unit_id")
+  name         String
+  code         String           @unique
+  type         BusinessUnitType
+  description  String?          @db.Text
+  managerId    String?          @map("manager_id")
+  isActive     Boolean          @default(true) @map("is_active")
+  createdAt    DateTime         @default(now()) @map("created_at")
+  updatedAt    DateTime         @updatedAt @map("updated_at")
+
+  // Relations
+  unit                 Unit                  @relation(fields: [unitId], references: [id])
+  canteenCategories    CanteenCategory[]
+  canteenItems         CanteenItem[]
+  canteenTransactions  CanteenTransaction[]
+  laundryPricings      LaundryPricing[]
+  laundryTransactions  LaundryTransaction[]
+
+  @@index([unitId])
+  @@map("business_units")
+}
 
 /// CanteenCategory - Kategori Menu Kantin
 model CanteenCategory {
-  id          String   @id @default(uuid())
-  unitId      String   @map("unit_id")
-  name        String // Makanan, Minuman, Snack, Alat Tulis, dll
+  id             String   @id @default(uuid())
+  unitId         String   @map("unit_id")
+  businessUnitId String?  @map("business_unit_id")
+  name           String // Makanan, Minuman, Snack, Alat Tulis, dll
   description String?
   sortOrder   Int      @default(0) @map("sort_order")
   isActive    Boolean  @default(true) @map("is_active")
@@ -5076,19 +5115,22 @@ model CanteenCategory {
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   // Relations
-  unit  Unit          @relation(fields: [unitId], references: [id])
-  items CanteenItem[]
+  unit         Unit          @relation(fields: [unitId], references: [id])
+  businessUnit BusinessUnit? @relation(fields: [businessUnitId], references: [id])
+  items        CanteenItem[]
 
   @@unique([unitId, name])
+  @@index([businessUnitId])
   @@index([unitId])
   @@map("canteen_categories")
 }
 
 /// CanteenItem - Item Menu Kantin
 model CanteenItem {
-  id          String   @id @default(uuid())
-  unitId      String   @map("unit_id")
-  categoryId  String   @map("category_id")
+  id             String   @id @default(uuid())
+  unitId         String   @map("unit_id")
+  businessUnitId String?  @map("business_unit_id")
+  categoryId     String   @map("category_id")
   code        String? // Kode produk
   name        String
   description String?
@@ -5105,12 +5147,14 @@ model CanteenItem {
 
   // Relations
   unitRel          Unit                     @relation(fields: [unitId], references: [id])
+  businessUnit     BusinessUnit?            @relation(fields: [businessUnitId], references: [id])
   category         CanteenCategory          @relation(fields: [categoryId], references: [id])
   transactionItems CanteenTransactionItem[]
   stockMovements   CanteenStockMovement[]
 
   @@unique([unitId, code])
   @@index([unitId])
+  @@index([businessUnitId])
   @@index([categoryId])
   @@index([isAvailable])
   @@map("canteen_items")
@@ -5118,9 +5162,10 @@ model CanteenItem {
 
 /// CanteenTransaction - Transaksi Kantin
 model CanteenTransaction {
-  id            String   @id @default(uuid())
-  unitId        String   @map("unit_id")
-  transactionNo String   @unique @map("transaction_no") // Format: CNT-YYYYMMDD-XXXX
+  id             String   @id @default(uuid())
+  unitId         String   @map("unit_id")
+  businessUnitId String?  @map("business_unit_id")
+  transactionNo  String   @unique @map("transaction_no") // Format: CNT-YYYYMMDD-XXXX
   studentId     String?  @map("student_id") // Null jika non-santri
   walletId      String?  @map("wallet_id")
   customerName  String?  @map("customer_name") // Nama jika non-santri
@@ -5135,12 +5180,14 @@ model CanteenTransaction {
   updatedAt     DateTime @updatedAt @map("updated_at")
 
   // Relations
-  unitRel Unit                     @relation(fields: [unitId], references: [id])
-  student Student?                 @relation(fields: [studentId], references: [id])
+  unitRel      Unit                     @relation(fields: [unitId], references: [id])
+  businessUnit BusinessUnit?            @relation(fields: [businessUnitId], references: [id])
+  student      Student?                 @relation(fields: [studentId], references: [id])
   cashier User                     @relation("CanteenCashier", fields: [cashierId], references: [id])
   items   CanteenTransactionItem[]
 
   @@index([unitId])
+  @@index([businessUnitId])
   @@index([studentId])
   @@index([transactionNo])
   @@index([createdAt])
@@ -5199,9 +5246,10 @@ model CanteenStockMovement {
 
 /// LaundryPricing - Harga Layanan Laundry
 model LaundryPricing {
-  id          String   @id @default(uuid())
-  unitId      String   @map("unit_id")
-  name        String // Reguler, Express, Setrika Only, dll
+  id             String   @id @default(uuid())
+  unitId         String   @map("unit_id")
+  businessUnitId String?  @map("business_unit_id")
+  name           String // Reguler, Express, Setrika Only, dll
   description String?
   pricePerKg  Decimal  @map("price_per_kg") @db.Decimal(15, 2)
   minWeight   Decimal  @default(1) @map("min_weight") @db.Decimal(5, 2) // Minimal berat (kg)
@@ -5213,18 +5261,21 @@ model LaundryPricing {
 
   // Relations
   unit         Unit                 @relation(fields: [unitId], references: [id])
+  businessUnit BusinessUnit?        @relation(fields: [businessUnitId], references: [id])
   transactions LaundryTransaction[]
 
   @@unique([unitId, name])
+  @@index([businessUnitId])
   @@index([unitId])
   @@map("laundry_pricings")
 }
 
 /// LaundryTransaction - Transaksi Laundry
 model LaundryTransaction {
-  id            String    @id @default(uuid())
-  unitId        String    @map("unit_id")
-  transactionNo String    @unique @map("transaction_no") // Format: LDR-YYYYMMDD-XXXX
+  id             String    @id @default(uuid())
+  unitId         String    @map("unit_id")
+  businessUnitId String?   @map("business_unit_id")
+  transactionNo  String    @unique @map("transaction_no") // Format: LDR-YYYYMMDD-XXXX
   studentId     String    @map("student_id")
   walletId      String?   @map("wallet_id")
   pricingId     String    @map("pricing_id")
@@ -5247,8 +5298,9 @@ model LaundryTransaction {
   updatedAt     DateTime  @updatedAt @map("updated_at")
 
   // Relations
-  unitRel     Unit               @relation(fields: [unitId], references: [id])
-  student     Student            @relation(fields: [studentId], references: [id])
+  unitRel      Unit               @relation(fields: [unitId], references: [id])
+  businessUnit BusinessUnit?      @relation(fields: [businessUnitId], references: [id])
+  student      Student            @relation(fields: [studentId], references: [id])
   pricing     LaundryPricing     @relation(fields: [pricingId], references: [id])
   receivedBy  User               @relation("LaundryReceiver", fields: [receivedById], references: [id])
   deliveredBy User?              @relation("LaundryDeliverer", fields: [deliveredById], references: [id])
@@ -5256,6 +5308,7 @@ model LaundryTransaction {
   statusLogs  LaundryStatusLog[]
 
   @@index([unitId])
+  @@index([businessUnitId])
   @@index([studentId])
   @@index([transactionNo])
   @@index([status])

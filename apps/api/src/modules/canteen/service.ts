@@ -1,5 +1,7 @@
 import { prisma } from '../../lib/prisma';
 import { Prisma } from '@prisma/client';
+import { JournalReferenceType } from '@cipansor/shared';
+import { getAccountOrFallback, ACCOUNT_MAPPING_KEYS } from '../finance/accounting-config.service';
 import type {
   CreateCategoryInput,
   UpdateCategoryInput,
@@ -324,7 +326,7 @@ export const transactionService = {
     });
   },
 
-  async create(unitId: string, cashierId: string, data: CreateTransactionInput) {
+  async create(unitId: string, cashierId: string, data: CreateTransactionInput & { businessUnitId?: string }) {
     return prisma.$transaction(async (tx) => {
       // Get all items
       const itemIds = data.items.map((i) => i.itemId);
@@ -411,6 +413,7 @@ export const transactionService = {
       const transaction = await tx.canteenTransaction.create({
         data: {
           unitId,
+          businessUnitId: data.businessUnitId,
           transactionNo,
           studentId: data.studentId,
           walletId,
@@ -456,10 +459,92 @@ export const transactionService = {
         });
       }
 
-      // Update stock and create stock movements
+      // ─── ACCOUNTING INTEGRATION (AUTOMATED JOURNALS) ───
+      // We process accounting entries per unit for simple unit-level reports.
+      // If businessUnitId is present, we try to use BU-specific account mappings first.
+
+      const accountPrefix = data.businessUnitId ? `BU_${data.businessUnitId}_` : '';
+
+      const salesAccount = await getAccountOrFallback(
+        unitId,
+        `${accountPrefix}SALES_REVENUE`,
+        '4101',
+        'Pendapatan Kantin'
+      );
+
+      const inventoryAccount = await getAccountOrFallback(
+        unitId,
+        `${accountPrefix}${ACCOUNT_MAPPING_KEYS.INVENTORY_ASSET}`,
+        '1104',
+        'Persediaan'
+      );
+
+      const cogsAccount = await getAccountOrFallback(
+        unitId,
+        `${accountPrefix}COGS`,
+        '5101',
+        'Beban Pokok Penjualan Kantin'
+      );
+
+      const cashAccount = await getAccountOrFallback(
+        unitId,
+        ACCOUNT_MAPPING_KEYS.CASH,
+        '1101',
+        'Kas'
+      );
+
+      const walletLiabilityAccount = await getAccountOrFallback(
+        unitId,
+        ACCOUNT_MAPPING_KEYS.WALLET_LIABILITY,
+        '2101',
+        'Utang Wallet Santri'
+      );
+
+      // 1. Record Revenue & Cash/Wallet Receipt
+      if (salesAccount && (cashAccount || walletLiabilityAccount)) {
+        const paymentAccount = data.paymentMethod === 'WALLET' ? walletLiabilityAccount : cashAccount;
+
+        if (paymentAccount) {
+          // Debit Cash/Wallet
+          await tx.journalEntry.create({
+            data: {
+              unitId,
+              accountId: paymentAccount.id,
+              date: new Date(),
+              description: `Penjualan Kantin #${transactionNo}`,
+              debit: total,
+              credit: 0,
+              reference: transaction.id,
+              referenceType: JournalReferenceType.CANTEEN as any,
+              createdById: cashierId,
+            },
+          });
+
+          // Credit Revenue
+          await tx.journalEntry.create({
+            data: {
+              unitId,
+              accountId: salesAccount.id,
+              date: new Date(),
+              description: `Penjualan Kantin #${transactionNo}`,
+              debit: 0,
+              credit: total,
+              reference: transaction.id,
+              referenceType: JournalReferenceType.CANTEEN as any,
+              createdById: cashierId,
+            },
+          });
+        }
+      }
+
+      // Update stock and create stock movements + COGS Journals
+      let totalCogs = new Prisma.Decimal(0);
+
       for (const orderItem of data.items) {
         const item = items.find((i) => i.id === orderItem.itemId)!;
         const newStock = item.stock - orderItem.quantity;
+        const itemCogs = (item.costPrice || new Prisma.Decimal(0)).mul(orderItem.quantity);
+        totalCogs = totalCogs.add(itemCogs);
 
         await tx.canteenItem.update({
           where: { id: item.id },
@@ -475,6 +560,39 @@ export const transactionService = {
             stockAfter: newStock,
             reference: transaction.id,
             notes: `Penjualan #${transactionNo}`,
+            createdById: cashierId,
+          },
+        });
+      }
+
+      // 2. Record COGS & Inventory Reduction
+      if (cogsAccount && inventoryAccount && totalCogs.gt(0)) {
+        // Debit COGS
+        await tx.journalEntry.create({
+          data: {
+            unitId,
+            accountId: cogsAccount.id,
+            date: new Date(),
+            description: `BPP Penjualan Kantin #${transactionNo}`,
+            debit: totalCogs,
+            credit: 0,
+            reference: transaction.id,
+            referenceType: JournalReferenceType.CANTEEN as any,
+            createdById: cashierId,
+          },
+        });
+
+        // Credit Inventory
+        await tx.journalEntry.create({
+          data: {
+            unitId,
+            accountId: inventoryAccount.id,
+            date: new Date(),
+            description: `Pengurangan Stok Kantin #${transactionNo}`,
+            debit: 0,
+            credit: totalCogs,
+            reference: transaction.id,
+            referenceType: JournalReferenceType.CANTEEN as any,
             createdById: cashierId,
           },
         });

@@ -8,6 +8,7 @@ export const CounselingCategory = z.enum([
   'SOCIAL',
   'FAMILY',
   'SPIRITUAL',
+  'PSYCHOLOGICAL_OBSERVATION',
   'OTHER',
 ]);
 

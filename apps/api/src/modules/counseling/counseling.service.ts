@@ -8,6 +8,7 @@ import {
   ReferralType,
   Prisma,
 } from '@prisma/client';
+import { createNotification } from '../notifications/service';
 import {
   CounselingSession as SharedCounselingSession,
   CounselingNote as SharedCounselingNote,
@@ -273,10 +274,30 @@ export class CounselingService {
       where: { id: sessionId },
       data: updateData,
       include: {
-        student: { include: { user: { select: { name: true } } } },
+        student: {
+          include: {
+            user: { select: { name: true } },
+            parents: { include: { parent: { select: { id: true } } } }
+          }
+        },
         counselor: { include: { user: { select: { name: true } } } },
       },
     });
+
+    // ─── NOTIFICATION INTEGRATION ───
+    // If session is completed, notify primary parents
+    if (input.status === CounselingStatus.COMPLETED) {
+      const primaryParent = updated.student.parents.find(p => p.isPrimary) || updated.student.parents[0];
+      if (primaryParent) {
+        await createNotification({
+          userId: primaryParent.parentId,
+          type: 'INFO',
+          title: 'Sesi Konseling Selesai',
+          message: `Sesi konseling untuk ${updated.student.user.name} telah selesai dilaksanakan. Silakan cek portal wali untuk detailnya.`,
+          link: `/parent/counseling/${updated.id}`,
+        } as any);
+      }
+    }
 
     return updated as unknown as SharedCounselingSession;
   }

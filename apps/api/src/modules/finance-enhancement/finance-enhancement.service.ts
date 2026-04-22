@@ -602,6 +602,57 @@ export class FinanceEnhancementService {
     };
   }
 
+  async getConsolidatedBudget(params: { academicYearId: string }) {
+    const { academicYearId } = params;
+
+    const budgets = await prisma.budget.findMany({
+      where: { academicYearId },
+      include: {
+        unit: { select: { name: true } },
+        account: { select: { code: true, name: true, type: true } },
+      },
+    });
+
+    const consolidated: Record<
+      string,
+      {
+        accountCode: string;
+        accountName: string;
+        accountType: string;
+        totalAmount: number;
+        totalUsed: number;
+        unitBreakdown: Array<{ unitName: string; amount: number; used: number }>;
+      }
+    > = {};
+
+    budgets.forEach((b) => {
+      const key = b.accountId;
+      if (!consolidated[key]) {
+        consolidated[key] = {
+          accountCode: b.account.code,
+          accountName: b.account.name,
+          accountType: b.account.type,
+          totalAmount: 0,
+          totalUsed: 0,
+          unitBreakdown: [],
+        };
+      }
+
+      const amount = Number(b.amount);
+      const used = Number(b.usedAmount);
+
+      consolidated[key].totalAmount += amount;
+      consolidated[key].totalUsed += used;
+      consolidated[key].unitBreakdown.push({
+        unitName: b.unit.name,
+        amount,
+        used,
+      });
+    });
+
+    return Object.values(consolidated).sort((a, b) => a.accountCode.localeCompare(b.accountCode));
+  }
+
   async getIncomeExpenseReport(params: {
     unitId?: string;
     startDate: Date;

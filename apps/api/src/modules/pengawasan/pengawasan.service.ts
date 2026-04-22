@@ -175,11 +175,26 @@ export class PengawasanService {
           // Only set to MONITORING if the risk is not already CLOSED
           const newStatus = existingRisk.status === 'CLOSED' ? 'CLOSED' : 'MONITORING';
 
+          // Best Practice: If finding is CRITICAL, escalate risk level
+          let riskLevelUpdate: any = {};
+          if (data.severity === 'CRITICAL') {
+            riskLevelUpdate = {
+              riskLevel: 'EXTREME',
+              impact: 'CATASTROPHIC',
+            };
+          } else if (data.severity === 'MAJOR') {
+            riskLevelUpdate = {
+              riskLevel: 'HIGH',
+              impact: 'MAJOR',
+            };
+          }
+
           await tx.risk.update({
             where: { id: data.linkToRiskId },
             data: {
               status: newStatus,
               consequence: updatedConsequence,
+              ...riskLevelUpdate,
             },
           });
         }

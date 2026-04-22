@@ -66,6 +66,45 @@ describe('Talenta Service', () => {
     });
   });
 
+  describe('suggestSuccessors', () => {
+    it('should rank successors with training bonus', async () => {
+      const mockProfiles = [
+        {
+          id: 'prof-1',
+          currentRole: 'Teacher',
+          category: 'HIGH_POTENTIAL',
+          user: {
+            id: 'user-1',
+            name: 'High Potential Trained',
+            trainingEnrollments: [{ id: 'enr-1' }, { id: 'enr-2' }] // 2 completed trainings
+          }
+        },
+        {
+          id: 'prof-2',
+          currentRole: 'Teacher',
+          category: 'HIGH_POTENTIAL',
+          user: {
+            id: 'user-2',
+            name: 'High Potential Untrained',
+            trainingEnrollments: []
+          }
+        }
+      ];
+
+      vi.mocked(prisma.talentProfile.findMany).mockResolvedValue(mockProfiles as any);
+
+      const result = await talentaService.suggestSuccessors('Teacher', 'unit-1');
+
+      // Both are HIGH_POTENTIAL (base 80)
+      // prof-1 has 2 trainings => 10 bonus, 'Teacher' match => 10 bonus => 100
+      // prof-2 has 0 trainings => 0 bonus, 'Teacher' match => 10 bonus => 90
+      expect(result[0].name).toBe('High Potential Trained');
+      expect(result[0].matchScore).toBe(100);
+      expect(result[1].name).toBe('High Potential Untrained');
+      expect(result[1].matchScore).toBe(90);
+    });
+  });
+
   describe('Assessments', () => {
     it('should create assessment and update profile category correctly', async () => {
       const dto = {

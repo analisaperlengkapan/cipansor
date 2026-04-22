@@ -9,6 +9,7 @@ router.get("/summary", authenticate, controller.getSummary);
 
 // Research Projects
 router.get("/projects", authenticate, controller.getProjects);
+router.get("/projects/:id/finances", authenticate, controller.getProjectFinancialStatus);
 router.get("/projects/:id", authenticate, controller.getProject);
 router.post("/projects", authenticate, authorize("UNIT_ADMIN", "SUPER_ADMIN", "TEACHER", "STAFF"), controller.createProject);
 router.put("/projects/:id", authenticate, authorize("UNIT_ADMIN", "SUPER_ADMIN", "TEACHER", "STAFF"), controller.updateProject);

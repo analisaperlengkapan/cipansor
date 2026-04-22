@@ -18,6 +18,14 @@ export const useProject = (id: string) => {
   });
 };
 
+export const useProjectFinances = (id: string) => {
+  return useQuery({
+    queryKey: ["litbang", "projects", id, "finances"],
+    queryFn: async () => (await api.get(`/api/litbang/projects/${id}/finances`)).data.data,
+    enabled: !!id,
+  });
+};
+
 export const useCreateProject = () => {
   const qc = useQueryClient();
   return useMutation({

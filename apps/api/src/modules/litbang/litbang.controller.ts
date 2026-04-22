@@ -9,6 +9,13 @@ export const getProjects = async (req: Request, res: Response, next: NextFunctio
   } catch (error) { next(error); }
 };
 
+export const getProjectFinancialStatus = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const data = await litbangService.getProjectFinancialStatus(req.params.id);
+    res.json({ data });
+  } catch (error) { next(error); }
+};
+
 export const getProject = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const data = await litbangService.getProject(req.params.id);

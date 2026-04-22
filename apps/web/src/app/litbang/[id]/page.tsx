@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
-import { useProject, useCreateMilestone, useUpdateMilestone, useUpdateProject } from "@/hooks/use-litbang";
+import { useProject, useProjectFinances, useCreateMilestone, useUpdateMilestone, useUpdateProject } from "@/hooks/use-litbang";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -18,7 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { ArrowLeft, Target, Users, Calendar, Flag, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Target, Users, Calendar, Flag, CheckCircle2, Wallet } from "lucide-react";
 
 const milestoneSchema = z.object({
   title: z.string().min(5, "Judul wajib diisi minimal 5 karakter"),
@@ -32,6 +32,7 @@ export default function LitbangProjectDetailPage() {
   const projectId = params.id as string;
 
   const { data: project, isLoading } = useProject(projectId);
+  const { data: finances, isLoading: loadingFinances } = useProjectFinances(projectId);
   const createMilestone = useCreateMilestone();
   const updateMilestone = useUpdateMilestone();
   const updateProject = useUpdateProject();
@@ -165,6 +166,43 @@ export default function LitbangProjectDetailPage() {
               </div>
               <Progress value={project.progress} className="h-2" />
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Financial Realization Card */}
+        <Card className="md:col-span-1">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Wallet className="w-5 h-5 text-emerald-600" /> Realisasi Anggaran
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {loadingFinances ? (
+              <Skeleton className="h-20 w-full" />
+            ) : finances ? (
+              <>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Anggaran</span>
+                  <span className="font-bold">Rp {finances.budget.toLocaleString('id-ID')}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Realisasi</span>
+                  <span className="font-bold text-emerald-600">Rp {finances.realization.toLocaleString('id-ID')}</span>
+                </div>
+                <div className="pt-2">
+                  <div className="flex justify-between mb-1 text-xs">
+                    <span>Penyerapan</span>
+                    <span className="font-medium">{finances.percentage.toFixed(1)}%</span>
+                  </div>
+                  <Progress value={finances.percentage} className="h-2 bg-emerald-100" />
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-2 italic">
+                  * Dihitung berdasarkan entri jurnal beban/aset pada unit terkait selama periode proyek.
+                </p>
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground">Data keuangan tidak tersedia.</p>
+            )}
           </CardContent>
         </Card>
       </div>

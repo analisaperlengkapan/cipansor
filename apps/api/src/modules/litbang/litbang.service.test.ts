@@ -10,6 +10,7 @@ vi.mock('../../lib/prisma', () => ({
       findMany: vi.fn(),
       findUniqueOrThrow: vi.fn(),
       update: vi.fn(),
+      updateMany: vi.fn(),
       delete: vi.fn(),
       count: vi.fn(),
     },
@@ -28,6 +29,10 @@ vi.mock('../../lib/prisma', () => ({
       delete: vi.fn(),
       count: vi.fn(),
     },
+    journalEntry: {
+      aggregate: vi.fn(),
+    },
+    $transaction: vi.fn((callback) => callback(prisma)),
   },
 }));
 
@@ -88,10 +93,35 @@ describe('Litbang Service', () => {
       });
 
       // Recalculate progress: 1 completed out of 2 = 50%
-      expect(prisma.researchProject.update).toHaveBeenCalledWith({
-        where: { id: 'proj-1' },
-        data: { progress: 50 },
+      // In the actual implementation it uses updateMany with status guards
+      expect(prisma.researchProject.updateMany).toHaveBeenCalledWith({
+        where: expect.objectContaining({ id: 'proj-1' }),
+        data: expect.objectContaining({ progress: 50 }),
       });
+    });
+
+    it('should calculate project financial status', async () => {
+      const mockProject = {
+        id: 'proj-1',
+        unitId: 'unit-1',
+        budget: 1000,
+        startDate: new Date('2024-01-01'),
+        endDate: new Date('2024-12-31'),
+      };
+
+      vi.mocked(prisma.researchProject.findUniqueOrThrow).mockResolvedValue(mockProject as any);
+      vi.mocked(prisma.journalEntry.aggregate).mockResolvedValue({
+        _sum: {
+          debit: { toNumber: () => 600 },
+          credit: { toNumber: () => 100 },
+        },
+      } as any);
+
+      const result = await litbangService.getProjectFinancialStatus('proj-1');
+
+      expect(result.budget).toBe(1000);
+      expect(result.realization).toBe(500); // 600 - 100
+      expect(result.percentage).toBe(50);
     });
   });
 

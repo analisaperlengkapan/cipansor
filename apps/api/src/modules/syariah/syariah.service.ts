@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
+import { pengawasanService } from '../pengawasan/pengawasan.service';
 
 export class SyariahService {
   async createCompliance(data: {
@@ -104,6 +105,7 @@ export class SyariahService {
       },
       include: {
         auditor: { select: { id: true, name: true } },
+        compliance: { select: { unitId: true, title: true } },
       },
     });
 
@@ -116,6 +118,39 @@ export class SyariahService {
         status: data.score >= 80 ? 'COMPLIANT' : data.score >= 50 ? 'PARTIALLY' : 'NON_COMPLIANT',
       },
     });
+
+    // If score is low, automatically create an audit finding in Pengawasan module
+    if (data.score < 70) {
+      const unitId = audit.compliance.unitId;
+
+      // Find or create a "Sharia Monitoring" audit record for this unit to satisfy FK constraints
+      let internalAudit = await prisma.internalAudit.findFirst({
+        where: { unitId, title: 'Monitoring Kepatuhan Syariah Terintegrasi' },
+        select: { id: true }
+      });
+
+      if (!internalAudit) {
+        internalAudit = await pengawasanService.createAudit({
+          title: 'Monitoring Kepatuhan Syariah Terintegrasi',
+          description: 'Audit otomatis untuk menampung temuan dari modul Kepatuhan Syariah.',
+          auditType: 'Kepatuhan',
+          plannedDate: new Date().toISOString(),
+          unitId,
+          leadAuditorId: data.auditorId,
+        });
+      }
+
+      await pengawasanService.createFinding({
+        auditId: internalAudit.id,
+        findingNumber: `SHR-${Date.now()}`,
+        title: `Ketidakpatuhan Syariah: ${audit.compliance.title}`,
+        description: `Audit syariah pada ${data.auditDate} memberikan skor ${data.score}. Temuan: ${data.findings}`,
+        severity: data.score < 40 ? 'MAJOR' : 'MINOR',
+        category: 'SYARIAH',
+        recommendation: data.recommendation,
+        linkToRiskId: undefined,
+      });
+    }
 
     return audit;
   }

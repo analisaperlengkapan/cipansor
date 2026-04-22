@@ -1,8 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { prisma } from '../../lib/prisma';
 import { syariahService } from './syariah.service';
+import { pengawasanService } from '../pengawasan/pengawasan.service';
 
 // Mock external dependencies
+vi.mock('../pengawasan/pengawasan.service', () => ({
+  pengawasanService: {
+    createFinding: vi.fn(),
+    createAudit: vi.fn(),
+  },
+}));
+
 vi.mock('../../lib/prisma', () => ({
   prisma: {
     shariaCompliance: {
@@ -13,6 +21,10 @@ vi.mock('../../lib/prisma', () => ({
       delete: vi.fn(),
     },
     shariaAudit: {
+      create: vi.fn(),
+    },
+    internalAudit: {
+      findFirst: vi.fn(),
       create: vi.fn(),
     },
     $transaction: vi.fn((callback) => callback(prisma)),
@@ -60,7 +72,11 @@ describe('Syariah Service', () => {
         score: 90,
       };
 
-      vi.mocked(prisma.shariaAudit.create).mockResolvedValue({ id: 'audit-1', ...dto } as any);
+      vi.mocked(prisma.shariaAudit.create).mockResolvedValue({
+        id: 'audit-1',
+        ...dto,
+        compliance: { unitId: 'unit-1', title: 'Koperasi' }
+      } as any);
       vi.mocked(prisma.shariaCompliance.update).mockResolvedValue({} as any);
 
       await syariahService.createShariaAudit(dto);
@@ -92,7 +108,11 @@ describe('Syariah Service', () => {
         score: 75,
       };
 
-      vi.mocked(prisma.shariaAudit.create).mockResolvedValue({ id: 'audit-2', ...dto } as any);
+      vi.mocked(prisma.shariaAudit.create).mockResolvedValue({
+        id: 'audit-2',
+        ...dto,
+        compliance: { unitId: 'unit-1', title: 'Koperasi' }
+      } as any);
       vi.mocked(prisma.shariaCompliance.update).mockResolvedValue({} as any);
 
       await syariahService.createShariaAudit(dto);
@@ -104,6 +124,34 @@ describe('Syariah Service', () => {
           status: 'PARTIALLY',
         }),
       });
+    });
+
+    it('should create audit finding if score is below 70', async () => {
+      const dto = {
+        complianceId: 'comp-1',
+        auditorId: 'user-1',
+        auditDate: '2026-03-01T00:00:00Z',
+        findings: 'Banyak ketidaksesuaian',
+        score: 60,
+      };
+
+      vi.mocked(prisma.shariaAudit.create).mockResolvedValue({
+        id: 'audit-3',
+        ...dto,
+        compliance: { unitId: 'unit-1', title: 'Koperasi' }
+      } as any);
+      vi.mocked(prisma.shariaCompliance.update).mockResolvedValue({ title: 'Koperasi' } as any);
+      vi.mocked(prisma.internalAudit.findFirst).mockResolvedValue({ id: 'int-audit-1' } as any);
+
+      await syariahService.createShariaAudit(dto);
+
+      expect(pengawasanService.createFinding).toHaveBeenCalledWith(
+        expect.objectContaining({
+          auditId: 'int-audit-1',
+          category: 'SYARIAH',
+          title: expect.stringContaining('Ketidakpatuhan Syariah: Koperasi'),
+        })
+      );
     });
   });
 

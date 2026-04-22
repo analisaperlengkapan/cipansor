@@ -287,6 +287,43 @@ export class LitbangService {
 
     return { totalProjects, activeProjects, totalProposals, implementedProposals };
   }
+
+  async getProjectFinancialStatus(projectId: string) {
+    const project = await prisma.researchProject.findUniqueOrThrow({
+      where: { id: projectId },
+      select: { unitId: true, budget: true, startDate: true, endDate: true },
+    });
+
+    if (!project.startDate) return { budget: Number(project.budget || 0), realization: 0, percentage: 0 };
+
+    // Realization is sum of debits - credits for expense/asset accounts in that unit/period
+    const aggregates = await prisma.journalEntry.aggregate({
+      where: {
+        unitId: project.unitId,
+        date: {
+          gte: project.startDate,
+          lte: project.endDate || new Date(),
+        },
+        account: {
+          type: { in: ['EXPENSE', 'ASSET'] }, // Usually projects are expenses or assets
+        },
+      },
+      _sum: {
+        debit: true,
+        credit: true,
+      },
+    });
+
+    const budget = Number(project.budget || 0);
+    const realization = (aggregates._sum.debit?.toNumber() || 0) - (aggregates._sum.credit?.toNumber() || 0);
+    const percentage = budget > 0 ? (realization / budget) * 100 : 0;
+
+    return {
+      budget,
+      realization,
+      percentage,
+    };
+  }
 }
 
 export const litbangService = new LitbangService();

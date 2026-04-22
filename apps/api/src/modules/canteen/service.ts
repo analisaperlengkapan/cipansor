@@ -335,11 +335,17 @@ export const transactionService = {
       // Get all items
       const itemIds = data.items.map((i) => i.itemId);
       const items = await tx.canteenItem.findMany({
-        where: { id: { in: itemIds }, unitId, isAvailable: true, isActive: true },
+        where: {
+          id: { in: itemIds },
+          unitId,
+          isAvailable: true,
+          isActive: true,
+          ...(data.businessUnitId && { businessUnitId: data.businessUnitId }),
+        },
       });
 
       if (items.length !== itemIds.length) {
-        throw new Error('Beberapa item tidak tersedia');
+        throw new Error('Beberapa item tidak tersedia atau tidak termasuk dalam unit usaha yang dipilih');
       }
 
       // Check stock

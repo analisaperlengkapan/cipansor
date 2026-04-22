@@ -5,6 +5,7 @@ import { validate } from '../../middleware/validate';
 import {
   CreateCategorySchema,
   UpdateCategorySchema,
+  ListCategoriesQuerySchema,
   CreateItemSchema,
   UpdateItemSchema,
   ListItemsQuerySchema,
@@ -31,8 +32,8 @@ router.get('/categories', authenticate, async (req: Request, res: Response, next
       return res.status(400).json(ApiResponse.error('Unit ID tidak ditemukan', 'UNIT_REQUIRED'));
     }
 
-    const businessUnitId = req.query.businessUnitId as string | undefined;
-    const categories = await categoryService.getAll(unitId, businessUnitId);
+    const parsedQuery = ListCategoriesQuerySchema.parse(req.query);
+    const categories = await categoryService.getAll(unitId, parsedQuery.businessUnitId);
     return res.json(ApiResponse.success(categories, 'Berhasil mengambil data kategori'));
   } catch (err) {
     next(err);

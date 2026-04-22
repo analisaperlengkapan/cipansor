@@ -100,10 +100,15 @@ export const ListStockMovementsQuerySchema = z.object({
   limit: z.string().regex(/^\d+$/).optional().default('20'),
 });
 
+export const ListCategoriesQuerySchema = z.object({
+  businessUnitId: z.string().uuid().optional(),
+});
+
 // =============================================================================
 // TYPE EXPORTS
 // =============================================================================
 
+export type ListCategoriesQuery = z.infer<typeof ListCategoriesQuerySchema>;
 export type CreateCategoryInput = z.infer<typeof CreateCategorySchema>;
 export type UpdateCategoryInput = z.infer<typeof UpdateCategorySchema>;
 export type CreateItemInput = z.infer<typeof CreateItemSchema>;

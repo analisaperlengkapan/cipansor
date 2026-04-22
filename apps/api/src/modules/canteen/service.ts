@@ -746,7 +746,7 @@ export const transactionService = {
               unitId,
               accountId: entry.accountId,
               date: new Date(),
-              description: `Refund ${entry.description || ''} #${transaction.transactionNo}`,
+              description: `${data.status === 'REFUNDED' ? 'Refund' : 'Pembatalan'} ${entry.description || ''} #${transaction.transactionNo}`,
               debit: entry.credit,
               credit: entry.debit,
               reference: refundReference,

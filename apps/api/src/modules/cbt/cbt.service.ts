@@ -711,10 +711,13 @@ export class CBTService {
 
   static async getTopicMasteryAnalytics(examId: string) {
     // Topic mastery analytics: aggregate per-question performance across all
-    // completed attempts.  The Question model does not have a
-    // learningObjective relation, so we group by individual question instead.
+    // completed and needs-review attempts.  NEEDS_REVIEW attempts are included
+    // because their MC/TF answers are already auto-graded; ungraded essay
+    // answers (score === null) are safely skipped by the aggregation loop.
+    // The Question model does not have a learningObjective relation, so we
+    // group by individual question instead.
     //
-    // NOTE: This eagerly loads all answers for all completed attempts into memory.
+    // NOTE: This eagerly loads all answers for all matching attempts into memory.
     // For exams with very large numbers of students, consider migrating to a
     // database-level aggregation (groupBy or raw SQL) for better scalability.
     const exam = await prisma.exam.findUnique({
@@ -728,7 +731,7 @@ export class CBTService {
           },
         },
         attempts: {
-          where: { status: 'COMPLETED' },
+          where: { status: { in: ['COMPLETED', 'NEEDS_REVIEW'] } },
           take: 1000, // Safety limit to prevent excessive memory usage
           include: {
             answers: true,
@@ -801,7 +804,7 @@ export class CBTService {
         ? {
             truncated: true,
             analyzedAttempts: exam.attempts.length,
-            message: 'Results based on first 1000 completed attempts only',
+            message: 'Results based on first 1000 attempts only',
           }
         : { truncated: false },
     };

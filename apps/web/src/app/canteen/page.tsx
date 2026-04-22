@@ -434,6 +434,7 @@ export default function CanteenPage() {
           <Select value={selectedBUId} onValueChange={(val) => {
             setSelectedBUId(val);
             setSelectedCategory("ALL");
+            setCart([]);
           }}>
             <SelectTrigger id="bu-select" className="border-none bg-transparent p-0 h-auto focus:ring-0 text-lg font-semibold">
               <SelectValue placeholder="Pilih Unit Usaha" />

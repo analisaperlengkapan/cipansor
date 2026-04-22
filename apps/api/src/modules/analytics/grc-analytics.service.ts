@@ -21,6 +21,9 @@ export interface GRCStats {
   sharia: {
     complianceRate: number;
     statusDistribution: Record<ComplianceStatus, number>;
+    summary: {
+      byCategory: Record<string, { total: number; averageScore: number }>;
+    };
   };
   auditSuggestions?: {
     riskId: string;
@@ -74,7 +77,7 @@ export async function getGRCStats(unitId?: string): Promise<GRCStats> {
     // 4. Sharia Compliance
     prisma.shariaCompliance.findMany({
       where: whereClause,
-      select: { score: true, status: true },
+      select: { score: true, status: true, category: true },
     }),
 
     // 5. Audit Suggestions (gracefully degrades on error)
@@ -126,6 +129,19 @@ export async function getGRCStats(unitId?: string): Promise<GRCStats> {
   });
   const avgShariaScore = scoredCount > 0 ? totalScore / scoredCount : 0;
 
+  // Sharia by-category breakdown
+  const byCategory: Record<string, { total: number; averageScore: number }> = {};
+  const categories = ['MUAMALAH', 'TARBIYAH', 'IBADAH', 'AKHLAQ', 'GOVERNANCE'];
+  for (const cat of categories) {
+    const items = compliances.filter((c) => c.category === cat);
+    if (items.length > 0) {
+      byCategory[cat] = {
+        total: items.length,
+        averageScore: items.reduce((s, i) => s + (i.score || 0), 0) / items.length,
+      };
+    }
+  }
+
   return {
     plans: {
       activeCount: activePlansCount,
@@ -145,6 +161,9 @@ export async function getGRCStats(unitId?: string): Promise<GRCStats> {
     sharia: {
       complianceRate: Math.round(avgShariaScore * 100) / 100,
       statusDistribution: shariaStatusDist,
+      summary: {
+        byCategory,
+      },
     },
     auditSuggestions,
   };

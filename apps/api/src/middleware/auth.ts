@@ -71,6 +71,32 @@ function expandRoleCodes(codes: string[]): string[] {
   return Array.from(expanded);
 }
 
+/**
+ * Reverse mapping: RoleCode → legacy UserRole enum value.
+ * Used to populate the deprecated `req.user.role` field so that unmigrated
+ * controllers/services that still compare against UserRole.SUPER_ADMIN,
+ * UserRole.UNIT_ADMIN, etc. continue to work at runtime.
+ * Built by inverting LEGACY_ROLE_EXPANSION.
+ * TODO: Remove once all modules are migrated to use roleCode.
+ */
+const ROLE_CODE_TO_LEGACY_ROLE: Record<string, string> = {};
+for (const [legacyRole, roleCodes] of Object.entries(LEGACY_ROLE_EXPANSION)) {
+  for (const rc of roleCodes) {
+    // First mapping wins (e.g. SUPER_ADMIN maps to 'SUPER_ADMIN')
+    if (!ROLE_CODE_TO_LEGACY_ROLE[rc]) {
+      ROLE_CODE_TO_LEGACY_ROLE[rc] = legacyRole;
+    }
+  }
+}
+
+/**
+ * Derive the legacy UserRole value from a RoleCode.
+ * Falls back to the roleCode itself if no mapping exists.
+ */
+function deriveLegacyRole(roleCode: string): string {
+  return ROLE_CODE_TO_LEGACY_ROLE[roleCode] || roleCode;
+}
+
 // Extend Express Request type
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -109,7 +135,7 @@ export function authenticate(req: Request, res: Response, next: NextFunction) {
       throw Errors.unauthorized('2FA Verification Required');
     }
 
-    req.user = { ...payload, id: payload.sub };
+    req.user = { ...payload, id: payload.sub, role: deriveLegacyRole(payload.roleCode) };
     next();
   } catch (error) {
     next(error);
@@ -140,7 +166,7 @@ export function authenticate2FA(req: Request, res: Response, next: NextFunction)
       throw Errors.unauthorized('Invalid token type');
     }
 
-    req.user = { ...payload, id: payload.sub };
+    req.user = { ...payload, id: payload.sub, role: deriveLegacyRole(payload.roleCode) };
     next();
   } catch (error) {
     next(error);
@@ -163,7 +189,7 @@ export function optionalAuth(req: Request, res: Response, next: NextFunction) {
     if (type === 'Bearer' && token) {
       const payload = verifyToken(token);
       if (payload.type === 'access' && !payload.isTemp) {
-        req.user = { ...payload, id: payload.sub };
+        req.user = { ...payload, id: payload.sub, role: deriveLegacyRole(payload.roleCode) };
       }
     }
 

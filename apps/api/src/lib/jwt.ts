@@ -11,6 +11,12 @@ export interface JwtPayload {
   permissions: string[]; // Permissions array from the Role record
   type: 'access' | 'refresh';
   isTemp?: boolean; // For 2FA temporary tokens
+  // DEPRECATED: Legacy role field derived from roleCode at authentication time.
+  // Kept so that unmigrated controllers/services that reference `req.user.role`
+  // continue to work. Maps granular RoleCodes back to the legacy UserRole enum
+  // values (SUPER_ADMIN, UNIT_ADMIN, TEACHER, STAFF, STUDENT, PARENT).
+  // TODO: Remove once all modules are migrated to use roleCode.
+  role: string;
 }
 
 export interface TokenPair {

@@ -274,7 +274,15 @@ export class CounselingService {
     if (input.summary !== undefined) updateData.summary = input.summary;
     if (input.recommendations !== undefined) updateData.recommendations = input.recommendations;
     if (input.followUpDate) updateData.followUpDate = new Date(input.followUpDate);
-    if (input.isConfidential !== undefined) updateData.isConfidential = input.isConfidential;
+    if (input.isConfidential !== undefined) {
+      // PSYCHOLOGICAL_OBSERVATION sessions must always remain confidential.
+      // Prevent downgrading confidentiality to avoid leaking sensitive mental
+      // health data (e.g. via parent notifications at line 299).
+      if (session.category === CounselingCategory.PSYCHOLOGICAL_OBSERVATION && !input.isConfidential) {
+        throw Errors.badRequest('PSYCHOLOGICAL_OBSERVATION sessions cannot be marked as non-confidential');
+      }
+      updateData.isConfidential = input.isConfidential;
+    }
     if (input.parentNotified !== undefined) updateData.parentNotified = input.parentNotified;
 
     const updated = await prisma.counselingSession.update({

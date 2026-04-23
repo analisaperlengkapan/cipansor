@@ -3,9 +3,9 @@ import { Prisma, BusinessUnitType } from '@prisma/client';
 import { Errors } from '@/middleware/error';
 
 export const businessUnitService = {
-  async list(params: { unitId: string; type?: BusinessUnitType; isActive?: boolean }) {
+  async list(params: { unitId?: string; type?: BusinessUnitType; isActive?: boolean }) {
     const where: Prisma.BusinessUnitWhereInput = {
-      unitId: params.unitId,
+      ...(params.unitId && { unitId: params.unitId }),
       ...(params.type && { type: params.type }),
       ...(params.isActive !== undefined && { isActive: params.isActive }),
     };
@@ -26,9 +26,12 @@ export const businessUnitService = {
     });
   },
 
-  async getById(id: string, unitId: string) {
+  async getById(id: string, unitId?: string) {
+    const where: Prisma.BusinessUnitWhereInput = { id };
+    if (unitId) where.unitId = unitId;
+
     const bu = await prisma.businessUnit.findFirst({
-      where: { id, unitId },
+      where,
       include: {
         unit: { select: { id: true, name: true } },
         _count: true,
@@ -61,7 +64,7 @@ export const businessUnitService = {
     });
   },
 
-  async update(id: string, unitId: string, data: Partial<{
+  async update(id: string, unitId: string | undefined, data: Partial<{
     name: string;
     code: string;
     type: BusinessUnitType;
@@ -69,15 +72,16 @@ export const businessUnitService = {
     managerId: string;
     isActive: boolean;
   }>) {
-    // Verify the business unit belongs to this unit
-    const bu = await prisma.businessUnit.findFirst({
-      where: { id, unitId },
-    });
+    // Verify the business unit exists (and belongs to this unit when unitId is provided)
+    const where: Prisma.BusinessUnitWhereInput = { id };
+    if (unitId) where.unitId = unitId;
+
+    const bu = await prisma.businessUnit.findFirst({ where });
     if (!bu) throw Errors.notFound('Business Unit');
 
     if (data.code) {
       const existing = await prisma.businessUnit.findUnique({
-        where: { unitId_code: { unitId, code: data.code } },
+        where: { unitId_code: { unitId: bu.unitId, code: data.code } },
       });
 
       if (existing && existing.id !== id) {
@@ -91,9 +95,12 @@ export const businessUnitService = {
     });
   },
 
-  async delete(id: string, unitId: string) {
+  async delete(id: string, unitId?: string) {
+    const where: Prisma.BusinessUnitWhereInput = { id };
+    if (unitId) where.unitId = unitId;
+
     const bu = await prisma.businessUnit.findFirst({
-      where: { id, unitId },
+      where,
       include: {
         _count: {
           select: {
@@ -120,8 +127,11 @@ export const businessUnitService = {
     return prisma.businessUnit.delete({ where: { id } });
   },
 
-  async getPerformance(id: string, unitId: string, startDate: Date, endDate: Date) {
-    const bu = await prisma.businessUnit.findFirst({ where: { id, unitId } });
+  async getPerformance(id: string, unitId: string | undefined, startDate: Date, endDate: Date) {
+    const where: Prisma.BusinessUnitWhereInput = { id };
+    if (unitId) where.unitId = unitId;
+
+    const bu = await prisma.businessUnit.findFirst({ where });
     if (!bu) throw Errors.notFound('Business Unit');
 
     if (bu.type === 'CANTEEN') {

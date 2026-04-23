@@ -1,12 +1,31 @@
 import { Request, Response, NextFunction } from 'express';
+import { RoleCode } from '@prisma/client';
 import { businessUnitService } from './service';
 import { BusinessUnitType } from '@prisma/client';
+
+/**
+ * Resolve the effective unitId for the current request.
+ * SUPER_ADMIN users have unitId: null in their JWT (they are global).
+ * For such users, we allow unitId to be supplied via query param or body.
+ */
+function resolveUnitId(req: Request): string | undefined {
+  return req.user?.unitId
+    || (req.query.unitId as string | undefined)
+    || req.body?.unitId
+    || undefined;
+}
+
+function isSuperAdmin(req: Request): boolean {
+  return req.user?.roleCode === RoleCode.SUPER_ADMIN;
+}
 
 export const businessUnitController = {
   async list(req: Request, res: Response, next: NextFunction) {
     try {
-      const unitId = req.user?.unitId;
-      if (!unitId) {
+      const unitId = resolveUnitId(req);
+
+      // SUPER_ADMIN without a unitId filter can list all business units
+      if (!unitId && !isSuperAdmin(req)) {
         return res.status(400).json({ success: false, message: 'Unit ID tidak ditemukan' });
       }
 
@@ -24,12 +43,13 @@ export const businessUnitController = {
 
   async getById(req: Request, res: Response, next: NextFunction) {
     try {
-      const unitId = req.user?.unitId;
-      if (!unitId) {
-        return res.status(400).json({ success: false, message: 'Unit ID tidak ditemukan' });
-      }
+      const unitId = resolveUnitId(req);
 
-      const result = await businessUnitService.getById(req.params.id, unitId);
+      // SUPER_ADMIN can view any business unit without unitId scoping
+      const result = isSuperAdmin(req) && !unitId
+        ? await businessUnitService.getById(req.params.id)
+        : await businessUnitService.getById(req.params.id, unitId);
+
       res.json({ success: true, data: result });
     } catch (error) {
       next(error);
@@ -38,9 +58,9 @@ export const businessUnitController = {
 
   async create(req: Request, res: Response, next: NextFunction) {
     try {
-      const unitId = req.user?.unitId;
+      const unitId = resolveUnitId(req);
       if (!unitId) {
-        return res.status(400).json({ success: false, message: 'Unit ID tidak ditemukan' });
+        return res.status(400).json({ success: false, message: 'Unit ID tidak ditemukan. SUPER_ADMIN harus menyertakan unitId di body.' });
       }
 
       const result = await businessUnitService.create({ ...req.body, unitId });
@@ -52,12 +72,13 @@ export const businessUnitController = {
 
   async update(req: Request, res: Response, next: NextFunction) {
     try {
-      const unitId = req.user?.unitId;
-      if (!unitId) {
-        return res.status(400).json({ success: false, message: 'Unit ID tidak ditemukan' });
-      }
+      const unitId = resolveUnitId(req);
 
-      const result = await businessUnitService.update(req.params.id, unitId, req.body);
+      // SUPER_ADMIN can update any business unit without unitId scoping
+      const result = isSuperAdmin(req) && !unitId
+        ? await businessUnitService.update(req.params.id, undefined, req.body)
+        : await businessUnitService.update(req.params.id, unitId!, req.body);
+
       res.json({ success: true, data: result });
     } catch (error) {
       next(error);
@@ -66,12 +87,17 @@ export const businessUnitController = {
 
   async delete(req: Request, res: Response, next: NextFunction) {
     try {
-      const unitId = req.user?.unitId;
-      if (!unitId) {
+      const unitId = resolveUnitId(req);
+
+      // SUPER_ADMIN can delete any business unit without unitId scoping
+      if (isSuperAdmin(req) && !unitId) {
+        await businessUnitService.delete(req.params.id);
+      } else if (unitId) {
+        await businessUnitService.delete(req.params.id, unitId);
+      } else {
         return res.status(400).json({ success: false, message: 'Unit ID tidak ditemukan' });
       }
 
-      await businessUnitService.delete(req.params.id, unitId);
       res.json({ success: true, data: null, message: 'Business unit berhasil dihapus' });
     } catch (error) {
       next(error);
@@ -80,22 +106,17 @@ export const businessUnitController = {
 
   async getPerformance(req: Request, res: Response, next: NextFunction) {
     try {
-      const unitId = req.user?.unitId;
-      if (!unitId) {
-        return res.status(400).json({ success: false, message: 'Unit ID tidak ditemukan' });
-      }
+      const unitId = resolveUnitId(req);
 
       const { startDate, endDate } = req.query;
       if (!startDate || !endDate) {
         return res.status(400).json({ success: false, message: 'startDate dan endDate diperlukan' });
       }
 
-      const result = await businessUnitService.getPerformance(
-        req.params.id,
-        unitId,
-        new Date(startDate as string),
-        new Date(endDate as string)
-      );
+      // SUPER_ADMIN can view performance without unitId scoping
+      const result = isSuperAdmin(req) && !unitId
+        ? await businessUnitService.getPerformance(req.params.id, undefined, new Date(startDate as string), new Date(endDate as string))
+        : await businessUnitService.getPerformance(req.params.id, unitId!, new Date(startDate as string), new Date(endDate as string));
 
       res.json({ success: true, data: result });
     } catch (error) {

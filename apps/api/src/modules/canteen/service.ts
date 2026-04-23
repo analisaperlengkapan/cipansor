@@ -2,6 +2,7 @@ import { prisma } from '../../lib/prisma';
 import { Prisma } from '@prisma/client';
 import { JournalReferenceType } from '@cipansor/shared';
 import { getAccountOrFallback, ACCOUNT_MAPPING_KEYS } from '../finance/accounting-config.service';
+import { checkPeriodStatus } from '../finance-enhancement/period.service';
 import type {
   CreateCategoryInput,
   UpdateCategoryInput,
@@ -584,6 +585,11 @@ export const transactionService = {
       // in the same double-entry set share the exact same date.
       const journalDate = new Date();
 
+      // Refuse to post journal entries into a closed financial period.
+      // Throws if a FinancialPeriod covering journalDate is marked isClosed,
+      // which rolls back the surrounding transaction (no stock/wallet changes).
+      await checkPeriodStatus(unitId, journalDate);
+
       const accountPrefix = data.businessUnitId ? `BU_${data.businessUnitId}_` : '';
 
       const salesAccount = await getAccountOrFallback(
@@ -888,6 +894,11 @@ export const transactionService = {
       // (now-unlikely but still theoretically possible) double-reversal if a
       // second request were to read both originals and prior reversals.
       if (data.status === 'REFUNDED' || (data.status === 'CANCELLED' && lockedRows[0].status === 'COMPLETED')) {
+        const reversalDate = new Date();
+        // Refuse to post reversing entries into a closed financial period.
+        // This rolls back the surrounding transaction (no wallet/stock changes).
+        await checkPeriodStatus(unitId, reversalDate);
+
         const reversalPrefix = data.status === 'REFUNDED' ? 'REFUND' : 'CANCEL';
         const refundReference = `${reversalPrefix}:${transaction.id}`;
 
@@ -905,7 +916,7 @@ export const transactionService = {
             data: {
               unitId,
               accountId: entry.accountId,
-              date: new Date(),
+              date: reversalDate,
               description: `${data.status === 'REFUNDED' ? 'Refund' : 'Pembatalan'} ${entry.description || ''} #${transaction.transactionNo}`,
               debit: entry.credit,
               credit: entry.debit,

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { authenticate, authorize, isSuperAdmin } from '@/middleware/auth';
 import { validate } from '@/middleware/validate';
-import { UserRole } from '@prisma/client';
+import { RoleCode } from '@prisma/client';
 import { financeEnhancementController } from './finance-enhancement.controller';
 import {
   createAccountCodeSchema,
@@ -12,6 +12,21 @@ import {
   createPaymentComponentSchema,
 } from './schema';
 import { z } from 'zod';
+
+// Reusable admin authorizer for finance-enhancement routes.
+// Includes SUPER_ADMIN + all per-unit/yayasan admin RoleCodes + legacy
+// 'UNIT_ADMIN' string for pre-migration JWT tokens (expanded via
+// LEGACY_ROLE_EXPANSION in apps/api/src/middleware/auth.ts).
+const financeAdmin = () =>
+  authorize(
+    RoleCode.SUPER_ADMIN,
+    RoleCode.YAYASAN_ADMIN,
+    RoleCode.TKQ_ADMIN,
+    RoleCode.SDIT_ADMIN,
+    RoleCode.SMPIT_ADMIN,
+    RoleCode.SMAQ_ADMIN,
+    'UNIT_ADMIN', // Legacy pre-migration token value
+  );
 
 // Minimal schemas for new endpoints (should be moved to schema.ts properly)
 const createBudgetSchema = z.object({
@@ -54,14 +69,14 @@ router.get('/account-codes', financeEnhancementController.getAccountCodes);
 
 router.post(
   '/account-codes',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  financeAdmin(),
   validate(createAccountCodeSchema),
   financeEnhancementController.createAccountCode
 );
 
 router.put(
   '/account-codes/:id',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  financeAdmin(),
   validate(updateAccountCodeSchema),
   financeEnhancementController.updateAccountCode
 );
@@ -70,13 +85,13 @@ router.put(
 
 router.get(
   '/journal-entries',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  financeAdmin(),
   financeEnhancementController.getJournalEntries
 );
 
 router.post(
   '/journal-entries',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  financeAdmin(),
   validate(createJournalEntrySchema),
   financeEnhancementController.createJournalEntry
 );
@@ -89,7 +104,7 @@ router.get('/scholarships', financeEnhancementController.getScholarships);
 
 router.post(
   '/scholarships',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  financeAdmin(),
   validate(createScholarshipSchema),
   financeEnhancementController.createScholarship
 );
@@ -100,7 +115,7 @@ router.get('/scholarships/:id/recipients', financeEnhancementController.getSchol
 
 router.post(
   '/scholarship-recipients',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  financeAdmin(),
   validate(assignScholarshipSchema),
   financeEnhancementController.assignScholarship
 );
@@ -111,7 +126,7 @@ router.get('/payment-components', financeEnhancementController.getPaymentCompone
 
 router.post(
   '/payment-components',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  financeAdmin(),
   validate(createPaymentComponentSchema),
   financeEnhancementController.createPaymentComponent
 );
@@ -120,70 +135,70 @@ router.post(
 
 router.get(
   '/reports/trial-balance',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  financeAdmin(),
   financeEnhancementController.getTrialBalance
 );
 
 router.get(
   '/reports/income-expense',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  financeAdmin(),
   financeEnhancementController.getIncomeExpenseReport
 );
 
 router.get(
   '/reports/general-ledger',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  financeAdmin(),
   financeEnhancementController.getGeneralLedger
 );
 
 router.get(
   '/reports/income-statement',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  financeAdmin(),
   financeEnhancementController.getIncomeExpenseReport
 );
 
 router.get(
   '/reports/cash-flow',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  financeAdmin(),
   financeEnhancementController.getCashFlowStatement
 );
 
 router.get(
   '/reports/budget-realization',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  financeAdmin(),
   financeEnhancementController.getBudgetRealizationReport
 );
 // ==================== BUDGETS ====================
 
 router.get(
   '/budgets',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  financeAdmin(),
   financeEnhancementController.getBudgets
 );
 
 router.post(
   '/budgets',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  financeAdmin(),
   validate(createBudgetSchema),
   financeEnhancementController.createBudget
 );
 
 router.put(
   '/budgets/:id',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  financeAdmin(),
   validate(updateBudgetSchema),
   financeEnhancementController.updateBudget
 );
 
 router.delete(
   '/budgets/:id',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  financeAdmin(),
   financeEnhancementController.deleteBudget
 );
 
 router.post(
   '/budgets/recalculate',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  financeAdmin(),
   financeEnhancementController.recalculateBudgetUsage
 );
 
@@ -191,20 +206,20 @@ router.post(
 
 router.get(
   '/financial-periods',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  financeAdmin(),
   financeEnhancementController.getFinancialPeriods
 );
 
 router.post(
   '/financial-periods',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  financeAdmin(),
   validate(createFinancialPeriodSchema),
   financeEnhancementController.createFinancialPeriod
 );
 
 router.patch(
   '/financial-periods/:id/close',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  financeAdmin(),
   financeEnhancementController.closeFinancialPeriod
 );
 
@@ -212,13 +227,13 @@ router.patch(
 
 router.get(
   '/reports/balance-sheet',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  financeAdmin(),
   financeEnhancementController.getBalanceSheet
 );
 
 router.get(
   '/reports/cash-flow-forecast',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  financeAdmin(),
   financeEnhancementController.getCashFlowForecast
 );
 

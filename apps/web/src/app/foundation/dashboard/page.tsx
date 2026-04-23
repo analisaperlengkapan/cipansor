@@ -43,7 +43,7 @@ import { id } from "date-fns/locale";
 export default function ExecutiveDashboard() {
   const { data: foundation } = useFoundation();
   const { data: units, isLoading: unitsLoading } = useUnits();
-  const { data: financialSummary, isLoading: financeLoading } = useFoundationFinancialSummary(foundation?.id);
+  const { data: financialSummary, isFetching: financeFetching } = useFoundationFinancialSummary(foundation?.id);
   const { data: talentStats } = useTalentAnalytics();
   const { data: announcements } = useRecentAnnouncements();
 
@@ -57,7 +57,7 @@ export default function ExecutiveDashboard() {
     }).format(value);
   };
 
-  if (unitsLoading || financeLoading) {
+  if (unitsLoading || financeFetching) {
     return (
       <MainLayout>
         <div className="flex h-96 items-center justify-center">

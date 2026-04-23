@@ -29,6 +29,10 @@ export const businessUnitController = {
     try {
       const unitId = resolveUnitId(req);
 
+      if (!unitId && !isSuperAdmin(req)) {
+        return res.status(400).json({ success: false, message: 'Unit ID tidak ditemukan' });
+      }
+
       // SUPER_ADMIN can view any business unit without unitId scoping
       const result = isSuperAdmin(req) && !unitId
         ? await businessUnitService.getById(req.params.id)

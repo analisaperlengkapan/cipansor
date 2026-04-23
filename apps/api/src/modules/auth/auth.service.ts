@@ -38,13 +38,24 @@ function resolveLegacyRoleToRoleCode(
     }
   }
 
-  // Per-unit mappings — require a known unit type
+  // Per-unit mappings — require a known unit type.
+  //
+  // NOTE on PESANTREN/OTHER units:
+  //   - TEACHER maps to MUSYRIF (the generic pesantren teacher role) to preserve
+  //     backward compatibility for legacy API clients registering pesantren teachers.
+  //     More specific pesantren roles (MUHAFIDZ, MURABBI, WALI_KAMAR) must be
+  //     selected explicitly via `roleCode` since they are distinct responsibilities.
+  //   - STAFF/STUDENT/PARENT have NO dedicated pesantren RoleCode. Legacy clients
+  //     registering these against PESANTREN/OTHER units must migrate to send
+  //     `roleCode` explicitly. Do NOT silently fall back to a school-unit RoleCode
+  //     — that would cross-assign a student/parent to the wrong unit type.
   const perUnit: Record<string, Partial<Record<UnitType, RoleCode>>> = {
     TEACHER: {
       [UnitType.TK_QURAN]: RoleCode.TKQ_GURU,
       [UnitType.SD_IT]: RoleCode.SDIT_GURU,
       [UnitType.SMP_IT]: RoleCode.SMPIT_GURU,
       [UnitType.SMA_QURAN]: RoleCode.SMAQ_GURU,
+      [UnitType.PESANTREN]: RoleCode.MUSYRIF,
     },
     STAFF: {
       [UnitType.TK_QURAN]: RoleCode.TKQ_TATA_USAHA,

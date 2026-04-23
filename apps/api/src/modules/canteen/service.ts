@@ -307,7 +307,15 @@ export const itemService = {
 // TRANSACTION SERVICE
 // =============================================================================
 
-const generateTransactionNo = async (unitId: string, tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0] = prisma): Promise<string> => {
+// NOTE: `tx` is required (no default). The advisory lock below (`pg_advisory_xact_lock`)
+// is only held for the duration of the surrounding transaction, so calling this
+// function outside a `prisma.$transaction` would release the lock immediately
+// after the SELECT returns, defeating the serialization guarantee and allowing
+// duplicate transaction numbers under concurrency.
+const generateTransactionNo = async (
+  unitId: string,
+  tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0],
+): Promise<string> => {
   const today = new Date();
   const dateStr = today.toISOString().slice(0, 10).replace(/-/g, '');
   const prefix = `CNT-${dateStr}`;

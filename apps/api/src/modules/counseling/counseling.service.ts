@@ -278,10 +278,21 @@ export class CounselingService {
       // PSYCHOLOGICAL_OBSERVATION sessions must always remain confidential.
       // Prevent downgrading confidentiality to avoid leaking sensitive mental
       // health data (e.g. via parent notifications at line 299).
-      if (session.category === CounselingCategory.PSYCHOLOGICAL_OBSERVATION && !input.isConfidential) {
+      // Check the *effective* post-update category: if the caller is changing
+      // the category to PSYCHOLOGICAL_OBSERVATION in the same request, the new
+      // category takes precedence over the pre-update value from the DB.
+      const effectiveCategory = (input.category as CounselingCategory | undefined) || session.category;
+      if (effectiveCategory === CounselingCategory.PSYCHOLOGICAL_OBSERVATION && !input.isConfidential) {
         throw Errors.badRequest('PSYCHOLOGICAL_OBSERVATION sessions cannot be marked as non-confidential');
       }
       updateData.isConfidential = input.isConfidential;
+    }
+
+    // If the category is being changed TO PSYCHOLOGICAL_OBSERVATION, force
+    // confidentiality regardless of whether isConfidential was provided.
+    // This mirrors the create-time enforcement at createSession().
+    if (input.category === 'PSYCHOLOGICAL_OBSERVATION' && session.category !== CounselingCategory.PSYCHOLOGICAL_OBSERVATION) {
+      updateData.isConfidential = true;
     }
     if (input.parentNotified !== undefined) updateData.parentNotified = input.parentNotified;
 

@@ -241,7 +241,7 @@ router.put('/password', validate(changePasswordSchema), controller.changePasswor
  *         application/json:
  *           schema:
  *             type: object
- *             required: [name, email, password, roleCode]
+ *             required: [name, email, password]
  *             properties:
  *               name:
  *                 type: string
@@ -255,7 +255,10 @@ router.put('/password', validate(changePasswordSchema), controller.changePasswor
  *                 minLength: 8
  *               roleCode:
  *                 type: string
- *                 description: A valid RoleCode from the roles table (e.g. SUPER_ADMIN, SDIT_GURU)
+ *                 description: A valid RoleCode from the roles table (e.g. SUPER_ADMIN, SDIT_GURU). Either roleCode or role is required.
+ *               role:
+ *                 type: string
+ *                 description: "DEPRECATED: Legacy role field (e.g. TEACHER, STAFF). Use roleCode instead. Accepted for backward compatibility."
  *               unitId:
  *                 type: string
  *                 format: uuid

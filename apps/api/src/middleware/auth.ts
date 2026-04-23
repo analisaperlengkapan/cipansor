@@ -4,10 +4,23 @@ import { verifyToken, JwtPayload } from '@/lib/jwt';
 import { Errors } from './error';
 
 // RoleCodes that are considered "admin" across the system.
+//
 // Includes Yayasan governance roles (PEMBINA, KETUA, etc.) because they are
 // mapped from the legacy UNIT_ADMIN enum via LEGACY_ROLE_EXPANSION and need
 // consistent treatment in isAdmin() / isAdminRoleCode() checks (e.g. forced
 // 2FA, register route access, disableTwoFactor security guards).
+//
+// NOTE: KEPALA_SEKOLAH roles (TKQ_KEPALA_SEKOLAH, SDIT_KEPALA_SEKOLAH, etc.)
+// are intentionally NOT included here. They are classified as teacher-level
+// (in TEACHER_OR_ABOVE_CODES) rather than admin-level. This separates
+// educational leadership from system administration. Schools that previously
+// gave principals UNIT_ADMIN access should assign them a per-unit admin
+// RoleCode (e.g. SDIT_ADMIN) in addition to their KEPALA_SEKOLAH role.
+//
+// NOTE: Yayasan governance roles (PEMBINA, KETUA, SEKRETARIS, BENDAHARA,
+// ANGGOTA, PENGAWAS) are included because they were historically mapped from
+// UNIT_ADMIN and need admin-level access for 2FA enforcement, user
+// registration, and similar system administration tasks.
 const ADMIN_ROLE_CODES: string[] = [
   RoleCode.SUPER_ADMIN,
   RoleCode.YAYASAN_ADMIN,
@@ -74,19 +87,37 @@ const LEGACY_ROLE_EXPANSION: Record<string, string[]> = {
 };
 
 /**
- * Expand a list of role identifiers, resolving any legacy UserRole values
- * to their RoleCode equivalents. Values that are already valid RoleCodes
- * pass through unchanged.
+ * Expand a list of role identifiers **bidirectionally**:
+ *
+ * 1. Legacy → New: 'UNIT_ADMIN' expands to all per-unit admin RoleCodes.
+ * 2. New → Legacy: RoleCode.SDIT_ADMIN also adds 'UNIT_ADMIN' so that
+ *    pre-migration tokens (whose roleCode is the legacy string) still match.
+ *
+ * This ensures that when a route is migrated from
+ *   `authorize(UserRole.UNIT_ADMIN, UserRole.STAFF)`
+ * to
+ *   `authorize(RoleCode.SDIT_ADMIN, RoleCode.SDIT_TATA_USAHA)`
+ * pre-migration tokens carrying roleCode='UNIT_ADMIN' or 'STAFF' are
+ * automatically included without the developer needing to remember to add
+ * the legacy strings manually.
+ *
+ * Values that are already valid RoleCodes pass through unchanged.
  */
 function expandRoleCodes(codes: string[]): string[] {
   const expanded = new Set<string>();
   for (const code of codes) {
+    // Forward expansion: legacy value → new RoleCodes
     const mapping = LEGACY_ROLE_EXPANSION[code];
     if (mapping) {
       mapping.forEach((rc) => expanded.add(rc));
     }
     // Always add the original value so that native RoleCodes pass through
     expanded.add(code);
+    // Reverse expansion: new RoleCode → legacy value for pre-migration tokens
+    const legacyRole = ROLE_CODE_TO_LEGACY_ROLE[code];
+    if (legacyRole) {
+      expanded.add(legacyRole);
+    }
   }
   return Array.from(expanded);
 }

@@ -20,10 +20,12 @@ import type {
 // =============================================================================
 
 export const categoryService = {
-  async getAll(unitId: string, businessUnitId?: string) {
+  // unitId is optional: when omitted (SUPER_ADMIN global view) returns categories
+  // across all units. The caller is responsible for authorization.
+  async getAll(unitId: string | undefined, businessUnitId?: string) {
     return prisma.canteenCategory.findMany({
       where: {
-        unitId,
+        ...(unitId && { unitId }),
         ...(businessUnitId && { businessUnitId }),
       },
       include: {
@@ -107,13 +109,15 @@ export const categoryService = {
 // =============================================================================
 
 export const itemService = {
-  async getAll(unitId: string, query: ListItemsQuery) {
+  // unitId is optional: when omitted (SUPER_ADMIN global view) returns items
+  // across all units. The caller is responsible for authorization.
+  async getAll(unitId: string | undefined, query: ListItemsQuery) {
     const page = parseInt(query.page || '1');
     const limit = parseInt(query.limit || '20');
     const skip = (page - 1) * limit;
 
     const where: Prisma.CanteenItemWhereInput = {
-      unitId,
+      ...(unitId && { unitId }),
       ...(query.categoryId && { categoryId: query.categoryId }),
       ...(query.businessUnitId && { businessUnitId: query.businessUnitId }),
       ...(query.search && {
@@ -165,7 +169,32 @@ export const itemService = {
     });
   },
 
-  async getLowStockItems(unitId: string) {
+  async getLowStockItems(unitId: string | undefined) {
+    // unitId is optional: when omitted (SUPER_ADMIN global view) returns low-stock
+    // items across all units. Caller is responsible for authorization.
+    if (unitId) {
+      return prisma.$queryRaw<
+        Array<{
+          id: string;
+          name: string;
+          code: string | null;
+          stock: number;
+          minStock: number;
+          categoryName: string;
+        }>
+      >`
+        SELECT
+          i.id, i.name, i.code, i.stock, i.min_stock as "minStock",
+          c.name as "categoryName"
+        FROM canteen_items i
+        JOIN canteen_categories c ON i.category_id = c.id
+        WHERE i.unit_id = ${unitId}
+          AND i.is_active = true
+          AND i.stock <= i.min_stock
+        ORDER BY i.stock ASC
+      `;
+    }
+
     return prisma.$queryRaw<
       Array<{
         id: string;
@@ -176,13 +205,12 @@ export const itemService = {
         categoryName: string;
       }>
     >`
-      SELECT 
+      SELECT
         i.id, i.name, i.code, i.stock, i.min_stock as "minStock",
         c.name as "categoryName"
       FROM canteen_items i
       JOIN canteen_categories c ON i.category_id = c.id
-      WHERE i.unit_id = ${unitId}
-        AND i.is_active = true
+      WHERE i.is_active = true
         AND i.stock <= i.min_stock
       ORDER BY i.stock ASC
     `;
@@ -873,7 +901,7 @@ export const transactionService = {
     });
   },
 
-  async getStats(unitId: string, startDate?: string, endDate?: string) {
+  async getStats(unitId: string | undefined, startDate?: string, endDate?: string) {
     const dateFilter =
       startDate && endDate
         ? {
@@ -888,19 +916,23 @@ export const transactionService = {
             },
           };
 
+    // unitId is optional: when omitted (SUPER_ADMIN global view) stats aggregate
+    // across all units. Caller is responsible for authorization.
+    const unitFilter = unitId ? { unitId } : {};
+
     const [todayStats, totalTransactions, topItems, paymentBreakdown] = await Promise.all([
       prisma.canteenTransaction.aggregate({
-        where: { unitId, status: 'COMPLETED', ...dateFilter },
+        where: { ...unitFilter, status: 'COMPLETED', ...dateFilter },
         _sum: { total: true },
         _count: { id: true },
       }),
       prisma.canteenTransaction.count({
-        where: { unitId },
+        where: { ...unitFilter },
       }),
       prisma.canteenTransactionItem.groupBy({
         by: ['itemId', 'itemName'],
         where: {
-          transaction: { unitId, status: 'COMPLETED', ...dateFilter },
+          transaction: { ...unitFilter, status: 'COMPLETED', ...dateFilter },
         },
         _sum: { quantity: true, total: true },
         orderBy: { _sum: { quantity: 'desc' } },
@@ -908,7 +940,7 @@ export const transactionService = {
       }),
       prisma.canteenTransaction.groupBy({
         by: ['paymentMethod'],
-        where: { unitId, status: 'COMPLETED', ...dateFilter },
+        where: { ...unitFilter, status: 'COMPLETED', ...dateFilter },
         _sum: { total: true },
         _count: { id: true },
       }),

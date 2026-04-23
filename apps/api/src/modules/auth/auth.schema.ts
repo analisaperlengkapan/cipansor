@@ -11,18 +11,13 @@ export const loginSchema = z.object({
 // Accepts `roleCode` (new) OR `role` (legacy) for backward compatibility with
 // existing API clients, scripts, and mobile apps that still send `{ role: 'TEACHER' }`.
 // If both are provided, `roleCode` takes precedence.
-// The legacy `role` field maps to RoleCode via LEGACY_ROLE_TO_ROLE_CODE below.
-const LEGACY_ROLE_TO_ROLE_CODE: Record<string, RoleCode> = {
-  SUPER_ADMIN: RoleCode.SUPER_ADMIN,
-  // Legacy UNIT_ADMIN → default to YAYASAN_ADMIN; callers should migrate to
-  // specific per-unit admin RoleCodes (e.g. SDIT_ADMIN) for precision.
-  UNIT_ADMIN: RoleCode.YAYASAN_ADMIN,
-  TEACHER: RoleCode.SDIT_GURU,
-  STAFF: RoleCode.SDIT_TATA_USAHA,
-  STUDENT: RoleCode.SDIT_SISWA,
-  PARENT: RoleCode.SDIT_ORANG_TUA,
-};
-
+//
+// NOTE: Per-unit legacy roles (TEACHER, STAFF, STUDENT, PARENT) cannot be
+// resolved to a specific RoleCode at schema-validation time because the
+// correct mapping depends on the target Unit's type (TKQ_GURU vs SDIT_GURU
+// vs SMPIT_GURU vs SMAQ_GURU).  Resolution is deferred to the service
+// layer (see AuthService.register), which has DB access to look up the
+// Unit.type and pick the correct per-unit RoleCode.
 export const registerSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.string().email('Invalid email format'),
@@ -35,31 +30,13 @@ export const registerSchema = z.object({
   roleCode: z.nativeEnum(RoleCode, { errorMap: () => ({ message: 'Invalid role code' }) }).optional(),
   // DEPRECATED: Legacy `role` field. Use `roleCode` instead.
   // Accepted for backward compatibility with pre-migration API clients.
+  // Values: SUPER_ADMIN, UNIT_ADMIN, TEACHER, STAFF, STUDENT, PARENT.
   role: z.string().optional(),
   unitId: z.string().uuid().optional().nullable(),
 }).refine(
   (data) => data.roleCode || data.role,
   { message: 'Either roleCode or role is required', path: ['roleCode'] },
-).transform((data): {
-  name: string;
-  email: string;
-  password: string;
-  roleCode: RoleCode;
-  role?: string;
-  unitId?: string | null;
-} => {
-  // Resolve legacy `role` to `roleCode` when only `role` is provided
-  if (!data.roleCode && data.role) {
-    const mapped = LEGACY_ROLE_TO_ROLE_CODE[data.role];
-    if (!mapped) {
-      // Let it through — the service will validate against the Role table
-      // and return a friendly error if the code is invalid.
-      return { ...data, roleCode: data.role as RoleCode };
-    }
-    return { ...data, roleCode: mapped };
-  }
-  return { ...data, roleCode: data.roleCode! };
-});
+);
 
 // Refresh token schema
 export const refreshTokenSchema = z.object({
@@ -79,7 +56,9 @@ export const changePasswordSchema = z.object({
 
 // Types
 export type LoginInput = z.infer<typeof loginSchema>;
-// RegisterInput uses z.output to get the post-transform type where roleCode is always resolved.
-export type RegisterInput = z.output<typeof registerSchema>;
+// RegisterInput: either `roleCode` OR `role` is present (guaranteed by refine).
+// The service layer resolves the legacy `role` field to a proper RoleCode
+// using the target Unit's type when `roleCode` is not provided.
+export type RegisterInput = z.infer<typeof registerSchema>;
 export type RefreshTokenInput = z.infer<typeof refreshTokenSchema>;
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;

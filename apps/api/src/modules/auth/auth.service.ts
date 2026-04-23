@@ -5,10 +5,66 @@ import { Errors } from '@/middleware/error';
 import { isAdminRoleCode, deriveLegacyRole } from '@/middleware/auth';
 import { config } from '@/config';
 import type { LoginInput, RegisterInput, ChangePasswordInput } from './auth.schema';
-import { RoleCode } from '@prisma/client';
+import { RoleCode, UnitType } from '@prisma/client';
 import { authenticator } from 'otplib';
 import * as qrcode from 'qrcode';
 import crypto from 'crypto';
+
+/**
+ * Resolve a legacy UserRole value (e.g. 'TEACHER', 'STAFF') into the correct
+ * per-unit RoleCode (e.g. 'TKQ_GURU', 'SDIT_GURU') based on the target Unit's
+ * type. For SUPER_ADMIN and UNIT_ADMIN the mapping is unit-agnostic.
+ *
+ * Returns null if the legacy value cannot be mapped — in that case the caller
+ * should reject with a helpful error message.
+ */
+function resolveLegacyRoleToRoleCode(
+  legacyRole: string,
+  unitType: UnitType | null | undefined,
+): RoleCode | null {
+  // Unit-agnostic mappings
+  if (legacyRole === 'SUPER_ADMIN') return RoleCode.SUPER_ADMIN;
+  if (legacyRole === 'UNIT_ADMIN') {
+    switch (unitType) {
+      case UnitType.TK_QURAN: return RoleCode.TKQ_ADMIN;
+      case UnitType.SD_IT: return RoleCode.SDIT_ADMIN;
+      case UnitType.SMP_IT: return RoleCode.SMPIT_ADMIN;
+      case UnitType.SMA_QURAN: return RoleCode.SMAQ_ADMIN;
+      default: return RoleCode.YAYASAN_ADMIN;
+    }
+  }
+
+  // Per-unit mappings — require a known unit type
+  const perUnit: Record<string, Partial<Record<UnitType, RoleCode>>> = {
+    TEACHER: {
+      [UnitType.TK_QURAN]: RoleCode.TKQ_GURU,
+      [UnitType.SD_IT]: RoleCode.SDIT_GURU,
+      [UnitType.SMP_IT]: RoleCode.SMPIT_GURU,
+      [UnitType.SMA_QURAN]: RoleCode.SMAQ_GURU,
+    },
+    STAFF: {
+      [UnitType.TK_QURAN]: RoleCode.TKQ_TATA_USAHA,
+      [UnitType.SD_IT]: RoleCode.SDIT_TATA_USAHA,
+      [UnitType.SMP_IT]: RoleCode.SMPIT_TATA_USAHA,
+      [UnitType.SMA_QURAN]: RoleCode.SMAQ_TATA_USAHA,
+    },
+    STUDENT: {
+      [UnitType.TK_QURAN]: RoleCode.TKQ_SISWA,
+      [UnitType.SD_IT]: RoleCode.SDIT_SISWA,
+      [UnitType.SMP_IT]: RoleCode.SMPIT_SISWA,
+      [UnitType.SMA_QURAN]: RoleCode.SMAQ_SISWA,
+    },
+    PARENT: {
+      [UnitType.TK_QURAN]: RoleCode.TKQ_ORANG_TUA,
+      [UnitType.SD_IT]: RoleCode.SDIT_ORANG_TUA,
+      [UnitType.SMP_IT]: RoleCode.SMPIT_ORANG_TUA,
+      [UnitType.SMA_QURAN]: RoleCode.SMAQ_ORANG_TUA,
+    },
+  };
+
+  if (!unitType) return null;
+  return perUnit[legacyRole]?.[unitType] ?? null;
+}
 
 /** Build a Prisma `where` clause to select only active, non-expired role assignments */
 function activeRoleWhere() {
@@ -167,17 +223,50 @@ export class AuthService {
    * Register new user (by admin)
    */
   async register(input: RegisterInput, creatorRoleCode: string) {
+    // Resolve legacy `role` field to a concrete RoleCode when roleCode is not supplied.
+    // This is deferred from schema validation because the correct per-unit RoleCode
+    // depends on the target Unit's type (TKQ_GURU vs SDIT_GURU vs SMPIT_GURU vs SMAQ_GURU).
+    let resolvedRoleCode: RoleCode;
+    if (input.roleCode) {
+      resolvedRoleCode = input.roleCode;
+    } else if (input.role) {
+      // Look up unit type if a unitId was provided
+      let unitType: UnitType | null = null;
+      if (input.unitId) {
+        const unit = await prisma.unit.findUnique({
+          where: { id: input.unitId },
+          select: { type: true },
+        });
+        if (!unit) {
+          throw Errors.badRequest(`Unit '${input.unitId}' not found`);
+        }
+        unitType = unit.type;
+      }
+
+      const mapped = resolveLegacyRoleToRoleCode(input.role, unitType);
+      if (!mapped) {
+        throw Errors.badRequest(
+          `Cannot resolve legacy role '${input.role}' for unit type '${unitType ?? 'unknown'}'. ` +
+          `Please send 'roleCode' instead.`
+        );
+      }
+      resolvedRoleCode = mapped;
+    } else {
+      // Should be unreachable due to schema .refine(), but be defensive.
+      throw Errors.badRequest('Either roleCode or role is required');
+    }
+
     // Validate the requested role exists
     const role = await prisma.role.findFirst({
-      where: { code: input.roleCode, isActive: true },
+      where: { code: resolvedRoleCode, isActive: true },
     });
 
     if (!role) {
-      throw Errors.badRequest(`Role code '${input.roleCode}' not found or inactive`);
+      throw Errors.badRequest(`Role code '${resolvedRoleCode}' not found or inactive`);
     }
 
     // Only Super Admin can create Super Admin
-    if (input.roleCode === RoleCode.SUPER_ADMIN && creatorRoleCode !== RoleCode.SUPER_ADMIN) {
+    if (resolvedRoleCode === RoleCode.SUPER_ADMIN && creatorRoleCode !== RoleCode.SUPER_ADMIN) {
       throw Errors.forbidden('Only Super Admin can create Super Admin');
     }
 
@@ -191,7 +280,7 @@ export class AuthService {
     }
 
     // Validate unit for non-super-admin roles
-    if (input.roleCode !== RoleCode.SUPER_ADMIN && !input.unitId) {
+    if (resolvedRoleCode !== RoleCode.SUPER_ADMIN && !input.unitId) {
       throw Errors.badRequest('Unit is required for this role');
     }
 
@@ -203,7 +292,7 @@ export class AuthService {
     // external tools, reports, and raw SQL queries that depend on it continue
     // to work during the migration period.
     const VALID_LEGACY_ROLES = ['SUPER_ADMIN', 'UNIT_ADMIN', 'TEACHER', 'STAFF', 'STUDENT', 'PARENT'];
-    const legacyRole = deriveLegacyRole(input.roleCode);
+    const legacyRole = deriveLegacyRole(resolvedRoleCode);
     // Only write to the legacy column if the derived value is a valid UserRole
     // enum value. New RoleCodes that have no legacy mapping (e.g. future custom
     // roles) would otherwise crash with a PostgreSQL enum constraint violation.
@@ -240,7 +329,7 @@ export class AuthService {
 
     return {
       ...userWithoutPassword,
-      roleCode: input.roleCode,
+      roleCode: resolvedRoleCode,
       academicYearId: activeAcademicYearId,
     };
   }

@@ -16,7 +16,6 @@ import {
   Users,
   Settings,
   GraduationCap,
-  ArrowRight,
   Loader2
 } from "lucide-react";
 import { useState } from "react";

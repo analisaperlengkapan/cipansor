@@ -26,7 +26,6 @@ import {
   Store,
   Utensils,
   BookOpen,
-  MoreVertical,
   TrendingUp,
   Settings,
   ArrowRight,

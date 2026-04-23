@@ -24,6 +24,7 @@ export interface StrategicPlan {
 export interface PlanObjective {
   id: string;
   title: string;
+  description?: string;
   perspective: string;
   priority: string;
   weight: number;

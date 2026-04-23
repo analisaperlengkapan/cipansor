@@ -600,7 +600,7 @@ export const transactionService = {
       // operational when an accountant has closed a prior period.
       // When the period is closed we skip journal creation and log a warning;
       // the accounting team can post adjusting entries manually if required.
-      const periodOpen = await isPeriodOpen(unitId, journalDate);
+      const periodOpen = await isPeriodOpen(unitId, journalDate, tx);
       if (!periodOpen) {
         // eslint-disable-next-line no-console
         console.warn(
@@ -932,7 +932,7 @@ export const transactionService = {
         // aren't denied refunds due to an accounting configuration. Skip the
         // reversing journal entries when the period is closed and log a
         // warning; accounting can post adjusting entries manually.
-        const reversalPeriodOpen = await isPeriodOpen(unitId, reversalDate);
+        const reversalPeriodOpen = await isPeriodOpen(unitId, reversalDate, tx);
         if (!reversalPeriodOpen) {
           // eslint-disable-next-line no-console
           console.warn(

@@ -7,10 +7,8 @@ import { Errors } from './error';
 
 // RoleCodes that are considered "admin" across the system.
 //
-// Includes Yayasan governance roles (PEMBINA, KETUA, etc.) because they are
-// mapped from the legacy UNIT_ADMIN enum via LEGACY_ROLE_EXPANSION and need
-// consistent treatment in isAdmin() / isAdminRoleCode() checks (e.g. forced
-// 2FA, register route access, disableTwoFactor security guards).
+// Scope: system-administration privileges only (forced 2FA, register route
+// access, disableTwoFactor security guards, isAdmin middleware).
 //
 // NOTE: KEPALA_SEKOLAH roles (TKQ_KEPALA_SEKOLAH, SDIT_KEPALA_SEKOLAH, etc.)
 // are intentionally NOT included here. They are classified as teacher-level
@@ -20,18 +18,22 @@ import { Errors } from './error';
 // RoleCode (e.g. SDIT_ADMIN) in addition to their KEPALA_SEKOLAH role.
 //
 // NOTE: Yayasan governance roles (PEMBINA, KETUA, SEKRETARIS, BENDAHARA,
-// ANGGOTA, PENGAWAS) are included because they were historically mapped from
-// UNIT_ADMIN and need admin-level access for 2FA enforcement, user
-// registration, and similar system administration tasks.
+// ANGGOTA, PENGAWAS) are intentionally EXCLUDED. These represent organizational
+// governance (board members, secretaries, auditors) — NOT system
+// administrators. A board member (YAYASAN_ANGGOTA) or internal auditor
+// (YAYASAN_PENGAWAS) should NOT automatically bypass admin-only security
+// guards just because they were historically bucketed under legacy UNIT_ADMIN.
+// Users that need BOTH governance AND system-admin privileges must be
+// explicitly assigned YAYASAN_ADMIN (or a per-unit admin RoleCode) in
+// addition to their governance role.
+//
+// Legacy compatibility: pre-migration tokens carrying `role: 'UNIT_ADMIN'`
+// still pass isAdmin() via the 'UNIT_ADMIN' string below. Routes that use
+// authorize(YAYASAN_PEMBINA, ...) still work because authorize() uses
+// expandRoleCodes() for bidirectional legacy mapping, independent of this list.
 const ADMIN_ROLE_CODES: string[] = [
   RoleCode.SUPER_ADMIN,
   RoleCode.YAYASAN_ADMIN,
-  RoleCode.YAYASAN_PEMBINA,
-  RoleCode.YAYASAN_KETUA,
-  RoleCode.YAYASAN_SEKRETARIS,
-  RoleCode.YAYASAN_BENDAHARA,
-  RoleCode.YAYASAN_ANGGOTA,
-  RoleCode.YAYASAN_PENGAWAS,
   RoleCode.TKQ_ADMIN,
   RoleCode.SDIT_ADMIN,
   RoleCode.SMPIT_ADMIN,

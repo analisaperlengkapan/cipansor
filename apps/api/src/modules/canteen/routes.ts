@@ -17,7 +17,7 @@ import {
 } from './canteen.schema';
 import { categoryService, itemService, transactionService, stockMovementService } from './service';
 import { ApiResponse } from '../../utils/response';
-import { resolveUnitId, isSuperAdmin } from '../../utils/resolve-unit-id';
+import { resolveUnitId, isSuperAdminUser } from '../../utils/resolve-unit-id';
 
 const router = Router();
 
@@ -30,7 +30,7 @@ router.get('/categories', authenticate, async (req: Request, res: Response, next
   try {
     const unitId = resolveUnitId(req);
     // SUPER_ADMIN may list across all units (no unitId scoping required)
-    if (!unitId && !isSuperAdmin(req)) {
+    if (!unitId && !isSuperAdminUser(req)) {
       return res.status(400).json(ApiResponse.error('Unit ID tidak ditemukan', 'UNIT_REQUIRED'));
     }
 
@@ -150,7 +150,7 @@ router.get('/items', authenticate, async (req: Request, res: Response, next: Nex
   try {
     const unitId = resolveUnitId(req);
     // SUPER_ADMIN may list across all units (no unitId scoping required)
-    if (!unitId && !isSuperAdmin(req)) {
+    if (!unitId && !isSuperAdminUser(req)) {
       return res.status(400).json(ApiResponse.error('Unit ID tidak ditemukan', 'UNIT_REQUIRED'));
     }
 
@@ -178,7 +178,7 @@ router.get(
     try {
       const unitId = resolveUnitId(req);
       // SUPER_ADMIN may view low-stock items across all units
-      if (!unitId && !isSuperAdmin(req)) {
+      if (!unitId && !isSuperAdminUser(req)) {
         return res.status(400).json(ApiResponse.error('Unit ID tidak ditemukan', 'UNIT_REQUIRED'));
       }
 
@@ -325,7 +325,7 @@ router.get(
     try {
       const unitId = resolveUnitId(req);
       // SUPER_ADMIN may view stats across all units (no unitId scoping required)
-      if (!unitId && !isSuperAdmin(req)) {
+      if (!unitId && !isSuperAdminUser(req)) {
         return res.status(400).json(ApiResponse.error('Unit ID tidak ditemukan', 'UNIT_REQUIRED'));
       }
 

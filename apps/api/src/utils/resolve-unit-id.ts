@@ -26,6 +26,15 @@ export function resolveUnitId(req: Request): string | undefined {
   return undefined;
 }
 
-export function isSuperAdmin(req: Request): boolean {
+/**
+ * Boolean helper to check if the current request is from a SUPER_ADMIN user.
+ *
+ * NOTE: Named `isSuperAdminUser` (not `isSuperAdmin`) to avoid name collision
+ * with the Express middleware `isSuperAdmin` exported from
+ * `@/middleware/auth`, which has signature `(req, res, next)` and is used
+ * directly in route definitions. Importing both into the same file would
+ * otherwise require aliasing.
+ */
+export function isSuperAdminUser(req: Request): boolean {
   return req.user?.roleCode === RoleCode.SUPER_ADMIN;
 }

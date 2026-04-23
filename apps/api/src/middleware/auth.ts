@@ -22,9 +22,15 @@ const ADMIN_ROLE_CODES: string[] = [
 const LEGACY_ROLE_EXPANSION: Record<string, string[]> = {
   // SUPER_ADMIN exists in both enums — identity mapping
   SUPER_ADMIN: [RoleCode.SUPER_ADMIN],
-  // Legacy UNIT_ADMIN → all per-unit admin RoleCodes
+  // Legacy UNIT_ADMIN → all per-unit admin RoleCodes + Yayasan governance roles
   UNIT_ADMIN: [
     RoleCode.YAYASAN_ADMIN,
+    RoleCode.YAYASAN_PEMBINA,
+    RoleCode.YAYASAN_KETUA,
+    RoleCode.YAYASAN_SEKRETARIS,
+    RoleCode.YAYASAN_BENDAHARA,
+    RoleCode.YAYASAN_ANGGOTA,
+    RoleCode.YAYASAN_PENGAWAS,
     RoleCode.TKQ_ADMIN,
     RoleCode.SDIT_ADMIN,
     RoleCode.SMPIT_ADMIN,

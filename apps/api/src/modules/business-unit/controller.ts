@@ -74,6 +74,10 @@ export const businessUnitController = {
     try {
       const unitId = resolveUnitId(req);
 
+      if (!unitId && !isSuperAdmin(req)) {
+        return res.status(400).json({ success: false, message: 'Unit ID tidak ditemukan' });
+      }
+
       // SUPER_ADMIN can update any business unit without unitId scoping
       const result = isSuperAdmin(req) && !unitId
         ? await businessUnitService.update(req.params.id, undefined, req.body)
@@ -107,6 +111,10 @@ export const businessUnitController = {
   async getPerformance(req: Request, res: Response, next: NextFunction) {
     try {
       const unitId = resolveUnitId(req);
+
+      if (!unitId && !isSuperAdmin(req)) {
+        return res.status(400).json({ success: false, message: 'Unit ID tidak ditemukan' });
+      }
 
       const { startDate, endDate } = req.query;
       if (!startDate || !endDate) {

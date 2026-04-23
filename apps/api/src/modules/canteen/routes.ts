@@ -20,6 +20,18 @@ import { ApiResponse } from '../../utils/response';
 
 const router = Router();
 
+/**
+ * Resolve the effective unitId for the current request.
+ * SUPER_ADMIN users have unitId: null in their JWT (they are global).
+ * For such users, we allow unitId to be supplied via query param or body.
+ */
+function resolveUnitId(req: Request): string | undefined {
+  return req.user?.unitId
+    || (req.query.unitId as string | undefined)
+    || req.body?.unitId
+    || undefined;
+}
+
 // =============================================================================
 // CATEGORY ROUTES
 // =============================================================================
@@ -27,7 +39,7 @@ const router = Router();
 // GET /api/canteen/categories - Get all categories
 router.get('/categories', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const unitId = req.user?.unitId;
+    const unitId = resolveUnitId(req);
     if (!unitId) {
       return res.status(400).json(ApiResponse.error('Unit ID tidak ditemukan', 'UNIT_REQUIRED'));
     }
@@ -46,7 +58,7 @@ router.get(
   authenticate,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const unitId = req.user?.unitId;
+      const unitId = resolveUnitId(req);
       if (!unitId) {
         return res.status(400).json(ApiResponse.error('Unit ID tidak ditemukan', 'UNIT_REQUIRED'));
       }
@@ -75,7 +87,7 @@ router.post(
   validate(CreateCategorySchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const unitId = req.user?.unitId;
+      const unitId = resolveUnitId(req);
       if (!unitId) {
         return res.status(400).json(ApiResponse.error('Unit ID tidak ditemukan', 'UNIT_REQUIRED'));
       }
@@ -100,7 +112,7 @@ router.put(
   validate(UpdateCategorySchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const unitId = req.user?.unitId;
+      const unitId = resolveUnitId(req);
       if (!unitId) {
         return res.status(400).json(ApiResponse.error('Unit ID tidak ditemukan', 'UNIT_REQUIRED'));
       }
@@ -123,7 +135,7 @@ router.delete(
   ),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const unitId = req.user?.unitId;
+      const unitId = resolveUnitId(req);
       if (!unitId) {
         return res.status(400).json(ApiResponse.error('Unit ID tidak ditemukan', 'UNIT_REQUIRED'));
       }
@@ -143,7 +155,7 @@ router.delete(
 // GET /api/canteen/items - Get all items
 router.get('/items', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const unitId = req.user?.unitId;
+    const unitId = resolveUnitId(req);
     if (!unitId) {
       return res.status(400).json(ApiResponse.error('Unit ID tidak ditemukan', 'UNIT_REQUIRED'));
     }
@@ -169,7 +181,7 @@ router.get(
   ),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const unitId = req.user?.unitId;
+      const unitId = resolveUnitId(req);
       if (!unitId) {
         return res.status(400).json(ApiResponse.error('Unit ID tidak ditemukan', 'UNIT_REQUIRED'));
       }
@@ -185,7 +197,7 @@ router.get(
 // GET /api/canteen/items/:id - Get item by ID
 router.get('/items/:id', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const unitId = req.user?.unitId;
+    const unitId = resolveUnitId(req);
     if (!unitId) {
       return res.status(400).json(ApiResponse.error('Unit ID tidak ditemukan', 'UNIT_REQUIRED'));
     }
@@ -213,7 +225,7 @@ router.post(
   validate(CreateItemSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const unitId = req.user?.unitId;
+      const unitId = resolveUnitId(req);
       if (!unitId) {
         return res.status(400).json(ApiResponse.error('Unit ID tidak ditemukan', 'UNIT_REQUIRED'));
       }
@@ -238,7 +250,7 @@ router.put(
   validate(UpdateItemSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const unitId = req.user?.unitId;
+      const unitId = resolveUnitId(req);
       if (!unitId) {
         return res.status(400).json(ApiResponse.error('Unit ID tidak ditemukan', 'UNIT_REQUIRED'));
       }
@@ -261,7 +273,7 @@ router.delete(
   ),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const unitId = req.user?.unitId;
+      const unitId = resolveUnitId(req);
       if (!unitId) {
         return res.status(400).json(ApiResponse.error('Unit ID tidak ditemukan', 'UNIT_REQUIRED'));
       }
@@ -284,7 +296,7 @@ router.get(
   authenticate,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const unitId = req.user?.unitId;
+      const unitId = resolveUnitId(req);
       if (!unitId) {
         return res.status(400).json(ApiResponse.error('Unit ID tidak ditemukan', 'UNIT_REQUIRED'));
       }
@@ -311,7 +323,7 @@ router.get(
   ),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const unitId = req.user?.unitId;
+      const unitId = resolveUnitId(req);
       if (!unitId) {
         return res.status(400).json(ApiResponse.error('Unit ID tidak ditemukan', 'UNIT_REQUIRED'));
       }
@@ -335,7 +347,7 @@ router.get(
   authenticate,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const unitId = req.user?.unitId;
+      const unitId = resolveUnitId(req);
       if (!unitId) {
         return res.status(400).json(ApiResponse.error('Unit ID tidak ditemukan', 'UNIT_REQUIRED'));
       }
@@ -364,7 +376,7 @@ router.post(
   validate(CreateTransactionSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const unitId = req.user?.unitId;
+      const unitId = resolveUnitId(req);
       const userId = req.user?.sub;
       if (!unitId || !userId) {
         return res
@@ -392,7 +404,7 @@ router.patch(
   validate(UpdateTransactionStatusSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const unitId = req.user?.unitId;
+      const unitId = resolveUnitId(req);
       const userId = req.user?.sub;
       if (!unitId || !userId) {
         return res
@@ -428,7 +440,7 @@ router.get(
   ),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const unitId = req.user?.unitId;
+      const unitId = resolveUnitId(req);
       if (!unitId) {
         return res.status(400).json(ApiResponse.error('Unit ID tidak ditemukan', 'UNIT_REQUIRED'));
       }
@@ -460,7 +472,7 @@ router.post(
   validate(CreateStockMovementSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const unitId = req.user?.unitId;
+      const unitId = resolveUnitId(req);
       const userId = req.user?.sub;
       if (!unitId || !userId) {
         return res

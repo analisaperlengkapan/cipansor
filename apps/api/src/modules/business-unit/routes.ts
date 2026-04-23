@@ -11,11 +11,19 @@ router.use(authenticate);
 // GET /api/business-units - List business units (any authenticated user)
 router.get('/', businessUnitController.list);
 
-// GET /api/business-units/:id - Get business unit by ID
-router.get('/:id', businessUnitController.getById);
+// GET /api/business-units/:id - Get business unit by ID (admin/staff only)
+router.get(
+  '/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  businessUnitController.getById
+);
 
-// GET /api/business-units/:id/performance - Get business unit performance
-router.get('/:id/performance', businessUnitController.getPerformance);
+// GET /api/business-units/:id/performance - Get business unit performance (admin/staff only)
+router.get(
+  '/:id/performance',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  businessUnitController.getPerformance
+);
 
 // POST /api/business-units - Create business unit (admin only)
 router.post(

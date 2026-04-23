@@ -1,6 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import { RoleCode } from '@prisma/client';
 import { verifyToken, JwtPayload } from '@/lib/jwt';
+import { prisma } from '@/lib/prisma';
+import { redis } from '@/lib/redis';
 import { Errors } from './error';
 
 // RoleCodes that are considered "admin" across the system.
@@ -309,16 +311,23 @@ export function authorize(...allowedRoleCodes: string[]) {
 
 /**
  * Permission-based access control middleware.
- * Permissions are embedded in the JWT token at login time for performance
- * (no DB/Redis lookup per request).
+ *
+ * Permissions are normally embedded in the JWT token at login time for
+ * performance (no DB/Redis lookup per request).
  *
  * TRADE-OFF: Permission changes (grant or revoke) do NOT take effect until
  * the user's access token expires and is refreshed, or the user re-logs in.
  * For urgent revocations (e.g. security incidents), invalidate the user's
  * refresh tokens via AuthService.logout() to force a re-login.
+ *
+ * BACKWARD COMPATIBILITY: Pre-migration tokens do NOT carry `permissions`
+ * but DO carry `roleId`. For those tokens we fall back to a cached DB lookup
+ * (Redis + 5 min TTL) so users with valid sessions aren't locked out of
+ * permission-gated routes until their token naturally refreshes. This path
+ * goes away once all pre-migration tokens have expired.
  */
 export function hasPermission(permission: string) {
-  return (req: Request, res: Response, next: NextFunction) => {
+  return async (req: Request, res: Response, next: NextFunction) => {
     if (!req.user) {
       return next(Errors.unauthorized());
     }
@@ -328,7 +337,43 @@ export function hasPermission(permission: string) {
       return next();
     }
 
-    const permissions = req.user.permissions || [];
+    let permissions = req.user.permissions || [];
+
+    // Legacy fallback: pre-migration tokens carry `roleId` but not
+    // `permissions`. Look them up from the Role record via Redis cache.
+    if (permissions.length === 0 && req.user.roleId) {
+      try {
+        const cacheKey = `role:permissions:${req.user.roleId}`;
+        let cached: string[] | null = null;
+
+        try {
+          const raw = await redis.get(cacheKey);
+          if (raw) cached = JSON.parse(raw);
+        } catch (redisError) {
+          // eslint-disable-next-line no-console
+          console.error('Redis error in hasPermission:', redisError);
+        }
+
+        if (cached) {
+          permissions = cached;
+        } else {
+          const role = await prisma.role.findUnique({
+            where: { id: req.user.roleId },
+            select: { permissions: true },
+          });
+
+          if (role) {
+            permissions = (role.permissions as string[]) || [];
+            // Cache for 5 minutes to mitigate stale permissions
+            redis
+              .setex(cacheKey, 300, JSON.stringify(permissions))
+              .catch((e) => console.error('Redis cache set error:', e));
+          }
+        }
+      } catch (error) {
+        return next(error);
+      }
+    }
 
     if (!permissions.includes(permission)) {
       return next(Errors.forbidden(`Missing permission: ${permission}`));

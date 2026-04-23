@@ -312,8 +312,14 @@ export const itemService = {
 // function outside a `prisma.$transaction` would release the lock immediately
 // after the SELECT returns, defeating the serialization guarantee and allowing
 // duplicate transaction numbers under concurrency.
+//
+// NOTE: No `unitId` parameter — transaction numbers use the format
+// `CNT-YYYYMMDD-XXXX` which does NOT embed a unit, and the sequence query
+// below is global. The advisory lock is therefore keyed to the date only.
+// If future requirements introduce per-unit transaction numbering, add a
+// `unitId` parameter AND include it in both the lock key and the WHERE
+// clause of the `findFirst` query — they must stay in sync.
 const generateTransactionNo = async (
-  unitId: string,
   tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0],
 ): Promise<string> => {
   const today = new Date();
@@ -523,7 +529,7 @@ export const transactionService = {
       }
 
       // Generate transaction number (inside tx to reduce race window)
-      const transactionNo = await generateTransactionNo(unitId, tx);
+      const transactionNo = await generateTransactionNo(tx);
 
       // Create transaction
       const transaction = await tx.canteenTransaction.create({

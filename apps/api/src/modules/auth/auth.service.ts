@@ -285,6 +285,16 @@ export class AuthService {
       throw Errors.forbidden('Only Super Admin can create Super Admin');
     }
 
+    // Privilege escalation guard: only SUPER_ADMIN can create ANY admin-level
+    // role. Without this, a unit-admin (e.g. TKQ_ADMIN) could create an admin
+    // for a different unit (e.g. SMAQ_ADMIN) or a foundation-level admin
+    // (e.g. YAYASAN_ADMIN), bypassing organizational boundaries.
+    // The SUPER_ADMIN case above has already returned, so here we know the
+    // creator is NOT a SUPER_ADMIN.
+    if (isAdminRoleCode(resolvedRoleCode) && creatorRoleCode !== RoleCode.SUPER_ADMIN) {
+      throw Errors.forbidden('Only Super Admin can create admin-level accounts');
+    }
+
     // Check if email exists
     const existing = await prisma.user.findFirst({
       where: { email: input.email },

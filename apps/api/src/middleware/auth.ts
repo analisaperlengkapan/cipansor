@@ -3,10 +3,20 @@ import { RoleCode } from '@prisma/client';
 import { verifyToken, JwtPayload } from '@/lib/jwt';
 import { Errors } from './error';
 
-// RoleCodes that are considered "admin" across the system
+// RoleCodes that are considered "admin" across the system.
+// Includes Yayasan governance roles (PEMBINA, KETUA, etc.) because they are
+// mapped from the legacy UNIT_ADMIN enum via LEGACY_ROLE_EXPANSION and need
+// consistent treatment in isAdmin() / isAdminRoleCode() checks (e.g. forced
+// 2FA, register route access, disableTwoFactor security guards).
 const ADMIN_ROLE_CODES: string[] = [
   RoleCode.SUPER_ADMIN,
   RoleCode.YAYASAN_ADMIN,
+  RoleCode.YAYASAN_PEMBINA,
+  RoleCode.YAYASAN_KETUA,
+  RoleCode.YAYASAN_SEKRETARIS,
+  RoleCode.YAYASAN_BENDAHARA,
+  RoleCode.YAYASAN_ANGGOTA,
+  RoleCode.YAYASAN_PENGAWAS,
   RoleCode.TKQ_ADMIN,
   RoleCode.SDIT_ADMIN,
   RoleCode.SMPIT_ADMIN,
@@ -83,6 +93,14 @@ function expandRoleCodes(codes: string[]): string[] {
  * controllers/services that still compare against UserRole.SUPER_ADMIN,
  * UserRole.UNIT_ADMIN, etc. continue to work at runtime.
  * Built by inverting LEGACY_ROLE_EXPANSION.
+ *
+ * NOTE: Yayasan governance roles (PEMBINA, KETUA, SEKRETARIS, BENDAHARA,
+ * ANGGOTA, PENGAWAS) map to 'UNIT_ADMIN' via LEGACY_ROLE_EXPANSION.
+ * RoleCodes that have NO mapping (e.g. future custom roles) fall back to
+ * the roleCode itself via deriveLegacyRole(), which means they will NOT
+ * match any legacy UserRole comparison in unmigrated modules. This is
+ * acceptable for new roles; those modules must be migrated to use roleCode.
+ *
  * TODO: Remove once all modules are migrated to use roleCode.
  */
 const ROLE_CODE_TO_LEGACY_ROLE: Record<string, string> = {};
@@ -99,8 +117,35 @@ for (const [legacyRole, roleCodes] of Object.entries(LEGACY_ROLE_EXPANSION)) {
  * Derive the legacy UserRole value from a RoleCode.
  * Falls back to the roleCode itself if no mapping exists.
  */
-function deriveLegacyRole(roleCode: string): string {
+export function deriveLegacyRole(roleCode: string): string {
   return ROLE_CODE_TO_LEGACY_ROLE[roleCode] || roleCode;
+}
+
+/**
+ * Build a safe `req.user` object from a decoded JWT payload.
+ *
+ * Tokens minted **before** the RoleCode migration carry `role` (legacy
+ * UserRole string) but NOT `roleCode` / `permissions`.  Tokens minted
+ * **after** the migration carry `roleCode` and `permissions` (and may
+ * or may not carry `role`).
+ *
+ * This helper normalises both shapes so that downstream code can rely
+ * on `req.user.roleCode` AND `req.user.role` always being populated.
+ */
+function buildReqUser(payload: JwtPayload): JwtPayload {
+  // Determine the canonical roleCode — prefer the new field, fall back
+  // to the legacy `role` field for pre-migration tokens.
+  const roleCode: string = payload.roleCode || payload.role || '';
+
+  return {
+    ...payload,
+    id: payload.sub,
+    roleCode,
+    permissions: payload.permissions || [],
+    // Derive legacy role from the canonical roleCode so unmigrated
+    // controllers that read `req.user.role` keep working.
+    role: deriveLegacyRole(roleCode),
+  };
 }
 
 // Extend Express Request type
@@ -141,7 +186,7 @@ export function authenticate(req: Request, res: Response, next: NextFunction) {
       throw Errors.unauthorized('2FA Verification Required');
     }
 
-    req.user = { ...payload, id: payload.sub, role: deriveLegacyRole(payload.roleCode) };
+    req.user = buildReqUser(payload);
     next();
   } catch (error) {
     next(error);
@@ -172,7 +217,7 @@ export function authenticate2FA(req: Request, res: Response, next: NextFunction)
       throw Errors.unauthorized('Invalid token type');
     }
 
-    req.user = { ...payload, id: payload.sub, role: deriveLegacyRole(payload.roleCode) };
+    req.user = buildReqUser(payload);
     next();
   } catch (error) {
     next(error);
@@ -195,7 +240,7 @@ export function optionalAuth(req: Request, res: Response, next: NextFunction) {
     if (type === 'Bearer' && token) {
       const payload = verifyToken(token);
       if (payload.type === 'access' && !payload.isTemp) {
-        req.user = { ...payload, id: payload.sub, role: deriveLegacyRole(payload.roleCode) };
+        req.user = buildReqUser(payload);
       }
     }
 
@@ -228,8 +273,14 @@ export function authorize(...allowedRoleCodes: string[]) {
 }
 
 /**
- * Permission-based access control middleware
- * Permissions are embedded in the JWT token at login time.
+ * Permission-based access control middleware.
+ * Permissions are embedded in the JWT token at login time for performance
+ * (no DB/Redis lookup per request).
+ *
+ * TRADE-OFF: Permission changes (grant or revoke) do NOT take effect until
+ * the user's access token expires and is refreshed, or the user re-logs in.
+ * For urgent revocations (e.g. security incidents), invalidate the user's
+ * refresh tokens via AuthService.logout() to force a re-login.
  */
 export function hasPermission(permission: string) {
   return (req: Request, res: Response, next: NextFunction) => {

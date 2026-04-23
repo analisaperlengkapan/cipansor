@@ -2,7 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { hashPassword, comparePassword } from '@/lib/password';
 import { generateTokenPair, verifyToken, getExpirationDate, generateAccessToken } from '@/lib/jwt';
 import { Errors } from '@/middleware/error';
-import { isAdminRoleCode } from '@/middleware/auth';
+import { isAdminRoleCode, deriveLegacyRole } from '@/middleware/auth';
 import { config } from '@/config';
 import type { LoginInput, RegisterInput, ChangePasswordInput } from './auth.schema';
 import { RoleCode } from '@prisma/client';
@@ -78,6 +78,7 @@ export class AuthService {
       roleCode,
       unitId: primaryAssignment.unitId || user.unitId,
       permissions,
+      role: deriveLegacyRole(roleCode),
     };
 
     // Check for 2FA
@@ -276,14 +277,16 @@ export class AuthService {
     const permissions = (primaryAssignment.role.permissions as string[]) || [];
 
     // Generate new tokens
+    const refreshRoleCode = primaryAssignment.role.code;
     const tokens = generateTokenPair({
       id: storedToken.user.id,
       sub: storedToken.user.id,
       email: storedToken.user.email,
       roleId: primaryAssignment.roleId,
-      roleCode: primaryAssignment.role.code,
+      roleCode: refreshRoleCode,
       unitId: primaryAssignment.unitId || storedToken.user.unitId,
       permissions,
+      role: deriveLegacyRole(refreshRoleCode),
     });
 
     // Store new refresh token
@@ -540,14 +543,16 @@ export class AuthService {
 
     const permissions = (primaryAssignment.role.permissions as string[]) || [];
 
+    const twoFaRoleCode = primaryAssignment.role.code;
     const tokens = generateTokenPair({
       id: user.id,
       sub: user.id,
       email: user.email,
       roleId: primaryAssignment.roleId,
-      roleCode: primaryAssignment.role.code,
+      roleCode: twoFaRoleCode,
       unitId: primaryAssignment.unitId || user.unitId,
       permissions,
+      role: deriveLegacyRole(twoFaRoleCode),
     });
 
     const [, , activeAcademicYearId] = await Promise.all([

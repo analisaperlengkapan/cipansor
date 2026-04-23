@@ -338,6 +338,29 @@ export function isAdmin(req: Request, res: Response, next: NextFunction) {
 }
 
 /**
+ * RoleCodes that pass the isTeacherOrAbove check.
+ * Computed once at module load (like ADMIN_ROLE_CODES) to avoid
+ * re-creating the array on every request.
+ */
+const TEACHER_OR_ABOVE_CODES: string[] = [
+  ...ADMIN_ROLE_CODES,
+  RoleCode.TKQ_GURU,
+  RoleCode.SDIT_GURU,
+  RoleCode.SMPIT_GURU,
+  RoleCode.SMAQ_GURU,
+  RoleCode.TKQ_KEPALA_SEKOLAH,
+  RoleCode.SDIT_KEPALA_SEKOLAH,
+  RoleCode.SMPIT_KEPALA_SEKOLAH,
+  RoleCode.SMAQ_KEPALA_SEKOLAH,
+  RoleCode.MUSYRIF,
+  RoleCode.MUHAFIDZ,
+  RoleCode.MURABBI,
+  RoleCode.WALI_KAMAR,
+  // Legacy UserRole values for pre-migration tokens
+  'TEACHER',
+];
+
+/**
  * Check if user is Teacher or above
  */
 export function isTeacherOrAbove(req: Request, res: Response, next: NextFunction) {
@@ -345,25 +368,7 @@ export function isTeacherOrAbove(req: Request, res: Response, next: NextFunction
     return next(Errors.unauthorized());
   }
 
-  const teacherCodes: string[] = [
-    ...ADMIN_ROLE_CODES,
-    RoleCode.TKQ_GURU,
-    RoleCode.SDIT_GURU,
-    RoleCode.SMPIT_GURU,
-    RoleCode.SMAQ_GURU,
-    RoleCode.TKQ_KEPALA_SEKOLAH,
-    RoleCode.SDIT_KEPALA_SEKOLAH,
-    RoleCode.SMPIT_KEPALA_SEKOLAH,
-    RoleCode.SMAQ_KEPALA_SEKOLAH,
-    RoleCode.MUSYRIF,
-    RoleCode.MUHAFIDZ,
-    RoleCode.MURABBI,
-    RoleCode.WALI_KAMAR,
-    // Legacy UserRole values for pre-migration tokens
-    'TEACHER',
-  ];
-
-  if (!teacherCodes.includes(req.user.roleCode)) {
+  if (!TEACHER_OR_ABOVE_CODES.includes(req.user.roleCode)) {
     return next(Errors.forbidden('Teacher or higher access required'));
   }
 

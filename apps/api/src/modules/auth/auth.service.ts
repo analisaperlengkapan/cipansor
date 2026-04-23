@@ -202,14 +202,19 @@ export class AuthService {
     // The legacy `role` column is populated for backward compatibility so that
     // external tools, reports, and raw SQL queries that depend on it continue
     // to work during the migration period.
+    const VALID_LEGACY_ROLES = ['SUPER_ADMIN', 'UNIT_ADMIN', 'TEACHER', 'STAFF', 'STUDENT', 'PARENT'];
     const legacyRole = deriveLegacyRole(input.roleCode);
+    // Only write to the legacy column if the derived value is a valid UserRole
+    // enum value. New RoleCodes that have no legacy mapping (e.g. future custom
+    // roles) would otherwise crash with a PostgreSQL enum constraint violation.
+    const legacyRoleValue = VALID_LEGACY_ROLES.includes(legacyRole) ? legacyRole : null;
     const user = await prisma.$transaction(async (tx) => {
       const newUser = await tx.user.create({
         data: {
           name: input.name,
           email: input.email,
           passwordHash,
-          role: legacyRole as any, // Populate legacy column for backward compat
+          role: legacyRoleValue as any, // Populate legacy column for backward compat
           unitId: input.unitId,
           isActive: true,
         },

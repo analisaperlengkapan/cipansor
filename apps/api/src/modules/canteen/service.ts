@@ -526,6 +526,9 @@ export const transactionService = {
       // ─── ACCOUNTING INTEGRATION (AUTOMATED JOURNALS) ───
       // We process accounting entries per unit for simple unit-level reports.
       // If businessUnitId is present, we try to use BU-specific account mappings first.
+      // Use a single timestamp for all journal entries so that related entries
+      // in the same double-entry set share the exact same date.
+      const journalDate = new Date();
 
       const accountPrefix = data.businessUnitId ? `BU_${data.businessUnitId}_` : '';
 
@@ -588,7 +591,7 @@ export const transactionService = {
           data: {
             unitId,
             accountId: paymentAccount.id,
-            date: new Date(),
+            date: journalDate,
             description: `Penjualan Kantin #${transactionNo}`,
             debit: total,
             credit: 0,
@@ -603,7 +606,7 @@ export const transactionService = {
           data: {
             unitId,
             accountId: salesAccount.id,
-            date: new Date(),
+            date: journalDate,
             description: `Penjualan Kantin #${transactionNo}`,
             debit: 0,
             credit: total,
@@ -651,7 +654,7 @@ export const transactionService = {
           data: {
             unitId,
             accountId: cogsAccount.id,
-            date: new Date(),
+            date: journalDate,
             description: `BPP Penjualan Kantin #${transactionNo}`,
             debit: totalCogs,
             credit: 0,
@@ -666,7 +669,7 @@ export const transactionService = {
           data: {
             unitId,
             accountId: inventoryAccount.id,
-            date: new Date(),
+            date: journalDate,
             description: `Pengurangan Stok Kantin #${transactionNo}`,
             debit: 0,
             credit: totalCogs,

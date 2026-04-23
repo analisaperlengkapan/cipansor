@@ -361,7 +361,6 @@ export function isTeacherOrAbove(req: Request, res: Response, next: NextFunction
     RoleCode.WALI_KAMAR,
     // Legacy UserRole values for pre-migration tokens
     'TEACHER',
-    'STAFF',
   ];
 
   if (!teacherCodes.includes(req.user.roleCode)) {

@@ -198,13 +198,18 @@ export class AuthService {
     // Hash password
     const passwordHash = await hashPassword(input.password);
 
-    // Create user + role assignment in a transaction
+    // Create user + role assignment in a transaction.
+    // The legacy `role` column is populated for backward compatibility so that
+    // external tools, reports, and raw SQL queries that depend on it continue
+    // to work during the migration period.
+    const legacyRole = deriveLegacyRole(input.roleCode);
     const user = await prisma.$transaction(async (tx) => {
       const newUser = await tx.user.create({
         data: {
           name: input.name,
           email: input.email,
           passwordHash,
+          role: legacyRole as any, // Populate legacy column for backward compat
           unitId: input.unitId,
           isActive: true,
         },
@@ -647,7 +652,11 @@ export class AuthService {
     if (!user) throw Errors.notFound('User');
 
     const primaryTargetRole = user.userRoles.find((r) => r.isPrimary) || user.userRoles[0];
-    const targetRoleCode = primaryTargetRole?.role.code || '';
+    // Fall back to the legacy User.role column for unmigrated users, consistent
+    // with the login flow. Without this, a legacy SUPER_ADMIN with no
+    // UserRoleAssignment would have targetRoleCode = '' and isTargetAdmin = false,
+    // allowing non-SUPER_ADMIN admins to disable their 2FA.
+    const targetRoleCode = primaryTargetRole?.role.code || user.role || '';
     const isTargetAdmin = isAdminRoleCode(targetRoleCode);
 
     if (adminId) {
@@ -667,7 +676,8 @@ export class AuthService {
       }
 
       const adminPrimaryRole = admin.userRoles.find((r) => r.isPrimary) || admin.userRoles[0];
-      const adminRoleCode = adminPrimaryRole?.role.code || '';
+      // Fall back to legacy User.role for unmigrated admin users
+      const adminRoleCode = adminPrimaryRole?.role.code || admin.role || '';
 
       // Check Admin privileges
       if (!isAdminRoleCode(adminRoleCode)) {

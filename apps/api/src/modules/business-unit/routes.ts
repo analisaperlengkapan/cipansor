@@ -1,7 +1,12 @@
 import { Router } from 'express';
 import { authenticate, authorize } from '@/middleware/auth';
+import { validate } from '@/middleware/validate';
 import { RoleCode } from '@prisma/client';
 import { businessUnitController } from './controller';
+import {
+  CreateBusinessUnitSchema,
+  UpdateBusinessUnitSchema,
+} from './schema';
 
 const router = Router();
 
@@ -52,6 +57,7 @@ router.post(
     RoleCode.YAYASAN_ADMIN, RoleCode.TKQ_ADMIN, RoleCode.SDIT_ADMIN, RoleCode.SMPIT_ADMIN, RoleCode.SMAQ_ADMIN,
     'UNIT_ADMIN', // Legacy pre-migration token value
   ),
+  validate(CreateBusinessUnitSchema),
   businessUnitController.create
 );
 
@@ -63,6 +69,7 @@ router.put(
     RoleCode.YAYASAN_ADMIN, RoleCode.TKQ_ADMIN, RoleCode.SDIT_ADMIN, RoleCode.SMPIT_ADMIN, RoleCode.SMAQ_ADMIN,
     'UNIT_ADMIN', // Legacy pre-migration token value
   ),
+  validate(UpdateBusinessUnitSchema),
   businessUnitController.update
 );
 

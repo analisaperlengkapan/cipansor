@@ -30,8 +30,13 @@ export const registerSchema = z.object({
   roleCode: z.nativeEnum(RoleCode, { errorMap: () => ({ message: 'Invalid role code' }) }).optional(),
   // DEPRECATED: Legacy `role` field. Use `roleCode` instead.
   // Accepted for backward compatibility with pre-migration API clients.
-  // Values: SUPER_ADMIN, UNIT_ADMIN, TEACHER, STAFF, STUDENT, PARENT.
-  role: z.string().optional(),
+  // Restricted to the known legacy UserRole enum values so that invalid
+  // strings (e.g. 'admin', 'HACKER') are rejected at schema-validation time
+  // with a clean Zod error, rather than falling through to the service
+  // layer which would produce a less actionable error message.
+  role: z
+    .enum(['SUPER_ADMIN', 'UNIT_ADMIN', 'TEACHER', 'STAFF', 'STUDENT', 'PARENT'])
+    .optional(),
   unitId: z.string().uuid().optional().nullable(),
 }).refine(
   (data) => data.roleCode || data.role,

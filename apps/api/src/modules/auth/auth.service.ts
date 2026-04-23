@@ -289,8 +289,16 @@ export class AuthService {
     // role. Without this, a unit-admin (e.g. TKQ_ADMIN) could create an admin
     // for a different unit (e.g. SMAQ_ADMIN) or a foundation-level admin
     // (e.g. YAYASAN_ADMIN), bypassing organizational boundaries.
-    // The SUPER_ADMIN case above has already returned, so here we know the
-    // creator is NOT a SUPER_ADMIN.
+    //
+    // NOTE: SUPER_ADMIN creating SUPER_ADMIN falls through the earlier guard
+    // (line 284) because both sides of the condition are SUPER_ADMIN. This
+    // second check still correctly allows SUPER_ADMIN creators through via
+    // the `creatorRoleCode !== RoleCode.SUPER_ADMIN` term.
+    //
+    // BEHAVIOR CHANGE: Previously a UNIT_ADMIN could create other UNIT_ADMINs.
+    // That is no longer allowed — admin account creation is now restricted to
+    // SUPER_ADMIN only. Foundations needing delegated admin creation must
+    // promote the delegate to SUPER_ADMIN or create the accounts centrally.
     if (isAdminRoleCode(resolvedRoleCode) && creatorRoleCode !== RoleCode.SUPER_ADMIN) {
       throw Errors.forbidden('Only Super Admin can create admin-level accounts');
     }

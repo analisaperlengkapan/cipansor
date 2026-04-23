@@ -36,10 +36,21 @@ export class CounselingService {
   async getSessions(filters: CounselingListParams, currentUser: AuthenticatedUser) {
     const where: Prisma.CounselingSessionWhereInput = {};
 
-    // Access control
+    // Access control.
+    //
+    // BEHAVIOR CHANGE: Previously, non-SUPER_ADMIN users without a unitId
+    // silently received ALL counseling sessions across ALL units — a
+    // cross-unit data leak. We now reject such requests explicitly so that
+    // misconfigured role assignments are surfaced rather than hidden.
+    //
+    // If a legitimate foundation-level role needs cross-unit visibility, it
+    // should be granted via RoleCode.SUPER_ADMIN or the check should be
+    // broadened to an explicit allowlist of foundation-level roles.
     if (currentUser.roleCode !== RoleCode.SUPER_ADMIN) {
       if (!currentUser.unitId) {
-        throw Errors.forbidden('No unit assignment found for this user');
+        throw Errors.forbidden(
+          'No unit assignment found for your account. Contact an administrator to assign you to a unit.'
+        );
       }
       where.unitId = currentUser.unitId;
     }
@@ -623,9 +634,13 @@ export class CounselingService {
   async getStatistics(currentUser: AuthenticatedUser): Promise<SharedCounselingStats> {
     const where: Prisma.CounselingSessionWhereInput = {};
 
+    // Same access-control pattern as getSessions — see comment there for
+    // rationale on rejecting non-SUPER_ADMIN users without a unitId.
     if (currentUser.roleCode !== RoleCode.SUPER_ADMIN) {
       if (!currentUser.unitId) {
-        throw Errors.forbidden('No unit assignment found for this user');
+        throw Errors.forbidden(
+          'No unit assignment found for your account. Contact an administrator to assign you to a unit.'
+        );
       }
       where.unitId = currentUser.unitId;
     }

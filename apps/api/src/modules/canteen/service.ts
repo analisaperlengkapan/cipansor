@@ -2,7 +2,7 @@ import { prisma } from '../../lib/prisma';
 import { Prisma } from '@prisma/client';
 import { JournalReferenceType } from '@cipansor/shared';
 import { getAccountOrFallback, ACCOUNT_MAPPING_KEYS } from '../finance/accounting-config.service';
-import { checkPeriodStatus } from '../finance-enhancement/period.service';
+import { isPeriodOpen } from '../finance-enhancement/period.service';
 import type {
   CreateCategoryInput,
   UpdateCategoryInput,
@@ -336,8 +336,17 @@ const generateTransactionNo = async (
   // same sequence, causing a unique-constraint violation.  Keying the lock to
   // the date only matches that global scope.  The lock is released
   // automatically when the enclosing transaction commits or rolls back.
-  const lockKey = `canteen-txno:${dateStr}`;
-  await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${lockKey}))`;
+  //
+  // We use the two-argument form `pg_advisory_xact_lock(classId, objId)` with a
+  // module-specific namespace (classId) so the canteen lockspace is isolated
+  // from other modules that may also use advisory locks. Without the
+  // namespace, a `hashtext()` collision with an unrelated module's lock key
+  // could cause spurious contention across modules.
+  //
+  //   classId = 1001         → "canteen txno" namespace (arbitrary module id)
+  //   objId   = hashtext(dateStr) → serializes per-date within the namespace
+  const CANTEEN_TXNO_LOCK_NAMESPACE = 1001;
+  await tx.$queryRaw`SELECT pg_advisory_xact_lock(${CANTEEN_TXNO_LOCK_NAMESPACE}::int, hashtext(${dateStr})::int)`;
 
   const lastTransaction = await tx.canteenTransaction.findFirst({
     where: { transactionNo: { startsWith: prefix } },
@@ -585,10 +594,20 @@ export const transactionService = {
       // in the same double-entry set share the exact same date.
       const journalDate = new Date();
 
-      // Refuse to post journal entries into a closed financial period.
-      // Throws if a FinancialPeriod covering journalDate is marked isClosed,
-      // which rolls back the surrounding transaction (no stock/wallet changes).
-      await checkPeriodStatus(unitId, journalDate);
+      // Refuse to post journal entries into a closed financial period, but
+      // DO NOT block the sale itself — the business transaction (stock,
+      // wallet, order record) must still complete so the POS remains
+      // operational when an accountant has closed a prior period.
+      // When the period is closed we skip journal creation and log a warning;
+      // the accounting team can post adjusting entries manually if required.
+      const periodOpen = await isPeriodOpen(unitId, journalDate);
+      if (!periodOpen) {
+        // eslint-disable-next-line no-console
+        console.warn(
+          `[Canteen Accounting] Skipping journal entries for transaction ${transactionNo} — ` +
+          `financial period for ${journalDate.toISOString()} is closed (unit ${unitId}).`
+        );
+      }
 
       const accountPrefix = data.businessUnitId ? `BU_${data.businessUnitId}_` : '';
 
@@ -634,9 +653,12 @@ export const transactionService = {
 
       // 1. Record Revenue & Cash/Wallet Receipt
       const paymentAccount = data.paymentMethod === 'WALLET' ? walletLiabilityAccount : cashAccount;
-      const revenueJournalCreated = !!(salesAccount && paymentAccount);
+      // Skip journal creation when the period is closed OR when required
+      // account mappings are missing. The business transaction still completes
+      // either way; only the ledger entries are deferred.
+      const revenueJournalCreated = periodOpen && !!(salesAccount && paymentAccount);
 
-      if (!revenueJournalCreated) {
+      if (periodOpen && !(salesAccount && paymentAccount)) {
         // eslint-disable-next-line no-console
         console.warn(
           `[Canteen Accounting] Skipping journal entries for transaction ${transactionNo} — ` +
@@ -830,29 +852,38 @@ export const transactionService = {
             FOR UPDATE
           `;
 
-          if (lockedWallets.length > 0) {
-            const walletRow = lockedWallets[0];
-            const currentBalance = new Prisma.Decimal(walletRow.balance);
-            const newBalance = currentBalance.add(transaction.total);
-            await tx.santriWallet.update({
-              where: { id: walletRow.id },
-              data: { balance: newBalance },
-            });
-
-            await tx.walletTransaction.create({
-              data: {
-                walletId: walletRow.id,
-                type: 'REFUND',
-                amount: transaction.total,
-                balanceBefore: currentBalance,
-                balanceAfter: newBalance,
-                reference: transaction.id,
-                referenceType: 'CANTEEN',
-                description: `${data.status === 'REFUNDED' ? 'Refund' : 'Pembatalan'} transaksi #${transaction.transactionNo}`,
-                createdById: userId,
-              },
-            });
+          if (lockedWallets.length === 0) {
+            // Wallet was deleted between the original transaction and this refund.
+            // Fail loudly rather than silently skipping — a silent skip would mark
+            // the transaction as REFUNDED without returning money to the student,
+            // producing a financial discrepancy that's hard to detect later.
+            throw new Error(
+              `Wallet (${transaction.walletId}) untuk transaksi #${transaction.transactionNo} tidak ditemukan. ` +
+              `Refund tidak dapat diproses.`
+            );
           }
+
+          const walletRow = lockedWallets[0];
+          const currentBalance = new Prisma.Decimal(walletRow.balance);
+          const newBalance = currentBalance.add(transaction.total);
+          await tx.santriWallet.update({
+            where: { id: walletRow.id },
+            data: { balance: newBalance },
+          });
+
+          await tx.walletTransaction.create({
+            data: {
+              walletId: walletRow.id,
+              type: 'REFUND',
+              amount: transaction.total,
+              balanceBefore: currentBalance,
+              balanceAfter: newBalance,
+              reference: transaction.id,
+              referenceType: 'CANTEEN',
+              description: `${data.status === 'REFUNDED' ? 'Refund' : 'Pembatalan'} transaksi #${transaction.transactionNo}`,
+              createdById: userId,
+            },
+          });
         }
 
         // Restore stock
@@ -895,36 +926,49 @@ export const transactionService = {
       // second request were to read both originals and prior reversals.
       if (data.status === 'REFUNDED' || (data.status === 'CANCELLED' && lockedRows[0].status === 'COMPLETED')) {
         const reversalDate = new Date();
-        // Refuse to post reversing entries into a closed financial period.
-        // This rolls back the surrounding transaction (no wallet/stock changes).
-        await checkPeriodStatus(unitId, reversalDate);
+        // Refuse to post reversing entries into a closed financial period, but
+        // DO NOT block the refund/cancellation itself — the customer-facing
+        // wallet refund and stock restoration must still complete so customers
+        // aren't denied refunds due to an accounting configuration. Skip the
+        // reversing journal entries when the period is closed and log a
+        // warning; accounting can post adjusting entries manually.
+        const reversalPeriodOpen = await isPeriodOpen(unitId, reversalDate);
+        if (!reversalPeriodOpen) {
+          // eslint-disable-next-line no-console
+          console.warn(
+            `[Canteen Accounting] Skipping reversing journal entries for transaction ${transaction.transactionNo} — ` +
+            `financial period for ${reversalDate.toISOString()} is closed (unit ${unitId}).`
+          );
+        }
 
-        const reversalPrefix = data.status === 'REFUNDED' ? 'REFUND' : 'CANCEL';
-        const refundReference = `${reversalPrefix}:${transaction.id}`;
+        if (reversalPeriodOpen) {
+          const reversalPrefix = data.status === 'REFUNDED' ? 'REFUND' : 'CANCEL';
+          const refundReference = `${reversalPrefix}:${transaction.id}`;
 
-        const originalEntries = await tx.journalEntry.findMany({
-          where: {
-            reference: transaction.id,
-            referenceType: JournalReferenceType.CANTEEN as any,
-          },
-          select: { accountId: true, debit: true, credit: true, description: true },
-        });
-
-        for (const entry of originalEntries) {
-          // Swap debit ↔ credit to create the reversing entry
-          await tx.journalEntry.create({
-            data: {
-              unitId,
-              accountId: entry.accountId,
-              date: reversalDate,
-              description: `${data.status === 'REFUNDED' ? 'Refund' : 'Pembatalan'} ${entry.description || ''} #${transaction.transactionNo}`,
-              debit: entry.credit,
-              credit: entry.debit,
-              reference: refundReference,
+          const originalEntries = await tx.journalEntry.findMany({
+            where: {
+              reference: transaction.id,
               referenceType: JournalReferenceType.CANTEEN as any,
-              createdById: userId,
             },
+            select: { accountId: true, debit: true, credit: true, description: true },
           });
+
+          for (const entry of originalEntries) {
+            // Swap debit ↔ credit to create the reversing entry
+            await tx.journalEntry.create({
+              data: {
+                unitId,
+                accountId: entry.accountId,
+                date: reversalDate,
+                description: `${data.status === 'REFUNDED' ? 'Refund' : 'Pembatalan'} ${entry.description || ''} #${transaction.transactionNo}`,
+                debit: entry.credit,
+                credit: entry.debit,
+                reference: refundReference,
+                referenceType: JournalReferenceType.CANTEEN as any,
+                createdById: userId,
+              },
+            });
+          }
         }
       }
 

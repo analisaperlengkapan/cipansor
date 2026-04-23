@@ -91,3 +91,26 @@ export async function checkPeriodStatus(unitId: string, date: Date) {
     throw new Error(`Financial period for ${date.toISOString()} is closed.`);
   }
 }
+
+/**
+ * Non-throwing variant of checkPeriodStatus.
+ * Returns true if journal entries may be posted for this date/unit, false if
+ * the enclosing financial period is closed.
+ *
+ * Use this when the caller performs a business transaction (e.g. a canteen
+ * sale or refund) whose success should NOT be blocked by period closure —
+ * only the associated accounting entries should be skipped.
+ */
+export async function isPeriodOpen(unitId: string, date: Date): Promise<boolean> {
+  const period = await prisma.financialPeriod.findFirst({
+    where: {
+      unitId,
+      startDate: { lte: date },
+      endDate: { gte: date },
+    },
+    select: { isClosed: true },
+  });
+
+  // No matching period → treat as open (no closure enforced).
+  return !period || !period.isClosed;
+}

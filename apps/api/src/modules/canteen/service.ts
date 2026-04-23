@@ -312,6 +312,16 @@ const generateTransactionNo = async (unitId: string, tx: Parameters<Parameters<t
   const dateStr = today.toISOString().slice(0, 10).replace(/-/g, '');
   const prefix = `CNT-${dateStr}`;
 
+  // Acquire a transaction-scoped advisory lock keyed to (unitId, date) to
+  // serialize concurrent transaction-number generation within the same
+  // unit/day. Without this, two concurrent `create` transactions could both
+  // read the same "last" transactionNo under READ COMMITTED isolation and
+  // attempt to insert the same next sequence, causing one to fail with a
+  // unique-constraint violation. The lock is released automatically when
+  // the enclosing transaction commits or rolls back.
+  const lockKey = `canteen-txno:${unitId}:${dateStr}`;
+  await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${lockKey}))`;
+
   const lastTransaction = await tx.canteenTransaction.findFirst({
     where: { transactionNo: { startsWith: prefix } },
     orderBy: { transactionNo: 'desc' },

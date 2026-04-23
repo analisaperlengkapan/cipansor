@@ -30,7 +30,11 @@ function resolveLegacyRoleToRoleCode(
       case UnitType.SD_IT: return RoleCode.SDIT_ADMIN;
       case UnitType.SMP_IT: return RoleCode.SMPIT_ADMIN;
       case UnitType.SMA_QURAN: return RoleCode.SMAQ_ADMIN;
-      default: return RoleCode.YAYASAN_ADMIN;
+      // PESANTREN / OTHER / unknown: no dedicated per-unit admin RoleCode exists.
+      // Do NOT silently fall back to YAYASAN_ADMIN — that would be a privilege
+      // escalation (foundation-level governance) for a unit-level admin.
+      // Caller must supply `roleCode` explicitly for these unit types.
+      default: return null;
     }
   }
 

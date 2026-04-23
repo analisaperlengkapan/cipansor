@@ -26,9 +26,9 @@ export const businessUnitService = {
     });
   },
 
-  async getById(id: string) {
-    const bu = await prisma.businessUnit.findUnique({
-      where: { id },
+  async getById(id: string, unitId: string) {
+    const bu = await prisma.businessUnit.findFirst({
+      where: { id, unitId },
       include: {
         unit: { select: { id: true, name: true } },
         _count: true,
@@ -61,7 +61,7 @@ export const businessUnitService = {
     });
   },
 
-  async update(id: string, data: Partial<{
+  async update(id: string, unitId: string, data: Partial<{
     name: string;
     code: string;
     type: BusinessUnitType;
@@ -69,6 +69,12 @@ export const businessUnitService = {
     managerId: string;
     isActive: boolean;
   }>) {
+    // Verify the business unit belongs to this unit
+    const bu = await prisma.businessUnit.findFirst({
+      where: { id, unitId },
+    });
+    if (!bu) throw Errors.notFound('Business Unit');
+
     if (data.code) {
       const existing = await prisma.businessUnit.findUnique({
         where: { code: data.code },
@@ -85,9 +91,9 @@ export const businessUnitService = {
     });
   },
 
-  async delete(id: string) {
-    const bu = await prisma.businessUnit.findUnique({
-      where: { id },
+  async delete(id: string, unitId: string) {
+    const bu = await prisma.businessUnit.findFirst({
+      where: { id, unitId },
       include: {
         _count: {
           select: {
@@ -114,8 +120,8 @@ export const businessUnitService = {
     return prisma.businessUnit.delete({ where: { id } });
   },
 
-  async getPerformance(id: string, startDate: Date, endDate: Date) {
-    const bu = await prisma.businessUnit.findUnique({ where: { id } });
+  async getPerformance(id: string, unitId: string, startDate: Date, endDate: Date) {
+    const bu = await prisma.businessUnit.findFirst({ where: { id, unitId } });
     if (!bu) throw Errors.notFound('Business Unit');
 
     if (bu.type === 'CANTEEN') {

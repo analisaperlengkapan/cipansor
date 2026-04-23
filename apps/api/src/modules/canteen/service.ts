@@ -656,6 +656,25 @@ export const transactionService = {
         throw new Error('Hanya transaksi COMPLETED yang dapat di-refund');
       }
 
+      // Enforce valid state transitions to prevent data corruption.
+      // Re-completing a CANCELLED/REFUNDED transaction is not allowed because
+      // the reversal (stock restore, wallet refund, journal reversal) has
+      // already been applied and re-completing would not re-deduct them.
+      const VALID_TRANSITIONS: Record<string, string[]> = {
+        PENDING: ['COMPLETED', 'CANCELLED'],
+        COMPLETED: ['REFUNDED', 'CANCELLED'],
+        CANCELLED: [],   // Terminal state
+        REFUNDED: [],     // Terminal state
+      };
+
+      const currentStatus = lockedRows[0].status;
+      const allowedNext = VALID_TRANSITIONS[currentStatus] || [];
+      if (!allowedNext.includes(data.status)) {
+        throw new Error(
+          `Transisi status dari ${currentStatus} ke ${data.status} tidak diperbolehkan`
+        );
+      }
+
       // Now safe to read the full transaction — the row is locked.
       const transaction = await tx.canteenTransaction.findFirst({
         where: { id, unitId },

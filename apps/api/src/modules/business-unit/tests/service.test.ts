@@ -6,6 +6,7 @@ vi.mock('@/lib/prisma', () => ({
   prisma: {
     businessUnit: {
       findMany: vi.fn(),
+      findFirst: vi.fn(),
       findUnique: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
@@ -40,5 +41,23 @@ describe('BusinessUnitService', () => {
 
     expect(result.id).toBe('bu1');
     expect(prisma.businessUnit.create).toHaveBeenCalled();
+  });
+
+  it('should getById with unitId scoping', async () => {
+    const mockBU = { id: 'bu1', unitId: 'unit-1', name: 'Kantin A' };
+    (prisma.businessUnit.findFirst as any).mockResolvedValue(mockBU);
+
+    const result = await businessUnitService.getById('bu1', 'unit-1');
+
+    expect(result).toEqual(mockBU);
+    expect(prisma.businessUnit.findFirst).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({ id: 'bu1', unitId: 'unit-1' }),
+    }));
+  });
+
+  it('should throw notFound when getById targets a different unit', async () => {
+    (prisma.businessUnit.findFirst as any).mockResolvedValue(null);
+
+    await expect(businessUnitService.getById('bu1', 'other-unit')).rejects.toThrow();
   });
 });

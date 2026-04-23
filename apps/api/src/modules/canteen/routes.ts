@@ -96,6 +96,7 @@ router.post(
     RoleCode.SUPER_ADMIN,
     RoleCode.TKQ_ADMIN, RoleCode.SDIT_ADMIN, RoleCode.SMPIT_ADMIN, RoleCode.SMAQ_ADMIN, RoleCode.YAYASAN_ADMIN,
     RoleCode.TKQ_TATA_USAHA, RoleCode.SDIT_TATA_USAHA, RoleCode.SMPIT_TATA_USAHA, RoleCode.SMAQ_TATA_USAHA,
+    'UNIT_ADMIN', 'STAFF', // Legacy pre-migration token values
   ),
   validate(CreateCategorySchema),
   async (req: Request, res: Response, next: NextFunction) => {
@@ -121,6 +122,7 @@ router.put(
     RoleCode.SUPER_ADMIN,
     RoleCode.TKQ_ADMIN, RoleCode.SDIT_ADMIN, RoleCode.SMPIT_ADMIN, RoleCode.SMAQ_ADMIN, RoleCode.YAYASAN_ADMIN,
     RoleCode.TKQ_TATA_USAHA, RoleCode.SDIT_TATA_USAHA, RoleCode.SMPIT_TATA_USAHA, RoleCode.SMAQ_TATA_USAHA,
+    'UNIT_ADMIN', 'STAFF', // Legacy pre-migration token values
   ),
   validate(UpdateCategorySchema),
   async (req: Request, res: Response, next: NextFunction) => {
@@ -145,6 +147,7 @@ router.delete(
   authorize(
     RoleCode.SUPER_ADMIN,
     RoleCode.TKQ_ADMIN, RoleCode.SDIT_ADMIN, RoleCode.SMPIT_ADMIN, RoleCode.SMAQ_ADMIN, RoleCode.YAYASAN_ADMIN,
+    'UNIT_ADMIN', // Legacy pre-migration token value
   ),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -191,6 +194,7 @@ router.get(
     RoleCode.SUPER_ADMIN,
     RoleCode.TKQ_ADMIN, RoleCode.SDIT_ADMIN, RoleCode.SMPIT_ADMIN, RoleCode.SMAQ_ADMIN, RoleCode.YAYASAN_ADMIN,
     RoleCode.TKQ_TATA_USAHA, RoleCode.SDIT_TATA_USAHA, RoleCode.SMPIT_TATA_USAHA, RoleCode.SMAQ_TATA_USAHA,
+    'UNIT_ADMIN', 'STAFF', // Legacy pre-migration token values
   ),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -234,6 +238,7 @@ router.post(
     RoleCode.SUPER_ADMIN,
     RoleCode.TKQ_ADMIN, RoleCode.SDIT_ADMIN, RoleCode.SMPIT_ADMIN, RoleCode.SMAQ_ADMIN, RoleCode.YAYASAN_ADMIN,
     RoleCode.TKQ_TATA_USAHA, RoleCode.SDIT_TATA_USAHA, RoleCode.SMPIT_TATA_USAHA, RoleCode.SMAQ_TATA_USAHA,
+    'UNIT_ADMIN', 'STAFF', // Legacy pre-migration token values
   ),
   validate(CreateItemSchema),
   async (req: Request, res: Response, next: NextFunction) => {
@@ -259,6 +264,7 @@ router.put(
     RoleCode.SUPER_ADMIN,
     RoleCode.TKQ_ADMIN, RoleCode.SDIT_ADMIN, RoleCode.SMPIT_ADMIN, RoleCode.SMAQ_ADMIN, RoleCode.YAYASAN_ADMIN,
     RoleCode.TKQ_TATA_USAHA, RoleCode.SDIT_TATA_USAHA, RoleCode.SMPIT_TATA_USAHA, RoleCode.SMAQ_TATA_USAHA,
+    'UNIT_ADMIN', 'STAFF', // Legacy pre-migration token values
   ),
   validate(UpdateItemSchema),
   async (req: Request, res: Response, next: NextFunction) => {
@@ -283,6 +289,7 @@ router.delete(
   authorize(
     RoleCode.SUPER_ADMIN,
     RoleCode.TKQ_ADMIN, RoleCode.SDIT_ADMIN, RoleCode.SMPIT_ADMIN, RoleCode.SMAQ_ADMIN, RoleCode.YAYASAN_ADMIN,
+    'UNIT_ADMIN', // Legacy pre-migration token value
   ),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -333,6 +340,7 @@ router.get(
     RoleCode.SUPER_ADMIN,
     RoleCode.TKQ_ADMIN, RoleCode.SDIT_ADMIN, RoleCode.SMPIT_ADMIN, RoleCode.SMAQ_ADMIN, RoleCode.YAYASAN_ADMIN,
     RoleCode.TKQ_TATA_USAHA, RoleCode.SDIT_TATA_USAHA, RoleCode.SMPIT_TATA_USAHA, RoleCode.SMAQ_TATA_USAHA,
+    'UNIT_ADMIN', 'STAFF', // Legacy pre-migration token values
   ),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -385,6 +393,7 @@ router.post(
     RoleCode.SUPER_ADMIN,
     RoleCode.TKQ_ADMIN, RoleCode.SDIT_ADMIN, RoleCode.SMPIT_ADMIN, RoleCode.SMAQ_ADMIN, RoleCode.YAYASAN_ADMIN,
     RoleCode.TKQ_TATA_USAHA, RoleCode.SDIT_TATA_USAHA, RoleCode.SMPIT_TATA_USAHA, RoleCode.SMAQ_TATA_USAHA,
+    'UNIT_ADMIN', 'STAFF', // Legacy pre-migration token values
   ),
   validate(CreateTransactionSchema),
   async (req: Request, res: Response, next: NextFunction) => {
@@ -413,6 +422,7 @@ router.patch(
     RoleCode.SUPER_ADMIN,
     RoleCode.TKQ_ADMIN, RoleCode.SDIT_ADMIN, RoleCode.SMPIT_ADMIN, RoleCode.SMAQ_ADMIN, RoleCode.YAYASAN_ADMIN,
     RoleCode.TKQ_TATA_USAHA, RoleCode.SDIT_TATA_USAHA, RoleCode.SMPIT_TATA_USAHA, RoleCode.SMAQ_TATA_USAHA,
+    'UNIT_ADMIN', 'STAFF', // Legacy pre-migration token values
   ),
   validate(UpdateTransactionStatusSchema),
   async (req: Request, res: Response, next: NextFunction) => {
@@ -450,6 +460,7 @@ router.get(
     RoleCode.SUPER_ADMIN,
     RoleCode.TKQ_ADMIN, RoleCode.SDIT_ADMIN, RoleCode.SMPIT_ADMIN, RoleCode.SMAQ_ADMIN, RoleCode.YAYASAN_ADMIN,
     RoleCode.TKQ_TATA_USAHA, RoleCode.SDIT_TATA_USAHA, RoleCode.SMPIT_TATA_USAHA, RoleCode.SMAQ_TATA_USAHA,
+    'UNIT_ADMIN', 'STAFF', // Legacy pre-migration token values
   ),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -481,6 +492,7 @@ router.post(
     RoleCode.SUPER_ADMIN,
     RoleCode.TKQ_ADMIN, RoleCode.SDIT_ADMIN, RoleCode.SMPIT_ADMIN, RoleCode.SMAQ_ADMIN, RoleCode.YAYASAN_ADMIN,
     RoleCode.TKQ_TATA_USAHA, RoleCode.SDIT_TATA_USAHA, RoleCode.SMPIT_TATA_USAHA, RoleCode.SMAQ_TATA_USAHA,
+    'UNIT_ADMIN', 'STAFF', // Legacy pre-migration token values
   ),
   validate(CreateStockMovementSchema),
   async (req: Request, res: Response, next: NextFunction) => {

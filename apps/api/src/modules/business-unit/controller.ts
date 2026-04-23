@@ -134,10 +134,16 @@ export const businessUnitController = {
         return res.status(400).json({ success: false, message: 'startDate dan endDate diperlukan' });
       }
 
+      const parsedStart = new Date(startDate as string);
+      const parsedEnd = new Date(endDate as string);
+      if (isNaN(parsedStart.getTime()) || isNaN(parsedEnd.getTime())) {
+        return res.status(400).json({ success: false, message: 'Format startDate atau endDate tidak valid' });
+      }
+
       // SUPER_ADMIN can view performance without unitId scoping
       const result = isSuperAdmin(req) && !unitId
-        ? await businessUnitService.getPerformance(req.params.id, undefined, new Date(startDate as string), new Date(endDate as string))
-        : await businessUnitService.getPerformance(req.params.id, unitId!, new Date(startDate as string), new Date(endDate as string));
+        ? await businessUnitService.getPerformance(req.params.id, undefined, parsedStart, parsedEnd)
+        : await businessUnitService.getPerformance(req.params.id, unitId!, parsedStart, parsedEnd);
 
       res.json({ success: true, data: result });
     } catch (error) {

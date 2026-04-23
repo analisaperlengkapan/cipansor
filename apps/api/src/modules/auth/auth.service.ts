@@ -169,7 +169,7 @@ export class AuthService {
   async register(input: RegisterInput, creatorRoleCode: string) {
     // Validate the requested role exists
     const role = await prisma.role.findFirst({
-      where: { code: input.roleCode as RoleCode, isActive: true },
+      where: { code: input.roleCode, isActive: true },
     });
 
     if (!role) {

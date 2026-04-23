@@ -361,6 +361,7 @@ apiRouter.get('/', (_req, res) => {
       organisasi: '/api/organisasi',
       tataLaksana: '/api/tata-laksana',
       litbang: '/api/litbang',
+      businessUnits: '/api/business-units',
     },
   });
 });

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { RoleCode } from '@prisma/client';
 
 // Login schema
 export const loginSchema = z.object({
@@ -17,7 +18,7 @@ export const registerSchema = z.object({
     .regex(/[A-Z]/, 'Password must contain uppercase letter')
     .regex(/[a-z]/, 'Password must contain lowercase letter')
     .regex(/[0-9]/, 'Password must contain number'),
-  roleCode: z.string().min(1, 'Role code is required'), // e.g. 'SDIT_GURU', 'SUPER_ADMIN'
+  roleCode: z.nativeEnum(RoleCode, { errorMap: () => ({ message: 'Invalid role code' }) }),
   unitId: z.string().uuid().optional().nullable(),
 });
 

@@ -440,6 +440,8 @@ export const transactionService = {
 
       // Handle wallet payment
       let walletId: string | undefined;
+      let walletBalance = new Prisma.Decimal(0);
+      let newBalance = new Prisma.Decimal(0);
       if (data.paymentMethod === 'WALLET' && data.studentId) {
         // Acquire row lock on wallet to prevent lost updates from concurrent
         // transactions (e.g. two purchases or a purchase + refund for the same student).
@@ -454,7 +456,7 @@ export const transactionService = {
         }
 
         const walletRow = lockedWallets[0];
-        const walletBalance = new Prisma.Decimal(walletRow.balance);
+        walletBalance = new Prisma.Decimal(walletRow.balance);
 
         if (walletBalance.lessThan(total)) {
           throw new Error(
@@ -463,7 +465,7 @@ export const transactionService = {
         }
 
         // Deduct wallet balance
-        const newBalance = walletBalance.sub(total);
+        newBalance = walletBalance.sub(total);
         await tx.santriWallet.update({
           where: { id: walletRow.id },
           data: { balance: newBalance },
@@ -505,18 +507,14 @@ export const transactionService = {
       });
 
       // Create wallet transaction if wallet payment
-      if (walletId) {
-        const wallet = await tx.santriWallet.findUnique({
-          where: { id: walletId },
-        });
-
+      if (walletId && data.studentId) {
         await tx.walletTransaction.create({
           data: {
             walletId,
             type: 'PURCHASE',
             amount: total,
-            balanceBefore: wallet!.balance.add(total),
-            balanceAfter: wallet!.balance,
+            balanceBefore: walletBalance,
+            balanceAfter: newBalance,
             reference: transaction.id,
             referenceType: 'CANTEEN',
             description: `Pembelian kantin #${transactionNo}`,

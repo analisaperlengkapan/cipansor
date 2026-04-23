@@ -658,8 +658,13 @@ export const transactionService = {
       // Re-completing a CANCELLED/REFUNDED transaction is not allowed because
       // the reversal (stock restore, wallet refund, journal reversal) has
       // already been applied and re-completing would not re-deduct them.
+      // PENDING → COMPLETED is also disallowed here because the `create` method
+      // always creates transactions as COMPLETED with all side-effects (stock
+      // deduction, wallet charge, journal entries) processed atomically.
+      // Allowing PENDING → COMPLETED via updateStatus would silently skip
+      // those side-effects, producing inconsistent inventory and accounting data.
       const VALID_TRANSITIONS: Record<string, string[]> = {
-        PENDING: ['COMPLETED', 'CANCELLED'],
+        PENDING: ['CANCELLED'],
         COMPLETED: ['REFUNDED', 'CANCELLED'],
         CANCELLED: [],   // Terminal state
         REFUNDED: [],     // Terminal state

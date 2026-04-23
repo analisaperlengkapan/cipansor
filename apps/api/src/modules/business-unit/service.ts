@@ -48,7 +48,7 @@ export const businessUnitService = {
     managerId?: string;
   }) {
     const existing = await prisma.businessUnit.findUnique({
-      where: { code: data.code },
+      where: { unitId_code: { unitId: data.unitId, code: data.code } },
     });
 
     if (existing) {
@@ -77,7 +77,7 @@ export const businessUnitService = {
 
     if (data.code) {
       const existing = await prisma.businessUnit.findUnique({
-        where: { code: data.code },
+        where: { unitId_code: { unitId, code: data.code } },
       });
 
       if (existing && existing.id !== id) {

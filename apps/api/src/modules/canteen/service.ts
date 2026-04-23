@@ -531,40 +531,38 @@ export const transactionService = {
       );
 
       // 1. Record Revenue & Cash/Wallet Receipt
-      if (salesAccount && (cashAccount || walletLiabilityAccount)) {
-        const paymentAccount = data.paymentMethod === 'WALLET' ? walletLiabilityAccount : cashAccount;
+      const paymentAccount = data.paymentMethod === 'WALLET' ? walletLiabilityAccount : cashAccount;
 
-        if (paymentAccount) {
-          // Debit Cash/Wallet
-          await tx.journalEntry.create({
-            data: {
-              unitId,
-              accountId: paymentAccount.id,
-              date: new Date(),
-              description: `Penjualan Kantin #${transactionNo}`,
-              debit: total,
-              credit: 0,
-              reference: transaction.id,
-              referenceType: JournalReferenceType.CANTEEN as any,
-              createdById: cashierId,
-            },
-          });
+      if (salesAccount && paymentAccount) {
+        // Debit Cash/Wallet
+        await tx.journalEntry.create({
+          data: {
+            unitId,
+            accountId: paymentAccount.id,
+            date: new Date(),
+            description: `Penjualan Kantin #${transactionNo}`,
+            debit: total,
+            credit: 0,
+            reference: transaction.id,
+            referenceType: JournalReferenceType.CANTEEN as any,
+            createdById: cashierId,
+          },
+        });
 
-          // Credit Revenue
-          await tx.journalEntry.create({
-            data: {
-              unitId,
-              accountId: salesAccount.id,
-              date: new Date(),
-              description: `Penjualan Kantin #${transactionNo}`,
-              debit: 0,
-              credit: total,
-              reference: transaction.id,
-              referenceType: JournalReferenceType.CANTEEN as any,
-              createdById: cashierId,
-            },
-          });
-        }
+        // Credit Revenue
+        await tx.journalEntry.create({
+          data: {
+            unitId,
+            accountId: salesAccount.id,
+            date: new Date(),
+            description: `Penjualan Kantin #${transactionNo}`,
+            debit: 0,
+            credit: total,
+            reference: transaction.id,
+            referenceType: JournalReferenceType.CANTEEN as any,
+            createdById: cashierId,
+          },
+        });
       }
 
       // Update stock and create stock movements + COGS Journals

@@ -5085,7 +5085,7 @@ model BusinessUnit {
   id           String           @id @default(uuid())
   unitId       String           @map("unit_id")
   name         String
-  code         String           @unique
+  code         String
   type         BusinessUnitType
   description  String?          @db.Text
   managerId    String?          @map("manager_id")
@@ -5102,6 +5102,7 @@ model BusinessUnit {
   laundryPricings      LaundryPricing[]
   laundryTransactions  LaundryTransaction[]
 
+  @@unique([unitId, code])
   @@index([unitId])
   @@index([managerId])
   @@map("business_units")

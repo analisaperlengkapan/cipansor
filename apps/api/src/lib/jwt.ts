@@ -1,14 +1,14 @@
 import jwt from 'jsonwebtoken';
 import { config } from '@/config';
-import { UserRole } from '@prisma/client';
 
 export interface JwtPayload {
   id: string;
   sub: string;
   email: string;
-  role: UserRole;
+  roleId: string; // Active Role ID from UserRoleAssignment
+  roleCode: string; // RoleCode string for quick checks (e.g. 'SUPER_ADMIN')
   unitId: string | null;
-  roleId?: string; // Current active role ID from UserRoleAssignment
+  permissions: string[]; // Permissions array from the Role record
   type: 'access' | 'refresh';
   isTemp?: boolean; // For 2FA temporary tokens
 }

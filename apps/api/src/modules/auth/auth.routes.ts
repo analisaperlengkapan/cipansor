@@ -241,7 +241,7 @@ router.put('/password', validate(changePasswordSchema), controller.changePasswor
  *         application/json:
  *           schema:
  *             type: object
- *             required: [name, email, password, role]
+ *             required: [name, email, password, roleCode]
  *             properties:
  *               name:
  *                 type: string
@@ -253,9 +253,9 @@ router.put('/password', validate(changePasswordSchema), controller.changePasswor
  *                 type: string
  *                 format: password
  *                 minLength: 8
- *               role:
+ *               roleCode:
  *                 type: string
- *                 enum: [SUPER_ADMIN, UNIT_ADMIN, TEACHER, STAFF, STUDENT, PARENT]
+ *                 description: A valid RoleCode from the roles table (e.g. SUPER_ADMIN, SDIT_GURU)
  *               unitId:
  *                 type: string
  *                 format: uuid

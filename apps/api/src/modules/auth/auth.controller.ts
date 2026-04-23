@@ -23,9 +23,9 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
  */
 export const register = asyncHandler(async (req: Request, res: Response) => {
   const input: RegisterInput = req.body;
-  const creatorRole = req.user!.role;
+  const creatorRoleCode = req.user!.roleCode;
 
-  const user = await authService.register(input, creatorRole);
+  const user = await authService.register(input, creatorRoleCode);
 
   res.status(201).json({
     success: true,

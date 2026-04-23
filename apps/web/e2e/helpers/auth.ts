@@ -3,12 +3,12 @@ import { Page } from '@playwright/test';
 /**
  * Mocks the authenticated user state via Playwright browser context.
  */
-export async function setupAuthenticatedPage(page: Page, role: string, unitId: string = 'unit-1') {
-  await setupMockUser(page, { role, unitId });
+export async function setupAuthenticatedPage(page: Page, roleCode: string, unitId: string = 'unit-1') {
+  await setupMockUser(page, { roleCode, unitId });
   await page.goto('/');
 }
 
-export async function setupMockUser(page: Page, user: { role: string; unitId: string }) {
+export async function setupMockUser(page: Page, user: { roleCode: string; unitId: string }) {
   await page.addInitScript((mockUser) => {
     const authState = {
       state: {
@@ -16,7 +16,7 @@ export async function setupMockUser(page: Page, user: { role: string; unitId: st
         user: {
           id: 'mock-user-id',
           name: 'Super Admin E2E',
-          role: mockUser.role,
+          roleCode: mockUser.roleCode,
           unitId: mockUser.unitId,
           email: 'admin@simkari.test',
         },

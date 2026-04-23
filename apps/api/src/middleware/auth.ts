@@ -1,9 +1,17 @@
 import { Request, Response, NextFunction } from 'express';
-import { UserRole } from '@prisma/client';
+import { RoleCode } from '@prisma/client';
 import { verifyToken, JwtPayload } from '@/lib/jwt';
 import { Errors } from './error';
-import { prisma } from '@/lib/prisma';
-import { redis } from '@/lib/redis';
+
+// RoleCodes that are considered "admin" across the system
+const ADMIN_ROLE_CODES: string[] = [
+  RoleCode.SUPER_ADMIN,
+  RoleCode.YAYASAN_ADMIN,
+  RoleCode.TKQ_ADMIN,
+  RoleCode.SDIT_ADMIN,
+  RoleCode.SMPIT_ADMIN,
+  RoleCode.SMAQ_ADMIN,
+];
 
 // Extend Express Request type
 declare global {
@@ -109,15 +117,16 @@ export function optionalAuth(req: Request, res: Response, next: NextFunction) {
 }
 
 /**
- * Role-based access control middleware (Legacy Enum Check)
+ * Role-based access control middleware
+ * Checks the user's active RoleCode against the allowed list.
  */
-export function authorize(...allowedRoles: UserRole[]) {
+export function authorize(...allowedRoleCodes: string[]) {
   return (req: Request, res: Response, next: NextFunction) => {
     if (!req.user) {
       return next(Errors.unauthorized());
     }
 
-    if (!allowedRoles.includes(req.user.role)) {
+    if (!allowedRoleCodes.includes(req.user.roleCode)) {
       return next(Errors.forbidden('Insufficient permissions'));
     }
 
@@ -126,67 +135,27 @@ export function authorize(...allowedRoles: UserRole[]) {
 }
 
 /**
- * Permission-based access control middleware (New Granular Check)
+ * Permission-based access control middleware
+ * Permissions are embedded in the JWT token at login time.
  */
 export function hasPermission(permission: string) {
-  return async (req: Request, res: Response, next: NextFunction) => {
+  return (req: Request, res: Response, next: NextFunction) => {
     if (!req.user) {
       return next(Errors.unauthorized());
     }
 
     // Super Admin has all permissions implicitly
-    if (req.user.role === UserRole.SUPER_ADMIN) {
+    if (req.user.roleCode === RoleCode.SUPER_ADMIN) {
       return next();
     }
 
-    // Check if user has an active role assignment
-    if (!req.user.roleId) {
-      return next(Errors.forbidden('No active role assignment'));
+    const permissions = req.user.permissions || [];
+
+    if (!permissions.includes(permission)) {
+      return next(Errors.forbidden(`Missing permission: ${permission}`));
     }
 
-    try {
-      let permissions: string[] | null = null;
-      const cacheKey = `role:permissions:${req.user.roleId}`;
-
-      // Try Redis first
-      try {
-        const cached = await redis.get(cacheKey);
-        if (cached) {
-          permissions = JSON.parse(cached);
-        }
-      } catch (redisError) {
-        // Log error but continue to DB
-        // eslint-disable-next-line no-console
-        console.error('Redis error in auth middleware:', redisError);
-      }
-
-      if (!permissions) {
-        // Fetch from DB
-        const role = await prisma.role.findUnique({
-          where: { id: req.user.roleId },
-          select: { permissions: true },
-        });
-
-        if (!role) {
-          return next(Errors.forbidden('Active role not found'));
-        }
-
-        permissions = (role.permissions as string[]) || [];
-
-        // Cache for 5 minutes (reduced TTL to mitigate stale permissions)
-        redis
-          .setex(cacheKey, 300, JSON.stringify(permissions))
-          .catch((e) => console.error('Redis cache set error:', e));
-      }
-
-      if (!permissions.includes(permission)) {
-        return next(Errors.forbidden(`Missing permission: ${permission}`));
-      }
-
-      next();
-    } catch (error) {
-      next(error);
-    }
+    next();
   };
 }
 
@@ -198,7 +167,7 @@ export function isSuperAdmin(req: Request, res: Response, next: NextFunction) {
     return next(Errors.unauthorized());
   }
 
-  if (req.user.role !== UserRole.SUPER_ADMIN) {
+  if (req.user.roleCode !== RoleCode.SUPER_ADMIN) {
     return next(Errors.forbidden('Super Admin access required'));
   }
 
@@ -206,15 +175,14 @@ export function isSuperAdmin(req: Request, res: Response, next: NextFunction) {
 }
 
 /**
- * Check if user is Admin (Super Admin or Unit Admin)
+ * Check if user is Admin (any admin-level RoleCode)
  */
 export function isAdmin(req: Request, res: Response, next: NextFunction) {
   if (!req.user) {
     return next(Errors.unauthorized());
   }
 
-  const adminRoles: UserRole[] = [UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN];
-  if (!adminRoles.includes(req.user.role)) {
+  if (!ADMIN_ROLE_CODES.includes(req.user.roleCode)) {
     return next(Errors.forbidden('Admin access required'));
   }
 
@@ -229,9 +197,22 @@ export function isTeacherOrAbove(req: Request, res: Response, next: NextFunction
     return next(Errors.unauthorized());
   }
 
-  const allowedRoles: UserRole[] = [UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER];
+  const teacherCodes: string[] = [
+    ...ADMIN_ROLE_CODES,
+    RoleCode.TKQ_GURU,
+    RoleCode.SDIT_GURU,
+    RoleCode.SMPIT_GURU,
+    RoleCode.SMAQ_GURU,
+    RoleCode.TKQ_KEPALA_SEKOLAH,
+    RoleCode.SDIT_KEPALA_SEKOLAH,
+    RoleCode.SMPIT_KEPALA_SEKOLAH,
+    RoleCode.SMAQ_KEPALA_SEKOLAH,
+    RoleCode.MUSYRIF,
+    RoleCode.MUHAFIDZ,
+    RoleCode.MURABBI,
+  ];
 
-  if (!allowedRoles.includes(req.user.role)) {
+  if (!teacherCodes.includes(req.user.roleCode)) {
     return next(Errors.forbidden('Teacher or higher access required'));
   }
 
@@ -248,7 +229,7 @@ export function sameUnit(paramName: string = 'unitId') {
     }
 
     // Super Admin can access all units
-    if (req.user.role === UserRole.SUPER_ADMIN) {
+    if (req.user.roleCode === RoleCode.SUPER_ADMIN) {
       return next();
     }
 
@@ -260,4 +241,11 @@ export function sameUnit(paramName: string = 'unitId') {
 
     next();
   };
+}
+
+/**
+ * Helper: check if a roleCode is an admin-level role
+ */
+export function isAdminRoleCode(roleCode: string): boolean {
+  return ADMIN_ROLE_CODES.includes(roleCode);
 }

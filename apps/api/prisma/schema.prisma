@@ -15,7 +15,10 @@ datasource db {
 // ENUMS
 // =====================================
 
-// Legacy UserRole - kept for backward compatibility during migration
+// DEPRECATED: Legacy UserRole enum — no longer used in application code.
+// Kept temporarily so that existing DB columns can be migrated.
+// TODO: Remove this enum and the User.role column after running a data
+// migration that ensures every user has a UserRoleAssignment.
 enum UserRole {
   SUPER_ADMIN // Yayasan level admin
   UNIT_ADMIN // School/Unit level admin
@@ -276,7 +279,7 @@ model User {
   resetTokenHash         String?   @map("reset_token_hash")
   resetTokenExpiresAt    DateTime? @map("reset_token_expires_at")
   phone                  String?
-  role                   UserRole // Legacy role - kept for backward compatibility
+  role                   UserRole? // DEPRECATED: Legacy role field. Use UserRoleAssignment instead.
   unitId                 String?   @map("unit_id")
   isActive               Boolean   @default(true) @map("is_active")
   isTwoFactorEnabled     Boolean   @default(false) @map("is_two_factor_enabled")

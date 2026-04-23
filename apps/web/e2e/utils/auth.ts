@@ -3,7 +3,7 @@ import { Page } from '@playwright/test';
 /**
  * Mocks the authenticated user state via Playwright browser context.
  */
-export async function setupMockUser(page: Page, user: { role: string; unitId: string }) {
+export async function setupMockUser(page: Page, user: { roleCode: string; unitId: string }) {
   await page.addInitScript((mockUser) => {
     const authState = {
       state: {
@@ -11,7 +11,7 @@ export async function setupMockUser(page: Page, user: { role: string; unitId: st
         user: {
           id: 'mock-user-id',
           name: 'Super Admin E2E',
-          role: mockUser.role,
+          roleCode: mockUser.roleCode,
           unitId: mockUser.unitId,
           email: 'admin@simkari.test',
         },

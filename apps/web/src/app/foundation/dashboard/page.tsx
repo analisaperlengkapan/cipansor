@@ -32,7 +32,6 @@ import {
 import {
   Building2,
   DollarSign,
-  TrendingUp,
   UserCheck,
   GraduationCap,
   FileText,

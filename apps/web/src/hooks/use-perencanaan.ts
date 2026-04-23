@@ -67,7 +67,7 @@ export const usePlans = (params?: { type?: string; status?: string }) => {
   return useQuery({
     queryKey: ["perencanaan", params],
     queryFn: async () => {
-      const res = await api.get("/api/perencanaan", { params });
+      const res = await api.get("/perencanaan", { params });
       return res.data.data as StrategicPlan[];
     },
   });
@@ -77,7 +77,7 @@ export const useCreateActivity = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: any) => {
-      const res = await api.post("/api/perencanaan/activities", data);
+      const res = await api.post("/perencanaan/activities", data);
       return res.data;
     },
     onSuccess: () => {
@@ -94,7 +94,7 @@ export const useUpdateActivity = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...data }: { id: string } & any) => {
-      const res = await api.put(`/api/perencanaan/activities/${id}`, data);
+      const res = await api.put(`/perencanaan/activities/${id}`, data);
       return res.data;
     },
     onSuccess: () => {
@@ -111,7 +111,7 @@ export const useDeleteActivity = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const res = await api.delete(`/api/perencanaan/activities/${id}`);
+      const res = await api.delete(`/perencanaan/activities/${id}`);
       return res.data;
     },
     onSuccess: () => {
@@ -128,7 +128,7 @@ export const usePlan = (id: string) => {
   return useQuery({
     queryKey: ["perencanaan", id],
     queryFn: async () => {
-      const res = await api.get(`/api/perencanaan/${id}`);
+      const res = await api.get(`/perencanaan/${id}`);
       return res.data.data as StrategicPlan;
     },
     enabled: !!id,
@@ -139,7 +139,7 @@ export const useCreatePlan = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: any) => {
-      const res = await api.post("/api/perencanaan", data);
+      const res = await api.post("/perencanaan", data);
       return res.data;
     },
     onSuccess: () => {
@@ -156,7 +156,7 @@ export const useUpdatePlan = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...data }: { id: string } & any) => {
-      const res = await api.put(`/api/perencanaan/${id}`, data);
+      const res = await api.put(`/perencanaan/${id}`, data);
       return res.data;
     },
     onSuccess: () => {
@@ -173,7 +173,7 @@ export const useApprovePlan = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const res = await api.post(`/api/perencanaan/${id}/approve`);
+      const res = await api.post(`/perencanaan/${id}/approve`);
       return res.data;
     },
     onSuccess: () => {
@@ -190,7 +190,7 @@ export const useDeletePlan = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const res = await api.delete(`/api/perencanaan/${id}`);
+      const res = await api.delete(`/perencanaan/${id}`);
       return res.data;
     },
     onSuccess: () => {

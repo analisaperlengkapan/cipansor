@@ -4,13 +4,11 @@ import { MainLayout } from "@/components/layout";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { usePlans } from "@/hooks";
-import { BSCPerspective } from "@cipansor/shared";
 import {
   TrendingUp,
   Users,

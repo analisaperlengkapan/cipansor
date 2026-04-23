@@ -37,7 +37,10 @@ export class CounselingService {
     const where: Prisma.CounselingSessionWhereInput = {};
 
     // Access control
-    if (currentUser.roleCode !== RoleCode.SUPER_ADMIN && currentUser.unitId) {
+    if (currentUser.roleCode !== RoleCode.SUPER_ADMIN) {
+      if (!currentUser.unitId) {
+        throw Errors.forbidden('No unit assignment found for this user');
+      }
       where.unitId = currentUser.unitId;
     }
 
@@ -620,7 +623,10 @@ export class CounselingService {
   async getStatistics(currentUser: AuthenticatedUser): Promise<SharedCounselingStats> {
     const where: Prisma.CounselingSessionWhereInput = {};
 
-    if (currentUser.roleCode !== RoleCode.SUPER_ADMIN && currentUser.unitId) {
+    if (currentUser.roleCode !== RoleCode.SUPER_ADMIN) {
+      if (!currentUser.unitId) {
+        throw Errors.forbidden('No unit assignment found for this user');
+      }
       where.unitId = currentUser.unitId;
     }
 

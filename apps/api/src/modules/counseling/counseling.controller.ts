@@ -18,7 +18,7 @@ import {
 export class CounselingController {
   async getSessions(req: Request, res: Response, next: NextFunction) {
     try {
-      const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
+      const user = { sub: req.user!.sub, roleCode: req.user!.roleCode, unitId: req.user!.unitId };
       const filters: CounselingListParams = {
         status: req.query.status as any,
         category: req.query.category as any,
@@ -45,7 +45,7 @@ export class CounselingController {
   ) {
     try {
       const { sessionId } = req.params;
-      const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
+      const user = { sub: req.user!.sub, roleCode: req.user!.roleCode, unitId: req.user!.unitId };
       const session = await counselingService.getSessionById(sessionId, user);
       res.json({ success: true, data: session });
     } catch (error) {
@@ -59,7 +59,7 @@ export class CounselingController {
     next: NextFunction
   ) {
     try {
-      const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
+      const user = { sub: req.user!.sub, roleCode: req.user!.roleCode, unitId: req.user!.unitId };
       const session = await counselingService.createSession(req.body, user);
       res.status(201).json({ success: true, data: session });
     } catch (error) {
@@ -74,7 +74,7 @@ export class CounselingController {
   ) {
     try {
       const { sessionId } = req.params;
-      const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
+      const user = { sub: req.user!.sub, roleCode: req.user!.roleCode, unitId: req.user!.unitId };
       const session = await counselingService.updateSession(sessionId, req.body, user);
       res.json({ success: true, data: session });
     } catch (error) {
@@ -85,7 +85,7 @@ export class CounselingController {
   async deleteSession(req: Request, res: Response<ApiResponse<null>>, next: NextFunction) {
     try {
       const { sessionId } = req.params;
-      const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
+      const user = { sub: req.user!.sub, roleCode: req.user!.roleCode, unitId: req.user!.unitId };
       await counselingService.deleteSession(sessionId, user);
       res.json({ success: true, data: null, message: 'Session deleted successfully' });
     } catch (error) {
@@ -96,7 +96,7 @@ export class CounselingController {
   async addNote(req: Request, res: Response<ApiResponse<CounselingNote>>, next: NextFunction) {
     try {
       const { sessionId } = req.params;
-      const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
+      const user = { sub: req.user!.sub, roleCode: req.user!.roleCode, unitId: req.user!.unitId };
       const note = await counselingService.addNote(sessionId, req.body, user);
       res.status(201).json({ success: true, data: note });
     } catch (error) {
@@ -107,7 +107,7 @@ export class CounselingController {
   async updateNote(req: Request, res: Response<ApiResponse<CounselingNote>>, next: NextFunction) {
     try {
       const { noteId } = req.params;
-      const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
+      const user = { sub: req.user!.sub, roleCode: req.user!.roleCode, unitId: req.user!.unitId };
       const note = await counselingService.updateNote(noteId, req.body, user);
       res.json({ success: true, data: note });
     } catch (error) {
@@ -118,7 +118,7 @@ export class CounselingController {
   async deleteNote(req: Request, res: Response<ApiResponse<null>>, next: NextFunction) {
     try {
       const { noteId } = req.params;
-      const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
+      const user = { sub: req.user!.sub, roleCode: req.user!.roleCode, unitId: req.user!.unitId };
       await counselingService.deleteNote(noteId, user);
       res.json({ success: true, data: null, message: 'Note deleted successfully' });
     } catch (error) {
@@ -133,7 +133,7 @@ export class CounselingController {
   ) {
     try {
       const { sessionId } = req.params;
-      const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
+      const user = { sub: req.user!.sub, roleCode: req.user!.roleCode, unitId: req.user!.unitId };
       const referral = await counselingService.addReferral(sessionId, req.body, user);
       res.status(201).json({ success: true, data: referral });
     } catch (error) {
@@ -148,7 +148,7 @@ export class CounselingController {
   ) {
     try {
       const { referralId } = req.params;
-      const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
+      const user = { sub: req.user!.sub, roleCode: req.user!.roleCode, unitId: req.user!.unitId };
       const referral = await counselingService.updateReferral(referralId, req.body, user);
       res.json({ success: true, data: referral });
     } catch (error) {
@@ -159,7 +159,7 @@ export class CounselingController {
   async deleteReferral(req: Request, res: Response<ApiResponse<null>>, next: NextFunction) {
     try {
       const { referralId } = req.params;
-      const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
+      const user = { sub: req.user!.sub, roleCode: req.user!.roleCode, unitId: req.user!.unitId };
       await counselingService.deleteReferral(referralId, user);
       res.json({ success: true, data: null, message: 'Referral deleted successfully' });
     } catch (error) {
@@ -174,7 +174,7 @@ export class CounselingController {
   ) {
     try {
       const { studentId } = req.params;
-      const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
+      const user = { sub: req.user!.sub, roleCode: req.user!.roleCode, unitId: req.user!.unitId };
       const history = await counselingService.getStudentHistory(studentId, user);
       res.json({ success: true, data: history });
     } catch (error) {
@@ -188,7 +188,7 @@ export class CounselingController {
     next: NextFunction
   ) {
     try {
-      const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
+      const user = { sub: req.user!.sub, roleCode: req.user!.roleCode, unitId: req.user!.unitId };
       const sessions = await counselingService.getCounselorSessions(user);
       res.json({ success: true, data: sessions });
     } catch (error) {
@@ -202,7 +202,7 @@ export class CounselingController {
     next: NextFunction
   ) {
     try {
-      const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
+      const user = { sub: req.user!.sub, roleCode: req.user!.roleCode, unitId: req.user!.unitId };
       const stats = await counselingService.getStatistics(user);
       res.json({ success: true, data: stats });
     } catch (error) {

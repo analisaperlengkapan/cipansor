@@ -550,7 +550,7 @@ export class AuthService {
       permissions,
     });
 
-    const [, activeAcademicYearId] = await Promise.all([
+    const [, , activeAcademicYearId] = await Promise.all([
       prisma.refreshToken.create({
         data: {
           token: tokens.refreshToken,

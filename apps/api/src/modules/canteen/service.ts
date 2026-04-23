@@ -60,6 +60,12 @@ export const categoryService = {
   },
 
   async update(id: string, unitId: string, data: UpdateCategoryInput) {
+    // Verify ownership before updating
+    const existing = await prisma.canteenCategory.findFirst({ where: { id, unitId } });
+    if (!existing) {
+      throw new Error('Kategori tidak ditemukan');
+    }
+
     const { businessUnitId, ...rest } = data;
     return prisma.canteenCategory.update({
       where: { id },
@@ -75,6 +81,12 @@ export const categoryService = {
   },
 
   async delete(id: string, unitId: string) {
+    // Verify ownership before deleting
+    const existing = await prisma.canteenCategory.findFirst({ where: { id, unitId } });
+    if (!existing) {
+      throw new Error('Kategori tidak ditemukan');
+    }
+
     // Check if category has items
     const itemCount = await prisma.canteenItem.count({
       where: { categoryId: id, unitId },
@@ -201,6 +213,12 @@ export const itemService = {
   },
 
   async update(id: string, unitId: string, data: UpdateItemInput) {
+    // Verify ownership before updating
+    const existing = await prisma.canteenItem.findFirst({ where: { id, unitId } });
+    if (!existing) {
+      throw new Error('Item tidak ditemukan');
+    }
+
     const updateData: Prisma.CanteenItemUpdateInput = {};
 
     if (data.categoryId !== undefined) updateData.category = { connect: { id: data.categoryId } };
@@ -232,6 +250,12 @@ export const itemService = {
   },
 
   async delete(id: string, unitId: string) {
+    // Verify ownership before deleting
+    const existing = await prisma.canteenItem.findFirst({ where: { id, unitId } });
+    if (!existing) {
+      throw new Error('Item tidak ditemukan');
+    }
+
     // Check if item has transactions
     const transactionCount = await prisma.canteenTransactionItem.count({
       where: { itemId: id },
@@ -347,6 +371,16 @@ export const transactionService = {
 
   async create(unitId: string, cashierId: string, data: CreateTransactionInput & { businessUnitId?: string }) {
     return prisma.$transaction(async (tx) => {
+      // Validate businessUnitId belongs to the same unit (multi-tenant isolation)
+      if (data.businessUnitId) {
+        const bu = await tx.businessUnit.findFirst({
+          where: { id: data.businessUnitId, unitId },
+        });
+        if (!bu) {
+          throw new Error('Unit usaha tidak ditemukan atau tidak termasuk dalam unit ini');
+        }
+      }
+
       // Get all items
       const itemIds = data.items.map((i) => i.itemId);
       const items = await tx.canteenItem.findMany({
@@ -407,28 +441,35 @@ export const transactionService = {
       // Handle wallet payment
       let walletId: string | undefined;
       if (data.paymentMethod === 'WALLET' && data.studentId) {
-        const wallet = await tx.santriWallet.findUnique({
-          where: { studentId: data.studentId },
-        });
+        // Acquire row lock on wallet to prevent lost updates from concurrent
+        // transactions (e.g. two purchases or a purchase + refund for the same student).
+        const lockedWallets = await tx.$queryRaw<Array<{ id: string; balance: string }>>`
+          SELECT id, balance::text FROM santri_wallets
+          WHERE student_id = ${data.studentId}
+          FOR UPDATE
+        `;
 
-        if (!wallet) {
+        if (lockedWallets.length === 0) {
           throw new Error('Wallet santri tidak ditemukan');
         }
 
-        if (wallet.balance.lessThan(total)) {
+        const walletRow = lockedWallets[0];
+        const walletBalance = new Prisma.Decimal(walletRow.balance);
+
+        if (walletBalance.lessThan(total)) {
           throw new Error(
-            `Saldo wallet tidak mencukupi (saldo: Rp ${wallet.balance.toNumber().toLocaleString('id-ID')})`
+            `Saldo wallet tidak mencukupi (saldo: Rp ${walletBalance.toNumber().toLocaleString('id-ID')})`
           );
         }
 
         // Deduct wallet balance
-        const newBalance = wallet.balance.sub(total);
+        const newBalance = walletBalance.sub(total);
         await tx.santriWallet.update({
-          where: { id: wallet.id },
+          where: { id: walletRow.id },
           data: { balance: newBalance },
         });
 
-        walletId = wallet.id;
+        walletId = walletRow.id;
       }
 
       // Generate transaction number (inside tx to reduce race window)
@@ -532,8 +573,18 @@ export const transactionService = {
 
       // 1. Record Revenue & Cash/Wallet Receipt
       const paymentAccount = data.paymentMethod === 'WALLET' ? walletLiabilityAccount : cashAccount;
+      const revenueJournalCreated = !!(salesAccount && paymentAccount);
 
-      if (salesAccount && paymentAccount) {
+      if (!revenueJournalCreated) {
+        // eslint-disable-next-line no-console
+        console.warn(
+          `[Canteen Accounting] Skipping journal entries for transaction ${transactionNo} — ` +
+          `missing account mappings (salesAccount: ${!!salesAccount}, paymentAccount: ${!!paymentAccount}). ` +
+          `Configure chart of accounts for unit ${unitId}.`
+        );
+      }
+
+      if (revenueJournalCreated) {
         // Debit Cash/Wallet
         await tx.journalEntry.create({
           data: {
@@ -594,7 +645,9 @@ export const transactionService = {
       }
 
       // 2. Record COGS & Inventory Reduction
-      if (cogsAccount && inventoryAccount && totalCogs.gt(0)) {
+      // Only create COGS journals when revenue journals were also created,
+      // to avoid partially recording the business event in the ledger.
+      if (revenueJournalCreated && cogsAccount && inventoryAccount && totalCogs.gt(0)) {
         // Debit COGS
         await tx.journalEntry.create({
           data: {
@@ -678,6 +731,16 @@ export const transactionService = {
         );
       }
 
+      // Cancelling a COMPLETED transaction triggers financial reversal (wallet refund,
+      // stock restore, journal entries). Require explicit confirmation to prevent
+      // accidental cancellation of settled transactions.
+      if (data.status === 'CANCELLED' && currentStatus === 'COMPLETED' && !data.confirmReversal) {
+        throw new Error(
+          'Pembatalan transaksi yang sudah COMPLETED akan mengembalikan saldo wallet, stok, dan jurnal akuntansi. ' +
+          'Kirim confirmReversal: true untuk mengonfirmasi.'
+        );
+      }
+
       // Now safe to read the full transaction — the row is locked.
       const transaction = await tx.canteenTransaction.findFirst({
         where: { id, unitId },
@@ -699,23 +762,28 @@ export const transactionService = {
       if (shouldReverse) {
         // Refund to wallet if original payment was wallet
         if (transaction.walletId) {
-          const wallet = await tx.santriWallet.findUnique({
-            where: { id: transaction.walletId },
-          });
+          // Acquire row lock on wallet to prevent lost updates from concurrent refunds
+          const lockedWallets = await tx.$queryRaw<Array<{ id: string; balance: string }>>`
+            SELECT id, balance::text FROM santri_wallets
+            WHERE id = ${transaction.walletId}
+            FOR UPDATE
+          `;
 
-          if (wallet) {
-            const newBalance = wallet.balance.add(transaction.total);
+          if (lockedWallets.length > 0) {
+            const walletRow = lockedWallets[0];
+            const currentBalance = new Prisma.Decimal(walletRow.balance);
+            const newBalance = currentBalance.add(transaction.total);
             await tx.santriWallet.update({
-              where: { id: wallet.id },
+              where: { id: walletRow.id },
               data: { balance: newBalance },
             });
 
             await tx.walletTransaction.create({
               data: {
-                walletId: wallet.id,
+                walletId: walletRow.id,
                 type: 'REFUND',
                 amount: transaction.total,
-                balanceBefore: wallet.balance,
+                balanceBefore: currentBalance,
                 balanceAfter: newBalance,
                 reference: transaction.id,
                 referenceType: 'CANTEEN',

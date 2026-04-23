@@ -13,6 +13,64 @@ const ADMIN_ROLE_CODES: string[] = [
   RoleCode.SMAQ_ADMIN,
 ];
 
+/**
+ * Backward-compatible mapping from legacy UserRole enum values to RoleCode values.
+ * authorize() expands these so that existing route files using UserRole.UNIT_ADMIN,
+ * UserRole.TEACHER, UserRole.STAFF etc. continue to work until fully migrated.
+ * TODO: Remove this mapping once all route files are migrated to RoleCode.
+ */
+const LEGACY_ROLE_EXPANSION: Record<string, string[]> = {
+  // SUPER_ADMIN exists in both enums — identity mapping
+  SUPER_ADMIN: [RoleCode.SUPER_ADMIN],
+  // Legacy UNIT_ADMIN → all per-unit admin RoleCodes
+  UNIT_ADMIN: [
+    RoleCode.YAYASAN_ADMIN,
+    RoleCode.TKQ_ADMIN,
+    RoleCode.SDIT_ADMIN,
+    RoleCode.SMPIT_ADMIN,
+    RoleCode.SMAQ_ADMIN,
+  ],
+  // Legacy TEACHER → all per-unit teacher + kepala sekolah + pesantren roles
+  TEACHER: [
+    RoleCode.TKQ_GURU, RoleCode.SDIT_GURU, RoleCode.SMPIT_GURU, RoleCode.SMAQ_GURU,
+    RoleCode.TKQ_KEPALA_SEKOLAH, RoleCode.SDIT_KEPALA_SEKOLAH,
+    RoleCode.SMPIT_KEPALA_SEKOLAH, RoleCode.SMAQ_KEPALA_SEKOLAH,
+    RoleCode.MUSYRIF, RoleCode.MUHAFIDZ, RoleCode.MURABBI, RoleCode.WALI_KAMAR,
+  ],
+  // Legacy STAFF → all per-unit tata usaha roles
+  STAFF: [
+    RoleCode.TKQ_TATA_USAHA, RoleCode.SDIT_TATA_USAHA,
+    RoleCode.SMPIT_TATA_USAHA, RoleCode.SMAQ_TATA_USAHA,
+  ],
+  // Legacy STUDENT → all per-unit student roles
+  STUDENT: [
+    RoleCode.TKQ_SISWA, RoleCode.SDIT_SISWA, RoleCode.SMPIT_SISWA, RoleCode.SMAQ_SISWA,
+  ],
+  // Legacy PARENT → all per-unit parent roles
+  PARENT: [
+    RoleCode.TKQ_ORANG_TUA, RoleCode.SDIT_ORANG_TUA,
+    RoleCode.SMPIT_ORANG_TUA, RoleCode.SMAQ_ORANG_TUA,
+  ],
+};
+
+/**
+ * Expand a list of role identifiers, resolving any legacy UserRole values
+ * to their RoleCode equivalents. Values that are already valid RoleCodes
+ * pass through unchanged.
+ */
+function expandRoleCodes(codes: string[]): string[] {
+  const expanded = new Set<string>();
+  for (const code of codes) {
+    const mapping = LEGACY_ROLE_EXPANSION[code];
+    if (mapping) {
+      mapping.forEach((rc) => expanded.add(rc));
+    }
+    // Always add the original value so that native RoleCodes pass through
+    expanded.add(code);
+  }
+  return Array.from(expanded);
+}
+
 // Extend Express Request type
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -119,14 +177,17 @@ export function optionalAuth(req: Request, res: Response, next: NextFunction) {
 /**
  * Role-based access control middleware
  * Checks the user's active RoleCode against the allowed list.
+ * Accepts both native RoleCode values and legacy UserRole values
+ * (which are auto-expanded via LEGACY_ROLE_EXPANSION).
  */
 export function authorize(...allowedRoleCodes: string[]) {
+  const expanded = expandRoleCodes(allowedRoleCodes);
   return (req: Request, res: Response, next: NextFunction) => {
     if (!req.user) {
       return next(Errors.unauthorized());
     }
 
-    if (!allowedRoleCodes.includes(req.user.roleCode)) {
+    if (!expanded.includes(req.user.roleCode)) {
       return next(Errors.forbidden('Insufficient permissions'));
     }
 
@@ -210,6 +271,7 @@ export function isTeacherOrAbove(req: Request, res: Response, next: NextFunction
     RoleCode.MUSYRIF,
     RoleCode.MUHAFIDZ,
     RoleCode.MURABBI,
+    RoleCode.WALI_KAMAR,
   ];
 
   if (!teacherCodes.includes(req.user.roleCode)) {

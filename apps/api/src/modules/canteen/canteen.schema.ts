@@ -70,6 +70,10 @@ export const CreateTransactionSchema = z.object({
 export const UpdateTransactionStatusSchema = z.object({
   status: z.enum(['PENDING', 'COMPLETED', 'CANCELLED', 'REFUNDED']),
   notes: z.string().optional(),
+  // Required when cancelling a COMPLETED transaction, since it triggers
+  // financial side-effects (wallet refund, stock restore, journal reversal).
+  // Prevents accidental cancellation of settled transactions.
+  confirmReversal: z.boolean().optional(),
 });
 
 export const ListTransactionsQuerySchema = z.object({

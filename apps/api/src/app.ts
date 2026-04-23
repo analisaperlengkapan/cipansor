@@ -105,6 +105,7 @@ import talentaRoutes from '@/modules/talenta/talenta.routes';
 import organisasiRoutes from '@/modules/organisasi/organisasi.routes';
 import tataLaksanaRoutes from '@/modules/tatalaksana/tatalaksana.routes';
 import litbangRoutes from '@/modules/litbang/litbang.routes';
+import businessUnitRoutes from '@/modules/business-unit/routes';
 
 // Create Express app
 const app = express();
@@ -283,6 +284,7 @@ apiRouter.use('/talenta', talentaRoutes);
 apiRouter.use('/organisasi', organisasiRoutes);
 apiRouter.use('/tata-laksana', tataLaksanaRoutes);
 apiRouter.use('/litbang', litbangRoutes);
+apiRouter.use('/business-units', businessUnitRoutes);
 
 // API info
 apiRouter.get('/', (_req, res) => {

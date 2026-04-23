@@ -170,7 +170,7 @@ export default function StrategyMapPage() {
                   </div>
 
                   {/* Causality Arrows (Placeholder) */}
-                  {key !== 'FINANCIAL' && (
+                  {key !== 'LEARNING' && (
                     <div className="flex justify-center my-[-10px] z-10 relative">
                        <div className="p-1 bg-background rounded-full border shadow-sm">
                          <TrendingUp size={14} className="text-muted-foreground rotate-180" />

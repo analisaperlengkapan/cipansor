@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authenticate, authorize } from '@/middleware/auth';
+import { authenticate, authorize, isSuperAdmin } from '@/middleware/auth';
 import { validate } from '@/middleware/validate';
 import { UserRole } from '@prisma/client';
 import { financeEnhancementController } from './finance-enhancement.controller';
@@ -220,6 +220,14 @@ router.get(
   '/reports/cash-flow-forecast',
   authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
   financeEnhancementController.getCashFlowForecast
+);
+
+// ==================== CONSOLIDATED BUDGET (Foundation-level) ====================
+
+router.get(
+  '/reports/consolidated-budget',
+  isSuperAdmin,
+  financeEnhancementController.getConsolidatedBudget
 );
 
 export default router;

@@ -1,13 +1,14 @@
 import { prisma } from '@/lib/prisma';
 import { Errors } from '@/middleware/error';
 import {
-  UserRole,
+  RoleCode,
   CounselingStatus,
   CounselingCategory,
   CounselingPriority,
   ReferralType,
   Prisma,
 } from '@prisma/client';
+import { isAdminRoleCode } from '@/middleware/auth';
 import { createNotification } from '../notifications/service';
 import {
   CounselingSession as SharedCounselingSession,
@@ -21,10 +22,10 @@ import {
   CounselingListParams,
 } from '@cipansor/shared';
 
-// User type from JwtPayload
+// User type from JwtPayload (aligned with new RoleCode-based auth)
 interface AuthenticatedUser {
   sub: string;
-  role: UserRole;
+  roleCode: string;
   unitId: string | null;
 }
 
@@ -36,7 +37,7 @@ export class CounselingService {
     const where: Prisma.CounselingSessionWhereInput = {};
 
     // Access control
-    if (currentUser.role !== UserRole.SUPER_ADMIN && currentUser.unitId) {
+    if (currentUser.roleCode !== RoleCode.SUPER_ADMIN && currentUser.unitId) {
       where.unitId = currentUser.unitId;
     }
 
@@ -160,7 +161,7 @@ export class CounselingService {
     }
 
     // Access control
-    if (currentUser.role !== UserRole.SUPER_ADMIN && session.unitId !== currentUser.unitId) {
+    if (currentUser.roleCode !== RoleCode.SUPER_ADMIN && session.unitId !== currentUser.unitId) {
       throw Errors.forbidden('Access denied');
     }
 
@@ -196,12 +197,18 @@ export class CounselingService {
     if (teacher) {
       counselorId = teacher.id;
     } else {
-      if (currentUser.role === UserRole.SUPER_ADMIN || currentUser.role === UserRole.UNIT_ADMIN) {
+      if (isAdminRoleCode(currentUser.roleCode)) {
         throw Errors.forbidden('You must have a Teacher profile to be assigned as a counselor.');
       } else {
         throw Errors.forbidden('Only teachers can create counseling sessions');
       }
     }
+
+    // PSYCHOLOGICAL_OBSERVATION sessions default to confidential regardless
+    // of the caller's input, since they contain sensitive mental health data.
+    const isConfidential = input.category === 'PSYCHOLOGICAL_OBSERVATION'
+      ? true
+      : (input.isConfidential ?? true);
 
     const session = await prisma.counselingSession.create({
       data: {
@@ -215,7 +222,7 @@ export class CounselingService {
         scheduledAt: new Date(input.scheduledAt),
         duration: input.duration,
         location: input.location,
-        isConfidential: input.isConfidential ?? true,
+        isConfidential,
         status: CounselingStatus.SCHEDULED,
       },
       include: {
@@ -244,7 +251,7 @@ export class CounselingService {
       throw Errors.notFound('Session not found');
     }
 
-    if (currentUser.role !== UserRole.SUPER_ADMIN && session.unitId !== currentUser.unitId) {
+    if (currentUser.roleCode !== RoleCode.SUPER_ADMIN && session.unitId !== currentUser.unitId) {
       throw Errors.forbidden('Access denied');
     }
 
@@ -277,7 +284,6 @@ export class CounselingService {
         student: {
           include: {
             user: { select: { name: true } },
-            parents: { include: { parent: { select: { id: true } } } }
           }
         },
         counselor: { include: { user: { select: { name: true } } } },
@@ -286,11 +292,19 @@ export class CounselingService {
 
     // ─── NOTIFICATION INTEGRATION ───
     // If session is completed, notify primary parents.
+    // Parent data is fetched only when the notification condition is met
+    // to avoid leaking parent relationship data in confidential sessions.
     // Wrapped in try/catch so a non-critical notification failure
     // does not cause the already-persisted session update to appear failed.
     if (updated.status === CounselingStatus.COMPLETED && session.status !== CounselingStatus.COMPLETED && !updated.isConfidential) {
       try {
-        const primaryParent = updated.student.parents.find(p => p.isPrimary) || updated.student.parents[0];
+        const studentWithParents = await prisma.student.findUnique({
+          where: { id: updated.studentId },
+          include: {
+            parents: { select: { parentId: true, isPrimary: true } },
+          },
+        });
+        const primaryParent = studentWithParents?.parents.find(p => p.isPrimary) || studentWithParents?.parents[0];
         if (primaryParent) {
           await createNotification({
             userId: primaryParent.parentId,
@@ -320,7 +334,7 @@ export class CounselingService {
       throw Errors.notFound('Session not found');
     }
 
-    if (currentUser.role !== UserRole.SUPER_ADMIN && session.unitId !== currentUser.unitId) {
+    if (currentUser.roleCode !== RoleCode.SUPER_ADMIN && session.unitId !== currentUser.unitId) {
       throw Errors.forbidden('Access denied');
     }
 
@@ -347,7 +361,7 @@ export class CounselingService {
       throw Errors.notFound('Session not found');
     }
 
-    if (currentUser.role !== UserRole.SUPER_ADMIN && session.unitId !== currentUser.unitId) {
+    if (currentUser.roleCode !== RoleCode.SUPER_ADMIN && session.unitId !== currentUser.unitId) {
       throw Errors.forbidden('Access denied');
     }
 
@@ -383,7 +397,7 @@ export class CounselingService {
       throw Errors.notFound('Note not found');
     }
 
-    if (currentUser.role !== UserRole.SUPER_ADMIN && note.session.unitId !== currentUser.unitId) {
+    if (currentUser.roleCode !== RoleCode.SUPER_ADMIN && note.session.unitId !== currentUser.unitId) {
       throw Errors.forbidden('Access denied');
     }
 
@@ -414,7 +428,7 @@ export class CounselingService {
       throw Errors.notFound('Note not found');
     }
 
-    if (currentUser.role !== UserRole.SUPER_ADMIN && note.session.unitId !== currentUser.unitId) {
+    if (currentUser.roleCode !== RoleCode.SUPER_ADMIN && note.session.unitId !== currentUser.unitId) {
       throw Errors.forbidden('Access denied');
     }
 
@@ -438,7 +452,7 @@ export class CounselingService {
       throw Errors.notFound('Session not found');
     }
 
-    if (currentUser.role !== UserRole.SUPER_ADMIN && session.unitId !== currentUser.unitId) {
+    if (currentUser.roleCode !== RoleCode.SUPER_ADMIN && session.unitId !== currentUser.unitId) {
       throw Errors.forbidden('Access denied');
     }
 
@@ -479,7 +493,7 @@ export class CounselingService {
     }
 
     if (
-      currentUser.role !== UserRole.SUPER_ADMIN &&
+      currentUser.roleCode !== RoleCode.SUPER_ADMIN &&
       referral.session.unitId !== currentUser.unitId
     ) {
       throw Errors.forbidden('Access denied');
@@ -518,7 +532,7 @@ export class CounselingService {
     }
 
     if (
-      currentUser.role !== UserRole.SUPER_ADMIN &&
+      currentUser.roleCode !== RoleCode.SUPER_ADMIN &&
       referral.session.unitId !== currentUser.unitId
     ) {
       throw Errors.forbidden('Access denied');
@@ -540,7 +554,7 @@ export class CounselingService {
       throw Errors.notFound('Student not found');
     }
 
-    if (currentUser.role !== UserRole.SUPER_ADMIN && student.unitId !== currentUser.unitId) {
+    if (currentUser.roleCode !== RoleCode.SUPER_ADMIN && student.unitId !== currentUser.unitId) {
       throw Errors.forbidden('Access denied');
     }
 
@@ -587,7 +601,7 @@ export class CounselingService {
   async getStatistics(currentUser: AuthenticatedUser): Promise<SharedCounselingStats> {
     const where: Prisma.CounselingSessionWhereInput = {};
 
-    if (currentUser.role !== UserRole.SUPER_ADMIN && currentUser.unitId) {
+    if (currentUser.roleCode !== RoleCode.SUPER_ADMIN && currentUser.unitId) {
       where.unitId = currentUser.unitId;
     }
 

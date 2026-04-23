@@ -1,5 +1,5 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { UserRole } from '@prisma/client';
+import { RoleCode } from '@prisma/client';
 import { authenticate, authorize } from '../../middleware/auth';
 import { validate } from '../../middleware/validate';
 import {
@@ -67,7 +67,11 @@ router.get(
 router.post(
   '/categories',
   authenticate,
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  authorize(
+    RoleCode.SUPER_ADMIN,
+    RoleCode.TKQ_ADMIN, RoleCode.SDIT_ADMIN, RoleCode.SMPIT_ADMIN, RoleCode.SMAQ_ADMIN, RoleCode.YAYASAN_ADMIN,
+    RoleCode.TKQ_TATA_USAHA, RoleCode.SDIT_TATA_USAHA, RoleCode.SMPIT_TATA_USAHA, RoleCode.SMAQ_TATA_USAHA,
+  ),
   validate(CreateCategorySchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -88,7 +92,11 @@ router.post(
 router.put(
   '/categories/:id',
   authenticate,
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  authorize(
+    RoleCode.SUPER_ADMIN,
+    RoleCode.TKQ_ADMIN, RoleCode.SDIT_ADMIN, RoleCode.SMPIT_ADMIN, RoleCode.SMAQ_ADMIN, RoleCode.YAYASAN_ADMIN,
+    RoleCode.TKQ_TATA_USAHA, RoleCode.SDIT_TATA_USAHA, RoleCode.SMPIT_TATA_USAHA, RoleCode.SMAQ_TATA_USAHA,
+  ),
   validate(UpdateCategorySchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -109,7 +117,10 @@ router.put(
 router.delete(
   '/categories/:id',
   authenticate,
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  authorize(
+    RoleCode.SUPER_ADMIN,
+    RoleCode.TKQ_ADMIN, RoleCode.SDIT_ADMIN, RoleCode.SMPIT_ADMIN, RoleCode.SMAQ_ADMIN, RoleCode.YAYASAN_ADMIN,
+  ),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const unitId = req.user?.unitId;
@@ -151,7 +162,11 @@ router.get('/items', authenticate, async (req: Request, res: Response, next: Nex
 router.get(
   '/items/low-stock',
   authenticate,
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  authorize(
+    RoleCode.SUPER_ADMIN,
+    RoleCode.TKQ_ADMIN, RoleCode.SDIT_ADMIN, RoleCode.SMPIT_ADMIN, RoleCode.SMAQ_ADMIN, RoleCode.YAYASAN_ADMIN,
+    RoleCode.TKQ_TATA_USAHA, RoleCode.SDIT_TATA_USAHA, RoleCode.SMPIT_TATA_USAHA, RoleCode.SMAQ_TATA_USAHA,
+  ),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const unitId = req.user?.unitId;
@@ -190,7 +205,11 @@ router.get('/items/:id', authenticate, async (req: Request, res: Response, next:
 router.post(
   '/items',
   authenticate,
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  authorize(
+    RoleCode.SUPER_ADMIN,
+    RoleCode.TKQ_ADMIN, RoleCode.SDIT_ADMIN, RoleCode.SMPIT_ADMIN, RoleCode.SMAQ_ADMIN, RoleCode.YAYASAN_ADMIN,
+    RoleCode.TKQ_TATA_USAHA, RoleCode.SDIT_TATA_USAHA, RoleCode.SMPIT_TATA_USAHA, RoleCode.SMAQ_TATA_USAHA,
+  ),
   validate(CreateItemSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -211,7 +230,11 @@ router.post(
 router.put(
   '/items/:id',
   authenticate,
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  authorize(
+    RoleCode.SUPER_ADMIN,
+    RoleCode.TKQ_ADMIN, RoleCode.SDIT_ADMIN, RoleCode.SMPIT_ADMIN, RoleCode.SMAQ_ADMIN, RoleCode.YAYASAN_ADMIN,
+    RoleCode.TKQ_TATA_USAHA, RoleCode.SDIT_TATA_USAHA, RoleCode.SMPIT_TATA_USAHA, RoleCode.SMAQ_TATA_USAHA,
+  ),
   validate(UpdateItemSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -232,7 +255,10 @@ router.put(
 router.delete(
   '/items/:id',
   authenticate,
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  authorize(
+    RoleCode.SUPER_ADMIN,
+    RoleCode.TKQ_ADMIN, RoleCode.SDIT_ADMIN, RoleCode.SMPIT_ADMIN, RoleCode.SMAQ_ADMIN, RoleCode.YAYASAN_ADMIN,
+  ),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const unitId = req.user?.unitId;
@@ -278,7 +304,11 @@ router.get(
 router.get(
   '/transactions/stats',
   authenticate,
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  authorize(
+    RoleCode.SUPER_ADMIN,
+    RoleCode.TKQ_ADMIN, RoleCode.SDIT_ADMIN, RoleCode.SMPIT_ADMIN, RoleCode.SMAQ_ADMIN, RoleCode.YAYASAN_ADMIN,
+    RoleCode.TKQ_TATA_USAHA, RoleCode.SDIT_TATA_USAHA, RoleCode.SMPIT_TATA_USAHA, RoleCode.SMAQ_TATA_USAHA,
+  ),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const unitId = req.user?.unitId;
@@ -326,7 +356,11 @@ router.get(
 router.post(
   '/transactions',
   authenticate,
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  authorize(
+    RoleCode.SUPER_ADMIN,
+    RoleCode.TKQ_ADMIN, RoleCode.SDIT_ADMIN, RoleCode.SMPIT_ADMIN, RoleCode.SMAQ_ADMIN, RoleCode.YAYASAN_ADMIN,
+    RoleCode.TKQ_TATA_USAHA, RoleCode.SDIT_TATA_USAHA, RoleCode.SMPIT_TATA_USAHA, RoleCode.SMAQ_TATA_USAHA,
+  ),
   validate(CreateTransactionSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -350,7 +384,11 @@ router.post(
 router.patch(
   '/transactions/:id/status',
   authenticate,
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  authorize(
+    RoleCode.SUPER_ADMIN,
+    RoleCode.TKQ_ADMIN, RoleCode.SDIT_ADMIN, RoleCode.SMPIT_ADMIN, RoleCode.SMAQ_ADMIN, RoleCode.YAYASAN_ADMIN,
+    RoleCode.TKQ_TATA_USAHA, RoleCode.SDIT_TATA_USAHA, RoleCode.SMPIT_TATA_USAHA, RoleCode.SMAQ_TATA_USAHA,
+  ),
   validate(UpdateTransactionStatusSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -383,7 +421,11 @@ router.patch(
 router.get(
   '/stock-movements',
   authenticate,
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  authorize(
+    RoleCode.SUPER_ADMIN,
+    RoleCode.TKQ_ADMIN, RoleCode.SDIT_ADMIN, RoleCode.SMPIT_ADMIN, RoleCode.SMAQ_ADMIN, RoleCode.YAYASAN_ADMIN,
+    RoleCode.TKQ_TATA_USAHA, RoleCode.SDIT_TATA_USAHA, RoleCode.SMPIT_TATA_USAHA, RoleCode.SMAQ_TATA_USAHA,
+  ),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const unitId = req.user?.unitId;
@@ -410,7 +452,11 @@ router.get(
 router.post(
   '/stock-movements',
   authenticate,
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  authorize(
+    RoleCode.SUPER_ADMIN,
+    RoleCode.TKQ_ADMIN, RoleCode.SDIT_ADMIN, RoleCode.SMPIT_ADMIN, RoleCode.SMAQ_ADMIN, RoleCode.YAYASAN_ADMIN,
+    RoleCode.TKQ_TATA_USAHA, RoleCode.SDIT_TATA_USAHA, RoleCode.SMPIT_TATA_USAHA, RoleCode.SMAQ_TATA_USAHA,
+  ),
   validate(CreateStockMovementSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {

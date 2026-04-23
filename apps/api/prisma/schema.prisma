@@ -3,7 +3,15 @@
 // Supports: TK Qur'an, SD IT (Islam Terpadu), SMP IT (Islam Terpadu), SMA Qur'an with Tahfidz 30 Juz + Sanad
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  // Enables `nullsNotDistinct` on @@unique so that NULL values in a
+  // composite unique key are treated as equal (PostgreSQL 15+).
+  // Required by the (unitId, businessUnitId, name/code) constraints on
+  // CanteenCategory, CanteenItem and LaundryPricing: without this, two rows
+  // with the same (unitId, name) and NULL businessUnitId both pass the
+  // unique check, defeating the constraint for legacy rows not scoped to
+  // a BusinessUnit.
+  previewFeatures = ["nullsNotDistinct"]
 }
 
 datasource db {
@@ -5128,7 +5136,7 @@ model CanteenCategory {
   businessUnit BusinessUnit? @relation(fields: [businessUnitId], references: [id])
   items        CanteenItem[]
 
-  @@unique([unitId, businessUnitId, name])
+  @@unique([unitId, businessUnitId, name], nullsNotDistinct: true)
   @@index([businessUnitId])
   @@index([unitId])
   @@map("canteen_categories")
@@ -5161,7 +5169,7 @@ model CanteenItem {
   transactionItems CanteenTransactionItem[]
   stockMovements   CanteenStockMovement[]
 
-  @@unique([unitId, businessUnitId, code])
+  @@unique([unitId, businessUnitId, code], nullsNotDistinct: true)
   @@index([unitId])
   @@index([businessUnitId])
   @@index([categoryId])
@@ -5273,7 +5281,7 @@ model LaundryPricing {
   businessUnit BusinessUnit?        @relation(fields: [businessUnitId], references: [id])
   transactions LaundryTransaction[]
 
-  @@unique([unitId, businessUnitId, name])
+  @@unique([unitId, businessUnitId, name], nullsNotDistinct: true)
   @@index([businessUnitId])
   @@index([unitId])
   @@map("laundry_pricings")

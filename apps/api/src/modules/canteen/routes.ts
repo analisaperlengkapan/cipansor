@@ -24,12 +24,22 @@ const router = Router();
  * Resolve the effective unitId for the current request.
  * SUPER_ADMIN users have unitId: null in their JWT (they are global).
  * For such users, we allow unitId to be supplied via query param or body.
+ * Non-SUPER_ADMIN users MUST use the unitId from their JWT to prevent
+ * cross-unit access via query/body parameter injection.
  */
 function resolveUnitId(req: Request): string | undefined {
-  return req.user?.unitId
-    || (req.query.unitId as string | undefined)
-    || req.body?.unitId
-    || undefined;
+  // Non-SUPER_ADMIN users: always use JWT unitId (never trust query/body)
+  if (req.user?.unitId) {
+    return req.user.unitId;
+  }
+  // Only SUPER_ADMIN (who has unitId: null) may specify unitId via query/body
+  if (req.user?.roleCode === RoleCode.SUPER_ADMIN) {
+    return (req.query.unitId as string | undefined)
+      || req.body?.unitId
+      || undefined;
+  }
+  // Non-SUPER_ADMIN with no unitId in JWT — cannot resolve
+  return undefined;
 }
 
 // =============================================================================

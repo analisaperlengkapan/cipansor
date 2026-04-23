@@ -58,15 +58,33 @@ export class AuthService {
       throw Errors.unauthorized('Invalid email or password');
     }
 
-    // Determine active role (primary or first role)
+    // Determine active role (primary or first role).
+    // Fall back to the legacy User.role column for users who have not yet been
+    // migrated to UserRoleAssignment records.  This prevents a total lockout
+    // when the code is deployed before the data migration has run.
     const primaryAssignment = user.userRoles.find((r) => r.isPrimary) || user.userRoles[0];
 
-    if (!primaryAssignment) {
+    let roleCode: string;
+    let permissions: string[];
+    let roleId: string | undefined;
+    let assignmentUnitId: string | null | undefined;
+
+    if (primaryAssignment) {
+      roleCode = primaryAssignment.role.code;
+      permissions = (primaryAssignment.role.permissions as string[]) || [];
+      roleId = primaryAssignment.roleId;
+      assignmentUnitId = primaryAssignment.unitId;
+    } else if (user.role) {
+      // Legacy fallback: user has no UserRoleAssignment but still has the
+      // deprecated User.role column populated.
+      roleCode = user.role; // e.g. 'SUPER_ADMIN', 'UNIT_ADMIN', 'TEACHER'
+      permissions = [];
+      roleId = undefined;
+      assignmentUnitId = undefined;
+    } else {
       throw Errors.forbidden('No active role assignment found for this user');
     }
 
-    const roleCode = primaryAssignment.role.code;
-    const permissions = (primaryAssignment.role.permissions as string[]) || [];
     const isUserAdmin = isAdminRoleCode(roleCode);
 
     // Build the payload used for all token generation in this method
@@ -74,9 +92,9 @@ export class AuthService {
       id: user.id,
       sub: user.id,
       email: user.email,
-      roleId: primaryAssignment.roleId,
+      roleId: roleId || '',
       roleCode,
-      unitId: primaryAssignment.unitId || user.unitId,
+      unitId: assignmentUnitId || user.unitId,
       permissions,
       role: deriveLegacyRole(roleCode),
     };
@@ -266,25 +284,37 @@ export class AuthService {
       where: { id: storedToken.id },
     });
 
-    // Get primary role
+    // Get primary role — with legacy fallback for unmigrated users
     const primaryAssignment =
       storedToken.user.userRoles.find((r) => r.isPrimary) || storedToken.user.userRoles[0];
 
-    if (!primaryAssignment) {
+    let refreshRoleCode: string;
+    let permissions: string[];
+    let refreshRoleId: string | undefined;
+    let refreshUnitId: string | null | undefined;
+
+    if (primaryAssignment) {
+      refreshRoleCode = primaryAssignment.role.code;
+      permissions = (primaryAssignment.role.permissions as string[]) || [];
+      refreshRoleId = primaryAssignment.roleId;
+      refreshUnitId = primaryAssignment.unitId;
+    } else if (storedToken.user.role) {
+      refreshRoleCode = storedToken.user.role;
+      permissions = [];
+      refreshRoleId = undefined;
+      refreshUnitId = undefined;
+    } else {
       throw Errors.forbidden('No active role assignment found');
     }
 
-    const permissions = (primaryAssignment.role.permissions as string[]) || [];
-
     // Generate new tokens
-    const refreshRoleCode = primaryAssignment.role.code;
     const tokens = generateTokenPair({
       id: storedToken.user.id,
       sub: storedToken.user.id,
       email: storedToken.user.email,
-      roleId: primaryAssignment.roleId,
+      roleId: refreshRoleId || '',
       roleCode: refreshRoleCode,
-      unitId: primaryAssignment.unitId || storedToken.user.unitId,
+      unitId: refreshUnitId || storedToken.user.unitId,
       permissions,
       role: deriveLegacyRole(refreshRoleCode),
     });
@@ -534,23 +564,35 @@ export class AuthService {
       throw Errors.unauthorized('Invalid OTP code');
     }
 
-    // Generate tokens
+    // Generate tokens — with legacy fallback for unmigrated users
     const primaryAssignment = user.userRoles.find((r) => r.isPrimary) || user.userRoles[0];
 
-    if (!primaryAssignment) {
+    let twoFaRoleCode: string;
+    let permissions: string[];
+    let twoFaRoleId: string | undefined;
+    let twoFaUnitId: string | null | undefined;
+
+    if (primaryAssignment) {
+      twoFaRoleCode = primaryAssignment.role.code;
+      permissions = (primaryAssignment.role.permissions as string[]) || [];
+      twoFaRoleId = primaryAssignment.roleId;
+      twoFaUnitId = primaryAssignment.unitId;
+    } else if (user.role) {
+      twoFaRoleCode = user.role;
+      permissions = [];
+      twoFaRoleId = undefined;
+      twoFaUnitId = undefined;
+    } else {
       throw Errors.forbidden('No active role assignment found');
     }
 
-    const permissions = (primaryAssignment.role.permissions as string[]) || [];
-
-    const twoFaRoleCode = primaryAssignment.role.code;
     const tokens = generateTokenPair({
       id: user.id,
       sub: user.id,
       email: user.email,
-      roleId: primaryAssignment.roleId,
+      roleId: twoFaRoleId || '',
       roleCode: twoFaRoleCode,
-      unitId: primaryAssignment.unitId || user.unitId,
+      unitId: twoFaUnitId || user.unitId,
       permissions,
       role: deriveLegacyRole(twoFaRoleCode),
     });

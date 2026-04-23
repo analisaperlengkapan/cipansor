@@ -21,6 +21,10 @@ const ADMIN_ROLE_CODES: string[] = [
   RoleCode.SDIT_ADMIN,
   RoleCode.SMPIT_ADMIN,
   RoleCode.SMAQ_ADMIN,
+  // Legacy UserRole values — pre-migration tokens carry these as roleCode
+  // via buildReqUser fallback. Must be recognised so isAdmin/isAdminRoleCode
+  // work for users whose access tokens were minted before the RoleCode migration.
+  'UNIT_ADMIN',
 ];
 
 /**
@@ -355,6 +359,9 @@ export function isTeacherOrAbove(req: Request, res: Response, next: NextFunction
     RoleCode.MUHAFIDZ,
     RoleCode.MURABBI,
     RoleCode.WALI_KAMAR,
+    // Legacy UserRole values for pre-migration tokens
+    'TEACHER',
+    'STAFF',
   ];
 
   if (!teacherCodes.includes(req.user.roleCode)) {

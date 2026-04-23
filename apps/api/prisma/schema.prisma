@@ -5128,7 +5128,7 @@ model CanteenCategory {
   businessUnit BusinessUnit? @relation(fields: [businessUnitId], references: [id])
   items        CanteenItem[]
 
-  @@unique([unitId, name])
+  @@unique([unitId, businessUnitId, name])
   @@index([businessUnitId])
   @@index([unitId])
   @@map("canteen_categories")
@@ -5161,7 +5161,7 @@ model CanteenItem {
   transactionItems CanteenTransactionItem[]
   stockMovements   CanteenStockMovement[]
 
-  @@unique([unitId, code])
+  @@unique([unitId, businessUnitId, code])
   @@index([unitId])
   @@index([businessUnitId])
   @@index([categoryId])
@@ -5273,7 +5273,7 @@ model LaundryPricing {
   businessUnit BusinessUnit?        @relation(fields: [businessUnitId], references: [id])
   transactions LaundryTransaction[]
 
-  @@unique([unitId, name])
+  @@unique([unitId, businessUnitId, name])
   @@index([businessUnitId])
   @@index([unitId])
   @@map("laundry_pricings")

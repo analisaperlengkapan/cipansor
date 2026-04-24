@@ -493,6 +493,26 @@ export class FinanceEnhancementController {
     }
   }
 
+  async getConsolidatedBudget(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { academicYearId } = req.query;
+
+      if (!academicYearId) {
+        return res
+          .status(400)
+          .json({ success: false, message: 'Academic Year ID is required' });
+      }
+
+      const result = await financeEnhancementService.getConsolidatedBudget({
+        academicYearId: academicYearId as string,
+      });
+
+      res.json({ success: true, data: result });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async closeFinancialPeriod(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;

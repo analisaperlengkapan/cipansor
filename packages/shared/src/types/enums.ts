@@ -112,6 +112,14 @@ export const SHARIA_CATEGORIES = [
 
 export type ShariaCategory = (typeof SHARIA_CATEGORIES)[number];
 
+// BSC Perspectives
+export enum BSCPerspective {
+  FINANCIAL = "FINANCIAL",
+  CUSTOMER = "CUSTOMER",
+  PROCESS = "PROCESS",
+  LEARNING = "LEARNING",
+}
+
 // Talent Categories
 export enum TalentCategory {
   HIGH_POTENTIAL = "HIGH_POTENTIAL",

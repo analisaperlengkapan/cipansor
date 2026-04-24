@@ -1,16 +1,22 @@
 import jwt from 'jsonwebtoken';
 import { config } from '@/config';
-import { UserRole } from '@prisma/client';
 
 export interface JwtPayload {
   id: string;
   sub: string;
   email: string;
-  role: UserRole;
+  roleId: string; // Active Role ID from UserRoleAssignment
+  roleCode: string; // RoleCode string for quick checks (e.g. 'SUPER_ADMIN')
   unitId: string | null;
-  roleId?: string; // Current active role ID from UserRoleAssignment
+  permissions: string[]; // Permissions array from the Role record
   type: 'access' | 'refresh';
   isTemp?: boolean; // For 2FA temporary tokens
+  // DEPRECATED: Legacy role field derived from roleCode at authentication time.
+  // Kept so that unmigrated controllers/services that reference `req.user.role`
+  // continue to work. Maps granular RoleCodes back to the legacy UserRole enum
+  // values (SUPER_ADMIN, UNIT_ADMIN, TEACHER, STAFF, STUDENT, PARENT).
+  // TODO: Remove once all modules are migrated to use roleCode.
+  role: string;
 }
 
 export interface TokenPair {

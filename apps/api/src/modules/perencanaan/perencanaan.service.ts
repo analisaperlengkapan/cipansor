@@ -345,7 +345,7 @@ export class PerencanaanService {
     baseline?: number;
     targetValue: number;
   }) {
-    return prisma.planIndicator.create({
+    const indicator = await prisma.planIndicator.create({
       data: {
         objective: { connect: { id: data.objectiveId } },
         name: data.name,
@@ -354,14 +354,30 @@ export class PerencanaanService {
         targetValue: data.targetValue,
       },
     });
+
+    await this.recalculateObjectiveProgress(data.objectiveId);
+    return indicator;
   }
 
   async updateIndicator(id: string, data: Prisma.PlanIndicatorUpdateInput) {
-    return prisma.planIndicator.update({ where: { id }, data });
+    const indicator = await prisma.planIndicator.update({
+      where: { id },
+      data,
+      include: { objective: { select: { id: true } } },
+    });
+
+    await this.recalculateObjectiveProgress(indicator.objective.id);
+    return indicator;
   }
 
   async deleteIndicator(id: string) {
-    return prisma.planIndicator.delete({ where: { id } });
+    const indicator = await prisma.planIndicator.findUnique({
+      where: { id },
+      select: { objectiveId: true },
+    });
+    const result = await prisma.planIndicator.delete({ where: { id } });
+    if (indicator) await this.recalculateObjectiveProgress(indicator.objectiveId);
+    return result;
   }
 
   // ==================== ACTIVITIES ====================
@@ -433,6 +449,53 @@ export class PerencanaanService {
   }
 
   // ==================== HELPERS ====================
+
+  /**
+   * Recalculate an objective's progress from its indicators.
+   * Logic: (currentValue / targetValue) * 100
+   */
+  async recalculateObjectiveProgress(
+    objectiveId: string,
+    tx: TransactionClient | typeof prisma = prisma
+  ) {
+    const objective = await tx.planObjective.findUnique({
+      where: { id: objectiveId },
+      include: { indicators: true },
+    });
+
+    if (!objective) return;
+
+    if (objective.indicators.length === 0) {
+      await tx.planObjective.update({
+        where: { id: objectiveId },
+        data: { progress: 0 },
+      });
+      await this.recalculatePlanProgress(objective.planId, tx);
+      return;
+    }
+
+    const totalProgress = objective.indicators.reduce((sum, ind) => {
+      const target = ind.targetValue;
+      const current = ind.currentValue || 0;
+      // When target is 0, the goal is "reduce to zero". If current is also 0
+      // (or less), the goal is fully met → 100%. Otherwise 0%.
+      if (target === 0 || target === null) {
+        return sum + (current <= 0 ? 100 : 0);
+      }
+      const progress = (current / target) * 100;
+      return sum + Math.min(100, progress); // Cap indicator progress at 100%
+    }, 0);
+
+    const averageProgress = totalProgress / objective.indicators.length;
+
+    await tx.planObjective.update({
+      where: { id: objectiveId },
+      data: { progress: Math.round(averageProgress * 100) / 100 },
+    });
+
+    // Also recalculate parent plan
+    await this.recalculatePlanProgress(objective.planId, tx);
+  }
 
   /**
    * Recalculate a plan's weighted progress from its objectives.

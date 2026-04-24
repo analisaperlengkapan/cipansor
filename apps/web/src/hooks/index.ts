@@ -27,6 +27,7 @@ export * from "./use-curriculum";
 export * from "./use-kurikulum-merdeka";
 export * from "./use-assessment";
 export * from "./use-notifications";
+export * from "./use-announcements";
 export * from "./use-alumni";
 export * from "./use-analytics";
 export * from "./use-reports";
@@ -47,6 +48,8 @@ export * from "./use-kitab-progress";
 export * from "./use-ibadah";
 export * from "./use-parent-portal";
 export * from "./use-accounting";
+export * from "./use-talenta";
+export * from "./use-perencanaan";
 
 // Utility hooks
 export * from "./use-url-filters";

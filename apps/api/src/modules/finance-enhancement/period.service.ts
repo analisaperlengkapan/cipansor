@@ -1,6 +1,8 @@
 import { prisma } from '../../lib/prisma';
 import { CreateFinancialPeriodInput } from '@cipansor/shared';
 
+type TransactionClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
+
 export async function createFinancialPeriod(data: CreateFinancialPeriodInput) {
   const { unitId, name, startDate, endDate, notes } = data;
 
@@ -90,4 +92,35 @@ export async function checkPeriodStatus(unitId: string, date: Date) {
   if (period && period.isClosed) {
     throw new Error(`Financial period for ${date.toISOString()} is closed.`);
   }
+}
+
+/**
+ * Non-throwing variant of checkPeriodStatus.
+ * Returns true if journal entries may be posted for this date/unit, false if
+ * the enclosing financial period is closed.
+ *
+ * Use this when the caller performs a business transaction (e.g. a canteen
+ * sale or refund) whose success should NOT be blocked by period closure —
+ * only the associated accounting entries should be skipped.
+ *
+ * Accepts an optional transaction client so the period check participates
+ * in the caller's transaction, eliminating the TOCTOU window where a period
+ * could be closed between the check and the journal insert.
+ */
+export async function isPeriodOpen(
+  unitId: string,
+  date: Date,
+  tx: TransactionClient | typeof prisma = prisma,
+): Promise<boolean> {
+  const period = await tx.financialPeriod.findFirst({
+    where: {
+      unitId,
+      startDate: { lte: date },
+      endDate: { gte: date },
+    },
+    select: { isClosed: true },
+  });
+
+  // No matching period → treat as open (no closure enforced).
+  return !period || !period.isClosed;
 }

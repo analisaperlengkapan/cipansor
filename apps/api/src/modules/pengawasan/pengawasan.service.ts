@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 import { Errors } from '@/middleware/error';
 import { perencanaanService } from '../perencanaan/perencanaan.service';
+import { riskService } from '../risk/risk.service';
 
 export class PengawasanService {
   // ==================== AUDITS ====================
@@ -125,11 +126,11 @@ export class PengawasanService {
       // friendly 404 instead of a raw Prisma P2025 from the `connect` call.
       // We also read consequence/status here to use in the side-effect below,
       // avoiding a redundant second query.
-      let existingRisk: { consequence: string | null; status: string } | null = null;
+      let existingRisk: { consequence: string | null; status: string; impact: string } | null = null;
       if (data.linkToRiskId) {
         existingRisk = await tx.risk.findUnique({
           where: { id: data.linkToRiskId },
-          select: { consequence: true, status: true },
+          select: { consequence: true, status: true, impact: true },
         });
         if (!existingRisk) {
           throw Errors.notFound(`Risk with id ${data.linkToRiskId}`);
@@ -175,13 +176,42 @@ export class PengawasanService {
           // Only set to MONITORING if the risk is not already CLOSED
           const newStatus = existingRisk.status === 'CLOSED' ? 'CLOSED' : 'MONITORING';
 
-          await tx.risk.update({
-            where: { id: data.linkToRiskId },
-            data: {
+          // Best Practice: If finding is CRITICAL or MAJOR, escalate risk impact.
+          // Delegate to RiskService.updateRisk so riskScore, riskLevel, and
+          // residualRisk are all recalculated consistently.
+          // Only escalate if the new impact is actually higher than the current one
+          // to avoid accidentally downgrading a risk (e.g. CATASTROPHIC → MAJOR).
+          const IMPACT_WEIGHTS: Record<string, number> = {
+            INSIGNIFICANT: 1, MINOR: 2, MODERATE: 3, MAJOR: 4, CATASTROPHIC: 5,
+          };
+
+          // Reuse impact from the earlier existingRisk read to avoid an extra query.
+          const currentImpactWeight = IMPACT_WEIGHTS[existingRisk.impact] || 0;
+
+          let impactEscalation: { impact: string } | undefined;
+          if (data.severity === 'CRITICAL' && currentImpactWeight < 5) {
+            impactEscalation = { impact: 'CATASTROPHIC' };
+          } else if (data.severity === 'MAJOR' && currentImpactWeight < 4) {
+            impactEscalation = { impact: 'MAJOR' };
+          }
+
+          if (impactEscalation) {
+            // updateRisk recalculates riskScore, riskLevel, and residualRisk.
+            // Pass `tx` so the risk update participates in the same transaction.
+            await riskService.updateRisk(data.linkToRiskId!, {
               status: newStatus,
               consequence: updatedConsequence,
-            },
-          });
+              ...impactEscalation,
+            }, tx);
+          } else {
+            await tx.risk.update({
+              where: { id: data.linkToRiskId },
+              data: {
+                status: newStatus,
+                consequence: updatedConsequence,
+              },
+            });
+          }
         }
 
       }

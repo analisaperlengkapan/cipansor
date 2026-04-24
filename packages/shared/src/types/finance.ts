@@ -21,6 +21,8 @@ export enum JournalReferenceType {
   PAYMENT = "PAYMENT",
   SCHOLARSHIP = "SCHOLARSHIP",
   PAYROLL = "PAYROLL",
+  CANTEEN = "CANTEEN",
+  LAUNDRY = "LAUNDRY",
   OTHER = "OTHER",
 }
 

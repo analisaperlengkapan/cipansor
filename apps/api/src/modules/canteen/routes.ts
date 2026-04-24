@@ -1,10 +1,11 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { UserRole } from '@prisma/client';
+import { RoleCode } from '@prisma/client';
 import { authenticate, authorize } from '../../middleware/auth';
 import { validate } from '../../middleware/validate';
 import {
   CreateCategorySchema,
   UpdateCategorySchema,
+  ListCategoriesQuerySchema,
   CreateItemSchema,
   UpdateItemSchema,
   ListItemsQuerySchema,
@@ -16,6 +17,7 @@ import {
 } from './canteen.schema';
 import { categoryService, itemService, transactionService, stockMovementService } from './service';
 import { ApiResponse } from '../../utils/response';
+import { resolveUnitId, isSuperAdminUser } from '../../utils/resolve-unit-id';
 
 const router = Router();
 
@@ -26,12 +28,14 @@ const router = Router();
 // GET /api/canteen/categories - Get all categories
 router.get('/categories', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const unitId = req.user?.unitId;
-    if (!unitId) {
+    const unitId = resolveUnitId(req);
+    // SUPER_ADMIN may list across all units (no unitId scoping required)
+    if (!unitId && !isSuperAdminUser(req)) {
       return res.status(400).json(ApiResponse.error('Unit ID tidak ditemukan', 'UNIT_REQUIRED'));
     }
 
-    const categories = await categoryService.getAll(unitId);
+    const parsedQuery = ListCategoriesQuerySchema.parse(req.query);
+    const categories = await categoryService.getAll(unitId, parsedQuery.businessUnitId);
     return res.json(ApiResponse.success(categories, 'Berhasil mengambil data kategori'));
   } catch (err) {
     next(err);
@@ -44,7 +48,7 @@ router.get(
   authenticate,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const unitId = req.user?.unitId;
+      const unitId = resolveUnitId(req);
       if (!unitId) {
         return res.status(400).json(ApiResponse.error('Unit ID tidak ditemukan', 'UNIT_REQUIRED'));
       }
@@ -65,11 +69,16 @@ router.get(
 router.post(
   '/categories',
   authenticate,
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  authorize(
+    RoleCode.SUPER_ADMIN,
+    RoleCode.TKQ_ADMIN, RoleCode.SDIT_ADMIN, RoleCode.SMPIT_ADMIN, RoleCode.SMAQ_ADMIN, RoleCode.YAYASAN_ADMIN,
+    RoleCode.TKQ_TATA_USAHA, RoleCode.SDIT_TATA_USAHA, RoleCode.SMPIT_TATA_USAHA, RoleCode.SMAQ_TATA_USAHA,
+    'UNIT_ADMIN', 'STAFF', // Legacy pre-migration token values
+  ),
   validate(CreateCategorySchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const unitId = req.user?.unitId;
+      const unitId = resolveUnitId(req);
       if (!unitId) {
         return res.status(400).json(ApiResponse.error('Unit ID tidak ditemukan', 'UNIT_REQUIRED'));
       }
@@ -86,11 +95,16 @@ router.post(
 router.put(
   '/categories/:id',
   authenticate,
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  authorize(
+    RoleCode.SUPER_ADMIN,
+    RoleCode.TKQ_ADMIN, RoleCode.SDIT_ADMIN, RoleCode.SMPIT_ADMIN, RoleCode.SMAQ_ADMIN, RoleCode.YAYASAN_ADMIN,
+    RoleCode.TKQ_TATA_USAHA, RoleCode.SDIT_TATA_USAHA, RoleCode.SMPIT_TATA_USAHA, RoleCode.SMAQ_TATA_USAHA,
+    'UNIT_ADMIN', 'STAFF', // Legacy pre-migration token values
+  ),
   validate(UpdateCategorySchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const unitId = req.user?.unitId;
+      const unitId = resolveUnitId(req);
       if (!unitId) {
         return res.status(400).json(ApiResponse.error('Unit ID tidak ditemukan', 'UNIT_REQUIRED'));
       }
@@ -107,10 +121,14 @@ router.put(
 router.delete(
   '/categories/:id',
   authenticate,
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  authorize(
+    RoleCode.SUPER_ADMIN,
+    RoleCode.TKQ_ADMIN, RoleCode.SDIT_ADMIN, RoleCode.SMPIT_ADMIN, RoleCode.SMAQ_ADMIN, RoleCode.YAYASAN_ADMIN,
+    'UNIT_ADMIN', // Legacy pre-migration token value
+  ),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const unitId = req.user?.unitId;
+      const unitId = resolveUnitId(req);
       if (!unitId) {
         return res.status(400).json(ApiResponse.error('Unit ID tidak ditemukan', 'UNIT_REQUIRED'));
       }
@@ -130,8 +148,9 @@ router.delete(
 // GET /api/canteen/items - Get all items
 router.get('/items', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const unitId = req.user?.unitId;
-    if (!unitId) {
+    const unitId = resolveUnitId(req);
+    // SUPER_ADMIN may list across all units (no unitId scoping required)
+    if (!unitId && !isSuperAdminUser(req)) {
       return res.status(400).json(ApiResponse.error('Unit ID tidak ditemukan', 'UNIT_REQUIRED'));
     }
 
@@ -149,11 +168,17 @@ router.get('/items', authenticate, async (req: Request, res: Response, next: Nex
 router.get(
   '/items/low-stock',
   authenticate,
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  authorize(
+    RoleCode.SUPER_ADMIN,
+    RoleCode.TKQ_ADMIN, RoleCode.SDIT_ADMIN, RoleCode.SMPIT_ADMIN, RoleCode.SMAQ_ADMIN, RoleCode.YAYASAN_ADMIN,
+    RoleCode.TKQ_TATA_USAHA, RoleCode.SDIT_TATA_USAHA, RoleCode.SMPIT_TATA_USAHA, RoleCode.SMAQ_TATA_USAHA,
+    'UNIT_ADMIN', 'STAFF', // Legacy pre-migration token values
+  ),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const unitId = req.user?.unitId;
-      if (!unitId) {
+      const unitId = resolveUnitId(req);
+      // SUPER_ADMIN may view low-stock items across all units
+      if (!unitId && !isSuperAdminUser(req)) {
         return res.status(400).json(ApiResponse.error('Unit ID tidak ditemukan', 'UNIT_REQUIRED'));
       }
 
@@ -168,7 +193,7 @@ router.get(
 // GET /api/canteen/items/:id - Get item by ID
 router.get('/items/:id', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const unitId = req.user?.unitId;
+    const unitId = resolveUnitId(req);
     if (!unitId) {
       return res.status(400).json(ApiResponse.error('Unit ID tidak ditemukan', 'UNIT_REQUIRED'));
     }
@@ -188,11 +213,16 @@ router.get('/items/:id', authenticate, async (req: Request, res: Response, next:
 router.post(
   '/items',
   authenticate,
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  authorize(
+    RoleCode.SUPER_ADMIN,
+    RoleCode.TKQ_ADMIN, RoleCode.SDIT_ADMIN, RoleCode.SMPIT_ADMIN, RoleCode.SMAQ_ADMIN, RoleCode.YAYASAN_ADMIN,
+    RoleCode.TKQ_TATA_USAHA, RoleCode.SDIT_TATA_USAHA, RoleCode.SMPIT_TATA_USAHA, RoleCode.SMAQ_TATA_USAHA,
+    'UNIT_ADMIN', 'STAFF', // Legacy pre-migration token values
+  ),
   validate(CreateItemSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const unitId = req.user?.unitId;
+      const unitId = resolveUnitId(req);
       if (!unitId) {
         return res.status(400).json(ApiResponse.error('Unit ID tidak ditemukan', 'UNIT_REQUIRED'));
       }
@@ -209,11 +239,16 @@ router.post(
 router.put(
   '/items/:id',
   authenticate,
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  authorize(
+    RoleCode.SUPER_ADMIN,
+    RoleCode.TKQ_ADMIN, RoleCode.SDIT_ADMIN, RoleCode.SMPIT_ADMIN, RoleCode.SMAQ_ADMIN, RoleCode.YAYASAN_ADMIN,
+    RoleCode.TKQ_TATA_USAHA, RoleCode.SDIT_TATA_USAHA, RoleCode.SMPIT_TATA_USAHA, RoleCode.SMAQ_TATA_USAHA,
+    'UNIT_ADMIN', 'STAFF', // Legacy pre-migration token values
+  ),
   validate(UpdateItemSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const unitId = req.user?.unitId;
+      const unitId = resolveUnitId(req);
       if (!unitId) {
         return res.status(400).json(ApiResponse.error('Unit ID tidak ditemukan', 'UNIT_REQUIRED'));
       }
@@ -230,10 +265,14 @@ router.put(
 router.delete(
   '/items/:id',
   authenticate,
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  authorize(
+    RoleCode.SUPER_ADMIN,
+    RoleCode.TKQ_ADMIN, RoleCode.SDIT_ADMIN, RoleCode.SMPIT_ADMIN, RoleCode.SMAQ_ADMIN, RoleCode.YAYASAN_ADMIN,
+    'UNIT_ADMIN', // Legacy pre-migration token value
+  ),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const unitId = req.user?.unitId;
+      const unitId = resolveUnitId(req);
       if (!unitId) {
         return res.status(400).json(ApiResponse.error('Unit ID tidak ditemukan', 'UNIT_REQUIRED'));
       }
@@ -256,8 +295,11 @@ router.get(
   authenticate,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const unitId = req.user?.unitId;
-      if (!unitId) {
+      const unitId = resolveUnitId(req);
+      // SUPER_ADMIN may list transactions across all units (no unitId scoping
+      // required). Consistent with sibling list routes for categories, items,
+      // low-stock, and transaction stats in this file.
+      if (!unitId && !isSuperAdminUser(req)) {
         return res.status(400).json(ApiResponse.error('Unit ID tidak ditemukan', 'UNIT_REQUIRED'));
       }
 
@@ -276,11 +318,17 @@ router.get(
 router.get(
   '/transactions/stats',
   authenticate,
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  authorize(
+    RoleCode.SUPER_ADMIN,
+    RoleCode.TKQ_ADMIN, RoleCode.SDIT_ADMIN, RoleCode.SMPIT_ADMIN, RoleCode.SMAQ_ADMIN, RoleCode.YAYASAN_ADMIN,
+    RoleCode.TKQ_TATA_USAHA, RoleCode.SDIT_TATA_USAHA, RoleCode.SMPIT_TATA_USAHA, RoleCode.SMAQ_TATA_USAHA,
+    'UNIT_ADMIN', 'STAFF', // Legacy pre-migration token values
+  ),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const unitId = req.user?.unitId;
-      if (!unitId) {
+      const unitId = resolveUnitId(req);
+      // SUPER_ADMIN may view stats across all units (no unitId scoping required)
+      if (!unitId && !isSuperAdminUser(req)) {
         return res.status(400).json(ApiResponse.error('Unit ID tidak ditemukan', 'UNIT_REQUIRED'));
       }
 
@@ -303,7 +351,7 @@ router.get(
   authenticate,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const unitId = req.user?.unitId;
+      const unitId = resolveUnitId(req);
       if (!unitId) {
         return res.status(400).json(ApiResponse.error('Unit ID tidak ditemukan', 'UNIT_REQUIRED'));
       }
@@ -324,11 +372,16 @@ router.get(
 router.post(
   '/transactions',
   authenticate,
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  authorize(
+    RoleCode.SUPER_ADMIN,
+    RoleCode.TKQ_ADMIN, RoleCode.SDIT_ADMIN, RoleCode.SMPIT_ADMIN, RoleCode.SMAQ_ADMIN, RoleCode.YAYASAN_ADMIN,
+    RoleCode.TKQ_TATA_USAHA, RoleCode.SDIT_TATA_USAHA, RoleCode.SMPIT_TATA_USAHA, RoleCode.SMAQ_TATA_USAHA,
+    'UNIT_ADMIN', 'STAFF', // Legacy pre-migration token values
+  ),
   validate(CreateTransactionSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const unitId = req.user?.unitId;
+      const unitId = resolveUnitId(req);
       const userId = req.user?.sub;
       if (!unitId || !userId) {
         return res
@@ -348,11 +401,16 @@ router.post(
 router.patch(
   '/transactions/:id/status',
   authenticate,
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  authorize(
+    RoleCode.SUPER_ADMIN,
+    RoleCode.TKQ_ADMIN, RoleCode.SDIT_ADMIN, RoleCode.SMPIT_ADMIN, RoleCode.SMAQ_ADMIN, RoleCode.YAYASAN_ADMIN,
+    RoleCode.TKQ_TATA_USAHA, RoleCode.SDIT_TATA_USAHA, RoleCode.SMPIT_TATA_USAHA, RoleCode.SMAQ_TATA_USAHA,
+    'UNIT_ADMIN', 'STAFF', // Legacy pre-migration token values
+  ),
   validate(UpdateTransactionStatusSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const unitId = req.user?.unitId;
+      const unitId = resolveUnitId(req);
       const userId = req.user?.sub;
       if (!unitId || !userId) {
         return res
@@ -381,10 +439,15 @@ router.patch(
 router.get(
   '/stock-movements',
   authenticate,
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  authorize(
+    RoleCode.SUPER_ADMIN,
+    RoleCode.TKQ_ADMIN, RoleCode.SDIT_ADMIN, RoleCode.SMPIT_ADMIN, RoleCode.SMAQ_ADMIN, RoleCode.YAYASAN_ADMIN,
+    RoleCode.TKQ_TATA_USAHA, RoleCode.SDIT_TATA_USAHA, RoleCode.SMPIT_TATA_USAHA, RoleCode.SMAQ_TATA_USAHA,
+    'UNIT_ADMIN', 'STAFF', // Legacy pre-migration token values
+  ),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const unitId = req.user?.unitId;
+      const unitId = resolveUnitId(req);
       if (!unitId) {
         return res.status(400).json(ApiResponse.error('Unit ID tidak ditemukan', 'UNIT_REQUIRED'));
       }
@@ -408,11 +471,16 @@ router.get(
 router.post(
   '/stock-movements',
   authenticate,
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  authorize(
+    RoleCode.SUPER_ADMIN,
+    RoleCode.TKQ_ADMIN, RoleCode.SDIT_ADMIN, RoleCode.SMPIT_ADMIN, RoleCode.SMAQ_ADMIN, RoleCode.YAYASAN_ADMIN,
+    RoleCode.TKQ_TATA_USAHA, RoleCode.SDIT_TATA_USAHA, RoleCode.SMPIT_TATA_USAHA, RoleCode.SMAQ_TATA_USAHA,
+    'UNIT_ADMIN', 'STAFF', // Legacy pre-migration token values
+  ),
   validate(CreateStockMovementSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const unitId = req.user?.unitId;
+      const unitId = resolveUnitId(req);
       const userId = req.user?.sub;
       if (!unitId || !userId) {
         return res

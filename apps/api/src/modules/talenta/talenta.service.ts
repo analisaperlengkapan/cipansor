@@ -2,6 +2,9 @@ import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 import { Errors } from '@/middleware/error';
 
+/** Well-known UUID for the seeded SYSTEM user (see prisma/seed.ts) */
+const SYSTEM_USER_ID = '00000000-0000-0000-0000-000000000000';
+
 export class TalentaService {
   // ==================== TALENT PROFILES ====================
 
@@ -133,6 +136,62 @@ export class TalentaService {
     });
 
     return assessment;
+  }
+
+  /**
+   * Sync talent profile category based on the latest PKG evaluation.
+   * Best Practice: Performance rating from PKG, Potential rating stays the same
+   * or adjusted by HR.
+   */
+  async syncFromPKG(teacherId: string, periodId: string) {
+    const evaluation = await prisma.pKGEvaluation.findUnique({
+      where: { periodId_teacherId: { periodId, teacherId } },
+      include: {
+        teacher: { select: { userId: true, unitId: true } },
+      },
+    });
+
+    if (!evaluation || !evaluation.totalScore) {
+      throw Errors.notFound('PKG Evaluation with score');
+    }
+
+    const talentProfile = await prisma.talentProfile.findUnique({
+      where: { userId: evaluation.teacher.userId },
+      include: {
+        assessments: {
+          orderBy: { assessedAt: 'desc' },
+          take: 1,
+        },
+      },
+    });
+
+    if (!talentProfile) {
+      throw Errors.notFound('Talent Profile for teacher');
+    }
+
+    // Map PKG Score (0-100) to Rating
+    const score = evaluation.totalScore.toNumber();
+    let performanceRating: 'OUTSTANDING' | 'EXCEEDS' | 'MEETS' | 'BELOW' | 'UNSATISFACTORY';
+
+    if (score >= 90) performanceRating = 'OUTSTANDING';
+    else if (score >= 80) performanceRating = 'EXCEEDS';
+    else if (score >= 70) performanceRating = 'MEETS';
+    else if (score >= 60) performanceRating = 'BELOW';
+    else performanceRating = 'UNSATISFACTORY';
+
+    const latestAssessment = talentProfile.assessments[0];
+    const potentialRating = latestAssessment?.potentialRating || 'MEETS';
+
+    return this.createAssessment({
+      talentId: talentProfile.id,
+      assessorId: evaluation.assessorId || SYSTEM_USER_ID,
+      period: `PKG Sync: ${periodId}`,
+      performanceRating,
+      potentialRating,
+      overallScore: score,
+      feedback: `Automated sync from PKG evaluation. Original score: ${score}`,
+      assessedAt: new Date().toISOString(),
+    });
   }
 
   // ==================== TRAINING PROGRAMS ====================

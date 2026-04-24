@@ -53,6 +53,7 @@ import {
   List,
   Wallet,
   Banknote,
+  Store,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -111,12 +112,15 @@ const api = {
     categoryId?: string;
     search?: string;
     isAvailable?: string;
+    businessUnitId?: string;
   }): Promise<{ data: CanteenItem[]; pagination: { total: number } }> => {
     const searchParams = new URLSearchParams();
     if (params?.categoryId) searchParams.set("categoryId", params.categoryId);
     if (params?.search) searchParams.set("search", params.search);
     if (params?.isAvailable)
       searchParams.set("isAvailable", params.isAvailable);
+    if (params?.businessUnitId)
+      searchParams.set("businessUnitId", params.businessUnitId);
     searchParams.set("limit", "100");
 
     const res = await fetch(`/api/canteen/items?${searchParams}`);
@@ -141,6 +145,7 @@ const api = {
   createTransaction: async (data: {
     studentId?: string;
     customerName?: string;
+    businessUnitId?: string;
     items: Array<{ itemId: string; quantity: number }>;
     discount: number;
     paymentMethod: string;
@@ -210,13 +215,33 @@ export default function CanteenPage() {
   const [discount, setDiscount] = useState(0);
 
   // Queries
+  const [selectedBUId, setSelectedBUId] = useState<string>("ALL");
+
+  const { data: businessUnits } = useQuery({
+    queryKey: ["business-units", "CANTEEN"],
+    queryFn: async () => {
+      const res = await fetch("/api/business-units?type=CANTEEN");
+      if (!res.ok) return [];
+      const json = await res.json();
+      return json.data;
+    },
+  });
+
   const { data: categories } = useQuery({
-    queryKey: ["canteen-categories"],
-    queryFn: api.getCategories,
+    queryKey: ["canteen-categories", selectedBUId],
+    queryFn: async () => {
+      const url = selectedBUId !== "ALL"
+        ? `/api/canteen/categories?businessUnitId=${selectedBUId}`
+        : "/api/canteen/categories";
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Failed to fetch categories");
+      const json = await res.json();
+      return json.data;
+    },
   });
 
   const { data: itemsData, isLoading: itemsLoading } = useQuery({
-    queryKey: ["canteen-items", selectedCategory, search],
+    queryKey: ["canteen-items", selectedCategory, search, selectedBUId],
     queryFn: () =>
       api.getItems({
         categoryId:
@@ -225,6 +250,8 @@ export default function CanteenPage() {
             : undefined,
         search: search || undefined,
         isAvailable: "true",
+        businessUnitId:
+          selectedBUId !== "ALL" ? selectedBUId : undefined,
       }),
   });
 
@@ -321,6 +348,7 @@ export default function CanteenPage() {
     createTransactionMutation.mutate({
       studentId: selectedStudent?.id,
       customerName: selectedStudent ? undefined : "Umum",
+      businessUnitId: selectedBUId !== "ALL" ? selectedBUId : undefined,
       items: cart.map((c) => ({
         itemId: c.item.id,
         quantity: c.quantity,
@@ -397,6 +425,29 @@ export default function CanteenPage() {
             </CardContent>
           </Card>
         ))}
+      </div>
+
+      {/* Business Unit Selector */}
+      <div className="flex items-center gap-4 bg-muted/30 p-4 rounded-xl border">
+        <Store className="h-5 w-5 text-primary" />
+        <div className="flex-1">
+          <Label htmlFor="bu-select" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Pilih Unit Usaha / Kantin</Label>
+          <Select value={selectedBUId} onValueChange={(val) => {
+            setSelectedBUId(val);
+            setSelectedCategory("ALL");
+            setCart([]);
+          }}>
+            <SelectTrigger id="bu-select" className="border-none bg-transparent p-0 h-auto focus:ring-0 text-lg font-semibold">
+              <SelectValue placeholder="Pilih Unit Usaha" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">Semua Kantin (Global)</SelectItem>
+              {businessUnits?.map((bu: any) => (
+                <SelectItem key={bu.id} value={bu.id}>{bu.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Main Content */}

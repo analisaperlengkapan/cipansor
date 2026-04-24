@@ -1,13 +1,15 @@
 import { prisma } from '@/lib/prisma';
 import { Errors } from '@/middleware/error';
 import {
-  UserRole,
+  RoleCode,
   CounselingStatus,
   CounselingCategory,
   CounselingPriority,
   ReferralType,
   Prisma,
 } from '@prisma/client';
+import { isAdminRoleCode } from '@/middleware/auth';
+import { createNotification } from '../notifications/service';
 import {
   CounselingSession as SharedCounselingSession,
   CounselingNote as SharedCounselingNote,
@@ -20,10 +22,46 @@ import {
   CounselingListParams,
 } from '@cipansor/shared';
 
-// User type from JwtPayload
+/**
+ * Foundation-level RoleCodes that have cross-unit visibility into counseling
+ * data (read-only access across all units, just like SUPER_ADMIN).
+ *
+ * These governance roles (board members, auditors, foundation secretary, etc.)
+ * legitimately need to view counseling statistics and session lists across all
+ * units for oversight purposes, even though they are NOT system administrators.
+ *
+ * WITHOUT this allowlist, the access-control check below would reject any
+ * non-SUPER_ADMIN whose JWT has no `unitId` — which would break foundation
+ * governance users whose role assignment is unit-less by design.
+ *
+ * NOTE: This grants cross-unit READ access to sessions, statistics, individual
+ * sessions (`getSessionById`) and student counseling history
+ * (`getStudentHistory`) — consistent with their oversight role. It does NOT
+ * grant mutation rights: `updateSession`, `deleteSession`, `addNote`,
+ * `updateNote`, `deleteNote`, `addReferral`, `updateReferral`, and
+ * `deleteReferral` continue to require either SUPER_ADMIN or a unit match, so
+ * foundation governance can view but not modify counseling data from other
+ * units. `authorize()` in the routes layer enforces coarse-grained route-level
+ * permissions in addition to these service-layer checks.
+ */
+const FOUNDATION_LEVEL_ROLES: string[] = [
+  RoleCode.YAYASAN_ADMIN,
+  RoleCode.YAYASAN_PEMBINA,
+  RoleCode.YAYASAN_KETUA,
+  RoleCode.YAYASAN_SEKRETARIS,
+  RoleCode.YAYASAN_BENDAHARA,
+  RoleCode.YAYASAN_ANGGOTA,
+  RoleCode.YAYASAN_PENGAWAS,
+];
+
+function hasCrossUnitCounselingAccess(roleCode: string): boolean {
+  return roleCode === RoleCode.SUPER_ADMIN || FOUNDATION_LEVEL_ROLES.includes(roleCode);
+}
+
+// User type from JwtPayload (aligned with new RoleCode-based auth)
 interface AuthenticatedUser {
   sub: string;
-  role: UserRole;
+  roleCode: string;
   unitId: string | null;
 }
 
@@ -34,8 +72,22 @@ export class CounselingService {
   async getSessions(filters: CounselingListParams, currentUser: AuthenticatedUser) {
     const where: Prisma.CounselingSessionWhereInput = {};
 
-    // Access control
-    if (currentUser.role !== UserRole.SUPER_ADMIN && currentUser.unitId) {
+    // Access control.
+    //
+    // BEHAVIOR CHANGE: Previously, non-SUPER_ADMIN users without a unitId
+    // silently received ALL counseling sessions across ALL units — a
+    // cross-unit data leak. We now reject such requests explicitly so that
+    // misconfigured role assignments are surfaced rather than hidden.
+    //
+    // Foundation-level governance roles (YAYASAN_PEMBINA, YAYASAN_KETUA, etc.)
+    // retain cross-unit read visibility via `hasCrossUnitCounselingAccess`.
+    // Unit-scoped users MUST have a unitId in their JWT.
+    if (!hasCrossUnitCounselingAccess(currentUser.roleCode)) {
+      if (!currentUser.unitId) {
+        throw Errors.forbidden(
+          'No unit assignment found for your account. Contact an administrator to assign you to a unit.'
+        );
+      }
       where.unitId = currentUser.unitId;
     }
 
@@ -158,8 +210,14 @@ export class CounselingService {
       throw Errors.notFound('Session not found');
     }
 
-    // Access control
-    if (currentUser.role !== UserRole.SUPER_ADMIN && session.unitId !== currentUser.unitId) {
+    // Access control: SUPER_ADMIN and foundation-level governance roles have
+    // cross-unit read access; all other users must match the session's unit.
+    // Keeping read access consistent with `getSessions` avoids the confusing
+    // UX where a governance user sees a session in the list but cannot open it.
+    if (
+      !hasCrossUnitCounselingAccess(currentUser.roleCode) &&
+      session.unitId !== currentUser.unitId
+    ) {
       throw Errors.forbidden('Access denied');
     }
 
@@ -195,12 +253,18 @@ export class CounselingService {
     if (teacher) {
       counselorId = teacher.id;
     } else {
-      if (currentUser.role === UserRole.SUPER_ADMIN || currentUser.role === UserRole.UNIT_ADMIN) {
+      if (isAdminRoleCode(currentUser.roleCode)) {
         throw Errors.forbidden('You must have a Teacher profile to be assigned as a counselor.');
       } else {
         throw Errors.forbidden('Only teachers can create counseling sessions');
       }
     }
+
+    // PSYCHOLOGICAL_OBSERVATION sessions default to confidential regardless
+    // of the caller's input, since they contain sensitive mental health data.
+    const isConfidential = input.category === 'PSYCHOLOGICAL_OBSERVATION'
+      ? true
+      : (input.isConfidential ?? true);
 
     const session = await prisma.counselingSession.create({
       data: {
@@ -214,7 +278,7 @@ export class CounselingService {
         scheduledAt: new Date(input.scheduledAt),
         duration: input.duration,
         location: input.location,
-        isConfidential: input.isConfidential ?? true,
+        isConfidential,
         status: CounselingStatus.SCHEDULED,
       },
       include: {
@@ -243,12 +307,31 @@ export class CounselingService {
       throw Errors.notFound('Session not found');
     }
 
-    if (currentUser.role !== UserRole.SUPER_ADMIN && session.unitId !== currentUser.unitId) {
+    if (currentUser.roleCode !== RoleCode.SUPER_ADMIN && session.unitId !== currentUser.unitId) {
       throw Errors.forbidden('Access denied');
     }
 
     const updateData: Prisma.CounselingSessionUpdateInput = {};
-    if (input.category) updateData.category = input.category as CounselingCategory;
+    if (input.category) {
+      // Once a session is classified as PSYCHOLOGICAL_OBSERVATION it cannot
+      // be reclassified to any other category. Allowing reclassification would
+      // open a multi-step confidentiality-bypass: (1) create as PO, (2) change
+      // category to ACADEMIC (clears `session.category === PO`), (3) set
+      // `isConfidential: false` — the guard below would pass because neither
+      // the pre-update nor effective category is PO anymore, yet the session's
+      // notes/description still contain sensitive mental-health data written
+      // while it was classified as PO. Locking the category at the source
+      // eliminates this bypass without needing a persisted historical flag.
+      if (
+        session.category === CounselingCategory.PSYCHOLOGICAL_OBSERVATION &&
+        input.category !== 'PSYCHOLOGICAL_OBSERVATION'
+      ) {
+        throw Errors.badRequest(
+          'Sessions classified as PSYCHOLOGICAL_OBSERVATION cannot be reclassified to another category'
+        );
+      }
+      updateData.category = input.category as CounselingCategory;
+    }
     if (input.priority) updateData.priority = input.priority as CounselingPriority;
     if (input.title) updateData.title = input.title;
     if (input.description !== undefined) updateData.description = input.description;
@@ -266,17 +349,85 @@ export class CounselingService {
     if (input.summary !== undefined) updateData.summary = input.summary;
     if (input.recommendations !== undefined) updateData.recommendations = input.recommendations;
     if (input.followUpDate) updateData.followUpDate = new Date(input.followUpDate);
-    if (input.isConfidential !== undefined) updateData.isConfidential = input.isConfidential;
+    if (input.isConfidential !== undefined) {
+      // PSYCHOLOGICAL_OBSERVATION sessions must always remain confidential.
+      // Prevent downgrading confidentiality to avoid leaking sensitive mental
+      // health data (e.g. via parent notifications at line 332).
+      //
+      // We check BOTH the effective post-update category AND the pre-update
+      // category. Rationale: the session's notes/description may still contain
+      // sensitive PO data written while the session was classified as PO.
+      // Reclassifying away from PO (e.g. PO → ACADEMIC) and setting
+      // isConfidential=false would trigger a parent notification linking to
+      // those historical sensitive notes. Once PO, always confidential.
+      const effectiveCategory = (input.category as CounselingCategory | undefined) || session.category;
+      const wasPsychologicalObservation = session.category === CounselingCategory.PSYCHOLOGICAL_OBSERVATION;
+      const isPsychologicalObservation = effectiveCategory === CounselingCategory.PSYCHOLOGICAL_OBSERVATION;
+      if ((isPsychologicalObservation || wasPsychologicalObservation) && !input.isConfidential) {
+        throw Errors.badRequest(
+          'Sessions that are or were classified as PSYCHOLOGICAL_OBSERVATION cannot be marked as non-confidential'
+        );
+      }
+      updateData.isConfidential = input.isConfidential;
+    }
+
+    // If the category is being changed TO PSYCHOLOGICAL_OBSERVATION, force
+    // confidentiality regardless of whether isConfidential was provided.
+    // This mirrors the create-time enforcement at createSession().
+    if (input.category === 'PSYCHOLOGICAL_OBSERVATION' && session.category !== CounselingCategory.PSYCHOLOGICAL_OBSERVATION) {
+      updateData.isConfidential = true;
+    }
+
+    // NOTE: A previous defense-in-depth block preserved confidentiality when
+    // the category was changed away from PSYCHOLOGICAL_OBSERVATION without an
+    // explicit `isConfidential`. That block has been removed because the guard
+    // at lines 325-332 now rejects any reclassification away from PO with a
+    // 400 error, making the preservation branch unreachable. If the upstream
+    // guard is ever relaxed, reinstate the block here.
+
     if (input.parentNotified !== undefined) updateData.parentNotified = input.parentNotified;
 
     const updated = await prisma.counselingSession.update({
       where: { id: sessionId },
       data: updateData,
       include: {
-        student: { include: { user: { select: { name: true } } } },
+        student: {
+          include: {
+            user: { select: { name: true } },
+          }
+        },
         counselor: { include: { user: { select: { name: true } } } },
       },
     });
+
+    // ─── NOTIFICATION INTEGRATION ───
+    // If session is completed, notify primary parents.
+    // Parent data is fetched only when the notification condition is met
+    // to avoid leaking parent relationship data in confidential sessions.
+    // Wrapped in try/catch so a non-critical notification failure
+    // does not cause the already-persisted session update to appear failed.
+    if (updated.status === CounselingStatus.COMPLETED && session.status !== CounselingStatus.COMPLETED && !updated.isConfidential) {
+      try {
+        const studentWithParents = await prisma.student.findUnique({
+          where: { id: updated.studentId },
+          include: {
+            parents: { select: { parentId: true, isPrimary: true } },
+          },
+        });
+        const primaryParent = studentWithParents?.parents.find(p => p.isPrimary) || studentWithParents?.parents[0];
+        if (primaryParent) {
+          await createNotification({
+            userId: primaryParent.parentId,
+            type: 'INFO',
+            title: 'Sesi Konseling Selesai',
+            message: `Sesi konseling untuk ${updated.student.user.name} telah selesai dilaksanakan. Silakan cek portal wali untuk detailnya.`,
+            link: `/parent/counseling/${updated.id}`,
+          } as any);
+        }
+      } catch (err) {
+        console.error('Failed to send counseling completion notification:', err);
+      }
+    }
 
     return updated as unknown as SharedCounselingSession;
   }
@@ -293,7 +444,7 @@ export class CounselingService {
       throw Errors.notFound('Session not found');
     }
 
-    if (currentUser.role !== UserRole.SUPER_ADMIN && session.unitId !== currentUser.unitId) {
+    if (currentUser.roleCode !== RoleCode.SUPER_ADMIN && session.unitId !== currentUser.unitId) {
       throw Errors.forbidden('Access denied');
     }
 
@@ -320,7 +471,7 @@ export class CounselingService {
       throw Errors.notFound('Session not found');
     }
 
-    if (currentUser.role !== UserRole.SUPER_ADMIN && session.unitId !== currentUser.unitId) {
+    if (currentUser.roleCode !== RoleCode.SUPER_ADMIN && session.unitId !== currentUser.unitId) {
       throw Errors.forbidden('Access denied');
     }
 
@@ -356,7 +507,7 @@ export class CounselingService {
       throw Errors.notFound('Note not found');
     }
 
-    if (currentUser.role !== UserRole.SUPER_ADMIN && note.session.unitId !== currentUser.unitId) {
+    if (currentUser.roleCode !== RoleCode.SUPER_ADMIN && note.session.unitId !== currentUser.unitId) {
       throw Errors.forbidden('Access denied');
     }
 
@@ -387,7 +538,7 @@ export class CounselingService {
       throw Errors.notFound('Note not found');
     }
 
-    if (currentUser.role !== UserRole.SUPER_ADMIN && note.session.unitId !== currentUser.unitId) {
+    if (currentUser.roleCode !== RoleCode.SUPER_ADMIN && note.session.unitId !== currentUser.unitId) {
       throw Errors.forbidden('Access denied');
     }
 
@@ -411,7 +562,7 @@ export class CounselingService {
       throw Errors.notFound('Session not found');
     }
 
-    if (currentUser.role !== UserRole.SUPER_ADMIN && session.unitId !== currentUser.unitId) {
+    if (currentUser.roleCode !== RoleCode.SUPER_ADMIN && session.unitId !== currentUser.unitId) {
       throw Errors.forbidden('Access denied');
     }
 
@@ -452,7 +603,7 @@ export class CounselingService {
     }
 
     if (
-      currentUser.role !== UserRole.SUPER_ADMIN &&
+      currentUser.roleCode !== RoleCode.SUPER_ADMIN &&
       referral.session.unitId !== currentUser.unitId
     ) {
       throw Errors.forbidden('Access denied');
@@ -491,7 +642,7 @@ export class CounselingService {
     }
 
     if (
-      currentUser.role !== UserRole.SUPER_ADMIN &&
+      currentUser.roleCode !== RoleCode.SUPER_ADMIN &&
       referral.session.unitId !== currentUser.unitId
     ) {
       throw Errors.forbidden('Access denied');
@@ -513,7 +664,12 @@ export class CounselingService {
       throw Errors.notFound('Student not found');
     }
 
-    if (currentUser.role !== UserRole.SUPER_ADMIN && student.unitId !== currentUser.unitId) {
+    // Read-only cross-unit access for SUPER_ADMIN and foundation governance
+    // roles, consistent with `getSessionById` and `getSessions`.
+    if (
+      !hasCrossUnitCounselingAccess(currentUser.roleCode) &&
+      student.unitId !== currentUser.unitId
+    ) {
       throw Errors.forbidden('Access denied');
     }
 
@@ -560,7 +716,15 @@ export class CounselingService {
   async getStatistics(currentUser: AuthenticatedUser): Promise<SharedCounselingStats> {
     const where: Prisma.CounselingSessionWhereInput = {};
 
-    if (currentUser.role !== UserRole.SUPER_ADMIN && currentUser.unitId) {
+    // Same access-control pattern as getSessions — see comment there for
+    // rationale on rejecting non-SUPER_ADMIN users without a unitId.
+    // Foundation-level governance roles retain cross-unit read visibility.
+    if (!hasCrossUnitCounselingAccess(currentUser.roleCode)) {
+      if (!currentUser.unitId) {
+        throw Errors.forbidden(
+          'No unit assignment found for your account. Contact an administrator to assign you to a unit.'
+        );
+      }
       where.unitId = currentUser.unitId;
     }
 

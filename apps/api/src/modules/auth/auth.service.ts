@@ -2,12 +2,95 @@ import { prisma } from '@/lib/prisma';
 import { hashPassword, comparePassword } from '@/lib/password';
 import { generateTokenPair, verifyToken, getExpirationDate, generateAccessToken } from '@/lib/jwt';
 import { Errors } from '@/middleware/error';
+import { isAdminRoleCode, isGovernanceRoleCode, deriveLegacyRole } from '@/middleware/auth';
 import { config } from '@/config';
 import type { LoginInput, RegisterInput, ChangePasswordInput } from './auth.schema';
-import { UserRole, RoleCode } from '@prisma/client';
+import { RoleCode, UnitType } from '@prisma/client';
 import { authenticator } from 'otplib';
 import * as qrcode from 'qrcode';
 import crypto from 'crypto';
+
+/**
+ * Resolve a legacy UserRole value (e.g. 'TEACHER', 'STAFF') into the correct
+ * per-unit RoleCode (e.g. 'TKQ_GURU', 'SDIT_GURU') based on the target Unit's
+ * type. For SUPER_ADMIN and UNIT_ADMIN the mapping is unit-agnostic.
+ *
+ * Returns null if the legacy value cannot be mapped — in that case the caller
+ * should reject with a helpful error message.
+ */
+function resolveLegacyRoleToRoleCode(
+  legacyRole: string,
+  unitType: UnitType | null | undefined,
+): RoleCode | null {
+  // Unit-agnostic mappings
+  if (legacyRole === 'SUPER_ADMIN') return RoleCode.SUPER_ADMIN;
+  if (legacyRole === 'UNIT_ADMIN') {
+    switch (unitType) {
+      case UnitType.TK_QURAN: return RoleCode.TKQ_ADMIN;
+      case UnitType.SD_IT: return RoleCode.SDIT_ADMIN;
+      case UnitType.SMP_IT: return RoleCode.SMPIT_ADMIN;
+      case UnitType.SMA_QURAN: return RoleCode.SMAQ_ADMIN;
+      // PESANTREN / OTHER / unknown: no dedicated per-unit admin RoleCode exists.
+      // Do NOT silently fall back to YAYASAN_ADMIN — that would be a privilege
+      // escalation (foundation-level governance) for a unit-level admin.
+      // Caller must supply `roleCode` explicitly for these unit types.
+      default: return null;
+    }
+  }
+
+  // Per-unit mappings — require a known unit type.
+  //
+  // NOTE on PESANTREN/OTHER units:
+  //   - TEACHER maps to MUSYRIF (the generic pesantren teacher role) to preserve
+  //     backward compatibility for legacy API clients registering pesantren teachers.
+  //     More specific pesantren roles (MUHAFIDZ, MURABBI, WALI_KAMAR) must be
+  //     selected explicitly via `roleCode` since they are distinct responsibilities.
+  //   - STAFF/STUDENT/PARENT have NO dedicated pesantren RoleCode. Legacy clients
+  //     registering these against PESANTREN/OTHER units must migrate to send
+  //     `roleCode` explicitly. Do NOT silently fall back to a school-unit RoleCode
+  //     — that would cross-assign a student/parent to the wrong unit type.
+  const perUnit: Record<string, Partial<Record<UnitType, RoleCode>>> = {
+    TEACHER: {
+      [UnitType.TK_QURAN]: RoleCode.TKQ_GURU,
+      [UnitType.SD_IT]: RoleCode.SDIT_GURU,
+      [UnitType.SMP_IT]: RoleCode.SMPIT_GURU,
+      [UnitType.SMA_QURAN]: RoleCode.SMAQ_GURU,
+      [UnitType.PESANTREN]: RoleCode.MUSYRIF,
+    },
+    STAFF: {
+      [UnitType.TK_QURAN]: RoleCode.TKQ_TATA_USAHA,
+      [UnitType.SD_IT]: RoleCode.SDIT_TATA_USAHA,
+      [UnitType.SMP_IT]: RoleCode.SMPIT_TATA_USAHA,
+      [UnitType.SMA_QURAN]: RoleCode.SMAQ_TATA_USAHA,
+    },
+    STUDENT: {
+      [UnitType.TK_QURAN]: RoleCode.TKQ_SISWA,
+      [UnitType.SD_IT]: RoleCode.SDIT_SISWA,
+      [UnitType.SMP_IT]: RoleCode.SMPIT_SISWA,
+      [UnitType.SMA_QURAN]: RoleCode.SMAQ_SISWA,
+    },
+    PARENT: {
+      [UnitType.TK_QURAN]: RoleCode.TKQ_ORANG_TUA,
+      [UnitType.SD_IT]: RoleCode.SDIT_ORANG_TUA,
+      [UnitType.SMP_IT]: RoleCode.SMPIT_ORANG_TUA,
+      [UnitType.SMA_QURAN]: RoleCode.SMAQ_ORANG_TUA,
+    },
+  };
+
+  if (!unitType) return null;
+  return perUnit[legacyRole]?.[unitType] ?? null;
+}
+
+/** Build a Prisma `where` clause to select only active, non-expired role assignments */
+function activeRoleWhere() {
+  return {
+    isActive: true,
+    OR: [
+      { expiresAt: null },
+      { expiresAt: { gt: new Date() } },
+    ],
+  };
+}
 
 export class AuthService {
   /**
@@ -22,7 +105,7 @@ export class AuthService {
       include: {
         unit: true,
         userRoles: {
-          where: { isActive: true },
+          where: activeRoleWhere(),
           include: {
             role: true,
             unit: true,
@@ -46,26 +129,53 @@ export class AuthService {
       throw Errors.unauthorized('Invalid email or password');
     }
 
-    // Determine active role (primary or first role)
-    const primaryRole = user.userRoles.find((r) => r.isPrimary) || user.userRoles[0];
+    // Determine active role (primary or first role).
+    // Fall back to the legacy User.role column for users who have not yet been
+    // migrated to UserRoleAssignment records.  This prevents a total lockout
+    // when the code is deployed before the data migration has run.
+    const primaryAssignment = user.userRoles.find((r) => r.isPrimary) || user.userRoles[0];
 
-    const isUserAdmin = this.isAdminAccount(user, primaryRole?.role.code as RoleCode);
+    let roleCode: string;
+    let permissions: string[];
+    let roleId: string | undefined;
+    let assignmentUnitId: string | null | undefined;
+
+    if (primaryAssignment) {
+      roleCode = primaryAssignment.role.code;
+      permissions = (primaryAssignment.role.permissions as string[]) || [];
+      roleId = primaryAssignment.roleId;
+      assignmentUnitId = primaryAssignment.unitId;
+    } else if (user.role) {
+      // Legacy fallback: user has no UserRoleAssignment but still has the
+      // deprecated User.role column populated.
+      roleCode = user.role; // e.g. 'SUPER_ADMIN', 'UNIT_ADMIN', 'TEACHER'
+      permissions = [];
+      roleId = undefined;
+      assignmentUnitId = undefined;
+    } else {
+      throw Errors.forbidden('No active role assignment found for this user');
+    }
+
+    const isUserAdmin = isAdminRoleCode(roleCode);
+
+    // Build the payload used for all token generation in this method
+    const basePayload = {
+      id: user.id,
+      sub: user.id,
+      email: user.email,
+      roleId: roleId || '',
+      roleCode,
+      unitId: assignmentUnitId || user.unitId,
+      permissions,
+      role: deriveLegacyRole(roleCode),
+    };
 
     // Check for 2FA
     if (user.isTwoFactorEnabled) {
-      // Return temporary token for 2FA verification with SHORT expiry
       const tempToken = generateAccessToken(
-        {
-          id: user.id,
-          sub: user.id,
-          email: user.email,
-          role: user.role,
-          unitId: user.unitId,
-          roleId: primaryRole?.roleId,
-          isTemp: true, // Marker for temp token
-        },
+        { ...basePayload, isTemp: true },
         '5m'
-      ); // 5 minutes expiry
+      );
 
       return {
         requiresTwoFactor: true,
@@ -76,17 +186,9 @@ export class AuthService {
     // Force 2FA setup for Admin/Super Admin
     if (isUserAdmin && !user.isTwoFactorEnabled) {
       const tempToken = generateAccessToken(
-        {
-          id: user.id,
-          sub: user.id,
-          email: user.email,
-          role: user.role,
-          unitId: user.unitId,
-          roleId: primaryRole?.roleId,
-          isTemp: true,
-        },
+        { ...basePayload, isTemp: true },
         '10m'
-      ); // 10 mins for setup
+      );
 
       return {
         requiresTwoFactorSetup: true,
@@ -94,41 +196,24 @@ export class AuthService {
       };
     }
 
-    // Generate tokens with roleId
-    const tokens = generateTokenPair({
-      id: user.id,
-      sub: user.id,
-      email: user.email,
-      role: user.role,
-      unitId: user.unitId,
-      roleId: primaryRole?.roleId,
-    });
+    // Generate tokens
+    const tokens = generateTokenPair(basePayload);
 
-    // Store refresh token
-    await prisma.refreshToken.create({
-      data: {
-        token: tokens.refreshToken,
-        userId: user.id,
-        expiresAt: getExpirationDate(config.jwt.refreshExpiresIn),
-      },
-    });
-
-    // Update last login
-    const [_, __, activeAcademicYearId] = await Promise.all([
+    // Store refresh token & update last login in parallel
+    const [, , activeAcademicYearId] = await Promise.all([
+      prisma.refreshToken.create({
+        data: {
+          token: tokens.refreshToken,
+          userId: user.id,
+          expiresAt: getExpirationDate(config.jwt.refreshExpiresIn),
+        },
+      }),
       prisma.user.update({
         where: { id: user.id },
         data: { lastLoginAt: new Date() },
       }),
-      // Store refresh token is already awaited before this, can't easily parallelize because tokens depend on user
-      // But we can parallelize the update and the academic year fetch
-      Promise.resolve(), // placeholder to keep structure or I can just await the academic year
       this.getActiveAcademicYearId(),
     ]);
-
-    // Get active academic year
-    const academicYear = await prisma.academicYear.findFirst({
-      where: { isActive: true },
-    });
 
     // Return user without password
     const {
@@ -138,9 +223,6 @@ export class AuthService {
       twoFactorRecoveryCodes,
       ...userWithoutPassword
     } = user;
-
-    // Get permissions from active role
-    const permissions = (primaryRole?.role.permissions as string[]) || [];
 
     return {
       user: {
@@ -155,10 +237,90 @@ export class AuthService {
   /**
    * Register new user (by admin)
    */
-  async register(input: RegisterInput, creatorRole: UserRole) {
+  async register(input: RegisterInput, creatorRoleCode: string) {
+    // Resolve legacy `role` field to a concrete RoleCode when roleCode is not supplied.
+    // This is deferred from schema validation because the correct per-unit RoleCode
+    // depends on the target Unit's type (TKQ_GURU vs SDIT_GURU vs SMPIT_GURU vs SMAQ_GURU).
+    let resolvedRoleCode: RoleCode;
+
+    // Validate the target unit exists whenever unitId is provided, regardless
+    // of whether the caller used the new `roleCode` field or the legacy `role`
+    // field. Without this, the `roleCode` path would skip validation and fail
+    // later at user.create() with an opaque Prisma FK constraint error instead
+    // of a clean 400 response.
+    let unitType: UnitType | null = null;
+    if (input.unitId) {
+      const unit = await prisma.unit.findUnique({
+        where: { id: input.unitId },
+        select: { type: true },
+      });
+      if (!unit) {
+        throw Errors.badRequest(`Unit '${input.unitId}' not found`);
+      }
+      unitType = unit.type;
+    }
+
+    if (input.roleCode) {
+      resolvedRoleCode = input.roleCode;
+    } else if (input.role) {
+      const mapped = resolveLegacyRoleToRoleCode(input.role, unitType);
+      if (!mapped) {
+        throw Errors.badRequest(
+          `Cannot resolve legacy role '${input.role}' for unit type '${unitType ?? 'unknown'}'. ` +
+          `Please send 'roleCode' instead.`
+        );
+      }
+      resolvedRoleCode = mapped;
+    } else {
+      // Should be unreachable due to schema .refine(), but be defensive.
+      throw Errors.badRequest('Either roleCode or role is required');
+    }
+
+    // Validate the requested role exists
+    const role = await prisma.role.findFirst({
+      where: { code: resolvedRoleCode, isActive: true },
+    });
+
+    if (!role) {
+      throw Errors.badRequest(`Role code '${resolvedRoleCode}' not found or inactive`);
+    }
+
     // Only Super Admin can create Super Admin
-    if (input.role === UserRole.SUPER_ADMIN && creatorRole !== UserRole.SUPER_ADMIN) {
+    if (resolvedRoleCode === RoleCode.SUPER_ADMIN && creatorRoleCode !== RoleCode.SUPER_ADMIN) {
       throw Errors.forbidden('Only Super Admin can create Super Admin');
+    }
+
+    // Privilege escalation guard: only SUPER_ADMIN can create ANY admin-level
+    // role. Without this, a unit-admin (e.g. TKQ_ADMIN) could create an admin
+    // for a different unit (e.g. SMAQ_ADMIN) or a foundation-level admin
+    // (e.g. YAYASAN_ADMIN), bypassing organizational boundaries.
+    //
+    // NOTE: SUPER_ADMIN creating SUPER_ADMIN falls through the earlier guard
+    // (line 284) because both sides of the condition are SUPER_ADMIN. This
+    // second check still correctly allows SUPER_ADMIN creators through via
+    // the `creatorRoleCode !== RoleCode.SUPER_ADMIN` term.
+    //
+    // BEHAVIOR CHANGE: Previously a UNIT_ADMIN could create other UNIT_ADMINs.
+    // That is no longer allowed — admin account creation is now restricted to
+    // SUPER_ADMIN only. Foundations needing delegated admin creation must
+    // promote the delegate to SUPER_ADMIN or create the accounts centrally.
+    if (isAdminRoleCode(resolvedRoleCode) && creatorRoleCode !== RoleCode.SUPER_ADMIN) {
+      throw Errors.forbidden('Only Super Admin can create admin-level accounts');
+    }
+
+    // Privilege escalation guard: only SUPER_ADMIN can create Yayasan-level
+    // governance roles (PEMBINA, KETUA, SEKRETARIS, BENDAHARA, ANGGOTA,
+    // PENGAWAS). These are not classified as admin in ADMIN_ROLE_CODES (by
+    // design — they are organizational governance, not system administration),
+    // but they DO carry elevated privileges: cross-unit counseling read
+    // access (see FOUNDATION_LEVEL_ROLES in counseling.service.ts) and
+    // legacy UNIT_ADMIN expansion via LEGACY_ROLE_EXPANSION.
+    //
+    // Without this guard, a unit-level admin (e.g. SDIT_ADMIN) could
+    // register a user with YAYASAN_PEMBINA by bypassing both the
+    // SUPER_ADMIN-only and the isAdminRoleCode guards above.
+    if (isGovernanceRoleCode(resolvedRoleCode) && creatorRoleCode !== RoleCode.SUPER_ADMIN) {
+      throw Errors.forbidden('Only Super Admin can create governance-level accounts');
     }
 
     // Check if email exists
@@ -170,24 +332,57 @@ export class AuthService {
       throw Errors.conflict('Email already registered');
     }
 
-    // Validate unit for non-super-admin
-    if (input.role !== UserRole.SUPER_ADMIN && !input.unitId) {
+    // Validate unit for non-super-admin roles
+    if (resolvedRoleCode !== RoleCode.SUPER_ADMIN && !input.unitId) {
       throw Errors.badRequest('Unit is required for this role');
     }
 
     // Hash password
     const passwordHash = await hashPassword(input.password);
 
-    // Create user
-    const user = await prisma.user.create({
-      data: {
-        name: input.name,
-        email: input.email,
-        passwordHash,
-        role: input.role as UserRole,
-        unitId: input.unitId,
-        isActive: true,
-      },
+    // Create user + role assignment in a transaction.
+    // The legacy `role` column is populated for backward compatibility so that
+    // external tools, reports, and raw SQL queries that depend on it continue
+    // to work during the migration period.
+    //
+    // IMPORTANT: We deliberately refuse to write NULL to the legacy column.
+    // Although the Prisma schema was made nullable (`UserRole?`) to support
+    // pre-existing data during migration, introducing NEW rows with
+    // `role = NULL` would break any downstream consumer (BI tools, audit
+    // queries, raw SQL reports) that assumes `role IS NOT NULL`. We would
+    // rather fail loudly here than silently create unmapped rows.
+    const VALID_LEGACY_ROLES = ['SUPER_ADMIN', 'UNIT_ADMIN', 'TEACHER', 'STAFF', 'STUDENT', 'PARENT'];
+    const legacyRole = deriveLegacyRole(resolvedRoleCode);
+    if (!VALID_LEGACY_ROLES.includes(legacyRole)) {
+      throw Errors.badRequest(
+        `RoleCode '${resolvedRoleCode}' has no legacy UserRole mapping. ` +
+        `Add a mapping to LEGACY_ROLE_EXPANSION in middleware/auth.ts or use an existing mapped role.`
+      );
+    }
+    const legacyRoleValue = legacyRole;
+    const user = await prisma.$transaction(async (tx) => {
+      const newUser = await tx.user.create({
+        data: {
+          name: input.name,
+          email: input.email,
+          passwordHash,
+          role: legacyRoleValue as any, // Populate legacy column (always non-null for new users)
+          unitId: input.unitId,
+          isActive: true,
+        },
+      });
+
+      await tx.userRoleAssignment.create({
+        data: {
+          userId: newUser.id,
+          roleId: role.id,
+          unitId: input.unitId,
+          isPrimary: true,
+          isActive: true,
+        },
+      });
+
+      return newUser;
     });
 
     // Return without password
@@ -197,6 +392,7 @@ export class AuthService {
 
     return {
       ...userWithoutPassword,
+      roleCode: resolvedRoleCode,
       academicYearId: activeAcademicYearId,
     };
   }
@@ -228,7 +424,8 @@ export class AuthService {
         user: {
           include: {
             userRoles: {
-              where: { isActive: true },
+              where: activeRoleWhere(),
+              include: { role: true },
               orderBy: { isPrimary: 'desc' },
             },
           },
@@ -249,18 +446,39 @@ export class AuthService {
       where: { id: storedToken.id },
     });
 
-    // Get primary role
-    const primaryRole =
+    // Get primary role — with legacy fallback for unmigrated users
+    const primaryAssignment =
       storedToken.user.userRoles.find((r) => r.isPrimary) || storedToken.user.userRoles[0];
+
+    let refreshRoleCode: string;
+    let permissions: string[];
+    let refreshRoleId: string | undefined;
+    let refreshUnitId: string | null | undefined;
+
+    if (primaryAssignment) {
+      refreshRoleCode = primaryAssignment.role.code;
+      permissions = (primaryAssignment.role.permissions as string[]) || [];
+      refreshRoleId = primaryAssignment.roleId;
+      refreshUnitId = primaryAssignment.unitId;
+    } else if (storedToken.user.role) {
+      refreshRoleCode = storedToken.user.role;
+      permissions = [];
+      refreshRoleId = undefined;
+      refreshUnitId = undefined;
+    } else {
+      throw Errors.forbidden('No active role assignment found');
+    }
 
     // Generate new tokens
     const tokens = generateTokenPair({
       id: storedToken.user.id,
       sub: storedToken.user.id,
       email: storedToken.user.email,
-      role: storedToken.user.role,
-      unitId: storedToken.user.unitId,
-      roleId: primaryRole?.roleId,
+      roleId: refreshRoleId || '',
+      roleCode: refreshRoleCode,
+      unitId: refreshUnitId || storedToken.user.unitId,
+      permissions,
+      role: deriveLegacyRole(refreshRoleCode),
     });
 
     // Store new refresh token
@@ -309,7 +527,7 @@ export class AuthService {
           unit: true,
           student: true,
           userRoles: {
-            where: { isActive: true },
+            where: activeRoleWhere(),
             include: {
               role: true,
               unit: true,
@@ -325,14 +543,9 @@ export class AuthService {
       throw Errors.notFound('User');
     }
 
-    // Get active academic year
-    const academicYear = await prisma.academicYear.findFirst({
-      where: { isActive: true },
-    });
-
     // Get active role permissions
-    const primaryRole = user.userRoles.find((r) => r.isPrimary) || user.userRoles[0];
-    const permissions = (primaryRole?.role.permissions as string[]) || [];
+    const primaryAssignment = user.userRoles.find((r) => r.isPrimary) || user.userRoles[0];
+    const permissions = (primaryAssignment?.role.permissions as string[]) || [];
 
     const {
       passwordHash,
@@ -475,7 +688,7 @@ export class AuthService {
       include: {
         unit: true,
         userRoles: {
-          where: { isActive: true },
+          where: activeRoleWhere(),
           include: {
             role: true,
             unit: true,
@@ -497,8 +710,6 @@ export class AuthService {
 
     // Check recovery codes if OTP failed (with atomic update to prevent race conditions)
     if (!isValid) {
-      // Use raw query for atomic array removal
-      // Returns number of affected rows
       const result = await prisma.$executeRaw`
         UPDATE "users"
         SET "two_factor_recovery_codes" = array_remove("two_factor_recovery_codes", ${token})
@@ -515,31 +726,54 @@ export class AuthService {
       throw Errors.unauthorized('Invalid OTP code');
     }
 
-    // Generate tokens
-    const primaryRole = user.userRoles.find((r) => r.isPrimary) || user.userRoles[0];
+    // Generate tokens — with legacy fallback for unmigrated users
+    const primaryAssignment = user.userRoles.find((r) => r.isPrimary) || user.userRoles[0];
+
+    let twoFaRoleCode: string;
+    let permissions: string[];
+    let twoFaRoleId: string | undefined;
+    let twoFaUnitId: string | null | undefined;
+
+    if (primaryAssignment) {
+      twoFaRoleCode = primaryAssignment.role.code;
+      permissions = (primaryAssignment.role.permissions as string[]) || [];
+      twoFaRoleId = primaryAssignment.roleId;
+      twoFaUnitId = primaryAssignment.unitId;
+    } else if (user.role) {
+      twoFaRoleCode = user.role;
+      permissions = [];
+      twoFaRoleId = undefined;
+      twoFaUnitId = undefined;
+    } else {
+      throw Errors.forbidden('No active role assignment found');
+    }
+
     const tokens = generateTokenPair({
       id: user.id,
       sub: user.id,
       email: user.email,
-      role: user.role,
-      unitId: user.unitId,
-      roleId: primaryRole?.roleId,
+      roleId: twoFaRoleId || '',
+      roleCode: twoFaRoleCode,
+      unitId: twoFaUnitId || user.unitId,
+      permissions,
+      role: deriveLegacyRole(twoFaRoleCode),
     });
 
-    await prisma.refreshToken.create({
-      data: {
-        token: tokens.refreshToken,
-        userId: user.id,
-        expiresAt: getExpirationDate(config.jwt.refreshExpiresIn),
-      },
-    });
+    const [, , activeAcademicYearId] = await Promise.all([
+      prisma.refreshToken.create({
+        data: {
+          token: tokens.refreshToken,
+          userId: user.id,
+          expiresAt: getExpirationDate(config.jwt.refreshExpiresIn),
+        },
+      }),
+      prisma.user.update({
+        where: { id: user.id },
+        data: { lastLoginAt: new Date() },
+      }),
+      this.getActiveAcademicYearId(),
+    ]);
 
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { lastLoginAt: new Date() },
-    });
-
-    const activeAcademicYearId = await this.getActiveAcademicYearId();
     const {
       passwordHash,
       twoFactorSecret,
@@ -547,9 +781,6 @@ export class AuthService {
       twoFactorSecretPending,
       ...userWithoutPassword
     } = user;
-
-    // Get permissions from active role
-    const permissions = (primaryRole?.role.permissions as string[]) || [];
 
     return {
       user: {
@@ -569,41 +800,60 @@ export class AuthService {
       where: { id: userId },
       include: {
         userRoles: {
-          where: { isActive: true },
+          where: activeRoleWhere(),
           include: { role: true },
+          orderBy: { isPrimary: 'desc' },
         },
       },
     });
     if (!user) throw Errors.notFound('User');
 
-    // Consistently check if target is Admin using role code logic
     const primaryTargetRole = user.userRoles.find((r) => r.isPrimary) || user.userRoles[0];
-    const isTargetAdmin = this.isAdminAccount(user, primaryTargetRole?.role.code as RoleCode);
+    // Fall back to the legacy User.role column for unmigrated users, consistent
+    // with the login flow. Without this, a legacy SUPER_ADMIN with no
+    // UserRoleAssignment would have targetRoleCode = '' and isTargetAdmin = false,
+    // allowing non-SUPER_ADMIN admins to disable their 2FA.
+    const targetRoleCode = primaryTargetRole?.role.code || user.role || '';
+    const isTargetAdmin = isAdminRoleCode(targetRoleCode);
 
     if (adminId) {
       // Admin disabling for another user (Reset flow)
-      const admin = await prisma.user.findUnique({ where: { id: adminId } });
+      const admin = await prisma.user.findUnique({
+        where: { id: adminId },
+        include: {
+          userRoles: {
+            where: activeRoleWhere(),
+            include: { role: true },
+            orderBy: { isPrimary: 'desc' },
+          },
+        },
+      });
       if (!admin || !admin.isTwoFactorEnabled || !admin.twoFactorSecret) {
         throw Errors.unauthorized('Admin must have 2FA enabled to perform this action');
       }
 
+      const adminPrimaryRole = admin.userRoles.find((r) => r.isPrimary) || admin.userRoles[0];
+      // Fall back to legacy User.role for unmigrated admin users
+      const adminRoleCode = adminPrimaryRole?.role.code || admin.role || '';
+
       // Check Admin privileges
-      if (admin.role !== UserRole.SUPER_ADMIN && admin.role !== UserRole.UNIT_ADMIN) {
+      if (!isAdminRoleCode(adminRoleCode)) {
         throw Errors.forbidden('Only Admins can disable 2FA for other users');
       }
 
-      // Fix Privilege Escalation: Prevent UNIT_ADMIN from disabling 2FA for SUPER_ADMIN
-      if (admin.role === UserRole.UNIT_ADMIN) {
-        if (user.role === UserRole.SUPER_ADMIN) {
-          throw Errors.forbidden('UNIT_ADMIN cannot disable 2FA for SUPER_ADMIN');
-        }
-        // Enforce Unit Boundary: UNIT_ADMIN can only manage users in same unit
+      // Prevent non-SUPER_ADMIN from disabling 2FA for SUPER_ADMIN
+      if (adminRoleCode !== RoleCode.SUPER_ADMIN && targetRoleCode === RoleCode.SUPER_ADMIN) {
+        throw Errors.forbidden('Only SUPER_ADMIN can disable 2FA for SUPER_ADMIN');
+      }
+
+      // Non-SUPER_ADMIN admins can only manage users in same unit
+      if (adminRoleCode !== RoleCode.SUPER_ADMIN) {
         if (admin.unitId !== user.unitId) {
-          throw Errors.forbidden('UNIT_ADMIN can only disable 2FA for users in their own unit');
+          throw Errors.forbidden('Admin can only disable 2FA for users in their own unit');
         }
-        // Enforce Hierarchy: UNIT_ADMIN cannot disable other UNIT_ADMINs (Peer protection)
-        if (user.role === UserRole.UNIT_ADMIN) {
-          throw Errors.forbidden('UNIT_ADMIN cannot disable 2FA for other UNIT_ADMINs');
+        // Peer protection: non-SUPER_ADMIN admin cannot disable other admins
+        if (isTargetAdmin) {
+          throw Errors.forbidden('Admin cannot disable 2FA for other admin accounts');
         }
       }
 
@@ -618,7 +868,7 @@ export class AuthService {
     } else {
       // User disabling their own
       if (isTargetAdmin) {
-        throw Errors.forbidden('2FA cannot be disabled for Admin/Super Admin accounts');
+        throw Errors.forbidden('2FA cannot be disabled for Admin accounts');
       }
 
       if (!user.isTwoFactorEnabled || !user.twoFactorSecret) {
@@ -660,28 +910,7 @@ export class AuthService {
     return Array.from({ length: 10 }, () => crypto.randomBytes(5).toString('hex').toUpperCase());
   }
 
-  /**
-   * Helper to check if a user is an Admin
-   * Checks both legacy role and RoleCode
-   */
-  private isAdminAccount(user: { role: UserRole }, roleCode?: RoleCode): boolean {
-    const ADMIN_ROLES = [
-      RoleCode.SUPER_ADMIN,
-      RoleCode.YAYASAN_ADMIN,
-      RoleCode.TKQ_ADMIN,
-      RoleCode.SDIT_ADMIN,
-      RoleCode.SMPIT_ADMIN,
-      RoleCode.SMAQ_ADMIN,
-      RoleCode.UNIT_ADMIN,
-    ];
 
-    return (
-      user.role === UserRole.SUPER_ADMIN ||
-      user.role === UserRole.UNIT_ADMIN ||
-      (roleCode && ADMIN_ROLES.includes(roleCode)) ||
-      false
-    );
-  }
 }
 
 export const authService = new AuthService();

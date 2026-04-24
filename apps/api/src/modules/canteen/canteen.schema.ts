@@ -9,6 +9,7 @@ export const CreateCategorySchema = z.object({
   description: z.string().optional(),
   sortOrder: z.number().int().default(0),
   isActive: z.boolean().default(true),
+  businessUnitId: z.string().uuid().optional().nullable(),
 });
 
 export const UpdateCategorySchema = CreateCategorySchema.partial();
@@ -19,6 +20,7 @@ export const UpdateCategorySchema = CreateCategorySchema.partial();
 
 export const CreateItemSchema = z.object({
   categoryId: z.string().uuid('Category ID tidak valid'),
+  businessUnitId: z.string().uuid().optional().nullable(),
   code: z.string().optional(),
   name: z.string().min(1, 'Nama item wajib diisi'),
   description: z.string().optional(),
@@ -36,6 +38,7 @@ export const UpdateItemSchema = CreateItemSchema.partial();
 
 export const ListItemsQuerySchema = z.object({
   categoryId: z.string().uuid().optional(),
+  businessUnitId: z.string().uuid().optional(),
   search: z.string().optional(),
   isAvailable: z.enum(['true', 'false']).optional(),
   isActive: z.enum(['true', 'false']).optional(),
@@ -57,15 +60,24 @@ export const TransactionItemSchema = z.object({
 export const CreateTransactionSchema = z.object({
   studentId: z.string().uuid().optional().nullable(), // Optional untuk non-santri
   customerName: z.string().optional().nullable(),
+  businessUnitId: z.string().uuid().optional().nullable(), // Optional Business Unit association
   items: z.array(TransactionItemSchema).min(1, 'Minimal 1 item'),
   discount: z.number().min(0).default(0),
   paymentMethod: z.enum(['WALLET', 'CASH']),
   notes: z.string().optional(),
 });
 
+// Only CANCELLED and REFUNDED are valid target statuses for updateStatus —
+// PENDING and COMPLETED cannot be transitioned to (see VALID_TRANSITIONS in
+// transactionService.updateStatus). Restricting the schema surfaces invalid
+// values as a clean Zod validation error instead of a runtime transition error.
 export const UpdateTransactionStatusSchema = z.object({
-  status: z.enum(['PENDING', 'COMPLETED', 'CANCELLED', 'REFUNDED']),
+  status: z.enum(['CANCELLED', 'REFUNDED']),
   notes: z.string().optional(),
+  // Required when cancelling a COMPLETED transaction, since it triggers
+  // financial side-effects (wallet refund, stock restore, journal reversal).
+  // Prevents accidental cancellation of settled transactions.
+  confirmReversal: z.boolean().optional(),
 });
 
 export const ListTransactionsQuerySchema = z.object({
@@ -98,10 +110,15 @@ export const ListStockMovementsQuerySchema = z.object({
   limit: z.string().regex(/^\d+$/).optional().default('20'),
 });
 
+export const ListCategoriesQuerySchema = z.object({
+  businessUnitId: z.string().uuid().optional(),
+});
+
 // =============================================================================
 // TYPE EXPORTS
 // =============================================================================
 
+export type ListCategoriesQuery = z.infer<typeof ListCategoriesQuerySchema>;
 export type CreateCategoryInput = z.infer<typeof CreateCategorySchema>;
 export type UpdateCategoryInput = z.infer<typeof UpdateCategorySchema>;
 export type CreateItemInput = z.infer<typeof CreateItemSchema>;

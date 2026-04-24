@@ -242,22 +242,27 @@ export class AuthService {
     // This is deferred from schema validation because the correct per-unit RoleCode
     // depends on the target Unit's type (TKQ_GURU vs SDIT_GURU vs SMPIT_GURU vs SMAQ_GURU).
     let resolvedRoleCode: RoleCode;
+
+    // Validate the target unit exists whenever unitId is provided, regardless
+    // of whether the caller used the new `roleCode` field or the legacy `role`
+    // field. Without this, the `roleCode` path would skip validation and fail
+    // later at user.create() with an opaque Prisma FK constraint error instead
+    // of a clean 400 response.
+    let unitType: UnitType | null = null;
+    if (input.unitId) {
+      const unit = await prisma.unit.findUnique({
+        where: { id: input.unitId },
+        select: { type: true },
+      });
+      if (!unit) {
+        throw Errors.badRequest(`Unit '${input.unitId}' not found`);
+      }
+      unitType = unit.type;
+    }
+
     if (input.roleCode) {
       resolvedRoleCode = input.roleCode;
     } else if (input.role) {
-      // Look up unit type if a unitId was provided
-      let unitType: UnitType | null = null;
-      if (input.unitId) {
-        const unit = await prisma.unit.findUnique({
-          where: { id: input.unitId },
-          select: { type: true },
-        });
-        if (!unit) {
-          throw Errors.badRequest(`Unit '${input.unitId}' not found`);
-        }
-        unitType = unit.type;
-      }
-
       const mapped = resolveLegacyRoleToRoleCode(input.role, unitType);
       if (!mapped) {
         throw Errors.badRequest(

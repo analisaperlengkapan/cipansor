@@ -378,18 +378,13 @@ export class CounselingService {
       updateData.isConfidential = true;
     }
 
-    // If the category was PSYCHOLOGICAL_OBSERVATION and is being changed to
-    // something else without an explicit isConfidential value, preserve
-    // confidentiality to protect historical sensitive notes from being
-    // exposed via parent notifications.
-    if (
-      session.category === CounselingCategory.PSYCHOLOGICAL_OBSERVATION &&
-      input.category &&
-      input.category !== 'PSYCHOLOGICAL_OBSERVATION' &&
-      input.isConfidential === undefined
-    ) {
-      updateData.isConfidential = true;
-    }
+    // NOTE: A previous defense-in-depth block preserved confidentiality when
+    // the category was changed away from PSYCHOLOGICAL_OBSERVATION without an
+    // explicit `isConfidential`. That block has been removed because the guard
+    // at lines 325-332 now rejects any reclassification away from PO with a
+    // 400 error, making the preservation branch unreachable. If the upstream
+    // guard is ever relaxed, reinstate the block here.
+
     if (input.parentNotified !== undefined) updateData.parentNotified = input.parentNotified;
 
     const updated = await prisma.counselingSession.update({

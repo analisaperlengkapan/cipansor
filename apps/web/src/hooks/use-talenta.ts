@@ -119,5 +119,13 @@ export const useDeleteSuccession = () => {
   });
 };
 
+export const useSuccessorSuggestions = (positionTitle?: string) => {
+  return useQuery({
+    queryKey: ["talenta", "successor-suggestions", positionTitle],
+    queryFn: async () => (await api.get("/talenta/suggestions", { params: { positionTitle } })).data.data,
+    enabled: !!positionTitle && positionTitle.length > 2,
+  });
+};
+
 // Aliases for consistent naming in pages
 export const useCreateProfile = useCreateTalentProfile;

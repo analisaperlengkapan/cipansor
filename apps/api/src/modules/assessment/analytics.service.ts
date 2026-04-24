@@ -25,7 +25,8 @@ export class AssessmentAnalyticsService {
       tahfidzProgress,
       violations,
       attendance,
-      ibadahPoints
+      ibadahPoints,
+      examAttempts
     ] = await Promise.all([
       // 1. Academic: Average of all subject percentages
       prisma.grade.aggregate({
@@ -67,6 +68,16 @@ export class AssessmentAnalyticsService {
           ...(yearStart && yearEnd ? { date: { gte: yearStart, lte: yearEnd } } : {}),
         },
         _sum: { pointsEarned: true }
+      }),
+
+      // 6. CBT Performance: Mastery trends
+      prisma.examAttempt.findMany({
+        where: {
+          studentId,
+          exam: { academicYearId },
+          status: { in: ['COMPLETED', 'NEEDS_REVIEW'] },
+        },
+        select: { score: true, exam: { select: { maxScore: true } } },
       })
     ]);
 
@@ -107,14 +118,23 @@ export class AssessmentAnalyticsService {
     // Ibadah score (relative to an arbitrary yearly target of 3000 pts)
     const ibadahScore = hasIbadahData ? Math.min(100, (Number(ibadahPoints._sum.pointsEarned) / 3000) * 100) : null;
 
+    // 6. CBT Mastery Score
+    const hasCBTData = examAttempts.length > 0;
+    const cbtScore = hasCBTData
+      ? (examAttempts.reduce((sum, a) => sum + (Number(a.score || 0) / Number(a.exam.maxScore || 100)), 0) /
+          examAttempts.length) *
+        100
+      : null;
+
     // Holistic Score (Weighted) — only include dimensions that have actual data.
     // This prevents a new student with no records from being scored as 0%.
     const weights: { score: number | null; weight: number }[] = [
-      { score: academicScore, weight: 0.3 },
-      { score: tahfidzScore, weight: 0.25 },
-      { score: behaviorScore, weight: 0.2 },
-      { score: attendanceScore, weight: 0.15 },
+      { score: academicScore, weight: 0.25 },
+      { score: tahfidzScore, weight: 0.2 },
+      { score: behaviorScore, weight: 0.15 },
+      { score: attendanceScore, weight: 0.1 },
       { score: ibadahScore, weight: 0.1 },
+      { score: cbtScore, weight: 0.2 },
     ];
     const activeWeights = weights.filter(w => w.score !== null);
     const totalWeight = activeWeights.reduce((sum, w) => sum + w.weight, 0);
@@ -145,7 +165,8 @@ export class AssessmentAnalyticsService {
       tahfidz: roundOrNull(tahfidzScore),
       behavior: roundOrNull(behaviorScore),
       attendance: roundOrNull(attendanceScore),
-      ibadah: roundOrNull(ibadahScore)
+      ibadah: roundOrNull(ibadahScore),
+      cbt: roundOrNull(cbtScore),
     };
 
     return {
@@ -186,7 +207,8 @@ export class AssessmentAnalyticsService {
       tahfidz: "Tingkatkan intensitas murojaah harian dan pastikan setoran ziyadah konsisten sesuai target juz per semester.",
       behavior: "Perlu bimbingan intensif dalam kedisiplinan dan kepatuhan terhadap tata tertib pesantren.",
       attendance: "Tingkatkan kedisiplinan dalam kehadiran di kelas dan kegiatan wajib lainnya.",
-      ibadah: "Meningkatkan kesadaran dalam menjalankan ibadah yaumiyah secara mandiri dan tepat waktu."
+      ibadah: "Meningkatkan kesadaran dalam menjalankan ibadah yaumiyah secara mandiri dan tepat waktu.",
+      cbt: "Latih kemampuan mengerjakan soal ujian berbasis komputer secara berkala untuk meningkatkan ketajaman analisis."
     };
 
     return recommendations[lowest[0]] || genericMessage;

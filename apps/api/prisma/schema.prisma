@@ -7062,8 +7062,10 @@ model Question {
   updatedAt   DateTime     @updatedAt @map("updated_at")
 
   // Relations
-  bank        QuestionBank @relation(fields: [bankId], references: [id], onDelete: Cascade)
-  examAnswers ExamAnswer[]
+  bank              QuestionBank       @relation(fields: [bankId], references: [id], onDelete: Cascade)
+  examAnswers       ExamAnswer[]
+  learningObjective LearningObjective? @relation(fields: [learningObjectiveId], references: [id])
+  learningObjectiveId String?          @map("learning_objective_id")
 
   @@index([bankId])
   @@map("questions")
@@ -8237,6 +8239,8 @@ model ResearchProject {
   unit       Unit                @relation(fields: [unitId], references: [id])
   leader     User                @relation("ResearchLeader", fields: [leaderId], references: [id])
   milestones ResearchMilestone[]
+  budgetRel  Budget?             @relation(fields: [budgetId], references: [id])
+  budgetId   String?             @map("budget_id")
 
   @@index([unitId])
   @@index([status])

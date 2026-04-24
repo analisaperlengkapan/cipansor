@@ -312,20 +312,34 @@ export const procurementService = {
           }
         }
 
-        if (prItem.budgetId && prItem.budget?.accountId) {
-          const debitAccount = prItem.budget.accountId;
+        // Accounting Integration: Every purchase must be recorded in the General Ledger.
+        // Best Practice: If no budget is linked, fallback to a unit-level mapped expense account.
+        let debitAccountId = prItem.budgetId && prItem.budget?.accountId ? prItem.budget.accountId : null;
 
+        if (prItem.budgetId) {
           await tx.budget.update({
             where: { id: prItem.budgetId },
-            data: {
-              usedAmount: { increment: totalItemPrice },
-            },
+            data: { usedAmount: { increment: totalItemPrice } },
           });
+        }
 
+        // If no budget-linked account, try to find a general procurement expense account for the unit
+        if (!debitAccountId) {
+          const { getAccountOrFallback, ACCOUNT_MAPPING_KEYS } = await import('../finance/accounting-config.service');
+          const fallbackExpense = await getAccountOrFallback(
+            request.unitId,
+            'PROCUREMENT_EXPENSE',
+            '5109', // Default code for general expenses
+            'Beban Pengadaan'
+          );
+          debitAccountId = fallbackExpense?.id || null;
+        }
+
+        if (debitAccountId) {
           await tx.journalEntry.create({
             data: {
               unitId: request.unitId,
-              accountId: debitAccount,
+              accountId: debitAccountId,
               date: new Date(input.receiptDate),
               description: `Purchase: ${prItem.itemName} (PR: ${request.code}) - Qty: ${fulfillmentItem.quantityReceived}`,
               debit: totalItemPrice,
@@ -349,6 +363,8 @@ export const procurementService = {
               createdById: userId,
             },
           });
+        } else {
+          console.warn(`[Procurement] No debit account found for PR Item ${prItem.id}. Journal entries skipped.`);
         }
       }
 

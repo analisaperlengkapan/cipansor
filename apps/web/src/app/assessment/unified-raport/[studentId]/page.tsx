@@ -6,9 +6,10 @@ import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Printer, Download, BookOpen, Award } from "lucide-react";
+import { Loader2, Printer, Download, BookOpen, Award, Sparkles, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import React from "react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function UnifiedRaportPage({ params: paramsPromise }: { params: Promise<{ studentId: string }> }) {
   const params = React.use(paramsPromise);
@@ -151,6 +152,34 @@ export default function UnifiedRaportPage({ params: paramsPromise }: { params: P
           </div>
         </CardContent>
       </Card>
+
+      {/* AI Performance Recommendation */}
+      {raport.remarks.recommendation && (
+        <Alert className="bg-purple-50 border-purple-200">
+          <Sparkles className="h-5 w-5 text-purple-600" />
+          <AlertTitle className="text-purple-800 font-bold flex items-center gap-2">
+            AI-Powered Development Recommendations
+            <Badge variant="outline" className="text-[10px] bg-white text-purple-600 border-purple-200">Experimental</Badge>
+          </AlertTitle>
+          <AlertDescription className="text-purple-700 mt-2 leading-relaxed italic">
+            "{raport.remarks.recommendation}"
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Holistic Analysis Summary */}
+      {raport.remarks.holistic && (
+        <Card className="border-l-4 border-l-blue-500 bg-blue-50/30">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-bold text-blue-800 flex items-center gap-2">
+              <TrendingUp className="h-4 w-4" /> Analisis Holistik (Kepribadian & Akademik)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-blue-700">{raport.remarks.holistic}</p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Attendance & Notes */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

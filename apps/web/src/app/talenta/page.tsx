@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Edit } from "lucide-react";
-import { useForm } from "react-hook-form";
+import { Edit, Sparkles, CheckCircle2 } from "lucide-react";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import {
@@ -16,6 +16,8 @@ import {
   useDeleteProfile,
   useDeleteTraining,
   useDeleteSuccession,
+  useSuccessorSuggestions,
+  useUpdateSuccession,
 } from "@/hooks/use-talenta";
 import { PageHeader } from "@/components/shared/page-header";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
@@ -355,6 +357,10 @@ function SuccessionFormDialog({ onClose, initialData }: { onClose: () => void; i
   const createSuccession = useCreateSuccession();
   const updateSuccession = useUpdateSuccession();
 
+  const [selectedSuccessorId, setSelectedSuccessorId] = useState<string | null>(
+    initialData?.successorId || null
+  );
+
   const isEdit = !!initialData;
   const isPending = createSuccession.isPending || updateSuccession.isPending;
 
@@ -369,6 +375,9 @@ function SuccessionFormDialog({ onClose, initialData }: { onClose: () => void; i
     },
   });
 
+  const positionTitle = useWatch({ control: form.control, name: "positionTitle" });
+  const { data: suggestions, isLoading: loadingSuggestions } = useSuccessorSuggestions(positionTitle);
+
   useEffect(() => {
     form.reset({
       positionTitle: initialData?.positionTitle || "",
@@ -377,11 +386,13 @@ function SuccessionFormDialog({ onClose, initialData }: { onClose: () => void; i
       notes: initialData?.notes || "",
       targetDate: initialData?.targetDate ? new Date(initialData.targetDate).toISOString().split('T')[0] : ""
     });
+    setSelectedSuccessorId(initialData?.successorId || null);
   }, [initialData, form]);
 
   const onSubmit = async (values: z.infer<typeof successionFormSchema>) => {
     const payload = {
       ...values,
+      successorId: selectedSuccessorId,
       targetDate: values.targetDate ? new Date(values.targetDate).toISOString() : undefined,
     };
 
@@ -394,7 +405,7 @@ function SuccessionFormDialog({ onClose, initialData }: { onClose: () => void; i
   };
 
   return (
-    <DialogContent className="sm:max-w-[480px]">
+    <DialogContent className="sm:max-w-[600px]">
       <DialogHeader>
         <DialogTitle>{isEdit ? "Edit Rencana Suksesi" : "Tambah Rencana Suksesi"}</DialogTitle>
         <DialogDescription>{isEdit ? "Perbarui" : "Buat"} rencana suksesi untuk posisi kunci di lembaga.</DialogDescription>
@@ -404,6 +415,50 @@ function SuccessionFormDialog({ onClose, initialData }: { onClose: () => void; i
           <FormField control={form.control} name="positionTitle" render={({ field }) => (
             <FormItem><FormLabel>Jabatan</FormLabel><FormControl><Input placeholder="cth: Kepala Sekolah" {...field} /></FormControl><FormMessage /></FormItem>
           )} />
+
+          {/* AI Suggestions */}
+          {positionTitle && positionTitle.length > 2 && (
+            <div className="space-y-2 border rounded-lg p-3 bg-slate-50/50">
+              <div className="flex items-center gap-2 text-sm font-semibold text-purple-700">
+                <Sparkles className="h-4 w-4" /> Kandidat Potensial (AI-Matching)
+              </div>
+              <div className="grid grid-cols-1 gap-2 max-h-[160px] overflow-y-auto pr-1">
+                {loadingSuggestions ? (
+                  <Skeleton className="h-10 w-full" />
+                ) : suggestions?.length > 0 ? (
+                  suggestions.map((s: any) => (
+                    <div
+                      key={s.talentProfileId}
+                      className={`flex items-center justify-between p-2 rounded-md border text-xs cursor-pointer transition-colors ${
+                        selectedSuccessorId === s.talentProfileId
+                          ? "bg-purple-100 border-purple-300 ring-1 ring-purple-300"
+                          : "bg-white hover:bg-slate-100 border-slate-200"
+                      }`}
+                      onClick={() => {
+                        setSelectedSuccessorId(s.talentProfileId);
+                        if (s.readiness === "READY_NOW") form.setValue("readinessLevel", "Siap Sekarang");
+                        else if (s.readiness === "READY_IN_1_YEAR") form.setValue("readinessLevel", "Siap 1-2 Tahun");
+                      }}
+                    >
+                      <div className="flex flex-col">
+                        <span className="font-bold flex items-center gap-1">
+                          {s.name}
+                          {s.shariaMatch && <CheckCircle2 className="h-3 w-3 text-green-600" title="Sharia Certified" />}
+                        </span>
+                        <span className="text-muted-foreground">{s.currentRole} • {s.category}</span>
+                      </div>
+                      <Badge variant={selectedSuccessorId === s.talentProfileId ? "default" : "outline"} className="text-[10px]">
+                        {s.matchScore}% Match
+                      </Badge>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-[10px] text-muted-foreground italic text-center py-2">Belum ada kandidat yang cocok</div>
+                )}
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-4">
             <FormField control={form.control} name="priority" render={({ field }) => (
               <FormItem>

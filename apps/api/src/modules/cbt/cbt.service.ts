@@ -790,16 +790,70 @@ export class CBTService {
       }
     });
 
-    const results = Object.values(topicMastery).map(({ gradedCount: _gc, ...m }) => ({
-      ...m,
-      masteryLevel: m.totalPoints > 0 ? (m.earnedPoints / m.totalPoints) * 100 : 0
-    })).sort((a, b) => a.masteryLevel - b.masteryLevel); // Weakest topics first
+    const results = Object.values(topicMastery)
+      .map(({ gradedCount: _gc, ...m }) => ({
+        ...m,
+        masteryLevel: m.totalPoints > 0 ? (m.earnedPoints / m.totalPoints) * 100 : 0,
+      }))
+      .sort((a, b) => a.masteryLevel - b.masteryLevel); // Weakest topics first
+
+    // Enhanced Best Practice: Analyze Topic Mastery from Learning Objectives (TP) if linked
+    // Grouping by TP gives teachers curriculum-aligned insights rather than just question performance.
+    const tpAggregation = await prisma.exam.findUnique({
+      where: { id: examId },
+      include: {
+        attempts: {
+          where: { status: { in: ['COMPLETED', 'NEEDS_REVIEW'] } },
+          include: {
+            answers: {
+              include: {
+                question: {
+                  include: {
+                    learningObjective: {
+                      select: { id: true, code: true, description: true },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const tpMastery: Record<string, any> = {};
+    tpAggregation?.attempts.forEach((attempt) => {
+      attempt.answers.forEach((answer) => {
+        const tp = answer.question.learningObjective;
+        if (tp && answer.score !== null) {
+          if (!tpMastery[tp.id]) {
+            tpMastery[tp.id] = {
+              objectiveId: tp.id,
+              code: tp.code,
+              description: tp.description,
+              totalPoints: 0,
+              earnedPoints: 0,
+            };
+          }
+          tpMastery[tp.id].totalPoints += answer.question.points;
+          tpMastery[tp.id].earnedPoints += Number(answer.score);
+        }
+      });
+    });
+
+    const tpResults = Object.values(tpMastery)
+      .map((m: any) => ({
+        ...m,
+        masteryLevel: m.totalPoints > 0 ? (m.earnedPoints / m.totalPoints) * 100 : 0,
+      }))
+      .sort((a, b) => a.masteryLevel - b.masteryLevel);
 
     // Return an object with items and metadata so truncation info survives
     // JSON serialization (named properties on arrays are silently dropped
     // by JSON.stringify).
     return {
       items: results,
+      topicMastery: tpResults.length > 0 ? tpResults : undefined,
       _meta: truncated
         ? {
             truncated: true,

@@ -95,15 +95,16 @@ export function FulfillDialog({ request, onSuccess }: FulfillDialogProps) {
 
   useEffect(() => {
     if (open) {
-      // Fetch Cash/Bank accounts
+      // Fetch Cash/Bank accounts from finance accounting module
       api
-        .get("/finance/accounts?type=ASSET&isCash=true")
+        .get("/finance/accounting/accounts?type=ASSET")
         .then((res) => {
           const cashAccounts = res.data.data.filter(
             (acc: any) =>
               acc.name.toLowerCase().includes("kas") ||
               acc.name.toLowerCase().includes("bank") ||
-              acc.code.startsWith("1-1"),
+              acc.code.startsWith("1-1") ||
+              acc.isCash === true,
           );
           setAccounts(cashAccounts);
         })

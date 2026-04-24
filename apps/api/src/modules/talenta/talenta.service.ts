@@ -389,14 +389,22 @@ export class TalentaService {
       const completedTrainings = t.user.trainingEnrollments?.length || 0;
       const trainingBonus = Math.min(15, completedTrainings * 5); // Max 15 points for training
 
-      const baseScore = t.category === 'HIGH_POTENTIAL' ? 80 : 65;
+      // Best Practice: Bonus for candidates with Sharia compliance training or experience
+      const hasShariaTraining = t.user.trainingEnrollments?.some((te: any) =>
+        te.program?.category?.toLowerCase().includes('syariah') ||
+        te.program?.title?.toLowerCase().includes('syariah')
+      );
+      const shariaBonus = hasShariaTraining ? 10 : 0;
+
+      const baseScore = t.category === 'HIGH_POTENTIAL' ? 75 : 60;
       return {
         talentProfileId: t.id,
         name: t.user.name,
         currentRole: t.currentRole,
         category: t.category,
         readiness: t.category === 'HIGH_POTENTIAL' ? 'READY_NOW' : 'READY_IN_1_YEAR',
-        matchScore: Math.min(100, baseScore + keywordBonus + trainingBonus),
+        matchScore: Math.min(100, baseScore + keywordBonus + trainingBonus + shariaBonus),
+        shariaMatch: hasShariaTraining,
       };
     }).sort((a, b) => b.matchScore - a.matchScore).slice(0, 10);
   }

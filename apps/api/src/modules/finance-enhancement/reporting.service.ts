@@ -574,3 +574,83 @@ export async function getBudgetRealizationReport(unitId: string, academicYearId:
     items,
   };
 }
+
+export async function getCashFlowForecast(unitId: string, months: number = 6) {
+  const now = new Date();
+  const endDate = new Date(now.getFullYear(), now.getMonth() + months, 0);
+
+  // 1. Get current cash balance
+  const cashAccounts = await prisma.accountCode.findMany({
+    where: {
+      isActive: true,
+      type: AccountType.ASSET,
+      OR: [
+        { name: { contains: 'kas', mode: 'insensitive' } },
+        { name: { contains: 'bank', mode: 'insensitive' } },
+      ],
+    },
+  });
+  const cashAccountIds = cashAccounts.map((a) => a.id);
+
+  const currentBalanceAgg = await prisma.journalEntry.aggregate({
+    where: { unitId, accountId: { in: cashAccountIds }, date: { lte: now } },
+    _sum: { debit: true, credit: true },
+  });
+  const initialBalance =
+    (currentBalanceAgg._sum.debit?.toNumber() || 0) -
+    (currentBalanceAgg._sum.credit?.toNumber() || 0);
+
+  // 2. Project Income (Pending/Partial Invoices by Due Date)
+  const pendingInvoices = await prisma.invoice.findMany({
+    where: {
+      student: { unitId },
+      status: { in: ['PENDING', 'PARTIAL'] },
+      dueDate: { gte: now, lte: endDate },
+    },
+    select: { dueDate: true, amount: true, paidAmount: true },
+  });
+
+  // 3. Project Expenses (Approved PRs and remaining Budgets)
+  const approvedPRs = await prisma.purchaseRequest.findMany({
+    where: {
+      unitId,
+      status: 'APPROVED',
+      date: { lte: endDate },
+    },
+    select: { date: true, totalEstimated: true },
+  });
+
+  // Aggregate monthly
+  const forecastData: any[] = [];
+  let runningBalance = initialBalance;
+
+  for (let i = 0; i < months; i++) {
+    const monthDate = new Date(now.getFullYear(), now.getMonth() + i, 1);
+    const monthEnd = new Date(now.getFullYear(), now.getMonth() + i + 1, 0);
+    const monthLabel = monthDate.toLocaleString('default', { month: 'short', year: '2-digit' });
+
+    const monthIncome = pendingInvoices
+      .filter((inv) => inv.dueDate >= monthDate && inv.dueDate <= monthEnd)
+      .reduce((sum, inv) => sum + (inv.amount.toNumber() - inv.paidAmount.toNumber()), 0);
+
+    const monthExpense = approvedPRs
+      .filter((pr) => pr.date >= monthDate && pr.date <= monthEnd)
+      .reduce((sum, pr) => sum + pr.totalEstimated.toNumber(), 0);
+
+    const netFlow = monthIncome - monthExpense;
+    runningBalance += netFlow;
+
+    forecastData.push({
+      month: monthLabel,
+      income: monthIncome,
+      expense: monthExpense,
+      netFlow,
+      balance: runningBalance,
+    });
+  }
+
+  return {
+    initialBalance,
+    forecast: forecastData,
+  };
+}

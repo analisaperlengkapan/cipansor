@@ -291,13 +291,21 @@ export class CounselingService {
     if (input.isConfidential !== undefined) {
       // PSYCHOLOGICAL_OBSERVATION sessions must always remain confidential.
       // Prevent downgrading confidentiality to avoid leaking sensitive mental
-      // health data (e.g. via parent notifications at line 299).
-      // Check the *effective* post-update category: if the caller is changing
-      // the category to PSYCHOLOGICAL_OBSERVATION in the same request, the new
-      // category takes precedence over the pre-update value from the DB.
+      // health data (e.g. via parent notifications at line 332).
+      //
+      // We check BOTH the effective post-update category AND the pre-update
+      // category. Rationale: the session's notes/description may still contain
+      // sensitive PO data written while the session was classified as PO.
+      // Reclassifying away from PO (e.g. PO → ACADEMIC) and setting
+      // isConfidential=false would trigger a parent notification linking to
+      // those historical sensitive notes. Once PO, always confidential.
       const effectiveCategory = (input.category as CounselingCategory | undefined) || session.category;
-      if (effectiveCategory === CounselingCategory.PSYCHOLOGICAL_OBSERVATION && !input.isConfidential) {
-        throw Errors.badRequest('PSYCHOLOGICAL_OBSERVATION sessions cannot be marked as non-confidential');
+      const wasPsychologicalObservation = session.category === CounselingCategory.PSYCHOLOGICAL_OBSERVATION;
+      const isPsychologicalObservation = effectiveCategory === CounselingCategory.PSYCHOLOGICAL_OBSERVATION;
+      if ((isPsychologicalObservation || wasPsychologicalObservation) && !input.isConfidential) {
+        throw Errors.badRequest(
+          'Sessions that are or were classified as PSYCHOLOGICAL_OBSERVATION cannot be marked as non-confidential'
+        );
       }
       updateData.isConfidential = input.isConfidential;
     }
@@ -306,6 +314,19 @@ export class CounselingService {
     // confidentiality regardless of whether isConfidential was provided.
     // This mirrors the create-time enforcement at createSession().
     if (input.category === 'PSYCHOLOGICAL_OBSERVATION' && session.category !== CounselingCategory.PSYCHOLOGICAL_OBSERVATION) {
+      updateData.isConfidential = true;
+    }
+
+    // If the category was PSYCHOLOGICAL_OBSERVATION and is being changed to
+    // something else without an explicit isConfidential value, preserve
+    // confidentiality to protect historical sensitive notes from being
+    // exposed via parent notifications.
+    if (
+      session.category === CounselingCategory.PSYCHOLOGICAL_OBSERVATION &&
+      input.category &&
+      input.category !== 'PSYCHOLOGICAL_OBSERVATION' &&
+      input.isConfidential === undefined
+    ) {
       updateData.isConfidential = true;
     }
     if (input.parentNotified !== undefined) updateData.parentNotified = input.parentNotified;

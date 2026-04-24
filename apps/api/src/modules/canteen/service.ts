@@ -500,6 +500,16 @@ export const transactionService = {
       }
 
       const discount = new Prisma.Decimal(data.discount || 0);
+      // Guard against discount exceeding subtotal: a negative total would
+      // silently credit the wallet on payment, produce negative-amount journal
+      // entries, and create a negative refund on reversal. Zod validates
+      // `discount >= 0` at the schema layer, but the upper bound depends on
+      // the computed subtotal so it must be enforced here.
+      if (discount.greaterThan(subtotal)) {
+        throw new Error(
+          `Diskon (Rp ${discount.toNumber().toLocaleString('id-ID')}) tidak boleh melebihi subtotal (Rp ${subtotal.toNumber().toLocaleString('id-ID')})`
+        );
+      }
       const total = subtotal.sub(discount);
 
       // Handle wallet payment

@@ -483,3 +483,30 @@ export function sameUnit(paramName: string = 'unitId') {
 export function isAdminRoleCode(roleCode: string): boolean {
   return ADMIN_ROLE_CODES.includes(roleCode);
 }
+
+/**
+ * Yayasan-level governance RoleCodes. These are NOT classified as system
+ * administrators (see ADMIN_ROLE_CODES comment), but they DO represent
+ * elevated foundation-level privileges (board members, auditors, foundation
+ * secretary, etc.) that should not be creatable by unit-level admins.
+ *
+ * Used by AuthService.register to prevent privilege escalation where a
+ * unit-admin (e.g. SDIT_ADMIN) registers a user with a foundation governance
+ * role (e.g. YAYASAN_PEMBINA), gaining cross-unit read access and legacy
+ * UNIT_ADMIN-level permissions via LEGACY_ROLE_EXPANSION.
+ */
+const GOVERNANCE_ROLE_CODES: string[] = [
+  RoleCode.YAYASAN_PEMBINA,
+  RoleCode.YAYASAN_KETUA,
+  RoleCode.YAYASAN_SEKRETARIS,
+  RoleCode.YAYASAN_BENDAHARA,
+  RoleCode.YAYASAN_ANGGOTA,
+  RoleCode.YAYASAN_PENGAWAS,
+];
+
+/**
+ * Helper: check if a roleCode is a Yayasan-level governance role.
+ */
+export function isGovernanceRoleCode(roleCode: string): boolean {
+  return GOVERNANCE_ROLE_CODES.includes(roleCode);
+}

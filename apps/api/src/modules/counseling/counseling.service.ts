@@ -34,12 +34,15 @@ import {
  * non-SUPER_ADMIN whose JWT has no `unitId` — which would break foundation
  * governance users whose role assignment is unit-less by design.
  *
- * NOTE: This grants READ access to the full sessions/statistics list. It does
- * NOT grant mutation rights — those are enforced by `authorize()` in the
- * routes layer. It also does NOT bypass the per-session access-control checks
- * in `getSessionById`, `updateSession`, etc., which still require unit match
- * for non-SUPER_ADMIN users. If foundation governance roles need to read
- * individual sessions across units, that must be handled separately.
+ * NOTE: This grants cross-unit READ access to sessions, statistics, individual
+ * sessions (`getSessionById`) and student counseling history
+ * (`getStudentHistory`) — consistent with their oversight role. It does NOT
+ * grant mutation rights: `updateSession`, `deleteSession`, `addNote`,
+ * `updateNote`, `deleteNote`, `addReferral`, `updateReferral`, and
+ * `deleteReferral` continue to require either SUPER_ADMIN or a unit match, so
+ * foundation governance can view but not modify counseling data from other
+ * units. `authorize()` in the routes layer enforces coarse-grained route-level
+ * permissions in addition to these service-layer checks.
  */
 const FOUNDATION_LEVEL_ROLES: string[] = [
   RoleCode.YAYASAN_ADMIN,
@@ -207,8 +210,14 @@ export class CounselingService {
       throw Errors.notFound('Session not found');
     }
 
-    // Access control
-    if (currentUser.roleCode !== RoleCode.SUPER_ADMIN && session.unitId !== currentUser.unitId) {
+    // Access control: SUPER_ADMIN and foundation-level governance roles have
+    // cross-unit read access; all other users must match the session's unit.
+    // Keeping read access consistent with `getSessions` avoids the confusing
+    // UX where a governance user sees a session in the list but cannot open it.
+    if (
+      !hasCrossUnitCounselingAccess(currentUser.roleCode) &&
+      session.unitId !== currentUser.unitId
+    ) {
       throw Errors.forbidden('Access denied');
     }
 
@@ -641,7 +650,12 @@ export class CounselingService {
       throw Errors.notFound('Student not found');
     }
 
-    if (currentUser.roleCode !== RoleCode.SUPER_ADMIN && student.unitId !== currentUser.unitId) {
+    // Read-only cross-unit access for SUPER_ADMIN and foundation governance
+    // roles, consistent with `getSessionById` and `getSessions`.
+    if (
+      !hasCrossUnitCounselingAccess(currentUser.roleCode) &&
+      student.unitId !== currentUser.unitId
+    ) {
       throw Errors.forbidden('Access denied');
     }
 

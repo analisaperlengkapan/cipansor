@@ -2,7 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { hashPassword, comparePassword } from '@/lib/password';
 import { generateTokenPair, verifyToken, getExpirationDate, generateAccessToken } from '@/lib/jwt';
 import { Errors } from '@/middleware/error';
-import { isAdminRoleCode, deriveLegacyRole } from '@/middleware/auth';
+import { isAdminRoleCode, isGovernanceRoleCode, deriveLegacyRole } from '@/middleware/auth';
 import { config } from '@/config';
 import type { LoginInput, RegisterInput, ChangePasswordInput } from './auth.schema';
 import { RoleCode, UnitType } from '@prisma/client';
@@ -303,6 +303,21 @@ export class AuthService {
       throw Errors.forbidden('Only Super Admin can create admin-level accounts');
     }
 
+    // Privilege escalation guard: only SUPER_ADMIN can create Yayasan-level
+    // governance roles (PEMBINA, KETUA, SEKRETARIS, BENDAHARA, ANGGOTA,
+    // PENGAWAS). These are not classified as admin in ADMIN_ROLE_CODES (by
+    // design — they are organizational governance, not system administration),
+    // but they DO carry elevated privileges: cross-unit counseling read
+    // access (see FOUNDATION_LEVEL_ROLES in counseling.service.ts) and
+    // legacy UNIT_ADMIN expansion via LEGACY_ROLE_EXPANSION.
+    //
+    // Without this guard, a unit-level admin (e.g. SDIT_ADMIN) could
+    // register a user with YAYASAN_PEMBINA by bypassing both the
+    // SUPER_ADMIN-only and the isAdminRoleCode guards above.
+    if (isGovernanceRoleCode(resolvedRoleCode) && creatorRoleCode !== RoleCode.SUPER_ADMIN) {
+      throw Errors.forbidden('Only Super Admin can create governance-level accounts');
+    }
+
     // Check if email exists
     const existing = await prisma.user.findFirst({
       where: { email: input.email },
@@ -324,19 +339,29 @@ export class AuthService {
     // The legacy `role` column is populated for backward compatibility so that
     // external tools, reports, and raw SQL queries that depend on it continue
     // to work during the migration period.
+    //
+    // IMPORTANT: We deliberately refuse to write NULL to the legacy column.
+    // Although the Prisma schema was made nullable (`UserRole?`) to support
+    // pre-existing data during migration, introducing NEW rows with
+    // `role = NULL` would break any downstream consumer (BI tools, audit
+    // queries, raw SQL reports) that assumes `role IS NOT NULL`. We would
+    // rather fail loudly here than silently create unmapped rows.
     const VALID_LEGACY_ROLES = ['SUPER_ADMIN', 'UNIT_ADMIN', 'TEACHER', 'STAFF', 'STUDENT', 'PARENT'];
     const legacyRole = deriveLegacyRole(resolvedRoleCode);
-    // Only write to the legacy column if the derived value is a valid UserRole
-    // enum value. New RoleCodes that have no legacy mapping (e.g. future custom
-    // roles) would otherwise crash with a PostgreSQL enum constraint violation.
-    const legacyRoleValue = VALID_LEGACY_ROLES.includes(legacyRole) ? legacyRole : null;
+    if (!VALID_LEGACY_ROLES.includes(legacyRole)) {
+      throw Errors.badRequest(
+        `RoleCode '${resolvedRoleCode}' has no legacy UserRole mapping. ` +
+        `Add a mapping to LEGACY_ROLE_EXPANSION in middleware/auth.ts or use an existing mapped role.`
+      );
+    }
+    const legacyRoleValue = legacyRole;
     const user = await prisma.$transaction(async (tx) => {
       const newUser = await tx.user.create({
         data: {
           name: input.name,
           email: input.email,
           passwordHash,
-          role: legacyRoleValue as any, // Populate legacy column for backward compat
+          role: legacyRoleValue as any, // Populate legacy column (always non-null for new users)
           unitId: input.unitId,
           isActive: true,
         },

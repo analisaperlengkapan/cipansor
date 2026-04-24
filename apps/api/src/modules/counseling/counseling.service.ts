@@ -312,7 +312,26 @@ export class CounselingService {
     }
 
     const updateData: Prisma.CounselingSessionUpdateInput = {};
-    if (input.category) updateData.category = input.category as CounselingCategory;
+    if (input.category) {
+      // Once a session is classified as PSYCHOLOGICAL_OBSERVATION it cannot
+      // be reclassified to any other category. Allowing reclassification would
+      // open a multi-step confidentiality-bypass: (1) create as PO, (2) change
+      // category to ACADEMIC (clears `session.category === PO`), (3) set
+      // `isConfidential: false` — the guard below would pass because neither
+      // the pre-update nor effective category is PO anymore, yet the session's
+      // notes/description still contain sensitive mental-health data written
+      // while it was classified as PO. Locking the category at the source
+      // eliminates this bypass without needing a persisted historical flag.
+      if (
+        session.category === CounselingCategory.PSYCHOLOGICAL_OBSERVATION &&
+        input.category !== 'PSYCHOLOGICAL_OBSERVATION'
+      ) {
+        throw Errors.badRequest(
+          'Sessions classified as PSYCHOLOGICAL_OBSERVATION cannot be reclassified to another category'
+        );
+      }
+      updateData.category = input.category as CounselingCategory;
+    }
     if (input.priority) updateData.priority = input.priority as CounselingPriority;
     if (input.title) updateData.title = input.title;
     if (input.description !== undefined) updateData.description = input.description;

@@ -796,6 +796,24 @@ export const transactionService = {
       // 2. Record COGS & Inventory Reduction
       // Only create COGS journals when revenue journals were also created,
       // to avoid partially recording the business event in the ledger.
+      //
+      // If revenue journals WERE created but COGS accounts are missing or
+      // totalCogs is zero (e.g. item.costPrice unset), we skip COGS entries
+      // and emit a warning. Without this warning the income statement would
+      // record revenue without the corresponding cost of goods sold,
+      // overstating profit — and operators following ACCOUNTING_DEPLOYMENT.md
+      // would have no log signal indicating the gap until month-end
+      // reconciliation.
+      if (revenueJournalCreated && (!cogsAccount || !inventoryAccount || !totalCogs.gt(0))) {
+        // eslint-disable-next-line no-console
+        console.warn(
+          `[Canteen Accounting] Revenue journals posted but COGS journals skipped for transaction ${transactionNo} — ` +
+          `cogsAccount: ${!!cogsAccount}, inventoryAccount: ${!!inventoryAccount}, totalCogs: ${totalCogs.toString()}. ` +
+          `Income statement for unit ${unitId} will be overstated until adjusting entries are posted. ` +
+          `Configure COGS/Inventory account mappings and ensure item.costPrice is set.`
+        );
+      }
+
       if (revenueJournalCreated && cogsAccount && inventoryAccount && totalCogs.gt(0)) {
         // Debit COGS
         await tx.journalEntry.create({

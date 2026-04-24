@@ -67,8 +67,12 @@ export const CreateTransactionSchema = z.object({
   notes: z.string().optional(),
 });
 
+// Only CANCELLED and REFUNDED are valid target statuses for updateStatus —
+// PENDING and COMPLETED cannot be transitioned to (see VALID_TRANSITIONS in
+// transactionService.updateStatus). Restricting the schema surfaces invalid
+// values as a clean Zod validation error instead of a runtime transition error.
 export const UpdateTransactionStatusSchema = z.object({
-  status: z.enum(['PENDING', 'COMPLETED', 'CANCELLED', 'REFUNDED']),
+  status: z.enum(['CANCELLED', 'REFUNDED']),
   notes: z.string().optional(),
   // Required when cancelling a COMPLETED transaction, since it triggers
   // financial side-effects (wallet refund, stock restore, journal reversal).

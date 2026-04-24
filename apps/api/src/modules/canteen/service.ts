@@ -356,8 +356,22 @@ const generateTransactionNo = async (
 
   let sequence = 1;
   if (lastTransaction) {
-    const lastSeq = parseInt(lastTransaction.transactionNo.split('-')[2]);
-    sequence = lastSeq + 1;
+    // Extract the sequence number using the last `-` so we are robust to any
+    // future format extensions that add additional dash-separated segments
+    // (e.g. `CNT-YYYYMMDD-UNITCODE-XXXX`). A naive `split('-')[2]` would break
+    // in that scenario and produce `NaN + 1 = NaN`, corrupting the sequence.
+    const lastDash = lastTransaction.transactionNo.lastIndexOf('-');
+    const seqStr = lastDash >= 0 ? lastTransaction.transactionNo.slice(lastDash + 1) : '';
+    const lastSeq = parseInt(seqStr, 10);
+    if (Number.isFinite(lastSeq)) {
+      sequence = lastSeq + 1;
+    } else {
+      // eslint-disable-next-line no-console
+      console.warn(
+        `[Canteen] Could not parse sequence from transactionNo '${lastTransaction.transactionNo}'. ` +
+        `Falling back to sequence=1 for prefix '${prefix}'.`
+      );
+    }
   }
 
   return `${prefix}-${sequence.toString().padStart(4, '0')}`;
@@ -481,11 +495,28 @@ export const transactionService = {
         throw new Error('Beberapa item tidak tersedia atau tidak termasuk dalam unit usaha yang dipilih');
       }
 
-      // Check stock
+      // Aggregate quantities per itemId so that multiple order lines referencing
+      // the same item (e.g. same drink with different notes) are stock-checked
+      // and decremented as a single combined quantity. Without this aggregation,
+      // two lines with qty=3 and qty=4 for the same item would each pass the
+      // stock check against the original stock value, and the stock-update loop
+      // below would last-write-wins — deducting only one line's quantity and
+      // under-reporting inventory consumption.
+      const quantityByItem = new Map<string, number>();
       for (const orderItem of data.items) {
-        const item = items.find((i) => i.id === orderItem.itemId);
-        if (item && item.stock < orderItem.quantity) {
-          throw new Error(`Stok ${item.name} tidak mencukupi (tersedia: ${item.stock})`);
+        quantityByItem.set(
+          orderItem.itemId,
+          (quantityByItem.get(orderItem.itemId) || 0) + orderItem.quantity
+        );
+      }
+
+      // Check stock against aggregated quantities
+      for (const [itemId, totalQty] of quantityByItem) {
+        const item = items.find((i) => i.id === itemId);
+        if (item && item.stock < totalQty) {
+          throw new Error(
+            `Stok ${item.name} tidak mencukupi (tersedia: ${item.stock}, diminta: ${totalQty})`
+          );
         }
       }
 
@@ -729,13 +760,18 @@ export const transactionService = {
         });
       }
 
-      // Update stock and create stock movements + COGS Journals
+      // Update stock and create stock movements + COGS Journals.
+      // Iterate over the aggregated `quantityByItem` map rather than
+      // `data.items` so that duplicate order lines referencing the same
+      // itemId produce exactly one stock decrement and one stock movement
+      // with the combined quantity. Iterating over `data.items` directly
+      // would cause last-write-wins on the stock column.
       let totalCogs = new Prisma.Decimal(0);
 
-      for (const orderItem of data.items) {
-        const item = items.find((i) => i.id === orderItem.itemId)!;
-        const newStock = item.stock - orderItem.quantity;
-        const itemCogs = (item.costPrice || new Prisma.Decimal(0)).mul(orderItem.quantity);
+      for (const [itemId, totalQty] of quantityByItem) {
+        const item = items.find((i) => i.id === itemId)!;
+        const newStock = item.stock - totalQty;
+        const itemCogs = (item.costPrice || new Prisma.Decimal(0)).mul(totalQty);
         totalCogs = totalCogs.add(itemCogs);
 
         await tx.canteenItem.update({
@@ -747,7 +783,7 @@ export const transactionService = {
           data: {
             itemId: item.id,
             type: 'OUT',
-            quantity: orderItem.quantity,
+            quantity: totalQty,
             stockBefore: item.stock,
             stockAfter: newStock,
             reference: transaction.id,

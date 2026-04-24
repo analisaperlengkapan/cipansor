@@ -734,7 +734,17 @@ export class CBTService {
           where: { status: { in: ['COMPLETED', 'NEEDS_REVIEW'] } },
           take: 1000, // Safety limit to prevent excessive memory usage
           include: {
-            answers: true,
+            answers: {
+              include: {
+                question: {
+                  include: {
+                    learningObjective: {
+                      select: { id: true, code: true, description: true },
+                    },
+                  },
+                },
+              },
+            },
           },
         },
       },
@@ -797,33 +807,12 @@ export class CBTService {
       }))
       .sort((a, b) => a.masteryLevel - b.masteryLevel); // Weakest topics first
 
-    // Enhanced Best Practice: Analyze Topic Mastery from Learning Objectives (TP) if linked
-    // Grouping by TP gives teachers curriculum-aligned insights rather than just question performance.
-    const tpAggregation = await prisma.exam.findUnique({
-      where: { id: examId },
-      include: {
-        attempts: {
-          where: { status: { in: ['COMPLETED', 'NEEDS_REVIEW'] } },
-          take: 1000,
-          include: {
-            answers: {
-              include: {
-                question: {
-                  include: {
-                    learningObjective: {
-                      select: { id: true, code: true, description: true },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-    });
-
+    // Enhanced Best Practice: Analyze Topic Mastery from Learning Objectives (TP) if linked.
+    // Grouping by TP gives teachers curriculum-aligned insights rather than just question
+    // performance. Reuses the attempts loaded above (bounded by take: 1000) to avoid a
+    // second unbounded query with deeply nested relations.
     const tpMastery: Record<string, any> = {};
-    tpAggregation?.attempts.forEach((attempt) => {
+    exam.attempts.forEach((attempt) => {
       attempt.answers.forEach((answer) => {
         const tp = answer.question.learningObjective;
         if (tp && answer.score !== null) {

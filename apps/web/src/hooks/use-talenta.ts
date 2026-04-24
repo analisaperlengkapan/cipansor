@@ -122,7 +122,7 @@ export const useDeleteSuccession = () => {
 export const useSuccessorSuggestions = (positionTitle?: string) => {
   return useQuery({
     queryKey: ["talenta", "successor-suggestions", positionTitle],
-    queryFn: async () => (await api.get("/talenta/suggestions", { params: { positionTitle } })).data.data,
+    queryFn: async () => (await api.get("/talenta/successions/suggest", { params: { positionTitle } })).data.data,
     enabled: !!positionTitle && positionTitle.length > 2,
   });
 };

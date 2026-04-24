@@ -445,8 +445,28 @@ export const transactionService = {
         }
       }
 
-      // Get all items
-      const itemIds = data.items.map((i) => i.itemId);
+      // Get all items.
+      //
+      // Acquire SELECT ... FOR UPDATE row locks on the canteen_items rows
+      // BEFORE reading them via Prisma, so that concurrent transactions
+      // purchasing the same item serialize on the stock check/update.
+      // Without this lock, two concurrent `create` calls could both read
+      // stock=N, both pass the stock check for quantity=K, and both write
+      // stock=N-K — losing one decrement under PostgreSQL READ COMMITTED.
+      //
+      // Locks are acquired in deterministic ID-sorted order to avoid
+      // deadlocks between concurrent multi-item transactions.
+      const itemIds = [...new Set(data.items.map((i) => i.itemId))].sort();
+
+      if (itemIds.length > 0) {
+        await tx.$queryRaw<Array<{ id: string }>>`
+          SELECT id FROM canteen_items
+          WHERE id = ANY(${itemIds}::text[])
+          ORDER BY id
+          FOR UPDATE
+        `;
+      }
+
       const items = await tx.canteenItem.findMany({
         where: {
           id: { in: itemIds },

@@ -49,9 +49,12 @@ export const businessUnitController = {
     try {
       const unitId = resolveUnitId(req);
       if (!unitId) {
+        // Note: unitId can only come from the JWT or the query string
+        // (e.g. ?unitId=...). It cannot be supplied in the body because
+        // CreateBusinessUnitSchema uses .strict() which rejects unknown fields.
         return next(
           Errors.badRequest(
-            'Unit ID tidak ditemukan. SUPER_ADMIN harus menyertakan unitId di body.'
+            'Unit ID tidak ditemukan. SUPER_ADMIN harus menyertakan unitId pada query string (mis. ?unitId=...).'
           )
         );
       }

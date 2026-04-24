@@ -952,24 +952,58 @@ export const transactionService = {
           });
         }
 
-        // Restore stock
+        // Restore stock.
+        //
+        // Acquire SELECT ... FOR UPDATE row locks on the canteen_items rows
+        // BEFORE reading them, so that concurrent `create` transactions (which
+        // also lock items FOR UPDATE — see line 475-481) cannot decrement stock
+        // between our read and write. Without this lock, a concurrent sale
+        // could decrement stock from N to N-K after we read N but before we
+        // write N+restore, causing our write to clobber the sale's decrement
+        // and over-report inventory.
+        //
+        // Locks are acquired in deterministic ID-sorted order to match the
+        // ordering used by `create` and avoid deadlocks between a concurrent
+        // sale and refund on overlapping item sets.
+        const restoreItemIds = [...new Set(transaction.items.map((i) => i.itemId))].sort();
+
+        if (restoreItemIds.length > 0) {
+          await tx.$queryRaw<Array<{ id: string }>>`
+            SELECT id FROM canteen_items
+            WHERE id = ANY(${restoreItemIds}::text[])
+            ORDER BY id
+            FOR UPDATE
+          `;
+        }
+
+        // Aggregate quantities per itemId so that duplicate order lines on the
+        // same item produce exactly one stock restore with the combined
+        // quantity (mirrors the aggregation applied on the `create` path).
+        const restoreQtyByItem = new Map<string, number>();
         for (const item of transaction.items) {
+          restoreQtyByItem.set(
+            item.itemId,
+            (restoreQtyByItem.get(item.itemId) || 0) + item.quantity
+          );
+        }
+
+        for (const [itemId, restoreQty] of restoreQtyByItem) {
           const currentItem = await tx.canteenItem.findUnique({
-            where: { id: item.itemId },
+            where: { id: itemId },
           });
 
           if (currentItem) {
-            const newStock = currentItem.stock + item.quantity;
+            const newStock = currentItem.stock + restoreQty;
             await tx.canteenItem.update({
-              where: { id: item.itemId },
+              where: { id: itemId },
               data: { stock: newStock },
             });
 
             await tx.canteenStockMovement.create({
               data: {
-                itemId: item.itemId,
+                itemId,
                 type: 'IN',
-                quantity: item.quantity,
+                quantity: restoreQty,
                 stockBefore: currentItem.stock,
                 stockAfter: newStock,
                 reference: transaction.id,

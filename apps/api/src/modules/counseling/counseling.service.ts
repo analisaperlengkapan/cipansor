@@ -22,6 +22,39 @@ import {
   CounselingListParams,
 } from '@cipansor/shared';
 
+/**
+ * Foundation-level RoleCodes that have cross-unit visibility into counseling
+ * data (read-only access across all units, just like SUPER_ADMIN).
+ *
+ * These governance roles (board members, auditors, foundation secretary, etc.)
+ * legitimately need to view counseling statistics and session lists across all
+ * units for oversight purposes, even though they are NOT system administrators.
+ *
+ * WITHOUT this allowlist, the access-control check below would reject any
+ * non-SUPER_ADMIN whose JWT has no `unitId` — which would break foundation
+ * governance users whose role assignment is unit-less by design.
+ *
+ * NOTE: This grants READ access to the full sessions/statistics list. It does
+ * NOT grant mutation rights — those are enforced by `authorize()` in the
+ * routes layer. It also does NOT bypass the per-session access-control checks
+ * in `getSessionById`, `updateSession`, etc., which still require unit match
+ * for non-SUPER_ADMIN users. If foundation governance roles need to read
+ * individual sessions across units, that must be handled separately.
+ */
+const FOUNDATION_LEVEL_ROLES: string[] = [
+  RoleCode.YAYASAN_ADMIN,
+  RoleCode.YAYASAN_PEMBINA,
+  RoleCode.YAYASAN_KETUA,
+  RoleCode.YAYASAN_SEKRETARIS,
+  RoleCode.YAYASAN_BENDAHARA,
+  RoleCode.YAYASAN_ANGGOTA,
+  RoleCode.YAYASAN_PENGAWAS,
+];
+
+function hasCrossUnitCounselingAccess(roleCode: string): boolean {
+  return roleCode === RoleCode.SUPER_ADMIN || FOUNDATION_LEVEL_ROLES.includes(roleCode);
+}
+
 // User type from JwtPayload (aligned with new RoleCode-based auth)
 interface AuthenticatedUser {
   sub: string;
@@ -43,10 +76,10 @@ export class CounselingService {
     // cross-unit data leak. We now reject such requests explicitly so that
     // misconfigured role assignments are surfaced rather than hidden.
     //
-    // If a legitimate foundation-level role needs cross-unit visibility, it
-    // should be granted via RoleCode.SUPER_ADMIN or the check should be
-    // broadened to an explicit allowlist of foundation-level roles.
-    if (currentUser.roleCode !== RoleCode.SUPER_ADMIN) {
+    // Foundation-level governance roles (YAYASAN_PEMBINA, YAYASAN_KETUA, etc.)
+    // retain cross-unit read visibility via `hasCrossUnitCounselingAccess`.
+    // Unit-scoped users MUST have a unitId in their JWT.
+    if (!hasCrossUnitCounselingAccess(currentUser.roleCode)) {
       if (!currentUser.unitId) {
         throw Errors.forbidden(
           'No unit assignment found for your account. Contact an administrator to assign you to a unit.'
@@ -657,7 +690,8 @@ export class CounselingService {
 
     // Same access-control pattern as getSessions — see comment there for
     // rationale on rejecting non-SUPER_ADMIN users without a unitId.
-    if (currentUser.roleCode !== RoleCode.SUPER_ADMIN) {
+    // Foundation-level governance roles retain cross-unit read visibility.
+    if (!hasCrossUnitCounselingAccess(currentUser.roleCode)) {
       if (!currentUser.unitId) {
         throw Errors.forbidden(
           'No unit assignment found for your account. Contact an administrator to assign you to a unit.'

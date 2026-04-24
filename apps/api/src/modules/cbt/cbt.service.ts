@@ -804,6 +804,7 @@ export class CBTService {
       include: {
         attempts: {
           where: { status: { in: ['COMPLETED', 'NEEDS_REVIEW'] } },
+          take: 1000,
           include: {
             answers: {
               include: {

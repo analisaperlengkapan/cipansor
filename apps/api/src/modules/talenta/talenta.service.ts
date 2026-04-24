@@ -365,7 +365,7 @@ export class TalentaService {
             name: true,
             trainingEnrollments: {
               where: { status: 'COMPLETED' },
-              select: { id: true },
+              select: { id: true, program: { select: { title: true, category: true } } },
             },
           },
         },

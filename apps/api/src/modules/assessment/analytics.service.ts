@@ -144,8 +144,8 @@ export class AssessmentAnalyticsService {
       ? activeWeights.reduce((sum, w) => sum + (w.score! * (w.weight / totalWeight)), 0)
       : 0;
 
-    const dimensionsWithData = [hasAcademicData, hasTahfidzData, hasBehaviorData, hasAttendanceData, hasIbadahData].filter(Boolean).length;
-    const dataCompleteness = dimensionsWithData >= 4 ? 'COMPLETE' : dimensionsWithData >= 2 ? 'PARTIAL' : 'INSUFFICIENT';
+    const dimensionsWithData = [hasAcademicData, hasTahfidzData, hasBehaviorData, hasAttendanceData, hasIbadahData, hasCBTData].filter(Boolean).length;
+    const dataCompleteness = dimensionsWithData >= 5 ? 'COMPLETE' : dimensionsWithData >= 2 ? 'PARTIAL' : 'INSUFFICIENT';
 
     const roundOrNull = (v: number | null) => v !== null ? Math.round(v * 100) / 100 : null;
 
@@ -157,7 +157,7 @@ export class AssessmentAnalyticsService {
     const interpretation = dataCompleteness === 'INSUFFICIENT'
       ? 'Dhoif (Perlu Bimbingan/Needs Improvement)'
       : dataCompleteness === 'PARTIAL'
-        ? `${baseInterpretation} — Data Sebagian (${dimensionsWithData}/5 dimensi)`
+        ? `${baseInterpretation} — Data Sebagian (${dimensionsWithData}/6 dimensi)`
         : baseInterpretation;
 
     const breakdown = {

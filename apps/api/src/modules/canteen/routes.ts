@@ -296,7 +296,10 @@ router.get(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const unitId = resolveUnitId(req);
-      if (!unitId) {
+      // SUPER_ADMIN may list transactions across all units (no unitId scoping
+      // required). Consistent with sibling list routes for categories, items,
+      // low-stock, and transaction stats in this file.
+      if (!unitId && !isSuperAdminUser(req)) {
         return res.status(400).json(ApiResponse.error('Unit ID tidak ditemukan', 'UNIT_REQUIRED'));
       }
 

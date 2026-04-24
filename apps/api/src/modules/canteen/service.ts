@@ -378,13 +378,15 @@ const generateTransactionNo = async (
 };
 
 export const transactionService = {
-  async getAll(unitId: string, query: ListTransactionsQuery) {
+  // unitId is optional: when omitted (SUPER_ADMIN global view) returns
+  // transactions across all units. Caller is responsible for authorization.
+  async getAll(unitId: string | undefined, query: ListTransactionsQuery) {
     const page = parseInt(query.page || '1');
     const limit = parseInt(query.limit || '20');
     const skip = (page - 1) * limit;
 
     const where: Prisma.CanteenTransactionWhereInput = {
-      unitId,
+      ...(unitId && { unitId }),
       ...(query.studentId && { studentId: query.studentId }),
       ...(query.status && { status: query.status }),
       ...(query.paymentMethod && { paymentMethod: query.paymentMethod }),
@@ -670,47 +672,62 @@ export const transactionService = {
         );
       }
 
+      // Short-circuit: when the period is closed there is no way we will post
+      // any journal entries below, so skip the 5 account-mapping lookups to
+      // avoid unnecessary DB round-trips on every sale (each getAccountOrFallback
+      // hits the Settings table, and potentially AccountCode when unscoped
+      // fallback is enabled).
       const accountPrefix = data.businessUnitId ? `BU_${data.businessUnitId}_` : '';
 
-      const salesAccount = await getAccountOrFallback(
-        unitId,
-        `${accountPrefix}${ACCOUNT_MAPPING_KEYS.SALES_REVENUE}`,
-        '4101',
-        'Pendapatan Kantin',
-        tx
-      );
+      const salesAccount = periodOpen
+        ? await getAccountOrFallback(
+            unitId,
+            `${accountPrefix}${ACCOUNT_MAPPING_KEYS.SALES_REVENUE}`,
+            '4101',
+            'Pendapatan Kantin',
+            tx
+          )
+        : null;
 
-      const inventoryAccount = await getAccountOrFallback(
-        unitId,
-        `${accountPrefix}${ACCOUNT_MAPPING_KEYS.INVENTORY_ASSET}`,
-        '1104',
-        'Persediaan',
-        tx
-      );
+      const inventoryAccount = periodOpen
+        ? await getAccountOrFallback(
+            unitId,
+            `${accountPrefix}${ACCOUNT_MAPPING_KEYS.INVENTORY_ASSET}`,
+            '1104',
+            'Persediaan',
+            tx
+          )
+        : null;
 
-      const cogsAccount = await getAccountOrFallback(
-        unitId,
-        `${accountPrefix}${ACCOUNT_MAPPING_KEYS.COGS}`,
-        '5101',
-        'Beban Pokok Penjualan Kantin',
-        tx
-      );
+      const cogsAccount = periodOpen
+        ? await getAccountOrFallback(
+            unitId,
+            `${accountPrefix}${ACCOUNT_MAPPING_KEYS.COGS}`,
+            '5101',
+            'Beban Pokok Penjualan Kantin',
+            tx
+          )
+        : null;
 
-      const cashAccount = await getAccountOrFallback(
-        unitId,
-        ACCOUNT_MAPPING_KEYS.CASH,
-        '1101',
-        'Kas',
-        tx
-      );
+      const cashAccount = periodOpen
+        ? await getAccountOrFallback(
+            unitId,
+            ACCOUNT_MAPPING_KEYS.CASH,
+            '1101',
+            'Kas',
+            tx
+          )
+        : null;
 
-      const walletLiabilityAccount = await getAccountOrFallback(
-        unitId,
-        ACCOUNT_MAPPING_KEYS.WALLET_LIABILITY,
-        '2101',
-        'Utang Wallet Santri',
-        tx
-      );
+      const walletLiabilityAccount = periodOpen
+        ? await getAccountOrFallback(
+            unitId,
+            ACCOUNT_MAPPING_KEYS.WALLET_LIABILITY,
+            '2101',
+            'Utang Wallet Santri',
+            tx
+          )
+        : null;
 
       // 1. Record Revenue & Cash/Wallet Receipt
       const paymentAccount = data.paymentMethod === 'WALLET' ? walletLiabilityAccount : cashAccount;

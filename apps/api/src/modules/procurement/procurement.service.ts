@@ -10,6 +10,7 @@ import { UserRole, AssetCondition, Prisma } from '@prisma/client';
 import { Errors } from '@/middleware/error';
 import { generateUniqueCode, generateBulkUniqueCodes } from '@/utils/code-generator';
 import { createNotification } from '../notifications/service';
+import { getAccountOrFallback } from '../finance/accounting-config.service';
 
 export const procurementService = {
   // Create a new purchase request
@@ -325,7 +326,6 @@ export const procurementService = {
 
         // If no budget-linked account, try to find a general procurement expense account for the unit
         if (!debitAccountId) {
-          const { getAccountOrFallback } = await import('../finance/accounting-config.service');
           const fallbackExpense = await getAccountOrFallback(
             request.unitId,
             'PROCUREMENT_EXPENSE',

@@ -77,7 +77,7 @@ function ProjectFormDialog({ onClose }: { onClose: () => void }) {
   const onSubmit = async (values: z.infer<typeof projectFormSchema>) => {
     await createProject.mutateAsync({
       ...values,
-      budgetId: values.budgetId === "none" ? undefined : values.budgetId,
+      budgetId: values.budgetId && values.budgetId !== "none" ? values.budgetId : undefined,
     });
     onClose();
   };
@@ -94,7 +94,7 @@ function ProjectFormDialog({ onClose }: { onClose: () => void }) {
             <FormItem><FormLabel>Unit ID</FormLabel><FormControl><Input placeholder="UUID unit" {...field} /></FormControl><FormMessage /></FormItem>
           )} />
           <FormField control={form.control} name="title" render={({ field }) => (
-            <FormItem><FormLabel>Judul Penelitian</FormLabel><FormControl><Input placeholder="cth: Dampak AI dalam Pembelajaran" {...field} /></FormControl><FormMessage /></FormMessage /></FormItem>
+            <FormItem><FormLabel>Judul Penelitian</FormLabel><FormControl><Input placeholder="cth: Dampak AI dalam Pembelajaran" {...field} /></FormControl><FormMessage /></FormItem>
           )} />
           <div className="grid grid-cols-2 gap-4">
             <FormField control={form.control} name="category" render={({ field }) => (

@@ -27,9 +27,11 @@ export class RiskService {
     // Auto-link to strategic plan if objective is provided
     // This is handled by Prisma via data.strategicPlan connection if provided in the DTO
 
-    // If EXTREME risk, suggest an internal audit immediately
+    // If EXTREME risk, fan out audit-team notifications. Fire-and-forget so the
+    // request response isn't blocked by N notification inserts; failures are
+    // already swallowed inside `triggerAuditSuggestion`.
     if (riskLevel === 'EXTREME') {
-      await this.triggerAuditSuggestion(risk);
+      void this.triggerAuditSuggestion(risk);
     }
 
     return risk;

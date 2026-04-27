@@ -119,10 +119,19 @@ export class AssessmentAnalyticsService {
     const ibadahScore = hasIbadahData ? Math.min(100, (Number(ibadahPoints._sum.pointsEarned) / 3000) * 100) : null;
 
     // 6. CBT Mastery Score
-    const hasCBTData = examAttempts.length > 0;
+    // Filter out attempts with null scores (edge cases like direct DB updates
+    // or migration artifacts) so they don't drag the average to zero.
+    // Also guard against zero/missing maxScore: `a.exam.maxScore` is a Prisma
+    // Decimal object which is always truthy, so `|| 100` would never fire —
+    // we coerce to Number first and then apply the fallback.
+    const scoredAttempts = examAttempts.filter((a) => a.score !== null);
+    const hasCBTData = scoredAttempts.length > 0;
     const cbtScore = hasCBTData
-      ? (examAttempts.reduce((sum, a) => sum + (Number(a.score || 0) / (Number(a.exam.maxScore) || 100)), 0) /
-          examAttempts.length) *
+      ? (scoredAttempts.reduce((sum, a) => {
+          const max = Number(a.exam.maxScore) || 100;
+          return sum + (Number(a.score) / max);
+        }, 0) /
+          scoredAttempts.length) *
         100
       : null;
 

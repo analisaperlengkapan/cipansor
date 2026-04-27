@@ -577,6 +577,10 @@ export async function getBudgetRealizationReport(unitId: string, academicYearId:
 
 export async function getCashFlowForecast(unitId: string, months: number = 6) {
   const now = new Date();
+  // Start-of-day used for filtering date-only fields (e.g. invoice dueDate
+  // which is stored at midnight). Using `now` directly would exclude items
+  // dated today since midnight < current time-of-day.
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const endDate = new Date(now.getFullYear(), now.getMonth() + months, 0);
 
   // 1. Get current cash balance
@@ -605,7 +609,7 @@ export async function getCashFlowForecast(unitId: string, months: number = 6) {
     where: {
       student: { unitId },
       status: { in: ['PENDING', 'PARTIAL'] },
-      dueDate: { gte: now, lte: endDate },
+      dueDate: { gte: todayStart, lte: endDate },
     },
     select: { dueDate: true, amount: true, paidAmount: true },
   });

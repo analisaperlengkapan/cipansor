@@ -633,8 +633,10 @@ export async function getCashFlowForecast(unitId: string, months: number = 6) {
       .filter((inv) => inv.dueDate >= monthDate && inv.dueDate <= monthEnd)
       .reduce((sum, inv) => sum + (inv.amount.toNumber() - inv.paidAmount.toNumber()), 0);
 
+    // For the first month, include all past approved-but-unfulfilled PRs
+    // (overdue backlog) so they don't disappear from the forecast.
     const monthExpense = approvedPRs
-      .filter((pr) => pr.date >= monthDate && pr.date <= monthEnd)
+      .filter((pr) => (i === 0 ? pr.date <= monthEnd : pr.date >= monthDate && pr.date <= monthEnd))
       .reduce((sum, pr) => sum + pr.totalEstimated.toNumber(), 0);
 
     const netFlow = monthIncome - monthExpense;

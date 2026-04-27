@@ -390,7 +390,7 @@ export class FinanceEnhancementController {
       // Validate and cap `months` to prevent abuse (e.g. months=999999 would
       // create that many forecast iterations). Default to 6, clamp to [1, 24].
       const parsedMonths = Number(months);
-      const safeMonths = Number.isFinite(parsedMonths) && parsedMonths > 0
+      const safeMonths = Number.isFinite(parsedMonths) && parsedMonths >= 1
         ? Math.min(24, Math.floor(parsedMonths))
         : 6;
       const result = await getCashFlowForecast(unitId as string, safeMonths);

@@ -19,6 +19,7 @@ import {
   useSuccessorSuggestions,
   useUpdateSuccession,
 } from "@/hooks/use-talenta";
+import { useAuth } from "@/hooks/use-auth";
 import { PageHeader } from "@/components/shared/page-header";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import {
@@ -375,8 +376,9 @@ function SuccessionFormDialog({ onClose, initialData }: { onClose: () => void; i
     },
   });
 
+  const { user } = useAuth();
   const positionTitle = useWatch({ control: form.control, name: "positionTitle" });
-  const { data: suggestions, isLoading: loadingSuggestions } = useSuccessorSuggestions(positionTitle);
+  const { data: suggestions, isLoading: loadingSuggestions } = useSuccessorSuggestions(positionTitle, user?.unitId);
 
   useEffect(() => {
     form.reset({

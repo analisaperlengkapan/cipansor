@@ -133,13 +133,13 @@ export const useDeleteSuccession = () => {
   });
 };
 
-export const useSuccessorSuggestions = (positionTitle?: string) => {
+export const useSuccessorSuggestions = (positionTitle?: string, unitId?: string) => {
   // Debounce the input so suggestions are fetched once typing pauses,
   // instead of firing a network request on every keystroke.
   const debounced = useDebouncedValue(positionTitle, 300);
   return useQuery({
-    queryKey: ["talenta", "successor-suggestions", debounced],
-    queryFn: async () => (await api.get("/talenta/successions/suggest", { params: { positionTitle: debounced } })).data.data,
+    queryKey: ["talenta", "successor-suggestions", debounced, unitId],
+    queryFn: async () => (await api.get("/talenta/successions/suggest", { params: { positionTitle: debounced, unitId } })).data.data,
     enabled: !!debounced && debounced.length > 2,
   });
 };

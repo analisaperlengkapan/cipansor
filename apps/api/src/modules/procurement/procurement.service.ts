@@ -325,12 +325,13 @@ export const procurementService = {
 
         // If no budget-linked account, try to find a general procurement expense account for the unit
         if (!debitAccountId) {
-          const { getAccountOrFallback, ACCOUNT_MAPPING_KEYS } = await import('../finance/accounting-config.service');
+          const { getAccountOrFallback } = await import('../finance/accounting-config.service');
           const fallbackExpense = await getAccountOrFallback(
             request.unitId,
             'PROCUREMENT_EXPENSE',
             '5109', // Default code for general expenses
-            'Beban Pengadaan'
+            'Beban Pengadaan',
+            tx
           );
           debitAccountId = fallbackExpense?.id || null;
         }

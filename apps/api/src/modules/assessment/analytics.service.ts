@@ -121,7 +121,7 @@ export class AssessmentAnalyticsService {
     // 6. CBT Mastery Score
     const hasCBTData = examAttempts.length > 0;
     const cbtScore = hasCBTData
-      ? (examAttempts.reduce((sum, a) => sum + (Number(a.score || 0) / Number(a.exam.maxScore || 100)), 0) /
+      ? (examAttempts.reduce((sum, a) => sum + (Number(a.score || 0) / (Number(a.exam.maxScore) || 100)), 0) /
           examAttempts.length) *
         100
       : null;

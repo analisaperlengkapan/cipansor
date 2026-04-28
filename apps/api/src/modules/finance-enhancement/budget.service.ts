@@ -210,6 +210,13 @@ export async function getBudgetUtilizationAlerts(unitId?: string, academicYearId
     resolvedAcademicYearId = activeYear?.id;
   }
 
+  // If we still couldn't resolve an academic year, return no alerts rather
+  // than querying budgets across ALL academic years (which would surface
+  // stale alerts from prior years' budgets).
+  if (!resolvedAcademicYearId) {
+    return [];
+  }
+
   const budgets = await prisma.budget.findMany({
     where: {
       ...(unitId && { unitId }),

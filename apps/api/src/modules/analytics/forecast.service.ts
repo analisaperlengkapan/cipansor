@@ -366,6 +366,21 @@ export async function calculateCashFlowForecast(unitId?: string, academicYearId?
     resolvedAcademicYearId = activeYear?.id;
   }
 
+  // If we still couldn't resolve an academic year, return an empty forecast
+  // rather than querying budgets across ALL academic years (which would
+  // dramatically inflate the projected outflow).
+  if (!resolvedAcademicYearId) {
+    return {
+      summary: {
+        totalProjectedIncome: 0,
+        totalProjectedOutflow: 0,
+        netProjection: 0,
+        status: 'BALANCED' as const,
+      },
+      dataPoints: [],
+    };
+  }
+
   const pendingInvoices = await prisma.invoice.findMany({
     where: {
       status: { in: ['PENDING', 'PARTIAL'] },

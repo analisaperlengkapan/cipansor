@@ -39,24 +39,7 @@ export async function getExams(req: Request, res: Response, next: NextFunction) 
 export async function getIntegratedRiskAlerts(req: Request, res: Response, next: NextFunction) {
   try {
     const { unitId, academicYearId } = req.query;
-    const user = (req as any).user;
-
-    if (!unitId) {
-      return res.status(400).json({ success: false, error: 'unitId is required' });
-    }
-    if (!academicYearId) {
-      return res.status(400).json({ success: false, error: 'academicYearId is required' });
-    }
-
-    // Unit-level authorization: non-SUPER_ADMIN users can only access their own unit
-    if (user.role !== 'SUPER_ADMIN' && user.unitId !== unitId) {
-      throw Errors.forbidden('Access to this unit is not allowed');
-    }
-
-    const alerts = await AssessmentAnalyticsService.getIntegratedRiskAlerts(
-      unitId as string,
-      academicYearId as string
-    );
+    const alerts = await AssessmentAnalyticsService.getIntegratedRiskAlerts(unitId as string, academicYearId as string);
     res.json({ success: true, data: alerts });
   } catch (error) {
     next(error);

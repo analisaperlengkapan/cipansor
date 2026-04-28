@@ -27,7 +27,7 @@ import {
   useActivePeriod,
   useCreateRegistration,
   Gender,
-} from "@/hooks/use-psb";
+} from "@/hooks/use-admissions";
 import { useUnits } from "@/hooks/use-units";
 import {
   CheckCircle2,

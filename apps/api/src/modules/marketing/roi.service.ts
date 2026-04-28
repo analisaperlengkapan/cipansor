@@ -3,43 +3,76 @@ import { Prisma } from '@prisma/client';
 
 /**
  * Marketing ROI Service
- * Provides analysis on marketing campaign effectiveness and conversion
+ * Optimized implementation to avoid N+1 queries.
  */
-
 export async function calculateCampaignROI(unitId?: string) {
   const campaigns = await prisma.marketingCampaign.findMany({
     where: unitId ? { unitId } : {},
-    include: {
+    select: {
+      id: true,
+      name: true,
+      code: true,
+      budget: true,
       _count: {
         select: { registrants: true },
       },
     },
   });
 
-  const results = await Promise.all(campaigns.map(async (campaign) => {
-    const convertedCount = await prisma.registrant.count({
-      where: {
-        campaignId: campaign.id,
-        studentId: { not: null },
-      },
-    });
+  if (campaigns.length === 0) return [];
 
-    const studentInvoices = await prisma.invoice.aggregate({
-      where: {
-        student: {
-          registrant: {
-            campaignId: campaign.id,
-          },
+  const campaignIds = campaigns.map(c => c.id);
+
+  // 1. Get converted counts in one query
+  const conversions = await prisma.registrant.groupBy({
+    by: ['campaignId'],
+    where: {
+      campaignId: { in: campaignIds },
+      studentId: { not: null },
+    },
+    _count: { _all: true },
+  });
+
+  const conversionMap = new Map(
+    conversions.map(c => [c.campaignId, c._count._all])
+  );
+
+  // 2. Get revenue in one query
+  // Note: Registrant -> Student -> Invoice
+  const revenueData = await prisma.invoice.findMany({
+    where: {
+      student: {
+        registrant: {
+          campaignId: { in: campaignIds },
         },
-        status: 'PAID',
       },
-      _sum: {
-        paidAmount: true,
-      },
-    });
+      status: 'PAID',
+    },
+    select: {
+      paidAmount: true,
+      student: {
+        select: {
+          registrant: {
+            select: { campaignId: true }
+          }
+        }
+      }
+    }
+  });
 
-    const revenue = Number(studentInvoices._sum.paidAmount || 0);
+  const revenueMap = new Map<string, number>();
+  revenueData.forEach(inv => {
+    const cid = inv.student?.registrant?.campaignId;
+    if (cid) {
+      revenueMap.set(cid, (revenueMap.get(cid) || 0) + Number(inv.paidAmount));
+    }
+  });
+
+  const results = campaigns.map((campaign) => {
+    const convertedCount = conversionMap.get(campaign.id) || 0;
+    const revenue = revenueMap.get(campaign.id) || 0;
     const cost = Number(campaign.budget || 0);
+
     const roi = cost > 0 ? ((revenue - cost) / cost) * 100 : 0;
     const conversionRate = campaign._count.registrants > 0
       ? (convertedCount / campaign._count.registrants) * 100
@@ -60,7 +93,7 @@ export async function calculateCampaignROI(unitId?: string) {
         costPerAcquisition: convertedCount > 0 ? cost / convertedCount : 0,
       }
     };
-  }));
+  });
 
   return results.sort((a, b) => b.metrics.roi - a.metrics.roi);
 }

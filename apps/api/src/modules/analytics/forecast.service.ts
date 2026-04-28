@@ -349,37 +349,10 @@ export async function getTahfidzCompletionForecast(unitId?: string): Promise<{
  * Project future cash flow for the next 6 months
  * Logic: (Pending Invoices - Outstanding Budgets)
  */
-export async function calculateCashFlowForecast(unitId?: string, academicYearId?: string) {
+export async function calculateCashFlowForecast(unitId?: string) {
   const months = 6;
   const now = new Date();
   const dataPoints = [];
-
-  // If no academicYearId provided, default to the currently active academic year
-  // to avoid summing budgets across all historical/future years.
-  // Note: AcademicYear is global (not scoped to a unit) in this schema.
-  let resolvedAcademicYearId = academicYearId;
-  if (!resolvedAcademicYearId) {
-    const activeYear = await prisma.academicYear.findFirst({
-      where: { isActive: true },
-      select: { id: true },
-    });
-    resolvedAcademicYearId = activeYear?.id;
-  }
-
-  // If we still couldn't resolve an academic year, return an empty forecast
-  // rather than querying budgets across ALL academic years (which would
-  // dramatically inflate the projected outflow).
-  if (!resolvedAcademicYearId) {
-    return {
-      summary: {
-        totalProjectedIncome: 0,
-        totalProjectedOutflow: 0,
-        netProjection: 0,
-        status: 'BALANCED' as const,
-      },
-      dataPoints: [],
-    };
-  }
 
   const pendingInvoices = await prisma.invoice.findMany({
     where: {
@@ -392,20 +365,11 @@ export async function calculateCashFlowForecast(unitId?: string, academicYearId?
   const activeBudgets = await prisma.budget.findMany({
     where: {
       ...(unitId && { unitId }),
-      ...(resolvedAcademicYearId && { academicYearId: resolvedAcademicYearId }),
     },
     include: { account: true },
   });
 
   const expenseBudgets = activeBudgets.filter(b => b.account.type === 'EXPENSE');
-
-  // The monthly outflow is loop-invariant — it depends only on the budget set,
-  // not on the projection month — so compute it once outside the loop.
-  const monthlyOutflow = expenseBudgets.reduce((sum, b) => {
-    const budgetAmount = b.amount.toNumber();
-    const monthlyAlloc = b.periodType === 'MONTHLY' ? budgetAmount : budgetAmount / 12;
-    return sum + monthlyAlloc;
-  }, 0);
 
   for (let i = 0; i < months; i++) {
     const projectionDate = new Date(now.getFullYear(), now.getMonth() + i, 1);
@@ -417,6 +381,12 @@ export async function calculateCashFlowForecast(unitId?: string, academicYearId?
         return d.getFullYear() === projectionDate.getFullYear() && d.getMonth() === projectionDate.getMonth();
       })
       .reduce((sum, inv) => sum + (Number(inv.amount) - Number(inv.paidAmount)), 0);
+
+    const monthlyOutflow = expenseBudgets.reduce((sum, b) => {
+      const yearlyBudget = b.amount.toNumber();
+      const monthlyAlloc = yearlyBudget / 12;
+      return sum + monthlyAlloc;
+    }, 0);
 
     dataPoints.push({
       month: monthStr,
@@ -434,7 +404,7 @@ export async function calculateCashFlowForecast(unitId?: string, academicYearId?
       totalProjectedIncome: totalIncome,
       totalProjectedOutflow: totalOutflow,
       netProjection: totalIncome - totalOutflow,
-      status: (totalIncome - totalOutflow) > 0 ? 'SURPLUS' : (totalIncome - totalOutflow) < 0 ? 'DEFICIT' : 'BALANCED',
+      status: (totalIncome - totalOutflow) > 0 ? 'SURPLUS' : 'DEFICIT',
     },
     dataPoints,
   };

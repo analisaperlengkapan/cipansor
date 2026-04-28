@@ -912,8 +912,8 @@ const adminNavigation: NavGroup[] = [
         icon: HeartHandshake,
       },
       {
-        title: "Admissions (PSB)",
-        href: "/psb",
+        title: "Admissions",
+        href: "/admissions",
         icon: UserPlus,
       },
       {
@@ -1184,8 +1184,8 @@ const kepalaSekolahNavigation: NavGroup[] = [
     title: "Administration",
     items: [
       {
-        title: "Admissions (PSB)",
-        href: "/psb",
+        title: "Admissions",
+        href: "/admissions",
         icon: UserPlus,
       },
       {

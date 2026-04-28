@@ -214,3 +214,13 @@ export function useExportReport(reportType: ReportType, filter?: ReportFilter) {
     enabled: false, // Only run when explicitly called
   });
 }
+
+export function useMarketingROI() {
+  return useQuery({
+    queryKey: ["marketing-roi"],
+    queryFn: async () => {
+      const response = await api.get("/marketing/roi");
+      return response.data;
+    },
+  });
+}

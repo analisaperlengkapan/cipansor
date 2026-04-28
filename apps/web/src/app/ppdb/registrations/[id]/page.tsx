@@ -57,7 +57,7 @@ import {
   REGISTRATION_STATUS_LABELS,
   REGISTRATION_STATUS_COLORS,
   RegistrationStatus,
-} from "@/hooks/use-psb";
+} from "@/hooks/use-admissions";
 import {
   ArrowLeft,
   Calendar,

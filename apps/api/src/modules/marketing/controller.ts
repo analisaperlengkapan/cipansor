@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
 import * as marketingService from './service';
-import { calculateCampaignROI } from './roi.service';
 import {
   createCampaignSchema,
   logInteractionSchema,

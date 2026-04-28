@@ -33,7 +33,7 @@ import {
   REGISTRATION_STATUSES,
   REGISTRATION_STATUS_LABELS,
   REGISTRATION_STATUS_COLORS,
-} from "@/hooks/use-psb";
+} from "@/hooks/use-admissions";
 import { Search, Eye, Filter } from "lucide-react";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";

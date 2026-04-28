@@ -197,30 +197,10 @@ export async function recalculateBudgetUsage(unitId: string, academicYearId: str
  * Identify budgets that exceed or are close to exceeding their allocated amount.
  * Returns alerts for accounts with usage > 90%.
  */
-export async function getBudgetUtilizationAlerts(unitId?: string, academicYearId?: string) {
-  // If no academicYearId provided, default to the currently active academic year
-  // so we don't surface stale alerts from prior years' budgets.
-  // Note: AcademicYear is global (not scoped to a unit) in this schema.
-  let resolvedAcademicYearId = academicYearId;
-  if (!resolvedAcademicYearId) {
-    const activeYear = await prisma.academicYear.findFirst({
-      where: { isActive: true },
-      select: { id: true },
-    });
-    resolvedAcademicYearId = activeYear?.id;
-  }
-
-  // If we still couldn't resolve an academic year, return no alerts rather
-  // than querying budgets across ALL academic years (which would surface
-  // stale alerts from prior years' budgets).
-  if (!resolvedAcademicYearId) {
-    return [];
-  }
-
+export async function getBudgetUtilizationAlerts(unitId?: string) {
   const budgets = await prisma.budget.findMany({
     where: {
       ...(unitId && { unitId }),
-      ...(resolvedAcademicYearId && { academicYearId: resolvedAcademicYearId }),
     },
     include: {
       account: { select: { code: true, name: true } },

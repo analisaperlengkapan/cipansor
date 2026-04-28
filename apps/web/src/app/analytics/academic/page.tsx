@@ -18,23 +18,17 @@ import {
 import { api } from "@/lib/api";
 import Link from "next/link";
 import { useActiveAcademicYear } from "@/hooks/use-academic-years";
-import { useAuth } from "@/hooks/use-auth";
 
 export default function AcademicInterventionDashboard() {
-  const { user } = useAuth();
-  const { data: activeYear } = useActiveAcademicYear(user?.unitId);
-
-  const unitId = user?.unitId;
+  const { data: activeYear } = useActiveAcademicYear();
 
   const { data: alertsResponse, isLoading } = useQuery({
-    queryKey: ["integrated-risk-alerts", activeYear?.id, unitId],
+    queryKey: ["integrated-risk-alerts", activeYear?.id],
     queryFn: async () => {
-      const response = await api.get(
-        `/assessment/analytics/integrated-alerts?academicYearId=${activeYear?.id}&unitId=${unitId}`,
-      );
+      const response = await api.get(`/assessment/analytics/integrated-alerts?academicYearId=${activeYear?.id}`);
       return response.data.data;
     },
-    enabled: !!activeYear?.id && !!unitId,
+    enabled: !!activeYear?.id,
   });
 
   return (

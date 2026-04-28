@@ -27,11 +27,6 @@ router.get(
   authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF),
   marketingController.getUpcomingFollowUps
 );
-router.get(
-  '/roi',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.YAYASAN_ADMIN),
-  marketingController.getROIStats
-);
 
 // Campaigns
 router.post(

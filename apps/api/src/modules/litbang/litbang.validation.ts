@@ -13,7 +13,8 @@ export const createProjectSchema = z.object({
     budgetId: z.string().uuid().optional(),
     fundingSource: z.string().optional(),
     methodology: z.string().optional(),
-    leaderId: z.string().uuid(),
+    // Optional: controller falls back to `req.user?.id` when not provided.
+    leaderId: z.string().uuid().optional(),
   }),
 });
 

@@ -714,8 +714,8 @@ export class CBTService {
     // completed and needs-review attempts.  NEEDS_REVIEW attempts are included
     // because their MC/TF answers are already auto-graded; ungraded essay
     // answers (score === null) are safely skipped by the aggregation loop.
-    // The Question model does not have a learningObjective relation, so we
-    // group by individual question instead.
+    // We compute two views: (1) per-question mastery, and (2) curriculum-aligned
+    // mastery grouped by Learning Objective (TP) when questions are linked.
     //
     // NOTE: This eagerly loads all answers for all matching attempts into memory.
     // For exams with very large numbers of students, consider migrating to a

@@ -16,13 +16,70 @@ export class RiskService {
     const riskScore = this.calculateRiskScore(data.likelihood, data.impact);
     const riskLevel = this.determineRiskLevel(riskScore);
 
-    return prisma.risk.create({
+    const risk = await prisma.risk.create({
       data: {
         ...data,
         riskScore,
         riskLevel,
       },
     });
+
+    // Auto-link to strategic plan if objective is provided
+    // This is handled by Prisma via data.strategicPlan connection if provided in the DTO
+
+    // If EXTREME risk, fan out audit-team notifications. Fire-and-forget so the
+    // request response isn't blocked by N notification inserts; failures are
+    // already swallowed inside `triggerAuditSuggestion`.
+    if (riskLevel === 'EXTREME') {
+      void this.triggerAuditSuggestion(risk);
+    }
+
+    return risk;
+  }
+
+  private async triggerAuditSuggestion(risk: Risk) {
+    try {
+      // Create a notification for the internal audit team
+      const auditAdmins = await prisma.user.findMany({
+        where: {
+          isActive: true,
+          userRoles: {
+            some: {
+              role: {
+                code: { in: ['YAYASAN_PENGAWAS', 'SUPER_ADMIN'] },
+              },
+            },
+          },
+        },
+        select: { id: true },
+      });
+
+      // Use allSettled so a single failed notification (e.g. invalid user ID)
+      // doesn't block delivery to the rest of the audit team.
+      const results = await Promise.allSettled(
+        auditAdmins.map((admin) =>
+          prisma.notification.create({
+            data: {
+              userId: admin.id,
+              type: 'ALERT',
+              title: 'Risiko Ekstrim Terdeteksi',
+              message: `Risiko baru dengan level EKSTRIM terdeteksi: ${risk.code}. Segera jadwalkan audit internal.`,
+              link: `/risk-management/${risk.id}`,
+              status: 'UNREAD',
+            },
+          })
+        )
+      );
+      const failures = results.filter((r) => r.status === 'rejected');
+      if (failures.length > 0) {
+        console.error(
+          `[Risk] ${failures.length}/${results.length} EXTREME-risk audit notifications failed for risk ${risk.code}`,
+          failures.map((f) => (f as PromiseRejectedResult).reason)
+        );
+      }
+    } catch (err) {
+      console.error('Failed to trigger audit suggestion:', err);
+    }
   }
 
   async getRisks(unitId: string, query: { category?: any; riskLevel?: any; strategicPlanId?: string }): Promise<Risk[]> {
@@ -65,6 +122,9 @@ export class RiskService {
         },
         strategicPlan: {
           select: { id: true, title: true },
+        },
+        auditFindings: {
+          select: { id: true, findingNumber: true, title: true, severity: true, auditId: true },
         },
       },
     });

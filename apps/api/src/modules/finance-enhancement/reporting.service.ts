@@ -574,3 +574,105 @@ export async function getBudgetRealizationReport(unitId: string, academicYearId:
     items,
   };
 }
+
+export async function getCashFlowForecast(unitId: string, months: number = 6) {
+  const now = new Date();
+  // Use end-of-day on the last day of the final month so that items with a
+  // non-midnight timestamp on that day aren't silently dropped by `<=` comparisons.
+  const endDate = new Date(now.getFullYear(), now.getMonth() + months, 0, 23, 59, 59, 999);
+
+  // 1. Get current cash balance
+  // Identify cash/bank accounts using both the standard Indonesian COA code
+  // prefix `1-1` (consistent with `procurement/[id]/fulfill-dialog.tsx`) and a
+  // name-based heuristic as a fallback. The previous implementation relied on
+  // name matches alone, which silently produced a zero `initialBalance` for
+  // institutions that name accounts in English (e.g. "Cash") or use other
+  // localized terms — that wrong baseline then propagates through every
+  // forecast month as a running total.
+  const cashAccounts = await prisma.accountCode.findMany({
+    where: {
+      isActive: true,
+      type: AccountType.ASSET,
+      OR: [
+        { code: { startsWith: '1-1' } },
+        { name: { contains: 'kas', mode: 'insensitive' } },
+        { name: { contains: 'bank', mode: 'insensitive' } },
+        { name: { contains: 'cash', mode: 'insensitive' } },
+      ],
+    },
+  });
+  const cashAccountIds = cashAccounts.map((a) => a.id);
+
+  const currentBalanceAgg = await prisma.journalEntry.aggregate({
+    where: { unitId, accountId: { in: cashAccountIds }, date: { lte: now } },
+    _sum: { debit: true, credit: true },
+  });
+  const initialBalance =
+    (currentBalanceAgg._sum.debit?.toNumber() || 0) -
+    (currentBalanceAgg._sum.credit?.toNumber() || 0);
+
+  // 2. Project Income (Pending/Partial Invoices by Due Date)
+  // No lower bound: overdue receivables are real expected income and should
+  // not be silently excluded. They are bucketed into the first forecast month
+  // (mirroring the overdue PR backlog behavior below).
+  const pendingInvoices = await prisma.invoice.findMany({
+    where: {
+      student: { unitId },
+      status: { in: ['PENDING', 'PARTIAL'] },
+      dueDate: { lte: endDate },
+    },
+    select: { dueDate: true, amount: true, paidAmount: true },
+  });
+
+  // 3. Project Expenses (Approved PRs and remaining Budgets)
+  const approvedPRs = await prisma.purchaseRequest.findMany({
+    where: {
+      unitId,
+      status: 'APPROVED',
+      date: { lte: endDate },
+    },
+    select: { date: true, totalEstimated: true },
+  });
+
+  // Aggregate monthly
+  const forecastData: any[] = [];
+  let runningBalance = initialBalance;
+
+  for (let i = 0; i < months; i++) {
+    const monthDate = new Date(now.getFullYear(), now.getMonth() + i, 1);
+    // End-of-day on the last day of the month so items dated mid-day on that
+    // day are correctly bucketed into this month rather than dropped entirely.
+    const monthEnd = new Date(now.getFullYear(), now.getMonth() + i + 1, 0, 23, 59, 59, 999);
+    const monthLabel = monthDate.toLocaleString('default', { month: 'short', year: '2-digit' });
+
+    // Symmetric to the expense backlog: in the first month, include all
+    // overdue receivables (dueDate < monthDate) so they aren't dropped.
+    const monthIncome = pendingInvoices
+      .filter((inv) =>
+        i === 0 ? inv.dueDate <= monthEnd : inv.dueDate >= monthDate && inv.dueDate <= monthEnd
+      )
+      .reduce((sum, inv) => sum + (inv.amount.toNumber() - inv.paidAmount.toNumber()), 0);
+
+    // For the first month, include all past approved-but-unfulfilled PRs
+    // (overdue backlog) so they don't disappear from the forecast.
+    const monthExpense = approvedPRs
+      .filter((pr) => (i === 0 ? pr.date <= monthEnd : pr.date >= monthDate && pr.date <= monthEnd))
+      .reduce((sum, pr) => sum + pr.totalEstimated.toNumber(), 0);
+
+    const netFlow = monthIncome - monthExpense;
+    runningBalance += netFlow;
+
+    forecastData.push({
+      month: monthLabel,
+      income: monthIncome,
+      expense: monthExpense,
+      netFlow,
+      balance: runningBalance,
+    });
+  }
+
+  return {
+    initialBalance,
+    forecast: forecastData,
+  };
+}

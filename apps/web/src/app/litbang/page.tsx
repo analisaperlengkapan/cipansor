@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import {
@@ -9,7 +9,9 @@ import {
   useCreateProject, useDeleteProject,
   useCreateProposal, useDeleteProposal, useEvaluateProposal,
   useCreateMilestone,
+  useProjectFinances,
 } from "@/hooks/use-litbang";
+import { useBudgets } from "@/hooks/use-finance-enhancement";
 import { PageHeader } from "@/components/shared/page-header";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,7 +25,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Trash2, FlaskConical, Lightbulb, BookOpen, TrendingUp } from "lucide-react";
+import { Plus, Trash2, FlaskConical, Lightbulb, BookOpen, TrendingUp, DollarSign } from "lucide-react";
 
 const projectFormSchema = z.object({
   unitId: z.string().min(1, "Unit wajib"),
@@ -31,6 +33,7 @@ const projectFormSchema = z.object({
   abstract: z.string().optional(),
   category: z.string().min(1, "Kategori wajib"),
   fundingSource: z.string().optional(),
+  budgetId: z.string().optional(),
 });
 
 const proposalFormSchema = z.object({
@@ -65,11 +68,17 @@ function ProjectFormDialog({ onClose }: { onClose: () => void }) {
   const createProject = useCreateProject();
   const form = useForm<z.infer<typeof projectFormSchema>>({
     resolver: zodResolver(projectFormSchema),
-    defaultValues: { unitId: "", title: "", abstract: "", category: "", fundingSource: "" },
+    defaultValues: { unitId: "", title: "", abstract: "", category: "", fundingSource: "", budgetId: "" },
   });
 
+  const selectedUnitId = useWatch({ control: form.control, name: "unitId" });
+  const { data: budgets } = useBudgets({ unitId: selectedUnitId });
+
   const onSubmit = async (values: z.infer<typeof projectFormSchema>) => {
-    await createProject.mutateAsync(values);
+    await createProject.mutateAsync({
+      ...values,
+      budgetId: values.budgetId && values.budgetId !== "none" ? values.budgetId : undefined,
+    });
     onClose();
   };
 
@@ -104,6 +113,23 @@ function ProjectFormDialog({ onClose }: { onClose: () => void }) {
           </div>
           <FormField control={form.control} name="abstract" render={({ field }) => (
             <FormItem><FormLabel>Abstrak (Opsional)</FormLabel><FormControl><Textarea rows={3} {...field} /></FormControl><FormMessage /></FormItem>
+          )} />
+          <FormField control={form.control} name="budgetId" render={({ field }) => (
+            <FormItem>
+              <FormLabel>Hubungkan ke Anggaran (Best Practice)</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger><SelectValue placeholder="Pilih kode anggaran untuk tracking realisasi" /></SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="none">Tidak dihubungkan</SelectItem>
+                  {budgets?.data?.map((b: any) => (
+                    <SelectItem key={b.id} value={b.id}>{b.account?.code} - {b.account?.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
           )} />
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="outline" onClick={onClose}>Batal</Button>
@@ -164,6 +190,69 @@ function ProposalFormDialog({ onClose }: { onClose: () => void }) {
         </form>
       </Form>
     </DialogContent>
+  );
+}
+
+function ProjectCard({ project, onDelete }: { project: any; onDelete: () => void }) {
+  const { data: finances } = useProjectFinances(project.id);
+
+  return (
+    <Card className="hover:shadow-md transition-shadow group">
+      <CardHeader>
+        <div className="flex items-start justify-between">
+          <div>
+            <CardTitle className="text-lg">{project.title}</CardTitle>
+            <CardDescription>
+              {project.category} • {project.leader?.name}
+              {project.fundingSource && ` • Dana: ${project.fundingSource}`}
+            </CardDescription>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge className={statusColor[project.status]}>{project.status}</Badge>
+            <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+              <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive"
+                onClick={onDelete}>
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">Milestone Progress</span>
+            <span className="font-medium">{project.progress}%</span>
+          </div>
+          <Progress value={project.progress} className="h-2" />
+          {project.milestones?.length > 0 && (
+            <div className="flex gap-1 flex-wrap mt-1">
+              {project.milestones.map((m: any) => (
+                <Badge key={m.id} variant={m.status === "COMPLETED" ? "default" : "outline"} className="text-[10px] h-5">
+                  {m.title}
+                </Badge>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {finances && finances.budget > 0 && (
+          <div className="pt-2 border-t space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground flex items-center gap-1">
+                <DollarSign className="h-3 w-3" /> Realisasi Anggaran
+              </span>
+              <span className="font-medium">{Math.round(finances.percentage)}%</span>
+            </div>
+            <Progress value={finances.percentage} className="h-2" />
+            <div className="flex justify-between text-[10px] text-muted-foreground uppercase tracking-wider">
+              <span>Rp {Math.round(finances.realization).toLocaleString()}</span>
+              <span>Target: Rp {Math.round(finances.budget).toLocaleString()}</span>
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -240,46 +329,11 @@ export default function LitbangPage() {
             </CardContent></Card>
           ) : (
             projects.map((project: any) => (
-              <Card key={project.id} className="hover:shadow-md transition-shadow group">
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <CardTitle className="text-lg">{project.title}</CardTitle>
-                      <CardDescription>
-                        {project.category} • {project.leader?.name}
-                        {project.fundingSource && ` • Dana: ${project.fundingSource}`}
-                      </CardDescription>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge className={statusColor[project.status]}>{project.status}</Badge>
-                      <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive"
-                          onClick={() => setDeleteState({ type: "project", id: project.id })}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Progress</span>
-                      <span className="font-medium">{project.progress}%</span>
-                    </div>
-                    <Progress value={project.progress} className="h-2" />
-                    {project.milestones?.length > 0 && (
-                      <div className="flex gap-1 flex-wrap mt-2">
-                        {project.milestones.map((m: any) => (
-                          <Badge key={m.id} variant={m.status === "COMPLETED" ? "default" : "outline"} className="text-xs">
-                            {m.title}
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+              <ProjectCard
+                key={project.id}
+                project={project}
+                onDelete={() => setDeleteState({ type: "project", id: project.id })}
+              />
             ))
           )}
         </TabsContent>

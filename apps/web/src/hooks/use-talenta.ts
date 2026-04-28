@@ -1,6 +1,20 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
+
+/**
+ * Debounce a value for the given delay (ms). Used to avoid firing API
+ * requests on every keystroke in autocomplete-style flows.
+ */
+function useDebouncedValue<T>(value: T, delay: number = 300): T {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(t);
+  }, [value, delay]);
+  return debounced;
+}
 
 export const useTalentProfiles = (params?: { category?: string }) => {
   return useQuery({
@@ -116,6 +130,17 @@ export const useDeleteSuccession = () => {
     mutationFn: async (id: string) => (await api.delete(`/talenta/successions/${id}`)).data,
     onSuccess: () => { toast.success("Rencana suksesi berhasil dihapus"); qc.invalidateQueries({ queryKey: ["talenta"] }); },
     onError: (e: any) => { toast.error(e.response?.data?.message || "Gagal menghapus rencana suksesi"); },
+  });
+};
+
+export const useSuccessorSuggestions = (positionTitle?: string, unitId?: string) => {
+  // Debounce the input so suggestions are fetched once typing pauses,
+  // instead of firing a network request on every keystroke.
+  const debounced = useDebouncedValue(positionTitle, 300);
+  return useQuery({
+    queryKey: ["talenta", "successor-suggestions", debounced, unitId],
+    queryFn: async () => (await api.get("/talenta/successions/suggest", { params: { positionTitle: debounced, unitId } })).data.data,
+    enabled: !!debounced && debounced.length > 2,
   });
 };
 

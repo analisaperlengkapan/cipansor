@@ -15,9 +15,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useState } from "react";
-import { Trash, CheckCircle, Clock } from "lucide-react";
+import { Trash, CheckCircle, Clock, ExternalLink, ShieldAlert } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { useRisk, useDeleteRisk, useCreateMitigation, useDeleteMitigation } from "@/hooks/use-risk";
+import Link from "next/link";
 
 const MitigationStrategy = ["AVOID", "REDUCE", "SHARE", "ACCEPT"] as const;
 
@@ -211,6 +212,49 @@ export default function RiskDetailPage() {
         </div>
 
         <div className="space-y-6">
+          {risk.strategicPlan && (
+            <Card className="border-l-4 border-l-blue-500">
+              <CardHeader>
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <ExternalLink className="h-4 w-4" /> Strategic Objective
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Link
+                  href={`/perencanaan/${risk.strategicPlan.id}`}
+                  className="text-sm font-medium hover:underline text-blue-600 block"
+                >
+                  {risk.strategicPlan.title}
+                </Link>
+              </CardContent>
+            </Card>
+          )}
+
+          {risk.auditFindings && risk.auditFindings.length > 0 && (
+            <Card className="border-l-4 border-l-red-500">
+              <CardHeader>
+                <CardTitle className="text-sm font-semibold flex items-center gap-2 text-red-700">
+                  <ShieldAlert className="h-4 w-4" /> Audit Findings
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {risk.auditFindings.map((finding: any) => (
+                  <div key={finding.id} className="text-xs border-b pb-2 last:border-0 last:pb-0">
+                    <Link
+                      href={`/pengawasan/audit/${finding.auditId}`}
+                      className="font-semibold hover:underline block mb-1"
+                    >
+                      {finding.findingNumber}: {finding.title}
+                    </Link>
+                    <Badge variant="outline" className="text-[10px] h-4">
+                      {finding.severity}
+                    </Badge>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+
            <Card>
              <CardHeader><CardTitle>Meta</CardTitle></CardHeader>
              <CardContent className="text-sm space-y-2">

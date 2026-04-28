@@ -411,6 +411,43 @@ export function useTrialBalanceReport(filters: {
   });
 }
 
+export function useCashFlowForecast(unitId?: string, months: number = 6) {
+  return useQuery({
+    queryKey: ["cash-flow-forecast", unitId, months],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (unitId) params.append("unitId", unitId);
+      params.append("months", String(months));
+
+      const response = await api.get<{ data: any }>(
+        `/finance-enhancement/reports/cash-flow-forecast?${params}`,
+      );
+      return response.data.data;
+    },
+    enabled: !!unitId,
+  });
+}
+
+// ==================== BUDGETS ====================
+
+export function useBudgets(filters: { unitId?: string; academicYearId?: string; page?: number; limit?: number } = {}) {
+  return useQuery({
+    queryKey: ["budgets", filters],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (filters.unitId) params.append("unitId", filters.unitId);
+      if (filters.academicYearId) params.append("academicYearId", filters.academicYearId);
+      if (filters.page) params.append("page", String(filters.page));
+      if (filters.limit) params.append("limit", String(filters.limit));
+
+      const response = await api.get<{ success: boolean; data: any }>(
+        `/finance-enhancement/budgets?${params}`,
+      );
+      return response.data.data;
+    },
+  });
+}
+
 export function useGeneralLedgerReport(filters: {
   unitId?: string;
   accountId: string;

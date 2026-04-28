@@ -10,8 +10,11 @@ export const createProjectSchema = z.object({
     startDate: z.string().datetime().optional(),
     endDate: z.string().datetime().optional(),
     budget: z.number().positive().optional(),
+    budgetId: z.string().uuid().optional(),
     fundingSource: z.string().optional(),
     methodology: z.string().optional(),
+    // Optional: controller falls back to `req.user?.id` when not provided.
+    leaderId: z.string().uuid().optional(),
   }),
 });
 
@@ -25,6 +28,7 @@ export const updateProjectSchema = z.object({
     startDate: z.string().datetime().optional(),
     endDate: z.string().datetime().optional(),
     budget: z.number().positive().optional(),
+    budgetId: z.string().uuid().optional(),
     fundingSource: z.string().optional(),
     methodology: z.string().optional(),
     findings: z.string().optional(),

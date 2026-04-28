@@ -1,4 +1,5 @@
 import { prisma } from '../../lib/prisma';
+import { Prisma } from '@prisma/client';
 
 export class LitbangService {
   // ── Research Projects ─────────────────────────────
@@ -41,27 +42,46 @@ export class LitbangService {
     startDate?: Date;
     endDate?: Date;
     budget?: number;
+    budgetId?: string;
     fundingSource?: string;
     methodology?: string;
   }) {
-    return prisma.researchProject.create({ data: { ...data, budget: data.budget as any } });
+    return prisma.researchProject.create({
+      data: {
+        ...data,
+        // Use `!== undefined` (matching updateProject) so that an explicit
+        // budget of 0 is preserved as Decimal(0) rather than silently dropped
+        // by a truthiness check.
+        budget: data.budget !== undefined ? new Prisma.Decimal(data.budget) : undefined,
+      },
+    });
   }
 
-  async updateProject(id: string, data: Partial<{
-    title: string;
-    abstract: string;
-    category: string;
-    status: any;
-    startDate: Date;
-    endDate: Date;
-    budget: number;
-    fundingSource: string;
-    methodology: string;
-    findings: string;
-    publishedUrl: string;
-    progress: number;
-  }>) {
-    return prisma.researchProject.update({ where: { id }, data: data as any });
+  async updateProject(
+    id: string,
+    data: Partial<{
+      title: string;
+      abstract: string;
+      category: string;
+      status: any;
+      startDate: Date;
+      endDate: Date;
+      budget: number;
+      budgetId: string;
+      fundingSource: string;
+      methodology: string;
+      findings: string;
+      publishedUrl: string;
+      progress: number;
+    }>
+  ) {
+    const updateData: any = { ...data };
+    if (data.budget !== undefined) updateData.budget = new Prisma.Decimal(data.budget);
+
+    return prisma.researchProject.update({
+      where: { id },
+      data: updateData,
+    });
   }
 
   async deleteProject(id: string) {
@@ -291,15 +311,35 @@ export class LitbangService {
   async getProjectFinancialStatus(projectId: string) {
     const project = await prisma.researchProject.findUniqueOrThrow({
       where: { id: projectId },
-      select: { unitId: true, budget: true, startDate: true, endDate: true },
+      select: { unitId: true, budget: true, startDate: true, endDate: true, budgetId: true, budgetRel: { select: { accountId: true } } },
     });
 
-    if (!project.startDate) return { budget: Number(project.budget || 0), realization: 0, percentage: 0 };
+    const budget = Number(project.budget || 0);
 
-    // NOTE: Realization is computed at the unit level — it aggregates ALL expense/asset
-    // journal entries for the unit during the project period. If the unit has multiple
-    // concurrent projects, the realization figure will include expenses from all of them.
-    // A project-level FK on journal entries would be needed for project-specific tracking.
+    // Best Practice: If the research project is explicitly linked to a budget code,
+    // we use that for precise tracking. Otherwise, we fallback to unit-level
+    // aggregation during the project dates (legacy behavior).
+    if (project.budgetId && project.budgetRel?.accountId) {
+      const aggregates = await prisma.journalEntry.aggregate({
+        where: {
+          unitId: project.unitId,
+          accountId: project.budgetRel.accountId,
+          date: {
+            gte: project.startDate || undefined,
+            lte: project.endDate || new Date(),
+          },
+        },
+        _sum: { debit: true, credit: true },
+      });
+
+      const realization = (aggregates._sum.debit?.toNumber() || 0) - (aggregates._sum.credit?.toNumber() || 0);
+      const percentage = budget > 0 ? Math.min(100, Math.max(0, (realization / budget) * 100)) : 0;
+
+      return { budget, realization: Math.max(0, realization), percentage };
+    }
+
+    if (!project.startDate) return { budget, realization: 0, percentage: 0 };
+
     const aggregates = await prisma.journalEntry.aggregate({
       where: {
         unitId: project.unitId,
@@ -308,22 +348,18 @@ export class LitbangService {
           lte: project.endDate || new Date(),
         },
         account: {
-          type: { in: ['EXPENSE', 'ASSET'] }, // Usually projects are expenses or assets
+          type: { in: ['EXPENSE', 'ASSET'] },
         },
       },
-      _sum: {
-        debit: true,
-        credit: true,
-      },
+      _sum: { debit: true, credit: true },
     });
 
-    const budget = Number(project.budget || 0);
     const realization = (aggregates._sum.debit?.toNumber() || 0) - (aggregates._sum.credit?.toNumber() || 0);
     const percentage = budget > 0 ? Math.min(100, Math.max(0, (realization / budget) * 100)) : 0;
 
     return {
       budget,
-      realization,
+      realization: Math.max(0, realization),
       percentage,
     };
   }

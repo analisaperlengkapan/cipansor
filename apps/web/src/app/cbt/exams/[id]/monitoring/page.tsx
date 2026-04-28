@@ -36,6 +36,7 @@ export default function ExamMonitoringPage({
   const { data: exam, isLoading } = useExamMonitoring(id);
   const { data: topicMasteryData, isLoading: loadingTopics } = useTopicMastery(id);
   const topicMastery = topicMasteryData?.items;
+  const curriculumMastery = topicMasteryData?.topicMastery;
   const topicMasteryMeta = topicMasteryData?._meta;
 
   if (isLoading) {
@@ -124,71 +125,91 @@ export default function ExamMonitoringPage({
           </Card>
         )}
 
-        {!loadingTopics && topicMastery && topicMastery.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center gap-2">
-                  <BarChart2 className="w-5 h-5 text-indigo-600" />
-                  <div>
-                    <CardTitle>Analisis Penguasaan Materi (Topic Mastery)</CardTitle>
-                    <CardDescription>
-                      Rata-rata persentase jawaban benar per Tujuan Pembelajaran (TP)
-                      {topicMasteryMeta?.truncated && (
-                        <span className="ml-2 text-amber-600 font-medium">
-                          (Berdasarkan {topicMasteryMeta.analyzedAttempts} percobaan pertama)
-                        </span>
-                      )}
-                    </CardDescription>
+        {!loadingTopics && (topicMastery || curriculumMastery) && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Curriculum-aligned Analytics (TP) */}
+            {curriculumMastery && curriculumMastery.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <BarChart2 className="w-5 h-5 text-indigo-600" />
+                    <div>
+                      <CardTitle>Analisis Kurikulum (Pencapaian TP)</CardTitle>
+                      <CardDescription>Rata-rata penguasaan per Tujuan Pembelajaran</CardDescription>
+                    </div>
                   </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[300px] w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={topicMastery} layout="vertical" margin={{ left: 120 }}>
-                      <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
-                      <XAxis type="number" domain={[0, 100]} hide />
-                      <YAxis
-                        dataKey="code"
-                        type="category"
-                        tick={{fontSize: 12, fontWeight: 'bold'}}
-                        width={100}
-                      />
-                      <Tooltip
-                        formatter={(value: number) => [`${value.toFixed(1)}%`, 'Tingkat Penguasaan']}
-                        labelFormatter={(label) => `TP: ${label}`}
-                      />
-                      <Bar dataKey="masteryLevel" radius={[0, 4, 4, 0]} barSize={20}>
-                        {topicMastery.map((entry: any, index: number) => (
-                          <Cell
-                            key={`cell-${index}`}
-                            fill={entry.masteryLevel < 60 ? '#f43f5e' : entry.masteryLevel < 80 ? '#f59e0b' : '#10b981'}
-                          />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[250px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={curriculumMastery} layout="vertical" margin={{ left: 80 }}>
+                        <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
+                        <XAxis type="number" domain={[0, 100]} hide />
+                        <YAxis dataKey="code" type="category" tick={{ fontSize: 10, fontWeight: "bold" }} width={70} />
+                        <Tooltip formatter={(value: number) => [`${value.toFixed(1)}%`, "Penguasaan"]} />
+                        <Bar dataKey="masteryLevel" radius={[0, 4, 4, 0]} barSize={15}>
+                          {curriculumMastery.map((entry: any, index: number) => (
+                            <Cell
+                              key={`cell-${index}`}
+                              fill={entry.masteryLevel < 60 ? "#f43f5e" : entry.masteryLevel < 80 ? "#f59e0b" : "#10b981"}
+                            />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="mt-4 space-y-2">
+                    {curriculumMastery.slice(0, 2).map((m: any) => (
+                      <div key={m.objectiveId} className="text-xs p-2 rounded border bg-slate-50">
+                        <span className="font-bold">{m.code}:</span> {m.description}
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
-                <div className="mt-4 grid grid-cols-1 gap-2">
-                   {topicMastery.slice(0, 3).map((topic: any) => (
-                     <div key={topic.objectiveId} className={`p-3 rounded-lg border flex items-center justify-between ${topic.masteryLevel < 60 ? 'bg-rose-50 border-rose-100' : 'bg-slate-50 border-slate-100'}`}>
-                        <div className="flex-1">
-                           <p className="text-xs font-bold text-slate-900">{topic.code}</p>
-                           <p className="text-xs text-slate-600 line-clamp-1">{topic.description}</p>
-                        </div>
-                        <div className="text-right ml-4">
-                           <Badge variant={topic.masteryLevel < 60 ? "destructive" : "outline"}>
-                             {topic.masteryLevel.toFixed(1)}%
-                           </Badge>
-                           {topic.masteryLevel < 60 && <p className="text-[10px] text-rose-600 font-bold mt-1 uppercase">Perlu Remedial</p>}
-                        </div>
-                     </div>
-                   ))}
-                </div>
-              </CardContent>
-            </Card>
+            {/* Question-level Analytics */}
+            {topicMastery && topicMastery.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <BarChart2 className="w-5 h-5 text-indigo-600" />
+                    <div>
+                      <CardTitle>Performa Butir Soal</CardTitle>
+                      <CardDescription>
+                        Rata-rata skor per butir soal
+                        {topicMasteryMeta?.truncated && (
+                          <span className="ml-2 text-amber-600 font-medium">
+                            (Top {topicMasteryMeta.analyzedAttempts})
+                          </span>
+                        )}
+                      </CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[250px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={topicMastery} layout="vertical" margin={{ left: 50 }}>
+                        <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
+                        <XAxis type="number" domain={[0, 100]} hide />
+                        <YAxis dataKey="code" type="category" tick={{ fontSize: 10, fontWeight: "bold" }} width={40} />
+                        <Tooltip formatter={(value: number) => [`${value.toFixed(1)}%`, "Benar"]} />
+                        <Bar dataKey="masteryLevel" radius={[0, 4, 4, 0]} barSize={15}>
+                          {topicMastery.map((entry: any, index: number) => (
+                            <Cell
+                              key={`cell-${index}`}
+                              fill={entry.masteryLevel < 50 ? "#f43f5e" : "#3b82f6"}
+                            />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         )}
 

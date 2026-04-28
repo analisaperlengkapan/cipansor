@@ -54,7 +54,9 @@ export class RiskService {
         select: { id: true },
       });
 
-      await Promise.all(
+      // Use allSettled so a single failed notification (e.g. invalid user ID)
+      // doesn't block delivery to the rest of the audit team.
+      const results = await Promise.allSettled(
         auditAdmins.map((admin) =>
           prisma.notification.create({
             data: {
@@ -68,6 +70,13 @@ export class RiskService {
           })
         )
       );
+      const failures = results.filter((r) => r.status === 'rejected');
+      if (failures.length > 0) {
+        console.error(
+          `[Risk] ${failures.length}/${results.length} EXTREME-risk audit notifications failed for risk ${risk.code}`,
+          failures.map((f) => (f as PromiseRejectedResult).reason)
+        );
+      }
     } catch (err) {
       console.error('Failed to trigger audit suggestion:', err);
     }

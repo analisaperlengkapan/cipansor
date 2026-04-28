@@ -384,6 +384,14 @@ export async function calculateCashFlowForecast(unitId?: string, academicYearId?
 
   const expenseBudgets = activeBudgets.filter(b => b.account.type === 'EXPENSE');
 
+  // The monthly outflow is loop-invariant — it depends only on the budget set,
+  // not on the projection month — so compute it once outside the loop.
+  const monthlyOutflow = expenseBudgets.reduce((sum, b) => {
+    const budgetAmount = b.amount.toNumber();
+    const monthlyAlloc = b.periodType === 'MONTHLY' ? budgetAmount : budgetAmount / 12;
+    return sum + monthlyAlloc;
+  }, 0);
+
   for (let i = 0; i < months; i++) {
     const projectionDate = new Date(now.getFullYear(), now.getMonth() + i, 1);
     const monthStr = projectionDate.toISOString().slice(0, 7);
@@ -394,12 +402,6 @@ export async function calculateCashFlowForecast(unitId?: string, academicYearId?
         return d.getFullYear() === projectionDate.getFullYear() && d.getMonth() === projectionDate.getMonth();
       })
       .reduce((sum, inv) => sum + (Number(inv.amount) - Number(inv.paidAmount)), 0);
-
-    const monthlyOutflow = expenseBudgets.reduce((sum, b) => {
-      const budgetAmount = b.amount.toNumber();
-      const monthlyAlloc = b.periodType === 'MONTHLY' ? budgetAmount : budgetAmount / 12;
-      return sum + monthlyAlloc;
-    }, 0);
 
     dataPoints.push({
       month: monthStr,

@@ -246,33 +246,51 @@ export class AssessmentAnalyticsService {
       select: { id: true, user: { select: { name: true } }, nis: true }
     });
 
-    const alerts = await Promise.all(students.map(async (student) => {
-      const holistic = await this.getStudentHolisticAnalytics(student.id, academicYearId);
+    // Process students in batches to avoid exhausting the Prisma connection pool.
+    // Each getStudentHolisticAnalytics call internally fans out to 6 parallel
+    // queries, so for large units (200+ students) an unbounded Promise.all
+    // would launch 1200+ concurrent queries.
+    const BATCH_SIZE = 10;
+    const alerts: Array<{
+      studentId: string;
+      name: string;
+      nis: string;
+      score: number;
+      alerts: string[];
+      priority: string;
+    } | null> = [];
 
-      const reasons: string[] = [];
-      if (holistic.breakdown.academic !== null && holistic.breakdown.academic < 70) reasons.push('Akademik Rendah');
-      if (holistic.breakdown.behavior !== null && holistic.breakdown.behavior < 70) reasons.push('Kedisiplinan Rendah');
-      if (holistic.breakdown.tahfidz !== null && holistic.breakdown.tahfidz < 60) reasons.push('Tahfidz Lambat');
-      if (holistic.breakdown.attendance !== null && holistic.breakdown.attendance < 85) reasons.push('Kehadiran Rendah');
-      if (holistic.breakdown.ibadah !== null && holistic.breakdown.ibadah < 60) reasons.push('Ibadah Kurang');
-      if (holistic.breakdown.cbt !== null && holistic.breakdown.cbt < 60) reasons.push('CBT Rendah');
+    for (let i = 0; i < students.length; i += BATCH_SIZE) {
+      const batch = students.slice(i, i + BATCH_SIZE);
+      const batchResults = await Promise.all(batch.map(async (student) => {
+        const holistic = await this.getStudentHolisticAnalytics(student.id, academicYearId);
 
-      const lowHolistic = holistic.holisticScore < 65 && holistic.dataCompleteness !== 'INSUFFICIENT';
-      if (reasons.length >= 2 || lowHolistic) {
-        if (reasons.length === 0 && lowHolistic) {
-          reasons.push('Skor Holistik Rendah');
+        const reasons: string[] = [];
+        if (holistic.breakdown.academic !== null && holistic.breakdown.academic < 70) reasons.push('Akademik Rendah');
+        if (holistic.breakdown.behavior !== null && holistic.breakdown.behavior < 70) reasons.push('Kedisiplinan Rendah');
+        if (holistic.breakdown.tahfidz !== null && holistic.breakdown.tahfidz < 60) reasons.push('Tahfidz Lambat');
+        if (holistic.breakdown.attendance !== null && holistic.breakdown.attendance < 85) reasons.push('Kehadiran Rendah');
+        if (holistic.breakdown.ibadah !== null && holistic.breakdown.ibadah < 60) reasons.push('Ibadah Kurang');
+        if (holistic.breakdown.cbt !== null && holistic.breakdown.cbt < 60) reasons.push('CBT Rendah');
+
+        const lowHolistic = holistic.holisticScore < 65 && holistic.dataCompleteness !== 'INSUFFICIENT';
+        if (reasons.length >= 2 || lowHolistic) {
+          if (reasons.length === 0 && lowHolistic) {
+            reasons.push('Skor Holistik Rendah');
+          }
+          return {
+            studentId: student.id,
+            name: student.user.name,
+            nis: student.nis,
+            score: holistic.holisticScore,
+            alerts: reasons,
+            priority: reasons.length >= 3 ? 'CRITICAL' : 'HIGH'
+          };
         }
-        return {
-          studentId: student.id,
-          name: student.user.name,
-          nis: student.nis,
-          score: holistic.holisticScore,
-          alerts: reasons,
-          priority: reasons.length >= 3 ? 'CRITICAL' : 'HIGH'
-        };
-      }
-      return null;
-    }));
+        return null;
+      }));
+      alerts.push(...batchResults);
+    }
 
     return alerts.filter(Boolean).sort((a, b) => (a?.score || 0) - (b?.score || 0));
   }

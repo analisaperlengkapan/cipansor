@@ -582,13 +582,22 @@ export async function getCashFlowForecast(unitId: string, months: number = 6) {
   const endDate = new Date(now.getFullYear(), now.getMonth() + months, 0, 23, 59, 59, 999);
 
   // 1. Get current cash balance
+  // Identify cash/bank accounts using both the standard Indonesian COA code
+  // prefix `1-1` (consistent with `procurement/[id]/fulfill-dialog.tsx`) and a
+  // name-based heuristic as a fallback. The previous implementation relied on
+  // name matches alone, which silently produced a zero `initialBalance` for
+  // institutions that name accounts in English (e.g. "Cash") or use other
+  // localized terms — that wrong baseline then propagates through every
+  // forecast month as a running total.
   const cashAccounts = await prisma.accountCode.findMany({
     where: {
       isActive: true,
       type: AccountType.ASSET,
       OR: [
+        { code: { startsWith: '1-1' } },
         { name: { contains: 'kas', mode: 'insensitive' } },
         { name: { contains: 'bank', mode: 'insensitive' } },
+        { name: { contains: 'cash', mode: 'insensitive' } },
       ],
     },
   });

@@ -383,8 +383,8 @@ export async function calculateCashFlowForecast(unitId?: string) {
       .reduce((sum, inv) => sum + (Number(inv.amount) - Number(inv.paidAmount)), 0);
 
     const monthlyOutflow = expenseBudgets.reduce((sum, b) => {
-      const yearlyBudget = b.amount.toNumber();
-      const monthlyAlloc = yearlyBudget / 12;
+      const budgetAmount = b.amount.toNumber();
+      const monthlyAlloc = b.periodType === 'MONTHLY' ? budgetAmount : budgetAmount / 12;
       return sum + monthlyAlloc;
     }, 0);
 

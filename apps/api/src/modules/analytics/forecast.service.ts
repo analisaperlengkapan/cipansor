@@ -349,10 +349,22 @@ export async function getTahfidzCompletionForecast(unitId?: string): Promise<{
  * Project future cash flow for the next 6 months
  * Logic: (Pending Invoices - Outstanding Budgets)
  */
-export async function calculateCashFlowForecast(unitId?: string) {
+export async function calculateCashFlowForecast(unitId?: string, academicYearId?: string) {
   const months = 6;
   const now = new Date();
   const dataPoints = [];
+
+  // If no academicYearId provided, default to the currently active academic year
+  // to avoid summing budgets across all historical/future years.
+  // Note: AcademicYear is global (not scoped to a unit) in this schema.
+  let resolvedAcademicYearId = academicYearId;
+  if (!resolvedAcademicYearId) {
+    const activeYear = await prisma.academicYear.findFirst({
+      where: { isActive: true },
+      select: { id: true },
+    });
+    resolvedAcademicYearId = activeYear?.id;
+  }
 
   const pendingInvoices = await prisma.invoice.findMany({
     where: {
@@ -365,6 +377,7 @@ export async function calculateCashFlowForecast(unitId?: string) {
   const activeBudgets = await prisma.budget.findMany({
     where: {
       ...(unitId && { unitId }),
+      ...(resolvedAcademicYearId && { academicYearId: resolvedAcademicYearId }),
     },
     include: { account: true },
   });

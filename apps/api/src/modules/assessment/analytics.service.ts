@@ -126,10 +126,14 @@ export class AssessmentAnalyticsService {
     // we coerce to Number first and then apply the fallback.
     const scoredAttempts = examAttempts.filter((a) => a.score !== null);
     const hasCBTData = scoredAttempts.length > 0;
+    // Cap each attempt's ratio at 1.0 so manually-graded essays with bonus
+    // points (where score can exceed maxScore) don't push the average above
+    // 100, which would inflate the holistic weighted score and break the
+    // interpretation thresholds in `getHolisticInterpretation`.
     const cbtScore = hasCBTData
       ? (scoredAttempts.reduce((sum, a) => {
           const max = Number(a.exam.maxScore) || 100;
-          return sum + (Number(a.score) / max);
+          return sum + Math.min(1, Number(a.score) / max);
         }, 0) /
           scoredAttempts.length) *
         100

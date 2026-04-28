@@ -49,7 +49,10 @@ export class LitbangService {
     return prisma.researchProject.create({
       data: {
         ...data,
-        budget: data.budget ? new Prisma.Decimal(data.budget) : undefined,
+        // Use `!== undefined` (matching updateProject) so that an explicit
+        // budget of 0 is preserved as Decimal(0) rather than silently dropped
+        // by a truthiness check.
+        budget: data.budget !== undefined ? new Prisma.Decimal(data.budget) : undefined,
       },
     });
   }

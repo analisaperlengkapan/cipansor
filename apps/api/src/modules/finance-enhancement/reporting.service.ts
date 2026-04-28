@@ -577,7 +577,9 @@ export async function getBudgetRealizationReport(unitId: string, academicYearId:
 
 export async function getCashFlowForecast(unitId: string, months: number = 6) {
   const now = new Date();
-  const endDate = new Date(now.getFullYear(), now.getMonth() + months, 0);
+  // Use end-of-day on the last day of the final month so that items with a
+  // non-midnight timestamp on that day aren't silently dropped by `<=` comparisons.
+  const endDate = new Date(now.getFullYear(), now.getMonth() + months, 0, 23, 59, 59, 999);
 
   // 1. Get current cash balance
   const cashAccounts = await prisma.accountCode.findMany({
@@ -629,7 +631,9 @@ export async function getCashFlowForecast(unitId: string, months: number = 6) {
 
   for (let i = 0; i < months; i++) {
     const monthDate = new Date(now.getFullYear(), now.getMonth() + i, 1);
-    const monthEnd = new Date(now.getFullYear(), now.getMonth() + i + 1, 0);
+    // End-of-day on the last day of the month so items dated mid-day on that
+    // day are correctly bucketed into this month rather than dropped entirely.
+    const monthEnd = new Date(now.getFullYear(), now.getMonth() + i + 1, 0, 23, 59, 59, 999);
     const monthLabel = monthDate.toLocaleString('default', { month: 'short', year: '2-digit' });
 
     // Symmetric to the expense backlog: in the first month, include all

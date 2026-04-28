@@ -404,7 +404,7 @@ export async function calculateCashFlowForecast(unitId?: string) {
       totalProjectedIncome: totalIncome,
       totalProjectedOutflow: totalOutflow,
       netProjection: totalIncome - totalOutflow,
-      status: (totalIncome - totalOutflow) > 0 ? 'SURPLUS' : 'DEFICIT',
+      status: (totalIncome - totalOutflow) > 0 ? 'SURPLUS' : (totalIncome - totalOutflow) < 0 ? 'DEFICIT' : 'BALANCED',
     },
     dataPoints,
   };

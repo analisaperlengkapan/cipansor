@@ -577,10 +577,6 @@ export async function getBudgetRealizationReport(unitId: string, academicYearId:
 
 export async function getCashFlowForecast(unitId: string, months: number = 6) {
   const now = new Date();
-  // Start-of-day used for filtering date-only fields (e.g. invoice dueDate
-  // which is stored at midnight). Using `now` directly would exclude items
-  // dated today since midnight < current time-of-day.
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const endDate = new Date(now.getFullYear(), now.getMonth() + months, 0);
 
   // 1. Get current cash balance
@@ -605,11 +601,14 @@ export async function getCashFlowForecast(unitId: string, months: number = 6) {
     (currentBalanceAgg._sum.credit?.toNumber() || 0);
 
   // 2. Project Income (Pending/Partial Invoices by Due Date)
+  // No lower bound: overdue receivables are real expected income and should
+  // not be silently excluded. They are bucketed into the first forecast month
+  // (mirroring the overdue PR backlog behavior below).
   const pendingInvoices = await prisma.invoice.findMany({
     where: {
       student: { unitId },
       status: { in: ['PENDING', 'PARTIAL'] },
-      dueDate: { gte: todayStart, lte: endDate },
+      dueDate: { lte: endDate },
     },
     select: { dueDate: true, amount: true, paidAmount: true },
   });
@@ -633,8 +632,12 @@ export async function getCashFlowForecast(unitId: string, months: number = 6) {
     const monthEnd = new Date(now.getFullYear(), now.getMonth() + i + 1, 0);
     const monthLabel = monthDate.toLocaleString('default', { month: 'short', year: '2-digit' });
 
+    // Symmetric to the expense backlog: in the first month, include all
+    // overdue receivables (dueDate < monthDate) so they aren't dropped.
     const monthIncome = pendingInvoices
-      .filter((inv) => inv.dueDate >= monthDate && inv.dueDate <= monthEnd)
+      .filter((inv) =>
+        i === 0 ? inv.dueDate <= monthEnd : inv.dueDate >= monthDate && inv.dueDate <= monthEnd
+      )
       .reduce((sum, inv) => sum + (inv.amount.toNumber() - inv.paidAmount.toNumber()), 0);
 
     // For the first month, include all past approved-but-unfulfilled PRs

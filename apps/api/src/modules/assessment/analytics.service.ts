@@ -236,6 +236,41 @@ export class AssessmentAnalyticsService {
   }
 
   /**
+   * Identifies students requiring integrated intervention.
+   * Logic: High-risk students are those with Academic score < 70 AND Behavior score < 70,
+   * OR any dimension < 50.
+   */
+  static async getIntegratedRiskAlerts(unitId: string, academicYearId: string) {
+    const students = await prisma.student.findMany({
+      where: { unitId, status: 'active' },
+      select: { id: true, user: { select: { name: true } }, nis: true }
+    });
+
+    const alerts = await Promise.all(students.map(async (student) => {
+      const holistic = await this.getStudentHolisticAnalytics(student.id, academicYearId);
+
+      const reasons: string[] = [];
+      if (holistic.breakdown.academic !== null && holistic.breakdown.academic < 70) reasons.push('Akademik Rendah');
+      if (holistic.breakdown.behavior !== null && holistic.breakdown.behavior < 70) reasons.push('Kedisiplinan Rendah');
+      if (holistic.breakdown.tahfidz !== null && holistic.breakdown.tahfidz < 60) reasons.push('Tahfidz Lambat');
+
+      if (reasons.length >= 2 || (holistic.holisticScore < 65 && holistic.dataCompleteness !== 'INSUFFICIENT')) {
+        return {
+          studentId: student.id,
+          name: student.user.name,
+          nis: student.nis,
+          score: holistic.holisticScore,
+          alerts: reasons,
+          priority: reasons.length >= 3 ? 'CRITICAL' : 'HIGH'
+        };
+      }
+      return null;
+    }));
+
+    return alerts.filter(Boolean).sort((a, b) => (a?.score || 0) - (b?.score || 0));
+  }
+
+  /**
    * Get education analytics for a unit (aggregated)
    */
   static async getUnitEducationAnalytics(unitId: string, academicYearId: string) {

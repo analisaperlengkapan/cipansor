@@ -36,6 +36,16 @@ export async function getExams(req: Request, res: Response, next: NextFunction) 
   }
 }
 
+export async function getIntegratedRiskAlerts(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { unitId, academicYearId } = req.query;
+    const alerts = await AssessmentAnalyticsService.getIntegratedRiskAlerts(unitId as string, academicYearId as string);
+    res.json({ success: true, data: alerts });
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function getUnitEducationAnalytics(req: Request, res: Response, next: NextFunction) {
   try {
     const { unitId } = req.params;

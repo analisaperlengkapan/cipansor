@@ -192,3 +192,41 @@ export async function recalculateBudgetUsage(unitId: string, academicYearId: str
 
   return { count: updates.length };
 }
+
+/**
+ * Identify budgets that exceed or are close to exceeding their allocated amount.
+ * Returns alerts for accounts with usage > 90%.
+ */
+export async function getBudgetUtilizationAlerts(unitId?: string) {
+  const budgets = await prisma.budget.findMany({
+    where: {
+      ...(unitId && { unitId }),
+    },
+    include: {
+      account: { select: { code: true, name: true } },
+      unit: { select: { name: true } },
+    },
+  });
+
+  const alerts = budgets
+    .map((b) => {
+      const limit = b.amount.toNumber();
+      const used = b.usedAmount.toNumber();
+      const percentage = limit > 0 ? (used / limit) * 100 : 0;
+
+      return {
+        id: b.id,
+        unitId: b.unitId,
+        unitName: b.unit.name,
+        accountCode: b.account.code,
+        accountName: b.account.name,
+        limit,
+        used,
+        percentage: Math.round(percentage * 100) / 100,
+        status: percentage >= 100 ? 'EXCEEDED' : percentage >= 90 ? 'WARNING' : 'NORMAL',
+      };
+    })
+    .filter((a) => a.status !== 'NORMAL');
+
+  return alerts.sort((a, b) => b.percentage - a.percentage);
+}

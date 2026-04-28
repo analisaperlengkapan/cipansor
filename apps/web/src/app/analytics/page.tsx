@@ -186,6 +186,9 @@ export default function AnalyticsPage() {
             </SelectContent>
           </Select>
           <Button variant="outline" asChild>
+            <a href="/analytics/academic">🎯 Intervensi</a>
+          </Button>
+          <Button variant="outline" asChild>
             <a href="/analytics/forecast">📈 Forecast</a>
           </Button>
           <Button variant="outline" asChild>

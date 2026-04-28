@@ -344,3 +344,68 @@ export async function getTahfidzCompletionForecast(unitId?: string): Promise<{
     })),
   };
 }
+
+/**
+ * Project future cash flow for the next 6 months
+ * Logic: (Pending Invoices - Outstanding Budgets)
+ */
+export async function calculateCashFlowForecast(unitId?: string) {
+  const months = 6;
+  const now = new Date();
+  const dataPoints = [];
+
+  const pendingInvoices = await prisma.invoice.findMany({
+    where: {
+      status: { in: ['PENDING', 'PARTIAL'] },
+      ...(unitId && { student: { unitId } }),
+    },
+    select: { amount: true, paidAmount: true, dueDate: true },
+  });
+
+  const activeBudgets = await prisma.budget.findMany({
+    where: {
+      ...(unitId && { unitId }),
+    },
+    include: { account: true },
+  });
+
+  const expenseBudgets = activeBudgets.filter(b => b.account.type === 'EXPENSE');
+
+  for (let i = 0; i < months; i++) {
+    const projectionDate = new Date(now.getFullYear(), now.getMonth() + i, 1);
+    const monthStr = projectionDate.toISOString().slice(0, 7);
+
+    const monthlyIncome = pendingInvoices
+      .filter(inv => {
+        const d = new Date(inv.dueDate);
+        return d.getFullYear() === projectionDate.getFullYear() && d.getMonth() === projectionDate.getMonth();
+      })
+      .reduce((sum, inv) => sum + (Number(inv.amount) - Number(inv.paidAmount)), 0);
+
+    const monthlyOutflow = expenseBudgets.reduce((sum, b) => {
+      const yearlyBudget = b.amount.toNumber();
+      const monthlyAlloc = yearlyBudget / 12;
+      return sum + monthlyAlloc;
+    }, 0);
+
+    dataPoints.push({
+      month: monthStr,
+      income: Math.round(monthlyIncome),
+      outflow: Math.round(monthlyOutflow),
+      net: Math.round(monthlyIncome - monthlyOutflow),
+    });
+  }
+
+  const totalIncome = dataPoints.reduce((s, d) => s + d.income, 0);
+  const totalOutflow = dataPoints.reduce((s, d) => s + d.outflow, 0);
+
+  return {
+    summary: {
+      totalProjectedIncome: totalIncome,
+      totalProjectedOutflow: totalOutflow,
+      netProjection: totalIncome - totalOutflow,
+      status: (totalIncome - totalOutflow) > 0 ? 'SURPLUS' : 'DEFICIT',
+    },
+    dataPoints,
+  };
+}

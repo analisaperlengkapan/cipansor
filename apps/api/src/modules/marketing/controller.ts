@@ -18,6 +18,16 @@ export const createCampaign = async (req: Request, res: Response, next: NextFunc
   }
 };
 
+export const getROIStats = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { unitId } = req.query;
+    const stats = await calculateCampaignROI(unitId as string);
+    res.json({ success: true, data: stats });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const getRecentLeads = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { unitId, limit } = req.query;

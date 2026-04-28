@@ -23,12 +23,14 @@ export default function AcademicInterventionDashboard() {
   const { data: activeYear } = useActiveAcademicYear();
 
   const { data: alertsResponse, isLoading } = useQuery({
-    queryKey: ["integrated-risk-alerts", activeYear?.id],
+    queryKey: ["integrated-risk-alerts", activeYear?.id, activeYear?.unitId],
     queryFn: async () => {
-      const response = await api.get(`/assessment/analytics/integrated-alerts?academicYearId=${activeYear?.id}`);
+      const response = await api.get(
+        `/assessment/analytics/integrated-alerts?academicYearId=${activeYear?.id}&unitId=${activeYear?.unitId}`,
+      );
       return response.data.data;
     },
-    enabled: !!activeYear?.id,
+    enabled: !!activeYear?.id && !!activeYear?.unitId,
   });
 
   return (

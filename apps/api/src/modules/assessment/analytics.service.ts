@@ -253,8 +253,15 @@ export class AssessmentAnalyticsService {
       if (holistic.breakdown.academic !== null && holistic.breakdown.academic < 70) reasons.push('Akademik Rendah');
       if (holistic.breakdown.behavior !== null && holistic.breakdown.behavior < 70) reasons.push('Kedisiplinan Rendah');
       if (holistic.breakdown.tahfidz !== null && holistic.breakdown.tahfidz < 60) reasons.push('Tahfidz Lambat');
+      if (holistic.breakdown.attendance !== null && holistic.breakdown.attendance < 85) reasons.push('Kehadiran Rendah');
+      if (holistic.breakdown.ibadah !== null && holistic.breakdown.ibadah < 60) reasons.push('Ibadah Kurang');
+      if (holistic.breakdown.cbt !== null && holistic.breakdown.cbt < 60) reasons.push('CBT Rendah');
 
-      if (reasons.length >= 2 || (holistic.holisticScore < 65 && holistic.dataCompleteness !== 'INSUFFICIENT')) {
+      const lowHolistic = holistic.holisticScore < 65 && holistic.dataCompleteness !== 'INSUFFICIENT';
+      if (reasons.length >= 2 || lowHolistic) {
+        if (reasons.length === 0 && lowHolistic) {
+          reasons.push('Skor Holistik Rendah');
+        }
         return {
           studentId: student.id,
           name: student.user.name,

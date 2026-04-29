@@ -98,40 +98,41 @@ export async function getCashFlowForecast(req: Request, res: Response, next: Nex
 /**
  * Get all forecasts summary
  *
- * Includes the new cash-flow forecast under the same unit-level authorization
- * rules as `getCashFlowForecast` (a UNIT_ADMIN cannot read another unit's
- * projection by passing a different `unitId`, nor by omitting it entirely).
- * The other forecasts have no inline authorization here, matching their
- * dedicated endpoints' behaviour.
+ * Applies the same unit-level authorization to ALL forecasts, not just
+ * cash-flow: a UNIT_ADMIN cannot read another unit's projections by passing
+ * a different `unitId`, nor by omitting it entirely (which would otherwise
+ * return aggregated data across ALL units). Previously only cash-flow was
+ * scoped, while enrollment / payment / outstanding / tahfidz silently leaked
+ * cross-unit data — the 403 early-return implied full-response scoping but
+ * only protected one of the five forecasts.
  */
 export async function getAllForecasts(req: Request, res: Response, next: NextFunction) {
   try {
     const { unitId } = req.query;
-    const uid = unitId as string | undefined;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const user = (req as any).user;
 
-    let cashFlowUnitId = uid;
+    let effectiveUnitId = unitId as string | undefined;
     if (user && user.role !== 'SUPER_ADMIN' && user.role !== 'YAYASAN_ADMIN') {
       if (!user.unitId) {
         return res
           .status(403)
           .json({ success: false, error: 'Access to this unit is not allowed' });
       }
-      if (cashFlowUnitId && cashFlowUnitId !== user.unitId) {
+      if (effectiveUnitId && effectiveUnitId !== user.unitId) {
         return res
           .status(403)
           .json({ success: false, error: 'Access to this unit is not allowed' });
       }
-      cashFlowUnitId = user.unitId;
+      effectiveUnitId = user.unitId;
     }
 
     const [enrollment, payment, outstanding, tahfidz, cashFlow] = await Promise.all([
-      forecastService.getEnrollmentForecast(uid),
-      forecastService.getPaymentForecast(uid),
-      forecastService.getOutstandingPaymentPrediction(uid),
-      forecastService.getTahfidzCompletionForecast(uid),
-      forecastService.calculateCashFlowForecast(cashFlowUnitId),
+      forecastService.getEnrollmentForecast(effectiveUnitId),
+      forecastService.getPaymentForecast(effectiveUnitId),
+      forecastService.getOutstandingPaymentPrediction(effectiveUnitId),
+      forecastService.getTahfidzCompletionForecast(effectiveUnitId),
+      forecastService.calculateCashFlowForecast(effectiveUnitId),
     ]);
 
     res.json({

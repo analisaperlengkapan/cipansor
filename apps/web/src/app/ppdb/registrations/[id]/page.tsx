@@ -183,8 +183,8 @@ export default function RegistrationDetailPage() {
     try {
       await onboardRegistrant.mutateAsync({
         registrantId: id,
-        unitId: registration.unitId,
-        academicYearId: registration.period?.academicYearId || "",
+        unitId: registration.admissionPeriod?.unit?.id,
+        academicYearId: registration.admissionPeriod?.academicYear?.id || "",
         // TODO: The UI should probably let admins select standard class, but we can default for now
         // For E2E mockup, we will assume the parent user ID is retrievable or mock it if not present
         parentUserId: "mocked-parent-id", // In real scenario, fetch parent userId from registration.fatherEmail etc
@@ -219,10 +219,10 @@ export default function RegistrationDetailPage() {
               </div>
               <p className="text-muted-foreground flex items-center gap-2">
                 <span className="font-mono text-xs bg-slate-100 px-2 py-0.5 rounded text-slate-600">
-                  {registration.registrationNumber}
+                  {registration.registrationNo}
                 </span>
                 <span>•</span>
-                <span>{registration.unit?.name}</span>
+                <span>{registration.admissionPeriod?.unit?.name}</span>
                 <span>•</span>
                 <Clock className="h-3 w-3 inline mr-1" />
                 {format(new Date(registration.createdAt), "d MMM yyyy HH:mm", {

@@ -140,7 +140,7 @@ export default function RegistrationsPage() {
                     registrations.map((reg) => (
                       <TableRow key={reg.id}>
                         <TableCell className="font-mono text-xs font-medium">
-                          {reg.registrationNumber}
+                          {reg.registrationNo}
                         </TableCell>
                         <TableCell>
                           <div className="font-medium">{reg.fullName}</div>
@@ -148,7 +148,7 @@ export default function RegistrationsPage() {
                             {reg.gender === "MALE" ? "Laki-laki" : "Perempuan"}
                           </div>
                         </TableCell>
-                        <TableCell>{reg.unit?.name}</TableCell>
+                        <TableCell>{reg.admissionPeriod?.unit?.name}</TableCell>
                         <TableCell>
                           {format(new Date(reg.createdAt), "d MMM yyyy", {
                             locale: idLocale,

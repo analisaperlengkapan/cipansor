@@ -447,6 +447,21 @@ export async function updateRegistrantScore(id: string, data: UpdateRegistrantSc
 }
 
 export async function updateRegistrantStatus(id: string, data: UpdateRegistrantStatusInput) {
+  // Guard: ENROLLED is a terminal status that must only be reached through
+  // `enrollRegistrant`, which atomically creates the User + Student records,
+  // assigns class/room, generates the registration-fee invoice, and adjusts
+  // wave counters. Allowing the status endpoint to set ENROLLED directly
+  // would leave the registrant marked as enrolled but without any of those
+  // side effects — a corrupt half-state that subsequent `enrollRegistrant`
+  // calls cannot recover from (they require status === ACCEPTED).
+  // The schema accepts `z.nativeEnum(AdmissionStatus)` so this check has to
+  // live here at the service layer.
+  if (data.status === AdmissionStatus.ENROLLED) {
+    throw new Error(
+      'Cannot set status to ENROLLED directly; use the enrollment endpoint instead'
+    );
+  }
+
   return prisma.$transaction(async (tx) => {
     // Read the previous status BEFORE updating so we can detect actual
     // transitions and avoid double-counting wave acceptance metrics.

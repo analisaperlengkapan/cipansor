@@ -460,7 +460,7 @@ export class FinanceEnhancementController {
 
   async getBudgetUtilizationAlerts(req: Request, res: Response, next: NextFunction) {
     try {
-      const { unitId } = req.query;
+      const { unitId, academicYearId } = req.query;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const user = (req as any).user;
 
@@ -484,7 +484,10 @@ export class FinanceEnhancementController {
         effectiveUnitId = user.unitId;
       }
 
-      const alerts = await getBudgetUtilizationAlerts(effectiveUnitId);
+      const alerts = await getBudgetUtilizationAlerts(
+        effectiveUnitId,
+        academicYearId as string | undefined
+      );
       res.json({ success: true, data: alerts });
     } catch (error) {
       next(error);

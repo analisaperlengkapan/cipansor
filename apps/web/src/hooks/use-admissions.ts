@@ -139,7 +139,13 @@ export function useOnboardRegistrant() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (payload: any) => {
-      const response = await api.post(`/admissions/registrants/${payload.registrantId}/onboard`, payload);
+      // The onboarding orchestrator is mounted under the waves sub-router at
+      // POST /admissions/waves/onboard-registrant (see ppdb-wave.routes.ts).
+      // The handler reads `registrantId` from the request body.
+      const response = await api.post(
+        `/admissions/waves/onboard-registrant`,
+        payload,
+      );
       return response.data;
     },
     onSuccess: () => {

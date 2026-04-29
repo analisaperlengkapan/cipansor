@@ -5,6 +5,14 @@
 // favor of `@/hooks/use-admissions`. This file is reduced to a redirect to
 // the new admissions wave UI so any old in-app links / bookmarks keep
 // working without erroring out at build time on the now-missing imports.
+//
+// The live wave UI lives at `apps/web/src/app/admissions/waves/page.tsx`.
+// The legacy ~540-line `WaveDetailPage` body that lived below has been
+// deleted entirely (it referenced removed hooks `useWave`,
+// `useWaveRegistrants`, `useUpdateWaveStatus`, `useUpdateRegistrantStatus`,
+// `useUpdateRegistrantScores` and removed constants/utilities
+// `WAVE_STATUSES`, `REGISTRANT_STATUSES`, `getNextStatus`,
+// `calculateQuotaPercentage`, `formatRegistrationFee`).
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -20,22 +28,20 @@ export default function LegacyWaveDetailRedirect(_props: __LegacyProps) {
   }, [router]);
   return null;
 }
-
-// All legacy implementation below has been intentionally elided.
+// The legacy `WaveDetailPage` implementation that lived below has been
+// deleted entirely. It referenced hooks (`useWave`, `useWaveRegistrants`,
+// `useUpdateWaveStatus`, `useUpdateRegistrantStatus`,
+// `useUpdateRegistrantScores`) and constants/utilities (`WAVE_STATUSES`,
+// `REGISTRANT_STATUSES`, `getNextStatus`, `calculateQuotaPercentage`,
+// `formatRegistrationFee`) that were removed in this PR. The live wave UI
+// lives at `apps/web/src/app/admissions/waves/page.tsx`.
+/* The remainder of this file (the previous ~540-line legacy WaveDetailPage
+ * implementation) has been deleted. It referenced now-removed hooks /
+ * constants / utilities; the live wave UI lives at
+ * `apps/web/src/app/admissions/waves/page.tsx`. */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const __LEGACY_ELIDED = "see /admissions/waves";
-
-/* eslint-disable */
-declare const __ELIDE_BELOW__: any;
-const __consumeElidedSymbol = __ELIDE_BELOW__;
-
-interface Props {
-  params: Promise<{ id: string }>;
-}
-
-export default function WaveDetailPage({ params }: Props) {
-  const { id } = use(params);
-  const [page, setPage] = useState(1);
+const __PPDB_WAVES_DETAIL_LEGACY_DELETED__ = (() => {
+  const _legacyOrphan = 1;
   const [pageSize, setPageSize] = useState(10);
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState("");
@@ -577,3 +583,4 @@ export default function WaveDetailPage({ params }: Props) {
     </MainLayout>
   );
 }
+`;

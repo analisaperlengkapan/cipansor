@@ -48,7 +48,7 @@ describe('Admissions Service', () => {
     vi.clearAllMocks();
   });
 
-  it('should generate registration number correctly and create invoice', async () => {
+  it('should generate registration number correctly and skip invoice creation at registration', async () => {
     const mockPeriod = {
       id: 'p1',
       academicYear: { name: '2024/2025' },
@@ -60,8 +60,8 @@ describe('Admissions Service', () => {
     vi.mocked(prisma.admissionPeriod.findUnique).mockResolvedValue(mockPeriod as any);
     vi.mocked(prisma.registrant.count).mockResolvedValue(10);
     vi.mocked(prisma.registrant.create).mockImplementation(({ data }: any) => Promise.resolve({ ...data, id: 'r1' }));
+    // REG_FEE payment type already exists, so no need to create one.
     vi.mocked(prisma.paymentType.findFirst).mockResolvedValue({ id: 'pt1' } as any);
-    vi.mocked(prisma.invoice.findFirst).mockResolvedValue(null);
 
     const result = await service.createRegistrant({
       admissionPeriodId: 'p1',
@@ -76,6 +76,9 @@ describe('Admissions Service', () => {
 
     expect(result.registrationNo).toBe('REG-2024-00011');
     expect(result.fullName).toBe('Test Student');
-    expect(prisma.invoice.create).toHaveBeenCalled();
+    // Invoice creation is intentionally deferred to enrollment time, when a
+    // real Student record exists. Creating it here would require a non-null
+    // studentId that doesn't yet exist.
+    expect(prisma.invoice.create).not.toHaveBeenCalled();
   });
 });

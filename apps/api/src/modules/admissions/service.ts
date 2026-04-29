@@ -364,6 +364,17 @@ export async function updateRegistrantScore(id: string, data: UpdateRegistrantSc
 
 export async function updateRegistrantStatus(id: string, data: UpdateRegistrantStatusInput) {
   return prisma.$transaction(async (tx) => {
+    // Read the previous status BEFORE updating so we can detect actual
+    // transitions and avoid double-counting wave acceptance metrics.
+    const previous = await tx.registrant.findUnique({
+      where: { id },
+      select: { status: true, waveId: true },
+    });
+
+    if (!previous) {
+      throw new Error('Registrant not found');
+    }
+
     const updateData: Prisma.RegistrantUpdateInput = {
       status: data.status,
       notes: data.notes,
@@ -391,12 +402,24 @@ export async function updateRegistrantStatus(id: string, data: UpdateRegistrantS
         // Notification could be sent here via WhatsApp/Push
     }
 
-    // Best Practice: Update wave statistics if wave is linked
-    if (registrant.waveId && data.status === AdmissionStatus.ACCEPTED) {
-       await tx.admissionWave.update({
-         where: { id: registrant.waveId },
-         data: { acceptedCount: { increment: 1 } }
-       });
+    // Best Practice: Update wave statistics if wave is linked.
+    // Only adjust acceptedCount on real transitions into / out of ACCEPTED
+    // so the counter stays consistent across re-accepts and reverts.
+    if (registrant.waveId) {
+      const wasAccepted = previous.status === AdmissionStatus.ACCEPTED;
+      const isAccepted = data.status === AdmissionStatus.ACCEPTED;
+
+      if (!wasAccepted && isAccepted) {
+        await tx.admissionWave.update({
+          where: { id: registrant.waveId },
+          data: { acceptedCount: { increment: 1 } },
+        });
+      } else if (wasAccepted && !isAccepted) {
+        await tx.admissionWave.updateMany({
+          where: { id: registrant.waveId, acceptedCount: { gt: 0 } },
+          data: { acceptedCount: { decrement: 1 } },
+        });
+      }
     }
 
     return registrant;

@@ -250,6 +250,28 @@ export const waveService = {
         throw new Error('Wave not found');
       }
 
+      // Look up the registrant's current wave (if any) so we can decrement
+      // the old wave's registeredCount when reassigning. Without this,
+      // the old wave's count stays inflated forever.
+      const existing = await tx.registrant.findUnique({
+        where: { id: registrantId },
+        select: { waveId: true },
+      });
+
+      if (!existing) {
+        throw new Error('Registrant not found');
+      }
+
+      // No-op if already assigned to the target wave.
+      if (existing.waveId === waveId) {
+        return tx.registrant.findUnique({
+          where: { id: registrantId },
+          include: {
+            wave: { select: { id: true, name: true, waveNumber: true } },
+          },
+        });
+      }
+
       // Atomic conditional update: only increments if registeredCount < quota.
       // updateMany returns count=0 if no rows matched, signaling the wave was full.
       const incrementResult = await tx.admissionWave.updateMany({
@@ -262,6 +284,15 @@ export const waveService = {
 
       if (incrementResult.count === 0) {
         throw new Error('Wave quota is full');
+      }
+
+      // Decrement the previous wave's count (clamped at 0 to avoid negatives
+      // in case of prior data drift).
+      if (existing.waveId) {
+        await tx.admissionWave.updateMany({
+          where: { id: existing.waveId, registeredCount: { gt: 0 } },
+          data: { registeredCount: { decrement: 1 } },
+        });
       }
 
       const updatedRegistrant = await tx.registrant.update({

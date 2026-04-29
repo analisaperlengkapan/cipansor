@@ -246,6 +246,36 @@ export async function getRegistrantById(id: string) {
 }
 
 export async function createRegistrant(data: CreateRegistrantExtendedInput) {
+  // Race-safety: `generateRegistrationNo` derives the next number from
+  // `count(*) + 1`. Under PostgreSQL's default READ COMMITTED isolation,
+  // two concurrent transactions can read the same count and try to insert
+  // the same `registrationNo`, which then fails the unique constraint
+  // (`Registrant.registrationNo @unique`) with Prisma error P2002. Retry
+  // a small number of times so the second/third concurrent caller gets a
+  // valid sequential number instead of a 500.
+  const MAX_ATTEMPTS = 5;
+  let lastError: unknown;
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+    try {
+      return await createRegistrantOnce(data);
+    } catch (err) {
+      lastError = err;
+      if (
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === 'P2002' &&
+        Array.isArray((err.meta as { target?: string[] } | undefined)?.target) &&
+        ((err.meta as { target: string[] }).target).includes('registrationNo')
+      ) {
+        // Collision on registrationNo — retry with a fresh count.
+        continue;
+      }
+      throw err;
+    }
+  }
+  throw lastError;
+}
+
+async function createRegistrantOnce(data: CreateRegistrantExtendedInput) {
   return prisma.$transaction(async (tx) => {
     const registrationNo = await generateRegistrationNo(data.admissionPeriodId, tx);
 

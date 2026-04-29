@@ -123,4 +123,17 @@ router.post(
   waveController.onboardRegistrant
 );
 
+/**
+ * @route POST /api/ppdb-wave/update-statuses
+ * @desc Recompute wave statuses (UPCOMING -> OPEN -> CLOSED / FULL) based on
+ *       current dates and registered counts. Intended to be called by a cron
+ *       job, but exposed as an admin-triggerable endpoint as well.
+ * @access Private - Admin
+ */
+router.post(
+  '/update-statuses',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  waveController.updateStatuses
+);
+
 export default router;

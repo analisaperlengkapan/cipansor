@@ -549,6 +549,32 @@ export async function enrollRegistrant(
         where: { studentId: student.id, status: 'active' },
         data: { status: 'completed' },
       });
+    } else if (existingUser) {
+      // A User with the registrant's email already exists but has no linked
+      // Student record (e.g. the same email belongs to a parent / staff
+      // account). Reuse that user and attach a new Student row to it instead
+      // of attempting `tx.user.create({ email })`, which would violate the
+      // `User.email @unique` constraint and abort the entire transaction
+      // with an opaque P2002 error.
+      user = existingUser;
+
+      student = await tx.student.create({
+        data: {
+          userId: user.id,
+          unitId: registrant.admissionPeriod.unitId,
+          nis: studentData.nis,
+          nisn: studentData.nisn,
+          gender: registrant.gender,
+          birthPlace: registrant.birthPlace,
+          birthDate: registrant.birthDate,
+          address: registrant.address,
+          parentName: registrant.parentName,
+          parentPhone: registrant.parentPhone,
+          parentEmail: registrant.parentEmail,
+          status: 'active',
+          entryYear: new Date().getFullYear(),
+        },
+      });
     } else {
       // Generate a cryptographically random password and bcrypt it.
       // The plain value is intentionally discarded so the account can only

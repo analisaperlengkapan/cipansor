@@ -1,13 +1,25 @@
 import { Router } from 'express';
+import { UserRole } from '@prisma/client';
 import * as controller from './controller';
 import * as forecastController from './forecast.controller';
 import * as exportController from './export.controller';
-import { authenticate } from '@/middleware/auth';
+import { authenticate, authorize } from '@/middleware/auth';
 
 const router = Router();
 
 // All routes require authentication
 router.use(authenticate);
+
+// Roles allowed to view forecast/projection data. Forecasts can leak
+// strategic information (cash position, projected attrition, etc.) so
+// students/parents/teachers must NOT reach these endpoints — only admin
+// roles can. Each handler still applies its own unit-level scoping where
+// applicable (see e.g. `getCashFlowForecast`).
+const forecastViewer = authorize(
+  UserRole.SUPER_ADMIN,
+  UserRole.YAYASAN_ADMIN,
+  UserRole.UNIT_ADMIN
+);
 
 /**
  * @swagger
@@ -226,7 +238,7 @@ router.get('/grc', controller.getGRCStats);
  *       200:
  *         description: Combined forecasts for enrollment, payment, outstanding, and tahfidz
  */
-router.get('/forecast', forecastController.getAllForecasts);
+router.get('/forecast', forecastViewer, forecastController.getAllForecasts);
 
 /**
  * @swagger
@@ -240,7 +252,7 @@ router.get('/forecast', forecastController.getAllForecasts);
  *       200:
  *         description: Enrollment prediction for next 6 months
  */
-router.get('/forecast/enrollment', forecastController.getEnrollmentForecast);
+router.get('/forecast/enrollment', forecastViewer, forecastController.getEnrollmentForecast);
 
 /**
  * @swagger
@@ -254,7 +266,7 @@ router.get('/forecast/enrollment', forecastController.getEnrollmentForecast);
  *       200:
  *         description: Payment prediction for next 6 months
  */
-router.get('/forecast/payment', forecastController.getPaymentForecast);
+router.get('/forecast/payment', forecastViewer, forecastController.getPaymentForecast);
 
 /**
  * @swagger
@@ -268,7 +280,7 @@ router.get('/forecast/payment', forecastController.getPaymentForecast);
  *       200:
  *         description: Outstanding payment risk analysis
  */
-router.get('/forecast/outstanding', forecastController.getOutstandingPrediction);
+router.get('/forecast/outstanding', forecastViewer, forecastController.getOutstandingPrediction);
 
 /**
  * @swagger
@@ -282,7 +294,7 @@ router.get('/forecast/outstanding', forecastController.getOutstandingPrediction)
  *       200:
  *         description: Tahfidz completion projection
  */
-router.get('/forecast/tahfidz', forecastController.getTahfidzForecast);
+router.get('/forecast/tahfidz', forecastViewer, forecastController.getTahfidzForecast);
 
 /**
  * @swagger
@@ -301,7 +313,7 @@ router.get('/forecast/tahfidz', forecastController.getTahfidzForecast);
  *       200:
  *         description: Monthly projected income vs outflow with overdue receivables
  */
-router.get('/forecast/cash-flow', forecastController.getCashFlowForecast);
+router.get('/forecast/cash-flow', forecastViewer, forecastController.getCashFlowForecast);
 
 // ============================================
 // EXPORT ENDPOINTS

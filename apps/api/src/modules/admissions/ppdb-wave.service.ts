@@ -164,6 +164,26 @@ export const waveService = {
     if (input.startDate !== undefined) data.startDate = new Date(input.startDate);
     if (input.endDate !== undefined) data.endDate = new Date(input.endDate);
 
+    // Cross-check date ordering against the persisted record. The schema-level
+    // `.refine` in `updateWaveSchema` only runs when BOTH dates are provided
+    // in the same request, so a caller can otherwise send only `endDate` (or
+    // only `startDate`) that violates the existing record's invariant. Reject
+    // the update here before Prisma persists `endDate <= startDate`.
+    if (data.startDate !== undefined || data.endDate !== undefined) {
+      const existing = await prisma.admissionWave.findUnique({
+        where: { id },
+        select: { startDate: true, endDate: true },
+      });
+      if (!existing) {
+        throw new Error('Wave not found');
+      }
+      const effectiveStart = data.startDate ?? existing.startDate;
+      const effectiveEnd = data.endDate ?? existing.endDate;
+      if (effectiveEnd <= effectiveStart) {
+        throw new Error('endDate must be after startDate');
+      }
+    }
+
     return prisma.admissionWave.update({
       where: { id },
       data,

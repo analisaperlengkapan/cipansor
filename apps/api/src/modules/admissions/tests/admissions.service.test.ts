@@ -74,7 +74,11 @@ describe('Admissions Service', () => {
       motherName: 'Mother',
     } as any);
 
-    expect(result.registrationNo).toBe('REG-2024-00011');
+    // The registration number includes a 4-char period suffix derived from
+    // the admissionPeriodId (with hyphens removed, uppercased, first 4 chars)
+    // so two distinct periods in the same academic year cannot collide on the
+    // globally-unique `registrationNo`. For id='p1' the suffix is 'P1'.
+    expect(result.registrationNo).toBe('REG-2024-P1-00011');
     expect(result.fullName).toBe('Test Student');
     // Invoice creation is intentionally deferred to enrollment time, when a
     // real Student record exists. Creating it here would require a non-null

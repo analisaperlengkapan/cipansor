@@ -97,17 +97,41 @@ export async function getCashFlowForecast(req: Request, res: Response, next: Nex
 
 /**
  * Get all forecasts summary
+ *
+ * Includes the new cash-flow forecast under the same unit-level authorization
+ * rules as `getCashFlowForecast` (a UNIT_ADMIN cannot read another unit's
+ * projection by passing a different `unitId`, nor by omitting it entirely).
+ * The other forecasts have no inline authorization here, matching their
+ * dedicated endpoints' behaviour.
  */
 export async function getAllForecasts(req: Request, res: Response, next: NextFunction) {
   try {
     const { unitId } = req.query;
     const uid = unitId as string | undefined;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const user = (req as any).user;
 
-    const [enrollment, payment, outstanding, tahfidz] = await Promise.all([
+    let cashFlowUnitId = uid;
+    if (user && user.role !== 'SUPER_ADMIN' && user.role !== 'YAYASAN_ADMIN') {
+      if (!user.unitId) {
+        return res
+          .status(403)
+          .json({ success: false, error: 'Access to this unit is not allowed' });
+      }
+      if (cashFlowUnitId && cashFlowUnitId !== user.unitId) {
+        return res
+          .status(403)
+          .json({ success: false, error: 'Access to this unit is not allowed' });
+      }
+      cashFlowUnitId = user.unitId;
+    }
+
+    const [enrollment, payment, outstanding, tahfidz, cashFlow] = await Promise.all([
       forecastService.getEnrollmentForecast(uid),
       forecastService.getPaymentForecast(uid),
       forecastService.getOutstandingPaymentPrediction(uid),
       forecastService.getTahfidzCompletionForecast(uid),
+      forecastService.calculateCashFlowForecast(cashFlowUnitId),
     ]);
 
     res.json({
@@ -117,6 +141,7 @@ export async function getAllForecasts(req: Request, res: Response, next: NextFun
         payment,
         outstanding,
         tahfidz,
+        cashFlow,
       },
     });
   } catch (error) {

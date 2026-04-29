@@ -225,6 +225,80 @@ export async function deleteRegistrantDocument(req: Request, res: Response, next
   }
 }
 
+// =====================================
+// PUBLIC CONTROLLERS (no authentication)
+// =====================================
+
+/**
+ * Return the single most-relevant currently-active admission period for a
+ * public landing page / registration form. Exposed WITHOUT authentication so
+ * the public PPDB page (`apps/web/src/app/public/ppdb/page.tsx`) can bootstrap
+ * the registration form. Returns `null` inside `data` when no period is
+ * active (the frontend handles this by showing a "pendaftaran belum dibuka"
+ * message).
+ *
+ * Intentionally LEAKS only: id, name, startDate, endDate, registrationFee,
+ * requirements, unit name and academic year name — never registrant counts,
+ * internal notes, or any PII.
+ */
+export async function getPublicActiveAdmissionPeriod(
+  _req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const { prisma } = await import('../../lib/prisma');
+    const period = await prisma.admissionPeriod.findFirst({
+      where: { isActive: true },
+      orderBy: { startDate: 'desc' },
+      select: {
+        id: true,
+        name: true,
+        startDate: true,
+        endDate: true,
+        registrationFee: true,
+        requirements: true,
+        quota: true,
+        unit: { select: { id: true, name: true, type: true } },
+        academicYear: { select: { id: true, name: true } },
+      },
+    });
+    res.json({ success: true, data: period });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Public registrant creation endpoint used by the unauthenticated PPDB form.
+ * Validates + persists the same way as `createRegistrant`, but the response
+ * is trimmed to non-sensitive identification fields so a public caller can't
+ * enumerate internal columns (status history, test scores, etc.) by varying
+ * payload shape.
+ */
+export async function createPublicRegistrant(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const data = createRegistrantSchema.parse(req.body);
+    const registrant = await service.createRegistrant(data);
+    res.status(201).json({
+      success: true,
+      data: {
+        id: registrant.id,
+        registrationNo: registrant.registrationNo,
+        fullName: registrant.fullName,
+        status: registrant.status,
+        createdAt: registrant.createdAt,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function getPriorityLeads(req: Request, res: Response, next: NextFunction) {
   try {
     const { unitId } = req.query;

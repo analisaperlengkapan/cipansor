@@ -183,10 +183,13 @@ export function useActivePeriod() {
   return useQuery({
     queryKey: ["active-admission-period"],
     queryFn: async () => {
-      const response = await api.get("/admissions/periods", {
-        params: { isActive: true, limit: 1 },
-      });
-      return response.data?.data?.[0] ?? null;
+      // Use the unauthenticated public endpoint so this hook works on the
+      // public PPDB page (`/public/ppdb`) where no user is logged in. The
+      // authenticated `/admissions/periods` list is behind `authenticate`
+      // + `authorize(SUPER_ADMIN, UNIT_ADMIN)` and would return 401/403 for
+      // anonymous visitors, breaking the registration form.
+      const response = await api.get("/admissions/public/active-period");
+      return response.data?.data ?? null;
     },
   });
 }
@@ -217,7 +220,12 @@ export function useCreateRegistration() {
       } else {
         payload = data;
       }
-      const response = await api.post("/admissions/registrants", payload);
+      // Use the unauthenticated public endpoint. The authenticated
+      // `/admissions/registrants` POST is behind `authorize(SUPER_ADMIN,
+      // UNIT_ADMIN, STAFF)` and would reject anonymous visitors submitting
+      // the public PPDB form. The public variant validates with the same
+      // `createRegistrantSchema` but returns only non-sensitive fields.
+      const response = await api.post("/admissions/public/registrants", payload);
       return response.data.data;
     },
     onSuccess: () => {

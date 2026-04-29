@@ -13,6 +13,15 @@ const router = Router();
 // BEFORE the admissions-wide `authenticate` below.
 router.use('/waves', waveRoutes);
 
+// ==================== PUBLIC ENDPOINTS ====================
+// Mounted BEFORE `authenticate` so the unauthenticated public PPDB page
+// (`apps/web/src/app/public/ppdb/page.tsx`) can bootstrap the registration
+// form and submit a new registrant without a session. The handlers return a
+// deliberately trimmed projection of the underlying records — see the JSDoc
+// on the corresponding controllers for the exact whitelist.
+router.get('/public/active-period', controller.getPublicActiveAdmissionPeriod);
+router.post('/public/registrants', controller.createPublicRegistrant);
+
 router.use(authenticate);
 
 // Lead scoring / priority leads.

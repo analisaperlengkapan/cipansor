@@ -617,6 +617,19 @@ export async function enrollRegistrant(
       },
     });
 
+    // The registrant's status transitions from ACCEPTED -> ENROLLED here, but
+    // unlike `updateRegistrantStatus` this code path doesn't go through the
+    // shared status-transition logic. We must therefore decrement the wave's
+    // `acceptedCount` ourselves; otherwise every successful enrollment leaves
+    // a stale ACCEPTED count behind, eventually overstating the wave's
+    // acceptance rate (see `ppdb-wave.service.ts` `getStats`).
+    if (registrant.waveId) {
+      await tx.admissionWave.updateMany({
+        where: { id: registrant.waveId, acceptedCount: { gt: 0 } },
+        data: { acceptedCount: { decrement: 1 } },
+      });
+    }
+
     // Auto-generate the registration-fee invoice now that we have a real
     // Student to attach it to. Skipped if no fee is configured or the
     // REG_FEE payment type is missing.

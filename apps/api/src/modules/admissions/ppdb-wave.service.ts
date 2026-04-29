@@ -366,10 +366,16 @@ export const waveService = {
       data: { status: 'OPEN' },
     });
 
-    // Mark waves as CLOSED if end date has passed and they're still OPEN
+    // Mark waves as CLOSED if end date has passed. We must include both OPEN
+    // and UPCOMING waves here: if `updateWaveStatuses` was never run while a
+    // wave's period was active (e.g. the cron job was down, or the wave's
+    // entire start..end window elapsed between two cron runs), an UPCOMING
+    // wave would otherwise be permanently stranded — Step 1 above requires
+    // `endDate >= now` to transition UPCOMING -> OPEN, so once `endDate < now`
+    // the wave can never leave UPCOMING without this fallback.
     await prisma.admissionWave.updateMany({
       where: {
-        status: 'OPEN',
+        status: { in: ['OPEN', 'UPCOMING'] },
         endDate: { lt: now },
       },
       data: { status: 'CLOSED' },

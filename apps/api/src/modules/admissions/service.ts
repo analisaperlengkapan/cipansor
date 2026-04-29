@@ -14,10 +14,10 @@ import {
   CreateRegistrantDocumentInput,
 } from './schema';
 
-interface CreateRegistrantExtendedInput extends CreateRegistrantInput {
-  source?: string;
-  campaignId?: string;
-}
+// `CreateRegistrantInput` already defines `source` and `campaignId` as
+// optional (see `createRegistrantSchema` in ./schema.ts), so there's no need
+// for a separate "extended" interface here.
+type CreateRegistrantExtendedInput = CreateRegistrantInput;
 
 // =====================================
 // ADMISSION PERIOD SERVICE
@@ -509,6 +509,16 @@ export async function enrollRegistrant(
     roomId?: string;
   }
 ) {
+  // Pre-compute a bcrypt hash OUTSIDE the transaction. bcrypt.hash with cost
+  // factor 10 takes ~80-100ms during which we'd otherwise be holding row locks
+  // inside the enrollment transaction, increasing lock contention under
+  // concurrent load. The hash is only consumed by the "no existing user" path
+  // below; when an existing user is reused it is simply discarded. The small
+  // amount of wasted work when the hash isn't needed is worth the shorter
+  // transaction lifetime.
+  const randomPassword = randomBytes(24).toString('base64url');
+  const prehashedPassword = await bcrypt.hash(randomPassword, 10);
+
   const result = await prisma.$transaction(async (tx) => {
     // Read registrant + status check INSIDE the transaction so two concurrent
     // enrollment requests can't both pass the ACCEPTED check and end up
@@ -576,18 +586,15 @@ export async function enrollRegistrant(
         },
       });
     } else {
-      // Generate a cryptographically random password and bcrypt it.
-      // The plain value is intentionally discarded so the account can only
+      // Use the bcrypt hash computed before the transaction (see above).
+      // The plain password is intentionally discarded so the account can only
       // be activated via the standard password-reset flow. This avoids
       // shipping a known-weak / non-bcrypt placeholder hash to production.
-      const randomPassword = randomBytes(24).toString('base64url');
-      const passwordHash = await bcrypt.hash(randomPassword, 10);
-
       user = await tx.user.create({
         data: {
           name: registrant.fullName,
           email: registrant.email || `${studentData.nis}@student.cipansor.id`,
-          passwordHash,
+          passwordHash: prehashedPassword,
           role: 'STUDENT',
           unitId: registrant.admissionPeriod.unitId,
           isActive: true,

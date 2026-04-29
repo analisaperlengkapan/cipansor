@@ -157,8 +157,12 @@ export const waveService = {
     if (input.registrationFee !== undefined) data.registrationFee = input.registrationFee;
     if (input.status !== undefined) data.status = input.status;
     if (input.notes !== undefined) data.notes = input.notes;
-    if (input.startDate) data.startDate = new Date(input.startDate);
-    if (input.endDate) data.endDate = new Date(input.endDate);
+    // Use `!== undefined` for consistency with the other fields above. An
+    // empty string would produce an Invalid Date, but Zod's `z.string()` does
+    // not emit empty strings by default for these fields, and this guard
+    // mirrors the "only touch explicitly provided fields" contract of a PATCH.
+    if (input.startDate !== undefined) data.startDate = new Date(input.startDate);
+    if (input.endDate !== undefined) data.endDate = new Date(input.endDate);
 
     return prisma.admissionWave.update({
       where: { id },

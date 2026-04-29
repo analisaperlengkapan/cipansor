@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import waveService from './ppdb-wave.service';
 import { ApiResponse } from '@/utils/response';
+import { Errors } from '@/middleware/error';
 
 export const waveController = {
   /**

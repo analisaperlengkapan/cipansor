@@ -6,12 +6,51 @@ import { Request, Response, NextFunction } from 'express';
 import * as forecastService from './forecast.service';
 
 /**
+ * Resolve the unitId a forecast request should be scoped to, given the
+ * caller's role and the (optional) `unitId` query param.
+ *
+ * Centralised here so every forecast endpoint applies the same unit-level
+ * authorization: a UNIT_ADMIN must not be able to read another unit's
+ * forecast by passing a different `unitId`, nor by omitting it entirely
+ * (which would otherwise return aggregated data across ALL units — see
+ * forecast.service.ts where `unitId` is only spread when truthy).
+ * SUPER_ADMIN and YAYASAN_ADMIN may scope to any (or all) unit(s).
+ *
+ * Returns `{ ok: true, unitId }` on success, or `{ ok: false }` after
+ * having already written a 403 response — callers should early-return
+ * when ok is false.
+ */
+function resolveForecastUnitId(
+  req: Request,
+  res: Response
+): { ok: true; unitId: string | undefined } | { ok: false } {
+  const { unitId } = req.query;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const user = (req as any).user;
+
+  let effectiveUnitId = unitId as string | undefined;
+  if (user && user.role !== 'SUPER_ADMIN' && user.role !== 'YAYASAN_ADMIN') {
+    if (!user.unitId) {
+      res.status(403).json({ success: false, error: 'Access to this unit is not allowed' });
+      return { ok: false };
+    }
+    if (effectiveUnitId && effectiveUnitId !== user.unitId) {
+      res.status(403).json({ success: false, error: 'Access to this unit is not allowed' });
+      return { ok: false };
+    }
+    effectiveUnitId = user.unitId;
+  }
+  return { ok: true, unitId: effectiveUnitId };
+}
+
+/**
  * Get enrollment forecast
  */
 export async function getEnrollmentForecast(req: Request, res: Response, next: NextFunction) {
   try {
-    const { unitId } = req.query;
-    const forecast = await forecastService.getEnrollmentForecast(unitId as string | undefined);
+    const scoped = resolveForecastUnitId(req, res);
+    if (!scoped.ok) return;
+    const forecast = await forecastService.getEnrollmentForecast(scoped.unitId);
     res.json({ success: true, data: forecast });
   } catch (error) {
     next(error);
@@ -23,8 +62,9 @@ export async function getEnrollmentForecast(req: Request, res: Response, next: N
  */
 export async function getPaymentForecast(req: Request, res: Response, next: NextFunction) {
   try {
-    const { unitId } = req.query;
-    const forecast = await forecastService.getPaymentForecast(unitId as string | undefined);
+    const scoped = resolveForecastUnitId(req, res);
+    if (!scoped.ok) return;
+    const forecast = await forecastService.getPaymentForecast(scoped.unitId);
     res.json({ success: true, data: forecast });
   } catch (error) {
     next(error);
@@ -36,10 +76,9 @@ export async function getPaymentForecast(req: Request, res: Response, next: Next
  */
 export async function getOutstandingPrediction(req: Request, res: Response, next: NextFunction) {
   try {
-    const { unitId } = req.query;
-    const prediction = await forecastService.getOutstandingPaymentPrediction(
-      unitId as string | undefined
-    );
+    const scoped = resolveForecastUnitId(req, res);
+    if (!scoped.ok) return;
+    const prediction = await forecastService.getOutstandingPaymentPrediction(scoped.unitId);
     res.json({ success: true, data: prediction });
   } catch (error) {
     next(error);
@@ -51,10 +90,9 @@ export async function getOutstandingPrediction(req: Request, res: Response, next
  */
 export async function getTahfidzForecast(req: Request, res: Response, next: NextFunction) {
   try {
-    const { unitId } = req.query;
-    const forecast = await forecastService.getTahfidzCompletionForecast(
-      unitId as string | undefined
-    );
+    const scoped = resolveForecastUnitId(req, res);
+    if (!scoped.ok) return;
+    const forecast = await forecastService.getTahfidzCompletionForecast(scoped.unitId);
     res.json({ success: true, data: forecast });
   } catch (error) {
     next(error);

@@ -31,7 +31,7 @@ export async function getAdmissionPeriodById(req: Request, res: Response, next: 
   try {
     const period = await service.getAdmissionPeriodById(req.params.id);
     if (!period) {
-      throw Errors.notFound('Admission period not found');
+      throw Errors.notFound('Admission period');
     }
     res.json({ success: true, data: period });
   } catch (error) {
@@ -72,7 +72,7 @@ export async function getAdmissionPeriodStats(req: Request, res: Response, next:
   try {
     const stats = await service.getAdmissionPeriodStats(req.params.id);
     if (!stats) {
-      throw Errors.notFound('Admission period not found');
+      throw Errors.notFound('Admission period');
     }
     res.json({ success: true, data: stats });
   } catch (error) {
@@ -98,7 +98,7 @@ export async function getRegistrantById(req: Request, res: Response, next: NextF
   try {
     const registrant = await service.getRegistrantById(req.params.id);
     if (!registrant) {
-      throw Errors.notFound('Registrant not found');
+      throw Errors.notFound('Registrant');
     }
     res.json({ success: true, data: registrant });
   } catch (error) {

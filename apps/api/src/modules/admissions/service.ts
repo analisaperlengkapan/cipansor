@@ -525,6 +525,41 @@ export async function updateRegistrantStatus(id: string, data: UpdateRegistrantS
   });
 }
 
+/**
+ * Enroll an ACCEPTED registrant as a Student.
+ *
+ * IMPORTANT — DUAL ENROLLMENT PATHS:
+ * There is a second enrollment entry point in
+ * `apps/api/src/services/integration/student-onboarding.orchestrator.ts`
+ * (`StudentOnboardingOrchestrator.processEnrollment`) used by
+ * `POST /api/admissions/waves/onboard-registrant` and the frontend
+ * `useOnboardRegistrant` hook. The two paths diverge in scope:
+ *
+ *   - This function (`enrollRegistrant`):
+ *       * Caller-supplied NIS (no auto-generation)
+ *       * Creates User + Student
+ *       * Generates REG_FEE invoice
+ *       * Decrements wave `acceptedCount`
+ *       * No parent account, no medical record, no wallet, no events
+ *
+ *   - `StudentOnboardingOrchestrator.processEnrollment`:
+ *       * Auto-generates NIS via Postgres advisory lock
+ *       * Creates User + Student
+ *       * Creates parent User (PARENT role) + StudentParent link
+ *       * Creates initial MedicalRecord
+ *       * Creates SantriWallet
+ *       * Emits `student:created`, `health:medical-record-created`,
+ *         `notification:send`, `email:send_reset_token` on the eventBus
+ *       * Does NOT generate REG_FEE invoice
+ *       * Does NOT decrement wave `acceptedCount`
+ *
+ * If you change ANY business rule for enrollment (mandatory wallet,
+ * mandatory medical record, mandatory invoice, NIS format, status
+ * transitions, wave-counter handling, …), update BOTH paths or document
+ * an explicit reason for the divergence here. Failing to do so leaves
+ * student records in inconsistent states depending on which API the
+ * caller used.
+ */
 export async function enrollRegistrant(
   registrantId: string,
   studentData: {

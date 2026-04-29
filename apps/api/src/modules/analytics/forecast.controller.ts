@@ -107,26 +107,9 @@ export async function getTahfidzForecast(req: Request, res: Response, next: Next
  */
 export async function getCashFlowForecast(req: Request, res: Response, next: NextFunction) {
   try {
-    const { unitId } = req.query;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const user = (req as any).user;
-
-    let effectiveUnitId = unitId as string | undefined;
-    if (user && user.role !== 'SUPER_ADMIN' && user.role !== 'YAYASAN_ADMIN') {
-      if (!user.unitId) {
-        return res
-          .status(403)
-          .json({ success: false, error: 'Access to this unit is not allowed' });
-      }
-      if (effectiveUnitId && effectiveUnitId !== user.unitId) {
-        return res
-          .status(403)
-          .json({ success: false, error: 'Access to this unit is not allowed' });
-      }
-      effectiveUnitId = user.unitId;
-    }
-
-    const forecast = await forecastService.calculateCashFlowForecast(effectiveUnitId);
+    const scoped = resolveForecastUnitId(req, res);
+    if (!scoped.ok) return;
+    const forecast = await forecastService.calculateCashFlowForecast(scoped.unitId);
     res.json({ success: true, data: forecast });
   } catch (error) {
     next(error);
@@ -146,24 +129,9 @@ export async function getCashFlowForecast(req: Request, res: Response, next: Nex
  */
 export async function getAllForecasts(req: Request, res: Response, next: NextFunction) {
   try {
-    const { unitId } = req.query;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const user = (req as any).user;
-
-    let effectiveUnitId = unitId as string | undefined;
-    if (user && user.role !== 'SUPER_ADMIN' && user.role !== 'YAYASAN_ADMIN') {
-      if (!user.unitId) {
-        return res
-          .status(403)
-          .json({ success: false, error: 'Access to this unit is not allowed' });
-      }
-      if (effectiveUnitId && effectiveUnitId !== user.unitId) {
-        return res
-          .status(403)
-          .json({ success: false, error: 'Access to this unit is not allowed' });
-      }
-      effectiveUnitId = user.unitId;
-    }
+    const scoped = resolveForecastUnitId(req, res);
+    if (!scoped.ok) return;
+    const effectiveUnitId = scoped.unitId;
 
     const [enrollment, payment, outstanding, tahfidz, cashFlow] = await Promise.all([
       forecastService.getEnrollmentForecast(effectiveUnitId),

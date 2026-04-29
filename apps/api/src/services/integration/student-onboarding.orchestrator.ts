@@ -234,6 +234,19 @@ export class StudentOnboardingOrchestrator {
         }
       });
 
+      // Decrement the wave's `acceptedCount` to mirror `enrollRegistrant` in
+      // `apps/api/src/modules/admissions/service.ts`. Without this, every
+      // registrant onboarded through the orchestrator path leaves a stale
+      // ACCEPTED count behind, eventually overstating each wave's acceptance
+      // rate (see `ppdb-wave.service.ts` `getStats`). Clamped at 0 to avoid
+      // negatives in case of prior data drift.
+      if (registrant.waveId) {
+        await tx.admissionWave.updateMany({
+          where: { id: registrant.waveId, acceptedCount: { gt: 0 } },
+          data: { acceptedCount: { decrement: 1 } },
+        });
+      }
+
       return {
         success: true,
         studentId: student.id,

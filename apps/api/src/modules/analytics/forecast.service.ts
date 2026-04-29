@@ -297,19 +297,41 @@ export async function getTahfidzCompletionForecast(unitId?: string): Promise<{
   const sixMonthsAgo = new Date();
   sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
-  const monthlyProgress = await prisma.$queryRaw<
-    Array<{ month: string; total_ayah: bigint; student_count: bigint }>
-  >`
-    SELECT 
-      TO_CHAR(recorded_at, 'YYYY-MM') as month,
-      COALESCE(SUM(total_ayah), 0)::bigint as total_ayah,
-      COUNT(DISTINCT student_id)::bigint as student_count
-    FROM tahfidz_records
-    WHERE recorded_at >= ${sixMonthsAgo}
-      AND activity_type = 'ZIYADAH'
-    GROUP BY TO_CHAR(recorded_at, 'YYYY-MM')
-    ORDER BY month
-  `;
+  // Scope monthly progress by `unitId` when provided so the aggregate is
+  // consistent with `currentHafidz` below (which already filters by unit).
+  // Without this the function would mix cross-unit ZIYADAH totals with a
+  // unit-scoped hafidz count, producing nonsensical projections for callers
+  // who passed a `unitId`. The join goes through `students` because
+  // `tahfidz_records` only carries `student_id`.
+  const monthlyProgress = unitId
+    ? await prisma.$queryRaw<
+        Array<{ month: string; total_ayah: bigint; student_count: bigint }>
+      >`
+        SELECT 
+          TO_CHAR(tr.recorded_at, 'YYYY-MM') as month,
+          COALESCE(SUM(tr.total_ayah), 0)::bigint as total_ayah,
+          COUNT(DISTINCT tr.student_id)::bigint as student_count
+        FROM tahfidz_records tr
+        INNER JOIN students s ON s.id = tr.student_id
+        WHERE tr.recorded_at >= ${sixMonthsAgo}
+          AND tr.activity_type = 'ZIYADAH'
+          AND s.unit_id = ${unitId}
+        GROUP BY TO_CHAR(tr.recorded_at, 'YYYY-MM')
+        ORDER BY month
+      `
+    : await prisma.$queryRaw<
+        Array<{ month: string; total_ayah: bigint; student_count: bigint }>
+      >`
+        SELECT 
+          TO_CHAR(recorded_at, 'YYYY-MM') as month,
+          COALESCE(SUM(total_ayah), 0)::bigint as total_ayah,
+          COUNT(DISTINCT student_id)::bigint as student_count
+        FROM tahfidz_records
+        WHERE recorded_at >= ${sixMonthsAgo}
+          AND activity_type = 'ZIYADAH'
+        GROUP BY TO_CHAR(recorded_at, 'YYYY-MM')
+        ORDER BY month
+      `;
 
   // Count current hafidz (students with 30 juz completed)
   const currentHafidz = await prisma.student.count({

@@ -36,10 +36,10 @@ router.get(
 
 /**
  * @swagger
- * /api/psb/periods:
+ * /api/admissions/periods:
  *   get:
  *     summary: List admission periods
- *     tags: [PSB]
+ *     tags: [Admissions]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -72,10 +72,10 @@ router.get(
 
 /**
  * @swagger
- * /api/psb/periods:
+ * /api/admissions/periods:
  *   post:
  *     summary: Create admission period
- *     tags: [PSB]
+ *     tags: [Admissions]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -114,10 +114,10 @@ router.post(
 
 /**
  * @swagger
- * /api/psb/periods/{id}:
+ * /api/admissions/periods/{id}:
  *   get:
  *     summary: Get admission period by ID
- *     tags: [PSB]
+ *     tags: [Admissions]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -138,10 +138,10 @@ router.get(
 
 /**
  * @swagger
- * /api/psb/periods/{id}/stats:
+ * /api/admissions/periods/{id}/stats:
  *   get:
  *     summary: Get admission period statistics
- *     tags: [PSB]
+ *     tags: [Admissions]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -162,10 +162,10 @@ router.get(
 
 /**
  * @swagger
- * /api/psb/periods/{id}:
+ * /api/admissions/periods/{id}:
  *   put:
  *     summary: Update admission period
- *     tags: [PSB]
+ *     tags: [Admissions]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -186,10 +186,10 @@ router.put(
 
 /**
  * @swagger
- * /api/psb/periods/{id}:
+ * /api/admissions/periods/{id}:
  *   delete:
  *     summary: Delete admission period
- *     tags: [PSB]
+ *     tags: [Admissions]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -212,10 +212,10 @@ router.delete(
 
 /**
  * @swagger
- * /api/psb/registrants:
+ * /api/admissions/registrants:
  *   get:
  *     summary: List registrants
- *     tags: [PSB]
+ *     tags: [Admissions]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -249,10 +249,10 @@ router.get(
 
 /**
  * @swagger
- * /api/psb/registrants:
+ * /api/admissions/registrants:
  *   post:
  *     summary: Create registrant
- *     tags: [PSB]
+ *     tags: [Admissions]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -295,10 +295,10 @@ router.post(
 
 /**
  * @swagger
- * /api/psb/registrants/{id}:
+ * /api/admissions/registrants/{id}:
  *   get:
  *     summary: Get registrant by ID
- *     tags: [PSB]
+ *     tags: [Admissions]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -319,10 +319,10 @@ router.get(
 
 /**
  * @swagger
- * /api/psb/registrants/{id}:
+ * /api/admissions/registrants/{id}:
  *   put:
  *     summary: Update registrant
- *     tags: [PSB]
+ *     tags: [Admissions]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -343,10 +343,10 @@ router.put(
 
 /**
  * @swagger
- * /api/psb/registrants/{id}/score:
+ * /api/admissions/registrants/{id}/score:
  *   patch:
  *     summary: Update registrant test score
- *     tags: [PSB]
+ *     tags: [Admissions]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -380,10 +380,10 @@ router.patch(
 
 /**
  * @swagger
- * /api/psb/registrants/{id}/status:
+ * /api/admissions/registrants/{id}/status:
  *   patch:
  *     summary: Update registrant status (accept/reject)
- *     tags: [PSB]
+ *     tags: [Admissions]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -416,10 +416,10 @@ router.patch(
 
 /**
  * @swagger
- * /api/psb/registrants/{id}/enroll:
+ * /api/admissions/registrants/{id}/enroll:
  *   post:
  *     summary: Enroll accepted registrant as student
- *     tags: [PSB]
+ *     tags: [Admissions]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -448,10 +448,10 @@ router.post(
 
 /**
  * @swagger
- * /api/psb/registrants/{id}:
+ * /api/admissions/registrants/{id}:
  *   delete:
  *     summary: Delete registrant
- *     tags: [PSB]
+ *     tags: [Admissions]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -474,10 +474,10 @@ router.delete(
 
 /**
  * @swagger
- * /api/psb/registrants/{registrantId}/documents:
+ * /api/admissions/registrants/{registrantId}/documents:
  *   get:
  *     summary: Get registrant documents
- *     tags: [PSB]
+ *     tags: [Admissions]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -498,10 +498,10 @@ router.get(
 
 /**
  * @swagger
- * /api/psb/registrants/{registrantId}/documents:
+ * /api/admissions/registrants/{registrantId}/documents:
  *   post:
  *     summary: Upload registrant document
- *     tags: [PSB]
+ *     tags: [Admissions]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -537,10 +537,10 @@ router.post(
 
 /**
  * @swagger
- * /api/psb/documents/{id}/verify:
+ * /api/admissions/documents/{id}/verify:
  *   patch:
  *     summary: Verify document
- *     tags: [PSB]
+ *     tags: [Admissions]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -574,10 +574,10 @@ router.patch(
 
 /**
  * @swagger
- * /api/psb/documents/{id}:
+ * /api/admissions/documents/{id}:
  *   delete:
  *     summary: Delete document
- *     tags: [PSB]
+ *     tags: [Admissions]
  *     security:
  *       - bearerAuth: []
  *     parameters:

@@ -25,21 +25,27 @@ export const getROIStats = async (req: Request, res: Response, next: NextFunctio
     const user = (req as any).user;
 
     // Unit-level authorization: a UNIT_ADMIN must not be able to query
-    // another unit's marketing ROI by guessing/knowing its unitId.
-    // SUPER_ADMIN and YAYASAN_ADMIN can scope to any (or all) unit(s).
-    if (
-      user &&
-      user.role !== 'SUPER_ADMIN' &&
-      user.role !== 'YAYASAN_ADMIN' &&
-      unitId &&
-      user.unitId !== unitId
-    ) {
-      return res
-        .status(403)
-        .json({ success: false, error: 'Access to this unit is not allowed' });
+    // another unit's marketing ROI by guessing/knowing its unitId, nor
+    // by omitting `unitId` entirely (which would otherwise return ROI
+    // across ALL units). SUPER_ADMIN and YAYASAN_ADMIN can scope to any
+    // (or all) unit(s).
+    let effectiveUnitId = unitId as string | undefined;
+    if (user && user.role !== 'SUPER_ADMIN' && user.role !== 'YAYASAN_ADMIN') {
+      if (!user.unitId) {
+        return res
+          .status(403)
+          .json({ success: false, error: 'Access to this unit is not allowed' });
+      }
+      if (effectiveUnitId && effectiveUnitId !== user.unitId) {
+        return res
+          .status(403)
+          .json({ success: false, error: 'Access to this unit is not allowed' });
+      }
+      // Force-scope to the caller's own unit when none was provided.
+      effectiveUnitId = user.unitId;
     }
 
-    const stats = await calculateCampaignROI(unitId as string);
+    const stats = await calculateCampaignROI(effectiveUnitId);
     res.json({ success: true, data: stats });
   } catch (error) {
     next(error);

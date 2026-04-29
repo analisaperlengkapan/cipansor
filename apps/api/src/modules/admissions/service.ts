@@ -611,6 +611,13 @@ export async function enrollRegistrant(
           unitId: registrant.admissionPeriod.unitId,
           status: 'active',
           nis: studentData.nis,
+          // Persist the caller-supplied NISN on re-enrollment too. The other
+          // two branches below (existing-user-without-student and brand-new
+          // user) both set `nisn: studentData.nisn` on `tx.student.create`,
+          // so omitting it here would silently discard the value when a
+          // previously-enrolled student is re-enrolled (e.g. after graduating
+          // or transferring) with a new NISN.
+          nisn: studentData.nisn,
           graduateYear: null,
         },
       });

@@ -17,28 +17,47 @@ export const listWaveQuerySchema = z.object({
   status: WaveStatusEnum.optional(),
 });
 
-export const createWaveSchema = z.object({
-  periodId: z.string().uuid(),
-  name: z.string().min(3, 'Name must be at least 3 characters'),
-  waveNumber: z.number().min(1, 'Wave number must be at least 1'),
-  startDate: z.string(),
-  endDate: z.string(),
-  quota: z.number().min(1),
-  registrationFee: z.number().min(0).optional(),
-  status: WaveStatusEnum.default('UPCOMING'),
-  notes: z.string().optional(),
-});
+export const createWaveSchema = z
+  .object({
+    periodId: z.string().uuid(),
+    name: z.string().min(3, 'Name must be at least 3 characters'),
+    waveNumber: z.number().min(1, 'Wave number must be at least 1'),
+    // Require ISO-8601 date-times so `new Date(input.startDate)` in
+    // ppdb-wave.service.ts can never produce an Invalid Date and silently
+    // persist NaN timestamps.
+    startDate: z.string().datetime(),
+    endDate: z.string().datetime(),
+    quota: z.number().min(1),
+    registrationFee: z.number().min(0).optional(),
+    status: WaveStatusEnum.default('UPCOMING'),
+    notes: z.string().optional(),
+  })
+  .refine((data) => new Date(data.endDate) > new Date(data.startDate), {
+    message: 'endDate must be after startDate',
+    path: ['endDate'],
+  });
 
-export const updateWaveSchema = z.object({
-  name: z.string().min(3).optional(),
-  waveNumber: z.number().min(1).optional(),
-  startDate: z.string().optional(),
-  endDate: z.string().optional(),
-  quota: z.number().min(1).optional(),
-  registrationFee: z.number().min(0).optional(),
-  status: WaveStatusEnum.optional(),
-  notes: z.string().optional(),
-});
+export const updateWaveSchema = z
+  .object({
+    name: z.string().min(3).optional(),
+    waveNumber: z.number().min(1).optional(),
+    startDate: z.string().datetime().optional(),
+    endDate: z.string().datetime().optional(),
+    quota: z.number().min(1).optional(),
+    registrationFee: z.number().min(0).optional(),
+    status: WaveStatusEnum.optional(),
+    notes: z.string().optional(),
+  })
+  .refine(
+    (data) =>
+      data.startDate === undefined ||
+      data.endDate === undefined ||
+      new Date(data.endDate) > new Date(data.startDate),
+    {
+      message: 'endDate must be after startDate',
+      path: ['endDate'],
+    }
+  );
 
 // =====================================
 // REGISTRANT WAVE SCHEMAS

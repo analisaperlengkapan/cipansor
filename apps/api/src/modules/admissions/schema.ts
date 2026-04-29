@@ -82,7 +82,10 @@ export const createRegistrantSchema = z.object({
 export const updateRegistrantSchema = z.object({
   fullName: z.string().min(2).max(100).optional(),
   phone: z.string().max(20).optional(),
-  email: z.string().email().optional(),
+  // Accept empty string to clear the field, mirroring `createRegistrantSchema`.
+  // Without `.or(z.literal(''))` a registrant created with an empty email
+  // cannot round-trip the same value back through PUT /registrants/:id.
+  email: z.string().email().optional().or(z.literal('')),
   address: z.string().min(5).optional(),
   previousSchool: z.string().max(200).optional(),
   // Parents

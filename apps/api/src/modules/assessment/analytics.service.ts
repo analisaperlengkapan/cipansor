@@ -237,8 +237,10 @@ export class AssessmentAnalyticsService {
 
   /**
    * Identifies students requiring integrated intervention.
-   * Logic: High-risk students are those with Academic score < 70 AND Behavior score < 70,
-   * OR any dimension < 50.
+   * Logic: a student is flagged when at least 2 of the per-dimension thresholds
+   * trip (academic < 70, behavior < 70, tahfidz < 60), OR when their overall
+   * holistic score is < 65 with at least PARTIAL data completeness.
+   * Priority is CRITICAL when 3+ dimension reasons trip, otherwise HIGH.
    */
   static async getIntegratedRiskAlerts(unitId: string, academicYearId: string) {
     const students = await prisma.student.findMany({

@@ -360,35 +360,51 @@ export async function updateRegistrant(id: string, data: UpdateRegistrantInput) 
 }
 
 export async function updateRegistrantScore(id: string, data: UpdateRegistrantScoreInput) {
-  // Only advance status to TEST_COMPLETED when the registrant is still in a
-  // pre-test phase. Recording a score (or just notes) on someone already
-  // ACCEPTED / REJECTED / ENROLLED / CANCELLED must not regress their state.
-  const current = await prisma.registrant.findUnique({
-    where: { id },
-    select: { status: true },
-  });
-
-  if (!current) throw new Error('Registrant not found');
+  // Only advance status to TEST_COMPLETED when:
+  //   1. At least one actual score (test/interview/tahfidz) was provided, AND
+  //   2. The registrant is still in a pre-test phase.
+  // Recording only notes — or recording a score on someone already
+  // ACCEPTED / REJECTED / ENROLLED / CANCELLED — must not change their status.
+  //
+  // The read+write are wrapped in a single interactive transaction so that a
+  // concurrent updateRegistrantStatus() (e.g. moving the registrant to
+  // ACCEPTED) cannot slip in between the status read and the update below
+  // and get clobbered back to TEST_COMPLETED.
+  const hasScore =
+    data.testScore !== undefined ||
+    data.interviewScore !== undefined ||
+    data.tahfidzScore !== undefined;
 
   const preTestStatuses: AdmissionStatus[] = [
     AdmissionStatus.REGISTERED,
     AdmissionStatus.DOCUMENT_CHECK,
     AdmissionStatus.TEST_SCHEDULED,
   ];
-  const shouldAdvanceStatus = preTestStatuses.includes(current.status);
 
-  return prisma.registrant.update({
-    where: { id },
-    data: {
-      testScore:
-        data.testScore !== undefined ? new Prisma.Decimal(data.testScore) : undefined,
-      interviewScore:
-        data.interviewScore !== undefined ? new Prisma.Decimal(data.interviewScore) : undefined,
-      tahfidzScore:
-        data.tahfidzScore !== undefined ? new Prisma.Decimal(data.tahfidzScore) : undefined,
-      notes: data.notes,
-      ...(shouldAdvanceStatus ? { status: AdmissionStatus.TEST_COMPLETED } : {}),
-    },
+  return prisma.$transaction(async (tx) => {
+    const current = await tx.registrant.findUnique({
+      where: { id },
+      select: { status: true },
+    });
+
+    if (!current) throw new Error('Registrant not found');
+
+    const shouldAdvanceStatus =
+      hasScore && preTestStatuses.includes(current.status);
+
+    return tx.registrant.update({
+      where: { id },
+      data: {
+        testScore:
+          data.testScore !== undefined ? new Prisma.Decimal(data.testScore) : undefined,
+        interviewScore:
+          data.interviewScore !== undefined ? new Prisma.Decimal(data.interviewScore) : undefined,
+        tahfidzScore:
+          data.tahfidzScore !== undefined ? new Prisma.Decimal(data.tahfidzScore) : undefined,
+        notes: data.notes,
+        ...(shouldAdvanceStatus ? { status: AdmissionStatus.TEST_COMPLETED } : {}),
+      },
+    });
   });
 }
 
@@ -603,13 +619,42 @@ export async function enrollRegistrant(
 }
 
 export async function deleteRegistrant(id: string) {
-  const registrant = await prisma.registrant.findUnique({ where: { id } });
+  // Wrap the read + decrement + delete in a single transaction so that the
+  // wave's `registeredCount` (and `acceptedCount` if the registrant was
+  // ACCEPTED) stays in sync with the registrants that actually exist.
+  // Without this, deleting a registrant that was assigned to a wave would
+  // leave the wave's counters permanently inflated, eventually marking
+  // waves as FULL even when slots are free.
+  return prisma.$transaction(async (tx) => {
+    const registrant = await tx.registrant.findUnique({
+      where: { id },
+      select: { status: true, waveId: true },
+    });
 
-  if (registrant?.status === AdmissionStatus.ENROLLED) {
-    throw new Error('Cannot delete enrolled registrant');
-  }
+    if (!registrant) {
+      throw new Error('Registrant not found');
+    }
 
-  return prisma.registrant.delete({ where: { id } });
+    if (registrant.status === AdmissionStatus.ENROLLED) {
+      throw new Error('Cannot delete enrolled registrant');
+    }
+
+    if (registrant.waveId) {
+      await tx.admissionWave.updateMany({
+        where: { id: registrant.waveId, registeredCount: { gt: 0 } },
+        data: { registeredCount: { decrement: 1 } },
+      });
+
+      if (registrant.status === AdmissionStatus.ACCEPTED) {
+        await tx.admissionWave.updateMany({
+          where: { id: registrant.waveId, acceptedCount: { gt: 0 } },
+          data: { acceptedCount: { decrement: 1 } },
+        });
+      }
+    }
+
+    return tx.registrant.delete({ where: { id } });
+  });
 }
 
 // =====================================

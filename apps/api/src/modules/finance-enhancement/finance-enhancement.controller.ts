@@ -17,6 +17,7 @@ import {
   getBudgets,
   deleteBudget,
   recalculateBudgetUsage,
+  getBudgetUtilizationAlerts,
 } from './budget.service';
 import { createFinancialPeriod, closePeriod, getFinancialPeriods } from './period.service';
 import {
@@ -452,6 +453,39 @@ export class FinanceEnhancementController {
       const { id } = req.params;
       await deleteBudget(id);
       res.json({ success: true, message: 'Budget deleted successfully' });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getBudgetUtilizationAlerts(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { unitId } = req.query;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const user = (req as any).user;
+
+      // Unit-level authorization mirrors the cash-flow forecast endpoint:
+      // a UNIT_ADMIN must not be able to query another unit's budget alerts
+      // by supplying a different `unitId`, nor by omitting it (which would
+      // otherwise return alerts across ALL units — see budget.service.ts
+      // where `unitId` is only spread when truthy).
+      let effectiveUnitId = unitId as string | undefined;
+      if (user && user.role !== 'SUPER_ADMIN' && user.role !== 'YAYASAN_ADMIN') {
+        if (!user.unitId) {
+          return res
+            .status(403)
+            .json({ success: false, message: 'Access to this unit is not allowed' });
+        }
+        if (effectiveUnitId && effectiveUnitId !== user.unitId) {
+          return res
+            .status(403)
+            .json({ success: false, message: 'Access to this unit is not allowed' });
+        }
+        effectiveUnitId = user.unitId;
+      }
+
+      const alerts = await getBudgetUtilizationAlerts(effectiveUnitId);
+      res.json({ success: true, data: alerts });
     } catch (error) {
       next(error);
     }

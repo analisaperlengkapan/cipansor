@@ -284,6 +284,25 @@ router.get('/forecast/outstanding', forecastController.getOutstandingPrediction)
  */
 router.get('/forecast/tahfidz', forecastController.getTahfidzForecast);
 
+/**
+ * @swagger
+ * /api/analytics/forecast/cash-flow:
+ *   get:
+ *     summary: Get 6-month cash flow forecast
+ *     tags: [Analytics - Forecast]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: unitId
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Monthly projected income vs outflow with overdue receivables
+ */
+router.get('/forecast/cash-flow', forecastController.getCashFlowForecast);
+
 // ============================================
 // EXPORT ENDPOINTS
 // ============================================

@@ -371,6 +371,26 @@ export async function calculateCashFlowForecast(unitId?: string) {
 
   const expenseBudgets = activeBudgets.filter(b => b.account.type === 'EXPENSE');
 
+  // Aggregate overdue (past-due) outstanding amounts separately so they don't
+  // silently fall outside the 6-month forecast window. Without this, an
+  // invoice with `dueDate < now` matches no projection month and its
+  // outstanding amount disappears from `totalProjectedIncome`, materially
+  // under-reporting expected cash for schools with significant arrears.
+  // We surface the overdue total under a dedicated `overdue` bucket on the
+  // first projection month and on the summary, so consumers can still
+  // distinguish "scheduled future income" from "already-overdue receivables".
+  const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const overdueAmount = pendingInvoices
+    .filter((inv) => new Date(inv.dueDate) < currentMonthStart)
+    .reduce((sum, inv) => sum + (Number(inv.amount) - Number(inv.paidAmount)), 0);
+
+  // Hoist the monthly outflow out of the loop — it doesn't depend on the
+  // iteration index and was being recomputed identically `months` times.
+  const monthlyOutflow = expenseBudgets.reduce((sum, b) => {
+    const yearlyBudget = b.amount.toNumber();
+    return sum + yearlyBudget / 12;
+  }, 0);
+
   for (let i = 0; i < months; i++) {
     const projectionDate = new Date(now.getFullYear(), now.getMonth() + i, 1);
     const monthStr = projectionDate.toISOString().slice(0, 7);
@@ -382,29 +402,32 @@ export async function calculateCashFlowForecast(unitId?: string) {
       })
       .reduce((sum, inv) => sum + (Number(inv.amount) - Number(inv.paidAmount)), 0);
 
-    const monthlyOutflow = expenseBudgets.reduce((sum, b) => {
-      const yearlyBudget = b.amount.toNumber();
-      const monthlyAlloc = yearlyBudget / 12;
-      return sum + monthlyAlloc;
-    }, 0);
+    // Fold overdue amounts into the FIRST projected month's income so the
+    // forecast totals match the actual outstanding receivable position.
+    const incomeWithOverdue = i === 0 ? monthlyIncome + overdueAmount : monthlyIncome;
 
     dataPoints.push({
       month: monthStr,
-      income: Math.round(monthlyIncome),
+      income: Math.round(incomeWithOverdue),
       outflow: Math.round(monthlyOutflow),
-      net: Math.round(monthlyIncome - monthlyOutflow),
+      net: Math.round(incomeWithOverdue - monthlyOutflow),
+      ...(i === 0 ? { overdueIncluded: Math.round(overdueAmount) } : {}),
     });
   }
 
   const totalIncome = dataPoints.reduce((s, d) => s + d.income, 0);
   const totalOutflow = dataPoints.reduce((s, d) => s + d.outflow, 0);
+  const net = totalIncome - totalOutflow;
 
   return {
     summary: {
       totalProjectedIncome: totalIncome,
       totalProjectedOutflow: totalOutflow,
-      netProjection: totalIncome - totalOutflow,
-      status: (totalIncome - totalOutflow) > 0 ? 'SURPLUS' : 'DEFICIT',
+      overdueAmount: Math.round(overdueAmount),
+      netProjection: net,
+      // Distinguish exactly-balanced from deficit so a perfectly matched
+      // budget isn't mislabelled as a shortfall.
+      status: net > 0 ? 'SURPLUS' : net < 0 ? 'DEFICIT' : 'BALANCED',
     },
     dataPoints,
   };

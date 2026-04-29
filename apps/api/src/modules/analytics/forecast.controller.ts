@@ -62,6 +62,40 @@ export async function getTahfidzForecast(req: Request, res: Response, next: Next
 }
 
 /**
+ * Get 6-month cash flow forecast (income vs expense-budget allocation).
+ * Applies unit-level authorization so a UNIT_ADMIN cannot read another
+ * unit's projection by passing a different `unitId`, nor by omitting it
+ * entirely (which would otherwise return aggregated data across ALL units).
+ */
+export async function getCashFlowForecast(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { unitId } = req.query;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const user = (req as any).user;
+
+    let effectiveUnitId = unitId as string | undefined;
+    if (user && user.role !== 'SUPER_ADMIN' && user.role !== 'YAYASAN_ADMIN') {
+      if (!user.unitId) {
+        return res
+          .status(403)
+          .json({ success: false, error: 'Access to this unit is not allowed' });
+      }
+      if (effectiveUnitId && effectiveUnitId !== user.unitId) {
+        return res
+          .status(403)
+          .json({ success: false, error: 'Access to this unit is not allowed' });
+      }
+      effectiveUnitId = user.unitId;
+    }
+
+    const forecast = await forecastService.calculateCashFlowForecast(effectiveUnitId);
+    res.json({ success: true, data: forecast });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
  * Get all forecasts summary
  */
 export async function getAllForecasts(req: Request, res: Response, next: NextFunction) {

@@ -173,7 +173,17 @@ async function generateRegistrationNo(
     where: { admissionPeriodId },
   });
 
-  return `REG-${year}-${String(count + 1).padStart(5, '0')}`;
+  // Include a short period-scoped suffix so two distinct AdmissionPeriods in
+  // the same academic year cannot generate the same `registrationNo`. The
+  // model's `registrationNo @unique` is GLOBAL (see prisma/schema.prisma:
+  // `registrationNo String @unique`), so without this suffix two periods
+  // would collide on `REG-{year}-{count+1}` and the retry loop in
+  // `createRegistrant` would loop until MAX_ATTEMPTS, surfacing a 500.
+  // Use the first 4 hex chars of the period UUID — short enough to keep the
+  // human-readable format compact, but unique enough across periods.
+  const periodSuffix = admissionPeriodId.replace(/-/g, '').slice(0, 4).toUpperCase();
+
+  return `REG-${year}-${periodSuffix}-${String(count + 1).padStart(5, '0')}`;
 }
 
 export async function getRegistrants(params: {

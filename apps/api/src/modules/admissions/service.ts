@@ -88,7 +88,8 @@ export async function updateAdmissionPeriod(id: string, data: UpdateAdmissionPer
       ...data,
       startDate: data.startDate ? new Date(data.startDate) : undefined,
       endDate: data.endDate ? new Date(data.endDate) : undefined,
-      registrationFee: data.registrationFee ? new Prisma.Decimal(data.registrationFee) : undefined,
+      registrationFee:
+        data.registrationFee !== undefined ? new Prisma.Decimal(data.registrationFee) : undefined,
     },
   });
 }
@@ -301,9 +302,12 @@ export async function updateRegistrantScore(id: string, data: UpdateRegistrantSc
   return prisma.registrant.update({
     where: { id },
     data: {
-      testScore: data.testScore ? new Prisma.Decimal(data.testScore) : undefined,
-      interviewScore: data.interviewScore ? new Prisma.Decimal(data.interviewScore) : undefined,
-      tahfidzScore: data.tahfidzScore ? new Prisma.Decimal(data.tahfidzScore) : undefined,
+      testScore:
+        data.testScore !== undefined ? new Prisma.Decimal(data.testScore) : undefined,
+      interviewScore:
+        data.interviewScore !== undefined ? new Prisma.Decimal(data.interviewScore) : undefined,
+      tahfidzScore:
+        data.tahfidzScore !== undefined ? new Prisma.Decimal(data.tahfidzScore) : undefined,
       notes: data.notes,
       status: AdmissionStatus.TEST_COMPLETED,
     },

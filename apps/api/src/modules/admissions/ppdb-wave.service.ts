@@ -238,35 +238,42 @@ export const waveService = {
    * Assign registrant to wave and increment count
    */
   async assignRegistrant(registrantId: string, waveId: string) {
-    // Check if wave has quota
-    const wave = await prisma.admissionWave.findUnique({
-      where: { id: waveId },
-    });
+    // Atomically increment registeredCount only if quota is not yet reached.
+    // This prevents race conditions where concurrent requests could both pass
+    // a non-atomic quota check and exceed the wave's quota.
+    return prisma.$transaction(async (tx) => {
+      const wave = await tx.admissionWave.findUnique({
+        where: { id: waveId },
+      });
 
-    if (!wave) {
-      throw new Error('Wave not found');
-    }
+      if (!wave) {
+        throw new Error('Wave not found');
+      }
 
-    if (wave.registeredCount >= wave.quota) {
-      throw new Error('Wave quota is full');
-    }
+      // Atomic conditional update: only increments if registeredCount < quota.
+      // updateMany returns count=0 if no rows matched, signaling the wave was full.
+      const incrementResult = await tx.admissionWave.updateMany({
+        where: {
+          id: waveId,
+          registeredCount: { lt: wave.quota },
+        },
+        data: { registeredCount: { increment: 1 } },
+      });
 
-    // Update registrant and increment wave count
-    const [updatedRegistrant] = await prisma.$transaction([
-      prisma.registrant.update({
+      if (incrementResult.count === 0) {
+        throw new Error('Wave quota is full');
+      }
+
+      const updatedRegistrant = await tx.registrant.update({
         where: { id: registrantId },
         data: { waveId },
         include: {
           wave: { select: { id: true, name: true, waveNumber: true } },
         },
-      }),
-      prisma.admissionWave.update({
-        where: { id: waveId },
-        data: { registeredCount: { increment: 1 } },
-      }),
-    ]);
+      });
 
-    return updatedRegistrant;
+      return updatedRegistrant;
+    });
   },
 
   /**

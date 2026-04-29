@@ -228,8 +228,29 @@ export async function deleteRegistrantDocument(req: Request, res: Response, next
 export async function getPriorityLeads(req: Request, res: Response, next: NextFunction) {
   try {
     const { unitId } = req.query;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const user = (req as any).user;
+
+    // Unit-level authorization: a UNIT_ADMIN / STAFF must not be able to
+    // query another unit's priority leads by guessing/knowing its unitId,
+    // nor by omitting `unitId` entirely (which would otherwise return
+    // leads across ALL units — see lead-scoring.service.ts where
+    // `unitId` is only spread when truthy). SUPER_ADMIN and
+    // YAYASAN_ADMIN can scope to any (or all) unit(s).
+    let effectiveUnitId = unitId as string | undefined;
+    if (user && user.role !== 'SUPER_ADMIN' && user.role !== 'YAYASAN_ADMIN') {
+      if (!user.unitId) {
+        throw Errors.forbidden('Access to this unit is not allowed');
+      }
+      if (effectiveUnitId && effectiveUnitId !== user.unitId) {
+        throw Errors.forbidden('Access to this unit is not allowed');
+      }
+      // Force-scope to the caller's own unit when none was provided.
+      effectiveUnitId = user.unitId;
+    }
+
     const { getPriorityLeads: getLeads } = await import('./lead-scoring.service');
-    const leads = await getLeads(unitId as string);
+    const leads = await getLeads(effectiveUnitId);
     res.json({ success: true, data: leads });
   } catch (error) {
     next(error);

@@ -435,24 +435,27 @@ export async function enrollRegistrant(
     roomId?: string;
   }
 ) {
-  const registrant = await prisma.registrant.findUnique({
-    where: { id: registrantId },
-    include: { admissionPeriod: { include: { unit: true } } },
-  });
-
-  if (!registrant) throw new Error('Registrant not found');
-  if (registrant.status !== AdmissionStatus.ACCEPTED) {
-    throw new Error('Registrant must be accepted before enrollment');
-  }
-
-  const existingUser = registrant.email
-    ? await prisma.user.findUnique({
-        where: { email: registrant.email },
-        include: { student: true },
-      })
-    : null;
-
   const result = await prisma.$transaction(async (tx) => {
+    // Read registrant + status check INSIDE the transaction so two concurrent
+    // enrollment requests can't both pass the ACCEPTED check and end up
+    // creating duplicate User/Student records for the same registrant.
+    const registrant = await tx.registrant.findUnique({
+      where: { id: registrantId },
+      include: { admissionPeriod: { include: { unit: true } } },
+    });
+
+    if (!registrant) throw new Error('Registrant not found');
+    if (registrant.status !== AdmissionStatus.ACCEPTED) {
+      throw new Error('Registrant must be accepted before enrollment');
+    }
+
+    const existingUser = registrant.email
+      ? await tx.user.findUnique({
+          where: { email: registrant.email },
+          include: { student: true },
+        })
+      : null;
+
     let user;
     let student;
 

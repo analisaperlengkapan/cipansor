@@ -63,8 +63,8 @@ export default function AdmissionsAnalyticsPage() {
                        <YAxis hide />
                        <Tooltip
                          formatter={(value: any, name: string) => [
-                            name === 'metrics.roi' ? `${value}%` : `Rp ${value.toLocaleString()}`,
-                            name === 'metrics.roi' ? 'ROI' : (name === 'metrics.cost' ? 'Cost' : 'Revenue')
+                            `Rp ${Number(value).toLocaleString()}`,
+                            name,
                          ]}
                        />
                        <Legend />

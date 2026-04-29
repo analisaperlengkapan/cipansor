@@ -4,10 +4,23 @@ import * as controller from './controller';
 import { authenticate, authorize } from '../../middleware/auth';
 import { validateQuery } from '../../middleware/error';
 import { queryAdmissionPeriodSchema, queryRegistrantSchema } from './schema';
+import waveRoutes from './ppdb-wave.routes';
 
 const router = Router();
 
+// Mount wave sub-router. `ppdb-wave.routes.ts` applies its own `authenticate`
+// middleware (and exposes a public `/active/:periodId` route), so we mount it
+// BEFORE the admissions-wide `authenticate` below.
+router.use('/waves', waveRoutes);
+
 router.use(authenticate);
+
+// Lead scoring / priority leads
+router.get(
+  '/leads/priority',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  controller.getPriorityLeads
+);
 
 // ==================== ADMISSION PERIODS ====================
 

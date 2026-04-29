@@ -353,9 +353,37 @@ async function createRegistrantOnce(data: CreateRegistrantExtendedInput) {
 }
 
 export async function updateRegistrant(id: string, data: UpdateRegistrantInput) {
+  // Map Zod input fields to the actual Prisma Registrant model.
+  // The schema accepts `fatherName` / `fatherPhone` / `motherName` /
+  // `motherPhone` for UX parity with create, but the persisted model uses
+  // consolidated `parentName` / `parentPhone` columns. Spreading the raw
+  // input would cause Prisma to reject unknown args at runtime.
+  const {
+    fatherName,
+    fatherPhone,
+    motherName,
+    motherPhone,
+    fullName,
+    ...rest
+  } = data;
+
+  const parentName =
+    fatherName !== undefined || motherName !== undefined
+      ? fatherName || motherName
+      : undefined;
+  const parentPhone =
+    fatherPhone !== undefined || motherPhone !== undefined
+      ? fatherPhone || motherPhone
+      : undefined;
+
   return prisma.registrant.update({
     where: { id },
-    data,
+    data: {
+      ...rest,
+      ...(fullName !== undefined ? { fullName, name: fullName } : {}),
+      ...(parentName !== undefined ? { parentName } : {}),
+      ...(parentPhone !== undefined ? { parentPhone } : {}),
+    },
   });
 }
 

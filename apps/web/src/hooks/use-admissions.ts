@@ -195,13 +195,29 @@ export function useCreateRegistration() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: FormData | Record<string, unknown>) => {
-      const isFormData =
-        typeof FormData !== "undefined" && data instanceof FormData;
-      const response = await api.post("/admissions/registrants", data, {
-        headers: isFormData
-          ? { "Content-Type": "multipart/form-data" }
-          : undefined,
-      });
+      // The backend `POST /admissions/registrants` route validates with
+      // `createRegistrantSchema.parse(req.body)` and has no multipart
+      // middleware (multer) installed. Sending a real `FormData` would land
+      // as an empty `req.body` and fail Zod validation. To keep
+      // backward-compatible callers working, accept both shapes and always
+      // serialise to a plain JSON object on the wire. File entries (from
+      // legacy callers that appended browser `File`s) are dropped here:
+      // document upload is a separate flow under
+      // `/admissions/registrants/:id/documents`, not part of registrant
+      // creation.
+      let payload: Record<string, unknown>;
+      if (typeof FormData !== "undefined" && data instanceof FormData) {
+        const obj: Record<string, unknown> = {};
+        data.forEach((value, key) => {
+          if (typeof value === "string") {
+            obj[key] = value;
+          }
+        });
+        payload = obj;
+      } else {
+        payload = data;
+      }
+      const response = await api.post("/admissions/registrants", payload);
       return response.data.data;
     },
     onSuccess: () => {

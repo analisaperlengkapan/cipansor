@@ -246,28 +246,81 @@ export class AssessmentAnalyticsService {
       select: { id: true, user: { select: { name: true } }, nis: true }
     });
 
-    const alerts = await Promise.all(students.map(async (student) => {
-      const holistic = await this.getStudentHolisticAnalytics(student.id, academicYearId);
+    // Each call to getStudentHolisticAnalytics fans out to ~6 parallel DB
+    // queries. With an unbounded Promise.all over hundreds of students that
+    // would saturate the Prisma connection pool. Process students in
+    // sequential batches to bound concurrency.
+    // TODO(perf): replace per-student calls with batched aggregate queries
+    // (grades / violations / attendance / ibadah / exam attempts grouped
+    // by studentId in a single round-trip) to drop this from O(N) to O(1)
+    // round-trips. The per-student function is reused here for behavioural
+    // parity with the single-student endpoint.
+    const BATCH_SIZE = 10;
+    const alerts: Array<{
+      studentId: string;
+      name: string;
+      nis: string;
+      score: number;
+      alerts: string[];
+      priority: 'CRITICAL' | 'HIGH';
+    } | null> = [];
 
-      const reasons: string[] = [];
-      if (holistic.breakdown.academic !== null && holistic.breakdown.academic < 70) reasons.push('Akademik Rendah');
-      if (holistic.breakdown.behavior !== null && holistic.breakdown.behavior < 70) reasons.push('Kedisiplinan Rendah');
-      if (holistic.breakdown.tahfidz !== null && holistic.breakdown.tahfidz < 60) reasons.push('Tahfidz Lambat');
+    for (let i = 0; i < students.length; i += BATCH_SIZE) {
+      const batch = students.slice(i, i + BATCH_SIZE);
+      const batchResults = await Promise.all(
+        batch.map(async (student) => {
+          const holistic = await this.getStudentHolisticAnalytics(
+            student.id,
+            academicYearId
+          );
 
-      if (reasons.length >= 2 || (holistic.holisticScore < 65 && holistic.dataCompleteness !== 'INSUFFICIENT')) {
-        return {
-          studentId: student.id,
-          name: student.user.name,
-          nis: student.nis,
-          score: holistic.holisticScore,
-          alerts: reasons,
-          priority: reasons.length >= 3 ? 'CRITICAL' : 'HIGH'
-        };
-      }
-      return null;
-    }));
+          const reasons: string[] = [];
+          if (
+            holistic.breakdown.academic !== null &&
+            holistic.breakdown.academic < 70
+          )
+            reasons.push('Akademik Rendah');
+          if (
+            holistic.breakdown.behavior !== null &&
+            holistic.breakdown.behavior < 70
+          )
+            reasons.push('Kedisiplinan Rendah');
+          if (
+            holistic.breakdown.tahfidz !== null &&
+            holistic.breakdown.tahfidz < 60
+          )
+            reasons.push('Tahfidz Lambat');
 
-    return alerts.filter(Boolean).sort((a, b) => (a?.score || 0) - (b?.score || 0));
+          const lowHolistic =
+            holistic.holisticScore < 65 &&
+            holistic.dataCompleteness !== 'INSUFFICIENT';
+
+          if (reasons.length >= 2 || lowHolistic) {
+            // Always surface at least one reason so the UI has something
+            // to render (covers the lowHolistic-only path).
+            if (reasons.length === 0 && lowHolistic) {
+              reasons.push('Skor Holistik Rendah');
+            }
+            return {
+              studentId: student.id,
+              name: student.user.name,
+              nis: student.nis,
+              score: holistic.holisticScore,
+              alerts: reasons,
+              priority: (reasons.length >= 3 ? 'CRITICAL' : 'HIGH') as
+                | 'CRITICAL'
+                | 'HIGH',
+            };
+          }
+          return null;
+        })
+      );
+      alerts.push(...batchResults);
+    }
+
+    return alerts
+      .filter((a): a is NonNullable<typeof a> => a !== null)
+      .sort((a, b) => a.score - b.score);
   }
 
   /**

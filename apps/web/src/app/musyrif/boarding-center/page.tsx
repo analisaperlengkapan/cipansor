@@ -35,6 +35,20 @@ export default function BoardingCommandCenter() {
         description="Monitoring integrasi asrama: Keamanan, Kesehatan, dan Kedisiplinan"
       />
 
+      {/*
+        NOTE: Several metrics on this dashboard (Social Harmony Score,
+        capacity %, urgent alerts count, active permits count, and the
+        health condition summary) are still wired to placeholder values
+        while the corresponding backend endpoints are being built. They
+        are surfaced under the "Preview" label below so users do not
+        mistake them for live data.
+      */}
+      <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-2 text-xs text-amber-800">
+        <strong>Preview:</strong> beberapa metrik (Social Harmony Score,
+        kapasitas, jumlah alert/perizinan, ringkasan kesehatan) masih
+        berupa data contoh. Hanya daftar asrama yang ditarik real-time.
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="bg-slate-900 text-white border-none overflow-hidden">
           <CardHeader className="pb-2">

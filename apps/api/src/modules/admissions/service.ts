@@ -1,3 +1,5 @@
+import { randomBytes } from 'crypto';
+import bcrypt from 'bcryptjs';
 import { prisma } from '../../lib/prisma';
 import { Prisma, AdmissionStatus, Gender } from '@prisma/client';
 import * as financeService from '../finance/service';
@@ -155,8 +157,11 @@ export async function getAdmissionPeriodStats(id: string) {
 // REGISTRANT SERVICE
 // =====================================
 
-async function generateRegistrationNo(admissionPeriodId: string): Promise<string> {
-  const period = await prisma.admissionPeriod.findUnique({
+async function generateRegistrationNo(
+  admissionPeriodId: string,
+  client: Prisma.TransactionClient | typeof prisma = prisma
+): Promise<string> {
+  const period = await client.admissionPeriod.findUnique({
     where: { id: admissionPeriodId },
     include: { unit: true, academicYear: true },
   });
@@ -164,7 +169,7 @@ async function generateRegistrationNo(admissionPeriodId: string): Promise<string
   if (!period) throw new Error('Admission period not found');
 
   const year = period.academicYear.name.split('/')[0];
-  const count = await prisma.registrant.count({
+  const count = await client.registrant.count({
     where: { admissionPeriodId },
   });
 
@@ -242,49 +247,75 @@ export async function getRegistrantById(id: string) {
 
 export async function createRegistrant(data: CreateRegistrantExtendedInput) {
   return prisma.$transaction(async (tx) => {
-    const registrationNo = await generateRegistrationNo(data.admissionPeriodId);
+    const registrationNo = await generateRegistrationNo(data.admissionPeriodId, tx);
+
+    // Map Zod input fields to the actual Prisma Registrant model.
+    // The schema accepts richer father/mother/address breakdowns for UX,
+    // but the persisted model uses consolidated parent* fields and does
+    // not have columns for nickname / nationalId / familyCardNumber /
+    // village / district / city / province / postalCode /
+    // previousSchoolAddress / graduationYear / fatherEmail /
+    // fatherOccupation / motherOccupation. Spreading would cause Prisma
+    // to reject unknown args at runtime.
+    const parentName = data.fatherName || data.motherName;
+    const parentPhone = data.fatherPhone || data.motherPhone || '';
+    const parentEmail =
+      data.fatherEmail && data.fatherEmail !== '' ? data.fatherEmail : undefined;
+    const parentOccupation = data.fatherOccupation || data.motherOccupation;
 
     const registrant = await tx.registrant.create({
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       data: {
-        ...data,
+        admissionPeriodId: data.admissionPeriodId,
         registrationNo,
+        fullName: data.fullName,
+        name: data.fullName, // legacy column, kept in sync
         gender: data.gender as Gender,
+        birthPlace: data.birthPlace,
         birthDate: new Date(data.birthDate),
-      } as any,
+        address: data.address,
+        phone: data.phone,
+        email: data.email && data.email !== '' ? data.email : undefined,
+        previousSchool: data.previousSchool,
+        quranAbility: data.quranAbility,
+        memorizedJuz: data.memorizedJuz,
+        parentName,
+        parentPhone,
+        parentEmail,
+        parentOccupation,
+        notes: data.notes,
+        source: data.source,
+        campaignId: data.campaignId,
+      },
     });
 
-    // Best Practice: Auto-generate invoice for registration fee
+    // Best Practice: Ensure a REG_FEE payment type exists so that the
+    // registration-fee invoice can be created automatically at enrollment
+    // time (when a real studentId is available). We deliberately do NOT
+    // create the Invoice here: the Invoice schema requires a non-null
+    // studentId, and the registrant has not yet been promoted to a Student.
+    // Creating an invoice with `studentId: ''` would fail with a Prisma
+    // foreign-key error and abort the entire transaction.
     const period = await tx.admissionPeriod.findUnique({
       where: { id: data.admissionPeriodId },
     });
 
     if (period && Number(period.registrationFee) > 0) {
-      let paymentType = await tx.paymentType.findFirst({
-        where: { unitId: period.unitId, code: 'REG_FEE' }
+      const existing = await tx.paymentType.findFirst({
+        where: { unitId: period.unitId, code: 'REG_FEE' },
       });
 
-      if (!paymentType) {
-        paymentType = await tx.paymentType.create({
+      if (!existing) {
+        await tx.paymentType.create({
           data: {
             unitId: period.unitId,
             code: 'REG_FEE',
             name: 'Biaya Pendaftaran',
             amount: period.registrationFee,
             isActive: true,
-            isRecurring: false
-          }
+            isRecurring: false,
+          },
         });
       }
-
-      await financeService.createInvoice({
-        studentId: '', // Placeholder
-        registrantId: registrant.id,
-        paymentTypeId: paymentType.id,
-        amount: Number(period.registrationFee),
-        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-        notes: `Biaya Pendaftaran ${registrant.fullName}`
-      }, tx as any);
     }
 
     return registrant;
@@ -299,6 +330,23 @@ export async function updateRegistrant(id: string, data: UpdateRegistrantInput) 
 }
 
 export async function updateRegistrantScore(id: string, data: UpdateRegistrantScoreInput) {
+  // Only advance status to TEST_COMPLETED when the registrant is still in a
+  // pre-test phase. Recording a score (or just notes) on someone already
+  // ACCEPTED / REJECTED / ENROLLED / CANCELLED must not regress their state.
+  const current = await prisma.registrant.findUnique({
+    where: { id },
+    select: { status: true },
+  });
+
+  if (!current) throw new Error('Registrant not found');
+
+  const preTestStatuses: AdmissionStatus[] = [
+    AdmissionStatus.REGISTERED,
+    AdmissionStatus.DOCUMENT_CHECK,
+    AdmissionStatus.TEST_SCHEDULED,
+  ];
+  const shouldAdvanceStatus = preTestStatuses.includes(current.status);
+
   return prisma.registrant.update({
     where: { id },
     data: {
@@ -309,7 +357,7 @@ export async function updateRegistrantScore(id: string, data: UpdateRegistrantSc
       tahfidzScore:
         data.tahfidzScore !== undefined ? new Prisma.Decimal(data.tahfidzScore) : undefined,
       notes: data.notes,
-      status: AdmissionStatus.TEST_COMPLETED,
+      ...(shouldAdvanceStatus ? { status: AdmissionStatus.TEST_COMPLETED } : {}),
     },
   });
 }
@@ -402,11 +450,18 @@ export async function enrollRegistrant(
         data: { status: 'completed' },
       });
     } else {
+      // Generate a cryptographically random password and bcrypt it.
+      // The plain value is intentionally discarded so the account can only
+      // be activated via the standard password-reset flow. This avoids
+      // shipping a known-weak / non-bcrypt placeholder hash to production.
+      const randomPassword = randomBytes(24).toString('base64url');
+      const passwordHash = await bcrypt.hash(randomPassword, 10);
+
       user = await tx.user.create({
         data: {
           name: registrant.fullName,
           email: registrant.email || `${studentData.nis}@student.cipansor.id`,
-          passwordHash: '$2a$10$defaultpasswordhash',
+          passwordHash,
           role: 'STUDENT',
           unitId: registrant.admissionPeriod.unitId,
           isActive: true,
@@ -461,6 +516,29 @@ export async function enrollRegistrant(
         studentId: student.id,
       },
     });
+
+    // Auto-generate the registration-fee invoice now that we have a real
+    // Student to attach it to. Skipped if no fee is configured or the
+    // REG_FEE payment type is missing.
+    const period = registrant.admissionPeriod;
+    if (period && Number(period.registrationFee) > 0) {
+      const paymentType = await tx.paymentType.findFirst({
+        where: { unitId: period.unitId, code: 'REG_FEE' },
+      });
+      if (paymentType) {
+        await financeService.createInvoice(
+          {
+            studentId: student.id,
+            paymentTypeId: paymentType.id,
+            amount: Number(period.registrationFee),
+            dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+            notes: `Biaya Pendaftaran ${registrant.fullName}`,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          } as any,
+          tx as Prisma.TransactionClient
+        );
+      }
+    }
 
     return { user, student };
   });

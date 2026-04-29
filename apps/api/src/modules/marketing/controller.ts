@@ -21,6 +21,23 @@ export const createCampaign = async (req: Request, res: Response, next: NextFunc
 export const getROIStats = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { unitId } = req.query;
+    const user = (req as any).user;
+
+    // Unit-level authorization: a UNIT_ADMIN must not be able to query
+    // another unit's marketing ROI by guessing/knowing its unitId.
+    // SUPER_ADMIN and YAYASAN_ADMIN can scope to any (or all) unit(s).
+    if (
+      user &&
+      user.role !== 'SUPER_ADMIN' &&
+      user.role !== 'YAYASAN_ADMIN' &&
+      unitId &&
+      user.unitId !== unitId
+    ) {
+      return res
+        .status(403)
+        .json({ success: false, error: 'Access to this unit is not allowed' });
+    }
+
     const stats = await calculateCampaignROI(unitId as string);
     res.json({ success: true, data: stats });
   } catch (error) {

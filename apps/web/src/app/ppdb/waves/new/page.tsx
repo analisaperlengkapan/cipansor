@@ -1,126 +1,31 @@
 "use client";
 
+// Legacy `/ppdb/waves/new` page. The PSB and PPDB modules have been unified
+// under `/admissions`, and `@/hooks/use-ppdb-wave` was deleted in favor of
+// `@/hooks/use-admissions`. This file is reduced to a client-side redirect so
+// any old in-app links / bookmarks land on the new wave management UI at
+// `apps/web/src/app/admissions/waves/page.tsx` instead of erroring out at
+// build time on the now-missing imports.
+
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { format } from "date-fns";
-import { ArrowLeft, GraduationCap, CalendarIcon } from "lucide-react";
-import { toast } from "sonner";
-
-import { MainLayout } from "@/components/layout/main-layout";
-import { PageHeader } from "@/components/shared/page-header";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { cn } from "@/lib/utils";
-import { useUnits } from "@/hooks/use-units";
-import { useAcademicYears } from "@/hooks/use-academic-years";
-import {
-  useCreateWave,
-  WAVE_STATUSES,
-  WaveStatus,
-} from "@/hooks/use-ppdb-wave";
-
-const waveSchema = z
-  .object({
-    name: z.string().min(3, "Nama minimal 3 karakter"),
-    periodId: z.string().min(1, "Pilih tahun ajaran"),
-    unitId: z.string().min(1, "Pilih unit"),
-    startDate: z.date({ required_error: "Pilih tanggal mulai" }),
-    endDate: z.date({ required_error: "Pilih tanggal berakhir" }),
-    quota: z.coerce.number().min(1, "Kuota minimal 1"),
-    registrationFee: z.coerce.number().min(0, "Biaya tidak boleh negatif"),
-    status: z.enum(["DRAFT", "OPEN", "CLOSED", "COMPLETED"] as const),
-    requirements: z.string().optional(),
-    description: z.string().optional(),
-  })
-  .refine((data) => data.endDate > data.startDate, {
-    message: "Tanggal berakhir harus setelah tanggal mulai",
-    path: ["endDate"],
-  });
-
-type WaveFormData = z.infer<typeof waveSchema>;
 
 export default function NewWavePage() {
   const router = useRouter();
-  const { data: units } = useUnits();
-  const { data: periodsData } = useAcademicYears({ limit: 10 });
-  const createWave = useCreateWave();
 
-  const periods = periodsData?.data || [];
+  useEffect(() => {
+    router.replace("/admissions/waves");
+  }, [router]);
 
-  const {
-    register,
-    handleSubmit,
-    setValue,
-    watch,
-    formState: { errors },
-  } = useForm<WaveFormData>({
-    resolver: zodResolver(waveSchema),
-    defaultValues: {
-      name: "",
-      periodId: "",
-      unitId: "",
-      startDate: new Date(),
-      endDate: undefined,
-      quota: 50,
-      registrationFee: 0,
-      status: "DRAFT",
-      requirements: "",
-      description: "",
-    },
-  });
+  return null;
+}
 
-  const startDate = watch("startDate");
-  const endDate = watch("endDate");
-  const selectedUnitId = watch("unitId");
-  const selectedPeriodId = watch("periodId");
-  const selectedStatus = watch("status");
-
-  const onSubmit = async (data: WaveFormData) => {
-    try {
-      await createWave.mutateAsync({
-        name: data.name,
-        periodId: data.periodId,
-        unitId: data.unitId,
-        startDate: data.startDate.toISOString(),
-        endDate: data.endDate.toISOString(),
-        quota: data.quota,
-        registrationFee: data.registrationFee,
-        status: data.status as WaveStatus,
-        requirements: data.requirements || undefined,
-        description: data.description || undefined,
-      });
-      toast.success("Gelombang PPDB berhasil dibuat");
-      router.push("/ppdb/waves");
-    } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Gagal membuat gelombang PPDB";
-      toast.error(errorMessage);
-    }
-  };
+// The legacy form implementation that lived below is wrapped in a
+// pseudo-template-string literal so the TypeScript / JSX parser ignores its
+// contents. This is a build-stability shim — it can be deleted entirely once
+// nobody links to the old route.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const __LEGACY_PPDB_WAVES_NEW_DEAD_CODE = String.raw`
 
   return (
     <MainLayout>
@@ -424,3 +329,4 @@ export default function NewWavePage() {
     </MainLayout>
   );
 }
+`;

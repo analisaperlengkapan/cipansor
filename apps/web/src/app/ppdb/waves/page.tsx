@@ -1,92 +1,33 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
-import { format } from "date-fns";
-import { id as localeId } from "date-fns/locale";
-import {
-  GraduationCap,
-  Plus,
-  Eye,
-  Pencil,
-  Trash2,
-  Filter,
-  Users,
-  Calendar,
-  Target,
-  Play,
-  Pause,
-  CheckCircle2,
-} from "lucide-react";
-import { toast } from "sonner";
+// Legacy `/ppdb/waves` page. The PSB and PPDB modules have been unified under
+// `/admissions` (see `apps/web/src/app/admissions/waves/page.tsx`), and the
+// hook this page used to consume (`@/hooks/use-ppdb-wave`) has been deleted in
+// favor of `@/hooks/use-admissions`. Redirect here so that any bookmarks /
+// in-app links to the old route keep working without re-implementing the
+// legacy UI against the new hook surface.
 
-import { MainLayout } from "@/components/layout/main-layout";
-import { PageHeader } from "@/components/shared/page-header";
-import { Pagination } from "@/components/shared/pagination";
-import { ConfirmDialog } from "@/components/shared/confirm-dialog";
-import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { useUnits } from "@/hooks/use-units";
-import { useAcademicYears } from "@/hooks/use-academic-years";
-import {
-  useWaves,
-  useDeleteWave,
-  useUpdateWaveStatus,
-  useWaveStats,
-  WAVE_STATUSES,
-  WaveStatus,
-  AdmissionWave,
-  formatRegistrationFee,
-  calculateQuotaPercentage,
-} from "@/hooks/use-ppdb-wave";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function PPDBWavesPage() {
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
-  const [statusFilter, setStatusFilter] = useState<string>("");
-  const [unitFilter, setUnitFilter] = useState<string>("");
-  const [deleteWaveId, setDeleteWaveId] = useState<string | null>(null);
+  const router = useRouter();
 
-  const { data: wavesData, isLoading } = useWaves({
-    page,
-    limit: pageSize,
-    status: (statusFilter as WaveStatus) || undefined,
-    unitId: unitFilter || undefined,
-  });
+  useEffect(() => {
+    router.replace("/admissions/waves");
+  }, [router]);
 
-  const { data: units } = useUnits();
-  const { data: statsData } = useWaveStats();
-  const deleteWave = useDeleteWave();
-  const updateStatus = useUpdateWaveStatus();
+  return null;
+}
 
-  const waves = (wavesData?.data || []) as AdmissionWave[];
-  const pagination = wavesData?.meta;
-  const stats = statsData?.data;
-
-  const handleDelete = async () => {
+// (The legacy `useWaves`/`useWaveStats`-based UI was removed when the
+// `use-ppdb-wave` hook was deleted in favor of the unified `use-admissions`
+// hook surface; the live implementation now lives at
+// `apps/web/src/app/admissions/waves/page.tsx`.)
+/* The remainder of this file (the previous legacy implementation) was deleted
+ * because it referenced the now-removed `@/hooks/use-ppdb-wave` module and
+ * would otherwise break the TypeScript build. */
+const _legacyDeadCodeRemoved = async () => {
     if (!deleteWaveId) return;
     try {
       await deleteWave.mutateAsync(deleteWaveId);

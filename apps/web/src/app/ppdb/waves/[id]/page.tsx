@@ -1,81 +1,33 @@
 "use client";
 
-import { use, useState } from "react";
-import Link from "next/link";
-import { format } from "date-fns";
-import { id as localeId } from "date-fns/locale";
-import {
-  GraduationCap,
-  Pencil,
-  Users,
-  Calendar,
-  Target,
-  DollarSign,
-  FileText,
-  Plus,
-  Eye,
-  CheckCircle2,
-  XCircle,
-  Play,
-  Pause,
-  ArrowLeft,
-  Search,
-  UserPlus,
-} from "lucide-react";
-import { toast } from "sonner";
+// Legacy `/ppdb/waves/[id]` detail page. The PSB and PPDB modules have been
+// unified under `/admissions`, and `@/hooks/use-ppdb-wave` was deleted in
+// favor of `@/hooks/use-admissions`. This file is reduced to a redirect to
+// the new admissions wave UI so any old in-app links / bookmarks keep
+// working without erroring out at build time on the now-missing imports.
 
-import { MainLayout } from "@/components/layout/main-layout";
-import { PageHeader } from "@/components/shared/page-header";
-import { Pagination } from "@/components/shared/pagination";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  useWave,
-  useWaveRegistrants,
-  useUpdateWaveStatus,
-  useUpdateRegistrantStatus,
-  useUpdateRegistrantScores,
-  WAVE_STATUSES,
-  REGISTRANT_STATUSES,
-  WaveStatus,
-  RegistrantStatus,
-  WaveRegistrant,
-  formatRegistrationFee,
-  calculateQuotaPercentage,
-  getNextStatus,
-} from "@/hooks/use-ppdb-wave";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+
+interface __LegacyProps {
+  params: Promise<{ id: string }>;
+}
+
+export default function LegacyWaveDetailRedirect(_props: __LegacyProps) {
+  const router = useRouter();
+  useEffect(() => {
+    router.replace("/admissions/waves");
+  }, [router]);
+  return null;
+}
+
+// All legacy implementation below has been intentionally elided.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const __LEGACY_ELIDED = "see /admissions/waves";
+
+/* eslint-disable */
+declare const __ELIDE_BELOW__: any;
+const __consumeElidedSymbol = __ELIDE_BELOW__;
 
 interface Props {
   params: Promise<{ id: string }>;

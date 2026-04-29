@@ -15,10 +15,20 @@ router.use('/waves', waveRoutes);
 
 router.use(authenticate);
 
-// Lead scoring / priority leads
+// Lead scoring / priority leads.
+// `controller.getPriorityLeads` exempts SUPER_ADMIN and YAYASAN_ADMIN from
+// unit-level scoping (they may query any/all units), but the route-level
+// `authorize` previously omitted YAYASAN_ADMIN — making the controller's
+// branch unreachable for that role and surfacing 403s instead of the
+// intended cross-unit view. Add YAYASAN_ADMIN here so the two layers agree.
 router.get(
   '/leads/priority',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  authorize(
+    UserRole.SUPER_ADMIN,
+    UserRole.YAYASAN_ADMIN,
+    UserRole.UNIT_ADMIN,
+    UserRole.STAFF
+  ),
   controller.getPriorityLeads
 );
 

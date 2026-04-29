@@ -362,12 +362,28 @@ export async function calculateCashFlowForecast(unitId?: string) {
     select: { amount: true, paidAmount: true, dueDate: true },
   });
 
-  const activeBudgets = await prisma.budget.findMany({
-    where: {
-      ...(unitId && { unitId }),
-    },
-    include: { account: true },
+  // Scope budgets to the currently-active academic year. Without this filter
+  // the query returns budgets from every historical academic year stored in
+  // the DB, so the monthly outflow (`yearlyBudget / 12`) ends up summing
+  // multiple years of expense allocations and inflates the projected outflow
+  // — consistently producing misleading DEFICIT classifications for units
+  // that have run several admission cycles. If no academic year is currently
+  // active (edge case during the brief window between two AYs), fall back
+  // to no budgets so the forecast simply omits outflow rather than
+  // double-counting historical data.
+  const activeAcademicYear = await prisma.academicYear.findFirst({
+    where: { isActive: true },
+    select: { id: true },
   });
+  const activeBudgets = activeAcademicYear
+    ? await prisma.budget.findMany({
+        where: {
+          academicYearId: activeAcademicYear.id,
+          ...(unitId && { unitId }),
+        },
+        include: { account: true },
+      })
+    : [];
 
   const expenseBudgets = activeBudgets.filter(b => b.account.type === 'EXPENSE');
 

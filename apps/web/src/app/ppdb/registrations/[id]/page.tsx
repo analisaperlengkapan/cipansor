@@ -190,8 +190,16 @@ export default function RegistrationDetailPage() {
         parentUserId: "mocked-parent-id", // In real scenario, fetch parent userId from registration.fatherEmail etc
       });
       toast.success("Siswa berhasil di-Onboard secara terpadu! (Siswa, Medis, Tagihan Terbuat)");
-      // Force status update to ENROLLED
-      await updateStatus.mutateAsync({ id, status: "ENROLLED" });
+      // NOTE: do NOT call `updateStatus({ status: "ENROLLED" })` here.
+      // The onboarding orchestrator already transitions the registrant to
+      // ENROLLED inside its transaction (see
+      // `apps/api/src/services/integration/student-onboarding.orchestrator.ts`).
+      // The admissions status endpoint now explicitly rejects direct
+      // ENROLLED transitions (see `updateRegistrantStatus` in
+      // `apps/api/src/modules/admissions/service.ts`, which throws
+      // "Cannot set status to ENROLLED directly; use the enrollment
+      // endpoint instead"). Calling it here caused a contradictory error
+      // toast to appear immediately after a successful onboarding.
     } catch (error) {
       toast.error("Gagal melakukan Onboarding Terpadu.");
     }

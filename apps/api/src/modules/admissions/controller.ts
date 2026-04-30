@@ -283,6 +283,33 @@ export async function createPublicRegistrant(
 ) {
   try {
     const data = createRegistrantSchema.parse(req.body);
+
+    // Guard: the public endpoint must only accept submissions for periods
+    // that are currently ACTIVE and within their registration window.
+    // Without this, any caller who has (or guesses) a valid period UUID
+    // can submit registrations after the period has been closed by an
+    // admin — bypassing the intended admission lifecycle. The companion
+    // `getPublicActiveAdmissionPeriod` filters by `isActive: true`, but
+    // that only protects UI-driven flows; direct API callers need a
+    // server-side check here. Validation lives at the controller (not
+    // the service) so the authenticated `createRegistrant` endpoint —
+    // used by admins who legitimately need to backfill registrants for
+    // closed periods — continues to work unchanged.
+    const { prisma } = await import('../../lib/prisma');
+    const period = await prisma.admissionPeriod.findUnique({
+      where: { id: data.admissionPeriodId },
+      select: { isActive: true, startDate: true, endDate: true },
+    });
+
+    if (!period) {
+      throw Errors.notFound('Admission period');
+    }
+
+    const now = new Date();
+    if (!period.isActive || now < period.startDate || now > period.endDate) {
+      throw Errors.badRequest('Admission period is not open for registration');
+    }
+
     const registrant = await service.createRegistrant(data);
     res.status(201).json({
       success: true,

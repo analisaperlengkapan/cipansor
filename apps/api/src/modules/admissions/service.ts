@@ -340,22 +340,31 @@ async function createRegistrantOnce(data: CreateRegistrantExtendedInput) {
     });
 
     if (period && Number(period.registrationFee) > 0) {
-      const existing = await tx.paymentType.findFirst({
-        where: { unitId: period.unitId, code: 'REG_FEE' },
+      // Use an atomic upsert on the `(unitId, code)` composite unique key
+      // (see `@@unique([unitId, code])` on the PaymentType model in
+      // prisma/schema.prisma). The previous `findFirst` + conditional
+      // `create` pattern is NOT atomic under Postgres' default READ
+      // COMMITTED isolation: two concurrent first-registrations for the
+      // same unit can both observe `existing === null`, both call
+      // `create`, and the second one fails with a P2002 unique-constraint
+      // violation that aborts the entire createRegistrant transaction
+      // (the retry loop in `createRegistrant` only handles `registrationNo`
+      // collisions, so this would surface as a 500). `upsert` leans on
+      // Postgres' `INSERT ... ON CONFLICT DO UPDATE` semantics and is
+      // race-safe. The `update` clause is a no-op so that re-running this
+      // path doesn't clobber admin-edited fields (name, amount, etc.).
+      await tx.paymentType.upsert({
+        where: { unitId_code: { unitId: period.unitId, code: 'REG_FEE' } },
+        create: {
+          unitId: period.unitId,
+          code: 'REG_FEE',
+          name: 'Biaya Pendaftaran',
+          amount: period.registrationFee,
+          isActive: true,
+          isRecurring: false,
+        },
+        update: {},
       });
-
-      if (!existing) {
-        await tx.paymentType.create({
-          data: {
-            unitId: period.unitId,
-            code: 'REG_FEE',
-            name: 'Biaya Pendaftaran',
-            amount: period.registrationFee,
-            isActive: true,
-            isRecurring: false,
-          },
-        });
-      }
     }
 
     return registrant;

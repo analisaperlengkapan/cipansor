@@ -242,9 +242,9 @@ export default function RegistrationDetailPage() {
 
           <div className="flex items-center gap-2">
             {/* Action Buttons based on Status */}
-            {registration.status === "SUBMITTED" && (
+            {registration.status === "REGISTERED" && (
               <Button
-                onClick={() => handleStatusChange("DOCUMENT_REVIEW")}
+                onClick={() => handleStatusChange("DOCUMENT_CHECK")}
                 className="bg-blue-600 hover:bg-blue-700"
               >
                 <FileText className="h-4 w-4 mr-2" />
@@ -252,7 +252,7 @@ export default function RegistrationDetailPage() {
               </Button>
             )}
 
-            {registration.status === "DOCUMENT_REVIEW" && (
+            {registration.status === "DOCUMENT_CHECK" && (
               <Button onClick={() => setTestDialogOpen(true)} variant="outline">
                 <Calendar className="h-4 w-4 mr-2" />
                 Jadwalkan Tes
@@ -269,8 +269,7 @@ export default function RegistrationDetailPage() {
               </Button>
             )}
 
-            {(registration.status === "TEST_COMPLETED" ||
-              registration.status === "INTERVIEW_COMPLETED") && (
+            {registration.status === "TEST_COMPLETED" && (
               <Button
                 onClick={() => setAcceptDialogOpen(true)}
                 className="bg-green-600 hover:bg-green-700"

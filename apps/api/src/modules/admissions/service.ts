@@ -493,6 +493,21 @@ export async function updateRegistrantStatus(id: string, data: UpdateRegistrantS
       throw new Error('Registrant not found');
     }
 
+    // Guard: ENROLLED is a terminal status that was reached through
+    // `enrollRegistrant` (which atomically created User + Student records,
+    // class/room assignments, and the registration-fee invoice). Allowing
+    // a transition AWAY from ENROLLED here (e.g. to REJECTED or CANCELLED)
+    // would mark the registrant as un-enrolled while leaving all of those
+    // downstream records in place — a corrupt half-state that the system
+    // has no automated recovery path for. Un-enrollment must go through a
+    // dedicated endpoint that tears down the side effects in the same
+    // transaction.
+    if (previous.status === AdmissionStatus.ENROLLED) {
+      throw new Error(
+        'Cannot change status of an enrolled registrant; un-enrollment must be handled through a dedicated endpoint'
+      );
+    }
+
     const updateData: Prisma.RegistrantUpdateInput = {
       status: data.status,
       notes: data.notes,

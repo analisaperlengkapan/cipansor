@@ -3,7 +3,6 @@ import bcrypt from 'bcryptjs';
 import { prisma } from '../../lib/prisma';
 import { Prisma, AdmissionStatus, Gender } from '@prisma/client';
 import * as financeService from '../finance/service';
-import * as notificationService from '../notifications/service';
 import {
   CreateAdmissionPeriodInput,
   UpdateAdmissionPeriodInput,

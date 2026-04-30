@@ -28,240 +28,20 @@ export default function LegacyWaveDetailRedirect(_props: __LegacyProps) {
   }, [router]);
   return null;
 }
-// The legacy `WaveDetailPage` implementation that lived below has been
-// deleted entirely. It referenced hooks (`useWave`, `useWaveRegistrants`,
-// `useUpdateWaveStatus`, `useUpdateRegistrantStatus`,
-// `useUpdateRegistrantScores`) and constants/utilities (`WAVE_STATUSES`,
-// `REGISTRANT_STATUSES`, `getNextStatus`, `calculateQuotaPercentage`,
-// `formatRegistrationFee`) that were removed in this PR. The live wave UI
-// lives at `apps/web/src/app/admissions/waves/page.tsx`.
-/* The remainder of this file (the previous ~540-line legacy WaveDetailPage
- * implementation) has been deleted. It referenced now-removed hooks /
- * constants / utilities; the live wave UI lives at
- * `apps/web/src/app/admissions/waves/page.tsx`. */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const __PPDB_WAVES_DETAIL_LEGACY_DELETED__ = (() => {
-  const _legacyOrphan = 1;
-  const [pageSize, setPageSize] = useState(10);
-  const [statusFilter, setStatusFilter] = useState<string>("");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedRegistrant, setSelectedRegistrant] = useState<string | null>(
-    null,
-  );
-  const [scoreDialogOpen, setScoreDialogOpen] = useState(false);
-  const [scores, setScores] = useState({ testScore: "", interviewScore: "" });
+// The legacy `WaveDetailPage` implementation has been removed entirely.
+// It referenced hooks (`useWave`, `useWaveRegistrants`, `useUpdateWaveStatus`,
+// `useUpdateRegistrantStatus`, `useUpdateRegistrantScores`) and
+// constants/utilities (`WAVE_STATUSES`, `REGISTRANT_STATUSES`,
+// `getNextStatus`, `calculateQuotaPercentage`, `formatRegistrationFee`)
+// that were deleted in this PR. The live wave UI lives at
+// `apps/web/src/app/admissions/waves/page.tsx`.
 
-  const { data: wave, isLoading: waveLoading } = useWave(id);
-  const { data: registrantsData, isLoading: registrantsLoading } =
-    useWaveRegistrants(id, {
-      page,
-      limit: pageSize,
-      status: (statusFilter as RegistrantStatus) || undefined,
-      search: searchTerm || undefined,
-    });
-  const updateWaveStatus = useUpdateWaveStatus();
-  const updateRegistrantStatus = useUpdateRegistrantStatus();
-  const updateScores = useUpdateRegistrantScores();
 
-  const registrants = (registrantsData?.data || []) as WaveRegistrant[];
-  const pagination = registrantsData?.meta;
 
-  const handleWaveStatusChange = async (status: WaveStatus) => {
-    try {
-      await updateWaveStatus.mutateAsync({ id, status });
-      toast.success(`Status gelombang berhasil diubah`);
-    } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Gagal mengubah status";
-      toast.error(errorMessage);
-    }
-  };
 
-  const handleRegistrantStatusChange = async (
-    registrantId: string,
-    status: RegistrantStatus,
-  ) => {
-    try {
-      await updateRegistrantStatus.mutateAsync({
-        waveId: id,
-        id: registrantId,
-        status,
-      });
-      toast.success(`Status pendaftar berhasil diubah`);
-    } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Gagal mengubah status";
-      toast.error(errorMessage);
-    }
-  };
 
-  const handleSaveScores = async () => {
-    if (!selectedRegistrant) return;
-    try {
-      await updateScores.mutateAsync({
-        waveId: id,
-        id: selectedRegistrant,
-        testScore: scores.testScore ? Number(scores.testScore) : undefined,
-        interviewScore: scores.interviewScore
-          ? Number(scores.interviewScore)
-          : undefined,
-      });
-      toast.success("Nilai berhasil disimpan");
-      setScoreDialogOpen(false);
-      setSelectedRegistrant(null);
-      setScores({ testScore: "", interviewScore: "" });
-    } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Gagal menyimpan nilai";
-      toast.error(errorMessage);
-    }
-  };
 
-  const getWaveStatusBadge = (status: WaveStatus) => {
-    const config = WAVE_STATUSES.find((s) => s.value === status);
-    return (
-      <Badge variant="secondary" className={config?.color}>
-        {config?.label || status}
-      </Badge>
-    );
-  };
 
-  const getRegistrantStatusBadge = (status: RegistrantStatus) => {
-    const config = REGISTRANT_STATUSES.find((s) => s.value === status);
-    return (
-      <Badge variant="secondary" className={config?.color}>
-        {config?.label || status}
-      </Badge>
-    );
-  };
-
-  if (waveLoading) {
-    return (
-      <MainLayout>
-        <div className="flex items-center justify-center h-96">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-        </div>
-      </MainLayout>
-    );
-  }
-
-  if (!wave) {
-    return (
-      <MainLayout>
-        <div className="text-center py-12">
-          <GraduationCap className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-          <p className="text-muted-foreground">
-            Gelombang PPDB tidak ditemukan
-          </p>
-          <Button asChild className="mt-4">
-            <Link href="/ppdb/waves">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Kembali
-            </Link>
-          </Button>
-        </div>
-      </MainLayout>
-    );
-  }
-
-  const quotaPercentage = calculateQuotaPercentage(
-    wave.registeredCount,
-    wave.quota,
-  );
-
-  return (
-    <MainLayout>
-      <PageHeader
-        title={wave.name}
-        description={`${wave.unit?.name || ""} - ${wave.period?.name || ""}`}
-        backHref="/ppdb/waves"
-        backLabel="Kembali"
-        action={
-          <div className="flex gap-2">
-            {wave.status === "DRAFT" && (
-              <Button onClick={() => handleWaveStatusChange("OPEN")}>
-                <Play className="h-4 w-4 mr-2" />
-                Buka Pendaftaran
-              </Button>
-            )}
-            {wave.status === "OPEN" && (
-              <Button
-                variant="outline"
-                onClick={() => handleWaveStatusChange("CLOSED")}
-              >
-                <Pause className="h-4 w-4 mr-2" />
-                Tutup Pendaftaran
-              </Button>
-            )}
-            <Button asChild variant="outline">
-              <Link href={`/ppdb/waves/${id}/edit`}>
-                <Pencil className="h-4 w-4 mr-2" />
-                Edit
-              </Link>
-            </Button>
-          </div>
-        }
-      />
-
-      <div className="grid gap-6 lg:grid-cols-3 mb-6">
-        {/* Info Cards */}
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Calendar className="h-4 w-4 text-blue-500" />
-              <span className="text-sm text-muted-foreground">
-                Periode Pendaftaran
-              </span>
-            </div>
-            <p className="font-medium">
-              {format(new Date(wave.startDate), "d MMM yyyy", {
-                locale: localeId,
-              })}{" "}
-              -{" "}
-              {format(new Date(wave.endDate), "d MMM yyyy", {
-                locale: localeId,
-              })}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <DollarSign className="h-4 w-4 text-green-500" />
-              <span className="text-sm text-muted-foreground">
-                Biaya Pendaftaran
-              </span>
-            </div>
-            <p className="font-medium">
-              {wave.registrationFee > 0
-                ? formatRegistrationFee(wave.registrationFee)
-                : "Gratis"}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <Target className="h-4 w-4 text-purple-500" />
-                <span className="text-sm text-muted-foreground">
-                  Kuota Pendaftaran
-                </span>
-              </div>
-              {getWaveStatusBadge(wave.status)}
-            </div>
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-2xl font-bold">
-                  {wave.registeredCount}
-                </span>
-                <span className="text-muted-foreground">/ {wave.quota}</span>
-              </div>
-              <Progress value={quotaPercentage} className="h-2" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
 
       {/* Requirements & Description */}
       {(wave.requirements || wave.description) && (
@@ -583,4 +363,4 @@ const __PPDB_WAVES_DETAIL_LEGACY_DELETED__ = (() => {
     </MainLayout>
   );
 }
-`;
+DELETED-LEGACY-BLOCK-END */

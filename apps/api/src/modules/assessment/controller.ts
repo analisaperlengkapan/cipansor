@@ -36,6 +36,41 @@ export async function getExams(req: Request, res: Response, next: NextFunction) 
   }
 }
 
+export async function getIntegratedRiskAlerts(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { unitId, academicYearId } = req.query;
+    const user = (req as any).user;
+
+    if (!unitId) {
+      return res.status(400).json({ success: false, error: 'unitId is required' });
+    }
+    if (!academicYearId) {
+      return res.status(400).json({ success: false, error: 'academicYearId is required' });
+    }
+
+    // Unit-level authorization: SUPER_ADMIN and YAYASAN_ADMIN have cross-unit
+    // visibility (consistent with the forecast controller's `resolveForecastUnitId`
+    // helper and the admissions `getPriorityLeads` controller). All other roles
+    // are scoped to their own unit and must not be able to query another unit's
+    // integrated risk alerts by passing a different `unitId`.
+    if (
+      user.role !== 'SUPER_ADMIN' &&
+      user.role !== 'YAYASAN_ADMIN' &&
+      user.unitId !== unitId
+    ) {
+      throw Errors.forbidden('Access to this unit is not allowed');
+    }
+
+    const alerts = await AssessmentAnalyticsService.getIntegratedRiskAlerts(
+      unitId as string,
+      academicYearId as string
+    );
+    res.json({ success: true, data: alerts });
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function getUnitEducationAnalytics(req: Request, res: Response, next: NextFunction) {
   try {
     const { unitId } = req.params;

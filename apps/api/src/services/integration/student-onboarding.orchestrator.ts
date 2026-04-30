@@ -7,6 +7,19 @@ export class StudentOnboardingOrchestrator {
    * Process a registrant to become a full student
    * This is an integration point touching multiple domains:
    * PSB -> HR/User -> Academic -> Health -> Finance
+   *
+   * IMPORTANT — DUAL ENROLLMENT PATHS:
+   * The legacy enrollment entry point lives in
+   * `apps/api/src/modules/admissions/service.ts` (`enrollRegistrant`)
+   * and is exposed via `POST /api/admissions/registrants/:id/enroll`.
+   * The two paths intentionally do different work; see the JSDoc on
+   * `enrollRegistrant` for the side-by-side comparison. If you change
+   * any enrollment business rule here (parent account creation, wallet
+   * setup, medical record bootstrap, NIS generation, event emission,
+   * etc.), update `enrollRegistrant` too — or explicitly document why
+   * the two paths should diverge. Failing to do so leaves student
+   * records in inconsistent states depending on which API the caller
+   * used.
    */
   static async processEnrollment(
     registrantId: string,
@@ -220,6 +233,19 @@ export class StudentOnboardingOrchestrator {
           studentId: student.id
         }
       });
+
+      // Decrement the wave's `acceptedCount` to mirror `enrollRegistrant` in
+      // `apps/api/src/modules/admissions/service.ts`. Without this, every
+      // registrant onboarded through the orchestrator path leaves a stale
+      // ACCEPTED count behind, eventually overstating each wave's acceptance
+      // rate (see `ppdb-wave.service.ts` `getStats`). Clamped at 0 to avoid
+      // negatives in case of prior data drift.
+      if (registrant.waveId) {
+        await tx.admissionWave.updateMany({
+          where: { id: registrant.waveId, acceptedCount: { gt: 0 } },
+          data: { acceptedCount: { decrement: 1 } },
+        });
+      }
 
       return {
         success: true,

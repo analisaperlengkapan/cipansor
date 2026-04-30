@@ -192,3 +192,59 @@ export async function recalculateBudgetUsage(unitId: string, academicYearId: str
 
   return { count: updates.length };
 }
+
+/**
+ * Identify budgets that exceed or are close to exceeding their allocated amount.
+ * Returns alerts for accounts with usage > 90%.
+ *
+ * Scopes to a single academic year so historical (already-closed) budgets
+ * don't surface as EXCEEDED alerts indefinitely. If no `academicYearId` is
+ * provided, falls back to the currently-active academic year. If no AY is
+ * active (brief window between two AYs), returns an empty list rather than
+ * the cross-year aggregate, mirroring the behaviour of
+ * `calculateCashFlowForecast` in `forecast.service.ts`.
+ */
+export async function getBudgetUtilizationAlerts(unitId?: string, academicYearId?: string) {
+  let effectiveAcademicYearId = academicYearId;
+  if (!effectiveAcademicYearId) {
+    const activeAcademicYear = await prisma.academicYear.findFirst({
+      where: { isActive: true },
+      select: { id: true },
+    });
+    if (!activeAcademicYear) return [];
+    effectiveAcademicYearId = activeAcademicYear.id;
+  }
+
+  const budgets = await prisma.budget.findMany({
+    where: {
+      academicYearId: effectiveAcademicYearId,
+      ...(unitId && { unitId }),
+    },
+    include: {
+      account: { select: { code: true, name: true } },
+      unit: { select: { name: true } },
+    },
+  });
+
+  const alerts = budgets
+    .map((b) => {
+      const limit = b.amount.toNumber();
+      const used = b.usedAmount.toNumber();
+      const percentage = limit > 0 ? (used / limit) * 100 : 0;
+
+      return {
+        id: b.id,
+        unitId: b.unitId,
+        unitName: b.unit.name,
+        accountCode: b.account.code,
+        accountName: b.account.name,
+        limit,
+        used,
+        percentage: Math.round(percentage * 100) / 100,
+        status: percentage >= 100 ? 'EXCEEDED' : percentage >= 90 ? 'WARNING' : 'NORMAL',
+      };
+    })
+    .filter((a) => a.status !== 'NORMAL');
+
+  return alerts.sort((a, b) => b.percentage - a.percentage);
+}

@@ -236,6 +236,129 @@ export class AssessmentAnalyticsService {
   }
 
   /**
+   * Identifies students requiring integrated intervention.
+   *
+   * Logic: a student is flagged when at least 2 of the per-dimension thresholds
+   * trip (academic < 70, behavior < 70, tahfidz < 60). Priority is CRITICAL
+   * when all 3 dimension reasons trip, otherwise HIGH.
+   *
+   * Implementation: this used to call `getStudentHolisticAnalytics` per
+   * student (≈6 queries each) inside a `BATCH_SIZE=10` loop. For a unit
+   * with N active students that's O(N) DB round-trips and would time out
+   * once N reaches the low hundreds. We now run THREE grouped aggregations
+   * (grades, violations, tahfidz) scoped to the unit + academic year in a
+   * single round-trip each — total cost is O(1) round-trips regardless of
+   * student count.
+   *
+   * Trade-off: this no longer evaluates the `lowHolistic` (overall score
+   * < 65) trigger or attendance/ibadah/CBT dimensions, because computing
+   * those via grouped queries requires several more aggregations and
+   * complicates the holistic re-normalization. The single-student
+   * `getStudentHolisticAnalytics` endpoint still surfaces those signals
+   * for deep dives; this endpoint is intentionally a fast triage list.
+   */
+  static async getIntegratedRiskAlerts(unitId: string, academicYearId: string) {
+    const students = await prisma.student.findMany({
+      where: { unitId, status: 'active' },
+      select: { id: true, nis: true, user: { select: { name: true } } },
+    });
+
+    if (students.length === 0) return [];
+
+    const studentIds = students.map((s) => s.id);
+
+    // Look up the academic year window so violation aggregation matches the
+    // single-student endpoint's scoping behaviour.
+    const academicYear = await prisma.academicYear.findUnique({
+      where: { id: academicYearId },
+      select: { startDate: true, endDate: true },
+    });
+
+    const [gradeAggs, violationAggs, tahfidzAggs] = await Promise.all([
+      // 1. Academic: average percentage per student
+      prisma.grade.groupBy({
+        by: ['studentId'],
+        where: { studentId: { in: studentIds }, academicYearId },
+        _avg: { percentage: true },
+      }),
+      // 2. Behavior: total violation points per student within academic year
+      prisma.violation.groupBy({
+        by: ['studentId'],
+        where: {
+          studentId: { in: studentIds },
+          ...(academicYear?.startDate && academicYear?.endDate
+            ? { occurredAt: { gte: academicYear.startDate, lte: academicYear.endDate } }
+            : {}),
+        },
+        _sum: { points: true },
+      }),
+      // 3. Tahfidz: max juz reached (cumulative — matches per-student logic)
+      prisma.tahfidzRecord.groupBy({
+        by: ['studentId'],
+        where: { studentId: { in: studentIds } },
+        _max: { juz: true },
+      }),
+    ]);
+
+    const academicMap = new Map<string, number | null>(
+      gradeAggs.map((g) => [g.studentId, g._avg.percentage !== null ? Number(g._avg.percentage) : null])
+    );
+    const violationMap = new Map<string, number>(
+      violationAggs.map((v) => [v.studentId, Number(v._sum.points || 0)])
+    );
+    const tahfidzMap = new Map<string, number | null>(
+      tahfidzAggs.map((t) => [t.studentId, t._max.juz])
+    );
+
+    const alerts: Array<{
+      studentId: string;
+      name: string;
+      nis: string;
+      score: number;
+      alerts: string[];
+      priority: 'CRITICAL' | 'HIGH';
+    }> = [];
+
+    for (const student of students) {
+      const academic = academicMap.get(student.id) ?? null;
+      const behavior = Math.max(0, 100 - (violationMap.get(student.id) || 0));
+      const tahfidzJuz = tahfidzMap.get(student.id);
+      const tahfidz =
+        tahfidzJuz !== null && tahfidzJuz !== undefined
+          ? Math.min(100, (tahfidzJuz / 30) * 100)
+          : null;
+
+      const reasons: string[] = [];
+      if (academic !== null && academic < 70) reasons.push('Akademik Rendah');
+      // Behavior is always considered present (no record === clean record),
+      // mirroring `hasBehaviorData = true` in `getStudentHolisticAnalytics`.
+      if (behavior < 70) reasons.push('Kedisiplinan Rendah');
+      if (tahfidz !== null && tahfidz < 60) reasons.push('Tahfidz Lambat');
+
+      if (reasons.length < 2) continue;
+
+      // Surface a representative score so the UI can sort by severity.
+      // Use the lowest tripped dimension to highlight the worst signal.
+      const dimensionScores: number[] = [];
+      if (academic !== null && academic < 70) dimensionScores.push(academic);
+      if (behavior < 70) dimensionScores.push(behavior);
+      if (tahfidz !== null && tahfidz < 60) dimensionScores.push(tahfidz);
+      const score = dimensionScores.length > 0 ? Math.min(...dimensionScores) : behavior;
+
+      alerts.push({
+        studentId: student.id,
+        name: student.user.name,
+        nis: student.nis,
+        score: Math.round(score * 100) / 100,
+        alerts: reasons,
+        priority: reasons.length >= 3 ? 'CRITICAL' : 'HIGH',
+      });
+    }
+
+    return alerts.sort((a, b) => a.score - b.score);
+  }
+
+  /**
    * Get education analytics for a unit (aggregated)
    */
   static async getUnitEducationAnalytics(unitId: string, academicYearId: string) {

@@ -27,7 +27,11 @@ import violationRoutes from '@/modules/violations/routes';
 import rewardRoutes from '@/modules/rewards/routes';
 import financeRoutes from '@/modules/finance/routes';
 import foundationRoutes from '@/modules/foundation/routes';
-import psbRoutes from '@/modules/psb/routes';
+// Legacy `psb` module has been superseded by the unified `admissions` module
+// (mounted at `/api/admissions`). Removed from the router so external callers
+// do not silently keep using endpoints whose data shape and field names have
+// diverged from the new module (e.g. `name` vs `fullName`, `registrationNumber`
+// vs `registrationNo`).
 import hrRoutes from '@/modules/hr/routes';
 import libraryRoutes from '@/modules/library/routes';
 import healthRoutes from '@/modules/health/routes';
@@ -46,6 +50,7 @@ import { takhosusRoutes } from '@/modules/takhosus';
 import { muhasabahRoutes } from '@/modules/muhasabah';
 import { donationRoutes } from '@/modules/donation';
 import { ppdbWaveRoutes } from '@/modules/ppdb-wave';
+import { admissionsRoutes } from '@/modules/admissions';
 import { wilayahRoutes } from '@/modules/wilayah';
 import { kurikulumMerdekaRoutes } from '@/modules/kurikulum-merdeka';
 import { facilitiesRoutes } from '@/modules/facilities';
@@ -206,7 +211,7 @@ apiRouter.use('/violations', violationRoutes);
 apiRouter.use('/rewards', rewardRoutes);
 apiRouter.use('/finance', financeRoutes);
 apiRouter.use('/foundation', foundationRoutes);
-apiRouter.use('/psb', psbRoutes);
+// `/api/psb` was removed; use `/api/admissions` instead.
 apiRouter.use('/marketing', marketingRoutes);
 apiRouter.use('/hr', hrRoutes);
 apiRouter.use('/library', libraryRoutes);
@@ -226,6 +231,7 @@ apiRouter.use('/takhosus', takhosusRoutes);
 apiRouter.use('/muhasabah', muhasabahRoutes);
 apiRouter.use('/donation', donationRoutes);
 apiRouter.use('/ppdb-wave', ppdbWaveRoutes);
+apiRouter.use('/admissions', admissionsRoutes);
 apiRouter.use('/wilayah', wilayahRoutes);
 apiRouter.use('/kurikulum-merdeka', kurikulumMerdekaRoutes);
 apiRouter.use('/facilities', facilitiesRoutes);
@@ -311,7 +317,7 @@ apiRouter.get('/', (_req, res) => {
       finance: '/api/finance',
       donation: '/api/donation',
       foundation: '/api/foundation',
-      psb: '/api/psb',
+      admissions: '/api/admissions',
       marketing: '/api/marketing',
       ppdbWave: '/api/ppdb-wave',
       hr: '/api/hr',

@@ -57,7 +57,7 @@ import {
   REGISTRATION_STATUS_LABELS,
   REGISTRATION_STATUS_COLORS,
   RegistrationStatus,
-} from "@/hooks/use-psb";
+} from "@/hooks/use-admissions";
 import {
   ArrowLeft,
   Calendar,
@@ -183,15 +183,23 @@ export default function RegistrationDetailPage() {
     try {
       await onboardRegistrant.mutateAsync({
         registrantId: id,
-        unitId: registration.unitId,
-        academicYearId: registration.period?.academicYearId || "",
+        unitId: registration.admissionPeriod?.unit?.id,
+        academicYearId: registration.admissionPeriod?.academicYear?.id || "",
         // TODO: The UI should probably let admins select standard class, but we can default for now
         // For E2E mockup, we will assume the parent user ID is retrievable or mock it if not present
         parentUserId: "mocked-parent-id", // In real scenario, fetch parent userId from registration.fatherEmail etc
       });
       toast.success("Siswa berhasil di-Onboard secara terpadu! (Siswa, Medis, Tagihan Terbuat)");
-      // Force status update to ENROLLED
-      await updateStatus.mutateAsync({ id, status: "ENROLLED" });
+      // NOTE: do NOT call `updateStatus({ status: "ENROLLED" })` here.
+      // The onboarding orchestrator already transitions the registrant to
+      // ENROLLED inside its transaction (see
+      // `apps/api/src/services/integration/student-onboarding.orchestrator.ts`).
+      // The admissions status endpoint now explicitly rejects direct
+      // ENROLLED transitions (see `updateRegistrantStatus` in
+      // `apps/api/src/modules/admissions/service.ts`, which throws
+      // "Cannot set status to ENROLLED directly; use the enrollment
+      // endpoint instead"). Calling it here caused a contradictory error
+      // toast to appear immediately after a successful onboarding.
     } catch (error) {
       toast.error("Gagal melakukan Onboarding Terpadu.");
     }
@@ -219,10 +227,10 @@ export default function RegistrationDetailPage() {
               </div>
               <p className="text-muted-foreground flex items-center gap-2">
                 <span className="font-mono text-xs bg-slate-100 px-2 py-0.5 rounded text-slate-600">
-                  {registration.registrationNumber}
+                  {registration.registrationNo}
                 </span>
                 <span>•</span>
-                <span>{registration.unit?.name}</span>
+                <span>{registration.admissionPeriod?.unit?.name}</span>
                 <span>•</span>
                 <Clock className="h-3 w-3 inline mr-1" />
                 {format(new Date(registration.createdAt), "d MMM yyyy HH:mm", {
@@ -234,9 +242,9 @@ export default function RegistrationDetailPage() {
 
           <div className="flex items-center gap-2">
             {/* Action Buttons based on Status */}
-            {registration.status === "SUBMITTED" && (
+            {registration.status === "REGISTERED" && (
               <Button
-                onClick={() => handleStatusChange("DOCUMENT_REVIEW")}
+                onClick={() => handleStatusChange("DOCUMENT_CHECK")}
                 className="bg-blue-600 hover:bg-blue-700"
               >
                 <FileText className="h-4 w-4 mr-2" />
@@ -244,7 +252,7 @@ export default function RegistrationDetailPage() {
               </Button>
             )}
 
-            {registration.status === "DOCUMENT_REVIEW" && (
+            {registration.status === "DOCUMENT_CHECK" && (
               <Button onClick={() => setTestDialogOpen(true)} variant="outline">
                 <Calendar className="h-4 w-4 mr-2" />
                 Jadwalkan Tes
@@ -261,8 +269,7 @@ export default function RegistrationDetailPage() {
               </Button>
             )}
 
-            {(registration.status === "TEST_COMPLETED" ||
-              registration.status === "INTERVIEW_COMPLETED") && (
+            {registration.status === "TEST_COMPLETED" && (
               <Button
                 onClick={() => setAcceptDialogOpen(true)}
                 className="bg-green-600 hover:bg-green-700"

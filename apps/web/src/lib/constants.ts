@@ -54,7 +54,7 @@ export const API_ENDPOINTS = {
   // Foundation
   FOUNDATION: "/api/foundation",
   // PSB
-  PSB: "/api/psb",
+  PSB: "/api/admissions",
   // HR
   HR: "/api/hr",
   // Curriculum

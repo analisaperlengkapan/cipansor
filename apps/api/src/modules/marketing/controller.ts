@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import * as marketingService from './service';
+import { calculateCampaignROI } from './roi.service';
 import {
   createCampaignSchema,
   logInteractionSchema,
@@ -13,6 +14,39 @@ export const createCampaign = async (req: Request, res: Response, next: NextFunc
     const userId = (req as any).user.id;
     const campaign = await marketingService.createCampaign(data, userId);
     res.status(201).json({ success: true, data: campaign });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getROIStats = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { unitId } = req.query;
+    const user = (req as any).user;
+
+    // Unit-level authorization: a UNIT_ADMIN must not be able to query
+    // another unit's marketing ROI by guessing/knowing its unitId, nor
+    // by omitting `unitId` entirely (which would otherwise return ROI
+    // across ALL units). SUPER_ADMIN and YAYASAN_ADMIN can scope to any
+    // (or all) unit(s).
+    let effectiveUnitId = unitId as string | undefined;
+    if (user && user.role !== 'SUPER_ADMIN' && user.role !== 'YAYASAN_ADMIN') {
+      if (!user.unitId) {
+        return res
+          .status(403)
+          .json({ success: false, error: 'Access to this unit is not allowed' });
+      }
+      if (effectiveUnitId && effectiveUnitId !== user.unitId) {
+        return res
+          .status(403)
+          .json({ success: false, error: 'Access to this unit is not allowed' });
+      }
+      // Force-scope to the caller's own unit when none was provided.
+      effectiveUnitId = user.unitId;
+    }
+
+    const stats = await calculateCampaignROI(effectiveUnitId);
+    res.json({ success: true, data: stats });
   } catch (error) {
     next(error);
   }

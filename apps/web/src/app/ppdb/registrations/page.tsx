@@ -33,7 +33,7 @@ import {
   REGISTRATION_STATUSES,
   REGISTRATION_STATUS_LABELS,
   REGISTRATION_STATUS_COLORS,
-} from "@/hooks/use-psb";
+} from "@/hooks/use-admissions";
 import { Search, Eye, Filter } from "lucide-react";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
@@ -140,7 +140,7 @@ export default function RegistrationsPage() {
                     registrations.map((reg) => (
                       <TableRow key={reg.id}>
                         <TableCell className="font-mono text-xs font-medium">
-                          {reg.registrationNumber}
+                          {reg.registrationNo}
                         </TableCell>
                         <TableCell>
                           <div className="font-medium">{reg.fullName}</div>
@@ -148,7 +148,7 @@ export default function RegistrationsPage() {
                             {reg.gender === "MALE" ? "Laki-laki" : "Perempuan"}
                           </div>
                         </TableCell>
-                        <TableCell>{reg.unit?.name}</TableCell>
+                        <TableCell>{reg.admissionPeriod?.unit?.name}</TableCell>
                         <TableCell>
                           {format(new Date(reg.createdAt), "d MMM yyyy", {
                             locale: idLocale,

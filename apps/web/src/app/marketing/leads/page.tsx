@@ -1,6 +1,6 @@
 "use client";
 
-import { useRegistrations } from "@/hooks/use-psb";
+import { useRegistrations } from "@/hooks/use-admissions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,

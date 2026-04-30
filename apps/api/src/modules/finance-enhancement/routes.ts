@@ -202,6 +202,12 @@ router.post(
   financeEnhancementController.recalculateBudgetUsage
 );
 
+router.get(
+  '/budgets/alerts',
+  financeAdmin(),
+  financeEnhancementController.getBudgetUtilizationAlerts
+);
+
 // ==================== FINANCIAL PERIODS ====================
 
 router.get(

@@ -27,7 +27,7 @@ import {
   useActivePeriod,
   useCreateRegistration,
   Gender,
-} from "@/hooks/use-psb";
+} from "@/hooks/use-admissions";
 import { useUnits } from "@/hooks/use-units";
 import {
   CheckCircle2,
@@ -242,31 +242,77 @@ export default function PublicPPDBPage() {
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
-      const formDataToSend = new FormData();
-
-      // Add all form fields
-      Object.entries(formData).forEach(([key, value]) => {
-        if (value) {
-          formDataToSend.append(key, String(value));
-        }
-      });
-
-      // Add files
-      if (files.photo) formDataToSend.append("photo", files.photo);
-      if (files.birthCertificate)
-        formDataToSend.append("birthCertificate", files.birthCertificate);
-      if (files.familyCard)
-        formDataToSend.append("familyCard", files.familyCard);
-
-      // Set period if not selected
-      if (!formData.periodId && activePeriod) {
-        formDataToSend.set("periodId", activePeriod.id);
+      // Build a plain JSON payload matching the backend's
+      // `createRegistrantSchema` in `apps/api/src/modules/admissions/schema.ts`.
+      // Notes:
+      //   - The schema field is `admissionPeriodId`, not the legacy `periodId`.
+      //   - `birthDate` must be an ISO-8601 datetime string (`z.string().datetime()`),
+      //     so we promote the date-only `<input type="date">` value to UTC midnight.
+      //   - `memorizedJuz` / `graduationYear` are numeric on the backend.
+      //   - `unitId` is not part of the schema (the unit is derived from the
+      //     admission period), so it's intentionally omitted.
+      //   - Files are NOT submitted here: documents have a separate upload flow
+      //     under `/admissions/registrants/:id/documents`, and there is no
+      //     multipart middleware on `POST /admissions/registrants`.
+      const admissionPeriodId = formData.periodId || activePeriod?.id;
+      if (!admissionPeriodId) {
+        toast.error("Periode pendaftaran tidak ditemukan");
+        setIsSubmitting(false);
+        return;
       }
 
-      const result = await createRegistration.mutateAsync(formDataToSend);
+      const birthDateIso = formData.birthDate
+        ? new Date(`${formData.birthDate}T00:00:00.000Z`).toISOString()
+        : "";
+
+      const payload: Record<string, unknown> = {
+        admissionPeriodId,
+        fullName: formData.fullName,
+        gender: formData.gender,
+        birthPlace: formData.birthPlace,
+        birthDate: birthDateIso,
+        address: formData.address,
+        fatherName: formData.fatherName,
+        motherName: formData.motherName,
+      };
+
+      // Optional fields — only include when set so empty strings don't
+      // trip schema validators that expect non-empty / typed values.
+      if (formData.nickname) payload.nickname = formData.nickname;
+      if (formData.nationalId) payload.nationalId = formData.nationalId;
+      if (formData.familyCardNumber)
+        payload.familyCardNumber = formData.familyCardNumber;
+      if (formData.village) payload.village = formData.village;
+      if (formData.district) payload.district = formData.district;
+      if (formData.city) payload.city = formData.city;
+      if (formData.province) payload.province = formData.province;
+      if (formData.postalCode) payload.postalCode = formData.postalCode;
+      if (formData.previousSchool)
+        payload.previousSchool = formData.previousSchool;
+      if (formData.previousSchoolAddress)
+        payload.previousSchoolAddress = formData.previousSchoolAddress;
+      if (formData.graduationYear)
+        payload.graduationYear = Number(formData.graduationYear);
+      if (formData.fatherOccupation)
+        payload.fatherOccupation = formData.fatherOccupation;
+      if (formData.fatherPhone) payload.fatherPhone = formData.fatherPhone;
+      if (formData.fatherEmail) payload.fatherEmail = formData.fatherEmail;
+      if (formData.motherOccupation)
+        payload.motherOccupation = formData.motherOccupation;
+      if (formData.motherPhone) payload.motherPhone = formData.motherPhone;
+      if (formData.quranAbility) payload.quranAbility = formData.quranAbility;
+      if (formData.memorizedJuz)
+        payload.memorizedJuz = Number(formData.memorizedJuz);
+      if (formData.source) payload.source = formData.source;
+      if (formData.campaignId) payload.campaignId = formData.campaignId;
+
+      const result = await createRegistration.mutateAsync(payload);
 
       setSuccessData({
-        registrationNumber: result.registrationNumber || "PSB-" + Date.now(),
+        registrationNumber:
+          result?.registrationNo ||
+          result?.registrationNumber ||
+          "PSB-" + Date.now(),
         name: formData.fullName,
       });
 

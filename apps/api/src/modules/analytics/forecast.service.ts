@@ -297,19 +297,41 @@ export async function getTahfidzCompletionForecast(unitId?: string): Promise<{
   const sixMonthsAgo = new Date();
   sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
-  const monthlyProgress = await prisma.$queryRaw<
-    Array<{ month: string; total_ayah: bigint; student_count: bigint }>
-  >`
-    SELECT 
-      TO_CHAR(recorded_at, 'YYYY-MM') as month,
-      COALESCE(SUM(total_ayah), 0)::bigint as total_ayah,
-      COUNT(DISTINCT student_id)::bigint as student_count
-    FROM tahfidz_records
-    WHERE recorded_at >= ${sixMonthsAgo}
-      AND activity_type = 'ZIYADAH'
-    GROUP BY TO_CHAR(recorded_at, 'YYYY-MM')
-    ORDER BY month
-  `;
+  // Scope monthly progress by `unitId` when provided so the aggregate is
+  // consistent with `currentHafidz` below (which already filters by unit).
+  // Without this the function would mix cross-unit ZIYADAH totals with a
+  // unit-scoped hafidz count, producing nonsensical projections for callers
+  // who passed a `unitId`. The join goes through `students` because
+  // `tahfidz_records` only carries `student_id`.
+  const monthlyProgress = unitId
+    ? await prisma.$queryRaw<
+        Array<{ month: string; total_ayah: bigint; student_count: bigint }>
+      >`
+        SELECT 
+          TO_CHAR(tr.recorded_at, 'YYYY-MM') as month,
+          COALESCE(SUM(tr.total_ayah), 0)::bigint as total_ayah,
+          COUNT(DISTINCT tr.student_id)::bigint as student_count
+        FROM tahfidz_records tr
+        INNER JOIN students s ON s.id = tr.student_id
+        WHERE tr.recorded_at >= ${sixMonthsAgo}
+          AND tr.activity_type = 'ZIYADAH'
+          AND s.unit_id = ${unitId}
+        GROUP BY TO_CHAR(tr.recorded_at, 'YYYY-MM')
+        ORDER BY month
+      `
+    : await prisma.$queryRaw<
+        Array<{ month: string; total_ayah: bigint; student_count: bigint }>
+      >`
+        SELECT 
+          TO_CHAR(recorded_at, 'YYYY-MM') as month,
+          COALESCE(SUM(total_ayah), 0)::bigint as total_ayah,
+          COUNT(DISTINCT student_id)::bigint as student_count
+        FROM tahfidz_records
+        WHERE recorded_at >= ${sixMonthsAgo}
+          AND activity_type = 'ZIYADAH'
+        GROUP BY TO_CHAR(recorded_at, 'YYYY-MM')
+        ORDER BY month
+      `;
 
   // Count current hafidz (students with 30 juz completed)
   const currentHafidz = await prisma.student.count({
@@ -342,5 +364,109 @@ export async function getTahfidzCompletionForecast(unitId?: string): Promise<{
       totalAyah: Number(m.total_ayah),
       students: Number(m.student_count),
     })),
+  };
+}
+
+/**
+ * Project future cash flow for the next 6 months
+ * Logic: (Pending Invoices - Outstanding Budgets)
+ */
+export async function calculateCashFlowForecast(unitId?: string) {
+  const months = 6;
+  const now = new Date();
+  const dataPoints = [];
+
+  const pendingInvoices = await prisma.invoice.findMany({
+    where: {
+      status: { in: ['PENDING', 'PARTIAL'] },
+      ...(unitId && { student: { unitId } }),
+    },
+    select: { amount: true, paidAmount: true, dueDate: true },
+  });
+
+  // Scope budgets to the currently-active academic year. Without this filter
+  // the query returns budgets from every historical academic year stored in
+  // the DB, so the monthly outflow (`yearlyBudget / 12`) ends up summing
+  // multiple years of expense allocations and inflates the projected outflow
+  // — consistently producing misleading DEFICIT classifications for units
+  // that have run several admission cycles. If no academic year is currently
+  // active (edge case during the brief window between two AYs), fall back
+  // to no budgets so the forecast simply omits outflow rather than
+  // double-counting historical data.
+  const activeAcademicYear = await prisma.academicYear.findFirst({
+    where: { isActive: true },
+    select: { id: true },
+  });
+  const activeBudgets = activeAcademicYear
+    ? await prisma.budget.findMany({
+        where: {
+          academicYearId: activeAcademicYear.id,
+          ...(unitId && { unitId }),
+        },
+        include: { account: true },
+      })
+    : [];
+
+  const expenseBudgets = activeBudgets.filter(b => b.account.type === 'EXPENSE');
+
+  // Aggregate overdue (past-due) outstanding amounts separately so they don't
+  // silently fall outside the 6-month forecast window. Without this, an
+  // invoice with `dueDate < now` matches no projection month and its
+  // outstanding amount disappears from `totalProjectedIncome`, materially
+  // under-reporting expected cash for schools with significant arrears.
+  // We surface the overdue total under a dedicated `overdue` bucket on the
+  // first projection month and on the summary, so consumers can still
+  // distinguish "scheduled future income" from "already-overdue receivables".
+  const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const overdueAmount = pendingInvoices
+    .filter((inv) => new Date(inv.dueDate) < currentMonthStart)
+    .reduce((sum, inv) => sum + (Number(inv.amount) - Number(inv.paidAmount)), 0);
+
+  // Hoist the monthly outflow out of the loop — it doesn't depend on the
+  // iteration index and was being recomputed identically `months` times.
+  const monthlyOutflow = expenseBudgets.reduce((sum, b) => {
+    const yearlyBudget = b.amount.toNumber();
+    return sum + yearlyBudget / 12;
+  }, 0);
+
+  for (let i = 0; i < months; i++) {
+    const projectionDate = new Date(now.getFullYear(), now.getMonth() + i, 1);
+    const monthStr = projectionDate.toISOString().slice(0, 7);
+
+    const monthlyIncome = pendingInvoices
+      .filter(inv => {
+        const d = new Date(inv.dueDate);
+        return d.getFullYear() === projectionDate.getFullYear() && d.getMonth() === projectionDate.getMonth();
+      })
+      .reduce((sum, inv) => sum + (Number(inv.amount) - Number(inv.paidAmount)), 0);
+
+    // Fold overdue amounts into the FIRST projected month's income so the
+    // forecast totals match the actual outstanding receivable position.
+    const incomeWithOverdue = i === 0 ? monthlyIncome + overdueAmount : monthlyIncome;
+
+    dataPoints.push({
+      month: monthStr,
+      income: Math.round(incomeWithOverdue),
+      outflow: Math.round(monthlyOutflow),
+      net: Math.round(incomeWithOverdue - monthlyOutflow),
+      ...(i === 0 ? { overdueIncluded: Math.round(overdueAmount) } : {}),
+    });
+  }
+
+  const totalIncome = dataPoints.reduce((s, d) => s + d.income, 0);
+  const totalOutflow = dataPoints.reduce((s, d) => s + d.outflow, 0);
+  const net = totalIncome - totalOutflow;
+
+  return {
+    summary: {
+      totalProjectedIncome: totalIncome,
+      totalProjectedOutflow: totalOutflow,
+      overdueAmount: Math.round(overdueAmount),
+      netProjection: net,
+      // Distinguish exactly-balanced from deficit so a perfectly matched
+      // budget isn't mislabelled as a shortfall.
+      status: net > 0 ? 'SURPLUS' : net < 0 ? 'DEFICIT' : 'BALANCED',
+    },
+    dataPoints,
   };
 }

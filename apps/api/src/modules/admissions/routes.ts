@@ -1,5 +1,7 @@
 import { Router } from 'express';
+import rateLimit from 'express-rate-limit';
 import { UserRole } from '@prisma/client';
+import { config } from '../../config';
 import * as controller from './controller';
 import { authenticate, authorize } from '../../middleware/auth';
 import { validateQuery } from '../../middleware/error';
@@ -7,6 +9,30 @@ import { queryAdmissionPeriodSchema, queryRegistrantSchema } from './schema';
 import waveRoutes from './ppdb-wave.routes';
 
 const router = Router();
+
+// Dedicated stricter rate limiter for the unauthenticated public registrant
+// creation endpoint. The global `defaultLimiter` in `apps/api/src/app.ts` is
+// disabled in `test` and `development` and otherwise allows ~100 req/min,
+// which is too permissive for an endpoint that creates DB rows and triggers
+// transactional logic (PaymentType upsert, registrant creation). Mirroring
+// the pattern used for `/auth` (see `authLimiter` in `middleware/rate-limit.ts`),
+// we cap public registrations at a small number per minute per IP and skip
+// the limiter entirely in `test` / `development` so test suites and local
+// dev aren't throttled.
+const publicRegistrantLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 10, // 10 public registration attempts per minute per IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    error: {
+      code: 'RATE_LIMIT_EXCEEDED',
+      message: 'Too many registration attempts, please try again later.',
+    },
+  },
+  skip: () => config.env === 'test' || config.env === 'development',
+});
 
 // Mount wave sub-router. `ppdb-wave.routes.ts` applies its own `authenticate`
 // middleware (and exposes a public `/active/:periodId` route), so we mount it
@@ -20,7 +46,11 @@ router.use('/waves', waveRoutes);
 // deliberately trimmed projection of the underlying records — see the JSDoc
 // on the corresponding controllers for the exact whitelist.
 router.get('/public/active-period', controller.getPublicActiveAdmissionPeriod);
-router.post('/public/registrants', controller.createPublicRegistrant);
+router.post(
+  '/public/registrants',
+  publicRegistrantLimiter,
+  controller.createPublicRegistrant
+);
 
 router.use(authenticate);
 
@@ -72,9 +102,14 @@ router.get(
  *       200:
  *         description: List of admission periods
  */
+// Read-only listing/detail routes also expose YAYASAN_ADMIN since the
+// foundation-level admin needs cross-unit oversight. Write routes
+// (POST/PUT/DELETE and the enroll/score/status mutations below) remain
+// restricted to SUPER_ADMIN/UNIT_ADMIN — foundation-level admins are
+// expected to read but not directly mutate admissions records.
 router.get(
   '/periods',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  authorize(UserRole.SUPER_ADMIN, UserRole.YAYASAN_ADMIN, UserRole.UNIT_ADMIN),
   validateQuery(queryAdmissionPeriodSchema),
   controller.getAdmissionPeriods
 );
@@ -141,7 +176,7 @@ router.post(
  */
 router.get(
   '/periods/:id',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  authorize(UserRole.SUPER_ADMIN, UserRole.YAYASAN_ADMIN, UserRole.UNIT_ADMIN),
   controller.getAdmissionPeriodById
 );
 
@@ -165,7 +200,7 @@ router.get(
  */
 router.get(
   '/periods/:id/stats',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  authorize(UserRole.SUPER_ADMIN, UserRole.YAYASAN_ADMIN, UserRole.UNIT_ADMIN),
   controller.getAdmissionPeriodStats
 );
 
@@ -251,7 +286,12 @@ router.delete(
  */
 router.get(
   '/registrants',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  authorize(
+    UserRole.SUPER_ADMIN,
+    UserRole.YAYASAN_ADMIN,
+    UserRole.UNIT_ADMIN,
+    UserRole.STAFF
+  ),
   validateQuery(queryRegistrantSchema),
   controller.getRegistrants
 );
@@ -322,7 +362,12 @@ router.post(
  */
 router.get(
   '/registrants/:id',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  authorize(
+    UserRole.SUPER_ADMIN,
+    UserRole.YAYASAN_ADMIN,
+    UserRole.UNIT_ADMIN,
+    UserRole.STAFF
+  ),
   controller.getRegistrantById
 );
 
@@ -501,7 +546,12 @@ router.delete(
  */
 router.get(
   '/registrants/:registrantId/documents',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  authorize(
+    UserRole.SUPER_ADMIN,
+    UserRole.YAYASAN_ADMIN,
+    UserRole.UNIT_ADMIN,
+    UserRole.STAFF
+  ),
   controller.getRegistrantDocuments
 );
 

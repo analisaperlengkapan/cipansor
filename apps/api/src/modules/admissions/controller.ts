@@ -251,6 +251,11 @@ export async function getPublicActiveAdmissionPeriod(
     const period = await prisma.admissionPeriod.findFirst({
       where: { isActive: true },
       orderBy: { startDate: 'desc' },
+      // Keep this projection in lockstep with the JSDoc whitelist above:
+      // id, name, startDate, endDate, registrationFee, requirements, unit
+      // name and academic year name — never `quota`, registrant counts,
+      // internal notes, or any PII. Anything added here is exposed to
+      // anonymous callers of the public PPDB form.
       select: {
         id: true,
         name: true,
@@ -258,7 +263,6 @@ export async function getPublicActiveAdmissionPeriod(
         endDate: true,
         registrationFee: true,
         requirements: true,
-        quota: true,
         unit: { select: { id: true, name: true, type: true } },
         academicYear: { select: { id: true, name: true } },
       },

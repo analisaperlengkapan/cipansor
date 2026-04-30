@@ -383,6 +383,7 @@ export async function updateRegistrant(id: string, data: UpdateRegistrantInput) 
     motherName,
     motherPhone,
     fullName,
+    email,
     ...rest
   } = data;
 
@@ -395,6 +396,15 @@ export async function updateRegistrant(id: string, data: UpdateRegistrantInput) 
       ? fatherPhone || motherPhone
       : undefined;
 
+  // Normalise empty-string email to `null` to mirror `createRegistrantOnce`,
+  // which maps `''` -> `undefined` (persisted as NULL). Without this, a PUT
+  // carrying `{ email: "" }` would store `""` in the DB while the same value
+  // on create stores NULL — breaking downstream `if (registrant.email)`
+  // checks and risking duplicate-empty-string collisions if `email` ever
+  // becomes @unique.
+  const normalisedEmail =
+    email === undefined ? undefined : email === '' ? null : email;
+
   return prisma.registrant.update({
     where: { id },
     data: {
@@ -402,6 +412,7 @@ export async function updateRegistrant(id: string, data: UpdateRegistrantInput) 
       ...(fullName !== undefined ? { fullName, name: fullName } : {}),
       ...(parentName !== undefined ? { parentName } : {}),
       ...(parentPhone !== undefined ? { parentPhone } : {}),
+      ...(normalisedEmail !== undefined ? { email: normalisedEmail } : {}),
     },
   });
 }

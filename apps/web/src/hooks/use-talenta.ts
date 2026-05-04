@@ -61,7 +61,7 @@ export const useCreateTalentProfile = () => {
   });
 };
 
-export const useCreateAssessment = () => {
+export const useCreateTalentAssessment = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (data: any) => (await api.post("/talenta/assessments", data)).data,

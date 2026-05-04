@@ -37,6 +37,20 @@ export interface RecentLead {
   } | null;
 }
 
+export interface RecentLead {
+  id: string;
+  fullName: string;
+  createdAt: string;
+  status: string;
+  source: string | null;
+  leadScore?: number;
+  quranAbility?: string;
+  campaign?: {
+    name: string;
+    code: string;
+  } | null;
+}
+
 export interface UpcomingFollowUp {
   id: string;
   type: string;
@@ -50,6 +64,21 @@ export interface UpcomingFollowUp {
     status: string;
   };
 }
+
+export const useHighPriorityLeads = (unitId?: string) => {
+  return useQuery({
+    queryKey: ["marketing", "leads", "high-priority", unitId],
+    queryFn: async () => {
+      const { data } = await api.get<{ success: boolean; data: RecentLead[] }>(
+        "/marketing/leads/high-priority",
+        {
+          params: { unitId },
+        },
+      );
+      return data.data;
+    },
+  });
+};
 
 export const useRecentLeads = (unitId?: string, limit: number = 5) => {
   return useQuery({

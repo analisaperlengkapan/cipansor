@@ -144,7 +144,7 @@ export function useUnitEducationAnalytics(unitId: string, academicYearId: string
 // Alias for backward compatibility or clarity
 export const useAssessments = useExams;
 export const useAssessment = useExam;
-export const useCreateAssessment = useCreateExam;
+export const useAssessmentCreation = useCreateExam;
 export const useUpdateAssessment = useUpdateExam;
 export const useDeleteAssessment = useDeleteExam;
 export const useSubmitGrades = useBulkCreateGrades;

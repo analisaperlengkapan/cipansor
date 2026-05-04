@@ -33,6 +33,7 @@ import {
   useLeaveRequests,
   useDepartments,
   useExpiringContracts,
+  useRetentionRisk,
   EMPLOYEE_STATUSES,
   EMPLOYEE_STATUS_LABELS,
   EMPLOYEE_TYPE_LABELS,
@@ -84,6 +85,7 @@ export default function HRPage() {
   const { data: departments } = useDepartments();
   const { data: units } = useUnits();
   const { data: expiringContracts } = useExpiringContracts();
+  const { data: retentionRisk } = useRetentionRisk(unitFilter || undefined);
 
   const employees = employeesData?.data || [];
   const leaveRequests = leaveRequestsData?.data || [];
@@ -243,6 +245,10 @@ export default function HRPage() {
               <Calendar className="mr-2 h-4 w-4" />
               Cuti
             </TabsTrigger>
+            <TabsTrigger value="retention">
+              <UserX className="mr-2 h-4 w-4" />
+              Risiko Retensi
+            </TabsTrigger>
           </TabsList>
 
           {/* Employees Tab */}
@@ -367,6 +373,58 @@ export default function HRPage() {
                   )}
                 </TableBody>
               </Table>
+            </Card>
+          </TabsContent>
+
+          {/* Retention Risk Tab */}
+          <TabsContent value="retention" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Analisis Risiko Retensi Karyawan</CardTitle>
+                <CardDescription>Deteksi dini potensi turnover berdasarkan data performa dan absensi</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nama</TableHead>
+                      <TableHead>Tingkat Risiko</TableHead>
+                      <TableHead>Skor</TableHead>
+                      <TableHead>Faktor Risiko</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {retentionRisk?.length ? (
+                      retentionRisk.map((risk) => (
+                        <TableRow key={risk.userId}>
+                          <TableCell className="font-medium">{risk.name}</TableCell>
+                          <TableCell>
+                            <Badge variant={risk.riskLevel === 'HIGH' ? 'destructive' : risk.riskLevel === 'MEDIUM' ? 'default' : 'secondary'}>
+                              {risk.riskLevel}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{risk.riskScore}</TableCell>
+                          <TableCell>
+                            <div className="flex flex-wrap gap-1">
+                              {risk.factors.map((f, i) => (
+                                <Badge key={i} variant="outline" className="text-[10px]">
+                                  {f}
+                                </Badge>
+                              ))}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                          Tidak ada data risiko yang ditemukan
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </CardContent>
             </Card>
           </TabsContent>
 

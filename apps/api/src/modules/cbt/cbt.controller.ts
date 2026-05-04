@@ -418,4 +418,30 @@ export class CBTController {
       next(error);
     }
   }
+
+  static async getExamDifficultyInsights(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { examId } = req.params;
+      const user = (req as any).user;
+
+      // Authorization check (Unit level)
+      if (user.role !== 'SUPER_ADMIN') {
+        const exam = await prisma.exam.findUnique({
+          where: { id: examId },
+          select: { unitId: true },
+        });
+        if (!exam) throw Errors.notFound('Exam');
+        if (user.unitId && exam.unitId !== user.unitId) {
+          throw Errors.forbidden('Access to this exam data is not allowed');
+        }
+      }
+
+      const insights = await CBTService.getExamDifficultyInsights(examId);
+      if (!insights) throw Errors.notFound('Exam');
+
+      res.json({ success: true, data: insights });
+    } catch (error) {
+      next(error);
+    }
+  }
 }

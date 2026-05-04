@@ -82,6 +82,87 @@ export async function getEmployeeById(id: string) {
   });
 }
 
+/**
+ * Calculate Retention Risk for employees in a unit.
+ * Best Practice: Early warning system for talent turnover.
+ */
+export async function getRetentionRiskAnalytics(unitId: string) {
+  const employees = await prisma.user.findMany({
+    where: {
+      unitId,
+      role: { in: [UserRole.TEACHER, UserRole.STAFF] },
+      deletedAt: null,
+      isActive: true,
+    },
+    include: {
+      teacher: true,
+      staff: true,
+      talentProfile: {
+        include: {
+          assessments: { orderBy: { assessedAt: 'desc' }, take: 1 },
+        },
+      },
+      leaves: {
+        where: {
+          status: LeaveStatus.APPROVED,
+          startDate: { gte: new Date(new Date().getFullYear(), 0, 1) },
+        },
+      },
+      trainingEnrollments: { where: { status: 'COMPLETED' } },
+    },
+  });
+
+  return employees.map((emp) => {
+    let riskScore = 0;
+    const riskFactors = [];
+
+    // 1. Performance Factor
+    const latestAssessment = emp.talentProfile?.assessments[0];
+    if (latestAssessment) {
+      if (latestAssessment.performanceRating === 'BELOW' || latestAssessment.performanceRating === 'UNSATISFACTORY') {
+        riskScore += 40;
+        riskFactors.push('Performa Rendah');
+      }
+    }
+
+    // 2. Leave Pattern Factor (High unplanned leaves)
+    const totalLeaveDays = emp.leaves.reduce((sum, l) => sum + l.totalDays, 0);
+    if (totalLeaveDays > 15) {
+      riskScore += 20;
+      riskFactors.push('Absensi Tinggi');
+    }
+
+    // 3. Training/Development Factor (Low engagement)
+    if (emp.trainingEnrollments.length === 0) {
+      riskScore += 15;
+      riskFactors.push('Kurang Pengembangan Diri');
+    }
+
+    // 4. Tenure Factor (Stagnation - simplified)
+    const joinDate = emp.teacher?.joinDate || emp.staff?.joinDate;
+    if (joinDate) {
+      const years = (new Date().getTime() - new Date(joinDate).getTime()) / (1000 * 60 * 60 * 24 * 365);
+      if (years > 5 && (!emp.talentProfile || emp.talentProfile.category === 'SOLID_PERFORMER')) {
+        riskScore += 15;
+        riskFactors.push('Stagnasi Karir Potensial');
+      }
+    }
+
+    let riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' = 'LOW';
+    if (riskScore >= 60) riskLevel = 'HIGH';
+    else if (riskScore >= 30) riskLevel = 'MEDIUM';
+
+    return {
+      userId: emp.id,
+      name: emp.name,
+      role: emp.role,
+      riskScore,
+      riskLevel,
+      factors: riskFactors,
+    };
+  }).sort((a, b) => b.riskScore - a.riskScore);
+}
+
 export async function createEmployee(data: CreateEmployeeInput) {
   // Validate unique email
   const existingUser = await prisma.user.findUnique({ where: { email: data.email } });

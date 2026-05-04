@@ -445,6 +445,26 @@ export function useEmployees(params?: {
   });
 }
 
+export function useRetentionRisk(unitId?: string) {
+  return useQuery({
+    queryKey: ["hr-retention-risk", unitId],
+    queryFn: async () => {
+      const response = await api.get("/hr/analytics/retention-risk", {
+        params: { unitId },
+      });
+      return response.data.data as {
+        userId: string;
+        name: string;
+        role: string;
+        riskScore: number;
+        riskLevel: "LOW" | "MEDIUM" | "HIGH";
+        factors: string[];
+      }[];
+    },
+    enabled: !!unitId,
+  });
+}
+
 export function useEmployee(id: string) {
   return useQuery({
     queryKey: ["employee", id],

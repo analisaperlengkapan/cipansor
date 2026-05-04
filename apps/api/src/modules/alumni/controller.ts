@@ -31,6 +31,16 @@ export async function getAlumni(req: Request, res: Response, next: NextFunction)
   }
 }
 
+export async function getOutcomeAnalytics(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { unitId } = req.query;
+    const data = await service.getAlumniOutcomeAnalytics(unitId as string | undefined);
+    res.json({ success: true, data });
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function getAlumniById(req: Request, res: Response, next: NextFunction) {
   try {
     const { id } = req.params;

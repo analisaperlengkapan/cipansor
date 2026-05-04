@@ -26,6 +26,25 @@ export const businessUnitController = {
     }
   },
 
+  async getEfficiency(req: Request, res: Response, next: NextFunction) {
+    try {
+      const unitId = resolveUnitId(req);
+
+      if (!unitId && !isSuperAdminUser(req)) {
+        return next(Errors.badRequest('Unit ID tidak ditemukan'));
+      }
+
+      // SUPER_ADMIN can view efficiency without unitId scoping
+      const result = isSuperAdminUser(req) && !unitId
+        ? await businessUnitService.getBusinessEfficiency(req.params.id, undefined)
+        : await businessUnitService.getBusinessEfficiency(req.params.id, unitId!);
+
+      res.json({ success: true, data: result });
+    } catch (error) {
+      next(error);
+    }
+  },
+
   async getById(req: Request, res: Response, next: NextFunction) {
     try {
       const unitId = resolveUnitId(req);

@@ -6,13 +6,13 @@ import { useEnrollmentByStudent, useSanadRecords } from "@/hooks/use-takhosus";
 
 export function StudentTakhosusTab({ studentId }: { studentId: string }) {
   const { data: enrollments, isLoading: loadEnrollments } = useEnrollmentByStudent(studentId);
-  const { data: sanadRecords, isLoading: loadSanads } = useSanadRecords({ studentId, limit: 10 });
+  const { data: sanadRecords, isLoading: loadSanads } = useSanadRecords({ limit: 10 });
 
   if (loadEnrollments || loadSanads) {
     return <div className="p-8 text-center animate-pulse">Memuat Data Takhosus...</div>;
   }
 
-  const enrollmentList = enrollments?.data || enrollments || [];
+  const enrollmentList = (enrollments as any)?.data || (Array.isArray(enrollments) ? enrollments : enrollments ? [enrollments] : []);
   const sanadList = sanadRecords?.data || [];
 
   return (

@@ -2,6 +2,8 @@ import { prisma } from '../../lib/prisma';
 import { ApiError, ErrorCode } from '../../middleware/error';
 import { AttendanceStatus, Invoice, StudentParent } from '@prisma/client';
 import { getStudentIbadahStats } from '../ibadah/ibadah.service';
+import { AssessmentAnalyticsService } from '../assessment/analytics.service';
+import * as DormitoryService from '../dormitories/service';
 
 type StudentParentWithStudent = Awaited<ReturnType<typeof prisma.studentParent.findMany>>[0];
 type GradeWithRelations = Awaited<ReturnType<typeof prisma.grade.findMany>>[0];
@@ -831,26 +833,65 @@ export class ParentService {
       orderBy: [{ studentId: 'asc' }, { recordedAt: 'desc' }],
     });
 
-    // Map data back to children
-    const summary = children.map((child) => {
-      // Filter recent attendance for this child, take 7
-      const recentAttendance = allAttendances.filter((a) => a.studentId === child.id).slice(0, 7);
-
-      const pendingInvoiceCount =
-        pendingInvoices.find((p) => p.studentId === child.id)?._count.id || 0;
-
-      const activePermitCount = activePermits.find((p) => p.studentId === child.id)?._count.id || 0;
-
-      const lastTahfidz = lastTahfidzRecords.find((t) => t.studentId === child.id);
-
-      return {
-        child,
-        recentAttendance,
-        pendingInvoices: pendingInvoiceCount,
-        activePermits: activePermitCount,
-        lastTahfidz: lastTahfidz || null,
-      };
+    // 5. Bulk fetch active academic years for all units involved
+    const unitIds = [...new Set(children.map((c) => c.unitId))];
+    const activeYears = await prisma.academicYear.findMany({
+      where: { unitId: { in: unitIds }, isActive: true },
     });
+
+    // 6. Bulk fetch room assignments
+    const roomAssignments = await prisma.roomAssignment.findMany({
+      where: { studentId: { in: childrenIds }, isActive: true },
+      select: { studentId: true, roomId: true },
+    });
+
+    // Map data back to children
+    const summary = await Promise.all(
+      children.map(async (child) => {
+        // Filter recent attendance for this child, take 7
+        const recentAttendance = allAttendances.filter((a) => a.studentId === child.id).slice(0, 7);
+
+        const pendingInvoiceCount =
+          pendingInvoices.find((p) => p.studentId === child.id)?._count.id || 0;
+
+        const activePermitCount = activePermits.find((p) => p.studentId === child.id)?._count.id || 0;
+
+        const lastTahfidz = lastTahfidzRecords.find((t) => t.studentId === child.id);
+
+        // Enhance with Holistic Analytics
+        // We use the active academic year for the child's unit
+        const activeYear = activeYears.find((ay) => ay.unitId === child.unitId);
+
+        let holistic = null;
+        if (activeYear) {
+          holistic = await AssessmentAnalyticsService.getStudentHolisticAnalytics(
+            child.id,
+            activeYear.id
+          );
+        }
+
+        // Enhance with Boarding Harmony
+        const assignment = roomAssignments.find((ra) => ra.studentId === child.id);
+
+        let boardingHarmony = null;
+        if (assignment) {
+          boardingHarmony = await DormitoryService.getRoomSocialAnalytics(
+            assignment.roomId
+          );
+        }
+
+        return {
+          child,
+          recentAttendance,
+          pendingInvoices: pendingInvoiceCount,
+          activePermits: activePermitCount,
+          lastTahfidz: lastTahfidz || null,
+          holisticScore: holistic?.holisticScore || null,
+          holisticInterpretation: holistic?.interpretation || null,
+          boardingHarmonyScore: boardingHarmony?.harmonyScore || null,
+        };
+      })
+    );
 
     // Get unread notifications
     const unreadNotifications = await prisma.notification.count({

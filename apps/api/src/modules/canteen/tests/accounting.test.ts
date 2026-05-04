@@ -1,7 +1,32 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+const { MockDecimal } = vi.hoisted(() => {
+  const Decimal = function(this: any, v: any) {
+    this.v = Number(v);
+  } as any;
+  Decimal.prototype.toNumber = function() { return this.v; };
+  Decimal.prototype.toString = function() { return String(this.v); };
+  Decimal.prototype.add = function(v2: any) { return new Decimal(this.v + (v2.v !== undefined ? v2.v : Number(v2))); };
+  Decimal.prototype.mul = function(v2: any) { return new Decimal(this.v * (v2.v !== undefined ? v2.v : Number(v2))); };
+  Decimal.prototype.sub = function(v2: any) { return new Decimal(this.v - (v2.v !== undefined ? v2.v : Number(v2))); };
+  Decimal.prototype.div = function(v2: any) { return new Decimal(this.v / (v2.v !== undefined ? v2.v : Number(v2))); };
+  Decimal.prototype.greaterThan = function(v2: any) { return this.v > (v2.v !== undefined ? v2.v : Number(v2)); };
+  Decimal.prototype.gt = function(v2: any) { return this.v > (v2.v !== undefined ? v2.v : Number(v2)); };
+  Decimal.prototype.lessThan = function(v2: any) { return this.v < (v2.v !== undefined ? v2.v : Number(v2)); };
+  Decimal.prototype.lt = function(v2: any) { return this.v < (v2.v !== undefined ? v2.v : Number(v2)); };
+  Decimal.prototype.toFixed = function(n: number) { return this.v.toFixed(n); };
+
+  return { MockDecimal: Decimal };
+});
+
+vi.mock('@prisma/client', () => ({
+  Prisma: {
+    Decimal: MockDecimal
+  }
+}));
+
 import { transactionService } from '../service';
 import { prisma } from '@/lib/prisma';
-import { Prisma } from '@prisma/client';
 import { JournalReferenceType } from '@cipansor/shared';
 
 vi.mock('@/lib/prisma', () => ({
@@ -27,6 +52,10 @@ vi.mock('@/lib/prisma', () => ({
     canteenStockMovement: {
       create: vi.fn(),
     },
+    financialPeriod: {
+      findFirst: vi.fn(),
+    },
+    $queryRaw: vi.fn(),
     $transaction: vi.fn((cb) => cb(prisma)),
   },
 }));
@@ -36,17 +65,21 @@ vi.mock('../../finance/accounting-config.service', () => ({
   ACCOUNT_MAPPING_KEYS: {
     CASH: 'CASH',
     INVENTORY_ASSET: 'INVENTORY_ASSET',
+    CANTEEN_REVENUE: 'CANTEEN_REVENUE',
+    CANTEEN_COGS: 'CANTEEN_COGS',
   },
 }));
 
 describe('Canteen Transaction Accounting', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    (prisma.$queryRaw as any).mockResolvedValue([{ id: 'item-1' }]);
+    (prisma.financialPeriod.findFirst as any).mockResolvedValue({ status: 'OPEN' });
   });
 
   it('should create journal entries on transaction', async () => {
     const mockItems = [
-      { id: 'item-1', price: new Prisma.Decimal(10000), costPrice: new Prisma.Decimal(7000), stock: 10, name: 'Item 1' }
+      { id: 'item-1', price: new MockDecimal(10000), costPrice: new MockDecimal(7000), stock: 10, name: 'Item 1' }
     ];
     (prisma.canteenItem.findMany as any).mockResolvedValue(mockItems);
     (prisma.canteenTransaction.create as any).mockResolvedValue({ id: 'tx-1', transactionNo: 'TX-001' });

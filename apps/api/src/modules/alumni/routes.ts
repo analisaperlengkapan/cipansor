@@ -27,6 +27,7 @@ router.use(authenticate);
  *         description: Alumni tracer study statistics
  */
 router.get('/stats/tracer', controller.getTracerStudyStats);
+router.get('/stats/outcome', controller.getOutcomeAnalytics);
 
 /**
  * @swagger

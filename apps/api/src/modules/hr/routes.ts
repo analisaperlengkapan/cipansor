@@ -554,6 +554,12 @@ router.get(
   controller.getLeaveBalance
 );
 
+router.get(
+  '/analytics/retention-risk',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  controller.getRetentionRisk
+);
+
 // ==================== DEPARTMENTS ====================
 
 router.post(

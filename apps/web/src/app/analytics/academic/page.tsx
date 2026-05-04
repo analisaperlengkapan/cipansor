@@ -73,7 +73,7 @@ export default function AcademicInterventionDashboard() {
               </div>
               <div>
                 <p className="text-sm font-bold">Kriteria Kedisiplinan</p>
-                <p className="text-xs text-muted-foreground">Akumulasi poin pelanggaran > 50 atau tingkat kehadiran < 85%.</p>
+                <p className="text-xs text-muted-foreground">Akumulasi poin pelanggaran {'>'} 50 atau tingkat kehadiran {'<'} 85%.</p>
               </div>
            </Card>
         </div>

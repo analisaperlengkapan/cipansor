@@ -208,9 +208,9 @@ export function useCreateRegistration() {
       // document upload is a separate flow under
       // `/admissions/registrants/:id/documents`, not part of registrant
       // creation.
-      let payload: Record<string, unknown>;
+      let payload: Record<string, any>;
       if (typeof FormData !== "undefined" && data instanceof FormData) {
-        const obj: Record<string, unknown> = {};
+        const obj: Record<string, any> = {};
         data.forEach((value, key) => {
           if (typeof value === "string") {
             obj[key] = value;

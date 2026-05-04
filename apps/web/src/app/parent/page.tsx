@@ -71,6 +71,9 @@ interface ChildSummary {
     score: number;
     maxScore: number;
   };
+  holisticScore?: number;
+  holisticInterpretation?: string;
+  boardingHarmonyScore?: number;
   pendingViolations: number;
   pendingPayments: {
     count: number;
@@ -275,6 +278,18 @@ export default function ParentDashboardPage() {
                         {summary?.unreadRewards || 0}
                       </strong>
                     </span>
+                  </div>
+                </div>
+
+                {/* Enhanced Analytics Section */}
+                <div className="mt-4 grid grid-cols-2 gap-2">
+                  <div className="p-2 rounded-lg bg-indigo-50 border border-indigo-100 flex flex-col items-center justify-center">
+                    <p className="text-[10px] text-indigo-700 font-bold uppercase">Skor Holistik</p>
+                    <p className="text-lg font-black text-indigo-900">{summary?.holisticScore || '—'}</p>
+                  </div>
+                  <div className="p-2 rounded-lg bg-emerald-50 border border-emerald-100 flex flex-col items-center justify-center">
+                    <p className="text-[10px] text-emerald-700 font-bold uppercase">Harmony Asrama</p>
+                    <p className="text-lg font-black text-emerald-900">{summary?.boardingHarmonyScore || '—'}%</p>
                   </div>
                 </div>
 

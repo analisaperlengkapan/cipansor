@@ -65,6 +65,32 @@ router.get(
   }
 );
 
+// GET /api/canteen/efficiency - Get business efficiency
+router.get(
+  '/efficiency',
+  authenticate,
+  authorize(
+    RoleCode.SUPER_ADMIN,
+    RoleCode.TKQ_ADMIN, RoleCode.SDIT_ADMIN, RoleCode.SMPIT_ADMIN, RoleCode.SMAQ_ADMIN, RoleCode.YAYASAN_ADMIN,
+    RoleCode.TKQ_TATA_USAHA, RoleCode.SDIT_TATA_USAHA, RoleCode.SMPIT_TATA_USAHA, RoleCode.SMAQ_TATA_USAHA,
+    'UNIT_ADMIN', 'STAFF', // Legacy pre-migration token values
+  ),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const unitId = resolveUnitId(req);
+      if (!unitId && !isSuperAdminUser(req)) {
+        return res.status(400).json(ApiResponse.error('Unit ID tidak ditemukan', 'UNIT_REQUIRED'));
+      }
+
+      const businessUnitId = req.query.businessUnitId as string | undefined;
+      const efficiency = await itemService.getBusinessEfficiency(unitId, businessUnitId);
+      return res.json(ApiResponse.success(efficiency, 'Berhasil mengambil data efisiensi'));
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
 // POST /api/canteen/categories - Create category
 router.post(
   '/categories',

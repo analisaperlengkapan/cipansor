@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { fetchApi } from "@/lib/api";
+import api from "@/lib/api";
 import { ArrowLeft, User, FileText, CheckCircle2 } from "lucide-react";
 
 export default function PositionDetailPage() {
@@ -18,7 +18,7 @@ export default function PositionDetailPage() {
 
   const { data: position, isLoading } = useQuery({
     queryKey: ['org-position', positionId],
-    queryFn: () => fetchApi(`/organisasi/positions/${positionId}`),
+    queryFn: () => api.get(`/organisasi/positions/${positionId}`).then(res => res.data.data),
   });
 
   if (isLoading) {

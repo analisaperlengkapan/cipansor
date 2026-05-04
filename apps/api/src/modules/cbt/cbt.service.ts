@@ -995,4 +995,55 @@ export class CBTService {
 
     return finishedAttempt;
   }
+
+  /**
+   * Identifies "Killer Questions" (high failure rate) and overall difficulty distribution.
+   */
+  static async getExamDifficultyInsights(examId: string) {
+    const exam = await prisma.exam.findUnique({
+      where: { id: examId },
+      include: {
+        questionBank: {
+          include: {
+            questions: {
+              orderBy: { order: 'asc' },
+            },
+          },
+        },
+        attempts: {
+          where: { status: { in: ['COMPLETED', 'NEEDS_REVIEW'] } },
+          include: {
+            answers: true,
+          },
+        },
+      },
+    });
+
+    if (!exam || !exam.questionBank) return null;
+
+    const insights = exam.questionBank.questions.map((q) => {
+      const answers = exam.attempts
+        .map((a) => a.answers.find((ans) => ans.questionId === q.id))
+        .filter((ans) => ans && ans.score !== null);
+
+      const totalGraded = answers.length;
+      const totalCorrect = answers.filter((ans) => ans?.isCorrect).length;
+      const successRate = totalGraded > 0 ? (totalCorrect / totalGraded) * 100 : 0;
+
+      return {
+        questionId: q.id,
+        content: q.content.substring(0, 100),
+        successRate,
+        totalGraded,
+        isKiller: successRate < 30 && totalGraded > 5,
+      };
+    });
+
+    return {
+      examId,
+      title: exam.title,
+      questionInsights: insights.sort((a, b) => a.successRate - b.successRate),
+      averageSuccessRate: insights.length > 0 ? insights.reduce((sum, i) => sum + i.successRate, 0) / insights.length : 0,
+    };
+  }
 }

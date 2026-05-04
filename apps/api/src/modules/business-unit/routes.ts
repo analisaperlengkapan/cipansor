@@ -49,6 +49,18 @@ router.get(
   businessUnitController.getPerformance
 );
 
+// GET /api/business-units/:id/efficiency - Get business unit efficiency (admin/staff only)
+router.get(
+  '/:id/efficiency',
+  authorize(
+    RoleCode.SUPER_ADMIN,
+    RoleCode.YAYASAN_ADMIN, RoleCode.TKQ_ADMIN, RoleCode.SDIT_ADMIN, RoleCode.SMPIT_ADMIN, RoleCode.SMAQ_ADMIN,
+    RoleCode.TKQ_TATA_USAHA, RoleCode.SDIT_TATA_USAHA, RoleCode.SMPIT_TATA_USAHA, RoleCode.SMAQ_TATA_USAHA,
+    'UNIT_ADMIN', 'STAFF', // Legacy pre-migration token values
+  ),
+  businessUnitController.getEfficiency
+);
+
 // POST /api/business-units - Create business unit (admin only)
 router.post(
   '/',

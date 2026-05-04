@@ -171,4 +171,63 @@ export const businessUnitService = {
 
     return { revenue: 0, transactionCount: 0 };
   }
+
+  /**
+   * Get business efficiency metrics.
+   * Best Practice: Analyzing operational performance beyond simple revenue.
+   */
+  async getBusinessEfficiency(id: string, unitId: string | undefined) {
+    const where: Prisma.BusinessUnitWhereInput = { id };
+    if (unitId) where.unitId = unitId;
+
+    const bu = await prisma.businessUnit.findFirst({
+      where,
+      include: {
+        canteenItems: {
+          select: {
+            id: true,
+            name: true,
+            stock: true,
+            _count: { select: { transactionItems: true } },
+          },
+        },
+      },
+    });
+
+    if (!bu) throw Errors.notFound('Business Unit');
+
+    if (bu.type === 'CANTEEN') {
+      const itemEfficiency = bu.canteenItems.map((item) => {
+        const turnover = item._count.transactionItems;
+        // Efficiency Score: (Turnover / Stock) * 100 - simple proxy for stock velocity
+        const score = item.stock > 0 ? (turnover / item.stock) * 100 : turnover > 0 ? 100 : 0;
+        return {
+          id: item.id,
+          name: item.name,
+          stock: item.stock,
+          turnover,
+          efficiencyScore: Math.round(score * 10) / 10,
+        };
+      });
+
+      const avgEfficiency = itemEfficiency.length > 0
+        ? itemEfficiency.reduce((sum, i) => sum + i.efficiencyScore, 0) / itemEfficiency.length
+        : 0;
+
+      return {
+        unitId: id,
+        type: bu.type,
+        overallEfficiency: Math.round(avgEfficiency * 10) / 10,
+        topItems: itemEfficiency.sort((a, b) => b.efficiencyScore - a.efficiencyScore).slice(0, 5),
+        lowItems: itemEfficiency.sort((a, b) => a.efficiencyScore - b.efficiencyScore).slice(0, 5),
+      };
+    }
+
+    return {
+      unitId: id,
+      type: bu.type,
+      overallEfficiency: 100,
+      message: 'Efficiency metrics currently only available for CANTEEN'
+    };
+  }
 };

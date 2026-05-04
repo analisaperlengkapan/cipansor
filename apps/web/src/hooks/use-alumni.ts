@@ -215,6 +215,25 @@ export function useAlumni(params?: {
   });
 }
 
+export function useAlumniOutcomeAnalytics(unitId?: string) {
+  return useQuery({
+    queryKey: ["alumni-outcome-analytics", unitId],
+    queryFn: async () => {
+      const response = await api.get("/alumni/stats/outcome", {
+        params: { unitId },
+      });
+      return response.data.data as {
+        id: string;
+        name: string;
+        avgGrade: number | null;
+        maxJuz: number;
+        outcomeScore: number;
+        graduationYear: number;
+      }[];
+    },
+  });
+}
+
 export function useAlumniDetail(id: string) {
   return useQuery({
     queryKey: ["alumni", id],

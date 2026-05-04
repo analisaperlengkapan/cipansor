@@ -29,7 +29,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  useCreateAssessment,
+  useAssessmentCreation as useCreateAssessment,
   ASSESSMENT_TYPES,
   ASSESSMENT_TYPE_LABELS,
   useClasses,

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
-import { useTalentProfile, useCreateAssessment, useEnrollTraining } from "@/hooks/use-talenta";
+import { useTalentProfile, useCreateTalentAssessment as useCreateAssessment, useEnrollTraining } from "@/hooks/use-talenta";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";

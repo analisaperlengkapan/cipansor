@@ -312,7 +312,7 @@ function DifficultyInsightsTab({ examId }: { examId: string }) {
             <CardTitle className="text-sm font-medium">Rata-rata Keberhasilan</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{insights.summary?.averageSuccessRate}%</div>
+            <div className="text-2xl font-bold">{insights.averageSuccessRate != null ? `${Math.round(insights.averageSuccessRate)}%` : '-'}</div>
           </CardContent>
         </Card>
         <Card className="border-l-4 border-l-rose-500">
@@ -322,7 +322,7 @@ function DifficultyInsightsTab({ examId }: { examId: string }) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{insights.killerQuestions?.length || 0} Soal</div>
+            <div className="text-2xl font-bold">{insights.questionInsights?.filter((q: any) => q.isKiller).length || 0} Soal</div>
           </CardContent>
         </Card>
         <Card>
@@ -330,7 +330,9 @@ function DifficultyInsightsTab({ examId }: { examId: string }) {
             <CardTitle className="text-sm font-medium">Soal Paling Sulit</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">Q{insights.summary?.hardestQuestion?.index || '-'}</div>
+            <div className="text-2xl font-bold text-sm truncate" title={insights.questionInsights?.[0]?.content || '-'}>
+              {insights.questionInsights?.[0]?.content?.substring(0, 30) || '-'}
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -341,29 +343,32 @@ function DifficultyInsightsTab({ examId }: { examId: string }) {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {insights.questions?.map((q: any) => (
-              <div key={q.id} className="p-4 border rounded-lg flex flex-col gap-2 bg-slate-50/50">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-mono text-indigo-300">Q{q.index}</span>
-                  <Badge variant={q.difficulty === 'Hard' ? 'destructive' : q.difficulty === 'Easy' ? 'default' : 'secondary'} className="text-[10px] h-4">
-                    {q.difficulty}
-                  </Badge>
-                </div>
-                <p className="text-xs text-muted-foreground line-clamp-1 italic">"{q.content}"</p>
-                <div className="mt-2">
-                  <div className="flex justify-between text-[10px] mb-1">
-                    <span>Success Rate</span>
-                    <span className="font-bold">{q.successRate}%</span>
+            {insights.questionInsights?.map((q: any, index: number) => {
+              const difficulty = q.successRate < 40 ? 'Hard' : q.successRate > 80 ? 'Easy' : 'Medium';
+              return (
+                <div key={q.questionId} className="p-4 border rounded-lg flex flex-col gap-2 bg-slate-50/50">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-mono text-indigo-300">Q{index + 1}</span>
+                    <Badge variant={difficulty === 'Hard' ? 'destructive' : difficulty === 'Easy' ? 'default' : 'secondary'} className="text-[10px] h-4">
+                      {difficulty}
+                    </Badge>
                   </div>
-                  <div className="w-full bg-slate-200 h-1 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full ${q.successRate < 40 ? 'bg-rose-500' : q.successRate > 80 ? 'bg-emerald-500' : 'bg-blue-500'}`}
-                      style={{ width: `${q.successRate}%` }}
-                    />
+                  <p className="text-xs text-muted-foreground line-clamp-1 italic">"{q.content}"</p>
+                  <div className="mt-2">
+                    <div className="flex justify-between text-[10px] mb-1">
+                      <span>Success Rate</span>
+                      <span className="font-bold">{Math.round(q.successRate)}%</span>
+                    </div>
+                    <div className="w-full bg-slate-200 h-1 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full ${q.successRate < 40 ? 'bg-rose-500' : q.successRate > 80 ? 'bg-emerald-500' : 'bg-blue-500'}`}
+                        style={{ width: `${q.successRate}%` }}
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </CardContent>
       </Card>

@@ -616,25 +616,19 @@ export default function Student360Page() {
                             <div className="flex-1 space-y-3">
                                <div className="grid grid-cols-2 gap-4">
                                   <div>
-                                     <p className="text-xs font-bold text-slate-500 uppercase">Indeks Keberagaman</p>
-                                     <Progress value={socialAnalytics?.diversityIndex || 0} className="h-1.5 mt-1" />
-                                     <p className="text-[10px] text-slate-400 mt-1">{socialAnalytics?.diversityIndex}% (Asal Daerah)</p>
+                                     <p className="text-xs font-bold text-slate-500 uppercase">Total Anggota Kamar</p>
+                                     <p className="text-lg font-bold text-slate-700 mt-1">{socialAnalytics?.members?.length || 0} Santri</p>
                                   </div>
                                   <div>
-                                     <p className="text-xs font-bold text-slate-500 uppercase">Sinyal Kesehatan</p>
-                                     <div className="flex gap-1 mt-1">
-                                        {[...Array(3)].map((_, i) => (
-                                           <div key={i} className={`h-1.5 flex-1 rounded-full ${i < (3 - (socialAnalytics?.healthSignals || 0)) ? 'bg-emerald-500' : 'bg-rose-500'}`} />
-                                        ))}
-                                     </div>
-                                     <p className="text-[10px] text-slate-400 mt-1">{socialAnalytics?.healthSignals === 0 ? 'Kondisi Prima' : 'Perlu Perhatian'}</p>
+                                     <p className="text-xs font-bold text-slate-500 uppercase">Status Kamar</p>
+                                     <p className="text-sm font-semibold mt-1 text-slate-600">{socialAnalytics?.status || 'NORMAL'}</p>
                                   </div>
                                </div>
                                <div className="p-3 bg-white rounded-lg border border-indigo-100 text-xs">
-                                  <p className="font-bold text-indigo-900 mb-1">Teman Sekamar ({socialAnalytics?.roommates?.length || 0}):</p>
+                                  <p className="font-bold text-indigo-900 mb-1">Teman Sekamar ({socialAnalytics?.members?.length || 0}):</p>
                                   <div className="flex flex-wrap gap-1">
-                                     {socialAnalytics?.roommates?.map((r: any) => (
-                                        <Badge key={r.id} variant="outline" className="text-[10px]">{r.name} ({r.province})</Badge>
+                                     {socialAnalytics?.members?.map((r: any) => (
+                                        <Badge key={r.studentId} variant="outline" className="text-[10px]">{r.name}</Badge>
                                      ))}
                                   </div>
                                </div>

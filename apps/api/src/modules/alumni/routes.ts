@@ -27,6 +27,25 @@ router.use(authenticate);
  *         description: Alumni tracer study statistics
  */
 router.get('/stats/tracer', controller.getTracerStudyStats);
+/**
+ * @swagger
+ * /api/alumni/stats/outcome:
+ *   get:
+ *     summary: Get alumni outcome analytics (career/education correlation)
+ *     tags: [Alumni]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: unitId
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Alumni outcome analytics data
+ *       403:
+ *         description: Access denied to cross-unit data
+ */
 router.get('/stats/outcome', controller.getOutcomeAnalytics);
 
 /**

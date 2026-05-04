@@ -182,9 +182,9 @@ test.describe("CBT Exams & Grading", () => {
       });
     });
 
-    // Mock Insights
+    // Mock Insights — shape matches the actual API: { averageSuccessRate, questionInsights }
     await page.route("**/api/cbt/exams/exam-1/difficulty-insights", async (route) => {
-        await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ success: true, data: { summary: { averageSuccessRate: 75 } } }) });
+        await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ success: true, data: { averageSuccessRate: 75, questionInsights: [{ questionId: "q-1", content: "Soal ujian contoh", successRate: 75, totalGraded: 20, isKiller: false }] } }) });
     });
     await page.route("**/api/cbt/exams/exam-1/topic-mastery", async (route) => {
         await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ success: true, data: { items: [] } }) });

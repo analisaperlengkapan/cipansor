@@ -31,18 +31,6 @@ export interface RecentLead {
   createdAt: string;
   status: string;
   source: string | null;
-  campaign?: {
-    name: string;
-    code: string;
-  } | null;
-}
-
-export interface RecentLead {
-  id: string;
-  fullName: string;
-  createdAt: string;
-  status: string;
-  source: string | null;
   leadScore?: number;
   quranAbility?: string;
   campaign?: {

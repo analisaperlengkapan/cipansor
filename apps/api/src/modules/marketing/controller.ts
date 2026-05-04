@@ -52,6 +52,19 @@ export const getROIStats = async (req: Request, res: Response, next: NextFunctio
   }
 };
 
+export const getHighPriorityLeads = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { unitId, limit } = req.query;
+    const leads = await marketingService.getHighPriorityLeads(
+      unitId as string,
+      limit ? parseInt(limit as string) : 10
+    );
+    res.json({ success: true, data: leads });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const getRecentLeads = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { unitId, limit } = req.query;

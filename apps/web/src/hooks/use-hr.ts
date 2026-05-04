@@ -450,7 +450,7 @@ export function useRetentionRisk(unitId?: string) {
     queryKey: ["hr-retention-risk", unitId],
     queryFn: async () => {
       const response = await api.get("/hr/analytics/retention-risk", {
-        params: { unitId },
+        params: unitId ? { unitId } : undefined,
       });
       return response.data.data as {
         userId: string;
@@ -461,7 +461,10 @@ export function useRetentionRisk(unitId?: string) {
         factors: string[];
       }[];
     },
-    enabled: !!unitId,
+    // Always enable; the backend scopes to the authenticated user's unit
+    // when no unitId is provided (non-SUPER_ADMIN). SUPER_ADMIN must pick
+    // a unit explicitly via the unitFilter control.
+    enabled: true,
   });
 }
 

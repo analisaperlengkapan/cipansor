@@ -445,7 +445,7 @@ function SuccessionFormDialog({ onClose, initialData }: { onClose: () => void; i
                       <div className="flex flex-col">
                         <span className="font-bold flex items-center gap-1">
                           {s.name}
-                          {s.shariaMatch && <CheckCircle2 className="h-3 w-3 text-green-600" />}
+                          {s.shariaMatch && <CheckCircle2 className="h-3 w-3 text-green-600" title="Memenuhi kriteria syariah" />}
                         </span>
                         <span className="text-muted-foreground">{s.currentRole} • {s.category}</span>
                       </div>

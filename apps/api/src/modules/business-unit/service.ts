@@ -170,7 +170,7 @@ export const businessUnitService = {
     }
 
     return { revenue: 0, transactionCount: 0 };
-  }
+  },
 
   /**
    * Get business efficiency metrics.
@@ -215,7 +215,7 @@ export const businessUnitService = {
         : 0;
 
       return {
-        unitId: id,
+        unitId: bu.unitId,
         type: bu.type,
         overallEfficiency: Math.round(avgEfficiency * 10) / 10,
         topItems: itemEfficiency.sort((a, b) => b.efficiencyScore - a.efficiencyScore).slice(0, 5),
@@ -224,7 +224,7 @@ export const businessUnitService = {
     }
 
     return {
-      unitId: id,
+      unitId: bu.unitId,
       type: bu.type,
       overallEfficiency: 100,
       message: 'Efficiency metrics currently only available for CANTEEN'

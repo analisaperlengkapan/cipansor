@@ -166,6 +166,50 @@ export const getRecentLeads = async (unitId?: string, limit: number = 5) => {
   });
 };
 
+export const getHighPriorityLeads = async (unitId?: string, limit: number = 10) => {
+  const where: Prisma.RegistrantWhereInput = {
+    status: { in: ['REGISTERED', 'TESTED', 'INTERVIEWED'] as any },
+  };
+  if (unitId) {
+    where.admissionPeriod = { unitId };
+  }
+
+  // Fetch a pool of candidates so we can score and sort them
+  const registrants = await prisma.registrant.findMany({
+    where,
+    orderBy: { createdAt: 'desc' },
+    take: 100,
+    select: {
+      id: true,
+      fullName: true,
+      createdAt: true,
+      status: true,
+      source: true,
+      quranAbility: true,
+      memorizedJuz: true,
+      campaign: { select: { name: true, code: true } },
+    },
+  });
+
+  // Compute a simple priority score: quranAbility + memorized juz bonus
+  const quranAbilityScore: Record<string, number> = {
+    TAHFIDZ: 40,
+    TARTIL: 25,
+    LANCAR: 15,
+    IQRA: 5,
+    BELUM_BISA: 0,
+  };
+
+  const scored = registrants.map((r) => {
+    const base = 50;
+    const quranBonus = r.quranAbility ? (quranAbilityScore[r.quranAbility] ?? 0) : 0;
+    const juzBonus = r.memorizedJuz ? Math.min(r.memorizedJuz * 2, 20) : 0;
+    return { ...r, leadScore: Math.min(base + quranBonus + juzBonus, 100) };
+  });
+
+  return scored.sort((a, b) => b.leadScore - a.leadScore).slice(0, limit);
+};
+
 export const getUpcomingFollowUps = async (unitId?: string, limit: number = 5) => {
   const whereRegistrant: Prisma.RegistrantWhereInput = {};
   if (unitId) {
@@ -202,5 +246,6 @@ export default {
   getInteractionsByRegistrant,
   getDashboardStats,
   getRecentLeads,
+  getHighPriorityLeads,
   getUpcomingFollowUps,
 };

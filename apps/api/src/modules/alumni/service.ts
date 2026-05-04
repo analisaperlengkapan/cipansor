@@ -65,6 +65,54 @@ export async function getAlumni(query: AlumniQueryInput) {
   };
 }
 
+/**
+ * Get analytics correlating alumni outcome (career/education) with school performance (tahfidz/academic).
+ * Best Practice: Feedback loop for curriculum improvement.
+ */
+export async function getAlumniOutcomeAnalytics(unitId?: string) {
+  const alumni = await prisma.alumni.findMany({
+    where: {
+      deletedAt: null,
+      ...(unitId && { unitId }),
+    },
+    include: {
+      student: {
+        include: {
+          grades: { select: { percentage: true } },
+          tahfidzRecords: { select: { juz: true } },
+        },
+      },
+      careers: true,
+      educations: true,
+    },
+  });
+
+  return alumni.map((alm) => {
+    const avgGrade = alm.student?.grades.length
+      ? alm.student.grades.reduce((sum, g) => sum + Number(g.percentage), 0) / alm.student.grades.length
+      : null;
+
+    const maxJuz = alm.student?.tahfidzRecords.length
+      ? Math.max(...alm.student.tahfidzRecords.map(r => r.juz))
+      : alm.tahfidzLevel ? (parseInt(alm.tahfidzLevel, 10) || 0) : 0;
+
+    const hasHigherEd = alm.educations.some(e =>
+      e.degree.includes('S1') || e.degree.includes('Bachelor') || e.degree.includes('S2')
+    );
+
+    const hasCareer = alm.careers.length > 0;
+
+    return {
+      id: alm.id,
+      name: alm.name,
+      avgGrade,
+      maxJuz,
+      outcomeScore: (hasHigherEd ? 50 : 0) + (hasCareer ? 50 : 0),
+      graduationYear: alm.graduationYear,
+    };
+  });
+}
+
 export async function getTracerStudyStats(unitId?: string) {
   const where: Prisma.AlumniWhereInput = {
     deletedAt: null,
@@ -266,6 +314,65 @@ export async function convertFromStudent(studentId: string, data: ConvertFromStu
   ]);
 
   return alumni;
+}
+
+export async function batchGraduateStudents(data: {
+  studentIds: string[];
+  graduationDate: string;
+  graduationYear: number;
+  notes?: string;
+}) {
+  return prisma.$transaction(async (tx) => {
+    const results = [];
+    for (const studentId of data.studentIds) {
+      const student = await tx.student.findUnique({
+        where: { id: studentId },
+        include: { user: true, enrollments: { where: { status: 'active' }, include: { class: true }, take: 1 } },
+      });
+
+      if (!student) continue;
+
+      const count = await tx.alumni.count({
+        where: { graduationYear: data.graduationYear },
+      });
+      const registrationNo = `ALM-${data.graduationYear}-${String(count + 1).padStart(4, '0')}`;
+
+      const alumni = await tx.alumni.create({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        data: {
+          studentId: student.id,
+          unitId: student.unitId,
+          registrationNo,
+          name: student.user.name,
+          gender: student.gender,
+          birthPlace: student.birthPlace,
+          birthDate: student.birthDate,
+          graduationYear: data.graduationYear,
+          graduationDate: new Date(data.graduationDate),
+          lastClass: student.enrollments[0]?.class.name || '-',
+          email: student.user.email,
+          phone: student.parentPhone,
+          address: student.address,
+          notes: data.notes,
+        } as any,
+      });
+
+      await tx.student.update({
+        where: { id: studentId },
+        data: { status: 'alumni', graduateYear: data.graduationYear },
+      });
+
+      // Using classEnrollment instead of enrollment to match common schema naming
+      // or check if it should be studentEnrollment/classEnrollment
+      await tx.classEnrollment.updateMany({
+        where: { studentId, status: 'active' },
+        data: { status: 'completed' },
+      });
+
+      results.push(alumni);
+    }
+    return results;
+  });
 }
 
 // ==================== CAREER ====================

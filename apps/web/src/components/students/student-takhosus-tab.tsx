@@ -12,7 +12,7 @@ export function StudentTakhosusTab({ studentId }: { studentId: string }) {
     return <div className="p-8 text-center animate-pulse">Memuat Data Takhosus...</div>;
   }
 
-  const enrollmentList = enrollments?.data || enrollments || [];
+  const enrollmentList = (enrollments as any)?.data || (Array.isArray(enrollments) ? enrollments : enrollments ? [enrollments] : []);
   const sanadList = sanadRecords?.data || [];
 
   return (

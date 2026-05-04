@@ -18,6 +18,11 @@ router.get(
   marketingController.getStats
 );
 router.get(
+  '/leads/high-priority',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.YAYASAN_ADMIN),
+  marketingController.getHighPriorityLeads
+);
+router.get(
   '/leads/recent',
   authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.YAYASAN_ADMIN),
   marketingController.getRecentLeads

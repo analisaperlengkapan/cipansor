@@ -485,6 +485,7 @@ export interface SanadParams {
   limit?: number;
   enrollmentId?: string;
   teacherId?: string;
+  studentId?: string;
   juz?: number;
 }
 

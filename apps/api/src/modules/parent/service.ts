@@ -2,6 +2,7 @@ import { prisma } from '../../lib/prisma';
 import { ApiError, ErrorCode } from '../../middleware/error';
 import { AttendanceStatus, Invoice, StudentParent } from '@prisma/client';
 import { getStudentIbadahStats } from '../ibadah/ibadah.service';
+import * as DormitoryService from '../dormitories/service';
 
 type StudentParentWithStudent = Awaited<ReturnType<typeof prisma.studentParent.findMany>>[0];
 type GradeWithRelations = Awaited<ReturnType<typeof prisma.grade.findMany>>[0];
@@ -831,7 +832,44 @@ export class ParentService {
       orderBy: [{ studentId: 'asc' }, { recordedAt: 'desc' }],
     });
 
-    // Map data back to children
+    // 5. Bulk fetch active academic years for all units involved
+    const unitIds = [...new Set(children.map((c) => c.unitId))];
+    const activeYears = await prisma.academicYear.findMany({
+      where: { unitId: { in: unitIds }, isActive: true },
+    });
+
+    // 6. Bulk fetch room assignments
+    const roomAssignments = await prisma.roomAssignment.findMany({
+      where: { studentId: { in: childrenIds }, isActive: true },
+      select: { studentId: true, roomId: true },
+    });
+
+    // 7. Batch fetch average academic grade per student for their active year
+    const activeYearIds = activeYears.map((ay) => ay.id);
+    const studentGradeScores = await prisma.grade.groupBy({
+      by: ['studentId'],
+      where: { studentId: { in: childrenIds }, academicYearId: { in: activeYearIds } },
+      _avg: { percentage: true },
+    });
+
+    // 8. Batch fetch total violation points per student
+    const studentViolationPoints = await prisma.violation.groupBy({
+      by: ['studentId'],
+      where: { studentId: { in: childrenIds } },
+      _sum: { points: true },
+    });
+
+    // 9. Fetch room social analytics once per unique room (avoid N+1)
+    const uniqueRoomIds = [...new Set(roomAssignments.map((ra) => ra.roomId))];
+    const roomAnalyticsEntries = await Promise.all(
+      uniqueRoomIds.map(async (roomId) => {
+        const analytics = await DormitoryService.getRoomSocialAnalytics(roomId);
+        return [roomId, analytics] as const;
+      })
+    );
+    const roomAnalyticsMap = new Map(roomAnalyticsEntries);
+
+    // Map data back to children (synchronous now – no per-child DB calls)
     const summary = children.map((child) => {
       // Filter recent attendance for this child, take 7
       const recentAttendance = allAttendances.filter((a) => a.studentId === child.id).slice(0, 7);
@@ -843,12 +881,36 @@ export class ParentService {
 
       const lastTahfidz = lastTahfidzRecords.find((t) => t.studentId === child.id);
 
+      // Compute holistic score from bulk-fetched data (academic + behavior + tahfidz)
+      const gradeAvg = studentGradeScores.find((g) => g.studentId === child.id)?._avg.percentage;
+      const violationPts = Number(
+        studentViolationPoints.find((v) => v.studentId === child.id)?._sum.points || 0
+      );
+      const academicScore = gradeAvg != null ? Number(gradeAvg) : null;
+      const behaviorScore = Math.max(0, 100 - violationPts);
+      const maxJuz = lastTahfidz?.juz || 0;
+      const tahfidzScore = maxJuz > 0 ? Math.min(100, (maxJuz / 30) * 100) : null;
+      const holisticDims = [academicScore, tahfidzScore, behaviorScore].filter(
+        (d): d is number => d !== null
+      );
+      const holisticScore =
+        holisticDims.length > 0
+          ? holisticDims.reduce((sum, d) => sum + d, 0) / holisticDims.length
+          : null;
+
+      // Boarding harmony from deduplicated room analytics map
+      const assignment = roomAssignments.find((ra) => ra.studentId === child.id);
+      const boardingHarmony = assignment ? (roomAnalyticsMap.get(assignment.roomId) ?? null) : null;
+
       return {
         child,
         recentAttendance,
         pendingInvoices: pendingInvoiceCount,
         activePermits: activePermitCount,
         lastTahfidz: lastTahfidz || null,
+        holisticScore: holisticScore !== null ? Math.round(holisticScore * 10) / 10 : null,
+        holisticInterpretation: null,
+        boardingHarmonyScore: boardingHarmony?.harmonyScore ?? null,
       };
     });
 
@@ -856,9 +918,6 @@ export class ParentService {
     const unreadNotifications = await prisma.notification.count({
       where: { userId: parentId, status: 'UNREAD' },
     });
-
-    // Get recent announcements
-    const unitIds = [...new Set(children.map((c) => c.unitId))];
 
     const recentAnnouncements = await prisma.announcement.findMany({
       where: {

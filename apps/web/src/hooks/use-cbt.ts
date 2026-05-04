@@ -107,6 +107,17 @@ export const useTopicMastery = (examId: string) => {
   });
 };
 
+export const useExamDifficultyInsights = (examId: string) => {
+  return useQuery({
+    queryKey: ["exam-difficulty-insights", examId],
+    queryFn: async () => {
+      const { data } = await api.get(`/cbt/exams/${examId}/difficulty-insights`);
+      return data.data;
+    },
+    enabled: !!examId,
+  });
+};
+
 // Teacher Grading
 
 export const useAttemptGrading = (attemptId: string) => {

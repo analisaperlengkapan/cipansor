@@ -31,6 +31,30 @@ export async function getAlumni(req: Request, res: Response, next: NextFunction)
   }
 }
 
+export async function getOutcomeAnalytics(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { unitId } = req.query;
+    const user = (req as any).user;
+
+    // Enforce tenant scope: non-super-admin users can only view their own unit's outcomes
+    let effectiveUnitId = unitId as string | undefined;
+    if (user && user.role !== 'SUPER_ADMIN' && user.role !== 'YAYASAN_ADMIN') {
+      if (!user.unitId) {
+        return res.status(403).json({ success: false, error: { code: 'FORBIDDEN', message: 'Access to this unit is not allowed' } });
+      }
+      if (effectiveUnitId && effectiveUnitId !== user.unitId) {
+        return res.status(403).json({ success: false, error: { code: 'FORBIDDEN', message: 'Access to this unit is not allowed' } });
+      }
+      effectiveUnitId = user.unitId;
+    }
+
+    const data = await service.getAlumniOutcomeAnalytics(effectiveUnitId);
+    res.json({ success: true, data });
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function getAlumniById(req: Request, res: Response, next: NextFunction) {
   try {
     const { id } = req.params;

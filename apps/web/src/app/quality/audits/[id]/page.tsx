@@ -6,7 +6,7 @@ import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 import { useAuditDetails, useUpdateAuditItem } from "@/hooks/use-quality";
 import { PageHeader } from "@/components/shared/page-header";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "src/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

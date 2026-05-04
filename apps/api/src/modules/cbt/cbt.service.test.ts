@@ -2,6 +2,20 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { prisma } from '../../lib/prisma';
 import { CBTService } from './cbt.service';
 
+vi.mock('@prisma/client', () => ({
+  Prisma: {
+    TransactionIsolationLevel: {
+      Serializable: 'Serializable',
+    },
+    Decimal: vi.fn((val) => val),
+  },
+  QuestionType: {
+    MULTIPLE_CHOICE: 'MULTIPLE_CHOICE',
+    TRUE_FALSE: 'TRUE_FALSE',
+    ESSAY: 'ESSAY',
+  },
+}));
+
 // Mock external dependencies
 vi.mock('../../lib/prisma', () => ({
   prisma: {
@@ -183,19 +197,27 @@ describe('CBT Service', () => {
               id: 'q2',
               points: 10,
               content: 'Question 2 content',
-            }
-          ]
+            },
+          ],
         },
         attempts: [
           {
             id: 'att1',
             status: 'COMPLETED',
             answers: [
-              { questionId: 'q1', score: 10 },
-              { questionId: 'q2', score: 5 }
-            ]
-          }
-        ]
+              {
+                questionId: 'q1',
+                score: 10,
+                question: { points: 10, learningObjective: { id: 'tp1', code: 'TP1', description: 'Desc' } },
+              },
+              {
+                questionId: 'q2',
+                score: 5,
+                question: { points: 10, learningObjective: { id: 'tp1', code: 'TP1', description: 'Desc' } },
+              },
+            ],
+          },
+        ],
       };
 
       vi.mocked(prisma.exam.findUnique).mockResolvedValue(mockExam as any);
@@ -223,26 +245,42 @@ describe('CBT Service', () => {
           questions: [
             { id: 'q1', points: 10, content: 'MC Question' },
             { id: 'q2', points: 20, content: 'Essay Question' },
-          ]
+          ],
         },
         attempts: [
           {
             id: 'att1',
             status: 'NEEDS_REVIEW',
             answers: [
-              { questionId: 'q1', score: 10 },  // MC auto-graded
-              { questionId: 'q2', score: null },  // Essay ungraded
-            ]
+              {
+                questionId: 'q1',
+                score: 10,
+                question: { points: 10, learningObjective: { id: 'tp1', code: 'TP1', description: 'Desc' } },
+              }, // MC auto-graded
+              {
+                questionId: 'q2',
+                score: null,
+                question: { points: 20, learningObjective: { id: 'tp2', code: 'TP2', description: 'Desc' } },
+              }, // Essay ungraded
+            ],
           },
           {
             id: 'att2',
             status: 'COMPLETED',
             answers: [
-              { questionId: 'q1', score: 10 },
-              { questionId: 'q2', score: 15 },
-            ]
-          }
-        ]
+              {
+                questionId: 'q1',
+                score: 10,
+                question: { points: 10, learningObjective: { id: 'tp1', code: 'TP1', description: 'Desc' } },
+              },
+              {
+                questionId: 'q2',
+                score: 15,
+                question: { points: 20, learningObjective: { id: 'tp2', code: 'TP2', description: 'Desc' } },
+              },
+            ],
+          },
+        ],
       };
 
       vi.mocked(prisma.exam.findUnique).mockResolvedValue(mockExam as any);

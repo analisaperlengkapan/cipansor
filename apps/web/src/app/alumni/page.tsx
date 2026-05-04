@@ -46,11 +46,22 @@ import {
   useCreateAlumni,
   useVerifyAlumni,
   useCreateAlumniEvent,
+  useAlumniOutcomeAnalytics,
   ALUMNI_STATUSES,
   ALUMNI_STATUS_LABELS,
   type AlumniStatus,
 } from "@/hooks";
 import { AlumniDashboard } from "@/components/alumni/alumni-dashboard";
+import {
+  ScatterChart,
+  Scatter,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RechartsTooltip,
+  ResponsiveContainer,
+  ZAxis,
+} from "recharts";
 
 const statusColors: Record<AlumniStatus, string> = {
   REGISTERED: "bg-blue-100 text-blue-800",
@@ -99,6 +110,7 @@ export default function AlumniPage() {
   });
 
   const { data: events, isLoading: eventsLoading } = useAlumniEvents();
+  const { data: outcomeData } = useAlumniOutcomeAnalytics();
 
   const createAlumni = useCreateAlumni();
   const verifyAlumni = useVerifyAlumni();
@@ -185,6 +197,7 @@ export default function AlumniPage() {
           <TabsTrigger value="alumni">Data Alumni</TabsTrigger>
           <TabsTrigger value="events">Acara Alumni</TabsTrigger>
           <TabsTrigger value="tracer">Dashboard Tracer</TabsTrigger>
+          <TabsTrigger value="outcome">Analisis Outcome</TabsTrigger>
         </TabsList>
 
         <TabsContent value="tracer" className="space-y-4">
@@ -473,6 +486,46 @@ export default function AlumniPage() {
                     )}
                   </TableBody>
                 </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="outcome" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Outcome Correlation Analysis</CardTitle>
+              <CardDescription>
+                Korelasi antara performa akademik (Rata-rata Nilai) dengan skor outcome alumni (Karir & Pendidikan Lanjut)
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="h-[400px]">
+              {outcomeData && outcomeData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+                    <CartesianGrid />
+                    <XAxis
+                      type="number"
+                      dataKey="avgGrade"
+                      name="Rata-rata Nilai"
+                      unit="%"
+                      domain={[0, 100]}
+                    />
+                    <YAxis
+                      type="number"
+                      dataKey="outcomeScore"
+                      name="Outcome Score"
+                      domain={[0, 100]}
+                    />
+                    <ZAxis type="number" dataKey="maxJuz" range={[50, 400]} name="Hafalan" unit=" Juz" />
+                    <RechartsTooltip cursor={{ strokeDasharray: '3 3' }} />
+                    <Scatter name="Alumni" data={outcomeData} fill="#8884d8" />
+                  </ScatterChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-full text-muted-foreground">
+                  Belum ada data korelasi yang cukup
+                </div>
               )}
             </CardContent>
           </Card>

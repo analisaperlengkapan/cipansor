@@ -408,13 +408,15 @@ export const sanadService = {
     limit: number;
     enrollmentId?: string;
     teacherId?: string;
+    studentId?: string;
   }) {
-    const { page, limit, enrollmentId, teacherId } = params;
+    const { page, limit, enrollmentId, teacherId, studentId } = params;
     const skip = (page - 1) * limit;
 
     const where = {
       ...(enrollmentId && { enrollmentId }),
       ...(teacherId && { teacherId }),
+      ...(studentId && { enrollment: { studentId } }),
     };
 
     const [data, total] = await Promise.all([

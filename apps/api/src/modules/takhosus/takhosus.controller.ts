@@ -236,13 +236,14 @@ export const sanadController = {
    */
   async list(req: Request, res: Response, next: NextFunction) {
     try {
-      const { page = 1, limit = 10, enrollmentId, teacherId } = req.query;
+      const { page = 1, limit = 10, enrollmentId, teacherId, studentId } = req.query;
 
       const result = await sanadService.findAll({
         page: Number(page),
         limit: Number(limit),
         enrollmentId: enrollmentId as string,
         teacherId: teacherId as string,
+        studentId: studentId as string,
       });
 
       res.json(

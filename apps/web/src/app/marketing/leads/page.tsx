@@ -51,7 +51,7 @@ export default function LeadsPage() {
                   </TableCell>
                 </TableRow>
               ) : (
-                registrations.map((reg) => (
+                registrations.map((reg: any) => (
                   <TableRow key={reg.id}>
                     <TableCell>
                       <div className="font-medium">{reg.fullName}</div>

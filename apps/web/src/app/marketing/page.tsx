@@ -10,6 +10,7 @@ import {
   useUpdateCampaign,
   useRecentLeads,
   useUpcomingFollowUps,
+  useHighPriorityLeads,
 } from "@/hooks/use-marketing";
 import { useAuth } from "@/hooks/use-auth";
 import {
@@ -151,6 +152,7 @@ export default function MarketingDashboard() {
   );
   const { data: recentLeads } = useRecentLeads(user?.unitId);
   const { data: followUps } = useUpcomingFollowUps(user?.unitId);
+  const { data: highPriorityLeads } = useHighPriorityLeads(user?.unitId);
   const createCampaign = useCreateCampaign();
   const updateCampaign = useUpdateCampaign();
 
@@ -358,6 +360,10 @@ export default function MarketingDashboard() {
             <BarChart3 className="mr-2 h-4 w-4" />
             Dashboard
           </TabsTrigger>
+          <TabsTrigger value="leads">
+            <Users className="mr-2 h-4 w-4" />
+            Leads & Prioritas
+          </TabsTrigger>
           <TabsTrigger value="campaigns">
             <Megaphone className="mr-2 h-4 w-4" />
             Kampanye
@@ -370,6 +376,40 @@ export default function MarketingDashboard() {
 
         {/* Dashboard Tab */}
         <TabsContent value="dashboard" className="space-y-4">
+          {/* Priority Leads Highlight */}
+          {highPriorityLeads && highPriorityLeads.length > 0 && (
+            <Card className="border-l-4 border-l-orange-500">
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Target className="w-5 h-5 text-orange-500" />
+                    <CardTitle>Prioritas Tindak Lanjut</CardTitle>
+                  </div>
+                  <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
+                    {highPriorityLeads.length} Lead Skor Tinggi
+                  </Badge>
+                </div>
+                <CardDescription>Lead dengan probabilitas konversi tinggi berdasarkan profil dan minat</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {highPriorityLeads.slice(0, 3).map((lead: any) => (
+                    <div key={lead.id} className="p-3 rounded-lg border bg-orange-50/30 flex justify-between items-center">
+                      <div>
+                        <div className="font-semibold text-sm">{lead.fullName}</div>
+                        <div className="text-xs text-muted-foreground">{lead.source} • {lead.quranAbility}</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-lg font-bold text-orange-600">Score: {lead.leadScore}</div>
+                        <Link href={`/marketing/leads/${lead.id}`} className="text-[10px] text-blue-600 hover:underline">Detail →</Link>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           <div className="grid gap-4 md:grid-cols-2">
             <Card>
               <CardHeader>
@@ -618,6 +658,69 @@ export default function MarketingDashboard() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Leads Tab */}
+        <TabsContent value="leads" className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-3">
+            <Card className="md:col-span-2">
+              <CardHeader>
+                <CardTitle>Semua Leads & Prospek</CardTitle>
+                <CardDescription>Daftar pendaftar potensial yang perlu di-follow up</CardDescription>
+              </CardHeader>
+              <CardContent>
+                 <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nama</TableHead>
+                      <TableHead>Skor</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Aksi</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {recentLeads?.map((lead) => (
+                      <TableRow key={lead.id}>
+                        <TableCell>
+                          <div className="font-medium">{lead.fullName}</div>
+                          <div className="text-xs text-muted-foreground">{lead.source}</div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={lead.leadScore && lead.leadScore > 70 ? "default" : "outline"}>
+                            {lead.leadScore || 0}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{lead.status}</TableCell>
+                        <TableCell className="text-right">
+                           <Button variant="ghost" size="sm" asChild>
+                              <Link href={`/marketing/leads/${lead.id}`}>Detail</Link>
+                           </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+
+            <div className="space-y-4">
+               <Card>
+                  <CardHeader>
+                    <CardTitle>Follow-up Hari Ini</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {followUps?.slice(0, 5).map((task) => (
+                      <div key={task.id} className="p-3 border rounded-lg flex flex-col gap-1">
+                        <div className="font-medium text-sm">{task.registrant.fullName}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {format(new Date(task.nextActionDate), "HH:mm")} • {task.registrant.parentPhone}
+                        </div>
+                      </div>
+                    ))}
+                  </CardContent>
+               </Card>
+            </div>
+          </div>
         </TabsContent>
 
         {/* Campaigns Tab */}

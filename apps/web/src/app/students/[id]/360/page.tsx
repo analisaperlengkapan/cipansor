@@ -29,6 +29,7 @@ import { useStudentViolationSummary } from "@/hooks/use-violations";
 import { useStudentFinancialSummary } from "@/hooks/use-finance";
 import { useStudentTahfidzProgress } from "@/hooks/use-tahfidz";
 import { useStudentIbadahStats } from "@/hooks/use-ibadah";
+import { useStudentRoomAssignment, useRoomSocialAnalytics } from "@/hooks/use-dormitory";
 import {
   BarChart,
   Bar,
@@ -55,6 +56,8 @@ export default function Student360Page() {
   const { data: violations, isLoading: loadingViolations } = useStudentViolationSummary(studentId);
   const { data: finance, isLoading: loadingFinance } = useStudentFinancialSummary(studentId);
   const { data: tahfidz, isLoading: loadingTahfidz } = useStudentTahfidzProgress(studentId);
+  const { data: roomAssignment, isLoading: loadingRoom } = useStudentRoomAssignment(studentId);
+  const { data: socialAnalytics, isLoading: loadingSocial } = useRoomSocialAnalytics(roomAssignment?.roomId || "");
 
   // Fallback to active academic year when student.currentClass.academicYear is not populated
   const { data: activeYear } = useActiveAcademicYear();
@@ -130,7 +133,7 @@ export default function Student360Page() {
              {student.photoUrl ? (
                <Image
                  src={student.photoUrl}
-                 alt={student.user?.name || student.name || "Student Photo"}
+                 alt={student.name || "Student Photo"}
                  fill
                  className="object-cover"
                />
@@ -139,7 +142,7 @@ export default function Student360Page() {
              )}
           </div>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">{student.user?.name}</h1>
+            <h1 className="text-3xl font-bold tracking-tight">{student.name}</h1>
             <div className="flex items-center gap-2 mt-1">
               <Badge variant="outline">{student.nis}</Badge>
               <Badge variant="secondary">{student.unit?.name}</Badge>
@@ -160,7 +163,7 @@ export default function Student360Page() {
           <Card className="flex-1 md:w-32 bg-slate-50 border-none shadow-none">
             <CardContent className="p-3 text-center">
                <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Hafalan (Juz)</p>
-               <p className="text-xl font-bold mt-1 text-indigo-600">{tahfidz?.totalJuz || 0}</p>
+               <p className="text-xl font-bold mt-1 text-indigo-600">{tahfidz?.summary?.juzCoveredCount || 0}</p>
             </CardContent>
           </Card>
         </div>
@@ -448,12 +451,12 @@ export default function Student360Page() {
                  <CardContent className="space-y-6">
                    <div className="flex justify-between items-end">
                       <div>
-                        <p className="text-3xl font-bold text-indigo-700">{tahfidz?.totalJuz || 0} <span className="text-sm font-normal text-slate-500">Juz</span></p>
+                        <p className="text-3xl font-bold text-indigo-700">{tahfidz?.summary?.juzCoveredCount || 0} <span className="text-sm font-normal text-slate-500">Juz</span></p>
                         <p className="text-xs text-muted-foreground">Total Hafalan Saat Ini</p>
                       </div>
                       <div className="text-right">
                         <p className="text-sm font-bold">Target: 30 Juz</p>
-                        <Progress value={((tahfidz?.totalJuz || 0) / 30) * 100} className="h-2 w-32 mt-1" />
+                        <Progress value={((tahfidz?.summary?.juzCoveredCount || 0) / 30) * 100} className="h-2 w-32 mt-1" />
                       </div>
                    </div>
 
@@ -549,15 +552,92 @@ export default function Student360Page() {
             </TabsContent>
 
             <TabsContent value="boarding">
-               <Card>
-                 <CardHeader>
-                   <CardTitle>Kehidupan Berasrama</CardTitle>
-                   <CardDescription>Informasi kamar dan dinamika sosial</CardDescription>
-                 </CardHeader>
-                 <CardContent>
-                    <p className="text-sm text-muted-foreground py-10 text-center">Data asrama akan tersedia setelah integrasi modul kamar santri.</p>
-                 </CardContent>
-               </Card>
+               {loadingRoom || (roomAssignment?.roomId && loadingSocial) ? (
+                 <Card>
+                   <CardContent className="flex justify-center py-12">
+                     <Skeleton className="h-[300px] w-full" />
+                   </CardContent>
+                 </Card>
+               ) : !roomAssignment ? (
+                 <Card>
+                    <CardHeader>
+                      <CardTitle>Kehidupan Berasrama</CardTitle>
+                      <CardDescription>Informasi kamar dan dinamika sosial</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                       <p className="text-sm text-muted-foreground py-10 text-center">Santri belum memiliki penempatan kamar.</p>
+                    </CardContent>
+                 </Card>
+               ) : (
+                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                   <Card className="md:col-span-1">
+                      <CardHeader>
+                        <CardTitle className="text-sm">Informasi Kamar</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="p-4 bg-slate-50 rounded-xl border">
+                           <p className="text-xs text-muted-foreground font-bold uppercase mb-1">Nama Kamar</p>
+                           <p className="text-lg font-bold">{roomAssignment.room?.name}</p>
+                           <p className="text-xs text-slate-500">{roomAssignment.room?.dormitory?.name} • Lt. {roomAssignment.room?.floor}</p>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                           <div className="p-3 border rounded-lg text-center">
+                              <p className="text-[10px] text-muted-foreground uppercase">Kapasitas</p>
+                              <p className="text-lg font-bold">{roomAssignment.room?.capacity} Bed</p>
+                           </div>
+                           <div className="p-3 border rounded-lg text-center">
+                              <p className="text-[10px] text-muted-foreground uppercase">Terisi</p>
+                              <p className="text-lg font-bold">{roomAssignment.room?.currentOccupancy} Santri</p>
+                           </div>
+                        </div>
+                      </CardContent>
+                   </Card>
+
+                   <Card className="md:col-span-2 border-indigo-100 bg-indigo-50/30">
+                      <CardHeader className="pb-2">
+                         <CardTitle className="text-indigo-900 flex items-center gap-2">
+                           <HeartPulse className="w-5 h-5 text-indigo-600" />
+                           Dinamika Sosial Kamar
+                         </CardTitle>
+                         <CardDescription className="text-indigo-700">Status: {socialAnalytics?.status || 'NORMAL'}</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                         <div className="flex flex-col md:flex-row gap-6 items-center">
+                            <div className="relative h-32 w-32 flex items-center justify-center">
+                               <svg className="w-full h-full transform -rotate-90">
+                                  <circle cx="64" cy="64" r="58" stroke="currentColor" strokeWidth="12" fill="transparent" className="text-slate-200" />
+                                  <circle cx="64" cy="64" r="58" stroke="currentColor" strokeWidth="12" fill="transparent" strokeDasharray={364.4} strokeDashoffset={364.4 - (364.4 * (socialAnalytics?.harmonyScore || 0)) / 100} className="text-indigo-600" />
+                               </svg>
+                               <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                  <span className="text-2xl font-black text-indigo-900">{socialAnalytics?.harmonyScore || 0}%</span>
+                                  <span className="text-[10px] font-bold text-indigo-700 uppercase">Harmony</span>
+                               </div>
+                            </div>
+                            <div className="flex-1 space-y-3">
+                               <div className="grid grid-cols-2 gap-4">
+                                  <div>
+                                     <p className="text-xs font-bold text-slate-500 uppercase">Total Anggota Kamar</p>
+                                     <p className="text-lg font-bold text-slate-700 mt-1">{socialAnalytics?.members?.length || 0} Santri</p>
+                                  </div>
+                                  <div>
+                                     <p className="text-xs font-bold text-slate-500 uppercase">Status Kamar</p>
+                                     <p className="text-sm font-semibold mt-1 text-slate-600">{socialAnalytics?.status || 'NORMAL'}</p>
+                                  </div>
+                               </div>
+                               <div className="p-3 bg-white rounded-lg border border-indigo-100 text-xs">
+                                  <p className="font-bold text-indigo-900 mb-1">Teman Sekamar ({socialAnalytics?.members?.length || 0}):</p>
+                                  <div className="flex flex-wrap gap-1">
+                                     {socialAnalytics?.members?.map((r: any) => (
+                                        <Badge key={r.studentId} variant="outline" className="text-[10px]">{r.name}</Badge>
+                                     ))}
+                                  </div>
+                               </div>
+                            </div>
+                         </div>
+                      </CardContent>
+                   </Card>
+                 </div>
+               )}
             </TabsContent>
 
             <TabsContent value="health">

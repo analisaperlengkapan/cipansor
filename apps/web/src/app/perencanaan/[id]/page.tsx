@@ -341,9 +341,9 @@ export default function PerencanaanDetailPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="p-6">
-              {plan.risks && plan.risks.length > 0 ? (
+              {(plan as any).risks && (plan as any).risks.length > 0 ? (
                 <div className="space-y-4">
-                  {plan.risks.map((risk: any) => (
+                  {(plan as any).risks.map((risk: any) => (
                     <div key={risk.id} className="p-4 border rounded-lg bg-white flex justify-between items-center">
                       <div className="flex items-center gap-3">
                         <RiskLevelBadge level={risk.riskLevel || 'UNKNOWN'} />
@@ -435,9 +435,9 @@ export default function PerencanaanDetailPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="p-6">
-              {plan.internalAudits && plan.internalAudits.length > 0 ? (
+              {(plan as any).internalAudits && (plan as any).internalAudits.length > 0 ? (
                 <div className="space-y-4">
-                  {plan.internalAudits.map((audit: any) => (
+                  {(plan as any).internalAudits.map((audit: any) => (
                     <div key={audit.id} className="p-4 border rounded-lg bg-white flex justify-between items-center">
                       <div className="flex items-center gap-3">
                         <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-200">

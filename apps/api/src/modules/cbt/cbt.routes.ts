@@ -77,6 +77,12 @@ router.get(
   authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
   CBTController.getTopicMasteryAnalytics
 );
+router.get(
+  '/exams/:examId/difficulty-insights',
+  authenticate,
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
+  CBTController.getExamDifficultyInsights
+);
 
 // --- Teacher Grading ---
 router.get(

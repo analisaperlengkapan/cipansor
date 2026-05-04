@@ -27,6 +27,21 @@ export async function getStaffAttendance(req: Request, res: Response, next: Next
   }
 }
 
+export async function getRetentionRisk(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { unitId } = req.query;
+    const user = req.user!;
+
+    const targetUnitId = user.role === 'SUPER_ADMIN' ? (unitId as string) : user.unitId;
+    if (!targetUnitId) throw Errors.badRequest('unitId is required');
+
+    const data = await service.getRetentionRiskAnalytics(targetUnitId);
+    res.json({ success: true, data });
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function getStaffAttendanceById(req: Request, res: Response, next: NextFunction) {
   try {
     const attendance = await service.getStaffAttendanceById(req.params.id);

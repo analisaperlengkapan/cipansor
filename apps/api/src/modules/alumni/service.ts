@@ -94,7 +94,7 @@ export async function getAlumniOutcomeAnalytics(unitId?: string) {
 
     const maxJuz = alm.student?.tahfidzRecords.length
       ? Math.max(...alm.student.tahfidzRecords.map(r => r.juz))
-      : alm.tahfidzLevel ? (parseInt(alm.tahfidzLevel) || 0) : 0;
+      : alm.tahfidzLevel ? (parseInt(alm.tahfidzLevel, 10) || 0) : 0;
 
     const hasHigherEd = alm.educations.some(e =>
       e.degree.includes('S1') || e.degree.includes('Bachelor') || e.degree.includes('S2')

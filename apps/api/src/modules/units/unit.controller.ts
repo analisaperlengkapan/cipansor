@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { UserRole } from '@prisma/client';
 import { asyncHandler } from '@/middleware/error';
 import { unitService } from './unit.service';
 import { ListUnitsQuery, CreateUnitInput, UpdateUnitInput } from './unit.schema';
@@ -10,7 +11,7 @@ import { ListUnitsQuery, CreateUnitInput, UpdateUnitInput } from './unit.schema'
 export const list = asyncHandler(async (req: Request, res: Response) => {
   const query = (res.locals.validatedQuery || req.query) as ListUnitsQuery;
   const result = await unitService.findAll(query, {
-    role: req.user!.role,
+    role: req.user!.role as UserRole,
     unitId: req.user!.unitId,
   });
 
@@ -29,7 +30,7 @@ export const list = asyncHandler(async (req: Request, res: Response) => {
  */
 export const getById = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const unit = await unitService.findById(id);
+  const unit = await unitService.findById(id as string);
 
   res.json({
     success: true,
@@ -58,7 +59,7 @@ export const create = asyncHandler(async (req: Request, res: Response) => {
 export const update = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
   const input: UpdateUnitInput = req.body;
-  const unit = await unitService.update(id, input);
+  const unit = await unitService.update(id as string, input);
 
   res.json({
     success: true,
@@ -72,7 +73,7 @@ export const update = asyncHandler(async (req: Request, res: Response) => {
  */
 export const remove = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const result = await unitService.delete(id);
+  const result = await unitService.delete(id as string);
 
   res.json({
     success: true,

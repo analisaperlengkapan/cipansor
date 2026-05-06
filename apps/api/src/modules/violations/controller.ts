@@ -39,7 +39,7 @@ export async function getViolations(req: Request, res: Response, next: NextFunct
 export async function getViolationById(req: Request, res: Response, next: NextFunction) {
   try {
     const { id } = req.params;
-    const violation = await violationService.getViolationById(id);
+    const violation = await violationService.getViolationById(id as string);
     if (!violation) {
       throw Errors.notFound('Violation');
     }
@@ -56,7 +56,7 @@ export async function updateViolation(req: Request, res: Response, next: NextFun
   try {
     const { id } = req.params;
     const data = updateViolationSchema.parse(req.body);
-    const violation = await violationService.updateViolation(id, data);
+    const violation = await violationService.updateViolation(id as string, data);
     res.json({
       success: true,
       message: 'Violation updated successfully',
@@ -70,7 +70,7 @@ export async function updateViolation(req: Request, res: Response, next: NextFun
 export async function deleteViolation(req: Request, res: Response, next: NextFunction) {
   try {
     const { id } = req.params;
-    await violationService.deleteViolation(id);
+    await violationService.deleteViolation(id as string);
     res.json({
       success: true,
       message: 'Violation deleted successfully',
@@ -83,7 +83,7 @@ export async function deleteViolation(req: Request, res: Response, next: NextFun
 export async function getStudentViolationSummary(req: Request, res: Response, next: NextFunction) {
   try {
     const { studentId } = req.params;
-    const summary = await violationService.getStudentViolationSummary(studentId);
+    const summary = await violationService.getStudentViolationSummary(studentId as string);
     res.json({
       success: true,
       data: summary,

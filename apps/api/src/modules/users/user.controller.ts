@@ -43,7 +43,7 @@ export const getById = asyncHandler(async (req: Request, res: Response) => {
  */
 export const create = asyncHandler(async (req: Request, res: Response) => {
   const input: CreateUserInput = req.body;
-  const user = await userService.create(input, req.user!.role);
+  const user = await userService.create(input, req.user!.role as UserRole);
 
   res.status(201).json({
     success: true,
@@ -58,7 +58,7 @@ export const create = asyncHandler(async (req: Request, res: Response) => {
 export const update = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
   const input: UpdateUserInput = req.body;
-  const user = await userService.update(id, input, {
+  const user = await userService.update(id as string, input, {
     role: req.user!.role,
     sub: req.user!.sub,
   });
@@ -75,7 +75,7 @@ export const update = asyncHandler(async (req: Request, res: Response) => {
  */
 export const remove = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const result = await userService.delete(id);
+  const result = await userService.delete(id as string);
 
   res.json({
     success: true,

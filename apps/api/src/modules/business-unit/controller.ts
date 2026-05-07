@@ -16,8 +16,8 @@ export const businessUnitController = {
 
       const result = await businessUnitService.list({
         unitId,
-        type: req.query.type as BusinessUnitType | undefined,
-        isActive: req.query.isActive !== undefined ? req.query.isActive === 'true' : undefined,
+        type: (req.query as any).type as BusinessUnitType | undefined,
+        isActive: (req.query as any).isActive !== undefined ? (req.query as any).isActive === 'true' : undefined,
       });
 
       res.json({ success: true, data: result });
@@ -36,8 +36,8 @@ export const businessUnitController = {
 
       // SUPER_ADMIN can view efficiency without unitId scoping
       const result = isSuperAdminUser(req) && !unitId
-        ? await businessUnitService.getBusinessEfficiency(req.params.id, undefined)
-        : await businessUnitService.getBusinessEfficiency(req.params.id, unitId!);
+        ? await businessUnitService.getBusinessEfficiency((req.params as any).id, undefined)
+        : await businessUnitService.getBusinessEfficiency((req.params as any).id, unitId!);
 
       res.json({ success: true, data: result });
     } catch (error) {
@@ -55,8 +55,8 @@ export const businessUnitController = {
 
       // SUPER_ADMIN can view any business unit without unitId scoping
       const result = isSuperAdminUser(req) && !unitId
-        ? await businessUnitService.getById(req.params.id)
-        : await businessUnitService.getById(req.params.id, unitId);
+        ? await businessUnitService.getById((req.params as any).id)
+        : await businessUnitService.getById((req.params as any).id, unitId);
 
       res.json({ success: true, data: result });
     } catch (error) {
@@ -95,8 +95,8 @@ export const businessUnitController = {
 
       // SUPER_ADMIN can update any business unit without unitId scoping
       const result = isSuperAdminUser(req) && !unitId
-        ? await businessUnitService.update(req.params.id, undefined, req.body)
-        : await businessUnitService.update(req.params.id, unitId!, req.body);
+        ? await businessUnitService.update((req.params as any).id, undefined, req.body)
+        : await businessUnitService.update((req.params as any).id, unitId!, req.body);
 
       res.json({ success: true, data: result });
     } catch (error) {
@@ -110,9 +110,9 @@ export const businessUnitController = {
 
       // SUPER_ADMIN can delete any business unit without unitId scoping
       if (isSuperAdminUser(req) && !unitId) {
-        await businessUnitService.delete(req.params.id);
+        await businessUnitService.delete((req.params as any).id);
       } else if (unitId) {
-        await businessUnitService.delete(req.params.id, unitId);
+        await businessUnitService.delete((req.params as any).id, unitId);
       } else {
         return next(Errors.badRequest('Unit ID tidak ditemukan'));
       }
@@ -131,7 +131,7 @@ export const businessUnitController = {
         return next(Errors.badRequest('Unit ID tidak ditemukan'));
       }
 
-      const { startDate, endDate } = req.query;
+      const { startDate, endDate } = (req.query as any);
       if (!startDate || !endDate) {
         return next(Errors.badRequest('startDate dan endDate diperlukan'));
       }
@@ -144,8 +144,8 @@ export const businessUnitController = {
 
       // SUPER_ADMIN can view performance without unitId scoping
       const result = isSuperAdminUser(req) && !unitId
-        ? await businessUnitService.getPerformance(req.params.id, undefined, parsedStart, parsedEnd)
-        : await businessUnitService.getPerformance(req.params.id, unitId!, parsedStart, parsedEnd);
+        ? await businessUnitService.getPerformance((req.params as any).id, undefined, parsedStart, parsedEnd)
+        : await businessUnitService.getPerformance((req.params as any).id, unitId!, parsedStart, parsedEnd);
 
       res.json({ success: true, data: result });
     } catch (error) {

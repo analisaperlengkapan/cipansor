@@ -188,9 +188,58 @@ export async function recalculateBudgetUsage(unitId: string, academicYearId: str
 
   if (updates.length > 0) {
     await prisma.$transaction(updates);
+
+    // After recalculating, check for alerts to trigger notifications
+    void triggerBudgetAlerts(unitId, academicYearId);
   }
 
   return { count: updates.length };
+}
+
+/**
+ * Internal logic to trigger real-time notifications for budget thresholds
+ */
+async function triggerBudgetAlerts(unitId: string, academicYearId: string) {
+  try {
+    const alerts = await getBudgetUtilizationAlerts(unitId, academicYearId);
+    const criticalAlerts = alerts.filter(a => a.status !== 'NORMAL');
+
+    if (criticalAlerts.length === 0) return;
+
+    // Find treasury roles to notify
+    const treasuryUsers = await prisma.user.findMany({
+      where: {
+        isActive: true,
+        userRoles: {
+          some: {
+            role: {
+              code: { in: ['YAYASAN_BENDAHARA', 'SUPER_ADMIN'] }
+            }
+          }
+        }
+      },
+      select: { id: true }
+    });
+
+    await Promise.allSettled(
+      treasuryUsers.flatMap(user =>
+        criticalAlerts.map(alert =>
+          prisma.notification.create({
+            data: {
+              userId: user.id,
+              type: 'ALERT',
+              title: alert.status === 'EXCEEDED' ? 'Anggaran Terlampaui!' : 'Peringatan Anggaran',
+              message: `Akun ${alert.accountCode} (${alert.accountName}) di unit ${alert.unitName} telah mencapai ${alert.percentage}% penggunaan.`,
+              link: '/finance/budget',
+              status: 'UNREAD',
+            }
+          })
+        )
+      )
+    );
+  } catch (err) {
+    console.error('[Budget] Failed to trigger real-time budget alerts:', err);
+  }
 }
 
 /**

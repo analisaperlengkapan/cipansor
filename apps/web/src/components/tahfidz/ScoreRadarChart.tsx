@@ -79,7 +79,7 @@ export function ScoreRadarChart({
           />
           {showLegend && <Legend />}
           <Tooltip
-            formatter={(value: number) => [`${value}%`, "Skor"]}
+            formatter={(value: any) => [`${value}%`, "Skor"]}
             contentStyle={{
               backgroundColor: "rgba(255, 255, 255, 0.95)",
               border: "1px solid #e5e7eb",
@@ -198,7 +198,7 @@ export function ComparisonRadarChart({
           ))}
           <Legend />
           <Tooltip
-            formatter={(value: number, name: string) => [`${value}%`, name]}
+            formatter={(value: any, name: any) => [`${value}%`, name]}
             contentStyle={{
               backgroundColor: "rgba(255, 255, 255, 0.95)",
               border: "1px solid #e5e7eb",

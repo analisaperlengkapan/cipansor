@@ -49,7 +49,7 @@ export async function createAssignment(req: Request, res: Response, next: NextFu
 export async function returnAssignment(req: Request, res: Response, next: NextFunction) {
   try {
     const data = returnAssetAssignmentSchema.parse(req.body);
-    const assignment = await service.returnAssignment(req.params.id, data);
+    const assignment = await service.returnAssignment((req.params as any).id, data);
     res.json({ success: true, data: assignment });
   } catch (error) {
     next(error);
@@ -58,7 +58,7 @@ export async function returnAssignment(req: Request, res: Response, next: NextFu
 
 export async function getAssignments(req: Request, res: Response, next: NextFunction) {
   try {
-    const query = queryAssetAssignmentSchema.parse(req.query);
+    const query = queryAssetAssignmentSchema.parse((req.query as any));
     const result = await service.getAssignments(query);
     res.json({ success: true, ...result });
   } catch (error) {
@@ -82,7 +82,7 @@ export async function createAudit(req: Request, res: Response, next: NextFunctio
 
 export async function getAudits(req: Request, res: Response, next: NextFunction) {
   try {
-    const query = queryAssetAuditSchema.parse(req.query);
+    const query = queryAssetAuditSchema.parse((req.query as any));
     const result = await service.getAudits(query);
     res.json({ success: true, ...result });
   } catch (error) {
@@ -92,7 +92,7 @@ export async function getAudits(req: Request, res: Response, next: NextFunction)
 
 export async function getAuditById(req: Request, res: Response, next: NextFunction) {
   try {
-    const audit = await service.getAuditById(req.params.id);
+    const audit = await service.getAuditById((req.params as any).id);
     if (!audit) {
       throw Errors.notFound('Audit not found');
     }
@@ -105,7 +105,7 @@ export async function getAuditById(req: Request, res: Response, next: NextFuncti
 export async function updateAuditItem(req: Request, res: Response, next: NextFunction) {
   try {
     const data = updateAssetAuditItemSchema.parse(req.body);
-    const item = await service.updateAuditItem(req.params.itemId, data);
+    const item = await service.updateAuditItem((req.params as any).itemId, data);
     res.json({ success: true, data: item });
   } catch (error) {
     next(error);
@@ -114,7 +114,7 @@ export async function updateAuditItem(req: Request, res: Response, next: NextFun
 
 export async function completeAudit(req: Request, res: Response, next: NextFunction) {
   try {
-    const audit = await service.completeAudit(req.params.id);
+    const audit = await service.completeAudit((req.params as any).id);
     res.json({ success: true, data: audit });
   } catch (error) {
     next(error);
@@ -125,7 +125,7 @@ export async function completeAudit(req: Request, res: Response, next: NextFunct
 
 export async function getDepreciation(req: Request, res: Response, next: NextFunction) {
   try {
-    const data = await service.calculateDepreciation(req.params.id);
+    const data = await service.calculateDepreciation((req.params as any).id);
     res.json({ success: true, data });
   } catch (error) {
     next(error);
@@ -134,7 +134,7 @@ export async function getDepreciation(req: Request, res: Response, next: NextFun
 
 export async function getCategoryById(req: Request, res: Response, next: NextFunction) {
   try {
-    const category = await service.getCategoryById(req.params.id);
+    const category = await service.getCategoryById((req.params as any).id);
     if (!category) {
       throw Errors.notFound('Category not found');
     }
@@ -157,7 +157,7 @@ export async function createCategory(req: Request, res: Response, next: NextFunc
 export async function updateCategory(req: Request, res: Response, next: NextFunction) {
   try {
     const data = updateInventoryCategorySchema.parse(req.body);
-    const category = await service.updateCategory(req.params.id, data);
+    const category = await service.updateCategory((req.params as any).id, data);
     res.json({ success: true, data: category });
   } catch (error) {
     next(error);
@@ -166,7 +166,7 @@ export async function updateCategory(req: Request, res: Response, next: NextFunc
 
 export async function deleteCategory(req: Request, res: Response, next: NextFunction) {
   try {
-    await service.deleteCategory(req.params.id);
+    await service.deleteCategory((req.params as any).id);
     res.json({ success: true, message: 'Category deleted' });
   } catch (error) {
     next(error);
@@ -177,7 +177,7 @@ export async function deleteCategory(req: Request, res: Response, next: NextFunc
 
 export async function getQrCode(req: Request, res: Response, next: NextFunction) {
   try {
-    const qrCode = await service.getQrCode(req.params.id);
+    const qrCode = await service.getQrCode((req.params as any).id);
     res.json({ success: true, data: qrCode });
   } catch (error) {
     next(error);
@@ -186,7 +186,7 @@ export async function getQrCode(req: Request, res: Response, next: NextFunction)
 
 export async function getItems(req: Request, res: Response, next: NextFunction) {
   try {
-    const query = queryInventoryItemSchema.parse(req.query);
+    const query = queryInventoryItemSchema.parse((req.query as any));
     const result = await service.getItems(query);
     res.json({ success: true, ...result });
   } catch (error) {
@@ -196,7 +196,7 @@ export async function getItems(req: Request, res: Response, next: NextFunction) 
 
 export async function getItemById(req: Request, res: Response, next: NextFunction) {
   try {
-    const item = await service.getItemById(req.params.id);
+    const item = await service.getItemById((req.params as any).id);
     if (!item) {
       throw Errors.notFound('Item not found');
     }
@@ -240,7 +240,7 @@ export async function runDepreciation(req: Request, res: Response, next: NextFun
 export async function updateItem(req: Request, res: Response, next: NextFunction) {
   try {
     const data = updateInventoryItemSchema.parse(req.body);
-    const item = await service.updateItem(req.params.id, data);
+    const item = await service.updateItem((req.params as any).id, data);
     res.json({ success: true, data: item });
   } catch (error) {
     next(error);
@@ -249,7 +249,7 @@ export async function updateItem(req: Request, res: Response, next: NextFunction
 
 export async function deleteItem(req: Request, res: Response, next: NextFunction) {
   try {
-    await service.deleteItem(req.params.id);
+    await service.deleteItem((req.params as any).id);
     res.json({ success: true, message: 'Item deleted' });
   } catch (error) {
     next(error);
@@ -258,7 +258,7 @@ export async function deleteItem(req: Request, res: Response, next: NextFunction
 
 export async function completeMaintenance(req: Request, res: Response, next: NextFunction) {
   try {
-    const maintenance = await service.completeMaintenance(req.params.id);
+    const maintenance = await service.completeMaintenance((req.params as any).id);
     res.json({
       success: true,
       data: maintenance,
@@ -273,7 +273,7 @@ export async function completeMaintenance(req: Request, res: Response, next: Nex
 
 export async function getMaintenances(req: Request, res: Response, next: NextFunction) {
   try {
-    const query = queryMaintenanceSchema.parse(req.query);
+    const query = queryMaintenanceSchema.parse((req.query as any));
     const result = await service.getMaintenances(query);
     res.json({ success: true, ...result });
   } catch (error) {
@@ -283,7 +283,7 @@ export async function getMaintenances(req: Request, res: Response, next: NextFun
 
 export async function getMaintenanceById(req: Request, res: Response, next: NextFunction) {
   try {
-    const maintenance = await service.getMaintenanceById(req.params.id);
+    const maintenance = await service.getMaintenanceById((req.params as any).id);
     if (!maintenance) {
       throw Errors.notFound('Maintenance record not found');
     }
@@ -318,7 +318,7 @@ export async function createMaintenanceRequest(req: Request, res: Response, next
 export async function updateMaintenance(req: Request, res: Response, next: NextFunction) {
   try {
     const data = updateMaintenanceSchema.parse(req.body);
-    const maintenance = await service.updateMaintenance(req.params.id, data);
+    const maintenance = await service.updateMaintenance((req.params as any).id, data);
     res.json({ success: true, data: maintenance });
   } catch (error) {
     next(error);
@@ -328,7 +328,7 @@ export async function updateMaintenance(req: Request, res: Response, next: NextF
 export async function updateMaintenanceStatus(req: Request, res: Response, next: NextFunction) {
   try {
     const data = updateMaintenanceStatusSchema.parse(req.body);
-    const maintenance = await service.updateMaintenanceStatus(req.params.id, data);
+    const maintenance = await service.updateMaintenanceStatus((req.params as any).id, data);
     res.json({ success: true, data: maintenance });
   } catch (error) {
     next(error);
@@ -337,7 +337,7 @@ export async function updateMaintenanceStatus(req: Request, res: Response, next:
 
 export async function deleteMaintenance(req: Request, res: Response, next: NextFunction) {
   try {
-    await service.deleteMaintenance(req.params.id);
+    await service.deleteMaintenance((req.params as any).id);
     res.json({ success: true, message: 'Maintenance record deleted' });
   } catch (error) {
     next(error);
@@ -351,7 +351,7 @@ export async function disposeAsset(req: Request, res: Response, next: NextFuncti
     const data = createAssetDisposalSchema.parse(req.body);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const userId = (req as any).user.id;
-    await service.disposeAsset(req.params.id, data, userId);
+    await service.disposeAsset((req.params as any).id, data, userId);
     res.json({ success: true, message: 'Asset disposed successfully' });
   } catch (error) {
     next(error);
@@ -362,7 +362,7 @@ export async function disposeAsset(req: Request, res: Response, next: NextFuncti
 
 export async function getInventoryStats(req: Request, res: Response, next: NextFunction) {
   try {
-    const unitId = req.params.unitId;
+    const unitId = (req.params as any).unitId;
     const stats = await service.getInventoryStats(unitId);
     res.json({ success: true, data: stats });
   } catch (error) {
@@ -377,7 +377,7 @@ export async function getInventorySettings(req: Request, res: Response, next: Ne
     // Assuming unitId is passed in query or user context, but Settings are per unit.
     // For admin purposes, let's allow passing unitId as query param or require it.
     // Ideally, frontend should pass ?unitId=...
-    const unitId = req.query.unitId as string;
+    const unitId = (req.query as any).unitId as string;
     if (!unitId) throw Errors.badRequest('unitId is required');
     const settings = await service.getInventorySettings(unitId);
     res.json({ success: true, data: settings });

@@ -24,7 +24,7 @@ function getContext(req: Request) {
   const user = (req as any).user;
   return {
     userId: user?.id,
-    unitId: typeof req.query.unitId === 'string' ? req.query.unitId : undefined,
+    unitId: typeof (req.query as any).unitId === 'string' ? (req.query as any).unitId : undefined,
     role: user?.role,
   };
 }
@@ -49,7 +49,7 @@ export async function getDashboardMetrics(
   next: NextFunction
 ): Promise<void> {
   try {
-    const query = dashboardMetricsQuerySchema.parse(req.query);
+    const query = dashboardMetricsQuerySchema.parse((req.query as any));
 
     if (!verifyUnitAccess(req, query.unitId)) {
       throw new ApiError(ErrorCode.FORBIDDEN, 'You do not have access to this unit');
@@ -97,7 +97,7 @@ export async function getQuickStats(
  */
 export async function getStats(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const query = dashboardStatsQuerySchema.parse(req.query);
+    const query = dashboardStatsQuerySchema.parse((req.query as any));
     const context = getContext(req);
     context.unitId = query.unitId;
 
@@ -122,7 +122,7 @@ export async function getAttendanceStats(
   next: NextFunction
 ): Promise<void> {
   try {
-    const query = attendanceStatsQuerySchema.parse(req.query);
+    const query = attendanceStatsQuerySchema.parse((req.query as any));
     const context = getContext(req);
     context.unitId = query.unitId;
 
@@ -152,7 +152,7 @@ export async function getFinanceStats(
   next: NextFunction
 ): Promise<void> {
   try {
-    const query = financeStatsQuerySchema.parse(req.query);
+    const query = financeStatsQuerySchema.parse((req.query as any));
     const context = getContext(req);
     context.unitId = query.unitId;
 
@@ -177,7 +177,7 @@ export async function getTahfidzStats(
   next: NextFunction
 ): Promise<void> {
   try {
-    const query = tahfidzStatsQuerySchema.parse(req.query);
+    const query = tahfidzStatsQuerySchema.parse((req.query as any));
     const context = getContext(req);
     context.unitId = query.unitId;
 
@@ -204,7 +204,7 @@ export async function getViolationRewardStats(
   next: NextFunction
 ): Promise<void> {
   try {
-    const query = violationRewardStatsQuerySchema.parse(req.query);
+    const query = violationRewardStatsQuerySchema.parse((req.query as any));
     const context = getContext(req);
     context.unitId = query.unitId;
 

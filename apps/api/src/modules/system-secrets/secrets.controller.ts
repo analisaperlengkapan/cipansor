@@ -7,7 +7,7 @@ export const listSecrets = async (req: Request, res: Response, next: NextFunctio
   try {
     // Only SUPER_ADMIN can see global secrets. UNIT_ADMIN sees unit secrets.
     // For now, allow filtering by unitId in query.
-    const unitId = req.query.unitId as string | undefined;
+    const unitId = (req.query as any).unitId as string | undefined;
     const secrets = await SecretsService.list(unitId);
     res.json({ data: secrets });
   } catch (error) {
@@ -32,7 +32,7 @@ export const upsertSecret = async (req: Request, res: Response, next: NextFuncti
 
 export const deleteSecret = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { id } = req.params;
+    const { id } = (req.params as any);
     await SecretsService.delete(id);
     res.status(httpStatus.NO_CONTENT).send();
   } catch (error) {

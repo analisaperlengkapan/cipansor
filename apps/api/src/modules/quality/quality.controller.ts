@@ -13,8 +13,8 @@ export const qualityController = {
   }),
 
   getStandardDetails: asyncHandler(async (req: Request, res: Response) => {
-    const { id } = req.params;
-    const { unitId, academicYearId } = req.query;
+    const { id } = (req.params as any);
+    const { unitId, academicYearId } = (req.query as any);
 
     if (!unitId || !academicYearId) {
       throw new ApiError(ErrorCode.BAD_REQUEST, 'unitId and academicYearId are required');
@@ -49,7 +49,7 @@ export const qualityController = {
   }),
 
   deleteEvidence: asyncHandler(async (req: Request, res: Response) => {
-    await qualityService.deleteEvidence(req.params.id);
+    await qualityService.deleteEvidence((req.params as any).id);
     res.json({
       success: true,
       message: 'Evidence deleted successfully',
@@ -57,7 +57,7 @@ export const qualityController = {
   }),
 
   getDashboardSummary: asyncHandler(async (req: Request, res: Response) => {
-    const { unitId, academicYearId } = req.query;
+    const { unitId, academicYearId } = (req.query as any);
 
     if (!unitId || !academicYearId) {
       throw new ApiError(ErrorCode.BAD_REQUEST, 'unitId and academicYearId are required');
@@ -88,7 +88,7 @@ export const qualityController = {
   }),
 
   getAudits: asyncHandler(async (req: Request, res: Response) => {
-    const { unitId, academicYearId } = req.query;
+    const { unitId, academicYearId } = (req.query as any);
     const user = (req as any).user;
 
     if (!unitId || !academicYearId) {
@@ -109,7 +109,7 @@ export const qualityController = {
   }),
 
   getAuditDetails: asyncHandler(async (req: Request, res: Response) => {
-    const { id } = req.params;
+    const { id } = (req.params as any);
     const user = (req as any).user;
 
     const audit = await qualityService.getAuditDetails(id, user.role, user.unitId);
@@ -125,7 +125,7 @@ export const qualityController = {
   }),
 
   updateAuditItem: asyncHandler(async (req: Request, res: Response) => {
-    const { itemId } = req.params;
+    const { itemId } = (req.params as any);
     const user = (req as any).user;
     const { score, notes } = req.body;
 

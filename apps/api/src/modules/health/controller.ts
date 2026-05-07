@@ -24,11 +24,11 @@ import {
 
 export async function getMedicalRecords(req: Request, res: Response, next: NextFunction) {
   try {
-    const query = queryMedicalRecordSchema.parse(req.query);
+    const query = queryMedicalRecordSchema.parse((req.query as any));
     const result = await service.getMedicalRecords({
       ...query,
       // Pass optional status filter if present
-      status: req.query.status as string,
+      status: (req.query as any).status as string,
     });
     res.json(result);
   } catch (error) {
@@ -50,7 +50,7 @@ export async function createGrowthRecord(req: Request, res: Response, next: Next
 
 export async function getGrowthRecords(req: Request, res: Response, next: NextFunction) {
   try {
-    const query = queryGrowthRecordSchema.parse(req.query);
+    const query = queryGrowthRecordSchema.parse((req.query as any));
     const result = await service.getGrowthRecords(query);
     res.json(result);
   } catch (error) {
@@ -60,7 +60,7 @@ export async function getGrowthRecords(req: Request, res: Response, next: NextFu
 
 export async function getMedicalRecordById(req: Request, res: Response, next: NextFunction) {
   try {
-    const record = await service.getMedicalRecordById(req.params.id);
+    const record = await service.getMedicalRecordById((req.params as any).id);
     if (!record) {
       throw Errors.notFound('Medical record not found');
     }
@@ -86,7 +86,7 @@ export async function createMedicalRecord(req: Request, res: Response, next: Nex
 export async function updateMedicalRecord(req: Request, res: Response, next: NextFunction) {
   try {
     const data = updateMedicalRecordSchema.parse(req.body);
-    const record = await service.updateMedicalRecord(req.params.id, data);
+    const record = await service.updateMedicalRecord((req.params as any).id, data);
     res.json({ success: true, data: record });
   } catch (error) {
     next(error);
@@ -95,7 +95,7 @@ export async function updateMedicalRecord(req: Request, res: Response, next: Nex
 
 export async function deleteMedicalRecord(req: Request, res: Response, next: NextFunction) {
   try {
-    await service.deleteMedicalRecord(req.params.id);
+    await service.deleteMedicalRecord((req.params as any).id);
     res.json({ success: true, message: 'Medical record deleted' });
   } catch (error) {
     next(error);
@@ -104,7 +104,7 @@ export async function deleteMedicalRecord(req: Request, res: Response, next: Nex
 
 export async function getStudentMedicalHistory(req: Request, res: Response, next: NextFunction) {
   try {
-    const history = await service.getStudentMedicalHistory(req.params.studentId);
+    const history = await service.getStudentMedicalHistory((req.params as any).studentId);
     res.json({ success: true, data: history });
   } catch (error) {
     next(error);
@@ -115,7 +115,7 @@ export async function getStudentMedicalHistory(req: Request, res: Response, next
 
 export async function getMedications(req: Request, res: Response, next: NextFunction) {
   try {
-    const query = queryMedicationSchema.parse(req.query);
+    const query = queryMedicationSchema.parse((req.query as any));
     const result = await service.getMedications(query);
     res.json(result);
   } catch (error) {
@@ -125,7 +125,7 @@ export async function getMedications(req: Request, res: Response, next: NextFunc
 
 export async function getMedicationById(req: Request, res: Response, next: NextFunction) {
   try {
-    const medication = await service.getMedicationById(req.params.id);
+    const medication = await service.getMedicationById((req.params as any).id);
     if (!medication) {
       throw Errors.notFound('Medication not found');
     }
@@ -148,7 +148,7 @@ export async function createMedication(req: Request, res: Response, next: NextFu
 export async function updateMedication(req: Request, res: Response, next: NextFunction) {
   try {
     const data = updateMedicationSchema.parse(req.body);
-    const medication = await service.updateMedication(req.params.id, data);
+    const medication = await service.updateMedication((req.params as any).id, data);
     res.json({ success: true, data: medication });
   } catch (error) {
     next(error);
@@ -157,7 +157,7 @@ export async function updateMedication(req: Request, res: Response, next: NextFu
 
 export async function deleteMedication(req: Request, res: Response, next: NextFunction) {
   try {
-    await service.deleteMedication(req.params.id);
+    await service.deleteMedication((req.params as any).id);
     res.json({ success: true, message: 'Medication deleted' });
   } catch (error) {
     next(error);
@@ -170,7 +170,7 @@ export async function addMedicationStock(req: Request, res: Response, next: Next
     if (!quantity || quantity <= 0) {
       throw Errors.badRequest('Quantity must be positive');
     }
-    const medication = await service.addMedicationStock(req.params.id, quantity);
+    const medication = await service.addMedicationStock((req.params as any).id, quantity);
     res.json({ success: true, data: medication });
   } catch (error) {
     next(error);
@@ -181,7 +181,7 @@ export async function addMedicationStock(req: Request, res: Response, next: Next
 
 export async function getMedicationUsageLogs(req: Request, res: Response, next: NextFunction) {
   try {
-    const query = queryMedicationUsageSchema.parse(req.query);
+    const query = queryMedicationUsageSchema.parse((req.query as any));
     const result = await service.getMedicationUsageLogs(query);
     res.json(result);
   } catch (error) {
@@ -206,7 +206,7 @@ export async function createMedicationUsage(req: Request, res: Response, next: N
 
 export async function getHealthStats(req: Request, res: Response, next: NextFunction) {
   try {
-    const unitId = req.params.unitId;
+    const unitId = (req.params as any).unitId;
     const stats = await service.getHealthStats(unitId);
     res.json({ success: true, data: stats });
   } catch (error) {

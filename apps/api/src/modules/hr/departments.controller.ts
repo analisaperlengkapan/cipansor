@@ -18,7 +18,7 @@ export const departmentController = {
 
   update: async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { id } = req.params;
+      const { id } = (req.params as any);
       const result = await departmentService.update(id, req.body);
       sendResponse(res, result, 'Department updated successfully');
     } catch (error) {
@@ -31,9 +31,9 @@ export const departmentController = {
       const { unitId } = req.user!;
       if (!unitId) throw Errors.badRequest('Unit ID missing from user');
 
-      const page = Number(req.query.page) || 1;
-      const limit = Number(req.query.limit) || 10;
-      const search = req.query.search as string;
+      const page = Number((req.query as any).page) || 1;
+      const limit = Number((req.query as any).limit) || 10;
+      const search = (req.query as any).search as string;
 
       const result = await departmentService.findAll(unitId, { page, limit, search });
       sendResponse(res, result, 'Departments retrieved successfully');
@@ -44,7 +44,7 @@ export const departmentController = {
 
   findOne: async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { id } = req.params;
+      const { id } = (req.params as any);
       const result = await departmentService.findOne(id);
       if (!result) throw Errors.notFound('Department');
       sendResponse(res, result, 'Department retrieved successfully');
@@ -55,7 +55,7 @@ export const departmentController = {
 
   delete: async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { id } = req.params;
+      const { id } = (req.params as any);
       await departmentService.delete(id);
       sendResponse(res, null, 'Department deleted successfully');
     } catch (error) {

@@ -33,16 +33,16 @@ function resolveUnitId(req: Request, bodyUnitId?: string): string {
 
 // Programs
 export const listPrograms = asyncHandler(async (req: Request, res: Response) => {
-  const unitId = resolveUnitId(req, req.query.unitId as string);
+  const unitId = resolveUnitId(req, (req.query as any).unitId as string);
   const programs = await lingkunganService.getPrograms(unitId, {
-    status: req.query.status as string,
-    category: req.query.category as string,
+    status: (req.query as any).status as string,
+    category: (req.query as any).category as string,
   });
   res.json({ success: true, data: programs });
 });
 
 export const getProgram = asyncHandler(async (req: Request, res: Response) => {
-  const program = await lingkunganService.getProgramById(req.params.id);
+  const program = await lingkunganService.getProgramById((req.params as any).id);
   if (!program) throw Errors.notFound('Program not found');
   if (!isPrivileged(req.user?.role) && program.unitId !== req.user?.unitId) throw Errors.forbidden('Access denied');
   res.json({ success: true, data: program });
@@ -56,25 +56,25 @@ export const createProgram = asyncHandler(async (req: Request, res: Response) =>
 });
 
 export const updateProgram = asyncHandler(async (req: Request, res: Response) => {
-  const existing = await lingkunganService.getProgramById(req.params.id);
+  const existing = await lingkunganService.getProgramById((req.params as any).id);
   if (!existing) throw Errors.notFound('Program not found');
   if (!isPrivileged(req.user?.role) && existing.unitId !== req.user?.unitId) throw Errors.forbidden('Access denied');
   const body = updateProgramSchema.parse(req.body);
-  const program = await lingkunganService.updateProgram(req.params.id, body);
+  const program = await lingkunganService.updateProgram((req.params as any).id, body);
   res.json({ success: true, data: program });
 });
 
 export const deleteProgram = asyncHandler(async (req: Request, res: Response) => {
-  const existing = await lingkunganService.getProgramById(req.params.id);
+  const existing = await lingkunganService.getProgramById((req.params as any).id);
   if (!existing) throw Errors.notFound('Program not found');
   if (!isPrivileged(req.user?.role) && existing.unitId !== req.user?.unitId) throw Errors.forbidden('Access denied');
-  await lingkunganService.deleteProgram(req.params.id);
+  await lingkunganService.deleteProgram((req.params as any).id);
   res.json({ success: true, message: 'Program deleted' });
 });
 
 // Waste
 export const listWaste = asyncHandler(async (req: Request, res: Response) => {
-  const unitId = resolveUnitId(req, req.query.unitId as string);
+  const unitId = resolveUnitId(req, (req.query as any).unitId as string);
   const records = await lingkunganService.getWasteRecords(unitId);
   res.json({ success: true, data: records });
 });
@@ -89,14 +89,14 @@ export const createWaste = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const getWasteSummary = asyncHandler(async (req: Request, res: Response) => {
-  const unitId = resolveUnitId(req, req.query.unitId as string);
+  const unitId = resolveUnitId(req, (req.query as any).unitId as string);
   const summary = await lingkunganService.getWasteSummary(unitId);
   res.json({ success: true, data: summary });
 });
 
 // Indicators
 export const listIndicators = asyncHandler(async (req: Request, res: Response) => {
-  const unitId = resolveUnitId(req, req.query.unitId as string);
+  const unitId = resolveUnitId(req, (req.query as any).unitId as string);
   const indicators = await lingkunganService.getIndicators(unitId);
   res.json({ success: true, data: indicators });
 });
@@ -110,11 +110,11 @@ export const createIndicator = asyncHandler(async (req: Request, res: Response) 
 
 export const updateIndicator = asyncHandler(async (req: Request, res: Response) => {
   const body = updateIndicatorSchema.parse(req.body);
-  const indicator = await lingkunganService.updateIndicator(req.params.id, body);
+  const indicator = await lingkunganService.updateIndicator((req.params as any).id, body);
   res.json({ success: true, data: indicator });
 });
 
 export const deleteIndicator = asyncHandler(async (req: Request, res: Response) => {
-  await lingkunganService.deleteIndicator(req.params.id);
+  await lingkunganService.deleteIndicator((req.params as any).id);
   res.json({ success: true, message: 'Indicator deleted' });
 });

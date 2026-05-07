@@ -8,7 +8,7 @@ export const waveController = {
    */
   async list(req: Request, res: Response, next: NextFunction) {
     try {
-      const { page = 1, limit = 10, periodId, status } = req.query;
+      const { page = 1, limit = 10, periodId, status } = (req.query as any);
 
       const result = await waveService.findAll({
         page: Number(page),
@@ -28,7 +28,7 @@ export const waveController = {
    */
   async listActive(req: Request, res: Response, next: NextFunction) {
     try {
-      const waves = await waveService.findActiveForPeriod(req.params.periodId);
+      const waves = await waveService.findActiveForPeriod((req.params as any).periodId);
       res.json(ApiResponse.success(waves, 'Active waves retrieved successfully'));
     } catch (error) {
       next(error);
@@ -40,7 +40,7 @@ export const waveController = {
    */
   async getStats(req: Request, res: Response, next: NextFunction) {
     try {
-      const stats = await waveService.getStats(req.params.periodId);
+      const stats = await waveService.getStats((req.params as any).periodId);
       res.json(ApiResponse.success(stats));
     } catch (error) {
       next(error);
@@ -52,7 +52,7 @@ export const waveController = {
    */
   async getById(req: Request, res: Response, next: NextFunction) {
     try {
-      const wave = await waveService.findById(req.params.id);
+      const wave = await waveService.findById((req.params as any).id);
 
       if (!wave) {
         return res.status(404).json(ApiResponse.error('Wave not found'));
@@ -69,9 +69,9 @@ export const waveController = {
    */
   async getRegistrants(req: Request, res: Response, next: NextFunction) {
     try {
-      const { page = 1, limit = 10, status } = req.query;
+      const { page = 1, limit = 10, status } = (req.query as any);
 
-      const result = await waveService.getRegistrantsByWave(req.params.id, {
+      const result = await waveService.getRegistrantsByWave((req.params as any).id, {
         page: Number(page),
         limit: Number(limit),
         status: status as string,
@@ -105,7 +105,7 @@ export const waveController = {
    */
   async update(req: Request, res: Response, next: NextFunction) {
     try {
-      const wave = await waveService.update(req.params.id, req.body);
+      const wave = await waveService.update((req.params as any).id, req.body);
       res.json(ApiResponse.success(wave, 'Wave updated successfully'));
     } catch (error) {
       next(error);
@@ -117,7 +117,7 @@ export const waveController = {
    */
   async delete(req: Request, res: Response, next: NextFunction) {
     try {
-      await waveService.delete(req.params.id);
+      await waveService.delete((req.params as any).id);
       res.json(ApiResponse.success(null, 'Wave deleted successfully'));
     } catch (error: any) {
       if (error.message?.includes('Cannot delete')) {

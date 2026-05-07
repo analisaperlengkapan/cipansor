@@ -25,7 +25,7 @@ export async function createReward(req: Request, res: Response, next: NextFuncti
 
 export async function getRewards(req: Request, res: Response, next: NextFunction) {
   try {
-    const query = queryRewardSchema.parse(res.locals.validatedQuery || req.query);
+    const query = queryRewardSchema.parse(res.locals.validatedQuery || (req.query as any));
     const result = await rewardService.getRewards(query);
     res.json({
       success: true,
@@ -38,7 +38,7 @@ export async function getRewards(req: Request, res: Response, next: NextFunction
 
 export async function getRewardById(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const { id } = (req.params as any);
     const reward = await rewardService.getRewardById(id);
     if (!reward) {
       throw Errors.notFound('Reward');
@@ -54,7 +54,7 @@ export async function getRewardById(req: Request, res: Response, next: NextFunct
 
 export async function updateReward(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const { id } = (req.params as any);
     const data = updateRewardSchema.parse(req.body);
     const reward = await rewardService.updateReward(id, data);
     res.json({
@@ -69,7 +69,7 @@ export async function updateReward(req: Request, res: Response, next: NextFuncti
 
 export async function deleteReward(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const { id } = (req.params as any);
     await rewardService.deleteReward(id);
     res.json({
       success: true,
@@ -82,7 +82,7 @@ export async function deleteReward(req: Request, res: Response, next: NextFuncti
 
 export async function getStudentRewardSummary(req: Request, res: Response, next: NextFunction) {
   try {
-    const { studentId } = req.params;
+    const { studentId } = (req.params as any);
     const summary = await rewardService.getStudentRewardSummary(studentId);
     res.json({
       success: true,
@@ -95,7 +95,7 @@ export async function getStudentRewardSummary(req: Request, res: Response, next:
 
 export async function getStudentPointBalance(req: Request, res: Response, next: NextFunction) {
   try {
-    const { studentId } = req.params;
+    const { studentId } = (req.params as any);
     const balance = await rewardService.getStudentPointBalance(studentId);
     res.json({
       success: true,
@@ -120,8 +120,8 @@ export async function getRewardCategories(req: Request, res: Response, next: Nex
 
 export async function getTopStudentsByPoints(req: Request, res: Response, next: NextFunction) {
   try {
-    const unitId = req.query.unitId as string | undefined;
-    const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
+    const unitId = (req.query as any).unitId as string | undefined;
+    const limit = (req.query as any).limit ? parseInt((req.query as any).limit as string) : 10;
     const topStudents = await rewardService.getTopStudentsByPoints(unitId, limit);
     res.json({
       success: true,

@@ -261,7 +261,7 @@ export default function FinanceConsolidationPage() {
                       ))}
                     </Pie>
                     <Tooltip
-                      formatter={(value: number) => formatCurrency(value)}
+                      formatter={(value: any) => formatCurrency(value)}
                     />
                   </PieChart>
                 </ResponsiveContainer>

@@ -27,19 +27,19 @@ export class RiskService {
     // Auto-link to strategic plan if objective is provided
     // This is handled by Prisma via data.strategicPlan connection if provided in the DTO
 
-    // If EXTREME risk, fan out audit-team notifications. Fire-and-forget so the
-    // request response isn't blocked by N notification inserts; failures are
-    // already swallowed inside `triggerAuditSuggestion`.
+    // If EXTREME risk, fan out audit-team notifications and create automated findings.
+    // Fire-and-forget so the request response isn't blocked by N notification inserts;
+    // failures are already swallowed inside `handleExtremeRisk`.
     if (riskLevel === 'EXTREME') {
-      void this.triggerAuditSuggestion(risk);
+      void this.handleExtremeRisk(risk);
     }
 
     return risk;
   }
 
-  private async triggerAuditSuggestion(risk: Risk) {
+  private async handleExtremeRisk(risk: Risk) {
     try {
-      // Create a notification for the internal audit team
+      // Find audit team members to notify and assign
       const auditAdmins = await prisma.user.findMany({
         where: {
           isActive: true,
@@ -54,8 +54,39 @@ export class RiskService {
         select: { id: true },
       });
 
-      // Use allSettled so a single failed notification (e.g. invalid user ID)
-      // doesn't block delivery to the rest of the audit team.
+      // 1. Create an automated Internal Audit record for this extreme risk
+      // Picking the first available auditor as the lead for the draft
+      const leadAuditorId = auditAdmins[0]?.id;
+
+      if (leadAuditorId) {
+        const audit = await prisma.internalAudit.create({
+          data: {
+            unitId: risk.unitId,
+            title: `Audit Respon Risiko Ekstrim: ${risk.code}`,
+            description: `Audit otomatis yang dipicu oleh deteksi risiko level EKSTRIM. Risiko: ${risk.description}`,
+            auditType: 'RISK_BASED',
+            status: 'PLANNED',
+            plannedDate: new Date(),
+            leadAuditorId: leadAuditorId,
+            riskId: risk.id,
+          }
+        });
+
+        // 2. Create an automated Finding under this audit
+        await prisma.auditFinding.create({
+          data: {
+            auditId: audit.id,
+            findingNumber: `AUTO-${risk.code}-${Date.now().toString().slice(-4)}`,
+            title: `Temuan Otomatis: Level Risiko Mencapai Batas Ekstrim`,
+            description: `Sistem secara otomatis mencatat temuan ini karena risiko ${risk.code} telah mencapai level EKSTRIM (Skor: ${risk.riskScore}). Diperlukan peninjauan mendalam terhadap efektivitas kontrol dan rencana mitigasi yang ada.`,
+            severity: 'CRITICAL',
+            category: 'RISK_MANAGEMENT',
+            riskId: risk.id,
+          }
+        });
+      }
+
+      // 3. Create notifications for the internal audit team
       const results = await Promise.allSettled(
         auditAdmins.map((admin) =>
           prisma.notification.create({
@@ -63,13 +94,14 @@ export class RiskService {
               userId: admin.id,
               type: 'ALERT',
               title: 'Risiko Ekstrim Terdeteksi',
-              message: `Risiko baru dengan level EKSTRIM terdeteksi: ${risk.code}. Segera jadwalkan audit internal.`,
+              message: `Risiko ${risk.code} mencapai level EKSTRIM. Audit otomatis telah dibuat.`,
               link: `/risk-management/${risk.id}`,
               status: 'UNREAD',
             },
           })
         )
       );
+
       const failures = results.filter((r) => r.status === 'rejected');
       if (failures.length > 0) {
         console.error(
@@ -78,7 +110,7 @@ export class RiskService {
         );
       }
     } catch (err) {
-      console.error('Failed to trigger audit suggestion:', err);
+      console.error('[Risk] Failed to handle extreme risk escalation:', err);
     }
   }
 
@@ -145,7 +177,7 @@ export class RiskService {
       const riskScore = this.calculateRiskScore(likelihood, impact);
       const riskLevel = this.determineRiskLevel(riskScore);
 
-      await tx.risk.update({
+      const updatedRisk = await tx.risk.update({
         where: { id },
         data: {
           ...data,
@@ -153,6 +185,13 @@ export class RiskService {
           riskLevel,
         },
       });
+
+      // If risk escalated to EXTREME from a lower level, trigger the audit response
+      if (updatedRisk.riskLevel === 'EXTREME' && current.riskLevel !== 'EXTREME') {
+        // We use setImmediate/void to keep it out of the critical path of the update transaction
+        // but still trigger the automation.
+        void this.handleExtremeRisk(updatedRisk);
+      }
 
       // Recalculate residual risk when inherent likelihood/impact changes
       await this.recalculateResidualRisk(id, tx);

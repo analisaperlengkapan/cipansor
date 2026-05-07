@@ -364,7 +364,7 @@ export default function ForecastPage() {
                         }
                       />
                       <Tooltip
-                        formatter={(value: number) => formatCurrency(value)}
+                        formatter={(value: any) => formatCurrency(value)}
                       />
                       <Legend />
                       <Area
@@ -404,7 +404,7 @@ export default function ForecastPage() {
                       />
                       <YAxis dataKey="category" type="category" width={150} />
                       <Tooltip
-                        formatter={(value: number) => formatCurrency(value)}
+                        formatter={(value: any) => formatCurrency(value)}
                       />
                       <Legend />
                       <Bar

@@ -1,5 +1,4 @@
 import { Request, Response } from 'express';
-import { UserRole } from '@prisma/client';
 import { asyncHandler } from '@/middleware/error';
 import { unitService } from './unit.service';
 import { ListUnitsQuery, CreateUnitInput, UpdateUnitInput } from './unit.schema';
@@ -9,9 +8,9 @@ import { ListUnitsQuery, CreateUnitInput, UpdateUnitInput } from './unit.schema'
  * GET /api/units
  */
 export const list = asyncHandler(async (req: Request, res: Response) => {
-  const query = (res.locals.validatedQuery || req.query) as ListUnitsQuery;
+  const query = (res.locals.validatedQuery || (req.query as any)) as ListUnitsQuery;
   const result = await unitService.findAll(query, {
-    role: req.user!.role as UserRole,
+    role: req.user!.role,
     unitId: req.user!.unitId,
   });
 
@@ -29,8 +28,8 @@ export const list = asyncHandler(async (req: Request, res: Response) => {
  * GET /api/units/:id
  */
 export const getById = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = req.params;
-  const unit = await unitService.findById(id as string);
+  const { id } = (req.params as any);
+  const unit = await unitService.findById(id);
 
   res.json({
     success: true,
@@ -57,9 +56,9 @@ export const create = asyncHandler(async (req: Request, res: Response) => {
  * PUT /api/units/:id
  */
 export const update = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const { id } = (req.params as any);
   const input: UpdateUnitInput = req.body;
-  const unit = await unitService.update(id as string, input);
+  const unit = await unitService.update(id, input);
 
   res.json({
     success: true,
@@ -72,8 +71,8 @@ export const update = asyncHandler(async (req: Request, res: Response) => {
  * DELETE /api/units/:id
  */
 export const remove = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = req.params;
-  const result = await unitService.delete(id as string);
+  const { id } = (req.params as any);
+  const result = await unitService.delete(id);
 
   res.json({
     success: true,

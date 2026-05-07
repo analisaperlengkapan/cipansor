@@ -6,8 +6,8 @@ import { Errors } from '@/middleware/error';
 export const leaveBalanceController = {
   getBalances: async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { userId } = req.params;
-      const { academicYearId } = req.query; // Should get current AY if missing
+      const { userId } = (req.params as any);
+      const { academicYearId } = (req.query as any); // Should get current AY if missing
 
       if (!academicYearId) {
         // Fallback to finding active academic year could be done in service
@@ -39,7 +39,7 @@ export const leaveBalanceController = {
 
   update: async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { id } = req.params;
+      const { id } = (req.params as any);
       const { totalDays } = req.body;
       const result = await leaveBalanceService.updateBalance(id, Number(totalDays));
       sendResponse(res, result, 'Leave balance updated successfully');

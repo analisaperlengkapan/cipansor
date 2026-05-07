@@ -42,6 +42,12 @@ const { mockPrisma } = vi.hoisted(() => {
       update: vi.fn(),
       delete: vi.fn(),
     },
+    user: {
+      findMany: vi.fn(),
+    },
+    notification: {
+      create: vi.fn(),
+    },
     $transaction: vi.fn().mockImplementation((cb: any) => cb(mock)),
   };
   return { mockPrisma: mock };
@@ -98,6 +104,7 @@ describe('Risk Service', () => {
       };
 
       vi.mocked(prisma.risk.create).mockResolvedValue({} as any);
+      vi.mocked(prisma.user.findMany).mockResolvedValue([] as any);
       await riskService.createRisk(dto as any);
 
       expect(prisma.risk.create).toHaveBeenCalledWith({

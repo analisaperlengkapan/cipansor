@@ -346,17 +346,42 @@ export class TalentaService {
 
   /**
    * Automatically suggest potential successors based on Talent Matrix.
-   * Filters by unit and talent category. When positionTitle is provided,
-   * candidates whose currentRole contains the position keywords are ranked higher.
+   * Enhanced algorithm that considers keyword matches, training completion,
+   * Sharia certification bonuses, and organizational position requirements.
    */
-  async suggestSuccessors(positionTitle: string, unitId: string) {
-    // Fetch ALL eligible talent profiles first, then score and rank them.
-    // Previously `take: 10` was applied BEFORE scoring, which could exclude
-    // the best keyword matches if they weren't among the 10 most recently updated.
+  async suggestSuccessors(positionTitle: string, unitId: string, targetPositionId?: string) {
+    // 1. Fetch target position requirements if provided
+    let targetRequirements: string[] = [];
+    let targetRequirementLevels: Record<string, number> = {};
+
+    if (targetPositionId) {
+      const position = await prisma.orgPosition.findUnique({
+        where: { id: targetPositionId },
+        select: { requirements: true }
+      });
+
+      if (position?.requirements) {
+        try {
+          const parsed = JSON.parse(position.requirements);
+          if (Array.isArray(parsed)) {
+            targetRequirements = parsed.map(r => String(r).trim());
+          } else if (typeof parsed === 'object' && parsed !== null) {
+            targetRequirements = Object.keys(parsed).map(r => r.trim());
+            targetRequirementLevels = Object.fromEntries(
+              Object.entries(parsed).map(([k, v]) => [k.trim(), Number(v) || 4])
+            );
+          }
+        } catch {
+          targetRequirements = position.requirements.split(',').map(r => r.trim());
+        }
+      }
+    }
+
+    // 2. Fetch ALL eligible talent profiles with their latest assessment and trainings
     const topTalents = await prisma.talentProfile.findMany({
       where: {
         unitId,
-        category: { in: ['HIGH_POTENTIAL', 'KEY_TALENT'] },
+        category: { in: ['HIGH_POTENTIAL', 'KEY_TALENT', 'EMERGING'] },
       },
       include: {
         user: {
@@ -369,42 +394,67 @@ export class TalentaService {
             },
           },
         },
+        assessments: {
+          orderBy: { assessedAt: 'desc' },
+          take: 1,
+          select: { competencies: true, overallScore: true }
+        }
       },
       orderBy: { updatedAt: 'desc' },
     });
 
-    // Compute a basic keyword match score against the position title
+    // 3. Score and rank candidates
     const positionKeywords = positionTitle
       .toLowerCase()
       .split(/\s+/)
       .filter((w) => w.length > 2);
 
     return topTalents.map((t) => {
+      // a. Keyword Match Score (up to 10 pts)
       const roleWords = (t.currentRole || '').toLowerCase();
       const keywordMatches = positionKeywords.filter((kw) => roleWords.includes(kw)).length;
       const keywordBonus = positionKeywords.length > 0
         ? Math.round((keywordMatches / positionKeywords.length) * 10)
         : 0;
 
+      // b. Training Bonus (up to 15 pts)
       const completedTrainings = t.user.trainingEnrollments?.length || 0;
-      const trainingBonus = Math.min(15, completedTrainings * 5); // Max 15 points for training
+      const trainingBonus = Math.min(15, completedTrainings * 5);
 
-      // Best Practice: Bonus for candidates with Sharia compliance training or experience
+      // c. Sharia Match Bonus (10 pts)
       const hasShariaTraining = t.user.trainingEnrollments?.some((te: any) =>
         te.program?.category?.toLowerCase().includes('syariah') ||
         te.program?.title?.toLowerCase().includes('syariah')
       );
       const shariaBonus = hasShariaTraining ? 10 : 0;
 
-      const baseScore = t.category === 'HIGH_POTENTIAL' ? 75 : 60;
+      // d. Competency Gap Score (up to 25 pts)
+      let competencyScore = 0;
+      if (targetRequirements.length > 0) {
+        const userCompetencies = (t.assessments[0]?.competencies as any) || {};
+        const gaps = targetRequirements.map(req => {
+          const userLevel = userCompetencies[req] ?? 0;
+          const targetLevel = targetRequirementLevels[req] || 4;
+          return Math.max(0, targetLevel - userLevel);
+        });
+        const averageGap = gaps.reduce((sum, g) => sum + g, 0) / gaps.length;
+        competencyScore = Math.max(0, 25 - (averageGap * 5));
+      }
+
+      // e. Base Score by Category
+      const baseScore = t.category === 'HIGH_POTENTIAL' ? 40 : t.category === 'KEY_TALENT' ? 30 : 20;
+
+      const totalMatchScore = Math.min(100, baseScore + keywordBonus + trainingBonus + shariaBonus + competencyScore);
+
       return {
         talentProfileId: t.id,
         name: t.user.name,
         currentRole: t.currentRole,
         category: t.category,
         readiness: t.category === 'HIGH_POTENTIAL' ? 'READY_NOW' : 'READY_IN_1_YEAR',
-        matchScore: Math.min(100, baseScore + keywordBonus + trainingBonus + shariaBonus),
+        matchScore: Math.round(totalMatchScore),
         shariaMatch: hasShariaTraining,
+        competencyMatch: targetRequirements.length > 0 ? Math.round((competencyScore / 25) * 100) : null,
       };
     }).sort((a, b) => b.matchScore - a.matchScore).slice(0, 10);
   }

@@ -80,7 +80,7 @@ router.get(
 router.get('/:studentId', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { studentId } = req.params;
-    const wallet = await walletService.getWalletByStudent(studentId as string);
+    const wallet = await walletService.getWalletByStudent(studentId);
     return res.json(ApiResponse.success(wallet, 'Wallet berhasil diambil'));
   } catch (error) {
     next(error);

@@ -35,7 +35,7 @@ export class BosController {
 
   async getSummary(req: Request, res: Response, next: NextFunction) {
     try {
-      const { unitId, year, quarter } = req.query;
+      const { unitId, year, quarter } = (req.query as any);
       const data = await bosService.getBosSummary(
         {
           unitId: unitId as string,
@@ -52,7 +52,7 @@ export class BosController {
 
   async getTransparencyReport(req: Request, res: Response, next: NextFunction) {
     try {
-      const { unitId, year } = req.params;
+      const { unitId, year } = (req.params as any);
       const data = await bosService.getBosTransparencyReport(
         unitId,
         parseInt(year) || new Date().getFullYear(),
@@ -66,7 +66,7 @@ export class BosController {
 
   async getQuarterlyReport(req: Request, res: Response, next: NextFunction) {
     try {
-      const { unitId, year, quarter } = req.params;
+      const { unitId, year, quarter } = (req.params as any);
       const data = await bosService.getQuarterlyReport(
         unitId,
         parseInt(year) || new Date().getFullYear(),
@@ -85,7 +85,7 @@ export class BosController {
 
   async validateUsage(req: Request, res: Response, next: NextFunction) {
     try {
-      const { unitId, year } = req.params;
+      const { unitId, year } = (req.params as any);
       const data = await bosService.validateBosUsage(
         unitId,
         parseInt(year) || new Date().getFullYear(),

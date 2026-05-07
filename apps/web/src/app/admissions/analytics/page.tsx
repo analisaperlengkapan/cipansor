@@ -62,7 +62,7 @@ export default function AdmissionsAnalyticsPage() {
                        <XAxis dataKey="name" tick={{fontSize: 12}} />
                        <YAxis hide />
                        <Tooltip
-                         formatter={(value: any, name: string) => [
+                         formatter={(value: any, name: any) => [
                             `Rp ${Number(value).toLocaleString()}`,
                             name,
                          ]}

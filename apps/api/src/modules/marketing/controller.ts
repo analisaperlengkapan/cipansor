@@ -21,7 +21,7 @@ export const createCampaign = async (req: Request, res: Response, next: NextFunc
 
 export const getROIStats = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { unitId } = req.query;
+    const { unitId } = (req.query as any);
     const user = (req as any).user;
 
     // Unit-level authorization: a UNIT_ADMIN must not be able to query
@@ -54,7 +54,7 @@ export const getROIStats = async (req: Request, res: Response, next: NextFunctio
 
 export const getHighPriorityLeads = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { unitId, limit } = req.query;
+    const { unitId, limit } = (req.query as any);
     const leads = await marketingService.getHighPriorityLeads(
       unitId as string,
       limit ? parseInt(limit as string) : 10
@@ -67,7 +67,7 @@ export const getHighPriorityLeads = async (req: Request, res: Response, next: Ne
 
 export const getRecentLeads = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { unitId, limit } = req.query;
+    const { unitId, limit } = (req.query as any);
     const leads = await marketingService.getRecentLeads(
       unitId as string,
       limit ? parseInt(limit as string) : 5
@@ -80,7 +80,7 @@ export const getRecentLeads = async (req: Request, res: Response, next: NextFunc
 
 export const getUpcomingFollowUps = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { unitId, limit } = req.query;
+    const { unitId, limit } = (req.query as any);
     const tasks = await marketingService.getUpcomingFollowUps(
       unitId as string,
       limit ? parseInt(limit as string) : 5
@@ -93,7 +93,7 @@ export const getUpcomingFollowUps = async (req: Request, res: Response, next: Ne
 
 export const updateCampaign = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { id } = req.params;
+    const { id } = (req.params as any);
     const data = updateCampaignSchema.parse(req.body);
     const campaign = await marketingService.updateCampaign(id, data);
     res.json({ success: true, data: campaign });
@@ -104,7 +104,7 @@ export const updateCampaign = async (req: Request, res: Response, next: NextFunc
 
 export const getCampaigns = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { unitId } = req.query;
+    const { unitId } = (req.query as any);
     const campaigns = await marketingService.getCampaigns(unitId as string);
     res.json({ success: true, data: campaigns });
   } catch (error) {
@@ -114,7 +114,7 @@ export const getCampaigns = async (req: Request, res: Response, next: NextFuncti
 
 export const getCampaignById = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { id } = req.params;
+    const { id } = (req.params as any);
     const campaign = await marketingService.getCampaignById(id);
     if (!campaign) {
       return res.status(404).json({ success: false, message: 'Campaign not found' });
@@ -127,7 +127,7 @@ export const getCampaignById = async (req: Request, res: Response, next: NextFun
 
 export const getCampaignByCode = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { code } = getCampaignByCodeSchema.parse(req.params);
+    const { code } = getCampaignByCodeSchema.parse((req.params as any));
     const campaign = await marketingService.getCampaignByCode(code);
     if (!campaign) {
       return res.status(404).json({ success: false, message: 'Campaign not found' });
@@ -151,7 +151,7 @@ export const logInteraction = async (req: Request, res: Response, next: NextFunc
 
 export const getInteractions = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { registrantId } = req.params;
+    const { registrantId } = (req.params as any);
     const interactions = await marketingService.getInteractionsByRegistrant(registrantId);
     res.json({ success: true, data: interactions });
   } catch (error) {
@@ -161,7 +161,7 @@ export const getInteractions = async (req: Request, res: Response, next: NextFun
 
 export const getStats = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { unitId } = req.query;
+    const { unitId } = (req.query as any);
     const stats = await marketingService.getDashboardStats(unitId as string);
     res.json({ success: true, data: stats });
   } catch (error) {

@@ -6,6 +6,8 @@ export enum UserRole {
   STUDENT = "STUDENT",
   PARENT = "PARENT",
   STAFF = "STAFF",
+  YAYASAN_ADMIN = "YAYASAN_ADMIN",
+  YAYASAN_PENGAWAS = "YAYASAN_PENGAWAS",
 }
 
 // Unit Types

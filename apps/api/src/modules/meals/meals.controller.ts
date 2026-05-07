@@ -9,13 +9,13 @@ export class MealsController {
   async listMenus(req: Request, res: Response, next: NextFunction) {
     try {
       const query = {
-        unitId: req.query.unitId as string | undefined,
-        mealType: req.query.mealType as any,
-        date: req.query.date as string | undefined,
-        startDate: req.query.startDate as string | undefined,
-        endDate: req.query.endDate as string | undefined,
-        page: parseInt(req.query.page as string) || 1,
-        limit: parseInt(req.query.limit as string) || 20,
+        unitId: (req.query as any).unitId as string | undefined,
+        mealType: (req.query as any).mealType as any,
+        date: (req.query as any).date as string | undefined,
+        startDate: (req.query as any).startDate as string | undefined,
+        endDate: (req.query as any).endDate as string | undefined,
+        page: parseInt((req.query as any).page as string) || 1,
+        limit: parseInt((req.query as any).limit as string) || 20,
       };
       const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
       const result = await mealsService.listMenus(query, user);
@@ -27,7 +27,7 @@ export class MealsController {
 
   async getMenuById(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
+      const { id } = (req.params as any);
       const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
       const menu = await mealsService.getMenuById(id, user);
       res.json({ data: menu });
@@ -48,7 +48,7 @@ export class MealsController {
 
   async updateMenu(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
+      const { id } = (req.params as any);
       const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
       const menu = await mealsService.updateMenu(id, req.body, user);
       res.json({ data: menu });
@@ -59,7 +59,7 @@ export class MealsController {
 
   async deleteMenu(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
+      const { id } = (req.params as any);
       const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
       await mealsService.deleteMenu(id, user);
       res.json({ success: true, message: 'Menu deleted successfully' });
@@ -70,7 +70,7 @@ export class MealsController {
 
   async getTodayMenu(req: Request, res: Response, next: NextFunction) {
     try {
-      const { unitId } = req.params;
+      const { unitId } = (req.params as any);
       const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
       const menus = await mealsService.getTodayMenu(unitId, user);
       res.json({ data: menus });
@@ -131,12 +131,12 @@ export class MealsController {
   async listAttendances(req: Request, res: Response, next: NextFunction) {
     try {
       const query = {
-        menuId: req.query.menuId as string | undefined,
-        studentId: req.query.studentId as string | undefined,
-        status: req.query.status as any,
-        date: req.query.date as string | undefined,
-        page: parseInt(req.query.page as string) || 1,
-        limit: parseInt(req.query.limit as string) || 50,
+        menuId: (req.query as any).menuId as string | undefined,
+        studentId: (req.query as any).studentId as string | undefined,
+        status: (req.query as any).status as any,
+        date: (req.query as any).date as string | undefined,
+        page: parseInt((req.query as any).page as string) || 1,
+        limit: parseInt((req.query as any).limit as string) || 50,
       };
       const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
       const result = await mealsService.listAttendance(query, user);
@@ -169,7 +169,7 @@ export class MealsController {
 
   async updateAttendance(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
+      const { id } = (req.params as any);
       const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
       const attendance = await mealsService.updateAttendance(id, req.body, user);
       res.json({ data: attendance });
@@ -184,9 +184,9 @@ export class MealsController {
 
   async getStatistics(req: Request, res: Response, next: NextFunction) {
     try {
-      const unitId = (req.query.unitId as string) || req.user!.unitId || '';
-      const startDate = req.query.startDate as string | undefined;
-      const endDate = req.query.endDate as string | undefined;
+      const unitId = ((req.query as any).unitId as string) || req.user!.unitId || '';
+      const startDate = (req.query as any).startDate as string | undefined;
+      const endDate = (req.query as any).endDate as string | undefined;
       const stats = await mealsService.getStatistics(unitId, startDate, endDate);
       res.json({ data: stats });
     } catch (error) {
@@ -196,9 +196,9 @@ export class MealsController {
 
   async getStudentHistory(req: Request, res: Response, next: NextFunction) {
     try {
-      const { studentId } = req.params;
+      const { studentId } = (req.params as any);
       const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
-      const limit = parseInt(req.query.limit as string) || 30;
+      const limit = parseInt((req.query as any).limit as string) || 30;
       const history = await mealsService.getStudentHistory(studentId, user, limit);
       res.json({ data: history });
     } catch (error) {

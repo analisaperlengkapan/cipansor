@@ -1,5 +1,4 @@
 import { Request, Response } from 'express';
-import { UserRole } from '@prisma/client';
 import { asyncHandler } from '@/middleware/error';
 import { userService } from './user.service';
 import { ListUsersQuery, CreateUserInput, UpdateUserInput } from './user.schema';
@@ -9,9 +8,9 @@ import { ListUsersQuery, CreateUserInput, UpdateUserInput } from './user.schema'
  * GET /api/users
  */
 export const list = asyncHandler(async (req: Request, res: Response) => {
-  const query = (res.locals.validatedQuery || req.query) as ListUsersQuery;
+  const query = (res.locals.validatedQuery || (req.query as any)) as ListUsersQuery;
   const result = await userService.findAll(query, {
-    role: req.user!.role as UserRole,
+    role: req.user!.role,
     unitId: req.user!.unitId,
   });
 
@@ -29,8 +28,8 @@ export const list = asyncHandler(async (req: Request, res: Response) => {
  * GET /api/users/:id
  */
 export const getById = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = req.params;
-  const user = await userService.findById(id as string);
+  const { id } = (req.params as any);
+  const user = await userService.findById(id);
 
   res.json({
     success: true,
@@ -44,7 +43,7 @@ export const getById = asyncHandler(async (req: Request, res: Response) => {
  */
 export const create = asyncHandler(async (req: Request, res: Response) => {
   const input: CreateUserInput = req.body;
-  const user = await userService.create(input, req.user!.role as UserRole);
+  const user = await userService.create(input, req.user!.role);
 
   res.status(201).json({
     success: true,
@@ -57,10 +56,10 @@ export const create = asyncHandler(async (req: Request, res: Response) => {
  * PUT /api/users/:id
  */
 export const update = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const { id } = (req.params as any);
   const input: UpdateUserInput = req.body;
-  const user = await userService.update(id as string, input, {
-    role: req.user!.role as UserRole,
+  const user = await userService.update(id, input, {
+    role: req.user!.role,
     sub: req.user!.sub,
   });
 
@@ -75,8 +74,8 @@ export const update = asyncHandler(async (req: Request, res: Response) => {
  * DELETE /api/users/:id
  */
 export const remove = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = req.params;
-  const result = await userService.delete(id as string);
+  const { id } = (req.params as any);
+  const result = await userService.delete(id);
 
   res.json({
     success: true,

@@ -80,7 +80,7 @@ export const procurementController = {
 
   findAll: async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { unitId, status } = req.query;
+      const { unitId, status } = (req.query as any);
       const user = (req as any).user;
 
       const result = await procurementService.findAll(
@@ -101,7 +101,7 @@ export const procurementController = {
 
   findById: async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { id } = req.params;
+      const { id } = (req.params as any);
       const result = await procurementService.findById(id);
       res.json({
         success: true,
@@ -114,7 +114,7 @@ export const procurementController = {
 
   getAuditLogs: async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { id } = req.params;
+      const { id } = (req.params as any);
       const result = await procurementService.getAuditLogs(id);
       res.json({
         success: true,
@@ -127,7 +127,7 @@ export const procurementController = {
 
   updateStatus: async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { id } = req.params;
+      const { id } = (req.params as any);
       const input = updateStatusSchema.parse(req.body);
       const user = (req as any).user;
 
@@ -150,7 +150,7 @@ export const procurementController = {
 
   fulfill: async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { id } = req.params;
+      const { id } = (req.params as any);
       const input = fulfillRequestSchema.parse(req.body);
       const user = (req as any).user;
 

@@ -152,7 +152,7 @@ export default function ExecutiveDashboard() {
                           axisLine={false}
                           tickFormatter={(value) => `Rp${(value / 1000000).toFixed(0)}jt`}
                         />
-                        <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                        <Tooltip formatter={(value: any) => formatCurrency(value)} />
                         <Legend />
                         <Bar dataKey="revenue" name="Pendapatan" fill="#10b981" radius={[4, 4, 0, 0]} />
                         <Bar dataKey="expense" name="Beban" fill="#ef4444" radius={[4, 4, 0, 0]} />

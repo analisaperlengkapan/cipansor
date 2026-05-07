@@ -10,7 +10,7 @@ import * as exportService from './export.service';
  */
 export async function exportStudents(req: Request, res: Response, next: NextFunction) {
   try {
-    const { unitId, format = 'json' } = req.query;
+    const { unitId, format = 'json' } = (req.query as any);
     const data = await exportService.exportStudentsData({
       unitId: unitId as string | undefined,
       format: format as 'json' | 'csv',
@@ -34,7 +34,7 @@ export async function exportStudents(req: Request, res: Response, next: NextFunc
  */
 export async function exportAttendance(req: Request, res: Response, next: NextFunction) {
   try {
-    const { unitId, startDate, endDate, format = 'json' } = req.query;
+    const { unitId, startDate, endDate, format = 'json' } = (req.query as any);
     const data = await exportService.exportAttendanceData({
       unitId: unitId as string | undefined,
       startDate: startDate as string | undefined,
@@ -60,7 +60,7 @@ export async function exportAttendance(req: Request, res: Response, next: NextFu
  */
 export async function exportFinance(req: Request, res: Response, next: NextFunction) {
   try {
-    const { unitId, startDate, endDate, format = 'json' } = req.query;
+    const { unitId, startDate, endDate, format = 'json' } = (req.query as any);
     const data = await exportService.exportFinanceData({
       unitId: unitId as string | undefined,
       startDate: startDate as string | undefined,
@@ -86,7 +86,7 @@ export async function exportFinance(req: Request, res: Response, next: NextFunct
  */
 export async function exportTahfidz(req: Request, res: Response, next: NextFunction) {
   try {
-    const { unitId, startDate, endDate, format = 'json' } = req.query;
+    const { unitId, startDate, endDate, format = 'json' } = (req.query as any);
     const data = await exportService.exportTahfidzData({
       unitId: unitId as string | undefined,
       startDate: startDate as string | undefined,
@@ -112,7 +112,7 @@ export async function exportTahfidz(req: Request, res: Response, next: NextFunct
  */
 export async function exportAll(req: Request, res: Response, next: NextFunction) {
   try {
-    const { unitId, startDate, endDate } = req.query;
+    const { unitId, startDate, endDate } = (req.query as any);
     const data = await exportService.getComprehensiveExport({
       unitId: unitId as string | undefined,
       startDate: startDate as string | undefined,

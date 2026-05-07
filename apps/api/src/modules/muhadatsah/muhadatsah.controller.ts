@@ -5,16 +5,16 @@ export class MuhadatsahController {
   async list(req: Request, res: Response, next: NextFunction) {
     try {
       const query = {
-        unitId: req.query.unitId as string,
-        studentId: req.query.studentId as string,
-        partnerId: req.query.partnerId as string,
-        evaluatorId: req.query.evaluatorId as string,
-        status: req.query.status as any,
-        language: req.query.language as string,
-        startDate: req.query.startDate as string,
-        endDate: req.query.endDate as string,
-        page: parseInt(req.query.page as string) || 1,
-        limit: parseInt(req.query.limit as string) || 20,
+        unitId: (req.query as any).unitId as string,
+        studentId: (req.query as any).studentId as string,
+        partnerId: (req.query as any).partnerId as string,
+        evaluatorId: (req.query as any).evaluatorId as string,
+        status: (req.query as any).status as any,
+        language: (req.query as any).language as string,
+        startDate: (req.query as any).startDate as string,
+        endDate: (req.query as any).endDate as string,
+        page: parseInt((req.query as any).page as string) || 1,
+        limit: parseInt((req.query as any).limit as string) || 20,
       };
 
       const result = await muhadatsahService.list(query, req.user!);
@@ -26,7 +26,7 @@ export class MuhadatsahController {
 
   async getById(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
+      const { id } = (req.params as any);
       const result = await muhadatsahService.getById(id, req.user!);
       res.json({ success: true, data: result });
     } catch (error) {
@@ -45,7 +45,7 @@ export class MuhadatsahController {
 
   async update(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
+      const { id } = (req.params as any);
       const result = await muhadatsahService.update(id, req.body, req.user!);
       res.json({ success: true, data: result });
     } catch (error) {
@@ -55,7 +55,7 @@ export class MuhadatsahController {
 
   async delete(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
+      const { id } = (req.params as any);
       const result = await muhadatsahService.delete(id, req.user!);
       res.json({ success: true, data: result });
     } catch (error) {
@@ -65,7 +65,7 @@ export class MuhadatsahController {
 
   async evaluate(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
+      const { id } = (req.params as any);
       const result = await muhadatsahService.evaluate(id, req.body, req.user!);
       res.json({ success: true, data: result });
     } catch (error) {
@@ -75,7 +75,7 @@ export class MuhadatsahController {
 
   async cancel(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
+      const { id } = (req.params as any);
       const result = await muhadatsahService.cancel(id, req.user!);
       res.json({ success: true, data: result });
     } catch (error) {
@@ -85,8 +85,8 @@ export class MuhadatsahController {
 
   async getUpcoming(req: Request, res: Response, next: NextFunction) {
     try {
-      const unitId = (req.query.unitId as string) || req.user!.unitId || '';
-      const limit = parseInt(req.query.limit as string) || 10;
+      const unitId = ((req.query as any).unitId as string) || req.user!.unitId || '';
+      const limit = parseInt((req.query as any).limit as string) || 10;
       const result = await muhadatsahService.getUpcoming(unitId, limit);
       res.json({ success: true, data: result });
     } catch (error) {
@@ -96,8 +96,8 @@ export class MuhadatsahController {
 
   async getStudentHistory(req: Request, res: Response, next: NextFunction) {
     try {
-      const { studentId } = req.params;
-      const limit = parseInt(req.query.limit as string) || 20;
+      const { studentId } = (req.params as any);
+      const limit = parseInt((req.query as any).limit as string) || 20;
       const result = await muhadatsahService.getStudentHistory(studentId, limit);
       res.json({ success: true, data: result });
     } catch (error) {
@@ -107,9 +107,9 @@ export class MuhadatsahController {
 
   async getStatistics(req: Request, res: Response, next: NextFunction) {
     try {
-      const unitId = (req.query.unitId as string) || req.user!.unitId || '';
-      const startDate = req.query.startDate as string;
-      const endDate = req.query.endDate as string;
+      const unitId = ((req.query as any).unitId as string) || req.user!.unitId || '';
+      const startDate = (req.query as any).startDate as string;
+      const endDate = (req.query as any).endDate as string;
       const result = await muhadatsahService.getStatistics(unitId, startDate, endDate);
       res.json({ success: true, data: result });
     } catch (error) {
@@ -119,9 +119,9 @@ export class MuhadatsahController {
 
   async getTopPerformers(req: Request, res: Response, next: NextFunction) {
     try {
-      const unitId = (req.query.unitId as string) || req.user!.unitId || '';
-      const language = req.query.language as string;
-      const limit = parseInt(req.query.limit as string) || 10;
+      const unitId = ((req.query as any).unitId as string) || req.user!.unitId || '';
+      const language = (req.query as any).language as string;
+      const limit = parseInt((req.query as any).limit as string) || 10;
       const result = await muhadatsahService.getTopPerformers(unitId, language, limit);
       res.json({ success: true, data: result });
     } catch (error) {
@@ -131,8 +131,8 @@ export class MuhadatsahController {
 
   async matchPartners(req: Request, res: Response, next: NextFunction) {
     try {
-      const unitId = (req.query.unitId as string) || req.user!.unitId || '';
-      const language = (req.query.language as string) || 'Arabic';
+      const unitId = ((req.query as any).unitId as string) || req.user!.unitId || '';
+      const language = ((req.query as any).language as string) || 'Arabic';
       const result = await muhadatsahService.matchPartners(unitId, language);
       res.json({ success: true, data: result });
     } catch (error) {

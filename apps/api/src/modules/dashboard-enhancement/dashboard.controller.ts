@@ -12,7 +12,7 @@ import { runJob } from '@/jobs';
  */
 export const getOverview = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const query = req.query as any;
+    const query = (req.query as any) as any;
     const overview = await dashboardService.getOverview(query);
     res.json(ApiResponse.success(overview));
   } catch (error) {
@@ -25,7 +25,7 @@ export const getOverview = async (req: Request, res: Response, next: NextFunctio
  */
 export const getQuickStats = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const unitId = req.query.unitId as string | undefined;
+    const unitId = (req.query as any).unitId as string | undefined;
     const stats = await dashboardService.getQuickStats(unitId);
     res.json(ApiResponse.success(stats));
   } catch (error) {
@@ -38,7 +38,7 @@ export const getQuickStats = async (req: Request, res: Response, next: NextFunct
  */
 export const getMetrics = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const query = req.query as any;
+    const query = (req.query as any) as any;
     const result = await dashboardService.getMetrics(query);
     res.json(
       ApiResponse.paginated(
@@ -71,7 +71,7 @@ export const createMetricSnapshot = async (req: Request, res: Response, next: Ne
  */
 export const getTrend = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const query = req.query as any;
+    const query = (req.query as any) as any;
     const trend = await dashboardService.getTrend(query);
     res.json(ApiResponse.success(trend));
   } catch (error) {
@@ -84,7 +84,7 @@ export const getTrend = async (req: Request, res: Response, next: NextFunction) 
  */
 export const getUnitComparison = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const query = req.query as any;
+    const query = (req.query as any) as any;
     const comparison = await dashboardService.getUnitComparison(query);
     res.json(ApiResponse.success(comparison));
   } catch (error) {

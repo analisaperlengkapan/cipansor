@@ -33,7 +33,7 @@ export const getGuestBooks = async (
     if (!req.user?.unitId) {
       throw Errors.unauthorized('User does not have a unit assigned');
     }
-    const data = await ReceptionService.getGuestBooks(req.user.unitId, req.query);
+    const data = await ReceptionService.getGuestBooks(req.user.unitId, (req.query as any));
     res.json({ success: true, data });
   } catch (error) {
     next(error);
@@ -62,7 +62,7 @@ export const updateGuestBook = async (
   next: NextFunction
 ) => {
   try {
-    const data = await ReceptionService.updateGuestBook(req.params.id, req.body);
+    const data = await ReceptionService.updateGuestBook((req.params as any).id, req.body);
     res.json({ success: true, data });
   } catch (error) {
     next(error);
@@ -80,7 +80,7 @@ export const getStudentVisits = async (
     if (!req.user?.unitId) {
       throw Errors.unauthorized('User does not have a unit assigned');
     }
-    const data = await ReceptionService.getStudentVisits(req.user.unitId, req.query);
+    const data = await ReceptionService.getStudentVisits(req.user.unitId, (req.query as any));
     res.json({ success: true, data });
   } catch (error) {
     next(error);
@@ -109,7 +109,7 @@ export const updateStudentVisit = async (
   next: NextFunction
 ) => {
   try {
-    const data = await ReceptionService.updateStudentVisit(req.params.id, req.body);
+    const data = await ReceptionService.updateStudentVisit((req.params as any).id, req.body);
     res.json({ success: true, data });
   } catch (error) {
     next(error);
@@ -127,7 +127,7 @@ export const getPackages = async (
     if (!req.user?.unitId) {
       throw Errors.unauthorized('User does not have a unit assigned');
     }
-    const data = await ReceptionService.getPackages(req.user.unitId, req.query);
+    const data = await ReceptionService.getPackages(req.user.unitId, (req.query as any));
     res.json({ success: true, data });
   } catch (error) {
     next(error);
@@ -156,7 +156,7 @@ export const updatePackage = async (
   next: NextFunction
 ) => {
   try {
-    const data = await ReceptionService.updatePackage(req.params.id, req.body);
+    const data = await ReceptionService.updatePackage((req.params as any).id, req.body);
     res.json({ success: true, data });
   } catch (error) {
     next(error);

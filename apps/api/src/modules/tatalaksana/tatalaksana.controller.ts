@@ -10,7 +10,7 @@ export const getSOPs = async (req: Request, res: Response, next: NextFunction) =
 
 export const getSOP = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const data = await tataLaksanaService.getSOP(req.params.id);
+    const data = await tataLaksanaService.getSOP((req.params as any).id);
     res.json({ data });
   } catch (error) { next(error); }
 };
@@ -29,7 +29,7 @@ export const createSOP = async (req: Request, res: Response, next: NextFunction)
 
 export const updateSOP = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const data = await tataLaksanaService.updateSOP(req.params.id, {
+    const data = await tataLaksanaService.updateSOP((req.params as any).id, {
       ...req.body,
       effectiveDate: req.body.effectiveDate ? new Date(req.body.effectiveDate) : undefined,
       reviewDate: req.body.reviewDate ? new Date(req.body.reviewDate) : undefined,
@@ -40,14 +40,14 @@ export const updateSOP = async (req: Request, res: Response, next: NextFunction)
 
 export const approveSOP = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const data = await tataLaksanaService.approveSOP(req.params.id, req.user?.id!);
+    const data = await tataLaksanaService.approveSOP((req.params as any).id, req.user?.id!);
     res.json({ data });
   } catch (error) { next(error); }
 };
 
 export const activateSOP = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const data = await tataLaksanaService.activateSOP(req.params.id);
+    const data = await tataLaksanaService.activateSOP((req.params as any).id);
     res.json({ data });
   } catch (error) { next(error); }
 };
@@ -64,7 +64,7 @@ export const createRevision = async (req: Request, res: Response, next: NextFunc
 
 export const deleteSOP = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    await tataLaksanaService.deleteSOP(req.params.id);
+    await tataLaksanaService.deleteSOP((req.params as any).id);
     res.status(204).send();
   } catch (error) { next(error); }
 };

@@ -301,7 +301,9 @@ export class StudentOnboardingOrchestrator {
         eventBus.emit('email:send_reset_token', {
           email: r.email,
           token: r.resetToken,
-          userId: r.userId
+          userId: r.userId,
+          title: 'Set Your Password',
+          message: 'Please set your password using the link provided.',
         });
 
         if (r.parentUserId && r.parentResetToken) {
@@ -314,7 +316,9 @@ export class StudentOnboardingOrchestrator {
           eventBus.emit('email:send_reset_token', {
             email: r.parentEmail,
             token: r.parentResetToken,
-            userId: r.parentUserId
+            userId: r.parentUserId,
+            title: 'Set Your Parent Password',
+            message: 'Please set your parent account password using the link provided.',
           });
         } else if (r.parentUserId) {
           eventBus.emit('notification:send', {

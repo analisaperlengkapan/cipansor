@@ -28,7 +28,7 @@ import { prisma } from '@/lib/prisma';
 
 export async function getExams(req: Request, res: Response, next: NextFunction) {
   try {
-    const query = examQuerySchema.parse(req.query);
+    const query = examQuerySchema.parse((req.query as any));
     const result = await assessmentService.getExams(query);
     res.json(result);
   } catch (error) {
@@ -38,7 +38,7 @@ export async function getExams(req: Request, res: Response, next: NextFunction) 
 
 export async function getIntegratedRiskAlerts(req: Request, res: Response, next: NextFunction) {
   try {
-    const { unitId, academicYearId } = req.query;
+    const { unitId, academicYearId } = (req.query as any);
     const user = (req as any).user;
 
     if (!unitId) {
@@ -73,8 +73,8 @@ export async function getIntegratedRiskAlerts(req: Request, res: Response, next:
 
 export async function getUnitEducationAnalytics(req: Request, res: Response, next: NextFunction) {
   try {
-    const { unitId } = req.params;
-    const { academicYearId } = req.query;
+    const { unitId } = (req.params as any);
+    const { academicYearId } = (req.query as any);
     const user = (req as any).user;
 
     // Unit-level authorization: non-SUPER_ADMIN users can only access their own unit
@@ -97,8 +97,8 @@ export async function getUnitEducationAnalytics(req: Request, res: Response, nex
 
 export async function getStudentHolisticAnalytics(req: Request, res: Response, next: NextFunction) {
   try {
-    const { studentId } = req.params;
-    const { academicYearId } = req.query;
+    const { studentId } = (req.params as any);
+    const { academicYearId } = (req.query as any);
     const user = (req as any).user;
 
     // Unit-level authorization: verify the student belongs to the user's unit
@@ -130,7 +130,7 @@ export async function getStudentHolisticAnalytics(req: Request, res: Response, n
 
 export async function getExamAnalytics(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const { id } = (req.params as any);
     const result = await assessmentService.getExamAnalytics(id);
     if (!result) {
       return res.status(404).json({ success: false, error: 'Exam not found' });
@@ -143,7 +143,7 @@ export async function getExamAnalytics(req: Request, res: Response, next: NextFu
 
 export async function getExamById(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const { id } = (req.params as any);
     const exam = await assessmentService.getExamById(id);
     if (!exam) {
       return res.status(404).json({ success: false, error: 'Exam not found' });
@@ -166,7 +166,7 @@ export async function createExam(req: Request, res: Response, next: NextFunction
 
 export async function updateExam(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const { id } = (req.params as any);
     const data = updateExamSchema.parse(req.body);
     const exam = await assessmentService.updateExam(id, data);
     res.json({ success: true, data: exam });
@@ -177,7 +177,7 @@ export async function updateExam(req: Request, res: Response, next: NextFunction
 
 export async function deleteExam(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const { id } = (req.params as any);
     await assessmentService.deleteExam(id);
     res.json({ success: true, message: 'Exam deleted successfully' });
   } catch (error) {
@@ -187,7 +187,7 @@ export async function deleteExam(req: Request, res: Response, next: NextFunction
 
 export async function updateExamStatus(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const { id } = (req.params as any);
     const { status } = req.body;
     const exam = await assessmentService.updateExamStatus(id, status);
     res.json({ success: true, data: exam });
@@ -202,7 +202,7 @@ export async function updateExamStatus(req: Request, res: Response, next: NextFu
 
 export async function getGrades(req: Request, res: Response, next: NextFunction) {
   try {
-    const query = gradeQuerySchema.parse(req.query);
+    const query = gradeQuerySchema.parse((req.query as any));
     const result = await assessmentService.getGrades(query);
     res.json(result);
   } catch (error) {
@@ -212,7 +212,7 @@ export async function getGrades(req: Request, res: Response, next: NextFunction)
 
 export async function getGradeById(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const { id } = (req.params as any);
     const grade = await assessmentService.getGradeById(id);
     if (!grade) {
       return res.status(404).json({ success: false, error: 'Grade not found' });
@@ -235,7 +235,7 @@ export async function createGrade(req: Request, res: Response, next: NextFunctio
 
 export async function updateGrade(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const { id } = (req.params as any);
     const data = updateGradeSchema.parse(req.body);
     const grade = await assessmentService.updateGrade(id, data);
     res.json({ success: true, data: grade });
@@ -246,7 +246,7 @@ export async function updateGrade(req: Request, res: Response, next: NextFunctio
 
 export async function deleteGrade(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const { id } = (req.params as any);
     await assessmentService.deleteGrade(id);
     res.json({ success: true, message: 'Grade deleted successfully' });
   } catch (error) {
@@ -266,8 +266,8 @@ export async function bulkCreateGrades(req: Request, res: Response, next: NextFu
 
 export async function getStudentGrades(req: Request, res: Response, next: NextFunction) {
   try {
-    const { studentId } = req.params;
-    const { academicYearId } = req.query;
+    const { studentId } = (req.params as any);
+    const { academicYearId } = (req.query as any);
     const grades = await assessmentService.getStudentGrades(
       studentId,
       academicYearId as string | undefined
@@ -280,7 +280,7 @@ export async function getStudentGrades(req: Request, res: Response, next: NextFu
 
 export async function getExamGrades(req: Request, res: Response, next: NextFunction) {
   try {
-    const { examId } = req.params;
+    const { examId } = (req.params as any);
     const grades = await assessmentService.getExamGrades(examId);
     res.json({ success: true, data: grades });
   } catch (error) {
@@ -294,7 +294,7 @@ export async function getExamGrades(req: Request, res: Response, next: NextFunct
 
 export async function getReportCards(req: Request, res: Response, next: NextFunction) {
   try {
-    const query = reportCardQuerySchema.parse(req.query);
+    const query = reportCardQuerySchema.parse((req.query as any));
     const result = await assessmentService.getReportCards(query);
     res.json(result);
   } catch (error) {
@@ -304,7 +304,7 @@ export async function getReportCards(req: Request, res: Response, next: NextFunc
 
 export async function getReportCardById(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const { id } = (req.params as any);
     const reportCard = await assessmentService.getReportCardById(id);
     if (!reportCard) {
       return res.status(404).json({ success: false, error: 'Report card not found' });
@@ -327,7 +327,7 @@ export async function createReportCard(req: Request, res: Response, next: NextFu
 
 export async function updateReportCard(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const { id } = (req.params as any);
     const data = updateReportCardSchema.parse(req.body);
     const reportCard = await assessmentService.updateReportCard(id, data);
     res.json({ success: true, data: reportCard });
@@ -338,7 +338,7 @@ export async function updateReportCard(req: Request, res: Response, next: NextFu
 
 export async function deleteReportCard(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const { id } = (req.params as any);
     await assessmentService.deleteReportCard(id);
     res.json({ success: true, message: 'Report card deleted successfully' });
   } catch (error) {
@@ -376,7 +376,7 @@ export async function generateReportCard(req: Request, res: Response, next: Next
 
 export async function publishReportCard(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const { id } = (req.params as any);
     const reportCard = await assessmentService.publishReportCard(id);
     res.json({ success: true, data: reportCard });
   } catch (error) {

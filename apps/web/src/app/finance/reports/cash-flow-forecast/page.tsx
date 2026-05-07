@@ -117,7 +117,7 @@ export default function CashFlowForecastPage() {
                   <XAxis dataKey="month" />
                   <YAxis tickFormatter={(val) => `Rp ${val / 1000000}jt`} />
                   <Tooltip
-                    formatter={(val: number) => formatCurrency(val)}
+                    formatter={(val: any) => formatCurrency(val)}
                     contentStyle={{ borderRadius: "8px", border: "none", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}
                   />
                   <Legend />
@@ -142,7 +142,7 @@ export default function CashFlowForecastPage() {
                   <XAxis dataKey="month" />
                   <YAxis tickFormatter={(val) => `Rp ${val / 1000000}jt`} />
                   <Tooltip
-                    formatter={(val: number) => formatCurrency(val)}
+                    formatter={(val: any) => formatCurrency(val)}
                     contentStyle={{ borderRadius: "8px", border: "none", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}
                   />
                   <Legend />

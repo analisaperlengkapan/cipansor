@@ -93,7 +93,7 @@ export async function getReportFormats(req: Request, res: Response, next: NextFu
 
 export async function getStudentReport(req: Request, res: Response, next: NextFunction) {
   try {
-    const { unitId, status, format = 'JSON' } = req.query;
+    const { unitId, status, format = 'JSON' } = (req.query as any);
     const result = await reportingService.generateReport({
       type: 'STUDENT_LIST',
       format: format as ReportFormat,
@@ -113,7 +113,7 @@ export async function getStudentReport(req: Request, res: Response, next: NextFu
 
 export async function getAttendanceReport(req: Request, res: Response, next: NextFunction) {
   try {
-    const { unitId, startDate, endDate, format = 'JSON' } = req.query;
+    const { unitId, startDate, endDate, format = 'JSON' } = (req.query as any);
     const result = await reportingService.generateReport({
       type: 'ATTENDANCE_SUMMARY',
       format: format as ReportFormat,
@@ -137,7 +137,7 @@ export async function getAttendanceReport(req: Request, res: Response, next: Nex
 
 export async function getFinanceReport(req: Request, res: Response, next: NextFunction) {
   try {
-    const { unitId, startDate, endDate } = req.query;
+    const { unitId, startDate, endDate } = (req.query as any);
     const result = await reportingService.generateReport({
       type: 'FINANCIAL_SUMMARY',
       format: 'JSON',
@@ -155,7 +155,7 @@ export async function getFinanceReport(req: Request, res: Response, next: NextFu
 
 export async function getTahfidzReport(req: Request, res: Response, next: NextFunction) {
   try {
-    const { unitId, startDate, endDate, format = 'JSON' } = req.query;
+    const { unitId, startDate, endDate, format = 'JSON' } = (req.query as any);
     const result = await reportingService.generateReport({
       type: 'TAHFIDZ_PROGRESS',
       format: format as ReportFormat,

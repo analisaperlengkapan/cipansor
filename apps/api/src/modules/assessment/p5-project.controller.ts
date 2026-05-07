@@ -28,7 +28,7 @@ export class P5ProjectController {
 
   static async updateProject(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
+      const { id } = (req.params as any);
       const project = await P5ProjectService.updateProject(id, req.body);
       return res.json(ApiResponse.success(project, 'P5 Project updated successfully'));
     } catch (error) {
@@ -38,7 +38,7 @@ export class P5ProjectController {
 
   static async deleteProject(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
+      const { id } = (req.params as any);
       await P5ProjectService.deleteProject(id);
       return res.json(ApiResponse.success(null, 'P5 Project deleted successfully'));
     } catch (error) {
@@ -48,7 +48,7 @@ export class P5ProjectController {
 
   static async getProjectById(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
+      const { id } = (req.params as any);
       const project = await P5ProjectService.getProjectById(id);
       return res.json(ApiResponse.success(project, 'P5 Project retrieved successfully'));
     } catch (error) {
@@ -58,7 +58,7 @@ export class P5ProjectController {
 
   static async getProjects(req: Request, res: Response, next: NextFunction) {
     try {
-      const projects = await P5ProjectService.getProjects(req.query);
+      const projects = await P5ProjectService.getProjects((req.query as any));
       return res.json(ApiResponse.success(projects, 'P5 Projects list retrieved successfully'));
     } catch (error) {
       next(error);

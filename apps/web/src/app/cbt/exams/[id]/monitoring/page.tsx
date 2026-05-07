@@ -226,7 +226,7 @@ export default function ExamMonitoringPage({
                             <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
                             <XAxis type="number" domain={[0, 100]} hide />
                             <YAxis dataKey="code" type="category" tick={{ fontSize: 10, fontWeight: "bold" }} width={70} />
-                            <Tooltip formatter={(value: number) => [`${value.toFixed(1)}%`, "Penguasaan"]} />
+                            <Tooltip formatter={(value: any) => [`${value.toFixed(1)}%`, "Penguasaan"]} />
                             <Bar dataKey="masteryLevel" radius={[0, 4, 4, 0]} barSize={15}>
                               {curriculumMastery.map((entry: any, index: number) => (
                                 <Cell
@@ -263,7 +263,7 @@ export default function ExamMonitoringPage({
                             <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
                             <XAxis type="number" domain={[0, 100]} hide />
                             <YAxis dataKey="code" type="category" tick={{ fontSize: 10, fontWeight: "bold" }} width={40} />
-                            <Tooltip formatter={(value: number) => [`${value.toFixed(1)}%`, "Benar"]} />
+                            <Tooltip formatter={(value: any) => [`${value.toFixed(1)}%`, "Benar"]} />
                             <Bar dataKey="masteryLevel" radius={[0, 4, 4, 0]} barSize={15}>
                               {topicMastery.map((entry: any, index: number) => (
                                 <Cell

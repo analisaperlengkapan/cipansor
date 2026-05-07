@@ -20,15 +20,15 @@ export class CounselingController {
     try {
       const user = { sub: req.user!.sub, roleCode: req.user!.roleCode, unitId: req.user!.unitId };
       const filters: CounselingListParams = {
-        status: req.query.status as any,
-        category: req.query.category as any,
-        priority: req.query.priority as any,
-        studentId: req.query.studentId as string | undefined,
-        startDate: req.query.startDate as string | undefined,
-        endDate: req.query.endDate as string | undefined,
-        search: req.query.search as string | undefined,
-        page: req.query.page ? Number(req.query.page) : undefined,
-        limit: req.query.limit ? Number(req.query.limit) : undefined,
+        status: (req.query as any).status as any,
+        category: (req.query as any).category as any,
+        priority: (req.query as any).priority as any,
+        studentId: (req.query as any).studentId as string | undefined,
+        startDate: (req.query as any).startDate as string | undefined,
+        endDate: (req.query as any).endDate as string | undefined,
+        search: (req.query as any).search as string | undefined,
+        page: (req.query as any).page ? Number((req.query as any).page) : undefined,
+        limit: (req.query as any).limit ? Number((req.query as any).limit) : undefined,
       };
 
       const result = await counselingService.getSessions(filters, user);
@@ -44,7 +44,7 @@ export class CounselingController {
     next: NextFunction
   ) {
     try {
-      const { sessionId } = req.params;
+      const { sessionId } = (req.params as any);
       const user = { sub: req.user!.sub, roleCode: req.user!.roleCode, unitId: req.user!.unitId };
       const session = await counselingService.getSessionById(sessionId, user);
       res.json({ success: true, data: session });
@@ -73,7 +73,7 @@ export class CounselingController {
     next: NextFunction
   ) {
     try {
-      const { sessionId } = req.params;
+      const { sessionId } = (req.params as any);
       const user = { sub: req.user!.sub, roleCode: req.user!.roleCode, unitId: req.user!.unitId };
       const session = await counselingService.updateSession(sessionId, req.body, user);
       res.json({ success: true, data: session });
@@ -84,7 +84,7 @@ export class CounselingController {
 
   async deleteSession(req: Request, res: Response<ApiResponse<null>>, next: NextFunction) {
     try {
-      const { sessionId } = req.params;
+      const { sessionId } = (req.params as any);
       const user = { sub: req.user!.sub, roleCode: req.user!.roleCode, unitId: req.user!.unitId };
       await counselingService.deleteSession(sessionId, user);
       res.json({ success: true, data: null, message: 'Session deleted successfully' });
@@ -95,7 +95,7 @@ export class CounselingController {
 
   async addNote(req: Request, res: Response<ApiResponse<CounselingNote>>, next: NextFunction) {
     try {
-      const { sessionId } = req.params;
+      const { sessionId } = (req.params as any);
       const user = { sub: req.user!.sub, roleCode: req.user!.roleCode, unitId: req.user!.unitId };
       const note = await counselingService.addNote(sessionId, req.body, user);
       res.status(201).json({ success: true, data: note });
@@ -106,7 +106,7 @@ export class CounselingController {
 
   async updateNote(req: Request, res: Response<ApiResponse<CounselingNote>>, next: NextFunction) {
     try {
-      const { noteId } = req.params;
+      const { noteId } = (req.params as any);
       const user = { sub: req.user!.sub, roleCode: req.user!.roleCode, unitId: req.user!.unitId };
       const note = await counselingService.updateNote(noteId, req.body, user);
       res.json({ success: true, data: note });
@@ -117,7 +117,7 @@ export class CounselingController {
 
   async deleteNote(req: Request, res: Response<ApiResponse<null>>, next: NextFunction) {
     try {
-      const { noteId } = req.params;
+      const { noteId } = (req.params as any);
       const user = { sub: req.user!.sub, roleCode: req.user!.roleCode, unitId: req.user!.unitId };
       await counselingService.deleteNote(noteId, user);
       res.json({ success: true, data: null, message: 'Note deleted successfully' });
@@ -132,7 +132,7 @@ export class CounselingController {
     next: NextFunction
   ) {
     try {
-      const { sessionId } = req.params;
+      const { sessionId } = (req.params as any);
       const user = { sub: req.user!.sub, roleCode: req.user!.roleCode, unitId: req.user!.unitId };
       const referral = await counselingService.addReferral(sessionId, req.body, user);
       res.status(201).json({ success: true, data: referral });
@@ -147,7 +147,7 @@ export class CounselingController {
     next: NextFunction
   ) {
     try {
-      const { referralId } = req.params;
+      const { referralId } = (req.params as any);
       const user = { sub: req.user!.sub, roleCode: req.user!.roleCode, unitId: req.user!.unitId };
       const referral = await counselingService.updateReferral(referralId, req.body, user);
       res.json({ success: true, data: referral });
@@ -158,7 +158,7 @@ export class CounselingController {
 
   async deleteReferral(req: Request, res: Response<ApiResponse<null>>, next: NextFunction) {
     try {
-      const { referralId } = req.params;
+      const { referralId } = (req.params as any);
       const user = { sub: req.user!.sub, roleCode: req.user!.roleCode, unitId: req.user!.unitId };
       await counselingService.deleteReferral(referralId, user);
       res.json({ success: true, data: null, message: 'Referral deleted successfully' });
@@ -173,7 +173,7 @@ export class CounselingController {
     next: NextFunction
   ) {
     try {
-      const { studentId } = req.params;
+      const { studentId } = (req.params as any);
       const user = { sub: req.user!.sub, roleCode: req.user!.roleCode, unitId: req.user!.unitId };
       const history = await counselingService.getStudentHistory(studentId, user);
       res.json({ success: true, data: history });

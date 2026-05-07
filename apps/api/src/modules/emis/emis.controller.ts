@@ -9,7 +9,7 @@ export class EmisController {
 
   async exportStudents(req: Request, res: Response, next: NextFunction) {
     try {
-      const { unitId, academicYearId, includeInactive } = req.query;
+      const { unitId, academicYearId, includeInactive } = (req.query as any);
       const data = await emisService.exportStudentData(
         {
           unitId: unitId as string,
@@ -26,7 +26,7 @@ export class EmisController {
 
   async exportTeachers(req: Request, res: Response, next: NextFunction) {
     try {
-      const { unitId, includeInactive } = req.query;
+      const { unitId, includeInactive } = (req.query as any);
       const data = await emisService.exportTeacherData(
         {
           unitId: unitId as string,
@@ -42,7 +42,7 @@ export class EmisController {
 
   async exportInstitution(req: Request, res: Response, next: NextFunction) {
     try {
-      const { unitId } = req.params;
+      const { unitId } = (req.params as any);
       const data = await emisService.exportInstitutionData(unitId, req.user!);
       res.json(ApiResponse.success(data, 'Data lembaga berhasil diekspor'));
     } catch (error) {
@@ -56,7 +56,7 @@ export class EmisController {
 
   async getSummary(req: Request, res: Response, next: NextFunction) {
     try {
-      const { unitId } = req.params;
+      const { unitId } = (req.params as any);
       const data = await emisService.getExportSummary(unitId, req.user!);
       res.json(ApiResponse.success(data, 'Ringkasan data EMIS berhasil diambil'));
     } catch (error) {
@@ -66,7 +66,7 @@ export class EmisController {
 
   async validateData(req: Request, res: Response, next: NextFunction) {
     try {
-      const { unitId } = req.params;
+      const { unitId } = (req.params as any);
       const data = await emisService.validateDataCompleteness(unitId, req.user!);
       res.json(ApiResponse.success(data, 'Validasi data EMIS selesai'));
     } catch (error) {

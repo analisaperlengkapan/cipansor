@@ -25,7 +25,7 @@ export async function createViolation(req: Request, res: Response, next: NextFun
 
 export async function getViolations(req: Request, res: Response, next: NextFunction) {
   try {
-    const query = queryViolationSchema.parse(res.locals.validatedQuery || req.query);
+    const query = queryViolationSchema.parse(res.locals.validatedQuery || (req.query as any));
     const result = await violationService.getViolations(query);
     res.json({
       success: true,
@@ -38,7 +38,7 @@ export async function getViolations(req: Request, res: Response, next: NextFunct
 
 export async function getViolationById(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const { id } = (req.params as any);
     const violation = await violationService.getViolationById(id);
     if (!violation) {
       throw Errors.notFound('Violation');
@@ -54,7 +54,7 @@ export async function getViolationById(req: Request, res: Response, next: NextFu
 
 export async function updateViolation(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const { id } = (req.params as any);
     const data = updateViolationSchema.parse(req.body);
     const violation = await violationService.updateViolation(id, data);
     res.json({
@@ -69,7 +69,7 @@ export async function updateViolation(req: Request, res: Response, next: NextFun
 
 export async function deleteViolation(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const { id } = (req.params as any);
     await violationService.deleteViolation(id);
     res.json({
       success: true,
@@ -82,7 +82,7 @@ export async function deleteViolation(req: Request, res: Response, next: NextFun
 
 export async function getStudentViolationSummary(req: Request, res: Response, next: NextFunction) {
   try {
-    const { studentId } = req.params;
+    const { studentId } = (req.params as any);
     const summary = await violationService.getStudentViolationSummary(studentId);
     res.json({
       success: true,

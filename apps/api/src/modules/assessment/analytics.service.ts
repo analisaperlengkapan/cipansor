@@ -24,6 +24,7 @@ export class AssessmentAnalyticsService {
       academicGrades,
       tahfidzProgress,
       violations,
+      rewards,
       attendance,
       ibadahPoints,
       examAttempts
@@ -41,8 +42,17 @@ export class AssessmentAnalyticsService {
         _max: { juz: true }
       }),
 
-      // 3. Behavior: Total violation points within academic year (inverted)
+      // 3. Behavior (Violations): Total violation points within academic year
       prisma.violation.aggregate({
+        where: {
+          studentId,
+          ...(yearStart && yearEnd ? { occurredAt: { gte: yearStart, lte: yearEnd } } : {}),
+        },
+        _sum: { points: true }
+      }),
+
+      // 3.5 Behavior (Rewards): Total reward points within academic year
+      prisma.reward.aggregate({
         where: {
           studentId,
           ...(yearStart && yearEnd ? { occurredAt: { gte: yearStart, lte: yearEnd } } : {}),
@@ -95,23 +105,27 @@ export class AssessmentAnalyticsService {
     // Tahfidz score: assuming 30 juz is 100% for high level
     const tahfidzScore = hasTahfidzData ? Math.min(100, ((tahfidzProgress._max.juz || 0) / 30) * 100) : null;
 
-    // Behavior score: starting at 100, subtract points.
+    // Behavior score: starting at 100, subtract violation points and add reward points.
     // Unlike grades or attendance (where records are created per student),
-    // violations are only recorded when infractions occur. The absence of
-    // violation records means the student has a clean record, NOT that they
+    // behavior events are only recorded when they occur. The absence of
+    // records means the student has a neutral/clean record, NOT that they
     // haven't been assessed. Therefore behavior data is always considered
     // present for enrolled students.
     const hasBehaviorData = true;
     const violationPoints = Number(violations._sum.points || 0);
-    const behaviorScore = hasBehaviorData ? Math.max(0, 100 - violationPoints) : null;
+    const rewardPoints = Number(rewards._sum.points || 0);
+    // Score is capped at 100 but can go down to 0. Rewards offset violations.
+    const behaviorScore = hasBehaviorData
+      ? Math.max(0, Math.min(100, 100 - violationPoints + rewardPoints))
+      : null;
 
     // Attendance score
     // SICK and EXCUSED are counted as partial presence (50% weight) since they are
     // legitimate absences that shouldn't penalize students the same as unexcused ones.
-    const attMap = attendance.reduce((acc: Record<string, number>, curr: any) => ({ ...acc, [curr.status]: curr._count._all }), {} as Record<string, number>);
-    const totalDays = Object.values(attMap).reduce((a, b) => a + b, 0);
-    const presentDays = (attMap['PRESENT'] || 0) + (attMap['LATE'] || 0);
-    const excusedDays = (attMap['SICK'] || 0) + (attMap['EXCUSED'] || 0);
+    const attMap: any = attendance.reduce((acc: any, curr: any) => ({ ...acc, [curr.status]: curr._count._all }), {});
+    const totalDays = Object.values(attMap).reduce((a: any, b: any) => (a as number) + (b as number), 0) as number;
+    const presentDays = ((attMap['PRESENT'] as number) || 0) + ((attMap['LATE'] as number) || 0);
+    const excusedDays = ((attMap['SICK'] as number) || 0) + ((attMap['EXCUSED'] as number) || 0);
     const hasAttendanceData = hasRawAttendanceData && totalDays > 0;
     const attendanceScore = hasAttendanceData ? ((presentDays + excusedDays * 0.5) / totalDays) * 100 : null;
 
@@ -274,20 +288,31 @@ export class AssessmentAnalyticsService {
       select: { startDate: true, endDate: true },
     });
 
-    const [gradeAggs, violationAggs, tahfidzAggs] = await Promise.all([
+    const [gradeAggs, violationAggs, rewardAggs, tahfidzAggs] = await Promise.all([
       // 1. Academic: average percentage per student
       prisma.grade.groupBy({
         by: ['studentId'],
         where: { studentId: { in: studentIds }, academicYearId },
         _avg: { percentage: true },
       }),
-      // 2. Behavior: total violation points per student within academic year
+      // 2. Behavior (Violations): total violation points per student
       prisma.violation.groupBy({
         by: ['studentId'],
         where: {
           studentId: { in: studentIds },
           ...(academicYear?.startDate && academicYear?.endDate
             ? { occurredAt: { gte: academicYear.startDate, lte: academicYear.endDate } }
+            : {}),
+        },
+        _sum: { points: true },
+      }),
+      // 2.5 Behavior (Rewards): total reward points per student
+      prisma.reward.groupBy({
+        by: ['studentId'],
+        where: {
+          studentId: { in: studentIds },
+          ...(academicYear?.startDate && academicYear?.endDate
+            ? { givenAt: { gte: academicYear.startDate, lte: academicYear.endDate } }
             : {}),
         },
         _sum: { points: true },
@@ -306,6 +331,9 @@ export class AssessmentAnalyticsService {
     const violationMap = new Map<string, number>(
       violationAggs.map((v) => [v.studentId, Number(v._sum.points || 0)])
     );
+    const rewardMap = new Map<string, number>(
+      rewardAggs.map((r) => [r.studentId, Number(r._sum.points || 0)])
+    );
     const tahfidzMap = new Map<string, number | null>(
       tahfidzAggs.map((t) => [t.studentId, t._max.juz])
     );
@@ -321,7 +349,7 @@ export class AssessmentAnalyticsService {
 
     for (const student of students) {
       const academic = academicMap.get(student.id) ?? null;
-      const behavior = Math.max(0, 100 - (violationMap.get(student.id) || 0));
+      const behavior = Math.max(0, Math.min(100, 100 - (violationMap.get(student.id) || 0) + (rewardMap.get(student.id) || 0)));
       const tahfidzJuz = tahfidzMap.get(student.id);
       const tahfidz =
         tahfidzJuz !== null && tahfidzJuz !== undefined

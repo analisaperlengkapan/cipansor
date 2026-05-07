@@ -15,7 +15,7 @@ export async function getStandards(req: Request, res: Response, next: NextFuncti
 // Get unit accreditation status and statistics
 export async function getUnitStatus(req: Request, res: Response, next: NextFunction) {
   try {
-    const { unitId } = req.params;
+    const { unitId } = (req.params as any);
     const status = await accreditationService.getUnitAccreditationStatus(unitId);
     return res.json(ApiResponse.success(status, 'Unit status fetched successfully'));
   } catch (error) {
@@ -26,7 +26,7 @@ export async function getUnitStatus(req: Request, res: Response, next: NextFunct
 // Get accreditation dashboard with readiness scores
 export async function getDashboard(req: Request, res: Response, next: NextFunction) {
   try {
-    const { unitId } = req.params;
+    const { unitId } = (req.params as any);
     const dashboard = await accreditationService.getAccreditationDashboard(unitId);
     return res.json(ApiResponse.success(dashboard, 'Dashboard fetched successfully'));
   } catch (error) {
@@ -57,7 +57,7 @@ export async function submitAssessment(req: Request, res: Response, next: NextFu
 // Simulate accreditation score
 export async function simulateScore(req: Request, res: Response, next: NextFunction) {
   try {
-    const { unitId } = req.params;
+    const { unitId } = (req.params as any);
     const { scores } = req.body;
 
     const simulation = await accreditationService.simulateAccreditationScore(unitId, scores ?? {});

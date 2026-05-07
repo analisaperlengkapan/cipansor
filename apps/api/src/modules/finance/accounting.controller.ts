@@ -28,7 +28,7 @@ export async function createAccount(req: Request, res: Response, next: NextFunct
 
 export async function updateAccount(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const { id } = (req.params as any);
     const data: UpdateAccountDto = req.body;
     const account = await service.updateAccount(id, data);
     res.json(account);
@@ -39,7 +39,7 @@ export async function updateAccount(req: Request, res: Response, next: NextFunct
 
 export async function getAccounts(req: Request, res: Response, next: NextFunction) {
   try {
-    const query = req.query as { search?: string; type?: string; isActive?: string };
+    const query = (req.query as any) as { search?: string; type?: string; isActive?: string };
     const accounts = await service.getAccounts({
       ...query,
       isActive: query.isActive === 'true' ? true : query.isActive === 'false' ? false : undefined,
@@ -52,7 +52,7 @@ export async function getAccounts(req: Request, res: Response, next: NextFunctio
 
 export async function getAccountById(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const { id } = (req.params as any);
     const account = await service.getAccountById(id);
     if (!account) {
       res.status(404).json({ message: 'Account not found' });
@@ -66,7 +66,7 @@ export async function getAccountById(req: Request, res: Response, next: NextFunc
 
 export async function deleteAccount(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const { id } = (req.params as any);
     await service.deleteAccount(id);
     res.status(204).send();
   } catch (error) {
@@ -80,7 +80,7 @@ export async function deleteAccount(req: Request, res: Response, next: NextFunct
 
 export async function getSettings(req: Request, res: Response, next: NextFunction) {
   try {
-    const { unitId } = req.query;
+    const { unitId } = (req.query as any);
     if (!unitId) {
       res.status(400).json({ message: 'Unit ID is required' });
       return;
@@ -144,7 +144,7 @@ export async function createJournal(req: Request, res: Response, next: NextFunct
 
 export async function getJournals(req: Request, res: Response, next: NextFunction) {
   try {
-    const query = req.query as any;
+    const query = (req.query as any) as any;
     const result = await service.getJournals({
       ...query,
       startDate: query.startDate ? new Date(query.startDate) : undefined,
@@ -164,7 +164,7 @@ export async function getJournals(req: Request, res: Response, next: NextFunctio
 
 export async function getTrialBalance(req: Request, res: Response, next: NextFunction) {
   try {
-    const query = req.query as any;
+    const query = (req.query as any) as any;
     const result = await service.getTrialBalance({
       unitId: query.unitId,
       startDate: query.startDate ? new Date(query.startDate) : undefined,
@@ -178,7 +178,7 @@ export async function getTrialBalance(req: Request, res: Response, next: NextFun
 
 export async function getBalanceSheet(req: Request, res: Response, next: NextFunction) {
   try {
-    const query = req.query as any;
+    const query = (req.query as any) as any;
     // Default to today if not specified
     const endDate = query.endDate ? new Date(query.endDate) : new Date();
 
@@ -194,7 +194,7 @@ export async function getBalanceSheet(req: Request, res: Response, next: NextFun
 
 export async function getIncomeStatement(req: Request, res: Response, next: NextFunction) {
   try {
-    const query = req.query as any;
+    const query = (req.query as any) as any;
     // Default to current month if not specified
     const now = new Date();
     const startDate = query.startDate

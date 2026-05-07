@@ -804,7 +804,7 @@ export default function FoundationPage() {
                             )}
                           </Pie>
                           <Tooltip
-                            formatter={(value: number) => formatCurrency(value)}
+                            formatter={(value: any) => formatCurrency(value)}
                           />
                           <Legend
                             layout="horizontal"
@@ -854,7 +854,7 @@ export default function FoundationPage() {
                             }
                           />
                           <Tooltip
-                            formatter={(value: number) => formatCurrency(value)}
+                            formatter={(value: any) => formatCurrency(value)}
                           />
                           <Legend />
                           <Bar

@@ -50,7 +50,7 @@ export const complaintsController = {
   findAll: async (req: Request, res: Response) => {
     try {
       const user = (req as any).user;
-      const { status, category, page, limit } = req.query;
+      const { status, category, page, limit } = (req.query as any);
 
       const result = await complaintsService.findAll({
         unitId: user.unitId,
@@ -70,7 +70,7 @@ export const complaintsController = {
 
   findOne: async (req: Request, res: Response) => {
     try {
-      const { id } = req.params;
+      const { id } = (req.params as any);
       const user = (req as any).user;
 
       const complaint = await complaintsService.findOne(id, user.sub, user.role, user.unitId);
@@ -100,7 +100,7 @@ export const complaintsController = {
       }
 
       const user = (req as any).user;
-      const { id } = req.params;
+      const { id } = (req.params as any);
       const { status, resolution } = validation.data;
 
       // Existence and Unit Authorization Check
@@ -141,7 +141,7 @@ export const complaintsController = {
       }
 
       const user = (req as any).user;
-      const { id } = req.params;
+      const { id } = (req.params as any);
       const { handlerId } = validation.data;
 
       // Existence and Unit Authorization Check
@@ -179,7 +179,7 @@ export const complaintsController = {
         });
       }
 
-      const { id } = req.params;
+      const { id } = (req.params as any);
       const user = (req as any).user;
       const { content, isInternal } = validation.data;
 

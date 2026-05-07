@@ -24,7 +24,7 @@ function resolveForecastUnitId(
   req: Request,
   res: Response
 ): { ok: true; unitId: string | undefined } | { ok: false } {
-  const { unitId } = req.query;
+  const { unitId } = (req.query as any);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const user = (req as any).user;
 

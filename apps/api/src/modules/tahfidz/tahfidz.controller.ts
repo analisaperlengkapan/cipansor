@@ -14,13 +14,13 @@ export class TahfidzController {
     try {
       const currentUser = (req as any).user;
       const query = {
-        page: Number(req.query.page) || 1,
-        limit: Number(req.query.limit) || 10,
-        studentId: req.query.studentId as string,
-        activityType: req.query.activityType as string,
-        startDate: req.query.startDate as string,
-        endDate: req.query.endDate as string,
-        surah: req.query.surah as string,
+        page: Number((req.query as any).page) || 1,
+        limit: Number((req.query as any).limit) || 10,
+        studentId: (req.query as any).studentId as string,
+        activityType: (req.query as any).activityType as string,
+        startDate: (req.query as any).startDate as string,
+        endDate: (req.query as any).endDate as string,
+        surah: (req.query as any).surah as string,
       };
 
       const result = await this.service.findAll(query, currentUser);
@@ -32,7 +32,7 @@ export class TahfidzController {
 
   findById = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const result = await this.service.findById(req.params.id);
+      const result = await this.service.findById((req.params as any).id);
       res.json({ success: true, data: result });
     } catch (error) {
       next(error);
@@ -52,7 +52,7 @@ export class TahfidzController {
 
   update = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const id = req.params.id;
+      const id = (req.params as any).id;
       const input: UpdateTahfidzInput = req.body;
       const result = await this.service.update(id, input);
       res.json({ success: true, data: result });
@@ -63,7 +63,7 @@ export class TahfidzController {
 
   delete = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const id = req.params.id;
+      const id = (req.params as any).id;
       const result = await this.service.delete(id);
       res.json({ success: true, data: result });
     } catch (error) {
@@ -73,7 +73,7 @@ export class TahfidzController {
 
   getStudentSummary = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { studentId } = req.params;
+      const { studentId } = (req.params as any);
       const result = await this.service.getStudentSummary(studentId);
       res.json({ success: true, data: result });
     } catch (error) {
@@ -83,9 +83,9 @@ export class TahfidzController {
 
   getDashboardStats = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const unitId = req.query.unitId as string;
-      const year = req.query.year ? parseInt(req.query.year as string) : undefined;
-      const month = req.query.month ? parseInt(req.query.month as string) : undefined;
+      const unitId = (req.query as any).unitId as string;
+      const year = (req.query as any).year ? parseInt((req.query as any).year as string) : undefined;
+      const month = (req.query as any).month ? parseInt((req.query as any).month as string) : undefined;
 
       const result = await this.service.getDashboardStats({ unitId, year, month });
       res.json({ success: true, data: result });
@@ -107,7 +107,7 @@ export class TahfidzController {
 
   getQuranMap = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { studentId } = req.params;
+      const { studentId } = (req.params as any);
       const result = await getQuranProgressMap(studentId);
       res.json({ success: true, data: result });
     } catch (error) {

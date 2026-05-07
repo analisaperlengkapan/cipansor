@@ -14,7 +14,7 @@ import {
  * GET /api/classes
  */
 export const list = asyncHandler(async (req: Request, res: Response) => {
-  const query = (res.locals.validatedQuery || req.query) as ListClassesQuery;
+  const query = (res.locals.validatedQuery || (req.query as any)) as ListClassesQuery;
   const result = await classService.findAll(query);
 
   res.json({
@@ -31,7 +31,7 @@ export const list = asyncHandler(async (req: Request, res: Response) => {
  * GET /api/classes/:id
  */
 export const getById = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const { id } = (req.params as any);
   const classData = await classService.findById(id);
 
   res.json({
@@ -59,7 +59,7 @@ export const create = asyncHandler(async (req: Request, res: Response) => {
  * PUT /api/classes/:id
  */
 export const update = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const { id } = (req.params as any);
   const input: UpdateClassInput = req.body;
   const classData = await classService.update(id, input);
 
@@ -74,7 +74,7 @@ export const update = asyncHandler(async (req: Request, res: Response) => {
  * DELETE /api/classes/:id
  */
 export const remove = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const { id } = (req.params as any);
   const result = await classService.delete(id);
 
   res.json({
@@ -89,7 +89,7 @@ export const remove = asyncHandler(async (req: Request, res: Response) => {
  * Used by useClassEnrollments hook
  */
 export const getEnrollments = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const { id } = (req.params as any);
   const enrollments = await classService.getEnrollments(id);
 
   res.json({
@@ -103,7 +103,7 @@ export const getEnrollments = asyncHandler(async (req: Request, res: Response) =
  * POST /api/classes/:id/enrollments
  */
 export const enrollStudent = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const { id } = (req.params as any);
   const input: EnrollStudentInput = req.body;
   const enrollment = await classService.enrollStudent(id, input);
 
@@ -118,7 +118,7 @@ export const enrollStudent = asyncHandler(async (req: Request, res: Response) =>
  * PATCH /api/classes/:id/enrollments/:studentId
  */
 export const updateEnrollment = asyncHandler(async (req: Request, res: Response) => {
-  const { id, studentId } = req.params;
+  const { id, studentId } = (req.params as any);
   const input: UpdateEnrollmentInput = req.body;
   const enrollment = await classService.updateEnrollment(id, studentId, input);
 
@@ -133,7 +133,7 @@ export const updateEnrollment = asyncHandler(async (req: Request, res: Response)
  * DELETE /api/classes/:id/enrollments/:studentId
  */
 export const removeStudent = asyncHandler(async (req: Request, res: Response) => {
-  const { id, studentId } = req.params;
+  const { id, studentId } = (req.params as any);
   const result = await classService.removeStudent(id, studentId);
 
   res.json({

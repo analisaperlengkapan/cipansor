@@ -25,7 +25,7 @@ const ADMIN_ROLES = [UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN];
 
 export async function getMyNotifications(req: Request, res: Response, next: NextFunction) {
   try {
-    const query = queryNotificationSchema.parse(req.query);
+    const query = queryNotificationSchema.parse((req.query as any));
     const result = await service.getUserNotifications(req.user!.sub, query);
     res.json({ success: true, ...result });
   } catch (error) {
@@ -35,7 +35,7 @@ export async function getMyNotifications(req: Request, res: Response, next: Next
 
 export async function getAllNotifications(req: Request, res: Response, next: NextFunction) {
   try {
-    const query = queryNotificationSchema.parse(req.query);
+    const query = queryNotificationSchema.parse((req.query as any));
     const result = await service.getAllNotifications(query);
     res.json({ success: true, ...result });
   } catch (error) {
@@ -45,7 +45,7 @@ export async function getAllNotifications(req: Request, res: Response, next: Nex
 
 export async function getNotificationById(req: Request, res: Response, next: NextFunction) {
   try {
-    const notification = await service.getNotificationById(req.params.id);
+    const notification = await service.getNotificationById((req.params as any).id);
     if (!notification) {
       throw Errors.notFound('Notification not found');
     }
@@ -86,7 +86,7 @@ export async function createBulkNotifications(req: Request, res: Response, next:
 
 export async function markAsRead(req: Request, res: Response, next: NextFunction) {
   try {
-    await service.markAsRead(req.params.id, req.user!.sub);
+    await service.markAsRead((req.params as any).id, req.user!.sub);
     res.json({ success: true, message: 'Notification marked as read' });
   } catch (error) {
     next(error);
@@ -107,7 +107,7 @@ export async function deleteNotification(req: Request, res: Response, next: Next
     const userRole = (req as any).user?.role;
     const isAdmin = ADMIN_ROLES.includes(userRole);
 
-    await service.deleteNotification(req.params.id, req.user!.sub, isAdmin);
+    await service.deleteNotification((req.params as any).id, req.user!.sub, isAdmin);
     res.json({ success: true, message: 'Notification deleted' });
   } catch (error) {
     next(error);
@@ -116,7 +116,7 @@ export async function deleteNotification(req: Request, res: Response, next: Next
 
 export async function sendNotification(req: Request, res: Response, next: NextFunction) {
   try {
-    await service.sendNotification(req.params.id);
+    await service.sendNotification((req.params as any).id);
     res.json({ success: true, message: 'Notification queued for sending' });
   } catch (error) {
     next(error);
@@ -130,7 +130,7 @@ const scheduleNotificationSchema = z.object({
 export async function scheduleNotification(req: Request, res: Response, next: NextFunction) {
   try {
     const { scheduledAt } = scheduleNotificationSchema.parse(req.body);
-    const result = await service.scheduleNotification(req.params.id, new Date(scheduledAt));
+    const result = await service.scheduleNotification((req.params as any).id, new Date(scheduledAt));
     res.json({ success: true, data: result });
   } catch (error) {
     next(error);
@@ -139,7 +139,7 @@ export async function scheduleNotification(req: Request, res: Response, next: Ne
 
 export async function getStats(req: Request, res: Response, next: NextFunction) {
   try {
-    const query = queryStatsSchema.parse(req.query);
+    const query = queryStatsSchema.parse((req.query as any));
     const result = await service.getNotificationStats(query.startDate, query.endDate);
     res.json({ success: true, data: result });
   } catch (error) {
@@ -151,7 +151,7 @@ export async function getStats(req: Request, res: Response, next: NextFunction) 
 
 export async function getTemplates(req: Request, res: Response, next: NextFunction) {
   try {
-    const query = queryTemplateSchema.parse(req.query);
+    const query = queryTemplateSchema.parse((req.query as any));
     const unitId = (req as any).user?.unitId;
     const result = await service.getTemplates(query, unitId);
     res.json({ success: true, data: result });
@@ -166,7 +166,7 @@ export async function getTemplates(req: Request, res: Response, next: NextFuncti
 export async function getTemplateById(req: Request, res: Response, next: NextFunction) {
   try {
     const unitId = (req as any).user?.unitId;
-    const result = await service.getTemplateById(req.params.id, unitId);
+    const result = await service.getTemplateById((req.params as any).id, unitId);
     if (!result) {
       throw Errors.notFound('Template not found');
     }
@@ -192,7 +192,7 @@ export async function updateTemplate(req: Request, res: Response, next: NextFunc
   try {
     const data = updateTemplateSchema.parse(req.body);
     const unitId = (req as any).user?.unitId;
-    const result = await service.updateTemplate(req.params.id, data, unitId);
+    const result = await service.updateTemplate((req.params as any).id, data, unitId);
     res.json({ success: true, data: result });
   } catch (error) {
     next(error);
@@ -202,7 +202,7 @@ export async function updateTemplate(req: Request, res: Response, next: NextFunc
 export async function deleteTemplate(req: Request, res: Response, next: NextFunction) {
   try {
     const unitId = (req as any).user?.unitId;
-    await service.deleteTemplate(req.params.id, unitId);
+    await service.deleteTemplate((req.params as any).id, unitId);
     res.json({ success: true, message: 'Template deleted' });
   } catch (error) {
     next(error);
@@ -213,7 +213,7 @@ export async function deleteTemplate(req: Request, res: Response, next: NextFunc
 
 export async function getAnnouncements(req: Request, res: Response, next: NextFunction) {
   try {
-    const query = queryAnnouncementSchema.parse(req.query);
+    const query = queryAnnouncementSchema.parse((req.query as any));
     const result = await service.getAnnouncements(query);
     res.json({ success: true, ...result });
   } catch (error) {
@@ -223,7 +223,7 @@ export async function getAnnouncements(req: Request, res: Response, next: NextFu
 
 export async function getAnnouncementById(req: Request, res: Response, next: NextFunction) {
   try {
-    const announcement = await service.getAnnouncementById(req.params.id);
+    const announcement = await service.getAnnouncementById((req.params as any).id);
     if (!announcement) {
       throw Errors.notFound('Announcement not found');
     }
@@ -246,7 +246,7 @@ export async function createAnnouncement(req: Request, res: Response, next: Next
 export async function updateAnnouncement(req: Request, res: Response, next: NextFunction) {
   try {
     const data = updateAnnouncementSchema.parse(req.body);
-    const announcement = await service.updateAnnouncement(req.params.id, data);
+    const announcement = await service.updateAnnouncement((req.params as any).id, data);
     res.json({ success: true, data: announcement });
   } catch (error) {
     next(error);
@@ -255,7 +255,7 @@ export async function updateAnnouncement(req: Request, res: Response, next: Next
 
 export async function deleteAnnouncement(req: Request, res: Response, next: NextFunction) {
   try {
-    await service.deleteAnnouncement(req.params.id);
+    await service.deleteAnnouncement((req.params as any).id);
     res.json({ success: true, message: 'Announcement deleted' });
   } catch (error) {
     next(error);

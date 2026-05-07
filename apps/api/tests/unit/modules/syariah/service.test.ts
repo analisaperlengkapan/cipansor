@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { mockShariaCompliance, mockShariaAudit } = vi.hoisted(() => ({
+const { mockShariaCompliance, mockShariaAudit, mockInternalAudit, mockAuditFinding } = vi.hoisted(() => ({
   mockShariaCompliance: {
     findMany: vi.fn(),
     findUnique: vi.fn(),
@@ -11,22 +11,27 @@ const { mockShariaCompliance, mockShariaAudit } = vi.hoisted(() => ({
   mockShariaAudit: {
     create: vi.fn(),
   },
-}));
-
-vi.mock('@prisma/client', () => ({
-  PrismaClient: class {
-    shariaCompliance = mockShariaCompliance;
-    shariaAudit = mockShariaAudit;
+  mockInternalAudit: {
+    findFirst: vi.fn(),
+    create: vi.fn(),
   },
-  Prisma: {},
+  mockAuditFinding: {
+    create: vi.fn(),
+  }
 }));
 
-vi.mock('../../../../../src/lib/prisma', () => ({
-  prisma: {
+vi.mock('@/lib/prisma', () => {
+  const mockPrisma = {
     shariaCompliance: mockShariaCompliance,
     shariaAudit: mockShariaAudit,
-  },
-}));
+    internalAudit: mockInternalAudit,
+    auditFinding: mockAuditFinding,
+    $transaction: vi.fn((callback) => callback(mockPrisma)),
+  };
+  return {
+    prisma: mockPrisma,
+  };
+});
 
 import { SyariahService } from '../../../../../src/modules/syariah/syariah.service';
 
@@ -84,6 +89,7 @@ describe('SyariahService', () => {
         id: 'audit-1',
         score: 85,
         auditor: { id: 'user-1', name: 'Auditor' },
+        compliance: { unitId: 'unit-1', title: 'Test' }
       };
 
       mockShariaAudit.create.mockResolvedValue(mockAudit);
@@ -109,8 +115,14 @@ describe('SyariahService', () => {
     });
 
     it('should set PARTIALLY status for score between 50-79', async () => {
-      mockShariaAudit.create.mockResolvedValue({ id: 'audit-2', score: 65 });
+      mockShariaAudit.create.mockResolvedValue({
+        id: 'audit-2',
+        score: 65,
+        compliance: { unitId: 'unit-1', title: 'Test' }
+      });
       mockShariaCompliance.update.mockResolvedValue({});
+      mockInternalAudit.findFirst.mockResolvedValue({ id: 'ia-1' });
+      mockAuditFinding.create.mockResolvedValue({});
 
       await service.createShariaAudit({
         complianceId: 'comp-1',
@@ -128,8 +140,14 @@ describe('SyariahService', () => {
     });
 
     it('should set NON_COMPLIANT status for score below 50', async () => {
-      mockShariaAudit.create.mockResolvedValue({ id: 'audit-3', score: 30 });
+      mockShariaAudit.create.mockResolvedValue({
+        id: 'audit-3',
+        score: 30,
+        compliance: { unitId: 'unit-1', title: 'Test' }
+      });
       mockShariaCompliance.update.mockResolvedValue({});
+      mockInternalAudit.findFirst.mockResolvedValue({ id: 'ia-1' });
+      mockAuditFinding.create.mockResolvedValue({});
 
       await service.createShariaAudit({
         complianceId: 'comp-1',
@@ -164,7 +182,7 @@ describe('SyariahService', () => {
       expect(result.partial).toBe(1);
       expect(result.nonCompliant).toBe(1);
       expect(result.underReview).toBe(1);
-      expect(result.averageScore).toBeCloseTo(53); // (90+85+60+30+0)/5
+      expect(result.averageScore).toBeCloseTo(66.25); // (90+85+60+30)/4
       expect(result.byCategory.MUAMALAH.total).toBe(1);
       expect(result.byCategory.MUAMALAH.averageScore).toBe(90);
     });

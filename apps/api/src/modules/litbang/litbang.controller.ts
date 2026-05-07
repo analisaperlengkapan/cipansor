@@ -11,14 +11,14 @@ export const getProjects = async (req: Request, res: Response, next: NextFunctio
 
 export const getProjectFinancialStatus = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const data = await litbangService.getProjectFinancialStatus(req.params.id);
+    const data = await litbangService.getProjectFinancialStatus((req.params as any).id);
     res.json({ data });
   } catch (error) { next(error); }
 };
 
 export const getProject = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const data = await litbangService.getProject(req.params.id);
+    const data = await litbangService.getProject((req.params as any).id);
     res.json({ data });
   } catch (error) { next(error); }
 };
@@ -37,7 +37,7 @@ export const createProject = async (req: Request, res: Response, next: NextFunct
 
 export const updateProject = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const data = await litbangService.updateProject(req.params.id, {
+    const data = await litbangService.updateProject((req.params as any).id, {
       ...req.body,
       startDate: req.body.startDate ? new Date(req.body.startDate) : undefined,
       endDate: req.body.endDate ? new Date(req.body.endDate) : undefined,
@@ -48,7 +48,7 @@ export const updateProject = async (req: Request, res: Response, next: NextFunct
 
 export const deleteProject = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    await litbangService.deleteProject(req.params.id);
+    await litbangService.deleteProject((req.params as any).id);
     res.status(204).send();
   } catch (error) { next(error); }
 };
@@ -66,7 +66,7 @@ export const createMilestone = async (req: Request, res: Response, next: NextFun
 
 export const updateMilestone = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const data = await litbangService.updateMilestone(req.params.id, {
+    const data = await litbangService.updateMilestone((req.params as any).id, {
       ...req.body,
       dueDate: req.body.dueDate ? new Date(req.body.dueDate) : undefined,
       completedAt: req.body.completedAt ? new Date(req.body.completedAt) : undefined,
@@ -77,7 +77,7 @@ export const updateMilestone = async (req: Request, res: Response, next: NextFun
 
 export const deleteMilestone = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    await litbangService.deleteMilestone(req.params.id);
+    await litbangService.deleteMilestone((req.params as any).id);
     res.status(204).send();
   } catch (error) { next(error); }
 };
@@ -92,7 +92,7 @@ export const getProposals = async (req: Request, res: Response, next: NextFuncti
 
 export const getProposal = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const data = await litbangService.getProposal(req.params.id);
+    const data = await litbangService.getProposal((req.params as any).id);
     res.json({ data });
   } catch (error) { next(error); }
 };
@@ -109,7 +109,7 @@ export const createProposal = async (req: Request, res: Response, next: NextFunc
 
 export const updateProposal = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const data = await litbangService.updateProposal(req.params.id, req.body);
+    const data = await litbangService.updateProposal((req.params as any).id, req.body);
     res.json({ data });
   } catch (error) { next(error); }
 };
@@ -117,7 +117,7 @@ export const updateProposal = async (req: Request, res: Response, next: NextFunc
 export const evaluateProposal = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const data = await litbangService.evaluateProposal(
-      req.params.id,
+      (req.params as any).id,
       req.user?.id!,
       req.body.score,
       req.body.feedback
@@ -128,7 +128,7 @@ export const evaluateProposal = async (req: Request, res: Response, next: NextFu
 
 export const deleteProposal = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    await litbangService.deleteProposal(req.params.id);
+    await litbangService.deleteProposal((req.params as any).id);
     res.status(204).send();
   } catch (error) { next(error); }
 };

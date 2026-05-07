@@ -19,7 +19,7 @@ import {
 
 export async function getSubjects(req: Request, res: Response, next: NextFunction) {
   try {
-    const query = subjectQuerySchema.parse(req.query);
+    const query = subjectQuerySchema.parse((req.query as any));
     const result = await curriculumService.getSubjects(query);
     res.json({ success: true, ...result });
   } catch (error) {
@@ -29,7 +29,7 @@ export async function getSubjects(req: Request, res: Response, next: NextFunctio
 
 export async function getSubjectById(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const { id } = (req.params as any);
     const subject = await curriculumService.getSubjectById(id);
     if (!subject) {
       return res.status(404).json({ success: false, error: 'Subject not found' });
@@ -52,7 +52,7 @@ export async function createSubject(req: Request, res: Response, next: NextFunct
 
 export async function updateSubject(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const { id } = (req.params as any);
     const data = updateSubjectSchema.parse(req.body);
     const subject = await curriculumService.updateSubject(id, data);
     res.json({ success: true, data: subject });
@@ -63,7 +63,7 @@ export async function updateSubject(req: Request, res: Response, next: NextFunct
 
 export async function deleteSubject(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const { id } = (req.params as any);
     await curriculumService.deleteSubject(id);
     res.json({ success: true, message: 'Subject deleted successfully' });
   } catch (error) {
@@ -87,7 +87,7 @@ export async function assignTeacherToSubject(req: Request, res: Response, next: 
 
 export async function removeTeacherFromSubject(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const { id } = (req.params as any);
     await curriculumService.removeTeacherFromSubject(id);
     res.json({ success: true, message: 'Teacher assignment removed' });
   } catch (error) {
@@ -97,7 +97,7 @@ export async function removeTeacherFromSubject(req: Request, res: Response, next
 
 export async function getTeacherSubjects(req: Request, res: Response, next: NextFunction) {
   try {
-    const { teacherId } = req.params;
+    const { teacherId } = (req.params as any);
     const subjects = await curriculumService.getTeacherSubjects(teacherId);
     res.json({ success: true, data: subjects });
   } catch (error) {
@@ -111,7 +111,7 @@ export async function getTeacherSubjects(req: Request, res: Response, next: Next
 
 export async function getLessonPlans(req: Request, res: Response, next: NextFunction) {
   try {
-    const query = lessonPlanQuerySchema.parse(req.query);
+    const query = lessonPlanQuerySchema.parse((req.query as any));
     const result = await curriculumService.getLessonPlans(query);
     res.json({ success: true, ...result });
   } catch (error) {
@@ -121,7 +121,7 @@ export async function getLessonPlans(req: Request, res: Response, next: NextFunc
 
 export async function getLessonPlanById(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const { id } = (req.params as any);
     const lessonPlan = await curriculumService.getLessonPlanById(id);
     if (!lessonPlan) {
       return res.status(404).json({ success: false, error: 'Lesson plan not found' });
@@ -144,7 +144,7 @@ export async function createLessonPlan(req: Request, res: Response, next: NextFu
 
 export async function updateLessonPlan(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const { id } = (req.params as any);
     const data = updateLessonPlanSchema.parse(req.body);
     const lessonPlan = await curriculumService.updateLessonPlan(id, data);
     res.json({ success: true, data: lessonPlan });
@@ -155,7 +155,7 @@ export async function updateLessonPlan(req: Request, res: Response, next: NextFu
 
 export async function deleteLessonPlan(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const { id } = (req.params as any);
     await curriculumService.deleteLessonPlan(id);
     res.json({ success: true, message: 'Lesson plan deleted successfully' });
   } catch (error) {
@@ -165,7 +165,7 @@ export async function deleteLessonPlan(req: Request, res: Response, next: NextFu
 
 export async function markLessonPlanComplete(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const { id } = (req.params as any);
     const lessonPlan = await curriculumService.markLessonPlanComplete(id);
     res.json({ success: true, data: lessonPlan });
   } catch (error) {
@@ -179,7 +179,7 @@ export async function markLessonPlanComplete(req: Request, res: Response, next: 
 
 export async function getSchedules(req: Request, res: Response, next: NextFunction) {
   try {
-    const query = scheduleQuerySchema.parse(req.query);
+    const query = scheduleQuerySchema.parse((req.query as any));
     const result = await curriculumService.getSchedules(query);
     res.json({ success: true, ...result });
   } catch (error) {
@@ -189,7 +189,7 @@ export async function getSchedules(req: Request, res: Response, next: NextFuncti
 
 export async function getScheduleById(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const { id } = (req.params as any);
     const schedule = await curriculumService.getScheduleById(id);
     if (!schedule) {
       return res.status(404).json({ success: false, error: 'Schedule not found' });
@@ -215,7 +215,7 @@ export async function createSchedule(req: Request, res: Response, next: NextFunc
 
 export async function updateSchedule(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const { id } = (req.params as any);
     const data = updateScheduleSchema.parse(req.body);
     const schedule = await curriculumService.updateSchedule(id, data);
     res.json({ success: true, data: schedule });
@@ -226,7 +226,7 @@ export async function updateSchedule(req: Request, res: Response, next: NextFunc
 
 export async function deleteSchedule(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const { id } = (req.params as any);
     await curriculumService.deleteSchedule(id);
     res.json({ success: true, message: 'Schedule deleted successfully' });
   } catch (error) {
@@ -236,8 +236,8 @@ export async function deleteSchedule(req: Request, res: Response, next: NextFunc
 
 export async function getClassSchedule(req: Request, res: Response, next: NextFunction) {
   try {
-    const { classId } = req.params;
-    const { academicYearId } = req.query;
+    const { classId } = (req.params as any);
+    const { academicYearId } = (req.query as any);
     const schedules = await curriculumService.getClassSchedule(
       classId,
       academicYearId as string | undefined
@@ -250,8 +250,8 @@ export async function getClassSchedule(req: Request, res: Response, next: NextFu
 
 export async function getTeacherSchedule(req: Request, res: Response, next: NextFunction) {
   try {
-    const { teacherId } = req.params;
-    const { academicYearId } = req.query;
+    const { teacherId } = (req.params as any);
+    const { academicYearId } = (req.query as any);
     const schedules = await curriculumService.getTeacherSchedule(
       teacherId,
       academicYearId as string | undefined

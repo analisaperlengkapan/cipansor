@@ -573,7 +573,7 @@ export default function DashboardPage() {
                         border: "1px solid hsl(var(--border))",
                         borderRadius: "8px",
                       }}
-                      formatter={(value: number) => [
+                      formatter={(value: any) => [
                         `Rp ${(value / 1000000).toFixed(1)} jt`,
                         "",
                       ]}
@@ -636,7 +636,7 @@ export default function DashboardPage() {
                         border: "1px solid hsl(var(--border))",
                         borderRadius: "8px",
                       }}
-                      formatter={(value: number) => [
+                      formatter={(value: any) => [
                         `Rp ${(value / 1000000).toFixed(1)} jt`,
                         "",
                       ]}

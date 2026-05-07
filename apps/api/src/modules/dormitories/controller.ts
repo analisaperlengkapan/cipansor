@@ -55,7 +55,7 @@ export async function getStudentsByMusyrif(req: Request, res: Response, next: Ne
 
 export async function getDormitories(req: Request, res: Response, next: NextFunction) {
   try {
-    const query = queryDormitorySchema.parse(res.locals.validatedQuery || req.query);
+    const query = queryDormitorySchema.parse(res.locals.validatedQuery || (req.query as any));
     const result = await dormitoryService.getDormitories(query);
     res.json({
       success: true,
@@ -68,7 +68,7 @@ export async function getDormitories(req: Request, res: Response, next: NextFunc
 
 export async function getDormitoryById(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const { id } = (req.params as any);
     const dormitory = await dormitoryService.getDormitoryById(id);
     if (!dormitory) {
       throw Errors.notFound('Dormitory not found');
@@ -84,7 +84,7 @@ export async function getDormitoryById(req: Request, res: Response, next: NextFu
 
 export async function getDormitoryStats(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const { id } = (req.params as any);
     const stats = await dormitoryService.getDormitoryStats(id);
     if (!stats) {
       throw Errors.notFound('Dormitory not found');
@@ -100,7 +100,7 @@ export async function getDormitoryStats(req: Request, res: Response, next: NextF
 
 export async function updateDormitory(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const { id } = (req.params as any);
     const data = updateDormitorySchema.parse(req.body);
     const dormitory = await dormitoryService.updateDormitory(id, data);
     res.json({
@@ -115,7 +115,7 @@ export async function updateDormitory(req: Request, res: Response, next: NextFun
 
 export async function deleteDormitory(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const { id } = (req.params as any);
     await dormitoryService.deleteDormitory(id);
     res.json({
       success: true,
@@ -146,7 +146,7 @@ export async function createRoom(req: Request, res: Response, next: NextFunction
 
 export async function getRooms(req: Request, res: Response, next: NextFunction) {
   try {
-    const query = queryRoomSchema.parse(res.locals.validatedQuery || req.query);
+    const query = queryRoomSchema.parse(res.locals.validatedQuery || (req.query as any));
     const result = await dormitoryService.getRooms(query);
     res.json({
       success: true,
@@ -159,7 +159,7 @@ export async function getRooms(req: Request, res: Response, next: NextFunction) 
 
 export async function getRoomById(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const { id } = (req.params as any);
     const room = await dormitoryService.getRoomById(id);
     if (!room) {
       throw Errors.notFound('Room not found');
@@ -175,7 +175,7 @@ export async function getRoomById(req: Request, res: Response, next: NextFunctio
 
 export async function getRoomSocialAnalytics(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const { id } = (req.params as any);
     const user = (req as any).user;
 
     // Unit-level authorization: verify the room belongs to the user's unit
@@ -207,7 +207,7 @@ export async function getRoomSocialAnalytics(req: Request, res: Response, next: 
 
 export async function getRoomOccupancy(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const { id } = (req.params as any);
     const occupancy = await dormitoryService.getRoomOccupancy(id);
     if (!occupancy) {
       throw Errors.notFound('Room not found');
@@ -223,7 +223,7 @@ export async function getRoomOccupancy(req: Request, res: Response, next: NextFu
 
 export async function updateRoom(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const { id } = (req.params as any);
     const data = updateRoomSchema.parse(req.body);
     const room = await dormitoryService.updateRoom(id, data);
     res.json({
@@ -238,7 +238,7 @@ export async function updateRoom(req: Request, res: Response, next: NextFunction
 
 export async function deleteRoom(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const { id } = (req.params as any);
     await dormitoryService.deleteRoom(id);
     res.json({
       success: true,
@@ -269,7 +269,7 @@ export async function createRoomAssignment(req: Request, res: Response, next: Ne
 
 export async function getRoomAssignments(req: Request, res: Response, next: NextFunction) {
   try {
-    const query = queryRoomAssignmentSchema.parse(res.locals.validatedQuery || req.query);
+    const query = queryRoomAssignmentSchema.parse(res.locals.validatedQuery || (req.query as any));
     const result = await dormitoryService.getRoomAssignments(query);
     res.json({
       success: true,
@@ -282,7 +282,7 @@ export async function getRoomAssignments(req: Request, res: Response, next: Next
 
 export async function getRoomAssignmentById(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const { id } = (req.params as any);
     const assignment = await dormitoryService.getRoomAssignmentById(id);
     if (!assignment) {
       throw Errors.notFound('Room assignment not found');
@@ -298,7 +298,7 @@ export async function getRoomAssignmentById(req: Request, res: Response, next: N
 
 export async function updateRoomAssignment(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const { id } = (req.params as any);
     const data = updateRoomAssignmentSchema.parse(req.body);
     const assignment = await dormitoryService.updateRoomAssignment(id, data);
     res.json({
@@ -313,7 +313,7 @@ export async function updateRoomAssignment(req: Request, res: Response, next: Ne
 
 export async function endRoomAssignment(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const { id } = (req.params as any);
     await dormitoryService.endRoomAssignment(id);
     res.json({
       success: true,

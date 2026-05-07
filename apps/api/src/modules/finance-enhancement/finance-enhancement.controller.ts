@@ -32,8 +32,8 @@ import {
 
 // Helper for parsing pagination params
 const parsePagination = (req: Request) => ({
-  page: Number(req.query.page) || 1,
-  limit: Number(req.query.limit) || 20,
+  page: Number((req.query as any).page) || 1,
+  limit: Number((req.query as any).limit) || 20,
 });
 
 export class FinanceEnhancementController {
@@ -41,7 +41,7 @@ export class FinanceEnhancementController {
 
   async getAccountCodes(req: Request, res: Response, next: NextFunction) {
     try {
-      const { type, isActive, search } = req.query;
+      const { type, isActive, search } = (req.query as any);
       const { page, limit } = parsePagination(req);
 
       const result = await financeEnhancementService.getAccountCodes({
@@ -60,7 +60,7 @@ export class FinanceEnhancementController {
 
   async getBudgetRealizationReport(req: Request, res: Response, next: NextFunction) {
     try {
-      const { unitId, academicYearId } = req.query;
+      const { unitId, academicYearId } = (req.query as any);
 
       if (!unitId || !academicYearId) {
         return res
@@ -88,7 +88,7 @@ export class FinanceEnhancementController {
 
   async updateAccountCode(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
+      const { id } = (req.params as any);
       const input: UpdateAccountCodeInput = req.body;
       const result = await financeEnhancementService.updateAccountCode(id, input);
       res.json({ success: true, data: result });
@@ -101,7 +101,7 @@ export class FinanceEnhancementController {
 
   async getJournalEntries(req: Request, res: Response, next: NextFunction) {
     try {
-      const { unitId, accountId, startDate, endDate, search } = req.query;
+      const { unitId, accountId, startDate, endDate, search } = (req.query as any);
       const { page, limit } = parsePagination(req);
 
       const result = await financeEnhancementService.getJournalEntries({
@@ -140,7 +140,7 @@ export class FinanceEnhancementController {
 
   async getJournalEntryById(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
+      const { id } = (req.params as any);
       const result = await financeEnhancementService.getJournalEntryById(id);
 
       if (!result) {
@@ -157,7 +157,7 @@ export class FinanceEnhancementController {
 
   async getScholarships(req: Request, res: Response, next: NextFunction) {
     try {
-      const { unitId, type, source, isActive } = req.query;
+      const { unitId, type, source, isActive } = (req.query as any);
       const { page, limit } = parsePagination(req);
 
       const result = await financeEnhancementService.getScholarships({
@@ -187,7 +187,7 @@ export class FinanceEnhancementController {
 
   async getScholarshipById(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
+      const { id } = (req.params as any);
       const result = await financeEnhancementService.getScholarshipById(id);
 
       if (!result) {
@@ -202,8 +202,8 @@ export class FinanceEnhancementController {
 
   async getScholarshipRecipients(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
-      const { status } = req.query;
+      const { id } = (req.params as any);
+      const { status } = (req.query as any);
       const { page, limit } = parsePagination(req);
 
       const result = await financeEnhancementService.getScholarshipRecipients(id, {
@@ -232,7 +232,7 @@ export class FinanceEnhancementController {
 
   async getPaymentComponents(req: Request, res: Response, next: NextFunction) {
     try {
-      const { unitId, category, isActive } = req.query;
+      const { unitId, category, isActive } = (req.query as any);
       const { page, limit } = parsePagination(req);
 
       const result = await financeEnhancementService.getPaymentComponents({
@@ -263,7 +263,7 @@ export class FinanceEnhancementController {
 
   async getTrialBalance(req: Request, res: Response, next: NextFunction) {
     try {
-      const { unitId, startDate, endDate } = req.query;
+      const { unitId, startDate, endDate } = (req.query as any);
 
       if (!unitId || !startDate || !endDate) {
         return res
@@ -286,7 +286,7 @@ export class FinanceEnhancementController {
 
   async getGeneralLedger(req: Request, res: Response, next: NextFunction) {
     try {
-      const { unitId, accountId, startDate, endDate } = req.query;
+      const { unitId, accountId, startDate, endDate } = (req.query as any);
 
       if (!unitId || !startDate || !endDate || !accountId) {
         return res
@@ -312,7 +312,7 @@ export class FinanceEnhancementController {
 
   async getCashFlowStatement(req: Request, res: Response, next: NextFunction) {
     try {
-      const { unitId, startDate, endDate } = req.query;
+      const { unitId, startDate, endDate } = (req.query as any);
 
       if (!unitId || !startDate || !endDate) {
         return res
@@ -334,7 +334,7 @@ export class FinanceEnhancementController {
 
   async getIncomeExpenseReport(req: Request, res: Response, next: NextFunction) {
     try {
-      const { unitId, startDate, endDate } = req.query;
+      const { unitId, startDate, endDate } = (req.query as any);
 
       if (!unitId || !startDate || !endDate) {
         return res
@@ -356,7 +356,7 @@ export class FinanceEnhancementController {
 
   async getBalanceSheet(req: Request, res: Response, next: NextFunction) {
     try {
-      const { unitId, date } = req.query;
+      const { unitId, date } = (req.query as any);
 
       if (!unitId || !date) {
         return res.status(400).json({ success: false, message: 'Unit ID and Date are required' });
@@ -374,7 +374,7 @@ export class FinanceEnhancementController {
 
   async getCashFlowForecast(req: Request, res: Response, next: NextFunction) {
     try {
-      const { unitId, months } = req.query;
+      const { unitId, months } = (req.query as any);
       const user = (req as any).user;
 
       if (!unitId) {
@@ -405,7 +405,7 @@ export class FinanceEnhancementController {
 
   async getBudgets(req: Request, res: Response, next: NextFunction) {
     try {
-      const { unitId, academicYearId } = req.query;
+      const { unitId, academicYearId } = (req.query as any);
       const { page, limit } = parsePagination(req);
 
       const result = await getBudgets({
@@ -439,7 +439,7 @@ export class FinanceEnhancementController {
 
   async updateBudget(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
+      const { id } = (req.params as any);
       const input: UpdateBudgetInput = req.body;
       const result = await updateBudget(id, input);
       res.json({ success: true, data: result });
@@ -450,7 +450,7 @@ export class FinanceEnhancementController {
 
   async deleteBudget(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
+      const { id } = (req.params as any);
       await deleteBudget(id);
       res.json({ success: true, message: 'Budget deleted successfully' });
     } catch (error) {
@@ -460,7 +460,7 @@ export class FinanceEnhancementController {
 
   async getBudgetUtilizationAlerts(req: Request, res: Response, next: NextFunction) {
     try {
-      const { unitId, academicYearId } = req.query;
+      const { unitId, academicYearId } = (req.query as any);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const user = (req as any).user;
 
@@ -514,7 +514,7 @@ export class FinanceEnhancementController {
 
   async getFinancialPeriods(req: Request, res: Response, next: NextFunction) {
     try {
-      const { unitId } = req.query;
+      const { unitId } = (req.query as any);
       const { page, limit } = parsePagination(req);
 
       const result = await getFinancialPeriods({
@@ -541,7 +541,7 @@ export class FinanceEnhancementController {
 
   async getConsolidatedBudget(req: Request, res: Response, next: NextFunction) {
     try {
-      const { academicYearId } = req.query;
+      const { academicYearId } = (req.query as any);
 
       if (!academicYearId) {
         return res
@@ -561,7 +561,7 @@ export class FinanceEnhancementController {
 
   async closeFinancialPeriod(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
+      const { id } = (req.params as any);
       const userId = (req as any).user.id;
       const result = await closePeriod(id, userId);
       res.json({ success: true, data: result });

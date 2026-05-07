@@ -18,14 +18,14 @@ function isPrivileged(role?: UserRole): boolean {
 
 export const listCompliances = asyncHandler(async (req: Request, res: Response) => {
   const unitId = req.user?.unitId;
-  const isPrivilegedUser = isPrivileged(req.user?.role);
+  const isPrivilegedUser = isPrivileged(req.user?.role as UserRole);
   if (!unitId && !isPrivilegedUser) throw Errors.unauthorized('Unit ID required');
-  const targetUnitId = isPrivilegedUser && req.query.unitId ? String(req.query.unitId) : unitId;
+  const targetUnitId = isPrivilegedUser && (req.query as any).unitId ? String((req.query as any).unitId) : unitId;
   if (!targetUnitId) throw Errors.badRequest('Unit ID required');
 
   const query = listComplianceQuerySchema.parse({
-    category: req.query.category,
-    status: req.query.status,
+    category: (req.query as any).category,
+    status: (req.query as any).status,
   });
 
   const compliances = await syariahService.getCompliances(targetUnitId, query);
@@ -33,9 +33,9 @@ export const listCompliances = asyncHandler(async (req: Request, res: Response) 
 });
 
 export const getCompliance = asyncHandler(async (req: Request, res: Response) => {
-  const compliance = await syariahService.getComplianceById(req.params.id);
+  const compliance = await syariahService.getComplianceById((req.params as any).id as string);
   if (!compliance) throw Errors.notFound('Compliance item not found');
-  if (!isPrivileged(req.user?.role) && compliance.unitId !== req.user?.unitId) {
+  if (!isPrivileged(req.user?.role as UserRole) && compliance.unitId !== req.user?.unitId) {
     throw Errors.forbidden('Access denied');
   }
   res.json({ success: true, data: compliance });
@@ -45,7 +45,7 @@ export const createCompliance = asyncHandler(async (req: Request, res: Response)
   const body = createComplianceSchema.parse(req.body);
   let targetUnitId = req.user?.unitId;
   if (!targetUnitId) {
-    if (isPrivileged(req.user?.role) && body.unitId) targetUnitId = body.unitId;
+    if (isPrivileged(req.user?.role as UserRole) && body.unitId) targetUnitId = body.unitId;
     else throw Errors.badRequest('Unit ID is required');
   }
 
@@ -54,24 +54,24 @@ export const createCompliance = asyncHandler(async (req: Request, res: Response)
 });
 
 export const updateCompliance = asyncHandler(async (req: Request, res: Response) => {
-  const existing = await syariahService.getComplianceById(req.params.id);
+  const existing = await syariahService.getComplianceById((req.params as any).id as string);
   if (!existing) throw Errors.notFound('Compliance item not found');
-  if (!isPrivileged(req.user?.role) && existing.unitId !== req.user?.unitId) {
+  if (!isPrivileged(req.user?.role as UserRole) && existing.unitId !== req.user?.unitId) {
     throw Errors.forbidden('Access denied');
   }
 
   const body = updateComplianceSchema.parse(req.body);
-  const compliance = await syariahService.updateCompliance(req.params.id, body, req.user?.sub);
+  const compliance = await syariahService.updateCompliance((req.params as any).id as string, body, req.user?.sub);
   res.json({ success: true, data: compliance });
 });
 
 export const deleteCompliance = asyncHandler(async (req: Request, res: Response) => {
-  const existing = await syariahService.getComplianceById(req.params.id);
+  const existing = await syariahService.getComplianceById((req.params as any).id as string);
   if (!existing) throw Errors.notFound('Compliance item not found');
-  if (!isPrivileged(req.user?.role) && existing.unitId !== req.user?.unitId) {
+  if (!isPrivileged(req.user?.role as UserRole) && existing.unitId !== req.user?.unitId) {
     throw Errors.forbidden('Access denied');
   }
-  await syariahService.deleteCompliance(req.params.id);
+  await syariahService.deleteCompliance((req.params as any).id as string);
   res.json({ success: true, message: 'Compliance item deleted' });
 });
 
@@ -86,9 +86,9 @@ export const createAudit = asyncHandler(async (req: Request, res: Response) => {
 
 export const getSummary = asyncHandler(async (req: Request, res: Response) => {
   const unitId = req.user?.unitId;
-  const isPrivilegedUser = isPrivileged(req.user?.role);
+  const isPrivilegedUser = isPrivileged(req.user?.role as UserRole);
   if (!unitId && !isPrivilegedUser) throw Errors.unauthorized('Unit ID required');
-  const targetUnitId = isPrivilegedUser && req.query.unitId ? String(req.query.unitId) : unitId;
+  const targetUnitId = isPrivilegedUser && (req.query as any).unitId ? String((req.query as any).unitId) : unitId;
   if (!targetUnitId) throw Errors.badRequest('Unit ID required');
 
   const summary = await syariahService.getComplianceSummary(targetUnitId);

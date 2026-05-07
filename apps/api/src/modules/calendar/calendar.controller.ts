@@ -5,18 +5,18 @@ export class CalendarController {
   async listEvents(req: Request, res: Response, next: NextFunction) {
     try {
       const query = {
-        unitId: req.query.unitId as string | undefined,
-        classId: req.query.classId as string | undefined,
-        eventType: req.query.eventType as any,
-        startDate: req.query.startDate as string | undefined,
-        endDate: req.query.endDate as string | undefined,
-        month: req.query.month ? parseInt(req.query.month as string) : undefined,
-        year: req.query.year ? parseInt(req.query.year as string) : undefined,
-        search: req.query.search as string | undefined,
+        unitId: (req.query as any).unitId as string | undefined,
+        classId: (req.query as any).classId as string | undefined,
+        eventType: (req.query as any).eventType as any,
+        startDate: (req.query as any).startDate as string | undefined,
+        endDate: (req.query as any).endDate as string | undefined,
+        month: (req.query as any).month ? parseInt((req.query as any).month as string) : undefined,
+        year: (req.query as any).year ? parseInt((req.query as any).year as string) : undefined,
+        search: (req.query as any).search as string | undefined,
         isPublic:
-          req.query.isPublic === 'true' ? true : req.query.isPublic === 'false' ? false : undefined,
-        page: parseInt(req.query.page as string) || 1,
-        limit: parseInt(req.query.limit as string) || 50,
+          (req.query as any).isPublic === 'true' ? true : (req.query as any).isPublic === 'false' ? false : undefined,
+        page: parseInt((req.query as any).page as string) || 1,
+        limit: parseInt((req.query as any).limit as string) || 50,
       };
       const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
       const result = await calendarService.findAll(query, user);
@@ -28,7 +28,7 @@ export class CalendarController {
 
   async getEventById(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
+      const { id } = (req.params as any);
       const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
       const event = await calendarService.findById(id, user);
       res.json({ data: event });
@@ -49,7 +49,7 @@ export class CalendarController {
 
   async updateEvent(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
+      const { id } = (req.params as any);
       const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
       const event = await calendarService.update(id, req.body, user);
       res.json({ data: event });
@@ -60,7 +60,7 @@ export class CalendarController {
 
   async deleteEvent(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
+      const { id } = (req.params as any);
       const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
       await calendarService.delete(id, user);
       res.json({ success: true, message: 'Event deleted successfully' });
@@ -71,8 +71,8 @@ export class CalendarController {
 
   async getUpcomingEvents(req: Request, res: Response, next: NextFunction) {
     try {
-      const { unitId } = req.params;
-      const limit = parseInt(req.query.limit as string) || 10;
+      const { unitId } = (req.params as any);
+      const limit = parseInt((req.query as any).limit as string) || 10;
       const events = await calendarService.getUpcoming(unitId, limit);
       res.json({ data: events });
     } catch (error) {
@@ -82,7 +82,7 @@ export class CalendarController {
 
   async getTodayEvents(req: Request, res: Response, next: NextFunction) {
     try {
-      const { unitId } = req.params;
+      const { unitId } = (req.params as any);
       const events = await calendarService.getToday(unitId);
       res.json({ data: events });
     } catch (error) {
@@ -92,9 +92,9 @@ export class CalendarController {
 
   async getHolidays(req: Request, res: Response, next: NextFunction) {
     try {
-      const { unitId } = req.params;
-      const startDate = req.query.startDate as string;
-      const endDate = req.query.endDate as string;
+      const { unitId } = (req.params as any);
+      const startDate = (req.query as any).startDate as string;
+      const endDate = (req.query as any).endDate as string;
       const events = await calendarService.getHolidays(unitId, startDate, endDate);
       res.json({ data: events });
     } catch (error) {
@@ -135,9 +135,9 @@ export class CalendarController {
 
   async getStatistics(req: Request, res: Response, next: NextFunction) {
     try {
-      const unitId = req.query.unitId as string | undefined;
-      const startDate = req.query.startDate as string | undefined;
-      const endDate = req.query.endDate as string | undefined;
+      const unitId = (req.query as any).unitId as string | undefined;
+      const startDate = (req.query as any).startDate as string | undefined;
+      const endDate = (req.query as any).endDate as string | undefined;
       const stats = await calendarService.getStatistics(unitId, startDate, endDate);
       res.json({ data: stats });
     } catch (error) {

@@ -19,7 +19,7 @@ export const contractController = {
 
   update: async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { id } = req.params;
+      const { id } = (req.params as any);
       const result = await contractService.update(id, {
         ...req.body,
         startDate: req.body.startDate ? new Date(req.body.startDate) : undefined,
@@ -36,10 +36,10 @@ export const contractController = {
       const { unitId } = req.user!;
       if (!unitId) throw Errors.badRequest('Unit ID missing from user');
 
-      const page = Number(req.query.page) || 1;
-      const limit = Number(req.query.limit) || 10;
-      const search = req.query.search as string;
-      const status = req.query.status as string;
+      const page = Number((req.query as any).page) || 1;
+      const limit = Number((req.query as any).limit) || 10;
+      const search = (req.query as any).search as string;
+      const status = (req.query as any).status as string;
 
       const result = await contractService.findAll(unitId, { page, limit, search, status });
       sendResponse(res, result, 'Contracts retrieved successfully');
@@ -50,7 +50,7 @@ export const contractController = {
 
   findByUser: async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { userId } = req.params;
+      const { userId } = (req.params as any);
       const result = await contractService.findByUser(userId);
       sendResponse(res, result, 'User contracts retrieved successfully');
     } catch (error) {
@@ -63,7 +63,7 @@ export const contractController = {
       const { unitId } = req.user!;
       if (!unitId) throw Errors.badRequest('Unit ID missing from user');
 
-      const days = Number(req.query.days) || 30;
+      const days = Number((req.query as any).days) || 30;
       const result = await contractService.findExpiring(unitId, days);
       sendResponse(res, result, 'Expiring contracts retrieved successfully');
     } catch (error) {

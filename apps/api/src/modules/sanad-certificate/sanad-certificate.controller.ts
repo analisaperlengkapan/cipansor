@@ -13,7 +13,7 @@ export const listSanadRecords = asyncHandler(async (req: Request, res: Response)
     userId: req.user!.sub,
   };
 
-  const result = await SanadCertificateService.findAllSanadRecords(req.query as any, context);
+  const result = await SanadCertificateService.findAllSanadRecords((req.query as any) as any, context);
 
   res.json({
     success: true,
@@ -27,7 +27,7 @@ export const listSanadRecords = asyncHandler(async (req: Request, res: Response)
 // ============================================
 
 export const getSanadById = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const { id } = (req.params as any);
   const record = await SanadCertificateService.findSanadById(id);
 
   res.json({
@@ -56,7 +56,7 @@ export const createSanadRecord = asyncHandler(async (req: Request, res: Response
 // ============================================
 
 export const updateSanadRecord = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const { id } = (req.params as any);
   const context = { userId: req.user!.sub };
   const record = await SanadCertificateService.updateSanadRecord(id, req.body, context);
 
@@ -72,7 +72,7 @@ export const updateSanadRecord = asyncHandler(async (req: Request, res: Response
 // ============================================
 
 export const deleteSanadRecord = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const { id } = (req.params as any);
   await SanadCertificateService.deleteSanadRecord(id);
 
   res.json({
@@ -101,7 +101,7 @@ export const bulkCreateSanadRecords = asyncHandler(async (req: Request, res: Res
 // ============================================
 
 export const getStudentSanadSummary = asyncHandler(async (req: Request, res: Response) => {
-  const { studentId } = req.params;
+  const { studentId } = (req.params as any);
   const summary = await SanadCertificateService.getStudentSanadSummary(studentId);
 
   res.json({
@@ -129,16 +129,16 @@ export const generateCertificate = asyncHandler(async (req: Request, res: Respon
 // ============================================
 
 export const getCertificatePdf = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const { id } = (req.params as any);
   const context = { userId: req.user!.sub };
 
   const certificateData = await SanadCertificateService.generateCertificate(
     {
       sanadId: id,
-      templateType: (req.query.template as any) || 'STANDARD',
-      includeQRCode: req.query.qr !== 'false',
-      signedBy: req.query.signedBy as string,
-      signedByTitle: req.query.signedByTitle as string,
+      templateType: ((req.query as any).template as any) || 'STANDARD',
+      includeQRCode: (req.query as any).qr !== 'false',
+      signedBy: (req.query as any).signedBy as string,
+      signedByTitle: (req.query as any).signedByTitle as string,
     },
     context
   );

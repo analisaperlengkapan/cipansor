@@ -8,7 +8,7 @@ export const muhasabahController = {
    */
   async list(req: Request, res: Response, next: NextFunction) {
     try {
-      const { page = 1, limit = 10, studentId, mood, startDate, endDate } = req.query;
+      const { page = 1, limit = 10, studentId, mood, startDate, endDate } = (req.query as any);
 
       const result = await muhasabahService.findAll({
         page: Number(page),
@@ -36,7 +36,7 @@ export const muhasabahController = {
    */
   async getById(req: Request, res: Response, next: NextFunction) {
     try {
-      const muhasabah = await muhasabahService.findById(req.params.id);
+      const muhasabah = await muhasabahService.findById((req.params as any).id);
 
       if (!muhasabah) {
         return res.status(404).json(ApiResponse.error('Muhasabah record not found'));
@@ -54,7 +54,7 @@ export const muhasabahController = {
   async getMyRecords(req: Request, res: Response, next: NextFunction) {
     try {
       const user = (req as any).user;
-      const { page = 1, limit = 10, mood, startDate, endDate } = req.query;
+      const { page = 1, limit = 10, mood, startDate, endDate } = (req.query as any);
 
       if (!user.studentId) {
         return res.status(400).json(ApiResponse.error('User is not a student'));
@@ -108,7 +108,7 @@ export const muhasabahController = {
   async getMyStats(req: Request, res: Response, next: NextFunction) {
     try {
       const user = (req as any).user;
-      const { days = 30 } = req.query;
+      const { days = 30 } = (req.query as any);
 
       if (!user.studentId) {
         return res.status(400).json(ApiResponse.error('User is not a student'));
@@ -170,7 +170,7 @@ export const muhasabahController = {
    */
   async update(req: Request, res: Response, next: NextFunction) {
     try {
-      const muhasabah = await muhasabahService.update(req.params.id, req.body);
+      const muhasabah = await muhasabahService.update((req.params as any).id, req.body);
       res.json(ApiResponse.success(muhasabah, 'Muhasabah updated successfully'));
     } catch (error) {
       next(error);
@@ -182,7 +182,7 @@ export const muhasabahController = {
    */
   async delete(req: Request, res: Response, next: NextFunction) {
     try {
-      await muhasabahService.delete(req.params.id);
+      await muhasabahService.delete((req.params as any).id);
       res.json(ApiResponse.success(null, 'Muhasabah deleted successfully'));
     } catch (error) {
       next(error);
@@ -194,8 +194,8 @@ export const muhasabahController = {
    */
   async getStudentStats(req: Request, res: Response, next: NextFunction) {
     try {
-      const { days = 30 } = req.query;
-      const stats = await muhasabahService.getStudentStats(req.params.studentId, Number(days));
+      const { days = 30 } = (req.query as any);
+      const stats = await muhasabahService.getStudentStats((req.params as any).studentId, Number(days));
       res.json(ApiResponse.success(stats));
     } catch (error) {
       next(error);
@@ -207,8 +207,8 @@ export const muhasabahController = {
    */
   async getStudentHistory(req: Request, res: Response, next: NextFunction) {
     try {
-      const { days = 30 } = req.query;
-      const history = await muhasabahService.getStudentHistory(req.params.studentId, Number(days));
+      const { days = 30 } = (req.query as any);
+      const history = await muhasabahService.getStudentHistory((req.params as any).studentId, Number(days));
       res.json(ApiResponse.success(history));
     } catch (error) {
       next(error);
@@ -220,7 +220,7 @@ export const muhasabahController = {
    */
   async getGroupStats(req: Request, res: Response, next: NextFunction) {
     try {
-      const { unitId, classId, halaqohId, days = 7 } = req.query;
+      const { unitId, classId, halaqohId, days = 7 } = (req.query as any);
 
       const stats = await muhasabahService.getGroupStats({
         unitId: unitId as string,
@@ -240,7 +240,7 @@ export const muhasabahController = {
    */
   async getDailyReport(req: Request, res: Response, next: NextFunction) {
     try {
-      const { date, halaqohId } = req.query;
+      const { date, halaqohId } = (req.query as any);
       const reportDate = date ? new Date(date as string) : new Date();
 
       const report = await muhasabahService.getDailyReport(reportDate, halaqohId as string);

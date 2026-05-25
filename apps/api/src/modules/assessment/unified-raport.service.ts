@@ -115,6 +115,7 @@ export class UnifiedRaportService {
         holistic: holistic.interpretation,
         recommendation: holistic.recommendation,
       },
+      trends: (holistic as any).trends,
       signatures: {
         homeroomTeacher: enrollment.class.homeroomTeacher?.user.name,
         principal: 'Kepala Sekolah',

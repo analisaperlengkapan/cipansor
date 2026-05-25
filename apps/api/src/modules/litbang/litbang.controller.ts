@@ -9,6 +9,13 @@ export const getProjects = async (req: Request, res: Response, next: NextFunctio
   } catch (error) { next(error); }
 };
 
+export const getResearchSOPImpact = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const data = await litbangService.getResearchSOPImpact();
+    res.json({ data });
+  } catch (error) { next(error); }
+};
+
 export const getProjectFinancialStatus = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const data = await litbangService.getProjectFinancialStatus((req.params as any).id);
@@ -122,6 +129,13 @@ export const evaluateProposal = async (req: Request, res: Response, next: NextFu
       req.body.score,
       req.body.feedback
     );
+    res.json({ data });
+  } catch (error) { next(error); }
+};
+
+export const promoteProposal = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const data = await litbangService.promoteProposal((req.params as any).id, req.body);
     res.json({ data });
   } catch (error) { next(error); }
 };

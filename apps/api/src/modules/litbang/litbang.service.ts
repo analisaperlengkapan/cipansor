@@ -1,5 +1,6 @@
 import { prisma } from '../../lib/prisma';
 import { Prisma } from '@prisma/client';
+import { tataLaksanaService } from '../tatalaksana/tatalaksana.service';
 
 export class LitbangService {
   // ── Research Projects ─────────────────────────────
@@ -49,9 +50,6 @@ export class LitbangService {
     return prisma.researchProject.create({
       data: {
         ...data,
-        // Use `!== undefined` (matching updateProject) so that an explicit
-        // budget of 0 is preserved as Decimal(0) rather than silently dropped
-        // by a truthiness check.
         budget: data.budget !== undefined ? new Prisma.Decimal(data.budget) : undefined,
       },
     });
@@ -78,10 +76,24 @@ export class LitbangService {
     const updateData: any = { ...data };
     if (data.budget !== undefined) updateData.budget = new Prisma.Decimal(data.budget);
 
-    return prisma.researchProject.update({
+    const project = await prisma.researchProject.update({
       where: { id },
       data: updateData,
     });
+
+    // Integration: If published, propose SOP from findings
+    // Idempotency is handled within createDraftFromResearch by checking for existing researchId in title
+    if (project.status === 'PUBLISHED' && project.findings) {
+      await tataLaksanaService.createDraftFromResearch({
+        unitId: project.unitId,
+        researchId: project.id,
+        title: project.title,
+        findings: project.findings,
+        createdById: project.leaderId,
+      });
+    }
+
+    return project;
   }
 
   async deleteProject(id: string) {
@@ -96,14 +108,9 @@ export class LitbangService {
     dueDate?: Date;
     sortOrder?: number;
   }) {
-    // Wrap create and progress recalculation in a transaction so the project's
-    // progress is always consistent with its milestones. Without this, adding a
-    // new non-COMPLETED milestone to a project that was auto-COMPLETED (100%
-    // progress) would leave the progress and status stale.
     return prisma.$transaction(async (tx) => {
       const created = await tx.researchMilestone.create({ data });
 
-      // Inline recalculation using the transaction client
       const milestones = await tx.researchMilestone.findMany({ where: { projectId: created.projectId } });
       const now = new Date();
       const completed = milestones.filter((m) => m.status === "COMPLETED").length;
@@ -139,17 +146,11 @@ export class LitbangService {
     status: string;
     sortOrder: number;
   }>) {
-    // Wrap update and progress recalculation in a transaction so the project's
-    // progress is always consistent with its milestones (matching deleteMilestone).
     const milestone = await prisma.$transaction(async (tx) => {
       const updated = await tx.researchMilestone.update({ where: { id }, data });
 
-      // Inline recalculation using the transaction client
       const milestones = await tx.researchMilestone.findMany({ where: { projectId: updated.projectId } });
       const now = new Date();
-      // Note: milestones.length === 0 is unreachable here because we just updated
-      // a milestone above, so at least one always exists. The guard is kept in
-      // deleteMilestone where it IS reachable.
       const completed = milestones.filter((m) => m.status === "COMPLETED").length;
       const progress = Math.round((completed / milestones.length) * 100);
       if (progress === 100) {
@@ -178,12 +179,9 @@ export class LitbangService {
   }
 
   async deleteMilestone(id: string) {
-    // Wrap delete and progress recalculation in a transaction so the project's
-    // progress is always consistent with its milestones.
     await prisma.$transaction(async (tx) => {
       const milestone = await tx.researchMilestone.findUniqueOrThrow({ where: { id } });
       await tx.researchMilestone.delete({ where: { id } });
-      // Inline recalculation using the transaction client
       const milestones = await tx.researchMilestone.findMany({ where: { projectId: milestone.projectId } });
       const now = new Date();
       if (milestones.length === 0) {
@@ -279,7 +277,7 @@ export class LitbangService {
     return prisma.innovationProposal.update({
       where: { id },
       data: {
-        status: score >= 70 ? "PILOT" : "REJECTED",
+        status: score >= 70 ? ("PILOT" as any) : ("REJECTED" as any),
         score,
         feedback,
         approvedById: evaluatorId,
@@ -290,6 +288,57 @@ export class LitbangService {
 
   async deleteProposal(id: string) {
     return prisma.innovationProposal.delete({ where: { id } });
+  }
+
+  async promoteProposal(id: string, data: {
+    type: 'RESEARCH' | 'STRATEGY';
+    objectiveId?: string;
+  }) {
+    return prisma.$transaction(async (tx) => {
+      const proposal = await tx.innovationProposal.findUniqueOrThrow({
+        where: { id },
+      });
+
+      if (data.type === 'RESEARCH') {
+        const project = await tx.researchProject.create({
+          data: {
+            unitId: proposal.unitId,
+            title: `[Inovasi] ${proposal.title}`,
+            abstract: proposal.description,
+            category: proposal.category,
+            leaderId: proposal.proposerId,
+            status: 'PROPOSAL' as any,
+          }
+        });
+
+        await tx.innovationProposal.update({
+          where: { id },
+          data: { status: 'IMPLEMENTED' as any }
+        });
+
+        return project;
+      }
+
+      if (data.type === 'STRATEGY' && data.objectiveId) {
+        const activity = await tx.planActivity.create({
+          data: {
+            objectiveId: data.objectiveId,
+            title: `Implementasi Inovasi: ${proposal.title}`,
+            description: proposal.description,
+            status: 'PLANNED' as any,
+          }
+        });
+
+        await tx.innovationProposal.update({
+          where: { id },
+          data: { status: 'IMPLEMENTED' as any }
+        });
+
+        return activity;
+      }
+
+      throw new Error("Tipe promosi tidak valid atau Objective ID tidak ditemukan");
+    });
   }
 
   // ── Summary ───────────────────────────────────────
@@ -308,6 +357,25 @@ export class LitbangService {
     return { totalProjects, activeProjects, totalProposals, implementedProposals };
   }
 
+  async getResearchSOPImpact() {
+    const sops = await prisma.standardOperatingProcedure.findMany({
+      where: {
+        title: { contains: '(Litbang:' }
+      },
+      select: {
+        id: true,
+        title: true,
+        status: true,
+        updatedAt: true,
+      }
+    });
+
+    const total = sops.length;
+    const active = sops.filter(s => s.status === 'ACTIVE').length;
+
+    return { total, active, sops: sops.slice(0, 5) };
+  }
+
   async getProjectFinancialStatus(projectId: string) {
     const project = await prisma.researchProject.findUniqueOrThrow({
       where: { id: projectId },
@@ -316,9 +384,6 @@ export class LitbangService {
 
     const budget = Number(project.budget || 0);
 
-    // Best Practice: If the research project is explicitly linked to a budget code,
-    // we use that for precise tracking. Otherwise, we fallback to unit-level
-    // aggregation during the project dates (legacy behavior).
     if (project.budgetId && project.budgetRel?.accountId) {
       const aggregates = await prisma.journalEntry.aggregate({
         where: {

@@ -26,6 +26,7 @@ export interface GRCStats {
       byCategory: Record<string, { total: number; averageScore: number }>;
     };
   };
+  orgHealthScore: number;
   auditSuggestions?: {
     riskId: string;
     riskCode: string;
@@ -46,7 +47,7 @@ export async function getGRCStats(unitId?: string): Promise<GRCStats> {
     prisma.strategicPlan.findMany({
       where: {
         ...whereClause,
-        status: { in: [PlanStatus.PROPOSED, PlanStatus.APPROVED, PlanStatus.IN_PROGRESS] },
+        status: { in: [PlanStatus.PROPOSED, PlanStatus.APPROVED, PlanStatus.IN_PROGRESS] as any },
       },
       select: { progress: true },
     }),
@@ -61,18 +62,16 @@ export async function getGRCStats(unitId?: string): Promise<GRCStats> {
     }),
 
     // 3. Audit Findings & Resolved Findings
-    // Note: AuditFinding has no direct unitId — filter through the audit relation
     prisma.auditFinding.count({
       where: {
         ...(unitId ? { audit: { unitId } } : {}),
-      },
+      } as any,
     }),
-    // Count distinct findings that have at least one verified follow-up
     prisma.auditFinding.count({
       where: {
         ...(unitId ? { audit: { unitId } } : {}),
         followUps: { some: { status: 'VERIFIED' } },
-      },
+      } as any,
     }),
 
     // 4. Sharia Compliance
@@ -81,11 +80,7 @@ export async function getGRCStats(unitId?: string): Promise<GRCStats> {
       select: { score: true, status: true, category: true },
     }),
 
-    // 5. Audit Suggestions (gracefully degrades on error)
-    // When unitId is provided, suggest for that unit; otherwise run a single cross-unit query.
-    // Previous implementation fanned out across up to 20 units (2 queries each = 40 DB round-trips).
-    // Now pengawasanService.suggestAuditSchedules accepts an optional unitId and handles
-    // cross-unit aggregation in a single pair of queries when unitId is omitted.
+    // 5. Audit Suggestions
     pengawasanService.suggestAuditSchedules(unitId).catch((err) => {
       console.error('[GRC] suggestAuditSchedules failed, returning empty suggestions:', err?.message || err);
       return [];
@@ -105,11 +100,13 @@ export async function getGRCStats(unitId?: string): Promise<GRCStats> {
     MEDIUM: 0,
     HIGH: 0,
     EXTREME: 0,
-  };
+  } as any;
   risks.forEach((r) => {
-    riskDistribution[r.riskLevel]++;
+    if (riskDistribution[r.riskLevel as RiskLevel] !== undefined) {
+      riskDistribution[r.riskLevel as RiskLevel]++;
+    }
   });
-  const criticalRisks = riskDistribution.HIGH + riskDistribution.EXTREME;
+  const criticalRisks = (riskDistribution.HIGH || 0) + (riskDistribution.EXTREME || 0);
 
   // Sharia Processing
   const shariaStatusDist: Record<ComplianceStatus, number> = {
@@ -118,11 +115,13 @@ export async function getGRCStats(unitId?: string): Promise<GRCStats> {
     NON_COMPLIANT: 0,
     UNDER_REVIEW: 0,
     NOT_APPLICABLE: 0,
-  };
+  } as any;
   let totalScore = 0;
   let scoredCount = 0;
   compliances.forEach((c) => {
-    shariaStatusDist[c.status]++;
+    if (shariaStatusDist[c.status as ComplianceStatus] !== undefined) {
+      shariaStatusDist[c.status as ComplianceStatus]++;
+    }
     if (c.score != null) {
       totalScore += c.score;
       scoredCount++;
@@ -130,8 +129,6 @@ export async function getGRCStats(unitId?: string): Promise<GRCStats> {
   });
   const avgShariaScore = scoredCount > 0 ? totalScore / scoredCount : 0;
 
-  // Sharia by-category breakdown (always includes all 5 categories for consistency
-  // with syariahService.getComplianceSummary — empty categories get total: 0, averageScore: 0)
   const byCategory: Record<string, { total: number; averageScore: number }> = {};
   for (const cat of SHARIA_CATEGORIES) {
     const items = compliances.filter((c) => c.category === cat);
@@ -141,6 +138,21 @@ export async function getGRCStats(unitId?: string): Promise<GRCStats> {
       averageScore: scoredItems.length > 0 ? Math.round(scoredItems.reduce((s, i) => s + (i.score || 0), 0) / scoredItems.length * 100) / 100 : 0,
     };
   }
+
+  // Calculate Organizational Health Score
+  // Weighted: 40% Compliance Rate, 30% Risk Level (Inverse), 30% Audit Resolution Rate
+  const riskWeightedScore = Math.max(0, 100 - (
+    ((riskDistribution.EXTREME || 0) * 25) +
+    ((riskDistribution.HIGH || 0) * 15) +
+    ((riskDistribution.MEDIUM || 0) * 5)
+  ));
+
+  const resolutionRate = findings > 0 ? (resolvedFindings / findings) * 100 : 100;
+  const orgHealthScore = Math.round(
+    (avgShariaScore * 0.4) +
+    (riskWeightedScore * 0.3) +
+    (resolutionRate * 0.3)
+  );
 
   return {
     plans: {
@@ -165,6 +177,7 @@ export async function getGRCStats(unitId?: string): Promise<GRCStats> {
         byCategory,
       },
     },
+    orgHealthScore,
     auditSuggestions,
   };
 }

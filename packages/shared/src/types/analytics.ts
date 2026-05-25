@@ -280,5 +280,6 @@ export interface GRCStats {
       byCategory: Record<string, { total: number; averageScore: number }>;
     };
   };
+  orgHealthScore: number;
   auditSuggestions?: AuditSuggestion[];
 }

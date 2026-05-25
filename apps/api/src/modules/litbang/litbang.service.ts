@@ -82,7 +82,7 @@ export class LitbangService {
     });
 
     // Integration: If published, propose SOP from findings
-    // Idempotency is handled within createDraftFromResearch by checking for existing researchId in title
+    // Idempotency: Handled by createDraftFromResearch checking for existing research ID in title
     if (project.status === 'PUBLISHED' && project.findings) {
       await tataLaksanaService.createDraftFromResearch({
         unitId: project.unitId,
@@ -108,6 +108,8 @@ export class LitbangService {
     dueDate?: Date;
     sortOrder?: number;
   }) {
+    // Wrap create and progress recalculation in a transaction so the project's
+    // progress is always consistent with its milestones.
     return prisma.$transaction(async (tx) => {
       const created = await tx.researchMilestone.create({ data });
 
@@ -118,18 +120,18 @@ export class LitbangService {
       if (progress === 100) {
         const progressionStatuses = ['PROPOSAL', 'IN_PROGRESS', 'APPROVED'];
         const result = await tx.researchProject.updateMany({
-          where: { id: created.projectId, status: { in: progressionStatuses } },
-          data: { progress, status: 'COMPLETED', updatedAt: now },
+          where: { id: created.projectId, status: { in: progressionStatuses as any } },
+          data: { progress, status: 'COMPLETED' as any, updatedAt: now },
         });
         if (result.count === 0) {
           await tx.researchProject.updateMany({
-            where: { id: created.projectId, status: { notIn: [...progressionStatuses, 'CANCELLED'] } },
+            where: { id: created.projectId, status: { notIn: [...progressionStatuses, 'CANCELLED'] as any } },
             data: { progress, updatedAt: now },
           });
         }
       } else {
         await tx.researchProject.updateMany({
-          where: { id: created.projectId, status: { not: 'CANCELLED' } },
+          where: { id: created.projectId, status: { not: 'CANCELLED' as any } },
           data: { progress, updatedAt: now },
         });
       }
@@ -146,6 +148,8 @@ export class LitbangService {
     status: string;
     sortOrder: number;
   }>) {
+    // Wrap update and progress recalculation in a transaction so the project's
+    // progress is always consistent with its milestones.
     const milestone = await prisma.$transaction(async (tx) => {
       const updated = await tx.researchMilestone.update({ where: { id }, data });
 
@@ -156,18 +160,18 @@ export class LitbangService {
       if (progress === 100) {
         const progressionStatuses = ['PROPOSAL', 'IN_PROGRESS', 'APPROVED'];
         const result = await tx.researchProject.updateMany({
-          where: { id: updated.projectId, status: { in: progressionStatuses } },
-          data: { progress, status: 'COMPLETED', updatedAt: now },
+          where: { id: updated.projectId, status: { in: progressionStatuses as any } },
+          data: { progress, status: 'COMPLETED' as any, updatedAt: now },
         });
         if (result.count === 0) {
           await tx.researchProject.updateMany({
-            where: { id: updated.projectId, status: { notIn: [...progressionStatuses, 'CANCELLED'] } },
+            where: { id: updated.projectId, status: { notIn: [...progressionStatuses, 'CANCELLED'] as any } },
             data: { progress, updatedAt: now },
           });
         }
       } else {
         await tx.researchProject.updateMany({
-          where: { id: updated.projectId, status: { not: 'CANCELLED' } },
+          where: { id: updated.projectId, status: { not: 'CANCELLED' as any } },
           data: { progress, updatedAt: now },
         });
       }
@@ -179,6 +183,8 @@ export class LitbangService {
   }
 
   async deleteMilestone(id: string) {
+    // Wrap delete and progress recalculation in a transaction so the project's
+    // progress is always consistent with its milestones.
     await prisma.$transaction(async (tx) => {
       const milestone = await tx.researchMilestone.findUniqueOrThrow({ where: { id } });
       await tx.researchMilestone.delete({ where: { id } });
@@ -186,7 +192,7 @@ export class LitbangService {
       const now = new Date();
       if (milestones.length === 0) {
         await tx.researchProject.updateMany({
-          where: { id: milestone.projectId, status: { not: 'CANCELLED' } },
+          where: { id: milestone.projectId, status: { not: 'CANCELLED' as any } },
           data: { progress: 0, updatedAt: now },
         });
         return;
@@ -196,18 +202,18 @@ export class LitbangService {
       if (progress === 100) {
         const progressionStatuses = ['PROPOSAL', 'IN_PROGRESS', 'APPROVED'];
         const result = await tx.researchProject.updateMany({
-          where: { id: milestone.projectId, status: { in: progressionStatuses } },
-          data: { progress, status: 'COMPLETED', updatedAt: now },
+          where: { id: milestone.projectId, status: { in: progressionStatuses as any } },
+          data: { progress, status: 'COMPLETED' as any, updatedAt: now },
         });
         if (result.count === 0) {
           await tx.researchProject.updateMany({
-            where: { id: milestone.projectId, status: { notIn: [...progressionStatuses, 'CANCELLED'] } },
+            where: { id: milestone.projectId, status: { notIn: [...progressionStatuses, 'CANCELLED'] as any } },
             data: { progress, updatedAt: now },
           });
         }
       } else {
         await tx.researchProject.updateMany({
-          where: { id: milestone.projectId, status: { not: 'CANCELLED' } },
+          where: { id: milestone.projectId, status: { not: 'CANCELLED' as any } },
           data: { progress, updatedAt: now },
         });
       }
@@ -256,7 +262,7 @@ export class LitbangService {
     resources?: string;
     timeline?: string;
   }) {
-    return prisma.innovationProposal.create({ data });
+    return prisma.innovationProposal.create({ data: data as any });
   }
 
   async updateProposal(id: string, data: Partial<{
@@ -270,7 +276,7 @@ export class LitbangService {
     score: number;
     feedback: string;
   }>) {
-    return prisma.innovationProposal.update({ where: { id }, data });
+    return prisma.innovationProposal.update({ where: { id }, data: data as any });
   }
 
   async evaluateProposal(id: string, evaluatorId: string, score: number, feedback?: string) {
@@ -349,9 +355,9 @@ export class LitbangService {
     const [totalProjects, activeProjects, totalProposals, implementedProposals] =
       await Promise.all([
         prisma.researchProject.count({ where: projectWhere }),
-        prisma.researchProject.count({ where: { ...projectWhere, status: "IN_PROGRESS" } }),
+        prisma.researchProject.count({ where: { ...projectWhere, status: "IN_PROGRESS" as any } }),
         prisma.innovationProposal.count({ where: proposalWhere }),
-        prisma.innovationProposal.count({ where: { ...proposalWhere, status: "IMPLEMENTED" } }),
+        prisma.innovationProposal.count({ where: { ...proposalWhere, status: "IMPLEMENTED" as any } }),
       ]);
 
     return { totalProjects, activeProjects, totalProposals, implementedProposals };
@@ -377,7 +383,7 @@ export class LitbangService {
   }
 
   async getProjectFinancialStatus(projectId: string) {
-    const project = await prisma.researchProject.findUniqueOrThrow({
+    const project = await (prisma.researchProject as any).findUniqueOrThrow({
       where: { id: projectId },
       select: { unitId: true, budget: true, startDate: true, endDate: true, budgetId: true, budgetRel: { select: { accountId: true } } },
     });
@@ -413,8 +419,8 @@ export class LitbangService {
           lte: project.endDate || new Date(),
         },
         account: {
-          type: { in: ['EXPENSE', 'ASSET'] },
-        },
+          type: { in: ['EXPENSE', 'ASSET'] as any },
+        } as any,
       },
       _sum: { debit: true, credit: true },
     });

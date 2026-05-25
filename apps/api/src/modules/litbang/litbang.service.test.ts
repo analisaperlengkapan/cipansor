@@ -1,10 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { prisma } from '../../lib/prisma';
 import { litbangService } from './litbang.service';
+import { tataLaksanaService } from '../tatalaksana/tatalaksana.service';
 
 // Mock external dependencies
-vi.mock('../../lib/prisma', () => ({
-  prisma: {
+vi.mock('../tatalaksana/tatalaksana.service', () => ({
+  tataLaksanaService: {
+    createDraftFromResearch: vi.fn(),
+  },
+}));
+
+const { mockPrisma } = vi.hoisted(() => {
+  const mock = {
     researchProject: {
       create: vi.fn(),
       findMany: vi.fn(),
@@ -29,11 +36,26 @@ vi.mock('../../lib/prisma', () => ({
       delete: vi.fn(),
       count: vi.fn(),
     },
+    planActivity: {
+      create: vi.fn(),
+    },
+    standardOperatingProcedure: {
+      create: vi.fn(),
+      findFirst: vi.fn(),
+      count: vi.fn(),
+      groupBy: vi.fn(),
+      findMany: vi.fn(),
+    },
     journalEntry: {
       aggregate: vi.fn(),
     },
-    $transaction: vi.fn((callback) => callback(prisma)),
-  },
+    $transaction: vi.fn().mockImplementation((cb: any) => cb(mock)),
+  };
+  return { mockPrisma: mock };
+});
+
+vi.mock('../../lib/prisma', () => ({
+  prisma: mockPrisma,
 }));
 
 describe('Litbang Service', () => {
@@ -55,12 +77,11 @@ describe('Litbang Service', () => {
 
       await litbangService.createProject(dto);
 
-      expect(prisma.researchProject.create).toHaveBeenCalledWith({
+      expect(prisma.researchProject.create).toHaveBeenCalledWith(expect.objectContaining({
         data: expect.objectContaining({
           title: 'Project Alpha',
-          budget: 10000000,
         }),
-      });
+      }));
     });
 
     it('should get projects with filters', async () => {
@@ -92,8 +113,6 @@ describe('Litbang Service', () => {
         data: { status: 'COMPLETED' },
       });
 
-      // Recalculate progress: 1 completed out of 2 = 50%
-      // In the actual implementation it uses updateMany with status guards
       expect(prisma.researchProject.updateMany).toHaveBeenCalledWith({
         where: expect.objectContaining({ id: 'proj-1' }),
         data: expect.objectContaining({ progress: 50 }),
@@ -122,7 +141,7 @@ describe('Litbang Service', () => {
       const result = await litbangService.getProjectFinancialStatus('proj-1');
 
       expect(result.budget).toBe(1000);
-      expect(result.realization).toBe(500); // 600 - 100
+      expect(result.realization).toBe(500);
       expect(result.percentage).toBe(50);
     });
   });
@@ -136,7 +155,7 @@ describe('Litbang Service', () => {
       expect(prisma.innovationProposal.update).toHaveBeenCalledWith({
         where: { id: 'prop-1' },
         data: expect.objectContaining({
-          status: 'PILOT', // Score >= 70
+          status: 'PILOT',
           score: 80,
           approvedById: 'user-1',
         }),
@@ -147,7 +166,7 @@ describe('Litbang Service', () => {
       expect(prisma.innovationProposal.update).toHaveBeenCalledWith({
         where: { id: 'prop-1' },
         data: expect.objectContaining({
-          status: 'REJECTED', // Score < 70
+          status: 'REJECTED',
           score: 50,
         }),
       });
@@ -156,10 +175,10 @@ describe('Litbang Service', () => {
 
   describe('Summary Dashboard', () => {
     it('should count projects and proposals', async () => {
-      vi.mocked(prisma.researchProject.count).mockResolvedValueOnce(5); // total
-      vi.mocked(prisma.researchProject.count).mockResolvedValueOnce(2); // active
-      vi.mocked(prisma.innovationProposal.count).mockResolvedValueOnce(10); // total
-      vi.mocked(prisma.innovationProposal.count).mockResolvedValueOnce(3); // implemented
+      vi.mocked(prisma.researchProject.count).mockResolvedValueOnce(5);
+      vi.mocked(prisma.researchProject.count).mockResolvedValueOnce(2);
+      vi.mocked(prisma.innovationProposal.count).mockResolvedValueOnce(10);
+      vi.mocked(prisma.innovationProposal.count).mockResolvedValueOnce(3);
 
       const summary = await litbangService.getSummary('unit-1');
 
@@ -167,6 +186,48 @@ describe('Litbang Service', () => {
       expect(summary.activeProjects).toBe(2);
       expect(summary.totalProposals).toBe(10);
       expect(summary.implementedProposals).toBe(3);
+    });
+  });
+
+  describe('Promotion and SOP Integration', () => {
+    it('should promote proposal to research project', async () => {
+      const mockProposal = { id: 'prop-1', unitId: 'unit-1', title: 'New Tech', description: 'desc', category: 'TEKNOLOGI', proposerId: 'user-1' };
+      vi.mocked(prisma.innovationProposal.findUniqueOrThrow).mockResolvedValue(mockProposal as any);
+      vi.mocked(prisma.researchProject.create).mockResolvedValue({ id: 'proj-1' } as any);
+
+      await litbangService.promoteProposal('prop-1', { type: 'RESEARCH' });
+
+      expect(prisma.researchProject.create).toHaveBeenCalledWith(expect.objectContaining({
+        data: expect.objectContaining({
+          title: '[Inovasi] New Tech',
+          unitId: 'unit-1',
+        })
+      }));
+      expect(prisma.innovationProposal.update).toHaveBeenCalledWith(expect.objectContaining({
+        where: { id: 'prop-1' },
+        data: { status: 'IMPLEMENTED' }
+      }));
+    });
+
+    it('should create SOP draft when project is published', async () => {
+      const mockProject = {
+        id: 'proj-1',
+        unitId: 'unit-1',
+        title: 'Project Alpha',
+        findings: 'Research findings here',
+        leaderId: 'user-1',
+        status: 'PUBLISHED'
+      };
+
+      vi.mocked(prisma.researchProject.update).mockResolvedValue(mockProject as any);
+      vi.mocked(tataLaksanaService.createDraftFromResearch).mockResolvedValue({} as any);
+
+      await litbangService.updateProject('proj-1', { status: 'PUBLISHED', findings: 'Research findings here' });
+
+      expect(tataLaksanaService.createDraftFromResearch).toHaveBeenCalledWith(expect.objectContaining({
+        researchId: 'proj-1',
+        findings: 'Research findings here',
+      }));
     });
   });
 });

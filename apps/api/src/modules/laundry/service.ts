@@ -1,5 +1,8 @@
 import { prisma } from '../../lib/prisma';
 import { Prisma } from '@prisma/client';
+import { JournalReferenceType } from '@cipansor/shared';
+import { getAccountOrFallback, ACCOUNT_MAPPING_KEYS } from '../finance/accounting-config.service';
+import { isPeriodOpen } from '../finance-enhancement/period.service';
 import type {
   CreatePricingInput,
   UpdatePricingInput,
@@ -336,6 +339,72 @@ export const transactionService = {
         });
       }
 
+      // ─── ACCOUNTING INTEGRATION (AUTOMATED JOURNALS) ───
+      if (paymentStatus === 'PAID') {
+        const journalDate = new Date();
+        const periodOpen = await isPeriodOpen(unitId, journalDate, tx);
+
+        if (periodOpen) {
+          const accountPrefix = data.businessUnitId ? `BU_${data.businessUnitId}_` : '';
+
+          const salesAccount = await getAccountOrFallback(
+            unitId,
+            `${accountPrefix}${ACCOUNT_MAPPING_KEYS.LAUNDRY_REVENUE}`,
+            '4102',
+            'Pendapatan Laundry',
+            tx
+          );
+
+          const cashAccount = await getAccountOrFallback(
+            unitId,
+            ACCOUNT_MAPPING_KEYS.CASH,
+            '1101',
+            'Kas',
+            tx
+          );
+
+          const walletLiabilityAccount = await getAccountOrFallback(
+            unitId,
+            ACCOUNT_MAPPING_KEYS.WALLET_LIABILITY,
+            '2101',
+            'Utang Wallet Santri',
+            tx
+          );
+
+          const paymentAccount = data.paymentMethod === 'WALLET' ? walletLiabilityAccount : cashAccount;
+
+          if (salesAccount && paymentAccount) {
+            await tx.journalEntry.create({
+              data: {
+                unitId,
+                accountId: paymentAccount.id,
+                date: journalDate,
+                description: `Pendapatan Laundry #${transactionNo}`,
+                debit: total,
+                credit: 0,
+                reference: transaction.id,
+                referenceType: JournalReferenceType.LAUNDRY as any,
+                createdById: userId,
+              },
+            });
+
+            await tx.journalEntry.create({
+              data: {
+                unitId,
+                accountId: salesAccount.id,
+                date: journalDate,
+                description: `Pendapatan Laundry #${transactionNo}`,
+                debit: 0,
+                credit: total,
+                reference: transaction.id,
+                referenceType: JournalReferenceType.LAUNDRY as any,
+                createdById: userId,
+              },
+            });
+          }
+        }
+      }
+
       return transaction;
     });
   },
@@ -408,6 +477,37 @@ export const transactionService = {
           });
 
           updateData.paymentStatus = 'REFUNDED';
+        }
+      }
+
+      // ─── REVERSING JOURNAL ENTRIES FOR CANCELLATION ───
+      if (data.status === 'CANCELLED' && transaction.paymentStatus === 'PAID') {
+        const reversalDate = new Date();
+        const periodOpen = await isPeriodOpen(unitId, reversalDate, tx);
+
+        if (periodOpen) {
+          const originalEntries = await tx.journalEntry.findMany({
+            where: {
+              reference: transaction.id,
+              referenceType: JournalReferenceType.LAUNDRY as any,
+            },
+          });
+
+          for (const entry of originalEntries) {
+            await tx.journalEntry.create({
+              data: {
+                unitId,
+                accountId: entry.accountId,
+                date: reversalDate,
+                description: `Pembatalan ${entry.description || ''} #${transaction.transactionNo}`,
+                debit: entry.credit,
+                credit: entry.debit,
+                reference: `CANCEL:${transaction.id}`,
+                referenceType: JournalReferenceType.LAUNDRY as any,
+                createdById: userId,
+              },
+            });
+          }
         }
       }
 
@@ -498,7 +598,7 @@ export const transactionService = {
         });
       }
 
-      return tx.laundryTransaction.update({
+      const updated = await tx.laundryTransaction.update({
         where: { id },
         data: {
           paymentMethod: data.paymentMethod,
@@ -512,6 +612,72 @@ export const transactionService = {
           pricing: { select: { id: true, name: true } },
         },
       });
+
+      // ─── ACCOUNTING INTEGRATION (AUTOMATED JOURNALS) FOR LATE PAYMENT ───
+      const journalDate = new Date();
+      const periodOpen = await isPeriodOpen(unitId, journalDate, tx);
+
+      if (periodOpen) {
+        const accountPrefix = updated.businessUnitId ? `BU_${updated.businessUnitId}_` : '';
+
+        const salesAccount = await getAccountOrFallback(
+          unitId,
+          `${accountPrefix}${ACCOUNT_MAPPING_KEYS.LAUNDRY_REVENUE}`,
+          '4102',
+          'Pendapatan Laundry',
+          tx
+        );
+
+        const cashAccount = await getAccountOrFallback(
+          unitId,
+          ACCOUNT_MAPPING_KEYS.CASH,
+          '1101',
+          'Kas',
+          tx
+        );
+
+        const walletLiabilityAccount = await getAccountOrFallback(
+          unitId,
+          ACCOUNT_MAPPING_KEYS.WALLET_LIABILITY,
+          '2101',
+          'Utang Wallet Santri',
+          tx
+        );
+
+        const paymentAccount = data.paymentMethod === 'WALLET' ? walletLiabilityAccount : cashAccount;
+
+        if (salesAccount && paymentAccount) {
+          await tx.journalEntry.create({
+            data: {
+              unitId,
+              accountId: paymentAccount.id,
+              date: journalDate,
+              description: `Pendapatan Laundry #${updated.transactionNo} (Pelunasan)`,
+              debit: updated.total,
+              credit: 0,
+              reference: updated.id,
+              referenceType: JournalReferenceType.LAUNDRY as any,
+              createdById: userId,
+            },
+          });
+
+          await tx.journalEntry.create({
+            data: {
+              unitId,
+              accountId: salesAccount.id,
+              date: journalDate,
+              description: `Pendapatan Laundry #${updated.transactionNo} (Pelunasan)`,
+              debit: 0,
+              credit: updated.total,
+              reference: updated.id,
+              referenceType: JournalReferenceType.LAUNDRY as any,
+              createdById: userId,
+            },
+          });
+        }
+      }
+
+      return updated;
     });
   },
 

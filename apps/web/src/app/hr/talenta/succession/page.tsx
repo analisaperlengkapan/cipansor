@@ -17,6 +17,7 @@ import {
   Sparkles
 } from "lucide-react";
 import { api } from "@/lib/api";
+import { SuccessionPlanningList } from "@/components/hr/succession-planning-list";
 
 export default function SuccessionPlanningPage() {
   const [positionSearch, setPositionSearch] = useState("Kepala Sekolah");
@@ -91,55 +92,11 @@ export default function SuccessionPlanningPage() {
               <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
               <p className="text-muted-foreground">Menganalisis matriks talenta dan riwayat pelatihan...</p>
             </div>
-          ) : suggestions && suggestions.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {suggestions.map((candidate: any) => (
-                <Card key={candidate.talentProfileId} className="hover:shadow-md transition-shadow border-l-4 border-l-primary">
-                  <CardHeader className="pb-2">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <CardTitle className="text-base">{candidate.name}</CardTitle>
-                        <CardDescription className="text-xs">{candidate.currentRole}</CardDescription>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-2xl font-bold text-primary">{candidate.matchScore}%</div>
-                        <div className="text-[10px] text-muted-foreground uppercase font-bold tracking-tighter">Match Score</div>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center gap-2">
-                      <Badge variant={candidate.category === 'HIGH_POTENTIAL' ? 'default' : 'secondary'} className="text-[10px]">
-                        {candidate.category.replace(/_/g, ' ')}
-                      </Badge>
-                      <Badge variant="outline" className="text-[10px] border-emerald-200 text-emerald-700 bg-emerald-50">
-                        {candidate.readiness.replace(/_/g, ' ')}
-                      </Badge>
-                      {candidate.shariaMatch && (
-                        <Badge variant="outline" className="text-[10px] border-amber-200 text-amber-700 bg-amber-50">
-                          Syariah Certified
-                        </Badge>
-                      )}
-                    </div>
-
-                    <div className="flex gap-2">
-                      <Button size="sm" variant="outline" className="flex-1 text-xs">
-                        Lihat Profil
-                      </Button>
-                      <Button size="sm" className="flex-1 text-xs">
-                        <UserPlus className="mr-1 h-3 w-3" /> Pilih Kandidat
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
           ) : (
-            <div className="text-center py-20 bg-slate-50 rounded-xl border border-dashed">
-              <Users className="h-12 w-12 mx-auto text-slate-300 mb-4" />
-              <p className="text-slate-500 font-medium">Tidak ada kandidat yang ditemukan.</p>
-              <p className="text-sm text-slate-400 mt-1">Coba sesuaikan kata kunci pencarian posisi.</p>
-            </div>
+            <SuccessionPlanningList
+              candidates={suggestions || []}
+              positionTitle={positionSearch}
+            />
           )}
 
           <div className="p-4 bg-blue-50 border border-blue-100 rounded-lg flex items-start gap-3">

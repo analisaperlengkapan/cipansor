@@ -325,7 +325,60 @@ export class PengawasanService {
       },
     });
 
-    if (highRisks.length === 0) return [];
+    // 1.5. Proactive Oversight: Identify budget utilization over 90%
+    const budgets = await prisma.budget.findMany({
+      where: {
+        ...unitFilter,
+        academicYear: { status: 'active' },
+      },
+      include: {
+        account: { select: { code: true, name: true } },
+        academicYear: { select: { startDate: true, endDate: true } },
+      },
+    });
+
+    const budgetSuggestions: any[] = [];
+    if (budgets.length > 0) {
+      // Aggregate actuals for these budgets to check utilization
+      const actuals = await prisma.journalEntry.groupBy({
+        by: ['accountId', 'unitId'],
+        where: {
+          accountId: { in: budgets.map((b) => b.accountId) },
+          unitId: { in: [...new Set(budgets.map((b) => b.unitId))] },
+        },
+        _sum: { debit: true, credit: true },
+      });
+
+      for (const budget of budgets) {
+        const actual = actuals.find(
+          (a) => a.accountId === budget.accountId && a.unitId === budget.unitId
+        );
+        const debit = actual?._sum.debit?.toNumber() || 0;
+        const credit = actual?._sum.credit?.toNumber() || 0;
+
+        // Simple utilization check: mostly looking for expense overruns
+        // (Debit - Credit) for ASSET/EXPENSE accounts.
+        const usage = debit - credit;
+        const limit = budget.amount.toNumber();
+        const utilization = limit > 0 ? (usage / limit) * 100 : 0;
+
+        if (utilization >= 90) {
+          budgetSuggestions.push({
+            type: 'BUDGET_OVERRUN',
+            unitId: budget.unitId,
+            suggestedTitle: `Audit Efisiensi Anggaran: ${budget.account.name}`,
+            suggestedDescription: `Penggunaan anggaran untuk akun ${budget.account.code} (${budget.account.name}) telah mencapai ${Math.round(utilization)}%. Diperlukan audit efisiensi untuk mencegah defisit.`,
+            priority: utilization >= 100 ? 'URGENT' : 'HIGH',
+            metadata: {
+              accountId: budget.accountId,
+              utilization: Math.round(utilization * 100) / 100,
+            },
+          });
+        }
+      }
+    }
+
+    if (highRisks.length === 0 && budgetSuggestions.length === 0) return [];
 
     // 2. Batch-query all non-cancelled audits linked to these risks (avoids N+1)
     const riskIds = highRisks.map((r) => r.id);
@@ -348,9 +401,10 @@ export class PengawasanService {
 
     // 4. Suggest audits for risks that don't have a linked internal audit
     //    in their own unit yet.
-    return highRisks
+    const riskSuggestions = highRisks
       .filter((risk) => !coveredKeys.has(`${risk.id}::${risk.unitId}`))
       .map((risk) => ({
+        type: 'RISK_BASED',
         riskId: risk.id,
         riskCode: risk.code,
         riskLevel: risk.riskLevel,
@@ -360,6 +414,11 @@ export class PengawasanService {
         strategicPlanTitle: risk.strategicPlan?.title,
         priority: risk.riskLevel === 'EXTREME' ? 'URGENT' : 'HIGH',
       }));
+
+    return [...riskSuggestions, ...budgetSuggestions].sort((a, b) => {
+      const priorityMap: Record<string, number> = { URGENT: 3, HIGH: 2, MEDIUM: 1, LOW: 0 };
+      return (priorityMap[b.priority] || 0) - (priorityMap[a.priority] || 0);
+    });
   }
 }
 

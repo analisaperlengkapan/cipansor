@@ -25,7 +25,16 @@ vi.mock('../../lib/prisma', () => ({
     },
     risk: {
       findMany: vi.fn(),
+      findUnique: vi.fn(),
+      update: vi.fn(),
     },
+    budget: {
+      findMany: vi.fn(),
+    },
+    journalEntry: {
+      groupBy: vi.fn(),
+    },
+    $transaction: vi.fn((callback) => callback(prisma)),
   },
 }));
 
@@ -165,6 +174,7 @@ describe('Pengawasan Service', () => {
 
   describe('Suggestion Engine', () => {
     it('should suggest audits based on high risk items', async () => {
+      vi.mocked(prisma.budget.findMany).mockResolvedValue([]);
       // Mock prisma.risk.findMany
       vi.mocked(prisma.risk.findMany).mockResolvedValue([
         {
@@ -200,11 +210,46 @@ describe('Pengawasan Service', () => {
       }));
 
       expect(suggestions).toHaveLength(1);
-      expect(suggestions[0]).toMatchObject({
-        riskId: 'risk-2',
+      expect(suggestions.find(s => s.riskId === 'risk-2')).toMatchObject({
         riskCode: 'RSK-002',
         priority: 'HIGH',
       });
+    });
+
+    it('should suggest audits for high budget utilization', async () => {
+      vi.mocked(prisma.risk.findMany).mockResolvedValue([]);
+      vi.mocked(prisma.internalAudit.findMany).mockResolvedValue([]);
+
+      vi.mocked(prisma.budget.findMany).mockResolvedValue([
+        {
+          id: 'b1',
+          unitId: 'unit-1',
+          amount: { toNumber: () => 1000000 },
+          accountId: 'acc-1',
+          account: { code: '5101', name: 'Beban Gaji' }
+        }
+      ] as any);
+
+      vi.mocked(prisma.journalEntry.groupBy).mockResolvedValue([
+        {
+          accountId: 'acc-1',
+          unitId: 'unit-1',
+          _sum: {
+            debit: { toNumber: () => 950000 },
+            credit: { toNumber: () => 0 }
+          }
+        }
+      ] as any);
+
+      const suggestions = await pengawasanService.suggestAuditSchedules('unit-1');
+
+      expect(suggestions).toHaveLength(1);
+      expect(suggestions[0]).toMatchObject({
+        type: 'BUDGET_OVERRUN',
+        suggestedTitle: expect.stringContaining('Beban Gaji'),
+        priority: 'HIGH',
+      });
+      expect(suggestions[0].metadata.utilization).toBe(95);
     });
   });
 });

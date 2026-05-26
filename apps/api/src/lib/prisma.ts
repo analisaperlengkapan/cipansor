@@ -12,6 +12,11 @@ export const prisma =
   global.__prisma ||
   new PrismaClient({
     log: config.env === 'development' ? ['query', 'info', 'warn', 'error'] : ['error'],
+    datasources: {
+      db: {
+        url: process.env.DATABASE_URL,
+      },
+    },
   });
 
 // In development, store in global to prevent too many connections

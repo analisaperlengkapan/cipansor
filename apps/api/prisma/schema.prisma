@@ -4,7 +4,8 @@
 
 generator client {
   provider        = "prisma-client-js"
-  previewFeatures = ["nullsNotDistinct"]
+  previewFeatures = []
+  engineType      = "library"
 }
 
 datasource db {

@@ -1,18 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { prisma } from '../../lib/prisma';
-import { syariahService } from './syariah.service';
-import { pengawasanService } from '../pengawasan/pengawasan.service';
 
-// Mock external dependencies
-vi.mock('../pengawasan/pengawasan.service', () => ({
-  pengawasanService: {
-    createFinding: vi.fn(),
-    createAudit: vi.fn(),
-  },
-}));
-
-vi.mock('../../lib/prisma', () => ({
-  prisma: {
+// Mock before imports
+vi.mock('../../lib/prisma', () => {
+  const mockPrisma = {
     shariaCompliance: {
       create: vi.fn(),
       findMany: vi.fn(),
@@ -27,9 +17,24 @@ vi.mock('../../lib/prisma', () => ({
       findFirst: vi.fn(),
       create: vi.fn(),
     },
-    $transaction: vi.fn((callback) => callback(prisma)),
+    $transaction: vi.fn(),
+  };
+  mockPrisma.$transaction.mockImplementation((callback) => callback(mockPrisma));
+  return { prisma: mockPrisma };
+});
+
+import { prisma } from '../../lib/prisma';
+import { syariahService } from './syariah.service';
+import { pengawasanService } from '../pengawasan/pengawasan.service';
+
+// Mock external dependencies
+vi.mock('../pengawasan/pengawasan.service', () => ({
+  pengawasanService: {
+    createFinding: vi.fn(),
+    createAudit: vi.fn(),
   },
 }));
+
 
 describe('Syariah Service', () => {
   beforeEach(() => {

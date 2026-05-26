@@ -1,14 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Prisma } from '@prisma/client';
-import { prisma } from '../../lib/prisma';
-import * as financeService from './service';
-import * as notificationService from '../notifications/service';
-import { eventBus } from '@/lib/event-bus';
-import { PaymentStatus } from '@prisma/client';
+import * as prismaClient from '@prisma/client';
 
-// Mock all external dependencies
-vi.mock('../../lib/prisma', () => ({
-  prisma: {
+// Mock prisma before imports
+vi.mock('../../lib/prisma', () => {
+  const mockPrisma = {
     paymentType: {
       create: vi.fn(),
       findMany: vi.fn(),
@@ -30,9 +26,17 @@ vi.mock('../../lib/prisma', () => ({
       count: vi.fn(),
       findUnique: vi.fn(),
     },
-    $transaction: vi.fn((callback) => callback(prisma)),
-  },
-}));
+    $transaction: vi.fn(),
+  };
+  mockPrisma.$transaction.mockImplementation((callback) => callback(mockPrisma));
+  return { prisma: mockPrisma };
+});
+
+import { prisma } from '../../lib/prisma';
+import * as financeService from './service';
+import * as notificationService from '../notifications/service';
+
+import { eventBus } from '@/lib/event-bus';
 
 vi.mock('../notifications/service', () => ({
   createNotification: vi.fn(),

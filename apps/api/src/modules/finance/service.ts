@@ -179,7 +179,7 @@ export async function createInvoice(data: CreateInvoiceDto, tx?: Prisma.Transact
         message: `Tagihan baru ${invoice.paymentType.name} sebesar ${formatter.format(
           invoice.amount.toNumber()
         )} telah dibuat. Jatuh tempo: ${new Date(invoice.dueDate).toLocaleDateString('id-ID')}`,
-        type: NotificationType.PAYMENT,
+        type: 'PAYMENT' as any,
         link: `/finance/bills/${invoice.id}`,
         priority: 'HIGH',
         channels: ['IN_APP', 'EMAIL'],

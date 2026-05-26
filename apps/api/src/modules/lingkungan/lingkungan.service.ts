@@ -134,7 +134,29 @@ export class LingkunganService {
       totalWeight += r.weight;
     }
 
-    return { totalWeight, totalRecords: records.length, byCategory, byMethod };
+    // Integration: Carbon Footprint Estimation (kg CO2e)
+    const emissionFactors: Record<string, number> = {
+      ORGANIC: 0.2,
+      INORGANIC: 0.1,
+      B3: 0.5,
+      PAPER: 0.05,
+      ELECTRONIC: 0.8,
+      OTHER: 0.3,
+    };
+
+    let estimatedCarbonSavings = 0;
+    for (const category in byCategory) {
+      const factor = emissionFactors[category] || 0.3;
+      estimatedCarbonSavings += byCategory[category] * factor;
+    }
+
+    return {
+      totalWeight,
+      totalRecords: records.length,
+      byCategory,
+      byMethod,
+      estimatedCarbonSavings: Math.round(estimatedCarbonSavings * 100) / 100,
+    };
   }
 
   // ==================== GREEN CAMPUS INDICATORS ====================

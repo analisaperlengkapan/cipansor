@@ -13,7 +13,8 @@ vi.mock('@/lib/prisma', () => ({
     dailyIbadahRecord: { aggregate: vi.fn() },
     examAttempt: { findMany: vi.fn() },
     dashboardHistory: { findMany: vi.fn() },
-    student: { count: vi.fn() },
+    student: { count: vi.fn(), findMany: vi.fn(), findUnique: vi.fn() },
+    roomAssignment: { findFirst: vi.fn() },
   },
 }));
 
@@ -24,6 +25,7 @@ describe('AssessmentAnalyticsService', () => {
     (prisma.reward.aggregate as any).mockResolvedValue({ _sum: { points: 0 } });
     (prisma.examAttempt.findMany as any).mockResolvedValue([]);
     (prisma.dashboardHistory.findMany as any).mockResolvedValue([]);
+    (prisma.roomAssignment.findFirst as any).mockResolvedValue(null);
   });
 
   it('should calculate student holistic score correctly', async () => {

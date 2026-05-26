@@ -441,10 +441,13 @@ export class TalentaService {
         competencyScore = Math.max(0, 25 - (averageGap * 5));
       }
 
-      // e. Base Score by Category
-      const baseScore = t.category === 'HIGH_POTENTIAL' ? 40 : t.category === 'KEY_TALENT' ? 30 : 20;
+      // e. Base Score by Category - aligned with organization standards
+      const baseScore = t.category === 'HIGH_POTENTIAL' ? 80 : t.category === 'KEY_TALENT' ? 70 : 60;
 
-      const totalMatchScore = Math.min(100, baseScore + keywordBonus + trainingBonus + shariaBonus + competencyScore);
+      const totalMatchScore = Math.min(
+        100,
+        baseScore + keywordBonus + trainingBonus + shariaBonus + (competencyScore || 0)
+      );
 
       return {
         talentProfileId: t.id,

@@ -1,13 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { LitbangService } from '@/modules/litbang/litbang.service';
 
-vi.mock('@prisma/client', () => {
+vi.mock('../../../../src/lib/prisma', () => {
   const mockPrisma = {
     researchProject: {
       findMany: vi.fn(),
       findUniqueOrThrow: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
+      updateMany: vi.fn(),
       delete: vi.fn(),
       count: vi.fn(),
     },
@@ -26,13 +27,20 @@ vi.mock('@prisma/client', () => {
       delete: vi.fn(),
       count: vi.fn(),
     },
+    standardOperatingProcedure: {
+      findMany: vi.fn(),
+    },
+    journalEntry: {
+      aggregate: vi.fn(),
+    },
+    $transaction: vi.fn(),
   };
-  return { PrismaClient: vi.fn(() => mockPrisma) };
+  mockPrisma.$transaction.mockImplementation((callback) => callback(mockPrisma));
+  return { prisma: mockPrisma };
 });
 
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient() as any;
+import { prisma as prismaLib } from '../../../../src/lib/prisma';
+const prisma = prismaLib as any;
 
 describe('LitbangService', () => {
   const service = new LitbangService();
@@ -88,6 +96,8 @@ describe('LitbangService', () => {
       const input = { projectId: 'p1', title: 'Literature Review', sortOrder: 1 };
       const mockCreated = { id: 'm1', ...input, status: 'PENDING' };
       prisma.researchMilestone.create.mockResolvedValue(mockCreated);
+      prisma.researchMilestone.findMany.mockResolvedValue([mockCreated]);
+      prisma.researchProject.updateMany.mockResolvedValue({ count: 1 });
 
       const result = await service.createMilestone(input);
       expect(result.title).toBe('Literature Review');
@@ -111,10 +121,12 @@ describe('LitbangService', () => {
       expect(result.status).toBe('COMPLETED');
 
       // Progress recalculated: 2/3 = 67%
-      expect(prisma.researchProject.update).toHaveBeenCalledWith({
-        where: { id: 'p1' },
-        data: { progress: 67 },
-      });
+      expect(prisma.researchProject.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ id: 'p1' }),
+          data: expect.objectContaining({ progress: 67 }),
+        })
+      );
     });
 
     it('should handle 100% progress when all milestones complete', async () => {
@@ -123,13 +135,15 @@ describe('LitbangService', () => {
         { id: 'm1', status: 'COMPLETED' },
         { id: 'm2', status: 'COMPLETED' },
       ]);
-      prisma.researchProject.update.mockResolvedValue({ id: 'p1', progress: 100 });
+      prisma.researchProject.updateMany.mockResolvedValue({ count: 1 });
 
       await service.updateMilestone('m1', { status: 'COMPLETED' });
-      expect(prisma.researchProject.update).toHaveBeenCalledWith({
-        where: { id: 'p1' },
-        data: { progress: 100 },
-      });
+      expect(prisma.researchProject.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ id: 'p1' }),
+          data: expect.objectContaining({ progress: 100 }),
+        })
+      );
     });
   });
 
@@ -140,7 +154,7 @@ describe('LitbangService', () => {
       prisma.researchMilestone.findMany.mockResolvedValue([
         { id: 'm2', status: 'COMPLETED' },
       ]);
-      prisma.researchProject.update.mockResolvedValue({ id: 'p1', progress: 100 });
+      prisma.researchProject.updateMany.mockResolvedValue({ count: 1 });
 
       await service.deleteMilestone('m1');
       expect(prisma.researchMilestone.delete).toHaveBeenCalled();

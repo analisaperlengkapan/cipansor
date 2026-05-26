@@ -429,12 +429,19 @@ export async function getRoomSocialAnalytics(roomId: string) {
   // Scale: 0 pts → 100, ~10 pts → ~82, ~50 pts → ~37, ~100 pts → ~14, ~250+ pts → ~0
   const harmonyScore = Math.round(Math.max(0, 100 * Math.exp(-avgViolationPoints / 50)) * 100) / 100;
 
+  // Enhanced: Detect "Murojaah Social Contagion" (Positive peer influence)
+  // If many members have high tahfidz progress, it boosts the room status.
+  const topMemorizers = room.assignments.filter(a => (a.student as any).tahfidzRecords?.length > 10).length;
+  const peerInfluenceBonus = Math.min(10, topMemorizers * 2);
+
+  const finalHarmonyScore = Math.min(100, harmonyScore + peerInfluenceBonus);
+
   return {
     roomId,
     roomName: room.name,
-    harmonyScore,
+    harmonyScore: finalHarmonyScore,
     members,
-    status: harmonyScore > 80 ? 'KONDUSIF' : harmonyScore > 50 ? 'PERLU_PENGAWASAN' : 'RAWAN_KONFLIK'
+    status: finalHarmonyScore > 80 ? 'KONDUSIF' : finalHarmonyScore > 50 ? 'PERLU_PENGAWASAN' : 'RAWAN_KONFLIK'
   };
 }
 

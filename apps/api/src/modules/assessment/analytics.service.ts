@@ -196,6 +196,12 @@ export class AssessmentAnalyticsService {
       cbt: roundOrNull(cbtScore),
     };
 
+    // Boarding School Logic: Integration with Dormitory data for holistic view
+    const roomAssignment = await prisma.roomAssignment.findFirst({
+      where: { studentId, isActive: true },
+      include: { room: { select: { name: true, dormitory: { select: { name: true } } } } },
+    });
+
     return {
       studentId,
       holisticScore: finalScore,
@@ -203,6 +209,12 @@ export class AssessmentAnalyticsService {
       dataCompleteness,
       interpretation,
       recommendation: this.generateRecommendation(breakdown, dataCompleteness),
+      boardingInfo: roomAssignment
+        ? {
+            room: roomAssignment.room.name,
+            dormitory: roomAssignment.room.dormitory.name,
+          }
+        : null,
     };
   }
 

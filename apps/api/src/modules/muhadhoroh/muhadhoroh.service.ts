@@ -8,7 +8,7 @@ type MuhadhorohStatus = 'SCHEDULED' | 'COMPLETED' | 'CANCELLED';
 // User type from JwtPayload
 interface AuthenticatedUser {
   sub: string;
-  role: UserRole;
+  role: string;
   unitId: string | null;
 }
 

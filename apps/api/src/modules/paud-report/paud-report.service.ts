@@ -35,7 +35,7 @@ const ACHIEVEMENT_DESCRIPTIONS: Record<PAUDAchievementLevel, string> = {
 // Minimum assessments required per aspect to auto-generate narrative
 const MIN_ASSESSMENTS_PER_ASPECT = 3;
 
-type ReportAccessContext = { role: UserRole; unitId: string | null; userId: string };
+type ReportAccessContext = { role: string; unitId: string | null; userId: string };
 
 async function assertCanAccessStudent(
   studentId: string,

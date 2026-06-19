@@ -6,7 +6,7 @@ import { Decimal } from '@prisma/client/runtime/library';
 // User type from JwtPayload
 interface AuthenticatedUser {
   sub: string;
-  role: UserRole;
+  role: string;
   unitId: string | null;
 }
 

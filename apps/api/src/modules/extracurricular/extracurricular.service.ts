@@ -21,7 +21,7 @@ export class ExtracurricularService {
    */
   async findAll(
     query: ListExtracurricularsQuery,
-    currentUser: { role: UserRole; unitId: string | null }
+    currentUser: { role: string; unitId: string | null }
   ) {
     const { page, limit, search, unitId, category, status, academicYearId, isCompulsory } = query;
     const skip = (page - 1) * limit;
@@ -113,7 +113,7 @@ export class ExtracurricularService {
   /**
    * Get extracurricular by ID
    */
-  async findById(id: string, currentUser: { role: UserRole; unitId: string | null }) {
+  async findById(id: string, currentUser: { role: string; unitId: string | null }) {
     const extracurricular = await prisma.extracurricular.findUnique({
       where: { id, deletedAt: null },
       include: {
@@ -175,7 +175,7 @@ export class ExtracurricularService {
    */
   async create(
     input: CreateExtracurricularInput,
-    currentUser: { role: UserRole; unitId: string | null }
+    currentUser: { role: string; unitId: string | null }
   ) {
     // Validate unit access
     if (currentUser.role !== UserRole.SUPER_ADMIN && input.unitId !== currentUser.unitId) {
@@ -219,7 +219,7 @@ export class ExtracurricularService {
   async update(
     id: string,
     input: UpdateExtracurricularInput,
-    currentUser: { role: UserRole; unitId: string | null }
+    currentUser: { role: string; unitId: string | null }
   ) {
     const extracurricular = await this.findById(id, currentUser);
 
@@ -255,7 +255,7 @@ export class ExtracurricularService {
   /**
    * Soft delete extracurricular
    */
-  async delete(id: string, currentUser: { role: UserRole; unitId: string | null }) {
+  async delete(id: string, currentUser: { role: string; unitId: string | null }) {
     await this.findById(id, currentUser);
 
     await prisma.extracurricular.update({
@@ -275,7 +275,7 @@ export class ExtracurricularService {
    */
   async enrollStudent(
     input: EnrollStudentInput,
-    currentUser: { role: UserRole; unitId: string | null }
+    currentUser: { role: string; unitId: string | null }
   ) {
     const { extracurricularId, studentId, notes } = input;
 
@@ -352,7 +352,7 @@ export class ExtracurricularService {
   /**
    * Bulk enroll students
    */
-  async bulkEnroll(input: BulkEnrollInput, currentUser: { role: UserRole; unitId: string | null }) {
+  async bulkEnroll(input: BulkEnrollInput, currentUser: { role: string; unitId: string | null }) {
     const { extracurricularId, studentIds } = input;
 
     if (!studentIds || studentIds.length === 0) {
@@ -467,7 +467,7 @@ export class ExtracurricularService {
   async updateEnrollment(
     id: string,
     input: UpdateEnrollmentInput,
-    currentUser: { role: UserRole; unitId: string | null }
+    currentUser: { role: string; unitId: string | null }
   ) {
     const enrollment = await prisma.extracurricularEnrollment.findUnique({
       where: { id },
@@ -504,7 +504,7 @@ export class ExtracurricularService {
    */
   async listEnrollments(
     query: ListEnrollmentsQuery,
-    currentUser: { role: UserRole; unitId: string | null }
+    currentUser: { role: string; unitId: string | null }
   ) {
     const { page, limit, extracurricularId, studentId, status } = query;
     const skip = (page - 1) * limit;
@@ -566,7 +566,7 @@ export class ExtracurricularService {
    */
   async recordAttendance(
     input: RecordAttendanceInput,
-    currentUser: { sub: string; role: UserRole; unitId: string | null }
+    currentUser: { sub: string; role: string; unitId: string | null }
   ) {
     const { extracurricularId, date, attendances } = input;
 
@@ -636,7 +636,7 @@ export class ExtracurricularService {
    */
   async listAttendance(
     query: ListAttendanceQuery,
-    currentUser: { role: UserRole; unitId: string | null }
+    currentUser: { role: string; unitId: string | null }
   ) {
     const { page, limit, extracurricularId, studentId, startDate, endDate } = query;
     const skip = (page - 1) * limit;
@@ -690,7 +690,7 @@ export class ExtracurricularService {
    */
   async getAttendanceSummary(
     extracurricularId: string,
-    currentUser: { role: UserRole; unitId: string | null }
+    currentUser: { role: string; unitId: string | null }
   ) {
     await this.findById(extracurricularId, currentUser);
 
@@ -721,7 +721,7 @@ export class ExtracurricularService {
    */
   async createAchievement(
     input: CreateAchievementInput,
-    currentUser: { role: UserRole; unitId: string | null }
+    currentUser: { role: string; unitId: string | null }
   ) {
     // Verify extracurricular
     await this.findById(input.extracurricularId, currentUser);
@@ -746,7 +746,7 @@ export class ExtracurricularService {
    */
   async listAchievements(
     query: ListAchievementsQuery,
-    currentUser: { role: UserRole; unitId: string | null }
+    currentUser: { role: string; unitId: string | null }
   ) {
     const { page, limit, extracurricularId, studentId, level } = query;
     const skip = (page - 1) * limit;
@@ -793,7 +793,7 @@ export class ExtracurricularService {
   /**
    * Delete achievement
    */
-  async deleteAchievement(id: string, currentUser: { role: UserRole; unitId: string | null }) {
+  async deleteAchievement(id: string, currentUser: { role: string; unitId: string | null }) {
     const achievement = await prisma.extracurricularAchievement.findUnique({
       where: { id },
       include: { extracurricular: { select: { unitId: true } } },
@@ -824,7 +824,7 @@ export class ExtracurricularService {
    */
   async getStudentExtracurriculars(
     studentId: string,
-    currentUser: { role: UserRole; unitId: string | null }
+    currentUser: { role: string; unitId: string | null }
   ) {
     const student = await prisma.student.findUnique({
       where: { id: studentId, deletedAt: null },

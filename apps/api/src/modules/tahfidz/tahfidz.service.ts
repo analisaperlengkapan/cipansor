@@ -16,7 +16,7 @@ export class TahfidzService {
   /**
    * Get tahfidz records with pagination
    */
-  async findAll(query: ListTahfidzQuery, currentUser: { role: UserRole; unitId: string | null }) {
+  async findAll(query: ListTahfidzQuery, currentUser: { role: string; unitId: string | null }) {
     const { page, limit, studentId, activityType, startDate, endDate, surah } = query;
     const skip = (page - 1) * limit;
 

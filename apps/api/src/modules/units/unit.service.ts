@@ -7,7 +7,7 @@ export class UnitService {
   /**
    * Get all units with pagination
    */
-  async findAll(query: ListUnitsQuery, currentUser: { role: UserRole; unitId: string | null }) {
+  async findAll(query: ListUnitsQuery, currentUser: { role: string; unitId: string | null }) {
     const { page, limit, search, type } = query;
     const skip = (page - 1) * limit;
 

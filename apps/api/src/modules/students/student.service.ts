@@ -8,7 +8,7 @@ export class StudentService {
   /**
    * Get all students with pagination
    */
-  async findAll(query: ListStudentsQuery, currentUser: { role: UserRole; unitId: string | null }) {
+  async findAll(query: ListStudentsQuery, currentUser: { role: string; unitId: string | null }) {
     const { page, limit, search, unitId, classId, gender } = query;
     const skip = (page - 1) * limit;
 

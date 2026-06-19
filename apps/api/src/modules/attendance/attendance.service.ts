@@ -29,7 +29,7 @@ export class AttendanceService {
    */
   async findAll(
     query: ListAttendanceQuery,
-    currentUser: { role: UserRole; unitId: string | null }
+    currentUser: { role: string; unitId: string | null }
   ) {
     const { page, limit, classId, studentId, date, startDate, endDate, status } = query;
     const skip = (page - 1) * limit;
@@ -322,7 +322,7 @@ export class AttendanceService {
   async update(
     id: string,
     input: UpdateAttendanceInput,
-    currentUser: { role: UserRole; unitId: string | null }
+    currentUser: { role: string; unitId: string | null }
   ): Promise<Attendance> {
     const attendance = await prisma.attendance.findUnique({
       where: { id },
@@ -364,7 +364,7 @@ export class AttendanceService {
   /**
    * Delete attendance record
    */
-  async delete(id: string, currentUser: { role: UserRole; unitId: string | null }) {
+  async delete(id: string, currentUser: { role: string; unitId: string | null }) {
     const attendance = await prisma.attendance.findUnique({
       where: { id },
       include: {
@@ -395,7 +395,7 @@ export class AttendanceService {
    */
   async getSummary(
     query: AttendanceSummaryQuery,
-    currentUser: { role: UserRole; unitId: string | null }
+    currentUser: { role: string; unitId: string | null }
   ): Promise<AttendanceSummary> {
     const { classId, studentId, startDate, endDate } = query;
 
@@ -492,7 +492,7 @@ export class AttendanceService {
     classId: string,
     year: number,
     month: number,
-    currentUser: { role: UserRole; unitId: string | null }
+    currentUser: { role: string; unitId: string | null }
   ): Promise<AttendanceCalendarResponse> {
     // Get class info
     const classInfo = await prisma.class.findUnique({

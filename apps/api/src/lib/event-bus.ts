@@ -53,6 +53,9 @@ export interface AppEvents {
   'student:graduated': StudentGraduatedEvent;
   'student:transferred': StudentTransferredEvent;
 
+  // Messaging Events
+  'message:sent': MessageSentEvent;
+
   // Notification Events
   'notification:send': NotificationSendEvent;
   'email:send_reset_token': EmailSendResetTokenEvent;
@@ -219,6 +222,14 @@ export interface StudentTransferredEvent {
   toUnitId: string;
   toUnitName: string;
   transferDate: Date;
+}
+
+export interface MessageSentEvent {
+  id: string;
+  senderId?: string | null;
+  recipientId?: string | null;
+  conversationId?: string | null;
+  [key: string]: unknown;
 }
 
 export interface NotificationSendEvent {

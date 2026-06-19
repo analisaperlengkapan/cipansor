@@ -75,7 +75,7 @@ export async function getProjectById(id: string) {
           tasks: {
             orderBy: { order: 'asc' },
             include: {
-              assignee: { select: { id: true, name: true, photoUrl: true } },
+              assignee: { select: { id: true, name: true } },
               _count: { select: { comments: true } },
             },
           },
@@ -83,7 +83,7 @@ export async function getProjectById(id: string) {
       },
       members: {
         include: {
-          user: { select: { id: true, name: true, email: true, photoUrl: true } },
+          user: { select: { id: true, name: true, email: true } },
         },
       },
     },

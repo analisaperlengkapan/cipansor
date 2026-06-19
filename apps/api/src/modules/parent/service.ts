@@ -834,8 +834,9 @@ export class ParentService {
 
     // 5. Bulk fetch active academic years for all units involved
     const unitIds = [...new Set(children.map((c) => c.unitId))];
+    // AcademicYear is global (not scoped by unit), so just fetch active years.
     const activeYears = await prisma.academicYear.findMany({
-      where: { unitId: { in: unitIds }, isActive: true },
+      where: { isActive: true },
     });
 
     // 6. Bulk fetch room assignments

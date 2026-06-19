@@ -155,7 +155,7 @@ export const simaanService = {
           include: { user: { select: { name: true } } },
         },
         examiners: {
-          include: { examiner: { include: { user: { select: { name: true } } } } },
+          include: { examiner: { select: { id: true, name: true } } },
         },
       },
     });
@@ -191,7 +191,7 @@ export const simaanService = {
             include: { user: { select: { name: true } } },
           },
           examiners: {
-            include: { examiner: { include: { user: { select: { name: true } } } } },
+            include: { examiner: { select: { id: true, name: true } } },
           },
           _count: {
             select: { examiners: true },
@@ -223,7 +223,7 @@ export const simaanService = {
           },
         },
         examiners: {
-          include: { examiner: { include: { user: { select: { name: true } } } } },
+          include: { examiner: { select: { id: true, name: true } } },
         },
       },
     });

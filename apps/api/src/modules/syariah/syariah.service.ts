@@ -66,7 +66,7 @@ export class SyariahService {
           auditDate: new Date(data.auditDate),
           findings: data.findings,
           score: data.score,
-          recommendations: data.recommendations,
+          recommendation: data.recommendations,
         },
         include: {
           compliance: true,
@@ -83,7 +83,6 @@ export class SyariahService {
         data: {
           score: data.score,
           status,
-          lastAuditDate: new Date(data.auditDate),
         },
       });
 
@@ -214,7 +213,6 @@ export class SyariahService {
             auditType: 'SYARIAH',
             status: 'PLANNED',
             plannedDate: new Date(),
-            priority: 'HIGH',
           },
         });
       }

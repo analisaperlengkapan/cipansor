@@ -95,17 +95,29 @@ export async function getRetentionRiskAnalytics(unitId: string) {
       isActive: true,
     },
     include: {
-      teacher: true,
-      staff: true,
+      teacher: {
+        include: {
+          leaves: {
+            where: {
+              status: LeaveStatus.APPROVED,
+              startDate: { gte: new Date(new Date().getFullYear(), 0, 1) },
+            },
+          },
+        },
+      },
+      staff: {
+        include: {
+          leaves: {
+            where: {
+              status: LeaveStatus.APPROVED,
+              startDate: { gte: new Date(new Date().getFullYear(), 0, 1) },
+            },
+          },
+        },
+      },
       talentProfile: {
         include: {
           assessments: { orderBy: { assessedAt: 'desc' }, take: 1 },
-        },
-      },
-      leaves: {
-        where: {
-          status: LeaveStatus.APPROVED,
-          startDate: { gte: new Date(new Date().getFullYear(), 0, 1) },
         },
       },
       trainingEnrollments: { where: { status: 'COMPLETED' } },
@@ -125,8 +137,10 @@ export async function getRetentionRiskAnalytics(unitId: string) {
       }
     }
 
-    // 2. Leave Pattern Factor (High unplanned leaves)
-    const totalLeaveDays = emp.leaves.reduce((sum, l) => sum + l.totalDays, 0);
+    // 2. Leave Pattern Factor (High unplanned leaves).
+    // Leaves are recorded against the Teacher/Staff profile, not the User.
+    const empLeaves = [...(emp.teacher?.leaves ?? []), ...(emp.staff?.leaves ?? [])];
+    const totalLeaveDays = empLeaves.reduce((sum, l) => sum + l.totalDays, 0);
     if (totalLeaveDays > 15) {
       riskScore += 20;
       riskFactors.push('Absensi Tinggi');
@@ -697,7 +711,7 @@ async function validateLeaveRequest(
 
       // Helper to check for leaves overlapping with AY
       const getOverlappingLeaveQuery = (
-        statusFilter: Prisma.EnumLeaveStatusFilter
+        statusFilter: LeaveStatus
       ): Prisma.LeaveWhereInput => ({
         type: LeaveType.ANNUAL,
         status: statusFilter,

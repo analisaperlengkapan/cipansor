@@ -6,12 +6,11 @@ import {
   UpdateStudentVisitInput,
   CreateStudentPackageInput,
   UpdateStudentPackageInput,
-  VisitStatus,
-  PackageStatus,
   ReceptionStats,
 } from '@cipansor/shared';
 import { Errors } from '../../middleware/error';
-import { Prisma } from '@prisma/client';
+// DB enums are the source of truth from Prisma, not the shared package.
+import { Prisma, VisitStatus, PackageStatus } from '@prisma/client';
 
 // --- Stats ---
 
@@ -182,8 +181,9 @@ export const createStudentVisit = async (unitId: string, data: CreateStudentVisi
       unitId,
       studentId: data.studentId,
       visitorName: data.visitorName,
-      relation: data.relation,
-      purpose: data.purpose,
+      // Shared DTO is the API contract; map its field names to the DB columns.
+      relation: data.relationship,
+      purpose: data.needs,
       notes: data.notes,
       status: VisitStatus.CHECKED_IN,
       checkIn: new Date(),

@@ -39,6 +39,9 @@ export interface AppEvents {
   'tahfidz:milestone': TahfidzMilestoneEvent;
   'tahfidz:hafidz-completed': HafidzCompletedEvent;
 
+  // Takhosus Events
+  'takhosus:sanad_assessed': TakhosusSanadAssessedEvent;
+
   // Finance Events
   'finance:payment-received': PaymentReceivedEvent;
   'finance:invoice-created': InvoiceCreatedEvent;
@@ -132,6 +135,15 @@ export interface TahfidzMilestoneEvent {
   surahNumber?: number;
   totalJuz: number;
   totalAyah: number;
+}
+
+export interface TakhosusSanadAssessedEvent {
+  studentId: string;
+  studentName: string;
+  halaqohName: string;
+  juz: number;
+  grade: string | null;
+  certifiedAt: Date | null;
 }
 
 export interface HafidzCompletedEvent {

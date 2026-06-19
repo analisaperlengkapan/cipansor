@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { ProjectStatus, TaskPriority } from '@prisma/client';
+import { ProjectStatus, TaskPriority, Prisma } from '@prisma/client';
 import {
   CreateProjectInput,
   UpdateProjectInput,
@@ -297,7 +297,7 @@ export async function createColumn(projectId: string, data: CreateColumnInput) {
     data: {
       projectId,
       ...data,
-    },
+    } as Prisma.ProjectColumnUncheckedCreateInput,
   });
 }
 

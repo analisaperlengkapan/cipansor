@@ -54,6 +54,7 @@ export const CreateTransactionSchema = z.object({
   paymentMethod: z.enum(['WALLET', 'CASH', 'PENDING']),
   discount: z.number().min(0).default(0),
   notes: z.string().optional(),
+  businessUnitId: z.string().uuid().optional(),
   items: z.array(LaundryItemInputSchema).optional(),
 });
 

@@ -144,7 +144,7 @@ export class UserService {
   /**
    * Create new user
    */
-  async create(input: CreateUserInput, creatorRole: UserRole) {
+  async create(input: CreateUserInput, creatorRole: string) {
     // Only Super Admin can create Super Admin
     if (input.role === 'SUPER_ADMIN' && creatorRole !== UserRole.SUPER_ADMIN) {
       throw Errors.forbidden('Only Super Admin can create Super Admin');

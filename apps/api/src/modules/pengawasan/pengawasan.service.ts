@@ -202,7 +202,7 @@ export class PengawasanService {
               status: newStatus,
               consequence: updatedConsequence,
               ...impactEscalation,
-            }, tx);
+            } as Prisma.RiskUpdateInput, tx);
           } else {
             await tx.risk.update({
               where: { id: data.linkToRiskId },

@@ -9,9 +9,9 @@ import {
   updateMitigationSchema,
   listRiskQuerySchema,
 } from './risk.validation';
-import { UserRole, RoleCode } from '@prisma/client';
+import { UserRole, RoleCode, Prisma } from '@prisma/client';
 
-const PRIVILEGED_ROLES = [UserRole.SUPER_ADMIN, RoleCode.YAYASAN_ADMIN, RoleCode.YAYASAN_KETUA];
+const PRIVILEGED_ROLES: string[] = [UserRole.SUPER_ADMIN, RoleCode.YAYASAN_ADMIN, RoleCode.YAYASAN_KETUA];
 
 function isPrivileged(role?: string): boolean {
   return role ? PRIVILEGED_ROLES.includes(role) : false;
@@ -82,7 +82,7 @@ export const createRisk = asyncHandler(async (req: Request, res: Response) => {
     unit: { connect: { id: targetUnitId } },
     createdBy: { connect: { id: userId } },
     ...(strategicPlanId ? { strategicPlan: { connect: { id: strategicPlanId } } } : {}),
-  });
+  } as Prisma.RiskCreateInput);
 
   res.status(201).json({ success: true, data: risk });
 });
@@ -149,7 +149,7 @@ export const addMitigation = asyncHandler(async (req: Request, res: Response) =>
     risk: { connect: { id: riskId } },
     createdBy: { connect: { id: userId } },
     pic: picId ? { connect: { id: picId } } : undefined,
-  });
+  } as Prisma.RiskMitigationCreateInput);
 
   res.status(201).json({ success: true, data: mitigation });
 });

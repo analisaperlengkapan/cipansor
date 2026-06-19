@@ -1,4 +1,5 @@
-import { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '@prisma/client';
+import { createPrismaClient } from '../client';
 
 interface ImmunizationSchedule {
   vaccineName: string;
@@ -423,7 +424,7 @@ export function getUpcomingImmunizations(ageMonths: number): ImmunizationSchedul
 
 // Run if called directly
 if (require.main === module) {
-  const prisma = new PrismaClient();
+  const prisma = createPrismaClient();
   seedImmunizationReference(prisma)
     .catch((e) => {
       console.error(e);

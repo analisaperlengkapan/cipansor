@@ -1,5 +1,4 @@
 import {
-  PrismaClient,
   UserRole,
   UnitType,
   Gender,
@@ -32,6 +31,7 @@ import {
   Prisma,
   Realm,
 } from '@prisma/client';
+import { createPrismaClient } from './client';
 import bcrypt from 'bcryptjs';
 import { seedWilayahIndonesia } from './seeds/wilayah-indonesia';
 import { seedKurikulumMerdeka, seedAccountCodes } from './seeds/kurikulum-merdeka';
@@ -95,7 +95,7 @@ const RoleCode = {
 // Define System User ID constant
 export const SYSTEM_USER_ID = '00000000-0000-0000-0000-000000000000';
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 async function main() {
   console.log('🌱 Seeding database...');

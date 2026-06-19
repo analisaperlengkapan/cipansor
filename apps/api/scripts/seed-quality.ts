@@ -1,6 +1,7 @@
-import { PrismaClient, QualityStandardType } from '@prisma/client';
+import { QualityStandardType } from '@prisma/client';
+import { createPrismaClient } from '../prisma/client';
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 const STANDARDS = [
   {

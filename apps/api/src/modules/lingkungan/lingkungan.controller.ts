@@ -11,8 +11,8 @@ import {
 } from './lingkungan.validation';
 import { UserRole } from '@prisma/client';
 
-const PRIVILEGED_ROLES: UserRole[] = [UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN];
-function isPrivileged(role?: UserRole): boolean {
+const PRIVILEGED_ROLES: string[] = [UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN];
+function isPrivileged(role?: string): boolean {
   return role ? PRIVILEGED_ROLES.includes(role) : false;
 }
 

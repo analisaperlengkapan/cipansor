@@ -15,9 +15,9 @@ import {
 } from './perencanaan.validation';
 import { UserRole } from '@prisma/client';
 
-const PRIVILEGED_ROLES: UserRole[] = [UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN];
+const PRIVILEGED_ROLES: string[] = [UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN];
 
-function isPrivileged(role?: UserRole): boolean {
+function isPrivileged(role?: string): boolean {
   return role ? PRIVILEGED_ROLES.includes(role) : false;
 }
 

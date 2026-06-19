@@ -1,85 +1,85 @@
 # Known Issues & Technical Debt
 
-This document tracks known issues and technical debt in the Cipansor project.
+Status of production-readiness work and the remaining roadmap. Updated as part of
+the production-readiness / architecture-standardization effort.
 
-## Web Build Issues (Next.js)
+## ✅ Resolved in this effort
 
-> **Update:** Major build blockers in Web module (Finance, HR, Takhosus, TK/PAUD, Inventory, Library) have been resolved. The CI build is now configured to fail on build errors to prevent regression.
+- **Destroyed Prisma schema restored.** `schema.prisma` (237 models, 133 enums)
+  had been truncated to a stub, breaking the entire backend; restored from the
+  last good revision.
+- **Prisma 7 migration completed.** Datasource `url` moved to `prisma.config.ts`;
+  runtime client now uses the `@prisma/adapter-pg` driver adapter; `Decimal`
+  import path fixed; standalone seeds/scripts use a shared `createPrismaClient()`
+  factory; missing back-relations and unsupported `nullsNotDistinct` arg fixed.
+- **otplib 13 migration** for 2FA (functional `generateSecret`/`generateURI`/`verify`).
+- **Express 5 types** pinned to a compatible `@types/express-serve-static-core`
+  (5.1.0) so `req.params` is typed `string` without breaking router overloads.
+- **RoleCode alignment (partial):** service/controller `currentUser.role` typed as
+  string; route guards use `RoleCode.YAYASAN_*`; GRC controllers' `isPrivileged`
+  accepts string.
+- **API build errors reduced from 336 → ~73** (lenient build) through the above.
 
-Remaining minor issues may include:
+## 🚧 In progress — API build green
 
-1. **Linting Warnings:** ESLint reports warnings/errors in `apps/web` and `apps/api`. These are currently non-blocking in CI.
-2. **Type Safety:** Some stricter type checks were bypassed using `any` to unblock the build. Future work should focus on proper type definitions in `@cipansor/shared`.
+The lenient build (`pnpm --filter api build`) still reports ~73 TypeScript errors;
+strict build (`build:strict`) reports more (includes tests + null-safety). Goal:
+both green, then unify and turn CI gates on.
 
-## TypeScript Strict Mode Issues (API)
+Remaining error categories:
 
-The following modules have TypeScript type errors that need to be fixed for full strict mode compliance:
+1. **Lenient-config Zod false-positives (~20).** `tsconfig.build.json` sets
+   `strictNullChecks: false`, which degrades Zod inference so every validated
+   field becomes optional → controllers passing validated bodies to services that
+   require fields error ("optional but required"). Affected: lingkungan,
+   pengawasan, perencanaan, talenta, finance/accounting, hr/employee-documents,
+   hr/employment-history, system-secrets, tahfidz controllers. **Correct fix:**
+   move the build toward strict (`strictNullChecks: true`) and resolve the
+   resulting Prisma-null errors, rather than relaxing further.
+2. **Shared-type ↔ Prisma-model divergence (reception, ~11).** `@cipansor/shared`
+   `StudentVisit`/`StudentPackage` use field/enum names (`relationship`, `needs`,
+   `expedition`, `content`, `pickedUpAt`; `VisitStatus.PENDING`,
+   `PackageStatus.NOTIFIED/PICKED_UP`) that don't match the DB model
+   (`relation`, `purpose`, `description`, `deliveredTo`; `CHECKED_IN`,
+   `RECEIVED/DELIVERED/RETURNED`). Needs a product decision + frontend update to
+   reconcile the contract end-to-end.
+3. **Prisma include/select bugs (genuine, ~15).** e.g. selecting `name` on
+   `Student` (it's on `user`), `account` not included on `Budget`,
+   `status`/`unitId` filters on `AcademicYear` that don't exist, `user` include on
+   a direct `User` relation in simaan. Fix each query's include/select to match
+   the schema.
+4. **Missing schema/DTO fields & enum mismatches (~10).** e.g.
+   `inventory` `TransactionType` import, notification priority/recipient/channel
+   enum literals, marketing/syariah/psb create-input field names. Align
+   DTOs/services with the model.
 
-### High Priority (Core Functionality)
+## 🗺️ Roadmap (not yet started)
 
-1. **`src/modules/reporting/report-builder.service.ts`** (20 errors)
-   - Missing includes for related entities in Prisma queries
-   - Property access on types that don't include relations
+These were scoped in the production-readiness plan and remain follow-ups:
 
-2. **`src/modules/analytics/alerts.service.ts`** (11 errors)
-   - AttendanceStatus enum comparison uses lowercase instead of uppercase
-   - Missing user relation in student queries
-   - Decimal type conversions
+- **Module architecture standardization.** Consistent `routes → controller →
+  service → schema → index` naming across all modules; extract inline handlers
+  from the ~12 controller-less modules. See `apps/api/AGENTS.md` for the standard.
+- **Turn CI gates on.** `.github/workflows/ci.yml` currently tolerates lint/build
+  failures (`|| echo ...`). Once the build is green, drop the escape hatches and
+  add a vitest job for api + web.
+- **Web role alignment.** `apps/web/middleware.ts`, `src/config/navigation.ts`,
+  `src/stores/auth.ts` still use the legacy `UserRole` vocabulary; align with
+  backend `RoleCode` + permissions.
+- **Replace remaining FE mock data** with real API calls (e.g.
+  `parent/buku-penghubung`, `unit-usaha`, `dashboard/executive` fallback,
+  `analytics/education`, `attendance/heatmap`, `foundation/dashboard`,
+  `assessment/report-cards/[id]/print-merdeka`).
+- **Web unit/component tests.** Add a jsdom + React Testing Library vitest project
+  for `apps/web/src/**` (currently only e2e-helper tests exist).
+- **Comprehensive Playwright e2e** across all routes (nav, CRUD, every
+  button/field, RBAC) against the seeded local stack.
+- **Workflow completions:** correspondence digital-signature trigger, takhosus
+  notification/certificate emission wiring, accounting per-unit config fallback.
 
-3. **`src/modules/analytics/forecast.service.ts`** (7 errors)
-   - Type mismatches in forecast calculations
+## How to contribute a build fix
 
-4. **`src/modules/analytics/bulk.service.ts`** (7 errors)
-   - Prisma create input type mismatches
-
-### Medium Priority (Enhancement Features)
-
-5. **Alumni service** (5 errors)
-6. **Curriculum service** (4 errors)
-7. **Analytics insights** (4 errors)
-
-### Low Priority (Seed Data)
-
-8. **`prisma/seeds/immunization-reference.ts`** (2 errors)
-   - JSON type assignment issues
-
-## Recommended Fixes
-
-### Short-term (1-2 weeks)
-
-1. Fix AttendanceStatus enum usage - use `PRESENT` instead of `'present'`
-2. Add proper includes in Prisma queries for related entities
-3. Fix Decimal to number conversions using `Number()` or `.toNumber()`
-
-### Medium-term (1 month)
-
-1. Review and fix all analytics module type issues
-2. Update reporting service with proper type annotations
-3. Add proper validation schemas for all service inputs
-
-### Long-term (ongoing)
-
-1. Enable strict TypeScript mode gradually
-2. Add comprehensive unit tests for all services
-3. Add integration tests for critical paths
-
-## Workarounds Applied
-
-To allow the build to succeed in development, the following workarounds are used:
-
-1. **tsconfig.build.json** - Less strict TypeScript settings for build
-2. **`as any` type assertions** - Used sparingly in service files where Prisma types are complex
-
-## How to Contribute Fixes
-
-1. Pick a file from the list above
-2. Run `pnpm --filter api build:strict` to see specific errors
-3. Fix the type errors
-4. Ensure tests pass: `pnpm --filter api test`
-5. Submit a PR with the fixes
-
-## References
-
-- [TypeScript Handbook](https://www.typescriptlang.org/docs/)
-- [Prisma Type System](https://www.prisma.io/docs/concepts/components/prisma-client/advanced-type-safety)
-- [Express with TypeScript](https://expressjs.com/en/advanced/best-practice-performance.html)
+1. `pnpm --filter api build:strict` to see strict errors (the real target).
+2. Fix the type errors; reuse `@cipansor/shared` types and `@prisma/client` enums.
+3. `pnpm --filter api test` and keep it green.
+4. Commit with a scoped message on the feature branch.

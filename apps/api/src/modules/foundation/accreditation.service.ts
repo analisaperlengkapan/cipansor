@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { Decimal } from '@prisma/client/runtime/library';
+import { Decimal } from '@prisma/client/runtime/client';
 
 // =====================================
 // 8 STANDAR NASIONAL PENDIDIKAN (SNP)

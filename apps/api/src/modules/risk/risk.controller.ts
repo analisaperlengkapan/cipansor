@@ -9,9 +9,9 @@ import {
   updateMitigationSchema,
   listRiskQuerySchema,
 } from './risk.validation';
-import { UserRole } from '@prisma/client';
+import { UserRole, RoleCode } from '@prisma/client';
 
-const PRIVILEGED_ROLES = [UserRole.SUPER_ADMIN, UserRole.YAYASAN_ADMIN, UserRole.YAYASAN_KETUA];
+const PRIVILEGED_ROLES = [UserRole.SUPER_ADMIN, RoleCode.YAYASAN_ADMIN, RoleCode.YAYASAN_KETUA];
 
 function isPrivileged(role?: UserRole): boolean {
   return role ? PRIVILEGED_ROLES.includes(role) : false;

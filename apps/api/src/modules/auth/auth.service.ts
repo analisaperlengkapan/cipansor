@@ -6,7 +6,7 @@ import { isAdminRoleCode, isGovernanceRoleCode, deriveLegacyRole } from '@/middl
 import { config } from '@/config';
 import type { LoginInput, RegisterInput, ChangePasswordInput } from './auth.schema';
 import { RoleCode, UnitType } from '@prisma/client';
-import { authenticator } from 'otplib';
+import { generateSecret, generateURI, verify as verifyOtp } from 'otplib';
 import * as qrcode from 'qrcode';
 import crypto from 'crypto';
 
@@ -621,8 +621,8 @@ export class AuthService {
       throw Errors.badRequest('2FA is already enabled');
     }
 
-    const secret = authenticator.generateSecret();
-    const otpauth = authenticator.keyuri(user.email, 'Cipansor App', secret);
+    const secret = generateSecret();
+    const otpauth = generateURI({ issuer: 'Cipansor App', label: user.email, secret });
     const qrCodeUrl = await qrcode.toDataURL(otpauth);
 
     // BUG FIX: Store pending secret server-side
@@ -653,7 +653,7 @@ export class AuthService {
       throw Errors.badRequest('No pending 2FA setup found. Please generate a new code.');
     }
 
-    const isValid = authenticator.verify({ token, secret: user.twoFactorSecretPending });
+    const isValid = (await verifyOtp({ token, secret: user.twoFactorSecretPending })).valid;
 
     if (!isValid) {
       throw Errors.badRequest('Invalid OTP code');
@@ -706,7 +706,7 @@ export class AuthService {
       throw Errors.unauthorized('2FA is not enabled for this user');
     }
 
-    let isValid = authenticator.verify({ token, secret: user.twoFactorSecret });
+    let isValid = (await verifyOtp({ token, secret: user.twoFactorSecret })).valid;
 
     // Check recovery codes if OTP failed (with atomic update to prevent race conditions)
     if (!isValid) {
@@ -863,7 +863,7 @@ export class AuthService {
       }
 
       // Verify ADMIN's OTP
-      const isValid = authenticator.verify({ token, secret: admin.twoFactorSecret });
+      const isValid = (await verifyOtp({ token, secret: admin.twoFactorSecret })).valid;
       if (!isValid) throw Errors.unauthorized('Invalid Admin OTP');
     } else {
       // User disabling their own
@@ -875,7 +875,7 @@ export class AuthService {
         throw Errors.badRequest('2FA is not enabled');
       }
       // Verify USER's OTP
-      const isValid = authenticator.verify({ token, secret: user.twoFactorSecret });
+      const isValid = (await verifyOtp({ token, secret: user.twoFactorSecret })).valid;
       if (!isValid) throw Errors.unauthorized('Invalid OTP');
     }
 

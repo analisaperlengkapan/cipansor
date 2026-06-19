@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
-import { UserRole } from '@prisma/client';
+import { UserRole, RoleCode } from '@prisma/client';
 import { config } from '../../config';
 import * as controller from './controller';
 import { authenticate, authorize } from '../../middleware/auth';
@@ -64,7 +64,7 @@ router.get(
   '/leads/priority',
   authorize(
     UserRole.SUPER_ADMIN,
-    UserRole.YAYASAN_ADMIN,
+    RoleCode.YAYASAN_ADMIN,
     UserRole.UNIT_ADMIN,
     UserRole.STAFF
   ),
@@ -109,7 +109,7 @@ router.get(
 // expected to read but not directly mutate admissions records.
 router.get(
   '/periods',
-  authorize(UserRole.SUPER_ADMIN, UserRole.YAYASAN_ADMIN, UserRole.UNIT_ADMIN),
+  authorize(UserRole.SUPER_ADMIN, RoleCode.YAYASAN_ADMIN, UserRole.UNIT_ADMIN),
   validateQuery(queryAdmissionPeriodSchema),
   controller.getAdmissionPeriods
 );
@@ -176,7 +176,7 @@ router.post(
  */
 router.get(
   '/periods/:id',
-  authorize(UserRole.SUPER_ADMIN, UserRole.YAYASAN_ADMIN, UserRole.UNIT_ADMIN),
+  authorize(UserRole.SUPER_ADMIN, RoleCode.YAYASAN_ADMIN, UserRole.UNIT_ADMIN),
   controller.getAdmissionPeriodById
 );
 
@@ -200,7 +200,7 @@ router.get(
  */
 router.get(
   '/periods/:id/stats',
-  authorize(UserRole.SUPER_ADMIN, UserRole.YAYASAN_ADMIN, UserRole.UNIT_ADMIN),
+  authorize(UserRole.SUPER_ADMIN, RoleCode.YAYASAN_ADMIN, UserRole.UNIT_ADMIN),
   controller.getAdmissionPeriodStats
 );
 
@@ -288,7 +288,7 @@ router.get(
   '/registrants',
   authorize(
     UserRole.SUPER_ADMIN,
-    UserRole.YAYASAN_ADMIN,
+    RoleCode.YAYASAN_ADMIN,
     UserRole.UNIT_ADMIN,
     UserRole.STAFF
   ),
@@ -364,7 +364,7 @@ router.get(
   '/registrants/:id',
   authorize(
     UserRole.SUPER_ADMIN,
-    UserRole.YAYASAN_ADMIN,
+    RoleCode.YAYASAN_ADMIN,
     UserRole.UNIT_ADMIN,
     UserRole.STAFF
   ),
@@ -548,7 +548,7 @@ router.get(
   '/registrants/:registrantId/documents',
   authorize(
     UserRole.SUPER_ADMIN,
-    UserRole.YAYASAN_ADMIN,
+    RoleCode.YAYASAN_ADMIN,
     UserRole.UNIT_ADMIN,
     UserRole.STAFF
   ),

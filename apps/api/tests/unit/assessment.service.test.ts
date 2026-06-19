@@ -8,7 +8,7 @@ import {
 } from '../../src/modules/assessment/service';
 import { prisma } from '../../src/lib/prisma';
 import { ExamType } from '@cipansor/shared';
-import { Decimal } from '@prisma/client/runtime/library';
+import { Decimal } from '@prisma/client/runtime/client';
 
 // Mock Prisma
 vi.mock('../../src/lib/prisma', () => ({

@@ -26,9 +26,9 @@ vi.mock('@prisma/client', () => {
 });
 
 // Now import the service which imports prisma
-import { createBorrowing, getBorrowings } from '../../../../../src/modules/library/service';
+import { createBorrowing, getBorrowings } from '../../../../src/modules/library/service';
 // Import the singleton to spy on methods (it will use the mocked class above)
-import { prisma } from '../../../../../src/lib/prisma';
+import { prisma } from '../../../../src/lib/prisma';
 
 describe('Library Service', () => {
   beforeEach(() => {

@@ -49,7 +49,7 @@ vi.mock('@prisma/client', () => {
 });
 
 // Mock the prisma singleton to use our mocks
-vi.mock('../../../../../src/lib/prisma', () => {
+vi.mock('../../../../src/lib/prisma', () => {
   return {
     prisma: {
       medicalRecord: mockMedicalRecord,
@@ -67,7 +67,7 @@ vi.mock('../../../../../src/lib/prisma', () => {
 });
 
 // Import service after mocking
-import * as service from '../../../../../src/modules/health/service';
+import * as service from '../../../../src/modules/health/service';
 
 describe('Health Service', () => {
   beforeEach(() => {

@@ -33,7 +33,7 @@ vi.mock('@/lib/prisma', () => {
   };
 });
 
-import { SyariahService } from '../../../../../src/modules/syariah/syariah.service';
+import { SyariahService } from '../../../../src/modules/syariah/syariah.service';
 
 describe('SyariahService', () => {
   let service: SyariahService;

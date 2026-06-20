@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { ReceptionService } from '../../../../../src/modules/reception/reception.service';
-import { prisma } from '../../../../../src/lib/prisma';
+import { ReceptionService } from '../../../../src/modules/reception/reception.service';
+import { prisma } from '../../../../src/lib/prisma';
 import { VisitStatus, PackageStatus } from '@cipansor/shared';
 
 // Mock dependencies
-vi.mock('../../../../../src/lib/prisma', () => ({
+vi.mock('../../../../src/lib/prisma', () => ({
   prisma: {
     guestBook: {
       findMany: vi.fn(),

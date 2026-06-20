@@ -39,7 +39,7 @@ vi.mock('@prisma/client', () => ({
   Prisma: { Decimal: class { constructor(v: number) { return v; } } },
 }));
 
-vi.mock('../../../../../src/lib/prisma', () => ({
+vi.mock('../../../../src/lib/prisma', () => ({
   prisma: {
     talentProfile: mockTalentProfile,
     talentAssessment: mockTalentAssessment,
@@ -49,7 +49,7 @@ vi.mock('../../../../../src/lib/prisma', () => ({
   },
 }));
 
-import { TalentaService } from '../../../../../src/modules/talenta/talenta.service';
+import { TalentaService } from '../../../../src/modules/talenta/talenta.service';
 
 describe('TalentaService', () => {
   let service: TalentaService;

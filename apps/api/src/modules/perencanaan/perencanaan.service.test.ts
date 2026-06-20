@@ -134,6 +134,12 @@ describe('Perencanaan Service', () => {
       };
 
       vi.mocked(prisma.planIndicator.create).mockResolvedValue({ id: 'ind-1' } as any);
+      // createIndicator recalculates objective progress, loading the objective + indicators.
+      vi.mocked(prisma.planObjective.findUnique).mockResolvedValue({
+        id: 'obj-1',
+        indicators: [],
+      } as any);
+      vi.mocked(prisma.planObjective.update).mockResolvedValue({} as any);
 
       await perencanaanService.createIndicator(dto);
 

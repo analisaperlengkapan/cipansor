@@ -82,7 +82,9 @@ export default function EditUserPage() {
       reset({
         email: user.email,
         name: user.name,
-        role: user.role,
+        // Backend populates the legacy UserRole on User.role; narrow the enum to
+        // the form's role union (same six values).
+        role: user.role as UserForm["role"],
         unitId: user.unitId || "",
         isActive: user.isActive,
       });

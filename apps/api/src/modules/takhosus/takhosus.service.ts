@@ -736,49 +736,59 @@ export const sanadService = {
   },
 
   /**
-   * Automatically check and suggest certificates based on progress.
-   * TODO: Integrate with notification/event service for production use.
-   * Currently a no-op stub to avoid wasteful DB queries until the notification system is ready.
+   * Check tahfidz milestones for a student and notify staff when the student
+   * becomes eligible for a certificate that has not yet been issued.
+   *
+   * We deliberately notify rather than auto-issue: a DigitalCertificate needs a
+   * signatory, QR/verification code, and an issuing user — context this
+   * progress hook does not have. Staff issue the certificate from the
+   * certificate module after the notification.
    */
-  async checkCertificateEligibility(_studentId: string) {
-    // No-op: Enable this when the notification/certificate creation service is implemented.
-    // See the commented-out implementation below for the intended logic.
-    return;
-
-    /*
+  async checkCertificateEligibility(studentId: string) {
     const enrollment = await prisma.takhosusEnrollment.findUnique({
-      where: { studentId: _studentId },
-      include: { sanadRecords: true },
+      where: { studentId },
+      include: {
+        sanadRecords: { select: { juz: true } },
+        student: { select: { unitId: true, user: { select: { name: true } } } },
+      },
     });
 
     if (!enrollment) return;
 
     const count = enrollment.sanadRecords.length;
+    const hasJuzAmma = enrollment.sanadRecords.some((s) => s.juz === 30);
+    const studentName = enrollment.student.user?.name ?? 'Santri';
+
+    // Check all milestones (don't stop at the highest) so lower milestones are
+    // also flagged when a higher one is reached.
     const targets = [
-      { count: 30, type: 'TAHFIDZ_30_JUZ', title: 'Hafidz 30 Juz' },
-      { count: 10, type: 'TAHFIDZ_10_JUZ', title: 'Hafidz 10 Juz' },
-      { count: 5, type: 'TAHFIDZ_5_JUZ', title: 'Hafidz 5 Juz' },
-      { count: 1, juz: 30, type: 'TAHFIDZ_JUZ_AMMA', title: 'Hafidz Juz Amma' },
+      { type: 'TAHFIDZ_30_JUZ', title: 'Hafidz 30 Juz', eligible: count >= 30 },
+      { type: 'TAHFIDZ_10_JUZ', title: 'Hafidz 10 Juz', eligible: count >= 10 },
+      { type: 'TAHFIDZ_5_JUZ', title: 'Hafidz 5 Juz', eligible: count >= 5 },
+      { type: 'TAHFIDZ_JUZ_AMMA', title: 'Hafidz Juz Amma', eligible: hasJuzAmma },
     ];
 
-    for (const target of targets) {
-      const eligible = target.juz
-        ? enrollment.sanadRecords.some(s => s.juz === target.juz)
-        : count >= target.count;
+    const eligibleTargets = targets.filter((t) => t.eligible);
+    if (eligibleTargets.length === 0) return;
 
-      if (eligible) {
-        const existing = await prisma.digitalCertificate.findFirst({
-          where: { studentId: _studentId, certificateType: target.type }
-        });
+    const { eventBus } = await import('@/lib/event-bus');
 
-        if (!existing) {
-          // TODO: Emit notification or create certificate record
-          // Note: Do NOT break here — check all eligible milestones so lower
-          // milestones (10, 5, 1 juz) are also awarded when 30 is reached.
-        }
-      }
+    for (const target of eligibleTargets) {
+      const existing = await prisma.digitalCertificate.findFirst({
+        where: { studentId, certificateType: target.type },
+        select: { id: true },
+      });
+      if (existing) continue;
+
+      eventBus.emit('notification:send', {
+        unitId: enrollment.student.unitId,
+        broadcast: true,
+        type: 'ACHIEVEMENT',
+        title: 'Santri Berhak Menerima Sertifikat',
+        message: `${studentName} telah memenuhi syarat sertifikat "${target.title}". Silakan terbitkan sertifikat tahfidz.`,
+        data: { studentId, certificateType: target.type },
+      });
     }
-    */
   }
 };
 

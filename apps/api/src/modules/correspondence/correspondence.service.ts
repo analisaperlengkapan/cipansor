@@ -247,7 +247,7 @@ export const CorrespondenceService = {
     action: 'APPROVE' | 'REJECT',
     notes?: string
   ) {
-    return await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx) => {
       // 1. Update Reviewer Status
       const review = await tx.letterReviewer.findUnique({
         where: {
@@ -271,6 +271,7 @@ export const CorrespondenceService = {
       });
 
       // 2. Check Workflow Logic
+      let signed = false;
       if (action === 'REJECT') {
         // If rejected, set letter to Revision Needed
         await tx.letter.update({
@@ -278,16 +279,41 @@ export const CorrespondenceService = {
           data: { status: 'REVISION_NEEDED' as any },
         });
       } else if (review.isSigner) {
-        // If signer approves, set letter to Signed
+        // If signer approves, the letter is signed.
         await tx.letter.update({
           where: { id: letterId },
           data: { status: 'SIGNED' as any },
         });
-        // TODO: Trigger Digital Signature here
+        signed = true;
       }
 
-      return { success: true };
+      return { success: true, signed };
     });
+
+    // Post-commit: when a letter has been signed, notify its creator so they can
+    // proceed (dispatch/archive). Done outside the transaction so the listener
+    // sees the committed SIGNED status.
+    if (result.signed) {
+      const letter = await prisma.letter.findUnique({
+        where: { id: letterId },
+        select: { createdById: true, unitId: true, subject: true, letterNumber: true },
+      });
+      if (letter) {
+        const { eventBus } = await import('@/lib/event-bus');
+        eventBus.emit('notification:send', {
+          userId: letter.createdById,
+          unitId: letter.unitId,
+          type: 'INFO',
+          title: 'Surat Telah Ditandatangani',
+          message: `Surat "${letter.subject}"${
+            letter.letterNumber ? ` (${letter.letterNumber})` : ''
+          } telah ditandatangani dan siap diproses.`,
+          data: { letterId },
+        });
+      }
+    }
+
+    return { success: true };
   },
 
   async createDisposition(data: CreateDispositionInput) {

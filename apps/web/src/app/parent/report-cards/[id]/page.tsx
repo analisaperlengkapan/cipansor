@@ -90,8 +90,9 @@ export default function ReportCardDetailPage() {
     return "text-red-600";
   };
 
-  // Categorize grades by subject category
-  const categorizedGrades = useMemo(() => {
+  // Categorize grades by subject category.
+  // (React Compiler auto-memoizes; manual useMemo could not be preserved here.)
+  const categorizedGrades = ((): Record<string, typeof reportCard.grades> => {
     if (!reportCard?.grades)
       return { RELIGIOUS: [], ACADEMIC: [], LOCAL: [], VOCATIONAL: [] };
 
@@ -116,10 +117,10 @@ export default function ReportCardDetailPage() {
           g.subject?.category === "KETERAMPILAN",
       ),
     };
-  }, [reportCard?.grades]);
+  })();
 
-  // Transform behavior to character assessment format
-  const characterAssessment = useMemo(() => {
+  // Transform behavior to character assessment format.
+  const characterAssessment = (() => {
     if (!reportCard?.behavior) return [];
     return [
       {
@@ -147,7 +148,7 @@ export default function ReportCardDetailPage() {
         description: "Kemampuan bekerja sama",
       },
     ];
-  }, [reportCard?.behavior]);
+  })();
 
   const handleDownload = () => {
     toast.success("Rapor akan diunduh dalam format PDF");

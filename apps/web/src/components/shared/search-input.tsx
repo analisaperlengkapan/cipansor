@@ -23,28 +23,8 @@ export function SearchInput({
 }: SearchInputProps) {
   const [internalValue, setInternalValue] = useState(externalValue || "");
   const isFirstRender = useRef(true);
-  // Store previous external value to check for changes
-  const prevExternalValueRef = useRef(externalValue);
 
-  // Update internal value when external value changes, but only if different
-  // We use a ref to track if this specific instance of the value has been processed
-  if (
-    externalValue !== undefined &&
-    externalValue !== prevExternalValueRef.current
-  ) {
-    prevExternalValueRef.current = externalValue;
-    // We can update state during render if it's based on props change (derived state pattern)
-    // However, since we also allow user input to change it, it's safer to just set it here if we accept
-    // that external updates override internal state.
-    // Ideally, for controlled components, we shouldn't have local state unless for debouncing.
-    // Here we have local state for debouncing.
-
-    // To avoid "set state during render" warning if not handled carefully or "set state in effect",
-    // we can use the pattern of checking in render and updating state, but that triggers re-render immediately.
-    // OR we can just use key prop on the component usage to reset state when key changes.
-    // BUT, for this component, let's stick to useEffect but be careful.
-  }
-
+  // Sync internal value when the external (controlled) value changes.
   useEffect(() => {
     if (externalValue !== undefined && externalValue !== internalValue) {
       setInternalValue(externalValue);

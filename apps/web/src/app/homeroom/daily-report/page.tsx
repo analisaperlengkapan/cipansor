@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -112,7 +112,7 @@ export default function HomeroomDailyReportPage() {
   const bulkCreateMutation = useBulkCreateDailyReports();
 
   // Initialize student reports when students load
-  useMemo(() => {
+  useEffect(() => {
     if (students.length > 0 && studentReports.size === 0) {
       const initial = new Map<string, StudentReportData>();
       students.forEach((s) => {

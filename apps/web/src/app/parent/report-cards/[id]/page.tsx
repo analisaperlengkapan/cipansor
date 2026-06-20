@@ -92,7 +92,7 @@ export default function ReportCardDetailPage() {
 
   // Categorize grades by subject category.
   // (React Compiler auto-memoizes; manual useMemo could not be preserved here.)
-  const categorizedGrades = ((): Record<string, typeof reportCard.grades> => {
+  const categorizedGrades = (() => {
     if (!reportCard?.grades)
       return { RELIGIOUS: [], ACADEMIC: [], LOCAL: [], VOCATIONAL: [] };
 

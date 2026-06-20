@@ -73,7 +73,7 @@ export class DashboardService {
       prisma.class.count({ where: unitFilter }),
       prisma.unit.count({ where: context.unitId ? { id: context.unitId } : {} }),
       this.getTodayAttendanceCount(context.unitId),
-      prisma.academicYear.findFirst({ where: { status: 'ACTIVE' } as any }),
+      prisma.academicYear.findFirst({ where: { isActive: true } }),
     ]);
 
     // Calculate student growth percentage

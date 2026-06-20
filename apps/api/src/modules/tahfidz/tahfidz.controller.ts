@@ -24,7 +24,15 @@ export class TahfidzController {
       };
 
       const result = await this.service.findAll(query as Parameters<typeof this.service.findAll>[0], currentUser);
-      res.json({ success: true, data: result });
+      // Standard paginated envelope ({ data: [...], meta: { pagination } }) so
+      // consumers (tahfidz list, dashboard) get an array at `.data`, matching
+      // every other module. Previously this nested the array under data.records,
+      // crashing those pages with "data.map is not a function".
+      res.json({
+        success: true,
+        data: result.records,
+        meta: { pagination: result.pagination },
+      });
     } catch (error) {
       next(error);
     }

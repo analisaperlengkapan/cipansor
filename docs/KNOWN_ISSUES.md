@@ -29,11 +29,13 @@ the production-readiness / architecture-standardization effort.
 - **Fixed a systematic test bug:** 13 module unit tests used a 5-level relative
   path so `vi.mock('../lib/prisma')` never intercepted; corrected to 4 levels.
 
-## 🟢 API test suite — GREEN (533 passed, 0 failed)
+## 🟢 API test suite — GREEN (565 passed, 0 failed)
 
-`pnpm --filter api test` now passes: **533 passed, 24 skipped** (the skipped set is
+`pnpm --filter api test` now passes: **565 passed, 24 skipped** (the skipped set is
 the opt-in DB integration suite + 2 pre-existing skips). The previously-failing
-~28 tests were all pre-existing debt and have been fixed:
+~28 tests were all pre-existing debt and have been fixed, and new coverage was
+added for security-critical paths (RBAC middleware, the 2FA flow,
+foundation analytics, takhosus certificate eligibility, correspondence signing):
 
 - Completed incomplete Prisma mocks (`$transaction`, `user`/`teacher`/`reward`/
   `roomAssignment`/`growthRecord`/`paymentType.upsert`, etc.).

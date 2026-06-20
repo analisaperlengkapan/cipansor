@@ -121,37 +121,37 @@ describe('SchedulerService Performance', () => {
     vi.mocked(prisma.notification.create).mockResolvedValue({ id: 'notif-id' } as any);
     vi.mocked(prisma.notification.createMany).mockResolvedValue({ count: studentCount } as any);
 
+    // Assert on the batching helper (the contract): all absences are dispatched
+    // in a single batched call rather than one-per-student.
+    const createManySpy = vi.spyOn(notificationService, 'createManyNotifications');
+
     const start = performance.now();
     await notificationScheduler.runTask('attendance-summary');
     const end = performance.now();
     const duration = end - start;
 
     const createCalls = vi.mocked(prisma.notification.create).mock.calls.length;
-    const createManyCalls = vi.mocked(prisma.notification.createMany).mock.calls.length;
 
-    console.log(`\n[Benchmark] sendAttendanceSummary with ${studentCount} absences:`);
-    console.log(`Time: ${duration.toFixed(2)}ms`);
-    console.log(`prisma.notification.create calls: ${createCalls}`);
-    console.log(`prisma.notification.createMany calls: ${createManyCalls}`);
-
-    // Verify correct data mapping
-    expect(createCalls).toBe(0);
-    expect(createManyCalls).toBe(1);
-
-    // If we were using createMany, we'd verify the payload size
-    expect(vi.mocked(prisma.notification.createMany)).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.arrayContaining([
-          expect.objectContaining({
-            userId: 'user-0',
-            type: 'ALERT',
-            data: expect.objectContaining({
-              priority: 'HIGH',
-              channels: ['IN_APP'],
-            }),
-          }),
-        ]),
-      })
+    // eslint-disable-next-line no-console
+    console.info(
+      `[Benchmark] sendAttendanceSummary ${studentCount} absences in ${duration.toFixed(2)}ms`
     );
+
+    // Per-student create must NOT be used; a single batched call handles all.
+    expect(createCalls).toBe(0);
+    expect(createManySpy).toHaveBeenCalledTimes(1);
+
+    // Verify the batched payload carries the mapped notifications.
+    expect(createManySpy).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({
+          userId: 'user-0',
+          type: 'ALERT',
+          priority: 'HIGH',
+          channels: ['IN_APP'],
+        }),
+      ])
+    );
+    expect(createManySpy.mock.calls[0][0]).toHaveLength(studentCount);
   });
 });

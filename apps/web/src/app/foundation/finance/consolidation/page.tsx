@@ -45,62 +45,10 @@ import {
   Cell,
   Legend,
 } from "recharts";
+import { Loader2 } from "lucide-react";
+import { useFoundationFinancialOverview } from "@/hooks/use-foundation";
 
-// Mock consolidated financial data across all units
-const mockFinancialData = {
-  totalRevenue: 4850000000,
-  totalExpenses: 3920000000,
-  netIncome: 930000000,
-  previousMonthRevenue: 4500000000,
-  cashOnHand: 2150000000,
-  receivables: 580000000,
-  payables: 320000000,
-  units: [
-    {
-      name: "Pesantren",
-      revenue: 1850000000,
-      expenses: 1450000000,
-      students: 450,
-      color: "#22c55e",
-    },
-    {
-      name: "SMA Al-Quran",
-      revenue: 1200000000,
-      expenses: 950000000,
-      students: 320,
-      color: "#6366f1",
-    },
-    {
-      name: "SMP IT",
-      revenue: 980000000,
-      expenses: 780000000,
-      students: 280,
-      color: "#f59e0b",
-    },
-    {
-      name: "SD IT",
-      revenue: 650000000,
-      expenses: 580000000,
-      students: 210,
-      color: "#ec4899",
-    },
-    {
-      name: "TK",
-      revenue: 170000000,
-      expenses: 160000000,
-      students: 85,
-      color: "#14b8a6",
-    },
-  ],
-  monthlyTrend: [
-    { month: "Jul", income: 750, expense: 620 },
-    { month: "Aug", income: 820, expense: 680 },
-    { month: "Sep", income: 780, expense: 640 },
-    { month: "Oct", income: 850, expense: 720 },
-    { month: "Nov", income: 890, expense: 750 },
-    { month: "Dec", income: 930, expense: 780 },
-  ],
-};
+const UNIT_COLORS = ["#22c55e", "#6366f1", "#f59e0b", "#ec4899", "#14b8a6", "#0ea5e9"];
 
 const formatCurrency = (value: number) => {
   if (value >= 1000000000) {
@@ -114,12 +62,45 @@ const formatCurrency = (value: number) => {
 
 export default function FinanceConsolidationPage() {
   const [period, setPeriod] = useState("current-year");
-  const data = mockFinancialData;
+  const { data: overview, isLoading } = useFoundationFinancialOverview();
+
+  // Map the consolidated foundation finance API into the view model.
+  const data = {
+    totalRevenue: overview?.currentMonth.revenue ?? 0,
+    totalExpenses: overview?.currentMonth.expense ?? 0,
+    netIncome: overview?.currentMonth.net ?? 0,
+    previousMonthRevenue: overview?.lastMonth.revenue ?? 0,
+    cashOnHand: overview?.cashPosition?.cashOnHand ?? 0,
+    receivables: overview?.cashPosition?.receivables ?? 0,
+    payables: overview?.cashPosition?.payables ?? 0,
+    units: (overview?.units ?? []).map((u, i) => ({
+      name: u.unitName,
+      revenue: u.revenue,
+      expenses: u.expense,
+      students: u.students,
+      color: UNIT_COLORS[i % UNIT_COLORS.length],
+    })),
+    monthlyTrend: (overview?.monthlyTrend ?? []).map((m) => ({
+      month: m.month,
+      income: Math.round(m.revenue / 1_000_000),
+      expense: Math.round(m.expense / 1_000_000),
+    })),
+  };
 
   const revenueGrowth =
-    ((data.totalRevenue - data.previousMonthRevenue) /
-      data.previousMonthRevenue) *
-    100;
+    data.previousMonthRevenue > 0
+      ? ((data.totalRevenue - data.previousMonthRevenue) / data.previousMonthRevenue) * 100
+      : 0;
+
+  if (isLoading) {
+    return (
+      <MainLayout allowedRoles={["SUPER_ADMIN", "FOUNDATION_ADMIN"]}>
+        <div className="flex h-96 items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout allowedRoles={["SUPER_ADMIN", "FOUNDATION_ADMIN"]}>

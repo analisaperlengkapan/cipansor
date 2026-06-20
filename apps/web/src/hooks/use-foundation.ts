@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type { FoundationExecutiveSummary } from "@cipansor/shared";
+import type { FoundationExecutiveSummary, FoundationFinancialOverview } from "@cipansor/shared";
 import api from "@/lib/api";
 
 // Types
@@ -165,6 +165,16 @@ export function useFoundationExecutiveSummary() {
     queryFn: async () => {
       const response = await api.get("/foundation/stats/executive");
       return response.data.data as FoundationExecutiveSummary;
+    },
+  });
+}
+
+export function useFoundationFinancialOverview() {
+  return useQuery({
+    queryKey: ["foundation", "financial-overview"],
+    queryFn: async () => {
+      const response = await api.get("/foundation/stats/financial");
+      return response.data.data as FoundationFinancialOverview;
     },
   });
 }

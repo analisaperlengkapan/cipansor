@@ -123,19 +123,79 @@ export async function getFinancialOverview(): Promise<FoundationFinancialOvervie
     select: { id: true, name: true },
   });
 
-  // Build by-unit breakdown with placeholder data
+  // Real per-unit revenue/expense from journal entries scoped to each unit.
+  const [revenueByUnit, expenseByUnit, studentsByUnit] = await Promise.all([
+    prisma.journalEntry.groupBy({
+      by: ['unitId'],
+      _sum: { credit: true },
+      where: {
+        date: { gte: startOfMonth, lte: endOfMonth },
+        account: { code: { startsWith: '4' } },
+      },
+    }),
+    prisma.journalEntry.groupBy({
+      by: ['unitId'],
+      _sum: { debit: true },
+      where: {
+        date: { gte: startOfMonth, lte: endOfMonth },
+        account: { code: { startsWith: '5' } },
+      },
+    }),
+    prisma.student.groupBy({
+      by: ['unitId'],
+      _count: { _all: true },
+      where: { status: 'ACTIVE' },
+    }),
+  ]);
+
+  const revenueMap = new Map(revenueByUnit.map((r) => [r.unitId, Number(r._sum.credit || 0)]));
+  const expenseMap = new Map(expenseByUnit.map((e) => [e.unitId, Number(e._sum.debit || 0)]));
+  const studentMap = new Map(studentsByUnit.map((s) => [s.unitId, s._count._all]));
+
   const byUnit = units.map((u) => ({
     unitId: u.id,
     unitName: u.name,
-    revenue: 0, // Placeholder - requires complex join through Invoice chain
-    expense: 0, // Placeholder - requires expense tracking per unit
+    revenue: revenueMap.get(u.id) || 0,
+    expense: expenseMap.get(u.id) || 0,
   }));
 
-  // Build units array with net income for PR #3 UI compatibility
   const unitsWithNetIncome = byUnit.map((u) => ({
     ...u,
     netIncome: u.revenue - u.expense,
+    students: studentMap.get(u.unitId) || 0,
   }));
+
+  // Cash position from balance-sheet accounts (all-time balances):
+  // Cash (11xx), Receivables (12xx) — debit-normal; Payables (2xx) — credit-normal.
+  const balanceFor = async (codePrefix: string, normal: 'debit' | 'credit') => {
+    const agg = await prisma.journalEntry.aggregate({
+      _sum: { debit: true, credit: true },
+      where: { account: { code: { startsWith: codePrefix } } },
+    });
+    const debit = Number(agg._sum.debit || 0);
+    const credit = Number(agg._sum.credit || 0);
+    return normal === 'debit' ? debit - credit : credit - debit;
+  };
+
+  const [cashOnHand, receivables, payables] = await Promise.all([
+    balanceFor('11', 'debit'),
+    balanceFor('12', 'debit'),
+    balanceFor('2', 'credit'),
+  ]);
+
+  // Revenue/expense for the trailing 6 months (oldest first).
+  const monthlyTrend = await Promise.all(
+    Array.from({ length: 6 }, (_, i) => 5 - i).map(async (back) => {
+      const mStart = new Date(now.getFullYear(), now.getMonth() - back, 1);
+      const mEnd = new Date(now.getFullYear(), now.getMonth() - back + 1, 0);
+      const totals = await getTotals(mStart, mEnd);
+      return {
+        month: mStart.toLocaleString('id-ID', { month: 'short' }),
+        revenue: totals.revenue,
+        expense: totals.expense,
+      };
+    })
+  );
 
   // Get expense composition by account for pie chart
   const expensesByAccount = await prisma.journalEntry.groupBy({
@@ -169,6 +229,8 @@ export async function getFinancialOverview(): Promise<FoundationFinancialOvervie
     byUnit,
     units: unitsWithNetIncome,
     expenseComposition,
+    cashPosition: { cashOnHand, receivables, payables },
+    monthlyTrend,
   };
 }
 

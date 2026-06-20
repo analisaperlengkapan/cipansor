@@ -16,6 +16,7 @@ import {
   useRecentAnnouncements,
 } from "@/hooks";
 import { useFoundationFinancialSummary, useFoundationExecutiveSummary } from "@/hooks/use-foundation";
+import { useRisks } from "@/hooks/use-risk";
 import {
   BarChart,
   Bar,
@@ -47,6 +48,18 @@ export default function ExecutiveDashboard() {
   const { data: talentStats } = useTalentAnalytics();
   const { data: announcements } = useRecentAnnouncements();
   const { data: executiveSummary } = useFoundationExecutiveSummary();
+  const { data: risks } = useRisks();
+
+  // High/extreme open risks per unit, for the consolidated risk panel.
+  const highRiskByUnit = (risks ?? []).reduce(
+    (acc: Record<string, number>, r: any) => {
+      if (r.status !== "CLOSED" && (r.riskLevel === "HIGH" || r.riskLevel === "EXTREME")) {
+        acc[r.unitId] = (acc[r.unitId] || 0) + 1;
+      }
+      return acc;
+    },
+    {},
+  );
 
   const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8"];
 
@@ -234,13 +247,21 @@ export default function ExecutiveDashboard() {
                         <div key={unit.id} className="flex items-center justify-between border-b pb-2">
                           <div className="space-y-1">
                             <p className="text-sm font-medium">{unit.name}</p>
-                            {/* TODO: Wire to Risk & Pengawasan APIs */}
-                            <p className="text-xs text-muted-foreground italic">Data risiko & audit belum tersedia</p>
+                            <p className="text-xs text-muted-foreground">
+                              {(highRiskByUnit[unit.id] || 0) > 0
+                                ? `${highRiskByUnit[unit.id]} risiko tinggi terbuka`
+                                : "Tidak ada risiko tinggi terbuka"}
+                            </p>
                           </div>
                           <div className="text-right">
-                             {/* TODO: Wire to Quality Assurance API */}
-                             <div className="text-sm font-bold text-muted-foreground">—</div>
-                             <p className="text-[10px] text-muted-foreground">Quality Score</p>
+                            <div
+                              className={`text-sm font-bold ${
+                                (highRiskByUnit[unit.id] || 0) > 0 ? "text-red-600" : "text-green-600"
+                              }`}
+                            >
+                              {(highRiskByUnit[unit.id] || 0) > 0 ? "Perhatian" : "Aman"}
+                            </div>
+                            <p className="text-[10px] text-muted-foreground">Status Risiko</p>
                           </div>
                         </div>
                       ))}

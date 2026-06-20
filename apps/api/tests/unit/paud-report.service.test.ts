@@ -43,6 +43,12 @@ const mockPrisma = vi.hoisted(() => ({
   dailyStudentReport: {
     findMany: vi.fn(),
   },
+  growthRecord: {
+    findFirst: vi.fn(),
+  },
+  tahfidzRecord: {
+    findFirst: vi.fn(),
+  },
   $transaction: vi.fn(),
 }));
 

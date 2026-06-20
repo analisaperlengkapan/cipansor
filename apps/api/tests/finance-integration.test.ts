@@ -112,6 +112,9 @@ describe('Finance Service Integration', () => {
         id: 'inv-123',
         amount: { toNumber: () => 100000, sub: vi.fn(), add: vi.fn(), gte: vi.fn(), gt: vi.fn() },
         paidAmount: { add: vi.fn(() => ({ gte: () => true, gt: () => true })) },
+        // No accountId → accounting journal integration is skipped.
+        paymentType: { accountId: null },
+        student: { unitId: 'unit-1', user: { id: 'user-1' } },
       };
 
       const mockPayment = {

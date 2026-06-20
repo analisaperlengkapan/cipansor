@@ -4,12 +4,15 @@
  */
 
 import { describe, it, expect, beforeAll } from 'vitest';
-import { PrismaClient } from '@prisma/client';
+import { createPrismaClient } from '../../prisma/client';
 
-const prisma = new PrismaClient();
+// Prisma 7 connects via a driver adapter; the shared factory constructs lazily
+// so this file loads even without a reachable database.
+const prisma = createPrismaClient();
 
-// Skip database tests if DATABASE_URL is not configured (e.g., in CI without DB)
-const describeDb = process.env.DATABASE_URL ? describe : describe.skip;
+// This is an integration test that queries a real Postgres instance. It is
+// opt-in via RUN_DB_TESTS=1 (the unit-test env points DATABASE_URL at a stub).
+const describeDb = process.env.RUN_DB_TESTS ? describe : describe.skip;
 
 describeDb('Database Schema - PAUD Models', () => {
   describe('PAUDDevelopmentIndicator Model', () => {

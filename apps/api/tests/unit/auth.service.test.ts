@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { UserRole } from '@prisma/client';
+import { UserRole, RoleCode } from '@prisma/client';
 
 // Use vi.hoisted to define mocks that will be available in vi.mock factories
 const {
@@ -40,6 +40,11 @@ const {
         findFirst: vi.fn(),
         findUnique: vi.fn(),
       },
+      userRoleAssignment: {
+        create: vi.fn(),
+      },
+      // register() runs user + role-assignment creation in a transaction.
+      $transaction: vi.fn(),
     },
     mockComparePassword: vi.fn(),
     mockHashPassword: vi.fn().mockResolvedValue('hashed-password'),
@@ -74,17 +79,9 @@ vi.mock('@/lib/prisma', () => ({
   prisma: mockPrisma,
 }));
 
-vi.mock('@prisma/client', () => ({
-  UserRole: mockUserRole,
-  RoleCode: mockRoleCode,
-  UnitType: {
-    TK_QURAN: 'TK_QURAN',
-    SD_IT: 'SD_IT',
-    SMP_IT: 'SMP_IT',
-    SMA_QURAN: 'SMA_QURAN',
-    PESANTREN: 'PESANTREN',
-  },
-}));
+// NOTE: @prisma/client is intentionally NOT mocked — the real generated enums
+// (UserRole/RoleCode/UnitType) are needed so the RoleCode legacy mapping in
+// middleware/auth resolves correctly.
 
 vi.mock('@/lib/password', () => ({
   hashPassword: mockHashPassword,
@@ -131,6 +128,8 @@ describe('AuthService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     authService = new AuthService();
+    // The register() transaction simply runs its callback against the mock client.
+    (mockPrisma.$transaction as any).mockImplementation(async (cb: any) => cb(mockPrisma));
   });
 
   describe('login', () => {
@@ -201,27 +200,42 @@ describe('AuthService', () => {
   });
 
   describe('register', () => {
-    const validRegisterInput = {
+    const baseInput = {
       name: 'New User',
       email: 'newuser@example.com',
       password: 'password123',
-      role: UserRole.UNIT_ADMIN,
-      unitId: 'unit-1',
+    };
+
+    // Common happy-path lookups: the target unit and the requested role exist.
+    const setupLookups = (code: RoleCode) => {
+      (mockPrisma.unit.findUnique as any).mockResolvedValue({ type: 'SD_IT' });
+      (mockPrisma.role.findFirst as any).mockResolvedValue({
+        id: 'role-1',
+        code,
+        isActive: true,
+        permissions: [],
+      });
     };
 
     it('should successfully register a new user', async () => {
+      setupLookups(RoleCode.SDIT_GURU);
       mockPrisma.user.findFirst.mockResolvedValue(null);
       mockPrisma.user.create.mockResolvedValue({
         id: 'new-user-id',
-        name: validRegisterInput.name,
-        email: validRegisterInput.email,
-        role: validRegisterInput.role,
-        unitId: validRegisterInput.unitId,
+        name: baseInput.name,
+        email: baseInput.email,
+        role: UserRole.TEACHER,
+        unitId: 'unit-1',
         passwordHash: 'hashed-password',
         isActive: true,
       });
+      (mockPrisma.userRoleAssignment.create as any).mockResolvedValue({ id: 'ura-1' });
+      mockPrisma.academicYear.findFirst.mockResolvedValue({ id: 'ay-1' });
 
-      const result = await authService.register(validRegisterInput, UserRole.SUPER_ADMIN);
+      const result = await authService.register(
+        { ...baseInput, roleCode: RoleCode.SDIT_GURU, unitId: 'unit-1' },
+        RoleCode.SUPER_ADMIN
+      );
 
       expect(result).toHaveProperty('id');
       expect(result.email).toBe('newuser@example.com');
@@ -230,35 +244,37 @@ describe('AuthService', () => {
     });
 
     it('should throw error when email already exists', async () => {
+      setupLookups(RoleCode.SDIT_GURU);
       mockPrisma.user.findFirst.mockResolvedValue({ id: 'existing-user' });
 
-      await expect(authService.register(validRegisterInput, UserRole.SUPER_ADMIN)).rejects.toThrow(
-        'Email already registered'
-      );
+      await expect(
+        authService.register(
+          { ...baseInput, roleCode: RoleCode.SDIT_GURU, unitId: 'unit-1' },
+          RoleCode.SUPER_ADMIN
+        )
+      ).rejects.toThrow('Email already registered');
     });
 
     it('should prevent non-super-admin from creating super-admin', async () => {
-      const superAdminInput = {
-        ...validRegisterInput,
-        role: UserRole.SUPER_ADMIN,
-        unitId: undefined,
-      };
+      (mockPrisma.role.findFirst as any).mockResolvedValue({
+        id: 'role-sa',
+        code: RoleCode.SUPER_ADMIN,
+        isActive: true,
+        permissions: [],
+      });
 
-      await expect(authService.register(superAdminInput, UserRole.UNIT_ADMIN)).rejects.toThrow(
-        'Only Super Admin can create Super Admin'
-      );
+      await expect(
+        authService.register({ ...baseInput, roleCode: RoleCode.SUPER_ADMIN }, RoleCode.SDIT_ADMIN)
+      ).rejects.toThrow('Only Super Admin can create Super Admin');
     });
 
-    it('should require unitId for non-super-admin roles', async () => {
-      const inputWithoutUnit = {
-        ...validRegisterInput,
-        unitId: undefined,
-      };
+    it('should require unit for non-super-admin roles', async () => {
+      setupLookups(RoleCode.SDIT_GURU);
       mockPrisma.user.findFirst.mockResolvedValue(null);
 
-      await expect(authService.register(inputWithoutUnit, UserRole.SUPER_ADMIN)).rejects.toThrow(
-        'Unit is required for this role'
-      );
+      await expect(
+        authService.register({ ...baseInput, roleCode: RoleCode.SDIT_GURU }, RoleCode.SUPER_ADMIN)
+      ).rejects.toThrow('Unit is required for this role');
     });
   });
 
@@ -275,6 +291,15 @@ describe('AuthService', () => {
           role: UserRole.SUPER_ADMIN,
           unitId: 'unit-1',
           isActive: true,
+          // refreshToken() reads the primary role assignment to mint new tokens.
+          userRoles: [
+            {
+              isPrimary: true,
+              roleId: 'role-1',
+              unitId: 'unit-1',
+              role: { code: RoleCode.SUPER_ADMIN, permissions: [] },
+            },
+          ],
         },
       };
 

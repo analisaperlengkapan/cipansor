@@ -7,10 +7,34 @@ import {
   CreateStudentPackageInput,
   UpdateStudentPackageInput,
   ReceptionStats,
+  StudentVisit,
+  StudentPackage,
 } from '@cipansor/shared';
 import { Errors } from '../../middleware/error';
 // DB enums are the source of truth from Prisma, not the shared package.
 import { Prisma, VisitStatus, PackageStatus } from '@prisma/client';
+
+// --- DTO mappers ---
+// Prisma returns the student name via the `user` relation and class via the
+// active enrollment; flatten that to the API contract shape (student.name,
+// student.class) the web client consumes.
+type PrismaStudentShape = {
+  user: { name: string } | null;
+  nis: string;
+  enrollments: { class: { name: string } }[];
+} | null;
+
+function mapStudent(s: PrismaStudentShape) {
+  if (!s) return undefined;
+  return { name: s.user?.name ?? '', nis: s.nis, class: s.enrollments?.[0]?.class };
+}
+
+const toStudentVisit = (v: Record<string, unknown> & { student?: PrismaStudentShape }): StudentVisit =>
+  ({ ...v, student: mapStudent(v.student ?? null) }) as unknown as StudentVisit;
+
+const toStudentPackage = (
+  p: Record<string, unknown> & { student?: PrismaStudentShape; receivedBy?: { name: string } | null }
+): StudentPackage => ({ ...p, student: mapStudent(p.student ?? null) }) as unknown as StudentPackage;
 
 // --- Stats ---
 
@@ -33,7 +57,7 @@ export const getStats = async (unitId: string): Promise<ReceptionStats> => {
     prisma.studentVisit.count({
       where: {
         unitId,
-        status: VisitStatus.CHECKED_IN,
+        status: { in: [VisitStatus.PENDING, VisitStatus.APPROVED] },
       },
     }),
     prisma.studentPackage.count({
@@ -147,7 +171,7 @@ export const getStudentVisits = async (
     where.studentId = params.studentId;
   }
 
-  return prisma.studentVisit.findMany({
+  const rows = await prisma.studentVisit.findMany({
     where,
     orderBy: { checkIn: 'desc' },
     include: {
@@ -164,6 +188,7 @@ export const getStudentVisits = async (
       },
     },
   });
+  return rows.map(toStudentVisit);
 };
 
 export const createStudentVisit = async (unitId: string, data: CreateStudentVisitInput) => {
@@ -176,16 +201,15 @@ export const createStudentVisit = async (unitId: string, data: CreateStudentVisi
   // In a real scenario, we might want to check if student.unitId === unitId
   // But for now we trust the input or assume global student access within allowed scopes
 
-  return prisma.studentVisit.create({
+  const row = await prisma.studentVisit.create({
     data: {
       unitId,
       studentId: data.studentId,
       visitorName: data.visitorName,
-      // Shared DTO is the API contract; map its field names to the DB columns.
-      relation: data.relationship,
-      purpose: data.needs,
+      relationship: data.relationship,
+      needs: data.needs,
       notes: data.notes,
-      status: VisitStatus.CHECKED_IN,
+      status: VisitStatus.PENDING,
       checkIn: new Date(),
     },
     include: {
@@ -202,13 +226,14 @@ export const createStudentVisit = async (unitId: string, data: CreateStudentVisi
       },
     },
   });
+  return toStudentVisit(row);
 };
 
 export const updateStudentVisit = async (id: string, data: UpdateStudentVisitInput) => {
   const visit = await prisma.studentVisit.findUnique({ where: { id } });
   if (!visit) throw Errors.notFound('Visit');
 
-  return prisma.studentVisit.update({
+  const row = await prisma.studentVisit.update({
     where: { id },
     data: {
       checkOut: data.checkOut,
@@ -229,6 +254,7 @@ export const updateStudentVisit = async (id: string, data: UpdateStudentVisitInp
       },
     },
   });
+  return toStudentVisit(row);
 };
 
 // --- Student Packages ---
@@ -247,7 +273,7 @@ export const getPackages = async (
     where.studentId = params.studentId;
   }
 
-  return prisma.studentPackage.findMany({
+  const rows = await prisma.studentPackage.findMany({
     where,
     orderBy: { receivedAt: 'desc' },
     include: {
@@ -267,6 +293,7 @@ export const getPackages = async (
       },
     },
   });
+  return rows.map(toStudentPackage);
 };
 
 export const createPackage = async (
@@ -274,13 +301,13 @@ export const createPackage = async (
   userId: string,
   data: CreateStudentPackageInput
 ) => {
-  return prisma.studentPackage.create({
+  const row = await prisma.studentPackage.create({
     data: {
       unitId,
       studentId: data.studentId,
       senderName: data.senderName,
-      senderPhone: data.senderPhone,
-      description: data.description,
+      expedition: data.expedition,
+      content: data.content,
       photoUrl: data.photoUrl,
       notes: data.notes,
       receivedById: userId,
@@ -304,6 +331,7 @@ export const createPackage = async (
       },
     },
   });
+  return toStudentPackage(row);
 };
 
 export const updatePackage = async (id: string, data: UpdateStudentPackageInput) => {
@@ -314,14 +342,18 @@ export const updatePackage = async (id: string, data: UpdateStudentPackageInput)
   const updateData: any = {
     status: data.status,
     notes: data.notes,
-    deliveredTo: data.deliveredTo,
   };
 
-  if (data.status === PackageStatus.DELIVERED && !pkg.deliveredAt) {
-    updateData.deliveredAt = new Date();
+  if (data.pickedUpAt) {
+    updateData.pickedUpAt = data.pickedUpAt;
   }
 
-  return prisma.studentPackage.update({
+  // Stamp pickup time when the package transitions to PICKED_UP.
+  if (data.status === PackageStatus.PICKED_UP && !pkg.pickedUpAt) {
+    updateData.pickedUpAt = new Date();
+  }
+
+  const row = await prisma.studentPackage.update({
     where: { id },
     data: updateData,
     include: {
@@ -341,4 +373,5 @@ export const updatePackage = async (id: string, data: UpdateStudentPackageInput)
       },
     },
   });
+  return toStudentPackage(row);
 };

@@ -6549,14 +6549,17 @@ model PurchaseRequestItem {
 // =====================================
 
 enum VisitStatus {
-  CHECKED_IN
-  CHECKED_OUT
+  PENDING
+  APPROVED
+  REJECTED
+  COMPLETED
   CANCELLED
 }
 
 enum PackageStatus {
   RECEIVED
-  DELIVERED
+  NOTIFIED
+  PICKED_UP
   RETURNED
 }
 
@@ -6591,12 +6594,12 @@ model StudentVisit {
   id          String      @id @default(uuid())
   studentId   String      @map("student_id")
   unitId      String      @map("unit_id")
-  visitorName String      @map("visitor_name")
-  relation    String // Hubungan dengan santri
-  purpose     String?
-  checkIn     DateTime    @default(now()) @map("check_in")
-  checkOut    DateTime?   @map("check_out")
-  status      VisitStatus @default(CHECKED_IN)
+  visitorName  String      @map("visitor_name")
+  relationship String      @map("relation") // Hubungan dengan santri
+  needs        String?     @map("purpose") // Keperluan kunjungan
+  checkIn      DateTime    @default(now()) @map("check_in")
+  checkOut     DateTime?   @map("check_out")
+  status       VisitStatus @default(PENDING)
   notes       String?
   createdAt   DateTime    @default(now()) @map("created_at")
   updatedAt   DateTime    @updatedAt @map("updated_at")
@@ -6618,12 +6621,13 @@ model StudentPackage {
   unitId       String        @map("unit_id")
   senderName   String        @map("sender_name")
   senderPhone  String?       @map("sender_phone")
-  description  String?       @db.Text
+  expedition   String? // Jasa pengiriman (JNE, J&T, dll.)
+  content      String?       @db.Text @map("description") // Isi/keterangan paket
   photoUrl     String?       @map("photo_url")
   receivedAt   DateTime      @default(now()) @map("received_at")
   receivedById String        @map("received_by_id")
   status       PackageStatus @default(RECEIVED)
-  deliveredAt  DateTime?     @map("delivered_at")
+  pickedUpAt   DateTime?     @map("delivered_at")
   deliveredTo  String?       @map("delivered_to") // Nama penerima (jika diwakilkan)
   notes        String?
   createdAt    DateTime      @default(now()) @map("created_at")

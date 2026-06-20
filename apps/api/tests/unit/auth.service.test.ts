@@ -32,6 +32,14 @@ const {
         delete: vi.fn(),
         deleteMany: vi.fn(),
       },
+      unit: {
+        findUnique: vi.fn(),
+        findFirst: vi.fn(),
+      },
+      role: {
+        findFirst: vi.fn(),
+        findUnique: vi.fn(),
+      },
     },
     mockComparePassword: vi.fn(),
     mockHashPassword: vi.fn().mockResolvedValue('hashed-password'),
@@ -69,6 +77,13 @@ vi.mock('@/lib/prisma', () => ({
 vi.mock('@prisma/client', () => ({
   UserRole: mockUserRole,
   RoleCode: mockRoleCode,
+  UnitType: {
+    TK_QURAN: 'TK_QURAN',
+    SD_IT: 'SD_IT',
+    SMP_IT: 'SMP_IT',
+    SMA_QURAN: 'SMA_QURAN',
+    PESANTREN: 'PESANTREN',
+  },
 }));
 
 vi.mock('@/lib/password', () => ({

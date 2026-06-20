@@ -215,14 +215,8 @@ export class AuthService {
       this.getActiveAcademicYearId(),
     ]);
 
-    // Return user without password
-    const {
-      passwordHash,
-      twoFactorSecret,
-      twoFactorSecretPending,
-      twoFactorRecoveryCodes,
-      ...userWithoutPassword
-    } = user;
+    // Return user without sensitive fields
+    const userWithoutPassword = this.stripSensitiveFields(user);
 
     return {
       user: {
@@ -385,8 +379,8 @@ export class AuthService {
       return newUser;
     });
 
-    // Return without password
-    const { passwordHash: _, ...userWithoutPassword } = user;
+    // Return without sensitive fields
+    const userWithoutPassword = this.stripSensitiveFields(user);
 
     const activeAcademicYearId = await this.getActiveAcademicYearId();
 
@@ -547,13 +541,7 @@ export class AuthService {
     const primaryAssignment = user.userRoles.find((r) => r.isPrimary) || user.userRoles[0];
     const permissions = (primaryAssignment?.role.permissions as string[]) || [];
 
-    const {
-      passwordHash,
-      twoFactorSecret,
-      twoFactorSecretPending,
-      twoFactorRecoveryCodes,
-      ...userWithoutPassword
-    } = user;
+    const userWithoutPassword = this.stripSensitiveFields(user);
 
     return {
       ...userWithoutPassword,
@@ -774,13 +762,7 @@ export class AuthService {
       this.getActiveAcademicYearId(),
     ]);
 
-    const {
-      passwordHash,
-      twoFactorSecret,
-      twoFactorRecoveryCodes,
-      twoFactorSecretPending,
-      ...userWithoutPassword
-    } = user;
+    const userWithoutPassword = this.stripSensitiveFields(user);
 
     return {
       user: {
@@ -908,6 +890,33 @@ export class AuthService {
 
   private generateRecoveryCodes(): string[] {
     return Array.from({ length: 10 }, () => crypto.randomBytes(5).toString('hex').toUpperCase());
+  }
+
+  /**
+   * Strip every sensitive field from a user record before returning it to a
+   * client. Covers the password hash, the 2FA secrets/recovery codes, and the
+   * password-reset token hash + expiry (these must never leave the server).
+   */
+  private stripSensitiveFields<
+    T extends {
+      passwordHash?: unknown;
+      twoFactorSecret?: unknown;
+      twoFactorSecretPending?: unknown;
+      twoFactorRecoveryCodes?: unknown;
+      resetTokenHash?: unknown;
+      resetTokenExpiresAt?: unknown;
+    },
+  >(user: T) {
+    const {
+      passwordHash: _ph,
+      twoFactorSecret: _ts,
+      twoFactorSecretPending: _tsp,
+      twoFactorRecoveryCodes: _trc,
+      resetTokenHash: _rth,
+      resetTokenExpiresAt: _rte,
+      ...safe
+    } = user;
+    return safe;
   }
 
 

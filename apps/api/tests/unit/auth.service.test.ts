@@ -196,6 +196,35 @@ describe('AuthService', () => {
       expect(result.user).not.toHaveProperty('passwordHash');
     });
 
+    it('strips all sensitive fields from the returned user', async () => {
+      mockPrisma.user.findFirst.mockResolvedValue({
+        ...mockUser,
+        passwordHash: 'hashed-password',
+        twoFactorSecret: 'SECRET',
+        twoFactorSecretPending: 'PENDING',
+        twoFactorRecoveryCodes: ['CODE1'],
+        resetTokenHash: 'reset-hash',
+        resetTokenExpiresAt: new Date(),
+      });
+      mockPrisma.academicYear.findFirst.mockResolvedValue({ id: 'ay-1' });
+      mockComparePassword.mockResolvedValue(true);
+      mockPrisma.refreshToken.create.mockResolvedValue({});
+      mockPrisma.user.update.mockResolvedValue(mockUser);
+
+      const { user } = await authService.login(validLoginInput);
+
+      for (const field of [
+        'passwordHash',
+        'twoFactorSecret',
+        'twoFactorSecretPending',
+        'twoFactorRecoveryCodes',
+        'resetTokenHash',
+        'resetTokenExpiresAt',
+      ]) {
+        expect(user).not.toHaveProperty(field);
+      }
+    });
+
     it('should throw error for non-existent email', async () => {
       mockPrisma.user.findFirst.mockResolvedValue(null);
 

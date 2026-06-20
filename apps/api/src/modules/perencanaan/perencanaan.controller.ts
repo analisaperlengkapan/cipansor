@@ -75,7 +75,7 @@ export const createPlan = asyncHandler(async (req: Request, res: Response) => {
     ...body,
     unitId: targetUnitId,
     createdById: userId,
-  });
+  } as Parameters<typeof perencanaanService.createPlan>[0]);
 
   res.status(201).json({ success: true, data: plan });
 });
@@ -121,7 +121,7 @@ export const deletePlan = asyncHandler(async (req: Request, res: Response) => {
 
 export const createObjective = asyncHandler(async (req: Request, res: Response) => {
   const body = createObjectiveSchema.parse(req.body);
-  const objective = await perencanaanService.createObjective(body);
+  const objective = await perencanaanService.createObjective(body as Parameters<typeof perencanaanService.createObjective>[0]);
   res.status(201).json({ success: true, data: objective });
 });
 
@@ -140,7 +140,7 @@ export const deleteObjective = asyncHandler(async (req: Request, res: Response) 
 
 export const createIndicator = asyncHandler(async (req: Request, res: Response) => {
   const body = createIndicatorSchema.parse(req.body);
-  const indicator = await perencanaanService.createIndicator(body);
+  const indicator = await perencanaanService.createIndicator(body as Parameters<typeof perencanaanService.createIndicator>[0]);
   res.status(201).json({ success: true, data: indicator });
 });
 
@@ -159,7 +159,7 @@ export const deleteIndicator = asyncHandler(async (req: Request, res: Response) 
 
 export const createActivity = asyncHandler(async (req: Request, res: Response) => {
   const body = createActivitySchema.parse(req.body);
-  const activity = await perencanaanService.createActivity(body);
+  const activity = await perencanaanService.createActivity(body as Parameters<typeof perencanaanService.createActivity>[0]);
   res.status(201).json({ success: true, data: activity });
 });
 

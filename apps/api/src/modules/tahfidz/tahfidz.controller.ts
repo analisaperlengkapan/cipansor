@@ -23,7 +23,7 @@ export class TahfidzController {
         surah: (req.query as any).surah as string,
       };
 
-      const result = await this.service.findAll(query, currentUser);
+      const result = await this.service.findAll(query as Parameters<typeof this.service.findAll>[0], currentUser);
       res.json({ success: true, data: result });
     } catch (error) {
       next(error);
@@ -98,7 +98,7 @@ export class TahfidzController {
     try {
       const createdById = (req as any).user.id;
       const input: GenerateCertificateInput = req.body;
-      const result = await this.service.generateCertificate(input, createdById);
+      const result = await this.service.generateCertificate(input as Parameters<typeof this.service.generateCertificate>[0], createdById);
       res.status(201).json({ success: true, data: result });
     } catch (error) {
       next(error);

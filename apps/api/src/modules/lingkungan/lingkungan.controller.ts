@@ -51,7 +51,8 @@ export const getProgram = asyncHandler(async (req: Request, res: Response) => {
 export const createProgram = asyncHandler(async (req: Request, res: Response) => {
   const body = createProgramSchema.parse(req.body);
   const unitId = resolveUnitId(req, body.unitId);
-  const program = await lingkunganService.createProgram({ ...body, unitId });
+  // Zod has validated `body`; cast to the service input (lenient tsconfig widens Zod optionals).
+  const program = await lingkunganService.createProgram({ ...body, unitId } as Parameters<typeof lingkunganService.createProgram>[0]);
   res.status(201).json({ success: true, data: program });
 });
 
@@ -84,7 +85,7 @@ export const createWaste = asyncHandler(async (req: Request, res: Response) => {
   if (!userId) throw Errors.unauthorized('User context missing');
   const body = createWasteSchema.parse(req.body);
   const unitId = resolveUnitId(req, body.unitId);
-  const record = await lingkunganService.createWasteRecord({ ...body, unitId, recordedById: userId });
+  const record = await lingkunganService.createWasteRecord({ ...body, unitId, recordedById: userId } as Parameters<typeof lingkunganService.createWasteRecord>[0]);
   res.status(201).json({ success: true, data: record });
 });
 
@@ -104,7 +105,7 @@ export const listIndicators = asyncHandler(async (req: Request, res: Response) =
 export const createIndicator = asyncHandler(async (req: Request, res: Response) => {
   const body = createIndicatorSchema.parse(req.body);
   const unitId = resolveUnitId(req, body.unitId);
-  const indicator = await lingkunganService.createIndicator({ ...body, unitId });
+  const indicator = await lingkunganService.createIndicator({ ...body, unitId } as Parameters<typeof lingkunganService.createIndicator>[0]);
   res.status(201).json({ success: true, data: indicator });
 });
 

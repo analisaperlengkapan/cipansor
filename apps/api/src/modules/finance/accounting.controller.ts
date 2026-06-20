@@ -19,7 +19,7 @@ export async function seedAccounts(req: Request, res: Response, next: NextFuncti
 export async function createAccount(req: Request, res: Response, next: NextFunction) {
   try {
     const data: CreateAccountDto = req.body;
-    const account = await service.createAccount(data);
+    const account = await service.createAccount(data as Parameters<typeof service.createAccount>[0]);
     res.status(201).json(account);
   } catch (error) {
     next(error);
@@ -135,7 +135,7 @@ export async function createJournal(req: Request, res: Response, next: NextFunct
       ...data,
       date: new Date(data.date),
       createdById: userId,
-    });
+    } as Parameters<typeof service.createManualJournal>[0]);
     res.status(201).json({ data: journals });
   } catch (error) {
     next(error);

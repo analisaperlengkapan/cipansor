@@ -59,6 +59,46 @@ schema (`db:push`), then `RUN_DB_TESTS=1 pnpm --filter api test`.
 - **CI gates are ON.** `.github/workflows/ci.yml` no longer tolerates lint/build
   failures (escape hatches removed) and runs an API test job.
 
+## 🟢 Local full-stack verification (no Docker required)
+
+The whole stack now boots and has been exercised locally against a **real**
+Postgres 16 + Redis (no Docker needed — Postgres/Redis binaries are present):
+
+- `prisma db push` + `db:seed` apply cleanly (after fixing the Prisma 7 config
+  import + `--config` flag wiring — see commit history).
+- **DB integration suite is green:** `RUN_DB_TESTS=1 pnpm --filter api test` →
+  588 passed, 2 skipped (incl. the 22 real-schema DB tests, realigned to the
+  restored schema's actual columns/indexes).
+- **API boots and serves real requests:** `/health` OK; login verified for
+  student/teacher/parent seed users; admins are correctly forced through the
+  2FA-setup gate. Confirmed the reset-token-hash leak fix at runtime.
+- **Web dev server boots** (Next 16 / Turbopack) and talks to the live API.
+- **Playwright** browsers install and run: `landing.spec` 7/7 green and the
+  unauthenticated `auth.spec` checks pass against the live stack.
+
+**To reproduce locally:** start Postgres + Redis, write `apps/api/.env`
+(DATABASE_URL/SHADOW_DATABASE_URL/REDIS_URL/JWT_SECRET), then
+`pnpm --filter api db:push && pnpm --filter api db:seed`,
+`pnpm --filter api dev` and `pnpm --filter web dev`.
+
+### Playwright e2e — remaining work (the big roadmap item)
+
+The harness (`e2e/global-setup.ts`, page objects, fixtures) is wired and the
+health-check URL + pre-auth credentials now match the seed. Two things still
+gate the **exhaustive authenticated** suite:
+
+1. **Credential drift:** specs/fixtures reference `superadmin@cipansor.id`,
+   `admin@cipansor.com`, `teacher@cipansor.id` which the seed does not create.
+   Either add deterministic e2e users to the seed or point fixtures at the seed.
+2. **Admin 2FA gate:** admins/super-admins are forced into 2FA setup on first
+   login (security feature), so they cannot be pre-authenticated by a plain UI
+   login. The web supports the full 2FA flow (`TwoFactorSetup`/`TwoFactorVerify`),
+   so the e2e auth helper must complete setup + verify using a TOTP generated
+   from a known secret (or the seed must pre-enable 2FA with a fixed secret).
+
+Non-admin authenticated flows work today; greening all ~70 specs (many written
+against mock data) against the real backend is the dedicated follow-up.
+
 ## 🗺️ Roadmap (remaining follow-ups)
 
 - **Module architecture standardization.** Consistent `routes → controller →

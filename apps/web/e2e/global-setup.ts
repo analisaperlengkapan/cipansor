@@ -13,16 +13,25 @@ import * as path from "path";
 
 const baseURL = process.env.BASE_URL || "http://localhost:3000";
 const apiURL = process.env.API_URL || "http://localhost:3001/api";
+// The health endpoint is mounted at the server root (/health), not under /api.
+const healthURL = `${apiURL.replace(/\/api\/?$/, "")}/health`;
 
-// Test users for pre-authentication
+// Test users for pre-authentication. These match the credentials produced by
+// `prisma/seed.ts`. Only non-admin roles are pre-authenticated here: admins are
+// deliberately forced through a 2FA-setup gate on first login (see
+// auth.service.login), so they never reach /dashboard via a plain UI login.
 const testUsers = {
-  admin: {
-    email: "admin@cipansor.id",
-    password: "admin123",
-  },
   teacher: {
-    email: "teacher@cipansor.id",
-    password: "teacher123",
+    email: "fatimah@sdit.sch.id",
+    password: "Teacher123!",
+  },
+  parent: {
+    email: "parent3@sdit.sch.id",
+    password: "Parent123!",
+  },
+  student: {
+    email: "student3@sdit.sch.id",
+    password: "Student123!",
   },
 };
 
@@ -42,7 +51,7 @@ async function globalSetup() {
   console.log("📡 Checking backend API health...");
   let backendAvailable = false;
   try {
-    const response = await fetch(`${apiURL}/health`);
+    const response = await fetch(healthURL);
     if (!response.ok) {
       console.warn(`⚠️ Backend API health check failed: ${response.status}`);
     } else {

@@ -34,6 +34,13 @@ vi.mock('../../../../src/lib/prisma', () => ({
     internalAudit: mockInternalAudit,
     auditFinding: mockAuditFinding,
     auditFollowUp: mockAuditFollowUp,
+    $transaction: vi.fn(async (cb: (tx: unknown) => unknown) =>
+      cb({
+        internalAudit: mockInternalAudit,
+        auditFinding: mockAuditFinding,
+        auditFollowUp: mockAuditFollowUp,
+      })
+    ),
   },
 }));
 

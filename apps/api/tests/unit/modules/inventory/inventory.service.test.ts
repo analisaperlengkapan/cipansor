@@ -44,6 +44,7 @@ vi.mock('@prisma/client', () => {
         delete: vi.fn(),
       };
       $disconnect = mocks.disconnect;
+      $transaction = async (cb: (tx: unknown) => unknown) => cb(this);
     },
     // Mock Enums
     AssetStatus: {

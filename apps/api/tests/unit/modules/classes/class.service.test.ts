@@ -1,17 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// Define mocks first
-const prismaMock = {
-  class: {
-    findUnique: vi.fn(),
+// Define mocks via vi.hoisted so they're available inside the hoisted vi.mock factories
+const { prismaMock } = vi.hoisted(() => ({
+  prismaMock: {
+    class: {
+      findUnique: vi.fn(),
+    },
+    classEnrollment: {
+      findMany: vi.fn(),
+      updateMany: vi.fn(),
+      createMany: vi.fn(),
+    },
+    $transaction: vi.fn(),
   },
-  classEnrollment: {
-    findMany: vi.fn(),
-    updateMany: vi.fn(),
-    createMany: vi.fn(),
-  },
-  $transaction: vi.fn(),
-};
+}));
 
 // Mock library
 vi.mock('../../../../src/lib/prisma', () => ({

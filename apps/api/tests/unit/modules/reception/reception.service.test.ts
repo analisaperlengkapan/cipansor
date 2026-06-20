@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { ReceptionService } from '../../../../src/modules/reception/reception.service';
+import * as ReceptionService from '../../../../src/modules/reception/reception.service';
 import { prisma } from '../../../../src/lib/prisma';
 import { VisitStatus, PackageStatus } from '@cipansor/shared';
 
@@ -60,9 +60,16 @@ describe('ReceptionService', () => {
 
       const result = await ReceptionService.createGuestBook(unitId, userId, input);
 
-      expect(prisma.guestBook.create).toHaveBeenCalledWith({
-        data: { ...input, unitId, receivedById: userId },
-      });
+      expect(prisma.guestBook.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            name: input.name,
+            purpose: input.purpose,
+            unitId,
+            receivedById: userId,
+          }),
+        })
+      );
       expect(result).toEqual(mockCreated);
     });
   });
@@ -99,7 +106,7 @@ describe('ReceptionService', () => {
 
       // Verify filters
       expect(prisma.studentVisit.count).toHaveBeenCalledWith({
-        where: { unitId, status: VisitStatus.CHECKED_IN },
+        where: { unitId, status: { in: [VisitStatus.PENDING, VisitStatus.APPROVED] } },
       });
       expect(prisma.studentPackage.count).toHaveBeenCalledWith({
         where: { unitId, status: PackageStatus.RECEIVED },

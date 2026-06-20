@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { OrganisasiService } from '@/modules/organisasi/organisasi.service';
 
-// Mock PrismaClient
-vi.mock('@prisma/client', () => {
-  const mockPrisma = {
+// The service uses the shared prisma instance, so mock that (not the constructor).
+const { mockPrisma } = vi.hoisted(() => ({
+  mockPrisma: {
     orgUnit: {
       findMany: vi.fn(),
       findUniqueOrThrow: vi.fn(),
@@ -17,13 +17,12 @@ vi.mock('@prisma/client', () => {
       update: vi.fn(),
       delete: vi.fn(),
     },
-  };
-  return { PrismaClient: vi.fn(() => mockPrisma) };
-});
+  },
+}));
 
-import { PrismaClient } from '@prisma/client';
+vi.mock('@/lib/prisma', () => ({ prisma: mockPrisma }));
 
-const prisma = new PrismaClient();
+const prisma = mockPrisma;
 
 describe('OrganisasiService', () => {
   const service = new OrganisasiService();

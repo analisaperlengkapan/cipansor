@@ -119,3 +119,6 @@ storybook-static/
 
 # Vercel
 .vercel/
+
+# Redis dump artifact (local dev)
+dump.rdb

@@ -3085,6 +3085,22 @@ async function main() {
   await seedPAUDIndicators(prisma);
   await seedImmunizationReference(prisma);
 
+  // ============================================
+  // E2E: deterministic 2FA for admin accounts
+  // ============================================
+  // Admins/super-admins are forced through a 2FA gate on login. For local e2e
+  // (and deterministic manual testing) we can pre-enable 2FA with a FIXED secret
+  // so a valid TOTP can be generated offline. Opt-in via E2E_FIXED_2FA=1 so the
+  // fixed secret never lands in a real environment's seed.
+  if (process.env.E2E_FIXED_2FA === '1') {
+    const fixedSecret = process.env.E2E_2FA_SECRET || 'NTGHH5U5LDHIYARFFNGFQKQHARJU7GBE';
+    const updated = await prisma.user.updateMany({
+      where: { role: { in: [UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN] } },
+      data: { isTwoFactorEnabled: true, twoFactorSecret: fixedSecret, twoFactorSecretPending: null },
+    });
+    console.log(`🔐 [E2E] Pre-enabled 2FA on ${updated.count} admin account(s) with a fixed secret`);
+  }
+
   console.log('\n✅ Database seeded successfully!');
 }
 

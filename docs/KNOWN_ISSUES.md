@@ -81,23 +81,24 @@ Postgres 16 + Redis (no Docker needed — Postgres/Redis binaries are present):
 `pnpm --filter api db:push && pnpm --filter api db:seed`,
 `pnpm --filter api dev` and `pnpm --filter web dev`.
 
-### Playwright e2e — remaining work (the big roadmap item)
+### Playwright e2e — authenticated foundation in place
 
-The harness (`e2e/global-setup.ts`, page objects, fixtures) is wired and the
-health-check URL + pre-auth credentials now match the seed. Two things still
-gate the **exhaustive authenticated** suite:
+A reusable API-based auth helper now exists (`e2e/helpers/auth-api.ts`):
+`await loginAs(page, role)` authenticates against the real API and injects the
+session (localStorage + middleware cookies). It transparently completes the
+**admin 2FA gate** using a TOTP derived from a fixed seed secret — so admins,
+super-admins, teachers, parents and students can all be pre-authenticated for
+browser tests. Verified by `authenticated-smoke.spec.ts` (5/5 roles green
+against the live stack, incl. SUPER_ADMIN + UNIT_ADMIN).
 
-1. **Credential drift:** specs/fixtures reference `superadmin@cipansor.id`,
-   `admin@cipansor.com`, `teacher@cipansor.id` which the seed does not create.
-   Either add deterministic e2e users to the seed or point fixtures at the seed.
-2. **Admin 2FA gate:** admins/super-admins are forced into 2FA setup on first
-   login (security feature), so they cannot be pre-authenticated by a plain UI
-   login. The web supports the full 2FA flow (`TwoFactorSetup`/`TwoFactorVerify`),
-   so the e2e auth helper must complete setup + verify using a TOTP generated
-   from a known secret (or the seed must pre-enable 2FA with a fixed secret).
+Enablement: seed with `E2E_FIXED_2FA=1` (gives admin accounts the known TOTP
+secret — opt-in, never used by a real seed). Bring the stack up with
+`scripts/dev-stack.sh` (Postgres + Redis, no Docker).
 
-Non-admin authenticated flows work today; greening all ~70 specs (many written
-against mock data) against the real backend is the dedicated follow-up.
+Remaining: migrate the ~70 existing specs (many written against mock data and
+the placeholder `*@cipansor.id`/`*.com` credentials) onto `loginAs` + real
+backend data, and complete the route × {nav, CRUD, button, field, RBAC}
+coverage matrix.
 
 ## 🗺️ Roadmap (remaining follow-ups)
 

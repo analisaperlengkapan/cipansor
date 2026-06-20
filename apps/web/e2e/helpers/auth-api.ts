@@ -1,0 +1,130 @@
+import type { Page } from "@playwright/test";
+import { generate as generateTotp } from "otplib";
+
+/**
+ * API-based authentication for e2e tests.
+ *
+ * Driving the login form is brittle (and impossible for admins, who are forced
+ * through a 2FA gate). Instead we authenticate against the real API — completing
+ * the 2FA challenge with a TOTP derived from the seed's fixed secret — and inject
+ * the resulting session into the browser exactly the way the app's auth store
+ * does (localStorage + the cookies the Next middleware reads).
+ *
+ * Requires the API seeded with `E2E_FIXED_2FA=1` so admin accounts share a known
+ * TOTP secret.
+ */
+
+const API_URL = process.env.API_URL || "http://localhost:3001/api";
+const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
+const FIXED_2FA_SECRET =
+  process.env.E2E_2FA_SECRET || "NTGHH5U5LDHIYARFFNGFQKQHARJU7GBE";
+
+export interface SeedUser {
+  email: string;
+  password: string;
+}
+
+/** Seed credentials, keyed by a friendly role name. */
+export const SEED_USERS = {
+  superAdmin: { email: "superadmin@cipansor.id", password: "SuperAdmin123!" },
+  adminSdit: { email: "admin@sdit.sch.id", password: "Admin123!" },
+  teacher: { email: "fatimah@sdit.sch.id", password: "Teacher123!" },
+  parent: { email: "parent3@sdit.sch.id", password: "Parent123!" },
+  student: { email: "student3@sdit.sch.id", password: "Student123!" },
+} satisfies Record<string, SeedUser>;
+
+export type SeedRole = keyof typeof SEED_USERS;
+
+export interface AuthSession {
+  user: Record<string, unknown> & { role?: string };
+  accessToken: string;
+  refreshToken: string;
+}
+
+async function postJson(path: string, body: unknown, bearer?: string) {
+  const res = await fetch(`${API_URL}${path}`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      ...(bearer ? { authorization: `Bearer ${bearer}` } : {}),
+    },
+    body: JSON.stringify(body),
+  });
+  return res.json();
+}
+
+/** Authenticate against the API, transparently completing 2FA when required. */
+export async function apiLogin(user: SeedUser): Promise<AuthSession> {
+  const login = await postJson("/auth/login", {
+    email: user.email,
+    password: user.password,
+  });
+  const data = login?.data;
+  if (!data) throw new Error(`Login failed for ${user.email}: ${JSON.stringify(login)}`);
+
+  // Admin accounts are gated behind 2FA; complete it with a fresh TOTP.
+  if (data.requiresTwoFactor) {
+    const token = await generateTotp({ secret: FIXED_2FA_SECRET });
+    const verified = await postJson("/auth/2fa/login", { token }, data.tempToken);
+    if (!verified?.data?.accessToken) {
+      throw new Error(`2FA login failed for ${user.email}: ${JSON.stringify(verified)}`);
+    }
+    return verified.data as AuthSession;
+  }
+
+  if (data.requiresTwoFactorSetup) {
+    throw new Error(
+      `${user.email} requires 2FA SETUP — seed the API with E2E_FIXED_2FA=1 so admins have a known secret.`,
+    );
+  }
+
+  if (!data.accessToken) {
+    throw new Error(`Unexpected login response for ${user.email}: ${JSON.stringify(data)}`);
+  }
+  return data as AuthSession;
+}
+
+/**
+ * Inject a session into the page's origin, mirroring the zustand persist store
+ * (`auth-storage`) and the raw `accessToken`/`refreshToken` items + cookies the
+ * middleware checks. Call before navigating to a protected route.
+ */
+export async function injectSession(page: Page, session: AuthSession) {
+  const authStorage = JSON.stringify({
+    state: { user: session.user, isAuthenticated: true },
+    version: 0,
+  });
+
+  // Cookies for the Next middleware (it JSON.parses the encoded auth-storage and
+  // falls back to accessToken). Mirror the app's encodeURIComponent encoding.
+  await page.context().addCookies([
+    {
+      name: "accessToken",
+      value: session.accessToken,
+      url: BASE_URL,
+    },
+    {
+      name: "auth-storage",
+      value: encodeURIComponent(authStorage),
+      url: BASE_URL,
+    },
+  ]);
+
+  // localStorage so the store rehydrates authenticated and the axios interceptor
+  // finds the bearer token. addInitScript runs before app JS on every load.
+  await page.addInitScript(
+    ([token, refresh, storage]) => {
+      localStorage.setItem("accessToken", token);
+      localStorage.setItem("refreshToken", refresh);
+      localStorage.setItem("auth-storage", storage);
+    },
+    [session.accessToken, session.refreshToken, authStorage] as const,
+  );
+}
+
+/** Convenience: log in as a seed role and inject the session into the page. */
+export async function loginAs(page: Page, role: SeedRole): Promise<AuthSession> {
+  const session = await apiLogin(SEED_USERS[role]);
+  await injectSession(page, session);
+  return session;
+}

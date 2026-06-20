@@ -49,13 +49,11 @@ jobs:
       - name: Build shared package
         run: pnpm --filter @cipansor/shared build
 
-      # Note: Linting has known issues documented in KNOWN_ISSUES.md
-      # These will be fixed incrementally
       - name: Run API linting
-        run: pnpm --filter api lint || echo "Linting has known issues - see KNOWN_ISSUES.md"
+        run: pnpm --filter api lint
 
       - name: Run Web linting
-        run: pnpm --filter web lint || echo "Linting has known issues - see KNOWN_ISSUES.md"
+        run: pnpm --filter web lint
 
   # Build API
   build-api:
@@ -88,8 +86,6 @@ jobs:
       - name: Build shared package
         run: pnpm --filter @cipansor/shared build
 
-      # Note: Build has TypeScript issues documented in KNOWN_ISSUES.md
-      # Build uses lenient tsconfig.build.json until issues are fixed
       - name: Build API
         run: pnpm --filter api build
 

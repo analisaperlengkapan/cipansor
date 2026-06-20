@@ -48,16 +48,24 @@ the opt-in DB integration suite + 2 pre-existing skips). The previously-failing
 **To run the DB integration suite:** start Postgres (docker-compose), apply the
 schema (`db:push`), then `RUN_DB_TESTS=1 pnpm --filter api test`.
 
-## 🗺️ Roadmap (not yet started)
+## 🟢 Also green now
 
-These were scoped in the production-readiness plan and remain follow-ups:
+- **Web build, type-check, and lint** all pass (`pnpm --filter web build`,
+  `tsc --noEmit`, `pnpm --filter web lint` — fixed the user-edit role typing and
+  the React Compiler lint errors).
+- **API lint** passes (0 errors; `no-explicit-any` warnings remain, non-blocking).
+- **CI gates are ON.** `.github/workflows/ci.yml` no longer tolerates lint/build
+  failures (escape hatches removed) and runs an API test job.
+
+## 🗺️ Roadmap (remaining follow-ups)
 
 - **Module architecture standardization.** Consistent `routes → controller →
   service → schema → index` naming across all modules; extract inline handlers
   from the ~12 controller-less modules. See `apps/api/AGENTS.md` for the standard.
-- **Turn CI gates on.** `.github/workflows/ci.yml` currently tolerates lint/build
-  failures (`|| echo ...`). Once the build is green, drop the escape hatches and
-  add a vitest job for api + web.
+- **Strict build.** Move `tsconfig.build.json` toward `tsconfig.json` strictness
+  (fix the Prisma-null and remaining errors) so `build` == `build:strict`, then
+  drop the `Parameters<...>[0]` casts added as lenient-config workarounds.
+- **Reduce `no-explicit-any` warnings** (push shared types into `packages/shared`).
 - **Web role alignment.** `apps/web/middleware.ts`, `src/config/navigation.ts`,
   `src/stores/auth.ts` still use the legacy `UserRole` vocabulary; align with
   backend `RoleCode` + permissions.

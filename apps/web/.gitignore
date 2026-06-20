@@ -43,3 +43,6 @@ next-env.d.ts
 # playwright e2e auth state
 playwright/.auth/
 playwright/
+
+# temporary/diagnostic e2e specs (underscore-prefixed)
+e2e/_*.spec.ts

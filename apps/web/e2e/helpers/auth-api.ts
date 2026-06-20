@@ -50,11 +50,29 @@ async function postJson(path: string, body: unknown, bearer?: string) {
     },
     body: JSON.stringify(body),
   });
-  return res.json();
+  const text = await res.text();
+  try {
+    return JSON.parse(text);
+  } catch {
+    // Non-JSON (e.g. the rate limiter's plain "Too many requests" body).
+    throw new Error(`POST ${path} → ${res.status}: ${text.slice(0, 120)}`);
+  }
 }
+
+// Cache sessions per email (per worker process) so we don't re-run the login +
+// 2FA flow in every beforeEach — that quickly trips the 2FA rate limiter.
+const sessionCache = new Map<string, AuthSession>();
 
 /** Authenticate against the API, transparently completing 2FA when required. */
 export async function apiLogin(user: SeedUser): Promise<AuthSession> {
+  const cached = sessionCache.get(user.email);
+  if (cached) return cached;
+  const session = await apiLoginUncached(user);
+  sessionCache.set(user.email, session);
+  return session;
+}
+
+async function apiLoginUncached(user: SeedUser): Promise<AuthSession> {
   const login = await postJson("/auth/login", {
     email: user.email,
     password: user.password,

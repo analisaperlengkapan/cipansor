@@ -15,7 +15,7 @@ import {
   useTalentAnalytics,
   useRecentAnnouncements,
 } from "@/hooks";
-import { useFoundationFinancialSummary } from "@/hooks/use-foundation";
+import { useFoundationFinancialSummary, useFoundationExecutiveSummary } from "@/hooks/use-foundation";
 import {
   BarChart,
   Bar,
@@ -46,6 +46,7 @@ export default function ExecutiveDashboard() {
   const { data: financialSummary, isFetching: financeFetching } = useFoundationFinancialSummary(foundation?.id);
   const { data: talentStats } = useTalentAnalytics();
   const { data: announcements } = useRecentAnnouncements();
+  const { data: executiveSummary } = useFoundationExecutiveSummary();
 
   const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8"];
 
@@ -119,9 +120,8 @@ export default function ExecutiveDashboard() {
               <GraduationCap className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              {/* TODO: Wire to PSB/Admission API */}
-              <div className="text-2xl font-bold text-muted-foreground">—</div>
-              <p className="text-xs text-muted-foreground">Belum tersedia</p>
+              <div className="text-2xl font-bold">{executiveSummary?.activeAdmissions ?? 0}</div>
+              <p className="text-xs text-muted-foreground">Pendaftar dalam proses PSB</p>
             </CardContent>
           </Card>
         </div>

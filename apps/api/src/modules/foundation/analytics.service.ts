@@ -38,6 +38,16 @@ export async function getExecutiveSummary(): Promise<FoundationExecutiveSummary>
   // Count units
   const totalUnits = await prisma.unit.count();
 
+  // Count registrants still active in the admissions pipeline
+  // (i.e. not yet enrolled, rejected, or cancelled).
+  const activeAdmissions = await prisma.registrant.count({
+    where: {
+      status: {
+        in: ['REGISTERED', 'DOCUMENT_CHECK', 'TEST_SCHEDULED', 'TEST_COMPLETED', 'ACCEPTED'],
+      },
+    },
+  });
+
   // Calculate growth based on students created in the last month
   const oneMonthAgo = new Date();
   oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
@@ -57,6 +67,7 @@ export async function getExecutiveSummary(): Promise<FoundationExecutiveSummary>
     totalTeachers,
     totalStaff,
     totalUnits,
+    activeAdmissions,
     growth: {
       students: Number(growth.toFixed(1)),
     },

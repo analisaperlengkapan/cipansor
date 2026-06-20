@@ -3,6 +3,8 @@ export interface FoundationExecutiveSummary {
   totalTeachers: number;
   totalStaff: number;
   totalUnits: number;
+  /** Registrants still in the admissions pipeline (not yet enrolled/rejected/cancelled). */
+  activeAdmissions: number;
   growth: {
     students: number;
   };

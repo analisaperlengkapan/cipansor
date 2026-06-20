@@ -9,7 +9,12 @@ import { beforeAll, afterAll, beforeEach, vi } from 'vitest';
 process.env.NODE_ENV = 'test';
 process.env.JWT_SECRET = 'test-secret-key-for-testing-purposes-min-32-chars';
 process.env.JWT_EXPIRES_IN = '1h';
-process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/cipansor_test';
+// Unit tests mock Prisma, so a stub URL is fine. The opt-in DB integration
+// suite (RUN_DB_TESTS=1) needs a real connection, so leave the environment's
+// DATABASE_URL untouched in that mode.
+if (!process.env.RUN_DB_TESTS) {
+  process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/cipansor_test';
+}
 
 // Mock console.log in tests to reduce noise
 beforeAll(() => {

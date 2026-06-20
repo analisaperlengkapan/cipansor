@@ -1,6 +1,7 @@
 "use client";
 
 import { use, useState } from "react";
+import { safeFormat } from "@/lib/date";
 import { useRouter } from "next/navigation";
 import { MainLayout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
@@ -170,10 +171,10 @@ export default function PayrollPeriodDetailPage({ params }: PageProps) {
       return;
     }
     try {
-        await processPayroll.mutateAsync({
-          periodId: periodId,
-          staffIds: selectedPayrolls
-        });
+      await processPayroll.mutateAsync({
+        periodId: periodId,
+        staffIds: selectedPayrolls,
+      });
       toast.success(`${selectedPayrolls.length} payroll berhasil diproses`);
       setSelectedPayrolls([]);
     } catch (error) {
@@ -206,7 +207,7 @@ export default function PayrollPeriodDetailPage({ params }: PageProps) {
     try {
       await processPayroll.mutateAsync({
         periodId: periodId,
-        staffIds: draftPayrolls
+        staffIds: draftPayrolls,
       });
       toast.success(`${draftPayrolls.length} payroll berhasil diproses`);
     } catch (error) {
@@ -314,8 +315,11 @@ export default function PayrollPeriodDetailPage({ params }: PageProps) {
                 {getPeriodStatusBadge(period.status)}
               </div>
               <p className="text-muted-foreground">
-                {format(new Date(period.startDate), "d MMMM", { locale: id })} -{" "}
-                {format(new Date(period.endDate), "d MMMM yyyy", {
+                {safeFormat(new Date(period.startDate), "d MMMM", {
+                  locale: id,
+                })}{" "}
+                -{" "}
+                {safeFormat(new Date(period.endDate), "d MMMM yyyy", {
                   locale: id,
                 })}
               </p>

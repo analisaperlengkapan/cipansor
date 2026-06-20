@@ -1,5 +1,5 @@
-import { format } from "date-fns";
 import { id } from "date-fns/locale";
+import { safeFormat } from "@/lib/date";
 import { LetterDispositionDetail } from "@cipansor/shared";
 import {
   Card,
@@ -63,9 +63,13 @@ export function DispositionTimeline({
 
               <div className="flex items-center gap-1 text-xs text-muted-foreground">
                 <Clock className="h-3 w-3" />
-                {format(new Date(disposition.createdAt), "dd MMM yyyy HH:mm", {
-                  locale: id,
-                })}
+                {safeFormat(
+                  new Date(disposition.createdAt),
+                  "dd MMM yyyy HH:mm",
+                  {
+                    locale: id,
+                  },
+                )}
               </div>
             </div>
           </CardHeader>
@@ -79,7 +83,7 @@ export function DispositionTimeline({
               {disposition.deadline && (
                 <div className="mt-2 text-xs text-red-600 font-medium">
                   Batas Waktu:{" "}
-                  {format(new Date(disposition.deadline), "dd MMMM yyyy", {
+                  {safeFormat(new Date(disposition.deadline), "dd MMMM yyyy", {
                     locale: id,
                   })}
                 </div>

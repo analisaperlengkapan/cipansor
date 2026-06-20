@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { safeFormat } from "@/lib/date";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 import {
@@ -553,12 +554,16 @@ export default function MuhadhorohPage() {
                       </Badge>
                       <div className="text-sm text-right">
                         <div className="font-medium">
-                          {format(new Date(record.scheduledAt), "dd MMM yyyy", {
-                            locale: localeId,
-                          })}
+                          {safeFormat(
+                            new Date(record.scheduledAt),
+                            "dd MMM yyyy",
+                            {
+                              locale: localeId,
+                            },
+                          )}
                         </div>
                         <div className="text-muted-foreground">
-                          {format(new Date(record.scheduledAt), "HH:mm", {
+                          {safeFormat(new Date(record.scheduledAt), "HH:mm", {
                             locale: localeId,
                           })}
                         </div>

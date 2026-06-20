@@ -1,8 +1,8 @@
 "use client";
-
 import { useState } from "react";
+import { safeFormat } from "@/lib/date";
 import { useRouter } from "next/navigation";
-import { format } from "date-fns";
+
 import { id as localeId } from "date-fns/locale";
 import { MainLayout } from "@/components/layout/main-layout";
 import { Button } from "@/components/ui/button";
@@ -225,9 +225,13 @@ export default function TKPage() {
                                 {report.student?.name}
                               </p>
                               <p className="text-xs text-muted-foreground">
-                                {format(new Date(report.date), "dd MMM yyyy", {
-                                  locale: localeId,
-                                })}
+                                {safeFormat(
+                                  new Date(report.date),
+                                  "dd MMM yyyy",
+                                  {
+                                    locale: localeId,
+                                  },
+                                )}
                               </p>
                               {report.mood && (
                                 <Badge

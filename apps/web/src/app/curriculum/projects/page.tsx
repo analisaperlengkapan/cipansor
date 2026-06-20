@@ -1,6 +1,6 @@
 "use client";
-
 import { useState, useMemo } from "react";
+import { safeFormat } from "@/lib/date";
 import { MainLayout } from "@/components/layout";
 import { PageHeader } from "@/components/shared";
 import {
@@ -54,7 +54,6 @@ import {
   P5Project,
   ProjectStatus,
 } from "@/hooks/use-kurikulum-merdeka";
-import { format } from "date-fns";
 
 // P5 (Profil Pelajar Pancasila) dimensions + Islamic values
 const CHARACTER_DIMENSIONS = [
@@ -131,8 +130,8 @@ export default function ProjectBasedLearningPage() {
       title: project.title,
       tema: project.theme?.name || "Tema P5",
       status: project.status,
-      startDate: format(new Date(project.startDate), "yyyy-MM-dd"),
-      endDate: format(new Date(project.endDate), "yyyy-MM-dd"),
+      startDate: safeFormat(new Date(project.startDate), "yyyy-MM-dd"),
+      endDate: safeFormat(new Date(project.endDate), "yyyy-MM-dd"),
       progress: getProgressValue(project.status),
       members: project.supervisor ? [project.supervisor.name] : [],
       dimensions: project.dimensions || [],
@@ -347,14 +346,14 @@ export default function ProjectBasedLearningPage() {
                   </div>
 
                   {project.status !== "COMPLETED" && (
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span>Progress</span>
-                          <span>{project.progress}%</span>
-                        </div>
-                        <Progress value={project.progress} />
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span>Progress</span>
+                        <span>{project.progress}%</span>
                       </div>
-                    )}
+                      <Progress value={project.progress} />
+                    </div>
+                  )}
 
                   <div className="flex flex-wrap gap-2">
                     {project.dimensions.map((dimCode: string) => {
@@ -373,17 +372,17 @@ export default function ProjectBasedLearningPage() {
 
                   <div className="flex gap-2 pt-2">
                     {project.status !== "COMPLETED" && (
-                        <>
-                          <Button variant="outline" size="sm">
-                            <Edit className="mr-1 h-4 w-4" />
-                            Update Progress
-                          </Button>
-                          <Button variant="outline" size="sm">
-                            <Upload className="mr-1 h-4 w-4" />
-                            Upload Bukti
-                          </Button>
-                        </>
-                      )}
+                      <>
+                        <Button variant="outline" size="sm">
+                          <Edit className="mr-1 h-4 w-4" />
+                          Update Progress
+                        </Button>
+                        <Button variant="outline" size="sm">
+                          <Upload className="mr-1 h-4 w-4" />
+                          Upload Bukti
+                        </Button>
+                      </>
+                    )}
                     <Button variant="outline" size="sm">
                       <FileText className="mr-1 h-4 w-4" />
                       Lihat Detail

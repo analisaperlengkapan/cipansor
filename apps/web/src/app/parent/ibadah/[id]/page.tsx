@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { safeFormat } from "@/lib/date";
 import { useParams, useRouter } from "next/navigation";
 import { format, startOfMonth, endOfMonth, parse } from "date-fns";
 import { id as localeId } from "date-fns/locale";
@@ -81,7 +82,7 @@ export default function ParentChildIbadahPage() {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<IbadahStats | null>(null);
   const [student, setStudent] = useState<StudentProfile | null>(null);
-  const [month, setMonth] = useState<string>(format(new Date(), "yyyy-MM"));
+  const [month, setMonth] = useState<string>(safeFormat(new Date(), "yyyy-MM"));
 
   useEffect(() => {
     const fetchData = async () => {

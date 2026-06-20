@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, Suspense } from "react";
+import { safeFormat } from "@/lib/date";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { format, addDays } from "date-fns";
@@ -74,7 +75,7 @@ type BorrowFormData = z.infer<typeof borrowSchema>;
 
 function getCategoryLabel(category: BookCategory) {
   // Use a type guard or safe access if BOOK_CATEGORIES is typed
-    const cat = BOOK_CATEGORIES.find((c) => c.value === (category as any));
+  const cat = BOOK_CATEGORIES.find((c) => c.value === (category as any));
   return cat?.label || category;
 }
 
@@ -107,7 +108,7 @@ function BorrowBookContent() {
     defaultValues: {
       bookId: preselectedBookId || "",
       studentId: "",
-      borrowDate: format(new Date(), "yyyy-MM-dd"),
+      borrowDate: safeFormat(new Date(), "yyyy-MM-dd"),
       dueDate: format(addDays(new Date(), 14), "yyyy-MM-dd"), // Default 14 days loan
       notes: "",
     },
@@ -203,7 +204,7 @@ function BorrowBookContent() {
                                       variant="outline"
                                       className="shrink-0"
                                     >
-                                        {(selectedBook as any).available} tersedia
+                                      {(selectedBook as any).available} tersedia
                                     </Badge>
                                   </div>
                                 ) : (
@@ -240,11 +241,15 @@ function BorrowBookContent() {
                                         </span>
                                         <span className="text-sm text-muted-foreground">
                                           {book.author} ·{" "}
-                                            {getCategoryLabel(book.category) as React.ReactNode}
+                                          {
+                                            getCategoryLabel(
+                                              book.category,
+                                            ) as React.ReactNode
+                                          }
                                         </span>
                                       </div>
                                       <Badge variant="outline">
-                                          {(book as any).available} tersedia
+                                        {(book as any).available} tersedia
                                       </Badge>
                                     </CommandItem>
                                   ))}
@@ -271,7 +276,11 @@ function BorrowBookContent() {
                           </p>
                           <div className="flex gap-2 mt-2">
                             <Badge variant="outline">
-                                {getCategoryLabel(selectedBook.category) as React.ReactNode}
+                              {
+                                getCategoryLabel(
+                                  selectedBook.category,
+                                ) as React.ReactNode
+                              }
                             </Badge>
                             {selectedBook.isbn && (
                               <Badge variant="secondary">

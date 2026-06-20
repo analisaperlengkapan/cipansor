@@ -1,6 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
+import { safeFormat } from "@/lib/date";
 import { Button } from "@/components/ui/button";
 import {
   ArrowLeft,
@@ -341,7 +342,7 @@ export default function SkhunPrintPage() {
               <div className="text-center text-sm">
                 <p>
                   {skhunData.school.address?.split(",")[0] ?? "Bandung"},{" "}
-                  {format(new Date(skhunData.issuedDate), "d MMMM yyyy", {
+                  {safeFormat(new Date(skhunData.issuedDate), "d MMMM yyyy", {
                     locale: idLocale,
                   })}
                 </p>
@@ -360,9 +361,13 @@ export default function SkhunPrintPage() {
               <p>Dokumen ini dicetak dari Sistem Informasi Manajemen Sekolah</p>
               <p>
                 Tanggal Cetak:{" "}
-                {format(new Date(), "EEEE, d MMMM yyyy 'pukul' HH:mm 'WIB'", {
-                  locale: idLocale,
-                })}
+                {safeFormat(
+                  new Date(),
+                  "EEEE, d MMMM yyyy 'pukul' HH:mm 'WIB'",
+                  {
+                    locale: idLocale,
+                  },
+                )}
               </p>
             </div>
           </div>

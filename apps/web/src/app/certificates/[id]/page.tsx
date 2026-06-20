@@ -1,6 +1,7 @@
 "use client";
 
 import { use } from "react";
+import { safeFormat } from "@/lib/date";
 import { useRouter } from "next/navigation";
 import { MainLayout } from "@/components/layout";
 import { PageHeader } from "@/components/shared";
@@ -477,9 +478,13 @@ export default function CertificateDetailPage({
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Dibuat pada</span>
                   <span className="font-medium">
-                    {format(new Date(certificate.createdAt), "dd MMM yyyy", {
-                      locale: idLocale,
-                    })}
+                    {safeFormat(
+                      new Date(certificate.createdAt),
+                      "dd MMM yyyy",
+                      {
+                        locale: idLocale,
+                      },
+                    )}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
+import { safeFormat } from "@/lib/date";
 import { MainLayout } from "@/components/layout";
 import { PageHeader } from "@/components/shared";
 import {
@@ -313,9 +314,14 @@ export default function MurojaahDetailPage() {
                       <p className="text-sm text-muted-foreground">Tanggal</p>
                       <p className="font-medium flex items-center gap-2">
                         <Calendar className="h-4 w-4" />
-                        {murojaah.date && format(new Date(murojaah.date), "EEEE, dd MMMM yyyy", {
-                          locale: idLocale,
-                        })}
+                        {murojaah.date &&
+                          safeFormat(
+                            new Date(murojaah.date),
+                            "EEEE, dd MMMM yyyy",
+                            {
+                              locale: idLocale,
+                            },
+                          )}
                       </p>
                     </div>
                   </div>

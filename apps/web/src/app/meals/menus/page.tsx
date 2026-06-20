@@ -1,8 +1,8 @@
 "use client";
-
 import { useState } from "react";
+import { safeFormat } from "@/lib/date";
 import Link from "next/link";
-import { format } from "date-fns";
+
 import { id as localeId } from "date-fns/locale";
 import { toast } from "sonner";
 import {
@@ -277,7 +277,7 @@ export default function MenusPage() {
                       <TableCell>
                         <div className="flex items-center gap-2 text-sm">
                           <Calendar className="h-4 w-4 text-muted-foreground" />
-                          {format(new Date(menu.date), "d MMM yyyy", {
+                          {safeFormat(new Date(menu.date), "d MMM yyyy", {
                             locale: localeId,
                           })}
                         </div>

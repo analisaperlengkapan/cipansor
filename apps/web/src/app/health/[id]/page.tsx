@@ -1,6 +1,6 @@
 "use client";
-
 import { use, useState } from "react";
+import { safeFormat } from "@/lib/date";
 import { useRouter } from "next/navigation";
 import { MainLayout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
@@ -54,7 +54,7 @@ import {
   Clock,
   AlertCircle,
 } from "lucide-react";
-import { format } from "date-fns";
+
 import { id } from "date-fns/locale";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -98,7 +98,7 @@ export default function HealthDetailPage({ params }: PageProps) {
         data: {
           status: newStatus,
           notes: statusNotes
-            ? `${record?.notes || ""}\n\n[${format(new Date(), "dd/MM/yyyy HH:mm")}] ${statusNotes}`
+            ? `${record?.notes || ""}\n\n[${safeFormat(new Date(), "dd/MM/yyyy HH:mm")}] ${statusNotes}`
             : (record?.notes ?? undefined),
         },
       });
@@ -160,7 +160,7 @@ export default function HealthDetailPage({ params }: PageProps) {
                 Detail Rekam Kesehatan
               </h1>
               <p className="text-muted-foreground">
-                {format(new Date(record.visitDate), "EEEE, dd MMMM yyyy", {
+                {safeFormat(new Date(record.visitDate), "EEEE, dd MMMM yyyy", {
                   locale: id,
                 })}
               </p>
@@ -367,7 +367,7 @@ export default function HealthDetailPage({ params }: PageProps) {
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
                     <span className="font-medium">
-                      {format(new Date(record.visitDate), "dd MMMM yyyy", {
+                      {safeFormat(new Date(record.visitDate), "dd MMMM yyyy", {
                         locale: id,
                       })}
                     </span>
@@ -381,9 +381,13 @@ export default function HealthDetailPage({ params }: PageProps) {
                     <div className="flex items-center gap-2">
                       <Clock className="h-4 w-4 text-yellow-500" />
                       <span className="font-medium text-yellow-600">
-                        {format(new Date(record.followUpDate), "dd MMMM yyyy", {
-                          locale: id,
-                        })}
+                        {safeFormat(
+                          new Date(record.followUpDate),
+                          "dd MMMM yyyy",
+                          {
+                            locale: id,
+                          },
+                        )}
                       </span>
                     </div>
                   </div>

@@ -1,6 +1,6 @@
 "use client";
-
 import { useState } from "react";
+import { safeFormat } from "@/lib/date";
 import { useRouter } from "next/navigation";
 import { MainLayout } from "@/components/layout";
 import { PageHeader, DataTable } from "@/components/shared";
@@ -23,7 +23,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSanadRecords, SanadRecord } from "@/hooks/use-takhosus";
 import { ColumnDef } from "@tanstack/react-table";
-import { format } from "date-fns";
+
 import { id } from "date-fns/locale";
 import {
   BookOpen,
@@ -129,7 +129,7 @@ export default function SanadPage() {
       accessorKey: "certifiedAt",
       header: "Tanggal Pengesahan",
       cell: ({ row }) =>
-        format(new Date(row.original.certifiedAt), "dd MMM yyyy", {
+        safeFormat(new Date(row.original.certifiedAt), "dd MMM yyyy", {
           locale: id,
         }),
     },

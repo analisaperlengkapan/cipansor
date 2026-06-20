@@ -1,6 +1,7 @@
 "use client";
 
 import { MainLayout } from "@/components/layout";
+import { safeFormat } from "@/lib/date";
 import {
   Card,
   CardContent,
@@ -15,7 +16,10 @@ import {
   useTalentAnalytics,
   useRecentAnnouncements,
 } from "@/hooks";
-import { useFoundationFinancialSummary, useFoundationExecutiveSummary } from "@/hooks/use-foundation";
+import {
+  useFoundationFinancialSummary,
+  useFoundationExecutiveSummary,
+} from "@/hooks/use-foundation";
 import { useRisks } from "@/hooks/use-risk";
 import {
   BarChart,
@@ -44,7 +48,8 @@ import { id } from "date-fns/locale";
 export default function ExecutiveDashboard() {
   const { data: foundation } = useFoundation();
   const { data: units, isLoading: unitsLoading } = useUnits();
-  const { data: financialSummary, isFetching: financeFetching } = useFoundationFinancialSummary(foundation?.id);
+  const { data: financialSummary, isFetching: financeFetching } =
+    useFoundationFinancialSummary(foundation?.id);
   const { data: talentStats } = useTalentAnalytics();
   const { data: announcements } = useRecentAnnouncements();
   const { data: executiveSummary } = useFoundationExecutiveSummary();
@@ -53,7 +58,10 @@ export default function ExecutiveDashboard() {
   // High/extreme open risks per unit, for the consolidated risk panel.
   const highRiskByUnit = (risks ?? []).reduce(
     (acc: Record<string, number>, r: any) => {
-      if (r.status !== "CLOSED" && (r.riskLevel === "HIGH" || r.riskLevel === "EXTREME")) {
+      if (
+        r.status !== "CLOSED" &&
+        (r.riskLevel === "HIGH" || r.riskLevel === "EXTREME")
+      ) {
         acc[r.unitId] = (acc[r.unitId] || 0) + 1;
       }
       return acc;
@@ -85,7 +93,9 @@ export default function ExecutiveDashboard() {
     <MainLayout>
       <div className="space-y-6">
         <div className="flex flex-col gap-2">
-          <h1 className="text-3xl font-bold tracking-tight">Executive Dashboard</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Executive Dashboard
+          </h1>
           <p className="text-muted-foreground">
             Laporan konsolidasi seluruh unit Yayasan Pesantren Cipansor
           </p>
@@ -100,16 +110,22 @@ export default function ExecutiveDashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{units?.length || 0}</div>
-              <p className="text-xs text-muted-foreground">Unit Pendidikan & Operasional</p>
+              <p className="text-xs text-muted-foreground">
+                Unit Pendidikan & Operasional
+              </p>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Net Income (Consolidated)</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Net Income (Consolidated)
+              </CardTitle>
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className={`text-2xl font-bold ${financialSummary?.currentMonth?.net != null && financialSummary.currentMonth.net >= 0 ? "text-green-600" : "text-red-600"}`}>
+              <div
+                className={`text-2xl font-bold ${financialSummary?.currentMonth?.net != null && financialSummary.currentMonth.net >= 0 ? "text-green-600" : "text-red-600"}`}
+              >
                 {formatCurrency(financialSummary?.currentMonth?.net || 0)}
               </div>
               <p className="text-xs text-muted-foreground">Bulan Berjalan</p>
@@ -117,24 +133,34 @@ export default function ExecutiveDashboard() {
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Key Talent Ratio</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Key Talent Ratio
+              </CardTitle>
               <UserCheck className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
                 {talentStats?.percentages?.KEY_TALENT || 0}%
               </div>
-              <p className="text-xs text-muted-foreground">High Potential & Key Talent</p>
+              <p className="text-xs text-muted-foreground">
+                High Potential & Key Talent
+              </p>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pendaftaran Aktif</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Pendaftaran Aktif
+              </CardTitle>
               <GraduationCap className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{executiveSummary?.activeAdmissions ?? 0}</div>
-              <p className="text-xs text-muted-foreground">Pendaftar dalam proses PSB</p>
+              <div className="text-2xl font-bold">
+                {executiveSummary?.activeAdmissions ?? 0}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Pendaftar dalam proses PSB
+              </p>
             </CardContent>
           </Card>
         </div>
@@ -158,17 +184,36 @@ export default function ExecutiveDashboard() {
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={financialSummary?.byUnit || []}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                        <XAxis dataKey="unitName" fontSize={12} tickLine={false} axisLine={false} />
+                        <XAxis
+                          dataKey="unitName"
+                          fontSize={12}
+                          tickLine={false}
+                          axisLine={false}
+                        />
                         <YAxis
                           fontSize={12}
                           tickLine={false}
                           axisLine={false}
-                          tickFormatter={(value) => `Rp${(value / 1000000).toFixed(0)}jt`}
+                          tickFormatter={(value) =>
+                            `Rp${(value / 1000000).toFixed(0)}jt`
+                          }
                         />
-                        <Tooltip formatter={(value: any) => formatCurrency(value)} />
+                        <Tooltip
+                          formatter={(value: any) => formatCurrency(value)}
+                        />
                         <Legend />
-                        <Bar dataKey="revenue" name="Pendapatan" fill="#10b981" radius={[4, 4, 0, 0]} />
-                        <Bar dataKey="expense" name="Beban" fill="#ef4444" radius={[4, 4, 0, 0]} />
+                        <Bar
+                          dataKey="revenue"
+                          name="Pendapatan"
+                          fill="#10b981"
+                          radius={[4, 4, 0, 0]}
+                        />
+                        <Bar
+                          dataKey="expense"
+                          name="Beban"
+                          fill="#ef4444"
+                          radius={[4, 4, 0, 0]}
+                        />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
@@ -186,12 +231,31 @@ export default function ExecutiveDashboard() {
                       <PieChart>
                         <Pie
                           data={[
-                            { name: "High Potential", value: talentStats?.distribution?.HIGH_POTENTIAL || 0 },
-                            { name: "Key Talent", value: talentStats?.distribution?.KEY_TALENT || 0 },
-                            { name: "Emerging", value: talentStats?.distribution?.EMERGING || 0 },
-                            { name: "Solid Performer", value: talentStats?.distribution?.SOLID_PERFORMER || 0 },
-                            { name: "Needs Dev", value: talentStats?.distribution?.NEEDS_DEVELOPMENT || 0 },
-                          ].filter(v => v.value > 0)}
+                            {
+                              name: "High Potential",
+                              value:
+                                talentStats?.distribution?.HIGH_POTENTIAL || 0,
+                            },
+                            {
+                              name: "Key Talent",
+                              value: talentStats?.distribution?.KEY_TALENT || 0,
+                            },
+                            {
+                              name: "Emerging",
+                              value: talentStats?.distribution?.EMERGING || 0,
+                            },
+                            {
+                              name: "Solid Performer",
+                              value:
+                                talentStats?.distribution?.SOLID_PERFORMER || 0,
+                            },
+                            {
+                              name: "Needs Dev",
+                              value:
+                                talentStats?.distribution?.NEEDS_DEVELOPMENT ||
+                                0,
+                            },
+                          ].filter((v) => v.value > 0)}
                           cx="50%"
                           cy="50%"
                           innerRadius={60}
@@ -213,7 +277,7 @@ export default function ExecutiveDashboard() {
             </div>
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-               <Card>
+              <Card>
                 <CardHeader>
                   <CardTitle>Pengumuman Terbaru</CardTitle>
                 </CardHeader>
@@ -225,9 +289,15 @@ export default function ExecutiveDashboard() {
                           <FileText className="h-4 w-4 text-blue-600" />
                         </div>
                         <div className="space-y-1">
-                          <p className="text-sm font-medium leading-none">{item.title}</p>
+                          <p className="text-sm font-medium leading-none">
+                            {item.title}
+                          </p>
                           <p className="text-xs text-muted-foreground">
-                            {format(new Date(item.createdAt), "d MMM yyyy", { locale: id })}
+                            {safeFormat(
+                              new Date(item.createdAt),
+                              "d MMM yyyy",
+                              { locale: id },
+                            )}
                           </p>
                         </div>
                       </div>
@@ -239,33 +309,44 @@ export default function ExecutiveDashboard() {
               <Card className="col-span-2">
                 <CardHeader>
                   <CardTitle>Status Kualitas & Risiko</CardTitle>
-                  <CardDescription>Konsolidasi temuan audit dan level risiko unit</CardDescription>
+                  <CardDescription>
+                    Konsolidasi temuan audit dan level risiko unit
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
-                   <div className="space-y-4">
-                      {units?.slice(0, 4).map((unit: any) => (
-                        <div key={unit.id} className="flex items-center justify-between border-b pb-2">
-                          <div className="space-y-1">
-                            <p className="text-sm font-medium">{unit.name}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {(highRiskByUnit[unit.id] || 0) > 0
-                                ? `${highRiskByUnit[unit.id]} risiko tinggi terbuka`
-                                : "Tidak ada risiko tinggi terbuka"}
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <div
-                              className={`text-sm font-bold ${
-                                (highRiskByUnit[unit.id] || 0) > 0 ? "text-red-600" : "text-green-600"
-                              }`}
-                            >
-                              {(highRiskByUnit[unit.id] || 0) > 0 ? "Perhatian" : "Aman"}
-                            </div>
-                            <p className="text-[10px] text-muted-foreground">Status Risiko</p>
-                          </div>
+                  <div className="space-y-4">
+                    {units?.slice(0, 4).map((unit: any) => (
+                      <div
+                        key={unit.id}
+                        className="flex items-center justify-between border-b pb-2"
+                      >
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium">{unit.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {(highRiskByUnit[unit.id] || 0) > 0
+                              ? `${highRiskByUnit[unit.id]} risiko tinggi terbuka`
+                              : "Tidak ada risiko tinggi terbuka"}
+                          </p>
                         </div>
-                      ))}
-                   </div>
+                        <div className="text-right">
+                          <div
+                            className={`text-sm font-bold ${
+                              (highRiskByUnit[unit.id] || 0) > 0
+                                ? "text-red-600"
+                                : "text-green-600"
+                            }`}
+                          >
+                            {(highRiskByUnit[unit.id] || 0) > 0
+                              ? "Perhatian"
+                              : "Aman"}
+                          </div>
+                          <p className="text-[10px] text-muted-foreground">
+                            Status Risiko
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </CardContent>
               </Card>
             </div>

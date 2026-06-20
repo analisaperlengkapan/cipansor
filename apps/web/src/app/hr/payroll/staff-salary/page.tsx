@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { safeFormat } from "@/lib/date";
 import { useRouter } from "next/navigation";
 import { MainLayout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
@@ -98,7 +99,7 @@ export default function StaffSalaryPage() {
   const [selectedStaffId, setSelectedStaffId] = useState("");
   const [baseSalary, setBaseSalary] = useState("");
   const [effectiveDate, setEffectiveDate] = useState(
-    format(new Date(), "yyyy-MM-dd"),
+    safeFormat(new Date(), "yyyy-MM-dd"),
   );
   const [notes, setNotes] = useState("");
 
@@ -142,7 +143,7 @@ export default function StaffSalaryPage() {
   const resetForm = () => {
     setSelectedStaffId("");
     setBaseSalary("");
-    setEffectiveDate(format(new Date(), "yyyy-MM-dd"));
+    setEffectiveDate(safeFormat(new Date(), "yyyy-MM-dd"));
     setNotes("");
     setEditingSalary(null);
   };
@@ -151,7 +152,7 @@ export default function StaffSalaryPage() {
     setEditingSalary(salary);
     setSelectedStaffId(salary.staffId);
     setBaseSalary(salary.baseSalary.toString());
-    setEffectiveDate(format(new Date(salary.effectiveDate), "yyyy-MM-dd"));
+    setEffectiveDate(safeFormat(new Date(salary.effectiveDate), "yyyy-MM-dd"));
     setNotes(salary.notes || "");
     setIsFormOpen(true);
   };
@@ -488,9 +489,13 @@ export default function StaffSalaryPage() {
                       {formatCurrency(salary.baseSalary)}
                     </TableCell>
                     <TableCell>
-                      {format(new Date(salary.effectiveDate), "d MMM yyyy", {
-                        locale: id,
-                      })}
+                      {safeFormat(
+                        new Date(salary.effectiveDate),
+                        "d MMM yyyy",
+                        {
+                          locale: id,
+                        },
+                      )}
                     </TableCell>
                     <TableCell className="text-center">
                       <Badge variant="outline">

@@ -1,20 +1,13 @@
 "use client";
-
 import Link from "next/link";
-import { format } from "date-fns";
+import { safeFormat } from "@/lib/date";
+
 import { id as localeId } from "date-fns/locale";
-import {
-  Plus,
-  MessageSquare,
-  Eye,
-} from "lucide-react";
+import { Plus, MessageSquare, Eye } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -74,7 +67,9 @@ export function StudentCounselingTab({ studentId }: StudentCounselingTabProps) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold">Riwayat Bimbingan & Konseling</h3>
+          <h3 className="text-lg font-semibold">
+            Riwayat Bimbingan & Konseling
+          </h3>
           <p className="text-sm text-muted-foreground">
             Daftar sesi konseling yang pernah dilakukan
           </p>
@@ -108,14 +103,16 @@ export function StudentCounselingTab({ studentId }: StudentCounselingTabProps) {
                 return (
                   <TableRow key={record.id}>
                     <TableCell>
-                      {format(new Date(record.scheduledAt), "dd MMM yyyy", {
+                      {safeFormat(new Date(record.scheduledAt), "dd MMM yyyy", {
                         locale: localeId,
                       })}
                     </TableCell>
                     <TableCell className="font-medium">
                       {record.title}
                       {record.isConfidential && (
-                        <span title="Rahasia" className="ml-2 text-xs">🔒</span>
+                        <span title="Rahasia" className="ml-2 text-xs">
+                          🔒
+                        </span>
                       )}
                     </TableCell>
                     <TableCell>

@@ -1,6 +1,7 @@
 "use client";
 
 import { use } from "react";
+import { safeFormat } from "@/lib/date";
 import { useRouter } from "next/navigation";
 import {
   usePayrollPeriod,
@@ -61,8 +62,8 @@ export default function PayrollDetailPage({
         <div>
           <h1 className="text-3xl font-bold tracking-tight">{period.name}</h1>
           <p className="text-muted-foreground">
-            {format(new Date(period.startDate), "MMM d, yyyy")} -{" "}
-            {format(new Date(period.endDate), "MMM d, yyyy")}
+            {safeFormat(new Date(period.startDate), "MMM d, yyyy")} -{" "}
+            {safeFormat(new Date(period.endDate), "MMM d, yyyy")}
           </p>
         </div>
         <div className="ml-auto flex gap-2">

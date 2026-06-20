@@ -1,6 +1,6 @@
 "use client";
-
 import { useState } from "react";
+import { safeFormat } from "@/lib/date";
 import { useRouter } from "next/navigation";
 import { MainLayout } from "@/components/layout/main-layout";
 import {
@@ -42,7 +42,6 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { format } from "date-fns";
 
 export default function NewEventPage() {
   const router = useRouter();
@@ -51,8 +50,8 @@ export default function NewEventPage() {
     title: "",
     description: "",
     category: "ACADEMIC" as EventCategory,
-    startDate: format(new Date(), "yyyy-MM-dd"),
-    endDate: format(new Date(), "yyyy-MM-dd"),
+    startDate: safeFormat(new Date(), "yyyy-MM-dd"),
+    endDate: safeFormat(new Date(), "yyyy-MM-dd"),
     startTime: "",
     endTime: "",
     isAllDay: true,
@@ -337,7 +336,7 @@ export default function NewEventPage() {
                     </p>
                     <p className="text-sm text-muted-foreground mt-1">
                       {formData.startDate &&
-                        format(new Date(formData.startDate), "d MMM yyyy")}
+                        safeFormat(new Date(formData.startDate), "d MMM yyyy")}
                       {!formData.isAllDay &&
                         formData.startTime &&
                         ` • ${formData.startTime}`}

@@ -1,6 +1,6 @@
 "use client";
-
 import { useState } from "react";
+import { safeFormat } from "@/lib/date";
 import { useParams, useRouter } from "next/navigation";
 import { MainLayout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
@@ -58,7 +58,7 @@ import {
   Instagram,
   Facebook,
 } from "lucide-react";
-import { format } from "date-fns";
+
 import { id as idLocale } from "date-fns/locale";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -349,7 +349,7 @@ export default function AlumniDetailPage() {
                   </Label>
                   <p className="font-medium">
                     {alumni.birthPlace},{" "}
-                    {format(new Date(alumni.birthDate), "d MMMM yyyy", {
+                    {safeFormat(new Date(alumni.birthDate), "d MMMM yyyy", {
                       locale: idLocale,
                     })}
                   </p>

@@ -1,9 +1,9 @@
 "use client";
-
 import { useState } from "react";
+import { safeFormat } from "@/lib/date";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { format } from "date-fns";
+
 import { id as localeId } from "date-fns/locale";
 import {
   CalendarDays,
@@ -173,12 +173,12 @@ export default function AcademicYearsPage() {
                     <TableCell className="font-medium">{ay.name}</TableCell>
                     <TableCell>{ay.unit?.name || "-"}</TableCell>
                     <TableCell>
-                      {format(new Date(ay.startDate), "d MMMM yyyy", {
+                      {safeFormat(new Date(ay.startDate), "d MMMM yyyy", {
                         locale: localeId,
                       })}
                     </TableCell>
                     <TableCell>
-                      {format(new Date(ay.endDate), "d MMMM yyyy", {
+                      {safeFormat(new Date(ay.endDate), "d MMMM yyyy", {
                         locale: localeId,
                       })}
                     </TableCell>

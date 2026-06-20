@@ -1,23 +1,57 @@
 "use client";
-
 import { useState } from "react";
+import { safeFormat } from "@/lib/date";
 import { useParams, useRouter } from "next/navigation";
-import { format } from "date-fns";
+
 import { id } from "date-fns/locale";
-import { useSOP, useUpdateSOP, useApproveSOP, useActivateSOP, useCreateRevision } from "@/hooks/use-tata-laksana";
+import {
+  useSOP,
+  useUpdateSOP,
+  useApproveSOP,
+  useActivateSOP,
+  useCreateRevision,
+} from "@/hooks/use-tata-laksana";
 import { PageHeader } from "@/components/shared/page-header";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  CardFooter,
+} from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { ArrowLeft, FileText, CheckCircle2, History, AlertCircle, Play } from "lucide-react";
+import {
+  ArrowLeft,
+  FileText,
+  CheckCircle2,
+  History,
+  AlertCircle,
+  Play,
+} from "lucide-react";
 
 const revisionSchema = z.object({
   changes: z.string().min(5, "Perubahan wajib diisi minimal 5 karakter"),
@@ -66,7 +100,11 @@ export default function SOPDetailPage() {
   };
 
   const handleActivate = async () => {
-    if (confirm("Apakah Anda yakin ingin mengaktifkan SOP ini? Status akan menjadi ACTIVE.")) {
+    if (
+      confirm(
+        "Apakah Anda yakin ingin mengaktifkan SOP ini? Status akan menjadi ACTIVE.",
+      )
+    ) {
       await activateSOP.mutateAsync(sop.id);
     }
   };
@@ -81,17 +119,22 @@ export default function SOPDetailPage() {
     form.reset();
   };
 
-  const statusColor = {
-    DRAFT: "bg-slate-100 text-slate-700",
-    REVIEW: "bg-yellow-100 text-yellow-700",
-    APPROVED: "bg-blue-100 text-blue-700",
-    ACTIVE: "bg-green-100 text-green-700",
-    OBSOLETE: "bg-red-100 text-red-700",
-  }[sop.status as string] || "bg-gray-100 text-gray-700";
+  const statusColor =
+    {
+      DRAFT: "bg-slate-100 text-slate-700",
+      REVIEW: "bg-yellow-100 text-yellow-700",
+      APPROVED: "bg-blue-100 text-blue-700",
+      ACTIVE: "bg-green-100 text-green-700",
+      OBSOLETE: "bg-red-100 text-red-700",
+    }[sop.status as string] || "bg-gray-100 text-gray-700";
 
   return (
     <div className="container mx-auto py-6 space-y-6">
-      <Button variant="ghost" className="mb-2 -ml-4" onClick={() => router.back()}>
+      <Button
+        variant="ghost"
+        className="mb-2 -ml-4"
+        onClick={() => router.back()}
+      >
         <ArrowLeft className="h-4 w-4 mr-2" />
         Kembali
       </Button>
@@ -100,26 +143,39 @@ export default function SOPDetailPage() {
         <div>
           <div className="flex items-center gap-3">
             <PageHeader title={sop.title} description={`Kode: ${sop.code}`} />
-            <Badge className={`${statusColor} hover:${statusColor} ml-2 mt-[-24px]`}>
+            <Badge
+              className={`${statusColor} hover:${statusColor} ml-2 mt-[-24px]`}
+            >
               {sop.status}
             </Badge>
           </div>
         </div>
         <div className="flex items-center gap-2">
           {sop.status === "DRAFT" || sop.status === "REVIEW" ? (
-            <Button onClick={handleApprove} disabled={approveSOP.isPending} variant="secondary">
+            <Button
+              onClick={handleApprove}
+              disabled={approveSOP.isPending}
+              variant="secondary"
+            >
               <CheckCircle2 className="w-4 h-4 mr-2" />
               Setujui SOP
             </Button>
           ) : sop.status === "APPROVED" ? (
-            <Button onClick={handleActivate} disabled={activateSOP.isPending} className="bg-green-600 hover:bg-green-700">
+            <Button
+              onClick={handleActivate}
+              disabled={activateSOP.isPending}
+              className="bg-green-600 hover:bg-green-700"
+            >
               <Play className="w-4 h-4 mr-2" />
               Aktifkan SOP
             </Button>
           ) : null}
 
           {sop.status === "ACTIVE" && (
-            <Dialog open={revisionDialogOpen} onOpenChange={setRevisionDialogOpen}>
+            <Dialog
+              open={revisionDialogOpen}
+              onOpenChange={setRevisionDialogOpen}
+            >
               <DialogTrigger asChild>
                 <Button variant="outline">
                   <History className="w-4 h-4 mr-2" />
@@ -130,33 +186,57 @@ export default function SOPDetailPage() {
                 <DialogHeader>
                   <DialogTitle>Buat Revisi SOP</DialogTitle>
                   <DialogDescription>
-                    Revisi akan meningkatkan versi SOP ini (misal v{sop.version} ke v{sop.version + 1}).
+                    Revisi akan meningkatkan versi SOP ini (misal v{sop.version}{" "}
+                    ke v{sop.version + 1}).
                   </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onRevisionSubmit)} className="space-y-4">
-                    <FormField control={form.control} name="changes" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Catatan Perubahan</FormLabel>
-                        <FormControl>
-                          <Textarea placeholder="Jelaskan bagian mana yang direvisi..." rows={3} {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
-                    <FormField control={form.control} name="documentUrl" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>URL Dokumen Baru</FormLabel>
-                        <FormControl>
-                          <Input placeholder="https://..." {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
+                  <form
+                    onSubmit={form.handleSubmit(onRevisionSubmit)}
+                    className="space-y-4"
+                  >
+                    <FormField
+                      control={form.control}
+                      name="changes"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Catatan Perubahan</FormLabel>
+                          <FormControl>
+                            <Textarea
+                              placeholder="Jelaskan bagian mana yang direvisi..."
+                              rows={3}
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="documentUrl"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>URL Dokumen Baru</FormLabel>
+                          <FormControl>
+                            <Input placeholder="https://..." {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                     <div className="flex justify-end gap-2 pt-4">
-                      <Button type="button" variant="outline" onClick={() => setRevisionDialogOpen(false)}>Batal</Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setRevisionDialogOpen(false)}
+                      >
+                        Batal
+                      </Button>
                       <Button type="submit" disabled={createRevision.isPending}>
-                        {createRevision.isPending ? "Menyimpan..." : "Simpan Revisi"}
+                        {createRevision.isPending
+                          ? "Menyimpan..."
+                          : "Simpan Revisi"}
                       </Button>
                     </div>
                   </form>
@@ -176,17 +256,27 @@ export default function SOPDetailPage() {
           </CardHeader>
           <CardContent className="space-y-6">
             <div>
-              <h4 className="text-sm font-medium text-muted-foreground mb-1">Tujuan SOP</h4>
-              <p className="text-sm border p-3 rounded-md bg-muted/30">{sop.objective || "-"}</p>
+              <h4 className="text-sm font-medium text-muted-foreground mb-1">
+                Tujuan SOP
+              </h4>
+              <p className="text-sm border p-3 rounded-md bg-muted/30">
+                {sop.objective || "-"}
+              </p>
             </div>
             <div>
-              <h4 className="text-sm font-medium text-muted-foreground mb-1">Ruang Lingkup</h4>
-              <p className="text-sm border p-3 rounded-md bg-muted/30">{sop.scope || "-"}</p>
+              <h4 className="text-sm font-medium text-muted-foreground mb-1">
+                Ruang Lingkup
+              </h4>
+              <p className="text-sm border p-3 rounded-md bg-muted/30">
+                {sop.scope || "-"}
+              </p>
             </div>
             <div className="flex gap-4 items-center">
               {sop.documentUrl && (
                 <Button variant="outline" asChild>
-                  <a href={sop.documentUrl} target="_blank" rel="noreferrer">Lihat Dokumen Lengkap</a>
+                  <a href={sop.documentUrl} target="_blank" rel="noreferrer">
+                    Lihat Dokumen Lengkap
+                  </a>
                 </Button>
               )}
             </div>
@@ -218,7 +308,11 @@ export default function SOPDetailPage() {
             </div>
             <div className="flex justify-between border-b pb-2">
               <span className="text-muted-foreground">Tgl Berubah</span>
-              <span className="font-medium">{format(new Date(sop.updatedAt), "dd MMM yyyy", { locale: id })}</span>
+              <span className="font-medium">
+                {safeFormat(new Date(sop.updatedAt), "dd MMM yyyy", {
+                  locale: id,
+                })}
+              </span>
             </div>
           </CardContent>
         </Card>
@@ -234,7 +328,10 @@ export default function SOPDetailPage() {
           <CardContent>
             <div className="space-y-4">
               {sop.revisions.map((rev: any) => (
-                <div key={rev.id} className="flex gap-4 p-4 border rounded-lg items-start">
+                <div
+                  key={rev.id}
+                  className="flex gap-4 p-4 border rounded-lg items-start"
+                >
                   <div className="bg-primary/10 text-primary px-3 py-1 rounded font-bold">
                     v{rev.version}
                   </div>
@@ -243,12 +340,24 @@ export default function SOPDetailPage() {
                     <div className="text-xs text-muted-foreground flex gap-4">
                       <span>Oleh: {rev.createdBy?.name || "System"}</span>
                       <span>•</span>
-                      <span>{format(new Date(rev.createdAt), "dd MMM yyyy HH:mm", { locale: id })}</span>
+                      <span>
+                        {safeFormat(
+                          new Date(rev.createdAt),
+                          "dd MMM yyyy HH:mm",
+                          { locale: id },
+                        )}
+                      </span>
                     </div>
                   </div>
                   {rev.documentUrl && (
                     <Button variant="ghost" size="sm" asChild>
-                      <a href={rev.documentUrl} target="_blank" rel="noreferrer">Unduh</a>
+                      <a
+                        href={rev.documentUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        Unduh
+                      </a>
                     </Button>
                   )}
                 </div>

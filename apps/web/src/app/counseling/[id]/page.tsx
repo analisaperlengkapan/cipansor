@@ -1,9 +1,9 @@
 "use client";
-
 import { use, useState } from "react";
+import { safeFormat } from "@/lib/date";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { format } from "date-fns";
+
 import { id as localeId } from "date-fns/locale";
 import {
   ArrowLeft,
@@ -171,14 +171,22 @@ export default function CounselingDetailPage({
                   <div className="flex items-center gap-2">
                     <CardTitle>{record.title}</CardTitle>
                     {record.isConfidential && (
-                      <Badge variant="outline" className="text-amber-600 border-amber-200 bg-amber-50">
+                      <Badge
+                        variant="outline"
+                        className="text-amber-600 border-amber-200 bg-amber-50"
+                      >
                         <Shield className="h-3 w-3 mr-1" />
                         Rahasia
                       </Badge>
                     )}
                   </div>
                   <CardDescription>
-                    Dibuat pada {format(new Date(record.createdAt), "dd MMMM yyyy, HH:mm", { locale: localeId })}
+                    Dibuat pada{" "}
+                    {safeFormat(
+                      new Date(record.createdAt),
+                      "dd MMMM yyyy, HH:mm",
+                      { locale: localeId },
+                    )}
                   </CardDescription>
                 </div>
                 <div className="flex gap-2">
@@ -194,14 +202,18 @@ export default function CounselingDetailPage({
             <CardContent className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <p className="text-sm font-medium text-muted-foreground">Kategori</p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Kategori
+                  </p>
                   <div className="flex items-center gap-2">
                     <span className="text-xl">{catConfig?.icon}</span>
                     <span>{catConfig?.label}</span>
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <p className="text-sm font-medium text-muted-foreground">Konselor</p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Konselor
+                  </p>
                   <div className="flex items-center gap-2">
                     <User className="h-4 w-4 text-muted-foreground" />
                     <span>{record.counselor?.user?.name || "-"}</span>
@@ -210,15 +222,23 @@ export default function CounselingDetailPage({
               </div>
 
               <div className="space-y-2">
-                <p className="text-sm font-medium text-muted-foreground">Jadwal & Lokasi</p>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Jadwal & Lokasi
+                </p>
                 <div className="flex flex-wrap gap-4">
                   <div className="flex items-center gap-2 text-sm">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
-                    {format(new Date(record.scheduledAt), "eeee, dd MMMM yyyy", { locale: localeId })}
+                    {safeFormat(
+                      new Date(record.scheduledAt),
+                      "eeee, dd MMMM yyyy",
+                      { locale: localeId },
+                    )}
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <Clock className="h-4 w-4 text-muted-foreground" />
-                    {format(new Date(record.scheduledAt), "HH:mm", { locale: localeId })}
+                    {safeFormat(new Date(record.scheduledAt), "HH:mm", {
+                      locale: localeId,
+                    })}
                     {record.duration ? ` (${record.duration} menit)` : ""}
                   </div>
                   {record.location && (
@@ -231,7 +251,9 @@ export default function CounselingDetailPage({
               </div>
 
               <div className="space-y-2">
-                <p className="text-sm font-medium text-muted-foreground">Deskripsi Masalah</p>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Deskripsi Masalah
+                </p>
                 <div className="p-4 bg-muted/30 rounded-lg text-sm leading-relaxed whitespace-pre-wrap">
                   {record.description}
                 </div>
@@ -239,7 +261,9 @@ export default function CounselingDetailPage({
 
               {record.summary && (
                 <div className="space-y-2">
-                  <p className="text-sm font-medium text-muted-foreground">Ringkasan & Hasil</p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Ringkasan & Hasil
+                  </p>
                   <div className="p-4 bg-blue-50/50 border border-blue-100 rounded-lg text-sm leading-relaxed whitespace-pre-wrap">
                     {record.summary}
                   </div>
@@ -248,7 +272,9 @@ export default function CounselingDetailPage({
 
               {record.recommendations && (
                 <div className="space-y-2">
-                  <p className="text-sm font-medium text-muted-foreground">Rekomendasi</p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Rekomendasi
+                  </p>
                   <div className="p-4 bg-green-50/50 border border-green-100 rounded-lg text-sm leading-relaxed whitespace-pre-wrap">
                     {record.recommendations}
                   </div>
@@ -261,7 +287,9 @@ export default function CounselingDetailPage({
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList>
               <TabsTrigger value="overview">Ringkasan</TabsTrigger>
-              <TabsTrigger value="notes">Catatan ({record._count?.notes || 0})</TabsTrigger>
+              <TabsTrigger value="notes">
+                Catatan ({record._count?.notes || 0})
+              </TabsTrigger>
             </TabsList>
             <TabsContent value="overview" className="mt-4">
               {/* Additional content could go here */}
@@ -297,17 +325,23 @@ export default function CounselingDetailPage({
                 </div>
                 <div>
                   <p className="font-medium">{record.student?.user?.name}</p>
-                  <p className="text-sm text-muted-foreground">{record.student?.nis}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {record.student?.nis}
+                  </p>
                 </div>
               </div>
               <div className="pt-4 border-t space-y-3">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Kelas</span>
-                  <span className="font-medium">{record.student?.currentClass?.name || "-"}</span>
+                  <span className="font-medium">
+                    {record.student?.currentClass?.name || "-"}
+                  </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Unit</span>
-                  <span className="font-medium">{record.unit?.name || "-"}</span>
+                  <span className="font-medium">
+                    {record.unit?.name || "-"}
+                  </span>
                 </div>
               </div>
               <Button variant="outline" className="w-full" asChild>

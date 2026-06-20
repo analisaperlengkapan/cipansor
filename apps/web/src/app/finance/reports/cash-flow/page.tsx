@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { safeFormat } from "@/lib/date";
 import { MainLayout } from "@/components/layout/main-layout";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent } from "@/components/ui/card";
@@ -39,7 +40,7 @@ export default function CashFlowPage() {
   const currentDate = new Date();
   const [unitId, setUnitId] = useState("");
   const [startDate, setStartDate] = useState(
-    format(new Date(currentDate.getFullYear(), 0, 1), "yyyy-MM-dd"),
+    safeFormat(new Date(currentDate.getFullYear(), 0, 1), "yyyy-MM-dd"),
   );
   const [endDate, setEndDate] = useState(format(currentDate, "yyyy-MM-dd"));
 
@@ -148,8 +149,12 @@ export default function CashFlowPage() {
                   <h2 className="text-2xl font-bold">Laporan Arus Kas</h2>
                   <p className="text-muted-foreground">
                     Periode:{" "}
-                    {format(new Date(report.period.startDate), "dd MMM yyyy")}{" "}
-                    s/d {format(new Date(report.period.endDate), "dd MMM yyyy")}
+                    {safeFormat(
+                      new Date(report.period.startDate),
+                      "dd MMM yyyy",
+                    )}{" "}
+                    s/d{" "}
+                    {safeFormat(new Date(report.period.endDate), "dd MMM yyyy")}
                   </p>
                 </div>
 

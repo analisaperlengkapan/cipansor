@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { safeFormat } from "@/lib/date";
 import {
   Card,
   CardContent,
@@ -102,7 +103,7 @@ export default function AnnouncementsPage() {
     content: "",
     type: "ANNOUNCEMENT",
     priority: 0,
-    publishedAt: format(new Date(), "yyyy-MM-dd'T'HH:mm"),
+    publishedAt: safeFormat(new Date(), "yyyy-MM-dd'T'HH:mm"),
     expiresAt: "",
     targetRoles: [] as string[],
   });
@@ -126,7 +127,7 @@ export default function AnnouncementsPage() {
       content: "",
       type: "ANNOUNCEMENT",
       priority: 0,
-      publishedAt: format(new Date(), "yyyy-MM-dd'T'HH:mm"),
+      publishedAt: safeFormat(new Date(), "yyyy-MM-dd'T'HH:mm"),
       expiresAt: "",
       targetRoles: [],
     });
@@ -141,10 +142,10 @@ export default function AnnouncementsPage() {
       type: announcement.type,
       priority: announcement.priority,
       publishedAt: announcement.publishedAt
-        ? format(new Date(announcement.publishedAt), "yyyy-MM-dd'T'HH:mm")
+        ? safeFormat(new Date(announcement.publishedAt), "yyyy-MM-dd'T'HH:mm")
         : "",
       expiresAt: announcement.expiresAt
-        ? format(new Date(announcement.expiresAt), "yyyy-MM-dd'T'HH:mm")
+        ? safeFormat(new Date(announcement.expiresAt), "yyyy-MM-dd'T'HH:mm")
         : "",
       targetRoles: announcement.targetRoles || [],
     });

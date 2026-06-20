@@ -1,6 +1,6 @@
 "use client";
-
 import { MainLayout } from "@/components/layout/main-layout";
+import { safeFormat } from "@/lib/date";
 import { useComplaints } from "@/hooks/use-complaints";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,7 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ComplaintStatus, ComplaintCategory } from "@cipansor/shared";
-import { format } from "date-fns";
+
 import { id as idLocale } from "date-fns/locale";
 
 export default function ComplaintsPage() {
@@ -148,9 +148,13 @@ export default function ComplaintsPage() {
                 data?.data.map((complaint) => (
                   <TableRow key={complaint.id}>
                     <TableCell>
-                      {format(new Date(complaint.createdAt), "dd MMM yyyy", {
-                        locale: idLocale,
-                      })}
+                      {safeFormat(
+                        new Date(complaint.createdAt),
+                        "dd MMM yyyy",
+                        {
+                          locale: idLocale,
+                        },
+                      )}
                     </TableCell>
                     <TableCell>
                       <Link

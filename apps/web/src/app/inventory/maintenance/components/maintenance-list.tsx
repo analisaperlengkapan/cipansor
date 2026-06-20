@@ -1,6 +1,6 @@
 "use client";
-
 import { useState } from "react";
+import { safeFormat } from "@/lib/date";
 import {
   Table,
   TableBody,
@@ -17,7 +17,7 @@ import {
   AssetMaintenance,
   AssetMaintenanceStatus,
 } from "@/hooks/use-inventory";
-import { format } from "date-fns";
+
 import { Loader2, CheckCircle, XCircle, Wrench } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -94,7 +94,7 @@ export function MaintenanceList() {
           {data?.data.map((item: AssetMaintenance) => (
             <TableRow key={item.id}>
               <TableCell>
-                {format(new Date(item.maintenanceDate), "dd MMM yyyy")}
+                {safeFormat(new Date(item.maintenanceDate), "dd MMM yyyy")}
               </TableCell>
               <TableCell>
                 <div className="font-medium">{item.asset?.name}</div>
@@ -201,7 +201,7 @@ export function MaintenanceList() {
       <Pagination
         page={data?.meta.page || 1}
         totalPages={data?.meta.totalPages || 1}
-          pageSize={limit}
+        pageSize={limit}
         total={data?.meta.total || 0}
         onPageChange={setPage}
         onPageSizeChange={setLimit}

@@ -27,7 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { MoreHorizontal, Eye, Pencil, Trash2 } from "lucide-react";
-import { format } from "date-fns";
+import { safeFormat } from "@/lib/date";
 import { toast } from "sonner";
 import { useAuthStore } from "@/stores/auth";
 
@@ -136,7 +136,7 @@ export default function StudentsPage() {
       header: "Enrolled",
       cell: ({ row }) => (
         <span className="text-sm">
-          {format(new Date(row.original.enrollmentDate), "dd MMM yyyy")}
+          {safeFormat(row.original.enrollmentDate, "dd MMM yyyy")}
         </span>
       ),
     },

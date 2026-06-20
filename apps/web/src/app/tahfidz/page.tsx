@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { safeFormat } from "@/lib/date";
 import Link from "next/link";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
@@ -333,7 +334,7 @@ export default function TahfidzPage() {
                 records.map((record) => (
                   <TableRow key={record.id}>
                     <TableCell>
-                      {format(new Date(record.recordedAt), "d MMM yyyy", {
+                      {safeFormat(new Date(record.recordedAt), "d MMM yyyy", {
                         locale: localeId,
                       })}
                     </TableCell>

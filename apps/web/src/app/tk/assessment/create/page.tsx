@@ -1,6 +1,6 @@
 "use client";
-
 import { useState, useEffect } from "react";
+import { safeFormat } from "@/lib/date";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/auth";
 import { MainLayout } from "@/components/layout/main-layout";
@@ -37,7 +37,6 @@ import {
   TKAspect,
   TKAchievementLevel,
 } from "@/hooks/use-tk-assessment";
-import { format } from "date-fns";
 
 const ACHIEVEMENT_LEVELS = [
   {
@@ -74,7 +73,7 @@ export default function TKAssessmentCreatePage() {
   const [selectedAspect, setSelectedAspect] = useState<TKAspect>("NAM");
   const [selectedIndicatorId, setSelectedIndicatorId] = useState<string>("");
   const [assessmentDate, setAssessmentDate] = useState<string>(
-    format(new Date(), "yyyy-MM-dd"),
+    safeFormat(new Date(), "yyyy-MM-dd"),
   );
 
   // Local state: studentId -> { achievementLevel, notes }

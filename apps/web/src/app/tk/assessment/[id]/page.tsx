@@ -1,6 +1,6 @@
 "use client";
-
 import { useRouter, useParams } from "next/navigation";
+import { safeFormat } from "@/lib/date";
 import { MainLayout } from "@/components/layout";
 import { PageHeader } from "@/components/shared";
 import {
@@ -41,7 +41,7 @@ import {
   BookOpen,
   Image,
 } from "lucide-react";
-import { format } from "date-fns";
+
 import { id as idLocale } from "date-fns/locale";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -222,9 +222,13 @@ export default function TKAssessmentDetailPage() {
                     Tanggal
                   </div>
                   <div className="font-medium">
-                    {format(new Date(assessment.periodDate), "dd MMMM yyyy", {
-                      locale: idLocale,
-                    })}
+                    {safeFormat(
+                      new Date(assessment.periodDate),
+                      "dd MMMM yyyy",
+                      {
+                        locale: idLocale,
+                      },
+                    )}
                   </div>
                 </div>
                 <div>

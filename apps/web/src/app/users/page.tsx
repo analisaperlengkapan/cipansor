@@ -1,6 +1,6 @@
 "use client";
-
 import { useState, useMemo } from "react";
+import { safeFormat } from "@/lib/date";
 import { useRouter } from "next/navigation";
 import { ColumnDef } from "@tanstack/react-table";
 import { MainLayout } from "@/components/layout";
@@ -52,7 +52,7 @@ import {
   ShieldAlert,
 } from "lucide-react";
 import { TwoFactorVerify } from "@/components/auth/TwoFactorVerify";
-import { format } from "date-fns";
+
 import { toast } from "sonner";
 import { useAuthStore } from "@/stores/auth";
 import { cn } from "@/lib/utils";
@@ -252,7 +252,7 @@ export default function UsersPage() {
       header: "Created",
       cell: ({ row }) => (
         <span className="text-sm">
-          {format(new Date(row.original.createdAt), "dd MMM yyyy")}
+          {safeFormat(new Date(row.original.createdAt), "dd MMM yyyy")}
         </span>
       ),
     },

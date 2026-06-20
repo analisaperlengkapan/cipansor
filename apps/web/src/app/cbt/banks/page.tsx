@@ -1,6 +1,6 @@
 "use client";
-
 import { useState } from "react";
+import { safeFormat } from "@/lib/date";
 import { MainLayout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,7 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { useQuestionBanks, useDeleteQuestionBank } from "@/hooks/use-cbt";
 import { Plus, Search, Eye, Trash2, Loader2, BookOpen } from "lucide-react";
 import Link from "next/link";
-import { format } from "date-fns";
+
 import { id } from "date-fns/locale";
 import { toast } from "sonner";
 import {
@@ -129,9 +129,13 @@ export default function QuestionBanksPage() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        {format(new Date(bank.updatedAt), "d MMM yyyy HH:mm", {
-                          locale: id,
-                        })}
+                        {safeFormat(
+                          new Date(bank.updatedAt),
+                          "d MMM yyyy HH:mm",
+                          {
+                            locale: id,
+                          },
+                        )}
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">

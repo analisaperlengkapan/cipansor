@@ -1,7 +1,7 @@
 "use client";
-
 import { useState } from "react";
-import { format } from "date-fns";
+import { safeFormat } from "@/lib/date";
+
 import { id as localeId } from "date-fns/locale";
 import {
   Table,
@@ -127,7 +127,7 @@ export function SimaanList({
               records.map((record: import("@/hooks/use-simaan").SimaanExam) => (
                 <TableRow key={record.id}>
                   <TableCell>
-                    {format(new Date(record.examDate), "d MMM yyyy", {
+                    {safeFormat(new Date(record.examDate), "d MMM yyyy", {
                       locale: localeId,
                     })}
                   </TableCell>

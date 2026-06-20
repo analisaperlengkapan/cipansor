@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { safeFormat } from "@/lib/date";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Card,
@@ -1234,7 +1235,7 @@ function TransactionsTab() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    {format(new Date(tx.receivedAt), "dd/MM/yy HH:mm")}
+                    {safeFormat(new Date(tx.receivedAt), "dd/MM/yy HH:mm")}
                   </TableCell>
                   <TableCell>{tx.totalItems} item</TableCell>
                   <TableCell>{formatCurrency(tx.totalAmount)}</TableCell>

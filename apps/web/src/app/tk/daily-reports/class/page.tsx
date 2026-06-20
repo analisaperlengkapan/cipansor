@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { safeFormat } from "@/lib/date";
 import { useRouter } from "next/navigation";
 import { MainLayout } from "@/components/layout";
 import { PageHeader, DataTable } from "@/components/shared";
@@ -98,7 +99,9 @@ export default function ClassDailyReportsPage() {
             </AvatarFallback>
           </Avatar>
           <div>
-            <div className="font-medium">{row.original.student?.user?.name}</div>
+            <div className="font-medium">
+              {row.original.student?.user?.name}
+            </div>
             <div className="text-sm text-muted-foreground">
               {row.original.student?.nis}
             </div>
@@ -144,7 +147,7 @@ export default function ClassDailyReportsPage() {
       header: "Check-in",
       cell: ({ row }) =>
         row.original.arrivalTime ? (
-          <span>{format(new Date(row.original.arrivalTime), "HH:mm")}</span>
+          <span>{safeFormat(new Date(row.original.arrivalTime), "HH:mm")}</span>
         ) : (
           <span className="text-muted-foreground">-</span>
         ),
@@ -154,7 +157,9 @@ export default function ClassDailyReportsPage() {
       header: "Check-out",
       cell: ({ row }) =>
         row.original.departureTime ? (
-          <span>{format(new Date(row.original.departureTime), "HH:mm")}</span>
+          <span>
+            {safeFormat(new Date(row.original.departureTime), "HH:mm")}
+          </span>
         ) : (
           <span className="text-muted-foreground">-</span>
         ),

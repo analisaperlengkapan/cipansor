@@ -1,6 +1,6 @@
 "use client";
-
 import { useRegistrations } from "@/hooks/use-admissions";
+import { safeFormat } from "@/lib/date";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Loader2, Eye } from "lucide-react";
 import Link from "next/link";
-import { format } from "date-fns";
+
 import { id as idLocale } from "date-fns/locale";
 
 export default function LeadsPage() {
@@ -56,7 +56,7 @@ export default function LeadsPage() {
                     <TableCell>
                       <div className="font-medium">{reg.fullName}</div>
                       <div className="text-xs text-muted-foreground">
-                          {(reg as any).parentPhone}
+                        {(reg as any).parentPhone}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -83,7 +83,7 @@ export default function LeadsPage() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {format(new Date(reg.createdAt), "d MMM yyyy", {
+                      {safeFormat(new Date(reg.createdAt), "d MMM yyyy", {
                         locale: idLocale,
                       })}
                     </TableCell>

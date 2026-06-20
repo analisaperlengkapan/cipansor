@@ -1,6 +1,6 @@
 "use client";
-
 import { useState } from "react";
+import { safeFormat } from "@/lib/date";
 import { MainLayout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import {
@@ -58,7 +58,7 @@ import {
   Loader2,
   AlertCircle,
 } from "lucide-react";
-import { format } from "date-fns";
+
 import { id } from "date-fns/locale";
 import Link from "next/link";
 
@@ -381,7 +381,10 @@ export default function HRPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Analisis Risiko Retensi Karyawan</CardTitle>
-                <CardDescription>Deteksi dini potensi turnover berdasarkan data performa dan absensi</CardDescription>
+                <CardDescription>
+                  Deteksi dini potensi turnover berdasarkan data performa dan
+                  absensi
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <Table>
@@ -397,9 +400,19 @@ export default function HRPage() {
                     {retentionRisk?.length ? (
                       retentionRisk.map((risk) => (
                         <TableRow key={risk.userId}>
-                          <TableCell className="font-medium">{risk.name}</TableCell>
+                          <TableCell className="font-medium">
+                            {risk.name}
+                          </TableCell>
                           <TableCell>
-                            <Badge variant={risk.riskLevel === 'HIGH' ? 'destructive' : risk.riskLevel === 'MEDIUM' ? 'default' : 'secondary'}>
+                            <Badge
+                              variant={
+                                risk.riskLevel === "HIGH"
+                                  ? "destructive"
+                                  : risk.riskLevel === "MEDIUM"
+                                    ? "default"
+                                    : "secondary"
+                              }
+                            >
                               {risk.riskLevel}
                             </Badge>
                           </TableCell>
@@ -407,7 +420,11 @@ export default function HRPage() {
                           <TableCell>
                             <div className="flex flex-wrap gap-1">
                               {risk.factors.map((f, i) => (
-                                <Badge key={i} variant="outline" className="text-[10px]">
+                                <Badge
+                                  key={i}
+                                  variant="outline"
+                                  className="text-[10px]"
+                                >
                                   {f}
                                 </Badge>
                               ))}
@@ -417,7 +434,10 @@ export default function HRPage() {
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                        <TableCell
+                          colSpan={4}
+                          className="text-center py-8 text-muted-foreground"
+                        >
                           Tidak ada data risiko yang ditemukan
                         </TableCell>
                       </TableRow>
@@ -494,15 +514,19 @@ export default function HRPage() {
                         <TableCell>
                           <div className="text-sm">
                             <p>
-                              {format(new Date(leave.startDate), "d MMM", {
+                              {safeFormat(new Date(leave.startDate), "d MMM", {
                                 locale: id,
                               })}
                             </p>
                             <p className="text-muted-foreground">
                               -{" "}
-                              {format(new Date(leave.endDate), "d MMM yyyy", {
-                                locale: id,
-                              })}
+                              {safeFormat(
+                                new Date(leave.endDate),
+                                "d MMM yyyy",
+                                {
+                                  locale: id,
+                                },
+                              )}
                             </p>
                           </div>
                         </TableCell>

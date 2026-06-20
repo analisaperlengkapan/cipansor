@@ -1,6 +1,6 @@
 "use client";
-
 import { use } from "react";
+import { safeFormat } from "@/lib/date";
 import { useRouter } from "next/navigation";
 import { MainLayout } from "@/components/layout";
 import { PageHeader } from "@/components/shared";
@@ -33,7 +33,7 @@ import {
   useDeleteSimaan,
   useCompleteSimaan,
 } from "@/hooks/use-simaan";
-import { format } from "date-fns";
+
 import { id } from "date-fns/locale";
 import {
   ArrowLeft,
@@ -137,7 +137,7 @@ export default function SimaanDetailPage({
         id: resolvedParams.id,
         data: {
           passed: true,
-          notes: "Finalized by user"
+          notes: "Finalized by user",
         },
       });
       toast.success("Ujian simaan berhasil diselesaikan");
@@ -321,7 +321,8 @@ export default function SimaanDetailPage({
                   <Badge
                     variant={examTypeBadgeVariant[exam.simaanType as ExamType]}
                   >
-                    {examTypeLabels[exam.simaanType as ExamType] || exam.simaanType}
+                    {examTypeLabels[exam.simaanType as ExamType] ||
+                      exam.simaanType}
                   </Badge>
                 </div>
 
@@ -330,7 +331,7 @@ export default function SimaanDetailPage({
                     <Calendar className="h-4 w-4" /> Tanggal
                   </span>
                   <span className="font-medium">
-                    {format(new Date(exam.examDate), "EEEE, dd MMMM yyyy", {
+                    {safeFormat(new Date(exam.examDate), "EEEE, dd MMMM yyyy", {
                       locale: id,
                     })}
                   </span>
@@ -342,7 +343,9 @@ export default function SimaanDetailPage({
 
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Juz</span>
-                  <span className="font-medium">Juz {exam.juzStart} - {exam.juzEnd}</span>
+                  <span className="font-medium">
+                    Juz {exam.juzStart} - {exam.juzEnd}
+                  </span>
                 </div>
               </div>
             </CardContent>
@@ -359,7 +362,7 @@ export default function SimaanDetailPage({
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Use local variables/defaults since shared type lacks status/finalScore */}
-              {(status === "COMPLETED" || exam.overallScore !== undefined) ? (
+              {status === "COMPLETED" || exam.overallScore !== undefined ? (
                 <>
                   {/* Final Score */}
                   <div className="text-center py-6 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 rounded-lg">
@@ -380,30 +383,27 @@ export default function SimaanDetailPage({
 
                   {/* Component Scores */}
                   <div className="space-y-3">
-                    {exam.tajwidScore !== undefined && exam.tajwidScore !== null && (
-                      <ScoreBar label="Tajwid" score={exam.tajwidScore} />
-                    )}
-                    {exam.fashohaScore !== undefined && exam.fashohaScore !== null && (
-                      <ScoreBar label="Fashahah" score={exam.fashohaScore} />
-                    )}
-                    {exam.tartilScore !== undefined && exam.tartilScore !== null && (
-                      <ScoreBar label="Tartil" score={exam.tartilScore} />
-                    )}
+                    {exam.tajwidScore !== undefined &&
+                      exam.tajwidScore !== null && (
+                        <ScoreBar label="Tajwid" score={exam.tajwidScore} />
+                      )}
+                    {exam.fashohaScore !== undefined &&
+                      exam.fashohaScore !== null && (
+                        <ScoreBar label="Fashahah" score={exam.fashohaScore} />
+                      )}
+                    {exam.tartilScore !== undefined &&
+                      exam.tartilScore !== null && (
+                        <ScoreBar label="Tartil" score={exam.tartilScore} />
+                      )}
                   </div>
 
                   {/* Pass/Fail Status */}
                   <div className="flex items-center justify-center pt-4">
                     <Badge
-                      variant={
-                        exam.passed
-                          ? "default"
-                          : "destructive"
-                      }
+                      variant={exam.passed ? "default" : "destructive"}
                       className="text-lg py-2 px-4"
                     >
-                      {exam.passed
-                        ? "✓ LULUS"
-                        : "✗ TIDAK LULUS"}
+                      {exam.passed ? "✓ LULUS" : "✗ TIDAK LULUS"}
                     </Badge>
                   </div>
                 </>

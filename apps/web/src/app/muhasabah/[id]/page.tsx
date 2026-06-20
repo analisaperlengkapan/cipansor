@@ -1,9 +1,9 @@
 "use client";
-
 import { use } from "react";
+import { safeFormat } from "@/lib/date";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { format } from "date-fns";
+
 import { id as localeId } from "date-fns/locale";
 import {
   BookOpen,
@@ -101,7 +101,7 @@ export default function MuhasabahDetailPage({ params }: Props) {
   return (
     <MainLayout>
       <PageHeader
-        title={`Muhasabah ${format(new Date(muhasabah.date), "EEEE, d MMMM yyyy", { locale: localeId })}`}
+        title={`Muhasabah ${safeFormat(new Date(muhasabah.date), "EEEE, d MMMM yyyy", { locale: localeId })}`}
         description="Detail catatan muhasabah harian"
         backHref="/muhasabah"
         backLabel="Kembali"
@@ -369,7 +369,7 @@ export default function MuhasabahDetailPage({ params }: Props) {
               <div>
                 <p className="text-sm text-muted-foreground">Tanggal</p>
                 <p className="font-medium">
-                  {format(new Date(muhasabah.date), "EEEE, d MMMM yyyy", {
+                  {safeFormat(new Date(muhasabah.date), "EEEE, d MMMM yyyy", {
                     locale: localeId,
                   })}
                 </p>
@@ -377,9 +377,13 @@ export default function MuhasabahDetailPage({ params }: Props) {
               <div>
                 <p className="text-sm text-muted-foreground">Dicatat</p>
                 <p className="font-medium">
-                  {format(new Date(muhasabah.createdAt), "d MMM yyyy HH:mm", {
-                    locale: localeId,
-                  })}
+                  {safeFormat(
+                    new Date(muhasabah.createdAt),
+                    "d MMM yyyy HH:mm",
+                    {
+                      locale: localeId,
+                    },
+                  )}
                 </p>
               </div>
               {muhasabah.updatedAt !== muhasabah.createdAt && (
@@ -388,9 +392,13 @@ export default function MuhasabahDetailPage({ params }: Props) {
                     Terakhir diubah
                   </p>
                   <p className="font-medium">
-                    {format(new Date(muhasabah.updatedAt), "d MMM yyyy HH:mm", {
-                      locale: localeId,
-                    })}
+                    {safeFormat(
+                      new Date(muhasabah.updatedAt),
+                      "d MMM yyyy HH:mm",
+                      {
+                        locale: localeId,
+                      },
+                    )}
                   </p>
                 </div>
               )}

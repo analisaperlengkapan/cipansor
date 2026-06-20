@@ -1,11 +1,10 @@
 "use client";
-
 import { use, useEffect } from "react";
+import { safeFormat } from "@/lib/date";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { Save, Shield, Trash2 } from "lucide-react";
 import Link from "next/link";
-import { format } from "date-fns";
 
 import { MainLayout } from "@/components/layout/main-layout";
 import { PageHeader } from "@/components/shared/page-header";
@@ -75,7 +74,9 @@ export default function EditCounselingPage({
         category: record.category,
         priority: record.priority,
         status: record.status,
-        scheduledAt: record.scheduledAt ? format(new Date(record.scheduledAt), "yyyy-MM-dd'T'HH:mm") : undefined,
+        scheduledAt: record.scheduledAt
+          ? safeFormat(new Date(record.scheduledAt), "yyyy-MM-dd'T'HH:mm")
+          : undefined,
         duration: record.duration,
         location: record.location,
         summary: record.summary,
@@ -101,7 +102,12 @@ export default function EditCounselingPage({
   };
 
   const handleDelete = async () => {
-    if (!confirm("Yakin ingin menghapus sesi konseling ini? Tindakan ini tidak dapat dibatalkan.")) return;
+    if (
+      !confirm(
+        "Yakin ingin menghapus sesi konseling ini? Tindakan ini tidak dapat dibatalkan.",
+      )
+    )
+      return;
 
     try {
       await deleteMutation.mutateAsync(id);
@@ -160,7 +166,9 @@ export default function EditCounselingPage({
                     {...register("title", { required: "Judul wajib diisi" })}
                   />
                   {errors.title && (
-                    <p className="text-sm text-destructive">{errors.title.message}</p>
+                    <p className="text-sm text-destructive">
+                      {errors.title.message}
+                    </p>
                   )}
                 </div>
 
@@ -209,10 +217,14 @@ export default function EditCounselingPage({
                   <Textarea
                     id="description"
                     rows={5}
-                    {...register("description", { required: "Deskripsi wajib diisi" })}
+                    {...register("description", {
+                      required: "Deskripsi wajib diisi",
+                    })}
                   />
                   {errors.description && (
-                    <p className="text-sm text-destructive">{errors.description.message}</p>
+                    <p className="text-sm text-destructive">
+                      {errors.description.message}
+                    </p>
                   )}
                 </div>
               </CardContent>
@@ -222,7 +234,9 @@ export default function EditCounselingPage({
             <Card>
               <CardHeader>
                 <CardTitle>Hasil & Rekomendasi</CardTitle>
-                <CardDescription>Diisi setelah sesi berlangsung</CardDescription>
+                <CardDescription>
+                  Diisi setelah sesi berlangsung
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
@@ -235,7 +249,9 @@ export default function EditCounselingPage({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="recommendations">Rekomendasi / Tindak Lanjut</Label>
+                  <Label htmlFor="recommendations">
+                    Rekomendasi / Tindak Lanjut
+                  </Label>
                   <Textarea
                     id="recommendations"
                     rows={4}
@@ -293,16 +309,15 @@ export default function EditCounselingPage({
 
                 <div className="space-y-2">
                   <Label htmlFor="location">Lokasi</Label>
-                  <Input
-                    id="location"
-                    {...register("location")}
-                  />
+                  <Input id="location" {...register("location")} />
                 </div>
 
                 <div className="flex items-center justify-between py-2 border-t mt-2">
                   <div className="flex items-center gap-2">
                     <Shield className="h-4 w-4 text-muted-foreground" />
-                    <Label htmlFor="confidential" className="cursor-pointer">Rahasia</Label>
+                    <Label htmlFor="confidential" className="cursor-pointer">
+                      Rahasia
+                    </Label>
                   </div>
                   <Switch
                     id="confidential"
@@ -324,14 +339,8 @@ export default function EditCounselingPage({
                 Simpan Perubahan
               </Button>
 
-              <Button
-                type="button"
-                variant="outline"
-                asChild
-              >
-                <Link href={`/counseling/${id}`}>
-                  Batal
-                </Link>
+              <Button type="button" variant="outline" asChild>
+                <Link href={`/counseling/${id}`}>Batal</Link>
               </Button>
 
               <Button

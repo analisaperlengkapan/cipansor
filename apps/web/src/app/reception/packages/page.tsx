@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { safeFormat } from "@/lib/date";
 import {
   usePackages,
   useCreatePackage,
@@ -241,7 +242,7 @@ function PackageRow({ pkg }: { pkg: StudentPackage }) {
 
   return (
     <TableRow>
-      <TableCell>{format(new Date(pkg.createdAt), "HH:mm")}</TableCell>
+      <TableCell>{safeFormat(new Date(pkg.createdAt), "HH:mm")}</TableCell>
       <TableCell>
         <div className="font-medium">{pkg.student?.name}</div>
         <div className="text-xs text-muted-foreground">{pkg.student?.nis}</div>
@@ -264,7 +265,7 @@ function PackageRow({ pkg }: { pkg: StudentPackage }) {
         {pkg.status === "PICKED_UP" && (
           <span className="text-xs text-muted-foreground">
             {pkg.pickedUpAt
-              ? format(new Date(pkg.pickedUpAt), "dd/MM HH:mm")
+              ? safeFormat(new Date(pkg.pickedUpAt), "dd/MM HH:mm")
               : "-"}
           </span>
         )}

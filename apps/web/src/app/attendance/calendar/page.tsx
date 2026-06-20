@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { safeFormat } from "@/lib/date";
 import Link from "next/link";
 import {
   format,
@@ -483,7 +484,7 @@ export default function AttendanceCalendarPage() {
             <DialogTitle>
               Detail Kehadiran -{" "}
               {selectedDay &&
-                format(new Date(selectedDay), "d MMMM yyyy", {
+                safeFormat(new Date(selectedDay), "d MMMM yyyy", {
                   locale: localeId,
                 })}
             </DialogTitle>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
+import { safeFormat } from "@/lib/date";
 import { MainLayout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import {
@@ -294,7 +295,7 @@ export default function EmployeeDetailPage() {
             </CardHeader>
             <CardContent>
               <p className="text-xl font-bold">
-                {format(new Date(employee.joinDate), "d MMM yyyy", {
+                {safeFormat(new Date(employee.joinDate), "d MMM yyyy", {
                   locale: idLocale,
                 })}
               </p>
@@ -469,9 +470,13 @@ export default function EmployeeDetailPage() {
                         Tanggal Bergabung
                       </dt>
                       <dd>
-                        {format(new Date(employee.joinDate), "d MMMM yyyy", {
-                          locale: idLocale,
-                        })}
+                        {safeFormat(
+                          new Date(employee.joinDate),
+                          "d MMMM yyyy",
+                          {
+                            locale: idLocale,
+                          },
+                        )}
                       </dd>
                     </div>
                     {employee.resignDate && (
@@ -608,15 +613,23 @@ export default function EmployeeDetailPage() {
                         </TableCell>
                         <TableCell>{contract.type}</TableCell>
                         <TableCell>
-                          {format(new Date(contract.startDate), "d MMM yyyy", {
-                            locale: idLocale,
-                          })}
+                          {safeFormat(
+                            new Date(contract.startDate),
+                            "d MMM yyyy",
+                            {
+                              locale: idLocale,
+                            },
+                          )}
                         </TableCell>
                         <TableCell>
                           {contract.endDate
-                            ? format(new Date(contract.endDate), "d MMM yyyy", {
-                                locale: idLocale,
-                              })
+                            ? safeFormat(
+                                new Date(contract.endDate),
+                                "d MMM yyyy",
+                                {
+                                  locale: idLocale,
+                                },
+                              )
                             : "Permanen"}
                         </TableCell>
                         <TableCell>
@@ -750,12 +763,16 @@ export default function EmployeeDetailPage() {
                             {LEAVE_TYPE_LABELS[leave.leaveType]}
                           </TableCell>
                           <TableCell>
-                            {format(new Date(leave.startDate), "d MMM yyyy", {
-                              locale: idLocale,
-                            })}
+                            {safeFormat(
+                              new Date(leave.startDate),
+                              "d MMM yyyy",
+                              {
+                                locale: idLocale,
+                              },
+                            )}
                           </TableCell>
                           <TableCell>
-                            {format(new Date(leave.endDate), "d MMM yyyy", {
+                            {safeFormat(new Date(leave.endDate), "d MMM yyyy", {
                               locale: idLocale,
                             })}
                           </TableCell>

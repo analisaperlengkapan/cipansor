@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { safeFormat } from "@/lib/date";
 import { MainLayout } from "@/components/layout/main-layout";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent } from "@/components/ui/card";
@@ -46,7 +47,7 @@ export default function GeneralLedgerPage() {
   const [unitId, setUnitId] = useState("");
   const [accountId, setAccountId] = useState("");
   const [startDate, setStartDate] = useState(
-    format(new Date(currentDate.getFullYear(), 0, 1), "yyyy-MM-dd"),
+    safeFormat(new Date(currentDate.getFullYear(), 0, 1), "yyyy-MM-dd"),
   );
   const [endDate, setEndDate] = useState(format(currentDate, "yyyy-MM-dd"));
 
@@ -186,7 +187,10 @@ export default function GeneralLedgerPage() {
                             acc.entries.map((entry) => (
                               <TableRow key={entry.id}>
                                 <TableCell>
-                                  {format(new Date(entry.date), "dd/MM/yyyy")}
+                                  {safeFormat(
+                                    new Date(entry.date),
+                                    "dd/MM/yyyy",
+                                  )}
                                 </TableCell>
                                 <TableCell>
                                   {entry.description}

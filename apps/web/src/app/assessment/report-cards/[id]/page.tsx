@@ -1,6 +1,6 @@
 "use client";
-
 import { useParams, useRouter } from "next/navigation";
+import { safeFormat } from "@/lib/date";
 import { MainLayout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import {
@@ -34,7 +34,7 @@ import {
   BookOpen,
   Clock,
 } from "lucide-react";
-import { format } from "date-fns";
+
 import { id as idLocale } from "date-fns/locale";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -227,9 +227,13 @@ export default function ReportCardDetailPage() {
                   <dt className="text-muted-foreground">Tanggal Cetak</dt>
                   <dd>
                     {reportCard.printedAt
-                      ? format(new Date(reportCard.printedAt), "d MMM yyyy", {
-                          locale: idLocale,
-                        })
+                      ? safeFormat(
+                          new Date(reportCard.printedAt),
+                          "d MMM yyyy",
+                          {
+                            locale: idLocale,
+                          },
+                        )
                       : "-"}
                   </dd>
                 </div>

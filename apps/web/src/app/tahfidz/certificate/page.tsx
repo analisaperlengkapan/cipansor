@@ -1,6 +1,6 @@
 "use client";
-
 import { useState, useRef, useEffect } from "react";
+import { safeFormat } from "@/lib/date";
 import { MainLayout } from "@/components/layout/main-layout";
 import {
   Card,
@@ -38,7 +38,7 @@ import {
   Star,
 } from "lucide-react";
 import { toast } from "sonner";
-import { format } from "date-fns";
+
 import { id as idLocale } from "date-fns/locale";
 import { api } from "@/lib/api";
 
@@ -154,7 +154,7 @@ export default function TahfidzCertificatePage() {
   const [activeTab, setActiveTab] = useState("select-student");
   const [formData, setFormData] = useState<FormData>({
     certificateType: "TAHFIDZ_JUZ_AMMA",
-    tanggalSertifikat: format(new Date(), "yyyy-MM-dd"),
+    tanggalSertifikat: safeFormat(new Date(), "yyyy-MM-dd"),
     musyrifName: "",
     musyrifTitle: "Musyrif Tahfidz",
     completedJuz: [30],
@@ -348,7 +348,7 @@ export default function TahfidzCertificatePage() {
     // Use generated number or fallback to placeholder
     const certNumberDisplay = generatedCertNumber
       ? `No: ${generatedCertNumber}`
-      : `No: [DRAFT]/${formData.certificateType.split("_").pop()}/CPN/${format(new Date(), "MM/yyyy")}`;
+      : `No: [DRAFT]/${formData.certificateType.split("_").pop()}/CPN/${safeFormat(new Date(), "MM/yyyy")}`;
 
     return (
       <div
@@ -459,9 +459,13 @@ export default function TahfidzCertificatePage() {
             <p className="text-xs opacity-70">
               Tempat/Tanggal Lahir: {selectedStudent.birthPlace || "-"},{" "}
               {selectedStudent.birthDate
-                ? format(new Date(selectedStudent.birthDate), "d MMMM yyyy", {
-                    locale: idLocale,
-                  })
+                ? safeFormat(
+                    new Date(selectedStudent.birthDate),
+                    "d MMMM yyyy",
+                    {
+                      locale: idLocale,
+                    },
+                  )
                 : "-"}
             </p>
           </div>
@@ -532,7 +536,7 @@ export default function TahfidzCertificatePage() {
           {/* Date */}
           <p className="text-sm mb-6">
             Ditetapkan di Bandung,{" "}
-            {format(new Date(formData.tanggalSertifikat), "d MMMM yyyy", {
+            {safeFormat(new Date(formData.tanggalSertifikat), "d MMMM yyyy", {
               locale: idLocale,
             })}
           </p>

@@ -1,8 +1,8 @@
 "use client";
-
 import { useParams, useRouter } from "next/navigation";
+import { safeFormat } from "@/lib/date";
 import Link from "next/link";
-import { format } from "date-fns";
+
 import { id as localeId } from "date-fns/locale";
 import {
   ArrowLeft,
@@ -228,11 +228,11 @@ export default function PermitDetailPage() {
               <div>
                 <p className="text-sm text-muted-foreground">Tanggal</p>
                 <p className="font-medium">
-                  {format(new Date(permit.startDate), "dd MMMM yyyy", {
+                  {safeFormat(new Date(permit.startDate), "dd MMMM yyyy", {
                     locale: localeId,
                   })}{" "}
                   -{" "}
-                  {format(new Date(permit.endDate), "dd MMMM yyyy", {
+                  {safeFormat(new Date(permit.endDate), "dd MMMM yyyy", {
                     locale: localeId,
                   })}
                 </p>
@@ -362,9 +362,13 @@ export default function PermitDetailPage() {
               <div className="pb-4">
                 <p className="font-medium">Izin Dibuat</p>
                 <p className="text-sm text-muted-foreground">
-                  {format(new Date(permit.createdAt), "dd MMMM yyyy HH:mm", {
-                    locale: localeId,
-                  })}
+                  {safeFormat(
+                    new Date(permit.createdAt),
+                    "dd MMMM yyyy HH:mm",
+                    {
+                      locale: localeId,
+                    },
+                  )}
                 </p>
               </div>
             </div>
@@ -391,9 +395,13 @@ export default function PermitDetailPage() {
                     {permit.status === "APPROVED" ? "Disetujui" : "Ditolak"}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    {format(new Date(permit.updatedAt), "dd MMMM yyyy HH:mm", {
-                      locale: localeId,
-                    })}
+                    {safeFormat(
+                      new Date(permit.updatedAt),
+                      "dd MMMM yyyy HH:mm",
+                      {
+                        locale: localeId,
+                      },
+                    )}
                   </p>
                   {permit.approver && (
                     <p className="text-sm text-muted-foreground">

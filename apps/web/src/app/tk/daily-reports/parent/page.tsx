@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { safeFormat } from "@/lib/date";
 import { MainLayout } from "@/components/layout";
 import { PageHeader } from "@/components/shared";
 import { Button } from "@/components/ui/button";
@@ -191,7 +192,7 @@ export default function ParentDailyReportsPage() {
                       <p className="text-sm text-muted-foreground">Check-in</p>
                       <p className="font-medium">
                         {report.checkInTime
-                          ? format(new Date(report.checkInTime), "HH:mm")
+                          ? safeFormat(new Date(report.checkInTime), "HH:mm")
                           : "-"}
                       </p>
                     </div>
@@ -199,7 +200,7 @@ export default function ParentDailyReportsPage() {
                       <p className="text-sm text-muted-foreground">Check-out</p>
                       <p className="font-medium">
                         {report.checkOutTime
-                          ? format(new Date(report.checkOutTime), "HH:mm")
+                          ? safeFormat(new Date(report.checkOutTime), "HH:mm")
                           : "-"}
                       </p>
                     </div>
@@ -241,9 +242,9 @@ export default function ParentDailyReportsPage() {
                         Tidur Siang
                       </span>
                       <span className="font-medium">
-                        {format(new Date(report.napStartTime), "HH:mm")} -
+                        {safeFormat(new Date(report.napStartTime), "HH:mm")} -
                         {report.napEndTime
-                          ? format(new Date(report.napEndTime), "HH:mm")
+                          ? safeFormat(new Date(report.napEndTime), "HH:mm")
                           : "..."}
                       </span>
                     </div>

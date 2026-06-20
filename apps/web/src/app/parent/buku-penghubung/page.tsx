@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { safeFormat } from "@/lib/date";
 import {
   Card,
   CardContent,
@@ -256,7 +257,11 @@ export default function BukuPenghubungPage() {
       {
         onSuccess: () => {
           setNewMessageOpen(false);
-          setNewMessage({ subject: "", message: "", category: "GENERAL" as any });
+          setNewMessage({
+            subject: "",
+            message: "",
+            category: "GENERAL" as any,
+          });
           toast.success("Pesan berhasil dikirim");
         },
         onError: () => {
@@ -549,10 +554,10 @@ export default function BukuPenghubungPage() {
                         <div className="flex items-center gap-4">
                           <div className="flex flex-col items-center">
                             <span className="text-2xl font-bold text-primary">
-                              {format(new Date(report.reportDate), "dd")}
+                              {safeFormat(new Date(report.reportDate), "dd")}
                             </span>
                             <span className="text-xs text-muted-foreground uppercase">
-                              {format(new Date(report.reportDate), "MMM")}
+                              {safeFormat(new Date(report.reportDate), "MMM")}
                             </span>
                           </div>
                           <div className="h-10 w-[1px] bg-border" />

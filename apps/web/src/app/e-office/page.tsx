@@ -1,6 +1,6 @@
 "use client";
-
 import { useState, useEffect } from "react";
+import { safeFormat } from "@/lib/date";
 import { useRouter } from "next/navigation";
 import { useCorrespondence } from "@/hooks/use-correspondence";
 import { useAuth } from "@/hooks/use-auth";
@@ -38,7 +38,7 @@ import {
   Calendar,
   RefreshCw,
 } from "lucide-react";
-import { format } from "date-fns";
+
 import { id as localeId } from "date-fns/locale";
 import {
   LetterDirection,
@@ -409,7 +409,7 @@ export default function EOfficeMainPage() {
                       </div>
                       <div className="flex items-center gap-2 mt-1">
                         <span className="text-xs text-muted-foreground">
-                          {format(new Date(letter.date), "dd MMM yyyy", {
+                          {safeFormat(new Date(letter.date), "dd MMM yyyy", {
                             locale: localeId,
                           })}
                         </span>
@@ -475,7 +475,7 @@ export default function EOfficeMainPage() {
                       </div>
                       <div className="flex items-center gap-2 mt-1">
                         <span className="text-xs text-muted-foreground">
-                          {format(new Date(letter.date), "dd MMM yyyy", {
+                          {safeFormat(new Date(letter.date), "dd MMM yyyy", {
                             locale: localeId,
                           })}
                         </span>

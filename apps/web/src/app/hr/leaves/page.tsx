@@ -1,6 +1,6 @@
 "use client";
-
 import { useState } from "react";
+import { safeFormat } from "@/lib/date";
 import {
   useLeaveRequests,
   useCancelLeaveRequest,
@@ -21,7 +21,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Plus, X, Check, Filter } from "lucide-react";
-import { format } from "date-fns";
+
 import { LeaveRequestDialog } from "@/components/hr/LeaveRequestDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
@@ -138,8 +138,8 @@ export default function LeavesPage() {
                 </TableCell>
                 <TableCell>
                   <div className="text-sm">
-                    {format(new Date(leave.startDate), "MMM d, yyyy")} -{" "}
-                    {format(new Date(leave.endDate), "MMM d, yyyy")}
+                    {safeFormat(new Date(leave.startDate), "MMM d, yyyy")} -{" "}
+                    {safeFormat(new Date(leave.endDate), "MMM d, yyyy")}
                   </div>
                 </TableCell>
                 <TableCell>{leave.totalDays} Days</TableCell>

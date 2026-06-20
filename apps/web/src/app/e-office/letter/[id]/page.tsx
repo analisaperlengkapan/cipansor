@@ -1,6 +1,6 @@
 "use client";
-
 import { useRouter } from "next/navigation";
+import { safeFormat } from "@/lib/date";
 import { useCorrespondence } from "@/hooks/use-correspondence";
 import { useAuth } from "@/hooks/use-auth";
 import { useTeachers } from "@/hooks/use-teachers";
@@ -19,7 +19,7 @@ import {
   Printer,
   ShieldCheck,
 } from "lucide-react";
-import { format } from "date-fns";
+
 import { id } from "date-fns/locale";
 import { useState, useRef } from "react";
 import html2canvas from "html2canvas";
@@ -351,7 +351,7 @@ export default function LetterDetailPage({
                     Tanggal
                   </label>
                   <p>
-                    {format(new Date(letter.date), "dd MMMM yyyy", {
+                    {safeFormat(new Date(letter.date), "dd MMMM yyyy", {
                       locale: id,
                     })}
                   </p>

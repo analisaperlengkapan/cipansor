@@ -1,6 +1,6 @@
 "use client";
-
 import { useState } from "react";
+import { safeFormat } from "@/lib/date";
 import { MainLayout } from "@/components/layout/main-layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,7 +26,7 @@ import { Plus, Eye } from "lucide-react";
 import Link from "next/link";
 import { formatCurrency } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import { format } from "date-fns";
+
 import { id as idLocale } from "date-fns/locale";
 
 export default function ProcurementPage() {
@@ -142,7 +142,7 @@ export default function ProcurementPage() {
                     <TableRow key={req.id}>
                       <TableCell className="font-medium">{req.code}</TableCell>
                       <TableCell>
-                        {format(new Date(req.date), "dd MMM yyyy", {
+                        {safeFormat(new Date(req.date), "dd MMM yyyy", {
                           locale: idLocale,
                         })}
                       </TableCell>

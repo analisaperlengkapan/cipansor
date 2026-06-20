@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { safeFormat } from "@/lib/date";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -161,7 +162,7 @@ export default function MarketingDashboard() {
     name: "",
     description: "",
     channel: "SOCIAL_MEDIA",
-    startDate: format(new Date(), "yyyy-MM-dd"),
+    startDate: safeFormat(new Date(), "yyyy-MM-dd"),
     endDate: "",
     budget: 0,
     isActive: true,
@@ -173,7 +174,7 @@ export default function MarketingDashboard() {
       name: "",
       description: "",
       channel: "SOCIAL_MEDIA",
-      startDate: format(new Date(), "yyyy-MM-dd"),
+      startDate: safeFormat(new Date(), "yyyy-MM-dd"),
       endDate: "",
       budget: 0,
       isActive: true,
@@ -215,9 +216,9 @@ export default function MarketingDashboard() {
       name: campaign.name,
       description: campaign.description || "",
       channel: campaign.channel,
-      startDate: format(new Date(campaign.startDate), "yyyy-MM-dd"),
+      startDate: safeFormat(new Date(campaign.startDate), "yyyy-MM-dd"),
       endDate: campaign.endDate
-        ? format(new Date(campaign.endDate), "yyyy-MM-dd")
+        ? safeFormat(new Date(campaign.endDate), "yyyy-MM-dd")
         : "",
       budget: campaign.budget || 0,
       isActive: campaign.isActive,
@@ -233,7 +234,7 @@ export default function MarketingDashboard() {
 
   const filteredCampaigns =
     campaigns?.filter(
-        (c: MarketingCampaign) =>
+      (c: MarketingCampaign) =>
         c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         c.code.toLowerCase().includes(searchQuery.toLowerCase()),
     ) || [];
@@ -306,7 +307,8 @@ export default function MarketingDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-                {campaigns?.filter((c: MarketingCampaign) => c.isActive).length || 0}
+              {campaigns?.filter((c: MarketingCampaign) => c.isActive).length ||
+                0}
             </div>
             <p className="text-xs text-muted-foreground">
               Dari {campaigns?.length || 0} total
@@ -338,10 +340,10 @@ export default function MarketingDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-                {stats?.topCampaigns && stats.topCampaigns.length > 0
+              {stats?.topCampaigns && stats.topCampaigns.length > 0
                 ? Math.round(
                     stats.topCampaigns.reduce(
-                        (sum, c) => sum + ((c as any).conversionRate || 0),
+                      (sum, c) => sum + ((c as any).conversionRate || 0),
                       0,
                     ) / stats.topCampaigns.length,
                   )
@@ -385,23 +387,43 @@ export default function MarketingDashboard() {
                     <Target className="w-5 h-5 text-orange-500" />
                     <CardTitle>Prioritas Tindak Lanjut</CardTitle>
                   </div>
-                  <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
+                  <Badge
+                    variant="outline"
+                    className="bg-orange-50 text-orange-700 border-orange-200"
+                  >
                     {highPriorityLeads.length} Lead Skor Tinggi
                   </Badge>
                 </div>
-                <CardDescription>Lead dengan probabilitas konversi tinggi berdasarkan profil dan minat</CardDescription>
+                <CardDescription>
+                  Lead dengan probabilitas konversi tinggi berdasarkan profil
+                  dan minat
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {highPriorityLeads.slice(0, 3).map((lead: any) => (
-                    <div key={lead.id} className="p-3 rounded-lg border bg-orange-50/30 flex justify-between items-center">
+                    <div
+                      key={lead.id}
+                      className="p-3 rounded-lg border bg-orange-50/30 flex justify-between items-center"
+                    >
                       <div>
-                        <div className="font-semibold text-sm">{lead.fullName}</div>
-                        <div className="text-xs text-muted-foreground">{lead.source} • {lead.quranAbility}</div>
+                        <div className="font-semibold text-sm">
+                          {lead.fullName}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {lead.source} • {lead.quranAbility}
+                        </div>
                       </div>
                       <div className="text-right">
-                        <div className="text-lg font-bold text-orange-600">Score: {lead.leadScore}</div>
-                        <Link href={`/marketing/leads/${lead.id}`} className="text-[10px] text-blue-600 hover:underline">Detail →</Link>
+                        <div className="text-lg font-bold text-orange-600">
+                          Score: {lead.leadScore}
+                        </div>
+                        <Link
+                          href={`/marketing/leads/${lead.id}`}
+                          className="text-[10px] text-blue-600 hover:underline"
+                        >
+                          Detail →
+                        </Link>
                       </div>
                     </div>
                   ))}
@@ -518,7 +540,7 @@ export default function MarketingDashboard() {
                           )}
                         </TableCell>
                         <TableCell className="text-right text-xs text-muted-foreground">
-                          {format(new Date(lead.createdAt), "d MMM", {
+                          {safeFormat(new Date(lead.createdAt), "d MMM", {
                             locale: localeId,
                           })}
                         </TableCell>
@@ -629,7 +651,7 @@ export default function MarketingDashboard() {
                                   { locale: localeId },
                                 )}
                                 {campaign.endDate &&
-                                  ` - ${format(new Date(campaign.endDate), "dd MMM yyyy", { locale: localeId })}`}
+                                  ` - ${safeFormat(new Date(campaign.endDate), "dd MMM yyyy", { locale: localeId })}`}
                               </p>
                             </div>
                             {getChannelBadge((campaign as any).channel)}
@@ -666,10 +688,12 @@ export default function MarketingDashboard() {
             <Card className="md:col-span-2">
               <CardHeader>
                 <CardTitle>Semua Leads & Prospek</CardTitle>
-                <CardDescription>Daftar pendaftar potensial yang perlu di-follow up</CardDescription>
+                <CardDescription>
+                  Daftar pendaftar potensial yang perlu di-follow up
+                </CardDescription>
               </CardHeader>
               <CardContent>
-                 <Table>
+                <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Nama</TableHead>
@@ -683,18 +707,28 @@ export default function MarketingDashboard() {
                       <TableRow key={lead.id}>
                         <TableCell>
                           <div className="font-medium">{lead.fullName}</div>
-                          <div className="text-xs text-muted-foreground">{lead.source}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {lead.source}
+                          </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant={lead.leadScore && lead.leadScore > 70 ? "default" : "outline"}>
+                          <Badge
+                            variant={
+                              lead.leadScore && lead.leadScore > 70
+                                ? "default"
+                                : "outline"
+                            }
+                          >
                             {lead.leadScore || 0}
                           </Badge>
                         </TableCell>
                         <TableCell>{lead.status}</TableCell>
                         <TableCell className="text-right">
-                           <Button variant="ghost" size="sm" asChild>
-                              <Link href={`/marketing/leads/${lead.id}`}>Detail</Link>
-                           </Button>
+                          <Button variant="ghost" size="sm" asChild>
+                            <Link href={`/marketing/leads/${lead.id}`}>
+                              Detail
+                            </Link>
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -704,21 +738,27 @@ export default function MarketingDashboard() {
             </Card>
 
             <div className="space-y-4">
-               <Card>
-                  <CardHeader>
-                    <CardTitle>Follow-up Hari Ini</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {followUps?.slice(0, 5).map((task) => (
-                      <div key={task.id} className="p-3 border rounded-lg flex flex-col gap-1">
-                        <div className="font-medium text-sm">{task.registrant.fullName}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {format(new Date(task.nextActionDate), "HH:mm")} • {task.registrant.parentPhone}
-                        </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Follow-up Hari Ini</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {followUps?.slice(0, 5).map((task) => (
+                    <div
+                      key={task.id}
+                      className="p-3 border rounded-lg flex flex-col gap-1"
+                    >
+                      <div className="font-medium text-sm">
+                        {task.registrant.fullName}
                       </div>
-                    ))}
-                  </CardContent>
-               </Card>
+                      <div className="text-xs text-muted-foreground">
+                        {safeFormat(new Date(task.nextActionDate), "HH:mm")} •{" "}
+                        {task.registrant.parentPhone}
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
             </div>
           </div>
         </TabsContent>
@@ -782,9 +822,12 @@ export default function MarketingDashboard() {
                         </TableCell>
                         <TableCell>
                           <div className="text-sm">
-                            {format(new Date(campaign.startDate), "dd/MM/yy")}
+                            {safeFormat(
+                              new Date(campaign.startDate),
+                              "dd/MM/yy",
+                            )}
                             {campaign.endDate &&
-                              ` - ${format(new Date(campaign.endDate), "dd/MM/yy")}`}
+                              ` - ${safeFormat(new Date(campaign.endDate), "dd/MM/yy")}`}
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
@@ -813,7 +856,9 @@ export default function MarketingDashboard() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem
-                                onClick={() => handleEditCampaign(campaign as any)}
+                                onClick={() =>
+                                  handleEditCampaign(campaign as any)
+                                }
                               >
                                 <Edit className="mr-2 h-4 w-4" />
                                 Edit

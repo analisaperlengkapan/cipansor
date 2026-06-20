@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { safeFormat } from "@/lib/date";
 import { useRouter } from "next/navigation";
 import { MainLayout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
@@ -417,11 +418,11 @@ export default function PayrollPeriodsPage() {
                       {period.year}
                     </TableCell>
                     <TableCell>
-                      {format(new Date(period.startDate), "d MMM", {
+                      {safeFormat(new Date(period.startDate), "d MMM", {
                         locale: id,
                       })}{" "}
                       -{" "}
-                      {format(new Date(period.endDate), "d MMM yyyy", {
+                      {safeFormat(new Date(period.endDate), "d MMM yyyy", {
                         locale: id,
                       })}
                     </TableCell>
@@ -433,7 +434,7 @@ export default function PayrollPeriodsPage() {
                     <TableCell>{getStatusBadge(period.status)}</TableCell>
                     <TableCell>
                       {period.closedAt
-                        ? format(new Date(period.closedAt), "d MMM yyyy", {
+                        ? safeFormat(new Date(period.closedAt), "d MMM yyyy", {
                             locale: id,
                           })
                         : "-"}

@@ -1,8 +1,8 @@
 "use client";
-
 import { use, useState } from "react";
+import { safeFormat } from "@/lib/date";
 import Link from "next/link";
-import { format } from "date-fns";
+
 import { id as localeId } from "date-fns/locale";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -489,9 +489,13 @@ export default function EnrollmentDetailPage({
                           <Badge variant="secondary">{activity.score}</Badge>
                         )}
                         <p className="text-xs text-muted-foreground mt-1">
-                          {format(new Date(activity.recordedAt), "d MMM yyyy", {
-                            locale: localeId,
-                          })}
+                          {safeFormat(
+                            new Date(activity.recordedAt),
+                            "d MMM yyyy",
+                            {
+                              locale: localeId,
+                            },
+                          )}
                         </p>
                       </div>
                     </div>

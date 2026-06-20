@@ -1,6 +1,6 @@
 "use client";
-
 import { MainLayout } from "@/components/layout/main-layout";
+import { safeFormat } from "@/lib/date";
 import { useParams } from "next/navigation";
 import {
   useComplaint,
@@ -14,7 +14,7 @@ import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/use-auth";
 import { useState } from "react";
-import { format } from "date-fns";
+
 import { id as idLocale } from "date-fns/locale";
 import { ArrowLeft, Send, User } from "lucide-react";
 import Link from "next/link";
@@ -107,9 +107,13 @@ export default function ComplaintDetailPage() {
             </h1>
             <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
               <span>
-                {format(new Date(complaint.createdAt), "dd MMMM yyyy HH:mm", {
-                  locale: idLocale,
-                })}
+                {safeFormat(
+                  new Date(complaint.createdAt),
+                  "dd MMMM yyyy HH:mm",
+                  {
+                    locale: idLocale,
+                  },
+                )}
               </span>
               <span>•</span>
               <span className="font-medium text-foreground">
@@ -151,7 +155,7 @@ export default function ComplaintDetailPage() {
                           {c.user?.name || "User"}
                         </span>
                         <span className="text-xs text-muted-foreground">
-                          {format(new Date(c.createdAt), "dd MMM HH:mm", {
+                          {safeFormat(new Date(c.createdAt), "dd MMM HH:mm", {
                             locale: idLocale,
                           })}
                         </span>

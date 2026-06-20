@@ -1,13 +1,26 @@
 "use client";
-
 import { useAdmissionWaves } from "@/hooks/use-admissions";
+import { safeFormat } from "@/lib/date";
 import { PageHeader } from "@/components/shared/page-header";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Loader2, Plus, Calendar } from "lucide-react";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { format } from "date-fns";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+
 import { id } from "date-fns/locale";
 
 export default function AdmissionWavesPage() {
@@ -52,23 +65,38 @@ export default function AdmissionWavesPage() {
                 <TableRow key={wave.id}>
                   <TableCell className="font-bold">{wave.name}</TableCell>
                   <TableCell>{wave.period?.name}</TableCell>
-                  <TableCell className="text-xs">{format(new Date(wave.startDate), "d MMM yyyy", { locale: id })}</TableCell>
-                  <TableCell className="text-xs">{format(new Date(wave.endDate), "d MMM yyyy", { locale: id })}</TableCell>
+                  <TableCell className="text-xs">
+                    {safeFormat(new Date(wave.startDate), "d MMM yyyy", {
+                      locale: id,
+                    })}
+                  </TableCell>
+                  <TableCell className="text-xs">
+                    {safeFormat(new Date(wave.endDate), "d MMM yyyy", {
+                      locale: id,
+                    })}
+                  </TableCell>
                   <TableCell>{wave.quota}</TableCell>
                   <TableCell>{wave.registeredCount}</TableCell>
                   <TableCell>
-                    <Badge variant={wave.status === 'OPEN' ? 'default' : 'secondary'}>
+                    <Badge
+                      variant={wave.status === "OPEN" ? "default" : "secondary"}
+                    >
                       {wave.status}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="sm">Edit</Button>
+                    <Button variant="ghost" size="sm">
+                      Edit
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground italic">
+                <TableCell
+                  colSpan={8}
+                  className="text-center py-8 text-muted-foreground italic"
+                >
                   Belum ada data gelombang.
                 </TableCell>
               </TableRow>

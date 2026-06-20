@@ -1,6 +1,6 @@
 "use client";
-
 import { useState } from "react";
+import { safeFormat } from "@/lib/date";
 import {
   useEmploymentHistory,
   useCreateEmploymentHistory,
@@ -25,7 +25,6 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { PlusCircle, Briefcase } from "lucide-react";
-import { format } from "date-fns";
 
 const ACTIONS: EmploymentAction[] = [
   "HIRED",
@@ -197,7 +196,7 @@ export function HistoryTab({ userId }: { userId: string }) {
             </span>
             <div className="items-center justify-between p-4 bg-white border border-gray-200 rounded-lg shadow-sm sm:flex dark:bg-gray-700 dark:border-gray-600">
               <div className="time mb-1 text-xs font-normal text-gray-400 sm:order-last sm:mb-0">
-                {format(new Date(item.effectiveDate), "dd MMMM yyyy")}
+                {safeFormat(new Date(item.effectiveDate), "dd MMMM yyyy")}
               </div>
               <div className="text-sm font-normal text-gray-500 dark:text-gray-300">
                 <span className="font-bold text-gray-900 dark:text-white">

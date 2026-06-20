@@ -6,8 +6,8 @@
  * Halaman manajemen portofolio digital siswa
  * Kategori: Akademik, P5, Ekstrakurikuler, Prestasi, Seni, Tahfidz
  */
-
 import { useState } from "react";
+import { safeFormat } from "@/lib/date";
 import { useRouter } from "next/navigation";
 import {
   usePortfolios,
@@ -70,7 +70,7 @@ import {
   Folder,
   TrendingUp,
 } from "lucide-react";
-import { format } from "date-fns";
+
 import { id as localeId } from "date-fns/locale";
 import { toast } from "sonner";
 
@@ -397,7 +397,7 @@ export default function PortfolioPage() {
                     </span>
                   </div>
                   <span>
-                    {format(new Date(portfolio.createdAt), "d MMM yyyy", {
+                    {safeFormat(new Date(portfolio.createdAt), "d MMM yyyy", {
                       locale: localeId,
                     })}
                   </span>

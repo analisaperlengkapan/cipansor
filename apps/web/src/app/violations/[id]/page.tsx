@@ -1,8 +1,8 @@
 "use client";
-
 import { useParams, useRouter } from "next/navigation";
+import { safeFormat } from "@/lib/date";
 import Link from "next/link";
-import { format } from "date-fns";
+
 import { id as localeId } from "date-fns/locale";
 import {
   ArrowLeft,
@@ -162,7 +162,7 @@ export default function ViolationDetailPage() {
               <div>
                 <p className="text-sm text-muted-foreground">Tanggal</p>
                 <p className="font-medium">
-                  {format(new Date(violation.date), "EEEE, dd MMMM yyyy", {
+                  {safeFormat(new Date(violation.date), "EEEE, dd MMMM yyyy", {
                     locale: localeId,
                   })}
                 </p>
@@ -311,9 +311,13 @@ export default function ViolationDetailPage() {
                 </p>
                 <p className="text-sm text-muted-foreground">
                   Dilaporkan pada{" "}
-                  {format(new Date(violation.createdAt), "dd MMMM yyyy HH:mm", {
-                    locale: localeId,
-                  })}
+                  {safeFormat(
+                    new Date(violation.createdAt),
+                    "dd MMMM yyyy HH:mm",
+                    {
+                      locale: localeId,
+                    },
+                  )}
                 </p>
               </div>
             </div>

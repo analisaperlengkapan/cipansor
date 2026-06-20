@@ -1,9 +1,9 @@
 "use client";
 // Force HMR Rebuild
-
 import { useState } from "react";
+import { safeFormat } from "@/lib/date";
 import Link from "next/link";
-import { format } from "date-fns";
+
 import { id as localeId } from "date-fns/locale";
 import {
   Plus,
@@ -234,7 +234,7 @@ export default function ViolationsPage() {
                     {violationsData?.data.map((violation) => (
                       <TableRow key={violation.id}>
                         <TableCell>
-                          {format(new Date(violation.date), "dd MMM yyyy", {
+                          {safeFormat(new Date(violation.date), "dd MMM yyyy", {
                             locale: localeId,
                           })}
                         </TableCell>

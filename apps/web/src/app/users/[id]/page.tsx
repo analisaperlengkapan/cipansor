@@ -1,13 +1,13 @@
 "use client";
-
 import { useParams, useRouter } from "next/navigation";
+import { safeFormat } from "@/lib/date";
 import { MainLayout } from "@/components/layout";
 import { PageHeader } from "@/components/shared";
 import { useUser } from "@/hooks/use-users";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { format } from "date-fns";
+
 import {
   ArrowLeft,
   Pencil,
@@ -153,11 +153,17 @@ export default function UserDetailPage() {
             <CardContent className="grid gap-4 md:grid-cols-2">
               <InfoRow
                 label="Created At"
-                value={format(new Date(user.createdAt), "dd MMMM yyyy, HH:mm")}
+                value={safeFormat(
+                  new Date(user.createdAt),
+                  "dd MMMM yyyy, HH:mm",
+                )}
               />
               <InfoRow
                 label="Last Updated"
-                value={format(new Date(user.updatedAt), "dd MMMM yyyy, HH:mm")}
+                value={safeFormat(
+                  new Date(user.updatedAt),
+                  "dd MMMM yyyy, HH:mm",
+                )}
               />
             </CardContent>
           </Card>

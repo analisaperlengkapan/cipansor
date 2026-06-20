@@ -79,8 +79,10 @@ schema (`db:push`), then `RUN_DB_TESTS=1 pnpm --filter api test`.
   for `apps/web/src/**` (currently only e2e-helper tests exist).
 - **Comprehensive Playwright e2e** across all routes (nav, CRUD, every
   button/field, RBAC) against the seeded local stack.
-- **Workflow completions:** correspondence digital-signature trigger, takhosus
-  notification/certificate emission wiring, accounting per-unit config fallback.
+- **Workflow completions:** ✅ correspondence letter-signed notification and
+  ✅ takhosus certificate-eligibility notification are now wired (via the
+  `notification:send` event bus). Remaining: accounting per-unit config fallback
+  (deferred until `AccountCode` gains a `unitId` column — see the in-code note).
 
 ## How to contribute a build fix
 

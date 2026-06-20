@@ -29,28 +29,24 @@ the production-readiness / architecture-standardization effort.
 - **Fixed a systematic test bug:** 13 module unit tests used a 5-level relative
   path so `vi.mock('../lib/prisma')` never intercepted; corrected to 4 levels.
 
-## 🚧 API test suite — pre-existing debt (483 pass / ~28 fail)
+## 🟢 API test suite — GREEN (533 passed, 0 failed)
 
-`pnpm --filter api test` now runs (the schema is restored), with **483 passing**.
-The ~28 remaining failures are **pre-existing test debt** (the suite was never run
-in CI), not regressions from the build work:
+`pnpm --filter api test` now passes: **533 passed, 24 skipped** (the skipped set is
+the opt-in DB integration suite + 2 pre-existing skips). The previously-failing
+~28 tests were all pre-existing debt and have been fixed:
 
-1. **Incomplete Prisma mocks.** Many mocks omit methods the services call
-   (`$transaction`, `user`, `findUnique`, `aggregate`, `paymentType.upsert`),
-   so the service hits `undefined` — auth, daily-report (bulkCreate), paud-report,
-   inventory, pengawasan, admissions, holistic, attendance, finance-integration.
-2. **Integration tests need a real DB / Prisma 7 adapter.** `database-migrations`,
-   `organisasi`, `tatalaksana` construct `new PrismaClient()` (or mock it as a
-   constructor) — update to a driver adapter or mock, or gate behind a test DB.
-3. **`vi.mock` hoisting bug** in `classes` ("cannot access prismaMock before
-   initialization").
-4. **Stale references:** `finance-enhancement` test calls a removed
-   `getCashFlowForecast`; `reception` test imports `{ ReceptionService }` (the
-   module exports named functions) and asserts the pre-alignment shape.
+- Completed incomplete Prisma mocks (`$transaction`, `user`/`teacher`/`reward`/
+  `roomAssignment`/`growthRecord`/`paymentType.upsert`, etc.).
+- Repointed mis-wired mocks (organisasi/tatalaksana mocked the constructor; they
+  use the shared `lib/prisma`) and fixed a `vi.mock` hoisting bug (classes).
+- Implemented the missing `classService.promoteStudents` the test specified.
+- Refreshed stale assertions/inputs (reception model alignment, library select,
+  upload response shape, daily-report meal enum, auth RoleCode register flow).
+- Gated `database-migrations` (real-DB integration) behind `RUN_DB_TESTS=1` and
+  constructed it via the Prisma 7 adapter factory so it loads + skips cleanly.
 
-**Recommended fix:** introduce one shared deep Prisma mock factory (covering
-`$transaction` and all delegates) for unit tests, convert integration tests to use
-a disposable Postgres (docker-compose) + the adapter, and refresh stale assertions.
+**To run the DB integration suite:** start Postgres (docker-compose), apply the
+schema (`db:push`), then `RUN_DB_TESTS=1 pnpm --filter api test`.
 
 ## 🗺️ Roadmap (not yet started)
 

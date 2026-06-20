@@ -69,10 +69,12 @@ schema (`db:push`), then `RUN_DB_TESTS=1 pnpm --filter api test`.
 - **Web role alignment.** `apps/web/middleware.ts`, `src/config/navigation.ts`,
   `src/stores/auth.ts` still use the legacy `UserRole` vocabulary; align with
   backend `RoleCode` + permissions.
-- **Replace remaining FE mock data** with real API calls (e.g.
-  `parent/buku-penghubung`, `unit-usaha`, `dashboard/executive` fallback,
-  `analytics/education`, `attendance/heatmap`, `foundation/dashboard`,
-  `assessment/report-cards/[id]/print-merdeka`).
+- **Replace remaining FE mock data** with real API calls. Done so far:
+  `foundation/dashboard` (admissions KPI + per-unit risk) and
+  `foundation/finance/consolidation` (real per-unit financials, cash position,
+  6-month trend). Still mocked: `analytics/parent-engagement`,
+  `homeroom/performance`, `alumni/sanad`, `foundation/accreditation/readiness`
+  (each needs a dedicated backend aggregation endpoint).
 - **Web unit/component tests.** Add a jsdom + React Testing Library vitest project
   for `apps/web/src/**` (currently only e2e-helper tests exist).
 - **Comprehensive Playwright e2e** across all routes (nav, CRUD, every

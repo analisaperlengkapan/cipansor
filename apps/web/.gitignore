@@ -46,3 +46,6 @@ playwright/
 
 # temporary/diagnostic e2e specs (underscore-prefixed)
 e2e/_*.spec.ts
+
+# e2e auth state
+.auth/

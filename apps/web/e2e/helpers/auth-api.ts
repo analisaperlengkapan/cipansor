@@ -146,3 +146,40 @@ export async function loginAs(page: Page, role: SeedRole): Promise<AuthSession> 
   await injectSession(page, session);
   return session;
 }
+
+/**
+ * Build a Playwright storageState object for a session, mirroring injectSession
+ * (cookies the middleware reads + the zustand-persisted localStorage). Used by
+ * global-setup to write `.auth/<role>.json` so specs can `test.use({ storageState })`.
+ */
+export function buildStorageState(session: AuthSession) {
+  const origin = new URL(BASE_URL).origin;
+  const authStorage = JSON.stringify({
+    state: { user: session.user, isAuthenticated: true },
+    version: 0,
+  });
+  return {
+    cookies: [
+      { name: "accessToken", value: session.accessToken },
+      { name: "auth-storage", value: encodeURIComponent(authStorage) },
+    ].map((c) => ({
+      ...c,
+      domain: new URL(BASE_URL).hostname,
+      path: "/",
+      expires: Math.floor(Date.now() / 1000) + 86400,
+      httpOnly: false,
+      secure: false,
+      sameSite: "Lax" as const,
+    })),
+    origins: [
+      {
+        origin,
+        localStorage: [
+          { name: "accessToken", value: session.accessToken },
+          { name: "refreshToken", value: session.refreshToken },
+          { name: "auth-storage", value: authStorage },
+        ],
+      },
+    ],
+  };
+}

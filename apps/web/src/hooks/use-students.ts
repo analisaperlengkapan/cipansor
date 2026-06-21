@@ -165,7 +165,18 @@ export function useStudents(params: StudentListParams = {}) {
       const response = await api.get<PaginatedResponse<Student>>("/students", {
         params,
       });
-      return response.data;
+      // Students carry their display name on the related user record. Normalize
+      // it onto `name` so every consumer (list, id-card, certificates, transcript,
+      // duty-roster…) has a string — several call `.split`/`.charAt` on it and
+      // crashed when it was undefined.
+      const body = response.data;
+      return {
+        ...body,
+        data: (body.data ?? []).map((s: any) => ({
+          ...s,
+          name: s.name ?? s.user?.name ?? "",
+        })),
+      };
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
   });

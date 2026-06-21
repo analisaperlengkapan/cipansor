@@ -41,7 +41,10 @@ router.get('/targets', authenticate, async (req, res, next) => {
   try {
     const query = listTargetsQuerySchema.parse(req.query);
     const result = await service.listTargets(query);
-    res.json(ApiResponse.success(result));
+    // Flat paginated envelope so the client gets an array at `.data` (matches
+    // every other module). Wrapping the {data,pagination} result directly nested
+    // the array under data.data, crashing the page with "reduce is not a function".
+    res.json({ success: true, data: result.data, meta: { pagination: result.pagination } });
   } catch (error) {
     next(error);
   }
@@ -179,7 +182,8 @@ router.get('/records', authenticate, async (req, res, next) => {
   try {
     const query = listRecordsQuerySchema.parse(req.query);
     const result = await service.listRecords(query);
-    res.json(ApiResponse.success(result));
+    // Flat paginated envelope (see /targets above): keep the array at `.data`.
+    res.json({ success: true, data: result.data, meta: { pagination: result.pagination } });
   } catch (error) {
     next(error);
   }

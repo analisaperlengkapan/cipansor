@@ -33,7 +33,20 @@ export function useBehaviorRecords(params?: any) {
     queryKey: ["behavior-records", params],
     queryFn: async () => {
       const response = await api.get("/homeroom/behavior", { params });
-      return response.data.data;
+      const d = response.data?.data;
+      // The endpoint returns { violations, rewards } rather than a flat array.
+      // Normalize into a single tagged list so consumers (which expect an array
+      // of records with behaviorType) don't crash with "filter is not a function".
+      if (Array.isArray(d)) return d;
+      const violations = (d?.violations ?? []).map((v: any) => ({
+        ...v,
+        behaviorType: v.behaviorType ?? "VIOLATION",
+      }));
+      const rewards = (d?.rewards ?? []).map((r: any) => ({
+        ...r,
+        behaviorType: r.behaviorType ?? "REWARD",
+      }));
+      return [...violations, ...rewards];
     },
   });
 }

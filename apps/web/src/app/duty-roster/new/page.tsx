@@ -139,8 +139,8 @@ export default function NewDutyRosterPage() {
 
   const filteredStudents = students.filter((student) => {
     const matchesSearch =
-      student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      student.nis.includes(searchQuery);
+      (student.name ?? "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (student.nis ?? "").includes(searchQuery);
     const matchesClass =
       filterClass === "all" || student.class.id === filterClass;
     return matchesSearch && matchesClass;

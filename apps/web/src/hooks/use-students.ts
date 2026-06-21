@@ -168,15 +168,16 @@ export function useStudents(params: StudentListParams = {}) {
       // Students carry their display name on the related user record. Normalize
       // it onto `name` so every consumer (list, id-card, certificates, transcript,
       // duty-roster…) has a string — several call `.split`/`.charAt` on it and
-      // crashed when it was undefined.
+      // crashed when it was undefined. Keep the typed return so consumers retain
+      // `Student` (a loosely-typed return would make `name` `any` downstream).
       const body = response.data;
       return {
         ...body,
-        data: (body.data ?? []).map((s: any) => ({
+        data: (body.data ?? []).map((s) => ({
           ...s,
-          name: s.name ?? s.user?.name ?? "",
+          name: s.name ?? (s as { user?: { name?: string } }).user?.name ?? "",
         })),
-      };
+      } as PaginatedResponse<Student>;
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
   });

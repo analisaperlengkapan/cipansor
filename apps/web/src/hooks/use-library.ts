@@ -46,10 +46,13 @@ export function useBookCategories(unitId?: string) {
   return useQuery({
     queryKey: ["book-categories", unitId],
     queryFn: async () => {
-      const response = await api.get<BookCategory[]>("/library/categories", {
-        params: { unitId },
-      });
-      return response.data;
+      const response = await api.get<{ data: BookCategory[] }>(
+        "/library/categories",
+        { params: { unitId } },
+      );
+      // The endpoint wraps the array in { success, data }; return the array
+      // (returning the envelope made `categories.map` crash the page).
+      return response.data.data ?? [];
     },
   });
 }

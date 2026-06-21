@@ -105,7 +105,7 @@ export default function NewDutyRosterPage() {
       studentsData?.data?.map((s: any) => ({
         id: s.id,
         nis: s.nis,
-        name: s.name,
+        name: s.user?.name ?? s.name ?? "",
         class: { id: s.class?.id || "", name: s.class?.name || "-" },
         gender: s.gender,
       })) || []

@@ -132,9 +132,11 @@ export default defineConfig({
     },
   ],
 
-  /* Run local dev server before tests */
+  /* Run the web server before tests. In CI we serve the production build
+   * (fast, deterministic per-route — dev mode compiles on demand and is slow
+   * and flaky). Locally we use the dev server and reuse an already-running one. */
   webServer: {
-    command: "pnpm dev",
+    command: process.env.CI ? "pnpm start" : "pnpm dev",
     url: "http://localhost:3000",
     reuseExistingServer: !process.env.CI,
     timeout: 240 * 1000, // 4 minutes for server startup

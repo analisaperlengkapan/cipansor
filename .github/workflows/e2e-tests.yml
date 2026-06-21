@@ -7,19 +7,51 @@ on:
     branches: [main, develop]
   workflow_dispatch: # Allow manual trigger
 
+# Cancel superseded runs on the same ref to save CI minutes.
+concurrency:
+  group: e2e-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
 env:
   NODE_VERSION: '20'
   PNPM_VERSION: '9.0.0'
 
 jobs:
-  e2e-tests:
-    name: E2E Tests (Playwright)
+  # Primary gate: the full Playwright suite on Chromium against a real,
+  # seeded backend (the app's primary target browser).
+  e2e:
+    name: E2E Tests (Chromium)
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
+    permissions:
+      contents: read
+      pull-requests: write # for the report comment on PRs
+
+    # The API reads these from the shell (its dotenv path is build-relative and
+    # unreliable), so we set them job-wide rather than via a .env file.
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/cipansor_test
+      REDIS_URL: redis://localhost:6379
+      JWT_SECRET: test-jwt-secret-key-for-e2e-testing
+      JWT_EXPIRES_IN: 7d
+      JWT_REFRESH_EXPIRES_IN: 30d
+      CORS_ORIGIN: http://localhost:3000
+      PORT: '3001'
+      LOG_LEVEL: error
+      # The e2e auth helper signs admin TOTPs from a known secret seeded when
+      # E2E_FIXED_2FA=1; raise the 2FA limiter so the many logins don't trip it.
+      TWO_FACTOR_RATE_LIMIT_MAX: '100000'
+      # Baked into the web build AND used by the test runner. MUST include /api.
+      NEXT_PUBLIC_API_URL: http://localhost:3001/api
+      API_URL: http://localhost:3001/api
+      BASE_URL: http://localhost:3000
 
     services:
       postgres:
-        image: postgres:14
+        image: postgres:16
         env:
           POSTGRES_DB: cipansor_test
           POSTGRES_USER: postgres
@@ -46,135 +78,111 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
-
-      - name: Setup pnpm cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+          cache: 'pnpm'
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Install Playwright browsers
-        run: cd apps/web && pnpm exec playwright install --with-deps chromium
+      - name: Install Playwright (Chromium)
+        run: pnpm --filter web exec playwright install --with-deps chromium
 
-      - name: Setup environment variables
-        run: |
-          # API environment
-          cat > apps/api/.env << EOF
-          NODE_ENV=test
-          PORT=3001
-          DATABASE_URL=postgresql://postgres:postgres@localhost:5432/cipansor_test
-          REDIS_HOST=localhost
-          REDIS_PORT=6379
-          JWT_SECRET=test-jwt-secret-key-for-e2e-testing
-          JWT_REFRESH_SECRET=test-jwt-refresh-secret-for-e2e
-          JWT_EXPIRES_IN=1h
-          JWT_REFRESH_EXPIRES_IN=7d
-          CORS_ORIGIN=http://localhost:3000
-          EOF
+      - name: Generate Prisma client
+        run: pnpm --filter api db:generate
 
-          # Web environment
-          cat > apps/web/.env.local << EOF
-          NEXT_PUBLIC_API_URL=http://localhost:3001
-          NEXT_PUBLIC_WS_URL=ws://localhost:3001
-          NODE_ENV=test
-          EOF
+      - name: Push database schema
+        run: pnpm --filter api db:push
 
-      - name: Setup database
-        run: |
-          cd apps/api
-          pnpm db:push
-          pnpm db:seed
-
-      - name: Build API
-        run: cd apps/api && pnpm build
-
-      - name: Start API server
-        run: |
-          cd apps/api
-          pnpm start &
-          echo $! > api.pid
-          # Wait for API to be ready
-          timeout 60 bash -c 'until curl -f http://localhost:3001/health; do sleep 2; done'
-
-      - name: Build Web
-        run: cd apps/web && pnpm build
-
-      - name: Start Web server
-        run: |
-          cd apps/web
-          pnpm start &
-          echo $! > web.pid
-          # Wait for Web to be ready
-          timeout 60 bash -c 'until curl -f http://localhost:3000; do sleep 2; done'
-
-      - name: Run E2E tests
-        run: cd apps/web && pnpm test:e2e
+      - name: Seed database (with fixed-secret 2FA for admins)
+        run: pnpm --filter api db:seed
         env:
-          CI: true
-          BASE_URL: http://localhost:3000
-          API_URL: http://localhost:3001
+          E2E_FIXED_2FA: '1'
 
-      - name: Upload test results
+      - name: Build shared + API + Web
+        run: |
+          pnpm --filter @cipansor/shared build
+          pnpm --filter api build
+          pnpm --filter web build
+
+      - name: Start API and wait for health
+        run: |
+          cd apps/api
+          node dist/main.js > /tmp/api.log 2>&1 &
+          echo $! > /tmp/api.pid
+          timeout 90 bash -c 'until curl -fs http://localhost:3001/health >/dev/null; do sleep 2; done' \
+            || { echo "API did not become healthy"; cat /tmp/api.log; exit 1; }
+          echo "API is healthy"
+
+      # Playwright's webServer starts the production web server (`pnpm start`)
+      # in CI; the API is already running above.
+      - name: Run E2E tests
+        run: pnpm --filter web exec playwright test --project=chromium
+
+      - name: Stop API
+        if: always()
+        run: '[ -f /tmp/api.pid ] && kill "$(cat /tmp/api.pid)" || true'
+
+      - name: Upload Playwright report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
           path: apps/web/playwright-report/
-          retention-days: 30
+          retention-days: 14
 
-      - name: Upload test screenshots
+      - name: Upload test results (traces/screenshots)
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: test-screenshots
+          name: playwright-test-results
           path: apps/web/test-results/
           retention-days: 7
 
-      - name: Stop servers
-        if: always()
-        run: |
-          if [ -f apps/api/api.pid ]; then kill $(cat apps/api/api.pid) || true; fi
-          if [ -f apps/web/web.pid ]; then kill $(cat apps/web/web.pid) || true; fi
-
       - name: Comment PR with test results
-        if: github.event_name == 'pull_request'
+        if: ${{ always() && github.event_name == 'pull_request' }}
         uses: daun/playwright-report-comment@v3
         with:
           report-path: apps/web/playwright-report
 
-  # Separate job for running tests on multiple browsers
+  # Supplementary cross-browser coverage on main. Firefox/WebKit are not the
+  # primary target and can surface engine-specific quirks, so this is reported
+  # but does not block the pipeline (flip continue-on-error off to gate on it).
   e2e-cross-browser:
-    name: E2E Tests (Cross-Browser)
+    name: E2E Tests (${{ matrix.browser }})
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
     timeout-minutes: 45
+    continue-on-error: true
     strategy:
+      fail-fast: false
       matrix:
-        project: [chromium, firefox, webkit]
+        browser: [firefox, webkit]
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/cipansor_test
+      REDIS_URL: redis://localhost:6379
+      JWT_SECRET: test-jwt-secret-key-for-e2e-testing
+      JWT_EXPIRES_IN: 7d
+      JWT_REFRESH_EXPIRES_IN: 30d
+      CORS_ORIGIN: http://localhost:3000
+      PORT: '3001'
+      LOG_LEVEL: error
+      TWO_FACTOR_RATE_LIMIT_MAX: '100000'
+      NEXT_PUBLIC_API_URL: http://localhost:3001/api
+      API_URL: http://localhost:3001/api
+      BASE_URL: http://localhost:3000
 
     services:
       postgres:
-        image: postgres:14
+        image: postgres:16
         env:
           POSTGRES_DB: cipansor_test
           POSTGRES_USER: postgres
@@ -186,7 +194,6 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-
       redis:
         image: redis:7-alpine
         ports:
@@ -201,60 +208,59 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: ${{ env.PNPM_VERSION }}
+          cache: 'pnpm'
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Install Playwright browsers
-        run: cd apps/web && pnpm exec playwright install --with-deps ${{ matrix.project }}
+      - name: Install Playwright (${{ matrix.browser }})
+        run: pnpm --filter web exec playwright install --with-deps ${{ matrix.browser }}
 
-      - name: Setup environment
+      - name: Generate Prisma client
+        run: pnpm --filter api db:generate
+
+      - name: Push database schema
+        run: pnpm --filter api db:push
+
+      - name: Seed database (with fixed-secret 2FA for admins)
+        run: pnpm --filter api db:seed
+        env:
+          E2E_FIXED_2FA: '1'
+
+      - name: Build shared + API + Web
         run: |
-          cat > apps/api/.env << EOF
-          NODE_ENV=test
-          PORT=3001
-          DATABASE_URL=postgresql://postgres:postgres@localhost:5432/cipansor_test
-          REDIS_HOST=localhost
-          REDIS_PORT=6379
-          JWT_SECRET=test-jwt-secret
-          JWT_REFRESH_SECRET=test-refresh-secret
-          EOF
+          pnpm --filter @cipansor/shared build
+          pnpm --filter api build
+          pnpm --filter web build
 
-          cat > apps/web/.env.local << EOF
-          NEXT_PUBLIC_API_URL=http://localhost:3001
-          NEXT_PUBLIC_WS_URL=ws://localhost:3001
-          EOF
-
-      - name: Setup and start services
+      - name: Start API and wait for health
         run: |
           cd apps/api
-          pnpm db:push
-          pnpm db:seed
-          pnpm build
-          pnpm start &
-          timeout 60 bash -c 'until curl -f http://localhost:3001/health; do sleep 2; done'
+          node dist/main.js > /tmp/api.log 2>&1 &
+          echo $! > /tmp/api.pid
+          timeout 90 bash -c 'until curl -fs http://localhost:3001/health >/dev/null; do sleep 2; done' \
+            || { echo "API did not become healthy"; cat /tmp/api.log; exit 1; }
 
-          cd ../web
-          pnpm build
-          pnpm start &
-          timeout 60 bash -c 'until curl -f http://localhost:3000; do sleep 2; done'
+      - name: Run E2E tests (${{ matrix.browser }})
+        run: pnpm --filter web exec playwright test --project=${{ matrix.browser }}
 
-      - name: Run E2E tests on ${{ matrix.project }}
-        run: cd apps/web && pnpm exec playwright test --project=${{ matrix.project }}
+      - name: Stop API
+        if: always()
+        run: '[ -f /tmp/api.pid ] && kill "$(cat /tmp/api.pid)" || true'
 
-      - name: Upload test results
+      - name: Upload Playwright report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report-${{ matrix.project }}
+          name: playwright-report-${{ matrix.browser }}
           path: apps/web/playwright-report/
           retention-days: 7

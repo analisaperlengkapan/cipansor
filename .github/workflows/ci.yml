@@ -1,5 +1,5 @@
 # CI/CD Workflow for Cipansor
-# Runs on push to main and pull requests
+# Lint, build, and test on pull requests and pushes to main.
 
 name: CI/CD
 
@@ -9,166 +9,126 @@ on:
   pull_request:
     branches: [main]
 
-# Restrict permissions for security
+# Cancel superseded runs on the same ref.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
-  pull-requests: read
 
 env:
   NODE_VERSION: '20'
-  PNPM_VERSION: '10'
+  PNPM_VERSION: '9.0.0'
 
 jobs:
-  # Lint and Type Check
+  # Lint (build the shared package first so its types resolve).
   lint:
-    name: Lint & Type Check
+    name: Lint
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v3
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
         with:
           version: ${{ env.PNPM_VERSION }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Generate Prisma Client
-        run: pnpm --filter api db:generate
-
-      - name: Build shared package
-        run: pnpm --filter @cipansor/shared build
-
-      - name: Run API linting
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter api db:generate
+      - run: pnpm --filter @cipansor/shared build
+      - name: Lint API
         run: pnpm --filter api lint
-
-      - name: Run Web linting
+      - name: Lint Web
         run: pnpm --filter web lint
 
-  # Build API
-  build-api:
-    name: Build API
+  # Build all packages (this also type-checks: api via tsc, web via next build).
+  build:
+    name: Build
     runs-on: ubuntu-latest
     needs: lint
-    permissions:
-      contents: read
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v3
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
         with:
           version: ${{ env.PNPM_VERSION }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
-
-      - name: Generate Prisma Client
-        run: pnpm --filter api db:generate
-
-      - name: Build shared package
-        run: pnpm --filter @cipansor/shared build
-
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter api db:generate
+      - run: pnpm --filter @cipansor/shared build
       - name: Build API
         run: pnpm --filter api build
-
-  # Build Web
-  build-web:
-    name: Build Web
-    runs-on: ubuntu-latest
-    needs: lint
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
-
-      - name: Build shared package
-        run: pnpm --filter @cipansor/shared build
-
       - name: Build Web
         run: pnpm --filter web build
         env:
-          NEXT_PUBLIC_API_URL: 'http://localhost:3001/api'
+          NEXT_PUBLIC_API_URL: http://localhost:3001/api
 
-  # Run Tests
+  # Unit/integration tests, including the DB-backed suite (RUN_DB_TESTS=1).
   test:
-    name: Run Tests
+    name: Tests
     runs-on: ubuntu-latest
-    needs: [build-api]
-    permissions:
-      contents: read
+    needs: lint
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/cipansor_test
+      REDIS_URL: redis://localhost:6379
+      JWT_SECRET: test-jwt-secret-key-for-ci
+      RUN_DB_TESTS: '1'
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: cipansor_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v3
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
         with:
           version: ${{ env.PNPM_VERSION }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
-
-      - name: Generate Prisma Client
-        run: pnpm --filter api db:generate
-
-      - name: Run API Tests
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter api db:generate
+      - name: Push database schema
+        run: pnpm --filter api db:push
+      - name: Run API tests
         run: pnpm --filter api test
 
-  # Docker Build (on main branch only)
+  # Docker build sanity check (main only).
   docker-build:
     name: Docker Build
     runs-on: ubuntu-latest
-    needs: [build-api, build-web]
+    needs: build
+    if: github.ref == 'refs/heads/main'
     permissions:
       contents: read
       packages: write
-    if: github.ref == 'refs/heads/main'
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
+      - uses: actions/checkout@v4
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
       - name: Build API Docker image
         uses: docker/build-push-action@v5
         with:
@@ -178,7 +138,6 @@ jobs:
           tags: cipansor-api:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
       - name: Build Web Docker image
         uses: docker/build-push-action@v5
         with:

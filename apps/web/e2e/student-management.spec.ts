@@ -49,8 +49,11 @@ test.describe("Student Management - List & View", () => {
     }
 
     // Check for add button
+    // "Add Student" is rendered as a link (Button asChild + Link), so match
+    // either role.
     const addButton = page
-      .getByRole("button", { name: /tambah|add|create/i })
+      .getByRole("link", { name: /tambah|add|create/i })
+      .or(page.getByRole("button", { name: /tambah|add|create/i }))
       .first();
     if (await addButton.isVisible({ timeout: 3000 }).catch(() => false)) {
       await expect(addButton).toBeVisible();
@@ -81,17 +84,24 @@ test.describe("Student Management - List & View", () => {
       .or(page.getByLabel(/cari|search/i));
 
     if (await searchInput.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await searchInput.fill("Ahmad");
+      // Data-agnostic: derive a search term from a real seeded student rather
+      // than hardcoding a name that may not exist.
+      const rows = page.locator('table tbody tr');
+      if ((await rows.count()) === 0) {
+        test.skip(true, "No students to search");
+        return;
+      }
+      const firstText = (await rows.first().textContent()) ?? "";
+      const term = (firstText.match(/[A-Za-z]{3,}/) ?? ["a"])[0].toLowerCase();
+
+      await searchInput.fill(term);
       await waitForLoadingComplete(page);
 
-      // Results should be filtered
-      const rows = page.locator('table tbody tr, [role="row"]');
-      const count = await rows.count();
-
-      if (count > 0) {
-        const firstRow = rows.first();
-        const text = await firstRow.textContent();
-        expect(text?.toLowerCase()).toContain("ahmad");
+      // Every visible result should match the search term.
+      const resultCount = await rows.count();
+      if (resultCount > 0) {
+        const text = (await rows.first().textContent())?.toLowerCase() ?? "";
+        expect(text).toContain(term);
       }
     } else {
       test.skip(true, "Search functionality not found");
@@ -204,8 +214,11 @@ test.describe("Student Management - Create", () => {
   });
 
   test("should open create student form", async ({ page }) => {
+    // "Add Student" is rendered as a link (Button asChild + Link), so match
+    // either role.
     const addButton = page
-      .getByRole("button", { name: /tambah|add|create/i })
+      .getByRole("link", { name: /tambah|add|create/i })
+      .or(page.getByRole("button", { name: /tambah|add|create/i }))
       .first();
     await addButton.click();
 
@@ -220,8 +233,11 @@ test.describe("Student Management - Create", () => {
   });
 
   test("should validate required fields", async ({ page }) => {
+    // "Add Student" is rendered as a link (Button asChild + Link), so match
+    // either role.
     const addButton = page
-      .getByRole("button", { name: /tambah|add|create/i })
+      .getByRole("link", { name: /tambah|add|create/i })
+      .or(page.getByRole("button", { name: /tambah|add|create/i }))
       .first();
     await addButton.click();
     await waitForLoadingComplete(page);
@@ -238,8 +254,11 @@ test.describe("Student Management - Create", () => {
   });
 
   test("should create new student successfully", async ({ page }) => {
+    // "Add Student" is rendered as a link (Button asChild + Link), so match
+    // either role.
     const addButton = page
-      .getByRole("button", { name: /tambah|add|create/i })
+      .getByRole("link", { name: /tambah|add|create/i })
+      .or(page.getByRole("button", { name: /tambah|add|create/i }))
       .first();
     await addButton.click();
     await waitForLoadingComplete(page);

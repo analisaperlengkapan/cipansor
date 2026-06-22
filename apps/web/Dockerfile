@@ -35,7 +35,8 @@ COPY . .
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 
-# Build the app
+# Build the app (standalone output for the runner stage below)
+ENV BUILD_STANDALONE=1
 RUN pnpm --filter @cipansor/shared build
 WORKDIR /app/apps/web
 RUN pnpm build

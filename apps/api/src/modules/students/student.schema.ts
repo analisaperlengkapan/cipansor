@@ -9,14 +9,18 @@ import {
 export const listStudentsQuerySchema = sharedListSchema;
 
 // Create student
-// API extends shared schema to enforce stricter password policy for creation
+// Password is optional at creation — students are typically issued an
+// auto-generated password (set/reset later). When a password IS supplied it
+// must meet the complexity policy below. (Requiring it here made the create form,
+// which collects no password, impossible to submit — POST returned 400.)
 export const createStudentSchema = sharedCreateSchema.extend({
   password: z
     .string()
     .min(8, 'Password must be at least 8 characters')
     .regex(/[A-Z]/, 'Password must contain uppercase letter')
     .regex(/[a-z]/, 'Password must contain lowercase letter')
-    .regex(/[0-9]/, 'Password must contain number'),
+    .regex(/[0-9]/, 'Password must contain number')
+    .optional(),
 });
 
 // Update student

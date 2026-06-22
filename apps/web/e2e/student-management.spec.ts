@@ -162,8 +162,8 @@ test.describe("Student Management - List & View", () => {
   });
 
   test("should view student detail", async ({ page }) => {
-    // Click first student row
-    const firstRow = page.locator('table tbody tr, [role="row"]').first();
+    // Click first student row (body only — [role=row] would also match the header).
+    const firstRow = page.locator("table tbody tr").first();
 
     if (await firstRow.isVisible({ timeout: 5000 }).catch(() => false)) {
       // Try clicking the row or view button
@@ -174,7 +174,9 @@ test.describe("Student Management - List & View", () => {
       if (await viewButton.isVisible({ timeout: 2000 }).catch(() => false)) {
         await viewButton.click();
       } else {
-        await firstRow.click();
+        // Click a data cell (not the actions column) so the row's onClick
+        // navigation fires rather than opening the row action menu.
+        await firstRow.locator("td").first().click();
       }
 
       // Should navigate to detail page or open modal
@@ -188,10 +190,10 @@ test.describe("Student Management - List & View", () => {
 
       if (isModal || urlChanged) {
         // Should show student details
-        await expect(page.getByText(/nama|name/i)).toBeVisible({
+        await expect(page.getByText(/nama|name/i).first()).toBeVisible({
           timeout: 5000,
         });
-        await expect(page.getByText(/nisn|nis/i)).toBeVisible();
+        await expect(page.getByText(/nisn|nis/i).first()).toBeVisible();
       }
     } else {
       test.skip(true, "No students available");
@@ -227,9 +229,10 @@ test.describe("Student Management - Create", () => {
       page.getByRole("heading", { name: /tambah|add|create|baru/i }),
     ).toBeVisible({ timeout: 5000 });
 
-    // Check for required fields
-    await expect(page.getByLabel(/nama|name/i)).toBeVisible();
-    await expect(page.getByLabel(/nisn|nis/i)).toBeVisible();
+    // Check for required fields (use specific labels to avoid matching
+    // "Parent Name" / multiple inputs).
+    await expect(page.getByLabel(/full name|nama lengkap/i)).toBeVisible();
+    await expect(page.getByLabel(/nis/i).first()).toBeVisible();
   });
 
   test("should validate required fields", async ({ page }) => {
@@ -244,7 +247,7 @@ test.describe("Student Management - Create", () => {
 
     // Try to submit empty form
     const submitButton = page.getByRole("button", {
-      name: /simpan|save|submit/i,
+      name: /simpan|save|submit|create student/i,
     });
     await submitButton.click();
 
@@ -270,42 +273,45 @@ test.describe("Student Management - Create", () => {
       nisn: `TEST${timestamp.toString().slice(-10)}`,
     };
 
-    // Fill form
-    await page
-      .getByLabel(/nama|name/i)
-      .first()
-      .fill(studentData.nama);
-    await page
-      .getByLabel(/nisn|nis/i)
-      .first()
-      .fill(studentData.nisn);
-
-    // Fill other required fields if they exist
-    const emailInput = page.getByLabel(/email/i);
-    if (await emailInput.isVisible({ timeout: 2000 }).catch(() => false)) {
+    // Fill all required fields (target inputs by id to avoid ambiguity).
+    await page.locator("#name").fill(studentData.nama);
+    await page.locator("#nis").fill(studentData.nisn);
+    await page.locator("#birthDate").fill("2012-05-10");
+    await page.locator("#birthPlace").fill("Bandung");
+    await page.locator("#address").fill("Jl. Test No. 123, Bandung");
+    await page.locator("#parentName").fill("Wali Test");
+    await page.locator("#parentPhone").fill("081234567890");
+    const emailInput = page.locator("#email");
+    if (await emailInput.isVisible({ timeout: 1000 }).catch(() => false)) {
       await emailInput.fill(`test${timestamp}@example.com`);
     }
 
+    // Gender and Unit are Radix selects.
+    const genderSelect = page
+      .locator('button[role="combobox"]')
+      .filter({ hasText: /gender/i })
+      .first();
+    if (await genderSelect.isVisible({ timeout: 1000 }).catch(() => false)) {
+      await genderSelect.click();
+      await page.getByRole("option").first().click();
+    }
     const unitSelect = page
       .locator('button[role="combobox"]')
       .filter({ hasText: /unit/i })
       .first();
-    if (await unitSelect.isVisible({ timeout: 2000 }).catch(() => false)) {
+    if (await unitSelect.isVisible({ timeout: 1000 }).catch(() => false)) {
       await unitSelect.click();
       await page.getByRole("option").first().click();
     }
 
     // Submit form
     const submitButton = page.getByRole("button", {
-      name: /simpan|save|submit/i,
+      name: /simpan|save|submit|create student/i,
     });
     await submitButton.click();
 
-    // Should show success message
-    await waitForToast(page, /berhasil|success/i, "success");
-
-    // Should navigate back to list or close modal
-    await waitForLoadingComplete(page);
+    // On success the form navigates back to the students list.
+    await expect(page).toHaveURL(/\/students(\/)?$/, { timeout: 15000 });
   });
 });
 

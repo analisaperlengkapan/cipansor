@@ -173,28 +173,26 @@ test.describe("Student Management - List & View", () => {
 
       if (await viewButton.isVisible({ timeout: 2000 }).catch(() => false)) {
         await viewButton.click();
-      } else {
-        // Click a data cell (not the actions column) so the row's onClick
-        // navigation fires rather than opening the row action menu.
-        await firstRow.locator("td").first().click();
-      }
-
-      // Should navigate to detail page or open modal
-      const isModal = await page
-        .locator('[role="dialog"]')
-        .isVisible({ timeout: 3000 })
-        .catch(() => false);
-      const urlChanged = page.url().includes("/students/");
-
-      expect(isModal || urlChanged).toBeTruthy();
-
-      if (isModal || urlChanged) {
-        // Should show student details
-        await expect(page.getByText(/nama|name/i).first()).toBeVisible({
-          timeout: 5000,
+        await expect(page).toHaveURL(/\/students\/[0-9a-f-]{16,}/, {
+          timeout: 10000,
         });
-        await expect(page.getByText(/nisn|nis/i).first()).toBeVisible();
+      } else {
+        // Click the name cell (a data cell, not the actions column) so the row's
+        // onClick navigation fires. Retry until it navigates — under parallel
+        // workers the click can land before the row's handler is hydrated.
+        await expect(async () => {
+          await firstRow.locator("td").nth(1).click();
+          await expect(page).toHaveURL(/\/students\/[0-9a-f-]{16,}/, {
+            timeout: 2000,
+          });
+        }).toPass({ timeout: 20000 });
       }
+
+      // Should show student details
+      await expect(page.getByText(/nama|name/i).first()).toBeVisible({
+        timeout: 8000,
+      });
+      await expect(page.getByText(/nisn|nis/i).first()).toBeVisible();
     } else {
       test.skip(true, "No students available");
     }
@@ -273,6 +271,22 @@ test.describe("Student Management - Create", () => {
       nisn: `TEST${timestamp.toString().slice(-10)}`,
     };
 
+    // Atomically open a Radix select, pick the first option, and confirm it
+    // closed. Retried as a unit — under parallel workers on a production build,
+    // interacting before hydration (or before async options load) silently drops
+    // the value and leaves overlays that block the next control.
+    const pickFirstOption = async (trigger: import("@playwright/test").Locator) => {
+      await expect(async () => {
+        await trigger.click();
+        const option = page.getByRole("option").first();
+        await option.waitFor({ state: "visible", timeout: 1500 });
+        await option.click();
+        await expect(page.getByRole("listbox")).toHaveCount(0, {
+          timeout: 1500,
+        });
+      }).toPass({ timeout: 20000 });
+    };
+
     // Fill all required fields (target inputs by id to avoid ambiguity).
     await page.locator("#name").fill(studentData.nama);
     await page.locator("#nis").fill(studentData.nisn);
@@ -286,23 +300,13 @@ test.describe("Student Management - Create", () => {
       await emailInput.fill(`test${timestamp}@example.com`);
     }
 
-    // Gender and Unit are Radix selects.
-    const genderSelect = page
-      .locator('button[role="combobox"]')
-      .filter({ hasText: /gender/i })
-      .first();
-    if (await genderSelect.isVisible({ timeout: 1000 }).catch(() => false)) {
-      await genderSelect.click();
-      await page.getByRole("option").first().click();
-    }
-    const unitSelect = page
-      .locator('button[role="combobox"]')
-      .filter({ hasText: /unit/i })
-      .first();
-    if (await unitSelect.isVisible({ timeout: 1000 }).catch(() => false)) {
-      await unitSelect.click();
-      await page.getByRole("option").first().click();
-    }
+    // Gender + Unit selects (Unit options load asynchronously via useUnits).
+    await pickFirstOption(
+      page.locator('button[role="combobox"]').filter({ hasText: /gender/i }).first(),
+    );
+    await pickFirstOption(
+      page.locator('button[role="combobox"]').filter({ hasText: /unit/i }).first(),
+    );
 
     // Submit form
     const submitButton = page.getByRole("button", {

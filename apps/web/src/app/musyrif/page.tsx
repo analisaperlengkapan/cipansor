@@ -485,10 +485,13 @@ export default function MusyrifDashboard() {
                         <p className="text-sm font-medium">Kamar {log.room}</p>
                         <p className="text-xs text-muted-foreground">
                           {log.studentCount} santri •{" "}
-                          {formatDistanceToNow(new Date(log.checkedAt), {
-                            addSuffix: true,
-                            locale: localeId,
-                          })}
+                          {log.checkedAt &&
+                          !Number.isNaN(new Date(log.checkedAt).getTime())
+                            ? formatDistanceToNow(new Date(log.checkedAt), {
+                                addSuffix: true,
+                                locale: localeId,
+                              })
+                            : "-"}
                         </p>
                       </div>
                       <Badge className={getPatrolStatusColor(log.status)}>

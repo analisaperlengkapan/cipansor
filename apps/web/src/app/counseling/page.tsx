@@ -108,11 +108,11 @@ export default function CounselingPage() {
   // Calculate stats from new structure
   const totalSessions = stats?.totalSessions || 0;
   const countScheduled =
-    stats?.byStatus.find((s) => s.status === "SCHEDULED")?.count || 0;
+    stats?.byStatus?.find((s) => s.status === "SCHEDULED")?.count || 0;
   const countInProgress =
-    stats?.byStatus.find((s) => s.status === "IN_PROGRESS")?.count || 0;
+    stats?.byStatus?.find((s) => s.status === "IN_PROGRESS")?.count || 0;
   const countCompleted =
-    stats?.byStatus.find((s) => s.status === "COMPLETED")?.count || 0;
+    stats?.byStatus?.find((s) => s.status === "COMPLETED")?.count || 0;
 
   return (
     <MainLayout>

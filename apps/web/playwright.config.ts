@@ -15,7 +15,16 @@ export default defineConfig({
 
   /* Test Organization */
   testMatch: "**/*.spec.ts",
-  testIgnore: "**/debug-*.spec.ts", // Ignore debug tests in CI
+  // Ignore debug specs and the screenshot/verification utilities — the latter
+  // are tooling (they overwrite tracked docs/images and aren't product tests);
+  // crash-sweep.spec.ts covers page-crash detection instead.
+  testIgnore: [
+    "**/debug-*.spec.ts",
+    "**/generate-screenshots.spec.ts",
+    "**/verify-screenshots.spec.ts",
+    "**/verify_reception.spec.ts",
+    "**/_*.spec.ts",
+  ],
 
   /* Parallel Execution */
   fullyParallel: true,

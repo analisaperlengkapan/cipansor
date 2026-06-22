@@ -62,7 +62,9 @@ export async function loginAsUser(page: Page, user: AuthUser) {
 
   // Wait for redirect to dashboard
   await expect(page).toHaveURL(/dashboard/, { timeout: 15000 });
-  await page.waitForLoadState("networkidle");
+  // domcontentloaded, not networkidle — long-lived connections keep the network
+  // busy, so networkidle would always time out.
+  await page.waitForLoadState("domcontentloaded");
 
   // Verify token is stored
   const token = await page.evaluate(() => localStorage.getItem("accessToken"));

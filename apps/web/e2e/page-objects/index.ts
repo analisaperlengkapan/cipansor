@@ -36,7 +36,7 @@ export class DashboardPage {
   // Actions
   async goto() {
     await this.page.goto("/dashboard");
-    await this.page.waitForLoadState("networkidle");
+    await this.page.waitForLoadState("domcontentloaded");
   }
 
   async waitForDataLoad() {
@@ -103,7 +103,7 @@ export class TahfidzDashboardPage {
   // Actions
   async goto() {
     await this.page.goto("/tahfidz/dashboard");
-    await this.page.waitForLoadState("networkidle");
+    await this.page.waitForLoadState("domcontentloaded");
   }
 
   async waitForDataLoad() {
@@ -173,7 +173,7 @@ export class TKAssessmentPage {
   // Actions
   async goto() {
     await this.page.goto("/tk/assessment");
-    await this.page.waitForLoadState("networkidle");
+    await this.page.waitForLoadState("domcontentloaded");
   }
 
   async selectStudent(studentName: string) {

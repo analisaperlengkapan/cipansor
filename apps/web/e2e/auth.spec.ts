@@ -111,7 +111,7 @@ test.describe("Authentication", () => {
 
     // Reload page
     await page.reload();
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
 
     // Should still be on dashboard, not redirected to login
     await expect(page).toHaveURL(/dashboard/);

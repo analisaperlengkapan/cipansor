@@ -106,7 +106,10 @@ export async function waitForAPICall(
  */
 export async function navigateTo(page: Page, path: string) {
   await page.goto(path);
-  await page.waitForLoadState("networkidle");
+  // Wait for the DOM, not networkidle — the app keeps long-lived connections
+  // (realtime socket / periodic connectivity ping / React Query), so the network
+  // never goes idle and networkidle would always time out.
+  await page.waitForLoadState("domcontentloaded");
   await waitForLoadingComplete(page);
 }
 

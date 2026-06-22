@@ -84,7 +84,7 @@ test.describe("Integration - Perencanaan to Finance linkage", () => {
 
     // 2. Navigate to Plan Detail
     await page.goto("/perencanaan/plan-1");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
 
     // 3. Switch to Activities tab
     await page.getByRole("tab", { name: /Program & Kegiatan/i }).click();

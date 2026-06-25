@@ -31,7 +31,7 @@ test.describe("CBT Exams & Grading", () => {
     });
 
     await page.goto("/cbt/exams");
-    await expect(page.locator("main").getByRole("heading", { level: 1 }).first()).toContainText("Computer Based Test");
+    await expect(page.getByRole("heading", { name: /jadwal ujian/i })).toBeVisible();
     await expect(page.getByText("Ujian Akhir Semester Ganjil")).toBeVisible();
   });
 
@@ -127,7 +127,7 @@ test.describe("CBT Exams & Grading", () => {
     });
 
     await page.goto("/cbt/exams/new");
-    await expect(page.locator("main").getByRole("heading", { level: 1 }).first()).toContainText("Buat Ujian Baru");
+    await expect(page.getByRole("heading", { name: /buat ujian baru/i })).toBeVisible();
 
     await page.fill('input[name="title"]', "UTS Sejarah Kebudayaan Islam");
 
@@ -191,7 +191,7 @@ test.describe("CBT Exams & Grading", () => {
     });
 
     await page.goto("/cbt/exams/exam-1/monitoring");
-    await expect(page.locator("main").getByRole("heading", { level: 1 }).first()).toContainText("Monitoring Ujian", { timeout: 15000 });
+    await expect(page.getByRole("heading", { name: /monitoring ujian/i })).toBeVisible({ timeout: 15000 });
     await expect(page.getByText("Ahmad Santoso")).toBeVisible();
 
     // Mock Attempt Grading
@@ -233,6 +233,6 @@ test.describe("CBT Exams & Grading", () => {
     });
 
     await page.goto("/cbt/attempts/attempt-1/grading");
-    await expect(page.locator("main").getByRole("heading", { level: 1 })).toContainText("Penilaian Manual");
+    await expect(page.getByRole("heading", { name: /penilaian manual/i })).toBeVisible();
   });
 });

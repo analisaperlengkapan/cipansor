@@ -30,10 +30,15 @@ test.describe("Attendance - Daily Marking", () => {
       page.getByRole("heading", { name: /absen|attendance|kehadiran/i }),
     ).toBeVisible({ timeout: 10000 });
 
-    // Check for date selector
+    // Check for the date selector. The page uses a custom date-picker button
+    // (shows "Pilih tanggal" or a formatted Indonesian date), not input[type=date].
     const dateInput = page
       .locator('input[type="date"]')
-      .or(page.getByLabel(/tanggal|date/i));
+      .or(
+        page.getByRole("button", {
+          name: /tanggal|date|januari|februari|maret|april|mei|juni|juli|agustus|september|oktober|november|desember/i,
+        }),
+      );
     await expect(dateInput.first()).toBeVisible();
   });
 

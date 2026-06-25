@@ -67,33 +67,35 @@ export class DashboardPage {
 export class TahfidzDashboardPage {
   constructor(private page: Page) {}
 
-  // Locators
+  // Locators. Use .first() on text locators: empty-state messages
+  // ("Tidak ada data progress per juz") repeat the section title text, so a bare
+  // getByText would match two elements and trip strict mode.
   get heading() {
     return this.page.getByRole("heading", { name: /dashboard tahfidz/i });
   }
 
   get totalRecordsCard() {
-    return this.page.getByText(/total catatan/i);
+    return this.page.getByText(/total catatan/i).first();
   }
 
   get activeSantriCard() {
-    return this.page.getByText(/santri aktif/i);
+    return this.page.getByText(/santri aktif/i).first();
   }
 
   get totalJuzCard() {
-    return this.page.getByText(/total juz/i);
+    return this.page.getByText(/total juz/i).first();
   }
 
   get recordTypeChart() {
-    return this.page.getByText(/catatan per tipe/i);
+    return this.page.getByText(/catatan per tipe/i).first();
   }
 
   get topSantriSection() {
-    return this.page.getByText(/top 10 santri/i);
+    return this.page.getByText(/top 10 santri/i).first();
   }
 
   get progressPerJuzSection() {
-    return this.page.getByText(/progress per juz/i);
+    return this.page.getByText(/progress per juz/i).first();
   }
 
   get recentRecordsTable() {

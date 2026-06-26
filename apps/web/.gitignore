@@ -49,3 +49,7 @@ e2e/_*.spec.ts
 
 # e2e auth state
 .auth/
+
+# e2e screenshot temp artifacts
+e2e/temp/
+apps/web/

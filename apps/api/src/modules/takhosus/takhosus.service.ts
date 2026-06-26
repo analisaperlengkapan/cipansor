@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { TakhosusStatus, HalaqohDay } from '@prisma/client';
+import { Prisma, TakhosusStatus, HalaqohDay } from '@prisma/client';
 import {
   CreateHalaqohInput,
   UpdateHalaqohInput,
@@ -111,10 +111,12 @@ export const halaqohService = {
   async update(id: string, input: UpdateHalaqohInput) {
     return prisma.halaqoh.update({
       where: { id },
+      // input is a validated UpdateHalaqohInput (zod); cast to the Prisma
+      // update shape (scheduleDay normalised to the enum array).
       data: {
         ...input,
         ...(input.scheduleDay && { scheduleDay: input.scheduleDay as HalaqohDay[] }),
-      },
+      } as Prisma.HalaqohUpdateInput,
       include: {
         unit: { select: { id: true, name: true } },
         teacher: { select: { id: true, name: true } },
@@ -562,7 +564,7 @@ export const sanadService = {
       eventBus.emit('takhosus:sanad_assessed', {
         studentId: sanad.enrollment.studentId,
         studentName: sanad.enrollment.student.user?.name || 'Unknown',
-        halaqohName: sanad.enrollment.halaqoh.name,
+        halaqohName: sanad.enrollment.halaqoh?.name ?? 'Unknown',
         juz: sanad.juz,
         grade: sanad.grade,
         certifiedAt: sanad.certifiedAt,
@@ -651,7 +653,7 @@ export const sanadService = {
       eventBus.emit('takhosus:sanad_assessed', {
         studentId: sanad.enrollment.studentId,
         studentName: sanad.enrollment.student.user?.name || 'Unknown',
-        halaqohName: sanad.enrollment.halaqoh.name,
+        halaqohName: sanad.enrollment.halaqoh?.name ?? 'Unknown',
         juz: sanad.juz,
         grade: sanad.grade,
         certifiedAt: sanad.certifiedAt,

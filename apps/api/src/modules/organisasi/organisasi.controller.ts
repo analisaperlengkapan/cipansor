@@ -3,7 +3,8 @@ import { organisasiService } from "./organisasi.service";
 
 export const getOrgUnits = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const unitId = (req.query as any).unitId as string || req.user?.unitId;
+    const unitId = ((req.query as any).unitId as string) || req.user?.unitId;
+    if (!unitId) { res.status(400).json({ error: "unitId is required" }); return; }
     const data = await organisasiService.getOrgUnits(unitId);
     res.json({ data });
   } catch (error) { next(error); }
@@ -11,7 +12,8 @@ export const getOrgUnits = async (req: Request, res: Response, next: NextFunctio
 
 export const getOrgTree = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const unitId = (req.query as any).unitId as string || req.user?.unitId;
+    const unitId = ((req.query as any).unitId as string) || req.user?.unitId;
+    if (!unitId) { res.status(400).json({ error: "unitId is required" }); return; }
     const data = await organisasiService.getOrgTree(unitId);
     res.json({ data });
   } catch (error) { next(error); }

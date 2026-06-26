@@ -936,7 +936,7 @@ export class CBTService {
             create: {
               attemptId,
               questionId: question.id,
-              answer: null,
+              answer: Prisma.JsonNull,
               isCorrect: null,
               score: null,
             },

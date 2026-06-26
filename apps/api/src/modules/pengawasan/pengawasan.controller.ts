@@ -154,7 +154,7 @@ export const getAuditSuggestions = asyncHandler(async (req: Request, res: Respon
   //   - pass ?unitId=all   to get cross-unit suggestions (global view)
   //   - omit ?unitId       to default to their own token unitId (or cross-unit if token has none)
   // Non-privileged users always use their token unitId.
-  let targetUnitId: string | undefined = unitId;
+  let targetUnitId: string | undefined = unitId ?? undefined;
   if (isPrivilegedUser) {
     const queryUnitId = (req.query as any).unitId ? String((req.query as any).unitId) : undefined;
     if (queryUnitId === 'all') {

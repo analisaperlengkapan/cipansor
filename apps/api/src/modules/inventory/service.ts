@@ -726,8 +726,8 @@ export async function updateInventorySettings(data: UpdateInventorySettingsInput
     keys.map((k) =>
       prisma.setting.upsert({
         where: { unitId_key: { unitId: data.unitId, key: k.key } },
-        update: { value: k.value },
-        create: { unitId: data.unitId, key: k.key, value: k.value },
+        update: { value: k.value ?? Prisma.JsonNull },
+        create: { unitId: data.unitId, key: k.key, value: k.value ?? Prisma.JsonNull },
       })
     )
   );

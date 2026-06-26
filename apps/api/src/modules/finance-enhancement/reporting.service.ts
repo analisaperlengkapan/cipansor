@@ -46,8 +46,17 @@ export async function getBalanceSheet(unitId: string, date: Date): Promise<Balan
     const typeAccounts = accounts.filter((a) => a.type === type);
     const roots = typeAccounts.filter((a) => !a.parentId);
 
-    const buildNode = (account: (typeof accounts)[0]) => {
-      const children = typeAccounts.filter((a) => a.parentId === account.id).map(buildNode);
+    interface ReportNode {
+      code: string;
+      name: string;
+      amount: number;
+      level: number;
+      children?: ReportNode[];
+    }
+    const buildNode = (account: (typeof accounts)[0]): ReportNode => {
+      const children: ReportNode[] = typeAccounts
+        .filter((a) => a.parentId === account.id)
+        .map(buildNode);
       let directBalance = balanceMap.get(account.id) || 0;
 
       // Flip sign for Credit normal accounts (Liability, Equity, Revenue)

@@ -289,7 +289,7 @@ export async function getTakhosusSummary(
     const avgScore = sessions > 0 ? sessionScores / sessions : 0;
 
     return {
-      halaqohName: enr.halaqoh.name,
+      halaqohName: enr.halaqoh?.name ?? "-",
       status: enr.status,
       progress: enr.targetJuz ? Math.round((enr.completedJuz / enr.targetJuz) * 100) : 0,
       latestGrade: getGradeFromScore(avgScore, config.gradeThresholds),

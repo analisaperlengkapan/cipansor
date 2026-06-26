@@ -430,7 +430,7 @@ test.describe("Integration: Multi-user Collaboration", () => {
 
     // Open second tab (simulate another user)
     const page2 = await context.newPage();
-    const login2 = new loginPage.LoginPage(page2);
+    const login2 = new LoginPage(page2);
     await login2.goto();
     await login2.loginAndWaitForDashboard(
       "superadmin@cipansor.id",

@@ -51,6 +51,7 @@ import {
   ShoppingBag,
   Key,
   MessageSquareWarning,
+  Leaf,
   type LucideIcon,
 } from "lucide-react";
 
@@ -277,6 +278,11 @@ const staffNavigation: NavGroup[] = [
         title: "Penghargaan",
         href: "/rewards",
         icon: Award,
+      },
+      {
+        title: "Kampus Hijau",
+        href: "/lingkungan",
+        icon: Leaf,
       },
     ],
   },

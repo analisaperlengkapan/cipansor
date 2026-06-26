@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -14,6 +14,8 @@ import {
   useCreateWasteRecord,
   useCreateIndicator,
 } from "@/hooks/use-lingkungan";
+import { useAuth } from "@/hooks/use-auth";
+import { useUnits } from "@/hooks/use-units";
 import { PageHeader } from "@/components/shared/page-header";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import {
@@ -312,19 +314,50 @@ export default function LingkunganPage() {
   const [editProgram, setEditProgram] = useState<any>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  const { data: programs, isLoading: loadingPrograms } = useEnvironmentPrograms();
-  const { data: wasteSummary } = useWasteSummary();
-  const { data: indicators } = useGreenIndicators();
+  // The backend scopes every read by unitId (and requires one for users without
+  // their own, e.g. SUPER_ADMIN), so resolve a unit before querying.
+  const { user } = useAuth();
+  const { data: units } = useUnits();
+  const [selectedUnitId, setSelectedUnitId] = useState<string>("");
+  useEffect(() => {
+    const ownUnit = (user as { unitId?: string } | null)?.unitId;
+    if (!selectedUnitId) {
+      if (ownUnit) setSelectedUnitId(ownUnit);
+      else if (units?.length) setSelectedUnitId(units[0].id);
+    }
+  }, [user, units, selectedUnitId]);
+  const isSuperAdmin = !(user as { unitId?: string } | null)?.unitId;
+
+  const { data: programs, isLoading: loadingPrograms } =
+    useEnvironmentPrograms(selectedUnitId);
+  const { data: wasteSummary } = useWasteSummary(selectedUnitId);
+  const { data: indicators } = useGreenIndicators(selectedUnitId);
   const deleteProgram = useDeleteProgram();
 
   const handleEditProgram = (prog: any) => { setEditProgram(prog); setProgramDialogOpen(true); };
 
   return (
     <div className="container mx-auto py-6 space-y-8">
-      <PageHeader
-        title="Manajemen Lingkungan"
-        description="Kelola program green campus, pengelolaan sampah, dan indikator lingkungan."
-      />
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <PageHeader
+          title="Kampus Hijau"
+          description="Kelola program lingkungan (Adiwiyata), pengelolaan sampah, dan indikator Kampus Hijau."
+        />
+        {isSuperAdmin && units && units.length > 0 && (
+          <Select value={selectedUnitId} onValueChange={setSelectedUnitId}>
+            <SelectTrigger className="w-56">
+              <SelectValue placeholder="Pilih unit" />
+            </SelectTrigger>
+            <SelectContent>
+              {units.map((u) => (
+                <SelectItem key={u.id} value={u.id}>
+                  {u.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+      </div>
 
       {/* Stats Row */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

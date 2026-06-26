@@ -5,8 +5,7 @@ test.describe("Lingkungan - Navigation", () => {
   test("should navigate to lingkungan page", async ({ page }) => {
     const login = new LoginPage(page);
     await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
-    await page.waitForTimeout(2000);
+    await login.loginAndWaitForDashboard("superadmin@cipansor.id", "SuperAdmin123!");
     await page.goto("/lingkungan");
     await page.waitForLoadState("domcontentloaded", { timeout: 10000 });
     expect(page.url()).toMatch(/lingkungan/);
@@ -15,8 +14,7 @@ test.describe("Lingkungan - Navigation", () => {
   test("should display lingkungan content", async ({ page }) => {
     const login = new LoginPage(page);
     await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
-    await page.waitForTimeout(2000);
+    await login.loginAndWaitForDashboard("superadmin@cipansor.id", "SuperAdmin123!");
     await page.goto("/lingkungan");
     await page.waitForLoadState("domcontentloaded", { timeout: 10000 });
     const content = await page.content();
@@ -29,8 +27,7 @@ test.describe("Lingkungan - Features", () => {
   test("should display environment programs", async ({ page }) => {
     const login = new LoginPage(page);
     await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
-    await page.waitForTimeout(2000);
+    await login.loginAndWaitForDashboard("superadmin@cipansor.id", "SuperAdmin123!");
     await page.goto("/lingkungan");
     await page.waitForLoadState("domcontentloaded", { timeout: 10000 });
 
@@ -45,8 +42,7 @@ test.describe("Lingkungan - Features", () => {
   test("should display waste management section", async ({ page }) => {
     const login = new LoginPage(page);
     await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
-    await page.waitForTimeout(2000);
+    await login.loginAndWaitForDashboard("superadmin@cipansor.id", "SuperAdmin123!");
     await page.goto("/lingkungan");
     await page.waitForLoadState("domcontentloaded", { timeout: 10000 });
 
@@ -63,8 +59,7 @@ test.describe("Lingkungan - Performance", () => {
   test("should load page within timeout", async ({ page }) => {
     const login = new LoginPage(page);
     await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
-    await page.waitForTimeout(2000);
+    await login.loginAndWaitForDashboard("superadmin@cipansor.id", "SuperAdmin123!");
     const startTime = Date.now();
     await page.goto("/lingkungan");
     await page.waitForLoadState("domcontentloaded", { timeout: 15000 });

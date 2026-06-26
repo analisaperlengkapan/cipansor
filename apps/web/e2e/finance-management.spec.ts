@@ -215,48 +215,23 @@ test.describe("Finance - Reports", () => {
   test("should generate income report", async ({ page }) => {
     await navigateTo(page, "/finance/reports");
 
-    const heading = page.getByRole("heading", { name: /laporan|report/i });
-    if (await heading.isVisible({ timeout: 5000 }).catch(() => false)) {
-      // Select report type
-      const reportTypeSelect = page
-        .locator('button[role="combobox"]')
-        .filter({ hasText: /jenis.*laporan|report.*type/i })
-        .first();
-      if (
-        await reportTypeSelect.isVisible({ timeout: 3000 }).catch(() => false)
-      ) {
-        await reportTypeSelect.click();
-        await page.getByRole("option", { name: /pendapatan|income/i }).click();
-      }
+    // The reports page ("Laporan Keuangan") presents reports as tabs rather than
+    // a generate-on-demand form. Open the income statement (Laba Rugi) tab and
+    // confirm its report renders.
+    await expect(
+      page.getByRole("heading", { name: /laporan keuangan/i }),
+    ).toBeVisible({ timeout: 10000 });
 
-      // Select date range
-      const startDate = page.getByLabel(/tanggal.*awal|start.*date/i);
-      if (await startDate.isVisible({ timeout: 2000 }).catch(() => false)) {
-        await startDate.fill("2026-01-01");
-      }
+    await page
+      .getByRole("tab", { name: /laba rugi|income statement/i })
+      .click();
+    await waitForLoadingComplete(page);
 
-      const endDate = page.getByLabel(/tanggal.*akhir|end.*date/i);
-      if (await endDate.isVisible({ timeout: 2000 }).catch(() => false)) {
-        await endDate.fill("2026-01-31");
-      }
-
-      // Generate report
-      const generateButton = page.getByRole("button", {
-        name: /generate|tampilkan/i,
-      });
-      await generateButton.click();
-      await waitForLoadingComplete(page);
-
-      // Should show report
-      const reportContent = page.locator(
-        '[data-testid="report-content"], .report-container',
-      );
-      await expect(reportContent.or(page.locator("table"))).toBeVisible({
-        timeout: 5000,
-      });
-    } else {
-      test.skip(true, "Finance reports page not available");
-    }
+    // The income-statement (Laba Rugi) report card renders with its activity
+    // title regardless of the loaded data.
+    await expect(
+      page.getByText(/laporan aktivitas/i).first(),
+    ).toBeVisible({ timeout: 10000 });
   });
 
   test("should export report to Excel", async ({ page }) => {

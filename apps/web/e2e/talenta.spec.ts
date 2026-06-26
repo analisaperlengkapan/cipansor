@@ -99,7 +99,9 @@ test.describe('Talenta Module End-to-End', () => {
 
     // Check if mocked data is rendered
     await expect(page.getByText('Kepala IT')).toBeVisible();
-    await expect(page.getByText('HIGH')).toBeVisible();
+    // "HIGH" priority badge — exact match avoids clashing with the
+    // "High Potential + Key Talent" stat-card description.
+    await expect(page.getByText('HIGH', { exact: true })).toBeVisible();
   });
 
   test('should open dialog and submit new succession plan', async ({ page }) => {
@@ -110,9 +112,11 @@ test.describe('Talenta Module End-to-End', () => {
     await expect(page.getByRole('dialog')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Tambah Rencana Suksesi' })).toBeVisible();
 
-    // Fill the form
+    // Fill the form. The priority Select is the only combobox in the dialog;
+    // its placeholder ("Opsional") isn't exposed as an accessible name, so scope
+    // to the dialog instead of matching by name.
     await page.getByLabel('Jabatan').fill('Direktur Operasional');
-    await page.getByRole('combobox', { name: 'Opsional' }).click();
+    await page.getByRole('dialog').getByRole('combobox').click();
     await page.getByRole('option', { name: 'Tinggi' }).click();
 
     // Submit
@@ -164,12 +168,12 @@ test.describe('Talenta Module End-to-End', () => {
     const deleteBtn = card.locator('button.text-destructive');
     await deleteBtn.click();
 
-    // Confirm Dialog should be open
-    await expect(page.getByRole('dialog')).toBeVisible();
+    // Confirm Dialog should be open (ConfirmDialog renders an AlertDialog).
+    await expect(page.getByRole('alertdialog')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Hapus Data?' })).toBeVisible();
 
     // Confirm deletion
-    await page.getByRole('button', { name: 'Hapus' }).click();
+    await page.getByRole('alertdialog').getByRole('button', { name: 'Hapus' }).click();
 
     // Verify toast success
     await expect(page.getByText('Rencana suksesi berhasil dihapus')).toBeVisible();

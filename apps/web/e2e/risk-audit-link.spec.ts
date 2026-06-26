@@ -1,7 +1,9 @@
 import { test, expect } from "@playwright/test";
+import { primeAuthCookies } from './helpers/auth';
 
 test("Risk - Audit Integration", async ({ page }) => {
   test.setTimeout(60000);
+  await primeAuthCookies(page);
 
   // Mock Auth
   await page.route("**/api/auth/me", async (route) => {

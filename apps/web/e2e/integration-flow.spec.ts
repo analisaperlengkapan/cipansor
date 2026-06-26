@@ -1,7 +1,9 @@
 import { test, expect } from '@playwright/test';
+import { primeAuthCookies } from './helpers/auth';
 
 test.describe('Integrated School Management Flow', () => {
   test.beforeEach(async ({ page }) => {
+    await primeAuthCookies(page);
     // Mock auth
     await page.goto('/');
     await page.evaluate(() => {

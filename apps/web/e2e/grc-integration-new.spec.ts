@@ -1,7 +1,9 @@
 import { test, expect } from '@playwright/test';
+import { primeAuthCookies } from './helpers/auth';
 
 test.describe('GRC Integrated Workflow', () => {
   test.beforeEach(async ({ page }) => {
+    await primeAuthCookies(page);
     // Mock authentication
     await page.goto('/');
     await page.evaluate(() => {

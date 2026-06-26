@@ -1,7 +1,9 @@
 import { test, expect } from '@playwright/test';
+import { primeAuthCookies } from './helpers/auth';
 
 test.describe('Talent Management Enhancements', () => {
   test.beforeEach(async ({ page }) => {
+    await primeAuthCookies(page);
     await page.goto('/');
     await page.evaluate(() => {
       localStorage.setItem('accessToken', 'mock-token');

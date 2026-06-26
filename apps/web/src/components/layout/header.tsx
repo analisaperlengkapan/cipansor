@@ -54,7 +54,11 @@ export function Header({ onMenuClick }: HeaderProps) {
         {/* User Menu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+            <Button
+              variant="ghost"
+              aria-label="User menu"
+              className="relative h-10 w-10 rounded-full"
+            >
               <Avatar className="h-10 w-10">
                 <AvatarFallback>
                   {user?.name?.charAt(0).toUpperCase() || "U"}

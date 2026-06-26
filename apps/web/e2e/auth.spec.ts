@@ -132,23 +132,12 @@ test.describe("Authentication", () => {
     ]);
 
     // Find and click logout (multiple possible locations)
-    const logoutButton = page
-      .getByRole("button", { name: /logout|keluar/i })
-      .first();
-
-    // Wait for logout button to be visible
-    if (await logoutButton.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await logoutButton.click();
-    } else {
-      // Try menu-based logout
-      const menuButton = page
-        .getByRole("button", { name: /menu|profile/i })
-        .first();
-      if (await menuButton.isVisible({ timeout: 5000 }).catch(() => false)) {
-        await menuButton.click();
-        await page.getByRole("menuitem", { name: /logout|keluar/i }).click();
-      }
-    }
+    // Logout lives in the header user menu (avatar dropdown, aria-label
+    // "User menu") as a menuitem.
+    await page.getByRole("button", { name: "User menu" }).click();
+    await page
+      .getByRole("menuitem", { name: /logout|keluar/i })
+      .click();
 
     // Should redirect to login
     await expect(page).toHaveURL(/login/, { timeout: 10000 });
@@ -200,10 +189,15 @@ test.describe("Role-based Access Control", () => {
       "SuperAdmin123!",
     );
 
-    // Check navigation menu has all items
-    const nav = page.locator('nav, [role="navigation"]');
-    await expect(nav.getByText(/dashboard/i)).toBeVisible();
-    await expect(nav.getByText(/tahfidz/i)).toBeVisible();
+    // Check navigation menu has all items. The sidebar renders one
+    // <nav>/navigation per section (plus a hidden mobile copy), so scope to the
+    // visible sidebar links by role rather than a broad nav text search.
+    await expect(
+      page.getByRole("link", { name: "Dashboard" }).first(),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: /tahfidz/i }).first(),
+    ).toBeVisible();
     // Add more based on your menu structure
   });
 

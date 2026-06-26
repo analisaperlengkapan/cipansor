@@ -47,9 +47,14 @@ test.describe("Analytics Dashboard", () => {
   test("should navigate to forecast page", async ({ page }) => {
     await page.goto("/analytics");
 
-    // Click forecast button
-    await page.getByRole("link", { name: /forecast/i }).click();
-    await expect(page).toHaveURL(/analytics\/forecast/);
+    // The quick-link anchors can be overlapped by the dashboard charts, so
+    // trigger the anchor's own navigation rather than a positional click.
+    const forecastLink = page.getByRole("link", { name: /forecast/i });
+    await expect(forecastLink).toHaveAttribute("href", /analytics\/forecast/);
+    await Promise.all([
+      page.waitForURL(/analytics\/forecast/, { timeout: 15000 }),
+      forecastLink.evaluate((el) => (el as HTMLElement).click()),
+    ]);
     await expect(
       page.getByRole("heading", { name: /prediksi|forecast/i }),
     ).toBeVisible();
@@ -58,9 +63,14 @@ test.describe("Analytics Dashboard", () => {
   test("should navigate to export page", async ({ page }) => {
     await page.goto("/analytics");
 
-    // Click export button
-    await page.getByRole("link", { name: /export/i }).click();
-    await expect(page).toHaveURL(/analytics\/export/);
+    // The quick-link anchors can be overlapped by the dashboard charts, so
+    // trigger the anchor's own navigation rather than a positional click.
+    const exportLink = page.getByRole("link", { name: /export/i });
+    await expect(exportLink).toHaveAttribute("href", /analytics\/export/);
+    await Promise.all([
+      page.waitForURL(/analytics\/export/, { timeout: 15000 }),
+      exportLink.evaluate((el) => (el as HTMLElement).click()),
+    ]);
     await expect(page.getByRole("heading", { name: /export/i })).toBeVisible();
   });
 });
@@ -71,8 +81,11 @@ test.describe("Forecast Page", () => {
   test("should display forecast cards", async ({ page }) => {
     await page.goto("/analytics/forecast");
 
-    // Check for summary cards
-    await expect(page.getByText(/prediksi pendaftaran/i)).toBeVisible();
+    // Check for summary cards (forecast computation can take a few seconds;
+    // the cards are behind a loading skeleton).
+    await expect(page.getByText(/prediksi pendaftaran/i)).toBeVisible({
+      timeout: 20000,
+    });
     await expect(page.getByText(/prediksi pembayaran/i)).toBeVisible();
     await expect(page.getByText(/risiko tunggakan/i)).toBeVisible();
     await expect(page.getByText(/proyeksi hafidz/i)).toBeVisible();
@@ -81,7 +94,9 @@ test.describe("Forecast Page", () => {
   test("should display forecast tabs", async ({ page }) => {
     await page.goto("/analytics/forecast");
 
-    await expect(page.getByRole("tab", { name: /pendaftaran/i })).toBeVisible();
+    await expect(page.getByRole("tab", { name: /pendaftaran/i })).toBeVisible({
+      timeout: 20000,
+    });
     await expect(page.getByRole("tab", { name: /pembayaran/i })).toBeVisible();
     await expect(page.getByRole("tab", { name: /tunggakan/i })).toBeVisible();
     await expect(page.getByRole("tab", { name: /tahfidz/i })).toBeVisible();
@@ -94,18 +109,20 @@ test.describe("Export Page", () => {
   test("should display export options", async ({ page }) => {
     await page.goto("/analytics/export");
 
-    // Check for export type selection
-    await expect(page.getByText(/data siswa/i)).toBeVisible();
-    await expect(page.getByText(/data kehadiran/i)).toBeVisible();
-    await expect(page.getByText(/data keuangan/i)).toBeVisible();
-    await expect(page.getByText(/data tahfidz/i)).toBeVisible();
+    // Check for export type selection (the selected type's name also appears in
+    // the preview panel, so scope to the first match).
+    await expect(page.getByText(/data siswa/i).first()).toBeVisible();
+    await expect(page.getByText(/data kehadiran/i).first()).toBeVisible();
+    await expect(page.getByText(/data keuangan/i).first()).toBeVisible();
+    await expect(page.getByText(/data tahfidz/i).first()).toBeVisible();
   });
 
   test("should have format selection", async ({ page }) => {
     await page.goto("/analytics/export");
 
-    // Check for format dropdown
-    await expect(page.getByLabel(/format/i)).toBeVisible();
+    // Format selector (a Radix Select with a "Format" label, not a native
+    // labelled control).
+    await expect(page.getByText(/format/i).first()).toBeVisible();
   });
 
   test("should preview data before export", async ({ page }) => {

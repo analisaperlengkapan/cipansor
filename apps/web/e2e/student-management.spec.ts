@@ -301,12 +301,10 @@ test.describe("Student Management - Create", () => {
     }
 
     // Gender + Unit selects (Unit options load asynchronously via useUnits).
-    await pickFirstOption(
-      page.locator('button[role="combobox"]').filter({ hasText: /gender/i }).first(),
-    );
-    await pickFirstOption(
-      page.locator('button[role="combobox"]').filter({ hasText: /unit/i }).first(),
-    );
+    // Radix renders the placeholder via data-placeholder, so hasText matching is
+    // unreliable — address the two triggers by index (gender = 0, unit = 1).
+    await pickFirstOption(page.locator('button[role="combobox"]').nth(0));
+    await pickFirstOption(page.locator('button[role="combobox"]').nth(1));
 
     // Submit form
     const submitButton = page.getByRole("button", {

@@ -36,6 +36,22 @@ test.describe("Tahfidz Transcript", () => {
       await route.fulfill({ json });
     });
 
+    // Any unmocked endpoint hitting the real backend with the fake token returns
+    // 401; the axios interceptor then tries /auth/refresh and, on failure,
+    // clears the session and redirects to /login. Mock refresh so a stray 401
+    // never logs the test out.
+    await page.route("**/api/auth/refresh", async (route) => {
+      await route.fulfill({
+        json: {
+          success: true,
+          data: {
+            accessToken: "mock-access-token",
+            refreshToken: "mock-refresh-token",
+          },
+        },
+      });
+    });
+
     await page.route("**/api/auth/me", async (route) => {
       const json = {
         success: true,

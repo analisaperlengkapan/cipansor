@@ -25,6 +25,6 @@ test.describe('Marketing ROI & Boarding Command Center', () => {
     await expect(page.getByText('Boarding Command Center')).toBeVisible();
     await expect(page.getByText('All Zones Active')).toBeVisible();
     await expect(page.getByText('Asrama Al-Fatih')).toBeVisible();
-    await expect(page.getByText('Social Harmony Score')).toBeVisible();
+    await expect(page.getByText('Social Harmony Score', { exact: true })).toBeVisible();
   });
 });

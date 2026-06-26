@@ -1,0 +1,27 @@
+# Keep GitHub Actions and the npm/pnpm dependency tree patched automatically.
+version: 2
+updates:
+  # GitHub Actions used by the workflows (supply-chain hygiene).
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '06:17'
+    open-pull-requests-limit: 5
+    groups:
+      actions:
+        patterns: ['*']
+
+  # JS/TS dependencies (pnpm workspace; Dependabot reads pnpm-lock.yaml).
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '06:23'
+    open-pull-requests-limit: 10
+    groups:
+      # Batch low-risk updates to keep PR noise down.
+      minor-and-patch:
+        update-types: ['minor', 'patch']

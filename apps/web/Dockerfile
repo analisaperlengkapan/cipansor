@@ -2,7 +2,7 @@
 # Multi-stage build for Next.js production optimization
 
 # Stage 1: Dependencies
-FROM node:20-alpine AS deps
+FROM node:22-alpine AS deps
 RUN npm install -g pnpm@10
 WORKDIR /app
 
@@ -19,7 +19,7 @@ COPY packages/shared/package.json ./packages/shared/
 RUN pnpm install --frozen-lockfile
 
 # Stage 2: Builder
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
 RUN npm install -g pnpm@10
 WORKDIR /app
 
@@ -42,7 +42,7 @@ WORKDIR /app/apps/web
 RUN pnpm build
 
 # Stage 3: Production
-FROM node:20-alpine AS runner
+FROM node:22-alpine AS runner
 RUN npm install -g pnpm@10
 WORKDIR /app
 

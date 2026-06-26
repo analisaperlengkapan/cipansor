@@ -1,7 +1,9 @@
 import { test, expect } from '@playwright/test';
+import { primeAuthCookies } from './helpers/auth';
 
 test.describe('Perencanaan & Risk Management Integration', () => {
   test.beforeEach(async ({ page }) => {
+    await primeAuthCookies(page);
     // Authenticate as a user who can access Perencanaan and Risk Management
     await page.addInitScript(() => {
       window.localStorage.setItem('accessToken', 'mock-token');

@@ -102,3 +102,26 @@ export async function login(page: Page) {
     path: '/',
   }]);
 }
+
+/**
+ * Prime the auth cookies the Next middleware reads, BEFORE the first navigation.
+ * Specs that mock auth purely via localStorage/addInitScript otherwise get
+ * redirected to /login on first load (the middleware runs before page JS, so a
+ * document.cookie/localStorage-only setup isn't visible yet). The cookie role
+ * only gates middleware *routing*; the page still uses whatever user the spec
+ * placed in localStorage.
+ */
+export async function primeAuthCookies(page: Page) {
+  const authStorage = JSON.stringify({
+    state: {
+      user: { id: "mock", name: "Mock", role: "SUPER_ADMIN" },
+      isAuthenticated: true,
+    },
+    version: 0,
+  });
+  const baseURL = process.env.BASE_URL || "http://localhost:3000";
+  await page.context().addCookies([
+    { name: "accessToken", value: "fake-token", url: baseURL },
+    { name: "auth-storage", value: encodeURIComponent(authStorage), url: baseURL },
+  ]);
+}

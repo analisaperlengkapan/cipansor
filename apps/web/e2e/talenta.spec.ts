@@ -1,7 +1,9 @@
 import { test, expect } from '@playwright/test';
+import { primeAuthCookies } from './helpers/auth';
 
 // Helper function to mock user login directly via local storage
 async function loginAsAdmin(page: any) {
+  await primeAuthCookies(page);
   await page.addInitScript(() => {
     window.localStorage.setItem('accessToken', 'mock-token-admin');
     window.localStorage.setItem('auth-storage', JSON.stringify({

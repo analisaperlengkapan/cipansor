@@ -151,5 +151,9 @@ export default defineConfig({
     timeout: 240 * 1000, // 4 minutes for server startup
     stdout: "pipe", // Capture server logs
     stderr: "pipe",
+    // `next start` honours the PORT env var. In CI the job sets PORT=3001 for
+    // the API, which would make the web server try to bind 3001 too
+    // (EADDRINUSE). Pin the web server to 3000 regardless of the inherited PORT.
+    env: { PORT: "3000" },
   },
 });

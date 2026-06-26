@@ -177,7 +177,8 @@ export default function AlumniDetailPage() {
     );
   };
 
-  const getInitials = (name: string) => {
+  const getInitials = (name?: string | null) => {
+    if (!name) return "?";
     return name
       .split(" ")
       .map((n) => n[0])
@@ -198,14 +199,14 @@ export default function AlumniDetailPage() {
               </Link>
             </Button>
             <Avatar className="h-16 w-16">
-              <AvatarImage src={alumni.photoUrl} alt={alumni.fullName} />
+              <AvatarImage src={alumni.photoUrl} alt={(alumni.name ?? alumni.fullName)} />
               <AvatarFallback className="text-lg">
-                {getInitials(alumni.fullName)}
+                {getInitials((alumni.name ?? alumni.fullName))}
               </AvatarFallback>
             </Avatar>
             <div>
               <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-bold">{alumni.fullName}</h1>
+                <h1 className="text-2xl font-bold">{(alumni.name ?? alumni.fullName)}</h1>
                 {getStatusBadge(alumni.status)}
               </div>
               <p className="text-muted-foreground">
@@ -335,7 +336,7 @@ export default function AlumniDetailPage() {
               <CardContent className="grid gap-6 md:grid-cols-2">
                 <div className="space-y-1">
                   <Label className="text-muted-foreground">Nama Lengkap</Label>
-                  <p className="font-medium">{alumni.fullName}</p>
+                  <p className="font-medium">{(alumni.name ?? alumni.fullName)}</p>
                 </div>
                 <div className="space-y-1">
                   <Label className="text-muted-foreground">Jenis Kelamin</Label>

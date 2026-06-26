@@ -76,6 +76,7 @@ export interface Alumni {
   };
 
   // Personal info
+  name?: string; // The API persists the alumnus name on `name`
   fullName: string;
   studentName?: string; // For backward compatibility
   gender: "MALE" | "FEMALE";

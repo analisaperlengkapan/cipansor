@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import {
@@ -476,8 +477,8 @@ export default function AlumniPage() {
                                   Verifikasi
                                 </Button>
                               )}
-                              <Button size="sm" variant="ghost">
-                                Detail
+                              <Button size="sm" variant="ghost" asChild>
+                                <Link href={`/alumni/${member.id}`}>Detail</Link>
                               </Button>
                             </div>
                           </TableCell>

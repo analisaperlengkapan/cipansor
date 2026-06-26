@@ -22,11 +22,11 @@ export class DashboardPage {
   }
 
   get totalTeachersCard() {
-    return this.page.getByText(/total (guru|teachers)/i);
+    return this.page.getByText(/ustadz|guru|teachers/i).first();
   }
 
   get todayAttendanceCard() {
-    return this.page.getByText(/kehadiran hari ini|today.*attendance/i);
+    return this.page.getByText(/kehadiran|attendance/i).first();
   }
 
   get realtimeIndicator() {

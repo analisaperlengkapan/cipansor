@@ -1,26 +1,28 @@
 import { test, expect } from "@playwright/test";
+import { primeAuthCookies } from "./helpers/auth";
 
 test("Finance Accounting Page - Trial Balance and Reports", async ({
   page,
 }) => {
   test.setTimeout(60000); // Increase timeout
 
-  // Mock Auth Login
-  await page.route("**/api/auth/login", async (route) => {
-    console.log("Login API hit");
-    const json = {
-      success: true,
-      data: {
-        token: "fake-token",
-        user: {
-          id: "user-id",
-          name: "Super Admin",
-          role: "ADMIN",
-          email: "superadmin@cipansor.id",
+  // Cookies the Next middleware reads must exist before the first navigation.
+  await primeAuthCookies(page);
+  // localStorage token must exist too: the auth store's fetchUser() short-circuits
+  // to unauthenticated when there's no accessToken in localStorage, which would
+  // make ProtectedRoute render nothing.
+  await page.addInitScript(() => {
+    localStorage.setItem("accessToken", "fake-token");
+    localStorage.setItem(
+      "auth-storage",
+      JSON.stringify({
+        state: {
+          user: { id: "user-id", name: "Super Admin", role: "SUPER_ADMIN" },
+          isAuthenticated: true,
         },
-      },
-    };
-    await route.fulfill({ json });
+        version: 0,
+      }),
+    );
   });
 
   // Mock User/Me endpoint
@@ -135,35 +137,14 @@ test("Finance Accounting Page - Trial Balance and Reports", async ({
     await route.fulfill({ json: { success: true, data: {} } });
   });
 
-  // 1. Go to Login
-  await page.goto("http://localhost:3000/login");
-
-  // 2. Perform Login
-  await page.getByLabel(/email/i).fill("superadmin@cipansor.id");
-  await page.getByLabel(/password|kata sandi/i).fill("SuperAdmin123!");
-  await page.getByRole("button", { name: /sign in|masuk|login/i }).click();
-
-  // 3. Wait for dashboard (indicating successful login)
-  await expect(page).toHaveURL(/dashboard/, { timeout: 30000 });
-
-  // 4. Navigate to the accounting page
+  // 1. Navigate directly to the accounting page (cookies primed above).
   await page.goto("http://localhost:3000/finance/accounting");
 
-  // 5. Click on "Laporan" tab
-  // Use a more specific locator if "Laporan" appears multiple times
-  await page.getByRole("tab", { name: "Laporan" }).click();
+  // 2. Open the reports tab ("Ringkasan Laporan").
+  await page.getByRole("tab", { name: /Ringkasan Laporan/i }).click();
 
-  // 6. Wait for the report to load (check for "Neraca Saldo")
+  // 3. Wait for the report to load (check for "Neraca Saldo").
   await expect(page.locator("text=Neraca Saldo")).toBeVisible({
     timeout: 10000,
-  });
-
-  // Wait a bit for charts/tables to render
-  await page.waitForTimeout(1000);
-
-  // Take a screenshot
-  await page.screenshot({
-    path: "/home/jules/verification/finance-reports.png",
-    fullPage: true,
   });
 });

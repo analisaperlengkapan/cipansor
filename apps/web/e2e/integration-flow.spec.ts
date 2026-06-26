@@ -19,7 +19,9 @@ test.describe('Integrated School Management Flow', () => {
 
   test('Unified Raport - Access and Display Data', async ({ page }) => {
     // Mock Unified Raport API
-    await page.route('**/api/assessment/unified-raport/*', async (route) => {
+    // The hook hits .../unified-raport/students/<id>?... — a single "*" won't
+    // cross the "/students/" segment, so use "**" to match the full path.
+    await page.route('**/api/assessment/unified-raport/**', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',

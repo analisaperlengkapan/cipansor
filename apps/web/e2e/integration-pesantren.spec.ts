@@ -109,12 +109,15 @@ test.describe('End-to-End: Integrated Pesantren Modules (Tahfidz, Takhosus, Kita
     await expect(page.getByText('Kitab Selesai: 3')).toBeVisible();
     await expect(page.getByText('Halaman Terbaca: 450 / 500')).toBeVisible();
 
-    // 5. Verify Ibadah & Akhlak
-    await expect(page.getByRole('heading', { name: 'Ibadah & Karakter (Akhlak)' })).toBeVisible();
-    await expect(page.getByText('Prestasi: 5')).toBeVisible();
+    // 5. Verify Ibadah & Akhlak (rendered as a CardTitle, not a heading element)
+    await expect(page.getByText('Ibadah & Karakter (Akhlak)')).toBeVisible();
+    await expect(page.getByText(/Prestasi:\s*5/)).toBeVisible();
     
-    // 6. Verify print layout structure
+    // 6. Verify print layout structure. The signature block is "hidden
+    // print:block", so emulate print media to assert it renders.
     await expect(page.getByRole('button', { name: 'Cetak Rapor' })).toBeVisible();
+    await page.emulateMedia({ media: 'print' });
     await expect(page.getByText('Mudirul Ma\'had')).toBeVisible();
+    await page.emulateMedia({ media: 'screen' });
   });
 });

@@ -62,10 +62,15 @@ jobs:
       - run: pnpm --filter @cipansor/shared build
       - name: Build API
         run: pnpm --filter api build
+        env:
+          # tsc on the full API surface exceeds Node's ~2GB default heap and
+          # OOMs (exit 134); raise the limit (runners have plenty of RAM).
+          NODE_OPTIONS: --max-old-space-size=4096
       - name: Build Web
         run: pnpm --filter web build
         env:
           NEXT_PUBLIC_API_URL: http://localhost:3001/api
+          NODE_OPTIONS: --max-old-space-size=4096
 
   # Unit/integration tests, including the DB-backed suite (RUN_DB_TESTS=1).
   test:

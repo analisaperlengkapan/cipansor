@@ -111,6 +111,10 @@ jobs:
           pnpm --filter @cipansor/shared build
           pnpm --filter api build
           pnpm --filter web build
+        env:
+          # tsc on the full API surface exceeds Node's ~2GB default heap and
+          # OOMs (exit 134); raise the limit (runners have plenty of RAM).
+          NODE_OPTIONS: --max-old-space-size=4096
 
       - name: Start API and wait for health
         run: |
@@ -147,10 +151,13 @@ jobs:
           retention-days: 7
 
       - name: Comment PR with test results
+        # Cosmetic PR comment — never let it fail the gate (e.g. when an earlier
+        # step failed and no report was produced). v3 takes the JSON report file.
         if: ${{ always() && github.event_name == 'pull_request' }}
+        continue-on-error: true
         uses: daun/playwright-report-comment@v3
         with:
-          report-path: apps/web/playwright-report
+          report-file: apps/web/test-results/results.json
 
   # Supplementary cross-browser coverage on main. Firefox/WebKit are not the
   # primary target and can surface engine-specific quirks, so this is reported
@@ -241,6 +248,8 @@ jobs:
           pnpm --filter @cipansor/shared build
           pnpm --filter api build
           pnpm --filter web build
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
 
       - name: Start API and wait for health
         run: |

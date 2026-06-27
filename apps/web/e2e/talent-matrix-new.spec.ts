@@ -29,8 +29,10 @@ test.describe('Talent Management Enhancements', () => {
       });
     });
 
-    await page.goto('/');
-    await page.evaluate(() => {
+    // Seed auth state before any page JS runs (applies on every navigation), so
+    // the auth store is hydrated on first paint and never races into the
+    // logout/redirect flow.
+    await page.addInitScript(() => {
       localStorage.setItem('accessToken', 'mock-token');
       localStorage.setItem('auth-storage', JSON.stringify({
         state: {

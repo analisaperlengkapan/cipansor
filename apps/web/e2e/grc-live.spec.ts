@@ -28,9 +28,9 @@ test.describe('GRC Dashboard Live Data', () => {
       });
     });
 
-    // Mock auth
-    await page.goto('/');
-    await page.evaluate(() => {
+    // Seed auth before any page JS runs (applies on every navigation) so the
+    // store is hydrated on first paint and never races into the logout flow.
+    await page.addInitScript(() => {
       localStorage.setItem('accessToken', 'mock-token');
       localStorage.setItem('auth-storage', JSON.stringify({
         state: {

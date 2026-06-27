@@ -59,9 +59,10 @@ test("Risk - Audit Integration", async ({ page }) => {
     });
   });
 
-  // Bypass login
-  await page.goto("http://localhost:3000/");
-  await page.evaluate(() => {
+  // Seed auth state BEFORE any page JS runs (addInitScript applies on every
+  // navigation), so the auth store is hydrated on first paint and never races
+  // into the logout/redirect flow.
+  await page.addInitScript(() => {
     localStorage.setItem("accessToken", "fake-token");
     localStorage.setItem("auth-storage", JSON.stringify({
       state: {

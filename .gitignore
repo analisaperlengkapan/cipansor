@@ -122,3 +122,4 @@ storybook-static/
 
 # Redis dump artifact (local dev)
 dump.rdb
+.ci-proxy-ca.crt

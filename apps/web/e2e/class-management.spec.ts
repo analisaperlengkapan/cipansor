@@ -49,24 +49,13 @@ test.describe("Class Management - List and View", () => {
     if (await heading.isVisible({ timeout: 5000 }).catch(() => false)) {
       const firstRow = page.locator("table tbody tr").first();
       if (await firstRow.isVisible({ timeout: 3000 }).catch(() => false)) {
-        const className = await firstRow.locator("td").first().textContent();
+        // Row click navigates to the class detail page (/classes/[id]).
+        await firstRow.click();
 
-        const viewButton = firstRow.getByRole("button", {
-          name: /view|lihat|detail/i,
-        });
-        if (await viewButton.isVisible({ timeout: 2000 }).catch(() => false)) {
-          await viewButton.click();
-        } else {
-          await firstRow.click();
-        }
-
+        // Confirm we landed on a detail route rather than asserting a brittle
+        // heading derived from concatenated cell text.
+        await page.waitForURL(/\/classes\/[^/]+$/, { timeout: 10000 });
         await waitForLoadingComplete(page);
-
-        // Should show class detail
-        const detailHeading = page.getByRole("heading", {
-          name: new RegExp(className || "detail", "i"),
-        });
-        await expect(detailHeading).toBeVisible({ timeout: 5000 });
 
         // Should show student list
         const studentSection = page.getByText(/daftar.*siswa|student.*list/i);
@@ -179,9 +168,17 @@ test.describe("Class Management - Create and Update", () => {
     const heading = page.getByRole("heading", { name: /kelas|class/i });
     if (await heading.isVisible({ timeout: 5000 }).catch(() => false)) {
       const firstRow = page.locator("table tbody tr").first();
+      if (!(await firstRow.isVisible({ timeout: 3000 }).catch(() => false))) {
+        test.skip(true, "No classes available to edit");
+        return;
+      }
 
-      const editButton = firstRow.getByRole("button", { name: /edit|ubah/i });
-      await editButton.click();
+      // Edit is exposed via the row's actions dropdown (the trailing icon
+      // button), which navigates to the dedicated /classes/[id]/edit page.
+      await firstRow.getByRole("button").last().click();
+      await page.getByRole("menuitem", { name: /edit|ubah/i }).click();
+
+      await page.waitForURL(/\/classes\/.+\/edit/, { timeout: 10000 });
       await waitForLoadingComplete(page);
 
       // Update capacity

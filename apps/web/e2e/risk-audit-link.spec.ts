@@ -5,6 +5,25 @@ test("Risk - Audit Integration", async ({ page }) => {
   test.setTimeout(60000);
   await primeAuthCookies(page);
 
+  // Fallback for any incidental API call (notifications, my-roles, etc.).
+  // Registered first so the specific mocks below take precedence (Playwright
+  // matches the most recently registered route first). Without this, a stray
+  // 401 triggers the axios refresh→logout flow and redirects to /login,
+  // wiping the page under test.
+  await page.route("**/api/**", async (route) => {
+    await route.fulfill({ json: { success: true, data: [] } });
+  });
+
+  // Keep a stray 401 from ever logging the test out via the refresh flow.
+  await page.route("**/api/auth/refresh", async (route) => {
+    await route.fulfill({
+      json: {
+        success: true,
+        data: { accessToken: "fake-token", refreshToken: "fake-token" },
+      },
+    });
+  });
+
   // Mock Auth
   await page.route("**/api/auth/me", async (route) => {
     await route.fulfill({
@@ -63,6 +82,4 @@ test("Risk - Audit Integration", async ({ page }) => {
   await expect(page.locator("text=Audit Findings")).toBeVisible();
   await expect(page.locator("text=FIND-01: Missing receipts")).toBeVisible();
   await expect(page.locator("text=MAJOR")).toBeVisible();
-
-  await page.screenshot({ path: "apps/web/e2e/temp/risk-audit-link.png" });
 });

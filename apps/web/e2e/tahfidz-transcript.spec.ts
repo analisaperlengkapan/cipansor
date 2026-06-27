@@ -181,10 +181,5 @@ test.describe("Tahfidz Transcript", () => {
     await expect(page.locator("text=150").first()).toBeVisible(); // Total Ayah
     await expect(page.locator("text=1").first()).toBeVisible(); // Juz Selesai
     await expect(page.locator("text=An-Nas").first()).toBeVisible(); // Surah list
-
-    // Take a screenshot for verification
-    await page.screenshot({
-      path: "/home/jules/verification/transcript_verified.png",
-    });
   });
 });

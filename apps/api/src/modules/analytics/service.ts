@@ -245,11 +245,11 @@ export async function getTahfidzStats(
     }),
   ]);
 
-  // Better approach for Completed Hafidz (30 Juz) using mapped table name
+  // Completed Hafidz = students who have records spanning all 30 juz.
+  // tahfidz_records has no soft-delete column, so don't filter on one.
   const completedHafidzCount = await prisma.$queryRaw<Array<{ count: bigint }>>`
       SELECT COUNT(*)::bigint as count FROM (
           SELECT student_id FROM tahfidz_records
-          WHERE deleted_at IS NULL -- Assuming standard soft delete or ignored if column doesn't exist
           GROUP BY student_id
           HAVING COUNT(DISTINCT juz) >= 30
       ) as hafidz

@@ -5,14 +5,14 @@ import { toast } from "sonner";
 export const useSOPs = (params?: { status?: string; category?: string; search?: string }) => {
   return useQuery({
     queryKey: ["tata-laksana", params],
-    queryFn: async () => (await api.get("/api/tata-laksana", { params })).data.data,
+    queryFn: async () => (await api.get("/tata-laksana", { params })).data.data,
   });
 };
 
 export const useSOP = (id: string) => {
   return useQuery({
     queryKey: ["tata-laksana", id],
-    queryFn: async () => (await api.get(`/api/tata-laksana/${id}`)).data.data,
+    queryFn: async () => (await api.get(`/tata-laksana/${id}`)).data.data,
     enabled: !!id,
   });
 };
@@ -20,14 +20,14 @@ export const useSOP = (id: string) => {
 export const useSOPSummary = () => {
   return useQuery({
     queryKey: ["tata-laksana", "summary"],
-    queryFn: async () => (await api.get("/api/tata-laksana/summary")).data.data,
+    queryFn: async () => (await api.get("/tata-laksana/summary")).data.data,
   });
 };
 
 export const useCreateSOP = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (data: any) => (await api.post("/api/tata-laksana", data)).data,
+    mutationFn: async (data: any) => (await api.post("/tata-laksana", data)).data,
     onSuccess: () => { toast.success("SOP berhasil dibuat"); qc.invalidateQueries({ queryKey: ["tata-laksana"] }); },
     onError: (e: any) => { toast.error(e.response?.data?.message || "Gagal membuat SOP"); },
   });
@@ -36,7 +36,7 @@ export const useCreateSOP = () => {
 export const useUpdateSOP = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...data }: { id: string } & any) => (await api.put(`/api/tata-laksana/${id}`, data)).data,
+    mutationFn: async ({ id, ...data }: { id: string } & any) => (await api.put(`/tata-laksana/${id}`, data)).data,
     onSuccess: () => { toast.success("SOP berhasil diperbarui"); qc.invalidateQueries({ queryKey: ["tata-laksana"] }); },
     onError: (e: any) => { toast.error(e.response?.data?.message || "Gagal memperbarui SOP"); },
   });
@@ -45,7 +45,7 @@ export const useUpdateSOP = () => {
 export const useApproveSOP = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (id: string) => (await api.post(`/api/tata-laksana/${id}/approve`)).data,
+    mutationFn: async (id: string) => (await api.post(`/tata-laksana/${id}/approve`)).data,
     onSuccess: () => { toast.success("SOP berhasil disetujui"); qc.invalidateQueries({ queryKey: ["tata-laksana"] }); },
     onError: (e: any) => { toast.error(e.response?.data?.message || "Gagal menyetujui SOP"); },
   });
@@ -54,7 +54,7 @@ export const useApproveSOP = () => {
 export const useActivateSOP = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (id: string) => (await api.post(`/api/tata-laksana/${id}/activate`)).data,
+    mutationFn: async (id: string) => (await api.post(`/tata-laksana/${id}/activate`)).data,
     onSuccess: () => { toast.success("SOP berhasil diaktifkan"); qc.invalidateQueries({ queryKey: ["tata-laksana"] }); },
     onError: (e: any) => { toast.error(e.response?.data?.message || "Gagal mengaktifkan SOP"); },
   });
@@ -63,7 +63,7 @@ export const useActivateSOP = () => {
 export const useCreateRevision = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (data: any) => (await api.post("/api/tata-laksana/revisions", data)).data,
+    mutationFn: async (data: any) => (await api.post("/tata-laksana/revisions", data)).data,
     onSuccess: () => { toast.success("Revisi berhasil dibuat"); qc.invalidateQueries({ queryKey: ["tata-laksana"] }); },
     onError: (e: any) => { toast.error(e.response?.data?.message || "Gagal membuat revisi"); },
   });
@@ -72,7 +72,7 @@ export const useCreateRevision = () => {
 export const useDeleteSOP = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (id: string) => (await api.delete(`/api/tata-laksana/${id}`)).data,
+    mutationFn: async (id: string) => (await api.delete(`/tata-laksana/${id}`)).data,
     onSuccess: () => { toast.success("SOP berhasil dihapus"); qc.invalidateQueries({ queryKey: ["tata-laksana"] }); },
     onError: (e: any) => { toast.error(e.response?.data?.message || "Gagal menghapus SOP"); },
   });

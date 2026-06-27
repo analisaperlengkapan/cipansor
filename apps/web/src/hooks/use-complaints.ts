@@ -51,7 +51,7 @@ export const useComplaints = (params: {
   return useQuery({
     queryKey: ["complaints", params],
     queryFn: async () => {
-      const response = await api.get<ComplaintsResponse>("/api/complaints", {
+      const response = await api.get<ComplaintsResponse>("/complaints", {
         params,
       });
       return response.data;
@@ -63,7 +63,7 @@ export const useComplaint = (id: string) => {
   return useQuery({
     queryKey: ["complaints", id],
     queryFn: async () => {
-      const response = await api.get<Complaint>(`/api/complaints/${id}`);
+      const response = await api.get<Complaint>(`/complaints/${id}`);
       return response.data;
     },
     enabled: !!id,
@@ -75,7 +75,7 @@ export const useCreateComplaint = () => {
 
   return useMutation({
     mutationFn: async (data: any) => {
-      const response = await api.post("/api/complaints", data);
+      const response = await api.post("/complaints", data);
       return response.data;
     },
     onSuccess: () => {
@@ -101,7 +101,7 @@ export const useUpdateComplaintStatus = () => {
       status: ComplaintStatus;
       resolution?: string;
     }) => {
-      const response = await api.patch(`/api/complaints/${id}/status`, {
+      const response = await api.patch(`/complaints/${id}/status`, {
         status,
         resolution,
       });
@@ -131,7 +131,7 @@ export const useAddComplaintComment = () => {
       content: string;
       isInternal?: boolean;
     }) => {
-      const response = await api.post(`/api/complaints/${id}/comments`, {
+      const response = await api.post(`/complaints/${id}/comments`, {
         content,
         isInternal,
       });

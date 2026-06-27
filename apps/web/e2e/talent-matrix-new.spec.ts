@@ -4,6 +4,31 @@ import { primeAuthCookies } from './helpers/auth';
 test.describe('Talent Management Enhancements', () => {
   test.beforeEach(async ({ page }) => {
     await primeAuthCookies(page);
+
+    // Low-priority fallback for incidental API calls. Registered first so the
+    // specific mocks (registered later, in each test) take precedence. Without
+    // it a stray 401 triggers the axios refresh->logout flow and redirects to
+    // /login, wiping the page under test.
+    await page.route('**/api/**', async (route) => {
+      await route.fulfill({ json: { success: true, data: [] } });
+    });
+    await page.route('**/api/auth/refresh', async (route) => {
+      await route.fulfill({
+        json: {
+          success: true,
+          data: { accessToken: 'mock-token', refreshToken: 'mock-token' },
+        },
+      });
+    });
+    await page.route('**/api/auth/me', async (route) => {
+      await route.fulfill({
+        json: {
+          success: true,
+          data: { id: 'user-1', name: 'HR Admin', role: 'UNIT_ADMIN' },
+        },
+      });
+    });
+
     await page.goto('/');
     await page.evaluate(() => {
       localStorage.setItem('accessToken', 'mock-token');

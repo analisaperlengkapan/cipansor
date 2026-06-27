@@ -4,6 +4,30 @@ import { primeAuthCookies } from './helpers/auth';
 test.describe('GRC Dashboard Live Data', () => {
   test.beforeEach(async ({ page }) => {
     await primeAuthCookies(page);
+
+    // Low-priority fallback + auth mocks so an incidental 401 never triggers the
+    // refresh->logout redirect. Per-test mocks (registered later) take
+    // precedence, including the deliberate 500 on /api/analytics/grc*.
+    await page.route('**/api/**', async (route) => {
+      await route.fulfill({ json: { success: true, data: [] } });
+    });
+    await page.route('**/api/auth/refresh', async (route) => {
+      await route.fulfill({
+        json: {
+          success: true,
+          data: { accessToken: 'mock-token', refreshToken: 'mock-token' },
+        },
+      });
+    });
+    await page.route('**/api/auth/me', async (route) => {
+      await route.fulfill({
+        json: {
+          success: true,
+          data: { id: '1', name: 'Admin', role: 'SUPER_ADMIN' },
+        },
+      });
+    });
+
     // Mock auth
     await page.goto('/');
     await page.evaluate(() => {

@@ -1,9 +1,30 @@
 # Known Issues & Technical Debt
 
 Status of production-readiness work and the remaining roadmap. Updated as part of
-the production-readiness / architecture-standardization effort.
+the production-readiness / architecture-standardization effort. For the system
+overview see [`ARCHITECTURE.md`](./ARCHITECTURE.md).
 
 ## ✅ Resolved in this effort
+
+- **FE↔BE double-`/api` bug (false green).** Seven React Query hooks
+  (`use-syariah`, `use-tata-laksana`, `use-organisasi`, `use-quality`,
+  `use-litbang`, `use-pengawasan`, `use-complaints`) prefixed paths with `/api`
+  even though the Axios `baseURL` already ends in `/api`, so they hit
+  `/api/api/...` and 404'd against the live backend. The e2e mocks' `**/api/...`
+  globs masked it. Fixed all 59 call sites to match the majority convention.
+- **Docker images reworked & verified runnable.** `apps/api` is a multi-stage
+  build using a fresh `pnpm install --prod` closure + compiled `dist` + the
+  generated Prisma client (~929 MB; boots, `/health` 200, PrismaClient loads);
+  `apps/web` uses Next.js standalone output (~537 MB; boots, `/` 200). Build
+  context kept ~136 KB via `.dockerignore`; both trust a build-time proxy CA via
+  a BuildKit secret. (`pnpm deploy` was dropped — it hangs in CI sandboxes.)
+- **E2E stabilized.** Root-caused and fixed every hard failure (a tahfidz raw-SQL
+  bug referencing a non-existent `deleted_at`, the class-management edit flow,
+  and several brittle mock-auth specs). Mock-based specs now seed auth via
+  `page.addInitScript` (before first paint) with `/api/auth/me` + `/api/auth/refresh`
+  mocks and a low-priority `/api/**` fallback, removing the logout-redirect races.
+- **Removed stale artifacts.** `dashboard/dashboard.controller.ts.old` and the
+  dead `apps/web/e2e/temp/` placeholder spec.
 
 - **Destroyed Prisma schema restored.** `schema.prisma` (237 models, 133 enums)
   had been truncated to a stub, breaking the entire backend; restored from the
@@ -115,9 +136,11 @@ coverage matrix.
 - **Replace remaining FE mock data** with real API calls. Done so far:
   `foundation/dashboard` (admissions KPI + per-unit risk) and
   `foundation/finance/consolidation` (real per-unit financials, cash position,
-  6-month trend). Still mocked: `analytics/parent-engagement`,
-  `homeroom/performance`, `alumni/sanad`, `foundation/accreditation/readiness`
-  (each needs a dedicated backend aggregation endpoint).
+  6-month trend). Still mocked (each needs a dedicated backend aggregation
+  endpoint): `analytics/education` (hardcoded KPI + grade-distribution arrays),
+  `parent/buku-penghubung` (the Weekly Progress tab), `attendance/heatmap`,
+  `analytics/parent-engagement`, `homeroom/performance`, `alumni/sanad`,
+  `foundation/accreditation/readiness`.
 - **Web unit/component tests.** Add a jsdom + React Testing Library vitest project
   for `apps/web/src/**` (currently only e2e-helper tests exist).
 - **Comprehensive Playwright e2e** across all routes (nav, CRUD, every

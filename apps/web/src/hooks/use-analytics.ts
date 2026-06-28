@@ -224,3 +224,37 @@ export function useMarketingROI() {
     },
   });
 }
+
+export interface UnitBenchmarkMetric {
+  unitId: string;
+  unitName: string;
+  unitType: string;
+  studentCount: number;
+  attendanceRate: number;
+  paymentCollectionRate: number;
+  tahfidzProgress: number;
+  academicAverage: number;
+}
+
+export interface BenchmarkComparison {
+  units: UnitBenchmarkMetric[];
+  averages: {
+    attendanceRate: number;
+    paymentCollectionRate: number;
+    tahfidzProgress: number;
+    academicAverage: number;
+  };
+}
+
+/** Cross-unit performance comparison (GET /analytics/benchmark/compare). */
+export function useBenchmarkComparison() {
+  return useQuery({
+    queryKey: ["analytics", "benchmark-comparison"],
+    queryFn: async () => {
+      const res = await api.get<{ data: BenchmarkComparison }>(
+        "/analytics/benchmark/compare",
+      );
+      return res.data.data;
+    },
+  });
+}

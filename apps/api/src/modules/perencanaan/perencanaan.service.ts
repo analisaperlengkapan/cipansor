@@ -137,6 +137,9 @@ export class PerencanaanService {
                 gte: plan.startDate,
                 lte: endOfDay,
               },
+              account: {
+                cashFlowCategory: { in: ['OPERATING', 'INVESTING', 'FINANCING'] },
+              },
             },
             _sum: {
               debit: true,
@@ -516,10 +519,42 @@ export class PerencanaanService {
       0
     );
 
-    await tx.strategicPlan.update({
+    const updatedPlan = await tx.strategicPlan.update({
       where: { id: planId },
       data: { progress: Math.round(weightedProgress * 100) / 100 },
+      include: { unit: true },
     });
+
+    // Integrated Alert: Notify unit admin if progress/realization is high or budget is near limit
+    // Since we don't have direct access to financial progress here (only objective progress),
+    // we fetch the full plan with realization to check budget utilization.
+    try {
+      const planWithRealization = await this.getPlanById(planId);
+      if (planWithRealization && planWithRealization.financialProgress >= 90) {
+        // Trigger notification
+        const admins = await tx.user.findMany({
+          where: {
+            unitId: updatedPlan.unitId,
+            userRoles: { some: { role: { code: { contains: 'ADMIN' } } } },
+          },
+          select: { id: true },
+        });
+
+        for (const admin of admins) {
+          await tx.notification.create({
+            data: {
+              userId: admin.id,
+              type: 'ALERT',
+              title: 'Peringatan Anggaran Rencana Strategis',
+              message: `Realisasi anggaran untuk rencana "${updatedPlan.title}" telah mencapai ${Math.round(planWithRealization.financialProgress)}%.`,
+              link: `/perencanaan/${planId}`,
+            },
+          });
+        }
+      }
+    } catch (err) {
+      console.error('[Perencanaan] Failed to trigger budget alert:', err);
+    }
   }
 }
 

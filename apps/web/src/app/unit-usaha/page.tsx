@@ -29,42 +29,10 @@ import {
   TrendingUp,
   Settings,
   ArrowRight,
+  Loader2,
 } from "lucide-react";
 import Link from "next/link";
-
-// Mock data based on BusinessUnit model
-const BUSINESS_UNITS = [
-  {
-    id: "bu-1",
-    name: "Kantin Al-Fatih",
-    code: "BU-KNT-01",
-    type: "CANTEEN",
-    status: "ACTIVE",
-    manager: "Ust. Ahmad",
-    revenue: 12500000,
-    items: 45,
-  },
-  {
-    id: "bu-2",
-    name: "Laundry Berkah",
-    code: "BU-LDR-01",
-    type: "LAUNDRY",
-    status: "ACTIVE",
-    manager: "Ibu Siti",
-    revenue: 4200000,
-    items: 5,
-  },
-  {
-    id: "bu-3",
-    name: "Koperasi Siswa",
-    code: "BU-KOP-01",
-    type: "COOPERATIVE",
-    status: "ACTIVE",
-    manager: "Bpk. Budi",
-    revenue: 8900000,
-    items: 120,
-  },
-];
+import { useBusinessUnits } from "@/hooks/use-business-unit";
 
 const TYPE_ICONS: Record<string, any> = {
   CANTEEN: Utensils,
@@ -75,6 +43,8 @@ const TYPE_ICONS: Record<string, any> = {
 };
 
 export default function BusinessUnitPage() {
+  const { data: businessUnits, isLoading } = useBusinessUnits();
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("id-ID", {
       style: "currency",
@@ -105,7 +75,9 @@ export default function BusinessUnitPage() {
               <Building2 className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">3</div>
+              <div className="text-2xl font-bold">
+                {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : businessUnits?.length || 0}
+              </div>
             </CardContent>
           </Card>
           <Card>
@@ -134,64 +106,77 @@ export default function BusinessUnitPage() {
             <CardDescription>Seluruh unit usaha yang terdaftar di bawah Yayasan</CardDescription>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nama Unit</TableHead>
-                  <TableHead>Tipe</TableHead>
-                  <TableHead>Pengelola</TableHead>
-                  <TableHead className="text-right">Pendapatan</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Aksi</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {BUSINESS_UNITS.map((bu) => {
-                  const Icon = TYPE_ICONS[bu.type] || ShoppingBag;
-                  return (
-                    <TableRow key={bu.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                            <Icon size={18} />
+            {isLoading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nama Unit</TableHead>
+                    <TableHead>Tipe</TableHead>
+                    <TableHead>Pengelola</TableHead>
+                    <TableHead className="text-right">Aset/Barang</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Aksi</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {businessUnits?.map((bu) => {
+                    const Icon = TYPE_ICONS[bu.type] || ShoppingBag;
+                    return (
+                      <TableRow key={bu.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                              <Icon size={18} />
+                            </div>
+                            <div>
+                              <p className="font-medium">{bu.name}</p>
+                              <p className="text-xs text-muted-foreground">{bu.code}</p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="font-medium">{bu.name}</p>
-                            <p className="text-xs text-muted-foreground">{bu.code}</p>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="capitalize">
-                          {bu.type.toLowerCase()}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{bu.manager}</TableCell>
-                      <TableCell className="text-right font-mono">
-                        {formatCurrency(bu.revenue)}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={bu.status === "ACTIVE" ? "default" : "secondary"}>
-                          {bu.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                           <Button variant="ghost" size="icon" asChild>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="capitalize">
+                            {bu.type.toLowerCase()}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{bu.managerId ? "Terhubung" : "Belum Ditentukan"}</TableCell>
+                        <TableCell className="text-right font-mono">
+                          {bu._count?.canteenItems || 0} Item
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={bu.isActive ? "default" : "secondary"}>
+                            {bu.isActive ? "AKTIF" : "NONAKTIF"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button variant="ghost" size="icon" asChild>
                               <Link href={`/unit-usaha/${bu.id}`}>
                                 <ArrowRight size={16} />
                               </Link>
-                           </Button>
-                           <Button variant="ghost" size="icon">
+                            </Button>
+                            <Button variant="ghost" size="icon">
                               <Settings size={16} />
-                           </Button>
-                        </div>
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                  {!businessUnits?.length && (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                        Belum ada unit usaha terdaftar
                       </TableCell>
                     </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+                  )}
+                </TableBody>
+              </Table>
+            )}
           </CardContent>
         </Card>
       </div>

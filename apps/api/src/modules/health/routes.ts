@@ -159,6 +159,7 @@ router.delete('/records/:id', controller.deleteMedicalRecord);
  *         description: Student's complete medical history
  */
 router.get('/students/:studentId/history', controller.getStudentMedicalHistory);
+router.get('/students/:studentId/summary', controller.getStudentHealthSummary);
 
 // ==================== MEDICATIONS ====================
 

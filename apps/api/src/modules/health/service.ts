@@ -295,6 +295,35 @@ export async function getStudentMedicalHistory(studentId: string) {
   return records as unknown as MedicalRecord[];
 }
 
+export async function getStudentHealthSummary(studentId: string) {
+  const [medicalRecords, growthRecords] = await Promise.all([
+    prisma.medicalRecord.findMany({
+      where: { studentId },
+      orderBy: { visitDate: "desc" },
+      take: 10,
+    }),
+    prisma.growthRecord.findMany({
+      where: { studentId },
+      orderBy: { recordDate: "asc" },
+      take: 20,
+    }),
+  ]);
+
+  const visitTrend: Record<string, number> = {};
+  medicalRecords.forEach((record) => {
+    const month = new Date(record.visitDate).toISOString().slice(0, 7);
+    visitTrend[month] = (visitTrend[month] || 0) + 1;
+  });
+
+  return {
+    studentId,
+    recentRecords: medicalRecords,
+    growthHistory: growthRecords,
+    visitTrend: Object.entries(visitTrend).map(([month, count]) => ({ month, count })),
+    latestGrowth: growthRecords[growthRecords.length - 1] || null,
+  };
+}
+
 // ==================== MEDICATION ====================
 
 export async function getMedications(query: QueryMedicationInput) {

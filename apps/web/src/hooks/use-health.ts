@@ -83,6 +83,26 @@ export function useHealthRecords(params?: {
   });
 }
 
+export function useStudentHealthSummary(studentId: string) {
+  return useQuery({
+    queryKey: ["health-records", "student", studentId, "summary"],
+    queryFn: async () => {
+      const response = await api.get<{
+        success: boolean;
+        data: {
+          studentId: string;
+          recentRecords: MedicalRecord[];
+          growthHistory: any[];
+          visitTrend: { month: string; count: number }[];
+          latestGrowth: any;
+        };
+      }>(`/health/students/${studentId}/summary`);
+      return response.data.data;
+    },
+    enabled: !!studentId,
+  });
+}
+
 export function useHealthRecord(id: string) {
   return useQuery({
     queryKey: ["health-records", id],

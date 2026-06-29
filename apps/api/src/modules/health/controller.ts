@@ -36,6 +36,15 @@ export async function getMedicalRecords(req: Request, res: Response, next: NextF
   }
 }
 
+export async function getStudentHealthSummary(req: Request, res: Response, next: NextFunction) {
+  try {
+    const summary = await service.getStudentHealthSummary((req.params as any).studentId);
+    res.json({ success: true, data: summary });
+  } catch (error) {
+    next(error);
+  }
+}
+
 // ==================== GROWTH RECORDS ====================
 
 export async function createGrowthRecord(req: Request, res: Response, next: NextFunction) {

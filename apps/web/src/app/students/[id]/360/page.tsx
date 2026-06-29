@@ -24,12 +24,13 @@ import {
 import { useStudent } from "@/hooks/use-students";
 import { useStudentGrades, useStudentHolisticAnalytics } from "@/hooks/use-assessment";
 import { useActiveAcademicYear } from "@/hooks/use-academic-years";
-import { useStudentHealthRecords } from "@/hooks/use-health";
+import { useStudentHealthRecords, useStudentHealthSummary } from "@/hooks/use-health";
 import { useStudentViolationSummary } from "@/hooks/use-violations";
 import { useStudentFinancialSummary } from "@/hooks/use-finance";
 import { useStudentTahfidzProgress } from "@/hooks/use-tahfidz";
 import { useStudentIbadahStats } from "@/hooks/use-ibadah";
 import { useStudentRoomAssignment, useRoomSocialAnalytics } from "@/hooks/use-dormitory";
+import { useStudentCounselingHistory, getCounselingCategoryConfig, getCounselingStatusConfig } from "@/hooks/use-counseling";
 import {
   BarChart,
   Bar,
@@ -43,6 +44,8 @@ import {
   PolarGrid,
   PolarAngleAxis,
   PolarRadiusAxis,
+  LineChart as ReLineChart,
+  Line,
 } from "recharts";
 
 export default function Student360Page() {
@@ -53,11 +56,13 @@ export default function Student360Page() {
   const { data: student, isLoading: loadingStudent } = useStudent(studentId);
   const { data: grades, isLoading: loadingGrades } = useStudentGrades(studentId);
   const { data: health, isLoading: loadingHealth } = useStudentHealthRecords(studentId);
+  const { data: healthSummary, isLoading: loadingHealthSummary } = useStudentHealthSummary(studentId);
   const { data: violations, isLoading: loadingViolations } = useStudentViolationSummary(studentId);
   const { data: finance, isLoading: loadingFinance } = useStudentFinancialSummary(studentId);
   const { data: tahfidz, isLoading: loadingTahfidz } = useStudentTahfidzProgress(studentId);
   const { data: roomAssignment, isLoading: loadingRoom } = useStudentRoomAssignment(studentId);
   const { data: socialAnalytics, isLoading: loadingSocial } = useRoomSocialAnalytics(roomAssignment?.roomId || "");
+  const { data: counselingHistory, isLoading: loadingCounseling } = useStudentCounselingHistory(studentId);
 
   // Fallback to active academic year when student.currentClass.academicYear is not populated
   const { data: activeYear } = useActiveAcademicYear();
@@ -540,15 +545,52 @@ export default function Student360Page() {
             </TabsContent>
 
             <TabsContent value="counseling">
-               <Card>
-                 <CardHeader>
-                   <CardTitle>Riwayat Bimbingan & Konseling</CardTitle>
-                   <CardDescription>Catatan perkembangan psikologis dan pembinaan</CardDescription>
-                 </CardHeader>
-                 <CardContent>
-                    <p className="text-sm text-muted-foreground py-10 text-center">Modul Bimbingan & Konseling dalam Pengembangan.</p>
-                 </CardContent>
-               </Card>
+               <div className="space-y-6">
+                 <Card>
+                   <CardHeader>
+                     <CardTitle>Riwayat Bimbingan & Konseling</CardTitle>
+                     <CardDescription>Catatan perkembangan psikologis dan pembinaan</CardDescription>
+                   </CardHeader>
+                   <CardContent>
+                      {loadingCounseling ? (
+                        <Skeleton className="h-[200px] w-full" />
+                      ) : Array.isArray(counselingHistory) && counselingHistory.length > 0 ? (
+                        <div className="relative space-y-4 before:absolute before:inset-0 before:ml-5 before:-translate-x-px before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-200 before:to-transparent">
+                          {counselingHistory.map((session) => {
+                            const config = getCounselingCategoryConfig(session.category);
+                            const status = getCounselingStatusConfig(session.status);
+                            return (
+                              <div key={session.id} className="relative flex items-start gap-4">
+                                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white border-2 border-slate-200 shadow-sm z-10 text-lg">
+                                  {config?.icon || "💬"}
+                                </div>
+                                <div className="flex-1 rounded-xl border bg-card p-4 text-card-foreground shadow-sm">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <h4 className="font-bold text-slate-900">{session.title}</h4>
+                                    <Badge className={status?.color}>{status?.label}</Badge>
+                                  </div>
+                                  <p className="text-sm text-slate-600 mb-3">{session.description}</p>
+                                  <div className="flex items-center gap-4 text-[10px] text-slate-500 uppercase font-bold">
+                                    <span>📅 {new Date(session.scheduledAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                                    <span>👤 {session.counselor?.user?.name || 'Konselor'}</span>
+                                    <Badge variant="outline" className="text-[10px]">{config?.label}</Badge>
+                                  </div>
+                                  {session.recommendations && (
+                                    <div className="mt-3 p-3 bg-amber-50 rounded-lg border border-amber-100 text-xs italic text-amber-900">
+                                      <strong>Rekomendasi:</strong> {session.recommendations}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground py-10 text-center">Belum ada riwayat konseling tercatat.</p>
+                      )}
+                   </CardContent>
+                 </Card>
+               </div>
             </TabsContent>
 
             <TabsContent value="boarding">
@@ -640,7 +682,65 @@ export default function Student360Page() {
                )}
             </TabsContent>
 
-            <TabsContent value="health">
+            <TabsContent value="health" className="space-y-6">
+               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                 <Card className="md:col-span-2">
+                   <CardHeader>
+                     <CardTitle className="text-sm">Tren Pertumbuhan (Berat & Tinggi)</CardTitle>
+                   </CardHeader>
+                   <CardContent className="h-[300px]">
+                      {loadingHealthSummary ? (
+                        <Skeleton className="h-full w-full" />
+                      ) : (
+                        <ResponsiveContainer width="100%" height="100%">
+                           <ReLineChart data={healthSummary?.growthHistory || []}>
+                              <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                              <XAxis
+                                dataKey="recordDate"
+                                tick={{fontSize: 10}}
+                                tickFormatter={(val) => new Date(val).toLocaleDateString('id-ID', { month: 'short' })}
+                              />
+                              <YAxis yAxisId="left" orientation="left" stroke="#3b82f6" tick={{fontSize: 10}} label={{ value: 'Tinggi (cm)', angle: -90, position: 'insideLeft', fontSize: 10 }} />
+                              <YAxis yAxisId="right" orientation="right" stroke="#10b981" tick={{fontSize: 10}} label={{ value: 'Berat (kg)', angle: 90, position: 'insideRight', fontSize: 10 }} />
+                              <Tooltip />
+                              <Line yAxisId="left" type="monotone" dataKey="height" stroke="#3b82f6" strokeWidth={2} dot={{r: 4}} activeDot={{r: 6}} />
+                              <Line yAxisId="right" type="monotone" dataKey="weight" stroke="#10b981" strokeWidth={2} dot={{r: 4}} activeDot={{r: 6}} />
+                           </ReLineChart>
+                        </ResponsiveContainer>
+                      )}
+                   </CardContent>
+                 </Card>
+
+                 <Card className="md:col-span-1">
+                    <CardHeader>
+                      <CardTitle className="text-sm">Kondisi Terakhir</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                       <div className="p-4 bg-blue-50 rounded-xl border border-blue-100">
+                          <p className="text-[10px] text-blue-700 font-bold uppercase">Tinggi Badan</p>
+                          <p className="text-2xl font-black text-blue-900">{healthSummary?.latestGrowth?.height || '—'} <span className="text-sm font-normal">cm</span></p>
+                       </div>
+                       <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-100">
+                          <p className="text-[10px] text-emerald-700 font-bold uppercase">Berat Badan</p>
+                          <p className="text-2xl font-black text-emerald-900">{healthSummary?.latestGrowth?.weight || '—'} <span className="text-sm font-normal">kg</span></p>
+                       </div>
+                       <div className="pt-2">
+                          <p className="text-[10px] text-muted-foreground uppercase font-bold mb-2">Statistik Kunjungan</p>
+                          <div className="flex items-end gap-1 h-12">
+                             {(healthSummary?.visitTrend || []).map((t: any) => (
+                               <div
+                                 key={t.month}
+                                 className="flex-1 bg-slate-200 rounded-t hover:bg-indigo-400 transition-colors"
+                                 style={{ height: `${Math.min(100, (t.count / 5) * 100)}%` }}
+                                 title={`${t.month}: ${t.count} kunjungan`}
+                               />
+                             ))}
+                          </div>
+                       </div>
+                    </CardContent>
+                 </Card>
+               </div>
+
                <Card>
                  <CardHeader>
                    <CardTitle>Log Kesehatan UKS</CardTitle>
@@ -650,14 +750,18 @@ export default function Student360Page() {
                     <div className="space-y-4">
                       {Array.isArray(health) && health.length > 0 ? (
                         health.map((h: any) => (
-                          <div key={h.id} className="p-4 border rounded-lg flex gap-4">
+                          <div key={h.id} className="p-4 border rounded-lg flex gap-4 bg-white hover:bg-slate-50 transition-colors">
                             <div className="h-10 w-10 rounded bg-slate-100 flex items-center justify-center shrink-0">
                               <HeartPulse className="w-5 h-5 text-rose-500" />
                             </div>
-                            <div>
-                               <p className="text-sm font-bold">{h.complaint}</p>
+                            <div className="flex-1">
+                               <div className="flex justify-between items-start">
+                                 <p className="text-sm font-bold text-slate-900">{h.complaint}</p>
+                                 <Badge variant="outline" className="text-[10px] uppercase">{h.type}</Badge>
+                               </div>
                                <p className="text-xs text-muted-foreground mt-1">Diagnosis: {h.diagnosis || 'Dalam Observasi'}</p>
-                               <p className="text-[10px] text-slate-400 mt-1 uppercase">{new Date(h.visitDate).toLocaleDateString('id-ID', {day: 'numeric', month: 'long', year: 'numeric'})}</p>
+                               {h.treatment && <p className="text-xs text-slate-600 mt-1 italic">Tindakan: {h.treatment}</p>}
+                               <p className="text-[10px] text-slate-400 mt-2 uppercase font-semibold">{new Date(h.visitDate).toLocaleDateString('id-ID', {day: 'numeric', month: 'long', year: 'numeric'})}</p>
                             </div>
                           </div>
                         ))

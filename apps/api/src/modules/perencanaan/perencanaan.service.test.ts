@@ -100,11 +100,11 @@ describe('Perencanaan Service', () => {
 
       await perencanaanService.createObjective(objData);
 
-      expect(prisma.strategicPlan.update).toHaveBeenCalledWith({
+      expect(prisma.strategicPlan.update).toHaveBeenCalledWith(expect.objectContaining({
         where: { id: 'plan-1' },
         // (60*50 + 40*100) / 100 = (3000 + 4000) / 100 = 70
         data: { progress: 70 },
-      });
+      }));
     });
 
     it('should update progress on objective delete', async () => {
@@ -117,10 +117,10 @@ describe('Perencanaan Service', () => {
 
       await perencanaanService.deleteObjective('obj-1');
 
-      expect(prisma.strategicPlan.update).toHaveBeenCalledWith({
+      expect(prisma.strategicPlan.update).toHaveBeenCalledWith(expect.objectContaining({
         where: { id: 'plan-1' },
         data: { progress: 20 },
-      });
+      }));
     });
   });
 

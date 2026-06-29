@@ -121,7 +121,10 @@ export const queryAnnouncementSchema = z.object({
     .transform((v) => v === 'true'),
 });
 
-export type CreateNotificationInput = z.infer<typeof createNotificationSchema>;
+// Use the INPUT type so fields with schema defaults (priority, channels,
+// recipientType, type) are optional for internal callers that build a
+// notification directly without re-parsing (e.g. permits, scheduler).
+export type CreateNotificationInput = z.input<typeof createNotificationSchema>;
 export type CreateBulkNotificationInput = z.infer<typeof createBulkNotificationSchema>;
 export type QueryNotificationInput = z.infer<typeof queryNotificationSchema>;
 export type CreateTemplateInput = z.infer<typeof createTemplateSchema>;

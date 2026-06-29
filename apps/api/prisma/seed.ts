@@ -1,5 +1,4 @@
 import {
-  PrismaClient,
   UserRole,
   UnitType,
   Gender,
@@ -32,6 +31,7 @@ import {
   Prisma,
   Realm,
 } from '@prisma/client';
+import { createPrismaClient } from './client';
 import bcrypt from 'bcryptjs';
 import { seedWilayahIndonesia } from './seeds/wilayah-indonesia';
 import { seedKurikulumMerdeka, seedAccountCodes } from './seeds/kurikulum-merdeka';
@@ -95,7 +95,7 @@ const RoleCode = {
 // Define System User ID constant
 export const SYSTEM_USER_ID = '00000000-0000-0000-0000-000000000000';
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 async function main() {
   console.log('🌱 Seeding database...');
@@ -106,66 +106,24 @@ async function main() {
   await seedWilayahIndonesia(prisma);
   await seedAccountCodes(prisma);
 
-  // Clean up existing data (in reverse order of dependencies)
-  // Phase 6 cleanup
-  await prisma.alumniEventAttendee.deleteMany();
-  await prisma.alumniEvent.deleteMany();
-  await prisma.alumniDonation.deleteMany();
-  await prisma.alumniEducation.deleteMany();
-  await prisma.alumniCareer.deleteMany();
-  await prisma.alumni.deleteMany();
-  // Phase 5 cleanup
-  await prisma.reportCardDetail.deleteMany();
-  await prisma.reportCard.deleteMany();
-  await prisma.grade.deleteMany();
-  await prisma.exam.deleteMany();
-  await prisma.lessonPlan.deleteMany();
-  await prisma.schedule.deleteMany();
-  await prisma.teacherSubject.deleteMany();
-  await prisma.subject.deleteMany();
-  // Phase 4 cleanup
-  await prisma.assetMaintenance.deleteMany();
-  await prisma.asset.deleteMany();
-  await prisma.assetCategory.deleteMany();
-  await prisma.notification.deleteMany();
-  await prisma.announcement.deleteMany();
-  await prisma.medicationUsageLog.deleteMany();
-  await prisma.medication.deleteMany();
-  await prisma.medicalRecord.deleteMany();
-  await prisma.borrowing.deleteMany();
-  await prisma.book.deleteMany();
-  await prisma.bookCategory.deleteMany();
-  // Phase 3 cleanup
-  await prisma.staffAttendance.deleteMany();
-  await prisma.leave.deleteMany();
-  await prisma.registrantDocument.deleteMany();
-  await prisma.registrant.deleteMany();
-  await prisma.admissionPeriod.deleteMany();
-  await prisma.boardMember.deleteMany();
-  await prisma.foundationDocument.deleteMany();
-  await prisma.foundation.deleteMany();
-  await prisma.staff.deleteMany();
-  await prisma.payment.deleteMany();
-  await prisma.invoice.deleteMany();
-  await prisma.paymentType.deleteMany();
-  await prisma.reward.deleteMany();
-  await prisma.violation.deleteMany();
-  await prisma.permit.deleteMany();
-  await prisma.roomAssignment.deleteMany();
-  await prisma.room.deleteMany();
-  await prisma.dormitory.deleteMany();
-  await prisma.tahfidzRecord.deleteMany();
-  await prisma.attendance.deleteMany();
-  await prisma.classEnrollment.deleteMany();
-  await prisma.class.deleteMany();
-  await prisma.academicYear.deleteMany();
-  await prisma.student.deleteMany();
-  await prisma.teacher.deleteMany();
-  await prisma.refreshToken.deleteMany();
-  await prisma.userRoleAssignment.deleteMany();
-  await prisma.user.deleteMany();
-  await prisma.role.deleteMany();
-  await prisma.unit.deleteMany();
+  // Clean up existing data.
+  // Previously this was a long, hand-ordered list of deleteMany() calls that had
+  // to mirror every FK dependency. It drifted out of sync with the schema (e.g.
+  // LearningOutcome/MerdekaAssessment/QuestionBank/Assignment all reference
+  // Subject but were never deleted before it), making re-seeds fail on FK
+  // violations. Truncating every table with CASCADE can't drift and is exactly
+  // what a re-seed wants. _prisma_migrations is preserved.
+  const tables = await prisma.$queryRaw<Array<{ tablename: string }>>`
+    SELECT tablename FROM pg_tables
+    WHERE schemaname = 'public' AND tablename <> '_prisma_migrations'
+  `;
+  if (tables.length > 0) {
+    const list = tables.map((t) => `"public"."${t.tablename}"`).join(', ');
+    await prisma.$executeRawUnsafe(
+      `TRUNCATE TABLE ${list} RESTART IDENTITY CASCADE`,
+    );
+  }
+
 
   // ============================================
   // SYSTEM USER
@@ -3084,6 +3042,22 @@ async function main() {
   // ============================================
   await seedPAUDIndicators(prisma);
   await seedImmunizationReference(prisma);
+
+  // ============================================
+  // E2E: deterministic 2FA for admin accounts
+  // ============================================
+  // Admins/super-admins are forced through a 2FA gate on login. For local e2e
+  // (and deterministic manual testing) we can pre-enable 2FA with a FIXED secret
+  // so a valid TOTP can be generated offline. Opt-in via E2E_FIXED_2FA=1 so the
+  // fixed secret never lands in a real environment's seed.
+  if (process.env.E2E_FIXED_2FA === '1') {
+    const fixedSecret = process.env.E2E_2FA_SECRET || 'NTGHH5U5LDHIYARFFNGFQKQHARJU7GBE';
+    const updated = await prisma.user.updateMany({
+      where: { role: { in: [UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN] } },
+      data: { isTwoFactorEnabled: true, twoFactorSecret: fixedSecret, twoFactorSecretPending: null },
+    });
+    console.log(`🔐 [E2E] Pre-enabled 2FA on ${updated.count} admin account(s) with a fixed secret`);
+  }
 
   console.log('\n✅ Database seeded successfully!');
 }

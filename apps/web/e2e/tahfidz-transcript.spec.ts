@@ -36,6 +36,22 @@ test.describe("Tahfidz Transcript", () => {
       await route.fulfill({ json });
     });
 
+    // Any unmocked endpoint hitting the real backend with the fake token returns
+    // 401; the axios interceptor then tries /auth/refresh and, on failure,
+    // clears the session and redirects to /login. Mock refresh so a stray 401
+    // never logs the test out.
+    await page.route("**/api/auth/refresh", async (route) => {
+      await route.fulfill({
+        json: {
+          success: true,
+          data: {
+            accessToken: "mock-access-token",
+            refreshToken: "mock-refresh-token",
+          },
+        },
+      });
+    });
+
     await page.route("**/api/auth/me", async (route) => {
       const json = {
         success: true,
@@ -165,10 +181,5 @@ test.describe("Tahfidz Transcript", () => {
     await expect(page.locator("text=150").first()).toBeVisible(); // Total Ayah
     await expect(page.locator("text=1").first()).toBeVisible(); // Juz Selesai
     await expect(page.locator("text=An-Nas").first()).toBeVisible(); // Surah list
-
-    // Take a screenshot for verification
-    await page.screenshot({
-      path: "/home/jules/verification/transcript_verified.png",
-    });
   });
 });

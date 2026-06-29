@@ -1,35 +1,42 @@
 import { test, expect } from '@playwright/test';
+import { LoginPage } from './page-objects';
 
 test.describe('Alumni Outcome & Tracer Study', () => {
   test.beforeEach(async ({ page }) => {
-    // Standard login flow or session restoration
-    await page.goto('/login');
-    await page.fill('input[name="email"]', 'admin@cipansor.sch.id');
-    await page.fill('input[name="password"]', 'password');
-    await page.click('button[type="submit"]');
-    await page.waitForURL('/dashboard');
+    const login = new LoginPage(page);
+    await login.goto();
+    await login.loginAndWaitForDashboard(
+      'superadmin@cipansor.id',
+      'SuperAdmin123!',
+    );
   });
 
-  test('should display tracer study analytics with outcome score', async ({ page }) => {
+  test('should display tracer study and outcome analysis tabs', async ({ page }) => {
     await page.goto('/alumni');
 
-    // Check if the tracer study section exists
-    await expect(page.locator('text=Tracer Study')).toBeVisible();
+    // Tracer dashboard + outcome analysis are available as tabs.
+    await expect(page.getByRole('tab', { name: 'Dashboard Tracer' })).toBeVisible();
+    const outcomeTab = page.getByRole('tab', { name: 'Analisis Outcome' });
+    await expect(outcomeTab).toBeVisible();
 
-    // Check for the new outcome score metric
-    // Note: In a real E2E we would check for specific data, here we check for UI presence
-    const outcomeCard = page.locator('div:has-text("Outcome Score")');
-    await expect(outcomeCard).toBeVisible();
+    // The outcome tab surfaces the outcome correlation analysis.
+    await outcomeTab.click();
+    await expect(page.getByText('Outcome Correlation Analysis')).toBeVisible();
   });
 
-  test('should show career and education integration in alumni profile', async ({ page }) => {
+  test('should show career and education in alumni profile', async ({ page }) => {
     await page.goto('/alumni');
 
-    // Click on the first alumni in the list
-    await page.locator('table tbody tr').first().click();
+    // The default "Data Alumni" tab lists alumni; open the first one's detail.
+    const firstDetail = page
+      .locator('table tbody tr')
+      .first()
+      .getByRole('link', { name: /detail/i });
+    await expect(firstDetail).toBeVisible();
+    await firstDetail.click();
 
-    // Verify tabs for Career and Education
-    await expect(page.locator('button:has-text("Riwayat Karir")')).toBeVisible();
-    await expect(page.locator('button:has-text("Riwayat Pendidikan")')).toBeVisible();
+    // Detail page exposes the Biodata / Karir & Pendidikan / Prestasi tabs.
+    await expect(page.getByRole('tab', { name: /Karir & Pendidikan/i })).toBeVisible();
+    await expect(page.getByRole('tab', { name: /Biodata/i })).toBeVisible();
   });
 });

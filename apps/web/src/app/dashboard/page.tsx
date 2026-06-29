@@ -1,6 +1,7 @@
 "use client";
 
 import { MainLayout } from "@/components/layout";
+import { safeFormat } from "@/lib/date";
 import {
   Card,
   CardContent,
@@ -394,7 +395,7 @@ export default function DashboardPage() {
                       const total =
                         item.present + item.absent + item.sick + item.excused;
                       return {
-                        date: format(new Date(item.date), "EEE", {
+                        date: safeFormat(new Date(item.date), "EEE", {
                           locale: id,
                         }),
                         hadir: item.present,
@@ -504,7 +505,7 @@ export default function DashboardPage() {
                       key={`${activity.type}-${activity.id}`}
                       title={activity.title}
                       description={activity.description}
-                      time={format(new Date(activity.time), "HH:mm", {
+                      time={safeFormat(new Date(activity.time), "HH:mm", {
                         locale: id,
                       })}
                       type={activity.type}

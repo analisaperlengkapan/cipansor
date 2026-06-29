@@ -1,7 +1,26 @@
 import { test, expect } from "./fixtures/auth.fixture";
+import { primeAuthCookies } from "./helpers/auth";
 
 test.describe("Integration - Perencanaan to Finance linkage", () => {
   test.beforeEach(async ({ page }) => {
+    // The Next middleware reads the accessToken cookie before page JS runs, and
+    // the perencanaan detail (MainLayout + ProtectedRoute) calls /api/auth/me on
+    // mount — without both, the page redirects to /login.
+    await primeAuthCookies(page);
+    await page.route("**/api/auth/me", async (route) => {
+      await route.fulfill({
+        json: {
+          success: true,
+          data: {
+            id: "admin-1",
+            name: "Super Admin",
+            email: "superadmin@cipansor.id",
+            role: "SUPER_ADMIN",
+            unitId: "unit-1",
+          },
+        },
+      });
+    });
     // Navigate to a valid origin first to allow localStorage setting
     await page.goto("/");
     await page.evaluate(() => {
@@ -84,7 +103,7 @@ test.describe("Integration - Perencanaan to Finance linkage", () => {
 
     // 2. Navigate to Plan Detail
     await page.goto("/perencanaan/plan-1");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
 
     // 3. Switch to Activities tab
     await page.getByRole("tab", { name: /Program & Kegiatan/i }).click();
@@ -104,7 +123,11 @@ test.describe("Integration - Perencanaan to Finance linkage", () => {
 
     // The dialog should appear (using text-based selector if role=dialog is being tricky)
     await expect(page.getByRole("dialog")).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText("Tambah Kegiatan")).toBeVisible();
+    // Scope to the dialog heading — "Tambah Kegiatan" also appears on the
+    // "+ Tambah Kegiatan" trigger button.
+    await expect(
+      page.getByRole("heading", { name: "Tambah Kegiatan" }),
+    ).toBeVisible();
 
     // 5. Fill Form including Budget selection
     await page.getByLabel(/Nama Kegiatan/i).fill("Kegiatan Terintegrasi");

@@ -1,4 +1,5 @@
-import { PrismaClient, PAUDAspect } from '@prisma/client';
+import { PAUDAspect, type PrismaClient } from '@prisma/client';
+import { createPrismaClient } from '../client';
 
 interface IndicatorSeed {
   aspect: PAUDAspect;
@@ -644,7 +645,7 @@ export async function seedPAUDIndicators(prisma: PrismaClient) {
 
 // Run if called directly
 if (require.main === module) {
-  const prisma = new PrismaClient();
+  const prisma = createPrismaClient();
   seedPAUDIndicators(prisma)
     .catch((e) => {
       console.error(e);

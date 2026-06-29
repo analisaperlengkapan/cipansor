@@ -1,7 +1,7 @@
 "use client";
-
 import { useState } from "react";
-import { format } from "date-fns";
+import { safeFormat } from "@/lib/date";
+
 import { id as localeId } from "date-fns/locale";
 import { useAuthStore } from "@/stores/auth";
 import {
@@ -196,7 +196,7 @@ export default function StaffDashboard() {
         </div>
         <div className="flex items-center gap-2">
           <p className="text-sm text-muted-foreground">
-            {format(new Date(), "EEEE, d MMMM yyyy", { locale: localeId })}
+            {safeFormat(new Date(), "EEEE, d MMMM yyyy", { locale: localeId })}
           </p>
           <Button
             variant="outline"
@@ -594,7 +594,7 @@ export default function StaffDashboard() {
                 <div>
                   <Label className="text-muted-foreground">Tanggal</Label>
                   <p className="font-medium">
-                    {format(new Date(selectedPermit.date), "d MMMM yyyy", {
+                    {safeFormat(new Date(selectedPermit.date), "d MMMM yyyy", {
                       locale: localeId,
                     })}
                   </p>

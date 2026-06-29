@@ -40,7 +40,7 @@ export const updateSOP = async (req: Request, res: Response, next: NextFunction)
 
 export const approveSOP = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const data = await tataLaksanaService.approveSOP((req.params as any).id, req.user?.id!);
+    const data = await tataLaksanaService.approveSOP((req.params as any).id, req.user!.id);
     res.json({ data });
   } catch (error) { next(error); }
 };
@@ -56,7 +56,7 @@ export const createRevision = async (req: Request, res: Response, next: NextFunc
   try {
     const data = await tataLaksanaService.createRevision({
       ...req.body,
-      revisedById: req.user?.id!,
+      revisedById: req.user!.id,
     });
     res.status(201).json({ data });
   } catch (error) { next(error); }

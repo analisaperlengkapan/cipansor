@@ -1,13 +1,13 @@
 "use client";
-
 import { useState } from "react";
+import { safeFormat } from "@/lib/date";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CreateProjectModal } from "./_components/create-project-modal";
-import { format } from "date-fns";
+
 import { Badge } from "@/components/ui/badge";
 
 export default function ProjectListPage() {
@@ -60,7 +60,7 @@ export default function ProjectListPage() {
                     <span>Members: {project._count.members}</span>
                   </div>
                   <span>
-                    {format(new Date(project.updatedAt), "MMM d, yyyy")}
+                    {safeFormat(new Date(project.updatedAt), "MMM d, yyyy")}
                   </span>
                 </div>
               </CardContent>

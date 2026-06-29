@@ -1,6 +1,6 @@
 "use client";
-
 import { useState } from "react";
+import { safeFormat } from "@/lib/date";
 import {
   useEmployeeDocuments,
   useCreateEmployeeDocument,
@@ -33,7 +33,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Trash2, FileText, Upload } from "lucide-react";
-import { format } from "date-fns";
+
 import api from "@/lib/api";
 
 const DOCUMENT_TYPES: EmployeeDocumentType[] = [
@@ -218,11 +218,11 @@ export function DocumentsTab({ userId }: { userId: string }) {
                 <TableCell>{doc.type}</TableCell>
                 <TableCell>
                   {doc.expiryDate
-                    ? format(new Date(doc.expiryDate), "dd MMM yyyy")
+                    ? safeFormat(new Date(doc.expiryDate), "dd MMM yyyy")
                     : "-"}
                 </TableCell>
                 <TableCell>
-                  {format(new Date(doc.createdAt), "dd MMM yyyy")}
+                  {safeFormat(new Date(doc.createdAt), "dd MMM yyyy")}
                 </TableCell>
                 <TableCell className="text-right">
                   <Button

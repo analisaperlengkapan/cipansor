@@ -1,6 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
+import { safeFormat } from "@/lib/date";
 import { Button } from "@/components/ui/button";
 import {
   ArrowLeft,
@@ -492,7 +493,7 @@ export default function TranscriptPrintPage() {
               </p>
               <p>
                 Tanggal:{" "}
-                {format(new Date(transcript.issuedDate), "d MMMM yyyy", {
+                {safeFormat(new Date(transcript.issuedDate), "d MMMM yyyy", {
                   locale: idLocale,
                 })}
               </p>
@@ -514,7 +515,7 @@ export default function TranscriptPrintPage() {
             </p>
             <p>
               Dicetak:{" "}
-              {format(new Date(), "EEEE, d MMMM yyyy 'pukul' HH:mm 'WIB'", {
+              {safeFormat(new Date(), "EEEE, d MMMM yyyy 'pukul' HH:mm 'WIB'", {
                 locale: idLocale,
               })}
             </p>

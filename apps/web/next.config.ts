@@ -5,8 +5,11 @@ const nextConfig: NextConfig = {
   // Enable React Compiler (experimental - only in development for safety)
   reactCompiler: process.env.NODE_ENV === "development",
 
-  // Output standalone for Docker deployment
-  output: "standalone",
+  // Standalone output is for the Docker image (the Dockerfile sets
+  // BUILD_STANDALONE=1 and runs `node server.js`). For everything else — local
+  // dev, `next start`, and the e2e/CI server — leave it unset so `next start`
+  // is fully supported (it is not, with output: "standalone").
+  output: process.env.BUILD_STANDALONE ? "standalone" : undefined,
 
   // Production optimizations
   poweredByHeader: false,

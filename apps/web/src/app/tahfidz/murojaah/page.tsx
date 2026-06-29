@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { safeFormat } from "@/lib/date";
 import { useRouter } from "next/navigation";
 import { ColumnDef } from "@tanstack/react-table";
 import { MainLayout } from "@/components/layout";
@@ -127,15 +128,13 @@ export default function MurojaahListPage() {
           ) : (
             <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
               <span className="text-xs font-medium">
-                {row.original.student?.user?.name?.[0] ||
-                  "?"}
+                {row.original.student?.user?.name?.[0] || "?"}
               </span>
             </div>
           )}
           <div>
             <p className="font-medium">
-              {row.original.student?.user?.name ||
-                "-"}
+              {row.original.student?.user?.name || "-"}
             </p>
             <p className="text-xs text-muted-foreground">
               {row.original.student?.nis}
@@ -149,9 +148,11 @@ export default function MurojaahListPage() {
       header: "Tanggal",
       cell: ({ row }) => (
         <span className="text-sm">
-          {row.original.date ? format(new Date(row.original.date), "dd MMM yyyy", {
-            locale: idLocale,
-          }) : "-"}
+          {row.original.date
+            ? safeFormat(new Date(row.original.date), "dd MMM yyyy", {
+                locale: idLocale,
+              })
+            : "-"}
         </span>
       ),
     },
@@ -217,8 +218,7 @@ export default function MurojaahListPage() {
       header: "Musyrif",
       cell: ({ row }) => (
         <span className="text-sm">
-          {row.original.teacher?.user?.name ||
-            "-"}
+          {row.original.teacher?.user?.name || "-"}
         </span>
       ),
     },
@@ -325,10 +325,7 @@ export default function MurojaahListPage() {
             </SelectContent>
           </Select>
 
-          <DatePickerWithRange
-            date={dateRange}
-            setDate={setDateRange}
-          />
+          <DatePickerWithRange date={dateRange} setDate={setDateRange} />
         </div>
 
         {/* Summary Cards */}

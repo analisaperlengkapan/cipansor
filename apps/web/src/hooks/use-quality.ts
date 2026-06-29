@@ -29,7 +29,7 @@ export const useQualityDashboard = (unitId: string, academicYearId: string) => {
     queryKey: ["quality", "dashboard", unitId, academicYearId],
     queryFn: async () => {
       const response = await api.get<ApiResponse<QualityDashboardSummary[]>>(
-        "/api/quality/dashboard/summary",
+        "/quality/dashboard/summary",
         { params: { unitId, academicYearId } },
       );
       return response.data.data;
@@ -43,7 +43,7 @@ export const useQualityStandards = () => {
     queryKey: ["quality", "standards"],
     queryFn: async () => {
       const response = await api.get<ApiResponse<QualityStandard[]>>(
-        "/api/quality/standards",
+        "/quality/standards",
       );
       return response.data.data;
     },
@@ -59,7 +59,7 @@ export const useStandardDetails = (
     queryKey: ["quality", "standard", id, unitId, academicYearId],
     queryFn: async () => {
       const response = await api.get<ApiResponse<QualityStandard>>(
-        `/api/quality/standards/${id}`,
+        `/quality/standards/${id}`,
         { params: { unitId, academicYearId } },
       );
       return response.data.data;
@@ -73,7 +73,7 @@ export const useCreateEvidence = () => {
 
   return useMutation({
     mutationFn: async (data: CreateQualityEvidenceInput) => {
-      const response = await api.post("/api/quality/evidence", data);
+      const response = await api.post("/quality/evidence", data);
       return response.data.data;
     },
     onSuccess: (_, variables) => {
@@ -101,7 +101,7 @@ export const useDeleteEvidence = () => {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const response = await api.delete(`/api/quality/evidence/${id}`);
+      const response = await api.delete(`/quality/evidence/${id}`);
       return response.data;
     },
     onSuccess: () => {
@@ -122,7 +122,7 @@ export const useQualityAudits = (unitId: string, academicYearId: string) => {
   return useQuery({
     queryKey: ["quality", "audits", unitId, academicYearId],
     queryFn: async () => {
-      const response = await api.get("/api/quality/audits", {
+      const response = await api.get("/quality/audits", {
         params: { unitId, academicYearId },
       });
       return response.data.data;
@@ -136,7 +136,7 @@ export const useCreateAudit = () => {
 
   return useMutation({
     mutationFn: async (data: CreateAuditInput) => {
-      const response = await api.post("/api/quality/audits", data);
+      const response = await api.post("/quality/audits", data);
       return response.data.data;
     },
     onSuccess: (_, variables) => {
@@ -160,7 +160,7 @@ export const useAuditDetails = (id: string) => {
   return useQuery({
     queryKey: ["quality", "audit", id],
     queryFn: async () => {
-      const response = await api.get(`/api/quality/audits/${id}`);
+      const response = await api.get(`/quality/audits/${id}`);
       return response.data.data;
     },
     enabled: !!id,
@@ -179,7 +179,7 @@ export const useUpdateAuditItem = () => {
       data: UpdateAuditItemInput;
     }) => {
       const response = await api.patch(
-        `/api/quality/audits/items/${itemId}`,
+        `/quality/audits/items/${itemId}`,
         data,
       );
       return response.data.data;

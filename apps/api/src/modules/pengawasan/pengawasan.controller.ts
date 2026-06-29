@@ -13,9 +13,9 @@ import {
 } from './pengawasan.validation';
 import { UserRole } from '@prisma/client';
 
-const PRIVILEGED_ROLES: UserRole[] = [UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN];
+const PRIVILEGED_ROLES: string[] = [UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN];
 
-function isPrivileged(role?: UserRole): boolean {
+function isPrivileged(role?: string): boolean {
   return role ? PRIVILEGED_ROLES.includes(role) : false;
 }
 
@@ -68,7 +68,7 @@ export const createAudit = asyncHandler(async (req: Request, res: Response) => {
     ...body,
     unitId: targetUnitId,
     leadAuditorId: userId,
-  });
+  } as Parameters<typeof pengawasanService.createAudit>[0]);
 
   res.status(201).json({ success: true, data: audit });
 });
@@ -107,7 +107,7 @@ export const deleteAudit = asyncHandler(async (req: Request, res: Response) => {
 
 export const createFinding = asyncHandler(async (req: Request, res: Response) => {
   const body = createFindingSchema.parse(req.body);
-  const finding = await pengawasanService.createFinding(body);
+  const finding = await pengawasanService.createFinding(body as Parameters<typeof pengawasanService.createFinding>[0]);
   res.status(201).json({ success: true, data: finding });
 });
 
@@ -126,7 +126,7 @@ export const deleteFinding = asyncHandler(async (req: Request, res: Response) =>
 
 export const createFollowUp = asyncHandler(async (req: Request, res: Response) => {
   const body = createFollowUpSchema.parse(req.body);
-  const followUp = await pengawasanService.createFollowUp(body);
+  const followUp = await pengawasanService.createFollowUp(body as Parameters<typeof pengawasanService.createFollowUp>[0]);
   res.status(201).json({ success: true, data: followUp });
 });
 
@@ -154,7 +154,7 @@ export const getAuditSuggestions = asyncHandler(async (req: Request, res: Respon
   //   - pass ?unitId=all   to get cross-unit suggestions (global view)
   //   - omit ?unitId       to default to their own token unitId (or cross-unit if token has none)
   // Non-privileged users always use their token unitId.
-  let targetUnitId: string | undefined = unitId;
+  let targetUnitId: string | undefined = unitId ?? undefined;
   if (isPrivilegedUser) {
     const queryUnitId = (req.query as any).unitId ? String((req.query as any).unitId) : undefined;
     if (queryUnitId === 'all') {

@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { PrismaClient } from '@prisma/client';
+import { createPrismaClient } from '../prisma/client';
 import { donationService } from '../src/modules/donation/donation.service';
 
 // Mock AccountType from shared if unavailable
@@ -8,7 +8,7 @@ const AccountType = {
   REVENUE: 'REVENUE',
 };
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 async function main() {
   console.log('Starting verification script...');

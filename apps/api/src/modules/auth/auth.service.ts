@@ -6,7 +6,7 @@ import { isAdminRoleCode, isGovernanceRoleCode, deriveLegacyRole } from '@/middl
 import { config } from '@/config';
 import type { LoginInput, RegisterInput, ChangePasswordInput } from './auth.schema';
 import { RoleCode, UnitType } from '@prisma/client';
-import { authenticator } from 'otplib';
+import { generateSecret, generateURI, verify as verifyOtp } from 'otplib';
 import * as qrcode from 'qrcode';
 import crypto from 'crypto';
 
@@ -215,14 +215,8 @@ export class AuthService {
       this.getActiveAcademicYearId(),
     ]);
 
-    // Return user without password
-    const {
-      passwordHash,
-      twoFactorSecret,
-      twoFactorSecretPending,
-      twoFactorRecoveryCodes,
-      ...userWithoutPassword
-    } = user;
+    // Return user without sensitive fields
+    const userWithoutPassword = this.stripSensitiveFields(user);
 
     return {
       user: {
@@ -385,8 +379,8 @@ export class AuthService {
       return newUser;
     });
 
-    // Return without password
-    const { passwordHash: _, ...userWithoutPassword } = user;
+    // Return without sensitive fields
+    const userWithoutPassword = this.stripSensitiveFields(user);
 
     const activeAcademicYearId = await this.getActiveAcademicYearId();
 
@@ -547,13 +541,7 @@ export class AuthService {
     const primaryAssignment = user.userRoles.find((r) => r.isPrimary) || user.userRoles[0];
     const permissions = (primaryAssignment?.role.permissions as string[]) || [];
 
-    const {
-      passwordHash,
-      twoFactorSecret,
-      twoFactorSecretPending,
-      twoFactorRecoveryCodes,
-      ...userWithoutPassword
-    } = user;
+    const userWithoutPassword = this.stripSensitiveFields(user);
 
     return {
       ...userWithoutPassword,
@@ -621,8 +609,8 @@ export class AuthService {
       throw Errors.badRequest('2FA is already enabled');
     }
 
-    const secret = authenticator.generateSecret();
-    const otpauth = authenticator.keyuri(user.email, 'Cipansor App', secret);
+    const secret = generateSecret();
+    const otpauth = generateURI({ issuer: 'Cipansor App', label: user.email, secret });
     const qrCodeUrl = await qrcode.toDataURL(otpauth);
 
     // BUG FIX: Store pending secret server-side
@@ -653,7 +641,7 @@ export class AuthService {
       throw Errors.badRequest('No pending 2FA setup found. Please generate a new code.');
     }
 
-    const isValid = authenticator.verify({ token, secret: user.twoFactorSecretPending });
+    const isValid = (await verifyOtp({ token, secret: user.twoFactorSecretPending })).valid;
 
     if (!isValid) {
       throw Errors.badRequest('Invalid OTP code');
@@ -706,7 +694,7 @@ export class AuthService {
       throw Errors.unauthorized('2FA is not enabled for this user');
     }
 
-    let isValid = authenticator.verify({ token, secret: user.twoFactorSecret });
+    let isValid = (await verifyOtp({ token, secret: user.twoFactorSecret })).valid;
 
     // Check recovery codes if OTP failed (with atomic update to prevent race conditions)
     if (!isValid) {
@@ -774,13 +762,7 @@ export class AuthService {
       this.getActiveAcademicYearId(),
     ]);
 
-    const {
-      passwordHash,
-      twoFactorSecret,
-      twoFactorRecoveryCodes,
-      twoFactorSecretPending,
-      ...userWithoutPassword
-    } = user;
+    const userWithoutPassword = this.stripSensitiveFields(user);
 
     return {
       user: {
@@ -863,7 +845,7 @@ export class AuthService {
       }
 
       // Verify ADMIN's OTP
-      const isValid = authenticator.verify({ token, secret: admin.twoFactorSecret });
+      const isValid = (await verifyOtp({ token, secret: admin.twoFactorSecret })).valid;
       if (!isValid) throw Errors.unauthorized('Invalid Admin OTP');
     } else {
       // User disabling their own
@@ -875,7 +857,7 @@ export class AuthService {
         throw Errors.badRequest('2FA is not enabled');
       }
       // Verify USER's OTP
-      const isValid = authenticator.verify({ token, secret: user.twoFactorSecret });
+      const isValid = (await verifyOtp({ token, secret: user.twoFactorSecret })).valid;
       if (!isValid) throw Errors.unauthorized('Invalid OTP');
     }
 
@@ -908,6 +890,33 @@ export class AuthService {
 
   private generateRecoveryCodes(): string[] {
     return Array.from({ length: 10 }, () => crypto.randomBytes(5).toString('hex').toUpperCase());
+  }
+
+  /**
+   * Strip every sensitive field from a user record before returning it to a
+   * client. Covers the password hash, the 2FA secrets/recovery codes, and the
+   * password-reset token hash + expiry (these must never leave the server).
+   */
+  private stripSensitiveFields<
+    T extends {
+      passwordHash?: unknown;
+      twoFactorSecret?: unknown;
+      twoFactorSecretPending?: unknown;
+      twoFactorRecoveryCodes?: unknown;
+      resetTokenHash?: unknown;
+      resetTokenExpiresAt?: unknown;
+    },
+  >(user: T) {
+    const {
+      passwordHash: _ph,
+      twoFactorSecret: _ts,
+      twoFactorSecretPending: _tsp,
+      twoFactorRecoveryCodes: _trc,
+      resetTokenHash: _rth,
+      resetTokenExpiresAt: _rte,
+      ...safe
+    } = user;
+    return safe;
   }
 
 

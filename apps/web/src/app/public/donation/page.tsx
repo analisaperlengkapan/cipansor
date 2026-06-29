@@ -1,6 +1,6 @@
 "use client";
-
 import { useState } from "react";
+import { safeFormat } from "@/lib/date";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -64,7 +64,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
-import { format } from "date-fns";
+
 import { id as idLocale } from "date-fns/locale";
 import Link from "next/link";
 
@@ -687,7 +687,7 @@ function CampaignCard({
             <span className="flex items-center gap-1">
               <Calendar className="h-3.5 w-3.5" />
               s/d{" "}
-              {format(new Date(campaign.endDate), "d MMM", {
+              {safeFormat(new Date(campaign.endDate), "d MMM", {
                 locale: idLocale,
               })}
             </span>

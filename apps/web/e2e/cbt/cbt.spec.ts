@@ -31,7 +31,7 @@ test.describe("CBT Exams & Grading", () => {
     });
 
     await page.goto("/cbt/exams");
-    await expect(page.locator("main").getByRole("heading", { level: 1 }).first()).toContainText("Computer Based Test");
+    await expect(page.getByRole("heading", { name: /jadwal ujian/i })).toBeVisible();
     await expect(page.getByText("Ujian Akhir Semester Ganjil")).toBeVisible();
   });
 
@@ -127,29 +127,28 @@ test.describe("CBT Exams & Grading", () => {
     });
 
     await page.goto("/cbt/exams/new");
-    await expect(page.locator("main").getByRole("heading", { level: 1 }).first()).toContainText("Buat Ujian Baru");
+    await expect(page.getByRole("heading", { name: /buat ujian baru/i })).toBeVisible();
 
     await page.fill('input[name="title"]', "UTS Sejarah Kebudayaan Islam");
 
-    // Fill other fields...
-    // Note: In headless CI, select triggers might need explicit clicks
-    await page.click("button:has-text('Pilih Unit')");
-    await page.click("text=Unit Satu");
+    // The form's selects are Radix triggers that render their placeholder via
+    // data-placeholder, so has-text matching is unreliable. Address them by
+    // index (0=Tipe Ujian, 1=Unit, 2=Tahun Ajaran, 3=Mapel, 4=Kelas, 5=Guru,
+    // 6=Bank Soal, 7=Status) and pick the option by its text.
+    const pickSelect = async (index: number, optionName: string) => {
+      await page.locator('button[role="combobox"]').nth(index).click();
+      const listbox = page.getByRole("listbox");
+      await expect(listbox).toBeVisible();
+      await listbox.getByRole("option", { name: optionName }).first().click();
+      await expect(listbox).toBeHidden();
+    };
 
-    await page.click("button:has-text('Pilih Tahun Ajaran')");
-    await page.click("text=2024/2025");
-
-    await page.click("button:has-text('Pilih Mata Pelajaran')");
-    await page.click("text=Sejarah Kebudayaan Islam");
-
-    await page.click("button:has-text('Pilih Kelas')");
-    await page.click("text=Kelas 10A");
-
-    await page.click("button:has-text('Pilih Guru')");
-    await page.click("text=Pak Guru");
-
-    await page.click("button:has-text('Pilih Bank Soal')");
-    await page.click("text=Bank Soal PAI Kelas 10");
+    await pickSelect(1, "Unit Satu");
+    await pickSelect(2, "2024/2025");
+    await pickSelect(3, "Sejarah Kebudayaan Islam");
+    await pickSelect(4, "Kelas 10A");
+    await pickSelect(5, "Pak Guru");
+    await pickSelect(6, "Bank Soal PAI Kelas 10");
 
     await page.fill('input[name="scheduledAt"]', "2024-12-10T08:00");
     await page.click("button[type='submit']");
@@ -191,7 +190,7 @@ test.describe("CBT Exams & Grading", () => {
     });
 
     await page.goto("/cbt/exams/exam-1/monitoring");
-    await expect(page.locator("main").getByRole("heading", { level: 1 }).first()).toContainText("Monitoring Ujian", { timeout: 15000 });
+    await expect(page.getByRole("heading", { name: /monitoring ujian/i })).toBeVisible({ timeout: 15000 });
     await expect(page.getByText("Ahmad Santoso")).toBeVisible();
 
     // Mock Attempt Grading
@@ -233,6 +232,6 @@ test.describe("CBT Exams & Grading", () => {
     });
 
     await page.goto("/cbt/attempts/attempt-1/grading");
-    await expect(page.locator("main").getByRole("heading", { level: 1 })).toContainText("Penilaian Manual");
+    await expect(page.getByRole("heading", { name: /penilaian manual/i })).toBeVisible();
   });
 });

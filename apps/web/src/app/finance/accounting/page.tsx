@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { safeFormat } from "@/lib/date";
 import { MainLayout } from "@/components/layout/main-layout";
 import { PageHeader } from "@/components/shared/page-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -435,7 +436,7 @@ function JournalEntriesTab() {
                       id="date"
                       name="date"
                       type="date"
-                      defaultValue={format(new Date(), "yyyy-MM-dd")}
+                      defaultValue={safeFormat(new Date(), "yyyy-MM-dd")}
                       required
                     />
                   </div>
@@ -580,7 +581,7 @@ function JournalEntriesTab() {
                 entriesData?.data.map((entry) => (
                   <TableRow key={entry.id}>
                     <TableCell>
-                      {format(new Date(entry.date), "dd MMM yyyy", {
+                      {safeFormat(new Date(entry.date), "dd MMM yyyy", {
                         locale: localeID,
                       })}
                     </TableCell>
@@ -619,7 +620,7 @@ function JournalEntriesTab() {
 function ReportsTab() {
   const currentDate = new Date();
   const [startDate, setStartDate] = useState(
-    format(new Date(currentDate.getFullYear(), 0, 1), "yyyy-MM-dd"),
+    safeFormat(new Date(currentDate.getFullYear(), 0, 1), "yyyy-MM-dd"),
   );
   const [endDate, setEndDate] = useState(format(currentDate, "yyyy-MM-dd"));
 

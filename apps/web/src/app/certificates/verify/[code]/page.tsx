@@ -1,6 +1,7 @@
 "use client";
 
 import { use } from "react";
+import { safeFormat } from "@/lib/date";
 import { MainLayout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import {
@@ -291,7 +292,7 @@ export default function VerifyCertificatePage({
             <div className="bg-muted/30 rounded-lg p-4 text-center text-sm text-muted-foreground">
               <p>
                 Verifikasi dilakukan pada{" "}
-                {format(new Date(), "dd MMMM yyyy 'pukul' HH:mm", {
+                {safeFormat(new Date(), "dd MMMM yyyy 'pukul' HH:mm", {
                   locale: id,
                 })}
               </p>

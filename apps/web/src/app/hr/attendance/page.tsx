@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { safeFormat } from "@/lib/date";
 import { MainLayout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -281,12 +282,12 @@ export default function StaffAttendancePage() {
                         <TableCell>{item.staff?.unit?.name || "-"}</TableCell>
                         <TableCell>
                           {item.checkIn
-                            ? format(new Date(item.checkIn), "HH:mm")
+                            ? safeFormat(new Date(item.checkIn), "HH:mm")
                             : "-"}
                         </TableCell>
                         <TableCell>
                           {item.checkOut
-                            ? format(new Date(item.checkOut), "HH:mm")
+                            ? safeFormat(new Date(item.checkOut), "HH:mm")
                             : "-"}
                         </TableCell>
                         <TableCell>{getStatusBadge(item.status)}</TableCell>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { safeFormat } from "@/lib/date";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
@@ -161,7 +162,7 @@ export default function GrowthTrackingPage() {
   // Prepare chart data (reverse to show chronological order left to right)
   const chartData = growthData
     ? [...growthData].reverse().map((r: any) => ({
-        date: format(new Date(r.recordDate), "dd/MM/yy"),
+        date: safeFormat(new Date(r.recordDate), "dd/MM/yy"),
         weight: r.weight,
         height: r.height,
         head: r.headCircumference,
@@ -411,9 +412,13 @@ export default function GrowthTrackingPage() {
                   {growthData?.map((record: any) => (
                     <TableRow key={record.id}>
                       <TableCell>
-                        {format(new Date(record.recordDate), "dd MMM yyyy", {
-                          locale: id,
-                        })}
+                        {safeFormat(
+                          new Date(record.recordDate),
+                          "dd MMM yyyy",
+                          {
+                            locale: id,
+                          },
+                        )}
                       </TableCell>
                       <TableCell>{record.weight || "-"}</TableCell>
                       <TableCell>{record.height || "-"}</TableCell>

@@ -1,8 +1,8 @@
 "use client";
-
 import { use } from "react";
+import { safeFormat } from "@/lib/date";
 import Link from "next/link";
-import { format } from "date-fns";
+
 import { id as localeId } from "date-fns/locale";
 import {
   ArrowLeft,
@@ -276,7 +276,7 @@ export default function HalaqohDetailPage({ params }: HalaqohDetailPageProps) {
                       {student.name}
                     </TableCell>
                     <TableCell>
-                      {format(new Date(student.enrolledAt), "d MMM yyyy", {
+                      {safeFormat(new Date(student.enrolledAt), "d MMM yyyy", {
                         locale: localeId,
                       })}
                     </TableCell>

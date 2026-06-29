@@ -18,6 +18,7 @@ describe('UploadController', () => {
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith({
         success: false,
+        data: null,
         error: {
           code: 'NO_FILE',
           message: 'No file uploaded',

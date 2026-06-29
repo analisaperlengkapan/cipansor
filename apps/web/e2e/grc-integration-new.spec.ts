@@ -1,10 +1,37 @@
 import { test, expect } from '@playwright/test';
+import { primeAuthCookies } from './helpers/auth';
 
 test.describe('GRC Integrated Workflow', () => {
   test.beforeEach(async ({ page }) => {
-    // Mock authentication
-    await page.goto('/');
-    await page.evaluate(() => {
+    await primeAuthCookies(page);
+
+    // Low-priority fallback for incidental API calls. Registered first so the
+    // per-test mocks (registered later) take precedence. Without it a stray 401
+    // triggers the axios refresh->logout flow and redirects to /login, wiping
+    // the page under test.
+    await page.route('**/api/**', async (route) => {
+      await route.fulfill({ json: { success: true, data: [] } });
+    });
+    await page.route('**/api/auth/refresh', async (route) => {
+      await route.fulfill({
+        json: {
+          success: true,
+          data: { accessToken: 'mock-token', refreshToken: 'mock-token' },
+        },
+      });
+    });
+    await page.route('**/api/auth/me', async (route) => {
+      await route.fulfill({
+        json: {
+          success: true,
+          data: { id: 'user-1', name: 'Super Admin', role: 'SUPER_ADMIN' },
+        },
+      });
+    });
+
+    // Seed auth before any page JS runs (applies on every navigation) so the
+    // store is hydrated on first paint and never races into the logout flow.
+    await page.addInitScript(() => {
       localStorage.setItem('accessToken', 'mock-token');
       localStorage.setItem('auth-storage', JSON.stringify({
         state: {

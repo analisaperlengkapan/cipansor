@@ -1,6 +1,7 @@
 "use client";
 
 import { use } from "react";
+import { safeFormat } from "@/lib/date";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { format, formatDistanceToNow } from "date-fns";
@@ -277,7 +278,7 @@ export default function MuhadhorohDetailPage({ params }: PageProps) {
                 <div>
                   <p className="text-sm text-muted-foreground">Waktu</p>
                   <p className="font-medium">
-                    {format(new Date(muhadhoroh.scheduledAt), "HH:mm", {
+                    {safeFormat(new Date(muhadhoroh.scheduledAt), "HH:mm", {
                       locale: localeId,
                     })}{" "}
                     WIB
@@ -578,7 +579,7 @@ export default function MuhadhorohDetailPage({ params }: PageProps) {
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Dibuat</span>
                 <span>
-                  {format(new Date(muhadhoroh.createdAt), "dd MMM yyyy", {
+                  {safeFormat(new Date(muhadhoroh.createdAt), "dd MMM yyyy", {
                     locale: localeId,
                   })}
                 </span>
@@ -586,7 +587,7 @@ export default function MuhadhorohDetailPage({ params }: PageProps) {
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Diperbarui</span>
                 <span>
-                  {format(new Date(muhadhoroh.updatedAt), "dd MMM yyyy", {
+                  {safeFormat(new Date(muhadhoroh.updatedAt), "dd MMM yyyy", {
                     locale: localeId,
                   })}
                 </span>

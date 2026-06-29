@@ -1,6 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
+import { safeFormat } from "@/lib/date";
 import { MainLayout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import {
@@ -326,9 +327,13 @@ export default function LeaveDetailPage() {
                         Tanggal Selesai
                       </dt>
                       <dd className="font-medium">
-                        {format(new Date(leave.endDate), "EEEE, d MMMM yyyy", {
-                          locale: idLocale,
-                        })}
+                        {safeFormat(
+                          new Date(leave.endDate),
+                          "EEEE, d MMMM yyyy",
+                          {
+                            locale: idLocale,
+                          },
+                        )}
                       </dd>
                     </div>
                   </div>
@@ -395,9 +400,13 @@ export default function LeaveDetailPage() {
                     <div>
                       <p className="font-medium">Diajukan</p>
                       <p className="text-sm text-muted-foreground">
-                        {format(new Date(leave.createdAt), "d MMM yyyy HH:mm", {
-                          locale: idLocale,
-                        })}
+                        {safeFormat(
+                          new Date(leave.createdAt),
+                          "d MMM yyyy HH:mm",
+                          {
+                            locale: idLocale,
+                          },
+                        )}
                       </p>
                     </div>
                   </div>

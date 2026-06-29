@@ -1,8 +1,8 @@
 "use client";
-
 import { useState } from "react";
+import { safeFormat } from "@/lib/date";
 import Link from "next/link";
-import { format } from "date-fns";
+
 import { id as localeId } from "date-fns/locale";
 import {
   Heart,
@@ -495,9 +495,13 @@ export default function DonationPage() {
                     donations.map((donation) => (
                       <TableRow key={donation.id}>
                         <TableCell>
-                          {format(new Date(donation.createdAt), "d MMM yyyy", {
-                            locale: localeId,
-                          })}
+                          {safeFormat(
+                            new Date(donation.createdAt),
+                            "d MMM yyyy",
+                            {
+                              locale: localeId,
+                            },
+                          )}
                         </TableCell>
                         <TableCell>
                           <div>

@@ -39,7 +39,7 @@ vi.mock('@prisma/client', () => {
 });
 
 // 3. Mock src/lib/prisma
-vi.mock('../../../../../src/lib/prisma', () => ({
+vi.mock('../../../../src/lib/prisma', () => ({
   prisma: {
     message: {
       create: mocks.create,
@@ -55,11 +55,11 @@ vi.mock('../../../../../src/lib/prisma', () => ({
   },
 }));
 
-vi.mock('../../../../../src/lib/logger');
-vi.mock('../../../../../src/lib/event-bus');
+vi.mock('../../../../src/lib/logger');
+vi.mock('../../../../src/lib/event-bus');
 
-import { MessagesService } from '../../../../../src/modules/messages/messages.service';
-import { Errors } from '../../../../../src/middleware/error';
+import { MessagesService } from '../../../../src/modules/messages/messages.service';
+import { Errors } from '../../../../src/middleware/error';
 
 describe('MessagesService', () => {
   let service: MessagesService;

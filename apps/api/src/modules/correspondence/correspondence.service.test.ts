@@ -2,6 +2,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { prisma } from '../../lib/prisma';
 import { CorrespondenceService } from './correspondence.service';
 
+// Shared event-bus spy. reviewLetter dispatches via a dynamic import('@/lib/event-bus'),
+// so mock both the relative and aliased specifiers with the same spy.
+const { emitMock } = vi.hoisted(() => ({ emitMock: vi.fn() }));
+
 // Mock external dependencies
 vi.mock('../../lib/prisma', () => ({
   prisma: {
@@ -38,11 +42,8 @@ vi.mock('../../lib/prisma', () => ({
   },
 }));
 
-vi.mock('../../lib/event-bus', () => ({
-  eventBus: {
-    emit: vi.fn(),
-  },
-}));
+vi.mock('../../lib/event-bus', () => ({ eventBus: { emit: emitMock } }));
+vi.mock('@/lib/event-bus', () => ({ eventBus: { emit: emitMock } }));
 
 describe('Correspondence Service', () => {
   beforeEach(() => {
@@ -129,6 +130,34 @@ describe('Correspondence Service', () => {
         where: { id: 'letter-1' },
         data: { status: 'SIGNED' },
       });
+    });
+
+    it('should notify the letter creator once a letter is signed', async () => {
+      vi.mocked(prisma.letterReviewer.findUnique).mockResolvedValue({
+        id: 'review-1',
+        isSigner: true,
+      } as any);
+      vi.mocked(prisma.letterReviewer.update).mockResolvedValue({} as any);
+      vi.mocked(prisma.letter.update).mockResolvedValue({} as any);
+      vi.mocked(prisma.letter.findUnique).mockResolvedValue({
+        createdById: 'creator-1',
+        unitId: 'unit-1',
+        subject: 'Undangan Rapat',
+        letterNumber: '001/X/2026',
+      } as any);
+
+      await CorrespondenceService.processReview('letter-1', 'user-1', 'APPROVE');
+
+      expect(emitMock).toHaveBeenCalledWith(
+        'notification:send',
+        expect.objectContaining({
+          userId: 'creator-1',
+          unitId: 'unit-1',
+          type: 'INFO',
+          title: 'Surat Telah Ditandatangani',
+          data: { letterId: 'letter-1' },
+        })
+      );
     });
 
     it('should set status to REVISION_NEEDED if rejected', async () => {

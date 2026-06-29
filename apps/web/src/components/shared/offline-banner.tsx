@@ -74,6 +74,9 @@ export function OfflineBanner({
         "px-4 py-2",
         "flex items-center justify-center gap-3",
         "animate-in slide-in-from-top duration-300",
+        // Informational overlay: never swallow clicks meant for the content
+        // beneath it (the interactive retry button re-enables them on itself).
+        "pointer-events-none",
         className,
       )}
     >
@@ -85,7 +88,7 @@ export function OfflineBanner({
           variant="secondary"
           onClick={handleRetry}
           disabled={isRetrying}
-          className="h-7 px-2"
+          className="h-7 px-2 pointer-events-auto"
         >
           <RefreshCw
             className={cn("h-3.5 w-3.5 mr-1", isRetrying && "animate-spin")}

@@ -155,7 +155,7 @@ export const procurementController = {
       const user = (req as any).user;
 
       const serviceInput: FulfillPurchaseRequestInput = {
-        items: input.items,
+        items: input.items as FulfillPurchaseRequestInput['items'],
         paymentAccountId: input.paymentAccountId,
         receiptDate: new Date(input.receiptDate),
         purchaseOrderNo: input.purchaseOrderNo,

@@ -6,8 +6,8 @@
  * Halaman manajemen PKG berdasarkan Permendiknas No. 35 Tahun 2010
  * 4 Kompetensi: Pedagogik, Kepribadian, Sosial, Profesional
  */
-
 import { useState } from "react";
+import { safeFormat } from "@/lib/date";
 import { useRouter } from "next/navigation";
 import {
   usePKGPeriods,
@@ -68,7 +68,7 @@ import {
   Calendar,
   Building2,
 } from "lucide-react";
-import { format } from "date-fns";
+
 import { id as localeId } from "date-fns/locale";
 import { toast } from "sonner";
 
@@ -359,11 +359,11 @@ export default function PKGPage() {
                       </TableCell>
                       <TableCell>{period.academicYear?.name}</TableCell>
                       <TableCell className="text-sm">
-                        {format(new Date(period.startDate), "d MMM", {
+                        {safeFormat(new Date(period.startDate), "d MMM", {
                           locale: localeId,
                         })}{" "}
                         -{" "}
-                        {format(new Date(period.endDate), "d MMM yyyy", {
+                        {safeFormat(new Date(period.endDate), "d MMM yyyy", {
                           locale: localeId,
                         })}
                       </TableCell>

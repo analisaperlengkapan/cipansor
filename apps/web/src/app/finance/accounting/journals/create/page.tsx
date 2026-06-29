@@ -1,6 +1,6 @@
 "use client";
-
 import { useState } from "react";
+import { safeFormat } from "@/lib/date";
 import { useRouter } from "next/navigation";
 import { MainLayout } from "@/components/layout/main-layout";
 import { PageHeader } from "@/components/shared/page-header";
@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/table";
 import { toast } from "sonner";
 import { Plus, Trash2, Save, ArrowLeft } from "lucide-react";
-import { format } from "date-fns";
+
 import { api } from "@/lib/api";
 import { useUnits } from "@/hooks/use-units";
 import { useAccountCodes } from "@/hooks/use-finance-enhancement";
@@ -55,7 +55,7 @@ export default function CreateManualJournalPage() {
   const { data: units } = useUnits();
   const { data: accounts } = useAccountCodes({ isActive: true, limit: 200 });
 
-  const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [date, setDate] = useState(safeFormat(new Date(), "yyyy-MM-dd"));
   const [unitId, setUnitId] = useState<string>("");
   const [description, setDescription] = useState("");
   const [rows, setRows] = useState<JournalRow[]>([createRow(), createRow()]);

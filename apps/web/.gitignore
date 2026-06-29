@@ -39,3 +39,17 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# playwright e2e auth state
+playwright/.auth/
+playwright/
+
+# temporary/diagnostic e2e specs (underscore-prefixed)
+e2e/_*.spec.ts
+
+# e2e auth state
+.auth/
+
+# e2e screenshot temp artifacts
+e2e/temp/
+apps/web/

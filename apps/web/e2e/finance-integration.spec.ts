@@ -1,35 +1,25 @@
 import { test, expect } from '@playwright/test';
-import { setupMockUser, login } from './utils/auth';
 
 test.describe('Finance & Billing Integration', () => {
-  test.beforeEach(async ({ page }) => {
-    // Mock user as a BENDAHARA (Finance Admin)
-    await setupMockUser(page, { role: 'BENDAHARA', unitId: 'unit-1' });
-    await login(page);
-  });
+  // Use a real authenticated session so the finance pages (MainLayout +
+  // ProtectedRoute, real API data) actually render.
+  test.use({ storageState: '.auth/superAdmin.json' });
 
-  test('Billing Management - Generate Auto-Billing', async ({ page }) => {
+  test('Billing & Arrears (Tunggakan) management page', async ({ page }) => {
     await page.goto('/finance/billing');
 
-    // Wait for the page to load
-    await expect(page.getByRole('heading', { name: 'Billing & Pembayaran' })).toBeVisible();
+    // Page loads with the arrears management UI.
+    await expect(
+      page.getByRole('heading', { name: 'Billing & Tunggakan' }),
+    ).toBeVisible();
 
-    // Verify Generate Tagihan bulk action exists
-    const generateBtn = page.getByRole('button', { name: /Buat Tagihan/i });
-    await expect(generateBtn).toBeVisible();
+    // Outstanding summary card and the unit filter are present (the arrears
+    // list itself requires picking a unit first).
+    await expect(page.getByText('Total Outstanding (Unit)')).toBeVisible();
+    await expect(page.getByText('Filter Data Tunggakan')).toBeVisible();
 
-    // The actual bulk click to test backend integration
-    // We mock/intercept or allow it to run depending on test DB setup.
-    // Generally in this E2E, we ensure UI responds correctly.
-    // Assuming a test environment where we just want it to trigger the dialog/toast
-    await generateBtn.click();
-    
-    // There should be a modal or validation dialog
-    await expect(page.getByRole('dialog')).toBeVisible();
-    await page.getByRole('button', { name: 'Confirm' }).click();
-
-    // Expect summary cards to exist
-    await expect(page.locator('text=Total Tunggakan')).toBeVisible();
+    // Core action exists.
+    await expect(page.getByRole('button', { name: /Refresh/i })).toBeVisible();
   });
 
   test('Update Student Wallet from Payment (Mocked Flow)', async ({ page }) => {

@@ -1,6 +1,6 @@
 "use client";
-
 import { useState } from "react";
+import { safeFormat } from "@/lib/date";
 import { useRouter } from "next/navigation";
 import {
   usePayrollPeriods,
@@ -20,7 +20,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Plus, ArrowRight, RefreshCw } from "lucide-react";
-import { format } from "date-fns";
+
 import {
   Dialog,
   DialogContent,
@@ -105,8 +105,8 @@ export default function PayrollPage() {
                       </TableCell>
                       <TableCell>
                         <div className="text-xs text-muted-foreground">
-                          {format(new Date(period.startDate), "MMM d")} -{" "}
-                          {format(new Date(period.endDate), "MMM d, yyyy")}
+                          {safeFormat(new Date(period.startDate), "MMM d")} -{" "}
+                          {safeFormat(new Date(period.endDate), "MMM d, yyyy")}
                         </div>
                       </TableCell>
                       <TableCell>

@@ -2,6 +2,25 @@
  * Date formatting utilities
  * Consistent date formatting throughout the application
  */
+import { format as dateFnsFormat } from "date-fns";
+
+/**
+ * Safe wrapper around date-fns `format`. Returns a placeholder instead of
+ * throwing `RangeError: Invalid time value` when the input is null/undefined or
+ * an unparseable date — which would otherwise crash the whole page (e.g. a list
+ * column rendering a record with a missing date).
+ */
+export function safeFormat(
+  date: Date | string | null | undefined,
+  pattern: string,
+  options?: Parameters<typeof dateFnsFormat>[2],
+  fallback = "-",
+): string {
+  if (!date) return fallback;
+  const d = typeof date === "string" ? new Date(date) : date;
+  if (isNaN(d.getTime())) return fallback;
+  return dateFnsFormat(d, pattern, options);
+}
 
 /**
  * Format date to Indonesian locale

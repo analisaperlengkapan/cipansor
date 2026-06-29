@@ -251,7 +251,7 @@ test.describe("Dashboard Performance", () => {
     const startTime = Date.now();
 
     await page.goto("/dashboard");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
     await waitForLoadingComplete(page);
 
     const loadTime = Date.now() - startTime;

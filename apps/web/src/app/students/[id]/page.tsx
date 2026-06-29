@@ -1,6 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
+import { safeFormat } from "@/lib/date";
 import Link from "next/link";
 import { format } from "date-fns";
 import {
@@ -236,7 +237,10 @@ export default function StudentDetailPage() {
                   />
                   <InfoRow
                     label="Birth Date"
-                    value={format(new Date(student.birthDate), "dd MMMM yyyy")}
+                    value={safeFormat(
+                      new Date(student.birthDate),
+                      "dd MMMM yyyy",
+                    )}
                   />
                   <InfoRow label="Birth Place" value={student.birthPlace} />
                 </CardContent>
@@ -382,7 +386,7 @@ export default function StudentDetailPage() {
                         />
                         <div>
                           <p className="font-medium">
-                            {format(new Date(att.date), "dd MMMM yyyy")}
+                            {safeFormat(new Date(att.date), "dd MMMM yyyy")}
                           </p>
                           <p className="text-sm text-muted-foreground">
                             {att.status}
@@ -480,7 +484,8 @@ export default function StudentDetailPage() {
                         </div>
                         <div className="flex justify-between text-sm text-muted-foreground">
                           <span>
-                            Due: {format(new Date(inv.dueDate), "dd MMM yyyy")}
+                            Due:{" "}
+                            {safeFormat(new Date(inv.dueDate), "dd MMM yyyy")}
                           </span>
                           <span>{inv.invoiceNumber}</span>
                         </div>
@@ -510,7 +515,7 @@ export default function StudentDetailPage() {
                     </h3>
                     <p className="text-xs opacity-70">
                       {student.wallet?.lastTopUp
-                        ? `Last top up: ${format(new Date(student.wallet.lastTopUp), "dd MMM yyyy")}`
+                        ? `Last top up: ${safeFormat(new Date(student.wallet.lastTopUp), "dd MMM yyyy")}`
                         : "No transaction history"}
                     </p>
                   </div>
@@ -536,13 +541,13 @@ export default function StudentDetailPage() {
                     </h3>
                     <p className="text-xs opacity-70">
                       {student.wallet?.lastTopUp
-                        ? `Last top up: ${format(new Date(student.wallet.lastTopUp), "dd MMM yyyy")}`
+                        ? `Last top up: ${safeFormat(new Date(student.wallet.lastTopUp), "dd MMM yyyy")}`
                         : "No transaction history"}
                     </p>
                   </div>
                   <Button variant="outline" className="w-full" asChild>
                     <Link href={`/wallet/${student.id}`}>
-                       Kelola Saldo & Riwayat
+                      Kelola Saldo & Riwayat
                     </Link>
                   </Button>
                 </CardContent>
@@ -554,7 +559,9 @@ export default function StudentDetailPage() {
                     <FileText className="h-5 w-5" />
                     Tagihan & Tunggakan
                   </CardTitle>
-                  <CardDescription>Informasi status tagihan berjalan</CardDescription>
+                  <CardDescription>
+                    Informasi status tagihan berjalan
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4 text-center py-6">
                   {summary.unpaidInvoices.count > 0 ? (
@@ -564,23 +571,32 @@ export default function StudentDetailPage() {
                         {summary.unpaidInvoices.count} Tagihan Belum Dibayar
                       </h3>
                       <p className="text-muted-foreground mb-4">
-                        Total: <strong>{formatCurrency(summary.unpaidInvoices.total)}</strong>
+                        Total:{" "}
+                        <strong>
+                          {formatCurrency(summary.unpaidInvoices.total)}
+                        </strong>
                       </p>
                       <Button variant="default" asChild>
-                         <Link href={`/finance/bills?studentId=${student.id}`}>
-                           Lihat Detail Tagihan
-                         </Link>
+                        <Link href={`/finance/bills?studentId=${student.id}`}>
+                          Lihat Detail Tagihan
+                        </Link>
                       </Button>
                     </div>
                   ) : (
                     <div>
                       <CheckCircle className="h-10 w-10 text-green-500 mx-auto mb-3" />
-                      <h3 className="text-xl font-bold text-green-600 mb-1">Status Lunas</h3>
-                      <p className="text-muted-foreground mb-4">Tidak ada tagihan tertunggak.</p>
+                      <h3 className="text-xl font-bold text-green-600 mb-1">
+                        Status Lunas
+                      </h3>
+                      <p className="text-muted-foreground mb-4">
+                        Tidak ada tagihan tertunggak.
+                      </p>
                       <Button variant="outline" asChild>
-                         <Link href={`/finance/payments?studentId=${student.id}`}>
-                           Lihat Riwayat Pembayaran
-                         </Link>
+                        <Link
+                          href={`/finance/payments?studentId=${student.id}`}
+                        >
+                          Lihat Riwayat Pembayaran
+                        </Link>
                       </Button>
                     </div>
                   )}
@@ -636,7 +652,7 @@ export default function StudentDetailPage() {
                             {med.complaint || med.type}
                           </p>
                           <span className="text-xs text-muted-foreground">
-                            {format(new Date(med.visitDate), "dd MMM yyyy")}
+                            {safeFormat(new Date(med.visitDate), "dd MMM yyyy")}
                           </span>
                         </div>
                         <p className="text-sm text-muted-foreground">

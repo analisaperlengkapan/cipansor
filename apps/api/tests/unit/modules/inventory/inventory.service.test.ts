@@ -44,6 +44,7 @@ vi.mock('@prisma/client', () => {
         delete: vi.fn(),
       };
       $disconnect = mocks.disconnect;
+      $transaction = async (cb: (tx: unknown) => unknown) => cb(this);
     },
     // Mock Enums
     AssetStatus: {
@@ -63,7 +64,7 @@ vi.mock('@prisma/client', () => {
 });
 
 // 3. Mock the prisma lib instance to force usage of our mocked client
-vi.mock('../../../../../src/lib/prisma', async () => {
+vi.mock('../../../../src/lib/prisma', async () => {
   const { PrismaClient } = await import('@prisma/client');
   return {
     prisma: new PrismaClient(),
@@ -74,8 +75,8 @@ import {
   createItem,
   getItems,
   getInventoryStats,
-} from '../../../../../src/modules/inventory/service';
-import { prisma } from '../../../../../src/lib/prisma';
+} from '../../../../src/modules/inventory/service';
+import { prisma } from '../../../../src/lib/prisma';
 import { AssetStatus, AssetCondition } from '@cipansor/shared';
 
 describe('Inventory Service', () => {

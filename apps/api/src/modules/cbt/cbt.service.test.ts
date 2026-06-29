@@ -8,6 +8,7 @@ vi.mock('@prisma/client', () => ({
       Serializable: 'Serializable',
     },
     Decimal: vi.fn((val) => val),
+    JsonNull: 'JsonNull',
   },
   QuestionType: {
     MULTIPLE_CHOICE: 'MULTIPLE_CHOICE',
@@ -492,7 +493,7 @@ describe('CBT Service', () => {
         create: {
           attemptId: 'attempt-1',
           questionId: 'q-2',
-          answer: null,
+          answer: 'JsonNull',
           isCorrect: null,
           score: null,
         },

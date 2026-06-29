@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { safeFormat } from "@/lib/date";
 import Link from "next/link";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
@@ -310,7 +311,7 @@ export default function AttendancePage() {
                 attendances.map((attendance) => (
                   <TableRow key={attendance.id}>
                     <TableCell>
-                      {format(new Date(attendance.date), "d MMM yyyy", {
+                      {safeFormat(new Date(attendance.date), "d MMM yyyy", {
                         locale: localeId,
                       })}
                     </TableCell>

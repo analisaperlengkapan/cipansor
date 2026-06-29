@@ -1,11 +1,11 @@
 import { ColumnDef } from "@tanstack/react-table";
+import { safeFormat } from "@/lib/date";
 import { DataTable } from "@/components/shared";
 import { AssignmentSubmission } from "@cipansor/shared";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
-import { format } from "date-fns";
 
 interface SubmissionListProps {
   submissions: AssignmentSubmission[];
@@ -28,7 +28,7 @@ export function SubmissionList({
       accessorKey: "submittedAt",
       header: "Submitted At",
       cell: ({ row }) =>
-        format(new Date(row.original.submittedAt), "dd MMM yyyy HH:mm"),
+        safeFormat(new Date(row.original.submittedAt), "dd MMM yyyy HH:mm"),
     },
     {
       accessorKey: "status",

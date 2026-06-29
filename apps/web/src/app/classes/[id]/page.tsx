@@ -1,6 +1,6 @@
 "use client";
-
 import { useParams, useRouter } from "next/navigation";
+import { safeFormat } from "@/lib/date";
 import { useState } from "react";
 import { MainLayout } from "@/components/layout";
 import { PageHeader, ConfirmDialog, DataTable } from "@/components/shared";
@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ColumnDef } from "@tanstack/react-table";
-import { format } from "date-fns";
+
 import {
   ArrowLeft,
   Pencil,
@@ -90,7 +90,7 @@ export default function ClassDetailPage() {
       header: "Enrolled At",
       cell: ({ row }) => (
         <span className="text-sm">
-          {format(new Date(row.original.enrolledAt), "dd MMM yyyy")}
+          {safeFormat(new Date(row.original.enrolledAt), "dd MMM yyyy")}
         </span>
       ),
     },

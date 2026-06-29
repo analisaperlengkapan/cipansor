@@ -107,8 +107,9 @@ export default function IbadahLeaderboardPage() {
     }));
   }, [leaderboardData]);
 
-  // Find current user position (from leaderboard or default)
-  const currentUserEntry = useMemo(() => {
+  // Find current user position (from leaderboard or default).
+  // (React Compiler auto-memoizes; manual useMemo could not be preserved here.)
+  const currentUserEntry = ((): { rank: number | string; score: number } => {
     if (!user?.id || !leaderboardData) return { rank: "-", score: 0 };
     const found = leaderboardData.find(
       (item: any) => item.studentId === user.id || item.student?.userId === user.id,
@@ -120,7 +121,7 @@ export default function IbadahLeaderboardPage() {
       };
     }
     return { rank: "-", score: 0 };
-  }, [leaderboardData, user?.id]);
+  })();
 
   return (
     <MainLayout

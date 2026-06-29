@@ -1,6 +1,6 @@
 "use client";
-
 import { useState, useEffect } from "react";
+import { safeFormat } from "@/lib/date";
 import { useRouter, useParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -43,7 +43,6 @@ import { useUnits } from "@/hooks";
 import { ArrowLeft, Loader2, Save } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { format } from "date-fns";
 
 const alumniSchema = z.object({
   fullName: z.string().min(1, "Nama lengkap wajib diisi"),
@@ -132,7 +131,7 @@ export default function EditAlumniPage() {
         gender: alumni.gender,
         birthPlace: alumni.birthPlace,
         birthDate: alumni.birthDate
-          ? format(new Date(alumni.birthDate), "yyyy-MM-dd")
+          ? safeFormat(new Date(alumni.birthDate), "yyyy-MM-dd")
           : "",
         phone: alumni.phone || "",
         email: alumni.email || "",

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { UserRole } from '@prisma/client';
+import { UserRole, RoleCode } from '@prisma/client';
 import * as controller from './controller';
 import * as forecastController from './forecast.controller';
 import * as exportController from './export.controller';
@@ -17,7 +17,7 @@ router.use(authenticate);
 // applicable (see e.g. `getCashFlowForecast`).
 const forecastViewer = authorize(
   UserRole.SUPER_ADMIN,
-  UserRole.YAYASAN_ADMIN,
+  RoleCode.YAYASAN_ADMIN,
   UserRole.UNIT_ADMIN
 );
 

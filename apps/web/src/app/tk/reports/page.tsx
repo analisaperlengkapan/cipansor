@@ -1,6 +1,6 @@
 "use client";
-
 import { useState } from "react";
+import { safeFormat } from "@/lib/date";
 import { useRouter } from "next/navigation";
 import { ColumnDef } from "@tanstack/react-table";
 import { MainLayout } from "@/components/layout";
@@ -45,7 +45,7 @@ import {
   Printer,
   Sparkles,
 } from "lucide-react";
-import { format } from "date-fns";
+
 import { id as idLocale } from "date-fns/locale";
 import { toast } from "sonner";
 import { useAuthStore } from "@/stores/auth";
@@ -180,7 +180,7 @@ export default function TKReportListPage() {
       header: "Dibuat",
       cell: ({ row }) => (
         <span className="text-sm">
-          {format(new Date(row.original.createdAt), "dd MMM yyyy", {
+          {safeFormat(new Date(row.original.createdAt), "dd MMM yyyy", {
             locale: idLocale,
           })}
         </span>

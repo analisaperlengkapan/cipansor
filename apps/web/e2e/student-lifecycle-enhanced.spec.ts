@@ -143,13 +143,16 @@ test.describe("Student Lifecycle Integration", () => {
     await page.route("**/api/tahfidz/students/*/summary", async (route) => route.fulfill({ body: JSON.stringify({ data: { summary: { juzCoveredCount: 5 } } }) }));
     await page.route("**/api/ibadah/stats*", async (route) => route.fulfill({ body: JSON.stringify({ data: { completionRate: 90 } }) }));
 
-    await page.route("**/api/academic-years/active*", async (route) => {
+    // useActiveAcademicYear() queries GET /academic-years?isActive=true and
+    // takes data[0]; without it academicYearId stays empty and the holistic
+    // analytics query is disabled (so the radar card never renders).
+    await page.route("**/api/academic-years*", async (route) => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
         body: JSON.stringify({
           success: true,
-          data: { id: "ay-active", name: "2024/2025" },
+          data: [{ id: "ay-active", name: "2024/2025", isActive: true }],
         }),
       });
     });
@@ -158,7 +161,7 @@ test.describe("Student Lifecycle Integration", () => {
 
     // Check Holistic Radar
     await expect(page.getByText("Analisis Perkembangan Holistik").first()).toBeVisible({ timeout: 15000 });
-    await expect(page.getByText("82.5")).toBeVisible();
+    await expect(page.getByText("82.5").first()).toBeVisible();
 
     // Check Boarding Tab
     const boardingTab = page.getByRole("tab", { name: /Asrama/i });

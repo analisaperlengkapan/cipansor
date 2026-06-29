@@ -5,7 +5,7 @@ import { UserRole, Prisma, DutyCategory, DutyStatus, DayOfWeek } from '@prisma/c
 // User type from JwtPayload
 interface AuthenticatedUser {
   sub: string;
-  role: UserRole;
+  role: string;
   unitId: string | null;
 }
 

@@ -103,10 +103,12 @@ test.describe("Assessment - Raport Merdeka", () => {
 test.describe("Assessment - Transcript", () => {
   test("should allow navigation to transcript page", async ({ page }) => {
     const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
-
-    await page.waitForTimeout(2000);
+    // Deterministic auth (apiLogin + injected session) avoids the flaky
+    // UI-login + fixed-timeout race that could redirect to /login mid-test.
+    await login.loginAndWaitForDashboard(
+      "superadmin@cipansor.id",
+      "SuperAdmin123!",
+    );
 
     // Navigate to assessment main page first
     await page.goto("/assessment");

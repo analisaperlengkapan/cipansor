@@ -18,6 +18,7 @@ vi.mock('@/lib/prisma', () => ({
     paymentType: {
       findFirst: vi.fn(),
       create: vi.fn(),
+      upsert: vi.fn(),
     },
     invoice: {
       create: vi.fn(),

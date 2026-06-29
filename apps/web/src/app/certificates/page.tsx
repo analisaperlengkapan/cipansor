@@ -1,6 +1,6 @@
 "use client";
-
 import { useState } from "react";
+import { safeFormat } from "@/lib/date";
 import { useRouter } from "next/navigation";
 import { MainLayout } from "@/components/layout";
 import { PageHeader, DataTable } from "@/components/shared";
@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useCertificates, DigitalCertificate } from "@/hooks/use-certificate";
 import { ColumnDef } from "@tanstack/react-table";
-import { format } from "date-fns";
+
 import { id } from "date-fns/locale";
 import {
   Award,
@@ -149,7 +149,9 @@ export default function CertificatesPage() {
       accessorKey: "issueDate",
       header: "Tanggal Terbit",
       cell: ({ row }) =>
-        format(new Date(row.original.issueDate), "dd MMM yyyy", { locale: id }),
+        safeFormat(new Date(row.original.issueDate), "dd MMM yyyy", {
+          locale: id,
+        }),
     },
     {
       accessorKey: "isPublic",

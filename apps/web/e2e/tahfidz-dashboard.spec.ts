@@ -108,7 +108,7 @@ test.describe("Tahfidz Dashboard", () => {
   });
 
   test("should display recent records table", async ({ page }) => {
-    const recentSection = page.getByText(/catatan terbaru/i);
+    const recentSection = page.getByText(/catatan terbaru/i).first();
     await expect(recentSection).toBeVisible({ timeout: 10000 });
 
     // Check if table exists
@@ -177,9 +177,9 @@ test.describe("Tahfidz Dashboard", () => {
   });
 
   test("should display monthly activity chart", async ({ page }) => {
-    const monthlyActivity = page.getByText(
-      /aktivitas bulanan|monthly activity/i,
-    );
+    const monthlyActivity = page
+      .getByText(/aktivitas bulanan|monthly activity/i)
+      .first();
     await expect(monthlyActivity).toBeVisible({ timeout: 10000 });
 
     // Should have chart element

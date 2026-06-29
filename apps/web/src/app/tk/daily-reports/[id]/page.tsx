@@ -1,6 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
+import { safeFormat } from "@/lib/date";
 import { MainLayout } from "@/components/layout";
 import { PageHeader } from "@/components/shared";
 import {
@@ -225,7 +226,7 @@ export default function DailyReportDetailPage() {
                         <span className="text-sm">
                           Datang:{" "}
                           <strong>
-                            {format(new Date(report.arrivalTime), "HH:mm")}
+                            {safeFormat(new Date(report.arrivalTime), "HH:mm")}
                           </strong>
                         </span>
                       </div>
@@ -236,7 +237,10 @@ export default function DailyReportDetailPage() {
                         <span className="text-sm">
                           Pulang:{" "}
                           <strong>
-                            {format(new Date(report.departureTime), "HH:mm")}
+                            {safeFormat(
+                              new Date(report.departureTime),
+                              "HH:mm",
+                            )}
                           </strong>
                         </span>
                       </div>
@@ -576,17 +580,25 @@ export default function DailyReportDetailPage() {
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Dibuat</span>
                     <span>
-                      {format(new Date(report.createdAt), "dd MMM yyyy HH:mm", {
-                        locale: idLocale,
-                      })}
+                      {safeFormat(
+                        new Date(report.createdAt),
+                        "dd MMM yyyy HH:mm",
+                        {
+                          locale: idLocale,
+                        },
+                      )}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Diperbarui</span>
                     <span>
-                      {format(new Date(report.updatedAt), "dd MMM yyyy HH:mm", {
-                        locale: idLocale,
-                      })}
+                      {safeFormat(
+                        new Date(report.updatedAt),
+                        "dd MMM yyyy HH:mm",
+                        {
+                          locale: idLocale,
+                        },
+                      )}
                     </span>
                   </div>
                 </div>

@@ -1,5 +1,5 @@
-import { format } from "date-fns";
 import { Star } from "lucide-react";
+import { safeFormat } from "@/lib/date";
 import { useStudentBehaviorStats } from "@/hooks/use-students";
 import {
   Card,
@@ -76,7 +76,7 @@ export function StudentBehaviorTab({ studentId }: StudentBehaviorTabProps) {
                         <div>
                           <p className="text-sm font-medium">{v.type}</p>
                           <p className="text-xs text-muted-foreground">
-                            {format(new Date(v.date), "dd MMM yyyy")}
+                            {safeFormat(new Date(v.date), "dd MMM yyyy")}
                           </p>
                         </div>
                         <Badge variant="destructive">{v.status}</Badge>
@@ -116,7 +116,7 @@ export function StudentBehaviorTab({ studentId }: StudentBehaviorTabProps) {
                       <div>
                         <p className="text-sm font-medium">{r.type}</p>
                         <p className="text-xs text-muted-foreground">
-                          {format(new Date(r.date), "dd MMM yyyy")}
+                          {safeFormat(new Date(r.date), "dd MMM yyyy")}
                         </p>
                       </div>
                       <Star className="h-4 w-4 text-yellow-500" />

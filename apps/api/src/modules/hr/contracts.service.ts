@@ -71,12 +71,15 @@ export const contractService = {
     ]);
 
     return {
+      success: true,
       data,
       meta: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
       },
     };
   },

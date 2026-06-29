@@ -5,7 +5,7 @@ import { UserRole, Prisma, ViolationType } from '@prisma/client';
 // User type from JwtPayload
 interface AuthenticatedUser {
   sub: string;
-  role: UserRole;
+  role: string;
   unitId: string | null;
 }
 

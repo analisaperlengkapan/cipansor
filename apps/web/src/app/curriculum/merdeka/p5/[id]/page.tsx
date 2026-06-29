@@ -1,8 +1,8 @@
 "use client";
-
 import { useState } from "react";
+import { safeFormat } from "@/lib/date";
 import { useParams, useRouter } from "next/navigation";
-import { format } from "date-fns";
+
 import { id as localeId } from "date-fns/locale";
 import {
   ArrowLeft,
@@ -440,7 +440,7 @@ export default function P5ProjectDetailPage() {
             </div>
             <p className="font-semibold">
               {project.startDate && project.endDate
-                ? `${format(new Date(project.startDate), "d MMM", { locale: localeId })} - ${format(new Date(project.endDate), "d MMM yyyy", { locale: localeId })}`
+                ? `${safeFormat(new Date(project.startDate), "d MMM", { locale: localeId })} - ${safeFormat(new Date(project.endDate), "d MMM yyyy", { locale: localeId })}`
                 : "-"}
             </p>
           </CardContent>

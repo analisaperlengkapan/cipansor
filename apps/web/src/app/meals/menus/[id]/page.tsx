@@ -1,9 +1,9 @@
 "use client";
-
 import { useState } from "react";
+import { safeFormat } from "@/lib/date";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { format } from "date-fns";
+
 import { id as localeId } from "date-fns/locale";
 import { toast } from "sonner";
 import {
@@ -105,7 +105,7 @@ export default function MenuDetailPage() {
 
     const menuText = `
 📋 ${menu.name}
-📅 ${format(new Date(menu.date), "EEEE, d MMMM yyyy", { locale: localeId })}
+📅 ${safeFormat(new Date(menu.date), "EEEE, d MMMM yyyy", { locale: localeId })}
 🕐 ${MEAL_TYPE_LABELS[menu.mealType]}
 
 🍽️ Hidangan:
@@ -188,7 +188,7 @@ ${menu.calories ? `\n🔥 Kalori: ${menu.calories} kkal` : ""}
                 {menu.name}
               </h1>
               <p className="text-muted-foreground">
-                {format(new Date(menu.date), "EEEE, d MMMM yyyy", {
+                {safeFormat(new Date(menu.date), "EEEE, d MMMM yyyy", {
                   locale: localeId,
                 })}
               </p>
@@ -433,7 +433,7 @@ ${menu.calories ? `\n🔥 Kalori: ${menu.calories} kkal` : ""}
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Dibuat:</span>
                   <span>
-                    {format(new Date(menu.createdAt), "d MMM yyyy, HH:mm", {
+                    {safeFormat(new Date(menu.createdAt), "d MMM yyyy, HH:mm", {
                       locale: localeId,
                     })}
                   </span>
@@ -442,7 +442,7 @@ ${menu.calories ? `\n🔥 Kalori: ${menu.calories} kkal` : ""}
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Diperbarui:</span>
                   <span>
-                    {format(new Date(menu.updatedAt), "d MMM yyyy, HH:mm", {
+                    {safeFormat(new Date(menu.updatedAt), "d MMM yyyy, HH:mm", {
                       locale: localeId,
                     })}
                   </span>

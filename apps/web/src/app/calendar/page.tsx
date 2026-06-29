@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { safeFormat } from "@/lib/date";
 import { MainLayout } from "@/components/layout/main-layout";
 import {
   Card,
@@ -455,16 +456,24 @@ export default function AcademicCalendarPage() {
                             <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
                               <span className="flex items-center gap-1">
                                 <CalendarIcon className="h-3.5 w-3.5" />
-                                {format(new Date(event.startDate), "d MMM", {
-                                  locale: idLocale,
-                                })}
+                                {safeFormat(
+                                  new Date(event.startDate),
+                                  "d MMM",
+                                  {
+                                    locale: idLocale,
+                                  },
+                                )}
                                 {event.startDate !== event.endDate && (
                                   <>
                                     {" "}
                                     -{" "}
-                                    {format(new Date(event.endDate), "d MMM", {
-                                      locale: idLocale,
-                                    })}
+                                    {safeFormat(
+                                      new Date(event.endDate),
+                                      "d MMM",
+                                      {
+                                        locale: idLocale,
+                                      },
+                                    )}
                                   </>
                                 )}
                               </span>
@@ -559,7 +568,7 @@ export default function AcademicCalendarPage() {
                           {event.title}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {format(new Date(event.startDate), "d MMM yyyy", {
+                          {safeFormat(new Date(event.startDate), "d MMM yyyy", {
                             locale: idLocale,
                           })}
                         </p>

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { Decimal } from '@prisma/client/runtime/library';
+import { Decimal } from '@prisma/client/runtime/client';
 
 vi.mock('@/lib/prisma', () => ({
   prisma: {
@@ -15,6 +15,9 @@ vi.mock('@/lib/prisma', () => ({
     violation: {
       aggregate: vi.fn(),
     },
+    reward: {
+      aggregate: vi.fn(),
+    },
     attendance: {
       groupBy: vi.fn(),
     },
@@ -23,6 +26,9 @@ vi.mock('@/lib/prisma', () => ({
     },
     examAttempt: {
       findMany: vi.fn(),
+    },
+    roomAssignment: {
+      findFirst: vi.fn(),
     },
   },
 }));
@@ -47,6 +53,7 @@ describe('Holistic Student Analytics', () => {
     (prisma.grade.aggregate as any).mockResolvedValue({ _avg: { percentage: 100 } });
     (prisma.tahfidzRecord.aggregate as any).mockResolvedValue({ _max: { juz: 30 } });
     (prisma.violation.aggregate as any).mockResolvedValue({ _sum: { points: 0 } });
+    (prisma.reward.aggregate as any).mockResolvedValue({ _sum: { points: 0 } });
     (prisma.attendance.groupBy as any).mockResolvedValue([{ status: 'PRESENT', _count: { _all: 10 } }]);
     (prisma.dailyIbadahRecord.aggregate as any).mockResolvedValue({ _sum: { pointsEarned: 3000 } });
 

@@ -122,6 +122,24 @@ export class ParentController {
   }
 
   /**
+   * Get child weekly progress (attendance + tahfidz + behavior + academic)
+   */
+  async getChildWeeklyProgress(req: Request, res: Response, next: NextFunction) {
+    try {
+      const parentId = req.user!.sub;
+      const { studentId } = (req.params as any);
+      const data = await parentService.getChildWeeklyProgress(
+        parentId,
+        studentId,
+        (req.query as any) as any
+      );
+      res.json({ success: true, data });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
    * Get child report cards
    */
   async getChildReportCards(req: Request, res: Response, next: NextFunction) {

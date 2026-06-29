@@ -171,7 +171,7 @@ export async function getNotificationById(id: string) {
 }
 
 export async function createNotification(data: CreateNotificationInput) {
-  const { dbType, originalType } = mapTypeToPrisma(data.type);
+  const { dbType, originalType } = mapTypeToPrisma(data.type ?? 'INFO');
 
   // Extract fields that are not in the Prisma model but need to be stored in `data`
   const { priority, channels, recipientType, recipientIds, ...rest } = data;
@@ -226,7 +226,7 @@ export async function createBulkNotifications(data: CreateBulkNotificationInput)
 export async function createManyNotifications(data: CreateNotificationInput[]) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const notifications: any[] = data.map((item) => {
-    const { dbType, originalType } = mapTypeToPrisma(item.type);
+    const { dbType, originalType } = mapTypeToPrisma(item.type ?? 'INFO');
     const { priority, channels, recipientType, recipientIds, ...rest } = item;
 
     return {

@@ -39,6 +39,9 @@ export interface AppEvents {
   'tahfidz:milestone': TahfidzMilestoneEvent;
   'tahfidz:hafidz-completed': HafidzCompletedEvent;
 
+  // Takhosus Events
+  'takhosus:sanad_assessed': TakhosusSanadAssessedEvent;
+
   // Finance Events
   'finance:payment-received': PaymentReceivedEvent;
   'finance:invoice-created': InvoiceCreatedEvent;
@@ -49,6 +52,9 @@ export interface AppEvents {
   'student:updated': StudentUpdatedEvent;
   'student:graduated': StudentGraduatedEvent;
   'student:transferred': StudentTransferredEvent;
+
+  // Messaging Events
+  'message:sent': MessageSentEvent;
 
   // Notification Events
   'notification:send': NotificationSendEvent;
@@ -134,6 +140,15 @@ export interface TahfidzMilestoneEvent {
   totalAyah: number;
 }
 
+export interface TakhosusSanadAssessedEvent {
+  studentId: string;
+  studentName: string;
+  halaqohName: string;
+  juz: number;
+  grade: string | null;
+  certifiedAt: Date | null;
+}
+
 export interface HafidzCompletedEvent {
   studentId: string;
   studentName: string;
@@ -207,6 +222,14 @@ export interface StudentTransferredEvent {
   toUnitId: string;
   toUnitName: string;
   transferDate: Date;
+}
+
+export interface MessageSentEvent {
+  id: string;
+  senderId?: string | null;
+  recipientId?: string | null;
+  conversationId?: string | null;
+  [key: string]: unknown;
 }
 
 export interface NotificationSendEvent {

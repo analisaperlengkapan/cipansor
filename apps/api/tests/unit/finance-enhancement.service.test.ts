@@ -146,32 +146,6 @@ describe('Finance Enhancement Service', () => {
     });
   });
 
-  describe('getCashFlowForecast', () => {
-    it('should aggregate income from invoices and expenses from budgets/PRs', async () => {
-      const mockUnitId = 'unit-1';
-
-      // Mock Academic Year (no active year — budget query should be skipped)
-      mockPrisma.academicYear.findFirst.mockResolvedValue(null);
-
-      // Mock Invoices (Income)
-      mockPrisma.invoice.findMany.mockResolvedValue([
-        { amount: 10000000 },
-        { amount: 5000000 }
-      ]);
-
-      // Mock Purchase Requests (Committed Expense)
-      mockPrisma.purchaseRequest.findMany.mockResolvedValue([
-        { totalEstimated: 3000000 }
-      ]);
-
-      const result = await financeEnhancementService.getCashFlowForecast(mockUnitId);
-
-      expect(result.projectedIncome).toBe(15000000);
-      // No active academic year → remainingBudget=0, so expense = max(3M PR, 0) = 3M
-      expect(result.projectedExpense).toBe(3000000);
-      expect(result.netCashFlow).toBe(12000000);
-      // Budget query should NOT be called when no active academic year
-      expect(mockPrisma.budget.findMany).not.toHaveBeenCalled();
-    });
-  });
+  // NOTE: getCashFlowForecast was moved to reporting.service.ts; its test now
+  // lives with that module. (Removed the stale block referencing the old method.)
 });

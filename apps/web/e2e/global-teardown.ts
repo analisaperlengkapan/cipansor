@@ -12,7 +12,7 @@ async function globalTeardown(config: FullConfig) {
   console.log("🧹 Starting E2E Test Global Teardown...");
 
   // Clean up auth state files (optional - comment out if you want to keep them)
-  const authDir = path.join(__dirname, "../playwright/.auth");
+  const authDir = path.join(__dirname, "../.auth");
   if (fs.existsSync(authDir)) {
     const files = fs.readdirSync(authDir);
     for (const file of files) {

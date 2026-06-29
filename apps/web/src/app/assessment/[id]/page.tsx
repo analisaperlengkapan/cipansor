@@ -1,6 +1,6 @@
 "use client";
-
 import { useState } from "react";
+import { safeFormat } from "@/lib/date";
 import { useParams, useRouter } from "next/navigation";
 import { MainLayout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
@@ -70,7 +70,7 @@ import {
   FileEdit,
   AlertCircle,
 } from "lucide-react";
-import { format } from "date-fns";
+
 import { id as idLocale } from "date-fns/locale";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -85,7 +85,8 @@ export default function AssessmentDetailPage() {
   const { data: grades, isLoading: loadingGrades } = useGrades({
     examId: assessmentId,
   });
-  const { data: analytics, isLoading: loadingAnalytics } = useExamAnalytics(assessmentId);
+  const { data: analytics, isLoading: loadingAnalytics } =
+    useExamAnalytics(assessmentId);
   const deleteAssessment = useDeleteAssessment();
   const publishAssessment = usePublishAssessment();
 
@@ -160,8 +161,7 @@ export default function AssessmentDetailPage() {
           average:
             grades
               .filter((g) => g.score !== null)
-              .reduce((sum, g) => sum + (g.score ?? 0), 0) /
-              gradedCount || 0,
+              .reduce((sum, g) => sum + (g.score ?? 0), 0) / gradedCount || 0,
           highest: Math.max(
             ...grades.filter((g) => g.score !== null).map((g) => g.score ?? 0),
           ),
@@ -298,12 +298,12 @@ export default function AssessmentDetailPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {format(new Date(assessment.scheduledAt), "d MMM", {
+                {safeFormat(new Date(assessment.scheduledAt), "d MMM", {
                   locale: idLocale,
                 })}
               </div>
               <p className="text-xs text-muted-foreground">
-                {format(new Date(assessment.scheduledAt), "EEEE, yyyy", {
+                {safeFormat(new Date(assessment.scheduledAt), "EEEE, yyyy", {
                   locale: idLocale,
                 })}
               </p>
@@ -344,10 +344,13 @@ export default function AssessmentDetailPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {analytics?.averageScore.toFixed(1) ?? stats?.average.toFixed(1) ?? "-"}
+                {analytics?.averageScore.toFixed(1) ??
+                  stats?.average.toFixed(1) ??
+                  "-"}
               </div>
               <p className="text-xs text-muted-foreground">
-                {(analytics?.passRate ?? stats?.passRate ?? 0).toFixed(1)}% Lulus
+                {(analytics?.passRate ?? stats?.passRate ?? 0).toFixed(1)}%
+                Lulus
               </p>
             </CardContent>
           </Card>
@@ -514,12 +517,19 @@ export default function AssessmentDetailPage() {
                           data={analytics.scoreDistribution}
                           margin={{ top: 20, right: 30, left: 0, bottom: 5 }}
                         >
-                          <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                          <CartesianGrid
+                            strokeDasharray="3 3"
+                            vertical={false}
+                          />
                           <XAxis dataKey="range" />
                           <YAxis allowDecimals={false} />
                           <Tooltip
-                            cursor={{ fill: 'rgba(0,0,0,0.05)' }}
-                            contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}
+                            cursor={{ fill: "rgba(0,0,0,0.05)" }}
+                            contentStyle={{
+                              borderRadius: "8px",
+                              border: "none",
+                              boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+                            }}
                           />
                           <Bar
                             dataKey="count"
@@ -536,28 +546,42 @@ export default function AssessmentDetailPage() {
                 <Card className="md:col-span-2">
                   <CardHeader>
                     <CardTitle>Santri Nilai Tertinggi</CardTitle>
-                    <CardDescription>Top 5 santri dengan nilai terbaik</CardDescription>
+                    <CardDescription>
+                      Top 5 santri dengan nilai terbaik
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
                       {analytics.topStudents.map((student, index) => (
-                        <div key={student.studentId} className="flex items-center justify-between border-b pb-2 last:border-0 last:pb-0">
+                        <div
+                          key={student.studentId}
+                          className="flex items-center justify-between border-b pb-2 last:border-0 last:pb-0"
+                        >
                           <div className="flex items-center gap-4">
-                            <div className={`flex items-center justify-center w-8 h-8 rounded-full font-bold text-xs ${
-                              index === 0 ? 'bg-yellow-100 text-yellow-700' :
-                              index === 1 ? 'bg-gray-100 text-gray-700' :
-                              index === 2 ? 'bg-orange-100 text-orange-700' :
-                              'bg-muted text-muted-foreground'
-                            }`}>
+                            <div
+                              className={`flex items-center justify-center w-8 h-8 rounded-full font-bold text-xs ${
+                                index === 0
+                                  ? "bg-yellow-100 text-yellow-700"
+                                  : index === 1
+                                    ? "bg-gray-100 text-gray-700"
+                                    : index === 2
+                                      ? "bg-orange-100 text-orange-700"
+                                      : "bg-muted text-muted-foreground"
+                              }`}
+                            >
                               #{index + 1}
                             </div>
-                            <span className="font-medium">{student.studentName}</span>
+                            <span className="font-medium">
+                              {student.studentName}
+                            </span>
                           </div>
                           <span className="font-bold">{student.score}</span>
                         </div>
                       ))}
                       {analytics.topStudents.length === 0 && (
-                        <p className="text-sm text-muted-foreground text-center py-4">Belum ada data nilai.</p>
+                        <p className="text-sm text-muted-foreground text-center py-4">
+                          Belum ada data nilai.
+                        </p>
                       )}
                     </div>
                   </CardContent>
@@ -611,9 +635,13 @@ export default function AssessmentDetailPage() {
                       Tanggal
                     </dt>
                     <dd className="text-lg">
-                      {format(new Date(assessment.scheduledAt), "d MMMM yyyy", {
-                        locale: idLocale,
-                      })}
+                      {safeFormat(
+                        new Date(assessment.scheduledAt),
+                        "d MMMM yyyy",
+                        {
+                          locale: idLocale,
+                        },
+                      )}
                     </dd>
                   </div>
                   <div>

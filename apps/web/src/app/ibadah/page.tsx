@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { safeFormat } from "@/lib/date";
 import Link from "next/link";
 import {
   format,
@@ -458,7 +459,7 @@ export default function IbadahPage() {
                       return (
                         <TableRow key={record.id}>
                           <TableCell>
-                            {format(new Date(record.date), "dd MMM yyyy", {
+                            {safeFormat(new Date(record.date), "dd MMM yyyy", {
                               locale: localeId,
                             })}
                           </TableCell>

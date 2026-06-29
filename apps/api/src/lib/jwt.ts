@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import { randomUUID } from 'crypto';
 import { config } from '@/config';
 
 export interface JwtPayload {
@@ -31,6 +32,7 @@ export function generateAccessToken(payload: Omit<JwtPayload, 'type'>, expiresIn
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (jwt as any).sign({ ...payload, type: 'access' }, config.jwt.secret, {
     expiresIn: expiresIn || config.jwt.expiresIn,
+    jwtid: randomUUID(),
   });
 }
 
@@ -41,9 +43,13 @@ export function generateRefreshToken(
   payload: Omit<JwtPayload, 'type'>,
   expiresIn?: string
 ): string {
+  // A unique jti guarantees distinct tokens even for two logins issued in the
+  // same second (identical payload + iat would otherwise collide on the
+  // refresh_tokens.token unique constraint → "field already exists").
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (jwt as any).sign({ ...payload, type: 'refresh' }, config.jwt.secret, {
     expiresIn: expiresIn || config.jwt.refreshExpiresIn,
+    jwtid: randomUUID(),
   });
 }
 

@@ -406,8 +406,8 @@ export default function DutyRosterPage() {
                         {roster.location}
                       </CardDescription>
                     </div>
-                    <Badge className={SHIFT_CONFIG[roster.shift].color}>
-                      {SHIFT_CONFIG[roster.shift].label}
+                    <Badge className={SHIFT_CONFIG[roster.shift]?.color}>
+                      {SHIFT_CONFIG[roster.shift]?.label}
                     </Badge>
                   </div>
                   <div className="flex items-center gap-4 text-sm text-muted-foreground mt-2">
@@ -465,11 +465,11 @@ export default function DutyRosterPage() {
                             </div>
                           )}
                           <Badge
-                            className={`text-xs ${STATUS_CONFIG[assignment.status].color}`}
+                            className={`text-xs ${STATUS_CONFIG[assignment.status]?.color}`}
                           >
                             <span className="flex items-center gap-1">
-                              {STATUS_CONFIG[assignment.status].icon}
-                              {STATUS_CONFIG[assignment.status].label}
+                              {STATUS_CONFIG[assignment.status]?.icon}
+                              {STATUS_CONFIG[assignment.status]?.label}
                             </span>
                           </Badge>
                         </div>

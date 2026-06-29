@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter, useParams } from "next/navigation";
+import { safeFormat } from "@/lib/date";
 import { MainLayout } from "@/components/layout";
 import { PageHeader } from "@/components/shared";
 import {
@@ -313,9 +314,13 @@ export default function StudentProgressDashboardPage() {
                         <div className="flex items-center gap-4">
                           <div className="text-center">
                             <p className="text-2xl font-bold">
-                              {format(new Date(assessment.periodDate), "dd", {
-                                locale: idLocale,
-                              })}
+                              {safeFormat(
+                                new Date(assessment.periodDate),
+                                "dd",
+                                {
+                                  locale: idLocale,
+                                },
+                              )}
                             </p>
                             <p className="text-xs text-muted-foreground">
                               {format(

@@ -15,7 +15,16 @@ export default defineConfig({
 
   /* Test Organization */
   testMatch: "**/*.spec.ts",
-  testIgnore: "**/debug-*.spec.ts", // Ignore debug tests in CI
+  // Ignore debug specs and the screenshot/verification utilities — the latter
+  // are tooling (they overwrite tracked docs/images and aren't product tests);
+  // crash-sweep.spec.ts covers page-crash detection instead.
+  testIgnore: [
+    "**/debug-*.spec.ts",
+    "**/generate-screenshots.spec.ts",
+    "**/verify-screenshots.spec.ts",
+    "**/verify_reception.spec.ts",
+    "**/_*.spec.ts",
+  ],
 
   /* Parallel Execution */
   fullyParallel: true,
@@ -132,13 +141,19 @@ export default defineConfig({
     },
   ],
 
-  /* Run local dev server before tests */
+  /* Run the web server before tests. In CI we serve the production build
+   * (fast, deterministic per-route — dev mode compiles on demand and is slow
+   * and flaky). Locally we use the dev server and reuse an already-running one. */
   webServer: {
-    command: "pnpm dev",
+    command: process.env.CI ? "pnpm start" : "pnpm dev",
     url: "http://localhost:3000",
     reuseExistingServer: !process.env.CI,
     timeout: 240 * 1000, // 4 minutes for server startup
     stdout: "pipe", // Capture server logs
     stderr: "pipe",
+    // `next start` honours the PORT env var. In CI the job sets PORT=3001 for
+    // the API, which would make the web server try to bind 3001 too
+    // (EADDRINUSE). Pin the web server to 3000 regardless of the inherited PORT.
+    env: { PORT: "3000" },
   },
 });

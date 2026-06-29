@@ -12,10 +12,11 @@ import rateLimit from 'express-rate-limit';
 
 const router = Router();
 
-// Rate limiter for 2FA actions
+// Rate limiter for 2FA actions. The cap is env-configurable (defaults to a
+// strict 10/15min) so e2e/dev runs can raise it without weakening production.
 const twoFactorLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // Limit each IP to 10 requests per windowMs
+  max: Number(process.env.TWO_FACTOR_RATE_LIMIT_MAX) || 10,
   message: 'Too many 2FA attempts, please try again later',
   standardHeaders: true,
   legacyHeaders: false,

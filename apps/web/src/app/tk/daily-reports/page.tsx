@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { safeFormat } from "@/lib/date";
 import { useRouter } from "next/navigation";
 import { ColumnDef } from "@tanstack/react-table";
 import { MainLayout } from "@/components/layout";
@@ -164,12 +165,12 @@ export default function DailyReportListPage() {
       cell: ({ row }) => (
         <div>
           <p className="font-medium">
-            {format(new Date(row.original.reportDate), "EEEE", {
+            {safeFormat(new Date(row.original.reportDate), "EEEE", {
               locale: idLocale,
             })}
           </p>
           <p className="text-xs text-muted-foreground">
-            {format(new Date(row.original.reportDate), "dd MMM yyyy", {
+            {safeFormat(new Date(row.original.reportDate), "dd MMM yyyy", {
               locale: idLocale,
             })}
           </p>
@@ -309,10 +310,7 @@ export default function DailyReportListPage() {
             </SelectContent>
           </Select>
 
-          <DatePickerWithRange
-            date={dateRange}
-            setDate={setDateRange}
-          />
+          <DatePickerWithRange date={dateRange} setDate={setDateRange} />
         </div>
 
         {/* Quick Date Filters */}

@@ -1,6 +1,6 @@
 "use client";
-
 import { useState, useRef } from "react";
+import { safeFormat } from "@/lib/date";
 import { MainLayout } from "@/components/layout/main-layout";
 import {
   Card,
@@ -49,7 +49,7 @@ import {
   Building2,
 } from "lucide-react";
 import { toast } from "sonner";
-import { format } from "date-fns";
+
 import { id as idLocale } from "date-fns/locale";
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -78,7 +78,7 @@ export default function CertificateGeneratorPage() {
     type: "GRADUATION",
     title: "",
     description: "",
-    issuedDate: format(new Date(), "yyyy-MM-dd"),
+    issuedDate: safeFormat(new Date(), "yyyy-MM-dd"),
     metadata: {},
   });
   const printRef = useRef<HTMLDivElement>(null);
@@ -374,7 +374,7 @@ export default function CertificateGeneratorPage() {
           {/* Date */}
           <p className="text-sm mb-8">
             Ditetapkan di .............,{" "}
-            {format(new Date(formData.issuedDate), "d MMMM yyyy", {
+            {safeFormat(new Date(formData.issuedDate), "d MMMM yyyy", {
               locale: idLocale,
             })}
           </p>

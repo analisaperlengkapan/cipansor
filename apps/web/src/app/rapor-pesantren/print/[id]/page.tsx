@@ -1,10 +1,10 @@
 "use client";
-
 import { useRaporDetail, RaporPesantren } from "@/hooks/use-rapor-pesantren";
+import { safeFormat } from "@/lib/date";
 import { useParams } from "next/navigation";
 import { Loader2, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { format } from "date-fns";
+
 import { id as localeId } from "date-fns/locale";
 
 export default function RaporPrintPage() {
@@ -332,7 +332,7 @@ export default function RaporPrintPage() {
           <div>
             <p className="mb-1">
               Cipansor,{" "}
-              {format(new Date(rapor.generatedAt), "d MMMM yyyy", {
+              {safeFormat(new Date(rapor.generatedAt), "d MMMM yyyy", {
                 locale: localeId,
               })}
             </p>

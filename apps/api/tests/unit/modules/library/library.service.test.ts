@@ -140,7 +140,7 @@ describe('Library Service', () => {
         where: { id: 'book-1' },
         data: {
           available: { decrement: 1 },
-          // status: BookStatus.AVAILABLE, // Still available (4 left)
+          status: BookStatus.AVAILABLE, // 5 available → still AVAILABLE after one borrow
         },
       });
     });

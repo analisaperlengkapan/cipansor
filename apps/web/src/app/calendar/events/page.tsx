@@ -1,6 +1,6 @@
 "use client";
-
 import { useState } from "react";
+import { safeFormat } from "@/lib/date";
 import { MainLayout } from "@/components/layout/main-layout";
 import {
   Card,
@@ -63,7 +63,7 @@ import {
   Clock,
   Filter,
 } from "lucide-react";
-import { format } from "date-fns";
+
 import { id as idLocale } from "date-fns/locale";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -239,14 +239,14 @@ export default function EventsListPage() {
                         <TableCell>
                           <div className="flex items-center gap-1 text-sm">
                             <CalendarIcon className="h-3.5 w-3.5 text-muted-foreground" />
-                            {format(new Date(event.startDate), "d MMM", {
+                            {safeFormat(new Date(event.startDate), "d MMM", {
                               locale: idLocale,
                             })}
                             {event.startDate !== event.endDate && (
                               <>
                                 {" "}
                                 -{" "}
-                                {format(new Date(event.endDate), "d MMM", {
+                                {safeFormat(new Date(event.endDate), "d MMM", {
                                   locale: idLocale,
                                 })}
                               </>

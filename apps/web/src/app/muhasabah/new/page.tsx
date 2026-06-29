@@ -1,11 +1,11 @@
 "use client";
-
 import { useRouter, useSearchParams } from "next/navigation";
+import { safeFormat } from "@/lib/date";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
-import { format } from "date-fns";
+
 import { id as localeId } from "date-fns/locale";
 import Link from "next/link";
 import { Moon, Sun, BookOpen, Heart, Sparkles, ArrowLeft } from "lucide-react";
@@ -64,7 +64,7 @@ export default function NewMuhasabahPage() {
 
   const createMuhasabah = useCreateMuhasabah();
 
-  const today = dateParam || format(new Date(), "yyyy-MM-dd");
+  const today = dateParam || safeFormat(new Date(), "yyyy-MM-dd");
 
   const {
     register,
@@ -159,7 +159,7 @@ export default function NewMuhasabahPage() {
             </h1>
             <p className="text-muted-foreground">
               Tanggal:{" "}
-              {format(new Date(today), "EEEE, d MMMM yyyy", {
+              {safeFormat(new Date(today), "EEEE, d MMMM yyyy", {
                 locale: localeId,
               })}
             </p>

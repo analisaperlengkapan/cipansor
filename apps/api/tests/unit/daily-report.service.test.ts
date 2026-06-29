@@ -35,6 +35,19 @@ vi.mock('@/lib/prisma', () => ({
     unit: {
       findUniqueOrThrow: vi.fn(),
     },
+    teacher: {
+      findUnique: vi.fn(),
+    },
+    kitabProgress: {
+      upsert: vi.fn(),
+    },
+    tahfidzRecord: {
+      create: vi.fn(),
+    },
+    dailyHomework: {
+      createMany: vi.fn(),
+      deleteMany: vi.fn(),
+    },
   },
 }));
 
@@ -378,7 +391,8 @@ describe('DailyReportService', () => {
     it('should handle breakfast consumption mapping', async () => {
       vi.mocked(prisma.dailyStudentReport.create).mockResolvedValue(mockReport as any);
 
-      await dailyReportService.create({ ...createInput, breakfastConsumption: 'FULL' }, mockUserId);
+      // 'HABIS' (finished) and 'SETENGAH' (half) map to hadBreakfast=true.
+      await dailyReportService.create({ ...createInput, breakfastConsumption: 'HABIS' }, mockUserId);
 
       const calledWith = vi.mocked(prisma.dailyStudentReport.create).mock.calls[0][0];
       expect(calledWith.data.hadBreakfast).toBe(true);

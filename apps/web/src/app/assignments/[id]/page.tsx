@@ -1,6 +1,6 @@
 "use client";
-
 import { useParams } from "next/navigation";
+import { safeFormat } from "@/lib/date";
 import { MainLayout } from "@/components/layout";
 import { PageHeader } from "@/components/shared";
 import {
@@ -14,7 +14,7 @@ import { SubmissionForm } from "@/components/assignments/submission-form";
 import { useAuthStore } from "@/stores/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { format } from "date-fns";
+
 import { toast } from "sonner";
 
 export default function AssignmentDetailPage() {
@@ -106,7 +106,10 @@ export default function AssignmentDetailPage() {
                 <Badge variant="outline">{assignment.type}</Badge>
                 <span className="text-sm text-red-600">
                   Due:{" "}
-                  {format(new Date(assignment.dueDate), "dd MMM yyyy HH:mm")}
+                  {safeFormat(
+                    new Date(assignment.dueDate),
+                    "dd MMM yyyy HH:mm",
+                  )}
                 </span>
               </div>
             </div>

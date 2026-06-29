@@ -1,6 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
+import { safeFormat } from "@/lib/date";
 import { MainLayout } from "@/components/layout/main-layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -111,7 +112,7 @@ export default function ProcurementDetailPage() {
             </h1>
             <p className="text-muted-foreground">
               Dibuat oleh {request.requester?.name} pada{" "}
-              {format(new Date(request.date), "dd MMMM yyyy", {
+              {safeFormat(new Date(request.date), "dd MMMM yyyy", {
                 locale: idLocale,
               })}
             </p>
@@ -298,7 +299,7 @@ export default function ProcurementDetailPage() {
                 <div>
                   <p className="text-muted-foreground">Tanggal</p>
                   <p className="font-medium">
-                    {format(new Date(request.date), "dd MMM yyyy", {
+                    {safeFormat(new Date(request.date), "dd MMM yyyy", {
                       locale: idLocale,
                     })}
                   </p>
@@ -359,7 +360,7 @@ export default function ProcurementDetailPage() {
                           oleh {log.user?.name}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {format(new Date(log.createdAt), "dd MMM HH:mm")}
+                          {safeFormat(new Date(log.createdAt), "dd MMM HH:mm")}
                         </p>
                       </div>
                     </div>

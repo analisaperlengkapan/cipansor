@@ -1,6 +1,6 @@
 "use client";
-
 import { useState, useEffect } from "react";
+import { safeFormat } from "@/lib/date";
 import { MainLayout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,7 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { useExams } from "@/hooks/use-cbt";
 import { Plus, Search, Eye, Loader2, Calendar } from "lucide-react";
 import Link from "next/link";
-import { format } from "date-fns";
+
 import { id } from "date-fns/locale";
 
 function useDebounce<T>(value: T, delay: number): T {
@@ -95,18 +95,18 @@ export default function ExamsPage() {
                       <TableCell className="font-medium">
                         {exam.title}
                       </TableCell>
-                      <TableCell>
-                        {exam.subject?.name || "-"}
-                      </TableCell>
-                      <TableCell>
-                        {exam.class?.name || "-"}
-                      </TableCell>
+                      <TableCell>{exam.subject?.name || "-"}</TableCell>
+                      <TableCell>{exam.class?.name || "-"}</TableCell>
                       <TableCell>
                         <div className="flex flex-col text-sm">
                           <span>
-                            {format(new Date(exam.scheduledAt), "dd MMM yyyy", {
-                              locale: id,
-                            })}
+                            {safeFormat(
+                              new Date(exam.scheduledAt),
+                              "dd MMM yyyy",
+                              {
+                                locale: id,
+                              },
+                            )}
                           </span>
                           <span className="text-muted-foreground">
                             Durasi: {exam.duration} menit
@@ -116,7 +116,8 @@ export default function ExamsPage() {
                       <TableCell>
                         <Badge
                           variant={
-                            exam.status === "COMPLETED" || exam.status === "GRADED"
+                            exam.status === "COMPLETED" ||
+                            exam.status === "GRADED"
                               ? "default"
                               : exam.status === "ONGOING"
                                 ? "secondary"
@@ -126,9 +127,7 @@ export default function ExamsPage() {
                           {exam.status}
                         </Badge>
                       </TableCell>
-                      <TableCell>
-                        {exam._count?.attempts || 0} Siswa
-                      </TableCell>
+                      <TableCell>{exam._count?.attempts || 0} Siswa</TableCell>
                       <TableCell className="text-right">
                         <Button variant="ghost" size="sm" asChild>
                           <Link href={`/cbt/exams/${exam.id}/monitoring`}>

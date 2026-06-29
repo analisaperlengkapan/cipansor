@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { safeFormat } from "@/lib/date";
 import { useRouter } from "next/navigation";
 import { MainLayout } from "@/components/layout/main-layout";
 import { PageHeader, DataTable } from "@/components/shared";
@@ -75,7 +76,7 @@ export default function TKAssessmentListPage() {
       accessorKey: "periodDate",
       header: "Tanggal",
       cell: ({ row }) =>
-        format(new Date(row.getValue("periodDate")), "dd MMM yyyy", {
+        safeFormat(new Date(row.getValue("periodDate")), "dd MMM yyyy", {
           locale: idLocale,
         }),
     },

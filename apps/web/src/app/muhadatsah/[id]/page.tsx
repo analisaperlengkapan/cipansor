@@ -1,6 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
+import { safeFormat } from "@/lib/date";
 import Link from "next/link";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
@@ -500,7 +501,7 @@ export default function MuhadatsahDetailPage() {
                 <div>
                   <p className="text-sm text-muted-foreground">Waktu</p>
                   <p className="font-medium">
-                    {format(new Date(muhadatsah.scheduledAt), "HH:mm", {
+                    {safeFormat(new Date(muhadatsah.scheduledAt), "HH:mm", {
                       locale: localeId,
                     })}
                   </p>

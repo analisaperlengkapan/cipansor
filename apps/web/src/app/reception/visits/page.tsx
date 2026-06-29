@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { safeFormat } from "@/lib/date";
 import {
   useStudentVisits,
   useCreateStudentVisit,
@@ -245,7 +246,7 @@ function VisitRow({ visit }: { visit: StudentVisit }) {
 
   return (
     <TableRow>
-      <TableCell>{format(new Date(visit.createdAt), "HH:mm")}</TableCell>
+      <TableCell>{safeFormat(new Date(visit.createdAt), "HH:mm")}</TableCell>
       <TableCell>
         <div className="font-medium">{visit.student?.name}</div>
         <div className="text-xs text-muted-foreground">

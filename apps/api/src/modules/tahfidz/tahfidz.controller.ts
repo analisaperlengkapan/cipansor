@@ -23,8 +23,16 @@ export class TahfidzController {
         surah: (req.query as any).surah as string,
       };
 
-      const result = await this.service.findAll(query, currentUser);
-      res.json({ success: true, data: result });
+      const result = await this.service.findAll(query as Parameters<typeof this.service.findAll>[0], currentUser);
+      // Standard paginated envelope ({ data: [...], meta: { pagination } }) so
+      // consumers (tahfidz list, dashboard) get an array at `.data`, matching
+      // every other module. Previously this nested the array under data.records,
+      // crashing those pages with "data.map is not a function".
+      res.json({
+        success: true,
+        data: result.records,
+        meta: { pagination: result.pagination },
+      });
     } catch (error) {
       next(error);
     }
@@ -98,7 +106,7 @@ export class TahfidzController {
     try {
       const createdById = (req as any).user.id;
       const input: GenerateCertificateInput = req.body;
-      const result = await this.service.generateCertificate(input, createdById);
+      const result = await this.service.generateCertificate(input as Parameters<typeof this.service.generateCertificate>[0], createdById);
       res.status(201).json({ success: true, data: result });
     } catch (error) {
       next(error);

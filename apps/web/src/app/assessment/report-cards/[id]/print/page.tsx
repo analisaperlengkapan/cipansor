@@ -1,6 +1,6 @@
 "use client";
-
 import { useParams, useRouter } from "next/navigation";
+import { safeFormat } from "@/lib/date";
 import { MainLayout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/table";
 import { useReportCard } from "@/hooks";
 import { ArrowLeft, Printer, Loader2, AlertCircle } from "lucide-react";
-import { format } from "date-fns";
+
 import { id as idLocale } from "date-fns/locale";
 
 export default function PrintReportCardPage() {
@@ -311,7 +311,8 @@ export default function PrintReportCardPage() {
           {/* Print Date */}
           <div className="text-right text-sm mt-8">
             <p>
-              Dicetak: {format(new Date(), "d MMMM yyyy", { locale: idLocale })}
+              Dicetak:{" "}
+              {safeFormat(new Date(), "d MMMM yyyy", { locale: idLocale })}
             </p>
           </div>
         </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { safeFormat } from "@/lib/date";
 import { useRouter } from "next/navigation";
 import { ColumnDef } from "@tanstack/react-table";
 import { MainLayout } from "@/components/layout";
@@ -145,7 +146,9 @@ export default function SimaanListPage() {
             </div>
           )}
           <div>
-            <p className="font-medium">{row.original.student?.user?.name || "-"}</p>
+            <p className="font-medium">
+              {row.original.student?.user?.name || "-"}
+            </p>
             <p className="text-xs text-muted-foreground">
               {row.original.student?.nis}
             </p>
@@ -159,7 +162,7 @@ export default function SimaanListPage() {
       cell: ({ row }) => (
         <div>
           <p className="font-medium">
-            {format(new Date(row.original.examDate), "dd MMM yyyy", {
+            {safeFormat(new Date(row.original.examDate), "dd MMM yyyy", {
               locale: idLocale,
             })}
           </p>
@@ -185,12 +188,7 @@ export default function SimaanListPage() {
       cell: ({ row }) => {
         const status = row.original.status || "SCHEDULED";
         return (
-          <Badge
-            className={cn(
-              "font-normal gap-1",
-              STATUS_COLORS[status],
-            )}
-          >
+          <Badge className={cn("font-normal gap-1", STATUS_COLORS[status])}>
             {STATUS_ICONS[status]}
             {STATUS_LABELS[status]}
           </Badge>
@@ -356,10 +354,7 @@ export default function SimaanListPage() {
             </SelectContent>
           </Select>
 
-          <DatePickerWithRange
-            date={dateRange}
-            setDate={setDateRange}
-          />
+          <DatePickerWithRange date={dateRange} setDate={setDateRange} />
         </div>
 
         {/* Summary Cards */}

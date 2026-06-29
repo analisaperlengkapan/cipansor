@@ -1,8 +1,8 @@
 "use client";
-
 import { useState } from "react";
+import { safeFormat } from "@/lib/date";
 import Link from "next/link";
-import { format } from "date-fns";
+
 import { id as localeId } from "date-fns/locale";
 import {
   Plus,
@@ -23,12 +23,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -112,9 +107,12 @@ export default function CounselingPage() {
 
   // Calculate stats from new structure
   const totalSessions = stats?.totalSessions || 0;
-  const countScheduled = stats?.byStatus.find(s => s.status === 'SCHEDULED')?.count || 0;
-  const countInProgress = stats?.byStatus.find(s => s.status === 'IN_PROGRESS')?.count || 0;
-  const countCompleted = stats?.byStatus.find(s => s.status === 'COMPLETED')?.count || 0;
+  const countScheduled =
+    stats?.byStatus?.find((s) => s.status === "SCHEDULED")?.count || 0;
+  const countInProgress =
+    stats?.byStatus?.find((s) => s.status === "IN_PROGRESS")?.count || 0;
+  const countCompleted =
+    stats?.byStatus?.find((s) => s.status === "COMPLETED")?.count || 0;
 
   return (
     <MainLayout>
@@ -200,7 +198,9 @@ export default function CounselingPage() {
         <CardContent>
           <div className="grid grid-cols-4 md:grid-cols-8 gap-2">
             {COUNSELING_CATEGORIES.map((cat) => {
-              const count = stats?.byCategory?.find(c => c.category === cat.value)?.count || 0;
+              const count =
+                stats?.byCategory?.find((c) => c.category === cat.value)
+                  ?.count || 0;
               return (
                 <button
                   key={cat.value}
@@ -363,7 +363,9 @@ export default function CounselingPage() {
                           <p className="font-medium flex items-center gap-2">
                             {record.student?.user?.name || "Unknown"}
                             {record.isConfidential && (
-                              <span title="Rahasia" className="text-xs">🔒</span>
+                              <span title="Rahasia" className="text-xs">
+                                🔒
+                              </span>
                             )}
                           </p>
                           <p className="text-xs text-muted-foreground">
@@ -378,7 +380,9 @@ export default function CounselingPage() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <p className="max-w-xs truncate" title={record.title}>{record.title}</p>
+                        <p className="max-w-xs truncate" title={record.title}>
+                          {record.title}
+                        </p>
                       </TableCell>
                       <TableCell>
                         <Badge className={priorityConfig?.color}>
@@ -397,9 +401,13 @@ export default function CounselingPage() {
                       </TableCell>
                       <TableCell>
                         <span className="text-sm">
-                          {format(new Date(record.scheduledAt), "dd MMM yyyy", {
-                            locale: localeId,
-                          })}
+                          {safeFormat(
+                            new Date(record.scheduledAt),
+                            "dd MMM yyyy",
+                            {
+                              locale: localeId,
+                            },
+                          )}
                         </span>
                       </TableCell>
                       <TableCell>

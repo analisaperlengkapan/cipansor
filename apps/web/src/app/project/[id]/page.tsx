@@ -1,13 +1,12 @@
 "use client";
-
 import { useQuery } from "@tanstack/react-query";
+import { safeFormat } from "@/lib/date";
 import axios from "axios";
 import { useParams } from "next/navigation";
 import { KanbanBoard } from "../_components/kanban-board";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { format } from "date-fns";
 
 export default function ProjectDetailPage() {
   const params = useParams();
@@ -39,7 +38,7 @@ export default function ProjectDetailPage() {
             <p className="text-sm text-muted-foreground">
               {project.description} • Due{" "}
               {project.endDate
-                ? format(new Date(project.endDate), "MMM d, yyyy")
+                ? safeFormat(new Date(project.endDate), "MMM d, yyyy")
                 : "No due date"}
             </p>
           </div>

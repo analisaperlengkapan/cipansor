@@ -1,8 +1,8 @@
 "use client";
-
 import { useState } from "react";
+import { safeFormat } from "@/lib/date";
 import Link from "next/link";
-import { format } from "date-fns";
+
 import { id as localeId } from "date-fns/locale";
 import {
   Plus,
@@ -579,7 +579,7 @@ export default function HealthPage() {
                   {healthData?.data?.map((record) => (
                     <TableRow key={record.id} className="hover:bg-slate-50/50">
                       <TableCell className="font-medium text-slate-600">
-                        {format(new Date(record.visitDate), "dd MMM yyyy", {
+                        {safeFormat(new Date(record.visitDate), "dd MMM yyyy", {
                           locale: localeId,
                         })}
                       </TableCell>

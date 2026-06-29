@@ -1,6 +1,7 @@
 "use client";
 
 import { use } from "react";
+import { safeFormat } from "@/lib/date";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
@@ -53,7 +54,10 @@ import {
 } from "@/hooks/use-library";
 
 function getCategoryLabel(category: BookCategory) {
-    return BOOK_CATEGORIES.find((c) => c.value === (category as any))?.label || category;
+  return (
+    BOOK_CATEGORIES.find((c) => c.value === (category as any))?.label ||
+    category
+  );
 }
 
 function getStatusBadge(status: BorrowStatus) {
@@ -95,7 +99,7 @@ export default function BookDetailPage({
         id: borrowId,
         data: {
           notes: "Returned via system",
-        }
+        },
       });
       toast.success("Buku berhasil dikembalikan");
     } catch {
@@ -134,7 +138,7 @@ export default function BookDetailPage({
 
   const activeBorrows =
     borrowsData?.data.filter(
-        (b) => b.status === "ACTIVE" || b.status === "OVERDUE",
+      (b) => b.status === "ACTIVE" || b.status === "OVERDUE",
     ) || [];
   const historyBorrows =
     borrowsData?.data.filter(
@@ -199,7 +203,9 @@ export default function BookDetailPage({
 
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                    <Badge>{getCategoryLabel(book.category) as React.ReactNode}</Badge>
+                  <Badge>
+                    {getCategoryLabel(book.category) as React.ReactNode}
+                  </Badge>
                 </div>
 
                 <Separator />
@@ -239,7 +245,9 @@ export default function BookDetailPage({
                     <div className="flex items-center gap-2 text-sm">
                       <MapPin className="h-4 w-4 text-muted-foreground" />
                       <span className="text-muted-foreground">Lokasi:</span>
-                      <span className="font-medium">{(book as any).location || book.shelfLocation}</span>
+                      <span className="font-medium">
+                        {(book as any).location || book.shelfLocation}
+                      </span>
                     </div>
                   )}
                 </div>
@@ -340,15 +348,19 @@ export default function BookDetailPage({
                             </TableCell>
                             <TableCell>
                               {format(
-                                  new Date(borrow.borrowedAt),
+                                new Date(borrow.borrowedAt),
                                 "dd MMM yyyy",
                                 { locale: localeId },
                               )}
                             </TableCell>
                             <TableCell>
-                              {format(new Date(borrow.dueDate), "dd MMM yyyy", {
-                                locale: localeId,
-                              })}
+                              {safeFormat(
+                                new Date(borrow.dueDate),
+                                "dd MMM yyyy",
+                                {
+                                  locale: localeId,
+                                },
+                              )}
                             </TableCell>
                             <TableCell>
                               {getStatusBadge(borrow.status)}
@@ -417,15 +429,15 @@ export default function BookDetailPage({
                             </TableCell>
                             <TableCell>
                               {format(
-                                  new Date(borrow.borrowedAt),
+                                new Date(borrow.borrowedAt),
                                 "dd MMM yyyy",
                                 { locale: localeId },
                               )}
                             </TableCell>
                             <TableCell>
-                                {borrow.returnedAt
+                              {borrow.returnedAt
                                 ? format(
-                                      new Date(borrow.returnedAt),
+                                    new Date(borrow.returnedAt),
                                     "dd MMM yyyy",
                                     { locale: localeId },
                                   )

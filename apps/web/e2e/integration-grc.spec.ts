@@ -19,12 +19,12 @@ test.describe("GRC Integration Flow", () => {
     // Check key metrics are present
     await expect(page.locator("text='Strategic Plans'")).toBeVisible();
     await expect(page.locator("text='Critical Risks'")).toBeVisible();
-    await expect(page.locator("text='Open Audits'")).toBeVisible();
-    await expect(page.locator("text='Sharia Compliance'")).toBeVisible();
-    
+    await expect(page.locator("text='Audit Findings'")).toBeVisible();
+    await expect(page.locator("text='Sharia Compliance'").first()).toBeVisible();
+
     // Check chart presence
-    await expect(page.locator("text='Strategic Plan Execution Tracker'")).toBeVisible();
-    await expect(page.locator("text='Enterprise Risk Heatmap'")).toBeVisible();
+    await expect(page.locator("text='GRC Performance Overview'")).toBeVisible();
+    await expect(page.locator("text='Risk Profile Distribution'")).toBeVisible();
   });
 
   test("should display Risk Factors and Audit Trails in Strategic Plan Detail", async ({ page }) => {

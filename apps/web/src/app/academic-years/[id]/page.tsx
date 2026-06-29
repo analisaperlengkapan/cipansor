@@ -1,6 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
+import { safeFormat } from "@/lib/date";
 import Link from "next/link";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
@@ -154,9 +155,13 @@ export default function AcademicYearDetailPage() {
                       Tanggal Mulai
                     </p>
                     <p>
-                      {format(new Date(academicYear.startDate), "d MMMM yyyy", {
-                        locale: localeId,
-                      })}
+                      {safeFormat(
+                        new Date(academicYear.startDate),
+                        "d MMMM yyyy",
+                        {
+                          locale: localeId,
+                        },
+                      )}
                     </p>
                   </div>
                 </div>
@@ -167,9 +172,13 @@ export default function AcademicYearDetailPage() {
                       Tanggal Selesai
                     </p>
                     <p>
-                      {format(new Date(academicYear.endDate), "d MMMM yyyy", {
-                        locale: localeId,
-                      })}
+                      {safeFormat(
+                        new Date(academicYear.endDate),
+                        "d MMMM yyyy",
+                        {
+                          locale: localeId,
+                        },
+                      )}
                     </p>
                   </div>
                 </div>
@@ -222,7 +231,7 @@ export default function AcademicYearDetailPage() {
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Mulai</span>
                   <span>
-                    {format(new Date(academicYear.startDate), "MMM yyyy", {
+                    {safeFormat(new Date(academicYear.startDate), "MMM yyyy", {
                       locale: localeId,
                     })}
                   </span>
@@ -230,7 +239,7 @@ export default function AcademicYearDetailPage() {
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Selesai</span>
                   <span>
-                    {format(new Date(academicYear.endDate), "MMM yyyy", {
+                    {safeFormat(new Date(academicYear.endDate), "MMM yyyy", {
                       locale: localeId,
                     })}
                   </span>

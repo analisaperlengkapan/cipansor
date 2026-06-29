@@ -1,74 +1,64 @@
-# Cipansor Web Dockerfile
-# Multi-stage build for Next.js production optimization
+# syntax=docker/dockerfile:1
+# Cipansor Web (Next.js) — multi-stage build using Next standalone output.
+# The runner ships only the standalone server + static assets + public dir.
+#
+# Behind a TLS-terminating egress proxy, pass the proxy CA as a build secret:
+#   docker build --secret id=proxyca,src=<ca.crt> \
+#     --build-arg NEXT_PUBLIC_API_URL=http://localhost:3001/api \
+#     -f apps/web/Dockerfile -t cipansor-web .
+# In a normal network the secret is unused and the build works without it.
 
-# Stage 1: Dependencies
-FROM node:20-alpine AS deps
-RUN npm install -g pnpm@10
+FROM node:22-alpine AS base
+ENV PNPM_HOME=/pnpm
+ENV PATH=$PNPM_HOME:$PATH
+ENV CI=true
 WORKDIR /app
+RUN --mount=type=secret,id=proxyca,required=false \
+    if [ -f /run/secrets/proxyca ]; then \
+      cat /run/secrets/proxyca >> /etc/ssl/certs/ca-certificates.crt; \
+    fi && \
+    NODE_EXTRA_CA_CERTS=/run/secrets/proxyca corepack enable && \
+    NODE_EXTRA_CA_CERTS=/run/secrets/proxyca corepack prepare pnpm@9.0.0 --activate
 
-# Copy workspace files
-COPY pnpm-workspace.yaml ./
-COPY pnpm-lock.yaml ./
-
-# Copy package.json files for all workspaces
-COPY package.json ./
+# ---- deps: install web + shared deps (api manifest not copied) ----
+FROM base AS deps
+COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
 COPY apps/web/package.json ./apps/web/
 COPY packages/shared/package.json ./packages/shared/
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
+    --mount=type=secret,id=proxyca,required=false \
+    NODE_EXTRA_CA_CERTS=/run/secrets/proxyca pnpm install --frozen-lockfile
 
-# Install dependencies
-RUN pnpm install --frozen-lockfile
-
-# Stage 2: Builder
-FROM node:20-alpine AS builder
-RUN npm install -g pnpm@10
-WORKDIR /app
-
-# Copy dependencies
+# ---- builder: build shared, then Next.js (standalone output) ----
+FROM base AS builder
+ENV NODE_OPTIONS=--max-old-space-size=4096
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV BUILD_STANDALONE=1
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
 COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_modules
-
-# Copy source files
 COPY . .
+RUN --mount=type=secret,id=proxyca,required=false \
+    NODE_EXTRA_CA_CERTS=/run/secrets/proxyca pnpm --filter @cipansor/shared build \
+ && NODE_EXTRA_CA_CERTS=/run/secrets/proxyca pnpm --filter web build
 
-# Set build-time environment variable
-ARG NEXT_PUBLIC_API_URL
-ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
-
-# Build the app
-RUN pnpm --filter @cipansor/shared build
-WORKDIR /app/apps/web
-RUN pnpm build
-
-# Stage 3: Production
-FROM node:20-alpine AS runner
-RUN npm install -g pnpm@10
-WORKDIR /app
-
-# Set production environment
+# ---- runner: minimal standalone server ----
+FROM base AS runner
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
+RUN addgroup -S nodejs -g 1001 && adduser -S nextjs -u 1001
 
-# Create non-root user for security
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
-
-# Copy built files
-COPY --from=builder /app/apps/web/public ./apps/web/public
+# Next standalone output bundles only the server's runtime deps.
+COPY --from=builder --chown=nextjs:nodejs /app/apps/web/public ./apps/web/public
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static ./apps/web/.next/static
 
-# Switch to non-root user
 USER nextjs
-
-# Expose port
 EXPOSE 3000
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:3000 || exit 1
-
-# Start the application
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:3000',r=>process.exit(r.statusCode<500?0:1)).on('error',()=>process.exit(1))"
 WORKDIR /app/apps/web
 CMD ["node", "server.js"]

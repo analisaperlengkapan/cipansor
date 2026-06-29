@@ -1,0 +1,60 @@
+# Dependencies
+node_modules
+.pnpm-store
+apps/*/node_modules
+packages/*/node_modules
+
+# Build outputs
+.next
+dist
+build
+*.log
+apps/*/.next
+apps/*/dist
+apps/*/build
+
+# Cache directories
+.turbo
+.cache
+.next/cache
+apps/*/.next/cache
+
+# Environment files
+.env
+.env.local
+.env.*.local
+apps/*/.env*
+
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+docker-compose*.yml
+Dockerfile*
+
+# Testing
+coverage
+.nyc_output
+test-results
+playwright-report
+apps/*/test-results
+apps/*/playwright-report
+apps/*/e2e
+apps/*/test_output*.log
+
+# Misc
+*.md
+!README.md
+docs
+scripts

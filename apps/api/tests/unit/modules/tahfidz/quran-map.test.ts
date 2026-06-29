@@ -25,7 +25,7 @@ vi.mock('@prisma/client', () => {
 });
 
 // Mock src/lib/prisma
-vi.mock('../../../../../src/lib/prisma', () => ({
+vi.mock('../../../../src/lib/prisma', () => ({
   prisma: {
     tahfidzRecord: {
       findMany: mocks.findMany,
@@ -33,9 +33,9 @@ vi.mock('../../../../../src/lib/prisma', () => ({
   },
 }));
 
-vi.mock('../../../../../src/lib/logger');
+vi.mock('../../../../src/lib/logger');
 
-import { getQuranProgressMap } from '../../../../../src/modules/tahfidz/tahfidz.analytics';
+import { getQuranProgressMap } from '../../../../src/modules/tahfidz/tahfidz.analytics';
 
 describe('getQuranProgressMap', () => {
   beforeEach(() => {

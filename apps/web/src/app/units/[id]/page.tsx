@@ -1,8 +1,8 @@
 "use client";
-
 import { useParams } from "next/navigation";
+import { safeFormat } from "@/lib/date";
 import Link from "next/link";
-import { format } from "date-fns";
+
 import { id as localeId } from "date-fns/locale";
 import {
   ArrowLeft,
@@ -207,7 +207,7 @@ export default function UnitDetailPage() {
                       Dibuat
                     </p>
                     <p className="text-sm">
-                      {format(new Date(unit.createdAt), "d MMMM yyyy", {
+                      {safeFormat(new Date(unit.createdAt), "d MMMM yyyy", {
                         locale: localeId,
                       })}
                     </p>
@@ -220,7 +220,7 @@ export default function UnitDetailPage() {
                       Terakhir Diperbarui
                     </p>
                     <p className="text-sm">
-                      {format(new Date(unit.updatedAt), "d MMMM yyyy", {
+                      {safeFormat(new Date(unit.updatedAt), "d MMMM yyyy", {
                         locale: localeId,
                       })}
                     </p>

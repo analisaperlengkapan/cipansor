@@ -1,30 +1,31 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { TataLaksanaService } from '@/modules/tatalaksana/tatalaksana.service';
 
-vi.mock('@prisma/client', () => {
+const { mockPrisma } = vi.hoisted(() => {
   const mockTx = {
     sOPRevision: { create: vi.fn() },
     standardOperatingProcedure: { update: vi.fn() },
   };
-  const mockPrisma = {
-    standardOperatingProcedure: {
-      findMany: vi.fn(),
-      findUniqueOrThrow: vi.fn(),
-      create: vi.fn(),
-      update: vi.fn(),
-      delete: vi.fn(),
-      count: vi.fn(),
-      groupBy: vi.fn(),
+  return {
+    mockPrisma: {
+      standardOperatingProcedure: {
+        findMany: vi.fn(),
+        findUniqueOrThrow: vi.fn(),
+        create: vi.fn(),
+        update: vi.fn(),
+        delete: vi.fn(),
+        count: vi.fn(),
+        groupBy: vi.fn(),
+      },
+      sOPRevision: { create: vi.fn() },
+      $transaction: vi.fn((fn: (tx: unknown) => unknown) => fn(mockTx)),
     },
-    sOPRevision: { create: vi.fn() },
-    $transaction: vi.fn((fn: any) => fn(mockTx)),
   };
-  return { PrismaClient: vi.fn(() => mockPrisma) };
 });
 
-import { PrismaClient } from '@prisma/client';
+vi.mock('@/lib/prisma', () => ({ prisma: mockPrisma }));
 
-const prisma = new PrismaClient() as any;
+const prisma = mockPrisma as any;
 
 describe('TataLaksanaService', () => {
   const service = new TataLaksanaService();

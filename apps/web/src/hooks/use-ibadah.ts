@@ -607,11 +607,14 @@ export function useIbadahLeaderboard(params: LeaderboardParams) {
   return useQuery({
     queryKey: ["ibadah-leaderboard", params],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<IbadahLeaderboard[]>>(
-        "/ibadah/leaderboard",
-        { params },
-      );
-      return response.data.data;
+      const response = await api.get<ApiResponse<any>>("/ibadah/leaderboard", {
+        params,
+      });
+      // The endpoint returns { data: { periodType, startDate, endDate, data: [] } }
+      // — the entries are nested under data.data. Return the array so the page's
+      // `leaderboard.map` doesn't crash.
+      const lb = response.data.data;
+      return (Array.isArray(lb) ? lb : (lb?.data ?? [])) as IbadahLeaderboard[];
     },
     enabled: !!params.unitId,
   });

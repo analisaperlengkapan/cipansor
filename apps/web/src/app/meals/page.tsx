@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { safeFormat } from "@/lib/date";
 import { MainLayout } from "@/components/layout/main-layout";
 import {
   Card,
@@ -319,7 +320,7 @@ export default function MealsPage() {
           <TabsContent value="today" className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold">
-                {format(new Date(), "EEEE, d MMMM yyyy", { locale: id })}
+                {safeFormat(new Date(), "EEEE, d MMMM yyyy", { locale: id })}
               </h2>
               <Badge className="bg-emerald-100 text-emerald-800">
                 Hari Ini

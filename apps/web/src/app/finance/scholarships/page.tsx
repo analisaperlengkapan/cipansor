@@ -1,6 +1,6 @@
 "use client";
-
 import { useState } from "react";
+import { safeFormat } from "@/lib/date";
 import { MainLayout } from "@/components/layout/main-layout";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -43,7 +43,7 @@ import {
   Eye,
 } from "lucide-react";
 import { toast } from "sonner";
-import { format } from "date-fns";
+
 import { id as localeID } from "date-fns/locale";
 
 import {
@@ -149,9 +149,13 @@ function RecipientsDialog({
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {format(new Date(recipient.startDate), "dd MMM yyyy", {
-                        locale: localeID,
-                      })}
+                      {safeFormat(
+                        new Date(recipient.startDate),
+                        "dd MMM yyyy",
+                        {
+                          locale: localeID,
+                        },
+                      )}
                     </TableCell>
                   </TableRow>
                 ))
@@ -332,7 +336,7 @@ export default function ScholarshipsPage() {
                         id="startDate"
                         name="startDate"
                         type="date"
-                        defaultValue={format(new Date(), "yyyy-MM-dd")}
+                        defaultValue={safeFormat(new Date(), "yyyy-MM-dd")}
                         required
                       />
                     </div>

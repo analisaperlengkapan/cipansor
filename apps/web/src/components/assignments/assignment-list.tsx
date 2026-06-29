@@ -1,9 +1,9 @@
 import { useRouter } from "next/navigation";
+import { safeFormat } from "@/lib/date";
 import { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/components/shared";
 import { Assignment } from "@cipansor/shared";
 import { Badge } from "@/components/ui/badge";
-import { format } from "date-fns";
 
 interface AssignmentListProps {
   assignments: Assignment[];
@@ -59,7 +59,7 @@ export function AssignmentList({
       header: "Due Date",
       cell: ({ row }) => (
         <span className="text-sm">
-          {format(new Date(row.original.dueDate), "dd MMM yyyy HH:mm")}
+          {safeFormat(new Date(row.original.dueDate), "dd MMM yyyy HH:mm")}
         </span>
       ),
     },

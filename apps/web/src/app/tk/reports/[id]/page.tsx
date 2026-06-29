@@ -1,6 +1,6 @@
 "use client";
-
 import { useParams, useRouter } from "next/navigation";
+import { safeFormat } from "@/lib/date";
 import { MainLayout } from "@/components/layout";
 import { PageHeader } from "@/components/shared";
 import {
@@ -33,7 +33,7 @@ import {
   Clock,
   Download,
 } from "lucide-react";
-import { format } from "date-fns";
+
 import { id as idLocale } from "date-fns/locale";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -164,7 +164,7 @@ export default function TKReportDetailPage() {
           {report.finalizedAt && (
             <Badge variant="outline">
               Difinalisasi:{" "}
-              {format(new Date(report.finalizedAt), "dd MMM yyyy HH:mm", {
+              {safeFormat(new Date(report.finalizedAt), "dd MMM yyyy HH:mm", {
                 locale: idLocale,
               })}
             </Badge>
@@ -246,7 +246,7 @@ export default function TKReportDetailPage() {
                   <div className="flex justify-between items-center">
                     <span className="text-muted-foreground">Dibuat</span>
                     <span className="font-medium">
-                      {format(new Date(report.createdAt), "dd MMM yyyy", {
+                      {safeFormat(new Date(report.createdAt), "dd MMM yyyy", {
                         locale: idLocale,
                       })}
                     </span>

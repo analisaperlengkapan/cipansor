@@ -1,5 +1,5 @@
 import React, { forwardRef } from "react";
-import { format } from "date-fns";
+import { safeFormat } from "@/lib/date";
 import { id } from "date-fns/locale";
 
 import { LetterDetail } from "@cipansor/shared";
@@ -81,7 +81,9 @@ export const LetterPDFTemplate = forwardRef<
           </table>
         </div>
         <div className="text-right">
-          <p>{format(new Date(letter.date), "dd MMMM yyyy", { locale: id })}</p>
+          <p>
+            {safeFormat(new Date(letter.date), "dd MMMM yyyy", { locale: id })}
+          </p>
         </div>
       </div>
 

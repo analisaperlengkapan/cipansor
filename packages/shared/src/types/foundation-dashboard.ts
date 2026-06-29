@@ -3,6 +3,8 @@ export interface FoundationExecutiveSummary {
   totalTeachers: number;
   totalStaff: number;
   totalUnits: number;
+  /** Registrants still in the admissions pipeline (not yet enrolled/rejected/cancelled). */
+  activeAdmissions: number;
   growth: {
     students: number;
   };
@@ -36,6 +38,19 @@ export interface FoundationFinancialOverview {
     revenue: number;
     expense: number;
     netIncome: number;
+    students: number;
+  }[];
+  /** Cash position derived from balance-sheet accounts. */
+  cashPosition?: {
+    cashOnHand: number;
+    receivables: number;
+    payables: number;
+  };
+  /** Revenue vs expense for the trailing 6 months (oldest first). */
+  monthlyTrend?: {
+    month: string;
+    revenue: number;
+    expense: number;
   }[];
 }
 

@@ -29,15 +29,22 @@ vi.mock('@prisma/client', () => ({
   Prisma: {},
 }));
 
-vi.mock('../../../../../src/lib/prisma', () => ({
+vi.mock('../../../../src/lib/prisma', () => ({
   prisma: {
     internalAudit: mockInternalAudit,
     auditFinding: mockAuditFinding,
     auditFollowUp: mockAuditFollowUp,
+    $transaction: vi.fn(async (cb: (tx: unknown) => unknown) =>
+      cb({
+        internalAudit: mockInternalAudit,
+        auditFinding: mockAuditFinding,
+        auditFollowUp: mockAuditFollowUp,
+      })
+    ),
   },
 }));
 
-import { PengawasanService } from '../../../../../src/modules/pengawasan/pengawasan.service';
+import { PengawasanService } from '../../../../src/modules/pengawasan/pengawasan.service';
 
 describe('PengawasanService', () => {
   let service: PengawasanService;

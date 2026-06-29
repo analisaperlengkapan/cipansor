@@ -1,6 +1,6 @@
 "use client";
-
 import { useState } from "react";
+import { safeFormat } from "@/lib/date";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -14,7 +14,7 @@ import {
   MessageSquare,
   CheckCircle2,
 } from "lucide-react";
-import { format } from "date-fns";
+
 import { id as dateLocale } from "date-fns/locale";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -102,7 +102,7 @@ export default function DailyReportDetailPage({
               Detail Laporan Harian
             </h1>
             <p className="text-muted-foreground">
-              {format(new Date(report.reportDate), "EEEE, dd MMMM yyyy", {
+              {safeFormat(new Date(report.reportDate), "EEEE, dd MMMM yyyy", {
                 locale: dateLocale,
               })}
             </p>
@@ -189,7 +189,7 @@ export default function DailyReportDetailPage({
                 </span>
                 <span className="font-medium">
                   {report.arrivalTime
-                    ? format(new Date(report.arrivalTime), "HH:mm")
+                    ? safeFormat(new Date(report.arrivalTime), "HH:mm")
                     : "-"}
                 </span>
               </div>
@@ -199,7 +199,7 @@ export default function DailyReportDetailPage({
                 </span>
                 <span className="font-medium">
                   {report.departureTime
-                    ? format(new Date(report.departureTime), "HH:mm")
+                    ? safeFormat(new Date(report.departureTime), "HH:mm")
                     : "-"}
                 </span>
               </div>

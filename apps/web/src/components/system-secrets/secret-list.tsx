@@ -1,6 +1,6 @@
 "use client";
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { safeFormat } from "@/lib/date";
 import { api } from "@/lib/api";
 import {
   Table,
@@ -26,7 +26,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
-import { format } from "date-fns";
 
 interface Secret {
   id: string;
@@ -121,7 +120,7 @@ export function SecretList() {
                   </TableCell>
                   <TableCell>{secret.description || "-"}</TableCell>
                   <TableCell>
-                    {format(new Date(secret.updatedAt), "PPP")}
+                    {safeFormat(new Date(secret.updatedAt), "PPP")}
                   </TableCell>
                   <TableCell className="flex gap-2">
                     <Button

@@ -1,7 +1,7 @@
 "use client";
-
 import { useState } from "react";
-import { format } from "date-fns";
+import { safeFormat } from "@/lib/date";
+
 import { id as localeId } from "date-fns/locale";
 import {
   Table,
@@ -128,7 +128,7 @@ export function MurojaahList({
                 (record: import("@/hooks/use-murojaah").MurojaahRecord) => (
                   <TableRow key={record.id}>
                     <TableCell>
-                      {format(new Date(record.murojaahDate), "d MMM yyyy", {
+                      {safeFormat(new Date(record.murojaahDate), "d MMM yyyy", {
                         locale: localeId,
                       })}
                     </TableCell>

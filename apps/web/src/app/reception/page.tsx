@@ -1,6 +1,6 @@
 "use client";
-
 import { useState } from "react";
+import { safeFormat } from "@/lib/date";
 import {
   Card,
   CardContent,
@@ -84,7 +84,7 @@ import {
   PackageCheck,
 } from "lucide-react";
 import { toast } from "sonner";
-import { format } from "date-fns";
+
 import { id as localeId } from "date-fns/locale";
 
 const GUEST_PURPOSE_OPTIONS = [
@@ -107,7 +107,7 @@ export default function ReceptionDashboardPage() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("dashboard");
   const [selectedDate, setSelectedDate] = useState(
-    format(new Date(), "yyyy-MM-dd"),
+    safeFormat(new Date(), "yyyy-MM-dd"),
   );
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -248,7 +248,7 @@ export default function ReceptionDashboardPage() {
         await updateVisit.mutateAsync({
           id: editingVisit.id,
           data: {
-            notes: visitForm.purpose // Mapping purpose to notes for now as per type
+            notes: visitForm.purpose, // Mapping purpose to notes for now as per type
           },
         });
         toast.success("Data kunjungan berhasil diperbarui");
@@ -297,7 +297,7 @@ export default function ReceptionDashboardPage() {
         await updatePackage.mutateAsync({
           id: editingPackage.id,
           data: {
-            notes: packageForm.description
+            notes: packageForm.description,
           },
         });
         toast.success("Data paket berhasil diperbarui");
@@ -307,7 +307,9 @@ export default function ReceptionDashboardPage() {
           senderName: packageForm.senderName,
           expedition: packageForm.courier,
           content: packageForm.description,
-          notes: packageForm.trackingNumber ? `Resi: ${packageForm.trackingNumber}` : undefined,
+          notes: packageForm.trackingNumber
+            ? `Resi: ${packageForm.trackingNumber}`
+            : undefined,
           // unitId inferred
         });
         toast.success("Paket berhasil didaftarkan");
@@ -329,8 +331,7 @@ export default function ReceptionDashboardPage() {
         id: pkg.id,
         data: {
           status: status as any, // Cast to PackageStatus enum
-          pickedUpAt:
-            status === "COLLECTED" ? new Date() : undefined,
+          pickedUpAt: status === "COLLECTED" ? new Date() : undefined,
         },
       });
       toast.success("Status paket berhasil diperbarui");
@@ -509,7 +510,7 @@ export default function ReceptionDashboardPage() {
                         </div>
                         <div className="text-right">
                           <p className="text-sm">
-                            {format(new Date(guest.checkIn), "HH:mm")}
+                            {safeFormat(new Date(guest.checkIn), "HH:mm")}
                           </p>
                           {guest.checkOut ? (
                             <Badge variant="outline" className="text-green-600">
@@ -619,7 +620,8 @@ export default function ReceptionDashboardPage() {
                           <PackageOpen className="h-5 w-5 text-muted-foreground" />
                         </div>
                         <p className="text-xs mt-2">
-                          {pkg.expedition} - {(pkg.notes || "").replace("Resi: ", "")}
+                          {pkg.expedition} -{" "}
+                          {(pkg.notes || "").replace("Resi: ", "")}
                         </p>
                         <div className="mt-3 flex gap-2">
                           <Button
@@ -659,7 +661,7 @@ export default function ReceptionDashboardPage() {
                 <div>
                   <CardTitle>Buku Tamu</CardTitle>
                   <CardDescription>
-                    {format(new Date(selectedDate), "EEEE, dd MMMM yyyy", {
+                    {safeFormat(new Date(selectedDate), "EEEE, dd MMMM yyyy", {
                       locale: localeId,
                     })}
                   </CardDescription>
@@ -701,13 +703,15 @@ export default function ReceptionDashboardPage() {
                           (o) => o.value === guest.purpose,
                         )?.label || guest.purpose}
                       </TableCell>
-                      <TableCell>{(guest as any).personToMeet || "-"}</TableCell>
                       <TableCell>
-                        {format(new Date(guest.checkIn), "HH:mm")}
+                        {(guest as any).personToMeet || "-"}
+                      </TableCell>
+                      <TableCell>
+                        {safeFormat(new Date(guest.checkIn), "HH:mm")}
                       </TableCell>
                       <TableCell>
                         {guest.checkOut
-                          ? format(new Date(guest.checkOut), "HH:mm")
+                          ? safeFormat(new Date(guest.checkOut), "HH:mm")
                           : "-"}
                       </TableCell>
                       <TableCell>
@@ -748,7 +752,7 @@ export default function ReceptionDashboardPage() {
                 <div>
                   <CardTitle>Kunjungan Wali Santri</CardTitle>
                   <CardDescription>
-                    {format(new Date(selectedDate), "EEEE, dd MMMM yyyy", {
+                    {safeFormat(new Date(selectedDate), "EEEE, dd MMMM yyyy", {
                       locale: localeId,
                     })}
                   </CardDescription>
@@ -790,11 +794,11 @@ export default function ReceptionDashboardPage() {
                       <TableCell>{visit.relationship}</TableCell>
                       <TableCell>{visit.needs || "-"}</TableCell>
                       <TableCell>
-                        {format(new Date(visit.checkIn), "HH:mm")}
+                        {safeFormat(new Date(visit.checkIn), "HH:mm")}
                       </TableCell>
                       <TableCell>
                         {visit.checkOut
-                          ? format(new Date(visit.checkOut), "HH:mm")
+                          ? safeFormat(new Date(visit.checkOut), "HH:mm")
                           : "-"}
                       </TableCell>
                       <TableCell>
@@ -876,7 +880,7 @@ export default function ReceptionDashboardPage() {
                       </TableCell>
                       <TableCell>{pkg.content || "-"}</TableCell>
                       <TableCell>
-                        {format(new Date(pkg.receivedAt), "dd/MM HH:mm")}
+                        {safeFormat(new Date(pkg.receivedAt), "dd/MM HH:mm")}
                       </TableCell>
                       <TableCell>{getStatusBadge(pkg.status)}</TableCell>
                       <TableCell>

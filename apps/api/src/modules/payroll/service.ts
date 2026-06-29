@@ -988,6 +988,7 @@ export const payrollService = {
 
     const attendanceMap = new Map<string, Record<string, number>>();
     for (const att of attendanceSummary) {
+      if (!att.staffId) continue;
       const current = attendanceMap.get(att.staffId) || {};
       current[att.status] = att._count;
       attendanceMap.set(att.staffId, current);

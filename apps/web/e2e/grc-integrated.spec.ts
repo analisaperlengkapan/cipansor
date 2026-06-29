@@ -1,7 +1,9 @@
 import { test, expect } from '@playwright/test';
+import { primeAuthCookies } from './helpers/auth';
 
 test.describe('GRC Integrated Flow', () => {
   test.beforeEach(async ({ page }) => {
+    await primeAuthCookies(page);
     // Mock auth and user data BEFORE navigation to prevent redirects
     await page.addInitScript(() => {
       window.localStorage.setItem('accessToken', 'mock-token');

@@ -105,7 +105,7 @@ export default function NewDutyRosterPage() {
       studentsData?.data?.map((s: any) => ({
         id: s.id,
         nis: s.nis,
-        name: s.name,
+        name: s.user?.name ?? s.name ?? "",
         class: { id: s.class?.id || "", name: s.class?.name || "-" },
         gender: s.gender,
       })) || []
@@ -139,8 +139,8 @@ export default function NewDutyRosterPage() {
 
   const filteredStudents = students.filter((student) => {
     const matchesSearch =
-      student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      student.nis.includes(searchQuery);
+      (student.name ?? "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (student.nis ?? "").includes(searchQuery);
     const matchesClass =
       filterClass === "all" || student.class.id === filterClass;
     return matchesSearch && matchesClass;

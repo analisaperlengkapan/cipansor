@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { primeAuthCookies } from "./helpers/auth";
 
 test.describe("Assessment Analytics", () => {
   const mockAssessmentId = "mock-assessment-id";
@@ -6,6 +7,8 @@ test.describe("Assessment Analytics", () => {
   test.use({ storageState: { cookies: [], origins: [] } });
 
   test.beforeEach(async ({ page }) => {
+    // Cookies for the middleware (must exist before first navigation).
+    await primeAuthCookies(page);
     // Mock local storage for auth store
     await page.addInitScript(() => {
       window.localStorage.setItem("accessToken", "fake-token");

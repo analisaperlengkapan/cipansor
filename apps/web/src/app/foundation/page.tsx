@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { safeFormat } from "@/lib/date";
 import { MainLayout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import {
@@ -497,9 +498,13 @@ export default function FoundationPage() {
                           </TableCell>
                           <TableCell>
                             {doc.expiryDate
-                              ? format(new Date(doc.expiryDate), "d MMM yyyy", {
-                                  locale: id,
-                                })
+                              ? safeFormat(
+                                  new Date(doc.expiryDate),
+                                  "d MMM yyyy",
+                                  {
+                                    locale: id,
+                                  },
+                                )
                               : "-"}
                           </TableCell>
                           <TableCell>
@@ -637,9 +642,13 @@ export default function FoundationPage() {
                             </Badge>
                             <span className="text-xs text-muted-foreground">
                               Sejak{" "}
-                              {format(new Date(member.startDate), "MMM yyyy", {
-                                locale: id,
-                              })}
+                              {safeFormat(
+                                new Date(member.startDate),
+                                "MMM yyyy",
+                                {
+                                  locale: id,
+                                },
+                              )}
                             </span>
                           </div>
                         </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { safeFormat } from "@/lib/date";
 import { MainLayout } from "@/components/layout";
 import { PageHeader } from "@/components/shared";
 import {
@@ -374,7 +375,7 @@ export default function ExecutiveDashboardPage() {
                         {alert.message}
                       </p>
                       <p className="text-xs text-muted-foreground mt-1 font-medium opacity-70">
-                        {format(new Date(alert.timestamp), "HH:mm", {
+                        {safeFormat(new Date(alert.timestamp), "HH:mm", {
                           locale: idLocale,
                         })}
                       </p>

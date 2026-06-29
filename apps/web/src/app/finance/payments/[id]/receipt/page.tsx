@@ -1,6 +1,7 @@
 "use client";
 
 import { use } from "react";
+import { safeFormat } from "@/lib/date";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -254,7 +255,7 @@ export default function PaymentReceiptPage({ params }: ReceiptPageProps) {
               <div className="flex justify-end pt-8">
                 <div className="text-center">
                   <p className="text-sm">
-                    {format(new Date(payment.paymentDate), "d MMMM yyyy", {
+                    {safeFormat(new Date(payment.paymentDate), "d MMMM yyyy", {
                       locale: localeId,
                     })}
                   </p>

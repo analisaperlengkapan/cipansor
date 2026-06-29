@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { ShariaCompliance, Prisma } from '@prisma/client';
+import { ShariaCompliance, Prisma, UserRole } from '@prisma/client';
 import { Errors } from '@/middleware/error';
 import { pengawasanService } from '../pengawasan/pengawasan.service';
 
@@ -66,7 +66,7 @@ export class SyariahService {
           auditDate: new Date(data.auditDate),
           findings: data.findings,
           score: data.score,
-          recommendations: data.recommendations,
+          recommendation: data.recommendations,
         },
         include: {
           compliance: true,
@@ -83,7 +83,6 @@ export class SyariahService {
         data: {
           score: data.score,
           status,
-          lastAuditDate: new Date(data.auditDate),
         },
       });
 
@@ -206,17 +205,33 @@ export class SyariahService {
       });
 
       if (!existing) {
-        await prisma.internalAudit.create({
-          data: {
-            unitId,
-            title,
-            description: `Audit darurat dipicu oleh skor rata-rata unit yang sangat rendah (${score}).`,
-            auditType: 'SYARIAH',
-            status: 'PLANNED',
-            plannedDate: new Date(),
-            priority: 'HIGH',
+        // InternalAudit requires a lead auditor. For this system-triggered
+        // emergency audit, assign a unit admin (falling back to a super admin).
+        const leadAuditor = await prisma.user.findFirst({
+          where: {
+            isActive: true,
+            OR: [
+              { unitId, role: UserRole.UNIT_ADMIN },
+              { role: UserRole.SUPER_ADMIN },
+            ],
           },
+          select: { id: true },
+          orderBy: { createdAt: 'asc' },
         });
+
+        if (leadAuditor) {
+          await prisma.internalAudit.create({
+            data: {
+              unitId,
+              title,
+              description: `Audit darurat dipicu oleh skor rata-rata unit yang sangat rendah (${score}).`,
+              auditType: 'SYARIAH',
+              status: 'PLANNED',
+              plannedDate: new Date(),
+              leadAuditorId: leadAuditor.id,
+            },
+          });
+        }
       }
     } catch (err) {
       console.error('[Syariah] Failed to trigger emergency audit:', err);

@@ -29,7 +29,7 @@ vi.mock('@prisma/client', () => ({
   Prisma: { Decimal: class { constructor(v: number) { return v; } } },
 }));
 
-vi.mock('../../../../../src/lib/prisma', () => ({
+vi.mock('../../../../src/lib/prisma', () => ({
   prisma: {
     environmentProgram: mockEnvironmentProgram,
     wasteManagement: mockWasteManagement,
@@ -37,7 +37,7 @@ vi.mock('../../../../../src/lib/prisma', () => ({
   },
 }));
 
-import { LingkunganService } from '../../../../../src/modules/lingkungan/lingkungan.service';
+import { LingkunganService } from '../../../../src/modules/lingkungan/lingkungan.service';
 
 describe('LingkunganService', () => {
   let service: LingkunganService;

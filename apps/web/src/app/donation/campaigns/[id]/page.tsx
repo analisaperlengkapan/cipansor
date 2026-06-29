@@ -1,8 +1,8 @@
 "use client";
-
 import { use } from "react";
+import { safeFormat } from "@/lib/date";
 import Link from "next/link";
-import { format } from "date-fns";
+
 import { id as localeId } from "date-fns/locale";
 import {
   Heart,
@@ -265,9 +265,13 @@ export default function CampaignDetailPage({ params }: Props) {
                     donations.map((donation) => (
                       <TableRow key={donation.id}>
                         <TableCell>
-                          {format(new Date(donation.createdAt), "d MMM yyyy", {
-                            locale: localeId,
-                          })}
+                          {safeFormat(
+                            new Date(donation.createdAt),
+                            "d MMM yyyy",
+                            {
+                              locale: localeId,
+                            },
+                          )}
                         </TableCell>
                         <TableCell>
                           <div>
@@ -363,7 +367,7 @@ export default function CampaignDetailPage({ params }: Props) {
                 <p className="text-sm text-muted-foreground">Tanggal Mulai</p>
                 <p className="font-medium">
                   {campaign.startDate
-                    ? format(new Date(campaign.startDate), "d MMMM yyyy", {
+                    ? safeFormat(new Date(campaign.startDate), "d MMMM yyyy", {
                         locale: localeId,
                       })
                     : "-"}
@@ -375,7 +379,7 @@ export default function CampaignDetailPage({ params }: Props) {
                 </p>
                 <p className="font-medium">
                   {campaign.endDate
-                    ? format(new Date(campaign.endDate), "d MMMM yyyy", {
+                    ? safeFormat(new Date(campaign.endDate), "d MMMM yyyy", {
                         locale: localeId,
                       })
                     : "Tanpa batas waktu"}

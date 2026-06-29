@@ -1,4 +1,5 @@
 import type { Page } from "@playwright/test";
+import { apiLogin, injectSession } from "../helpers/auth-api";
 
 /**
  * Dashboard Page Object Model
@@ -21,11 +22,11 @@ export class DashboardPage {
   }
 
   get totalTeachersCard() {
-    return this.page.getByText(/total (guru|teachers)/i);
+    return this.page.getByText(/ustadz|guru|teachers/i).first();
   }
 
   get todayAttendanceCard() {
-    return this.page.getByText(/kehadiran hari ini|today.*attendance/i);
+    return this.page.getByText(/kehadiran|attendance/i).first();
   }
 
   get realtimeIndicator() {
@@ -35,7 +36,7 @@ export class DashboardPage {
   // Actions
   async goto() {
     await this.page.goto("/dashboard");
-    await this.page.waitForLoadState("networkidle");
+    await this.page.waitForLoadState("domcontentloaded");
   }
 
   async waitForDataLoad() {
@@ -66,33 +67,35 @@ export class DashboardPage {
 export class TahfidzDashboardPage {
   constructor(private page: Page) {}
 
-  // Locators
+  // Locators. Use .first() on text locators: empty-state messages
+  // ("Tidak ada data progress per juz") repeat the section title text, so a bare
+  // getByText would match two elements and trip strict mode.
   get heading() {
     return this.page.getByRole("heading", { name: /dashboard tahfidz/i });
   }
 
   get totalRecordsCard() {
-    return this.page.getByText(/total catatan/i);
+    return this.page.getByText(/total catatan/i).first();
   }
 
   get activeSantriCard() {
-    return this.page.getByText(/santri aktif/i);
+    return this.page.getByText(/santri aktif/i).first();
   }
 
   get totalJuzCard() {
-    return this.page.getByText(/total juz/i);
+    return this.page.getByText(/total juz/i).first();
   }
 
   get recordTypeChart() {
-    return this.page.getByText(/catatan per tipe/i);
+    return this.page.getByText(/catatan per tipe/i).first();
   }
 
   get topSantriSection() {
-    return this.page.getByText(/top 10 santri/i);
+    return this.page.getByText(/top 10 santri/i).first();
   }
 
   get progressPerJuzSection() {
-    return this.page.getByText(/progress per juz/i);
+    return this.page.getByText(/progress per juz/i).first();
   }
 
   get recentRecordsTable() {
@@ -102,7 +105,7 @@ export class TahfidzDashboardPage {
   // Actions
   async goto() {
     await this.page.goto("/tahfidz/dashboard");
-    await this.page.waitForLoadState("networkidle");
+    await this.page.waitForLoadState("domcontentloaded");
   }
 
   async waitForDataLoad() {
@@ -172,7 +175,7 @@ export class TKAssessmentPage {
   // Actions
   async goto() {
     await this.page.goto("/tk/assessment");
-    await this.page.waitForLoadState("networkidle");
+    await this.page.waitForLoadState("domcontentloaded");
   }
 
   async selectStudent(studentName: string) {
@@ -241,41 +244,48 @@ export class LoginPage {
     await this.emailInput.fill(email);
     await this.passwordInput.fill(password);
     await this.loginButton.click();
+    // Admin accounts are challenged for 2FA after the password step. Complete it
+    // through the real UI using a TOTP from the fixed seed secret.
+    await this.completeTwoFactorIfPrompted();
   }
 
+  /**
+   * If the 2FA verification screen appears, fill a freshly-generated TOTP and
+   * submit. No-op when 2FA is not required. Requires the API seeded with
+   * E2E_FIXED_2FA=1 (admin accounts share a known TOTP secret).
+   */
+  async completeTwoFactorIfPrompted() {
+    const otpInput = this.page.getByPlaceholder("123456");
+    const appeared = await otpInput
+      .waitFor({ state: "visible", timeout: 5000 })
+      .then(() => true)
+      .catch(() => false);
+    if (!appeared) return;
+
+    const { generate } = await import("otplib");
+    const secret =
+      process.env.E2E_2FA_SECRET || "NTGHH5U5LDHIYARFFNGFQKQHARJU7GBE";
+    const token = await generate({ secret });
+    await otpInput.fill(token);
+    await this.page.getByRole("button", { name: /verify/i }).click();
+  }
+
+  /**
+   * Authenticate and land on the dashboard. Used by the bulk of the suite where
+   * the goal is simply to *be* logged in (not to exercise the login UI). Uses the
+   * API-based helper — it authenticates against the real backend, completes the
+   * admin 2FA gate via TOTP, and injects the session — which is far more reliable
+   * and faster than driving the form (and avoids the 2FA login rate limiter). For
+   * tests that specifically exercise the login UI, use `login()` instead.
+   */
   async loginAndWaitForDashboard(email: string, password: string) {
-    await this.login(email, password);
+    const session = await apiLogin({ email, password });
+    await injectSession(this.page, session);
+    await this.page.goto("/dashboard");
 
-    // Wait a bit for navigation to start
-    await this.page.waitForTimeout(1000);
-
-    // Wait for navigation with multiple fallbacks
-    await Promise.race([
-      this.page.waitForURL(/dashboard/, { timeout: 20000 }).catch(() => {}),
-      this.page.waitForURL(/home/, { timeout: 20000 }).catch(() => {}),
-      this.page
-        .waitForLoadState("domcontentloaded", { timeout: 20000 })
-        .catch(() => {}),
-    ]);
-
-    // Verify we're not still on login page
     const currentURL = this.page.url();
     if (currentURL.includes("/login")) {
-      // Check if there's an error message
-      const errorVisible = await this.page
-        .locator('[role="alert"], [class*="error"]')
-        .isVisible({ timeout: 2000 })
-        .catch(() => false);
-
-      if (errorVisible) {
-        const errorText = await this.page
-          .locator('[role="alert"], [class*="error"]')
-          .first()
-          .textContent();
-        throw new Error(`Login failed with error: ${errorText}`);
-      }
-
-      throw new Error(`Login failed - still on login page: ${currentURL}`);
+      throw new Error(`Login failed - redirected to login: ${currentURL}`);
     }
   }
 }

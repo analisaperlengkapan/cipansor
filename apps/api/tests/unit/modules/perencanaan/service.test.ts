@@ -39,7 +39,7 @@ vi.mock('@prisma/client', () => ({
   Prisma: { Decimal: class { constructor(v: number) { return v; } } },
 }));
 
-vi.mock('../../../../../src/lib/prisma', () => ({
+vi.mock('../../../../src/lib/prisma', () => ({
   prisma: {
     strategicPlan: mockStrategicPlan,
     planObjective: mockPlanObjective,
@@ -48,7 +48,7 @@ vi.mock('../../../../../src/lib/prisma', () => ({
   },
 }));
 
-import { PerencanaanService } from '../../../../../src/modules/perencanaan/perencanaan.service';
+import { PerencanaanService } from '../../../../src/modules/perencanaan/perencanaan.service';
 
 describe('PerencanaanService', () => {
   let service: PerencanaanService;

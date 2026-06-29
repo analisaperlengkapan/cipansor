@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { safeFormat } from "@/lib/date";
 import { MainLayout } from "@/components/layout/main-layout";
 import {
   Card,
@@ -318,7 +319,7 @@ export default function SuratKeteranganPage() {
   const [activeTab, setActiveTab] = useState("select-student");
   const [formData, setFormData] = useState<FormData>({
     type: "KETERANGAN_AKTIF",
-    tanggalSurat: format(new Date(), "yyyy-MM-dd"),
+    tanggalSurat: safeFormat(new Date(), "yyyy-MM-dd"),
     metadata: {},
   });
   const printRef = useRef<HTMLDivElement>(null);
@@ -688,7 +689,7 @@ export default function SuratKeteranganPage() {
           <div className="text-center">
             <p>
               Bandung,{" "}
-              {format(new Date(formData.tanggalSurat), "d MMMM yyyy", {
+              {safeFormat(new Date(formData.tanggalSurat), "d MMMM yyyy", {
                 locale: idLocale,
               })}
             </p>

@@ -21,8 +21,8 @@ vi.mock('@/lib/prisma', () => ({
 }));
 
 // Import service AFTER mocking
-import { paudAssessmentService } from '../../../../../src/modules/paud-assessment/paud-assessment.service';
-import { prisma } from '../../../../../src/lib/prisma';
+import { paudAssessmentService } from '../../../../src/modules/paud-assessment/paud-assessment.service';
+import { prisma } from '../../../../src/lib/prisma';
 
 describe('PAUD Assessment Service', () => {
   beforeEach(() => {

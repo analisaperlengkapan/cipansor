@@ -125,7 +125,7 @@ export const evaluateProposal = async (req: Request, res: Response, next: NextFu
   try {
     const data = await litbangService.evaluateProposal(
       (req.params as any).id,
-      req.user?.id!,
+      req.user!.id,
       req.body.score,
       req.body.feedback
     );

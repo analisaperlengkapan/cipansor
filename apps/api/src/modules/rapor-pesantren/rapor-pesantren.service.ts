@@ -289,7 +289,7 @@ export async function getTakhosusSummary(
     const avgScore = sessions > 0 ? sessionScores / sessions : 0;
 
     return {
-      halaqohName: enr.halaqoh.name,
+      halaqohName: enr.halaqoh?.name ?? "-",
       status: enr.status,
       progress: enr.targetJuz ? Math.round((enr.completedJuz / enr.targetJuz) * 100) : 0,
       latestGrade: getGradeFromScore(avgScore, config.gradeThresholds),
@@ -964,7 +964,7 @@ export async function updateRaporPesantren(id: string, data: UpdateRaporInput) {
           userId: p.parent.id,
           type: 'ACADEMIC',
           priority: 'HIGH',
-          recipientType: 'PARENT',
+          recipientType: 'INDIVIDUAL',
           channels: ['IN_APP', 'EMAIL'],
           title: 'Rapor Pesantren Diterbitkan',
           message: `Rapor Pesantren ananda ${studentName} untuk periode ${period} Semester ${semester} telah diterbitkan. Silakan cek di portal wali santri.`,
@@ -1068,6 +1068,7 @@ export async function getRaporPesantrenById(id: string): Promise<RaporPesantren 
       address: rapor.unit.address,
       phone: rapor.unit.phone,
       email: rapor.unit.email,
+      website: '', // Unit model has no website column; institution site configured elsewhere
       logoUrl: rapor.unit.logoUrl,
     },
     academicYearId: rapor.academicYearId,

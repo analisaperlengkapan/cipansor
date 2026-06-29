@@ -1,10 +1,37 @@
 import { test, expect } from '@playwright/test';
+import { primeAuthCookies } from './helpers/auth';
 
 test.describe('Integrated School Management Flow', () => {
   test.beforeEach(async ({ page }) => {
-    // Mock auth
-    await page.goto('/');
-    await page.evaluate(() => {
+    await primeAuthCookies(page);
+
+    // Low-priority fallback + auth mocks so an incidental 401 never triggers the
+    // refresh->logout redirect. Per-test mocks (registered later) take
+    // precedence.
+    await page.route('**/api/**', async (route) => {
+      await route.fulfill({ json: { success: true, data: [] } });
+    });
+    await page.route('**/api/auth/refresh', async (route) => {
+      await route.fulfill({
+        json: {
+          success: true,
+          data: { accessToken: 'mock-token', refreshToken: 'mock-token' },
+        },
+      });
+    });
+    await page.route('**/api/auth/me', async (route) => {
+      await route.fulfill({
+        json: {
+          success: true,
+          data: { id: '1', name: 'Admin', role: 'SUPER_ADMIN' },
+        },
+      });
+    });
+
+    // Seed auth state before any page JS runs (applies on every navigation), so
+    // the auth store is hydrated on first paint and never races into the
+    // logout/redirect flow.
+    await page.addInitScript(() => {
       localStorage.setItem('accessToken', 'mock-token');
       localStorage.setItem('auth-storage', JSON.stringify({
         state: {
@@ -17,7 +44,9 @@ test.describe('Integrated School Management Flow', () => {
 
   test('Unified Raport - Access and Display Data', async ({ page }) => {
     // Mock Unified Raport API
-    await page.route('**/api/assessment/unified-raport/*', async (route) => {
+    // The hook hits .../unified-raport/students/<id>?... — a single "*" won't
+    // cross the "/students/" segment, so use "**" to match the full path.
+    await page.route('**/api/assessment/unified-raport/**', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',

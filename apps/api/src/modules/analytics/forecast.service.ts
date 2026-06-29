@@ -4,6 +4,7 @@
  */
 
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 
 interface ForecastResult {
   currentValue: number;
@@ -72,13 +73,18 @@ export async function getEnrollmentForecast(unitId?: string): Promise<ForecastRe
   const twelveMonthsAgo = new Date();
   twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
 
+  // Conditional fragments must be composed with Prisma.sql / Prisma.empty —
+  // nesting prisma.$queryRaw inside another template produces invalid SQL.
+  const unitFilter = unitId
+    ? Prisma.sql`AND unit_id = ${unitId}`
+    : Prisma.empty;
   const monthlyEnrollments = await prisma.$queryRaw<Array<{ month: string; count: bigint }>>`
-    SELECT 
+    SELECT
       TO_CHAR(created_at, 'YYYY-MM') as month,
       COUNT(*)::bigint as count
     FROM students
     WHERE created_at >= ${twelveMonthsAgo}
-    ${unitId ? prisma.$queryRaw`AND unit_id = ${unitId}` : prisma.$queryRaw``}
+    ${unitFilter}
     GROUP BY TO_CHAR(created_at, 'YYYY-MM')
     ORDER BY month
   `;

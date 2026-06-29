@@ -1,8 +1,8 @@
 "use client";
-
 import { useState } from "react";
+import { safeFormat } from "@/lib/date";
 import Link from "next/link";
-import { format } from "date-fns";
+
 import { id as localeId } from "date-fns/locale";
 import {
   Plus,
@@ -240,7 +240,7 @@ export default function RewardsPage() {
                     {rewardsData?.data.map((reward) => (
                       <TableRow key={reward.id}>
                         <TableCell>
-                          {format(new Date(reward.date), "dd MMM yyyy", {
+                          {safeFormat(new Date(reward.date), "dd MMM yyyy", {
                             locale: localeId,
                           })}
                         </TableCell>

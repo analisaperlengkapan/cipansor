@@ -3,12 +3,11 @@ import { StudentOnboardingOrchestrator } from './student-onboarding.orchestrator
 import { prisma } from '../../lib/prisma';
 import { eventBus } from '../../lib/event-bus';
 
-// Mock dependencies
-vi.mock('../../lib/event-bus', () => ({
-  eventBus: {
-    emit: vi.fn()
-  }
-}));
+// Mock dependencies. The orchestrator emits via a dynamic import('@/lib/event-bus'),
+// so mock both the relative and aliased specifiers with the SAME shared spy.
+const { emitMock } = vi.hoisted(() => ({ emitMock: vi.fn() }));
+vi.mock('../../lib/event-bus', () => ({ eventBus: { emit: emitMock } }));
+vi.mock('@/lib/event-bus', () => ({ eventBus: { emit: emitMock } }));
 
 vi.mock('../../lib/prisma', () => ({
   prisma: {
@@ -137,8 +136,9 @@ describe('StudentOnboardingOrchestrator', () => {
         data: expect.objectContaining({ status: 'ENROLLED', studentId: 'stud-1' })
       }));
 
-      // Flush nextTick to check event bus
-      await new Promise(process.nextTick);
+      // The orchestrator dispatches events in process.nextTick + an awaited
+      // dynamic import; allow both the tick and the import microtasks to flush.
+      await new Promise((resolve) => setTimeout(resolve, 20));
 
       expect(eventBus.emit).toHaveBeenCalledWith('student:created', expect.objectContaining({ id: 'stud-1', unitName: 'SMP' }));
       expect(eventBus.emit).toHaveBeenCalledWith('health:medical-record-created', expect.objectContaining({ studentId: 'stud-1' }));

@@ -520,6 +520,47 @@ export class ClassService {
       },
     })) as unknown as ClassEnrollment[];
   }
+
+  /**
+   * Promote a set of students into a target class: close their current active
+   * enrollments and open new active enrollments in the target class. Rejects if
+   * the target class does not have enough remaining capacity.
+   */
+  async promoteStudents(input: { studentIds: string[]; targetClassId: string }) {
+    const { studentIds, targetClassId } = input;
+
+    const targetClass = await prisma.class.findUnique({
+      where: { id: targetClassId },
+      include: { _count: { select: { enrollments: true } } },
+    });
+
+    if (!targetClass) {
+      throw Errors.notFound('Target class');
+    }
+
+    const currentCount = (targetClass as unknown as { _count: { enrollments: number } })._count
+      .enrollments;
+    if (currentCount + studentIds.length > targetClass.capacity) {
+      throw Errors.badRequest('Target class capacity exceeded');
+    }
+
+    return prisma.$transaction(async (tx) => {
+      await tx.classEnrollment.updateMany({
+        where: { studentId: { in: studentIds }, status: 'active' },
+        data: { status: 'completed' },
+      });
+
+      const created = await tx.classEnrollment.createMany({
+        data: studentIds.map((studentId) => ({
+          studentId,
+          classId: targetClassId,
+          status: 'active',
+        })),
+      });
+
+      return { promoted: created.count };
+    });
+  }
 }
 
 export const classService = new ClassService();

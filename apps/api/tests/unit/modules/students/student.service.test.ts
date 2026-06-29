@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { studentService } from '../../../../../src/modules/students/student.service';
-import { prisma } from '../../../../../src/lib/prisma';
-import { Errors } from '../../../../../src/middleware/error';
+import { studentService } from '../../../../src/modules/students/student.service';
+import { prisma } from '../../../../src/lib/prisma';
+import { Errors } from '../../../../src/middleware/error';
 
 // Mock Prisma
-vi.mock('../../../../../src/lib/prisma', () => {
+vi.mock('../../../../src/lib/prisma', () => {
   const prismaClient = {
     student: {
       findFirst: vi.fn(),
@@ -38,7 +38,7 @@ vi.mock('../../../../../src/lib/prisma', () => {
   return { prisma: prismaClient };
 });
 
-vi.mock('../../../../../src/lib/password', () => ({
+vi.mock('../../../../src/lib/password', () => ({
   hashPassword: vi.fn().mockResolvedValue('hashed_password'),
 }));
 

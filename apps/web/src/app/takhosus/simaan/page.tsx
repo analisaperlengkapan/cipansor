@@ -1,8 +1,8 @@
 "use client";
-
 import { useState } from "react";
+import { safeFormat } from "@/lib/date";
 import { useRouter } from "next/navigation";
-import { format } from "date-fns";
+
 import { id } from "date-fns/locale";
 import {
   useSimaanExams,
@@ -124,7 +124,7 @@ export default function SimaanListPage() {
                   {data.data.map((exam: SimaanExam) => (
                     <TableRow key={exam.id}>
                       <TableCell>
-                        {format(new Date(exam.examDate), "dd MMMM yyyy", {
+                        {safeFormat(new Date(exam.examDate), "dd MMMM yyyy", {
                           locale: id,
                         })}
                       </TableCell>

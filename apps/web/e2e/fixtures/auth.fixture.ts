@@ -13,6 +13,8 @@ export interface AuthUser {
   unitId?: string;
 }
 
+// Credentials below match prisma/seed.ts (the real seeded users), so e2e runs
+// against the actual backend rather than mock data.
 export const testUsers: Record<string, AuthUser> = {
   superAdmin: {
     email: "superadmin@cipansor.id",
@@ -20,12 +22,12 @@ export const testUsers: Record<string, AuthUser> = {
     role: "SUPER_ADMIN",
   },
   unitAdmin: {
-    email: "admin@cipansor.com",
-    password: "admin123",
+    email: "admin@sdit.sch.id",
+    password: "Admin123!",
     role: "UNIT_ADMIN",
   },
   teacher: {
-    email: "teacher@cipansor.id",
+    email: "fatimah@sdit.sch.id",
     password: "Teacher123!",
     role: "TEACHER",
   },
@@ -43,9 +45,26 @@ export async function loginAsUser(page: Page, user: AuthUser) {
   await page.getByLabel(/password|kata sandi/i).fill(user.password);
   await page.getByRole("button", { name: /sign in|masuk|login/i }).click();
 
+  // Admin accounts hit a 2FA challenge after the password step — complete it
+  // through the UI with a TOTP from the fixed seed secret (E2E_FIXED_2FA=1).
+  const otpInput = page.getByPlaceholder("123456");
+  const needs2fa = await otpInput
+    .waitFor({ state: "visible", timeout: 5000 })
+    .then(() => true)
+    .catch(() => false);
+  if (needs2fa) {
+    const { generate } = await import("otplib");
+    const secret =
+      process.env.E2E_2FA_SECRET || "NTGHH5U5LDHIYARFFNGFQKQHARJU7GBE";
+    await otpInput.fill(await generate({ secret }));
+    await page.getByRole("button", { name: /verify/i }).click();
+  }
+
   // Wait for redirect to dashboard
   await expect(page).toHaveURL(/dashboard/, { timeout: 15000 });
-  await page.waitForLoadState("networkidle");
+  // domcontentloaded, not networkidle — long-lived connections keep the network
+  // busy, so networkidle would always time out.
+  await page.waitForLoadState("domcontentloaded");
 
   // Verify token is stored
   const token = await page.evaluate(() => localStorage.getItem("accessToken"));

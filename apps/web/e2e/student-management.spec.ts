@@ -49,8 +49,11 @@ test.describe("Student Management - List & View", () => {
     }
 
     // Check for add button
+    // "Add Student" is rendered as a link (Button asChild + Link), so match
+    // either role.
     const addButton = page
-      .getByRole("button", { name: /tambah|add|create/i })
+      .getByRole("link", { name: /tambah|add|create/i })
+      .or(page.getByRole("button", { name: /tambah|add|create/i }))
       .first();
     if (await addButton.isVisible({ timeout: 3000 }).catch(() => false)) {
       await expect(addButton).toBeVisible();
@@ -81,17 +84,24 @@ test.describe("Student Management - List & View", () => {
       .or(page.getByLabel(/cari|search/i));
 
     if (await searchInput.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await searchInput.fill("Ahmad");
+      // Data-agnostic: derive a search term from a real seeded student rather
+      // than hardcoding a name that may not exist.
+      const rows = page.locator('table tbody tr');
+      if ((await rows.count()) === 0) {
+        test.skip(true, "No students to search");
+        return;
+      }
+      const firstText = (await rows.first().textContent()) ?? "";
+      const term = (firstText.match(/[A-Za-z]{3,}/) ?? ["a"])[0].toLowerCase();
+
+      await searchInput.fill(term);
       await waitForLoadingComplete(page);
 
-      // Results should be filtered
-      const rows = page.locator('table tbody tr, [role="row"]');
-      const count = await rows.count();
-
-      if (count > 0) {
-        const firstRow = rows.first();
-        const text = await firstRow.textContent();
-        expect(text?.toLowerCase()).toContain("ahmad");
+      // Every visible result should match the search term.
+      const resultCount = await rows.count();
+      if (resultCount > 0) {
+        const text = (await rows.first().textContent())?.toLowerCase() ?? "";
+        expect(text).toContain(term);
       }
     } else {
       test.skip(true, "Search functionality not found");
@@ -152,8 +162,8 @@ test.describe("Student Management - List & View", () => {
   });
 
   test("should view student detail", async ({ page }) => {
-    // Click first student row
-    const firstRow = page.locator('table tbody tr, [role="row"]').first();
+    // Click first student row (body only — [role=row] would also match the header).
+    const firstRow = page.locator("table tbody tr").first();
 
     if (await firstRow.isVisible({ timeout: 5000 }).catch(() => false)) {
       // Try clicking the row or view button
@@ -163,26 +173,26 @@ test.describe("Student Management - List & View", () => {
 
       if (await viewButton.isVisible({ timeout: 2000 }).catch(() => false)) {
         await viewButton.click();
-      } else {
-        await firstRow.click();
-      }
-
-      // Should navigate to detail page or open modal
-      const isModal = await page
-        .locator('[role="dialog"]')
-        .isVisible({ timeout: 3000 })
-        .catch(() => false);
-      const urlChanged = page.url().includes("/students/");
-
-      expect(isModal || urlChanged).toBeTruthy();
-
-      if (isModal || urlChanged) {
-        // Should show student details
-        await expect(page.getByText(/nama|name/i)).toBeVisible({
-          timeout: 5000,
+        await expect(page).toHaveURL(/\/students\/[0-9a-f-]{16,}/, {
+          timeout: 10000,
         });
-        await expect(page.getByText(/nisn|nis/i)).toBeVisible();
+      } else {
+        // Click the name cell (a data cell, not the actions column) so the row's
+        // onClick navigation fires. Retry until it navigates — under parallel
+        // workers the click can land before the row's handler is hydrated.
+        await expect(async () => {
+          await firstRow.locator("td").nth(1).click();
+          await expect(page).toHaveURL(/\/students\/[0-9a-f-]{16,}/, {
+            timeout: 2000,
+          });
+        }).toPass({ timeout: 20000 });
       }
+
+      // Should show student details
+      await expect(page.getByText(/nama|name/i).first()).toBeVisible({
+        timeout: 8000,
+      });
+      await expect(page.getByText(/nisn|nis/i).first()).toBeVisible();
     } else {
       test.skip(true, "No students available");
     }
@@ -204,8 +214,11 @@ test.describe("Student Management - Create", () => {
   });
 
   test("should open create student form", async ({ page }) => {
+    // "Add Student" is rendered as a link (Button asChild + Link), so match
+    // either role.
     const addButton = page
-      .getByRole("button", { name: /tambah|add|create/i })
+      .getByRole("link", { name: /tambah|add|create/i })
+      .or(page.getByRole("button", { name: /tambah|add|create/i }))
       .first();
     await addButton.click();
 
@@ -214,21 +227,25 @@ test.describe("Student Management - Create", () => {
       page.getByRole("heading", { name: /tambah|add|create|baru/i }),
     ).toBeVisible({ timeout: 5000 });
 
-    // Check for required fields
-    await expect(page.getByLabel(/nama|name/i)).toBeVisible();
-    await expect(page.getByLabel(/nisn|nis/i)).toBeVisible();
+    // Check for required fields (use specific labels to avoid matching
+    // "Parent Name" / multiple inputs).
+    await expect(page.getByLabel(/full name|nama lengkap/i)).toBeVisible();
+    await expect(page.getByLabel(/nis/i).first()).toBeVisible();
   });
 
   test("should validate required fields", async ({ page }) => {
+    // "Add Student" is rendered as a link (Button asChild + Link), so match
+    // either role.
     const addButton = page
-      .getByRole("button", { name: /tambah|add|create/i })
+      .getByRole("link", { name: /tambah|add|create/i })
+      .or(page.getByRole("button", { name: /tambah|add|create/i }))
       .first();
     await addButton.click();
     await waitForLoadingComplete(page);
 
     // Try to submit empty form
     const submitButton = page.getByRole("button", {
-      name: /simpan|save|submit/i,
+      name: /simpan|save|submit|create student/i,
     });
     await submitButton.click();
 
@@ -238,8 +255,11 @@ test.describe("Student Management - Create", () => {
   });
 
   test("should create new student successfully", async ({ page }) => {
+    // "Add Student" is rendered as a link (Button asChild + Link), so match
+    // either role.
     const addButton = page
-      .getByRole("button", { name: /tambah|add|create/i })
+      .getByRole("link", { name: /tambah|add|create/i })
+      .or(page.getByRole("button", { name: /tambah|add|create/i }))
       .first();
     await addButton.click();
     await waitForLoadingComplete(page);
@@ -251,42 +271,49 @@ test.describe("Student Management - Create", () => {
       nisn: `TEST${timestamp.toString().slice(-10)}`,
     };
 
-    // Fill form
-    await page
-      .getByLabel(/nama|name/i)
-      .first()
-      .fill(studentData.nama);
-    await page
-      .getByLabel(/nisn|nis/i)
-      .first()
-      .fill(studentData.nisn);
+    // Atomically open a Radix select, pick the first option, and confirm it
+    // closed. Retried as a unit — under parallel workers on a production build,
+    // interacting before hydration (or before async options load) silently drops
+    // the value and leaves overlays that block the next control.
+    const pickFirstOption = async (trigger: import("@playwright/test").Locator) => {
+      await expect(async () => {
+        await trigger.click();
+        const option = page.getByRole("option").first();
+        await option.waitFor({ state: "visible", timeout: 1500 });
+        await option.click();
+        await expect(page.getByRole("listbox")).toHaveCount(0, {
+          timeout: 1500,
+        });
+      }).toPass({ timeout: 20000 });
+    };
 
-    // Fill other required fields if they exist
-    const emailInput = page.getByLabel(/email/i);
-    if (await emailInput.isVisible({ timeout: 2000 }).catch(() => false)) {
+    // Fill all required fields (target inputs by id to avoid ambiguity).
+    await page.locator("#name").fill(studentData.nama);
+    await page.locator("#nis").fill(studentData.nisn);
+    await page.locator("#birthDate").fill("2012-05-10");
+    await page.locator("#birthPlace").fill("Bandung");
+    await page.locator("#address").fill("Jl. Test No. 123, Bandung");
+    await page.locator("#parentName").fill("Wali Test");
+    await page.locator("#parentPhone").fill("081234567890");
+    const emailInput = page.locator("#email");
+    if (await emailInput.isVisible({ timeout: 1000 }).catch(() => false)) {
       await emailInput.fill(`test${timestamp}@example.com`);
     }
 
-    const unitSelect = page
-      .locator('button[role="combobox"]')
-      .filter({ hasText: /unit/i })
-      .first();
-    if (await unitSelect.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await unitSelect.click();
-      await page.getByRole("option").first().click();
-    }
+    // Gender + Unit selects (Unit options load asynchronously via useUnits).
+    // Radix renders the placeholder via data-placeholder, so hasText matching is
+    // unreliable — address the two triggers by index (gender = 0, unit = 1).
+    await pickFirstOption(page.locator('button[role="combobox"]').nth(0));
+    await pickFirstOption(page.locator('button[role="combobox"]').nth(1));
 
     // Submit form
     const submitButton = page.getByRole("button", {
-      name: /simpan|save|submit/i,
+      name: /simpan|save|submit|create student/i,
     });
     await submitButton.click();
 
-    // Should show success message
-    await waitForToast(page, /berhasil|success/i, "success");
-
-    // Should navigate back to list or close modal
-    await waitForLoadingComplete(page);
+    // On success the form navigates back to the students list.
+    await expect(page).toHaveURL(/\/students(\/)?$/, { timeout: 15000 });
   });
 });
 

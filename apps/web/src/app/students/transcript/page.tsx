@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { safeFormat } from "@/lib/date";
 import { MainLayout } from "@/components/layout/main-layout";
 import {
   Card,
@@ -247,9 +248,13 @@ export default function StudentTranscriptPage() {
               <span className="w-32">Tempat, Tgl Lahir</span>
               <span>
                 : {selectedStudent.birthPlace || "-"},{" "}
-                {format(new Date(selectedStudent.birthDate), "d MMMM yyyy", {
-                  locale: idLocale,
-                })}
+                {safeFormat(
+                  new Date(selectedStudent.birthDate),
+                  "d MMMM yyyy",
+                  {
+                    locale: idLocale,
+                  },
+                )}
               </span>
             </div>
             <div className="flex">
@@ -424,7 +429,7 @@ export default function StudentTranscriptPage() {
                   <tr key={record.id}>
                     <td className="text-center">{idx + 1}</td>
                     <td>
-                      {format(new Date(record.recordedAt), "d MMM yyyy", {
+                      {safeFormat(new Date(record.recordedAt), "d MMM yyyy", {
                         locale: idLocale,
                       })}
                     </td>
@@ -453,7 +458,9 @@ export default function StudentTranscriptPage() {
             <div className="text-xs text-gray-600">
               <p>
                 Dicetak:{" "}
-                {format(new Date(), "d MMMM yyyy, HH:mm", { locale: idLocale })}
+                {safeFormat(new Date(), "d MMMM yyyy, HH:mm", {
+                  locale: idLocale,
+                })}
               </p>
               <p>Dokumen ini digenerate otomatis oleh sistem CIPANSOR.</p>
             </div>

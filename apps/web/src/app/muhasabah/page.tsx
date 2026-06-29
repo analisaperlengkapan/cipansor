@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { safeFormat } from "@/lib/date";
 import Link from "next/link";
 import {
   format,
@@ -293,12 +294,12 @@ export default function MuhasabahPage() {
                       <div className="flex items-center gap-4">
                         <div className="text-center">
                           <p className="text-sm text-muted-foreground">
-                            {format(new Date(record.date), "EEE", {
+                            {safeFormat(new Date(record.date), "EEE", {
                               locale: localeId,
                             })}
                           </p>
                           <p className="text-lg font-bold">
-                            {format(new Date(record.date), "d")}
+                            {safeFormat(new Date(record.date), "d")}
                           </p>
                         </div>
                         <div className="text-3xl">{moodConfig?.emoji}</div>

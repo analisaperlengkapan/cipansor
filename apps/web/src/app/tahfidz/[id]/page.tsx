@@ -1,8 +1,8 @@
 "use client";
-
 import { useParams, useRouter } from "next/navigation";
+import { safeFormat } from "@/lib/date";
 import Link from "next/link";
-import { format } from "date-fns";
+
 import { id as localeId } from "date-fns/locale";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -130,7 +130,7 @@ export default function TahfidzDetailPage() {
                 {getTypeBadge(record.activityType)}
               </div>
               <p className="text-muted-foreground">
-                {format(new Date(record.recordedAt), "d MMMM yyyy", {
+                {safeFormat(new Date(record.recordedAt), "d MMMM yyyy", {
                   locale: localeId,
                 })}
               </p>
@@ -274,18 +274,26 @@ export default function TahfidzDetailPage() {
               <div>
                 <p className="text-sm text-muted-foreground">Tanggal</p>
                 <p className="font-medium">
-                  {format(new Date(record.recordedAt), "EEEE, d MMMM yyyy", {
-                    locale: localeId,
-                  })}
+                  {safeFormat(
+                    new Date(record.recordedAt),
+                    "EEEE, d MMMM yyyy",
+                    {
+                      locale: localeId,
+                    },
+                  )}
                 </p>
               </div>
               {record.createdAt && (
                 <div>
                   <p className="text-sm text-muted-foreground">Dibuat</p>
                   <p className="text-sm">
-                    {format(new Date(record.createdAt), "d MMMM yyyy, HH:mm", {
-                      locale: localeId,
-                    })}
+                    {safeFormat(
+                      new Date(record.createdAt),
+                      "d MMMM yyyy, HH:mm",
+                      {
+                        locale: localeId,
+                      },
+                    )}
                   </p>
                 </div>
               )}
@@ -295,9 +303,13 @@ export default function TahfidzDetailPage() {
                     Terakhir Diperbarui
                   </p>
                   <p className="text-sm">
-                    {format(new Date(record.updatedAt), "d MMMM yyyy, HH:mm", {
-                      locale: localeId,
-                    })}
+                    {safeFormat(
+                      new Date(record.updatedAt),
+                      "d MMMM yyyy, HH:mm",
+                      {
+                        locale: localeId,
+                      },
+                    )}
                   </p>
                 </div>
               )}

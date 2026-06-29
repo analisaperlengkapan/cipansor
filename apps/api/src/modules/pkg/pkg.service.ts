@@ -10,7 +10,7 @@
  */
 
 import { prisma } from '@/lib/prisma';
-import { Decimal } from '@prisma/client/runtime/library';
+import { Decimal } from '@prisma/client/runtime/client';
 
 // PKG Indicators per Competency
 export const PKG_INDICATORS = {

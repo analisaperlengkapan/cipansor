@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { UserRole } from '@prisma/client';
+import { UserRole, RoleCode } from '@prisma/client';
 
 // Use vi.hoisted to define mocks that will be available in vi.mock factories
 const {
@@ -15,11 +15,16 @@ const {
   mockGetExpirationDate,
   mockUserRole,
   mockRoleCode,
+  mockGenerateSecret,
+  mockGenerateURI,
+  mockVerifyOtp,
+  mockToDataURL,
 } = vi.hoisted(() => {
   return {
     mockPrisma: {
       user: {
         findFirst: vi.fn(),
+        findUnique: vi.fn(),
         create: vi.fn(),
         update: vi.fn(),
       },
@@ -32,6 +37,19 @@ const {
         delete: vi.fn(),
         deleteMany: vi.fn(),
       },
+      unit: {
+        findUnique: vi.fn(),
+        findFirst: vi.fn(),
+      },
+      role: {
+        findFirst: vi.fn(),
+        findUnique: vi.fn(),
+      },
+      userRoleAssignment: {
+        create: vi.fn(),
+      },
+      // register() runs user + role-assignment creation in a transaction.
+      $transaction: vi.fn(),
     },
     mockComparePassword: vi.fn(),
     mockHashPassword: vi.fn().mockResolvedValue('hashed-password'),
@@ -58,6 +76,10 @@ const {
       SMAQ_ADMIN: 'SMAQ_ADMIN',
       UNIT_ADMIN: 'UNIT_ADMIN',
     },
+    mockGenerateSecret: vi.fn(() => 'GENERATED_SECRET'),
+    mockGenerateURI: vi.fn(() => 'otpauth://totp/Cipansor%20App:test@example.com?secret=GENERATED_SECRET'),
+    mockVerifyOtp: vi.fn(),
+    mockToDataURL: vi.fn().mockResolvedValue('data:image/png;base64,QRCODE'),
   };
 });
 
@@ -66,10 +88,9 @@ vi.mock('@/lib/prisma', () => ({
   prisma: mockPrisma,
 }));
 
-vi.mock('@prisma/client', () => ({
-  UserRole: mockUserRole,
-  RoleCode: mockRoleCode,
-}));
+// NOTE: @prisma/client is intentionally NOT mocked — the real generated enums
+// (UserRole/RoleCode/UnitType) are needed so the RoleCode legacy mapping in
+// middleware/auth resolves correctly.
 
 vi.mock('@/lib/password', () => ({
   hashPassword: mockHashPassword,
@@ -107,6 +128,17 @@ vi.mock('@/config', () => ({
   },
 }));
 
+// otplib (functional API) and qrcode are used by the 2FA flow.
+vi.mock('otplib', () => ({
+  generateSecret: mockGenerateSecret,
+  generateURI: mockGenerateURI,
+  verify: mockVerifyOtp,
+}));
+
+vi.mock('qrcode', () => ({
+  toDataURL: mockToDataURL,
+}));
+
 // Import after mocking
 import { AuthService } from '@/modules/auth/auth.service';
 
@@ -116,6 +148,8 @@ describe('AuthService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     authService = new AuthService();
+    // The register() transaction simply runs its callback against the mock client.
+    (mockPrisma.$transaction as any).mockImplementation(async (cb: any) => cb(mockPrisma));
   });
 
   describe('login', () => {
@@ -162,6 +196,35 @@ describe('AuthService', () => {
       expect(result.user).not.toHaveProperty('passwordHash');
     });
 
+    it('strips all sensitive fields from the returned user', async () => {
+      mockPrisma.user.findFirst.mockResolvedValue({
+        ...mockUser,
+        passwordHash: 'hashed-password',
+        twoFactorSecret: 'SECRET',
+        twoFactorSecretPending: 'PENDING',
+        twoFactorRecoveryCodes: ['CODE1'],
+        resetTokenHash: 'reset-hash',
+        resetTokenExpiresAt: new Date(),
+      });
+      mockPrisma.academicYear.findFirst.mockResolvedValue({ id: 'ay-1' });
+      mockComparePassword.mockResolvedValue(true);
+      mockPrisma.refreshToken.create.mockResolvedValue({});
+      mockPrisma.user.update.mockResolvedValue(mockUser);
+
+      const { user } = await authService.login(validLoginInput);
+
+      for (const field of [
+        'passwordHash',
+        'twoFactorSecret',
+        'twoFactorSecretPending',
+        'twoFactorRecoveryCodes',
+        'resetTokenHash',
+        'resetTokenExpiresAt',
+      ]) {
+        expect(user).not.toHaveProperty(field);
+      }
+    });
+
     it('should throw error for non-existent email', async () => {
       mockPrisma.user.findFirst.mockResolvedValue(null);
 
@@ -186,27 +249,42 @@ describe('AuthService', () => {
   });
 
   describe('register', () => {
-    const validRegisterInput = {
+    const baseInput = {
       name: 'New User',
       email: 'newuser@example.com',
       password: 'password123',
-      role: UserRole.UNIT_ADMIN,
-      unitId: 'unit-1',
+    };
+
+    // Common happy-path lookups: the target unit and the requested role exist.
+    const setupLookups = (code: RoleCode) => {
+      (mockPrisma.unit.findUnique as any).mockResolvedValue({ type: 'SD_IT' });
+      (mockPrisma.role.findFirst as any).mockResolvedValue({
+        id: 'role-1',
+        code,
+        isActive: true,
+        permissions: [],
+      });
     };
 
     it('should successfully register a new user', async () => {
+      setupLookups(RoleCode.SDIT_GURU);
       mockPrisma.user.findFirst.mockResolvedValue(null);
       mockPrisma.user.create.mockResolvedValue({
         id: 'new-user-id',
-        name: validRegisterInput.name,
-        email: validRegisterInput.email,
-        role: validRegisterInput.role,
-        unitId: validRegisterInput.unitId,
+        name: baseInput.name,
+        email: baseInput.email,
+        role: UserRole.TEACHER,
+        unitId: 'unit-1',
         passwordHash: 'hashed-password',
         isActive: true,
       });
+      (mockPrisma.userRoleAssignment.create as any).mockResolvedValue({ id: 'ura-1' });
+      mockPrisma.academicYear.findFirst.mockResolvedValue({ id: 'ay-1' });
 
-      const result = await authService.register(validRegisterInput, UserRole.SUPER_ADMIN);
+      const result = await authService.register(
+        { ...baseInput, roleCode: RoleCode.SDIT_GURU, unitId: 'unit-1' },
+        RoleCode.SUPER_ADMIN
+      );
 
       expect(result).toHaveProperty('id');
       expect(result.email).toBe('newuser@example.com');
@@ -215,35 +293,37 @@ describe('AuthService', () => {
     });
 
     it('should throw error when email already exists', async () => {
+      setupLookups(RoleCode.SDIT_GURU);
       mockPrisma.user.findFirst.mockResolvedValue({ id: 'existing-user' });
 
-      await expect(authService.register(validRegisterInput, UserRole.SUPER_ADMIN)).rejects.toThrow(
-        'Email already registered'
-      );
+      await expect(
+        authService.register(
+          { ...baseInput, roleCode: RoleCode.SDIT_GURU, unitId: 'unit-1' },
+          RoleCode.SUPER_ADMIN
+        )
+      ).rejects.toThrow('Email already registered');
     });
 
     it('should prevent non-super-admin from creating super-admin', async () => {
-      const superAdminInput = {
-        ...validRegisterInput,
-        role: UserRole.SUPER_ADMIN,
-        unitId: undefined,
-      };
+      (mockPrisma.role.findFirst as any).mockResolvedValue({
+        id: 'role-sa',
+        code: RoleCode.SUPER_ADMIN,
+        isActive: true,
+        permissions: [],
+      });
 
-      await expect(authService.register(superAdminInput, UserRole.UNIT_ADMIN)).rejects.toThrow(
-        'Only Super Admin can create Super Admin'
-      );
+      await expect(
+        authService.register({ ...baseInput, roleCode: RoleCode.SUPER_ADMIN }, RoleCode.SDIT_ADMIN)
+      ).rejects.toThrow('Only Super Admin can create Super Admin');
     });
 
-    it('should require unitId for non-super-admin roles', async () => {
-      const inputWithoutUnit = {
-        ...validRegisterInput,
-        unitId: undefined,
-      };
+    it('should require unit for non-super-admin roles', async () => {
+      setupLookups(RoleCode.SDIT_GURU);
       mockPrisma.user.findFirst.mockResolvedValue(null);
 
-      await expect(authService.register(inputWithoutUnit, UserRole.SUPER_ADMIN)).rejects.toThrow(
-        'Unit is required for this role'
-      );
+      await expect(
+        authService.register({ ...baseInput, roleCode: RoleCode.SDIT_GURU }, RoleCode.SUPER_ADMIN)
+      ).rejects.toThrow('Unit is required for this role');
     });
   });
 
@@ -260,6 +340,15 @@ describe('AuthService', () => {
           role: UserRole.SUPER_ADMIN,
           unitId: 'unit-1',
           isActive: true,
+          // refreshToken() reads the primary role assignment to mint new tokens.
+          userRoles: [
+            {
+              isPrimary: true,
+              roleId: 'role-1',
+              unitId: 'unit-1',
+              role: { code: RoleCode.SUPER_ADMIN, permissions: [] },
+            },
+          ],
         },
       };
 
@@ -373,6 +462,194 @@ describe('AuthService', () => {
       await expect(authService.changePassword('user-1', changePasswordInput)).rejects.toThrow(
         'Current password is incorrect'
       );
+    });
+  });
+
+  describe('generateTwoFactorSecret', () => {
+    it('generates a secret + QR code and stores the pending secret server-side', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: 'user-1',
+        email: 'test@example.com',
+        isTwoFactorEnabled: false,
+      });
+      mockPrisma.user.update.mockResolvedValue({});
+
+      const result = await authService.generateTwoFactorSecret('user-1');
+
+      expect(result).toEqual({
+        secret: 'GENERATED_SECRET',
+        qrCodeUrl: 'data:image/png;base64,QRCODE',
+      });
+      expect(mockGenerateURI).toHaveBeenCalledWith({
+        issuer: 'Cipansor App',
+        label: 'test@example.com',
+        secret: 'GENERATED_SECRET',
+      });
+      // The pending secret must be persisted so verification is server-side.
+      expect(mockPrisma.user.update).toHaveBeenCalledWith({
+        where: { id: 'user-1' },
+        data: { twoFactorSecretPending: 'GENERATED_SECRET' },
+      });
+    });
+
+    it('throws for a non-existent user', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue(null);
+
+      await expect(authService.generateTwoFactorSecret('ghost')).rejects.toThrow();
+    });
+
+    it('refuses to re-provision when 2FA is already enabled', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: 'user-1',
+        email: 'test@example.com',
+        isTwoFactorEnabled: true,
+      });
+
+      await expect(authService.generateTwoFactorSecret('user-1')).rejects.toThrow(
+        '2FA is already enabled'
+      );
+      expect(mockPrisma.user.update).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('enableTwoFactor', () => {
+    it('enables 2FA and returns recovery codes when the OTP is valid', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: 'user-1',
+        isTwoFactorEnabled: false,
+        twoFactorSecretPending: 'PENDING_SECRET',
+      });
+      mockVerifyOtp.mockResolvedValue({ valid: true });
+      mockPrisma.user.update.mockResolvedValue({});
+
+      const result = await authService.enableTwoFactor('user-1', '123456');
+
+      expect(mockVerifyOtp).toHaveBeenCalledWith({ token: '123456', secret: 'PENDING_SECRET' });
+      expect(result.recoveryCodes).toHaveLength(10);
+      // The pending secret is promoted to the active secret and cleared.
+      expect(mockPrisma.user.update).toHaveBeenCalledWith({
+        where: { id: 'user-1' },
+        data: expect.objectContaining({
+          isTwoFactorEnabled: true,
+          twoFactorSecret: 'PENDING_SECRET',
+          twoFactorSecretPending: null,
+          twoFactorRecoveryCodes: expect.any(Array),
+        }),
+      });
+    });
+
+    it('rejects when there is no pending 2FA setup', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: 'user-1',
+        isTwoFactorEnabled: false,
+        twoFactorSecretPending: null,
+      });
+
+      await expect(authService.enableTwoFactor('user-1', '123456')).rejects.toThrow(
+        'No pending 2FA setup found'
+      );
+      expect(mockPrisma.user.update).not.toHaveBeenCalled();
+    });
+
+    it('rejects an invalid OTP and does not enable 2FA', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: 'user-1',
+        isTwoFactorEnabled: false,
+        twoFactorSecretPending: 'PENDING_SECRET',
+      });
+      mockVerifyOtp.mockResolvedValue({ valid: false });
+
+      await expect(authService.enableTwoFactor('user-1', '000000')).rejects.toThrow(
+        'Invalid OTP code'
+      );
+      expect(mockPrisma.user.update).not.toHaveBeenCalled();
+    });
+
+    it('refuses when 2FA is already enabled', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: 'user-1',
+        isTwoFactorEnabled: true,
+        twoFactorSecretPending: 'PENDING_SECRET',
+      });
+
+      await expect(authService.enableTwoFactor('user-1', '123456')).rejects.toThrow(
+        '2FA is already enabled'
+      );
+    });
+  });
+
+  describe('disableTwoFactor', () => {
+    it('lets a non-admin user disable their own 2FA with a valid OTP', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: 'user-1',
+        role: UserRole.STUDENT,
+        unitId: 'unit-1',
+        isTwoFactorEnabled: true,
+        twoFactorSecret: 'ACTIVE_SECRET',
+        userRoles: [{ isPrimary: true, role: { code: RoleCode.SDIT_SISWA } }],
+      });
+      mockVerifyOtp.mockResolvedValue({ valid: true });
+      mockPrisma.user.update.mockResolvedValue({});
+
+      const result = await authService.disableTwoFactor('user-1', '123456');
+
+      expect(result.message).toBe('2FA disabled successfully');
+      expect(mockPrisma.user.update).toHaveBeenCalledWith({
+        where: { id: 'user-1' },
+        data: expect.objectContaining({
+          isTwoFactorEnabled: false,
+          twoFactorSecret: null,
+          twoFactorSecretPending: null,
+          twoFactorRecoveryCodes: [],
+        }),
+      });
+    });
+
+    it('prevents an admin from self-disabling 2FA on their own account', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: 'admin-1',
+        role: UserRole.UNIT_ADMIN,
+        unitId: 'unit-1',
+        isTwoFactorEnabled: true,
+        twoFactorSecret: 'ACTIVE_SECRET',
+        userRoles: [{ isPrimary: true, role: { code: RoleCode.SDIT_ADMIN } }],
+      });
+
+      await expect(authService.disableTwoFactor('admin-1', '123456')).rejects.toThrow(
+        '2FA cannot be disabled for Admin accounts'
+      );
+      expect(mockPrisma.user.update).not.toHaveBeenCalled();
+    });
+
+    it('rejects an invalid OTP when a user disables their own 2FA', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: 'user-1',
+        role: UserRole.STUDENT,
+        unitId: 'unit-1',
+        isTwoFactorEnabled: true,
+        twoFactorSecret: 'ACTIVE_SECRET',
+        userRoles: [{ isPrimary: true, role: { code: RoleCode.SDIT_SISWA } }],
+      });
+      mockVerifyOtp.mockResolvedValue({ valid: false });
+
+      await expect(authService.disableTwoFactor('user-1', '000000')).rejects.toThrow('Invalid OTP');
+      expect(mockPrisma.user.update).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('getTwoFactorStatus', () => {
+    it('reports the enabled flag', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue({ isTwoFactorEnabled: true });
+
+      const result = await authService.getTwoFactorStatus('user-1');
+
+      expect(result).toEqual({ isEnabled: true });
+    });
+
+    it('throws for a non-existent user', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue(null);
+
+      await expect(authService.getTwoFactorStatus('ghost')).rejects.toThrow();
     });
   });
 });

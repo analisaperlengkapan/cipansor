@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { Prisma, QuestionType } from '@prisma/client';
-import { Decimal } from '@prisma/client/runtime/library';
+import { Decimal } from '@prisma/client/runtime/client';
 import { Errors } from '@/middleware/error';
 
 // Types for inputs (can be moved to shared types later)
@@ -936,7 +936,7 @@ export class CBTService {
             create: {
               attemptId,
               questionId: question.id,
-              answer: null,
+              answer: Prisma.JsonNull,
               isCorrect: null,
               score: null,
             },

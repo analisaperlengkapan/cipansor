@@ -1,6 +1,7 @@
-import { PrismaClient, KitabCategory, KitabLevel } from '@prisma/client';
+import { KitabCategory, KitabLevel } from '@prisma/client';
+import { createPrismaClient } from './client';
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 async function main() {
   console.log('🌱 Seeding Iqra Books...');

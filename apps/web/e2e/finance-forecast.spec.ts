@@ -1,7 +1,11 @@
 import { test, expect } from "@playwright/test";
+import { primeAuthCookies } from "./helpers/auth";
 
 test("Finance Cash Flow Forecast Page", async ({ page }) => {
   test.setTimeout(60000);
+
+  // Cookies the Next middleware reads must exist before the first navigation.
+  await primeAuthCookies(page);
 
   // Mock Auth & Session
   await page.route("**/api/auth/me", async (route) => {
@@ -60,6 +64,4 @@ test("Finance Cash Flow Forecast Page", async ({ page }) => {
   const table = page.locator("table");
   await expect(table.locator("td:has-text('Jan 24')")).toBeVisible();
   await expect(table.locator("td:has-text('Rp 54.000.000')")).toBeVisible(); // Final balance
-
-  await page.screenshot({ path: "apps/web/e2e/temp/cash-flow-forecast.png" });
 });

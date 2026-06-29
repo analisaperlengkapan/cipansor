@@ -147,11 +147,14 @@ export class RolesController {
 
       // Generate new tokens with the new active role
       const tokens = generateTokenPair({
+        id: result.user.id,
         sub: result.user.id,
         email: result.user.email,
-        role: result.user.role,
-        unitId: result.user.unitId,
+        role: result.user.role ?? '',
+        roleCode: result.activeRole.role.code,
         roleId: result.activeRole.roleId,
+        unitId: result.user.unitId,
+        permissions: (result.activeRole.role.permissions as string[]) ?? [],
       });
 
       // Store refresh token

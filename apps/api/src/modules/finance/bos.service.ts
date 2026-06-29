@@ -1,12 +1,12 @@
 import { prisma } from '@/lib/prisma';
 import { Errors } from '@/middleware/error';
 import { UserRole, Prisma, PaymentStatus, PaymentMethod } from '@prisma/client';
-import { Decimal } from '@prisma/client/runtime/library';
+import { Decimal } from '@prisma/client/runtime/client';
 
 // User type from JwtPayload
 interface AuthenticatedUser {
   sub: string;
-  role: UserRole;
+  role: string;
   unitId: string | null;
 }
 

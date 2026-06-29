@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { safeFormat } from "@/lib/date";
 import {
   useGuestBooks,
   useCreateGuestBook,
@@ -194,7 +195,7 @@ function GuestRow({ guest }: { guest: GuestBook }) {
 
   return (
     <TableRow>
-      <TableCell>{format(new Date(guest.checkIn), "HH:mm")}</TableCell>
+      <TableCell>{safeFormat(new Date(guest.checkIn), "HH:mm")}</TableCell>
       <TableCell>
         <div className="font-medium">{guest.name}</div>
         {guest.phone && (

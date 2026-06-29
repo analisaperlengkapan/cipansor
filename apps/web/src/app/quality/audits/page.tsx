@@ -1,6 +1,6 @@
 "use client";
-
 import { MainLayout } from "@/components/layout/main-layout";
+import { safeFormat } from "@/lib/date";
 import {
   Card,
   CardContent,
@@ -16,7 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Calendar, FileCheck, User } from "lucide-react";
 import Link from "next/link";
-import { format } from "date-fns";
+
 import { id as idLocale } from "date-fns/locale";
 
 export default function QualityAuditsPage() {
@@ -89,11 +89,11 @@ export default function QualityAuditsPage() {
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Calendar className="h-4 w-4" />
                     <span>
-                      {format(new Date(audit.startDate), "dd MMM yyyy", {
+                      {safeFormat(new Date(audit.startDate), "dd MMM yyyy", {
                         locale: idLocale,
                       })}{" "}
                       -{" "}
-                      {format(new Date(audit.endDate), "dd MMM yyyy", {
+                      {safeFormat(new Date(audit.endDate), "dd MMM yyyy", {
                         locale: idLocale,
                       })}
                     </span>

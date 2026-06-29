@@ -1,6 +1,6 @@
 "use client";
-
 import { useState } from "react";
+import { safeFormat } from "@/lib/date";
 import { MainLayout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import {
@@ -58,7 +58,7 @@ import {
   MessageSquare,
   BarChart3,
 } from "lucide-react";
-import { format } from "date-fns";
+
 import { id } from "date-fns/locale";
 import Link from "next/link";
 import {
@@ -339,7 +339,7 @@ export default function NotificationsPage() {
                           )}
                         </TableCell>
                         <TableCell>
-                          {format(new Date(notif.createdAt), "d MMM yyyy", {
+                          {safeFormat(new Date(notif.createdAt), "d MMM yyyy", {
                             locale: id,
                           })}
                         </TableCell>

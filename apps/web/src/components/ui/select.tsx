@@ -6,10 +6,34 @@ import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
+/**
+ * Radix Select forbids a SelectItem `value=""` (it reserves the empty string to
+ * clear the selection) and throws, crashing the page. Many filters here use an
+ * empty-string "All" option, so we transparently map "" to a private sentinel
+ * at the boundary (Root value/defaultValue/onValueChange and Item value) and map
+ * it back on the way out. Callers keep using "" and never see the sentinel.
+ */
+const EMPTY_VALUE = "__empty__";
+const toRadix = (v: string | undefined) => (v === "" ? EMPTY_VALUE : v);
+const fromRadix = (v: string) => (v === EMPTY_VALUE ? "" : v);
+
 function Select({
+  value,
+  defaultValue,
+  onValueChange,
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Root>) {
-  return <SelectPrimitive.Root data-slot="select" {...props} />;
+  return (
+    <SelectPrimitive.Root
+      data-slot="select"
+      value={toRadix(value)}
+      defaultValue={toRadix(defaultValue)}
+      onValueChange={
+        onValueChange ? (v) => onValueChange(fromRadix(v)) : undefined
+      }
+      {...props}
+    />
+  );
 }
 
 function SelectGroup({
@@ -103,11 +127,13 @@ function SelectLabel({
 function SelectItem({
   className,
   children,
+  value,
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Item>) {
   return (
     <SelectPrimitive.Item
       data-slot="select-item"
+      value={toRadix(value) as string}
       className={cn(
         "focus:bg-accent focus:text-accent-foreground [&_svg:not([class*='text-'])]:text-muted-foreground relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2",
         className,

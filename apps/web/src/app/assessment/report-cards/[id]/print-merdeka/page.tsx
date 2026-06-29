@@ -1,10 +1,10 @@
 "use client";
-
 import { useParams, useRouter } from "next/navigation";
+import { safeFormat } from "@/lib/date";
 import { Button } from "@/components/ui/button";
 import { useReportCard } from "@/hooks";
 import { ArrowLeft, Printer, Loader2 } from "lucide-react";
-import { format } from "date-fns";
+
 import { id as idLocale } from "date-fns/locale";
 
 // ============================================
@@ -770,7 +770,7 @@ export default function PrintReportCardMerdekaPage() {
               <div>
                 <p>
                   Bandung,{" "}
-                  {format(new Date(), "d MMMM yyyy", { locale: idLocale })}
+                  {safeFormat(new Date(), "d MMMM yyyy", { locale: idLocale })}
                 </p>
                 <p>Wali Kelas</p>
                 <div className="h-16"></div>
@@ -794,9 +794,13 @@ export default function PrintReportCardMerdekaPage() {
             <div className="text-center text-xs text-gray-500 mt-4 pt-2 border-t">
               <p>
                 Dicetak dari Sistem Informasi Manajemen Pesantren Cipansor |{" "}
-                {format(new Date(), "EEEE, d MMMM yyyy 'pukul' HH:mm 'WIB'", {
-                  locale: idLocale,
-                })}
+                {safeFormat(
+                  new Date(),
+                  "EEEE, d MMMM yyyy 'pukul' HH:mm 'WIB'",
+                  {
+                    locale: idLocale,
+                  },
+                )}
               </p>
             </div>
           </div>

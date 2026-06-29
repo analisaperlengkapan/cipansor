@@ -92,7 +92,9 @@ test.describe('End-to-End: Rapor Ganda (Unified Raport) Generation', () => {
 
     // 4. Verify Unified Report Output renders on screen
     await expect(page.getByText('LAPORAN HASIL BELAJAR (RAPOR)')).toBeVisible();
-    await expect(page.getByText('Ahmad Hanif')).toBeVisible();
+    // The name appears both in the (now-collapsed) select value and the report
+    // body, so scope to the report's "Nama:" line to avoid strict-mode clashes.
+    await expect(page.getByText(/Nama:\s*Ahmad Hanif/i)).toBeVisible();
     
     // Academic Section
     await expect(page.getByRole('cell', { name: 'Matematika' })).toBeVisible();

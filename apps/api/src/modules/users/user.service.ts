@@ -8,7 +8,7 @@ export class UserService {
   /**
    * Get all users with pagination and filters
    */
-  async findAll(query: ListUsersQuery, currentUser: { role: UserRole; unitId: string | null }) {
+  async findAll(query: ListUsersQuery, currentUser: { role: string; unitId: string | null }) {
     const { page, limit, search, role, unitId } = query;
     const skip = (page - 1) * limit;
 
@@ -144,7 +144,7 @@ export class UserService {
   /**
    * Create new user
    */
-  async create(input: CreateUserInput, creatorRole: UserRole) {
+  async create(input: CreateUserInput, creatorRole: string) {
     // Only Super Admin can create Super Admin
     if (input.role === 'SUPER_ADMIN' && creatorRole !== UserRole.SUPER_ADMIN) {
       throw Errors.forbidden('Only Super Admin can create Super Admin');
@@ -197,7 +197,7 @@ export class UserService {
   /**
    * Update user
    */
-  async update(id: string, input: UpdateUserInput, currentUser: { role: UserRole; sub: string }) {
+  async update(id: string, input: UpdateUserInput, currentUser: { role: string; sub: string }) {
     const user = await prisma.user.findFirst({
       where: { id, deletedAt: null },
     });

@@ -83,7 +83,7 @@ router.get(
       }
 
       const businessUnitId = req.query.businessUnitId as string | undefined;
-      const efficiency = await itemService.getBusinessEfficiency(unitId, businessUnitId);
+      const efficiency = await categoryService.getBusinessEfficiency(unitId, businessUnitId);
       return res.json(ApiResponse.success(efficiency, 'Berhasil mengambil data efisiensi'));
     } catch (err) {
       next(err);

@@ -1,85 +1,160 @@
 # Known Issues & Technical Debt
 
-This document tracks known issues and technical debt in the Cipansor project.
+Status of production-readiness work and the remaining roadmap. Updated as part of
+the production-readiness / architecture-standardization effort. For the system
+overview see [`ARCHITECTURE.md`](./ARCHITECTURE.md).
 
-## Web Build Issues (Next.js)
+## ✅ Resolved in this effort
 
-> **Update:** Major build blockers in Web module (Finance, HR, Takhosus, TK/PAUD, Inventory, Library) have been resolved. The CI build is now configured to fail on build errors to prevent regression.
+- **FE↔BE double-`/api` bug (false green).** Seven React Query hooks
+  (`use-syariah`, `use-tata-laksana`, `use-organisasi`, `use-quality`,
+  `use-litbang`, `use-pengawasan`, `use-complaints`) prefixed paths with `/api`
+  even though the Axios `baseURL` already ends in `/api`, so they hit
+  `/api/api/...` and 404'd against the live backend. The e2e mocks' `**/api/...`
+  globs masked it. Fixed all 59 call sites to match the majority convention.
+- **Docker images reworked & verified runnable.** `apps/api` is a multi-stage
+  build using a fresh `pnpm install --prod` closure + compiled `dist` + the
+  generated Prisma client (~929 MB; boots, `/health` 200, PrismaClient loads);
+  `apps/web` uses Next.js standalone output (~537 MB; boots, `/` 200). Build
+  context kept ~136 KB via `.dockerignore`; both trust a build-time proxy CA via
+  a BuildKit secret. (`pnpm deploy` was dropped — it hangs in CI sandboxes.)
+- **E2E stabilized.** Root-caused and fixed every hard failure (a tahfidz raw-SQL
+  bug referencing a non-existent `deleted_at`, the class-management edit flow,
+  and several brittle mock-auth specs). Mock-based specs now seed auth via
+  `page.addInitScript` (before first paint) with `/api/auth/me` + `/api/auth/refresh`
+  mocks and a low-priority `/api/**` fallback, removing the logout-redirect races.
+- **Removed stale artifacts.** `dashboard/dashboard.controller.ts.old` and the
+  dead `apps/web/e2e/temp/` placeholder spec.
 
-Remaining minor issues may include:
+- **Destroyed Prisma schema restored.** `schema.prisma` (237 models, 133 enums)
+  had been truncated to a stub, breaking the entire backend; restored from the
+  last good revision.
+- **Prisma 7 migration completed.** Datasource `url` moved to `prisma.config.ts`;
+  runtime client now uses the `@prisma/adapter-pg` driver adapter; `Decimal`
+  import path fixed; standalone seeds/scripts use a shared `createPrismaClient()`
+  factory; missing back-relations and unsupported `nullsNotDistinct` arg fixed.
+- **otplib 13 migration** for 2FA (functional `generateSecret`/`generateURI`/`verify`).
+- **Express 5 types** pinned to a compatible `@types/express-serve-static-core`
+  (5.1.0) so `req.params` is typed `string` without breaking router overloads.
+- **RoleCode alignment (partial):** service/controller `currentUser.role` typed as
+  string; route guards use `RoleCode.YAYASAN_*`; GRC controllers' `isPrivileged`
+  accepts string.
+- **🟢 API build is GREEN — all 336 TypeScript errors fixed.** `pnpm --filter api build`
+  exits 0. Fixes spanned RoleCode typing, Prisma include/select bugs, enum literal
+  mismatches, missing schema/DTO fields, the trial-balance report, role-switch
+  tokens, and a full reception model alignment (the DB now matches the implemented
+  frontend approval-workflow / package model). Controller→service calls that the
+  lenient `strictNullChecks:false` config makes Zod-optional are cast to the
+  service's own parameter type (`Parameters<...>[0]`) — to be removed when the
+  build moves to strict mode.
+- **Fixed a systematic test bug:** 13 module unit tests used a 5-level relative
+  path so `vi.mock('../lib/prisma')` never intercepted; corrected to 4 levels.
 
-1. **Linting Warnings:** ESLint reports warnings/errors in `apps/web` and `apps/api`. These are currently non-blocking in CI.
-2. **Type Safety:** Some stricter type checks were bypassed using `any` to unblock the build. Future work should focus on proper type definitions in `@cipansor/shared`.
+## 🟢 API test suite — GREEN (565 passed, 0 failed)
 
-## TypeScript Strict Mode Issues (API)
+`pnpm --filter api test` now passes: **565 passed, 24 skipped** (the skipped set is
+the opt-in DB integration suite + 2 pre-existing skips). The previously-failing
+~28 tests were all pre-existing debt and have been fixed, and new coverage was
+added for security-critical paths (RBAC middleware, the 2FA flow,
+foundation analytics, takhosus certificate eligibility, correspondence signing):
 
-The following modules have TypeScript type errors that need to be fixed for full strict mode compliance:
+- Completed incomplete Prisma mocks (`$transaction`, `user`/`teacher`/`reward`/
+  `roomAssignment`/`growthRecord`/`paymentType.upsert`, etc.).
+- Repointed mis-wired mocks (organisasi/tatalaksana mocked the constructor; they
+  use the shared `lib/prisma`) and fixed a `vi.mock` hoisting bug (classes).
+- Implemented the missing `classService.promoteStudents` the test specified.
+- Refreshed stale assertions/inputs (reception model alignment, library select,
+  upload response shape, daily-report meal enum, auth RoleCode register flow).
+- Gated `database-migrations` (real-DB integration) behind `RUN_DB_TESTS=1` and
+  constructed it via the Prisma 7 adapter factory so it loads + skips cleanly.
 
-### High Priority (Core Functionality)
+**To run the DB integration suite:** start Postgres (docker-compose), apply the
+schema (`db:push`), then `RUN_DB_TESTS=1 pnpm --filter api test`.
 
-1. **`src/modules/reporting/report-builder.service.ts`** (20 errors)
-   - Missing includes for related entities in Prisma queries
-   - Property access on types that don't include relations
+## 🟢 Also green now
 
-2. **`src/modules/analytics/alerts.service.ts`** (11 errors)
-   - AttendanceStatus enum comparison uses lowercase instead of uppercase
-   - Missing user relation in student queries
-   - Decimal type conversions
+- **Web build, type-check, and lint** all pass (`pnpm --filter web build`,
+  `tsc --noEmit`, `pnpm --filter web lint` — fixed the user-edit role typing and
+  the React Compiler lint errors).
+- **API lint** passes (0 errors; `no-explicit-any` warnings remain, non-blocking).
+- **CI gates are ON.** `.github/workflows/ci.yml` no longer tolerates lint/build
+  failures (escape hatches removed) and runs an API test job.
 
-3. **`src/modules/analytics/forecast.service.ts`** (7 errors)
-   - Type mismatches in forecast calculations
+## 🟢 Local full-stack verification (no Docker required)
 
-4. **`src/modules/analytics/bulk.service.ts`** (7 errors)
-   - Prisma create input type mismatches
+The whole stack now boots and has been exercised locally against a **real**
+Postgres 16 + Redis (no Docker needed — Postgres/Redis binaries are present):
 
-### Medium Priority (Enhancement Features)
+- `prisma db push` + `db:seed` apply cleanly (after fixing the Prisma 7 config
+  import + `--config` flag wiring — see commit history).
+- **DB integration suite is green:** `RUN_DB_TESTS=1 pnpm --filter api test` →
+  588 passed, 2 skipped (incl. the 22 real-schema DB tests, realigned to the
+  restored schema's actual columns/indexes).
+- **API boots and serves real requests:** `/health` OK; login verified for
+  student/teacher/parent seed users; admins are correctly forced through the
+  2FA-setup gate. Confirmed the reset-token-hash leak fix at runtime.
+- **Web dev server boots** (Next 16 / Turbopack) and talks to the live API.
+- **Playwright** browsers install and run: `landing.spec` 7/7 green and the
+  unauthenticated `auth.spec` checks pass against the live stack.
 
-5. **Alumni service** (5 errors)
-6. **Curriculum service** (4 errors)
-7. **Analytics insights** (4 errors)
+**To reproduce locally:** start Postgres + Redis, write `apps/api/.env`
+(DATABASE_URL/SHADOW_DATABASE_URL/REDIS_URL/JWT_SECRET), then
+`pnpm --filter api db:push && pnpm --filter api db:seed`,
+`pnpm --filter api dev` and `pnpm --filter web dev`.
 
-### Low Priority (Seed Data)
+### Playwright e2e — authenticated foundation in place
 
-8. **`prisma/seeds/immunization-reference.ts`** (2 errors)
-   - JSON type assignment issues
+A reusable API-based auth helper now exists (`e2e/helpers/auth-api.ts`):
+`await loginAs(page, role)` authenticates against the real API and injects the
+session (localStorage + middleware cookies). It transparently completes the
+**admin 2FA gate** using a TOTP derived from a fixed seed secret — so admins,
+super-admins, teachers, parents and students can all be pre-authenticated for
+browser tests. Verified by `authenticated-smoke.spec.ts` (5/5 roles green
+against the live stack, incl. SUPER_ADMIN + UNIT_ADMIN).
 
-## Recommended Fixes
+Enablement: seed with `E2E_FIXED_2FA=1` (gives admin accounts the known TOTP
+secret — opt-in, never used by a real seed). Bring the stack up with
+`scripts/dev-stack.sh` (Postgres + Redis, no Docker).
 
-### Short-term (1-2 weeks)
+Remaining: migrate the ~70 existing specs (many written against mock data and
+the placeholder `*@cipansor.id`/`*.com` credentials) onto `loginAs` + real
+backend data, and complete the route × {nav, CRUD, button, field, RBAC}
+coverage matrix.
 
-1. Fix AttendanceStatus enum usage - use `PRESENT` instead of `'present'`
-2. Add proper includes in Prisma queries for related entities
-3. Fix Decimal to number conversions using `Number()` or `.toNumber()`
+## 🗺️ Roadmap (remaining follow-ups)
 
-### Medium-term (1 month)
+- **Module architecture standardization.** Consistent `routes → controller →
+  service → schema → index` naming across all modules; extract inline handlers
+  from the ~12 controller-less modules. See `apps/api/AGENTS.md` for the standard.
+- **Strict build.** Move `tsconfig.build.json` toward `tsconfig.json` strictness
+  (fix the Prisma-null and remaining errors) so `build` == `build:strict`, then
+  drop the `Parameters<...>[0]` casts added as lenient-config workarounds.
+- **Reduce `no-explicit-any` warnings** (push shared types into `packages/shared`).
+- **Web role alignment.** `apps/web/middleware.ts`, `src/config/navigation.ts`,
+  `src/stores/auth.ts` still use the legacy `UserRole` vocabulary; align with
+  backend `RoleCode` + permissions.
+- **Replace remaining FE mock data** with real API calls. Done so far:
+  `foundation/dashboard` (admissions KPI + per-unit risk),
+  `foundation/finance/consolidation` (real per-unit financials, cash position,
+  6-month trend), `analytics/education` (cross-unit KPI + jenjang distribution
+  via `/analytics/benchmark/compare`, enrollment trend via `/analytics/students`),
+  `attendance/heatmap` (per-class daily data via `/attendance/calendar/:classId`),
+  and `parent/buku-penghubung` Weekly Progress (new
+  `/parent/children/:studentId/weekly-progress` aggregation). Still mocked (each
+  needs a dedicated backend aggregation endpoint): `analytics/parent-engagement`,
+  `homeroom/performance`, `alumni/sanad`, `foundation/accreditation/readiness`.
+- **Web unit/component tests.** Add a jsdom + React Testing Library vitest project
+  for `apps/web/src/**` (currently only e2e-helper tests exist).
+- **Comprehensive Playwright e2e** across all routes (nav, CRUD, every
+  button/field, RBAC) against the seeded local stack.
+- **Workflow completions:** ✅ correspondence letter-signed notification and
+  ✅ takhosus certificate-eligibility notification are now wired (via the
+  `notification:send` event bus). Remaining: accounting per-unit config fallback
+  (deferred until `AccountCode` gains a `unitId` column — see the in-code note).
 
-1. Review and fix all analytics module type issues
-2. Update reporting service with proper type annotations
-3. Add proper validation schemas for all service inputs
+## How to contribute a build fix
 
-### Long-term (ongoing)
-
-1. Enable strict TypeScript mode gradually
-2. Add comprehensive unit tests for all services
-3. Add integration tests for critical paths
-
-## Workarounds Applied
-
-To allow the build to succeed in development, the following workarounds are used:
-
-1. **tsconfig.build.json** - Less strict TypeScript settings for build
-2. **`as any` type assertions** - Used sparingly in service files where Prisma types are complex
-
-## How to Contribute Fixes
-
-1. Pick a file from the list above
-2. Run `pnpm --filter api build:strict` to see specific errors
-3. Fix the type errors
-4. Ensure tests pass: `pnpm --filter api test`
-5. Submit a PR with the fixes
-
-## References
-
-- [TypeScript Handbook](https://www.typescriptlang.org/docs/)
-- [Prisma Type System](https://www.prisma.io/docs/concepts/components/prisma-client/advanced-type-safety)
-- [Express with TypeScript](https://expressjs.com/en/advanced/best-practice-performance.html)
+1. `pnpm --filter api build:strict` to see strict errors (the real target).
+2. Fix the type errors; reuse `@cipansor/shared` types and `@prisma/client` enums.
+3. `pnpm --filter api test` and keep it green.
+4. Commit with a scoped message on the feature branch.

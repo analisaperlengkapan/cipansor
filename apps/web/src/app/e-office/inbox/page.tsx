@@ -1,6 +1,6 @@
 "use client";
-
 import { useRouter } from "next/navigation";
+import { safeFormat } from "@/lib/date";
 import { useCorrespondence } from "@/hooks/use-correspondence";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -30,7 +30,7 @@ import {
   type LetterDetail,
 } from "@cipansor/shared";
 import { useState } from "react";
-import { format } from "date-fns";
+
 import { id } from "date-fns/locale";
 
 export default function InboxPage() {
@@ -181,7 +181,7 @@ export default function InboxPage() {
                         : letter.recipientName || letter.recipientInstance}
                     </TableCell>
                     <TableCell>
-                      {format(new Date(letter.date), "dd MMM yyyy", {
+                      {safeFormat(new Date(letter.date), "dd MMM yyyy", {
                         locale: id,
                       })}
                     </TableCell>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useInteractions } from "@/hooks/use-marketing";
+import { safeFormat } from "@/lib/date";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Phone, MessageCircle, Calendar } from "lucide-react";
 import { format } from "date-fns";
@@ -45,7 +46,7 @@ export function InteractionTimeline({
                     </p>
                   </div>
                   <span className="text-xs text-muted-foreground">
-                    {format(new Date(interaction.date), "d MMM HH:mm", {
+                    {safeFormat(new Date(interaction.date), "d MMM HH:mm", {
                       locale: idLocale,
                     })}
                   </span>

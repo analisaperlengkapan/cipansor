@@ -84,6 +84,19 @@ export function useDashboardSummary() {
   });
 }
 
+export function useStudent360(studentId: string) {
+  return useQuery({
+    queryKey: ["analytics", "student-360", studentId],
+    queryFn: async () => {
+      const { data } = await api.get<{ data: any }>(
+        `/analytics/students/${studentId}/360`,
+      );
+      return data.data;
+    },
+    enabled: !!studentId,
+  });
+}
+
 export function useStudentStatistics(filter?: ReportFilter) {
   return useQuery({
     queryKey: ["analytics", "student-statistics", filter],

@@ -16,6 +16,7 @@ import {
   ResponsiveContainer,
   Legend
 } from "recharts";
+import { RiskHeatmap } from "./risk-heatmap";
 
 export default function GrcDashboardPage() {
   const { data: grcResponse, isLoading, error } = useGRCStats();
@@ -110,15 +111,15 @@ export default function GrcDashboardPage() {
         <Card className="border-l-4 border-l-emerald-600 shadow-sm">
           <CardHeader className="pb-2">
             <CardDescription className="text-sm font-medium flex items-center justify-between">
-              Sharia Compliance <Scale className="h-4 w-4 text-emerald-600" />
+              Org Health Score <Activity className="h-4 w-4 text-emerald-600" />
             </CardDescription>
-            <CardTitle className="text-2xl pt-2">{grc.sharia.complianceRate}% Compliant</CardTitle>
+            <CardTitle className="text-2xl pt-2">{grc.orgHealthScore}/100</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-xs text-emerald-600 mt-1 flex items-center gap-1">
-              <CheckCircle2 className="w-3 h-3" /> Based on latest audits
+              <CheckCircle2 className="w-3 h-3" /> Balanced Scorecard
             </div>
-            <Progress value={grc.sharia.complianceRate} className="h-1 mt-2 bg-emerald-100" />
+            <Progress value={grc.orgHealthScore} className="h-1 mt-2 bg-emerald-100" />
           </CardContent>
         </Card>
       </div>
@@ -155,41 +156,7 @@ export default function GrcDashboardPage() {
         </Card>
 
         {/* Risk Profile */}
-        <Card className="shadow-md border-slate-200">
-          <CardHeader className="bg-slate-50/50 border-b">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <ShieldAlert className="h-5 w-5 text-slate-700" /> 
-              Risk Profile Distribution
-            </CardTitle>
-            <CardDescription>Breakdown of active risks by severity level</CardDescription>
-          </CardHeader>
-          <CardContent className="pt-6 flex flex-col gap-6">
-            <div className="space-y-4">
-              {riskMatrixData.map((tier) => (
-                <div key={tier.level} className="space-y-2">
-                  <div className="flex justify-between items-center text-sm">
-                    <div className="flex items-center gap-2">
-                      <div className={`w-3 h-3 rounded-full ${tier.color}`} />
-                      <span className="font-medium text-slate-600">{tier.level}</span>
-                    </div>
-                    <Badge variant="outline" className="font-bold">{tier.count}</Badge>
-                  </div>
-                  <Progress
-                    value={(tier.count / (grc.risks.total || 1)) * 100}
-                    className="h-2"
-                  />
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-4 p-4 rounded-lg bg-slate-50 border border-slate-100">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-slate-700">Total Risks Tracked</span>
-                <span className="text-xl font-bold text-slate-900">{grc.risks.total}</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <RiskHeatmap risks={grc.allRisks || []} />
       </div>
 
       {/* GRC Recommendations & Insights */}

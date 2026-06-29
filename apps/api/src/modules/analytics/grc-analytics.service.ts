@@ -37,6 +37,7 @@ export interface GRCStats {
     strategicPlanTitle?: string;
     priority: string;
   }[];
+  allRisks?: any[];
 }
 
 export async function getGRCStats(unitId?: string): Promise<GRCStats> {
@@ -58,7 +59,13 @@ export async function getGRCStats(unitId?: string): Promise<GRCStats> {
         ...whereClause,
         status: 'OPEN',
       },
-      select: { riskLevel: true },
+      select: {
+        riskLevel: true,
+        likelihood: true,
+        impact: true,
+        code: true,
+        description: true
+      },
     }),
 
     // 3. Audit Findings & Resolved Findings
@@ -148,11 +155,29 @@ export async function getGRCStats(unitId?: string): Promise<GRCStats> {
   ));
 
   const resolutionRate = findings > 0 ? (resolvedFindings / findings) * 100 : 100;
+
+  // Holistic Org Health Score:
+  // 25% Sharia, 25% Risk Management (Weighted), 25% Audit Resolution, 25% Strategic Progress
   const orgHealthScore = Math.round(
-    (avgShariaScore * 0.4) +
-    (riskWeightedScore * 0.3) +
-    (resolutionRate * 0.3)
+    (avgShariaScore * 0.25) +
+    (riskWeightedScore * 0.25) +
+    (resolutionRate * 0.25) +
+    (avgProgress * 0.25)
   );
+
+  const riskWeights: Record<string, number> = {
+    RARE: 1, INSIGNIFICANT: 1,
+    UNLIKELY: 2, MINOR: 2,
+    POSSIBLE: 3, MODERATE: 3,
+    LIKELY: 4, MAJOR: 4,
+    ALMOST_CERTAIN: 5, CATASTROPHIC: 5,
+  };
+
+  const processedRisks = risks.map(r => ({
+    ...r,
+    likelihoodWeight: riskWeights[r.likelihood] || 1,
+    impactWeight: riskWeights[r.impact] || 1,
+  }));
 
   return {
     plans: {
@@ -164,6 +189,7 @@ export async function getGRCStats(unitId?: string): Promise<GRCStats> {
       byLevel: riskDistribution,
       criticalCount: criticalRisks,
     },
+    allRisks: processedRisks,
     audits: {
       totalFindings: findings,
       resolvedCount: Math.min(resolvedFindings, findings),

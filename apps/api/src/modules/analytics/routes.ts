@@ -3,6 +3,7 @@ import { UserRole, RoleCode } from '@prisma/client';
 import * as controller from './controller';
 import * as forecastController from './forecast.controller';
 import * as exportController from './export.controller';
+import * as student360Controller from './student-360.controller';
 import { authenticate, authorize } from '@/middleware/auth';
 
 const router = Router();
@@ -197,6 +198,26 @@ router.get('/library', controller.getLibraryStats);
  *         description: PSB statistics (applications, admissions rate)
  */
 router.get('/psb', controller.getPSBStats);
+
+/**
+ * @swagger
+ * /api/analytics/students/{id}/360:
+ *   get:
+ *     summary: Get comprehensive Student 360 view
+ *     tags: [Analytics]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Holistic view of student progress across all modules
+ */
+router.get('/students/:id/360', student360Controller.getStudent360);
 
 /**
  * @swagger

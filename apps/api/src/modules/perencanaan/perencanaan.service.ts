@@ -212,6 +212,12 @@ export class PerencanaanService {
           totalBudget,
           totalRealization,
           financialProgress: totalBudget > 0 ? Math.min((totalRealization / totalBudget) * 100, 100) : 0,
+          budgetVsActual: activitiesWithRealization.map(a => ({
+            title: a.title,
+            budget: a.budget?.toNumber() || 0,
+            actual: a.realization,
+            variance: (a.budget?.toNumber() || 0) - a.realization,
+          })),
         };
       });
 

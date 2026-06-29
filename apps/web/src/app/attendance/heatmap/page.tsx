@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useQueries } from "@tanstack/react-query";
 import { MainLayout } from "@/components/layout";
 import { PageHeader } from "@/components/shared";
 import {
@@ -10,7 +11,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -21,47 +21,14 @@ import {
 import {
   Calendar,
   Users,
-  TrendingUp,
   TrendingDown,
   AlertTriangle,
 } from "lucide-react";
+import type { AttendanceCalendarResponse, AttendanceCalendarDay } from "@cipansor/shared";
 import { useClasses } from "@/hooks/use-classes";
 import { useAuthStore } from "@/stores/auth";
+import api from "@/lib/api";
 import { cn } from "@/lib/utils";
-
-// Generate mock attendance data for heatmap
-const generateMockData = (classCount: number, daysInMonth: number) => {
-  const data: Record<
-    string,
-    Record<
-      string,
-      { present: number; absent: number; late: number; total: number }
-    >
-  > = {};
-
-  const classNames = ["VII A", "VII B", "VIII A", "VIII B", "IX A", "IX B"];
-
-  for (let i = 0; i < Math.min(classCount, classNames.length); i++) {
-    const className = classNames[i];
-    data[className] = {};
-
-    for (let day = 1; day <= daysInMonth; day++) {
-      const date = `2026-01-${day.toString().padStart(2, "0")}`;
-      const total = 28 + Math.floor(Math.random() * 5);
-      const absent = Math.floor(Math.random() * 4);
-      const late = Math.floor(Math.random() * 3);
-
-      data[className][date] = {
-        present: total - absent - late,
-        absent,
-        late,
-        total,
-      };
-    }
-  }
-
-  return data;
-};
 
 const getHeatmapColor = (attendanceRate: number) => {
   if (attendanceRate >= 95) return "bg-green-500";
@@ -76,79 +43,135 @@ const WEEKDAY_LABELS = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
 
 export default function AttendanceHeatmapPage() {
   const { user } = useAuthStore();
-  const [selectedMonth, setSelectedMonth] = useState("2026-01");
+
+  // Last 6 months as selectable options.
+  const monthOptions = useMemo(() => {
+    const opts: { value: string; label: string }[] = [];
+    const now = new Date();
+    for (let i = 0; i < 6; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      opts.push({
+        value: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`,
+        label: d.toLocaleDateString("id-ID", { month: "long", year: "numeric" }),
+      });
+    }
+    return opts;
+  }, []);
+
+  const [selectedMonth, setSelectedMonth] = useState(monthOptions[0].value);
   const [selectedClass, setSelectedClass] = useState<string>("all");
   const [hoveredCell, setHoveredCell] = useState<{
     class: string;
     date: string;
   } | null>(null);
 
-  const { data: classes } = useClasses({ unitId: user?.unitId });
+  const { data: classesResp, isLoading: classesLoading } = useClasses({
+    unitId: user?.unitId,
+    limit: 100,
+  });
+  const classList = useMemo(() => classesResp?.data ?? [], [classesResp]);
 
-  // Parse month
-  const [year, month] = selectedMonth.split("-").map(Number);
-  const daysInMonth = new Date(year, month, 0).getDate();
-  const firstDayOfMonth = new Date(year, month - 1, 1).getDay();
+  // Parse the selected month (value is 1-indexed; the calendar API wants 0-indexed).
+  const [year, month1] = selectedMonth.split("-").map(Number);
+  const apiMonth = month1 - 1;
+  const daysInMonth = new Date(year, month1, 0).getDate();
+  const firstDayOfMonth = new Date(year, month1 - 1, 1).getDay();
 
-  // Generate mock data
-  const attendanceData = useMemo(() => {
-    return generateMockData(6, daysInMonth);
-  }, [daysInMonth]);
+  const visibleClasses = useMemo(
+    () =>
+      selectedClass === "all"
+        ? classList
+        : classList.filter((c) => c.id === selectedClass),
+    [classList, selectedClass],
+  );
 
-  const classNames = Object.keys(attendanceData);
-  const filteredClasses =
-    selectedClass === "all" ? classNames : [selectedClass];
+  // One real calendar request per visible class.
+  const calendarQueries = useQueries({
+    queries: visibleClasses.map((c) => ({
+      queryKey: ["attendance-calendar", c.id, year, apiMonth],
+      queryFn: async () => {
+        const res = await api.get<{ data: AttendanceCalendarResponse }>(
+          `/attendance/calendar/${c.id}`,
+          { params: { year, month: apiMonth } },
+        );
+        return res.data.data;
+      },
+      enabled: !!c.id,
+    })),
+  });
 
-  // Calculate overall stats
+  const isLoading =
+    classesLoading || calendarQueries.some((q) => q.isLoading);
+
+  // Per-class day lookup keyed by day-of-month.
+  const calendars = useMemo(
+    () =>
+      visibleClasses.map((c, i) => {
+        const days = calendarQueries[i]?.data?.days ?? [];
+        const byDay = new Map<number, AttendanceCalendarDay>();
+        for (const d of days) {
+          byDay.set(new Date(d.date).getDate(), d);
+        }
+        return { class: c, byDay };
+      }),
+    [visibleClasses, calendarQueries],
+  );
+
+  // Aggregate stats from real days.
   const overallStats = useMemo(() => {
-    let totalPresent = 0;
-    let totalAbsent = 0;
-    let totalLate = 0;
-    let totalStudents = 0;
+    let present = 0;
+    let absent = 0;
+    let late = 0;
+    let total = 0;
+    const byDate = new Map<string, { present: number; total: number }>();
 
-    filteredClasses.forEach((className) => {
-      Object.values(attendanceData[className] || {}).forEach((day) => {
-        totalPresent += day.present;
-        totalAbsent += day.absent;
-        totalLate += day.late;
-        totalStudents += day.total;
-      });
-    });
-
-    return {
-      attendanceRate:
-        totalStudents > 0
-          ? ((totalPresent / totalStudents) * 100).toFixed(1)
-          : 0,
-      totalAbsent,
-      totalLate,
-      worstDay: "2026-01-13", // Mock
-    };
-  }, [filteredClasses, attendanceData]);
-
-  // Generate calendar grid for each class
-  const renderHeatmapForClass = (className: string) => {
-    const classData = attendanceData[className] || {};
-
-    // Create calendar grid
-    const calendarDays = [];
-
-    // Add empty cells for days before first day of month
-    for (let i = 0; i < firstDayOfMonth; i++) {
-      calendarDays.push(null);
+    for (const { byDay } of calendars) {
+      for (const d of byDay.values()) {
+        present += d.present;
+        absent += d.absent;
+        late += d.late;
+        total += d.total;
+        const cur = byDate.get(d.date) || { present: 0, total: 0 };
+        cur.present += d.present;
+        cur.total += d.total;
+        byDate.set(d.date, cur);
+      }
     }
 
-    // Add days of month
+    let worstDay: string | null = null;
+    let worstRate = Infinity;
+    for (const [date, agg] of byDate) {
+      if (agg.total === 0) continue;
+      const rate = (agg.present / agg.total) * 100;
+      if (rate < worstRate) {
+        worstRate = rate;
+        worstDay = date;
+      }
+    }
+
+    return {
+      attendanceRate: total > 0 ? ((present / total) * 100).toFixed(1) : "0",
+      totalAbsent: absent,
+      totalLate: late,
+      worstDay,
+    };
+  }, [calendars]);
+
+  const renderHeatmapForClass = (
+    classItem: { id: string; name: string },
+    byDay: Map<number, AttendanceCalendarDay>,
+  ) => {
+    const calendarDays: ({ day: number; data?: AttendanceCalendarDay } | null)[] =
+      [];
+    for (let i = 0; i < firstDayOfMonth; i++) calendarDays.push(null);
     for (let day = 1; day <= daysInMonth; day++) {
-      const date = `2026-01-${day.toString().padStart(2, "0")}`;
-      calendarDays.push({ day, date, data: classData[date] });
+      calendarDays.push({ day, data: byDay.get(day) });
     }
 
     return (
-      <div key={className} className="mb-6">
-        <h4 className="font-medium mb-2">{className}</h4>
+      <div key={classItem.id} className="mb-6">
+        <h4 className="font-medium mb-2">{classItem.name}</h4>
         <div className="grid grid-cols-7 gap-1">
-          {/* Weekday headers */}
           {WEEKDAY_LABELS.map((label) => (
             <div
               key={label}
@@ -158,44 +181,45 @@ export default function AttendanceHeatmapPage() {
             </div>
           ))}
 
-          {/* Calendar cells */}
           {calendarDays.map((cell, index) => {
             if (!cell) {
               return <div key={`empty-${index}`} className="aspect-square" />;
             }
 
-            const attendanceRate = cell.data
-              ? (cell.data.present / cell.data.total) * 100
-              : 100;
+            const hasData = !!cell.data && cell.data.total > 0;
+            const attendanceRate = hasData
+              ? (cell.data!.present / cell.data!.total) * 100
+              : 0;
+            const cellKey = `${classItem.id}-${cell.day}`;
             const isHovered =
-              hoveredCell?.class === className &&
-              hoveredCell?.date === cell.date;
+              hoveredCell?.class === classItem.id &&
+              hoveredCell?.date === cellKey;
 
             return (
               <div
-                key={cell.date}
+                key={cellKey}
                 className="relative"
                 onMouseEnter={() =>
-                  setHoveredCell({ class: className, date: cell.date })
+                  setHoveredCell({ class: classItem.id, date: cellKey })
                 }
                 onMouseLeave={() => setHoveredCell(null)}
               >
                 <div
                   className={cn(
                     "aspect-square rounded-sm flex items-center justify-center text-xs font-medium transition-all cursor-pointer",
-                    getHeatmapColor(attendanceRate),
-                    "text-white",
+                    hasData
+                      ? cn(getHeatmapColor(attendanceRate), "text-white")
+                      : "bg-muted text-muted-foreground",
                     isHovered && "ring-2 ring-primary ring-offset-1",
                   )}
                 >
                   {cell.day}
                 </div>
 
-                {/* Tooltip */}
-                {isHovered && cell.data && (
+                {isHovered && hasData && (
                   <div className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 bg-popover border rounded-lg shadow-lg p-3 min-w-[150px]">
                     <p className="font-medium text-sm mb-2">
-                      {new Date(cell.date).toLocaleDateString("id-ID", {
+                      {new Date(cell.data!.date).toLocaleDateString("id-ID", {
                         weekday: "long",
                         day: "numeric",
                         month: "short",
@@ -205,19 +229,19 @@ export default function AttendanceHeatmapPage() {
                       <div className="flex justify-between">
                         <span>Hadir:</span>
                         <span className="font-medium text-green-600">
-                          {cell.data.present}
+                          {cell.data!.present}
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span>Tidak Hadir:</span>
                         <span className="font-medium text-red-600">
-                          {cell.data.absent}
+                          {cell.data!.absent}
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span>Terlambat:</span>
                         <span className="font-medium text-amber-600">
-                          {cell.data.late}
+                          {cell.data!.late}
                         </span>
                       </div>
                       <div className="flex justify-between border-t pt-1 mt-1">
@@ -248,25 +272,27 @@ export default function AttendanceHeatmapPage() {
         {/* Filters */}
         <div className="flex flex-wrap gap-4">
           <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-[200px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="2026-01">Januari 2026</SelectItem>
-              <SelectItem value="2025-12">Desember 2025</SelectItem>
-              <SelectItem value="2025-11">November 2025</SelectItem>
+              {monthOptions.map((m) => (
+                <SelectItem key={m.value} value={m.value}>
+                  {m.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
 
           <Select value={selectedClass} onValueChange={setSelectedClass}>
-            <SelectTrigger className="w-[150px]">
+            <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Semua Kelas" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Semua Kelas</SelectItem>
-              {classNames.map((name) => (
-                <SelectItem key={name} value={name}>
-                  {name}
+              {classList.map((c) => (
+                <SelectItem key={c.id} value={c.id}>
+                  {c.name}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -335,7 +361,14 @@ export default function AttendanceHeatmapPage() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Hari Terendah</p>
-                  <p className="text-lg font-bold">Senin, 13 Jan</p>
+                  <p className="text-lg font-bold">
+                    {overallStats.worstDay
+                      ? new Date(overallStats.worstDay).toLocaleDateString(
+                          "id-ID",
+                          { weekday: "long", day: "numeric", month: "short" },
+                        )
+                      : "—"}
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -356,6 +389,7 @@ export default function AttendanceHeatmapPage() {
                 { label: "80-84%", color: "bg-orange-400" },
                 { label: "75-79%", color: "bg-orange-500" },
                 { label: "<75%", color: "bg-red-500" },
+                { label: "Tidak ada data", color: "bg-muted" },
               ].map((item) => (
                 <div key={item.label} className="flex items-center gap-2">
                   <div className={cn("w-6 h-6 rounded", item.color)} />
@@ -375,11 +409,21 @@ export default function AttendanceHeatmapPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-              {filteredClasses.map((className) =>
-                renderHeatmapForClass(className),
-              )}
-            </div>
+            {isLoading ? (
+              <div className="py-12 text-center text-sm text-muted-foreground">
+                Memuat data kehadiran…
+              </div>
+            ) : calendars.length === 0 ? (
+              <div className="py-12 text-center text-sm text-muted-foreground">
+                Belum ada kelas untuk ditampilkan.
+              </div>
+            ) : (
+              <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+                {calendars.map(({ class: c, byDay }) =>
+                  renderHeatmapForClass(c, byDay),
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

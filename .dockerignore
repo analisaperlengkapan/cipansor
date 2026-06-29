@@ -58,3 +58,5 @@ apps/*/test_output*.log
 !README.md
 docs
 scripts
+tests
+.github

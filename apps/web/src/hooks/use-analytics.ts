@@ -84,6 +84,21 @@ export function useDashboardSummary() {
   });
 }
 
+export const useParentEngagement = (unitId?: string) => {
+  return useQuery({
+    queryKey: ["analytics", "parent-engagement", unitId],
+    queryFn: async () => {
+      const { data } = await api.get<{ success: boolean; data: any }>(
+        "/analytics/parent-engagement",
+        {
+          params: { unitId },
+        },
+      );
+      return data.data;
+    },
+  });
+};
+
 export function useStudentStatistics(filter?: ReportFilter) {
   return useQuery({
     queryKey: ["analytics", "student-statistics", filter],

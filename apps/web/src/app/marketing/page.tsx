@@ -12,6 +12,7 @@ import {
   useRecentLeads,
   useUpcomingFollowUps,
   useHighPriorityLeads,
+  useMarketingROI,
 } from "@/hooks/use-marketing";
 import { useAuth } from "@/hooks/use-auth";
 import {
@@ -154,6 +155,7 @@ export default function MarketingDashboard() {
   const { data: recentLeads } = useRecentLeads(user?.unitId);
   const { data: followUps } = useUpcomingFollowUps(user?.unitId);
   const { data: highPriorityLeads } = useHighPriorityLeads(user?.unitId);
+  const { data: roiData, isLoading: loadingROI } = useMarketingROI(user?.unitId);
   const createCampaign = useCreateCampaign();
   const updateCampaign = useUpdateCampaign();
 
@@ -372,7 +374,7 @@ export default function MarketingDashboard() {
           </TabsTrigger>
           <TabsTrigger value="analytics">
             <PieChartIcon className="mr-2 h-4 w-4" />
-            Analytics
+            ROI & Analytics
           </TabsTrigger>
         </TabsList>
 
@@ -894,6 +896,74 @@ export default function MarketingDashboard() {
 
         {/* Analytics Tab */}
         <TabsContent value="analytics" className="space-y-4">
+          {/* ROI Analysis Section */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Analisis ROI Kampanye</CardTitle>
+                  <CardDescription>
+                    Return on Investment dan efisiensi biaya per akuisisi
+                  </CardDescription>
+                </div>
+                <Badge variant="outline" className="bg-primary/10 text-primary">
+                  Berdasarkan Pembayaran Real
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {loadingROI ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                </div>
+              ) : roiData && roiData.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Kampanye</TableHead>
+                      <TableHead className="text-right">Biaya</TableHead>
+                      <TableHead className="text-right">Revenue</TableHead>
+                      <TableHead className="text-right">ROI</TableHead>
+                      <TableHead className="text-right">CAC</TableHead>
+                      <TableHead className="text-right">Konversi</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {roiData.map((item: any) => (
+                      <TableRow key={item.campaignId}>
+                        <TableCell>
+                          <div className="font-medium">{item.name}</div>
+                          <div className="text-xs text-muted-foreground">{item.code}</div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {formatCurrency(item.metrics.cost)}
+                        </TableCell>
+                        <TableCell className="text-right text-green-600 font-medium">
+                          {formatCurrency(item.metrics.revenue)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Badge variant={item.metrics.roi > 0 ? "default" : "destructive"}>
+                            {item.metrics.roi}%
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {formatCurrency(item.metrics.costPerAcquisition)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {item.metrics.conversionRate}%
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  Belum ada data ROI tersedia
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           <div className="grid gap-4 md:grid-cols-2">
             <Card>
               <CardHeader>

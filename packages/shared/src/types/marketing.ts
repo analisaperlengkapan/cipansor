@@ -62,3 +62,19 @@ export interface MarketingStats {
     budget?: number | null;
   }[];
 }
+
+export interface MarketingROI {
+  campaignId: string;
+  name: string;
+  code: string;
+  metrics: {
+    totalLeads: number;
+    convertedStudents: number;
+    conversionRate: number;
+    cost: number;
+    revenue: number;
+    roi: number;
+    costPerLead: number;
+    costPerAcquisition: number;
+  };
+}

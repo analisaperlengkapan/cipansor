@@ -93,8 +93,8 @@ export class RiskService {
             data: {
               userId: admin.id,
               type: 'ALERT',
-              title: 'Risiko Ekstrim Terdeteksi',
-              message: `Risiko ${risk.code} mencapai level EKSTRIM. Audit otomatis telah dibuat.`,
+              title: '⚠️ RISIKO EKSTRIM TERDETEKSI',
+              message: `Risiko ${risk.code} mencapai level EKSTRIM. Audit otomatis telah dibuat dan memerlukan tindakan segera.`,
               link: `/risk-management/${risk.id}`,
               status: 'UNREAD',
             },
@@ -132,6 +132,9 @@ export class RiskService {
         },
         strategicPlan: {
           select: { id: true, title: true },
+        },
+        auditFindings: {
+          select: { id: true, severity: true },
         },
       },
       orderBy: { createdAt: 'desc' },

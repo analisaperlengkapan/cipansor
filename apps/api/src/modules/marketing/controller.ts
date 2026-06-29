@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import * as marketingService from './service';
 import { calculateCampaignROI } from './roi.service';
+import { ApiResponse, MarketingROI } from '@cipansor/shared';
 import {
   createCampaignSchema,
   logInteractionSchema,
@@ -19,7 +20,11 @@ export const createCampaign = async (req: Request, res: Response, next: NextFunc
   }
 };
 
-export const getROIStats = async (req: Request, res: Response, next: NextFunction) => {
+export const getROIStats = async (
+  req: Request,
+  res: Response<ApiResponse<MarketingROI[]>>,
+  next: NextFunction
+) => {
   try {
     const { unitId } = (req.query as any);
     const user = (req as any).user;
@@ -34,12 +39,12 @@ export const getROIStats = async (req: Request, res: Response, next: NextFunctio
       if (!user.unitId) {
         return res
           .status(403)
-          .json({ success: false, error: 'Access to this unit is not allowed' });
+          .json({ success: false, message: 'Access to this unit is not allowed' } as any);
       }
       if (effectiveUnitId && effectiveUnitId !== user.unitId) {
         return res
           .status(403)
-          .json({ success: false, error: 'Access to this unit is not allowed' });
+          .json({ success: false, message: 'Access to this unit is not allowed' } as any);
       }
       // Force-scope to the caller's own unit when none was provided.
       effectiveUnitId = user.unitId;

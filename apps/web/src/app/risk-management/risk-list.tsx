@@ -4,8 +4,9 @@ import { DataTable } from "@/components/shared/data-table";
 import { useRisks } from "@/hooks/use-risk";
 import { RiskStatusBadge, RiskLevelBadge } from "@/components/risk/risk-badges";
 import { Button } from "@/components/ui/button";
-import { Plus, Eye } from "lucide-react";
+import { Plus, Eye, AlertTriangle } from "lucide-react";
 import Link from "next/link";
+import { Badge } from "@/components/ui/badge";
 import { ColumnDef } from "@tanstack/react-table";
 import { Risk } from "@/types/risk";
 
@@ -38,6 +39,20 @@ const columns: ColumnDef<Risk>[] = [
   {
     accessorKey: "riskScore",
     header: "Score",
+  },
+  {
+    id: "audit",
+    header: "Audit",
+    cell: ({ row }) => {
+      const findings = row.original.auditFindings || [];
+      if (findings.length === 0) return "-";
+      return (
+        <Badge variant="outline" className="flex items-center gap-1 text-orange-600 border-orange-200 bg-orange-50">
+          <AlertTriangle className="w-3 h-3" />
+          {findings.length} Finding
+        </Badge>
+      );
+    }
   },
   {
     accessorKey: "status",

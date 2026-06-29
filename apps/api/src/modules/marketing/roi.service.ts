@@ -1,10 +1,11 @@
 import { prisma } from '@/lib/prisma';
+import { MarketingROI } from '@cipansor/shared';
 
 /**
  * Marketing ROI Service
  * Optimized implementation to avoid N+1 queries.
  */
-export async function calculateCampaignROI(unitId?: string) {
+export async function calculateCampaignROI(unitId?: string): Promise<MarketingROI[]> {
   const campaigns = await prisma.marketingCampaign.findMany({
     where: unitId ? { unitId } : {},
     select: {
@@ -96,15 +97,15 @@ export async function calculateCampaignROI(unitId?: string) {
     }
   });
 
-  const results = campaigns.map((campaign) => {
+    const results: MarketingROI[] = campaigns.map((campaign) => {
     const convertedCount = conversionMap.get(campaign.id) || 0;
     const revenue = revenueMap.get(campaign.id) || 0;
     const cost = Number(campaign.budget || 0);
+    const revenueNum = Number(revenue);
 
-    const roi = cost > 0 ? ((revenue - cost) / cost) * 100 : 0;
-    const conversionRate = campaign._count.registrants > 0
-      ? (convertedCount / campaign._count.registrants) * 100
-      : 0;
+    const roi = cost > 0 ? ((revenueNum - cost) / cost) * 100 : 0;
+      const conversionRate =
+        campaign._count.registrants > 0 ? (convertedCount / campaign._count.registrants) * 100 : 0;
 
     return {
       campaignId: campaign.id,
@@ -115,11 +116,11 @@ export async function calculateCampaignROI(unitId?: string) {
         convertedStudents: convertedCount,
         conversionRate: Math.round(conversionRate * 100) / 100,
         cost,
-        revenue,
+        revenue: revenueNum,
         roi: Math.round(roi * 100) / 100,
         costPerLead: campaign._count.registrants > 0 ? cost / campaign._count.registrants : 0,
         costPerAcquisition: convertedCount > 0 ? cost / convertedCount : 0,
-      }
+        },
     };
   });
 

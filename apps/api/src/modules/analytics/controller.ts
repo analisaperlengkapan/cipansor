@@ -10,6 +10,7 @@ import type {
   AnalyticsAttendanceSummary,
   AcademicPerformance,
   GRCStats,
+  ParentEngagementStats,
 } from '@cipansor/shared';
 
 export async function getDashboardStats(
@@ -20,6 +21,20 @@ export async function getDashboardStats(
   try {
     const { unitId } = (req.query as any);
     const stats = await service.getDashboardStats(unitId as string | undefined);
+    res.json({ success: true, data: stats });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getParentEngagementStats(
+  req: Request,
+  res: Response<ApiResponse<ParentEngagementStats>>,
+  next: NextFunction
+) {
+  try {
+    const { unitId } = req.query as any;
+    const stats = await service.getParentEngagementStats(unitId as string | undefined);
     res.json({ success: true, data: stats });
   } catch (error) {
     next(error);

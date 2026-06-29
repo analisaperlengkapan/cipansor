@@ -283,3 +283,36 @@ export interface GRCStats {
   orgHealthScore: number;
   auditSuggestions?: AuditSuggestion[];
 }
+
+export interface ParentEngagementStats {
+  summary: {
+    totalParents: number;
+    activeParents: number;
+    engagementRate: number;
+    avgResponseTime: number;
+    monthlyTrend: string;
+  };
+  metrics: {
+    portalLogins: { value: number; change: number; label: string };
+    reportViews: { value: number; change: number; label: string };
+    billPayments: { value: number; change: number; label: string };
+    messageSent: { value: number; change: number; label: string };
+  };
+  weeklyActivity: Array<{
+    day: string;
+    logins: number;
+    reports: number;
+    messages: number;
+  }>;
+  classBreakdown: Array<{
+    class: string;
+    engagement: number;
+    parents: number;
+  }>;
+  lowEngagement: Array<{
+    parentName: string;
+    childName: string;
+    lastLogin: string;
+    reason: string;
+  }>;
+}

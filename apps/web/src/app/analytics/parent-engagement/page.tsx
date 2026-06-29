@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { MainLayout } from "@/components/layout";
+import { useParentEngagement } from "@/hooks/use-analytics";
+import { useAuth } from "@/hooks/use-auth";
 import { PageHeader } from "@/components/shared";
 import {
   Card,
@@ -45,63 +47,23 @@ import {
 } from "recharts";
 import { cn } from "@/lib/utils";
 
-// Mock parent engagement data
-const mockEngagementData = {
-  summary: {
-    totalParents: 450,
-    activeParents: 380,
-    engagementRate: 84.4,
-    avgResponseTime: 2.5, // hours
-    monthlyTrend: "+5.2%",
-  },
-  metrics: {
-    portalLogins: { value: 1250, change: 12, label: "Login Portal" },
-    reportViews: { value: 3420, change: 8, label: "Lihat Laporan" },
-    billPayments: { value: 156, change: -3, label: "Pembayaran" },
-    messageSent: { value: 89, change: 15, label: "Pesan Guru" },
-  },
-  weeklyActivity: [
-    { day: "Sen", logins: 185, reports: 420, messages: 12 },
-    { day: "Sel", logins: 210, reports: 380, messages: 18 },
-    { day: "Rab", logins: 195, reports: 350, messages: 15 },
-    { day: "Kam", logins: 220, reports: 410, messages: 22 },
-    { day: "Jum", logins: 180, reports: 480, messages: 8 },
-    { day: "Sab", logins: 150, reports: 580, messages: 5 },
-    { day: "Min", logins: 110, reports: 800, messages: 9 },
-  ],
-  classBreakdown: [
-    { class: "VII A", engagement: 92, parents: 32 },
-    { class: "VII B", engagement: 88, parents: 30 },
-    { class: "VIII A", engagement: 85, parents: 28 },
-    { class: "VIII B", engagement: 80, parents: 29 },
-    { class: "IX A", engagement: 78, parents: 27 },
-    { class: "IX B", engagement: 75, parents: 26 },
-  ],
-  lowEngagement: [
-    {
-      parentName: "Bapak Ahmad",
-      childName: "Muhammad Hasan",
-      lastLogin: "14 hari lalu",
-      reason: "Tidak pernah login",
-    },
-    {
-      parentName: "Ibu Fatimah",
-      childName: "Aisyah Putri",
-      lastLogin: "21 hari lalu",
-      reason: "Tidak respon pesan",
-    },
-    {
-      parentName: "Bapak Umar",
-      childName: "Ibrahim Malik",
-      lastLogin: "30 hari lalu",
-      reason: "Belum bayar 3 bulan",
-    },
-  ],
-};
 
 export default function ParentEngagementPage() {
+  const { user } = useAuth();
   const [selectedPeriod, setSelectedPeriod] = useState("month");
-  const data = mockEngagementData;
+  const { data, isLoading } = useParentEngagement(user?.unitId);
+
+  if (isLoading) {
+    return (
+      <MainLayout allowedRoles={["SUPER_ADMIN", "UNIT_ADMIN"]}>
+        <div className="flex items-center justify-center h-[400px]">
+          <p>Loading analytics...</p>
+        </div>
+      </MainLayout>
+    );
+  }
+
+  if (!data) return null;
 
   return (
     <MainLayout allowedRoles={["SUPER_ADMIN", "UNIT_ADMIN"]}>
@@ -204,7 +166,7 @@ export default function ParentEngagementPage() {
 
         {/* Activity Metrics */}
         <div className="grid gap-4 md:grid-cols-4">
-          {Object.entries(data.metrics).map(([key, metric]) => (
+          {Object.entries(data.metrics).map(([key, metric]: [string, any]) => (
             <Card key={key}>
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
@@ -274,7 +236,7 @@ export default function ParentEngagementPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {data.classBreakdown.map((item) => (
+              {data.classBreakdown.map((item: any) => (
                 <div key={item.class} className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
                     <span className="font-medium">{item.class}</span>
@@ -311,7 +273,7 @@ export default function ParentEngagementPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {data.lowEngagement.map((parent, index) => (
+              {data.lowEngagement.map((parent: any, index: number) => (
                 <div
                   key={index}
                   className="flex items-center justify-between p-3 bg-white rounded-lg border"

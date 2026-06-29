@@ -11,6 +11,7 @@ import type {
   ViolationSummary,
   LibrarySummary,
   PsbSummary,
+  ParentEngagementStats,
 } from '@cipansor/shared';
 
 interface DateRange {
@@ -786,5 +787,255 @@ export async function getPSBStats(unitId?: string): Promise<PsbSummary> {
     totalRegistrants,
     byStatus: statusCounts,
     byPeriod: periodsData,
+  };
+}
+
+// ==================== PARENT ENGAGEMENT STATISTICS ====================
+
+export async function getParentEngagementStats(unitId?: string): Promise<ParentEngagementStats> {
+  const parentRoleCodes = ['TKQ_ORANG_TUA', 'SDIT_ORANG_TUA', 'SMPIT_ORANG_TUA', 'SMAQ_ORANG_TUA'];
+  const now = new Date();
+  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+  const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+
+  // 1. Get parents
+  const parents = await prisma.user.findMany({
+    where: {
+      userRoles: {
+        some: {
+          role: { code: { in: parentRoleCodes } },
+          ...(unitId ? { unitId } : {}),
+        },
+      },
+    },
+    select: {
+      id: true,
+      name: true,
+      lastLoginAt: true,
+      parentOf: {
+        select: {
+          student: {
+            select: {
+              id: true,
+              user: { select: { name: true } },
+              enrollments: {
+                where: { status: 'active' },
+                include: { class: { select: { name: true } } },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  const parentIds = parents.map((p) => p.id);
+  const studentIds = Array.from(
+    new Set(parents.flatMap((p) => p.parentOf.map((rel) => rel.student.id)))
+  );
+
+  const totalParents = parents.length;
+  const activeParentsCurrent = parents.filter(
+    (p) => p.lastLoginAt && p.lastLoginAt >= thirtyDaysAgo
+  ).length;
+  const activeParentsPrevious = parents.filter(
+    (p) => p.lastLoginAt && p.lastLoginAt >= sixtyDaysAgo && p.lastLoginAt < thirtyDaysAgo
+  ).length;
+
+  const engagementRate = totalParents > 0 ? (activeParentsCurrent / totalParents) * 100 : 0;
+  const trendVal =
+    activeParentsPrevious > 0
+      ? ((activeParentsCurrent - activeParentsPrevious) / activeParentsPrevious) * 100
+      : activeParentsCurrent > 0
+        ? 100
+        : 0;
+  const monthlyTrend = `${trendVal >= 0 ? '+' : ''}${trendVal.toFixed(1)}%`;
+
+  // 2. Metrics (Current vs Previous)
+  const [
+    loginsCurr,
+    loginsPrev,
+    reportsCurr,
+    reportsPrev,
+    messagesCurr,
+    messagesPrev,
+    paymentsCurr,
+    paymentsPrev,
+  ] = await Promise.all([
+    prisma.auditLog.count({
+      where: { action: 'LOGIN', userId: { in: parentIds }, createdAt: { gte: thirtyDaysAgo } },
+    }),
+    prisma.auditLog.count({
+      where: {
+        action: 'LOGIN',
+        userId: { in: parentIds },
+        createdAt: { gte: sixtyDaysAgo, lt: thirtyDaysAgo },
+      },
+    }),
+    prisma.auditLog.count({
+      where: { action: 'REPORT_VIEW', userId: { in: parentIds }, createdAt: { gte: thirtyDaysAgo } },
+    }),
+    prisma.auditLog.count({
+      where: {
+        action: 'REPORT_VIEW',
+        userId: { in: parentIds },
+        createdAt: { gte: sixtyDaysAgo, lt: thirtyDaysAgo },
+      },
+    }),
+    prisma.message.count({
+      where: { senderId: { in: parentIds }, createdAt: { gte: thirtyDaysAgo } },
+    }),
+    prisma.message.count({
+      where: {
+        senderId: { in: parentIds },
+        createdAt: { gte: sixtyDaysAgo, lt: thirtyDaysAgo },
+      },
+    }),
+    prisma.payment.aggregate({
+      where: { invoice: { studentId: { in: studentIds } }, paidAt: { gte: thirtyDaysAgo } },
+      _sum: { amount: true },
+    }),
+    prisma.payment.aggregate({
+      where: {
+        invoice: { studentId: { in: studentIds } },
+        paidAt: { gte: sixtyDaysAgo, lt: thirtyDaysAgo },
+      },
+      _sum: { amount: true },
+    }),
+  ]);
+
+  const calcChange = (curr: number, prev: number) =>
+    prev > 0 ? Math.round(((curr - prev) / prev) * 100) : curr > 0 ? 100 : 0;
+
+  // 3. Response Time Calculation (Average time for staff-to-parent messages to get a reply)
+  const staffToParentMsgs = await prisma.message.findMany({
+    where: {
+      recipientId: { in: parentIds },
+      createdAt: { gte: thirtyDaysAgo },
+    },
+    select: { id: true, createdAt: true },
+  });
+
+  const parentReplies = await prisma.message.findMany({
+    where: {
+      senderId: { in: parentIds },
+      parentId: { in: staffToParentMsgs.map((m) => m.id) },
+    },
+    select: { parentId: true, createdAt: true },
+  });
+
+  let totalResponseTime = 0;
+  let responseCount = 0;
+  parentReplies.forEach((reply) => {
+    const original = staffToParentMsgs.find((m) => m.id === reply.parentId);
+    if (original) {
+      totalResponseTime += reply.createdAt.getTime() - original.createdAt.getTime();
+      responseCount++;
+    }
+  });
+  const avgResponseTime = responseCount > 0 ? totalResponseTime / (responseCount * 1000 * 3600) : 0;
+
+  // 4. Weekly activity
+  const weeklyActivityData = await Promise.all(
+    Array.from({ length: 7 }).map(async (_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - (6 - i));
+      const start = new Date(d.setHours(0, 0, 0, 0));
+      const end = new Date(d.setHours(23, 59, 59, 999));
+      const dayName = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'][start.getDay()];
+
+      const [logins, reports, messages] = await Promise.all([
+        prisma.auditLog.count({
+          where: { action: 'LOGIN', userId: { in: parentIds }, createdAt: { gte: start, lte: end } },
+        }),
+        prisma.auditLog.count({
+          where: {
+            action: 'REPORT_VIEW',
+            userId: { in: parentIds },
+            createdAt: { gte: start, lte: end },
+          },
+        }),
+        prisma.message.count({
+          where: { senderId: { in: parentIds }, createdAt: { gte: start, lte: end } },
+        }),
+      ]);
+
+      return { day: dayName, logins, reports, messages };
+    })
+  );
+
+  // 5. Class breakdown
+  const classStats: Record<string, { parents: Set<string>; active: Set<string> }> = {};
+  parents.forEach((p) => {
+    p.parentOf.forEach((rel) => {
+      rel.student.enrollments.forEach((en) => {
+        const className = en.class.name;
+        if (!classStats[className]) {
+          classStats[className] = { parents: new Set(), active: new Set() };
+        }
+        classStats[className].parents.add(p.id);
+        if (p.lastLoginAt && p.lastLoginAt >= thirtyDaysAgo) {
+          classStats[className].active.add(p.id);
+        }
+      });
+    });
+  });
+
+  const classBreakdown = Object.entries(classStats)
+    .map(([name, stats]) => ({
+      class: name,
+      engagement:
+        stats.parents.size > 0 ? Math.round((stats.active.size / stats.parents.size) * 100) : 0,
+      parents: stats.parents.size,
+    }))
+    .sort((a, b) => b.engagement - a.engagement);
+
+  // 6. Low engagement alerts
+  const lowEngagement = parents
+    .filter((p) => !p.lastLoginAt || p.lastLoginAt < fourteenDaysAgo)
+    .slice(0, 5)
+    .map((p) => ({
+      parentName: p.name,
+      childName: p.parentOf[0]?.student.user.name || 'Unknown',
+      lastLogin: p.lastLoginAt
+        ? `${Math.floor((now.getTime() - p.lastLoginAt.getTime()) / (1000 * 60 * 60 * 24))} hari lalu`
+        : 'Belum pernah login',
+      reason: !p.lastLoginAt ? 'Tidak pernah login' : 'Sudah lama tidak login',
+    }));
+
+  return {
+    summary: {
+      totalParents,
+      activeParents: activeParentsCurrent,
+      engagementRate: Number(engagementRate.toFixed(1)),
+      avgResponseTime: Number(avgResponseTime.toFixed(1)),
+      monthlyTrend,
+    },
+    metrics: {
+      portalLogins: {
+        value: loginsCurr,
+        change: calcChange(loginsCurr, loginsPrev),
+        label: 'Login Portal',
+      },
+      reportViews: {
+        value: reportsCurr,
+        change: calcChange(reportsCurr, reportsPrev),
+        label: 'Lihat Laporan',
+      },
+      billPayments: {
+        value: Number(paymentsCurr._sum.amount || 0),
+        change: calcChange(Number(paymentsCurr._sum.amount || 0), Number(paymentsPrev._sum.amount || 0)),
+        label: 'Pembayaran',
+      },
+      messageSent: {
+        value: messagesCurr,
+        change: calcChange(messagesCurr, messagesPrev),
+        label: 'Pesan Guru',
+      },
+    },
+    weeklyActivity: weeklyActivityData,
+    classBreakdown,
+    lowEngagement,
   };
 }

@@ -23,6 +23,25 @@ const forecastViewer = authorize(
 
 /**
  * @swagger
+ * /api/analytics/parent-engagement:
+ *   get:
+ *     summary: Get parent engagement statistics
+ *     tags: [Analytics]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: unitId
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Parent engagement statistics (activity, class breakdown, etc.)
+ */
+router.get('/parent-engagement', controller.getParentEngagementStats);
+
+/**
+ * @swagger
  * /api/analytics/dashboard:
  *   get:
  *     summary: Get dashboard overview statistics

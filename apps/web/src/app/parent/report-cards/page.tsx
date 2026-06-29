@@ -39,6 +39,15 @@ import {
   useChildReportCards,
   useChildGrades,
 } from "@/hooks/use-parent-portal";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RechartsTooltip,
+  ResponsiveContainer,
+} from "recharts";
 
 export default function ParentReportCardsPage() {
   // Fetch children from API
@@ -446,7 +455,7 @@ export default function ParentReportCardsPage() {
         </CardContent>
       </Card>
 
-      {/* Progress Chart Placeholder */}
+      {/* Progress Chart */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -458,40 +467,29 @@ export default function ParentReportCardsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="h-64 flex items-center justify-center bg-muted rounded-lg">
-            <div className="text-center">
-              <TrendingUp className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
-              <p className="text-muted-foreground">Grafik perkembangan nilai</p>
-              <p className="text-sm text-muted-foreground">
-                (Integrasi chart akan ditambahkan)
-              </p>
-            </div>
-          </div>
-          {/* Simple visual representation */}
-          <div className="mt-6 flex items-end justify-around h-40 px-4">
-            {reportHistory
-              .slice()
-              .reverse()
-              .map((report, idx) => (
-                <div
-                  key={report.reportCardId}
-                  className="flex flex-col items-center gap-2"
-                >
-                  <div
-                    className="w-16 bg-primary rounded-t transition-all"
-                    style={{ height: `${(report.averageScore / 100) * 120}px` }}
-                  />
-                  <div className="text-center">
-                    <p className="text-sm font-medium">{report.averageScore}</p>
-                    <p className="text-xs text-muted-foreground">
-                      Sem {report.semester}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {report.year.split("/")[0]}
-                    </p>
-                  </div>
-                </div>
-              ))}
+          <div className="h-80 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart
+                data={reportHistory.slice().reverse().map(r => ({
+                  period: `Sem ${r.semester} ${r.year.split('/')[0]}`,
+                  score: r.averageScore
+                }))}
+                margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="period" />
+                <YAxis domain={[0, 100]} />
+                <RechartsTooltip />
+                <Line
+                  type="monotone"
+                  dataKey="score"
+                  stroke="hsl(var(--primary))"
+                  strokeWidth={3}
+                  dot={{ r: 6, fill: "hsl(var(--primary))", strokeWidth: 2, stroke: "#fff" }}
+                  activeDot={{ r: 8 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
           </div>
         </CardContent>
       </Card>

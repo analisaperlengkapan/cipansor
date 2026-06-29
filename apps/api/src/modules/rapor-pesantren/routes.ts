@@ -45,6 +45,35 @@ router.get('/config/:unitId', authenticate, async (req, res, next) => {
 
 /**
  * @swagger
+ * /api/rapor-pesantren/student/{studentId}:
+ *   get:
+ *     summary: Get integrated summary (latest rapor) for a student (Student 360)
+ *     tags: [RaporPesantren]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.get('/student/:studentId', authenticate, async (req, res, next) => {
+  try {
+    const { studentId } = req.params;
+    // Find the latest published or final rapor for this student
+    const result = await prisma.raporPesantren.findFirst({
+      where: { studentId },
+      orderBy: { generatedAt: 'desc' },
+    });
+
+    if (!result) {
+      return res.json(ApiResponse.success(null));
+    }
+
+    const rapor = await service.getRaporPesantrenById(result.id);
+    res.json(ApiResponse.success(rapor));
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * @swagger
  * /api/rapor-pesantren/config:
  *   put:
  *     summary: Update rapor configuration

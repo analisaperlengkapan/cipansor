@@ -73,6 +73,17 @@ export const updateSessionSchema = z.object({
   followUpDate: z.string().datetime().or(z.date()).optional().nullable(),
   isConfidential: z.boolean().optional(),
   parentNotified: z.boolean().optional(),
+  psychologyData: z.object({
+    iqScore: z.number().min(0).max(200).optional(),
+    personalityType: z.string().optional(),
+    dominantTraits: z.array(z.string()).optional(),
+    observationNotes: z.string().optional(),
+    testResults: z.array(z.object({
+      testName: z.string(),
+      score: z.union([z.number(), z.string()]),
+      interpretation: z.string().optional(),
+    })).optional(),
+  }).optional(),
 });
 
 export type UpdateSessionInput = z.infer<typeof updateSessionSchema>;

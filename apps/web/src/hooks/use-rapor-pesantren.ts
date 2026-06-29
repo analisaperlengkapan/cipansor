@@ -48,6 +48,7 @@ export interface RaporPesantren {
   kitabProgress: KitabProgressSummary;
   akhlak: AkhlakSummary;
   attendance: AttendanceSummary;
+  academic?: AcademicSummary;
   overallScore: number;
   overallGrade: string;
   notes?: string;
@@ -197,6 +198,22 @@ export interface AttendanceSummary {
   grade: string;
 }
 
+export interface AcademicSummary {
+  averageScore: number;
+  grade: string;
+  totalSubjects: number;
+  subjects: Array<{
+    subjectName: string;
+    score: number;
+    grade: string;
+    isPassing: boolean;
+  }>;
+  trends?: Array<{
+    month: string;
+    averageScore: number;
+  }>;
+}
+
 export interface RaporListItem {
   id: string;
   studentId: string;
@@ -222,6 +239,7 @@ export interface RaporConfig {
     muhadatsah: number;
     kitabProgress: number;
     akhlak: number;
+    academic: number;
   };
   gradeThresholds: {
     mumtaz: number;
@@ -260,6 +278,9 @@ export interface LegerItem {
 
   akhlakScore: number;
   akhlakGrade: string;
+
+  academicScore: number;
+  academicGrade: string;
 
   attendanceScore: number;
   attendanceGrade: string;
@@ -308,6 +329,11 @@ async function listRapor(params: ListRaporParams) {
 async function getRaporById(id: string) {
   const { data } = await api.get(`/rapor-pesantren/${id}`);
   return data.data as RaporPesantren;
+}
+
+async function getRaporByStudentId(studentId: string) {
+  const { data } = await api.get(`/rapor-pesantren/student/${studentId}`);
+  return data.data as RaporPesantren | null;
 }
 
 interface GenerateRaporParams {
@@ -397,6 +423,14 @@ export function useRaporDetail(id: string) {
     queryKey: raporPesantrenKeys.detail(id),
     queryFn: () => getRaporById(id),
     enabled: !!id,
+  });
+}
+
+export function useStudentRapor(studentId: string) {
+  return useQuery({
+    queryKey: [...raporPesantrenKeys.all, "student", studentId],
+    queryFn: () => getRaporByStudentId(studentId),
+    enabled: !!studentId,
   });
 }
 

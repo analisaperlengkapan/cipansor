@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { Prisma, PlanStatus } from '@prisma/client';
+import { pengawasanService } from '../pengawasan/pengawasan.service';
 
 type TransactionClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
 
@@ -220,6 +221,16 @@ export class PerencanaanService {
         (sum, obj) => sum + obj.totalRealization,
         0
       );
+
+      // Integration: Risk-Based Audit Trigger
+      // If financial realization exceeds 120% for any objective, automatically trigger an audit finding.
+      // We do this check during the "read" as a just-in-time notification/escalation mechanism
+      // for the management viewing the report.
+      for (const obj of objectivesWithRealization) {
+        if (obj.totalBudget > 0 && obj.financialProgress > 120) {
+          void this.triggerOverrunAudit(plan, obj);
+        }
+      }
 
       return {
         ...plan,
@@ -449,6 +460,58 @@ export class PerencanaanService {
   }
 
   // ==================== HELPERS ====================
+
+  /**
+   * Triggers an automated audit finding for budget overrun.
+   */
+  private async triggerOverrunAudit(plan: any, objective: any) {
+    try {
+      const findingNumber = `AUTO-OVR-${plan.id.slice(0, 4)}-${objective.id.slice(0, 4)}`;
+
+      // Check if this specific overrun was already flagged to avoid duplicates
+      const existing = await prisma.auditFinding.findFirst({
+        where: { findingNumber },
+      });
+
+      if (existing) return;
+
+      // Find an active/planned audit for this unit or create one
+      let audit = await prisma.internalAudit.findFirst({
+        where: {
+          unitId: plan.unitId,
+          status: 'PLANNED',
+          auditType: 'FINANCIAL',
+        },
+      });
+
+      if (!audit) {
+        audit = await prisma.internalAudit.create({
+          data: {
+            unitId: plan.unitId,
+            title: 'Audit Efisiensi Anggaran (Otomatis)',
+            description: 'Audit dipicu oleh deteksi penggunaan anggaran yang melebihi batas (overrun).',
+            auditType: 'FINANCIAL',
+            status: 'PLANNED',
+            plannedDate: new Date(),
+            leadAuditorId: plan.createdById, // Assign to plan creator as a starting point
+            strategicPlanId: plan.id,
+          },
+        });
+      }
+
+      await pengawasanService.createFinding({
+        auditId: audit.id,
+        findingNumber,
+        title: `Deteksi Budget Overrun: ${objective.title}`,
+        description: `Penggunaan anggaran untuk sasaran "${objective.title}" pada rencana "${plan.title}" telah mencapai ${Math.round(objective.financialProgress)}% (Rp ${objective.totalRealization.toLocaleString()} dari budget Rp ${objective.totalBudget.toLocaleString()}).`,
+        severity: 'MAJOR',
+        category: 'FINANCIAL_EFFICIENCY',
+        planObjectiveId: objective.id,
+      });
+    } catch (err) {
+      console.error('[Perencanaan] Failed to trigger overrun audit:', err);
+    }
+  }
 
   /**
    * Recalculate an objective's progress from its indicators.

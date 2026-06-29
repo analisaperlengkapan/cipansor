@@ -459,6 +459,12 @@ export default function ParentDashboardPage() {
                 <span>Mutaba&apos;ah</span>
               </Button>
             </Link>
+            <Link href="/parent/counseling">
+              <Button variant="outline" className="w-full h-20 flex-col gap-2">
+                <MessageSquare className="h-6 w-6" />
+                <span>Konseling</span>
+              </Button>
+            </Link>
           </div>
         </CardContent>
       </Card>

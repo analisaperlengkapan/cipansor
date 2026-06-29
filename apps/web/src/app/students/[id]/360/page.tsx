@@ -30,6 +30,7 @@ import { useStudentFinancialSummary } from "@/hooks/use-finance";
 import { useStudentTahfidzProgress } from "@/hooks/use-tahfidz";
 import { useStudentIbadahStats } from "@/hooks/use-ibadah";
 import { useStudentRoomAssignment, useRoomSocialAnalytics } from "@/hooks/use-dormitory";
+import { useStudentRapor } from "@/hooks/use-rapor-pesantren";
 import {
   BarChart,
   Bar,
@@ -67,17 +68,30 @@ export default function Student360Page() {
   const { data: holistic, isLoading: loadingHolistic } = useStudentHolisticAnalytics(studentId, academicYearId);
   const { data: ibadah, isLoading: loadingIbadah } = useStudentIbadahStats({ studentId });
 
+  // Use Rapor Detail for integrated summaries if available
+  const { data: rapor, isLoading: loadingRapor } = useStudentRapor(studentId);
+
   // Only gate on primary data — holistic and ibadah are supplementary and
   // should not block the entire page from rendering.
   const isLoading = loadingStudent || loadingGrades || loadingHealth || loadingViolations || loadingFinance || loadingTahfidz;
 
   const academicData = useMemo(() => {
+    if (rapor?.academic?.subjects) {
+      return rapor.academic.subjects.slice(0, 5).map(s => ({
+        name: s.subjectName,
+        score: s.score
+      }));
+    }
     if (!Array.isArray(grades) || grades.length === 0) return [];
     return grades.slice(0, 5).map((g: any) => ({
       name: g.subject?.name || "Unknown",
       score: Number(g.score)
     }));
-  }, [grades]);
+  }, [grades, rapor]);
+
+  const academicTrends = useMemo(() => {
+    return rapor?.academic?.trends || [];
+  }, [rapor]);
 
   // useStudentViolationSummary returns the summary object with totalPoints and recentViolations
   const violationTotalPoints = violations?.totalPoints ?? 0;
@@ -324,18 +338,28 @@ export default function Student360Page() {
                 {/* Academic Performance Chart */}
                 <Card>
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-base">Top 5 Performa Mapel</CardTitle>
-                    <CardDescription>Skor penilaian terbaru</CardDescription>
+                    <CardTitle className="text-base">Performa Akademik</CardTitle>
+                    <CardDescription>Tren skor rata-rata bulanan</CardDescription>
                   </CardHeader>
                   <CardContent className="h-[250px] pt-4">
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={academicData}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                        <XAxis dataKey="name" tick={{fontSize: 10}} interval={0} />
-                        <YAxis hide domain={[0, 100]} />
-                        <Tooltip />
-                        <Bar dataKey="score" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={30} />
-                      </BarChart>
+                      {academicTrends.length > 0 ? (
+                        <BarChart data={academicTrends}>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                          <XAxis dataKey="month" tick={{fontSize: 10}} />
+                          <YAxis hide domain={[0, 100]} />
+                          <Tooltip />
+                          <Bar dataKey="averageScore" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={30} />
+                        </BarChart>
+                      ) : (
+                        <BarChart data={academicData}>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                          <XAxis dataKey="name" tick={{fontSize: 10}} interval={0} />
+                          <YAxis hide domain={[0, 100]} />
+                          <Tooltip />
+                          <Bar dataKey="score" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={30} />
+                        </BarChart>
+                      )}
                     </ResponsiveContainer>
                   </CardContent>
                 </Card>

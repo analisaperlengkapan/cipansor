@@ -67,6 +67,11 @@ const parentNavItems: NavItem[] = [
     icon: FileText,
   },
   {
+    title: "Konseling",
+    href: "/parent/counseling",
+    icon: Users,
+  },
+  {
     title: "Pengumuman",
     href: "/parent/announcements",
     icon: Bell,

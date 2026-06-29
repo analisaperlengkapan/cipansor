@@ -16,6 +16,7 @@ import {
   KitabProgressSummary,
   AkhlakSummary,
   AttendanceSummary,
+  AcademicSummary,
   getGradeFromScore,
 } from './rapor-pesantren.schema';
 import type { Prisma } from '@prisma/client';
@@ -663,6 +664,91 @@ async function getAkhlakSummary(
 }
 
 // =====================
+// ACADEMIC SUMMARY
+// =====================
+
+async function getAcademicSummary(
+  studentId: string,
+  startDate: Date,
+  endDate: Date,
+  config: RaporConfig
+): Promise<AcademicSummary> {
+  const grades = await prisma.grade.findMany({
+    where: {
+      studentId,
+      gradedAt: {
+        gte: startDate,
+        lte: endDate,
+      },
+    },
+    include: {
+      subject: true,
+    },
+    orderBy: { gradedAt: 'asc' },
+  });
+
+  if (grades.length === 0) {
+    return {
+      averageScore: 0,
+      grade: 'MAQBUL',
+      totalSubjects: 0,
+      subjects: [],
+    };
+  }
+
+  // Group by subject and calculate average
+  const subjectGrades = new Map<string, { total: number; count: number; name: string; passingScore: number }>();
+
+  grades.forEach((g) => {
+    const existing = subjectGrades.get(g.subjectId) || { total: 0, count: 0, name: g.subject.name, passingScore: Number(g.subject.passingScore) };
+    subjectGrades.set(g.subjectId, {
+      total: existing.total + Number(g.score),
+      count: existing.count + 1,
+      name: g.subject.name,
+      passingScore: existing.passingScore,
+    });
+  });
+
+  const subjects = Array.from(subjectGrades.values()).map((s) => {
+    const score = s.total / s.count;
+    return {
+      subjectName: s.name,
+      score,
+      grade: getGradeFromScore(score, config.gradeThresholds),
+      isPassing: score >= s.passingScore,
+    };
+  });
+
+  const averageScore = subjects.reduce((sum, s) => sum + s.score, 0) / subjects.length;
+
+  // Calculate monthly trends
+  const monthMap = new Map<string, { total: number; count: number }>();
+  grades.forEach((g) => {
+    const month = g.gradedAt.toISOString().slice(0, 7); // YYYY-MM
+    const existing = monthMap.get(month) || { total: 0, count: 0 };
+    monthMap.set(month, {
+      total: existing.total + Number(g.score),
+      count: existing.count + 1,
+    });
+  });
+
+  const trends = Array.from(monthMap.entries())
+    .map(([month, data]) => ({
+      month,
+      averageScore: data.total / data.count,
+    }))
+    .sort((a, b) => a.month.localeCompare(b.month));
+
+  return {
+    averageScore,
+    grade: getGradeFromScore(averageScore, config.gradeThresholds),
+    totalSubjects: subjects.length,
+    subjects,
+    trends,
+  };
+}
+
+// =====================
 // ATTENDANCE SUMMARY
 // =====================
 
@@ -752,7 +838,7 @@ export async function generateRaporPesantren(query: GetRaporQuery): Promise<Rapo
   const config = await getRaporConfig(unitId || student.unitId);
 
   // Generate all summaries in parallel
-  const [tahfidz, takhosus, ibadah, muhadhoroh, muhadatsah, kitabProgress, akhlak, attendance] =
+  const [tahfidz, takhosus, ibadah, muhadhoroh, muhadatsah, kitabProgress, akhlak, attendance, academic] =
     await Promise.all([
       getTahfidzSummary(studentId, startDate, endDate, config),
       getTakhosusSummary(studentId, startDate, endDate, config),
@@ -762,6 +848,7 @@ export async function generateRaporPesantren(query: GetRaporQuery): Promise<Rapo
       getKitabProgressSummary(studentId, startDate, endDate, config),
       getAkhlakSummary(studentId, startDate, endDate, config),
       getAttendanceSummary(studentId, startDate, endDate, config),
+      getAcademicSummary(studentId, startDate, endDate, config),
     ]);
 
   // Calculate overall score
@@ -773,7 +860,8 @@ export async function generateRaporPesantren(query: GetRaporQuery): Promise<Rapo
     (muhadhoroh.score * weights.muhadhoroh) / 100 +
     (muhadatsah.score * weights.muhadatsah) / 100 +
     (kitabProgress.score * weights.kitabProgress) / 100 +
-    (akhlak.score * weights.akhlak) / 100;
+    (akhlak.score * weights.akhlak) / 100 +
+    (academic.averageScore * (weights as any).academic || 0) / 100;
 
   const overallGrade = getGradeFromScore(overallScore, config.gradeThresholds);
 
@@ -800,6 +888,7 @@ export async function generateRaporPesantren(query: GetRaporQuery): Promise<Rapo
     kitabProgressData: kitabProgress as unknown as Prisma.InputJsonValue,
     akhlakData: akhlak as unknown as Prisma.InputJsonValue,
     attendanceData: attendance as unknown as Prisma.InputJsonValue,
+    academicData: academic as unknown as Prisma.InputJsonValue,
     overallScore,
     overallGrade,
     generatedAt: new Date(),
@@ -839,6 +928,7 @@ export async function generateRaporPesantren(query: GetRaporQuery): Promise<Rapo
     kitabProgress,
     akhlak,
     attendance,
+    academic,
     overallScore,
     overallGrade,
     notes: rapor.notes || undefined,
@@ -1210,6 +1300,7 @@ export async function getLegerPesantren(query: GetLegerQuery): Promise<LegerItem
     const kitab = getComponent(rapor.kitabProgressData);
     const akhlak = getComponent(rapor.akhlakData);
     const attendance = getComponent(rapor.attendanceData);
+    const academic = getComponent(rapor.academicData);
 
     return {
       id: rapor.id,
@@ -1237,6 +1328,9 @@ export async function getLegerPesantren(query: GetLegerQuery): Promise<LegerItem
 
       akhlakScore: akhlak.score,
       akhlakGrade: akhlak.grade,
+
+      academicScore: academic.score,
+      academicGrade: academic.grade,
 
       attendanceScore: attendance.score,
       attendanceGrade: attendance.grade,

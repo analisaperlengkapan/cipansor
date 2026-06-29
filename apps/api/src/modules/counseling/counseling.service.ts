@@ -386,6 +386,7 @@ export class CounselingService {
     // guard is ever relaxed, reinstate the block here.
 
     if (input.parentNotified !== undefined) updateData.parentNotified = input.parentNotified;
+    if (input.psychologyData !== undefined) updateData.psychologyData = input.psychologyData as any;
 
     const updated = await prisma.counselingSession.update({
       where: { id: sessionId },

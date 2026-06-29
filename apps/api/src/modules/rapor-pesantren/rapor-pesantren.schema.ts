@@ -104,6 +104,7 @@ export const raporConfigSchema = z.object({
     muhadatsah: z.coerce.number().min(0).max(100).default(15),
     kitabProgress: z.coerce.number().min(0).max(100).default(15),
     akhlak: z.coerce.number().min(0).max(100).default(10),
+    academic: z.coerce.number().min(0).max(100).default(0), // Default 0 as it's typically in academic report
   }),
   gradeThresholds: z.object({
     mumtaz: z.coerce.number().min(0).max(100).default(90),
@@ -267,6 +268,22 @@ export interface AttendanceSummary {
   grade: string;
 }
 
+export interface AcademicSummary {
+  averageScore: number;
+  grade: string;
+  totalSubjects: number;
+  subjects: {
+    subjectName: string;
+    score: number;
+    grade: string;
+    isPassing: boolean;
+  }[];
+  trends?: {
+    month: string;
+    averageScore: number;
+  }[];
+}
+
 export interface RaporPesantren {
   id: string;
   studentId: string;
@@ -305,6 +322,7 @@ export interface RaporPesantren {
   kitabProgress: KitabProgressSummary;
   akhlak: AkhlakSummary;
   attendance: AttendanceSummary;
+  academic?: AcademicSummary;
 
   // Overall Scores
   overallScore: number;
@@ -361,6 +379,9 @@ export interface LegerItem {
 
   akhlakScore: number;
   akhlakGrade: string;
+
+  academicScore: number;
+  academicGrade: string;
 
   attendanceScore: number;
   attendanceGrade: string;

@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import * as marketingService from './service';
-import { calculateCampaignROI } from './roi.service';
+import { calculateCampaignROI, getROITrend } from './roi.service';
 import {
   createCampaignSchema,
   logInteractionSchema,
@@ -14,6 +14,16 @@ export const createCampaign = async (req: Request, res: Response, next: NextFunc
     const userId = (req as any).user.id;
     const campaign = await marketingService.createCampaign(data, userId);
     res.status(201).json({ success: true, data: campaign });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getROITrendData = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { unitId } = (req.query as any);
+    const trend = await getROITrend(unitId as string);
+    res.json({ success: true, data: trend });
   } catch (error) {
     next(error);
   }

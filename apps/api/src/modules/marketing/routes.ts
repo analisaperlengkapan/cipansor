@@ -37,6 +37,11 @@ router.get(
   authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, RoleCode.YAYASAN_ADMIN),
   marketingController.getROIStats
 );
+router.get(
+  '/roi-trend',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, RoleCode.YAYASAN_ADMIN),
+  marketingController.getROITrendData
+);
 
 // Campaigns
 router.post(

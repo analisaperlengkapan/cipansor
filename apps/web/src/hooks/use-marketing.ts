@@ -25,6 +25,32 @@ export const useMarketingStats = (unitId?: string) => {
   });
 };
 
+export const useMarketingROI = (unitId?: string) => {
+  return useQuery({
+    queryKey: ["marketing", "roi", unitId],
+    queryFn: async () => {
+      const { data } = await api.get<{ success: boolean; data: any[] }>(
+        "/marketing/roi",
+        { params: { unitId } }
+      );
+      return data.data;
+    },
+  });
+};
+
+export const useMarketingROITrend = (unitId?: string) => {
+  return useQuery({
+    queryKey: ["marketing", "roi-trend", unitId],
+    queryFn: async () => {
+      const { data } = await api.get<{ success: boolean; data: any }>(
+        "/marketing/roi-trend",
+        { params: { unitId } }
+      );
+      return data.data;
+    },
+  });
+};
+
 export interface RecentLead {
   id: string;
   fullName: string;

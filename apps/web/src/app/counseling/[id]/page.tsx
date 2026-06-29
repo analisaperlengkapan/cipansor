@@ -112,6 +112,7 @@ export default function CounselingDetailPage({
     );
   }
 
+  const isPsychological = record.category === "PSYCHOLOGICAL_OBSERVATION";
   const catConfig = getCounselingCategoryConfig(record.category);
   const statusConfig = getCounselingStatusConfig(record.status);
   const priorityConfig = getCounselingPriorityConfig(record.priority);
@@ -259,25 +260,42 @@ export default function CounselingDetailPage({
                 </div>
               </div>
 
-              {record.summary && (
+              {(record.summary || isPsychological) && (
                 <div className="space-y-2">
-                  <p className="text-sm font-medium text-muted-foreground">
-                    Ringkasan & Hasil
+                  <p className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    {isPsychological ? <Shield className="h-4 w-4 text-primary" /> : null}
+                    Ringkasan & Hasil {isPsychological ? "(Observasi Klinis)" : ""}
                   </p>
-                  <div className="p-4 bg-blue-50/50 border border-blue-100 rounded-lg text-sm leading-relaxed whitespace-pre-wrap">
-                    {record.summary}
+                  <div className={`p-4 rounded-lg text-sm leading-relaxed whitespace-pre-wrap border ${
+                    isPsychological
+                      ? "bg-indigo-50/50 border-indigo-100 text-indigo-900"
+                      : "bg-blue-50/50 border-blue-100"
+                  }`}>
+                    {record.summary || "Belum ada ringkasan hasil untuk sesi ini."}
                   </div>
                 </div>
               )}
 
-              {record.recommendations && (
+              {(record.recommendations || isPsychological) && (
                 <div className="space-y-2">
-                  <p className="text-sm font-medium text-muted-foreground">
-                    Rekomendasi
+                  <p className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    {isPsychological ? <TrendingUp className="h-4 w-4 text-green-600" /> : null}
+                    Rekomendasi {isPsychological ? "Tindak Lanjut Psikologis" : ""}
                   </p>
-                  <div className="p-4 bg-green-50/50 border border-green-100 rounded-lg text-sm leading-relaxed whitespace-pre-wrap">
-                    {record.recommendations}
+                  <div className={`p-4 rounded-lg text-sm leading-relaxed whitespace-pre-wrap border ${
+                    isPsychological
+                      ? "bg-emerald-50/50 border-emerald-100 text-emerald-900 font-medium"
+                      : "bg-green-50/50 border-green-100"
+                  }`}>
+                    {record.recommendations || "Belum ada rekomendasi yang dicatat."}
                   </div>
+                </div>
+              )}
+
+              {isPsychological && (
+                <div className="mt-4 p-3 bg-slate-100 rounded border border-dashed border-slate-300 text-[10px] text-slate-500 flex gap-2 items-center">
+                  <AlertCircle className="h-3 w-3 shrink-0" />
+                  DATA SENSITIF: Sesi ini diklasifikasikan sebagai Observasi Psikologis. Akses terbatas hanya untuk staf BK dan pimpinan unit.
                 </div>
               )}
             </CardContent>

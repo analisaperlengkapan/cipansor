@@ -31,40 +31,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import Link from "next/link";
-
-// Mock data based on BusinessUnit model
-const BUSINESS_UNITS = [
-  {
-    id: "bu-1",
-    name: "Kantin Al-Fatih",
-    code: "BU-KNT-01",
-    type: "CANTEEN",
-    status: "ACTIVE",
-    manager: "Ust. Ahmad",
-    revenue: 12500000,
-    items: 45,
-  },
-  {
-    id: "bu-2",
-    name: "Laundry Berkah",
-    code: "BU-LDR-01",
-    type: "LAUNDRY",
-    status: "ACTIVE",
-    manager: "Ibu Siti",
-    revenue: 4200000,
-    items: 5,
-  },
-  {
-    id: "bu-3",
-    name: "Koperasi Siswa",
-    code: "BU-KOP-01",
-    type: "COOPERATIVE",
-    status: "ACTIVE",
-    manager: "Bpk. Budi",
-    revenue: 8900000,
-    items: 120,
-  },
-];
+import { useBusinessUnits } from "@/hooks/use-business-unit";
 
 const TYPE_ICONS: Record<string, any> = {
   CANTEEN: Utensils,
@@ -75,6 +42,8 @@ const TYPE_ICONS: Record<string, any> = {
 };
 
 export default function BusinessUnitPage() {
+  const { data: businessUnits, isLoading } = useBusinessUnits();
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("id-ID", {
       style: "currency",
@@ -105,25 +74,31 @@ export default function BusinessUnitPage() {
               <Building2 className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">3</div>
+              <div className="text-2xl font-bold">
+                {isLoading ? "..." : businessUnits?.filter(bu => bu.isActive).length || 0}
+              </div>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Pendapatan (Bulan Ini)</CardTitle>
+              <CardTitle className="text-sm font-medium">Monitoring Unit</CardTitle>
               <TrendingUp className="h-4 w-4 text-green-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(25600000)}</div>
+              <div className="text-sm text-muted-foreground">
+                Pantau performa real-time seluruh unit bisnis yayasan.
+              </div>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Transaksi</CardTitle>
+              <CardTitle className="text-sm font-medium">Total Transaksi (Historis)</CardTitle>
               <ShoppingBag className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">1,248</div>
+              <div className="text-2xl font-bold">
+                {isLoading ? "..." : businessUnits?.reduce((acc, bu) => acc + (bu._count?.canteenTransactions || 0) + (bu._count?.laundryTransactions || 0), 0).toLocaleString() || 0}
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -139,15 +114,20 @@ export default function BusinessUnitPage() {
                 <TableRow>
                   <TableHead>Nama Unit</TableHead>
                   <TableHead>Tipe</TableHead>
-                  <TableHead>Pengelola</TableHead>
-                  <TableHead className="text-right">Pendapatan</TableHead>
+                  <TableHead>Items/Layanan</TableHead>
+                  <TableHead className="text-right">Transaksi</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {BUSINESS_UNITS.map((bu) => {
+                {isLoading ? (
+                  <TableRow><TableCell colSpan={6} className="text-center py-8">Memuat data...</TableCell></TableRow>
+                ) : businessUnits?.length === 0 ? (
+                  <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Belum ada unit usaha.</TableCell></TableRow>
+                ) : businessUnits?.map((bu) => {
                   const Icon = TYPE_ICONS[bu.type] || ShoppingBag;
+                  const totalTx = (bu._count?.canteenTransactions || 0) + (bu._count?.laundryTransactions || 0);
                   return (
                     <TableRow key={bu.id}>
                       <TableCell>
@@ -166,13 +146,13 @@ export default function BusinessUnitPage() {
                           {bu.type.toLowerCase()}
                         </Badge>
                       </TableCell>
-                      <TableCell>{bu.manager}</TableCell>
+                      <TableCell>{bu._count?.canteenItems || bu._count?.laundryPricings || 0}</TableCell>
                       <TableCell className="text-right font-mono">
-                        {formatCurrency(bu.revenue)}
+                        {totalTx.toLocaleString()}
                       </TableCell>
                       <TableCell>
-                        <Badge variant={bu.status === "ACTIVE" ? "default" : "secondary"}>
-                          {bu.status}
+                        <Badge variant={bu.isActive ? "default" : "secondary"}>
+                          {bu.isActive ? "Aktif" : "Nonaktif"}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">

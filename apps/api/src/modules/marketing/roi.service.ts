@@ -125,3 +125,69 @@ export async function calculateCampaignROI(unitId?: string) {
 
   return results.sort((a, b) => b.metrics.roi - a.metrics.roi);
 }
+
+/**
+ * Get ROI Trend for the last 6 months
+ */
+export async function getROITrend(unitId?: string) {
+  const sixMonthsAgo = new Date();
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
+  sixMonthsAgo.setDate(1);
+  sixMonthsAgo.setHours(0, 0, 0, 0);
+
+  const invoices = await prisma.invoice.findMany({
+    where: {
+      status: 'PAID',
+      createdAt: { gte: sixMonthsAgo },
+      student: {
+        unitId: unitId || undefined,
+        registrant: { campaignId: { not: null } },
+      },
+    },
+    select: {
+      paidAmount: true,
+      createdAt: true,
+      student: {
+        select: {
+          registrant: {
+            select: {
+              campaignId: true,
+              campaign: { select: { name: true, code: true } }
+            }
+          }
+        }
+      }
+    }
+  });
+
+  const months: string[] = [];
+  const now = new Date();
+  for (let i = 0; i < 6; i++) {
+    // Setting day to 1 to avoid "31st skips month" bug when subtracting months
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    months.unshift(d.toLocaleString('default', { month: 'short', year: '2-digit' }));
+  }
+
+  const trendMap = new Map<string, { name: string } & Record<string, number>>();
+
+  invoices.forEach(inv => {
+    // Standardize month label to avoid 31st of month skipping bugs
+    const date = new Date(inv.createdAt);
+    const monthLabel = date.toLocaleString('default', { month: 'short', year: '2-digit' });
+
+    const campaignId = inv.student.registrant!.campaignId!;
+    const campaignName = inv.student.registrant!.campaign!.name;
+
+    if (!trendMap.has(campaignId)) {
+      trendMap.set(campaignId, { name: campaignName });
+    }
+
+    const campaignData = trendMap.get(campaignId)!;
+    campaignData[monthLabel] = (campaignData[monthLabel] || 0) + Number(inv.paidAmount);
+  });
+
+  return {
+    months,
+    campaigns: Array.from(trendMap.values())
+  };
+}

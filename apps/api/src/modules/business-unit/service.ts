@@ -19,6 +19,7 @@ export const businessUnitService = {
             canteenItems: true,
             canteenTransactions: true,
             laundryTransactions: true,
+            laundryPricings: true,
           },
         },
       },
@@ -223,11 +224,43 @@ export const businessUnitService = {
       };
     }
 
+    if (bu.type === 'LAUNDRY') {
+      const stats = await prisma.laundryTransaction.aggregate({
+        where: { businessUnitId: id, status: 'DELIVERED' },
+        _sum: { weight: true, total: true },
+        _count: { id: true },
+      });
+
+      const totalWeight = Number(stats._sum.weight || 0);
+      const totalRevenue = Number(stats._sum.total || 0);
+      const count = stats._count.id;
+
+      const avgWeight = count > 0 ? totalWeight / count : 0;
+      const revPerKg = totalWeight > 0 ? totalRevenue / totalWeight : 0;
+
+      // Simple operational score based on average weight per load (optimized load)
+      // Assuming 5kg is an optimal domestic load
+      const efficiencyScore = Math.min(100, (avgWeight / 5) * 100);
+
+      return {
+        unitId: bu.unitId,
+        type: bu.type,
+        overallEfficiency: Math.round(efficiencyScore * 10) / 10,
+        metrics: {
+          totalWeight,
+          totalRevenue,
+          transactionCount: count,
+          averageWeightPerTransaction: Math.round(avgWeight * 100) / 100,
+          revenuePerKg: Math.round(revPerKg * 100) / 100,
+        }
+      };
+    }
+
     return {
       unitId: bu.unitId,
       type: bu.type,
       overallEfficiency: 100,
-      message: 'Efficiency metrics currently only available for CANTEEN'
+      message: `Efficiency metrics for ${bu.type} are not yet detailed.`
     };
   }
 };

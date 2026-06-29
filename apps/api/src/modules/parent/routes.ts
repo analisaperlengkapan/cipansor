@@ -182,6 +182,35 @@ router.get('/children/:studentId/grades', parentController.getChildGrades.bind(p
 
 /**
  * @swagger
+ * /api/parent/children/{studentId}/weekly-progress:
+ *   get:
+ *     summary: Get child's aggregated weekly progress
+ *     tags: [Parent Portal]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: studentId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: weekStart
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Any date within the desired week (defaults to current week)
+ *     responses:
+ *       200:
+ *         description: Weekly attendance, tahfidz, behavior and academic summary
+ */
+router.get(
+  '/children/:studentId/weekly-progress',
+  parentController.getChildWeeklyProgress.bind(parentController)
+);
+
+/**
+ * @swagger
  * /api/parent/children/{studentId}/report-cards:
  *   get:
  *     summary: Get child's report cards

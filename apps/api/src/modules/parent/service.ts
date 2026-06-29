@@ -245,6 +245,140 @@ export class ParentService {
   }
 
   /**
+   * Aggregated weekly progress for one child (attendance + tahfidz + behavior +
+   * academic), used by the parent "Buku Penghubung" weekly tab. Defaults to the
+   * current Monday–Sunday week; `weekStart` (any date in the desired week) can
+   * override it.
+   */
+  async getChildWeeklyProgress(
+    parentId: string,
+    studentId: string,
+    query: { weekStart?: string } = {}
+  ) {
+    await this.verifyParentAccess(parentId, studentId);
+
+    // Monday 00:00 of the reference week → exclusive next Monday.
+    const ref = query.weekStart ? new Date(query.weekStart) : new Date();
+    const start = new Date(ref);
+    const dow = (start.getDay() + 6) % 7; // 0 = Monday
+    start.setDate(start.getDate() - dow);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(start);
+    end.setDate(start.getDate() + 7);
+    const prevStart = new Date(start);
+    prevStart.setDate(start.getDate() - 7);
+
+    const [attendanceGroups, tahfidzRecords, weekGrades, prevGrades, rewards, violations] =
+      await Promise.all([
+        prisma.attendance.groupBy({
+          by: ['status'],
+          where: { studentId, date: { gte: start, lt: end } },
+          _count: { id: true },
+        }),
+        prisma.tahfidzRecord.findMany({
+          where: { studentId, recordedAt: { gte: start, lt: end } },
+          select: { activityType: true, totalAyah: true, score: true },
+        }),
+        prisma.grade.findMany({
+          where: { studentId, gradedAt: { gte: start, lt: end } },
+          select: { percentage: true, score: true, maxScore: true },
+        }),
+        prisma.grade.findMany({
+          where: { studentId, gradedAt: { gte: prevStart, lt: start } },
+          select: { percentage: true, score: true, maxScore: true },
+        }),
+        prisma.reward.findMany({
+          where: { studentId, givenAt: { gte: start, lt: end } },
+          orderBy: { givenAt: 'desc' },
+        }),
+        prisma.violation.findMany({
+          where: { studentId, occurredAt: { gte: start, lt: end } },
+          orderBy: { occurredAt: 'desc' },
+        }),
+      ]);
+
+    // Attendance
+    const att = { PRESENT: 0, ABSENT: 0, LATE: 0, SICK: 0, EXCUSED: 0 };
+    for (const g of attendanceGroups) {
+      att[g.status as keyof typeof att] = g._count.id;
+    }
+
+    // Tahfidz
+    let newMemorization = 0;
+    let review = 0;
+    const tahfidzScores: number[] = [];
+    for (const r of tahfidzRecords) {
+      if (r.activityType === 'ZIYADAH') newMemorization += r.totalAyah;
+      else if (r.activityType === 'MUROJAAH') review += r.totalAyah;
+      if (r.score != null) tahfidzScores.push(Number(r.score));
+    }
+    const tahfidzAvg =
+      tahfidzScores.length > 0
+        ? tahfidzScores.reduce((a, b) => a + b, 0) / tahfidzScores.length
+        : null;
+    const grade =
+      tahfidzAvg == null
+        ? '—'
+        : tahfidzAvg >= 90
+          ? 'Mumtaz'
+          : tahfidzAvg >= 80
+            ? 'Jayyid Jiddan'
+            : tahfidzAvg >= 70
+              ? 'Jayyid'
+              : 'Maqbul';
+
+    // Academic
+    const pct = (g: { percentage: unknown; score: unknown; maxScore: unknown }) =>
+      Number(
+        g.percentage ??
+          (g.maxScore ? (Number(g.score) / Number(g.maxScore)) * 100 : 0)
+      );
+    const avg = (arr: typeof weekGrades) =>
+      arr.length > 0 ? arr.reduce((a, g) => a + pct(g), 0) / arr.length : null;
+    const weekAvg = avg(weekGrades);
+    const prevAvg = avg(prevGrades);
+    let improvement = '';
+    if (weekAvg != null && prevAvg != null) {
+      const diff = weekAvg - prevAvg;
+      improvement =
+        Math.abs(diff) < 0.05
+          ? 'Stabil dari minggu sebelumnya'
+          : diff > 0
+            ? `Naik ${diff.toFixed(1)} poin dari minggu sebelumnya`
+            : `Turun ${Math.abs(diff).toFixed(1)} poin dari minggu sebelumnya`;
+    }
+
+    const weekLabel = `${start.toLocaleDateString('id-ID', {
+      day: 'numeric',
+      month: 'short',
+    })} – ${new Date(end.getTime() - 1).toLocaleDateString('id-ID', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    })}`;
+
+    return {
+      week: weekLabel,
+      attendance: {
+        present: att.PRESENT,
+        absent: att.ABSENT,
+        sick: att.SICK,
+        permitted: att.EXCUSED,
+      },
+      tahfidz: { newMemorization, review, grade },
+      behavior: {
+        positive: rewards.length,
+        negative: violations.length,
+        notes: rewards[0]?.description || violations[0]?.description || '',
+      },
+      academic: {
+        averageScore: weekAvg != null ? Math.round(weekAvg * 10) / 10 : 0,
+        improvement,
+      },
+    };
+  }
+
+  /**
    * Get child tahfidz progress
    */
   async getChildTahfidz(

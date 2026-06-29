@@ -109,29 +109,6 @@ interface WeeklyProgress {
 }
 
 // ========================================
-// MOCK DATA (would come from API)
-// ========================================
-
-const MOCK_WEEKLY_PROGRESS: WeeklyProgress = {
-  week: "Minggu ke-3 November 2024",
-  attendance: { present: 5, absent: 0, sick: 0, permitted: 0 },
-  tahfidz: {
-    newMemorization: 15,
-    review: 30,
-    grade: "Jayyid Jiddan",
-  },
-  behavior: {
-    positive: 3,
-    negative: 0,
-    notes: "Aktif dalam kegiatan kelas dan membantu teman",
-  },
-  academic: {
-    averageScore: 85.5,
-    improvement: "Naik 2.5 poin dari minggu sebelumnya",
-  },
-};
-
-// ========================================
 // COMPONENT
 // ========================================
 
@@ -199,10 +176,25 @@ export default function BukuPenghubungPage() {
   }, []);
 
   useEffect(() => {
-    if (selectedChildId) {
-      // In real app, fetch weekly progress for selected child
-      setWeeklyProgress(MOCK_WEEKLY_PROGRESS);
+    if (!selectedChildId) {
+      setWeeklyProgress(null);
+      return;
     }
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await api.get(
+          `/parent/children/${selectedChildId}/weekly-progress`,
+        );
+        if (!cancelled) setWeeklyProgress(res.data.data as WeeklyProgress);
+      } catch (err) {
+        console.error("Failed to fetch weekly progress:", err);
+        if (!cancelled) setWeeklyProgress(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [selectedChildId]);
 
   const selectedChild = children.find((c) => c.student.id === selectedChildId);
@@ -860,8 +852,17 @@ export default function BukuPenghubungPage() {
           </div>
         </TabsContent>
 
-        {/* Weekly Progress Tab (Still mock for now) */}
+        {/* Weekly Progress Tab — aggregated from the parent weekly-progress API */}
         <TabsContent value="weekly" className="space-y-4">
+          {!weeklyProgress && (
+            <Card>
+              <CardContent className="py-10 text-center text-sm text-muted-foreground">
+                {selectedChildId
+                  ? "Belum ada data perkembangan untuk minggu ini."
+                  : "Pilih anak untuk melihat perkembangan mingguan."}
+              </CardContent>
+            </Card>
+          )}
           {weeklyProgress && (
             <>
               <Card>

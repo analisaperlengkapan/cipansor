@@ -139,13 +139,13 @@ describe('Talenta Service', () => {
       });
     });
 
-    it('should calculate category based on internal logic', async () => {
+    it('should calculate category based on internal 9-box logic', async () => {
        const dto = {
         talentId: 'prof-1',
         assessorId: 'user-2',
         period: 'Q1 2026',
-        performanceRating: 'MEETS' as any,   // 3
-        potentialRating: 'BELOW' as any,     // 2 => sum = 5 => EMERGING
+        performanceRating: 'MEETS' as any,   // rank 2
+        potentialRating: 'BELOW' as any,     // rank 1 => SOLID_PERFORMER in new logic
         overallScore: 70,
         assessedAt: new Date().toISOString(),
       };
@@ -158,7 +158,7 @@ describe('Talenta Service', () => {
       expect(prisma.talentProfile.update).toHaveBeenCalledWith({
         where: { id: 'prof-1' },
         data: expect.objectContaining({
-          category: 'EMERGING',
+          category: 'SOLID_PERFORMER',
         }),
       });
     });

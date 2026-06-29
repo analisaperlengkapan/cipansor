@@ -498,27 +498,61 @@ export class PerencanaanService {
   }
 
   /**
-   * Recalculate a plan's weighted progress from its objectives.
+   * Recalculate a plan's weighted progress from its objectives and linked risk mitigations.
    * Accepts an optional transaction client so it can be called from within
    * other services' transactions (e.g., PengawasanService.createFinding).
    */
   async recalculatePlanProgress(planId: string, tx: TransactionClient | typeof prisma = prisma) {
-    const objectives = await tx.planObjective.findMany({
-      where: { planId },
-      select: { weight: true, progress: true },
-    });
+    const [objectives, risks] = await Promise.all([
+      tx.planObjective.findMany({
+        where: { planId },
+        select: { weight: true, progress: true },
+      }),
+      tx.risk.findMany({
+        where: { strategicPlanId: planId },
+        include: { mitigations: true },
+      }),
+    ]);
 
-    if (objectives.length === 0) return;
+    if (objectives.length === 0 && risks.length === 0) return;
 
-    const totalWeight = objectives.reduce((sum, obj) => sum + obj.weight, 0);
-    const weightedProgress = objectives.reduce(
-      (sum, obj) => sum + (obj.progress * obj.weight) / (totalWeight || 1),
+    // 1. Calculate Objectives Progress
+    let totalWeight = objectives.reduce((sum, obj) => sum + obj.weight, 0);
+    let weightedProgressSum = objectives.reduce(
+      (sum, obj) => sum + (obj.progress * obj.weight),
       0
     );
 
+    // 2. Integrate Risk Mitigation Progress
+    // If there are linked risks, we treat their collective mitigation as a
+    // virtual objective to ensure GRC integration.
+    if (risks.length > 0) {
+      let totalMitigations = 0;
+      let totalMitigationProgress = 0;
+
+      risks.forEach(risk => {
+        risk.mitigations.forEach(m => {
+          totalMitigations++;
+          totalMitigationProgress += (m.progress || 0);
+        });
+      });
+
+      if (totalMitigations > 0) {
+        const avgRiskProgress = totalMitigationProgress / totalMitigations;
+
+        // Give Risk Management a standard weight (e.g., average weight of objectives)
+        const riskWeight = objectives.length > 0 ? (totalWeight / objectives.length) : 1;
+
+        totalWeight += riskWeight;
+        weightedProgressSum += (avgRiskProgress * riskWeight);
+      }
+    }
+
+    const finalProgress = weightedProgressSum / (totalWeight || 1);
+
     await tx.strategicPlan.update({
       where: { id: planId },
-      data: { progress: Math.round(weightedProgress * 100) / 100 },
+      data: { progress: Math.round(finalProgress * 100) / 100 },
     });
   }
 }

@@ -650,20 +650,70 @@ export class TalentaService {
     };
   }
 
+  // ==================== BATCH SYNC ====================
+
+  /**
+   * Batch sync talent profiles for all teachers in a unit from their latest PKG evaluations.
+   */
+  async batchSyncFromPKG(unitId: string, periodId: string) {
+    const teachers = await prisma.teacher.findMany({
+      where: { unitId },
+      select: { id: true },
+    });
+
+    const results = {
+      synced: 0,
+      failed: 0,
+      errors: [] as string[],
+    };
+
+    for (const teacher of teachers) {
+      try {
+        await this.syncFromPKG(teacher.id, periodId);
+        results.synced++;
+      } catch (err: any) {
+        // Skip teachers without evaluation for this period
+        if (err?.status === 404) continue;
+
+        results.failed++;
+        results.errors.push(`Teacher ${teacher.id}: ${err.message}`);
+      }
+    }
+
+    return results;
+  }
+
   // ==================== HELPERS ====================
 
+  /**
+   * Formal 9-Box Matrix Categorization Logic.
+   * Mapping Performance (X-axis) and Potential (Y-axis) to standard categories.
+   */
   private determineTalentCategory(
     performance: string,
     potential: string
   ): 'HIGH_POTENTIAL' | 'KEY_TALENT' | 'EMERGING' | 'SOLID_PERFORMER' | 'NEEDS_DEVELOPMENT' {
-    const perfScore = { OUTSTANDING: 5, EXCEEDS: 4, MEETS: 3, BELOW: 2, UNSATISFACTORY: 1 }[performance] || 3;
-    const potScore = { OUTSTANDING: 5, EXCEEDS: 4, MEETS: 3, BELOW: 2, UNSATISFACTORY: 1 }[potential] || 3;
-    const combined = perfScore + potScore;
+    const perfRank = { OUTSTANDING: 3, EXCEEDS: 3, MEETS: 2, BELOW: 1, UNSATISFACTORY: 1 }[performance] || 2;
+    const potRank = { OUTSTANDING: 3, EXCEEDS: 3, MEETS: 2, BELOW: 1, UNSATISFACTORY: 1 }[potential] || 2;
 
-    if (combined >= 9) return 'HIGH_POTENTIAL';
-    if (combined >= 7) return 'KEY_TALENT';
-    if (combined >= 5) return 'EMERGING';
-    if (combined >= 4) return 'SOLID_PERFORMER';
+    // Box Matrix (9 Boxes):
+    // 3,3: Star (HIGH_POTENTIAL)
+    // 3,2: High Professional (KEY_TALENT)
+    // 3,1: Master (SOLID_PERFORMER)
+    // 2,3: High Potential (HIGH_POTENTIAL)
+    // 2,2: Core Employee (SOLID_PERFORMER)
+    // 2,1: Effective (SOLID_PERFORMER)
+    // 1,3: Enigma (EMERGING)
+    // 1,2: Dilemma (EMERGING)
+    // 1,1: Under Performer (NEEDS_DEVELOPMENT)
+
+    if (perfRank === 3 && potRank >= 2) return 'HIGH_POTENTIAL';
+    if (perfRank === 2 && potRank === 3) return 'HIGH_POTENTIAL';
+    if (perfRank === 3 && potRank === 1) return 'KEY_TALENT';
+    if (perfRank === 2 && potRank === 2) return 'SOLID_PERFORMER';
+    if (perfRank === 1 && potRank >= 2) return 'EMERGING';
+    if (perfRank >= 2 && potRank === 1) return 'SOLID_PERFORMER';
+
     return 'NEEDS_DEVELOPMENT';
   }
 }

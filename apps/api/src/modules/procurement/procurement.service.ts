@@ -264,6 +264,34 @@ export const procurementService = {
     }
 
     const result = await prisma.$transaction(async (tx) => {
+      // 1. Budget Verification (Strict Block)
+      const budgetIds = [...new Set(request.items.map(i => i.budgetId).filter(Boolean))] as string[];
+      if (budgetIds.length > 0) {
+        const budgets = await tx.budget.findMany({
+          where: { id: { in: budgetIds } },
+        });
+
+        const budgetMap = new Map(budgets.map(b => [b.id, b]));
+
+        for (const fulfillmentItem of input.items) {
+          const prItem = request.items.find(i => i.id === fulfillmentItem.itemId);
+          if (prItem?.budgetId) {
+            const budget = budgetMap.get(prItem.budgetId);
+            if (budget) {
+              const totalActual = fulfillmentItem.quantityReceived * fulfillmentItem.actualPrice;
+              const remaining = Number(budget.amount) - Number(budget.usedAmount);
+
+              if (totalActual > remaining) {
+                throw Errors.badRequest(
+                  `Budget Exceeded for Account: ${budget.accountId}. ` +
+                  `Actual: ${totalActual}, Remaining: ${remaining}. fulfillment blocked.`
+                );
+              }
+            }
+          }
+        }
+      }
+
       const updatedRequest = await tx.purchaseRequest.update({
         where: { id },
         data: {

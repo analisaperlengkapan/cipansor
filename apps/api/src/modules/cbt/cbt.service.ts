@@ -1046,4 +1046,59 @@ export class CBTService {
       averageSuccessRate: insights.length > 0 ? insights.reduce((sum, i) => sum + i.successRate, 0) / insights.length : 0,
     };
   }
+
+  /**
+   * Calculates "Topic Mastery" by aggregating student scores grouped by
+   * curriculum-aligned topics (from Question tags or subject metadata).
+   */
+  static async getExamTopicMastery(examId: string) {
+    const exam = await prisma.exam.findUnique({
+      where: { id: examId },
+      include: {
+        questionBank: {
+          include: {
+            questions: true
+          }
+        },
+        attempts: {
+          where: { status: { in: ['COMPLETED', 'NEEDS_REVIEW'] } },
+          include: {
+            answers: true
+          }
+        }
+      }
+    });
+
+    if (!exam || !exam.questionBank) return null;
+
+    const topicMap = new Map<string, { totalPoints: number; earnedPoints: number; questions: number }>();
+
+    // For now, using Question Type and Subject as proxy for "Topics" if no explicit TP linking exists
+    exam.questionBank.questions.forEach(q => {
+      const topic = q.type || 'General';
+      if (!topicMap.has(topic)) {
+        topicMap.set(topic, { totalPoints: 0, earnedPoints: 0, questions: 0 });
+      }
+      const t = topicMap.get(topic)!;
+      t.questions++;
+    });
+
+    exam.attempts.forEach(attempt => {
+      attempt.answers.forEach(ans => {
+        const question = exam.questionBank!.questions.find(q => q.id === ans.questionId);
+        const topic = question?.type || 'General';
+        const t = topicMap.get(topic);
+        if (t && ans.score !== null) {
+          t.earnedPoints += Number(ans.score);
+          t.totalPoints += (question?.points || 1);
+        }
+      });
+    });
+
+    return Array.from(topicMap.entries()).map(([topic, stats]) => ({
+      topic,
+      mastery: stats.totalPoints > 0 ? (stats.earnedPoints / stats.totalPoints) * 100 : 0,
+      questionCount: stats.questions
+    }));
+  }
 }

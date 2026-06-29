@@ -29,6 +29,9 @@ vi.mock('../../lib/prisma', () => ({
       update: vi.fn(),
       delete: vi.fn(),
     },
+    risk: {
+      findMany: vi.fn(),
+    },
     journalEntry: {
       aggregate: vi.fn(),
     },
@@ -95,6 +98,7 @@ describe('Perencanaan Service', () => {
         { weight: 60, progress: 50 },
         { weight: 40, progress: 100 },
       ] as any);
+      vi.mocked(prisma.risk.findMany).mockResolvedValue([] as any);
 
       vi.mocked(prisma.strategicPlan.update).mockResolvedValue({} as any);
 
@@ -114,6 +118,7 @@ describe('Perencanaan Service', () => {
       vi.mocked(prisma.planObjective.findMany).mockResolvedValue([
         { weight: 100, progress: 20 },
       ] as any);
+      vi.mocked(prisma.risk.findMany).mockResolvedValue([] as any);
 
       await perencanaanService.deleteObjective('obj-1');
 
@@ -137,9 +142,12 @@ describe('Perencanaan Service', () => {
       // createIndicator recalculates objective progress, loading the objective + indicators.
       vi.mocked(prisma.planObjective.findUnique).mockResolvedValue({
         id: 'obj-1',
+        planId: 'plan-1',
         indicators: [],
       } as any);
       vi.mocked(prisma.planObjective.update).mockResolvedValue({} as any);
+      vi.mocked(prisma.planObjective.findMany).mockResolvedValue([] as any);
+      vi.mocked(prisma.risk.findMany).mockResolvedValue([] as any);
 
       await perencanaanService.createIndicator(dto);
 

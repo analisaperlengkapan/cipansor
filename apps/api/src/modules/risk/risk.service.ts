@@ -8,6 +8,7 @@ import {
   Prisma,
 } from '@prisma/client';
 import { Errors } from '@/middleware/error';
+import { perencanaanService } from '../perencanaan/perencanaan.service';
 
 type TransactionClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
 
@@ -27,17 +28,17 @@ export class RiskService {
     // Auto-link to strategic plan if objective is provided
     // This is handled by Prisma via data.strategicPlan connection if provided in the DTO
 
-    // If EXTREME risk, fan out audit-team notifications and create automated findings.
+    // If HIGH or EXTREME risk, fan out audit-team notifications and create automated findings.
     // Fire-and-forget so the request response isn't blocked by N notification inserts;
-    // failures are already swallowed inside `handleExtremeRisk`.
-    if (riskLevel === 'EXTREME') {
-      void this.handleExtremeRisk(risk);
+    // failures are already swallowed inside `handleEscalatedRisk`.
+    if (riskLevel === 'HIGH' || riskLevel === 'EXTREME') {
+      void this.handleEscalatedRisk(risk);
     }
 
     return risk;
   }
 
-  private async handleExtremeRisk(risk: Risk) {
+  private async handleEscalatedRisk(risk: Risk) {
     try {
       // Find audit team members to notify and assign
       const auditAdmins = await prisma.user.findMany({
@@ -46,13 +47,13 @@ export class RiskService {
           userRoles: {
             some: {
               role: {
-                code: { in: ['YAYASAN_PENGAWAS', 'SUPER_ADMIN'] },
+                code: { in: ['YAYASAN_PENGAWAS', 'SUPER_ADMIN'] as any },
               },
             },
           },
         },
         select: { id: true },
-      });
+      }) || [];
 
       // 1. Create an automated Internal Audit record for this extreme risk
       // Picking the first available auditor as the lead for the draft
@@ -62,8 +63,8 @@ export class RiskService {
         const audit = await prisma.internalAudit.create({
           data: {
             unitId: risk.unitId,
-            title: `Audit Respon Risiko Ekstrim: ${risk.code}`,
-            description: `Audit otomatis yang dipicu oleh deteksi risiko level EKSTRIM. Risiko: ${risk.description}`,
+            title: `Audit Respon Risiko ${risk.riskLevel === 'EXTREME' ? 'Ekstrim' : 'Tinggi'}: ${risk.code}`,
+            description: `Audit otomatis yang dipicu oleh deteksi risiko level ${risk.riskLevel}. Risiko: ${risk.description}`,
             auditType: 'RISK_BASED',
             status: 'PLANNED',
             plannedDate: new Date(),
@@ -77,9 +78,9 @@ export class RiskService {
           data: {
             auditId: audit.id,
             findingNumber: `AUTO-${risk.code}-${Date.now().toString().slice(-4)}`,
-            title: `Temuan Otomatis: Level Risiko Mencapai Batas Ekstrim`,
-            description: `Sistem secara otomatis mencatat temuan ini karena risiko ${risk.code} telah mencapai level EKSTRIM (Skor: ${risk.riskScore}). Diperlukan peninjauan mendalam terhadap efektivitas kontrol dan rencana mitigasi yang ada.`,
-            severity: 'CRITICAL',
+            title: `Temuan Otomatis: Level Risiko Mencapai Batas ${risk.riskLevel === 'EXTREME' ? 'Ekstrim' : 'Tinggi'}`,
+            description: `Sistem secara otomatis mencatat temuan ini karena risiko ${risk.code} telah mencapai level ${risk.riskLevel} (Skor: ${risk.riskScore}). Diperlukan peninjauan mendalam terhadap efektivitas kontrol dan rencana mitigasi yang ada.`,
+            severity: risk.riskLevel === 'EXTREME' ? 'CRITICAL' : 'MAJOR',
             category: 'RISK_MANAGEMENT',
             riskId: risk.id,
           }
@@ -93,8 +94,8 @@ export class RiskService {
             data: {
               userId: admin.id,
               type: 'ALERT',
-              title: 'Risiko Ekstrim Terdeteksi',
-              message: `Risiko ${risk.code} mencapai level EKSTRIM. Audit otomatis telah dibuat.`,
+              title: `Risiko ${risk.riskLevel === 'EXTREME' ? 'Ekstrim' : 'Tinggi'} Terdeteksi`,
+              message: `Risiko ${risk.code} mencapai level ${risk.riskLevel}. Audit otomatis telah dibuat.`,
               link: `/risk-management/${risk.id}`,
               status: 'UNREAD',
             },
@@ -105,12 +106,12 @@ export class RiskService {
       const failures = results.filter((r) => r.status === 'rejected');
       if (failures.length > 0) {
         console.error(
-          `[Risk] ${failures.length}/${results.length} EXTREME-risk audit notifications failed for risk ${risk.code}`,
+          `[Risk] ${failures.length}/${results.length} escalated-risk audit notifications failed for risk ${risk.code}`,
           failures.map((f) => (f as PromiseRejectedResult).reason)
         );
       }
     } catch (err) {
-      console.error('[Risk] Failed to handle extreme risk escalation:', err);
+      console.error('[Risk] Failed to handle risk escalation:', err);
     }
   }
 
@@ -186,11 +187,15 @@ export class RiskService {
         },
       });
 
-      // If risk escalated to EXTREME from a lower level, trigger the audit response
-      if (updatedRisk.riskLevel === 'EXTREME' && current.riskLevel !== 'EXTREME') {
+      // If risk escalated to HIGH or EXTREME from a lower level, trigger the audit response
+      const escalatedLevels: RiskLevel[] = ['HIGH', 'EXTREME'];
+      if (
+        escalatedLevels.includes(updatedRisk.riskLevel) &&
+        !escalatedLevels.includes(current.riskLevel as RiskLevel)
+      ) {
         // We use setImmediate/void to keep it out of the critical path of the update transaction
         // but still trigger the automation.
-        void this.handleExtremeRisk(updatedRisk);
+        void this.handleEscalatedRisk(updatedRisk);
       }
 
       // Recalculate residual risk when inherent likelihood/impact changes
@@ -322,6 +327,11 @@ export class RiskService {
         residualLevel,
       },
     });
+
+    // Integration: If risk is linked to a Strategic Plan, trigger plan progress recalculation
+    if (risk.strategicPlanId) {
+      await perencanaanService.recalculatePlanProgress(risk.strategicPlanId, tx);
+    }
   }
 
   // Shared enum-to-numeric mapping used by both calculateRiskScore and

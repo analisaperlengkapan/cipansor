@@ -28,11 +28,20 @@ interface TalentMatrixProps {
 }
 
 const GRID_CELLS = [
-  { id: 'HIGH_POTENTIAL', label: 'High Potential', performance: 'High', potential: 'High', color: 'bg-emerald-100 border-emerald-500' },
-  { id: 'KEY_TALENT', label: 'Key Talent', performance: 'Moderate', potential: 'High', color: 'bg-blue-100 border-blue-500' },
-  { id: 'EMERGING', label: 'Emerging', performance: 'Moderate', potential: 'Moderate', color: 'bg-slate-100 border-slate-400' },
-  { id: 'SOLID_PERFORMER', label: 'Solid Performer', performance: 'High', potential: 'Low', color: 'bg-emerald-50 border-emerald-300' },
-  { id: 'NEEDS_DEVELOPMENT', label: 'Needs Development', performance: 'Low', potential: 'Low', color: 'bg-red-100 border-red-500' },
+  // Top Row (Potential: High)
+  { id: 'HIGH_POTENTIAL_STAR', label: 'Star', performance: 'High', potential: 'High', color: 'bg-purple-100 border-purple-500', category: 'HIGH_POTENTIAL' },
+  { id: 'HIGH_POTENTIAL_HIPO', label: 'High Potential', performance: 'Moderate', potential: 'High', color: 'bg-purple-50 border-purple-400', category: 'HIGH_POTENTIAL' },
+  { id: 'EMERGING_ENIGMA', label: 'Enigma', performance: 'Low', potential: 'High', color: 'bg-blue-50 border-blue-300', category: 'EMERGING' },
+
+  // Middle Row (Potential: Moderate)
+  { id: 'KEY_TALENT_HIPRO', label: 'High Professional', performance: 'High', potential: 'Moderate', color: 'bg-green-100 border-green-500', category: 'KEY_TALENT' },
+  { id: 'SOLID_PERFORMER_CORE', label: 'Core Employee', performance: 'Moderate', potential: 'Moderate', color: 'bg-slate-100 border-slate-400', category: 'SOLID_PERFORMER' },
+  { id: 'EMERGING_DILEMMA', label: 'Dilemma', performance: 'Low', potential: 'Moderate', color: 'bg-orange-50 border-orange-300', category: 'EMERGING' },
+
+  // Bottom Row (Potential: Low)
+  { id: 'SOLID_PERFORMER_MASTER', label: 'Master', performance: 'High', potential: 'Low', color: 'bg-emerald-50 border-emerald-300', category: 'SOLID_PERFORMER' },
+  { id: 'SOLID_PERFORMER_EFFECTIVE', label: 'Effective', performance: 'Moderate', potential: 'Low', color: 'bg-slate-50 border-slate-300', category: 'SOLID_PERFORMER' },
+  { id: 'NEEDS_DEVELOPMENT_UNDER', label: 'Under Performer', performance: 'Low', potential: 'Low', color: 'bg-red-100 border-red-500', category: 'NEEDS_DEVELOPMENT' },
 ];
 
 export function TalentMatrix({ profiles }: TalentMatrixProps) {
@@ -43,57 +52,87 @@ export function TalentMatrix({ profiles }: TalentMatrixProps) {
     if (cell) setSelectedCategory(cell);
   };
 
-  const getFilteredProfiles = (categoryId: string) => {
+  const getFilteredProfiles = (cell: typeof GRID_CELLS[0]) => {
     return profiles
-      .filter(p => p.category === categoryId)
+      .filter(p => {
+        // Map 0-100 scores back to Low (1), Moderate (2), High (3) levels
+        const getLevel = (score: number) => score >= 80 ? 'High' : score >= 50 ? 'Moderate' : 'Low';
+        return p.category === cell.category &&
+               getLevel(p.performanceScore) === cell.performance &&
+               getLevel(p.potentialScore) === cell.potential;
+      })
       .sort((a, b) => (b.performanceScore + b.potentialScore) - (a.performanceScore + a.potentialScore));
   };
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-        {/* Talent categories mapped from backend's 5-value TalentCategory enum */}
-        {GRID_CELLS.map((cell) => {
-          const cellProfiles = getFilteredProfiles(cell.id);
+      <div className="relative overflow-x-auto">
+        <div className="min-w-[800px] grid grid-cols-4 grid-rows-4 gap-4 p-2">
+          {/* Y-Axis Label */}
+          <div className="row-span-3 flex flex-col justify-around items-center py-8">
+            <span className="text-xs font-bold uppercase tracking-widest -rotate-90 whitespace-nowrap text-slate-400">Potential</span>
+            <div className="flex flex-col gap-28 text-[10px] font-bold text-slate-400">
+              <span>High</span>
+              <span>Mod</span>
+              <span>Low</span>
+            </div>
+          </div>
 
-          return (
-            <Card
-              key={cell.id}
-              className={`p-4 border-2 min-h-[150px] cursor-pointer transition-all hover:shadow-md hover:scale-[1.02] ${cell.color}`}
-              onClick={() => handleCellClick(cell.id)}
-            >
-              <div className="flex justify-between items-start mb-2">
-                <span className="text-xs font-bold uppercase tracking-wider">{cell.label}</span>
-                <Badge variant="outline" className="bg-white/50">{cellProfiles.length}</Badge>
-              </div>
-              <div className="flex flex-wrap gap-1">
-                <TooltipProvider>
-                  {cellProfiles.slice(0, 10).map((profile) => (
-                    <Tooltip key={profile.id}>
-                      <TooltipTrigger asChild>
-                        <div className="w-8 h-8 rounded-full bg-white border flex items-center justify-center text-[10px] font-bold shadow-sm">
-                          {(profile.name || '?').split(' ').map(n => n[0]).join('').substring(0, 2)}
+          {/* Grid Cells */}
+          <div className="col-span-3 grid grid-cols-3 grid-rows-3 gap-4">
+            {GRID_CELLS.map((cell) => {
+              const cellProfiles = getFilteredProfiles(cell);
+
+              return (
+                <Card
+                  key={cell.id}
+                  className={`p-3 border-2 min-h-[120px] cursor-pointer transition-all hover:shadow-md hover:scale-[1.02] flex flex-col ${cell.color}`}
+                  onClick={() => handleCellClick(cell.id)}
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider leading-tight">{cell.label}</span>
+                    <Badge variant="outline" className="bg-white/50 text-[10px] h-4 px-1">{cellProfiles.length}</Badge>
+                  </div>
+                  <div className="flex flex-wrap gap-1 mt-auto">
+                    <TooltipProvider>
+                      {cellProfiles.slice(0, 6).map((profile) => (
+                        <Tooltip key={profile.id}>
+                          <TooltipTrigger asChild>
+                            <div className="w-6 h-6 rounded-full bg-white border flex items-center justify-center text-[8px] font-bold shadow-sm">
+                              {(profile.name || '?').split(' ').map(n => n[0]).join('').substring(0, 2)}
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <div className="text-xs">
+                              <p className="font-bold">{profile.name}</p>
+                              <p>{profile.currentRole}</p>
+                              <p className="mt-1 border-t pt-1">Perf: {profile.performanceScore} | Pot: {profile.potentialScore}</p>
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
+                      ))}
+                      {cellProfiles.length > 6 && (
+                        <div className="w-6 h-6 rounded-full bg-white/50 border flex items-center justify-center text-[8px] font-medium italic">
+                          +{cellProfiles.length - 6}
                         </div>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <div className="text-xs">
-                          <p className="font-bold">{profile.name}</p>
-                          <p>{profile.currentRole}</p>
-                          <p className="mt-1 border-t pt-1">Perf: {profile.performanceScore} | Pot: {profile.potentialScore}</p>
-                        </div>
-                      </TooltipContent>
-                    </Tooltip>
-                  ))}
-                  {cellProfiles.length > 10 && (
-                    <div className="w-8 h-8 rounded-full bg-white/50 border flex items-center justify-center text-[10px] font-medium italic">
-                      +{cellProfiles.length - 10}
-                    </div>
-                  )}
-                </TooltipProvider>
-              </div>
-            </Card>
-          );
-        })}
+                      )}
+                    </TooltipProvider>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+
+          {/* X-Axis Label */}
+          <div className="col-start-2 col-span-3 flex justify-around items-center pt-2">
+            <div className="flex gap-40 text-[10px] font-bold text-slate-400">
+              <span>Low</span>
+              <span>Mod</span>
+              <span>High</span>
+            </div>
+            <span className="absolute bottom-0 text-xs font-bold uppercase tracking-widest text-slate-400">Performance</span>
+          </div>
+        </div>
       </div>
 
       {/* Drill-down Dialog */}
@@ -112,7 +151,7 @@ export function TalentMatrix({ profiles }: TalentMatrixProps) {
 
           <ScrollArea className="max-h-[60vh] mt-4">
             <div className="grid gap-3 pr-4">
-              {selectedCategory && getFilteredProfiles(selectedCategory.id).map((profile) => (
+              {selectedCategory && getFilteredProfiles(selectedCategory).map((profile) => (
                 <Card key={profile.id} className="p-4 flex items-center justify-between hover:bg-muted/50 transition-colors">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-primary/10 border flex items-center justify-center text-sm font-bold text-primary">

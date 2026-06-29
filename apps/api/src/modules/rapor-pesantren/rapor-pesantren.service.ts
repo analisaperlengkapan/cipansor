@@ -634,9 +634,18 @@ async function getAkhlakSummary(
   const grade = getGradeFromScore(score, config.gradeThresholds);
 
   let behaviorGrade = 'BAIK';
-  if (violationPoints === 0 && rewardPoints > 10) behaviorGrade = 'SANGAT BAIK';
-  else if (violationPoints > 20) behaviorGrade = 'PERLU PEMBINAAN';
-  else if (violationPoints > 10) behaviorGrade = 'CUKUP';
+  let characterDescription = 'Ananda menunjukkan sikap yang baik dan patuh terhadap tata tertib pesantren.';
+
+  if (violationPoints === 0 && rewardPoints > 10) {
+    behaviorGrade = 'SANGAT BAIK';
+    characterDescription = 'Ananda menunjukkan keteladanan yang luar biasa, aktif dalam kebaikan, dan menjadi inspirasi bagi santri lainnya.';
+  } else if (violationPoints > 20) {
+    behaviorGrade = 'PERLU PEMBINAAN';
+    characterDescription = 'Ananda memerlukan bimbingan intensif dan perhatian khusus untuk memperbaiki kedisiplinan dan perilaku di lingkungan pesantren.';
+  } else if (violationPoints > 10) {
+    behaviorGrade = 'CUKUP';
+    characterDescription = 'Ananda cukup kooperatif, namun perlu meningkatkan konsistensi dalam menjaga kedisiplinan dan etika harian.';
+  }
 
   return {
     totalViolations: violations.length,
@@ -645,6 +654,7 @@ async function getAkhlakSummary(
     rewardPoints,
     netPoints,
     behaviorGrade,
+    characterDescription,
     grade,
     score,
     violations: violations.slice(0, 10).map((v) => ({

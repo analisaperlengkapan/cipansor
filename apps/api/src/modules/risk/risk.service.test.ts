@@ -36,6 +36,12 @@ const { mockPrisma } = vi.hoisted(() => {
       update: vi.fn(),
       delete: vi.fn(),
     },
+    internalAudit: {
+      create: vi.fn(),
+    },
+    auditFinding: {
+      create: vi.fn(),
+    },
     riskMitigation: {
       create: vi.fn(),
       findUnique: vi.fn(),

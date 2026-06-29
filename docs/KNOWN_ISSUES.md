@@ -134,13 +134,15 @@ coverage matrix.
   `src/stores/auth.ts` still use the legacy `UserRole` vocabulary; align with
   backend `RoleCode` + permissions.
 - **Replace remaining FE mock data** with real API calls. Done so far:
-  `foundation/dashboard` (admissions KPI + per-unit risk) and
+  `foundation/dashboard` (admissions KPI + per-unit risk),
   `foundation/finance/consolidation` (real per-unit financials, cash position,
-  6-month trend). Still mocked (each needs a dedicated backend aggregation
-  endpoint): `analytics/education` (hardcoded KPI + grade-distribution arrays),
-  `parent/buku-penghubung` (the Weekly Progress tab), `attendance/heatmap`,
-  `analytics/parent-engagement`, `homeroom/performance`, `alumni/sanad`,
-  `foundation/accreditation/readiness`.
+  6-month trend), `analytics/education` (cross-unit KPI + jenjang distribution
+  via `/analytics/benchmark/compare`, enrollment trend via `/analytics/students`),
+  `attendance/heatmap` (per-class daily data via `/attendance/calendar/:classId`),
+  and `parent/buku-penghubung` Weekly Progress (new
+  `/parent/children/:studentId/weekly-progress` aggregation). Still mocked (each
+  needs a dedicated backend aggregation endpoint): `analytics/parent-engagement`,
+  `homeroom/performance`, `alumni/sanad`, `foundation/accreditation/readiness`.
 - **Web unit/component tests.** Add a jsdom + React Testing Library vitest project
   for `apps/web/src/**` (currently only e2e-helper tests exist).
 - **Comprehensive Playwright e2e** across all routes (nav, CRUD, every

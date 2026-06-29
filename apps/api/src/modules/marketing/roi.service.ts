@@ -36,6 +36,23 @@ export async function calculateCampaignROI(unitId?: string) {
     conversions.map(c => [c.campaignId, c._count._all])
   );
 
+  // 1.5 Get Funnel Data
+  const funnelData = await prisma.registrant.groupBy({
+    by: ['campaignId', 'status'],
+    where: {
+      campaignId: { in: campaignIds },
+    },
+    _count: { _all: true },
+  });
+
+  const funnelMap = new Map<string, Record<string, number>>();
+  funnelData.forEach((f) => {
+    if (!f.campaignId) return;
+    const current = funnelMap.get(f.campaignId) || {};
+    current[f.status] = f._count._all;
+    funnelMap.set(f.campaignId, current);
+  });
+
   // 2. Get revenue in one query
   // Support both Registrant -> Student -> Invoice AND Registrant -> Invoice directly
   const [studentRevenueData, registrantRevenueData] = await Promise.all([
@@ -106,6 +123,8 @@ export async function calculateCampaignROI(unitId?: string) {
       ? (convertedCount / campaign._count.registrants) * 100
       : 0;
 
+    const funnel = funnelMap.get(campaign.id) || {};
+
     return {
       campaignId: campaign.id,
       name: campaign.name,
@@ -119,6 +138,13 @@ export async function calculateCampaignROI(unitId?: string) {
         roi: Math.round(roi * 100) / 100,
         costPerLead: campaign._count.registrants > 0 ? cost / campaign._count.registrants : 0,
         costPerAcquisition: convertedCount > 0 ? cost / convertedCount : 0,
+      },
+      funnel: {
+        leads: campaign._count.registrants,
+        tested: funnel['TESTED'] || 0,
+        interviewed: funnel['INTERVIEWED'] || 0,
+        accepted: funnel['ACCEPTED'] || 0,
+        enrolled: convertedCount,
       }
     };
   });

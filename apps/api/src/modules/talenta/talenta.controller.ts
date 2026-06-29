@@ -209,3 +209,11 @@ export const getCompetencyGap = asyncHandler(async (req: Request, res: Response)
   const result = await talentaService.getCompetencyGap(userId, targetPositionId);
   res.json({ success: true, data: result });
 });
+
+export const syncFromPKG = asyncHandler(async (req: Request, res: Response) => {
+  const { teacherId, periodId } = req.body;
+  if (!teacherId || !periodId) throw Errors.badRequest('teacherId and periodId are required');
+
+  const result = await talentaService.syncFromPKG(teacherId, periodId);
+  res.json({ success: true, data: result, message: 'Successfully synced from PKG' });
+});

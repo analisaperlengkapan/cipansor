@@ -19,6 +19,7 @@ router.delete('/profiles/:id', talentaController.deleteProfile);
 
 // Assessments
 router.post('/assessments', talentaController.createAssessment);
+router.post('/sync-pkg', talentaController.syncFromPKG);
 
 // Training Programs
 router.get('/trainings', talentaController.listTrainings);

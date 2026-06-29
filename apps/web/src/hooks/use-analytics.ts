@@ -13,6 +13,7 @@ import {
   ViolationSummary,
   DashboardSummary,
   GRCStats,
+  ParentEngagementSummary,
 } from "@cipansor/shared";
 
 export type {
@@ -28,6 +29,7 @@ export type {
   ViolationSummary,
   DashboardSummary,
   GRCStats,
+  ParentEngagementSummary,
 };
 
 // Constants
@@ -244,6 +246,21 @@ export interface BenchmarkComparison {
     tahfidzProgress: number;
     academicAverage: number;
   };
+}
+
+export function useParentEngagementAnalytics(unitId?: string) {
+  return useQuery({
+    queryKey: ["analytics", "parent-engagement", unitId],
+    queryFn: async () => {
+      const { data } = await api.get<{ data: ParentEngagementSummary }>(
+        "/analytics/parent-engagement",
+        {
+          params: { unitId },
+        },
+      );
+      return data.data;
+    },
+  });
 }
 
 /** Cross-unit performance comparison (GET /analytics/benchmark/compare). */

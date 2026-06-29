@@ -12,6 +12,7 @@ import {
   useRecentLeads,
   useUpcomingFollowUps,
   useHighPriorityLeads,
+  useCampaignROI,
 } from "@/hooks/use-marketing";
 import { useAuth } from "@/hooks/use-auth";
 import {
@@ -373,6 +374,10 @@ export default function MarketingDashboard() {
           <TabsTrigger value="analytics">
             <PieChartIcon className="mr-2 h-4 w-4" />
             Analytics
+          </TabsTrigger>
+          <TabsTrigger value="roi">
+            <DollarSign className="mr-2 h-4 w-4" />
+            ROI & Funnel
           </TabsTrigger>
         </TabsList>
 
@@ -961,6 +966,11 @@ export default function MarketingDashboard() {
             </Card>
           </div>
         </TabsContent>
+
+        {/* ROI & Funnel Tab */}
+        <TabsContent value="roi" className="space-y-4">
+          <ROIFunnelContent unitId={user?.unitId} />
+        </TabsContent>
       </Tabs>
 
       {/* Create/Edit Campaign Dialog */}
@@ -1124,6 +1134,66 @@ export default function MarketingDashboard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+function ROIFunnelContent({ unitId }: { unitId?: string }) {
+  const { data: roiData, isLoading } = useCampaignROI(unitId);
+
+  if (isLoading) return <div className="flex justify-center p-8"><Loader2 className="animate-spin h-8 w-8" /></div>;
+
+  return (
+    <div className="space-y-6">
+      <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2">
+        {roiData?.map((item) => (
+          <Card key={item.campaignId}>
+            <CardHeader>
+              <div className="flex justify-between items-start">
+                <div>
+                  <CardTitle>{item.name}</CardTitle>
+                  <CardDescription>ROI: <span className={item.metrics.roi >= 0 ? "text-green-600 font-bold" : "text-red-600 font-bold"}>{item.metrics.roi}%</span></CardDescription>
+                </div>
+                <Badge>{item.code}</Badge>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="p-2 bg-muted rounded">
+                    <p className="text-muted-foreground">Revenue</p>
+                    <p className="text-lg font-bold">Rp {item.metrics.revenue.toLocaleString()}</p>
+                  </div>
+                  <div className="p-2 bg-muted rounded">
+                    <p className="text-muted-foreground">Cost</p>
+                    <p className="text-lg font-bold">Rp {item.metrics.cost.toLocaleString()}</p>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">Conversion Funnel</p>
+                  <div className="h-[200px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart layout="vertical" data={[
+                        { stage: 'Leads', value: item.funnel.leads },
+                        { stage: 'Tested', value: item.funnel.tested },
+                        { stage: 'Interview', value: item.funnel.interviewed },
+                        { stage: 'Accepted', value: item.funnel.accepted },
+                        { stage: 'Enrolled', value: item.funnel.enrolled },
+                      ]}>
+                        <XAxis type="number" hide />
+                        <YAxis dataKey="stage" type="category" width={80} />
+                        <Tooltip />
+                        <Bar dataKey="value" fill="#6366f1" radius={[0, 4, 4, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 }

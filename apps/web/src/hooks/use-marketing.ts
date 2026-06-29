@@ -25,6 +25,44 @@ export const useMarketingStats = (unitId?: string) => {
   });
 };
 
+export interface CampaignROIResult {
+  campaignId: string;
+  name: string;
+  code: string;
+  metrics: {
+    totalLeads: number;
+    convertedStudents: number;
+    conversionRate: number;
+    cost: number;
+    revenue: number;
+    roi: number;
+    costPerLead: number;
+    costPerAcquisition: number;
+  };
+  funnel: {
+    leads: number;
+    tested: number;
+    interviewed: number;
+    accepted: number;
+    enrolled: number;
+  };
+}
+
+export const useCampaignROI = (unitId?: string) => {
+  return useQuery({
+    queryKey: ["marketing", "roi", unitId],
+    queryFn: async () => {
+      const { data } = await api.get<{
+        success: boolean;
+        data: CampaignROIResult[];
+      }>("/marketing/roi", {
+        params: { unitId },
+      });
+      return data.data;
+    },
+  });
+};
+
 export interface RecentLead {
   id: string;
   fullName: string;

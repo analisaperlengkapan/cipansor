@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { MainLayout } from "@/components/layout";
 import { PageHeader } from "@/components/shared";
+import { useParentEngagementAnalytics } from "@/hooks/use-analytics";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Card,
   CardContent,
@@ -101,7 +103,31 @@ const mockEngagementData = {
 
 export default function ParentEngagementPage() {
   const [selectedPeriod, setSelectedPeriod] = useState("month");
-  const data = mockEngagementData;
+  const { data, isLoading } = useParentEngagementAnalytics();
+
+  if (isLoading) {
+    return (
+      <MainLayout allowedRoles={["SUPER_ADMIN", "UNIT_ADMIN"]}>
+        <div className="space-y-6">
+          <PageHeader
+            title="Metrik Engagement Orang Tua"
+            description="Analisis keterlibatan orang tua dalam sistem"
+          />
+          <div className="grid gap-4 md:grid-cols-4">
+            {[1, 2, 3, 4].map((i) => (
+              <Skeleton key={i} className="h-24 w-full" />
+            ))}
+          </div>
+          <div className="grid gap-6 lg:grid-cols-2">
+            <Skeleton className="h-[400px] w-full" />
+            <Skeleton className="h-[400px] w-full" />
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
+
+  if (!data) return null;
 
   return (
     <MainLayout allowedRoles={["SUPER_ADMIN", "UNIT_ADMIN"]}>

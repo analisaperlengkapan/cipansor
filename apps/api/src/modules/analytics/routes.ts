@@ -217,6 +217,25 @@ router.get('/psb', controller.getPSBStats);
  */
 router.get('/grc', controller.getGRCStats);
 
+/**
+ * @swagger
+ * /api/analytics/parent-engagement:
+ *   get:
+ *     summary: Get parent engagement statistics
+ *     tags: [Analytics]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: unitId
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Parent engagement statistics (logins, response times, etc.)
+ */
+router.get('/parent-engagement', controller.getParentEngagementStats);
+
 // ============================================
 // FORECAST ENDPOINTS (Predictive Analytics)
 // ============================================

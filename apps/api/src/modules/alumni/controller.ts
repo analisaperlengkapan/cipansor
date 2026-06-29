@@ -355,3 +355,18 @@ export async function cancelRegistration(req: Request, res: Response, next: Next
     next(error);
   }
 }
+
+// ==================== SANAD TREE ====================
+
+export async function getSanadTree(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { search, graduationYear } = req.query as any;
+    const result = await service.getSanadTree({
+      search,
+      graduationYear: graduationYear ? parseInt(graduationYear) : undefined
+    });
+    res.json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+}

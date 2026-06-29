@@ -745,4 +745,5 @@ router.put('/events/attendees/:id/status', controller.updateAttendeeStatus);
  */
 router.delete('/events/attendees/:id', controller.cancelRegistration);
 
+router.get('/sanad/tree', controller.getSanadTree);
 export default router;

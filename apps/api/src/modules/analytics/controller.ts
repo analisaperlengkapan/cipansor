@@ -10,7 +10,11 @@ import type {
   AnalyticsAttendanceSummary,
   AcademicPerformance,
   GRCStats,
+  ParentEngagementStats,
+  HomeroomPerformanceStats,
+  AccreditationReadiness,
 } from '@cipansor/shared';
+import * as engagementService from './engagement-analytics.service';
 
 export async function getDashboardStats(
   req: Request,
@@ -20,6 +24,48 @@ export async function getDashboardStats(
   try {
     const { unitId } = (req.query as any);
     const stats = await service.getDashboardStats(unitId as string | undefined);
+    res.json({ success: true, data: stats });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getParentEngagementStats(
+  req: Request,
+  res: Response<ApiResponse<ParentEngagementStats>>,
+  next: NextFunction
+) {
+  try {
+    const { unitId } = req.query as any;
+    const stats = await engagementService.getParentEngagementStats(unitId);
+    res.json({ success: true, data: stats });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getHomeroomPerformance(
+  req: Request,
+  res: Response<ApiResponse<HomeroomPerformanceStats[]>>,
+  next: NextFunction
+) {
+  try {
+    const { unitId } = req.query as any;
+    const stats = await engagementService.getHomeroomPerformance(unitId);
+    res.json({ success: true, data: stats });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getAccreditationReadiness(
+  req: Request,
+  res: Response<ApiResponse<AccreditationReadiness[]>>,
+  next: NextFunction
+) {
+  try {
+    const { unitId } = req.query as any;
+    const stats = await engagementService.getAccreditationReadiness(unitId);
     res.json({ success: true, data: stats });
   } catch (error) {
     next(error);

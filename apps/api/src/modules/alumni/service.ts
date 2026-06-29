@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma';
+import { prisma } from '../../lib/prisma';
 import {
   CreateAlumniInput,
   UpdateAlumniInput,
@@ -747,4 +747,71 @@ export async function getAlumniStats(unitId?: string) {
       totalCount: donationStats._count,
     },
   };
+}
+
+// ==================== SANAD TREE ====================
+
+export async function getSanadTree(query: { search?: string; graduationYear?: number }) {
+  // 1. Fetch teachers who have sanad records
+  const teachersWithSanad = await prisma.user.findMany({
+    where: {
+      recordedTahfidz: { some: {} },
+      userRoles: { some: { roleCode: { in: ['MUHAFIDZ', 'TKQ_GURU', 'SDIT_GURU', 'SMPIT_GURU', 'SMAQ_GURU'] } } }
+    },
+    select: {
+      id: true,
+      name: true,
+      teacher: {
+        select: {
+          specialization: true,
+        }
+      }
+    }
+  });
+
+  // 2. Fetch all sanad records
+  const sanadRecords = await prisma.sanadRecord.findMany({
+    where: {
+      enrollment: {
+        student: {
+          ...(query.graduationYear ? { graduateYear: query.graduationYear } : {}),
+          ...(query.search ? { user: { name: { contains: query.search, mode: 'insensitive' } } } : {})
+        }
+      }
+    },
+    include: {
+      teacher: { select: { id: true, name: true } },
+      enrollment: {
+        include: {
+          student: {
+            include: { user: { select: { name: true } } }
+          }
+        }
+      }
+    }
+  });
+
+  // 3. Build recursive structure
+  const tree = teachersWithSanad.map(teacher => {
+    const students = sanadRecords
+      .filter(r => r.teacherId === teacher.id)
+      .map(r => ({
+        id: r.enrollment.student.id,
+        name: r.enrollment.student.user.name,
+        title: "Hafizh",
+        year: r.enrollment.student.graduateYear?.toString() || "",
+        specialty: `${r.juz} Juz bi Sanad`,
+      }));
+
+    return {
+      id: teacher.id,
+      name: teacher.name,
+      title: "معلم القرآن",
+      year: "",
+      specialty: teacher.teacher?.specialization || "Tahfidz & Qiroah",
+      children: students
+    };
+  });
+
+  return tree;
 }

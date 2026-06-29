@@ -94,6 +94,25 @@ router.get('/', authenticate, validateQuery(listSanadQuerySchema), controller.li
 
 /**
  * @openapi
+ * /api/sanad/tree:
+ *   get:
+ *     summary: Get hierarchical sanad tree (silsilah)
+ *     tags: [Sanad Certificate]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: rootId
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Hierarchical sanad tree data
+ */
+router.get('/tree', authenticate, controller.getSanadTree);
+
+/**
+ * @openapi
  * /api/sanad/students/{studentId}/summary:
  *   get:
  *     summary: Get student sanad summary

@@ -126,40 +126,73 @@ export class PerencanaanService {
       const endOfDay = new Date(plan.endDate);
       endOfDay.setUTCHours(23, 59, 59, 999);
 
-      const accountRealizationMap = new Map<string, number>();
-      await Promise.all(
-        Array.from(accountMap.entries()).map(async ([accountId, meta]) => {
-          const journalAggregates = await prisma.journalEntry.aggregate({
-            where: {
-              accountId,
-              unitId: plan.unitId,
-              date: {
-                gte: plan.startDate,
-                lte: endOfDay,
-              },
-            },
-            _sum: {
-              debit: true,
-              credit: true,
-            },
-          });
+      // 2. Efficiently aggregate all relevant journal entries in ONE query using groupBy
+      const allAccountIds = Array.from(accountMap.keys());
+      const journalAggregates = await prisma.journalEntry.groupBy({
+        by: ['accountId'],
+        where: {
+          accountId: { in: allAccountIds },
+          unitId: plan.unitId,
+          date: { gte: plan.startDate, lte: endOfDay },
+        },
+        _sum: { debit: true, credit: true },
+      });
 
+      const accountRealizationMap = new Map<string, number>();
+      journalAggregates.forEach((agg) => {
+        const meta = accountMap.get(agg.accountId);
+        if (meta) {
           let realization: number;
           if (meta.normalBalance === 'DEBIT') {
-            realization =
-              (journalAggregates._sum.debit?.toNumber() || 0) -
-              (journalAggregates._sum.credit?.toNumber() || 0);
+            realization = (agg._sum.debit?.toNumber() || 0) - (agg._sum.credit?.toNumber() || 0);
           } else {
-            realization =
-              (journalAggregates._sum.credit?.toNumber() || 0) -
-              (journalAggregates._sum.debit?.toNumber() || 0);
+            realization = (agg._sum.credit?.toNumber() || 0) - (agg._sum.debit?.toNumber() || 0);
           }
-          accountRealizationMap.set(accountId, Math.max(0, realization));
-        })
-      );
+          accountRealizationMap.set(agg.accountId, Math.max(0, realization));
+        }
+      });
 
-      // 3. For each account, compute the total budget across all activities sharing it
-      //    so we can distribute realization proportionally.
+      // 3. Optimized Monthly Trend: Query all months at once and group in memory
+      // We can use a single query for all entries in the range and aggregate by month
+      const monthlyEntries = await prisma.journalEntry.findMany({
+        where: {
+          accountId: { in: allAccountIds },
+          unitId: plan.unitId,
+          date: { gte: plan.startDate, lte: endOfDay },
+        },
+        select: { accountId: true, date: true, debit: true, credit: true },
+      });
+
+      const monthlyTrendMap = new Map<string, number>();
+      monthlyEntries.forEach((entry) => {
+        const monthKey = entry.date.toISOString().substring(0, 7); // YYYY-MM
+        const meta = accountMap.get(entry.accountId);
+        if (meta) {
+          let realization: number;
+          if (meta.normalBalance === 'DEBIT') {
+            realization = entry.debit.toNumber() - entry.credit.toNumber();
+          } else {
+            realization = entry.credit.toNumber() - entry.debit.toNumber();
+          }
+          monthlyTrendMap.set(monthKey, (monthlyTrendMap.get(monthKey) || 0) + realization);
+        }
+      });
+
+      // Convert map to sorted array of monthly trend
+      const monthlyTrend = [];
+      const start = new Date(plan.startDate);
+      const end = new Date(plan.endDate);
+      const curr = new Date(start);
+      while (curr <= end) {
+        const key = curr.toISOString().substring(0, 7);
+        monthlyTrend.push({
+          month: key,
+          realization: Math.max(0, monthlyTrendMap.get(key) || 0),
+        });
+        curr.setMonth(curr.getMonth() + 1);
+      }
+
+      // 4. Compute total budget across all activities sharing accounts
       const accountTotalBudget = new Map<string, number>();
       for (const obj of plan.objectives) {
         for (const act of obj.activities) {
@@ -171,7 +204,7 @@ export class PerencanaanService {
         }
       }
 
-      // 4. Calculate realization for each activity and objective
+      // 5. Calculate realization for each activity and objective
       const objectivesWithRealization = plan.objectives.map((obj) => {
         const activitiesWithRealization = obj.activities.map((act) => {
           let realization = 0;
@@ -181,11 +214,9 @@ export class PerencanaanService {
             const totalBudgetForAccount = accountTotalBudget.get(accId) || 0;
             const actBudget = act.budget?.toNumber() || 0;
 
-            // Distribute the account's realization proportionally by budget share
             if (totalBudgetForAccount > 0 && actBudget > 0) {
               realization = accountTotal * (actBudget / totalBudgetForAccount);
             } else if (totalBudgetForAccount === 0) {
-              // All activities have zero budget — split evenly as fallback
               const actCount = [...plan.objectives]
                 .flatMap((o) => o.activities)
                 .filter((a) => a.budgetRel?.accountId === accId).length;
@@ -195,8 +226,6 @@ export class PerencanaanService {
           return { ...act, realization: Math.max(0, realization) };
         });
 
-        // Only include activities with a budgetRel link in the total budget
-        // so that untracked activities don't dilute the financial progress.
         const totalBudget = activitiesWithRealization.reduce(
           (sum, act) => sum + (act.budgetRel ? (act.budget?.toNumber() || 0) : 0),
           0

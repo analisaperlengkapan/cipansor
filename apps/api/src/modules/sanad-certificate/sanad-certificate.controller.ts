@@ -161,3 +161,17 @@ export const verifyCertificate = asyncHandler(async (req: Request, res: Response
     data: result,
   });
 });
+
+// ============================================
+// GET SANAD TREE (SILSILAH)
+// ============================================
+
+export const getSanadTree = asyncHandler(async (req: Request, res: Response) => {
+  const { rootId } = (req.query as any);
+  const tree = await SanadCertificateService.getSanadTree(rootId);
+
+  res.json({
+    success: true,
+    data: tree,
+  });
+});

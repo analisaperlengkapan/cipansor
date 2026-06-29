@@ -31,6 +31,8 @@ vi.mock('../../lib/prisma', () => ({
     },
     journalEntry: {
       aggregate: vi.fn(),
+      groupBy: vi.fn(),
+      findMany: vi.fn(),
     },
   },
 }));
@@ -223,16 +225,18 @@ describe('Perencanaan Service', () => {
       };
 
       vi.mocked(prisma.strategicPlan.findUnique).mockResolvedValue(mockPlan as any);
-      vi.mocked(prisma.journalEntry.aggregate).mockResolvedValue({
-        _sum: { debit: { toNumber: () => 500000 }, credit: { toNumber: () => 100000 } }
-      } as any);
+      vi.mocked(prisma.journalEntry.groupBy).mockResolvedValue([
+        { accountId: 'acc-1', _sum: { debit: { toNumber: () => 500000 }, credit: { toNumber: () => 100000 } } }
+      ] as any);
+      vi.mocked(prisma.journalEntry.findMany).mockResolvedValue([]);
 
       const result = await perencanaanService.getPlanById(planId);
 
       expect(result.totalRealization).toBe(400000); // 500k - 100k
       expect(result.financialProgress).toBe(40); // 400k / 1m
-      expect(prisma.journalEntry.aggregate).toHaveBeenCalledWith(expect.objectContaining({
-        where: expect.objectContaining({ accountId: 'acc-1' })
+      expect(prisma.journalEntry.groupBy).toHaveBeenCalledWith(expect.objectContaining({
+        by: ['accountId'],
+        where: expect.objectContaining({ accountId: { in: ['acc-1'] } })
       }));
     });
 
@@ -269,14 +273,15 @@ describe('Perencanaan Service', () => {
       };
 
       vi.mocked(prisma.strategicPlan.findUnique).mockResolvedValue(mockPlan as any);
-      vi.mocked(prisma.journalEntry.aggregate).mockResolvedValue({
-        _sum: { debit: { toNumber: () => 500000 }, credit: { toNumber: () => 0 } }
-      } as any);
+      vi.mocked(prisma.journalEntry.groupBy).mockResolvedValue([
+        { accountId: 'acc-shared', _sum: { debit: { toNumber: () => 500000 }, credit: { toNumber: () => 0 } } }
+      ] as any);
+      vi.mocked(prisma.journalEntry.findMany).mockResolvedValue([]);
 
       const result = await perencanaanService.getPlanById(planId);
 
-      // Journal aggregate should be called only ONCE for the shared account
-      expect(prisma.journalEntry.aggregate).toHaveBeenCalledTimes(1);
+      // Journal groupBy should be called only ONCE for the shared account
+      expect(prisma.journalEntry.groupBy).toHaveBeenCalledTimes(1);
 
       // Total realization should equal the account total (500k), NOT 500k * 2
       expect(result.totalRealization).toBe(500000);

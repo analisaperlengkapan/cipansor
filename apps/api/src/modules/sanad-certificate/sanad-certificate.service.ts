@@ -660,6 +660,88 @@ export async function verifyCertificate(input: VerifyCertificateInput) {
 // EXPORT SERVICE
 // ============================================
 
+// ============================================
+// GET SANAD TREE (SILSILAH) - OPTIMIZED
+// ============================================
+
+export async function getSanadTree(rootTeacherId?: string) {
+  // Fetch ALL records to build tree in memory (Best Practice for small-to-medium datasets)
+  // For extremely large datasets, this would need a graph database or ltree in Postgres.
+  const allRecords = await prisma.sanadRecord.findMany({
+    include: {
+      enrollment: {
+        include: {
+          student: {
+            include: {
+              user: { select: { id: true, name: true } },
+            },
+          },
+        },
+      },
+      teacher: { select: { id: true, name: true } },
+    },
+    orderBy: { certifiedAt: 'asc' },
+  });
+
+  if (allRecords.length === 0) return null;
+
+  // 1. Identify start teacher
+  let startTeacherId = rootTeacherId;
+  if (!startTeacherId) {
+    // Find a teacher who hasn't been a student in any record (top of the chain)
+    const studentUserIds = new Set(
+      allRecords.map((r) => r.enrollment.student.user?.id).filter(Boolean)
+    );
+    const topTeacher = allRecords.find((r) => !studentUserIds.has(r.teacherId));
+    startTeacherId = topTeacher ? topTeacher.teacherId : allRecords[0].teacherId;
+  }
+
+  const rootTeacher = await prisma.user.findUnique({
+    where: { id: startTeacherId },
+    select: { id: true, name: true },
+  });
+
+  if (!rootTeacher) throw new Error('Teacher not found');
+
+  // 2. Build teacher -> children map
+  const adjMap = new Map<string, any[]>();
+  allRecords.forEach((record) => {
+    const studentUser = record.enrollment.student.user;
+    if (studentUser) {
+      if (!adjMap.has(record.teacherId)) adjMap.set(record.teacherId, []);
+      adjMap.get(record.teacherId)!.push({
+        id: record.id,
+        studentUserId: studentUser.id,
+        name: studentUser.name,
+        title: record.grade || 'Hafizh',
+        year: new Date(record.certifiedAt).getFullYear().toString(),
+        specialty: `Juz ${record.juz}`,
+      });
+    }
+  });
+
+  // 3. Recursive builder from memory map
+  const build = (tId: string, tName: string): any => {
+    const childrenNodes = adjMap.get(tId) || [];
+    return {
+      id: tId,
+      name: tName,
+      title: 'Mudaris',
+      year: '',
+      specialty: 'Sanad Al-Qur\'an',
+      children: childrenNodes.map((c) => {
+        const subTree = build(c.studentUserId, c.name);
+        return {
+          ...c,
+          children: subTree.children.length > 0 ? subTree.children : undefined,
+        };
+      }),
+    };
+  };
+
+  return build(rootTeacher.id, rootTeacher.name);
+}
+
 export const SanadCertificateService = {
   findAllSanadRecords,
   findSanadById,
@@ -671,4 +753,5 @@ export const SanadCertificateService = {
   generateCertificate,
   generateCertificateHtml,
   verifyCertificate,
+  getSanadTree,
 };

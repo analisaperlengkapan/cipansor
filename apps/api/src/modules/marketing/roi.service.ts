@@ -37,60 +37,34 @@ export async function calculateCampaignROI(unitId?: string) {
   );
 
   // 2. Get revenue in one query
-  // Support both Registrant -> Student -> Invoice AND Registrant -> Invoice directly
-  const [studentRevenueData, registrantRevenueData] = await Promise.all([
-    // Path: Registrant -> Student -> Invoice
-    prisma.invoice.findMany({
-      where: {
-        student: {
-          registrant: {
-            campaignId: { in: campaignIds },
-          },
-        },
-        status: 'PAID',
-      },
-      select: {
-        paidAmount: true,
-        student: {
-          select: {
-            registrant: {
-              select: { campaignId: true }
-            }
-          }
-        }
-      }
-    }),
-    // Path: Registrant -> Invoice (for registration fees paid before promotion to student)
-    // Note: This requires an optional registrantId on the Invoice model
-    (prisma.invoice as any).findMany({
-      where: {
+  // Path: MarketingCampaign -> Registrant -> Student -> Invoice
+  // This is the primary conversion path where a lead becomes a student and pays fees.
+  const studentRevenueData = await prisma.invoice.findMany({
+    where: {
+      student: {
         registrant: {
           campaignId: { in: campaignIds },
         },
-        status: 'PAID',
       },
-      select: {
-        paidAmount: true,
-        registrant: {
-          select: { campaignId: true }
+      status: 'PAID',
+    },
+    select: {
+      paidAmount: true,
+      student: {
+        select: {
+          registrant: {
+            select: { campaignId: true }
+          }
         }
       }
-    }).catch(() => []) // Gracefully handle if registrantId isn't on Invoice yet
-  ]);
-
-  const revenueMap = new Map<string, number>();
-
-  // Add revenue from students
-  studentRevenueData.forEach(inv => {
-    const cid = inv.student?.registrant?.campaignId;
-    if (cid) {
-      revenueMap.set(cid, (revenueMap.get(cid) || 0) + Number(inv.paidAmount));
     }
   });
 
-  // Add revenue from direct registrants (e.g. registration fees)
-  registrantRevenueData.forEach((inv: any) => {
-    const cid = inv.registrant?.campaignId;
+  const revenueMap = new Map<string, number>();
+
+  // Add revenue from students who originated from campaigns
+  studentRevenueData.forEach(inv => {
+    const cid = inv.student?.registrant?.campaignId;
     if (cid) {
       revenueMap.set(cid, (revenueMap.get(cid) || 0) + Number(inv.paidAmount));
     }

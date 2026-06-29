@@ -42,6 +42,12 @@ const { mockPrisma } = vi.hoisted(() => {
       update: vi.fn(),
       delete: vi.fn(),
     },
+    internalAudit: {
+      create: vi.fn(),
+    },
+    auditFinding: {
+      create: vi.fn(),
+    },
     user: {
       findMany: vi.fn(),
     },
@@ -103,8 +109,21 @@ describe('Risk Service', () => {
         createdById: 'user-1',
       };
 
-      vi.mocked(prisma.risk.create).mockResolvedValue({} as any);
-      vi.mocked(prisma.user.findMany).mockResolvedValue([] as any);
+      const mockRisk = {
+        id: 'risk-extreme',
+        unitId: 'unit-1',
+        code: 'RSK-001',
+        description: 'Total failure',
+        riskScore: 25,
+        riskLevel: RiskLevel.EXTREME,
+      };
+
+      vi.mocked(prisma.risk.create).mockResolvedValue(mockRisk as any);
+      vi.mocked(prisma.user.findMany).mockResolvedValue([{ id: 'auditor-1' }] as any);
+      vi.mocked(prisma.internalAudit.create).mockResolvedValue({ id: 'audit-1' } as any);
+      vi.mocked(prisma.auditFinding.create).mockResolvedValue({ id: 'finding-1' } as any);
+      vi.mocked(prisma.notification.create).mockResolvedValue({} as any);
+
       await riskService.createRisk(dto as any);
 
       expect(prisma.risk.create).toHaveBeenCalledWith({
@@ -113,6 +132,31 @@ describe('Risk Service', () => {
           riskLevel: RiskLevel.EXTREME,
         }),
       });
+
+      // Verify automation (Audit & Finding creation)
+      // Since it's fire-and-forget in the service, we might need a small delay or use vi.waitFor
+      // but in this mock environment it usually executes synchronously unless specifically delayed.
+
+      // Wait a tiny bit for the "void" promise to resolve
+      await new Promise(resolve => setTimeout(resolve, 10));
+
+      expect(prisma.internalAudit.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            riskId: 'risk-extreme',
+            auditType: 'RISK_BASED',
+          }),
+        })
+      );
+
+      expect(prisma.auditFinding.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            riskId: 'risk-extreme',
+            severity: 'CRITICAL',
+          }),
+        })
+      );
     });
   });
 

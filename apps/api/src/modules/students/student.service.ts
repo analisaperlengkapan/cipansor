@@ -241,6 +241,114 @@ export class StudentService {
   }
 
   /**
+   * Get complete student profile (Student 360 View)
+   * Aggregates Academic, Tahfidz, Counseling, and Health logs.
+   */
+  async getCompleteProfile(id: string) {
+    const student = await prisma.student.findFirst({
+      where: { id, deletedAt: null },
+      include: {
+        user: { select: { id: true, name: true, email: true } },
+        unit: { select: { id: true, name: true, type: true } },
+        enrollments: {
+          include: {
+            class: {
+              include: {
+                academicYear: true,
+              },
+            },
+          },
+          orderBy: { enrolledAt: 'desc' },
+        },
+        parents: {
+          include: {
+            parent: { select: { id: true, name: true, phone: true, email: true } },
+          },
+        },
+        // Academic
+        grades: {
+          include: { subject: { select: { name: true } } },
+          orderBy: { gradedAt: 'desc' },
+          take: 20,
+        },
+        // Tahfidz
+        tahfidzRecords: {
+          orderBy: { recordedAt: 'desc' },
+          take: 20,
+        },
+        // Counseling
+        counselingSessions: {
+          orderBy: { scheduledAt: 'desc' },
+          take: 10,
+        },
+        // Health
+        medicalRecords: {
+          orderBy: { visitDate: 'desc' },
+          take: 10,
+        },
+        growthRecords: {
+          orderBy: { recordDate: 'desc' },
+          take: 5,
+        },
+        // Behavior (for completeness of 360 view)
+        violations: {
+          orderBy: { occurredAt: 'desc' },
+          take: 10,
+        },
+        rewards: {
+          orderBy: { givenAt: 'desc' },
+          take: 10,
+        },
+      },
+    });
+
+    if (!student) throw Errors.notFound('Student');
+
+    // Calculate Academic Summary
+    const validGrades = student.grades.filter(g => g.score);
+    const averageGrade = validGrades.length > 0
+      ? validGrades.reduce((sum, g) => sum + g.score.toNumber(), 0) / validGrades.length
+      : 0;
+
+    // Calculate Attendance Summary (Last 30 days)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const attendanceRecords = await prisma.attendance.findMany({
+      where: { studentId: id, date: { gte: thirtyDaysAgo } },
+    });
+    const presentDays = attendanceRecords.filter(r => r.status === 'PRESENT').length;
+    const totalDays = attendanceRecords.length;
+
+    // Map to Frontend expected structure (StudentCompleteProfile)
+    return {
+      ...student,
+      parents: student.parents.map(p => ({
+        id: p.parent.id,
+        name: p.parent.name,
+        relation: p.relation,
+        phone: p.parent.phone,
+        email: p.parent.email,
+      })),
+      academicSummary: {
+        averageGrade: Math.round(averageGrade * 100) / 100,
+        totalSubjects: new Set(student.grades.map(g => g.subjectId)).size,
+        trend: 'STABLE', // Simplified
+      },
+      attendanceSummary: {
+        totalDays,
+        presentDays,
+        percentage: totalDays > 0 ? Math.round((presentDays / totalDays) * 100) : 100,
+      },
+      behaviorSummary: {
+        totalViolations: student.violations.length,
+        totalRewards: student.rewards.length,
+        points: student.violations.reduce((sum, v) => sum - v.points, 0) +
+                student.rewards.reduce((sum, r) => sum + r.points, 0),
+      },
+    };
+  }
+
+  /**
    * Create new student (with user account)
    */
   async create(input: CreateStudentInput) {

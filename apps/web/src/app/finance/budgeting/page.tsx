@@ -46,6 +46,17 @@ import {
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  Cell,
+} from "recharts";
 
 // Helper Hooks
 const useBudgets = (unitId: string, academicYearId: string) => {
@@ -151,6 +162,17 @@ export default function BudgetingPage() {
     selectedUnitId,
     selectedYearId,
   );
+
+  const { data: realizationReport } = useQuery({
+    queryKey: ["budget-realization", selectedUnitId, selectedYearId],
+    queryFn: async () => {
+      const res = await api.get(`/finance-enhancement/reports/budget-realization`, {
+        params: { unitId: selectedUnitId, academicYearId: selectedYearId },
+      });
+      return res.data.data;
+    },
+    enabled: !!selectedUnitId && !!selectedYearId,
+  });
   const createBudget = useCreateBudget();
   const deleteBudget = useDeleteBudget();
   const updateBudget = useUpdateBudget();
@@ -334,6 +356,80 @@ export default function BudgetingPage() {
             ))}
           </SelectContent>
         </Select>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="md:col-span-2">
+          <CardHeader>
+            <CardTitle>Visualisasi Realisasi Anggaran</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px] w-full">
+              {realizationReport?.items?.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={realizationReport.items}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                    <XAxis dataKey="code" />
+                    <YAxis tickFormatter={(value) => `Rp${value / 1000000}jt`} />
+                    <Tooltip
+                      formatter={(value: any) => formatCurrency(Number(value || 0))}
+                      labelFormatter={(label) => `Akun: ${label}`}
+                    />
+                    <Legend />
+                    <Bar dataKey="budgetAmount" name="Anggaran" fill="#94a3b8" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="actualAmount" name="Realisasi" radius={[4, 4, 0, 0]}>
+                      {realizationReport.items.map((entry: any, index: number) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={entry.actualAmount > entry.budgetAmount ? "#ef4444" : "#22c55e"}
+                        />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-full flex items-center justify-center text-muted-foreground border-2 border-dashed rounded-lg">
+                  Pilih unit dan tahun ajaran untuk melihat grafik
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Ringkasan Total</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Total Anggaran</span>
+                <span className="font-bold">{formatCurrency(realizationReport?.totals?.budget || 0)}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Total Realisasi</span>
+                <span className="font-bold">{formatCurrency(realizationReport?.totals?.actual || 0)}</span>
+              </div>
+              <div className="flex justify-between text-sm pt-2 border-t">
+                <span className="text-muted-foreground">Sisa Anggaran</span>
+                <span className={`font-bold ${(realizationReport?.totals?.variance || 0) < 0 ? 'text-destructive' : 'text-primary'}`}>
+                  {formatCurrency(realizationReport?.totals?.variance || 0)}
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex justify-between text-xs font-medium">
+                <span>Penyerapan Total</span>
+                <span>{realizationReport?.totals?.percentage?.toFixed(1) || 0}%</span>
+              </div>
+              <Progress value={realizationReport?.totals?.percentage || 0} className="h-3" />
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       <Card>

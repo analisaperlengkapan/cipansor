@@ -32,6 +32,12 @@ vi.mock('../../lib/prisma', () => ({
       update: vi.fn(),
       delete: vi.fn(),
     },
+    orgPosition: {
+      findUnique: vi.fn(),
+    },
+    pKGEvaluation: {
+      findUnique: vi.fn(),
+    },
     $transaction: vi.fn((callback) => callback(prisma)),
   },
 }));
@@ -67,7 +73,7 @@ describe('Talenta Service', () => {
   });
 
   describe('suggestSuccessors', () => {
-    it('should rank successors with training bonus', async () => {
+    it('should rank successors with training bonus and keyword match', async () => {
       const mockProfiles = [
         {
           id: 'prof-1',
@@ -76,8 +82,9 @@ describe('Talenta Service', () => {
           user: {
             id: 'user-1',
             name: 'High Potential Trained',
-            trainingEnrollments: [{ id: 'enr-1' }, { id: 'enr-2' }] // 2 completed trainings
-          }
+            trainingEnrollments: [{ id: 'enr-1', program: { category: 'Common' } }, { id: 'enr-2', program: { category: 'Common' } }]
+          },
+          assessments: []
         },
         {
           id: 'prof-2',
@@ -87,7 +94,8 @@ describe('Talenta Service', () => {
             id: 'user-2',
             name: 'High Potential Untrained',
             trainingEnrollments: []
-          }
+          },
+          assessments: []
         }
       ];
 
@@ -102,6 +110,38 @@ describe('Talenta Service', () => {
       expect(result[0].matchScore).toBe(100);
       expect(result[1].name).toBe('High Potential Untrained');
       expect(result[1].matchScore).toBe(90);
+    });
+
+    it('should consider competency gaps from position requirements', async () => {
+      const mockPosition = {
+        id: 'pos-1',
+        requirements: JSON.stringify({ "Leadership": 5, "Management": 4 })
+      };
+
+      const mockProfiles = [
+        {
+          id: 'prof-1',
+          currentRole: 'Coordinator',
+          category: 'KEY_TALENT', // base 70
+          user: {
+            id: 'user-1',
+            name: 'Good Fit',
+            trainingEnrollments: []
+          },
+          assessments: [{
+            competencies: { "Leadership": 4, "Management": 4 } // Gap = (1+0)/2 = 0.5. Score = 25 - (0.5 * 5) = 22.5
+          }]
+        }
+      ];
+
+      vi.mocked(prisma.orgPosition.findUnique).mockResolvedValue(mockPosition as any);
+      vi.mocked(prisma.talentProfile.findMany).mockResolvedValue(mockProfiles as any);
+
+      const result = await talentaService.suggestSuccessors('Director', 'unit-1', 'pos-1');
+
+      // Base 70 + keyword 0 + training 0 + sharia 0 + competency 22.5 = 92.5 -> 93
+      expect(result[0].matchScore).toBe(93);
+      expect(result[0].competencyMatch).toBe(90); // 22.5 / 25 * 100 = 90%
     });
   });
 
@@ -161,6 +201,33 @@ describe('Talenta Service', () => {
           category: 'EMERGING',
         }),
       });
+    });
+
+    it('should sync from PKG and map scores correctly', async () => {
+      const teacherId = 'teacher-1';
+      const periodId = 'period-1';
+      const mockPKG = {
+        totalScore: { toNumber: () => 92 }, // Outstanding
+        assessorId: 'assessor-1',
+        teacher: { userId: 'user-1' }
+      };
+      const mockProfile = { id: 'prof-1', assessments: [] };
+
+      vi.mocked(prisma.pKGEvaluation.findUnique).mockResolvedValue(mockPKG as any);
+      vi.mocked(prisma.talentProfile.findUnique).mockResolvedValue(mockProfile as any);
+      vi.mocked(prisma.talentAssessment.create).mockResolvedValue({} as any);
+      vi.mocked(prisma.talentProfile.update).mockResolvedValue({} as any);
+
+      await talentaService.syncFromPKG(teacherId, periodId);
+
+      expect(prisma.talentAssessment.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            performanceRating: 'OUTSTANDING',
+            overallScore: 92,
+          })
+        })
+      );
     });
   });
 

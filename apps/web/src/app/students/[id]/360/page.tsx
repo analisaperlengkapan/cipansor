@@ -21,7 +21,7 @@ import {
   CheckCircle2,
   FileText
 } from "lucide-react";
-import { useStudent } from "@/hooks/use-students";
+import { useStudent, useStudentCompleteProfile } from "@/hooks/use-students";
 import { useStudentGrades, useStudentHolisticAnalytics } from "@/hooks/use-assessment";
 import { useActiveAcademicYear } from "@/hooks/use-academic-years";
 import { useStudentHealthRecords } from "@/hooks/use-health";
@@ -51,6 +51,7 @@ export default function Student360Page() {
   const studentId = params.id as string;
 
   const { data: student, isLoading: loadingStudent } = useStudent(studentId);
+  const { data: completeProfile, isLoading: loadingComplete } = useStudentCompleteProfile(studentId);
   const { data: grades, isLoading: loadingGrades } = useStudentGrades(studentId);
   const { data: health, isLoading: loadingHealth } = useStudentHealthRecords(studentId);
   const { data: violations, isLoading: loadingViolations } = useStudentViolationSummary(studentId);
@@ -431,15 +432,57 @@ export default function Student360Page() {
             </TabsContent>
 
             <TabsContent value="academic">
-               <Card>
-                 <CardHeader>
-                   <CardTitle>Buku Raport & Penilaian</CardTitle>
-                   <CardDescription>Histori nilai per semester</CardDescription>
-                 </CardHeader>
-                 <CardContent>
-                   <p className="text-sm text-muted-foreground py-10 text-center">Modul Akademik Lengkap dalam Pengembangan.</p>
-                 </CardContent>
-               </Card>
+               <div className="space-y-6">
+                 <Card>
+                   <CardHeader>
+                     <CardTitle>Ringkasan Akademik</CardTitle>
+                     <CardDescription>Performa belajar secara keseluruhan</CardDescription>
+                   </CardHeader>
+                   <CardContent>
+                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                       <div className="p-4 bg-blue-50 rounded-xl border border-blue-100 text-center">
+                         <p className="text-xs text-blue-700 font-bold uppercase">Rata-rata Nilai</p>
+                         <p className="text-3xl font-black text-blue-900">{completeProfile?.academicSummary?.averageGrade || 0}</p>
+                       </div>
+                       <div className="p-4 bg-indigo-50 rounded-xl border border-indigo-100 text-center">
+                         <p className="text-xs text-indigo-700 font-bold uppercase">Mata Pelajaran</p>
+                         <p className="text-3xl font-black text-indigo-900">{completeProfile?.academicSummary?.totalSubjects || 0}</p>
+                       </div>
+                       <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-100 text-center">
+                         <p className="text-xs text-emerald-700 font-bold uppercase">Kehadiran</p>
+                         <p className="text-3xl font-black text-emerald-900">{completeProfile?.attendanceSummary?.percentage || 0}%</p>
+                       </div>
+                     </div>
+                   </CardContent>
+                 </Card>
+
+                 <Card>
+                   <CardHeader>
+                     <CardTitle>Penilaian Terbaru</CardTitle>
+                   </CardHeader>
+                   <CardContent className="p-0">
+                     <div className="divide-y">
+                       {completeProfile?.grades?.map((g: any) => (
+                         <div key={g.id} className="p-4 flex justify-between items-center">
+                           <div>
+                             <p className="font-bold">{g.subject?.name}</p>
+                             <p className="text-xs text-muted-foreground">{g.type} • {new Date(g.gradedAt).toLocaleDateString('id-ID')}</p>
+                           </div>
+                           <div className="text-right">
+                             <p className="text-lg font-black">{Number(g.score)}</p>
+                             <Badge variant="outline" className={Number(g.score) >= 75 ? "text-emerald-600" : "text-rose-600"}>
+                               {Number(g.score) >= 75 ? "Tuntas" : "Remedial"}
+                             </Badge>
+                           </div>
+                         </div>
+                       ))}
+                       {(!completeProfile?.grades || completeProfile.grades.length === 0) && (
+                         <p className="p-10 text-center text-muted-foreground italic">Belum ada data penilaian.</p>
+                       )}
+                     </div>
+                   </CardContent>
+                 </Card>
+               </div>
             </TabsContent>
 
             <TabsContent value="tahfidz">
@@ -545,8 +588,28 @@ export default function Student360Page() {
                    <CardTitle>Riwayat Bimbingan & Konseling</CardTitle>
                    <CardDescription>Catatan perkembangan psikologis dan pembinaan</CardDescription>
                  </CardHeader>
-                 <CardContent>
-                    <p className="text-sm text-muted-foreground py-10 text-center">Modul Bimbingan & Konseling dalam Pengembangan.</p>
+                 <CardContent className="p-0">
+                    <div className="divide-y">
+                      {completeProfile?.counselingSessions?.map((s: any) => (
+                        <div key={s.id} className="p-4 space-y-2">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <Badge className="mb-1">{s.category}</Badge>
+                              <p className="font-bold">{s.title}</p>
+                            </div>
+                            <Badge variant={s.priority === 'URGENT' ? 'destructive' : 'outline'}>{s.priority}</Badge>
+                          </div>
+                          <p className="text-sm text-slate-600">{s.description}</p>
+                          <div className="flex justify-between items-center text-[10px] text-slate-400 uppercase">
+                            <span>Status: {s.status}</span>
+                            <span>{new Date(s.scheduledAt).toLocaleDateString('id-ID')}</span>
+                          </div>
+                        </div>
+                      ))}
+                      {(!completeProfile?.counselingSessions || completeProfile.counselingSessions.length === 0) && (
+                        <p className="p-10 text-center text-muted-foreground italic">Tidak ada catatan konseling.</p>
+                      )}
+                    </div>
                  </CardContent>
                </Card>
             </TabsContent>

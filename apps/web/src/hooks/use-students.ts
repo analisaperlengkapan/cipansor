@@ -471,6 +471,10 @@ export interface StudentCompleteProfile extends Student {
     totalRewards: number;
     points: number;
   };
+  grades?: any[];
+  tahfidzRecords?: any[];
+  counselingSessions?: any[];
+  medicalRecords?: any[];
 }
 
 /**

@@ -287,6 +287,32 @@ router.get(
 
 /**
  * @swagger
+ * /api/students/{id}/complete-profile:
+ *   get:
+ *     summary: Get complete student profile (360 View)
+ *     tags: [Students]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Holistic student data
+ */
+router.get(
+  '/:id/complete-profile',
+  hasPermission(PERMISSIONS.STUDENT_VIEW),
+  validateParams(studentIdParamSchema),
+  controller.getCompleteProfile
+);
+
+/**
+ * @swagger
  * /api/students:
  *   post:
  *     summary: Create student (Admin only)

@@ -82,6 +82,7 @@ export class RiskService {
             severity: 'CRITICAL',
             category: 'RISK_MANAGEMENT',
             riskId: risk.id,
+            responsibleId: risk.ownerId,
           }
         });
       }

@@ -169,14 +169,20 @@ export class TalentaService {
       throw Errors.notFound('Talent Profile for teacher');
     }
 
-    // Map PKG Score (0-100) to Rating
+    // Map PKG Score (0-100) to Rating using Indonesia Teacher Performance (PKG) standards
     const score = evaluation.totalScore.toNumber();
     let performanceRating: 'OUTSTANDING' | 'EXCEEDS' | 'MEETS' | 'BELOW' | 'UNSATISFACTORY';
 
-    if (score >= 90) performanceRating = 'OUTSTANDING';
-    else if (score >= 80) performanceRating = 'EXCEEDS';
-    else if (score >= 70) performanceRating = 'MEETS';
-    else if (score >= 60) performanceRating = 'BELOW';
+    // PKG Conversion Standards (typically):
+    // 91 - 100: Amat Baik (Outstanding)
+    // 76 - 90: Baik (Exceeds)
+    // 61 - 75: Cukup (Meets)
+    // 51 - 60: Sedang (Below)
+    // < 50: Kurang (Unsatisfactory)
+    if (score >= 91) performanceRating = 'OUTSTANDING';
+    else if (score >= 76) performanceRating = 'EXCEEDS';
+    else if (score >= 61) performanceRating = 'MEETS';
+    else if (score >= 51) performanceRating = 'BELOW';
     else performanceRating = 'UNSATISFACTORY';
 
     const latestAssessment = talentProfile.assessments[0];

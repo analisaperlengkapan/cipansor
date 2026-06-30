@@ -30,6 +30,9 @@ export interface Book {
   coverUrl?: string;
   description?: string;
   status: BookStatus;
+  isDigital?: boolean;
+  fileUrl?: string;
+  fileType?: string;
   category: BookCategory;
   unit?: {
     id: string;

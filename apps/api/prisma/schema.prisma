@@ -1115,6 +1115,8 @@ model TahfidzRecord {
   totalAyah    Int                 @map("total_ayah")
   score        Float? // For assessment type
   notes        String?
+  audioUrl     String?             @map("audio_url") // URL for e-simaan audio recording
+  feedback     Json? // Timestamped feedback/corrections
   recordedAt   DateTime            @default(now()) @map("recorded_at")
   recordedById String              @map("recorded_by_id")
   createdAt    DateTime            @default(now()) @map("created_at")
@@ -1916,6 +1918,9 @@ model Book {
   coverUrl      String?    @map("cover_url")
   description   String?    @db.Text
   status        BookStatus @default(AVAILABLE)
+  isDigital     Boolean    @default(false) @map("is_digital")
+  fileUrl       String?    @map("file_url") // URL for digital book (Maktabah Cipansor)
+  fileType      String?    @map("file_type") // pdf, epub, etc.
   createdAt     DateTime   @default(now()) @map("created_at")
   updatedAt     DateTime   @updatedAt @map("updated_at")
   deletedAt     DateTime?  @map("deleted_at")
@@ -2255,6 +2260,7 @@ model Asset {
   assignments     AssetAssignment[]
   auditItems      AssetAuditItem[]
   disposal        AssetDisposal?
+  complaints      Complaint[]
 
   @@index([unitId])
   @@index([categoryId])
@@ -2784,6 +2790,9 @@ model AlumniEducation {
   endYear      Int?     @map("end_year")
   isCompleted  Boolean  @default(false) @map("is_completed")
   achievements String?  @db.Text // Prestasi
+  admissionPath String? @map("admission_path") // SNBP, SNBT, Mandiri, Al-Azhar Track, etc.
+  scholarshipName String? @map("scholarship_name")
+  isInternational Boolean @default(false) @map("is_international")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
@@ -4866,7 +4875,7 @@ model Land {
 
   // Relations
   unit      Unit       @relation(fields: [unitId], references: [id])
-  buildings Building[]
+  buildings  Building[]
 
   @@unique([unitId, code])
   @@index([unitId])
@@ -4892,7 +4901,8 @@ model Building {
   // Relations
   unit  Unit           @relation(fields: [unitId], references: [id])
   land  Land?          @relation(fields: [landId], references: [id])
-  rooms FacilityRoom[]
+  rooms      FacilityRoom[]
+  complaints Complaint[]
 
   @@unique([unitId, code])
   @@index([unitId])
@@ -4936,7 +4946,8 @@ model FacilityRoom {
   unit     Unit      @relation(fields: [unitId], references: [id])
   building Building? @relation(fields: [buildingId], references: [id])
   roomType RoomType  @relation(fields: [roomTypeId], references: [id])
-  assets   Asset[]
+  assets     Asset[]
+  complaints Complaint[]
 
   @@unique([unitId, code])
   @@index([unitId])
@@ -7356,6 +7367,11 @@ model Complaint {
   isAnonymous Boolean           @default(false) @map("is_anonymous")
   attachments Json? // Array of strings (URLs)
 
+  // SI-PEKA Integration
+  buildingId String? @map("building_id")
+  roomId     String? @map("room_id")
+  assetId    String? @map("asset_id")
+
   // Resolution
   assignedToId String?   @map("assigned_to_id")
   resolution   String?   @db.Text
@@ -7369,6 +7385,10 @@ model Complaint {
   user       User?              @relation("ComplaintReporter", fields: [userId], references: [id])
   assignedTo User?              @relation("ComplaintHandler", fields: [assignedToId], references: [id])
   comments   ComplaintComment[]
+
+  building Building?     @relation(fields: [buildingId], references: [id])
+  room     FacilityRoom? @relation(fields: [roomId], references: [id])
+  asset    Asset?        @relation(fields: [assetId], references: [id])
 
   @@index([unitId])
   @@index([userId])

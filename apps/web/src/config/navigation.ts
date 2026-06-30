@@ -571,11 +571,6 @@ const yayasanNavigation: NavGroup[] = [
         href: "/donation",
         icon: HeartHandshake,
       },
-      {
-        title: "Public Portal",
-        href: "/public/donation",
-        icon: HeartHandshake,
-      },
     ],
   },
   {

@@ -67,12 +67,12 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
   return (
     <div
       className={cn(
-        "flex h-screen flex-col border-r sidebar-gradient transition-all duration-300",
+        "flex h-screen flex-col border-r sidebar-gradient transition-all duration-300 overflow-hidden",
         collapsed ? "w-16" : "w-64",
       )}
     >
       {/* Header */}
-      <div className="flex h-16 items-center justify-between border-b px-4">
+      <div className="flex h-16 items-center justify-between border-b px-4 shrink-0">
         {!collapsed && (
           <Link href="/dashboard" className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold">
@@ -94,7 +94,7 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
       </div>
 
       {/* Navigation */}
-      <ScrollArea className="flex-1 px-3 py-4">
+      <ScrollArea className="flex-1 px-3 py-4 overflow-y-auto">
         {navigation.map((group, index) => (
           <NavGroupComponent
             key={group.title}
@@ -107,7 +107,7 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
       </ScrollArea>
 
       {/* Footer */}
-      <div className="border-t p-4">
+      <div className="border-t p-4 shrink-0">
         {!collapsed && user && (
           <div className="mb-4 flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted text-sm font-medium">
@@ -182,19 +182,21 @@ function NavGroupComponent({
           const Icon = item.icon;
 
           return (
-            <Link key={item.href} href={item.href}>
-              <Button
-                variant={isActive ? "secondary" : "ghost"}
-                className={cn(
-                  "w-full justify-start transition-all duration-200 hover:translate-x-1",
-                  isActive && "active-glow bg-secondary/80 font-medium",
-                  collapsed && "justify-center px-2 hover:translate-x-0",
-                )}
-              >
+            <Button
+              key={item.href}
+              variant={isActive ? "secondary" : "ghost"}
+              className={cn(
+                "w-full justify-start transition-all duration-200 hover:translate-x-1",
+                isActive && "active-glow bg-secondary/80 font-medium",
+                collapsed && "justify-center px-2 hover:translate-x-0",
+              )}
+              asChild
+            >
+              <Link href={item.href} className="flex items-center">
                 <Icon className="h-4 w-4" />
                 {!collapsed && <span className="ml-2">{item.title}</span>}
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           );
         })}
       </nav>

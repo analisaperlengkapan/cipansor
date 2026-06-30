@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -333,14 +334,25 @@ export default function PublicPPDBPage() {
       <header className="bg-white shadow-sm sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center text-white font-bold">
-              C
-            </div>
-            <span className="font-bold text-xl text-gray-900">PSB Online</span>
+            <Link href="/">
+              <div className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+                <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center text-white font-bold">
+                  C
+                </div>
+                <span className="font-bold text-xl text-gray-900">PSB Online</span>
+              </div>
+            </Link>
           </div>
-          <div className="text-sm text-muted-foreground hidden sm:block">
-            Penerimaan Santri Baru Tahun Ajaran{" "}
-            {activePeriod?.academicYear?.name || "..."}
+          <div className="flex items-center gap-4">
+            <div className="text-sm text-muted-foreground hidden sm:block">
+              Penerimaan Santri Baru Tahun Ajaran{" "}
+              {activePeriod?.academicYear?.name || "..."}
+            </div>
+            <Link href="/">
+              <Button variant="outline" size="sm">
+                Kembali ke Beranda
+              </Button>
+            </Link>
           </div>
         </div>
       </header>

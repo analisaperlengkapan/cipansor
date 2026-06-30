@@ -328,11 +328,6 @@ const studentNavigation: NavGroup[] = [
         href: "/tahfidz",
         icon: BookMarked,
       },
-      {
-        title: "Target",
-        href: "/student/target",
-        icon: Target,
-      },
     ],
   },
   {
@@ -429,7 +424,7 @@ const parentNavigation: NavGroup[] = [
       },
       {
         title: "Portfolio Anak",
-        href: "/parent/portfolio",
+        href: "/portfolio",
         icon: FolderOpen,
       },
       {
@@ -568,7 +563,7 @@ const yayasanNavigation: NavGroup[] = [
       },
       {
         title: "Donasi Alumni",
-        href: "/alumni/donations",
+        href: "/donation",
         icon: Receipt,
       },
       {
@@ -692,7 +687,7 @@ const adminNavigation: NavGroup[] = [
       },
       {
         title: "Role Permissions",
-        href: "/roles",
+        href: "/settings/roles",
         icon: Shield,
         roleCodes: ["SUPER_ADMIN"],
       },
@@ -1025,7 +1020,7 @@ const adminNavigation: NavGroup[] = [
       },
       {
         title: "Kurikulum Merdeka",
-        href: "/kurikulum-merdeka",
+        href: "/curriculum/merdeka",
         icon: BookMarked,
       },
     ],
@@ -1035,12 +1030,12 @@ const adminNavigation: NavGroup[] = [
     items: [
       {
         title: "Student Compliance",
-        href: "/compliance/students",
+        href: "/students/compliance",
         icon: Shield,
       },
       {
         title: "Teacher Compliance",
-        href: "/compliance/teachers",
+        href: "/hr/teachers/compliance",
         icon: Shield,
       },
     ],

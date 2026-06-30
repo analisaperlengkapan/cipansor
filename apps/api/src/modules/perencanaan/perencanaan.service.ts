@@ -183,6 +183,7 @@ export class PerencanaanService {
       const start = new Date(plan.startDate);
       const end = new Date(plan.endDate);
       const curr = new Date(start);
+      curr.setDate(1); // Hindari overflow setMonth pada tanggal 29-31
       while (curr <= end) {
         const key = curr.toISOString().substring(0, 7);
         monthlyTrend.push({
@@ -256,6 +257,7 @@ export class PerencanaanService {
         totalBudget: totalPlanBudget,
         totalRealization: totalPlanRealization,
         financialProgress: totalPlanBudget > 0 ? Math.min((totalPlanRealization / totalPlanBudget) * 100, 100) : 0,
+        monthlyTrend,
       };
     } catch (err: any) {
       console.error('[Perencanaan] Journal aggregation failed, returning plan without financial data:', err?.message || err);
@@ -273,6 +275,7 @@ export class PerencanaanService {
         totalBudget: fallbackObjectives.reduce((sum, obj) => sum + obj.totalBudget, 0),
         totalRealization: 0,
         financialProgress: 0,
+        monthlyTrend: [],
       };
     }
   }

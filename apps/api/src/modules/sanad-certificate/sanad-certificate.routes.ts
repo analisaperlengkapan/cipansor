@@ -109,7 +109,7 @@ router.get('/', authenticate, validateQuery(listSanadQuerySchema), controller.li
  *       200:
  *         description: Hierarchical sanad tree data
  */
-router.get('/tree', authenticate, controller.getSanadTree);
+router.get('/tree', authenticate, authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER), controller.getSanadTree);
 
 /**
  * @openapi

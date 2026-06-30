@@ -161,7 +161,7 @@ check-health:
 # Push database schema
 db-push:
 	@echo "$(BLUE)Pushing Prisma schema to database...$(NC)"
-	docker exec cipansor-api sh -c "cd /app/apps/api && npx prisma db push --url='postgresql://$(DB_USER):$(DB_PASSWORD)@db:5432/$(DB_NAME)'"
+	@DATABASE_URL="postgresql://$(DB_USER):$(DB_PASSWORD)@localhost:5432/$(DB_NAME)" pnpm --filter api db:push
 	@echo "$(GREEN)✓ Database schema pushed$(NC)"
 
 # Seed database

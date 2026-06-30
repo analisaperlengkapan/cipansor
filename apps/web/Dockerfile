@@ -4,7 +4,7 @@
 #
 # Behind a TLS-terminating egress proxy, pass the proxy CA as a build secret:
 #   docker build --secret id=proxyca,src=<ca.crt> \
-#     --build-arg NEXT_PUBLIC_API_URL=http://localhost:3001/api \
+#     --build-arg NEXT_PUBLIC_API_URL=http://localhost:3001 \
 #     -f apps/web/Dockerfile -t cipansor-web .
 # In a normal network the secret is unused and the build works without it.
 

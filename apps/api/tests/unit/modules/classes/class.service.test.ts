@@ -52,8 +52,9 @@ describe('Class Service', () => {
       (prisma.class.findUnique as any).mockResolvedValue({
         id: targetClassId,
         capacity: 30,
-        _count: { enrollments: 10 },
       });
+
+      (prisma.classEnrollment.count as any).mockResolvedValue(10);
 
       (prisma.classEnrollment.createMany as any).mockResolvedValue({ count: 2 });
 

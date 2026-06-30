@@ -233,8 +233,8 @@ ready: check-prereqs
 	@docker compose ps web | grep -q "healthy" && echo "$(GREEN)✓ Web service is healthy$(NC)" || echo "$(YELLOW)⚠ Web service is not healthy or not running$(NC)"
 	@echo ""
 	@echo "$(BLUE)8. Checking disk space...$(NC)"
-	@df -BG . | awk 'NR==2 {gsub("G","",$$4); print $$4}' | while read space; do \
-		if [ "$$space" -lt 5 ]; then \
+	@df -BG . | awk 'NR==2 {gsub("G","",$$4); print $$4+0}' | while read space; do \
+		if [ "$${space:-0}" -lt 5 ]; then \
 			echo "$(YELLOW)⚠ Low disk space: $${space}G available$(NC)"; \
 		else \
 			echo "$(GREEN)✓ Sufficient disk space: $${space}G available$(NC)"; \

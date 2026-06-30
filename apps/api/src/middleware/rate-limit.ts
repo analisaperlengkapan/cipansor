@@ -41,8 +41,8 @@ export const defaultLimiter: RateLimitRequestHandler = rateLimit({
  * Prevents brute force attacks
  */
 export const authLimiter: RateLimitRequestHandler = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 5, // Only 5 login attempts per minute
+  windowMs: config.rateLimit.auth.windowMs, // Configurable (default: 1 minute)
+  max: config.rateLimit.auth.maxRequests, // Configurable (default: 20 requests per minute)
   standardHeaders: true,
   legacyHeaders: false,
   message: {

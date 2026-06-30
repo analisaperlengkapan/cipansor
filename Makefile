@@ -52,7 +52,10 @@ DB_USER ?= $(shell grep -E '^DB_USER=' .env 2>/dev/null | cut -d= -f2- | tr -d '
 DB_PASSWORD ?= $(shell grep -E '^DB_PASSWORD=' .env 2>/dev/null | cut -d= -f2- | tr -d '"')
 DB_USER := $(if $(strip $(DB_USER)),$(DB_USER),postgres)
 DB_PASSWORD := $(if $(strip $(DB_PASSWORD)),$(DB_PASSWORD),postgres)
-DB_NAME ?= cipansor
+DB_PORT ?= $(shell grep -E '^DB_PORT=' .env 2>/dev/null | cut -d= -f2- | tr -d '"')
+DB_PORT := $(if $(strip $(DB_PORT)),$(DB_PORT),5432)
+DB_NAME := $(shell grep -E '^DB_NAME=' .env 2>/dev/null | cut -d= -f2- | tr -d '"')
+DB_NAME := $(if $(strip $(DB_NAME)),$(DB_NAME),cipansor)
 
 # Check prerequisites
 check-prereqs:
@@ -161,7 +164,7 @@ check-health:
 # Push database schema
 db-push:
 	@echo "$(BLUE)Pushing Prisma schema to database...$(NC)"
-	@DATABASE_URL="postgresql://$(DB_USER):$(DB_PASSWORD)@localhost:5432/$(DB_NAME)" pnpm --filter api db:push
+	@DATABASE_URL="postgresql://$(DB_USER):$(DB_PASSWORD)@localhost:$(DB_PORT)/$(DB_NAME)" pnpm --filter api db:push
 	@echo "$(GREEN)✓ Database schema pushed$(NC)"
 
 # Seed database
@@ -171,7 +174,7 @@ db-push:
 #            yang TIDAK tersedia di image API, lihat apps/api/Dockerfile).
 db-seed:
 	@echo "$(BLUE)Seeding database...$(NC)"
-	@DATABASE_URL="postgresql://$(DB_USER):$(DB_PASSWORD)@localhost:5432/$(DB_NAME)" pnpm --filter api db:seed
+	@DATABASE_URL="postgresql://$(DB_USER):$(DB_PASSWORD)@localhost:$(DB_PORT)/$(DB_NAME)" pnpm --filter api db:seed
 	@echo "$(GREEN)✓ Database seeded$(NC)"
 
 # Reset database

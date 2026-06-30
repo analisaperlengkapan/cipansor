@@ -5,6 +5,7 @@ import "./globals.css";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { SkipLink, OfflineBanner } from "@/components/shared";
+import { LayoutWrapper } from "@/components/layout";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -63,7 +64,7 @@ export default function RootLayout({
         <QueryProvider>
           <SkipLink />
           <OfflineBanner />
-          <main id="main-content">{children}</main>
+          <LayoutWrapper>{children}</LayoutWrapper>
           <Toaster />
         </QueryProvider>
       </body>

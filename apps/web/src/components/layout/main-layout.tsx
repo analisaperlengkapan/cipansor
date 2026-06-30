@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, createContext, useContext } from "react";
 import { Sidebar } from "./sidebar";
 import { Header } from "./header";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
@@ -14,6 +14,14 @@ interface MainLayoutProps {
 
 import { PageTransition } from "./page-transition";
 
+/**
+ * Context to detect if MainLayout is already rendered in the component tree.
+ * This prevents nested layout rendering (e.g., MainLayout inside another MainLayout)
+ * which would duplicate sidebars, headers, and layout structure.
+ * LayoutWrapper uses this context to conditionally render MainLayout only once.
+ */
+export const MainLayoutContext = createContext<boolean>(false);
+
 export function MainLayout({
   children,
   allowedRoles,
@@ -21,47 +29,54 @@ export function MainLayout({
 }: MainLayoutProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const isNested = useContext(MainLayoutContext);
+
+  if (isNested) {
+    return <>{children}</>;
+  }
 
   return (
-    <ProtectedRoute allowedRoles={allowedRoles}>
-      {/* Skip Link for Keyboard Accessibility */}
-      <a href="#main-content" className="skip-link">
-        Langsung ke konten
-      </a>
-      <div className="flex h-screen overflow-hidden">
-        {/* Desktop Sidebar */}
-        {showSidebar && (
-          <div className="hidden lg:block">
-            <Sidebar
-              collapsed={sidebarCollapsed}
-              onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+    <MainLayoutContext.Provider value={true}>
+      <ProtectedRoute allowedRoles={allowedRoles}>
+        {/* Skip Link for Keyboard Accessibility */}
+        <a href="#main-content" className="skip-link">
+          Langsung ke konten
+        </a>
+        <div className="flex h-screen overflow-hidden">
+          {/* Desktop Sidebar */}
+          {showSidebar && (
+            <div className="hidden lg:block">
+              <Sidebar
+                collapsed={sidebarCollapsed}
+                onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+              />
+            </div>
+          )}
+
+          {/* Mobile Sidebar */}
+          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+            <SheetContent side="left" className="w-64 p-0">
+              <Sidebar />
+            </SheetContent>
+          </Sheet>
+
+          {/* Main Content */}
+          <div className="flex flex-1 flex-col overflow-hidden">
+            <Header
+              onMenuClick={showSidebar ? () => setMobileOpen(true) : undefined}
             />
+            <main
+              id="main-content"
+              className="flex-1 overflow-auto bg-muted/30 p-4 lg:p-6 premium-gradient"
+              role="main"
+            >
+              <PageTransition>
+                <div className="mx-auto max-w-7xl">{children}</div>
+              </PageTransition>
+            </main>
           </div>
-        )}
-
-        {/* Mobile Sidebar */}
-        <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-          <SheetContent side="left" className="w-64 p-0">
-            <Sidebar />
-          </SheetContent>
-        </Sheet>
-
-        {/* Main Content */}
-        <div className="flex flex-1 flex-col overflow-hidden">
-          <Header
-            onMenuClick={showSidebar ? () => setMobileOpen(true) : undefined}
-          />
-          <main
-            id="main-content"
-            className="flex-1 overflow-auto bg-muted/30 p-4 lg:p-6 premium-gradient"
-            role="main"
-          >
-            <PageTransition>
-              <div className="mx-auto max-w-7xl">{children}</div>
-            </PageTransition>
-          </main>
         </div>
-      </div>
-    </ProtectedRoute>
+      </ProtectedRoute>
+    </MainLayoutContext.Provider>
   );
 }

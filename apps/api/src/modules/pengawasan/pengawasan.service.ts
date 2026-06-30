@@ -295,10 +295,23 @@ export class PengawasanService {
       updateData.completedAt = new Date();
     }
 
-    return prisma.auditFollowUp.update({
-      where: { id },
-      data: updateData,
-      include: { verifiedBy: { select: { id: true, name: true } } },
+    return prisma.$transaction(async (tx) => {
+      const followUp = await tx.auditFollowUp.update({
+        where: { id },
+        data: updateData,
+        include: {
+          verifiedBy: { select: { id: true, name: true } },
+          finding: { select: { riskId: true } },
+        },
+      });
+
+      // Best Practice: Trigger residual risk recalculation when audit follow-up is verified.
+      // This ensures the GRC loop is closed: Audit -> Finding -> Follow-up -> Risk Reduction.
+      if (data.status === 'VERIFIED' && followUp.finding.riskId) {
+        await riskService.updateRisk(followUp.finding.riskId, {}, tx);
+      }
+
+      return followUp;
     });
   }
 

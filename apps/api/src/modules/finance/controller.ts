@@ -30,6 +30,31 @@ export async function createPaymentType(req: Request, res: Response, next: NextF
   }
 }
 
+// =====================================
+// BUDGET VARIANCE
+// =====================================
+
+export async function getBudgetVarianceAnalysis(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { unitId, academicYearId } = (req.query as any);
+    if (!academicYearId) {
+      throw Errors.badRequest('Academic Year ID is required');
+    }
+
+    const data = await financeService.getBudgetVarianceAnalysis({
+      unitId: unitId as string | undefined,
+      academicYearId: academicYearId as string,
+    });
+
+    res.json({
+      success: true,
+      data,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function getPaymentTypes(req: Request, res: Response, next: NextFunction) {
   try {
     const query = queryPaymentTypeSchema.parse(res.locals.validatedQuery || (req.query as any));

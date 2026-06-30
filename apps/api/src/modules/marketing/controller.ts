@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import * as marketingService from './service';
-import { calculateCampaignROI } from './roi.service';
+import { calculateCampaignROI, getMarketingFunnel } from './roi.service';
 import {
   createCampaignSchema,
   logInteractionSchema,
@@ -14,6 +14,16 @@ export const createCampaign = async (req: Request, res: Response, next: NextFunc
     const userId = (req as any).user.id;
     const campaign = await marketingService.createCampaign(data, userId);
     res.status(201).json({ success: true, data: campaign });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getFunnelStats = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { unitId } = (req.query as any);
+    const stats = await getMarketingFunnel(unitId as string);
+    res.json({ success: true, data: stats });
   } catch (error) {
     next(error);
   }

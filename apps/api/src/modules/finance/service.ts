@@ -1049,3 +1049,62 @@ export function validateScholarshipDiscount(data: { componentId?: string | null;
     throw new Error("Data Integrity Error: At least one of componentId or paymentTypeId must be set to prevent duplicate orphaned discounts.");
   }
 }
+
+/**
+ * Budget Variance Analysis
+ * Best Practice: Comparing planned vs actual spending across units.
+ */
+export async function getBudgetVarianceAnalysis(query: { unitId?: string; academicYearId: string }) {
+  const { unitId, academicYearId } = query;
+
+  const budgets = await prisma.budget.findMany({
+    where: {
+      ...(unitId && { unitId }),
+      academicYearId,
+    },
+    include: {
+      account: { select: { code: true, name: true, normalBalance: true } },
+      unit: { select: { name: true } },
+    },
+  });
+
+  const accountIds = budgets.map((b) => b.accountId);
+  const actuals = await prisma.journalEntry.groupBy({
+    by: ['accountId', 'unitId'],
+    where: {
+      accountId: { in: accountIds },
+      ...(unitId && { unitId }),
+    },
+    _sum: { debit: true, credit: true },
+  });
+
+  return budgets.map((budget) => {
+    const actual = actuals.find(
+      (a) => a.accountId === budget.accountId && a.unitId === budget.unitId
+    );
+
+    const debit = actual?._sum.debit?.toNumber() || 0;
+    const credit = actual?._sum.credit?.toNumber() || 0;
+
+    // Calculate realization based on normal balance
+    const realized = budget.account.normalBalance === 'DEBIT'
+      ? debit - credit
+      : credit - debit;
+
+    const planned = budget.amount.toNumber();
+    const variance = planned - realized;
+    const variancePercentage = planned > 0 ? (variance / planned) * 100 : 0;
+
+    return {
+      budgetId: budget.id,
+      unitName: budget.unit.name,
+      accountCode: budget.account.code,
+      accountName: budget.account.name,
+      planned,
+      realized: Math.max(0, realized),
+      variance,
+      variancePercentage: Math.round(variancePercentage * 100) / 100,
+      status: variance < 0 ? 'OVER_BUDGET' : variancePercentage < 10 ? 'WATCH' : 'ON_TRACK',
+    };
+  });
+}

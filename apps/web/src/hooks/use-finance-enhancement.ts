@@ -411,6 +411,23 @@ export function useTrialBalanceReport(filters: {
   });
 }
 
+export function useBudgetVariance(filters: { unitId?: string; academicYearId: string }) {
+  return useQuery({
+    queryKey: ["budget-variance", filters],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (filters.unitId) params.append("unitId", filters.unitId);
+      params.append("academicYearId", filters.academicYearId);
+
+      const response = await api.get<{ data: any }>(
+        `/api/finance/budget-variance?${params}`,
+      );
+      return response.data.data;
+    },
+    enabled: !!filters.academicYearId,
+  });
+}
+
 export function useCashFlowForecast(unitId?: string, months: number = 6) {
   return useQuery({
     queryKey: ["cash-flow-forecast", unitId, months],
@@ -485,10 +502,19 @@ export function useCashFlowReport(filters: {
       params.append("startDate", filters.startDate);
       params.append("endDate", filters.endDate);
 
-      const response = await api.get<{ data: CashFlowReport }>(
-        `/finance-enhancement/reports/cash-flow?${params}`,
-      );
-      return response.data.data;
+      // Try the new PSR-compliant categorized endpoint first
+      try {
+        const response = await api.get<{ data: any }>(
+          `/finance/accounting/reports/cash-flow?${params}`,
+        );
+        return response.data.data;
+      } catch (e) {
+        // Fallback to enhancement endpoint if legacy
+        const response = await api.get<{ data: CashFlowReport }>(
+          `/finance-enhancement/reports/cash-flow?${params}`,
+        );
+        return response.data.data;
+      }
     },
     enabled: !!filters.startDate && !!filters.endDate,
   });

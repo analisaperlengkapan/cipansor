@@ -37,6 +37,11 @@ router.get(
   authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, RoleCode.YAYASAN_ADMIN),
   marketingController.getROIStats
 );
+router.get(
+  '/funnel',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, RoleCode.YAYASAN_ADMIN),
+  marketingController.getFunnelStats
+);
 
 // Campaigns
 router.post(

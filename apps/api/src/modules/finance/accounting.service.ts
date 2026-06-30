@@ -328,6 +328,63 @@ export async function getIncomeStatement(query: {
   };
 }
 
+export async function getCashFlowStatement(query: {
+  unitId?: string;
+  startDate: Date;
+  endDate: Date;
+}) {
+  const { unitId, startDate, endDate } = query;
+
+  const journals = await prisma.journalEntry.findMany({
+    where: {
+      ...(unitId && { unitId }),
+      date: {
+        gte: startDate,
+        lte: endDate,
+      },
+      account: {
+        cashFlowCategory: { not: null },
+      },
+    },
+    include: {
+      account: true,
+    },
+  });
+
+  const categories = {
+    OPERATING: { name: 'Operating Activities', total: 0, items: [] as any[] },
+    INVESTING: { name: 'Investing Activities', total: 0, items: [] as any[] },
+    FINANCING: { name: 'Financing Activities', total: 0, items: [] as any[] },
+  };
+
+  journals.forEach((j) => {
+    const category = j.account.cashFlowCategory as keyof typeof categories;
+    if (categories[category]) {
+      const amount = j.account.normalBalance === 'DEBIT'
+        ? j.debit.toNumber() - j.credit.toNumber()
+        : j.credit.toNumber() - j.debit.toNumber();
+
+      categories[category].total += amount;
+      categories[category].items.push({
+        id: j.id,
+        date: j.date,
+        description: j.description,
+        amount,
+        accountName: j.account.name,
+        accountCode: j.account.code,
+      });
+    }
+  });
+
+  return {
+    categories: Object.entries(categories).map(([key, val]) => ({
+      type: key,
+      ...val,
+    })),
+    netCashFlow: Object.values(categories).reduce((sum, c) => sum + c.total, 0),
+  };
+}
+
 // =====================================
 // SEEDING SERVICE
 // =====================================

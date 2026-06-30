@@ -1018,4 +1018,33 @@ router.get(
   accountingController.getIncomeStatement
 );
 
+/**
+ * @swagger
+ * /api/finance/accounting/reports/cash-flow:
+ *   get:
+ *     summary: Get Cash Flow Statement report
+ *     tags: [Finance - Accounting]
+ */
+router.get(
+  '/accounting/reports/cash-flow',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  validateQuery(queryReportSchema),
+  accountingController.getCashFlowStatement
+);
+
+// ==================== BUDGET VARIANCE ====================
+
+/**
+ * @swagger
+ * /api/finance/budget-variance:
+ *   get:
+ *     summary: Get Budget Variance Analysis
+ *     tags: [Finance]
+ */
+router.get(
+  '/budget-variance',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  controller.getBudgetVarianceAnalysis
+);
+
 export default router;

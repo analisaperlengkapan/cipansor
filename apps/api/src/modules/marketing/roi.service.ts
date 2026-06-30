@@ -125,3 +125,58 @@ export async function calculateCampaignROI(unitId?: string) {
 
   return results.sort((a, b) => b.metrics.roi - a.metrics.roi);
 }
+
+/**
+ * Funnel Analysis
+ * Best Practice: Tracking conversion efficiency across admission stages.
+ */
+export async function getMarketingFunnel(unitId?: string) {
+  const where: any = {};
+  if (unitId) {
+    where.admissionPeriod = { unitId };
+  }
+
+  const stages = [
+    'REGISTERED',
+    'DOCUMENT_CHECK',
+    'TEST_SCHEDULED',
+    'TEST_COMPLETED',
+    'ACCEPTED',
+    'ENROLLED',
+  ];
+
+  const counts = await prisma.registrant.groupBy({
+    by: ['status'],
+    where,
+    _count: { _all: true },
+  });
+
+  const funnel = stages.map((stage) => {
+    const item = counts.find((c) => c.status === stage);
+    return {
+      stage,
+      count: item?._count._all || 0,
+    };
+  });
+
+  // Calculate cumulative funnel (Total who reached or passed this stage)
+  let cumulative = 0;
+  const result = [];
+  for (let i = funnel.length - 1; i >= 0; i--) {
+    cumulative += funnel[i].count;
+    result.unshift({
+      ...funnel[i],
+      reached: cumulative,
+    });
+  }
+
+  // Calculate conversion rates between stages
+  return result.map((item, idx, arr) => {
+    const prev = idx > 0 ? arr[idx - 1] : null;
+    return {
+      ...item,
+      dropoff: prev ? prev.reached - item.reached : 0,
+      conversionRate: prev ? (item.reached / prev.reached) * 100 : 100,
+    };
+  });
+}

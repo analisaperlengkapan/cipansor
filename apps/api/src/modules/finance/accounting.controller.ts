@@ -16,6 +16,28 @@ export async function seedAccounts(req: Request, res: Response, next: NextFuncti
   }
 }
 
+export async function getCashFlowStatement(req: Request, res: Response, next: NextFunction) {
+  try {
+    const query = (req.query as any) as any;
+    const now = new Date();
+    const startDate = query.startDate
+      ? new Date(query.startDate)
+      : new Date(now.getFullYear(), now.getMonth(), 1);
+    const endDate = query.endDate
+      ? new Date(query.endDate)
+      : new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+    const result = await service.getCashFlowStatement({
+      unitId: query.unitId,
+      startDate,
+      endDate,
+    });
+    res.json({ data: result });
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function createAccount(req: Request, res: Response, next: NextFunction) {
   try {
     const data: CreateAccountDto = req.body;

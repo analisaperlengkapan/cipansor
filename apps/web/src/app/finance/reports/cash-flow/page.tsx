@@ -69,7 +69,7 @@ export default function CashFlowPage() {
         ) : (
           items.map((item, idx) => (
             <div key={idx} className="flex justify-between text-sm">
-              <span>{item.name}</span>
+              <span>{item.name || item.description}</span>
               <span className="font-mono">{formatCurrency(item.amount)}</span>
             </div>
           ))
@@ -158,22 +158,32 @@ export default function CashFlowPage() {
                   </p>
                 </div>
 
-                {renderSection(
-                  report.operatingActivities.title,
-                  report.operatingActivities.total,
-                  report.operatingActivities.items,
-                )}
+                {report.categories ? (
+                  // New Categorized Format
+                  report.categories.map((cat: any) =>
+                    renderSection(cat.name, cat.total, cat.items)
+                  )
+                ) : (
+                  // Legacy Format Fallback
+                  <>
+                    {renderSection(
+                      report.operatingActivities.title,
+                      report.operatingActivities.total,
+                      report.operatingActivities.items,
+                    )}
 
-                {renderSection(
-                  report.investingActivities.title,
-                  report.investingActivities.total,
-                  report.investingActivities.items,
-                )}
+                    {renderSection(
+                      report.investingActivities.title,
+                      report.investingActivities.total,
+                      report.investingActivities.items,
+                    )}
 
-                {renderSection(
-                  report.financingActivities.title,
-                  report.financingActivities.total,
-                  report.financingActivities.items,
+                    {renderSection(
+                      report.financingActivities.title,
+                      report.financingActivities.total,
+                      report.financingActivities.items,
+                    )}
+                  </>
                 )}
 
                 <div className="border-t-2 pt-4 mt-8">
@@ -182,23 +192,27 @@ export default function CashFlowPage() {
                       Kenaikan/(Penurunan) Kas Bersih
                     </span>
                     <span
-                      className={`font-bold font-mono text-lg ${report.netChangeInCash >= 0 ? "text-green-700" : "text-red-700"}`}
+                      className={`font-bold font-mono text-lg ${(report.netCashFlow ?? report.netChangeInCash) >= 0 ? "text-green-700" : "text-red-700"}`}
                     >
-                      {formatCurrency(report.netChangeInCash)}
+                      {formatCurrency(report.netCashFlow ?? report.netChangeInCash)}
                     </span>
                   </div>
-                  <div className="flex justify-between items-center text-sm text-muted-foreground">
-                    <span>Saldo Kas Awal</span>
-                    <span className="font-mono">
-                      {formatCurrency(report.beginningCashBalance)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center text-lg font-bold mt-2 bg-muted/20 p-2 rounded">
-                    <span>Saldo Kas Akhir</span>
-                    <span className="font-mono">
-                      {formatCurrency(report.endingCashBalance)}
-                    </span>
-                  </div>
+                  {report.beginningCashBalance !== undefined && (
+                    <>
+                      <div className="flex justify-between items-center text-sm text-muted-foreground">
+                        <span>Saldo Kas Awal</span>
+                        <span className="font-mono">
+                          {formatCurrency(report.beginningCashBalance)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center text-lg font-bold mt-2 bg-muted/20 p-2 rounded">
+                        <span>Saldo Kas Akhir</span>
+                        <span className="font-mono">
+                          {formatCurrency(report.endingCashBalance)}
+                        </span>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             ) : (

@@ -456,3 +456,35 @@ test.describe("Integration: Multi-user Collaboration", () => {
     await page2.close();
   });
 });
+
+test.describe('Integration: GRC and Finance Advanced Reporting', () => {
+  test('should verify GRC Dashboard components', async ({ page }) => {
+    const login = new LoginPage(page);
+    await login.goto();
+    await login.loginAndWaitForDashboard(
+      "superadmin@cipansor.id",
+      "SuperAdmin123!",
+    );
+
+    await navigateTo(page, '/analytics/grc');
+    await expect(page.getByText('GRC Executive Dashboard')).toBeVisible();
+
+    // Verify our new components are rendering
+    await expect(page.getByText('Org Health Score')).toBeVisible();
+    await expect(page.getByText('Health Trend (6 Months)')).toBeVisible();
+    await expect(page.getByText('Risk Profile')).toBeVisible();
+  });
+
+  test('should verify Categorized Cash Flow Report', async ({ page }) => {
+    const login = new LoginPage(page);
+    await login.goto();
+    await login.loginAndWaitForDashboard(
+      "superadmin@cipansor.id",
+      "SuperAdmin123!",
+    );
+
+    await navigateTo(page, '/finance/reports/cash-flow');
+    await expect(page.getByText('Laporan Arus Kas')).toBeVisible();
+    await expect(page.getByText('Periode:')).toBeVisible();
+  });
+});

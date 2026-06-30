@@ -191,7 +191,17 @@ export const getHighPriorityLeads = async (unitId?: string, limit: number = 10) 
     },
   });
 
-  // Compute a simple priority score: quranAbility + memorized juz bonus
+  // Fetch interactions for these leads to score frequency
+  const leadIds = registrants.map((r) => r.id);
+  const interactions = await prisma.marketingInteraction.groupBy({
+    by: ['registrantId'],
+    where: { registrantId: { in: leadIds } },
+    _count: { _all: true },
+  });
+
+  const interactionMap = new Map(interactions.map((i) => [i.registrantId, i._count._all]));
+
+  // Compute a priority score: quranAbility + memorized juz + interaction frequency
   const quranAbilityScore: Record<string, number> = {
     TAHFIDZ: 40,
     TARTIL: 25,
@@ -201,10 +211,17 @@ export const getHighPriorityLeads = async (unitId?: string, limit: number = 10) 
   };
 
   const scored = registrants.map((r) => {
-    const base = 50;
+    const base = 40;
     const quranBonus = r.quranAbility ? (quranAbilityScore[r.quranAbility] ?? 0) : 0;
     const juzBonus = r.memorizedJuz ? Math.min(r.memorizedJuz * 2, 20) : 0;
-    return { ...r, leadScore: Math.min(base + quranBonus + juzBonus, 100) };
+    const interactionCount = interactionMap.get(r.id) || 0;
+    const engagementBonus = Math.min(interactionCount * 5, 20); // Max 20 points for engagement
+
+    return {
+      ...r,
+      leadScore: Math.min(base + quranBonus + juzBonus + engagementBonus, 100),
+      engagementLevel: interactionCount > 5 ? 'HIGH' : interactionCount > 2 ? 'MEDIUM' : 'LOW',
+    };
   });
 
   return scored.sort((a, b) => b.leadScore - a.leadScore).slice(0, limit);

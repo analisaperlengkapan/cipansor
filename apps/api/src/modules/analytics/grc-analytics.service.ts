@@ -27,6 +27,11 @@ export interface GRCStats {
     };
   };
   orgHealthScore: number;
+  trend?: {
+    month: string;
+    avgRiskScore: number;
+    complianceRate: number;
+  }[];
   auditSuggestions?: {
     riskId: string;
     riskCode: string;
@@ -178,6 +183,51 @@ export async function getGRCStats(unitId?: string): Promise<GRCStats> {
       },
     },
     orgHealthScore,
+    trend: await getGRCTrend(unitId),
     auditSuggestions,
   };
+}
+
+/**
+ * GRC Trend Analysis
+ * Best Practice: Tracking organizational health over time.
+ */
+async function getGRCTrend(unitId?: string) {
+  const months = [];
+  const now = new Date();
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    months.push({
+      label: d.toLocaleString('id-ID', { month: 'short' }),
+      start: new Date(d.getFullYear(), d.getMonth(), 1),
+      end: new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59),
+    });
+  }
+
+  return Promise.all(
+    months.map(async (m) => {
+      const [risks, sharia] = await Promise.all([
+        prisma.risk.aggregate({
+          where: {
+            ...(unitId && { unitId }),
+            createdAt: { lte: m.end },
+          },
+          _avg: { riskScore: true },
+        }),
+        prisma.shariaCompliance.aggregate({
+          where: {
+            ...(unitId && { unitId }),
+            createdAt: { lte: m.end },
+          },
+          _avg: { score: true },
+        }),
+      ]);
+
+      return {
+        month: m.label,
+        avgRiskScore: Math.round((risks._avg.riskScore || 0) * 10) / 10,
+        complianceRate: Math.round((sharia._avg.score || 0) * 10) / 10,
+      };
+    })
+  );
 }

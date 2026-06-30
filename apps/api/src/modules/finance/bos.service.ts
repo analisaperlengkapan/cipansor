@@ -185,12 +185,17 @@ export class BosService {
       throw Errors.badRequest(`Invalid component code: ${input.componentCode}`);
     }
 
+    const expenseDate = new Date(input.date);
+    const year = expenseDate.getFullYear();
+    const quarter = Math.floor(expenseDate.getMonth() / 3) + 1;
+
     // Create audit log for expense
     const auditLog = await prisma.auditLog.create({
       data: {
         userId: currentUser.sub,
         action: 'CREATE',
         entity: 'BOS_EXPENSE',
+        entityId: `${input.unitId}-${year}-Q${quarter}`,
         newValues: {
           ...input,
           componentName: component.name,

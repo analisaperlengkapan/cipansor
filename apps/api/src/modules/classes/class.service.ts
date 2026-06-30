@@ -119,7 +119,7 @@ export class ClassService {
           },
           _count: {
             select: {
-              enrollments: true,
+              enrollments: { where: { status: 'active' } },
             },
           },
         },
@@ -133,9 +133,9 @@ export class ClassService {
       studentCount: c._count.enrollments,
       homeroomTeacher: c.homeroomTeacher
         ? {
-            id: c.homeroomTeacher.id,
-            user: c.homeroomTeacher.user,
-          }
+          id: c.homeroomTeacher.id,
+          user: c.homeroomTeacher.user,
+        }
         : null,
       unit: {
         id: c.unit.id,
@@ -181,7 +181,7 @@ export class ClassService {
         },
         _count: {
           select: {
-            enrollments: true,
+            enrollments: { where: { status: 'active' } },
           },
         },
       },
@@ -197,9 +197,9 @@ export class ClassService {
       studentCount: classData._count.enrollments,
       homeroomTeacher: classData.homeroomTeacher
         ? {
-            id: classData.homeroomTeacher.id,
-            user: classData.homeroomTeacher.user,
-          }
+          id: classData.homeroomTeacher.id,
+          user: classData.homeroomTeacher.user,
+        }
         : null,
       unit: {
         id: classData.unit.id,
@@ -528,28 +528,23 @@ export class ClassService {
    */
   async promoteStudents(input: { studentIds: string[]; targetClassId: string }) {
     const { studentIds, targetClassId } = input;
-
-    const targetClass = await prisma.class.findUnique({
-      where: { id: targetClassId },
-      include: { _count: { select: { enrollments: true } } },
-    });
-
-    if (!targetClass) {
-      throw Errors.notFound('Target class');
-    }
-
-    const currentCount = (targetClass as unknown as { _count: { enrollments: number } })._count
-      .enrollments;
-    if (currentCount + studentIds.length > targetClass.capacity) {
-      throw Errors.badRequest('Target class capacity exceeded');
-    }
-
     return prisma.$transaction(async (tx) => {
+      const targetClass = await tx.class.findUnique({
+        where: { id: targetClassId },
+      });
+      if (!targetClass) {
+        throw Errors.notFound('Target class');
+      }
+      const currentCount = await tx.classEnrollment.count({
+        where: { classId: targetClassId, status: 'active' },
+      });
+      if (currentCount + studentIds.length > targetClass.capacity) {
+        throw Errors.badRequest('Target class capacity exceeded');
+      }
       await tx.classEnrollment.updateMany({
         where: { studentId: { in: studentIds }, status: 'active' },
         data: { status: 'completed' },
       });
-
       const created = await tx.classEnrollment.createMany({
         data: studentIds.map((studentId) => ({
           studentId,
@@ -557,7 +552,6 @@ export class ClassService {
           status: 'active',
         })),
       });
-
       return { promoted: created.count };
     });
   }

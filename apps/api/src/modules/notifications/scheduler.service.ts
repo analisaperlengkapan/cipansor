@@ -88,6 +88,15 @@ export class SchedulerService {
       () => this.sendMonthlyReport(),
       3600000
     );
+
+    // Monthly SPP Bill Notification - run 1st of month at 6 AM
+    this.registerTask(
+      'monthly-spp-notification',
+      'Monthly SPP Bill Notification',
+      '0 6 1 * *',
+      () => this.sendMonthlySppNotifications(),
+      3600000
+    );
   }
 
   private static registerTask(
@@ -223,6 +232,9 @@ export class SchedulerService {
         break;
       case 'monthly-report':
         await this.sendMonthlyReport();
+        break;
+      case 'monthly-spp-notification':
+        await this.sendMonthlySppNotifications();
         break;
       default:
         throw new Error('Unknown task: ' + taskId);
@@ -577,6 +589,74 @@ export class SchedulerService {
     }
 
     logger.info('Sent ' + notifications.length + ' monthly reports');
+  }
+
+  private static async sendMonthlySppNotifications(): Promise<void> {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    // Find all invoices for this month that are PENDING or PARTIAL
+    const activeInvoices = await prisma.invoice.findMany({
+      where: {
+        status: { in: [PaymentStatus.PENDING, PaymentStatus.PARTIAL] },
+        dueDate: {
+          gte: new Date(currentYear, currentMonth, 1),
+          lt: new Date(currentYear, currentMonth + 1, 1),
+        },
+        paymentType: {
+          code: 'SPP',
+        },
+      },
+      include: {
+        student: {
+          include: {
+            user: { select: { id: true, name: true, phone: true } },
+          },
+        },
+        paymentType: true,
+      },
+    });
+
+    logger.info(`Found ${activeInvoices.length} active SPP invoices for monthly notification`);
+
+    const notifications: CreateNotificationInput[] = [];
+
+    for (const invoice of activeInvoices) {
+      const student = invoice.student;
+      if (!student?.user) continue;
+
+      const amountStr = new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR',
+        minimumFractionDigits: 0,
+      }).format(Number(invoice.amount));
+
+      const title = 'Tagihan SPP Bulan Ini';
+      const message = `Bapak/Ibu yang kami hormati, ini adalah pemberitahuan tagihan SPP untuk ${student.user.name} bulan ${invoice.period || ''} sebesar ${amountStr}. Mohon untuk segera melakukan pembayaran. Terima kasih.`;
+
+      notifications.push({
+        userId: student.user.id,
+        title,
+        message,
+        type: NotificationType.PAYMENT,
+        priority: 'HIGH',
+        channels: ['IN_APP', 'WHATSAPP', 'EMAIL'],
+        recipientType: 'INDIVIDUAL',
+        link: `/finance/bills/${invoice.id}`,
+      });
+    }
+
+    if (notifications.length > 0) {
+      // Chunk processing to avoid heavy load
+      const chunkSize = 50;
+      for (let i = 0; i < notifications.length; i += chunkSize) {
+        const chunk = notifications.slice(i, i + chunkSize);
+        await createManyNotifications(chunk);
+      }
+    }
+
+    logger.info(`Successfully processed ${notifications.length} monthly SPP notifications`);
   }
 
   // ============== BROADCAST API ==============

@@ -40,7 +40,7 @@ describe('Finance Scheduler Unit Tests - Auto Billing', () => {
 
       expect(prisma.student.findMany).toHaveBeenCalledWith({
         where: { status: 'ACTIVE' },
-        select: { id: true, unitId: true, userId: true },
+        select: { id: true, unitId: true, userId: true, isBoarding: true },
       });
 
       expect(prisma.paymentType.findMany).toHaveBeenCalledWith({

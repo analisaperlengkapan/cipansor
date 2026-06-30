@@ -16,6 +16,7 @@
  */
 
 import { logger } from '../../lib/logger';
+import { prisma } from '../../lib/prisma';
 
 // WhatsApp provider types
 type WhatsAppProvider = 'META' | 'FONNTE' | 'WATROOP' | 'WHACENTER' | 'SIMULATOR';
@@ -966,6 +967,105 @@ class WhatsAppService {
       provider: this.config.provider,
       configured,
     };
+  }
+
+  // ==================== Template Management ====================
+
+  async getStoredTemplates() {
+    return prisma.whatsAppTemplate.findMany({
+      orderBy: { name: 'asc' },
+    });
+  }
+
+  async createStoredTemplate(data: {
+    name: string;
+    category: string;
+    content: string;
+    header?: string;
+    footer?: string;
+    buttons?: any;
+  }) {
+    return prisma.whatsAppTemplate.create({
+      data: {
+        ...data,
+        status: 'PENDING',
+      },
+    });
+  }
+
+  async updateStoredTemplate(id: string, data: any) {
+    return prisma.whatsAppTemplate.update({
+      where: { id },
+      data,
+    });
+  }
+
+  async deleteStoredTemplate(id: string) {
+    return prisma.whatsAppTemplate.delete({
+      where: { id },
+    });
+  }
+
+  /**
+   * Sync templates from Meta Cloud API
+   */
+  async syncMetaTemplates() {
+    if (this.config.provider !== 'META' || !this.config.accessToken || !this.config.phoneNumberId) {
+      throw new Error('Meta provider not configured for sync');
+    }
+
+    try {
+      // We need WABA ID for template management, usually found via Phone Number ID
+      // For simplicity, we assume another env var or fetch it
+      const wabaId = process.env.WA_BUSINESS_ACCOUNT_ID;
+      if (!wabaId) throw new Error('WA_BUSINESS_ACCOUNT_ID is required for template sync');
+
+      const url = `https://graph.facebook.com/v17.0/${wabaId}/message_templates`;
+      const response = await fetch(url, {
+        headers: { Authorization: `Bearer ${this.config.accessToken}` },
+      });
+
+      const data = (await response.json()) as { data: any[] };
+
+      if (response.ok && data.data) {
+        for (const metaTpl of data.data) {
+          const contentComponent = metaTpl.components.find((c: any) => c.type === 'BODY');
+          const headerComponent = metaTpl.components.find((c: any) => c.type === 'HEADER');
+          const footerComponent = metaTpl.components.find((c: any) => c.type === 'FOOTER');
+          const buttonsComponent = metaTpl.components.find((c: any) => c.type === 'BUTTONS');
+
+          await prisma.whatsAppTemplate.upsert({
+            where: { name: metaTpl.name },
+            update: {
+              category: metaTpl.category,
+              content: contentComponent?.text || '',
+              header: headerComponent?.text,
+              footer: footerComponent?.text,
+              buttons: buttonsComponent?.buttons,
+              externalId: metaTpl.id,
+              status: metaTpl.status,
+              language: metaTpl.language,
+            },
+            create: {
+              name: metaTpl.name,
+              category: metaTpl.category,
+              content: contentComponent?.text || '',
+              header: headerComponent?.text,
+              footer: footerComponent?.text,
+              buttons: buttonsComponent?.buttons,
+              externalId: metaTpl.id,
+              status: metaTpl.status,
+              language: metaTpl.language,
+            },
+          });
+        }
+        return { success: true, count: data.data.length };
+      }
+      throw new Error(JSON.stringify(data));
+    } catch (error) {
+      logger.error('Meta template sync failed:', error);
+      throw error;
+    }
   }
 }
 

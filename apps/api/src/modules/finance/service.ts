@@ -1,5 +1,5 @@
 import { prisma } from '../../lib/prisma';
-import { PaymentStatus, Prisma, NotificationType } from '@prisma/client';
+import { PaymentStatus, Prisma, NotificationType, VerificationStatus } from '@prisma/client';
 import * as notificationService from '../notifications/service';
 import { eventBus } from '@/lib/event-bus';
 import { AccountType, JournalReferenceType } from '@cipansor/shared';
@@ -317,6 +317,8 @@ export async function createPayment(data: CreatePaymentDto, userId: string = 'SY
         referenceNo: paymentData.referenceNo,
         notes: paymentData.notes,
         amount: new Prisma.Decimal(data.amount),
+        proofUrl: paymentData.proofUrl,
+        status: paymentData.proofUrl ? VerificationStatus.PENDING_VERIFICATION : VerificationStatus.FINAL_APPROVED,
         invoice: { connect: { id: invoiceId } },
       },
       include: {
@@ -345,18 +347,21 @@ export async function createPayment(data: CreatePaymentDto, userId: string = 'SY
       newStatus = PaymentStatus.PENDING;
     }
 
-    await tx.invoice.update({
-      where: { id: data.invoiceId },
-      data: {
-        paidAmount: newPaidAmount,
-        status: newStatus,
-      },
-    });
+    // If it's a cash payment or verified already, update invoice
+    if (payment.status === VerificationStatus.FINAL_APPROVED) {
+      await tx.invoice.update({
+        where: { id: data.invoiceId },
+        data: {
+          paidAmount: newPaidAmount,
+          status: newStatus,
+        },
+      });
+    }
 
     // =================================================================
     // INTEGRATION: Create Journal Entry for Accounting
     // =================================================================
-    if (invoice.paymentType.accountId && invoice.student.unitId) {
+    if (payment.status === VerificationStatus.FINAL_APPROVED && invoice.paymentType.accountId && invoice.student.unitId) {
       // 1. Determine Debit Account (Asset) based on Payment Method
       const isBank = ['BANK_TRANSFER', 'VIRTUAL_ACCOUNT', 'QRIS', 'EWALLET'].includes(
         payment.method
@@ -415,57 +420,238 @@ export async function createPayment(data: CreatePaymentDto, userId: string = 'SY
     return payment;
   });
 
-  // Send notification after transaction commits
-  try {
-    const formatter = new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      minimumFractionDigits: 0,
-    });
-
-    await notificationService.createNotification({
-      userId: payment.invoice.student.user.id,
-      title: 'Pembayaran Berhasil',
-      message: `Pembayaran untuk tagihan ${payment.invoice.paymentType.name} sebesar ${formatter.format(
-        payment.amount.toNumber()
-      )} telah diterima.`,
-      type: NotificationType.PAYMENT,
-      link: `/finance/bills/${payment.invoice.id}`,
-      priority: 'HIGH',
-      channels: ['IN_APP', 'EMAIL'],
-      recipientType: 'INDIVIDUAL',
-    });
-  } catch (error) {
-    console.error('Failed to send payment notification:', error);
-  }
-
-  // Emit event for cross-module integration (dashboard real-time updates)
-  try {
-    // We need to fetch student unit info for the event
-    const studentWithUnit = await prisma.student.findUnique({
-      where: { id: payment.invoice.studentId },
-      include: { unit: { select: { id: true, name: true } } },
-    });
-
-    if (studentWithUnit) {
-      eventBus.emit('finance:payment-received', {
-        id: payment.id,
-        invoiceId: payment.invoiceId,
-        studentId: payment.invoice.studentId,
-        studentName: payment.invoice.student.user.name,
-        unitId: studentWithUnit.unitId,
-        unitName: studentWithUnit.unit?.name || '',
-        amount: payment.amount.toNumber(),
-        paymentMethod: payment.method,
-        paidAt: payment.paidAt || new Date(),
-        processedById: 'SYSTEM',
+  // Send notification after transaction commits only if FINAL_APPROVED
+  if (payment.status === VerificationStatus.FINAL_APPROVED) {
+    try {
+      const formatter = new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR',
+        minimumFractionDigits: 0,
       });
+
+      await notificationService.createNotification({
+        userId: payment.invoice.student.user.id,
+        title: 'Pembayaran Berhasil',
+        message: `Pembayaran untuk tagihan ${payment.invoice.paymentType.name} sebesar ${formatter.format(
+          payment.amount.toNumber()
+        )} telah diterima dan diverifikasi.`,
+        type: NotificationType.PAYMENT,
+        link: `/finance/bills/${payment.invoice.id}`,
+        priority: 'HIGH',
+        channels: ['IN_APP', 'EMAIL', 'WHATSAPP'],
+        recipientType: 'INDIVIDUAL',
+      });
+    } catch (error) {
+      console.error('Failed to send payment notification:', error);
     }
-  } catch (error) {
-    console.error('Failed to emit payment event:', error);
+
+    // Emit event for cross-module integration (dashboard real-time updates)
+    try {
+      // We need to fetch student unit info for the event
+      const studentWithUnit = await prisma.student.findUnique({
+        where: { id: payment.invoice.studentId },
+        include: { unit: { select: { id: true, name: true } } },
+      });
+
+      if (studentWithUnit) {
+        eventBus.emit('finance:payment-received', {
+          id: payment.id,
+          invoiceId: payment.invoiceId,
+          studentId: payment.invoice.studentId,
+          studentName: payment.invoice.student.user.name,
+          unitId: studentWithUnit.unitId,
+          unitName: studentWithUnit.unit?.name || '',
+          amount: payment.amount.toNumber(),
+          paymentMethod: payment.method,
+          paidAt: payment.paidAt || new Date(),
+          processedById: 'SYSTEM',
+        });
+      }
+    } catch (error) {
+      console.error('Failed to emit payment event:', error);
+    }
+  } else if (payment.status === VerificationStatus.PENDING_VERIFICATION) {
+    try {
+      await notificationService.createNotification({
+        userId: payment.invoice.student.user.id,
+        title: 'Bukti Pembayaran Diunggah',
+        message: `Bukti pembayaran untuk tagihan ${payment.invoice.paymentType.name} telah diunggah dan sedang menunggu verifikasi Tata Usaha.`,
+        type: NotificationType.PAYMENT,
+        link: `/finance/bills/${payment.invoice.id}`,
+        priority: 'LOW',
+        channels: ['IN_APP'],
+        recipientType: 'INDIVIDUAL',
+      });
+    } catch (error) {
+      console.error('Failed to send pending verification notification:', error);
+    }
   }
 
   return payment;
+}
+
+export async function uploadPaymentProof(paymentId: string, proofUrl: string) {
+  return prisma.payment.update({
+    where: { id: paymentId },
+    data: {
+      proofUrl,
+      status: VerificationStatus.PENDING_VERIFICATION,
+      rejectionReason: null,
+    },
+    include: {
+      invoice: {
+        include: {
+          student: {
+            include: { user: { select: { id: true } } },
+          },
+          paymentType: { select: { name: true } },
+        },
+      },
+    },
+  });
+}
+
+export async function verifyPayment(paymentId: string, status: VerificationStatus, userId: string, notes?: string) {
+  return prisma.$transaction(async (tx) => {
+    const payment = await tx.payment.findUnique({
+      where: { id: paymentId },
+      include: {
+        invoice: {
+          include: {
+            student: {
+              include: { user: { select: { id: true, name: true } } },
+            },
+            paymentType: { select: { id: true, name: true, accountId: true } },
+          },
+        },
+      },
+    });
+
+    if (!payment) throw new Error('Payment not found');
+
+    const updateData: any = { status };
+    if (status === VerificationStatus.TU_APPROVED) {
+      updateData.tuVerifiedAt = new Date();
+      updateData.tuVerifiedById = userId;
+    } else if (status === VerificationStatus.FINAL_APPROVED) {
+      updateData.finalVerifiedAt = new Date();
+      updateData.finalVerifiedById = userId;
+
+      // Update invoice paid amount and status
+      const newPaidAmount = payment.invoice.paidAmount.add(payment.amount);
+      let newStatus: PaymentStatus;
+
+      if (newPaidAmount.gte(payment.invoice.amount)) {
+        newStatus = PaymentStatus.PAID;
+      } else if (newPaidAmount.gt(0)) {
+        newStatus = PaymentStatus.PARTIAL;
+      } else {
+        newStatus = PaymentStatus.PENDING;
+      }
+
+      await tx.invoice.update({
+        where: { id: payment.invoiceId },
+        data: {
+          paidAmount: newPaidAmount,
+          status: newStatus,
+        },
+      });
+
+      // Accounting Integration
+      if (payment.invoice.paymentType.accountId && payment.invoice.student.unitId) {
+        const isBank = ['BANK_TRANSFER', 'VIRTUAL_ACCOUNT', 'QRIS', 'EWALLET'].includes(payment.method);
+        const mappingKey = isBank ? ACCOUNT_MAPPING_KEYS.BANK : ACCOUNT_MAPPING_KEYS.CASH;
+        const fallbackCode = isBank ? '1102' : '1101';
+        const fallbackName = isBank ? 'Bank' : 'Kas';
+
+        const assetAccount = await getAccountOrFallback(
+          payment.invoice.student.unitId,
+          mappingKey,
+          fallbackCode,
+          fallbackName
+        );
+
+        if (assetAccount) {
+          const descriptionPrefix = `Pembayaran ${payment.invoice.invoiceNumber}`;
+          await tx.journalEntry.create({
+            data: {
+              unitId: payment.invoice.student.unitId,
+              accountId: assetAccount.id,
+              date: new Date(),
+              description: `${descriptionPrefix} (${payment.method})`,
+              debit: payment.amount,
+              credit: 0,
+              reference: payment.id,
+              referenceType: JournalReferenceType.PAYMENT,
+              createdById: userId,
+            },
+          });
+          await tx.journalEntry.create({
+            data: {
+              unitId: payment.invoice.student.unitId,
+              accountId: payment.invoice.paymentType.accountId,
+              date: new Date(),
+              description: `Pendapatan ${payment.invoice.paymentType.name} - ${payment.invoice.student.user.name}`,
+              debit: 0,
+              credit: payment.amount,
+              reference: payment.id,
+              referenceType: JournalReferenceType.PAYMENT,
+              createdById: userId,
+            },
+          });
+        }
+      }
+    } else if (status === VerificationStatus.REJECTED) {
+      updateData.rejectionReason = notes;
+    }
+
+    const updatedPayment = await tx.payment.update({
+      where: { id: paymentId },
+      data: updateData,
+      include: {
+        invoice: {
+          include: {
+            student: { include: { user: { select: { id: true } } } },
+            paymentType: { select: { name: true } },
+          },
+        },
+      },
+    });
+
+    // Notify User
+    let title = '';
+    let message = '';
+    let priority: 'LOW' | 'NORMAL' | 'HIGH' = 'NORMAL';
+    const channels: any[] = ['IN_APP'];
+
+    if (status === VerificationStatus.TU_APPROVED) {
+      title = 'Pembayaran Diverifikasi TU';
+      message = `Pembayaran ${updatedPayment.invoice.paymentType.name} telah diverifikasi oleh Tata Usaha dan menunggu verifikasi akhir Bendahara.`;
+    } else if (status === VerificationStatus.FINAL_APPROVED) {
+      title = 'Pembayaran Berhasil';
+      message = `Alhamdulillah, pembayaran ${updatedPayment.invoice.paymentType.name} telah diverifikasi final oleh Bendahara.`;
+      priority = 'HIGH';
+      channels.push('EMAIL', 'WHATSAPP');
+    } else if (status === VerificationStatus.REJECTED) {
+      title = 'Pembayaran Ditolak';
+      message = `Mohon maaf, pembayaran ${updatedPayment.invoice.paymentType.name} ditolak. Alasan: ${notes || 'Data tidak valid'}. Silakan unggah bukti yang benar.`;
+      priority = 'HIGH';
+      channels.push('WHATSAPP');
+    }
+
+    await notificationService.createNotification({
+      userId: updatedPayment.invoice.student.user.id,
+      title,
+      message,
+      type: NotificationType.PAYMENT,
+      link: `/finance/bills/${updatedPayment.invoice.id}`,
+      priority,
+      channels,
+      recipientType: 'INDIVIDUAL',
+    });
+
+    return updatedPayment;
+  });
 }
 
 export async function getPayments(query: QueryPaymentDto) {
@@ -895,11 +1081,31 @@ export async function generateBulkSppInvoices(data: {
   const createdInvoices = [];
 
   for (const student of students) {
+    // Find appropriate payment type based on student boarding status
+    let targetPaymentTypeId = paymentTypeId;
+    let targetAmount = paymentType.amount;
+
+    // Logic: if current paymentType is SPP, try to find the specific one for student's boarding status
+    if (paymentType.code === 'SPP') {
+      const specificType = await prisma.paymentType.findFirst({
+        where: {
+          unitId: student.unitId,
+          code: 'SPP',
+          forBoarding: student.isBoarding,
+          isActive: true
+        }
+      });
+      if (specificType) {
+        targetPaymentTypeId = specificType.id;
+        targetAmount = specificType.amount;
+      }
+    }
+
     // Check if invoice already exists for this student/month
     const existing = await prisma.invoice.findFirst({
       where: {
         studentId: student.id,
-        paymentTypeId,
+        paymentTypeId: targetPaymentTypeId,
         dueDate: {
           gte: new Date(year, month, 1),
           lt: new Date(year, month + 1, 1),
@@ -912,12 +1118,12 @@ export async function generateBulkSppInvoices(data: {
       const invoice = await prisma.invoice.create({
         data: {
           studentId: student.id,
-          paymentTypeId,
+          paymentTypeId: targetPaymentTypeId,
           invoiceNumber,
-          amount: paymentType.amount,
+          amount: targetAmount,
           dueDate,
           period,
-          notes: `Tagihan ${paymentType.name} untuk ${period}`,
+          notes: `Tagihan ${paymentType.name} untuk ${period} (${student.isBoarding ? 'Boarding' : 'Non-Boarding'})`,
         },
       });
       createdInvoices.push(invoice);
@@ -969,7 +1175,7 @@ export async function generateRecurringBills() {
   // 2. Get all active students
   const activeStudents = await prisma.student.findMany({
     where: { status: 'ACTIVE' },
-    select: { id: true, unitId: true, userId: true },
+    select: { id: true, unitId: true, userId: true, isBoarding: true },
   });
 
   if (!activeStudents.length) {
@@ -984,6 +1190,11 @@ export async function generateRecurringBills() {
     );
 
     for (const paymentType of applicableTypes) {
+      // Check if payment type matches student boarding status
+      if (paymentType.forBoarding !== null && paymentType.forBoarding !== student.isBoarding) {
+        continue;
+      }
+
       processed++;
       
       // Check if already billed
@@ -1008,7 +1219,7 @@ export async function generateRecurringBills() {
             amount: paymentType.amount,
             dueDate,
             period,
-            notes: `Tagihan ${paymentType.name} otomatis untuk ${period}`,
+            notes: `Tagihan ${paymentType.name} otomatis untuk ${period} (${student.isBoarding ? 'Boarding' : 'Non-Boarding'})`,
           },
         });
         created++;

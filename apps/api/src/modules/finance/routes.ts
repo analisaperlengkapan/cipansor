@@ -440,6 +440,79 @@ router.get(
   controller.getPaymentById
 );
 
+/**
+ * @swagger
+ * /api/finance/payments/{id}/proof:
+ *   post:
+ *     summary: Upload proof of payment
+ *     tags: [Finance]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - proofUrl
+ *             properties:
+ *               proofUrl:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Proof uploaded
+ */
+router.post(
+  '/payments/:id/proof',
+  authorize(UserRole.PARENT, UserRole.STUDENT),
+  controller.uploadPaymentProof
+);
+
+/**
+ * @swagger
+ * /api/finance/payments/{id}/verify:
+ *   post:
+ *     summary: Verify or reject payment
+ *     tags: [Finance]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - status
+ *             properties:
+ *               status:
+ *                 type: string
+ *                 enum: [TU_APPROVED, FINAL_APPROVED, REJECTED]
+ *               rejectionReason:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Payment verified/rejected
+ */
+router.post(
+  '/payments/:id/verify',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  controller.verifyPayment
+);
+
 // ==================== ANALYTICS ====================
 
 /**

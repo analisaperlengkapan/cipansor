@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { PaymentStatus, PaymentMethod } from '@prisma/client';
+import { PaymentStatus, PaymentMethod, VerificationStatus } from '@prisma/client';
 
 // =====================================
 // PAYMENT TYPE SCHEMAS
@@ -70,6 +70,17 @@ export const createPaymentSchema = z.object({
   method: z.nativeEnum(PaymentMethod),
   referenceNo: z.string().optional(),
   notes: z.string().optional(),
+  proofUrl: z.string().url('Invalid proof URL').optional(),
+});
+
+export const uploadPaymentProofSchema = z.object({
+  paymentId: z.string().uuid('Invalid payment ID'),
+  proofUrl: z.string().url('Invalid proof URL'),
+});
+
+export const verifyPaymentSchema = z.object({
+  status: z.enum([VerificationStatus.TU_APPROVED, VerificationStatus.FINAL_APPROVED, VerificationStatus.REJECTED]),
+  rejectionReason: z.string().optional(),
 });
 
 export const queryPaymentSchema = z.object({
@@ -91,6 +102,8 @@ export type UpdateInvoiceDto = z.infer<typeof updateInvoiceSchema>;
 export type QueryInvoiceDto = z.infer<typeof queryInvoiceSchema>;
 
 export type CreatePaymentDto = z.infer<typeof createPaymentSchema>;
+export type UploadPaymentProofDto = z.infer<typeof uploadPaymentProofSchema>;
+export type VerifyPaymentDto = z.infer<typeof verifyPaymentSchema>;
 export type QueryPaymentDto = z.infer<typeof queryPaymentSchema>;
 
 // =====================================

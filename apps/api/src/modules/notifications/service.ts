@@ -1,5 +1,7 @@
 import { Prisma, NotificationStatus } from '@prisma/client';
 import { prisma } from '../../lib/prisma';
+import { whatsAppService } from './whatsapp.service';
+import { fcmService } from './fcm.service';
 import crypto from 'node:crypto';
 import type {
   CreateNotificationInput,
@@ -193,7 +195,27 @@ export async function createNotification(data: CreateNotificationInput) {
     scheduledAt: data.scheduledAt || null,
   };
 
-  const notification = await prisma.notification.create({ data: createData });
+  const notification = await prisma.notification.create({
+    data: createData,
+    include: { user: { select: { id: true, phone: true } } },
+  });
+
+  // Handle multi-channel delivery
+  if (channels?.includes('WHATSAPP') && notification.user.phone) {
+    whatsAppService.sendMessage({
+      to: notification.user.phone,
+      message: `*${notification.title}*\n\n${notification.message}`,
+      type: 'text',
+    }).catch(err => console.error('WhatsApp background delivery error:', err));
+  }
+
+  if (notification.user.fcmToken) {
+    fcmService.sendPushNotification({
+      userId: notification.userId,
+      title: notification.title,
+      body: notification.message,
+    }).catch(err => console.error('FCM background delivery error:', err));
+  }
 
   if (originalType) {
     return { ...notification, type: originalType };
@@ -218,9 +240,48 @@ export async function createBulkNotifications(data: CreateBulkNotificationInput)
     },
   }));
 
-  return prisma.notification.createMany({
+  const result = await prisma.notification.createMany({
     data: notifications,
   });
+
+  // Trigger background WhatsApp delivery for bulk
+  const waRecipients = data
+    .filter((item) => item.channels?.includes('WHATSAPP'))
+    .map((item) => ({ userId: item.userId }));
+
+  if (waRecipients.length > 0) {
+    const usersWithPhone = await prisma.user.findMany({
+      where: { id: { in: waRecipients.map((r) => r.userId) }, phone: { not: null } },
+      select: { id: true, phone: true },
+    });
+
+    const tasks = data
+      .filter((item) => item.channels?.includes('WHATSAPP'))
+      .map((item) => {
+        const user = usersWithPhone.find((u) => u.id === item.userId);
+        if (user?.phone) {
+          return whatsAppService.sendMessage({
+            to: user.phone,
+            message: `*${item.title}*\n\n${item.message}`,
+            type: 'text',
+          });
+        }
+        return Promise.resolve(null);
+      });
+
+    // Run in background
+    Promise.all(tasks).catch((err) => console.error('Bulk WhatsApp delivery error:', err));
+  }
+
+  // Trigger FCM push
+  const fcmUserIds = data.map(item => item.userId);
+  if (fcmUserIds.length > 0) {
+    // Assuming first notification title/message as representative for bulk
+    fcmService.sendBulkPush(fcmUserIds, data[0].title, data[0].message)
+      .catch(err => console.error('Bulk FCM delivery error:', err));
+  }
+
+  return result;
 }
 
 export async function createManyNotifications(data: CreateNotificationInput[]) {

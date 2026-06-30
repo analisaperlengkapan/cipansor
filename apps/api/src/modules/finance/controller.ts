@@ -30,6 +30,37 @@ export async function createPaymentType(req: Request, res: Response, next: NextF
   }
 }
 
+export async function uploadPaymentProof(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { id } = (req.params as any);
+    const { proofUrl } = req.body;
+    const payment = await financeService.uploadPaymentProof(id, proofUrl);
+    res.json({
+      success: true,
+      message: 'Proof of payment uploaded successfully',
+      data: payment,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function verifyPayment(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { id } = (req.params as any);
+    const { status, rejectionReason } = req.body;
+    const userId = req.user?.sub || 'SYSTEM';
+    const payment = await financeService.verifyPayment(id, status, userId, rejectionReason);
+    res.json({
+      success: true,
+      message: `Payment status updated to ${status}`,
+      data: payment,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function getPaymentTypes(req: Request, res: Response, next: NextFunction) {
   try {
     const query = queryPaymentTypeSchema.parse(res.locals.validatedQuery || (req.query as any));

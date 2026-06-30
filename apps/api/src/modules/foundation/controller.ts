@@ -25,6 +25,16 @@ export async function getFoundations(req: Request, res: Response, next: NextFunc
   }
 }
 
+export async function getConsolidatedDashboard(req: Request, res: Response, next: NextFunction) {
+  try {
+    const foundationId = (req.params as any).id;
+    const result = await service.getConsolidatedExecutiveDashboard(foundationId);
+    res.json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function getFoundationById(req: Request, res: Response, next: NextFunction) {
   try {
     const foundation = await service.getFoundationById((req.params as any).id);

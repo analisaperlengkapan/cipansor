@@ -123,6 +123,30 @@ router.get('/:id', authorize(UserRole.SUPER_ADMIN), controller.getFoundationById
  */
 router.get('/:id/stats', authorize(UserRole.SUPER_ADMIN), controller.getFoundationStats);
 
+/**
+ * @swagger
+ * /api/foundation/{id}/consolidated:
+ *   get:
+ *     summary: Get consolidated executive dashboard for a foundation
+ *     tags: [Foundation]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Consolidated foundation metrics
+ */
+router.get(
+  '/:id/consolidated',
+  authorize(UserRole.SUPER_ADMIN, UserRole.YAYASAN_ADMIN),
+  controller.getConsolidatedDashboard
+);
+
 // ==================== EXECUTIVE DASHBOARD ANALYTICS ====================
 
 /**

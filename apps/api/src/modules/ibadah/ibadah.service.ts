@@ -591,6 +591,71 @@ export async function getLeaderboard(query: LeaderboardQuery) {
   };
 }
 
+export async function getStudentAchievements(studentId: string) {
+  const [totalPointsResult, streaks] = await Promise.all([
+    prisma.dailyIbadahRecord.aggregate({
+      where: { studentId, isCompleted: true },
+      _sum: { pointsEarned: true, bonusEarned: true },
+    }),
+    prisma.dailyIbadahRecord.findMany({
+      where: { studentId, isCompleted: true },
+      select: { date: true },
+      orderBy: { date: 'desc' },
+      distinct: ['date'],
+    }),
+  ]);
+
+  const totalPoints =
+    (totalPointsResult._sum.pointsEarned || 0) + (totalPointsResult._sum.bonusEarned || 0);
+
+  // Calculate current streak
+  let currentStreak = 0;
+  if (streaks.length > 0) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    let lastDate = new Date(streaks[0].date);
+    lastDate.setHours(0, 0, 0, 0);
+
+    const diffDays = Math.floor((today.getTime() - lastDate.getTime()) / (1000 * 3600 * 24));
+
+    if (diffDays <= 1) {
+      // Still in streak if recorded today or yesterday
+      currentStreak = 1;
+      for (let i = 1; i < streaks.length; i++) {
+        const prevDate = new Date(streaks[i].date);
+        prevDate.setHours(0, 0, 0, 0);
+        const dayDiff = Math.floor((lastDate.getTime() - prevDate.getTime()) / (1000 * 3600 * 24));
+
+        if (dayDiff === 1) {
+          currentStreak++;
+          lastDate = prevDate;
+        } else {
+          break;
+        }
+      }
+    }
+  }
+
+  // Determine Level and Badges
+  const level = Math.floor(totalPoints / 1000) + 1;
+  const badges = [];
+
+  if (totalPoints >= 100) badges.push({ id: 'beginner', name: 'Mubtadi', icon: '🌱' });
+  if (totalPoints >= 1000) badges.push({ id: 'consistent', name: 'Istiqomah', icon: '🔥' });
+  if (currentStreak >= 7) badges.push({ id: 'weekly_warrior', name: 'Pejuang Mingguan', icon: '⚔️' });
+  if (currentStreak >= 30) badges.push({ id: 'monthly_master', name: 'Ahli Ibadah', icon: '🏆' });
+
+  return {
+    totalPoints,
+    currentStreak,
+    level,
+    badges,
+    nextLevelAt: level * 1000,
+    progressToNextLevel: (totalPoints % 1000) / 10,
+  };
+}
+
 // ======================
 // STATISTICS
 // ======================

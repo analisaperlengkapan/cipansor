@@ -334,6 +334,48 @@ export class TahfidzService {
       juzCovered: juzCovered.map((j) => j.juz).sort((a, b) => a - b),
       surahCovered: surahCovered.sort((a, b) => a.surahNumber - b.surahNumber),
       recentRecords,
+      estimation: this.calculateGraduationEstimation(totalAyahZiyadah._sum?.totalAyah || 0, recentRecords),
+    };
+  }
+
+  /**
+   * Calculate estimated time to finish 30 Juz (6236 ayah)
+   * Based on average daily ziyadah in recent records
+   */
+  private calculateGraduationEstimation(totalCurrent: number, recentRecords: any[]) {
+    const TOTAL_QURAN_AYAH = 6236;
+    const remaining = TOTAL_QURAN_AYAH - totalCurrent;
+
+    if (remaining <= 0) return { status: 'COMPLETED', remainingDays: 0 };
+
+    // Get ziyadah records from the last 30 days or last 10 records
+    const ziyadahRecords = recentRecords.filter((r: any) => r.activityType === 'ZIYADAH');
+
+    if (ziyadahRecords.length < 3) {
+      return { status: 'INSUFFICIENT_DATA', remainingDays: null };
+    }
+
+    // Average ayah per setoran
+    const avgPerSetoran =
+      ziyadahRecords.reduce((sum: number, r: any) => sum + r.totalAyah, 0) / ziyadahRecords.length;
+
+    // Estimate frequency (assume 3 times a week if no better data)
+    const frequencyPerWeek = 3;
+    const estimatedAyahPerWeek = avgPerSetoran * frequencyPerWeek;
+
+    const remainingWeeks = remaining / estimatedAyahPerWeek;
+    const remainingDays = Math.ceil(remainingWeeks * 7);
+
+    const estimatedDate = new Date();
+    estimatedDate.setDate(estimatedDate.getDate() + remainingDays);
+
+    return {
+      status: 'ON_TRACK',
+      totalMemorized: totalCurrent,
+      remainingAyah: remaining,
+      avgPerSetoran: Math.round(avgPerSetoran * 10) / 10,
+      estimatedDays: remainingDays,
+      estimatedDate,
     };
   }
 

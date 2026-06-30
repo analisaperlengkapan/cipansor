@@ -362,6 +362,24 @@ router.get('/leaderboard', authenticate, async (req, res, next) => {
 
 /**
  * @swagger
+ * /api/ibadah/achievements/{studentId}:
+ *   get:
+ *     summary: Get student achievements (gamification)
+ *     tags: [Ibadah]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.get('/achievements/:studentId', authenticate, async (req, res, next) => {
+  try {
+    const result = await service.getStudentAchievements(req.params.studentId);
+    res.json(ApiResponse.success(result));
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * @swagger
  * /api/ibadah/stats/student:
  *   get:
  *     summary: Get student ibadah statistics

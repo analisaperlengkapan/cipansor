@@ -854,3 +854,14 @@ export function getStreakEmoji(streak: number) {
   if (streak >= 3) return "✨";
   return "";
 }
+
+export function useIbadahAchievements(studentId: string) {
+  return useQuery({
+    queryKey: ["ibadah-achievements", studentId],
+    queryFn: async () => {
+      const response = await api.get<ApiResponse<any>>(`/ibadah/achievements/${studentId}`);
+      return response.data.data;
+    },
+    enabled: !!studentId,
+  });
+}

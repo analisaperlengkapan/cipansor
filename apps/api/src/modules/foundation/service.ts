@@ -307,3 +307,85 @@ export async function getFoundationStats(foundationId: string) {
     unitsSummary: foundation.units,
   };
 }
+
+export async function getConsolidatedExecutiveDashboard(foundationId: string) {
+  const foundation = await prisma.foundation.findUnique({
+    where: { id: foundationId },
+    include: {
+      units: {
+        select: {
+          id: true,
+          name: true,
+          type: true,
+        },
+      },
+    },
+  });
+
+  if (!foundation) throw new Error('Foundation not found');
+
+  const unitIds = foundation.units.map((u) => u.id);
+
+  const [studentStats, teacherStats, attendanceStats, financeStats, tahfidzStats] =
+    await Promise.all([
+      prisma.student.groupBy({
+        by: ['unitId'],
+        where: { unitId: { in: unitIds }, status: 'active' },
+        _count: { _all: true },
+      }),
+      prisma.teacher.groupBy({
+        by: ['unitId'],
+        where: { unitId: { in: unitIds } },
+        _count: { _all: true },
+      }),
+      prisma.attendance.groupBy({
+        by: ['status'],
+        where: {
+          student: { unitId: { in: unitIds } },
+          date: { gte: new Date(new Date().setHours(0, 0, 0, 0)) },
+        },
+        _count: { _all: true },
+      }),
+      prisma.payment.aggregate({
+        where: {
+          invoice: { student: { unitId: { in: unitIds } } },
+          paidAt: { gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1) },
+        },
+        _sum: { amount: true },
+      }),
+      prisma.tahfidzRecord.aggregate({
+        where: { student: { unitId: { in: unitIds } } },
+        _avg: { juz: true },
+        _count: { _all: true },
+      }),
+    ]);
+
+  return {
+    foundation: {
+      id: foundation.id,
+      name: foundation.name,
+    },
+    metrics: {
+      totalActiveStudents: studentStats.reduce((sum, s) => sum + s._count._all, 0),
+      totalTeachers: teacherStats.reduce((sum, t) => sum + t._count._all, 0),
+      todayAttendanceRate: calculateAttendanceRate(attendanceStats),
+      monthlyRevenue: Number(financeStats._sum.amount) || 0,
+      avgTahfidzJuz: Number(tahfidzStats._avg.juz?.toFixed(2)) || 0,
+    },
+    unitBreakdown: foundation.units.map((u) => ({
+      id: u.id,
+      name: u.name,
+      type: u.type,
+      students: studentStats.find((s) => s.unitId === u.id)?._count._all || 0,
+      teachers: teacherStats.find((t) => t.unitId === u.id)?._count._all || 0,
+      status: 'stable',
+    })),
+  };
+}
+
+function calculateAttendanceRate(stats: any[]) {
+  const total = stats.reduce((sum, s) => sum + s._count._all, 0);
+  if (total === 0) return 0;
+  const present = stats.find((s) => s.status === 'PRESENT')?._count._all || 0;
+  return Number(((present / total) * 100).toFixed(2));
+}

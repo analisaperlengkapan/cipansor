@@ -46,6 +46,14 @@ YELLOW := \033[1;33m
 RED := \033[0;31m
 NC := \033[0m # No Color
 
+# Kredensial DB: ambil dari .env bila ada (parsing selektif agar value
+# berkutip lain di .env tidak ikut), fallback ke default 'postgres'.
+DB_USER ?= $(shell grep -E '^DB_USER=' .env 2>/dev/null | cut -d= -f2- | tr -d '"')
+DB_PASSWORD ?= $(shell grep -E '^DB_PASSWORD=' .env 2>/dev/null | cut -d= -f2- | tr -d '"')
+DB_USER := $(if $(strip $(DB_USER)),$(DB_USER),postgres)
+DB_PASSWORD := $(if $(strip $(DB_PASSWORD)),$(DB_PASSWORD),postgres)
+DB_NAME ?= cipansor
+
 # Check prerequisites
 check-prereqs:
 	@echo "$(BLUE)Checking prerequisites...$(NC)"
@@ -153,7 +161,7 @@ check-health:
 # Push database schema
 db-push:
 	@echo "$(BLUE)Pushing Prisma schema to database...$(NC)"
-	docker exec cipansor-api sh -c "cd /app/apps/api && npx prisma db push --url='postgresql://postgres:postgres@db:5432/cipansor'"
+	docker exec cipansor-api sh -c "cd /app/apps/api && npx prisma db push --url='postgresql://$(DB_USER):$(DB_PASSWORD)@db:5432/$(DB_NAME)'"
 	@echo "$(GREEN)✓ Database schema pushed$(NC)"
 
 # Seed database
@@ -163,7 +171,7 @@ db-push:
 #            yang TIDAK tersedia di image API, lihat apps/api/Dockerfile).
 db-seed:
 	@echo "$(BLUE)Seeding database...$(NC)"
-	@DATABASE_URL="postgresql://postgres:postgres@localhost:5432/cipansor" pnpm --filter api db:seed
+	@DATABASE_URL="postgresql://$(DB_USER):$(DB_PASSWORD)@localhost:5432/$(DB_NAME)" pnpm --filter api db:seed
 	@echo "$(GREEN)✓ Database seeded$(NC)"
 
 # Reset database
@@ -172,7 +180,7 @@ db-reset:
 	@printf "Are you sure? [y/N] "; \
 	read REPLY; \
 	if [ "$$REPLY" = "y" ] || [ "$$REPLY" = "Y" ]; then \
-		docker exec cipansor-db psql -U postgres -d cipansor -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"; \
+		docker exec cipansor-db psql -U $(DB_USER) -d $(DB_NAME) -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"; \
 		$(MAKE) db-push; \
 		$(MAKE) db-seed; \
 		echo "$(GREEN)✓ Database reset completed$(NC)"; \

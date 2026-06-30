@@ -8,6 +8,7 @@ const { prismaMock } = vi.hoisted(() => ({
     },
     classEnrollment: {
       findMany: vi.fn(),
+      count: vi.fn(),
       updateMany: vi.fn(),
       createMany: vi.fn(),
     },
@@ -96,8 +97,8 @@ describe('Class Service', () => {
       (prisma.class.findUnique as any).mockResolvedValue({
         id: targetClassId,
         capacity: 30,
-        _count: { enrollments: 29 },
       });
+      (prisma.classEnrollment.count as any).mockResolvedValue(29);
 
       await expect(classService.promoteStudents({ studentIds, targetClassId })).rejects.toThrow(
         'Target class capacity exceeded'

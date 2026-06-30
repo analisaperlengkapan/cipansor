@@ -11,6 +11,25 @@ router.use(authenticate);
 
 /**
  * @swagger
+ * /api/alumni/sanad/tree:
+ *   get:
+ *     summary: Get recursive sanad transmission tree
+ *     tags: [Alumni]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: rootId
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Sanad tree data
+ */
+router.get('/sanad/tree', controller.getSanadTree);
+
+/**
+ * @swagger
  * /api/alumni/stats/tracer:
  *   get:
  *     summary: Get alumni tracer study statistics

@@ -283,3 +283,102 @@ export interface GRCStats {
   orgHealthScore: number;
   auditSuggestions?: AuditSuggestion[];
 }
+
+export interface ParentEngagementStats {
+  summary: {
+    totalParents: number;
+    activeParents: number;
+    engagementRate: number;
+    avgResponseTime: number;
+    monthlyTrend: string;
+  };
+  metrics: {
+    portalLogins: { value: number; change: number; label: string };
+    reportViews: { value: number; change: number; label: string };
+    billPayments: { value: number; change: number; label: string };
+    messageSent: { value: number; change: number; label: string };
+  };
+  weeklyActivity: Array<{
+    day: string;
+    logins: number;
+    reports: number;
+    messages: number;
+  }>;
+  classBreakdown: Array<{
+    class: string;
+    engagement: number;
+    parents: number;
+  }>;
+  lowEngagement: Array<{
+    parentName: string;
+    childName: string;
+    lastLogin: string;
+    reason: string;
+  }>;
+}
+
+export interface HomeroomPerformanceStats {
+  teachers: Array<{
+    id: string;
+    teacherName: string;
+    className: string;
+    studentCount: number;
+    metrics: {
+      dailyReportCompletion: number;
+      attendanceAccuracy: number;
+      parentEngagement: number;
+      tahfidzProgress: number;
+      behaviorManagement: number;
+      administrativeTask: number;
+    };
+    overallScore: number;
+    trend: "up" | "down";
+    monthlyData: Array<{
+      month: string;
+      score: number;
+    }>;
+  }>;
+}
+
+export interface AccreditationStandard {
+  code: string;
+  name: string;
+  weight: number;
+  indicatorCount: number;
+}
+
+export interface AccreditationDashboard {
+  unit: {
+    id: string;
+    name: string;
+    npsn: string | null;
+    currentAccreditation: string | null;
+  };
+  statistics: {
+    teachers: {
+      total: number;
+      certified: number;
+      certificationRate: number;
+    };
+    students: {
+      total: number;
+    };
+    facilities: {
+      dormitories: number;
+      totalRooms: number;
+      classes: number;
+    };
+    finance: {
+      annualRevenue: number;
+    };
+  };
+  standards: AccreditationStandard[];
+  readinessScores: Array<{
+    standardCode: string;
+    standardName: string;
+    autoScore: number;
+    needsManualAssessment: boolean;
+  }>;
+  overallReadiness: number;
+  recommendedActions: string[];
+}

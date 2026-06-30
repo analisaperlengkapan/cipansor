@@ -55,6 +55,8 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { useMemo } from "react";
+import { AdmissionsStatsCard } from "@/components/dashboard/AdmissionsStatsCard";
+import { CBTMonitoringWidget } from "@/components/dashboard/CBTMonitoringWidget";
 
 export default function DashboardPage() {
   const { user } = useAuthStore();
@@ -140,13 +142,27 @@ export default function DashboardPage() {
     <MainLayout>
       <div className="space-y-6">
         {/* Welcome Header */}
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">
-            Selamat datang, {user?.name}!
-          </h1>
-          <p className="text-muted-foreground">
-            Berikut ringkasan {user?.unit?.name || "sistem"} hari ini.
-          </p>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">
+              Selamat datang, {user?.name}!
+            </h1>
+            <p className="text-muted-foreground">
+              Berikut ringkasan {user?.unit?.name || "sistem"} hari ini.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 px-3 py-1">
+              <Calendar className="mr-2 h-3.5 w-3.5" />
+              {format(new Date(), "EEEE, dd MMMM yyyy", { locale: id })}
+            </Badge>
+          </div>
+        </div>
+
+        {/* Admissions & CBT Quick Monitoring */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
+           <AdmissionsStatsCard stats={stats?.admissions} isLoading={isLoading} />
+           <CBTMonitoringWidget stats={stats?.cbt} isLoading={isLoading} />
         </div>
 
         {/* Main Stats Grid */}

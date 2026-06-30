@@ -70,6 +70,40 @@ export async function getAdmissionPeriodById(id: string) {
   });
 }
 
+export async function getRegistrantByRegistrationNo(registrationNo: string, birthDate: Date) {
+  // Normalize date to start of day for comparison
+  const startOfDay = new Date(birthDate);
+  startOfDay.setHours(0, 0, 0, 0);
+  const endOfDay = new Date(birthDate);
+  endOfDay.setHours(23, 59, 59, 999);
+
+  return prisma.registrant.findFirst({
+    where: {
+      registrationNo,
+      birthDate: {
+        gte: startOfDay,
+        lte: endOfDay,
+      },
+    },
+    include: {
+      admissionPeriod: {
+        select: {
+          name: true,
+          unit: { select: { name: true } },
+        },
+      },
+      documents: {
+        select: {
+          id: true,
+          name: true,
+          isVerified: true,
+          notes: true,
+        },
+      },
+    },
+  });
+}
+
 export async function createAdmissionPeriod(data: CreateAdmissionPeriodInput) {
   return prisma.admissionPeriod.create({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -861,4 +895,9 @@ export async function verifyDocument(id: string, isVerified: boolean, notes?: st
 
 export async function deleteRegistrantDocument(id: string) {
   return prisma.registrantDocument.delete({ where: { id } });
+}
+
+export async function verifyRegistrationPayment(registrantId: string) {
+  const { financeBridgeService } = await import('./finance-bridge.service');
+  return financeBridgeService.syncPaymentStatus(registrantId);
 }

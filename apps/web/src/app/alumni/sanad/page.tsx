@@ -34,84 +34,14 @@ import {
   GraduationCap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useAlumni, useAlumniStats } from "@/hooks/use-alumni";
+import {
+  useAlumni,
+  useAlumniStats,
+  useSanadTree,
+  SanadNode,
+} from "@/hooks/use-alumni";
 import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/api";
-
-// Sanad chain data structure
-interface SanadNode {
-  id: string;
-  name: string;
-  title: string;
-  year: string;
-  location?: string;
-  specialty: string;
-  children?: SanadNode[];
-}
-
-// Mock sanad chain data - showing isnad (chain of transmission)
-// This is static institutional data representing the chain of transmission (silsilah)
-const mockSanadChain: SanadNode = {
-  id: "root",
-  name: "Syaikh Abdul Qadir Al-Arnauth",
-  title: "محدث الشام",
-  year: "1928-2004",
-  location: "Damascus, Syria",
-  specialty: "Hadits & Tahqiq",
-  children: [
-    {
-      id: "level1-1",
-      name: "KH. Muhammad Salim",
-      title: "مشايخ الحديث",
-      year: "1945-2020",
-      location: "Pesantren Al-Hikmah",
-      specialty: "Hadits",
-      children: [
-        {
-          id: "level2-1",
-          name: "Ust. Ahmad Fadlan, Lc.",
-          title: "معلم القرآن",
-          year: "1975-",
-          location: "Pesantren Al-Hikmah",
-          specialty: "Tahfidz & Qiroah",
-          children: [
-            {
-              id: "level3-1",
-              name: "Muhammad Hasan",
-              title: "Hafizh",
-              year: "2010-",
-              specialty: "30 Juz bi Sanad",
-            },
-            {
-              id: "level3-2",
-              name: "Fatimah Azzahra",
-              title: "Hafizhah",
-              year: "2011-",
-              specialty: "30 Juz bi Sanad",
-            },
-          ],
-        },
-        {
-          id: "level2-2",
-          name: "Ust. Ibrahim Hakim, Lc.",
-          title: "معلم القرآن",
-          year: "1980-",
-          location: "Pesantren Al-Hikmah",
-          specialty: "Tahfidz & Tajwid",
-          children: [
-            {
-              id: "level3-3",
-              name: "Ahmad Syakir",
-              title: "Hafizh",
-              year: "2009-",
-              specialty: "30 Juz bi Sanad",
-            },
-          ],
-        },
-      ],
-    },
-  ],
-};
 
 // Hook to fetch alumni with sanad data
 function useAlumniWithSanad(params?: {
@@ -123,7 +53,7 @@ function useAlumniWithSanad(params?: {
     queryFn: async () => {
       // Try to get sanad data, fallback to alumni data
       try {
-        const response = await api.get("/sanad", {
+        const response = await api.get("/takhosus/sanad", {
           params: {
             limit: 50,
             ...params,
@@ -275,6 +205,8 @@ export default function AlumniSanadPage() {
     graduationYear: filterYear !== "all" ? filterYear : undefined,
   });
 
+  const { data: sanadTree, isLoading: isLoadingTree } = useSanadTree();
+
   const filteredAlumni = alumniWithSanad.filter((alumni) => {
     const matchesSearch = searchQuery
       ? alumni.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -287,9 +219,6 @@ export default function AlumniSanadPage() {
   // Calculate stats from actual data
   const totalSanad = alumniWithSanad.reduce((sum, a) => sum + a.sanadCount, 0);
   const totalAlumni = alumniWithSanad.length;
-  const verifiedCount = alumniWithSanad.filter(
-    (a) => a.status === "verified",
-  ).length;
   const totalJuz = alumniWithSanad.reduce((sum, a) => sum + a.juzCount, 0);
 
   return (
@@ -389,11 +318,26 @@ export default function AlumniSanadPage() {
               Pohon Sanad Al-Quran
             </CardTitle>
             <CardDescription>
-              Silsilah ijazah dan sanad dari guru ke murid
+              Silsilah ijazah dan sanad dari guru ke murid secara real-time
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <SanadTreeNode node={mockSanadChain} />
+            {isLoadingTree ? (
+              <div className="space-y-4">
+                <Skeleton className="h-24 w-full" />
+                <Skeleton className="h-24 w-[90%] ml-8" />
+                <Skeleton className="h-24 w-[80%] ml-16" />
+              </div>
+            ) : sanadTree ? (
+              <SanadTreeNode node={sanadTree} />
+            ) : (
+              <div className="p-8 text-center border-2 border-dashed rounded-xl">
+                <GitBranch className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">
+                  Data pohon sanad belum tersedia.
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
 

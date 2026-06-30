@@ -1,5 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type { FoundationExecutiveSummary, FoundationFinancialOverview } from "@cipansor/shared";
+import type {
+  FoundationExecutiveSummary,
+  FoundationFinancialOverview,
+  AccreditationDashboard,
+} from "@cipansor/shared";
 import api from "@/lib/api";
 
 // Types
@@ -100,6 +104,19 @@ export function useFoundation() {
       const response = await api.get("/foundation");
       return response.data.data as Foundation;
     },
+  });
+}
+
+export function useAccreditationDashboard(unitId: string) {
+  return useQuery({
+    queryKey: ["foundation", "accreditation", "dashboard", unitId],
+    queryFn: async () => {
+      const { data } = await api.get<{ data: AccreditationDashboard }>(
+        `/foundation/accreditation/units/${unitId}/dashboard`,
+      );
+      return data.data;
+    },
+    enabled: !!unitId,
   });
 }
 

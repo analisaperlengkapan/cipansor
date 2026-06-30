@@ -12,7 +12,6 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -20,18 +19,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Users,
   TrendingUp,
   TrendingDown,
-  Clock,
-  FileText,
-  CheckCircle2,
   AlertCircle,
   Star,
-  Award,
   BarChart3,
-  Calendar,
 } from "lucide-react";
 import {
   BarChart,
@@ -48,82 +43,7 @@ import {
   PolarRadiusAxis,
 } from "recharts";
 import { cn } from "@/lib/utils";
-
-// Mock homeroom teacher performance data
-const mockHomeroomData = [
-  {
-    id: "hr-1",
-    teacherName: "Ust. Ahmad Fadlan",
-    className: "VII A",
-    studentCount: 32,
-    metrics: {
-      dailyReportCompletion: 95,
-      attendanceAccuracy: 98,
-      parentEngagement: 85,
-      tahfidzProgress: 88,
-      behaviorManagement: 90,
-      administrativeTask: 92,
-    },
-    overallScore: 91,
-    trend: "up",
-    monthlyData: [
-      { month: "Jul", score: 85 },
-      { month: "Aug", score: 88 },
-      { month: "Sep", score: 87 },
-      { month: "Oct", score: 90 },
-      { month: "Nov", score: 89 },
-      { month: "Dec", score: 91 },
-    ],
-  },
-  {
-    id: "hr-2",
-    teacherName: "Ustz. Fatimah Nur",
-    className: "VII B",
-    studentCount: 30,
-    metrics: {
-      dailyReportCompletion: 88,
-      attendanceAccuracy: 95,
-      parentEngagement: 92,
-      tahfidzProgress: 82,
-      behaviorManagement: 85,
-      administrativeTask: 88,
-    },
-    overallScore: 88,
-    trend: "up",
-    monthlyData: [
-      { month: "Jul", score: 82 },
-      { month: "Aug", score: 84 },
-      { month: "Sep", score: 85 },
-      { month: "Oct", score: 86 },
-      { month: "Nov", score: 87 },
-      { month: "Dec", score: 88 },
-    ],
-  },
-  {
-    id: "hr-3",
-    teacherName: "Ust. Ibrahim Hakim",
-    className: "VIII A",
-    studentCount: 28,
-    metrics: {
-      dailyReportCompletion: 78,
-      attendanceAccuracy: 90,
-      parentEngagement: 75,
-      tahfidzProgress: 85,
-      behaviorManagement: 80,
-      administrativeTask: 70,
-    },
-    overallScore: 80,
-    trend: "down",
-    monthlyData: [
-      { month: "Jul", score: 85 },
-      { month: "Aug", score: 83 },
-      { month: "Sep", score: 82 },
-      { month: "Oct", score: 81 },
-      { month: "Nov", score: 80 },
-      { month: "Dec", score: 80 },
-    ],
-  },
-];
+import { useHomeroomPerformanceAnalytics } from "@/hooks/use-analytics";
 
 const METRIC_LABELS: Record<string, string> = {
   dailyReportCompletion: "Laporan Harian",
@@ -141,22 +61,45 @@ const getScoreColor = (score: number) => {
   return "text-red-600";
 };
 
-const getScoreBg = (score: number) => {
-  if (score >= 90) return "bg-green-100";
-  if (score >= 80) return "bg-blue-100";
-  if (score >= 70) return "bg-yellow-100";
-  return "bg-red-100";
-};
-
 export default function HomeroomPerformancePage() {
   const [selectedPeriod, setSelectedPeriod] = useState("semester");
-  const [selectedTeacher, setSelectedTeacher] = useState<string>(
-    mockHomeroomData[0].id,
+  const { data, isLoading } = useHomeroomPerformanceAnalytics();
+  const [selectedTeacherId, setSelectedTeacherId] = useState<string | null>(
+    null,
   );
 
+  if (isLoading) {
+    return (
+      <MainLayout allowedRoles={["SUPER_ADMIN", "UNIT_ADMIN"]}>
+        <div className="space-y-6">
+          <PageHeader
+            title="Performa Wali Kelas"
+            description="Evaluasi kinerja wali kelas berdasarkan multiple metrics"
+          />
+          <div className="grid gap-4 md:grid-cols-4">
+            {[...Array(4)].map((_, i) => (
+              <Skeleton key={i} className="h-24 w-full" />
+            ))}
+          </div>
+          <div className="grid gap-4 md:grid-cols-3">
+            {[...Array(3)].map((_, i) => (
+              <Skeleton key={i} className="h-32 w-full" />
+            ))}
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
+
+  const performanceData = data?.data;
+  if (!performanceData) return null;
+
+  const teachers = performanceData.teachers;
   const currentTeacher =
-    mockHomeroomData.find((t) => t.id === selectedTeacher) ||
-    mockHomeroomData[0];
+    teachers.find((t) => t.id === (selectedTeacherId || teachers[0]?.id)) ||
+    teachers[0];
+
+  if (!currentTeacher) return null;
 
   // Radar chart data
   const radarData = Object.entries(currentTeacher.metrics).map(
@@ -169,8 +112,7 @@ export default function HomeroomPerformancePage() {
 
   // Average scores
   const avgScore = Math.round(
-    mockHomeroomData.reduce((sum, t) => sum + t.overallScore, 0) /
-      mockHomeroomData.length,
+    teachers.reduce((sum, t) => sum + t.overallScore, 0) / teachers.length,
   );
 
   return (
@@ -205,9 +147,7 @@ export default function HomeroomPerformancePage() {
                   <p className="text-sm text-muted-foreground">
                     Total Wali Kelas
                   </p>
-                  <p className="text-2xl font-bold">
-                    {mockHomeroomData.length}
-                  </p>
+                  <p className="text-2xl font-bold">{teachers.length}</p>
                 </div>
               </div>
             </CardContent>
@@ -240,10 +180,7 @@ export default function HomeroomPerformancePage() {
                     Performa Terbaik
                   </p>
                   <p className="text-2xl font-bold">
-                    {
-                      mockHomeroomData.filter((t) => t.overallScore >= 90)
-                        .length
-                    }
+                    {teachers.filter((t) => t.overallScore >= 90).length}
                   </p>
                 </div>
               </div>
@@ -261,7 +198,7 @@ export default function HomeroomPerformancePage() {
                     Perlu Perhatian
                   </p>
                   <p className="text-2xl font-bold">
-                    {mockHomeroomData.filter((t) => t.overallScore < 80).length}
+                    {teachers.filter((t) => t.overallScore < 80).length}
                   </p>
                 </div>
               </div>
@@ -271,14 +208,15 @@ export default function HomeroomPerformancePage() {
 
         {/* Teacher Cards */}
         <div className="grid gap-4 md:grid-cols-3">
-          {mockHomeroomData.map((teacher) => (
+          {teachers.map((teacher) => (
             <Card
               key={teacher.id}
               className={cn(
                 "cursor-pointer transition-all hover:shadow-lg",
-                selectedTeacher === teacher.id && "ring-2 ring-primary",
+                (selectedTeacherId || teachers[0].id) === teacher.id &&
+                  "ring-2 ring-primary",
               )}
-              onClick={() => setSelectedTeacher(teacher.id)}
+              onClick={() => setSelectedTeacherId(teacher.id)}
             >
               <CardContent className="pt-6">
                 <div className="flex items-start justify-between mb-4">

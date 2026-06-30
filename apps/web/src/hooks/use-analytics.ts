@@ -13,6 +13,8 @@ import {
   ViolationSummary,
   DashboardSummary,
   GRCStats,
+  ParentEngagementStats,
+  HomeroomPerformanceStats,
 } from "@cipansor/shared";
 
 export type {
@@ -78,6 +80,36 @@ export function useDashboardSummary() {
     queryFn: async () => {
       const { data } = await api.get<{ data: DashboardSummary }>(
         "/analytics/dashboard",
+      );
+      return data;
+    },
+  });
+}
+
+export function useParentEngagementAnalytics(unitId?: string) {
+  return useQuery({
+    queryKey: ["analytics", "parent-engagement", unitId],
+    queryFn: async () => {
+      const { data } = await api.get<{ data: ParentEngagementStats }>(
+        "/analytics/engagement",
+        {
+          params: { unitId },
+        },
+      );
+      return data;
+    },
+  });
+}
+
+export function useHomeroomPerformanceAnalytics(unitId?: string) {
+  return useQuery({
+    queryKey: ["analytics", "homeroom-performance", unitId],
+    queryFn: async () => {
+      const { data } = await api.get<{ data: HomeroomPerformanceStats }>(
+        "/analytics/homeroom-performance",
+        {
+          params: { unitId },
+        },
       );
       return data;
     },

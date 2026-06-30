@@ -651,6 +651,89 @@ export class DashboardService {
   }
 
   /**
+   * Get admissions statistics for dashboard
+   */
+  async getAdmissionsStats(context: DashboardServiceContext) {
+    const unitFilter = context.unitId ? { admissionPeriod: { unitId: context.unitId } } : {};
+
+    const [totalRegistrants, statusCounts, activePeriods, recentRegistrants] = await Promise.all([
+      prisma.registrant.count({ where: unitFilter }),
+      prisma.registrant.groupBy({
+        by: ['status'],
+        where: unitFilter,
+        _count: { status: true },
+      }),
+      prisma.admissionPeriod.count({
+        where: {
+          ...(context.unitId && { unitId: context.unitId }),
+          isActive: true,
+        },
+      }),
+      prisma.registrant.findMany({
+        where: unitFilter,
+        orderBy: { createdAt: 'desc' },
+        take: 5,
+        select: {
+          id: true,
+          fullName: true,
+          status: true,
+          createdAt: true,
+        },
+      }),
+    ]);
+
+    const byStatus = statusCounts.reduce(
+      (acc, curr) => ({
+        ...acc,
+        [curr.status]: curr._count.status,
+      }),
+      {} as Record<string, number>
+    );
+
+    return {
+      totalRegistrants,
+      byStatus,
+      activePeriods,
+      recentRegistrants: recentRegistrants.map((r) => ({
+        ...r,
+        createdAt: r.createdAt.toISOString(),
+      })),
+    };
+  }
+
+  /**
+   * Get CBT summary statistics for dashboard
+   */
+  async getCBTSummary(context: DashboardServiceContext) {
+    const unitFilter = context.unitId ? { unitId: context.unitId } : {};
+
+    const [totalExams, activeExams, totalAttempts, avgScoreResult] = await Promise.all([
+      prisma.exam.count({ where: unitFilter }),
+      prisma.exam.count({
+        where: {
+          ...unitFilter,
+          status: 'PUBLISHED',
+          scheduledAt: { lte: new Date() },
+        },
+      }),
+      prisma.examAttempt.count({
+        where: { exam: unitFilter },
+      }),
+      prisma.examAttempt.aggregate({
+        where: { exam: unitFilter },
+        _avg: { score: true },
+      }),
+    ]);
+
+    return {
+      totalExams,
+      activeExams,
+      totalAttempts,
+      avgScore: Number(avgScoreResult._avg.score || 0),
+    };
+  }
+
+  /**
    * Get today's attendance count
    */
   private async getTodayAttendanceCount(unitId?: string): Promise<number> {

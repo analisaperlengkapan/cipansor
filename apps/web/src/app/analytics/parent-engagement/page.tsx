@@ -19,16 +19,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Users,
-  MessageSquare,
   Eye,
   Heart,
   TrendingUp,
   TrendingDown,
   Clock,
-  CreditCard,
-  CheckCircle2,
   AlertCircle,
 } from "lucide-react";
 import {
@@ -39,69 +37,40 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  LineChart,
-  Line,
   Legend,
 } from "recharts";
 import { cn } from "@/lib/utils";
-
-// Mock parent engagement data
-const mockEngagementData = {
-  summary: {
-    totalParents: 450,
-    activeParents: 380,
-    engagementRate: 84.4,
-    avgResponseTime: 2.5, // hours
-    monthlyTrend: "+5.2%",
-  },
-  metrics: {
-    portalLogins: { value: 1250, change: 12, label: "Login Portal" },
-    reportViews: { value: 3420, change: 8, label: "Lihat Laporan" },
-    billPayments: { value: 156, change: -3, label: "Pembayaran" },
-    messageSent: { value: 89, change: 15, label: "Pesan Guru" },
-  },
-  weeklyActivity: [
-    { day: "Sen", logins: 185, reports: 420, messages: 12 },
-    { day: "Sel", logins: 210, reports: 380, messages: 18 },
-    { day: "Rab", logins: 195, reports: 350, messages: 15 },
-    { day: "Kam", logins: 220, reports: 410, messages: 22 },
-    { day: "Jum", logins: 180, reports: 480, messages: 8 },
-    { day: "Sab", logins: 150, reports: 580, messages: 5 },
-    { day: "Min", logins: 110, reports: 800, messages: 9 },
-  ],
-  classBreakdown: [
-    { class: "VII A", engagement: 92, parents: 32 },
-    { class: "VII B", engagement: 88, parents: 30 },
-    { class: "VIII A", engagement: 85, parents: 28 },
-    { class: "VIII B", engagement: 80, parents: 29 },
-    { class: "IX A", engagement: 78, parents: 27 },
-    { class: "IX B", engagement: 75, parents: 26 },
-  ],
-  lowEngagement: [
-    {
-      parentName: "Bapak Ahmad",
-      childName: "Muhammad Hasan",
-      lastLogin: "14 hari lalu",
-      reason: "Tidak pernah login",
-    },
-    {
-      parentName: "Ibu Fatimah",
-      childName: "Aisyah Putri",
-      lastLogin: "21 hari lalu",
-      reason: "Tidak respon pesan",
-    },
-    {
-      parentName: "Bapak Umar",
-      childName: "Ibrahim Malik",
-      lastLogin: "30 hari lalu",
-      reason: "Belum bayar 3 bulan",
-    },
-  ],
-};
+import { useParentEngagementAnalytics } from "@/hooks/use-analytics";
 
 export default function ParentEngagementPage() {
   const [selectedPeriod, setSelectedPeriod] = useState("month");
-  const data = mockEngagementData;
+  const { data, isLoading } = useParentEngagementAnalytics();
+
+  if (isLoading) {
+    return (
+      <MainLayout allowedRoles={["SUPER_ADMIN", "UNIT_ADMIN"]}>
+        <div className="space-y-6">
+          <PageHeader
+            title="Metrik Engagement Orang Tua"
+            description="Analisis keterlibatan orang tua dalam sistem"
+          />
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {[...Array(4)].map((_, i) => (
+              <Skeleton key={i} className="h-24 w-full" />
+            ))}
+          </div>
+          <div className="grid gap-6 lg:grid-cols-2">
+            <Skeleton className="h-[400px] w-full" />
+            <Skeleton className="h-[400px] w-full" />
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
+
+  const engagementData = data?.data;
+
+  if (!engagementData) return null;
 
   return (
     <MainLayout allowedRoles={["SUPER_ADMIN", "UNIT_ADMIN"]}>
@@ -136,7 +105,8 @@ export default function ParentEngagementPage() {
                     Orang Tua Aktif
                   </p>
                   <p className="text-2xl font-bold">
-                    {data.summary.activeParents}/{data.summary.totalParents}
+                    {engagementData.summary.activeParents}/
+                    {engagementData.summary.totalParents}
                   </p>
                 </div>
               </div>
@@ -155,11 +125,11 @@ export default function ParentEngagementPage() {
                   </p>
                   <div className="flex items-center gap-2">
                     <p className="text-2xl font-bold">
-                      {data.summary.engagementRate}%
+                      {engagementData.summary.engagementRate}%
                     </p>
                     <Badge className="bg-green-100 text-green-700">
                       <TrendingUp className="h-3 w-3 mr-1" />
-                      {data.summary.monthlyTrend}
+                      {engagementData.summary.monthlyTrend}
                     </Badge>
                   </div>
                 </div>
@@ -178,7 +148,7 @@ export default function ParentEngagementPage() {
                     Rata-rata Respon
                   </p>
                   <p className="text-2xl font-bold">
-                    {data.summary.avgResponseTime} jam
+                    {engagementData.summary.avgResponseTime} jam
                   </p>
                 </div>
               </div>
@@ -194,7 +164,7 @@ export default function ParentEngagementPage() {
                 <div>
                   <p className="text-sm text-muted-foreground">Lihat Laporan</p>
                   <p className="text-2xl font-bold">
-                    {data.metrics.reportViews.value.toLocaleString()}
+                    {engagementData.metrics.reportViews.value.toLocaleString()}
                   </p>
                 </div>
               </div>
@@ -204,7 +174,7 @@ export default function ParentEngagementPage() {
 
         {/* Activity Metrics */}
         <div className="grid gap-4 md:grid-cols-4">
-          {Object.entries(data.metrics).map(([key, metric]) => (
+          {Object.entries(engagementData.metrics).map(([key, metric]) => (
             <Card key={key}>
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
@@ -246,7 +216,7 @@ export default function ParentEngagementPage() {
             <CardContent>
               <div className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={data.weeklyActivity}>
+                  <BarChart data={engagementData.weeklyActivity}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="day" />
                     <YAxis />
@@ -274,7 +244,7 @@ export default function ParentEngagementPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {data.classBreakdown.map((item) => (
+              {engagementData.classBreakdown.map((item) => (
                 <div key={item.class} className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
                     <span className="font-medium">{item.class}</span>
@@ -311,7 +281,7 @@ export default function ParentEngagementPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {data.lowEngagement.map((parent, index) => (
+              {engagementData.lowEngagement.map((parent, index) => (
                 <div
                   key={index}
                   className="flex items-center justify-between p-3 bg-white rounded-lg border"

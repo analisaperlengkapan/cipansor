@@ -216,6 +216,28 @@ export function useAlumni(params?: {
   });
 }
 
+export interface SanadNode {
+  id: string;
+  name: string;
+  title: string;
+  year: string;
+  location?: string;
+  specialty: string;
+  children?: SanadNode[];
+}
+
+export function useSanadTree(rootId?: string) {
+  return useQuery({
+    queryKey: ["sanad-tree", rootId],
+    queryFn: async () => {
+      const response = await api.get("/alumni/sanad/tree", {
+        params: { rootId },
+      });
+      return response.data.data as SanadNode;
+    },
+  });
+}
+
 export function useAlumniOutcomeAnalytics(unitId?: string) {
   return useQuery({
     queryKey: ["alumni-outcome-analytics", unitId],

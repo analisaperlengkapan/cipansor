@@ -140,10 +140,23 @@ export default function ExamMonitoringPage({
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {exam.attempts?.map((attempt: any) => (
+                    {exam.attempts?.map((attempt: any) => {
+                      const totalQuestions = exam.questionBank?._count?.questions || 0;
+                      const answeredQuestions = attempt._count?.answers || 0;
+                      const progress = totalQuestions > 0 ? (answeredQuestions / totalQuestions) * 100 : 0;
+
+                      return (
                       <TableRow key={attempt.id}>
                         <TableCell className="font-medium">
-                          {attempt.student?.user?.name || "Unknown"}
+                          <div>
+                            {attempt.student?.user?.name || "Unknown"}
+                            <div className="mt-1 w-24 bg-slate-100 h-1 rounded-full overflow-hidden" title={`${Math.round(progress)}% progress`}>
+                              <div
+                                className={`h-full ${attempt.status === 'COMPLETED' ? 'bg-emerald-500' : 'bg-blue-500 animate-pulse'}`}
+                                style={{ width: `${progress}%` }}
+                              />
+                            </div>
+                          </div>
                         </TableCell>
                         <TableCell>
                           <Badge
@@ -189,7 +202,8 @@ export default function ExamMonitoringPage({
                           )}
                         </TableCell>
                       </TableRow>
-                    ))}
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </CardContent>
@@ -306,10 +320,10 @@ function DifficultyInsightsTab({ examId }: { examId: string }) {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Rata-rata Keberhasilan</CardTitle>
+            <CardTitle className="text-sm font-medium">Avg Success Rate</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{insights.averageSuccessRate != null ? `${Math.round(insights.averageSuccessRate)}%` : '-'}</div>
@@ -327,11 +341,19 @@ function DifficultyInsightsTab({ examId }: { examId: string }) {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Soal Paling Sulit</CardTitle>
+            <CardTitle className="text-sm font-medium">Data Teranalisis</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-sm truncate" title={insights.questionInsights?.[0]?.content || '-'}>
-              {insights.questionInsights?.[0]?.content?.substring(0, 30) || '-'}
+            <div className="text-2xl font-bold">{insights.totalParticipants || 0} Peserta</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Diskriminasi Soal</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-sm">
+              {insights.questionInsights?.filter((q: any) => q.discriminationIndex > 0.4).length || 0} Sangat Baik
             </div>
           </CardContent>
         </Card>
@@ -339,33 +361,52 @@ function DifficultyInsightsTab({ examId }: { examId: string }) {
 
       <Card>
         <CardHeader>
-          <CardTitle>Distribusi Kesulitan Soal</CardTitle>
+          <CardTitle>Analisis Butir Soal (Psikometri)</CardTitle>
+          <CardDescription>
+            Indeks Kesulitan (Difficulty) & Daya Beda (Discrimination)
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {insights.questionInsights?.map((q: any, index: number) => {
-              const difficulty = q.successRate < 40 ? 'Hard' : q.successRate > 80 ? 'Easy' : 'Medium';
+              const diffLabel = q.difficultyIndex < 0.3 ? 'Sukar' : q.difficultyIndex > 0.7 ? 'Mudah' : 'Sedang';
+              const discLabel = q.discriminationIndex > 0.4 ? 'Sangat Baik' : q.discriminationIndex > 0.3 ? 'Baik' : q.discriminationIndex > 0.2 ? 'Cukup' : 'Buruk';
+              const needsImprovement = q.needsReview || q.discriminationIndex < 0.2;
+
               return (
-                <div key={q.questionId} className="p-4 border rounded-lg flex flex-col gap-2 bg-slate-50/50">
+                <div key={q.questionId} className={`p-4 border rounded-lg flex flex-col gap-3 ${needsImprovement ? 'bg-rose-50/50 border-rose-200' : 'bg-slate-50/50'}`}>
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-mono text-indigo-300">Q{index + 1}</span>
-                    <Badge variant={difficulty === 'Hard' ? 'destructive' : difficulty === 'Easy' ? 'default' : 'secondary'} className="text-[10px] h-4">
-                      {difficulty}
-                    </Badge>
-                  </div>
-                  <p className="text-xs text-muted-foreground line-clamp-1 italic">"{q.content}"</p>
-                  <div className="mt-2">
-                    <div className="flex justify-between text-[10px] mb-1">
-                      <span>Success Rate</span>
-                      <span className="font-bold">{Math.round(q.successRate)}%</span>
-                    </div>
-                    <div className="w-full bg-slate-200 h-1 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full ${q.successRate < 40 ? 'bg-rose-500' : q.successRate > 80 ? 'bg-emerald-500' : 'bg-blue-500'}`}
-                        style={{ width: `${q.successRate}%` }}
-                      />
+                    <span className="text-sm font-bold text-indigo-600">Butir {index + 1}</span>
+                    <div className="flex gap-1">
+                      <Badge variant={diffLabel === 'Sukar' ? 'destructive' : diffLabel === 'Mudah' ? 'default' : 'secondary'} className="text-[10px] px-1.5 h-4">
+                        {diffLabel}
+                      </Badge>
+                      <Badge variant={q.discriminationIndex < 0.2 ? 'destructive' : 'outline'} className="text-[10px] px-1.5 h-4">
+                        {discLabel}
+                      </Badge>
                     </div>
                   </div>
+
+                  <p className="text-xs text-muted-foreground line-clamp-2 italic h-8">"{q.content}"</p>
+
+                  <div className="grid grid-cols-2 gap-4 mt-2">
+                    <div>
+                      <span className="text-[10px] text-muted-foreground block uppercase font-semibold">Kesulitan (P)</span>
+                      <span className="text-sm font-mono">{q.difficultyIndex.toFixed(2)}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-muted-foreground block uppercase font-semibold">Daya Beda (D)</span>
+                      <span className={`text-sm font-mono ${q.discriminationIndex < 0.2 ? 'text-rose-600 font-bold' : ''}`}>
+                        {q.discriminationIndex.toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {needsImprovement && (
+                    <div className="mt-1 flex items-center gap-1 text-[10px] text-rose-600 font-medium bg-rose-100/50 p-1 rounded">
+                      <AlertCircle className="w-3 h-3" /> Perlu Review/Revisi
+                    </div>
+                  )}
                 </div>
               );
             })}

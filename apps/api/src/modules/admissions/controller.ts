@@ -27,6 +27,15 @@ export async function getAdmissionPeriods(req: Request, res: Response, next: Nex
   }
 }
 
+export async function verifyRegistrationPayment(req: Request, res: Response, next: NextFunction) {
+  try {
+    const result = await service.verifyRegistrationPayment((req.params as any).id);
+    res.json({ success: true, data: result, message: 'Payment verification processed' });
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function getAdmissionPeriodById(req: Request, res: Response, next: NextFunction) {
   try {
     const period = await service.getAdmissionPeriodById((req.params as any).id);
@@ -322,6 +331,56 @@ export async function createPublicRegistrant(
         registrationNo: registrant.registrationNo,
         fullName: registrant.fullName,
         status: registrant.status,
+        createdAt: registrant.createdAt,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Public endpoint to track registration status using registration number and
+ * birth date. This allows parents to check their progress without needing a
+ * full user account until enrollment.
+ */
+export async function trackPublicRegistrantStatus(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const schema = z.object({
+      registrationNo: z.string().min(1),
+      birthDate: z.string().pipe(z.coerce.date()),
+    });
+    const { registrationNo, birthDate } = schema.parse(req.query);
+
+    const registrant = await service.getRegistrantByRegistrationNo(
+      registrationNo,
+      birthDate
+    );
+
+    if (!registrant) {
+      throw Errors.notFound('Registrant with provided details not found');
+    }
+
+    // Explicitly select fields to return to public tracker to avoid leaking PII.
+    // Return status, names, scores (optional), and document verification status.
+    res.json({
+      success: true,
+      data: {
+        id: registrant.id,
+        registrationNo: registrant.registrationNo,
+        fullName: registrant.fullName,
+        status: registrant.status,
+        admissionPeriod: registrant.admissionPeriod,
+        testScore: registrant.testScore,
+        interviewScore: registrant.interviewScore,
+        tahfidzScore: registrant.tahfidzScore,
+        documents: registrant.documents,
+        enrolledAt: registrant.enrolledAt,
+        acceptedAt: registrant.acceptedAt,
         createdAt: registrant.createdAt,
       },
     });

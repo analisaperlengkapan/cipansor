@@ -51,6 +51,11 @@ router.post(
   publicRegistrantLimiter,
   controller.createPublicRegistrant
 );
+router.get(
+  '/public/track',
+  publicRegistrantLimiter,
+  controller.trackPublicRegistrantStatus
+);
 
 router.use(authenticate);
 
@@ -522,6 +527,12 @@ router.delete(
   '/registrants/:id',
   authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
   controller.deleteRegistrant
+);
+
+router.post(
+  '/registrants/:id/verify-payment',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  controller.verifyRegistrationPayment
 );
 
 // ==================== DOCUMENTS ====================

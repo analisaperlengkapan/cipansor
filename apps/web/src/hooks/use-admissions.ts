@@ -80,6 +80,20 @@ export function useAdmissionPeriods(params?: any) {
   });
 }
 
+export function useTrackRegistrant(registrationNo: string, birthDate: string) {
+  return useQuery({
+    queryKey: ["track-registrant", registrationNo, birthDate],
+    queryFn: async () => {
+      const response = await api.get("/admissions/public/track", {
+        params: { registrationNo, birthDate },
+      });
+      return response.data.data;
+    },
+    enabled: !!registrationNo && !!birthDate,
+    retry: false,
+  });
+}
+
 export function useAdmissionPeriod(id: string) {
   return useQuery({
     queryKey: ["admission-period", id],

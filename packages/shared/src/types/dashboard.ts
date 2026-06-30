@@ -11,6 +11,8 @@ export interface DashboardStats {
     startDate: string;
     endDate: string;
   };
+  admissions?: AdmissionsStats;
+  cbt?: CBTStats;
 }
 
 export interface AttendanceStats {
@@ -160,6 +162,27 @@ export interface DashboardOverview {
     passedExams: number;
     passRate: number;
   };
+  admissions?: AdmissionsStats;
+  cbt?: CBTStats;
+}
+
+export interface AdmissionsStats {
+  totalRegistrants: number;
+  byStatus: Record<string, number>;
+  activePeriods: number;
+  recentRegistrants: {
+    id: string;
+    fullName: string;
+    status: string;
+    createdAt: string;
+  }[];
+}
+
+export interface CBTStats {
+  totalExams: number;
+  activeExams: number;
+  totalAttempts: number;
+  avgScore: number;
 }
 
 export interface QuickStats {

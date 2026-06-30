@@ -66,6 +66,84 @@ export async function getAlumni(query: AlumniQueryInput) {
 }
 
 /**
+ * Get recursive Sanad Tree logic.
+ * Visualizes the chain of transmission from teacher to students (who become teachers).
+ */
+export async function getSanadTree(rootTeacherId?: string, depth = 0, maxDepth = 4): Promise<any> {
+  if (depth > maxDepth) return null;
+
+  let teacherId = rootTeacherId;
+
+  // If no root provided, find the first muhafidz/teacher who has certifications
+  if (!teacherId) {
+    const firstSanad = await prisma.sanadRecord.findFirst({
+      select: { teacherId: true },
+    });
+    if (!firstSanad) return null;
+    teacherId = firstSanad.teacherId;
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: teacherId },
+    select: {
+      id: true,
+      name: true,
+      teacher: { select: { specialization: true, joinDate: true } },
+      student: {
+        select: {
+          graduateYear: true,
+          unit: { select: { name: true } },
+          takhosusEnrollment: { select: { completedJuz: true } },
+        },
+      },
+    },
+  });
+
+  if (!user) return null;
+
+  const node: any = {
+    id: user.id,
+    name: user.name,
+    title: user.teacher ? 'Muhafidz' : 'Hafizh',
+    year: user.student?.graduateYear?.toString() || user.teacher?.joinDate?.getFullYear().toString() || 'N/A',
+    location: user.student?.unit?.name || 'Pesantren Cipansor',
+    specialty: user.teacher?.specialization || `${user.student?.takhosusEnrollment?.completedJuz || 0} Juz`,
+    children: [],
+  };
+
+  // Find students certified by this teacher
+  const certifications = await prisma.sanadRecord.findMany({
+    where: { teacherId: teacherId },
+    select: {
+      enrollment: {
+        select: {
+          student: {
+            select: { userId: true },
+          },
+        },
+      },
+    },
+    distinct: ['enrollmentId'],
+  });
+
+  const studentUserIds = certifications
+    .map((c) => c.enrollment.student.userId)
+    .filter((id) => id !== teacherId); // Avoid self-reference cycles
+
+  // Limit recursion breadth to avoid explosion
+  const limitedStudentIds = studentUserIds.slice(0, 10);
+
+  for (const sUserId of limitedStudentIds) {
+    const childNode = await getSanadTree(sUserId, depth + 1, maxDepth);
+    if (childNode) {
+      node.children.push(childNode);
+    }
+  }
+
+  return node;
+}
+
+/**
  * Get analytics correlating alumni outcome (career/education) with school performance (tahfidz/academic).
  * Best Practice: Feedback loop for curriculum improvement.
  */

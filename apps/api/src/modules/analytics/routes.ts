@@ -200,6 +200,44 @@ router.get('/psb', controller.getPSBStats);
 
 /**
  * @swagger
+ * /api/analytics/engagement:
+ *   get:
+ *     summary: Get parent engagement statistics
+ *     tags: [Analytics]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: unitId
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Parent engagement metrics and activity
+ */
+router.get('/engagement', controller.getParentEngagementStats);
+
+/**
+ * @swagger
+ * /api/analytics/homeroom-performance:
+ *   get:
+ *     summary: Get homeroom teacher performance statistics
+ *     tags: [Analytics]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: unitId
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Homeroom teacher metrics and trends
+ */
+router.get('/homeroom-performance', controller.getHomeroomPerformanceStats);
+
+/**
+ * @swagger
  * /api/analytics/grc:
  *   get:
  *     summary: Get GRC (Governance, Risk, Compliance) statistics

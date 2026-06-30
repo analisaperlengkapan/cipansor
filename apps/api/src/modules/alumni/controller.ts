@@ -31,6 +31,16 @@ export async function getAlumni(req: Request, res: Response, next: NextFunction)
   }
 }
 
+export async function getSanadTree(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { rootId } = (req.query as any);
+    const data = await service.getSanadTree(rootId as string | undefined);
+    res.json({ success: true, data });
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function getOutcomeAnalytics(req: Request, res: Response, next: NextFunction) {
   try {
     const { unitId } = (req.query as any);

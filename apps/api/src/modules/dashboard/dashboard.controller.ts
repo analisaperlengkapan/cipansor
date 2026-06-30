@@ -101,7 +101,17 @@ export async function getStats(req: Request, res: Response, next: NextFunction):
     const context = getContext(req);
     context.unitId = query.unitId;
 
-    const result = await dashboardService.getStats(context);
+    const [mainStats, admissions, cbt] = await Promise.all([
+      dashboardService.getStats(context),
+      dashboardService.getAdmissionsStats(context),
+      dashboardService.getCBTSummary(context),
+    ]);
+
+    const result = {
+      ...mainStats,
+      admissions,
+      cbt,
+    };
 
     res.json({
       success: true,

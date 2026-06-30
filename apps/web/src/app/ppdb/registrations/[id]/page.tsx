@@ -20,7 +20,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Loader2, Rocket, GraduationCap } from "lucide-react";
+import { Loader2, Rocket, GraduationCap, CheckCircle2, AlertCircle, RefreshCw } from "lucide-react";
+import { api } from "@/lib/api";
 
 const STATUS_LABEL: Record<string, string> = {
   REGISTERED: "Mendaftar",
@@ -49,10 +50,25 @@ export default function RegistrationDetailPage({
 }) {
   const params = React.use(paramsPromise);
   const { user } = useAuth();
-  const { data: registrant, isLoading } = useRegistrant(params.id);
+  const { data: registrant, isLoading, refetch } = useRegistrant(params.id);
   const onboard = useOnboardRegistrant();
   const updateStatus = useUpdateRegistrantStatus();
   const [isOnboarding, setIsOnboarding] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
+
+  const handleVerifyPayment = async () => {
+    if (!registrant) return;
+    setIsVerifying(true);
+    try {
+      await api.post(`/admissions/registrants/${registrant.id}/verify-payment`);
+      toast.success("Verifikasi pembayaran diproses!");
+      refetch();
+    } catch (e: any) {
+      toast.error(e.response?.data?.message || "Gagal verifikasi pembayaran.");
+    } finally {
+      setIsVerifying(false);
+    }
+  };
 
   const handleOnboard = async () => {
     if (!registrant) return;
@@ -117,6 +133,76 @@ export default function RegistrationDetailPage({
           <Badge variant="outline" className="text-sm uppercase">
             {STATUS_LABEL[registrant.status] ?? registrant.status}
           </Badge>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card className={`md:col-span-1 border-l-4 ${registrant.status === 'REGISTERED' ? 'border-l-amber-500 bg-amber-50/20' : 'border-l-green-500 bg-green-50/20'}`}>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-bold flex items-center gap-2">
+                <CheckCircle2 className={`h-4 w-4 ${registrant.status === 'REGISTERED' ? 'text-amber-600' : 'text-green-600'}`} />
+                Status Pembayaran
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col gap-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-muted-foreground">Biaya Pendaftaran</span>
+                  <span className="font-bold text-sm">
+                    Rp {(registrant.admissionPeriod?.registrationFee || 0).toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-muted-foreground">Status Verifikasi</span>
+                  <Badge variant={registrant.status === 'REGISTERED' ? "outline" : "secondary"} className="text-[10px]">
+                    {registrant.status === 'REGISTERED' ? "BELUM LUNAS" : "TERVERIFIKASI"}
+                  </Badge>
+                </div>
+                {registrant.status === 'REGISTERED' && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="w-full mt-2 text-xs"
+                    onClick={handleVerifyPayment}
+                    disabled={isVerifying}
+                  >
+                    {isVerifying ? <Loader2 className="h-3 w-3 animate-spin mr-2" /> : <RefreshCw className="h-3 w-3 mr-2" />}
+                    Cek Pembayaran Finance
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="md:col-span-2 border-l-4 border-l-blue-500 bg-blue-50/20">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-bold flex items-center gap-2">
+                <AlertCircle className="h-4 w-4 text-blue-600" /> Tahap Pendaftaran
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-4 py-2">
+                <div className="flex flex-col items-center gap-1">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${registrant.status !== 'REGISTERED' ? 'bg-green-500 text-white' : 'bg-blue-500 text-white'}`}>1</div>
+                  <span className="text-[10px] font-medium">Registrasi</span>
+                </div>
+                <div className="h-[2px] flex-1 bg-slate-200" />
+                <div className="flex flex-col items-center gap-1">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${['TEST_SCHEDULED', 'TEST_COMPLETED', 'ACCEPTED', 'ENROLLED'].includes(registrant.status) ? 'bg-green-500 text-white' : 'bg-slate-200 text-slate-500'}`}>2</div>
+                  <span className="text-[10px] font-medium">Ujian / Tes</span>
+                </div>
+                <div className="h-[2px] flex-1 bg-slate-200" />
+                <div className="flex flex-col items-center gap-1">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${['ACCEPTED', 'ENROLLED'].includes(registrant.status) ? 'bg-green-500 text-white' : 'bg-slate-200 text-slate-500'}`}>3</div>
+                  <span className="text-[10px] font-medium">Hasil</span>
+                </div>
+                <div className="h-[2px] flex-1 bg-slate-200" />
+                <div className="flex flex-col items-center gap-1">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${registrant.status === 'ENROLLED' ? 'bg-green-500 text-white' : 'bg-slate-200 text-slate-500'}`}>4</div>
+                  <span className="text-[10px] font-medium">Onboard</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {canOnboard && (

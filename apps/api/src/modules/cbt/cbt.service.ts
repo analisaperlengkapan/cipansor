@@ -376,9 +376,15 @@ export class CBTService {
       where: { id: examId },
       include: {
         teacher: { select: { userId: true } },
+        questionBank: {
+          select: {
+            _count: { select: { questions: true } }
+          }
+        },
         attempts: {
           include: {
             student: { select: { id: true, user: { select: { name: true } } } },
+            _count: { select: { answers: true } }
           },
         },
       },
@@ -997,7 +1003,14 @@ export class CBTService {
   }
 
   /**
-   * Identifies "Killer Questions" (high failure rate) and overall difficulty distribution.
+   * Identifies "Killer Questions" (high failure rate), Difficulty Index,
+   * and Discrimination Index for each question in the exam.
+   *
+   * Best Practice:
+   * - Difficulty Index (P): Success rate. 0.0-0.3 (Hard), 0.3-0.7 (Medium), 0.7-1.0 (Easy).
+   * - Discrimination Index (D): Ability to distinguish between high and low performers.
+   *   D = (Correct in High Group - Correct in Low Group) / N of one group.
+   *   D > 0.4 is Excellent, 0.3-0.39 Good, 0.2-0.29 Marginal, < 0.2 Poor.
    */
   static async getExamDifficultyInsights(examId: string) {
     const exam = await prisma.exam.findUnique({
@@ -1012,6 +1025,7 @@ export class CBTService {
         },
         attempts: {
           where: { status: { in: ['COMPLETED', 'NEEDS_REVIEW'] } },
+          orderBy: { score: 'desc' }, // Order for Discrimination Index calculation
           include: {
             answers: true,
           },
@@ -1021,21 +1035,41 @@ export class CBTService {
 
     if (!exam || !exam.questionBank) return null;
 
+    const attemptsCount = exam.attempts.length;
+    const groupSize = Math.max(1, Math.floor(attemptsCount * 0.27));
+    const highGroup = exam.attempts.slice(0, groupSize);
+    const lowGroup = exam.attempts.slice(-groupSize);
+
     const insights = exam.questionBank.questions.map((q) => {
-      const answers = exam.attempts
+      const allAnswers = exam.attempts
         .map((a) => a.answers.find((ans) => ans.questionId === q.id))
         .filter((ans) => ans && ans.score !== null);
 
-      const totalGraded = answers.length;
-      const totalCorrect = answers.filter((ans) => ans?.isCorrect).length;
+      const totalGraded = allAnswers.length;
+      const totalCorrect = allAnswers.filter((ans) => ans?.isCorrect).length;
       const successRate = totalGraded > 0 ? (totalCorrect / totalGraded) * 100 : 0;
+
+      // Discrimination Index Calculation
+      let discriminationIndex = 0;
+      if (attemptsCount >= 10) { // Only calculate if enough data
+        const highCorrect = highGroup.filter(a =>
+          a.answers.find(ans => ans.questionId === q.id)?.isCorrect
+        ).length;
+        const lowCorrect = lowGroup.filter(a =>
+          a.answers.find(ans => ans.questionId === q.id)?.isCorrect
+        ).length;
+        discriminationIndex = (highCorrect - lowCorrect) / groupSize;
+      }
 
       return {
         questionId: q.id,
         content: q.content.substring(0, 100),
         successRate,
+        difficultyIndex: successRate / 100,
+        discriminationIndex,
         totalGraded,
         isKiller: successRate < 30 && totalGraded > 5,
+        needsReview: successRate < 20 || discriminationIndex < 0.1,
       };
     });
 
@@ -1044,6 +1078,8 @@ export class CBTService {
       title: exam.title,
       questionInsights: insights.sort((a, b) => a.successRate - b.successRate),
       averageSuccessRate: insights.length > 0 ? insights.reduce((sum, i) => sum + i.successRate, 0) / insights.length : 0,
+      totalParticipants: attemptsCount,
+      groupSize,
     };
   }
 }

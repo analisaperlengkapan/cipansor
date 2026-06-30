@@ -20,7 +20,7 @@ function getDatabaseUrl(): string {
   const host = process.env.DB_HOST ?? 'localhost';
   const port = process.env.DB_PORT ?? '5432';
   const name = process.env.DB_NAME ?? 'cipansor';
-  return `postgresql://${user}:${password}@${host}:${port}/${name}?schema=public`;
+  return `postgresql://${encodeURIComponent(user)}:${encodeURIComponent(password)}@${host}:${port}/${name}?schema=public`;
 }
 
 export default defineConfig({

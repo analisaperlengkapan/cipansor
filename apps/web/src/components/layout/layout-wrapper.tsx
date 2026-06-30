@@ -19,7 +19,7 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
     pathname === "/unauthorized" ||
     pathname.startsWith("/parent") ||
     pathname.startsWith("/public/") ||
-    pathname.startsWith("/certificates/verify/");
+    pathname.startsWith("/certificates/verify");
 
   if (isExcluded) {
     return <main id="main-content">{children}</main>;

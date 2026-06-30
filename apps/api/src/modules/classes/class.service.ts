@@ -531,7 +531,7 @@ export class ClassService {
 
     const targetClass = await prisma.class.findUnique({
       where: { id: targetClassId },
-      include: { _count: { select: { enrollments: true } } },
+      include: { _count: { select: { enrollments: { where: { status: 'active' } } } } },
     });
 
     if (!targetClass) {

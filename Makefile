@@ -157,6 +157,10 @@ db-push:
 	@echo "$(GREEN)✓ Database schema pushed$(NC)"
 
 # Seed database
+# PERINGATAN: db:seed melakukan TRUNCATE semua tabel lalu insert data demo
+#            (lihat apps/api/prisma/seed.ts) — JANGAN jalankan pada DB produksi.
+# Prasyarat: butuh pnpm + Node + source repo di host (tsx adalah devDependency
+#            yang TIDAK tersedia di image API, lihat apps/api/Dockerfile).
 db-seed:
 	@echo "$(BLUE)Seeding database...$(NC)"
 	@DATABASE_URL="postgresql://postgres:postgres@localhost:5432/cipansor" pnpm --filter api db:seed
@@ -232,7 +236,7 @@ ready: check-prereqs
 	@echo "$(BLUE)Production readiness check completed$(NC)"
 
 # Deploy to production
-deploy: build up db-push db-seed
+deploy: build up db-push
 	@echo "$(GREEN)✓ Deployment completed$(NC)"
 	@echo "$(YELLOW)Services are now running at:$(NC)"
 	@echo "  - Web: http://localhost:3000"
@@ -241,6 +245,6 @@ deploy: build up db-push db-seed
 	@echo "  - Redis: localhost:6379"
 
 # Quick start for development
-quick-start: check-prereqs build up db-push db-seed
+quick-start: check-prereqs build up db-push
 	@echo "$(GREEN)✓ Quick start completed$(NC)"
 	@$(MAKE) check-health

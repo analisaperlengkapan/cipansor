@@ -1183,7 +1183,7 @@ export const transactionService = {
     // across all units. Caller is responsible for authorization.
     const unitFilter = unitId ? { unitId } : {};
 
-    const [todayStats, totalTransactions, topItems, paymentBreakdown] = await Promise.all([
+    const [todayStats, allTimeTransactionsCount, topItems, paymentBreakdown] = await Promise.all([
       prisma.canteenTransaction.aggregate({
         where: { ...unitFilter, status: 'COMPLETED', ...dateFilter },
         _sum: { total: true },
@@ -1209,15 +1209,24 @@ export const transactionService = {
       }),
     ]);
 
+    const totalRevenue = todayStats._sum.total?.toNumber() || 0;
+    const totalTransactions = todayStats._count.id;
+
+    // Efficiency Metrics
+    const avgTransactionValue = totalTransactions > 0 ? totalRevenue / totalTransactions : 0;
+
     return {
       period: {
         startDate: startDate || new Date().toISOString().slice(0, 10),
         endDate: endDate || new Date().toISOString().slice(0, 10),
       },
       summary: {
-        totalRevenue: todayStats._sum.total?.toNumber() || 0,
-        totalTransactions: todayStats._count.id,
-        allTimeTransactions: totalTransactions,
+        totalRevenue,
+        totalTransactions,
+        allTimeTransactions: allTimeTransactionsCount,
+        efficiency: {
+          avgTransactionValue: Math.round(avgTransactionValue * 100) / 100,
+        },
       },
       topItems: topItems.map((item) => ({
         itemId: item.itemId,

@@ -170,6 +170,10 @@ export class StudentService {
           take: 5,
           orderBy: { visitDate: 'desc' },
         },
+        growthRecords: {
+          take: 1,
+          orderBy: { recordDate: 'desc' },
+        },
         invoices: {
           where: { status: { not: 'PAID' } },
           include: {
@@ -225,6 +229,9 @@ export class StudentService {
         }
       : null;
 
+    // Latest Health info
+    const latestGrowth = student.growthRecords[0] || null;
+
     return {
       ...student,
       currentClass,
@@ -232,6 +239,14 @@ export class StudentService {
         walletBalance: student.wallet ? Number(student.wallet.balance) : 0,
         violationPoints: totalViolationPoints,
         boarding,
+        health: latestGrowth
+          ? {
+              status: latestGrowth.nutritionStatus,
+              weight: latestGrowth.weight,
+              height: latestGrowth.height,
+              updatedAt: latestGrowth.recordDate,
+            }
+          : null,
         unpaidInvoices: {
           count: unpaidInvoicesCount,
           total: unpaidInvoicesTotal,

@@ -17,11 +17,8 @@ export default defineConfig({
     testTimeout: 10000,
     hookTimeout: 10000,
     pool: 'threads',
-    poolOptions: {
-      threads: {
-        singleThread: true, // For database tests
-      },
-    },
+    // poolOptions removed in Vitest 4, use top-level pool settings if needed
+    // but singleThread is now controlled via pool options per pool type
   },
   resolve: {
     alias: {

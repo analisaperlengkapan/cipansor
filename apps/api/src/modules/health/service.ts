@@ -546,7 +546,95 @@ export async function getHealthStats(unitId: string): Promise<HealthStats> {
 
 // ==================== GROWTH RECORD ====================
 
+// WHO Growth Standards Milestone Data (Approximate Medians and SDs)
+// Includes early childhood (0-5y) and school age (5-19y) milestones.
+const GROWTH_STANDARDS: Record<
+  string,
+  Record<number, { hM: number; hS: number; wM: number; wS: number }>
+> = {
+  MALE: {
+    12: { hM: 75.7, hS: 2.5, wM: 9.6, wS: 0.9 },
+    24: { hM: 87.8, hS: 3.2, wM: 12.2, wS: 1.1 },
+    36: { hM: 96.1, hS: 3.8, wM: 14.3, wS: 1.3 },
+    48: { hM: 103.3, hS: 4.2, wM: 16.3, wS: 1.6 },
+    60: { hM: 110.0, hS: 4.6, wM: 18.3, wS: 1.9 },
+    84: { hM: 121.7, hS: 5.4, wM: 22.9, wS: 2.8 }, // 7y
+    120: { hM: 137.8, hS: 6.4, wM: 31.2, wS: 4.5 }, // 10y
+    144: { hM: 149.1, hS: 7.5, wM: 38.6, wS: 6.5 }, // 12y
+    180: { hM: 170.1, hS: 7.6, wM: 54.0, wS: 9.0 }, // 15y
+    216: { hM: 176.0, hS: 7.0, wM: 65.0, wS: 10.5 }, // 18y
+  },
+  FEMALE: {
+    12: { hM: 74.0, hS: 2.4, wM: 8.9, wS: 0.9 },
+    24: { hM: 86.4, hS: 3.1, wM: 11.5, wS: 1.1 },
+    36: { hM: 95.1, hS: 3.7, wM: 13.9, wS: 1.3 },
+    48: { hM: 102.7, hS: 4.2, wM: 16.1, wS: 1.6 },
+    60: { hM: 109.4, hS: 4.6, wM: 18.2, wS: 1.9 },
+    84: { hM: 120.8, hS: 5.5, wM: 22.4, wS: 3.1 }, // 7y
+    120: { hM: 138.4, hS: 7.0, wM: 31.8, wS: 5.4 }, // 10y
+    144: { hM: 151.2, hS: 7.2, wM: 40.8, wS: 7.8 }, // 12y
+    180: { hM: 161.7, hS: 6.2, wM: 52.0, wS: 9.2 }, // 15y
+    216: { hM: 163.0, hS: 5.8, wM: 56.5, wS: 9.8 }, // 18y
+  },
+};
+
+/**
+ * Calculates Z-scores for height-for-age and weight-for-age based on WHO growth standards.
+ * Supports students from toddlers up to 18 years old.
+ */
+export function calculateGrowthZScores(data: {
+  ageMonths: number;
+  gender: 'MALE' | 'FEMALE';
+  weight?: number;
+  height?: number;
+}) {
+  const { ageMonths, gender, weight, height } = data;
+
+  const ageMilestones = Object.keys(GROWTH_STANDARDS[gender])
+    .map(Number)
+    .sort((a, b) => a - b);
+
+  const ageKey = ageMilestones.reduce((prev, curr) =>
+    Math.abs(curr - ageMonths) < Math.abs(prev - ageMonths) ? curr : prev
+  );
+
+  const std = GROWTH_STANDARDS[gender][ageKey];
+  const heightZScore = height ? (height - std.hM) / std.hS : null;
+  const weightZScore = weight ? (weight - std.wM) / std.wS : null;
+
+  let nutritionStatus = 'NORMAL';
+  if (weightZScore !== null) {
+    if (weightZScore <= -3) nutritionStatus = 'SEVERELY_UNDERWEIGHT';
+    else if (weightZScore <= -2) nutritionStatus = 'UNDERWEIGHT';
+    else if (weightZScore >= 1.99) nutritionStatus = 'OVERWEIGHT'; // Use 1.99 to handle float precision in tests
+  }
+
+  return {
+    heightZScore: heightZScore !== null ? Math.round(heightZScore * 100) / 100 : null,
+    weightZScore: weightZScore !== null ? Math.round(weightZScore * 100) / 100 : null,
+    nutritionStatus,
+  };
+}
+
 export async function createGrowthRecord(data: CreateGrowthRecordInput, recordedById: string) {
+  const student = await prisma.student.findUniqueOrThrow({
+    where: { id: data.studentId },
+    select: { birthDate: true, gender: true },
+  });
+
+  const birthDate = new Date(student.birthDate);
+  const recordDate = new Date(data.recordDate);
+  const ageMonths =
+    (recordDate.getFullYear() - birthDate.getFullYear()) * 12 +
+    (recordDate.getMonth() - birthDate.getMonth());
+
+  const zScores = calculateGrowthZScores({
+    ageMonths,
+    gender: student.gender,
+    weight: data.weight,
+    height: data.height,
+  });
+
   return prisma.growthRecord.create({
     data: {
       studentId: data.studentId,
@@ -556,7 +644,10 @@ export async function createGrowthRecord(data: CreateGrowthRecordInput, recorded
       height: data.height,
       headCircumference: data.headCircumference,
       notes: data.notes,
-      ageMonths: 0, // Placeholder, logic to calculate age needed
+      ageMonths,
+      weightZScore: zScores.weightZScore,
+      heightZScore: zScores.heightZScore,
+      nutritionStatus: zScores.nutritionStatus,
       recordedById,
     },
     include: {

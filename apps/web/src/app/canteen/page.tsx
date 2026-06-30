@@ -90,6 +90,9 @@ interface CanteenStats {
   summary: {
     totalRevenue: number;
     totalTransactions: number;
+    efficiency?: {
+      avgTransactionValue: number;
+    };
   };
   topItems: Array<{
     itemId: string;
@@ -439,6 +442,40 @@ export default function CanteenPage() {
           </Card>
         ))}
       </div>
+
+        {/* Efficiency Indicators */}
+        {stats?.summary?.efficiency && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Card className="bg-primary/5 border-primary/20">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <DollarSign className="h-4 w-4 text-primary" />
+                  Rata-rata Nilai Transaksi
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {formatRupiah(stats.summary.efficiency.avgTransactionValue)}
+                </div>
+                <p className="text-xs text-muted-foreground">Average Basket Size</p>
+              </CardContent>
+            </Card>
+            <Card className="bg-indigo-50 border-indigo-200">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4 text-indigo-600" />
+                  Skor Perputaran Stok
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {efficiencyData?.overallEfficiency || 0}%
+                </div>
+                <p className="text-xs text-muted-foreground">Kecepatan stok keluar</p>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
       {/* Business Unit Selector */}
       <div className="flex items-center gap-4 bg-muted/30 p-4 rounded-xl border">

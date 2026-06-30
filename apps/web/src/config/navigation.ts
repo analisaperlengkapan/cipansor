@@ -210,6 +210,16 @@ const teacherNavigation: NavGroup[] = [
         href: "/kitab-progress",
         icon: BookOpen,
       },
+      {
+        title: "Praktek Mengajar",
+        href: "/practicum",
+        icon: GraduationCap,
+      },
+      {
+        title: "Penelitian Turats",
+        href: "/research",
+        icon: BookMarked,
+      },
     ],
   },
   {
@@ -377,6 +387,21 @@ const studentNavigation: NavGroup[] = [
         title: "Muhasabah Harian",
         href: "/muhasabah",
         icon: Sparkles,
+      },
+      {
+        title: "Praktek Mengajar",
+        href: "/practicum",
+        icon: GraduationCap,
+      },
+      {
+        title: "Organisasi Santri",
+        href: "/student-org",
+        icon: Users,
+      },
+      {
+        title: "Penelitian Turats",
+        href: "/research",
+        icon: BookMarked,
       },
     ],
   },

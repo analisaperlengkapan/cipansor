@@ -28,3 +28,6 @@ export * from "./types/quality";
 export * from "./types/library";
 export * from "./types/supplier";
 export * from "./types/assignment";
+export * from "./types/practicum";
+export * from "./types/student-org";
+export * from "./types/research";

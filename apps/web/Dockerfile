@@ -49,6 +49,10 @@ FROM base AS runner
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
+# Next.js standalone bakes the build container's hostname into server.js.
+# Setting HOSTNAME=0.0.0.0 forces the server to bind to all interfaces
+# instead of trying to resolve the stale build-time container ID.
+ENV HOSTNAME=0.0.0.0
 RUN addgroup -S nodejs -g 1001 && adduser -S nextjs -u 1001
 
 # Next standalone output bundles only the server's runtime deps.

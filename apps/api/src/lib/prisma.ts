@@ -11,10 +11,21 @@ declare global {
 /**
  * Prisma 7 connects through a driver adapter rather than a `datasource.url`.
  * We use the node-postgres adapter (`@prisma/adapter-pg`) backed by a single
- * connection pool sourced from `DATABASE_URL`.
+ * connection pool sourced from the DB_* env vars (or a pre-built DATABASE_URL).
  */
+function getDatabaseUrl(): string {
+  if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
+
+  const user = process.env.DB_USER ?? 'postgres';
+  const password = process.env.DB_PASSWORD ?? 'postgres';
+  const host = process.env.DB_HOST ?? 'localhost';
+  const port = process.env.DB_PORT ?? '5432';
+  const name = process.env.DB_NAME ?? 'cipansor';
+  return `postgresql://${user}:${password}@${host}:${port}/${name}?schema=public`;
+}
+
 function createPrismaClient(): PrismaClient {
-  const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+  const adapter = new PrismaPg({ connectionString: getDatabaseUrl() });
 
   return new PrismaClient({
     adapter,

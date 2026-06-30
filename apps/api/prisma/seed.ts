@@ -59,6 +59,30 @@ import {
   MuhasabahMood,
   TakhosusStatus,
   HalaqohDay,
+  MurojaahType,
+  SimaanType,
+  PurchaseRequestStatus,
+  ReferralType,
+  EventType,
+  EventScope,
+  NoteCategory,
+  NotePriority,
+  NoteVisibility,
+  BehaviorType,
+  BehaviorCategory,
+  DailyMood,
+  MealConsumption,
+  ContractStatus,
+  EmployeeDocumentType,
+  EmploymentAction,
+  WaveStatus,
+  PAUDAspect,
+  PAUDAchievementLevel,
+  PAUDReportPeriod,
+  DocumentType,
+  DocumentStatus,
+  KitabAssessmentType,
+  KitabProgressStatus,
 } from '@prisma/client';
 import { createPrismaClient } from './client';
 import bcrypt from 'bcryptjs';
@@ -129,12 +153,6 @@ const prisma = createPrismaClient();
 async function main() {
   console.log('🌱 Seeding database...');
 
-  // ============================================
-  // PHASE 8: Wilayah Indonesia & Kurikulum Merdeka
-  // ============================================
-  await seedWilayahIndonesia(prisma);
-  await seedAccountCodes(prisma);
-
   // Clean up existing data.
   // Previously this was a long, hand-ordered list of deleteMany() calls that had
   // to mirror every FK dependency. It drifted out of sync with the schema (e.g.
@@ -152,6 +170,12 @@ async function main() {
       `TRUNCATE TABLE ${list} RESTART IDENTITY CASCADE`,
     );
   }
+
+  // ============================================
+  // PHASE 8: Wilayah Indonesia & Kurikulum Merdeka
+  // ============================================
+  await seedWilayahIndonesia(prisma);
+  await seedAccountCodes(prisma);
 
 
   // ============================================
@@ -1035,6 +1059,21 @@ async function main() {
 
   console.log('✅ Parent users created');
 
+  // Create StudentParent connections
+  for (const p of parentUsers) {
+    if (students[p.studentIdx]) {
+      await prisma.studentParent.create({
+        data: {
+          studentId: students[p.studentIdx].id,
+          parentId: p.user.id,
+          relation: p.studentIdx === 1 ? 'mother' : 'father',
+          isPrimary: true,
+        }
+      });
+    }
+  }
+  console.log('✅ StudentParent relations created');
+
   // Create Attendance records for today
   const today = new Date();
   for (const student of students) {
@@ -1071,6 +1110,19 @@ async function main() {
   }
 
   console.log('✅ Tahfidz records created');
+
+  // Create TahfidzTargets for students
+  for (const student of students) {
+    await prisma.tahfidzTarget.create({
+      data: {
+        studentId: student.id,
+        academicYearId: academicYear.id,
+        targetJuz: 5,
+        notes: 'Target semester ini minimal 5 Juz',
+      }
+    });
+  }
+  console.log('✅ Tahfidz targets created');
 
   // ============================================
   // PHASE 2: Dormitories, Permits, Violations, Rewards, Finance
@@ -3733,8 +3785,9 @@ async function main() {
   console.log('   ✅ Muhadhoroh & Muhadatsah records created');
 
   // 9. Counseling (Bimbingan Konseling)
+  let counselingSession;
   if (students.length > 0) {
-    await prisma.counselingSession.create({
+    counselingSession = await prisma.counselingSession.create({
       data: {
         unitId: pesantren.id,
         studentId: students[0].id,
@@ -3752,6 +3805,28 @@ async function main() {
         summary: 'Telah diajarkan metode Kitabah (menulis sebelum menghafal) serta metode pengulangan (murojaah) berkala.',
         recommendations: 'Santri disarankan menulis 5 baris ayat sebelum tidur dan menghafalnya ba\'da subuh.',
         isConfidential: true,
+      }
+    });
+  }
+
+  if (students.length > 0 && counselingSession) {
+    await prisma.counselingNote.create({
+      data: {
+        sessionId: counselingSession.id,
+        content: 'Santri sangat kooperatif selama sesi bimbingan dan menunjukkan komitmen tinggi.',
+        noteType: 'observation',
+        createdById: teacherPesantrenUser.id,
+      }
+    });
+
+    await prisma.counselingReferral.create({
+      data: {
+        sessionId: counselingSession.id,
+        type: ReferralType.INTERNAL,
+        referredTo: 'Ustadz Ahmad (Wali Kamar)',
+        reason: 'Mohon pantau aktivitas murojaah santri sebelum tidur di asrama.',
+        referredAt: new Date(),
+        createdById: teacherPesantrenUser.id,
       }
     });
   }
@@ -3942,8 +4017,9 @@ async function main() {
     }
   });
 
+  let takhosusEnrollment;
   if (students.length > 0) {
-    await prisma.takhosusEnrollment.create({
+    takhosusEnrollment = await prisma.takhosusEnrollment.create({
       data: {
         studentId: students[0].id,
         halaqohId: halaqoh.id,
@@ -3952,6 +4028,64 @@ async function main() {
         currentJuz: 5,
         completedJuz: 4,
         notes: 'Santri sangat disiplin mengikuti halaqoh',
+      }
+    });
+  }
+
+  if (students.length > 0 && takhosusEnrollment) {
+    // Seed MurojaahRecord
+    await prisma.murojaahRecord.create({
+      data: {
+        studentId: students[0].id,
+        enrollmentId: takhosusEnrollment.id,
+        halaqohId: halaqoh.id,
+        recordedById: teacherPesantrenUser.id,
+        murojaahType: MurojaahType.YAUMIYAH,
+        murojaahDate: new Date(),
+        juzStart: 1,
+        juzEnd: 3,
+        pagesReviewed: 30,
+        durationMinutes: 45,
+        qualityScore: 90,
+        mistakeCount: 2,
+        fluencyLevel: 4,
+        notes: 'Murojaah sangat lancar, sedikit kesalahan tajwid di Juz 2',
+      }
+    });
+
+    // Seed SimaanExam
+    await prisma.simaanExam.create({
+      data: {
+        studentId: students[0].id,
+        enrollmentId: takhosusEnrollment.id,
+        halaqohId: halaqoh.id,
+        simaanType: SimaanType.BIL_GHAIB,
+        examDate: new Date(),
+        sessionNumber: 1,
+        totalSessions: 1,
+        juzStart: 1,
+        juzEnd: 5,
+        overallScore: 92,
+        tajwidScore: 90,
+        fashohaScore: 94,
+        tartilScore: 92,
+        grade: 'Mumtaz',
+        passed: true,
+        notes: 'Ujian simaan 5 Juz sekali duduk berhasil dengan nilai memuaskan.',
+      }
+    });
+
+    // Seed SanadRecord
+    await prisma.sanadRecord.create({
+      data: {
+        enrollmentId: takhosusEnrollment.id,
+        teacherId: teacherPesantrenUser.id,
+        juz: 1,
+        surahStart: 1,
+        surahEnd: 2,
+        certifiedAt: new Date(),
+        grade: 'Mumtaz',
+        notes: 'Sanad Juz 1 sah diberikan setelah setoran sempurna',
       }
     });
   }
@@ -4017,6 +4151,1274 @@ async function main() {
     }
   });
   console.log('   ✅ BOS Allocation & Expense Logs created');
+
+  // 16. Procurement Seeding (Suppliers & PurchaseRequests)
+  const supplier1 = await prisma.supplier.create({
+    data: {
+      name: 'Toko Buku Barokah',
+      address: 'Jl. Ahmad Yani No. 45, Sukabumi',
+      phone: '081234567011',
+      email: 'sales@barokahbook.com',
+      contactPerson: 'Bapak Ahmad',
+      category: 'STATIONERY',
+      rating: 5,
+      bankName: 'Bank Syariah Indonesia',
+      bankAccount: '7112233445',
+      isActive: true,
+    }
+  });
+
+  const supplier2 = await prisma.supplier.create({
+    data: {
+      name: 'CV Utama Jaya Teknik',
+      address: 'Kawasan Industri Cikembar, Sukabumi',
+      phone: '081234567022',
+      email: 'info@utamajaya.co.id',
+      contactPerson: 'Ibu Lilis',
+      category: 'MAINTENANCE',
+      rating: 4,
+      bankName: 'Bank Mandiri',
+      bankAccount: '1300012345678',
+      isActive: true,
+    }
+  });
+  console.log('   ✅ Suppliers created');
+
+  const pr1 = await prisma.purchaseRequest.create({
+    data: {
+      unitId: pesantren.id,
+      code: 'PR-202606-0001',
+      requesterId: teacherPesantrenUser.id,
+      preferredSupplierId: supplier1.id,
+      date: new Date(),
+      description: 'Pengadaan buku panduan hafalan tahfidz baru dan kitab kuning tingkat pemula',
+      totalEstimated: new Prisma.Decimal(2500000),
+      status: PurchaseRequestStatus.APPROVED,
+      approvedById: teacherPesantrenUser.id,
+      approvedAt: new Date(),
+    }
+  });
+
+  await prisma.purchaseRequestItem.create({
+    data: {
+      requestId: pr1.id,
+      itemName: 'Kitab Safinatun Najah',
+      quantity: 50,
+      unit: 'pcs',
+      estimatedPrice: new Prisma.Decimal(20000),
+      totalPrice: new Prisma.Decimal(1000000),
+    }
+  });
+
+  await prisma.purchaseRequestItem.create({
+    data: {
+      requestId: pr1.id,
+      itemName: 'Buku Mutabaah Hafalan Santri',
+      quantity: 100,
+      unit: 'pcs',
+      estimatedPrice: new Prisma.Decimal(15000),
+      totalPrice: new Prisma.Decimal(1500000),
+    }
+  });
+
+  const pr2 = await prisma.purchaseRequest.create({
+    data: {
+      unitId: pesantren.id,
+      code: 'PR-202606-0002',
+      requesterId: teacherPesantrenUser.id,
+      preferredSupplierId: supplier2.id,
+      date: new Date(),
+      description: 'Pengadaan unit AC untuk ruang kelas multimedia dan kantor administrasi',
+      totalEstimated: new Prisma.Decimal(9000000),
+      status: PurchaseRequestStatus.PENDING,
+    }
+  });
+
+  await prisma.purchaseRequestItem.create({
+    data: {
+      requestId: pr2.id,
+      itemName: 'AC Split Panasonic 1 PK',
+      quantity: 2,
+      unit: 'unit',
+      estimatedPrice: new Prisma.Decimal(4500000),
+      totalPrice: new Prisma.Decimal(9000000),
+    }
+  });
+  console.log('   ✅ Purchase Requests & Items created');
+
+  // ============================================
+  // PHASE 11: Comprehensive Demo Data (Empty Table Fill)
+  // ============================================
+  console.log('\n🔧 Seeding Phase 11 comprehensive demo data...');
+
+  // --- Calendar Events ---
+  await prisma.calendarEvent.createMany({
+    data: [
+      {
+        title: 'Ujian Tengah Semester Ganjil',
+        description: 'Pelaksanaan UTS semester ganjil untuk seluruh unit.',
+        eventType: EventType.ACADEMIC,
+        scope: EventScope.ALL_UNITS,
+        startDate: new Date('2024-10-14'),
+        endDate: new Date('2024-10-18'),
+        isAllDay: true,
+        isPublic: true,
+        color: '#3B82F6',
+        createdById: superAdminUser.id,
+      },
+      {
+        unitId: pesantren.id,
+        title: 'Khataman Al-Quran Akbar',
+        description: 'Acara khataman Al-Quran untuk santri yang telah khatam 30 juz.',
+        eventType: EventType.RELIGIOUS,
+        scope: EventScope.SPECIFIC_UNIT,
+        startDate: new Date('2024-12-20'),
+        isAllDay: true,
+        location: 'Masjid Utama Al-Hikmah',
+        isPublic: true,
+        color: '#10B981',
+        createdById: adminPesantrenUser.id,
+      },
+      {
+        title: 'Libur Semester Ganjil',
+        description: 'Libur akhir semester ganjil tahun ajaran 2024/2025.',
+        eventType: EventType.HOLIDAY,
+        scope: EventScope.ALL_UNITS,
+        startDate: new Date('2024-12-23'),
+        endDate: new Date('2025-01-04'),
+        isAllDay: true,
+        isPublic: true,
+        color: '#EF4444',
+        createdById: superAdminUser.id,
+      },
+      {
+        unitId: pesantren.id,
+        title: 'Rapat Dewan Guru Bulanan',
+        description: 'Rapat koordinasi guru dan musyrif membahas perkembangan santri.',
+        eventType: EventType.MEETING,
+        scope: EventScope.SPECIFIC_UNIT,
+        startDate: new Date('2024-11-05'),
+        isAllDay: false,
+        startTime: '09:00',
+        endTime: '11:00',
+        location: 'Ruang Rapat Utama',
+        isPublic: false,
+        color: '#8B5CF6',
+        createdById: adminPesantrenUser.id,
+      },
+    ],
+  });
+  console.log('   ✅ Calendar events created');
+
+  // --- Islamic Events ---
+  await prisma.islamicEvent.createMany({
+    data: [
+      {
+        name: 'Maulid Nabi Muhammad SAW',
+        nameArabic: 'المولد النبوي',
+        type: 'HARI_BESAR',
+        hijriMonth: 3,
+        hijriDay: 12,
+        gregorianDate: new Date('2024-09-27'),
+        gregorianYear: 2024,
+        description: 'Peringatan kelahiran Nabi Muhammad SAW.',
+        activities: 'Pembacaan maulid, ceramah, dan dzikir bersama.',
+        isHoliday: true,
+        isRecurring: true,
+      },
+      {
+        name: 'Isra Miraj',
+        nameArabic: 'الإسراء والمعراج',
+        type: 'HARI_BESAR',
+        hijriMonth: 7,
+        hijriDay: 27,
+        gregorianDate: new Date('2025-01-27'),
+        gregorianYear: 2025,
+        description: 'Peringatan perjalanan Nabi Muhammad SAW dari Masjidil Haram ke Masjidil Aqsa.',
+        activities: 'Ceramah, sholat sunnah, dan muhasabah.',
+        isHoliday: true,
+        isRecurring: true,
+      },
+      {
+        name: 'Puasa Senin-Kamis',
+        type: 'PUASA_SUNNAH',
+        hijriMonth: 1,
+        hijriDay: 1,
+        description: 'Puasa sunnah Senin dan Kamis yang dijalankan rutin oleh santri.',
+        activities: 'Puasa sunnah dan kajian kitab kuning.',
+        isHoliday: false,
+        isRecurring: true,
+      },
+      {
+        name: 'Nuzulul Quran',
+        nameArabic: 'نزول القرآن',
+        type: 'HARI_BESAR',
+        hijriMonth: 9,
+        hijriDay: 17,
+        gregorianDate: new Date('2025-03-17'),
+        gregorianYear: 2025,
+        description: 'Peringatan turunnya Al-Quran kepada Nabi Muhammad SAW.',
+        activities: 'Khataman Al-Quran, tadarus bersama, ceramah.',
+        isHoliday: true,
+        isRecurring: true,
+      },
+    ],
+  });
+  console.log('   ✅ Islamic events created');
+
+  // --- Daily Schedule Template & Activities (Pesantren) ---
+  const scheduleTemplate = await prisma.dailyScheduleTemplate.create({
+    data: {
+      unitId: pesantren.id,
+      name: 'Jadwal Hari Biasa (Senin-Kamis)',
+      isDefault: true,
+      isActive: true,
+    },
+  });
+
+  const scheduleTemplateFriday = await prisma.dailyScheduleTemplate.create({
+    data: {
+      unitId: pesantren.id,
+      name: 'Jadwal Hari Jumat',
+      isDefault: false,
+      isActive: true,
+    },
+  });
+
+  await prisma.dailyActivity.createMany({
+    data: [
+      { templateId: scheduleTemplate.id, name: 'Sholat Subuh Berjamaah', startTime: '04:30', endTime: '05:00', location: 'Masjid Utama', isMandatory: true, sequence: 1 },
+      { templateId: scheduleTemplate.id, name: 'Tahfidz Pagi (Ziyadah)', startTime: '05:00', endTime: '06:00', location: 'Kelas Tahfidz', isMandatory: true, sequence: 2 },
+      { templateId: scheduleTemplate.id, name: 'Mandi & Sarapan', startTime: '06:00', endTime: '07:00', location: 'Asrama & Kantin', isMandatory: true, sequence: 3 },
+      { templateId: scheduleTemplate.id, name: 'KBM (Pelajaran Umum)', startTime: '07:00', endTime: '12:00', location: 'Ruang Kelas', isMandatory: true, sequence: 4 },
+      { templateId: scheduleTemplate.id, name: 'Sholat Dzuhur Berjamaah', startTime: '12:00', endTime: '12:30', location: 'Masjid Utama', isMandatory: true, sequence: 5 },
+      { templateId: scheduleTemplate.id, name: 'Makan Siang', startTime: '12:30', endTime: '13:00', location: 'Kantin', isMandatory: true, sequence: 6 },
+      { templateId: scheduleTemplate.id, name: 'Istirahat / Tidur Siang', startTime: '13:00', endTime: '14:00', location: 'Asrama', isMandatory: false, sequence: 7 },
+      { templateId: scheduleTemplate.id, name: 'KBM (Pelajaran Diniyah)', startTime: '14:00', endTime: '15:15', location: 'Ruang Kelas', isMandatory: true, sequence: 8 },
+      { templateId: scheduleTemplate.id, name: 'Sholat Ashar Berjamaah', startTime: '15:15', endTime: '15:45', location: 'Masjid Utama', isMandatory: true, sequence: 9 },
+      { templateId: scheduleTemplate.id, name: 'Murojaah Sore', startTime: '15:45', endTime: '17:00', location: 'Kelas Tahfidz', isMandatory: true, sequence: 10 },
+      { templateId: scheduleTemplate.id, name: 'Sholat Maghrib & Tilawah', startTime: '17:45', endTime: '19:00', location: 'Masjid Utama', isMandatory: true, sequence: 11 },
+      { templateId: scheduleTemplate.id, name: 'Makan Malam', startTime: '19:00', endTime: '19:30', location: 'Kantin', isMandatory: true, sequence: 12 },
+      { templateId: scheduleTemplate.id, name: 'Sholat Isya & Kajian Malam', startTime: '19:30', endTime: '20:30', location: 'Masjid Utama', isMandatory: true, sequence: 13 },
+      { templateId: scheduleTemplate.id, name: 'Belajar Mandiri', startTime: '20:30', endTime: '22:00', location: 'Asrama', isMandatory: true, sequence: 14 },
+      { templateId: scheduleTemplateFriday.id, name: 'Sholat Subuh Berjamaah', startTime: '04:30', endTime: '05:00', location: 'Masjid Utama', isMandatory: true, sequence: 1 },
+      { templateId: scheduleTemplateFriday.id, name: 'Muhadhoroh / Kultum', startTime: '05:00', endTime: '06:00', location: 'Aula', isMandatory: true, sequence: 2 },
+      { templateId: scheduleTemplateFriday.id, name: 'Olahraga & Kerja Bakti', startTime: '06:30', endTime: '08:00', location: 'Lapangan', isMandatory: true, sequence: 3 },
+      { templateId: scheduleTemplateFriday.id, name: 'Sholat Jumat', startTime: '11:30', endTime: '13:00', location: 'Masjid Utama', isMandatory: true, sequence: 4 },
+    ],
+  });
+  console.log('   ✅ Daily schedule templates & activities created');
+
+  // --- Musyrif (Dormitory Supervisor) ---
+  const musyrif1 = await prisma.musyrif.create({
+    data: {
+      userId: teacherPesantrenUser.id,
+      unitId: pesantren.id,
+      teacherId: teacherPesantren.id,
+      code: 'MSF-001',
+      phone: '081234567890',
+      isActive: true,
+      joinDate: new Date('2023-07-15'),
+      notes: 'Musyrif senior, bertanggung jawab atas asrama putra.',
+    },
+  });
+
+  await prisma.musyrifAssignment.create({
+    data: {
+      musyrifId: musyrif1.id,
+      dormitoryId: dormitoryPutra.id,
+      role: 'KOORDINATOR',
+      startDate: new Date('2024-07-15'),
+      isActive: true,
+    },
+  });
+  console.log('   ✅ Musyrif & assignments created');
+
+  // --- Santri Wallet & Transactions ---
+  if (students.length > 0) {
+    const wallet1 = await prisma.santriWallet.create({
+      data: {
+        studentId: students[0].id,
+        balance: new Prisma.Decimal(150000),
+        lastTopUp: new Date(),
+      },
+    });
+
+    await prisma.walletTransaction.createMany({
+      data: [
+        {
+          walletId: wallet1.id,
+          type: 'TOPUP',
+          amount: new Prisma.Decimal(200000),
+          balanceBefore: new Prisma.Decimal(0),
+          balanceAfter: new Prisma.Decimal(200000),
+          description: 'Top-up saldo oleh wali santri',
+          createdById: parentUsers[0]?.user?.id || teacherPesantrenUser.id,
+        },
+        {
+          walletId: wallet1.id,
+          type: 'PURCHASE',
+          amount: new Prisma.Decimal(-35000),
+          balanceBefore: new Prisma.Decimal(200000),
+          balanceAfter: new Prisma.Decimal(165000),
+          description: 'Pembelian di kantin - Nasi Goreng + Es Teh',
+          referenceType: 'CANTEEN',
+        },
+        {
+          walletId: wallet1.id,
+          type: 'PURCHASE',
+          amount: new Prisma.Decimal(-15000),
+          balanceBefore: new Prisma.Decimal(165000),
+          balanceAfter: new Prisma.Decimal(150000),
+          description: 'Laundry - 3 kg pakaian',
+          referenceType: 'LAUNDRY',
+        },
+      ],
+    });
+
+    if (students.length > 1) {
+      await prisma.santriWallet.create({
+        data: {
+          studentId: students[1].id,
+          balance: new Prisma.Decimal(75000),
+          lastTopUp: new Date(),
+        },
+      });
+    }
+  }
+  console.log('   ✅ Santri wallets & transactions created');
+
+  // --- Student Notes ---
+  if (students.length > 0) {
+    await prisma.studentNote.createMany({
+      data: [
+        {
+          studentId: students[0].id,
+          classId: class7A.id,
+          academicYearId: academicYear.id,
+          category: NoteCategory.ACHIEVEMENT,
+          title: 'Juara 1 Musabaqah Tilawatil Quran',
+          content: 'Muhammad Rizky berhasil meraih juara 1 MTQ tingkat kecamatan. Bacaan tajwid dan makhorijul huruf sangat baik.',
+          priority: NotePriority.LOW,
+          visibility: NoteVisibility.TEACHERS,
+          createdById: teacherPesantrenUser.id,
+        },
+        {
+          studentId: students[0].id,
+          classId: class7A.id,
+          academicYearId: academicYear.id,
+          category: NoteCategory.SPIRITUAL,
+          title: 'Progres Hafalan Sangat Baik',
+          content: 'Santri menunjukkan peningkatan signifikan dalam hafalan. Sudah menyelesaikan juz 30 dan sedang melanjutkan juz 29.',
+          priority: NotePriority.MEDIUM,
+          visibility: NoteVisibility.PARENTS,
+          createdById: teacherPesantrenUser.id,
+        },
+        {
+          studentId: students[1]?.id || students[0].id,
+          classId: class7A.id,
+          academicYearId: academicYear.id,
+          category: NoteCategory.CONCERN,
+          title: 'Perlu Perhatian Khusus Pelajaran Matematika',
+          content: 'Ahmad Fauzan menunjukkan kesulitan dalam memahami materi pecahan dan aljabar. Disarankan les tambahan.',
+          priority: NotePriority.HIGH,
+          visibility: NoteVisibility.HOMEROOM_ONLY,
+          requiresFollowUp: true,
+          followUpDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+          createdById: teacherPesantrenUser.id,
+        },
+      ],
+    });
+  }
+  console.log('   ✅ Student notes created');
+
+  // --- Behavior Records ---
+  if (students.length > 0) {
+    await prisma.behaviorRecord.createMany({
+      data: [
+        {
+          studentId: students[0].id,
+          classId: class7A.id,
+          academicYearId: academicYear.id,
+          date: new Date(),
+          behaviorType: BehaviorType.POSITIVE,
+          category: BehaviorCategory.RELIGIOUS,
+          description: 'Rutin memimpin dzikir ba\'da sholat maghrib tanpa diminta.',
+          points: 10,
+          recordedById: teacherPesantrenUser.id,
+        },
+        {
+          studentId: students[0].id,
+          classId: class7A.id,
+          academicYearId: academicYear.id,
+          date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+          behaviorType: BehaviorType.POSITIVE,
+          category: BehaviorCategory.COOPERATION,
+          description: 'Membantu teman baru beradaptasi di asrama, mengajarkan tata tertib.',
+          points: 5,
+          recordedById: teacherPesantrenUser.id,
+        },
+        {
+          studentId: students[1]?.id || students[0].id,
+          classId: class7A.id,
+          academicYearId: academicYear.id,
+          date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+          behaviorType: BehaviorType.NEGATIVE,
+          category: BehaviorCategory.PUNCTUALITY,
+          description: 'Terlambat hadir ke sholat subuh berjamaah.',
+          points: -3,
+          actionTaken: 'Dinasihati dan diberi tugas membersihkan masjid.',
+          recordedById: teacherPesantrenUser.id,
+        },
+      ],
+    });
+  }
+  console.log('   ✅ Behavior records created');
+
+  // --- Daily Student Report (for SD IT / PAUD) ---
+  if (students.length > 2) {
+    const dailyReport = await prisma.dailyStudentReport.create({
+      data: {
+        studentId: students[2].id,
+        unitId: sdIt.id,
+        academicYearId: academicYear.id,
+        reportDate: today,
+        unitType: UnitType.SD_IT,
+        arrivalTime: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 7, 15),
+        mood: DailyMood.HAPPY,
+        healthStatus: 'Sehat',
+        hadBreakfast: true,
+        mealStatus: MealConsumption.HABIS,
+        snackStatus: MealConsumption.SETENGAH,
+        sholatDhuha: true,
+        sholatDzuhur: true,
+        tahfidzActivity: 'Menghafal surat Al-Mulk ayat 1-10',
+        activitiesSummary: 'Hari ini belajar Matematika (pecahan), Bahasa Indonesia (membaca), dan Tahfidz.',
+        achievements: 'Mendapat bintang untuk kelancaran membaca.',
+        behaviorNotes: 'Sopan dan aktif bertanya di kelas.',
+        teacherNotes: 'Siti menunjukkan perkembangan yang baik hari ini.',
+        departureTime: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 15, 30),
+        pickedUpBy: 'Bapak Aisyah',
+        createdById: teacherSdItUser.id,
+      },
+    });
+
+    await prisma.dailyHomework.createMany({
+      data: [
+        {
+          reportId: dailyReport.id,
+          subjectName: 'Matematika',
+          description: 'Kerjakan latihan soal pecahan halaman 45 nomor 1-10.',
+          dueDate: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000),
+        },
+        {
+          reportId: dailyReport.id,
+          subjectName: 'Bahasa Indonesia',
+          description: 'Baca cerita pendek "Petualangan di Hutan" dan tulis 5 pertanyaan.',
+          dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
+        },
+      ],
+    });
+  }
+  console.log('   ✅ Daily student reports & homework created');
+
+  // --- Growth Records ---
+  if (students.length > 2) {
+    await prisma.growthRecord.createMany({
+      data: [
+        {
+          studentId: students[2].id,
+          unitId: sdIt.id,
+          recordDate: new Date('2024-08-15'),
+          weight: 25.5,
+          height: 120.3,
+          ageMonths: 84,
+          nutritionStatus: 'Normal',
+          notes: 'Pertumbuhan sesuai usia.',
+          recordedById: teacherSdItUser.id,
+        },
+        {
+          studentId: students[2].id,
+          unitId: sdIt.id,
+          recordDate: new Date('2025-02-15'),
+          weight: 27.0,
+          height: 123.1,
+          ageMonths: 90,
+          nutritionStatus: 'Normal',
+          notes: 'Kenaikan BB dan TB normal.',
+          recordedById: teacherSdItUser.id,
+        },
+        {
+          studentId: students[0].id,
+          unitId: pesantren.id,
+          recordDate: new Date('2024-08-20'),
+          weight: 42.0,
+          height: 155.5,
+          ageMonths: 150,
+          nutritionStatus: 'Normal',
+          notes: 'BMI normal.',
+          recordedById: teacherPesantrenUser.id,
+        },
+      ],
+    });
+  }
+  console.log('   ✅ Growth records created');
+
+  // --- Immunization Records ---
+  if (students.length > 2) {
+    await prisma.immunizationRecord.createMany({
+      data: [
+        {
+          studentId: students[2].id,
+          unitId: sdIt.id,
+          vaccineName: 'Campak Rubella (MR)',
+          vaccineCode: 'MR',
+          doseNumber: 2,
+          scheduledDate: new Date('2024-09-15'),
+          administeredDate: new Date('2024-09-15'),
+          administeredAt: 'UKS SD IT Ar-Rahman',
+          batchNumber: 'MR-2024-001',
+          status: 'COMPLETED',
+          recordedById: teacherSdItUser.id,
+        },
+        {
+          studentId: students[2].id,
+          unitId: sdIt.id,
+          vaccineName: 'DT (Difteri Tetanus)',
+          vaccineCode: 'DT',
+          doseNumber: 1,
+          scheduledDate: new Date('2024-10-20'),
+          administeredDate: new Date('2024-10-20'),
+          administeredAt: 'Puskesmas Sukabumi',
+          batchNumber: 'DT-2024-045',
+          status: 'COMPLETED',
+          recordedById: teacherSdItUser.id,
+        },
+        {
+          studentId: students[3]?.id || students[0].id,
+          unitId: tkQuran.id,
+          vaccineName: 'Polio (IPV)',
+          vaccineCode: 'IPV',
+          doseNumber: 4,
+          scheduledDate: new Date('2025-03-01'),
+          status: 'PENDING',
+        },
+      ],
+    });
+  }
+  console.log('   ✅ Immunization records created');
+
+  // --- Complaints ---
+  const complaint1 = await prisma.complaint.create({
+    data: {
+      unitId: pesantren.id,
+      userId: parentUsers[0]?.user?.id || teacherPesantrenUser.id,
+      category: ComplaintCategory.FACILITY,
+      subject: 'AC Ruang Kelas 7A Tidak Berfungsi',
+      description: 'Sudah 3 hari AC di ruang kelas 7A mati. Santri merasa kepanasan terutama saat jam siang.',
+      location: 'Ruang Kelas 7A, Lantai 2',
+      status: ComplaintStatus.IN_PROGRESS,
+      priority: ComplaintPriority.HIGH,
+      isAnonymous: false,
+      assignedToId: adminPesantrenUser.id,
+    },
+  });
+
+  await prisma.complaintComment.create({
+    data: {
+      complaintId: complaint1.id,
+      userId: adminPesantrenUser.id,
+      content: 'Sudah dihubungi teknisi AC. Diperkirakan akan diperbaiki besok pagi.',
+      isInternal: false,
+    },
+  });
+
+  await prisma.complaint.create({
+    data: {
+      unitId: pesantren.id,
+      category: ComplaintCategory.SERVICE,
+      subject: 'Variasi Menu Makan Kurang',
+      description: 'Mohon ditambahkan variasi menu makan siang. Beberapa santri mengeluhkan menu yang monoton.',
+      status: ComplaintStatus.RESOLVED,
+      priority: ComplaintPriority.NORMAL,
+      isAnonymous: true,
+      resolution: 'Sudah dikoordinasikan dengan bagian dapur untuk menambahkan 5 menu baru mulai minggu depan.',
+      resolvedAt: new Date(),
+    },
+  });
+  console.log('   ✅ Complaints & comments created');
+
+  // --- Department (HRM) ---
+  const deptKurikulum = await prisma.department.create({
+    data: {
+      unitId: pesantren.id,
+      code: 'KUR',
+      name: 'Kurikulum & Pengajaran',
+      description: 'Bagian yang menangani kurikulum, pengajaran, dan evaluasi akademik.',
+      managerId: kepalaSmpItUser?.id || adminPesantrenUser.id,
+      isActive: true,
+    },
+  });
+
+  await prisma.department.create({
+    data: {
+      unitId: pesantren.id,
+      code: 'KEP',
+      name: 'Kepesantrenan',
+      description: 'Bagian yang menangani kegiatan kepesantrenan, asrama, dan pembinaan santri.',
+      managerId: teacherPesantrenUser.id,
+      isActive: true,
+    },
+  });
+
+  await prisma.department.create({
+    data: {
+      unitId: pesantren.id,
+      code: 'TU',
+      name: 'Tata Usaha',
+      description: 'Bagian administrasi dan tata usaha.',
+      isActive: true,
+    },
+  });
+  console.log('   ✅ Departments created');
+
+  // --- Leave Balance ---
+  await prisma.leaveBalance.createMany({
+    data: [
+      {
+        unitId: pesantren.id,
+        academicYearId: academicYear.id,
+        userId: teacherPesantrenUser.id,
+        leaveType: LeaveType.ANNUAL,
+        totalDays: 12,
+        usedDays: 3,
+        remainingDays: 9,
+        notes: 'Sisa cuti tahunan.',
+      },
+      {
+        unitId: pesantren.id,
+        academicYearId: academicYear.id,
+        userId: teacherPesantrenUser.id,
+        leaveType: LeaveType.SICK,
+        totalDays: 14,
+        usedDays: 1,
+        remainingDays: 13,
+      },
+      {
+        unitId: sdIt.id,
+        academicYearId: academicYear.id,
+        userId: teacherSdItUser.id,
+        leaveType: LeaveType.ANNUAL,
+        totalDays: 12,
+        usedDays: 2,
+        remainingDays: 10,
+      },
+    ],
+  });
+  console.log('   ✅ Leave balances created');
+
+  // --- Employment Contract ---
+  await prisma.employmentContract.createMany({
+    data: [
+      {
+        userId: teacherPesantrenUser.id,
+        contractNumber: 'KTR-2023-001',
+        type: 'PKWTT',
+        startDate: new Date('2023-07-01'),
+        status: ContractStatus.ACTIVE,
+        notes: 'Guru tetap bidang studi Al-Quran dan Hadits.',
+      },
+      {
+        userId: teacherSdItUser.id,
+        contractNumber: 'KTR-2023-002',
+        type: 'PKWT',
+        startDate: new Date('2023-08-01'),
+        endDate: new Date('2025-07-31'),
+        status: ContractStatus.ACTIVE,
+        notes: 'Kontrak guru 2 tahun.',
+      },
+      {
+        userId: adminPesantrenUser.id,
+        contractNumber: 'KTR-2022-003',
+        type: 'PKWTT',
+        startDate: new Date('2022-01-15'),
+        status: ContractStatus.ACTIVE,
+        notes: 'Staf administrasi tetap.',
+      },
+    ],
+  });
+  console.log('   ✅ Employment contracts created');
+
+  // --- Employee Document ---
+  await prisma.employeeDocument.createMany({
+    data: [
+      {
+        userId: teacherPesantrenUser.id,
+        name: 'Ijazah S1 Pendidikan Agama Islam',
+        type: EmployeeDocumentType.IJAZAH,
+        fileUrl: '/documents/employee/ijazah-ahmad-pai.pdf',
+        notes: 'Universitas Islam Negeri Sunan Gunung Djati, Bandung.',
+      },
+      {
+        userId: teacherPesantrenUser.id,
+        name: 'Sertifikat Profesi Guru',
+        type: EmployeeDocumentType.SERTIFIKAT,
+        fileUrl: '/documents/employee/sertifikasi-guru-ahmad.pdf',
+        notes: 'Sertifikat pendidik nomor registrasi 2023-00012.',
+      },
+      {
+        userId: adminPesantrenUser.id,
+        name: 'KTP Elektronik',
+        type: EmployeeDocumentType.KTP,
+        fileUrl: '/documents/employee/ktp-admin.pdf',
+        expiryDate: new Date('2029-12-31'),
+      },
+    ],
+  });
+  console.log('   ✅ Employee documents created');
+
+  // --- Employment History ---
+  await prisma.employmentHistory.createMany({
+    data: [
+      {
+        userId: teacherPesantrenUser.id,
+        action: EmploymentAction.HIRED,
+        previousPosition: '',
+        newPosition: 'Guru Al-Quran dan Hadits',
+        newDepartment: 'Kurikulum & Pengajaran',
+        effectiveDate: new Date('2023-07-01'),
+        notes: 'Diterima sebagai guru tetap.',
+      },
+      {
+        userId: teacherPesantrenUser.id,
+        action: EmploymentAction.PROMOTED,
+        previousPosition: 'Guru Al-Quran dan Hadits',
+        newPosition: 'Wali Kelas 7A & Koordinator Tahfidz',
+        previousDepartment: 'Kurikulum & Pengajaran',
+        newDepartment: 'Kurikulum & Pengajaran',
+        effectiveDate: new Date('2024-07-15'),
+        notes: 'Dipromosikan sebagai wali kelas dan koordinator tahfidz.',
+      },
+    ],
+  });
+  console.log('   ✅ Employment history created');
+
+  // --- Extracurricular Attendance ---
+  if (students.length >= 2) {
+    await prisma.extracurricularAttendance.createMany({
+      data: [
+        {
+          extracurricularId: scout.id,
+          studentId: students[0].id,
+          date: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 7),
+          status: AttendanceStatus.PRESENT,
+          notes: 'Mengikuti latihan dengan baik.',
+          recordedById: teacherPesantrenUser.id,
+        },
+        {
+          extracurricularId: scout.id,
+          studentId: students[1].id,
+          date: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 7),
+          status: AttendanceStatus.PRESENT,
+          recordedById: teacherPesantrenUser.id,
+        },
+        {
+          extracurricularId: hadroh.id,
+          studentId: students[0].id,
+          date: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 5),
+          status: AttendanceStatus.PRESENT,
+          notes: 'Latihan persiapan penampilan Maulid.',
+          recordedById: teacherPesantrenUser.id,
+        },
+      ],
+    });
+  }
+  console.log('   ✅ Extracurricular attendance created');
+
+  // --- Extracurricular Achievement ---
+  if (students.length > 0) {
+    await prisma.extracurricularAchievement.createMany({
+      data: [
+        {
+          extracurricularId: scout.id,
+          studentId: students[0].id,
+          title: 'Juara 2 Lomba Pioneering',
+          description: 'Meraih juara 2 lomba pioneering tingkat kwartir ranting.',
+          level: 'Kecamatan',
+          rank: 'Juara 2',
+          organizer: 'Kwartir Ranting Kecamatan Sukabumi',
+          eventDate: new Date('2024-11-10'),
+        },
+        {
+          extracurricularId: hadroh.id,
+          title: 'Juara 1 Festival Hadroh',
+          description: 'Tim hadroh pesantren meraih juara 1 festival hadroh se-Kabupaten Sukabumi.',
+          level: 'Kabupaten',
+          rank: 'Juara 1',
+          organizer: 'Kemenag Kabupaten Sukabumi',
+          eventDate: new Date('2024-12-05'),
+        },
+      ],
+    });
+  }
+  console.log('   ✅ Extracurricular achievements created');
+
+  // --- Admission Wave ---
+  const admissionPeriods = await prisma.admissionPeriod.findMany();
+  if (admissionPeriods.length > 0) {
+    await prisma.admissionWave.createMany({
+      data: [
+        {
+          periodId: admissionPeriods[0].id,
+          waveNumber: 1,
+          name: 'Gelombang 1 - Jalur Prestasi',
+          startDate: new Date('2024-01-15'),
+          endDate: new Date('2024-03-15'),
+          quota: 60,
+          registeredCount: 55,
+          acceptedCount: 48,
+          status: WaveStatus.CLOSED,
+          registrationFee: new Prisma.Decimal(250000),
+          notes: 'Jalur prestasi akademik dan tahfidz.',
+        },
+        {
+          periodId: admissionPeriods[0].id,
+          waveNumber: 2,
+          name: 'Gelombang 2 - Jalur Reguler',
+          startDate: new Date('2024-04-01'),
+          endDate: new Date('2024-06-30'),
+          quota: 40,
+          registeredCount: 38,
+          acceptedCount: 32,
+          status: WaveStatus.CLOSED,
+          registrationFee: new Prisma.Decimal(300000),
+          notes: 'Jalur pendaftaran reguler.',
+        },
+        {
+          periodId: admissionPeriods[0].id,
+          waveNumber: 3,
+          name: 'Gelombang 3 - Sisa Kuota',
+          startDate: new Date('2024-07-01'),
+          endDate: new Date('2024-07-15'),
+          quota: 10,
+          registeredCount: 6,
+          acceptedCount: 6,
+          status: WaveStatus.CLOSED,
+          registrationFee: new Prisma.Decimal(350000),
+        },
+      ],
+    });
+  }
+  console.log('   ✅ Admission waves created');
+
+  // --- Asset Assignment ---
+  const allAssets = await prisma.asset.findMany({ take: 3 });
+  if (allAssets.length > 0) {
+    await prisma.assetAssignment.create({
+      data: {
+        assetId: allAssets[0].id,
+        userId: teacherPesantrenUser.id,
+        assignedAt: new Date('2024-08-01'),
+        conditionBefore: AssetCondition.GOOD,
+        notes: 'Digunakan untuk kegiatan belajar mengajar di ruang kelas 7A.',
+        status: 'ACTIVE',
+      },
+    });
+
+    if (allAssets.length > 1) {
+      await prisma.assetAssignment.create({
+        data: {
+          assetId: allAssets[1].id,
+          userId: adminPesantrenUser.id,
+          assignedAt: new Date('2024-07-15'),
+          conditionBefore: AssetCondition.GOOD,
+          notes: 'Inventaris kantor Tata Usaha.',
+          status: 'ACTIVE',
+        },
+      });
+    }
+  }
+  console.log('   ✅ Asset assignments created');
+
+  // --- Hafidz Student (completed memorization) ---
+  if (students.length > 0) {
+    await prisma.hafidzStudent.create({
+      data: {
+        studentId: students[0].id,
+        completedAt: new Date('2024-11-15'),
+        notes: 'Alhamdulillah, telah menyelesaikan hafalan 30 juz dengan predikat Mumtaz (Istimewa).',
+      },
+    });
+  }
+  console.log('   ✅ Hafidz student records created');
+
+  // --- Messages (Internal Communication) ---
+  await prisma.message.createMany({
+    data: [
+      {
+        senderId: adminPesantrenUser.id,
+        recipientId: teacherPesantrenUser.id,
+        subject: 'Jadwal Rapat Persiapan UTS',
+        content: 'Assalamu\'alaikum Ustadz Ahmad,\n\nMohon hadir di rapat persiapan UTS hari Senin jam 09:00 di ruang rapat utama.\n\nJazakallahu khairan.',
+        isRead: true,
+      },
+      {
+        senderId: teacherPesantrenUser.id,
+        recipientId: adminPesantrenUser.id,
+        subject: 'Laporan Perkembangan Santri Bulan Oktober',
+        content: 'Assalamu\'alaikum,\n\nBerikut laporan perkembangan santri kelas 7A untuk bulan Oktober 2024. Total santri aktif: 28, rata-rata hafalan baru: 2 halaman/minggu.\n\nWassalam.',
+        isRead: false,
+      },
+      {
+        senderId: superAdminUser.id,
+        recipientId: adminPesantrenUser.id,
+        subject: 'Pengumuman: Update Sistem Informasi',
+        content: 'Assalamu\'alaikum,\n\nDiberitahukan bahwa sistem Cipansor akan diperbarui pada hari Sabtu, 30 November 2024 pukul 22:00-00:00 WIB. Mohon pastikan semua data sudah tersimpan sebelum waktu tersebut.\n\nTerima kasih.',
+        isRead: true,
+      },
+    ],
+  });
+  console.log('   ✅ Internal messages created');
+
+  // --- Special Diet ---
+  if (students.length > 2) {
+    await prisma.specialDiet.createMany({
+      data: [
+        {
+          studentId: students[2].id,
+          dietType: 'Alergi Telur',
+          allergies: ['Telur', 'Produk telur'],
+          medicalNotes: 'Diagnosis alergi dari dr. Rina, Puskesmas Sukabumi. Batasan: Tidak boleh mengonsumsi makanan yang mengandung telur dalam bentuk apapun.',
+          isActive: true,
+          approvedById: teacherSdItUser.id,
+          approvedAt: new Date(),
+          startDate: new Date(),
+        },
+        {
+          studentId: students[0].id,
+          dietType: 'Asma - Pantang Dingin',
+          allergies: [],
+          medicalNotes: 'Riwayat asma ringan. Batasan: Hindari minuman dingin dan es. Makanan tidak boleh terlalu pedas.',
+          isActive: true,
+          approvedById: teacherPesantrenUser.id,
+          approvedAt: new Date(),
+          startDate: new Date(),
+        },
+      ],
+    });
+  }
+  console.log('   ✅ Special diet records created');
+
+  // --- Foundation Document ---
+  await prisma.foundationDocument.createMany({
+    data: [
+      {
+        foundationId: foundation.id,
+        name: 'Akta Pendirian Yayasan',
+        type: 'akta',
+        fileUrl: '/documents/foundation/akta-pendirian.pdf',
+        notes: 'Akta notaris pendirian Yayasan Pesantren Cipansor.',
+        issueDate: new Date(),
+      },
+      {
+        foundationId: foundation.id,
+        name: 'SK Kemenkumham',
+        type: 'sk',
+        fileUrl: '/documents/foundation/sk-kemenkumham.pdf',
+        notes: 'Surat Keputusan pengesahan dari Kementerian Hukum dan HAM.',
+        issueDate: new Date(),
+      },
+      {
+        foundationId: foundation.id,
+        name: 'NPWP Yayasan',
+        type: 'lainnya',
+        fileUrl: '/documents/foundation/npwp-yayasan.pdf',
+        notes: 'Nomor Pokok Wajib Pajak Yayasan.',
+        issueDate: new Date(),
+      },
+    ],
+  });
+  console.log('   ✅ Foundation documents created');
+
+  // ============================================
+  // PHASE 12: Comprehensive Demo Data Part 2 (Additional Empty Models)
+  // ============================================
+  console.log('\n🔧 Seeding Phase 12 comprehensive demo data (Additional Empty Models)...');
+
+  // --- Student Documents & Digital Certificates ---
+  if (students.length > 0) {
+    await prisma.studentDocument.createMany({
+      data: [
+        {
+          studentId: students[0].id,
+          documentType: DocumentType.BIRTH_CERTIFICATE,
+          title: 'Akta Kelahiran - Muhammad Rizky',
+          description: 'Dokumen resmi akta kelahiran santri.',
+          fileUrl: '/documents/students/akta-rizky.pdf',
+          status: DocumentStatus.VERIFIED,
+          uploadedById: superAdminUser.id,
+          verifiedById: adminPesantrenUser.id,
+          verifiedAt: new Date(),
+        },
+        {
+          studentId: students[0].id,
+          documentType: DocumentType.FAMILY_CARD,
+          title: 'Kartu Keluarga - Rizky',
+          fileUrl: '/documents/students/kk-rizky.pdf',
+          status: DocumentStatus.VERIFIED,
+          uploadedById: superAdminUser.id,
+          verifiedById: adminPesantrenUser.id,
+          verifiedAt: new Date(),
+        },
+      ],
+    });
+
+    await prisma.digitalCertificate.create({
+      data: {
+        studentId: students[0].id,
+        certificateType: 'TAHFIDZ',
+        title: 'Sertifikat Tahfidz Juz 30',
+        description: 'Diberikan atas keberhasilan menyelesaikan hafalan Al-Qur\'an Juz 30.',
+        certificateNumber: 'CERT-TFZ-30-2024001',
+        qrCode: 'https://cipansor.id/verify/CERT-TFZ-30-2024001',
+        verificationUrl: 'https://cipansor.id/verify/CERT-TFZ-30-2024001',
+        grade: 'MUMTAZ',
+        issueDate: new Date('2024-10-15'),
+        signatoryName: 'KH. Abdullah Syukur',
+        signatoryTitle: 'Pimpinan Yayasan Pesantren Cipansor',
+        isPublic: true,
+        createdById: superAdminUser.id,
+      },
+    });
+  }
+  console.log('   ✅ Student documents and digital certificates created');
+
+  // --- Kitab Master, Assignment, Progress & Records ---
+  const kitabFathulMuin = await prisma.kitab.create({
+    data: {
+      unitId: pesantren.id,
+      name: 'Fathul Mu\'in',
+      author: 'Syekh Zainuddin Al-Malibari',
+      category: KitabCategory.FIQH,
+      level: KitabLevel.MENENGAH,
+      description: 'Kitab fiqih madzhab Syafi\'i yang populer digunakan di pesantren.',
+      totalBab: 4,
+      totalHalaman: 150,
+      isActive: true,
+    },
+  });
+
+  const kitabTafsirJalalain = await prisma.kitab.create({
+    data: {
+      unitId: pesantren.id,
+      name: 'Tafsir Al-Jalalain',
+      author: 'Jalaluddin Al-Mahalli & Jalaluddin As-Suyuthi',
+      category: KitabCategory.TAFSIR,
+      level: KitabLevel.LANJUT,
+      description: 'Kitab tafsir Al-Qur\'an klasik.',
+      totalBab: 30,
+      totalHalaman: 600,
+      isActive: true,
+    },
+  });
+
+  if (kitabFathulMuin && teacherPesantren) {
+    const kitabAssign1 = await prisma.kitabAssignment.create({
+      data: {
+        kitabId: kitabFathulMuin.id,
+        classId: class7A.id,
+        academicYearId: academicYear.id,
+        teacherId: teacherPesantren.id,
+        semester: 'GANJIL',
+        targetBab: 2,
+        notes: 'Target semester ganjil menyelesaikan Bab Ibadah dan Bab Muamalah.',
+      },
+    });
+
+    if (students.length > 0) {
+      const studentProgress = await prisma.kitabStudentProgress.create({
+        data: {
+          studentId: students[0].id,
+          kitabAssignmentId: kitabAssign1.id,
+          currentBab: 1,
+          currentHalaman: 25,
+          status: KitabProgressStatus.IN_PROGRESS,
+          notes: 'Pemahaman materi fiqih thoharoh cukup baik.',
+        },
+      });
+
+      await prisma.kitabProgressRecord.create({
+        data: {
+          studentId: students[0].id,
+          kitabAssignmentId: kitabAssign1.id,
+          kitabId: kitabFathulMuin.id,
+          date: new Date(),
+          assessmentType: KitabAssessmentType.SOROGAN,
+          babNumber: 1,
+          halamanStart: 20,
+          halamanEnd: 25,
+          score: 85,
+          predicate: 'A',
+          isPassed: true,
+          notes: 'Setoran lancar, pemahaman tajam.',
+          recordedById: teacherPesantrenUser.id,
+        },
+      });
+    }
+  }
+  console.log('   ✅ Kitab models and assignments created');
+
+  // --- Portfolio & Showcase ---
+  if (students.length > 0) {
+    const portfolio = await prisma.portfolio.create({
+      data: {
+        studentId: students[0].id,
+        title: 'Esai Nilai-Nilai Kepemimpinan dalam Islam',
+        type: 'ACADEMIC',
+        category: 'Pelajaran Agama',
+        description: 'Tugas akhir mata pelajaran Aqidah Akhlak mengenai kepemimpinan Khulafaur Rasyidin.',
+        reflection: 'Saya belajar banyak tentang pentingnya sifat amanah dan shiddiq dari kepemimpinan para Khalifah.',
+        academicYearId: academicYear.id,
+        score: new Prisma.Decimal(92.5),
+        feedback: 'Analisis mendalam dengan sumber pustaka yang lengkap. Kerja bagus!',
+        isPublic: true,
+        isShowcase: true,
+        reviewedBy: teacherPesantrenUser.id,
+        reviewedAt: new Date(),
+      },
+    });
+
+    const pFile = await prisma.portfolioFile.create({
+      data: {
+        portfolioId: portfolio.id,
+        fileName: 'esai-kepemimpinan-islam.pdf',
+        fileUrl: '/documents/portfolios/esai-kepemimpinan.pdf',
+        fileType: 'document',
+        isCover: true,
+      },
+    });
+
+    await prisma.portfolioComment.create({
+      data: {
+        portfolioId: portfolio.id,
+        userId: parentUsers[0]?.user?.id || teacherPesantrenUser.id,
+        content: 'Sangat bangga melihat tulisan ini. Terus tingkatkan prestasimu, nak!',
+      },
+    });
+  }
+  console.log('   ✅ Student portfolio documents created');
+
+  // --- Rapor Pesantren (Islamic Education Report Cards) ---
+  if (students.length > 0) {
+    await prisma.raporPesantren.create({
+      data: {
+        studentId: students[0].id,
+        unitId: pesantren.id,
+        academicYearId: academicYear.id,
+        semester: 1,
+        status: 'PUBLISHED',
+        tahfidzData: {
+          tahfidzScore: 88,
+          tahfidzGrade: 'Mumtaz',
+          recentSurahs: ['Juz 30', 'Juz 29'],
+        },
+        takhosusData: {
+          takhosusName: 'Takhosus Hifdzil Quran',
+          attendanceRate: 95,
+        },
+        ibadahData: {
+          sholatFardhuPercentage: 100,
+          sholatRawatibCount: 30,
+        },
+        muhadhorohData: {
+          speechSkillScore: 85,
+          speechGrade: 'Baik',
+        },
+        overallScore: 89.5,
+        overallGrade: 'A',
+        notes: 'Pertahankan prestasi akademik dan hafalan Al-Qur\'an.',
+        musyrifNotes: 'Perilaku sangat baik dan teladan bagi teman-teman di asrama.',
+        headTeacherNotes: 'Sangat baik dalam interaksi sosial dan kegiatan ibadah.',
+        principalNotes: 'Naik ke kelas berikutnya dengan predikat Istimewa.',
+        publishedAt: new Date(),
+      },
+    });
+  }
+  console.log('   ✅ Rapor Pesantren created');
+
+  // --- PAUD Development Assessment & Narrative Reports ---
+  if (students.length > 3) {
+    const paudIndicators = await prisma.pAUDDevelopmentIndicator.findMany({
+      where: { OR: [{ unitId: tkQuran.id }, { unitId: null }] },
+      take: 2,
+    });
+
+    if (paudIndicators.length > 0) {
+      const paudAssessment = await prisma.pAUDDevelopmentAssessment.create({
+        data: {
+          studentId: students[3].id,
+          unitId: tkQuran.id,
+          academicYearId: academicYear.id,
+          semester: 'GANJIL',
+          periodType: PAUDReportPeriod.SEMESTER,
+          periodDate: new Date('2024-11-25'),
+          aspect: PAUDAspect.NAM,
+          indicatorId: paudIndicators[0].id,
+          achievementLevel: PAUDAchievementLevel.BSH,
+          narrativeText: 'Anak menunjukkan sikap sopan santun dan terbiasa melafalkan doa harian secara mandiri.',
+          teacherNotes: 'Sangat baik dalam menghafal surat pendek.',
+          assessedById: teacherSdItUser.id,
+        },
+      });
+
+      await prisma.pAUDAssessmentEvidence.create({
+        data: {
+          assessmentId: paudAssessment.id,
+          fileUrl: '/images/assessments/nam-doa.jpg',
+          fileType: 'image',
+          fileName: 'berdoa-bersama.jpg',
+          caption: 'Berdoa secara khusyuk sebelum memulai pelajaran.',
+        },
+      });
+    }
+
+    const narrativeReport = await prisma.pAUDNarrativeReport.create({
+      data: {
+        studentId: students[3].id,
+        unitId: tkQuran.id,
+        academicYearId: academicYear.id,
+        semester: 'GANJIL',
+        narrativeNAM: 'Alhamdulillah, dalam aspek nilai agama dan moral, anak terbiasa mengucapkan salam, mau berbagi makanan dengan temannya, dan lancar melafalkan surat Al-Fatihah serta surat-surat pendek.',
+        narrativeFM: 'Dalam aspek fisik motorik, anak sangat aktif bergerak dan terampil dalam melipat kertas origami serta menyusun balok kayu.',
+        narrativeKOG: 'Dalam aspek kognitif, anak sudah dapat membedakan pola warna dasar dan mengelompokkan bentuk-bentuk geometri secara tepat.',
+        narrativeBHS: 'Dalam aspek bahasa, anak dapat mengutarakan keinginan dengan kalimat yang lengkap dan senang mendengarkan cerita guru.',
+        narrativeSE: 'Dalam aspek sosial emosional, anak bersikap ramah, menunjukkan kepedulian terhadap teman yang sedang sedih, dan mau antre giliran.',
+        narrativeSNI: 'Dalam aspek seni, anak sangat percaya diri saat bernyanyi lagu anak islami di depan kelas dan gemar mewarnai gambar pemandangan.',
+        overallStrengths: 'Sangat menonjol dalam hafalan doa harian dan sifat peduli sesama.',
+        areasForDevelopment: 'Perlu bimbingan untuk konsentrasi lebih lama saat kegiatan menulis.',
+        parentRecommendations: 'Disarankan mengajak anak berlatih memegang pensil dengan benar di rumah.',
+        totalDays: 100,
+        presentDays: 95,
+        sickDays: 3,
+        excusedDays: 2,
+        status: 'FINALIZED',
+        finalizedAt: new Date(),
+        createdById: teacherSdItUser.id,
+      },
+    });
+
+    await prisma.pAUDReportPhoto.create({
+      data: {
+        reportId: narrativeReport.id,
+        photoUrl: '/images/reports/paud-activity.jpg',
+        caption: 'Mewarnai gambar pemandangan dengan rapi.',
+        orderNumber: 1,
+      },
+    });
+  }
+  console.log('   ✅ PAUD Narrative reports and assessments created');
+
+  console.log('🔧 Phase 11 & 12 comprehensive demo data completed!\n');
 
   // ============================================
   // E2E: deterministic 2FA for admin accounts

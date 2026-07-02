@@ -38,6 +38,20 @@ export const getById = asyncHandler(async (req: Request, res: Response) => {
 });
 
 /**
+ * Get complete student profile (Student 360 view)
+ * GET /api/students/:id/complete-profile
+ */
+export const getCompleteProfile = asyncHandler(async (req: Request, res: Response) => {
+  const { id } = (req.params as any);
+  const student = await studentService.getCompleteProfile(id);
+
+  res.json({
+    success: true,
+    data: student,
+  });
+});
+
+/**
  * Create student
  * POST /api/students
  */

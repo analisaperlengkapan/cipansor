@@ -241,6 +241,123 @@ export class StudentService {
   }
 
   /**
+   * Get complete student profile (Student 360 view).
+   * Aggregate summaries only — detailed counseling/medical data stays behind
+   * their own permission-guarded endpoints.
+   */
+  async getCompleteProfile(id: string) {
+    const student = await prisma.student.findFirst({
+      where: { id, deletedAt: null },
+      include: {
+        user: {
+          select: { id: true, name: true, email: true, isActive: true },
+        },
+        unit: {
+          select: { id: true, name: true, type: true },
+        },
+        enrollments: {
+          include: {
+            class: {
+              include: {
+                academicYear: { select: { id: true, name: true } },
+              },
+            },
+          },
+          orderBy: { enrolledAt: 'desc' },
+        },
+        parents: {
+          include: {
+            parent: { select: { id: true, name: true, phone: true, email: true } },
+          },
+        },
+      },
+    });
+
+    if (!student) {
+      throw Errors.notFound('Student');
+    }
+
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const [grades, attendanceByStatus, violationAgg, rewardAgg] = await Promise.all([
+      prisma.grade.findMany({
+        where: { studentId: id },
+        orderBy: { gradedAt: 'desc' },
+        take: 40,
+        select: { score: true, maxScore: true, percentage: true, subjectId: true },
+      }),
+      prisma.attendance.groupBy({
+        by: ['status'],
+        where: { studentId: id, date: { gte: thirtyDaysAgo } },
+        _count: { id: true },
+      }),
+      prisma.violation.aggregate({
+        where: { studentId: id },
+        _count: { id: true },
+        _sum: { points: true },
+      }),
+      prisma.reward.aggregate({
+        where: { studentId: id },
+        _count: { id: true },
+        _sum: { points: true },
+      }),
+    ]);
+
+    // Academic summary — normalize each grade to a percentage
+    const toPercentage = (g: (typeof grades)[number]) => {
+      if (g.percentage !== null) return Number(g.percentage);
+      const max = Number(g.maxScore) || 100;
+      return (Number(g.score) / max) * 100;
+    };
+    const percentages = grades.map(toPercentage);
+    const average = (values: number[]) =>
+      values.length > 0 ? values.reduce((sum, v) => sum + v, 0) / values.length : 0;
+    const averageGrade = Math.round(average(percentages) * 100) / 100;
+
+    // Trend: newer half vs older half of the recent grades (>2 point swing)
+    let trend: 'UP' | 'DOWN' | 'STABLE' = 'STABLE';
+    if (percentages.length >= 4) {
+      const mid = Math.floor(percentages.length / 2);
+      const diff = average(percentages.slice(0, mid)) - average(percentages.slice(mid));
+      if (diff > 2) trend = 'UP';
+      else if (diff < -2) trend = 'DOWN';
+    }
+
+    // Attendance summary (last 30 days)
+    const countFor = (status: string) =>
+      attendanceByStatus.find((row) => row.status === status)?._count.id ?? 0;
+    const totalDays = attendanceByStatus.reduce((sum, row) => sum + row._count.id, 0);
+    const presentDays = countFor('PRESENT');
+
+    return {
+      ...student,
+      parents: student.parents.map((link) => ({
+        id: link.parent.id,
+        name: link.parent.name,
+        relation: link.relation,
+        phone: link.parent.phone,
+        email: link.parent.email,
+      })),
+      academicSummary: {
+        averageGrade,
+        totalSubjects: new Set(grades.map((g) => g.subjectId)).size,
+        trend,
+      },
+      attendanceSummary: {
+        totalDays,
+        presentDays,
+        percentage: totalDays > 0 ? Math.round((presentDays / totalDays) * 100) : 0,
+      },
+      behaviorSummary: {
+        totalViolations: violationAgg._count.id,
+        totalRewards: rewardAgg._count.id,
+        points: (rewardAgg._sum.points ?? 0) - (violationAgg._sum.points ?? 0),
+      },
+    };
+  }
+
+  /**
    * Create new student (with user account)
    */
   async create(input: CreateStudentInput) {

@@ -19,6 +19,18 @@ vi.mock('@/lib/prisma', () => ({
     unit: {
       findFirst: vi.fn(),
     },
+    grade: {
+      findMany: vi.fn(),
+    },
+    attendance: {
+      groupBy: vi.fn(),
+    },
+    violation: {
+      aggregate: vi.fn(),
+    },
+    reward: {
+      aggregate: vi.fn(),
+    },
     $transaction: vi.fn((callback) => callback(prisma)),
   },
 }));
@@ -126,6 +138,112 @@ describe('StudentService', () => {
       (prisma.student.findFirst as any).mockResolvedValue({ id: 'existing' });
 
       await expect(service.create(mockInput)).rejects.toThrow('NIS already exists');
+    });
+  });
+
+  describe('getCompleteProfile', () => {
+    const mockStudent = {
+      id: 'student-1',
+      user: { id: 'user-1', name: 'Santri A', email: 'a@x.id', isActive: true },
+      unit: { id: 'unit-1', name: 'SMP IT', type: 'SMP_IT' },
+      enrollments: [],
+      parents: [
+        {
+          relation: 'father',
+          parent: { id: 'parent-1', name: 'Ayah A', phone: '0812', email: 'ayah@x.id' },
+        },
+      ],
+    };
+
+    it('should throw not found for missing student', async () => {
+      (prisma.student.findFirst as any).mockResolvedValue(null);
+
+      await expect(service.getCompleteProfile('missing')).rejects.toThrow();
+    });
+
+    it('should aggregate academic, attendance and behavior summaries', async () => {
+      (prisma.student.findFirst as any).mockResolvedValue(mockStudent);
+      // Newest-first grades: newer half avg 90, older half avg 70 -> UP
+      (prisma.grade.findMany as any).mockResolvedValue([
+        { percentage: 90, score: 90, maxScore: 100, subjectId: 'sub-1' },
+        { percentage: 90, score: 90, maxScore: 100, subjectId: 'sub-2' },
+        { percentage: null, score: 35, maxScore: 50, subjectId: 'sub-1' }, // 70%
+        { percentage: 70, score: 70, maxScore: 100, subjectId: 'sub-2' },
+      ]);
+      (prisma.attendance.groupBy as any).mockResolvedValue([
+        { status: 'PRESENT', _count: { id: 18 } },
+        { status: 'SICK', _count: { id: 2 } },
+      ]);
+      (prisma.violation.aggregate as any).mockResolvedValue({
+        _count: { id: 3 },
+        _sum: { points: 15 },
+      });
+      (prisma.reward.aggregate as any).mockResolvedValue({
+        _count: { id: 5 },
+        _sum: { points: 40 },
+      });
+
+      const result = await service.getCompleteProfile('student-1');
+
+      expect(result.academicSummary).toEqual({
+        averageGrade: 80,
+        totalSubjects: 2,
+        trend: 'UP',
+      });
+      expect(result.attendanceSummary).toEqual({
+        totalDays: 20,
+        presentDays: 18,
+        percentage: 90,
+      });
+      expect(result.behaviorSummary).toEqual({
+        totalViolations: 3,
+        totalRewards: 5,
+        points: 25,
+      });
+      expect(result.parents).toEqual([
+        {
+          id: 'parent-1',
+          name: 'Ayah A',
+          relation: 'father',
+          phone: '0812',
+          email: 'ayah@x.id',
+        },
+      ]);
+      // Counseling/medical data must never leak through this endpoint
+      expect(result).not.toHaveProperty('counselingSessions');
+      expect(result).not.toHaveProperty('medicalRecords');
+    });
+
+    it('should fall back to zeroes when the student has no records', async () => {
+      (prisma.student.findFirst as any).mockResolvedValue({ ...mockStudent, parents: [] });
+      (prisma.grade.findMany as any).mockResolvedValue([]);
+      (prisma.attendance.groupBy as any).mockResolvedValue([]);
+      (prisma.violation.aggregate as any).mockResolvedValue({
+        _count: { id: 0 },
+        _sum: { points: null },
+      });
+      (prisma.reward.aggregate as any).mockResolvedValue({
+        _count: { id: 0 },
+        _sum: { points: null },
+      });
+
+      const result = await service.getCompleteProfile('student-1');
+
+      expect(result.academicSummary).toEqual({
+        averageGrade: 0,
+        totalSubjects: 0,
+        trend: 'STABLE',
+      });
+      expect(result.attendanceSummary).toEqual({
+        totalDays: 0,
+        presentDays: 0,
+        percentage: 0,
+      });
+      expect(result.behaviorSummary).toEqual({
+        totalViolations: 0,
+        totalRewards: 0,
+        points: 0,
+      });
     });
   });
 });

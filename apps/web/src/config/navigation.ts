@@ -557,6 +557,11 @@ const yayasanNavigation: NavGroup[] = [
         icon: Receipt,
       },
       {
+        title: "Verifikasi Pembayaran",
+        href: "/finance/verification",
+        icon: Receipt,
+      },
+      {
         title: "BOS/BOP",
         href: "/finance/bos",
         icon: Wallet,

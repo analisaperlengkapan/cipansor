@@ -416,6 +416,111 @@ router.post(
 
 /**
  * @swagger
+ * /api/finance/invoices/{id}/payment-proof:
+ *   post:
+ *     summary: Submit a transfer proof for an invoice (parent/student)
+ *     description: Creates a payment in PENDING_VERIFICATION. The invoice and ledger are only updated after the Tata Usaha two-step verification reaches FINAL_APPROVED.
+ *     tags: [Finance]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [amount, method, proofUrl]
+ *             properties:
+ *               amount:
+ *                 type: number
+ *               method:
+ *                 type: string
+ *               referenceNo:
+ *                 type: string
+ *               proofUrl:
+ *                 type: string
+ *               notes:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Proof submitted, awaiting verification
+ */
+router.post(
+  '/invoices/:id/payment-proof',
+  authorize(UserRole.PARENT, UserRole.STUDENT),
+  controller.submitPaymentProof
+);
+
+/**
+ * @swagger
+ * /api/finance/payments/verifications:
+ *   get:
+ *     summary: List payments awaiting verification (TU queue)
+ *     tags: [Finance]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [PENDING_VERIFICATION, TU_APPROVED, FINAL_APPROVED, REJECTED]
+ *     responses:
+ *       200:
+ *         description: Paginated verification queue (unit-scoped)
+ */
+router.get(
+  '/payments/verifications',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  controller.getPendingVerifications
+);
+
+/**
+ * @swagger
+ * /api/finance/payments/{id}/verify:
+ *   post:
+ *     summary: Advance the payment verification state machine
+ *     description: TU_APPROVE (staff/admin) then FINAL_APPROVE (admin only, different user) posts the payment to the invoice and ledger; REJECT requires a reason. Idempotent — invalid transitions are refused.
+ *     tags: [Finance]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [action]
+ *             properties:
+ *               action:
+ *                 type: string
+ *                 enum: [TU_APPROVE, FINAL_APPROVE, REJECT]
+ *               rejectionReason:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Updated payment
+ */
+router.post(
+  '/payments/:id/verify',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  controller.verifyPayment
+);
+
+/**
+ * @swagger
  * /api/finance/payments/{id}:
  *   get:
  *     summary: Get payment by ID

@@ -292,6 +292,7 @@ model User {
   twoFactorSecretPending String?   @map("two_factor_secret_pending")
   twoFactorRecoveryCodes String[]  @default([]) @map("two_factor_recovery_codes")
   lastLoginAt            DateTime? @map("last_login_at")
+  fcmToken               String?   @map("fcm_token") // Push token aplikasi mobile
   createdAt              DateTime  @default(now()) @map("created_at")
   updatedAt              DateTime  @updatedAt @map("updated_at")
   deletedAt              DateTime? @map("deleted_at")
@@ -376,6 +377,8 @@ model User {
   // PAUD & Enhancement relations
   paudAssessments                   PAUDDevelopmentAssessment[] @relation("PAUDAssessor")
   paudNarrativeReports              PAUDNarrativeReport[]       @relation("PAUDReportCreator")
+  tuVerifiedPayments                Payment[]                   @relation("PaymentTUVerifier")
+  finalVerifiedPayments             Payment[]                   @relation("PaymentFinalVerifier")
   dailyStudentReports               DailyStudentReport[]        @relation("DailyReportCreator")
   murojaahRecords                   MurojaahRecord[]            @relation("MurojaahRecorder")
   simaanExaminer                    SimaanExaminer[]
@@ -1368,23 +1371,41 @@ model Invoice {
   @@map("invoices")
 }
 
+/// Status verifikasi bukti pembayaran (maker-checker Tata Usaha)
+enum PaymentVerificationStatus {
+  PENDING_VERIFICATION // Bukti diunggah, menunggu verifikasi TU
+  TU_APPROVED // Diverifikasi Tata Usaha, menunggu persetujuan akhir
+  FINAL_APPROVED // Sah — tercatat ke tagihan & jurnal
+  REJECTED // Ditolak (lihat rejectionReason)
+}
+
 /// Payment - Pembayaran
 model Payment {
-  id          String        @id @default(uuid())
-  invoiceId   String        @map("invoice_id")
-  amount      Decimal       @db.Decimal(15, 2)
-  method      PaymentMethod
-  referenceNo String?       @map("reference_no") // Nomor referensi bank/transfer
-  paidAt      DateTime      @default(now()) @map("paid_at")
-  notes       String?
-  createdAt   DateTime      @default(now()) @map("created_at")
-  updatedAt   DateTime      @updatedAt @map("updated_at")
+  id                 String                    @id @default(uuid())
+  invoiceId          String                    @map("invoice_id")
+  amount             Decimal                   @db.Decimal(15, 2)
+  method             PaymentMethod
+  referenceNo        String?                   @map("reference_no") // Nomor referensi bank/transfer
+  proofUrl           String?                   @map("proof_url") // Bukti transfer (upload ortu)
+  verificationStatus PaymentVerificationStatus @default(FINAL_APPROVED) @map("verification_status")
+  rejectionReason    String?                   @map("rejection_reason")
+  tuVerifiedAt       DateTime?                 @map("tu_verified_at")
+  tuVerifiedById     String?                   @map("tu_verified_by_id")
+  finalVerifiedAt    DateTime?                 @map("final_verified_at")
+  finalVerifiedById  String?                   @map("final_verified_by_id")
+  paidAt             DateTime                  @default(now()) @map("paid_at")
+  notes              String?
+  createdAt          DateTime                  @default(now()) @map("created_at")
+  updatedAt          DateTime                  @updatedAt @map("updated_at")
 
   // Relations
-  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  invoice         Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  tuVerifiedBy    User?   @relation("PaymentTUVerifier", fields: [tuVerifiedById], references: [id])
+  finalVerifiedBy User?   @relation("PaymentFinalVerifier", fields: [finalVerifiedById], references: [id])
 
   @@index([invoiceId])
   @@index([paidAt])
+  @@index([verificationStatus])
   @@map("payments")
 }
 

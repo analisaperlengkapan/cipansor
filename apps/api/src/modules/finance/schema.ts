@@ -90,6 +90,21 @@ export type CreateInvoiceDto = z.infer<typeof createInvoiceSchema>;
 export type UpdateInvoiceDto = z.infer<typeof updateInvoiceSchema>;
 export type QueryInvoiceDto = z.infer<typeof queryInvoiceSchema>;
 
+export const submitPaymentProofSchema = z.object({
+  amount: z.number().positive('Amount must be positive'),
+  method: z.nativeEnum(PaymentMethod),
+  referenceNo: z.string().max(100).optional(),
+  proofUrl: z.string().url('Invalid proof URL'),
+  notes: z.string().max(500).optional(),
+});
+export type SubmitPaymentProofDto = z.infer<typeof submitPaymentProofSchema>;
+
+export const verifyPaymentSchema = z.object({
+  action: z.enum(['TU_APPROVE', 'FINAL_APPROVE', 'REJECT']),
+  rejectionReason: z.string().max(500).optional(),
+});
+export type VerifyPaymentDto = z.infer<typeof verifyPaymentSchema>;
+
 export type CreatePaymentDto = z.infer<typeof createPaymentSchema>;
 export type QueryPaymentDto = z.infer<typeof queryPaymentSchema>;
 

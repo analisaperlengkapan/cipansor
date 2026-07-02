@@ -17,6 +17,7 @@ import { whatsAppService } from './whatsapp.service';
 import { notificationScheduler } from './scheduler.service';
 import { z } from 'zod';
 import { UserRole } from '@prisma/client';
+import { prisma } from '../../lib/prisma';
 
 // Constants
 const ADMIN_ROLES = [UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN];
@@ -257,6 +258,28 @@ export async function deleteAnnouncement(req: Request, res: Response, next: Next
   try {
     await service.deleteAnnouncement((req.params as any).id);
     res.json({ success: true, message: 'Announcement deleted' });
+  } catch (error) {
+    next(error);
+  }
+}
+
+// ==================== MOBILE PUSH (FCM) ====================
+
+export async function updateFcmToken(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { token } = req.body as { token?: string | null };
+    if (token !== null && (typeof token !== 'string' || token.length < 10 || token.length > 4096)) {
+      res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'token must be a string (or null to clear)' },
+      });
+      return;
+    }
+    await prisma.user.update({
+      where: { id: req.user!.sub },
+      data: { fcmToken: token },
+    });
+    res.json({ success: true, message: token ? 'FCM token registered' : 'FCM token cleared' });
   } catch (error) {
     next(error);
   }

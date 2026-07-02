@@ -88,6 +88,16 @@ export class SchedulerService {
       () => this.sendMonthlyReport(),
       3600000
     );
+
+    // Monthly SPP reminder to parents - 1st of month at 6 AM
+    // (in-app + WhatsApp via the configured provider)
+    this.registerTask(
+      'monthly-spp-reminder',
+      'Monthly SPP Parent Reminder',
+      '0 6 1 * *',
+      () => this.sendMonthlySppReminders(),
+      3600000
+    );
   }
 
   private static registerTask(
@@ -224,12 +234,114 @@ export class SchedulerService {
       case 'monthly-report':
         await this.sendMonthlyReport();
         break;
+      case 'monthly-spp-reminder':
+        await this.sendMonthlySppReminders();
+        break;
       default:
         throw new Error('Unknown task: ' + taskId);
     }
   }
 
   // ============== TASK HANDLERS ==============
+
+  /**
+   * Awal bulan: ingatkan ORANG TUA atas tagihan SPP bulan berjalan yang
+   * belum lunas — in-app + WhatsApp (provider dikonfigurasi via env;
+   * SIMULATOR hanya mencatat log).
+   */
+  private static async sendMonthlySppReminders(): Promise<void> {
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const nextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+
+    const invoices = await prisma.invoice.findMany({
+      where: {
+        status: { in: [PaymentStatus.PENDING, PaymentStatus.PARTIAL] },
+        dueDate: { gte: monthStart, lt: nextMonthStart },
+        paymentType: { code: 'SPP' },
+      },
+      include: {
+        student: {
+          include: {
+            user: { select: { name: true } },
+            parents: {
+              include: {
+                parent: { select: { id: true, name: true, phone: true } },
+              },
+            },
+          },
+        },
+        paymentType: { select: { name: true } },
+      },
+      take: 500,
+    });
+
+    if (invoices.length === 0) {
+      logger.info('Monthly SPP reminder: no open SPP invoices this month');
+      return;
+    }
+
+    const notifications: Prisma.NotificationCreateManyInput[] = [];
+    let waSent = 0;
+
+    for (const invoice of invoices) {
+      const remaining = Number(invoice.amount) - Number(invoice.paidAmount);
+      const amountText = 'Rp ' + remaining.toLocaleString('id-ID');
+      const { dbType, originalType } = mapTypeToPrisma(NotificationType.PAYMENT);
+
+      for (const link of invoice.student.parents) {
+        notifications.push({
+          userId: link.parent.id,
+          type: dbType as NotificationType,
+          title: 'Tagihan SPP Bulan Ini',
+          message:
+            'Tagihan ' +
+            invoice.paymentType.name +
+            ' untuk ' +
+            invoice.student.user.name +
+            ' sebesar ' +
+            amountText +
+            ' jatuh tempo ' +
+            invoice.dueDate.toLocaleDateString('id-ID') +
+            '.',
+          data: {
+            ...(originalType ? { originalType } : {}),
+            priority: 'HIGH',
+            channels: ['IN_APP', 'WHATSAPP'],
+            recipientType: 'INDIVIDUAL',
+            invoiceId: invoice.id,
+          },
+          scheduledAt: null,
+        });
+
+        if (link.parent.phone) {
+          try {
+            await whatsAppService.sendPaymentReminder({
+              parentPhone: link.parent.phone,
+              parentName: link.parent.name,
+              studentName: invoice.student.user.name,
+              amount: remaining,
+              dueDate: invoice.dueDate,
+            });
+            waSent++;
+          } catch (error) {
+            logger.error('Monthly SPP WA reminder failed for ' + link.parent.id + ':', error);
+          }
+        }
+      }
+    }
+
+    if (notifications.length > 0) {
+      await prisma.notification.createMany({ data: notifications });
+    }
+    logger.info(
+      'Monthly SPP reminder: ' +
+        notifications.length +
+        ' in-app notifications, ' +
+        waSent +
+        ' WhatsApp messages'
+    );
+  }
 
   private static async sendPaymentReminders(): Promise<void> {
     const now = new Date();

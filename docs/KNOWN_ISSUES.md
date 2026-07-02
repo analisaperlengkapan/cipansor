@@ -133,16 +133,19 @@ coverage matrix.
 - **Web role alignment.** `apps/web/middleware.ts`, `src/config/navigation.ts`,
   `src/stores/auth.ts` still use the legacy `UserRole` vocabulary; align with
   backend `RoleCode` + permissions.
-- **Replace remaining FE mock data** with real API calls. Done so far:
-  `foundation/dashboard` (admissions KPI + per-unit risk),
-  `foundation/finance/consolidation` (real per-unit financials, cash position,
-  6-month trend), `analytics/education` (cross-unit KPI + jenjang distribution
-  via `/analytics/benchmark/compare`, enrollment trend via `/analytics/students`),
-  `attendance/heatmap` (per-class daily data via `/attendance/calendar/:classId`),
-  and `parent/buku-penghubung` Weekly Progress (new
-  `/parent/children/:studentId/weekly-progress` aggregation). Still mocked (each
-  needs a dedicated backend aggregation endpoint): `analytics/parent-engagement`,
-  `homeroom/performance`, `alumni/sanad`, `foundation/accreditation/readiness`.
+- **Replace remaining FE mock data** with real API calls. ✅ **DONE — all
+  previously-mocked pages are now real-API:** `foundation/dashboard`,
+  `foundation/finance/consolidation`, `analytics/education`,
+  `attendance/heatmap`, `parent/buku-penghubung` Weekly Progress,
+  `analytics/parent-engagement` (new `/analytics/parent-engagement`),
+  `alumni/sanad` (new `/sanad/tree` transmission tree),
+  `homeroom/performance` (new `/homeroom/performance-overview`), and
+  `foundation/accreditation/readiness` (new
+  `/foundation/accreditation/readiness`). Also implemented the missing backend
+  for the pre-existing `useStudentCompleteProfile` hook
+  (`/students/:id/complete-profile`, Student 360 aggregate — counseling and
+  medical details deliberately excluded; they stay behind their own
+  permission-guarded endpoints).
 - **Web unit/component tests.** Add a jsdom + React Testing Library vitest project
   for `apps/web/src/**` (currently only e2e-helper tests exist).
 - **Comprehensive Playwright e2e** across all routes (nav, CRUD, every
@@ -151,6 +154,34 @@ coverage matrix.
   ✅ takhosus certificate-eligibility notification are now wired (via the
   `notification:send` event bus). Remaining: accounting per-unit config fallback
   (deferred until `AccountCode` gains a `unitId` column — see the in-code note).
+
+## 📋 Disposition of the auto-generated PR backlog (#278–#298)
+
+A review of the 20 open PRs (2026-07) found: 18 failed CI (build/lint/test/e2e),
+massive duplication (the same feature implemented 3–5× across PRs — e.g.
+`marketing/roi.service.ts` rewritten by 5 PRs), 4 PRs editing `schema.prisma`
+with **zero migrations**, and systematically overstated descriptions. Verdict
+and follow-through:
+
+- **Rebuilt properly on this branch (verified, tested):** Student 360
+  complete-profile (#281/#283/#284/#285), parent-engagement analytics
+  (#282/#286/#289), sanad transmission tree (#278/#286/#294 part),
+  homeroom performance + accreditation readiness (#286), cash-flow page fix
+  (#279 — its restyle dropped `MainLayout`; we kept the layout and fixed the
+  dead export button instead).
+- **Already existed on `main`; PR variants rejected:** talenta `syncFromPKG`,
+  marketing ROI service, perencanaan budget-realization — the competing PR
+  rewrites all failed CI.
+- **Rejected as unsafe:** #281's `responsibleId: risk.ownerId` on auto audit
+  findings (`Risk.ownerId` is documented as "User **or Department**"; blind
+  assignment can violate the `AuditFinding.responsibleId → User` FK).
+- **Deferred (rebuild from scratch if wanted, with real migrations):** the
+  large feature sets in #294–#298 (E-Simaan, digital library, facility
+  ticketing, alumni placement, practicum/qiyadah/turats, admissions+CBT
+  bridge, tahfidz prediction/gamification, Flutter mobile + FCM/WhatsApp).
+  All fail CI and change the schema without migrations.
+- **#293 (demo seeding)** is the only non-generated PR; left open — needs its
+  e2e failure fixed by its author before merge.
 
 ## How to contribute a build fix
 

@@ -329,3 +329,35 @@ export interface ParentEngagementStats {
   };
   lowEngagement: ParentEngagementLowItem[];
 }
+
+// ===== Homeroom (Wali Kelas) Performance =====
+
+export interface HomeroomPerformanceMetrics {
+  /** % of attendance records marked PRESENT (last 30 days). */
+  attendanceRate: number;
+  /** % of weekdays with attendance recorded for the class (last 30 days). */
+  recordingDiscipline: number;
+  /** Average grade percentage of the class (last 90 days). */
+  academicAverage: number;
+  /** Tahfidz records per student in the last 30 days. */
+  tahfidzActivityPerStudent: number;
+  /** Rewards minus violations recorded in the last 30 days. */
+  behaviorBalance: number;
+}
+
+export interface HomeroomPerformanceItem {
+  classId: string;
+  className: string;
+  unitName: string;
+  teacherId: string;
+  teacherName: string;
+  studentCount: number;
+  metrics: HomeroomPerformanceMetrics;
+  /** Weighted composite (0-100) of the measurable metrics. */
+  overallScore: number;
+}
+
+export interface HomeroomPerformanceOverview {
+  items: HomeroomPerformanceItem[];
+  averageScore: number;
+}

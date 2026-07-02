@@ -638,6 +638,206 @@ export class HomeroomService {
   /**
    * Record behavior
    */
+  /**
+   * Cross-class homeroom (wali kelas) performance overview.
+   * Composite of measurable signals only: attendance quality + recording
+   * discipline (30d), academic average (90d), tahfidz activity (30d) and
+   * behavior balance. Unit-scoped for non-super-admins.
+   */
+  async getPerformanceOverview(currentUser: AuthenticatedUser, unitId?: string) {
+    const effectiveUnitId =
+      currentUser.role === UserRole.SUPER_ADMIN ? unitId : (currentUser.unitId ?? 'none');
+
+    const classes = await prisma.class.findMany({
+      where: {
+        deletedAt: null,
+        homeroomTeacherId: { not: null },
+        academicYear: { isActive: true },
+        ...(effectiveUnitId ? { unitId: effectiveUnitId } : {}),
+      },
+      select: {
+        id: true,
+        name: true,
+        unit: { select: { name: true } },
+        homeroomTeacher: {
+          select: { id: true, user: { select: { name: true } } },
+        },
+        enrollments: {
+          where: { status: 'active' },
+          select: { studentId: true },
+        },
+      },
+      orderBy: { name: 'asc' },
+    });
+
+    if (classes.length === 0) return { items: [], averageScore: 0 };
+
+    const classIds = classes.map((c) => c.id);
+    const studentToClass = new Map<string, string>();
+    for (const cls of classes) {
+      for (const enrollment of cls.enrollments) {
+        studentToClass.set(enrollment.studentId, cls.id);
+      }
+    }
+    const studentIds = [...studentToClass.keys()];
+
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const ninetyDaysAgo = new Date();
+    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+
+    const [attendanceByStatus, attendanceDays, gradeByStudent, tahfidzByStudent, violationByStudent, rewardByStudent] =
+      await Promise.all([
+        prisma.attendance.groupBy({
+          by: ['classId', 'status'],
+          where: { classId: { in: classIds }, date: { gte: thirtyDaysAgo } },
+          _count: { id: true },
+        }),
+        prisma.attendance.groupBy({
+          by: ['classId', 'date'],
+          where: { classId: { in: classIds }, date: { gte: thirtyDaysAgo } },
+          _count: { id: true },
+        }),
+        prisma.grade.groupBy({
+          by: ['studentId'],
+          where: { studentId: { in: studentIds }, gradedAt: { gte: ninetyDaysAgo } },
+          _avg: { percentage: true },
+        }),
+        prisma.tahfidzRecord.groupBy({
+          by: ['studentId'],
+          where: { studentId: { in: studentIds }, recordedAt: { gte: thirtyDaysAgo } },
+          _count: { id: true },
+        }),
+        prisma.violation.groupBy({
+          by: ['studentId'],
+          where: { studentId: { in: studentIds }, occurredAt: { gte: thirtyDaysAgo } },
+          _count: { id: true },
+        }),
+        prisma.reward.groupBy({
+          by: ['studentId'],
+          where: { studentId: { in: studentIds }, givenAt: { gte: thirtyDaysAgo } },
+          _count: { id: true },
+        }),
+      ]);
+
+    // Weekdays in the last 30 days = expected school days for recording discipline
+    let weekdays = 0;
+    for (let i = 0; i < 30; i++) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const day = d.getDay();
+      if (day !== 0 && day !== 6) weekdays++;
+    }
+
+    const perClass = new Map<
+      string,
+      {
+        present: number;
+        totalAttendance: number;
+        recordedDays: number;
+        gradeSum: number;
+        gradeCount: number;
+        tahfidzCount: number;
+        violations: number;
+        rewards: number;
+      }
+    >();
+    const bucket = (classId: string) => {
+      let entry = perClass.get(classId);
+      if (!entry) {
+        entry = {
+          present: 0,
+          totalAttendance: 0,
+          recordedDays: 0,
+          gradeSum: 0,
+          gradeCount: 0,
+          tahfidzCount: 0,
+          violations: 0,
+          rewards: 0,
+        };
+        perClass.set(classId, entry);
+      }
+      return entry;
+    };
+
+    for (const row of attendanceByStatus) {
+      const entry = bucket(row.classId);
+      entry.totalAttendance += row._count.id;
+      if (row.status === 'PRESENT') entry.present += row._count.id;
+    }
+    for (const row of attendanceDays) {
+      bucket(row.classId).recordedDays++;
+    }
+    for (const row of gradeByStudent) {
+      const classId = studentToClass.get(row.studentId);
+      if (!classId || row._avg.percentage === null) continue;
+      const entry = bucket(classId);
+      entry.gradeSum += Number(row._avg.percentage);
+      entry.gradeCount++;
+    }
+    for (const row of tahfidzByStudent) {
+      const classId = studentToClass.get(row.studentId);
+      if (classId) bucket(classId).tahfidzCount += row._count.id;
+    }
+    for (const row of violationByStudent) {
+      const classId = studentToClass.get(row.studentId);
+      if (classId) bucket(classId).violations += row._count.id;
+    }
+    for (const row of rewardByStudent) {
+      const classId = studentToClass.get(row.studentId);
+      if (classId) bucket(classId).rewards += row._count.id;
+    }
+
+    const round1 = (v: number) => Math.round(v * 10) / 10;
+    const items = classes.map((cls) => {
+      const stats = perClass.get(cls.id);
+      const studentCount = cls.enrollments.length;
+
+      const attendanceRate =
+        stats && stats.totalAttendance > 0 ? (stats.present / stats.totalAttendance) * 100 : 0;
+      const recordingDiscipline =
+        stats && weekdays > 0 ? Math.min((stats.recordedDays / weekdays) * 100, 100) : 0;
+      const academicAverage =
+        stats && stats.gradeCount > 0 ? stats.gradeSum / stats.gradeCount : 0;
+      const tahfidzActivityPerStudent =
+        stats && studentCount > 0 ? stats.tahfidzCount / studentCount : 0;
+      const behaviorBalance = stats ? stats.rewards - stats.violations : 0;
+
+      // Tahfidz component: ~20 records/student/month counts as full marks
+      const tahfidzScore = Math.min(tahfidzActivityPerStudent / 20, 1) * 100;
+      const overallScore = round1(
+        attendanceRate * 0.35 +
+          recordingDiscipline * 0.15 +
+          academicAverage * 0.3 +
+          tahfidzScore * 0.2
+      );
+
+      return {
+        classId: cls.id,
+        className: cls.name,
+        unitName: cls.unit.name,
+        teacherId: cls.homeroomTeacher!.id,
+        teacherName: cls.homeroomTeacher!.user.name,
+        studentCount,
+        metrics: {
+          attendanceRate: round1(attendanceRate),
+          recordingDiscipline: round1(recordingDiscipline),
+          academicAverage: round1(academicAverage),
+          tahfidzActivityPerStudent: round1(tahfidzActivityPerStudent),
+          behaviorBalance,
+        },
+        overallScore,
+      };
+    });
+
+    const averageScore =
+      items.length > 0
+        ? round1(items.reduce((sum, item) => sum + item.overallScore, 0) / items.length)
+        : 0;
+
+    return { items, averageScore };
+  }
+
   async recordBehavior(
     input: {
       studentId: string;

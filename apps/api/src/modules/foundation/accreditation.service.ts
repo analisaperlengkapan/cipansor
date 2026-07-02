@@ -464,6 +464,38 @@ export async function getAccreditationDashboard(unitId: string) {
   };
 }
 
+/**
+ * Cross-unit accreditation readiness overview for the foundation dashboard.
+ * Reuses the per-unit dashboard computation for every active unit.
+ */
+export async function getAccreditationReadinessOverview() {
+  const units = await prisma.unit.findMany({
+    where: { deletedAt: null },
+    select: { id: true },
+    orderBy: { name: 'asc' },
+  });
+
+  const dashboards = await Promise.all(units.map((u) => getAccreditationDashboard(u.id)));
+
+  const items = dashboards.map((dashboard) => ({
+    unitId: dashboard.unit.id,
+    unitName: dashboard.unit.name,
+    npsn: dashboard.unit.npsn,
+    currentGrade: dashboard.unit.currentAccreditation,
+    overallReadiness: dashboard.overallReadiness,
+    standards: dashboard.readinessScores,
+    statistics: dashboard.statistics,
+    recommendedActions: dashboard.recommendedActions,
+  }));
+
+  const averageReadiness =
+    items.length > 0
+      ? Math.round(items.reduce((sum, item) => sum + item.overallReadiness, 0) / items.length)
+      : 0;
+
+  return { units: items, averageReadiness };
+}
+
 export async function simulateAccreditationScore(
   unitId: string,
   manualScores: Record<string, number>

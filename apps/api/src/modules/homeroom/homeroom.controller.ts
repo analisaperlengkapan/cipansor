@@ -12,6 +12,20 @@ export class HomeroomController {
     }
   }
 
+  async getPerformanceOverview(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { unitId } = (req.query as any);
+      const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
+      const overview = await homeroomService.getPerformanceOverview(
+        user,
+        unitId as string | undefined
+      );
+      res.json({ data: overview });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async getClassDashboard(req: Request, res: Response, next: NextFunction) {
     try {
       const { classId } = (req.params as any);

@@ -31,6 +31,7 @@ vi.mock('../../lib/prisma', () => ({
     },
     journalEntry: {
       aggregate: vi.fn(),
+      findMany: vi.fn(),
     },
   },
 }));
@@ -285,6 +286,57 @@ describe('Perencanaan Service', () => {
       const activities = result.objectives[0].activities;
       expect(activities[0].realization).toBe(300000); // 500k * (600k / 1m)
       expect(activities[1].realization).toBe(200000); // 500k * (400k / 1m)
+    });
+  });
+
+  describe('getPlanRealizationTrend', () => {
+    it('buckets journal movements per month by normal balance', async () => {
+      vi.mocked(prisma.strategicPlan.findUnique).mockResolvedValue({
+        id: 'plan-1',
+        unitId: 'unit-1',
+        startDate: new Date('2026-01-01'),
+        endDate: new Date('2026-06-30'),
+        objectives: [
+          {
+            activities: [
+              {
+                budgetRel: {
+                  accountId: 'acc-exp',
+                  account: { normalBalance: 'DEBIT' },
+                },
+              },
+            ],
+          },
+        ],
+      } as any);
+      vi.mocked(prisma.journalEntry.findMany).mockResolvedValue([
+        { accountId: 'acc-exp', date: new Date('2026-01-15'), debit: 100000, credit: 0 },
+        { accountId: 'acc-exp', date: new Date('2026-01-20'), debit: 50000, credit: 10000 },
+        { accountId: 'acc-exp', date: new Date('2026-03-05'), debit: 75000, credit: 0 },
+      ] as any);
+
+      const result = await perencanaanService.getPlanRealizationTrend('plan-1');
+
+      expect(result).toEqual({
+        planId: 'plan-1',
+        trend: [
+          { month: '2026-01', realization: 140000 },
+          { month: '2026-03', realization: 75000 },
+        ],
+      });
+    });
+
+    it('returns empty trend when the plan has no budget accounts', async () => {
+      vi.mocked(prisma.strategicPlan.findUnique).mockResolvedValue({
+        id: 'plan-1',
+        unitId: 'unit-1',
+        startDate: new Date('2026-01-01'),
+        endDate: new Date('2026-06-30'),
+        objectives: [],
+      } as any);
+
+      const result = await perencanaanService.getPlanRealizationTrend('plan-1');
+      expect(result).toEqual({ planId: 'plan-1', trend: [] });
     });
   });
 });

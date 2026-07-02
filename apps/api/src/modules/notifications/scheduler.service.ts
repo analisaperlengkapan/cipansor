@@ -98,6 +98,15 @@ export class SchedulerService {
       () => this.sendMonthlySppReminders(),
       3600000
     );
+
+    // Budget overrun alert - Mondays at 7 AM
+    this.registerTask(
+      'budget-overrun-alert',
+      'Strategic Plan Budget Overrun Alert',
+      '0 7 * * 1',
+      () => this.sendBudgetOverrunAlerts(),
+      3600000
+    );
   }
 
   private static registerTask(
@@ -237,6 +246,9 @@ export class SchedulerService {
       case 'monthly-spp-reminder':
         await this.sendMonthlySppReminders();
         break;
+      case 'budget-overrun-alert':
+        await this.sendBudgetOverrunAlerts();
+        break;
       default:
         throw new Error('Unknown task: ' + taskId);
     }
@@ -249,6 +261,105 @@ export class SchedulerService {
    * belum lunas — in-app + WhatsApp (provider dikonfigurasi via env;
    * SIMULATOR hanya mencatat log).
    */
+  /**
+   * Alert unit admins when an active strategic plan's account-level
+   * realization exceeds 120% of its budget (planning discipline signal —
+   * same attribution caveats as the plan detail's realization figure).
+   */
+  private static async sendBudgetOverrunAlerts(): Promise<void> {
+    const plans = await prisma.strategicPlan.findMany({
+      where: {
+        status: { in: ['APPROVED', 'IN_PROGRESS'] },
+        budget: { not: null },
+      },
+      include: {
+        objectives: {
+          include: {
+            activities: {
+              include: {
+                budgetRel: { include: { account: { select: { normalBalance: true } } } },
+              },
+            },
+          },
+        },
+      },
+      take: 50,
+    });
+
+    let alerts = 0;
+    for (const plan of plans) {
+      const budget = Number(plan.budget ?? 0);
+      if (budget <= 0) continue;
+
+      const accountBalance = new Map<string, string>();
+      for (const objective of plan.objectives) {
+        for (const activity of objective.activities) {
+          if (activity.budgetRel) {
+            accountBalance.set(
+              activity.budgetRel.accountId,
+              activity.budgetRel.account.normalBalance
+            );
+          }
+        }
+      }
+      if (accountBalance.size === 0) continue;
+
+      const endOfDay = new Date(plan.endDate);
+      endOfDay.setUTCHours(23, 59, 59, 999);
+
+      let realization = 0;
+      for (const [accountId, normalBalance] of accountBalance) {
+        const sums = await prisma.journalEntry.aggregate({
+          where: {
+            accountId,
+            unitId: plan.unitId,
+            date: { gte: plan.startDate, lte: endOfDay },
+          },
+          _sum: { debit: true, credit: true },
+        });
+        const movement =
+          normalBalance === 'DEBIT'
+            ? Number(sums._sum.debit ?? 0) - Number(sums._sum.credit ?? 0)
+            : Number(sums._sum.credit ?? 0) - Number(sums._sum.debit ?? 0);
+        realization += Math.max(0, movement);
+      }
+
+      if (realization <= budget * 1.2) continue;
+
+      const admins = await prisma.user.findMany({
+        where: { role: 'UNIT_ADMIN', unitId: plan.unitId, isActive: true, deletedAt: null },
+        select: { id: true },
+      });
+      const pct = Math.round((realization / budget) * 100);
+      const { dbType, originalType } = mapTypeToPrisma(NotificationType.ALERT);
+      if (admins.length > 0) {
+        await prisma.notification.createMany({
+          data: admins.map((admin) => ({
+            userId: admin.id,
+            type: dbType as NotificationType,
+            title: 'Realisasi Anggaran Melampaui Batas',
+            message:
+              'Realisasi rencana "' +
+              plan.title +
+              '" mencapai ' +
+              pct +
+              '% dari anggaran (ambang 120%). Mohon tinjau di modul Perencanaan.',
+            data: {
+              ...(originalType ? { originalType } : {}),
+              priority: 'HIGH',
+              channels: ['IN_APP', 'EMAIL'],
+              recipientType: 'INDIVIDUAL',
+              planId: plan.id,
+            },
+            scheduledAt: null,
+          })),
+        });
+        alerts += admins.length;
+      }
+    }
+    logger.info('Budget overrun alert: ' + alerts + ' notifications sent');
+  }
+
   private static async sendMonthlySppReminders(): Promise<void> {
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);

@@ -41,6 +41,18 @@ export const listPlans = asyncHandler(async (req: Request, res: Response) => {
   res.json({ success: true, data: plans });
 });
 
+export const getPlanRealizationTrend = asyncHandler(async (req: Request, res: Response) => {
+  const planAuth = await perencanaanService.getPlanForAuth((req.params as any).id);
+  if (!planAuth) throw Errors.notFound('Plan not found');
+  if (!isPrivileged(req.user?.role) && planAuth.unitId !== req.user?.unitId) {
+    throw Errors.forbidden('Access denied');
+  }
+
+  const trend = await perencanaanService.getPlanRealizationTrend((req.params as any).id);
+  if (!trend) throw Errors.notFound('Plan not found');
+  res.json({ success: true, data: trend });
+});
+
 export const getPlan = asyncHandler(async (req: Request, res: Response) => {
   // Lightweight auth check first to avoid expensive journal aggregation for unauthorized users
   const planAuth = await perencanaanService.getPlanForAuth((req.params as any).id);

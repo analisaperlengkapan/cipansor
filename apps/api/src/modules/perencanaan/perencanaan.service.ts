@@ -251,6 +251,71 @@ export class PerencanaanService {
   /**
    * Lightweight lookup for authorization checks — no journal aggregation.
    */
+  /**
+   * Monthly realization trend for a plan: journal movements on the plan's
+   * budget accounts, bucketed per month over the plan period (same
+   * account-level attribution caveats as getPlanById).
+   */
+  async getPlanRealizationTrend(id: string) {
+    const plan = await prisma.strategicPlan.findUnique({
+      where: { id },
+      include: {
+        objectives: {
+          include: {
+            activities: {
+              include: {
+                budgetRel: { include: { account: { select: { normalBalance: true } } } },
+              },
+            },
+          },
+        },
+      },
+    });
+    if (!plan) return null;
+
+    const accountBalance = new Map<string, string>();
+    for (const objective of plan.objectives) {
+      for (const activity of objective.activities) {
+        if (activity.budgetRel) {
+          accountBalance.set(
+            activity.budgetRel.accountId,
+            activity.budgetRel.account.normalBalance
+          );
+        }
+      }
+    }
+    if (accountBalance.size === 0) return { planId: id, trend: [] };
+
+    const endOfDay = new Date(plan.endDate);
+    endOfDay.setUTCHours(23, 59, 59, 999);
+
+    const entries = await prisma.journalEntry.findMany({
+      where: {
+        accountId: { in: [...accountBalance.keys()] },
+        unitId: plan.unitId,
+        date: { gte: plan.startDate, lte: endOfDay },
+      },
+      select: { accountId: true, date: true, debit: true, credit: true },
+      take: 10000,
+    });
+
+    const buckets = new Map<string, number>();
+    for (const entry of entries) {
+      const key = `${entry.date.getFullYear()}-${String(entry.date.getMonth() + 1).padStart(2, '0')}`;
+      const isDebitNormal = accountBalance.get(entry.accountId) === 'DEBIT';
+      const movement = isDebitNormal
+        ? Number(entry.debit) - Number(entry.credit)
+        : Number(entry.credit) - Number(entry.debit);
+      buckets.set(key, (buckets.get(key) ?? 0) + movement);
+    }
+
+    const trend = [...buckets.entries()]
+      .map(([month, realization]) => ({ month, realization: Math.max(0, realization) }))
+      .sort((a, b) => a.month.localeCompare(b.month));
+
+    return { planId: id, trend };
+  }
+
   async getPlanForAuth(id: string) {
     return prisma.strategicPlan.findUnique({
       where: { id },

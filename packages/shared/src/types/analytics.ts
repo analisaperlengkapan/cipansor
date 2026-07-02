@@ -283,3 +283,49 @@ export interface GRCStats {
   orgHealthScore: number;
   auditSuggestions?: AuditSuggestion[];
 }
+
+// ===== Parent Engagement Analytics =====
+
+export interface ParentEngagementSummary {
+  totalParents: number;
+  activeParents: number;
+  engagementRate: number;
+  /** Average hours for a parent to reply to a teacher message (last 30 days); null when no replies. */
+  avgResponseHours: number | null;
+}
+
+export interface ParentEngagementDailyActivity {
+  date: string;
+  /** Localized short day name (Sen/Sel/...). */
+  day: string;
+  messages: number;
+  notificationsRead: number;
+}
+
+export interface ParentEngagementClassBreakdown {
+  classId: string;
+  className: string;
+  parents: number;
+  activeParents: number;
+  engagement: number;
+}
+
+export interface ParentEngagementLowItem {
+  parentId: string;
+  parentName: string;
+  childName: string;
+  lastLoginAt: string | null;
+  daysSinceLogin: number | null;
+}
+
+export interface ParentEngagementStats {
+  summary: ParentEngagementSummary;
+  weeklyActivity: ParentEngagementDailyActivity[];
+  classBreakdown: ParentEngagementClassBreakdown[];
+  invoiceStatus: {
+    paid: number;
+    pending: number;
+    overdue: number;
+  };
+  lowEngagement: ParentEngagementLowItem[];
+}

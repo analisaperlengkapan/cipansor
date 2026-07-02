@@ -12,6 +12,8 @@ vi.mock('@/lib/prisma', () => ({
       update: vi.fn(),
       delete: vi.fn(),
     },
+    canteenTransaction: { groupBy: vi.fn() },
+    laundryTransaction: { groupBy: vi.fn() },
   },
 }));
 
@@ -20,13 +22,22 @@ describe('BusinessUnitService', () => {
     vi.clearAllMocks();
   });
 
-  it('should list business units', async () => {
-    const mockBUs = [{ id: '1', name: 'Kantin A' }];
+  it('should list business units with current-month revenue', async () => {
+    const mockBUs = [{ id: '1', name: 'Kantin A' }, { id: '2', name: 'Laundry B' }];
     (prisma.businessUnit.findMany as any).mockResolvedValue(mockBUs);
+    (prisma.canteenTransaction.groupBy as any).mockResolvedValue([
+      { businessUnitId: '1', _sum: { total: 150000 }, _count: { id: 12 } },
+    ]);
+    (prisma.laundryTransaction.groupBy as any).mockResolvedValue([
+      { businessUnitId: '2', _sum: { total: 80000 }, _count: { id: 4 } },
+    ]);
 
     const result = await businessUnitService.list({ unitId: 'unit-1' });
 
-    expect(result).toEqual(mockBUs);
+    expect(result).toEqual([
+      { id: '1', name: 'Kantin A', monthlyRevenue: 150000, monthlyTransactions: 12 },
+      { id: '2', name: 'Laundry B', monthlyRevenue: 80000, monthlyTransactions: 4 },
+    ]);
     expect(prisma.businessUnit.findMany).toHaveBeenCalledWith(expect.objectContaining({
       where: expect.objectContaining({ unitId: 'unit-1' }),
     }));

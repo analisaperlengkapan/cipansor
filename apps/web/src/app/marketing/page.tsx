@@ -12,6 +12,8 @@ import {
   useRecentLeads,
   useUpcomingFollowUps,
   useHighPriorityLeads,
+  useAdmissionFunnel,
+  useMarketingRoiTrend,
 } from "@/hooks/use-marketing";
 import { useAuth } from "@/hooks/use-auth";
 import {
@@ -154,6 +156,8 @@ export default function MarketingDashboard() {
   const { data: recentLeads } = useRecentLeads(user?.unitId);
   const { data: followUps } = useUpcomingFollowUps(user?.unitId);
   const { data: highPriorityLeads } = useHighPriorityLeads(user?.unitId);
+  const { data: funnel } = useAdmissionFunnel();
+  const { data: roiTrend = [] } = useMarketingRoiTrend(6);
   const createCampaign = useCreateCampaign();
   const updateCampaign = useUpdateCampaign();
 
@@ -957,6 +961,91 @@ export default function MarketingDashboard() {
                     </div>
                   </div>
                 ))}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Admission Funnel (real pipeline data) */}
+          <div className="grid gap-4 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>Funnel Penerimaan</CardTitle>
+                <CardDescription>
+                  Perjalanan pendaftar dari daftar sampai daftar ulang
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {!funnel || funnel.stages[0]?.reached === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    Belum ada data pendaftar.
+                  </p>
+                ) : (
+                  <>
+                    {funnel.stages.map((stage) => (
+                      <div key={stage.stage} className="space-y-1">
+                        <div className="flex items-center justify-between text-sm">
+                          <span>{stage.label}</span>
+                          <span className="font-semibold">
+                            {stage.reached}{" "}
+                            <span className="text-muted-foreground font-normal">
+                              ({stage.conversionFromStart}%)
+                            </span>
+                          </span>
+                        </div>
+                        <div className="h-2 rounded bg-muted overflow-hidden">
+                          <div
+                            className="h-full bg-primary"
+                            style={{ width: `${stage.conversionFromStart}%` }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                    <p className="text-xs text-muted-foreground pt-1">
+                      Ditolak: {funnel.dropOff.rejected} • Dibatalkan:{" "}
+                      {funnel.dropOff.cancelled}
+                    </p>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Pendapatan Teratribusi Kampanye</CardTitle>
+                <CardDescription>
+                  Pembayaran dari santri hasil kampanye, 6 bulan terakhir
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[260px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={roiTrend}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                      <YAxis
+                        tickFormatter={(v: number) =>
+                          `${Math.round(v / 1000000)}jt`
+                        }
+                      />
+                      <Tooltip
+                        formatter={(value) =>
+                          new Intl.NumberFormat("id-ID", {
+                            style: "currency",
+                            currency: "IDR",
+                            minimumFractionDigits: 0,
+                          }).format(Number(value))
+                        }
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="revenue"
+                        name="Pendapatan"
+                        stroke="#6366f1"
+                        strokeWidth={2}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
               </CardContent>
             </Card>
           </div>

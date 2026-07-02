@@ -251,6 +251,22 @@ router.get('/:id/certificate', authenticate, controller.getCertificatePdf);
 
 /**
  * @openapi
+ * /api/sanad/tree:
+ *   get:
+ *     summary: Get the sanad transmission tree (silsilah)
+ *     description: Teacher-to-student certification hierarchy built from sanad records.
+ *     tags: [Sanad Certificate]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Forest of sanad tree roots
+ */
+// NOTE: must stay registered before '/:id' so 'tree' is not captured as an id
+router.get('/tree', authenticate, controller.getSanadTree);
+
+/**
+ * @openapi
  * /api/sanad/{id}:
  *   get:
  *     summary: Get sanad record by ID

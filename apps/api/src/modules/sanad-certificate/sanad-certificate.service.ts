@@ -657,6 +657,113 @@ export async function verifyCertificate(input: VerifyCertificateInput) {
 }
 
 // ============================================
+// SANAD TREE (Silsilah / Isnad)
+// ============================================
+
+export interface SanadTreeNode {
+  id: string;
+  name: string;
+  role: 'TEACHER' | 'STUDENT';
+  /** Distinct juz certified under the parent teacher (student nodes only). */
+  juzCount?: number;
+  /** Year of the most recent certification under the parent teacher. */
+  certifiedYear?: number;
+  children: SanadTreeNode[];
+}
+
+/**
+ * Build the transmission tree (silsilah) from certification records:
+ * teacher → certified students, chained when a certified student later
+ * certifies others. Single query + in-memory adjacency map.
+ */
+export async function getSanadTree(): Promise<SanadTreeNode[]> {
+  const records = await prisma.sanadRecord.findMany({
+    select: {
+      juz: true,
+      certifiedAt: true,
+      teacher: { select: { id: true, name: true } },
+      enrollment: {
+        select: {
+          student: {
+            select: { user: { select: { id: true, name: true } } },
+          },
+        },
+      },
+    },
+  });
+
+  // Aggregate edges per (teacher, student) pair
+  interface Edge {
+    juz: Set<number>;
+    lastCertifiedAt: Date;
+  }
+  const names = new Map<string, string>();
+  const edges = new Map<string, Map<string, Edge>>(); // teacherId -> studentId -> Edge
+  const studentIds = new Set<string>();
+
+  for (const record of records) {
+    const teacher = record.teacher;
+    const student = record.enrollment.student.user;
+    names.set(teacher.id, teacher.name);
+    names.set(student.id, student.name);
+    studentIds.add(student.id);
+
+    let byStudent = edges.get(teacher.id);
+    if (!byStudent) {
+      byStudent = new Map();
+      edges.set(teacher.id, byStudent);
+    }
+    const edge = byStudent.get(student.id);
+    if (edge) {
+      edge.juz.add(record.juz);
+      if (record.certifiedAt > edge.lastCertifiedAt) edge.lastCertifiedAt = record.certifiedAt;
+    } else {
+      byStudent.set(student.id, {
+        juz: new Set([record.juz]),
+        lastCertifiedAt: record.certifiedAt,
+      });
+    }
+  }
+
+  const buildNode = (
+    userId: string,
+    visited: Set<string>,
+    edge?: Edge
+  ): SanadTreeNode => {
+    const childEdges = edges.get(userId);
+    const children: SanadTreeNode[] = [];
+    if (childEdges && !visited.has(userId)) {
+      const nextVisited = new Set(visited).add(userId);
+      for (const [studentId, studentEdge] of childEdges) {
+        if (nextVisited.has(studentId)) continue; // cycle guard
+        children.push(buildNode(studentId, nextVisited, studentEdge));
+      }
+      children.sort((a, b) => a.name.localeCompare(b.name));
+    }
+    return {
+      id: userId,
+      name: names.get(userId) ?? 'Unknown',
+      role: edges.has(userId) ? 'TEACHER' : 'STUDENT',
+      ...(edge
+        ? {
+            juzCount: edge.juz.size,
+            certifiedYear: edge.lastCertifiedAt.getFullYear(),
+          }
+        : {}),
+      children,
+    };
+  };
+
+  // Roots: teachers who were never certified as students themselves
+  const roots = [...edges.keys()]
+    .filter((teacherId) => !studentIds.has(teacherId))
+    .map((teacherId) => buildNode(teacherId, new Set()))
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  return roots;
+}
+
+// ============================================
 // EXPORT SERVICE
 // ============================================
 
@@ -668,6 +775,7 @@ export const SanadCertificateService = {
   deleteSanadRecord,
   bulkCreateSanadRecords,
   getStudentSanadSummary,
+  getSanadTree,
   generateCertificate,
   generateCertificateHtml,
   verifyCertificate,

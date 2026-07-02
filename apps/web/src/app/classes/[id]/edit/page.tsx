@@ -227,7 +227,9 @@ export default function EditClassPage() {
                     disabled={unitsLoading}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Pilih unit" />
+                      <SelectValue placeholder="Pilih unit">
+                        {units?.find((u) => u.id === selectedUnitId)?.name}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       {units?.map((unit) => (
@@ -258,7 +260,13 @@ export default function EditClassPage() {
                             ? "Pilih unit terlebih dahulu"
                             : "Pilih tahun ajaran"
                         }
-                      />
+                      >
+                        {
+                          academicYears?.find(
+                            (ay) => ay.id === watch("academicYearId"),
+                          )?.name
+                        }
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       {academicYears?.map((ay) => (
@@ -291,7 +299,13 @@ export default function EditClassPage() {
                             ? "Pilih unit terlebih dahulu"
                             : "Pilih wali kelas"
                         }
-                      />
+                      >
+                        {
+                          teachersList?.find(
+                            (t) => t.id === watch("homeroomTeacherId"),
+                          )?.user?.name
+                        }
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       {teachersList?.map((teacher) => (

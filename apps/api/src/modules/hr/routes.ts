@@ -8,7 +8,7 @@ import { employeeDocumentController } from './employee-documents.controller';
 import { employmentHistoryController } from './employment-history.controller';
 import { authenticate, authorize } from '../../middleware/auth';
 import { validateQuery } from '../../middleware/error';
-import { queryStaffAttendanceSchema, queryLeaveSchema, queryStaffSchema } from './schema';
+import { queryStaffAttendanceSchema, queryLeaveSchema, queryStaffSchema, queryTeachersSchema } from './schema';
 
 const router = Router();
 
@@ -50,6 +50,39 @@ router.get(
   authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
   validateQuery(queryStaffSchema),
   controller.getStaffList
+);
+
+/**
+ * @swagger
+ * /api/hr/teachers:
+ *   get:
+ *     summary: List teachers (for pickers and directories)
+ *     tags: [HR]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: unitId
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [ACTIVE, INACTIVE, ON_LEAVE]
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Paginated teacher list with user + unit info
+ */
+router.get(
+  '/teachers',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF),
+  validateQuery(queryTeachersSchema),
+  controller.getTeachers
 );
 
 /**

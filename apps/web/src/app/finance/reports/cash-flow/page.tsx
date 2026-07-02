@@ -3,8 +3,6 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
-import type { CashFlowReport } from "@cipansor/shared";
-import { safeFormat } from "@/lib/date";
 import {
   Card,
   CardContent,
@@ -31,13 +29,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useUnits } from "@/hooks/use-units";
-import { useCashFlowReport } from "@/hooks/use-finance-enhancement";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/api";
 import { Printer, Download, Filter, TrendingUp, TrendingDown, DollarSign } from "lucide-react";
+import { MainLayout } from "@/components/layout";
 
 export default function CashFlowPage() {
   const [unitId, setUnitId] = useState<string>("");
   const [startDate, setStartDate] = useState<string>(
-    format(new Date(new Date().getFullYear(), 0, 1), "yyyy-MM-dd")
+    format(new Date(new Date().getFullYear(), new Date().getMonth(), 1), "yyyy-MM-dd")
   );
   const [endDate, setEndDate] = useState<string>(
     format(new Date(), "yyyy-MM-dd")
@@ -45,10 +45,15 @@ export default function CashFlowPage() {
 
   const { data: units } = useUnits();
 
-  const { data: report, isLoading } = useCashFlowReport({
-    unitId: unitId && unitId !== "all" ? unitId : undefined,
-    startDate,
-    endDate,
+  const { data: report, isLoading } = useQuery({
+    queryKey: ["cash-flow", unitId, startDate, endDate],
+    queryFn: async () => {
+      const { data } = await api.get("/finance/accounting/reports/cash-flow", {
+        params: { unitId, startDate, endDate },
+      });
+      return data.data;
+    },
+    enabled: !!startDate && !!endDate,
   });
 
   const formatCurrency = (amount: number) => {
@@ -64,6 +69,7 @@ export default function CashFlowPage() {
   };
 
   return (
+    <MainLayout>
     <div className="space-y-6 p-6 pb-16">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between print:hidden">
         <div>
@@ -132,60 +138,32 @@ export default function CashFlowPage() {
         </div>
       ) : report ? (
         <div className="space-y-6">
-          <div className="grid gap-4 md:grid-cols-5">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Saldo Awal Kas</CardTitle>
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {formatCurrency(report.beginningCashBalance)}
-                </div>
-                <p className="text-xs text-muted-foreground">Saldo kas awal periode</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Saldo Akhir Kas</CardTitle>
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {formatCurrency(report.endingCashBalance)}
-                </div>
-                <p className="text-xs text-muted-foreground">Saldo kas akhir periode</p>
-              </CardContent>
-            </Card>
+          <div className="grid gap-4 md:grid-cols-3">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium">Arus Kas Bersih</CardTitle>
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className={`text-2xl font-bold ${report.netChangeInCash >= 0 ? "text-green-600" : "text-red-600"}`}>
-                  {formatCurrency(report.netChangeInCash)}
+                <div className={`text-2xl font-bold ${report.netCashFlow >= 0 ? "text-green-600" : "text-red-600"}`}>
+                  {formatCurrency(report.netCashFlow)}
                 </div>
                 <p className="text-xs text-muted-foreground">Total mutasi kas periode ini</p>
               </CardContent>
             </Card>
-            {[
-              report.operatingActivities,
-              report.investingActivities,
-              report.financingActivities
-            ].map((section) => (
-              <Card key={section.title}>
+            {Object.entries(report.categories).map(([key, cat]: [string, any]) => (
+              <Card key={key}>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium">{section.title}</CardTitle>
-                  {section.total >= 0 ? (
+                  <CardTitle className="text-sm font-medium">{cat.name}</CardTitle>
+                  {cat.total >= 0 ? (
                     <TrendingUp className="h-4 w-4 text-green-500" />
                   ) : (
                     <TrendingDown className="h-4 w-4 text-red-500" />
                   )}
                 </CardHeader>
                 <CardContent>
-                  <div className={`text-xl font-bold ${section.total >= 0 ? "text-green-600" : "text-red-600"}`}>
-                    {formatCurrency(section.total)}
+                  <div className={`text-xl font-bold ${cat.total >= 0 ? "text-green-600" : "text-red-600"}`}>
+                    {formatCurrency(cat.total)}
                   </div>
                 </CardContent>
               </Card>
@@ -193,15 +171,11 @@ export default function CashFlowPage() {
           </div>
 
           <div className="space-y-8">
-            {[
-              report.operatingActivities,
-              report.investingActivities,
-              report.financingActivities
-            ].map((section) => (
-              <Card key={section.title} className="overflow-hidden">
+            {Object.entries(report.categories).map(([key, cat]: [string, any]) => (
+              <Card key={key} className="overflow-hidden">
                 <CardHeader className="bg-muted/50">
-                  <CardTitle>{section.title}</CardTitle>
-                  <CardDescription>Detail rincian transaksi {section.title.toLowerCase()}</CardDescription>
+                  <CardTitle>{cat.name}</CardTitle>
+                  <CardDescription>Detail rincian transaksi {cat.name.toLowerCase()}</CardDescription>
                 </CardHeader>
                 <CardContent className="p-0">
                   <Table>
@@ -214,17 +188,17 @@ export default function CashFlowPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {section.items.length === 0 ? (
+                      {cat.items.length === 0 ? (
                         <TableRow>
                           <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
                             Tidak ada transaksi dalam kategori ini
                           </TableCell>
                         </TableRow>
                       ) : (
-                        section.items.map((item: any, idx: number) => (
+                        cat.items.map((item: any, idx: number) => (
                           <TableRow key={idx}>
                             <TableCell className="text-sm">
-                              {safeFormat(item.date, "dd MMM yyyy", { locale: id })}
+                              {format(new Date(item.date), "dd MMM yyyy", { locale: id })}
                             </TableCell>
                             <TableCell className="max-w-md truncate font-medium">
                               {item.description}
@@ -239,9 +213,9 @@ export default function CashFlowPage() {
                         ))
                       )}
                       <TableRow className="bg-muted/30 font-bold">
-                        <TableCell colSpan={3}>Subtotal {section.title}</TableCell>
-                        <TableCell className={`text-right font-mono ${section.total >= 0 ? "text-green-600" : "text-red-600"}`}>
-                          {formatCurrency(section.total)}
+                        <TableCell colSpan={3}>Subtotal {cat.name}</TableCell>
+                        <TableCell className={`text-right font-mono ${cat.total >= 0 ? "text-green-600" : "text-red-600"}`}>
+                          {formatCurrency(cat.total)}
                         </TableCell>
                       </TableRow>
                     </TableBody>
@@ -253,7 +227,7 @@ export default function CashFlowPage() {
             <div className="flex justify-between items-center p-4 bg-primary text-primary-foreground rounded-lg shadow-lg">
               <span className="text-lg font-bold">KENAIKAN/PENURUNAN BERSIH KAS</span>
               <span className="text-2xl font-mono font-bold">
-                {formatCurrency(report.netChangeInCash)}
+                {formatCurrency(report.netCashFlow)}
               </span>
             </div>
           </div>
@@ -267,5 +241,6 @@ export default function CashFlowPage() {
         </Card>
       )}
     </div>
+    </MainLayout>
   );
 }

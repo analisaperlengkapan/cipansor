@@ -3420,6 +3420,7 @@ model CounselingSession {
   // Privacy
   isConfidential  Boolean            @default(true) @map("is_confidential")
   parentNotified  Boolean            @default(false) @map("parent_notified")
+  psychologyData  Json?              @map("psychology_data") // Observasi psikologis terstruktur (khusus konselor)
   createdAt       DateTime           @default(now()) @map("created_at")
   updatedAt       DateTime           @updatedAt @map("updated_at")
 
@@ -5968,6 +5969,7 @@ model RaporPesantren {
   kitabProgressData Json? @map("kitab_progress_data")
   akhlakData        Json? @map("akhlak_data")
   attendanceData    Json? @map("attendance_data")
+  academicData      Json? @map("academic_data") // Ringkasan nilai akademik (modul Grade)
 
   // Overall Scores
   overallScore Float?  @map("overall_score")

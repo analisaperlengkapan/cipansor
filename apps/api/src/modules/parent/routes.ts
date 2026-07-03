@@ -270,6 +270,30 @@ router.get('/children/:studentId/finance', parentController.getChildFinance.bind
  *       200:
  *         description: Violations with summary
  */
+/**
+ * @swagger
+ * /api/parent/children/{studentId}/counseling:
+ *   get:
+ *     summary: Get child's counseling summaries shared with parents
+ *     description: Only sessions flagged parentNotified or non-confidential; psychological observation data is never exposed here.
+ *     tags: [Parent Portal]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: studentId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Counseling summaries and recommendations
+ */
+router.get(
+  '/children/:studentId/counseling',
+  parentController.getChildCounseling.bind(parentController)
+);
+
 router.get(
   '/children/:studentId/violations',
   parentController.getChildViolations.bind(parentController)

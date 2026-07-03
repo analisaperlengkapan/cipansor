@@ -634,6 +634,45 @@ export class ParentService {
   }
 
   /**
+   * Get child counseling summaries shared with parents.
+   * PRIVACY: only sessions explicitly flagged for parents
+   * (parentNotified) or non-confidential ones are returned, and the
+   * structured psychological observations (psychologyData) plus internal
+   * notes are NEVER exposed here — only summary and recommendations.
+   */
+  async getChildCounseling(parentId: string, studentId: string) {
+    await this.verifyParentAccess(parentId, studentId);
+
+    const sessions = await prisma.counselingSession.findMany({
+      where: {
+        studentId,
+        OR: [{ parentNotified: true }, { isConfidential: false }],
+      },
+      orderBy: { scheduledAt: 'desc' },
+      take: 30,
+      select: {
+        id: true,
+        scheduledAt: true,
+        status: true,
+        summary: true,
+        recommendations: true,
+        counselor: {
+          select: { user: { select: { name: true } } },
+        },
+      },
+    });
+
+    return sessions.map((session) => ({
+      id: session.id,
+      scheduledAt: session.scheduledAt,
+      status: session.status,
+      summary: session.summary,
+      recommendations: session.recommendations,
+      counselorName: session.counselor?.user?.name ?? null,
+    }));
+  }
+
+  /**
    * Get child violations
    */
   async getChildViolations(parentId: string, studentId: string) {

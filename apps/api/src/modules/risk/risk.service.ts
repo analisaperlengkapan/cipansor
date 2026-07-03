@@ -133,6 +133,9 @@ export class RiskService {
         strategicPlan: {
           select: { id: true, title: true },
         },
+        auditFindings: {
+          select: { id: true, severity: true },
+        },
       },
       orderBy: { createdAt: 'desc' },
     });

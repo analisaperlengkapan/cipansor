@@ -546,7 +546,97 @@ export async function getHealthStats(unitId: string): Promise<HealthStats> {
 
 // ==================== GROWTH RECORD ====================
 
+// WHO growth-standard milestones (approximate medians and SDs) for
+// height-for-age and weight-for-age, early childhood through 18y.
+const GROWTH_STANDARDS: Record<
+  'MALE' | 'FEMALE',
+  Record<number, { hM: number; hS: number; wM: number; wS: number }>
+> = {
+  MALE: {
+    12: { hM: 75.7, hS: 2.5, wM: 9.6, wS: 0.9 },
+    24: { hM: 87.8, hS: 3.2, wM: 12.2, wS: 1.1 },
+    36: { hM: 96.1, hS: 3.8, wM: 14.3, wS: 1.3 },
+    48: { hM: 103.3, hS: 4.2, wM: 16.3, wS: 1.6 },
+    60: { hM: 110.0, hS: 4.6, wM: 18.3, wS: 1.9 },
+    84: { hM: 121.7, hS: 5.4, wM: 22.9, wS: 2.8 },
+    120: { hM: 137.8, hS: 6.4, wM: 31.2, wS: 4.5 },
+    144: { hM: 149.1, hS: 7.5, wM: 38.6, wS: 6.5 },
+    180: { hM: 170.1, hS: 7.6, wM: 54.0, wS: 9.0 },
+    216: { hM: 176.0, hS: 7.0, wM: 65.0, wS: 10.5 },
+  },
+  FEMALE: {
+    12: { hM: 74.0, hS: 2.4, wM: 8.9, wS: 0.9 },
+    24: { hM: 86.4, hS: 3.1, wM: 11.5, wS: 1.1 },
+    36: { hM: 95.1, hS: 3.7, wM: 13.9, wS: 1.3 },
+    48: { hM: 102.7, hS: 4.2, wM: 16.1, wS: 1.6 },
+    60: { hM: 109.4, hS: 4.6, wM: 18.2, wS: 1.9 },
+    84: { hM: 120.8, hS: 5.5, wM: 22.4, wS: 3.1 },
+    120: { hM: 138.4, hS: 7.0, wM: 31.8, wS: 5.4 },
+    144: { hM: 151.2, hS: 7.2, wM: 40.8, wS: 7.8 },
+    180: { hM: 161.7, hS: 6.2, wM: 52.0, wS: 9.2 },
+    216: { hM: 163.0, hS: 5.8, wM: 56.5, wS: 9.8 },
+  },
+};
+
+/**
+ * Height-for-age and weight-for-age Z-scores against the nearest WHO
+ * milestone, plus a derived nutrition status label.
+ */
+export function calculateGrowthZScores(input: {
+  ageMonths: number;
+  gender: 'MALE' | 'FEMALE';
+  weight?: number | null;
+  height?: number | null;
+}) {
+  const { ageMonths, gender, weight, height } = input;
+  const milestones = Object.keys(GROWTH_STANDARDS[gender]).map(Number);
+  const nearest = milestones.reduce((prev, curr) =>
+    Math.abs(curr - ageMonths) < Math.abs(prev - ageMonths) ? curr : prev
+  );
+  const std = GROWTH_STANDARDS[gender][nearest];
+
+  const heightZScore = height ? Math.round(((height - std.hM) / std.hS) * 100) / 100 : null;
+  const weightZScore = weight ? Math.round(((weight - std.wM) / std.wS) * 100) / 100 : null;
+
+  let nutritionStatus: string | null = null;
+  if (weightZScore !== null) {
+    if (weightZScore <= -3) nutritionStatus = 'SEVERELY_UNDERWEIGHT';
+    else if (weightZScore <= -2) nutritionStatus = 'UNDERWEIGHT';
+    else if (weightZScore >= 2) nutritionStatus = 'OVERWEIGHT';
+    else nutritionStatus = 'NORMAL';
+  }
+
+  return { heightZScore, weightZScore, nutritionStatus };
+}
+
 export async function createGrowthRecord(data: CreateGrowthRecordInput, recordedById: string) {
+  // Compute real age + WHO Z-scores from the student's profile
+  const student = await prisma.student.findUnique({
+    where: { id: data.studentId },
+    select: { birthDate: true, gender: true },
+  });
+  let ageMonths = 0;
+  let zScores: ReturnType<typeof calculateGrowthZScores> = {
+    heightZScore: null,
+    weightZScore: null,
+    nutritionStatus: null,
+  };
+  if (student?.birthDate) {
+    const recordDate = new Date(data.recordDate);
+    ageMonths =
+      (recordDate.getFullYear() - student.birthDate.getFullYear()) * 12 +
+      (recordDate.getMonth() - student.birthDate.getMonth());
+    ageMonths = Math.max(0, ageMonths);
+    if (student.gender === 'MALE' || student.gender === 'FEMALE') {
+      zScores = calculateGrowthZScores({
+        ageMonths,
+        gender: student.gender,
+        weight: data.weight,
+        height: data.height,
+      });
+    }
+  }
+
   return prisma.growthRecord.create({
     data: {
       studentId: data.studentId,
@@ -556,7 +646,10 @@ export async function createGrowthRecord(data: CreateGrowthRecordInput, recorded
       height: data.height,
       headCircumference: data.headCircumference,
       notes: data.notes,
-      ageMonths: 0, // Placeholder, logic to calculate age needed
+      ageMonths,
+      heightZScore: zScores.heightZScore,
+      weightZScore: zScores.weightZScore,
+      nutritionStatus: zScores.nutritionStatus,
       recordedById,
     },
     include: {

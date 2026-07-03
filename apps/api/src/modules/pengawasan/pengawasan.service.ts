@@ -295,11 +295,66 @@ export class PengawasanService {
       updateData.completedAt = new Date();
     }
 
-    return prisma.auditFollowUp.update({
+    const followUp = await prisma.auditFollowUp.update({
       where: { id },
       data: updateData,
-      include: { verifiedBy: { select: { id: true, name: true } } },
+      include: {
+        verifiedBy: { select: { id: true, name: true } },
+        finding: {
+          select: {
+            id: true,
+            title: true,
+            riskId: true,
+          },
+        },
+      },
     });
+
+    // GRC loop: a VERIFIED follow-up on a risk-linked finding means the
+    // mitigation is confirmed — prompt the risk admins to reassess the
+    // residual rating (we deliberately do NOT auto-mutate risk scores;
+    // re-rating is a human assessment).
+    if (data.status === 'VERIFIED' && followUp.finding?.riskId) {
+      try {
+        const risk = await prisma.risk.findUnique({
+          where: { id: followUp.finding.riskId },
+          select: { id: true, code: true, description: true, unitId: true },
+        });
+        if (risk) {
+          const admins = await prisma.user.findMany({
+            where: {
+              role: 'UNIT_ADMIN',
+              unitId: risk.unitId,
+              isActive: true,
+              deletedAt: null,
+            },
+            select: { id: true },
+          });
+          if (admins.length > 0) {
+            await prisma.notification.createMany({
+              data: admins.map((admin) => ({
+                userId: admin.id,
+                type: 'ALERT' as const,
+                title: 'Tinjau Ulang Rating Residual Risiko',
+                message:
+                  'Tindak lanjut temuan "' +
+                  followUp.finding!.title +
+                  '" telah diverifikasi. Mitigasi risiko ' +
+                  risk.code +
+                  ' (' +
+                  risk.description.slice(0, 60) +
+                  ') terkonfirmasi — mohon tinjau ulang rating residual di Risk Register.',
+                data: { riskId: risk.id, findingId: followUp.finding!.id },
+              })),
+            });
+          }
+        }
+      } catch (error) {
+        console.error('GRC loop notification failed:', error);
+      }
+    }
+
+    return followUp;
   }
 
   async deleteFollowUp(id: string) {

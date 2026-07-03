@@ -1,6 +1,6 @@
 "use client";
 
-import { useGRCStats } from "@/hooks/use-analytics";
+import { useGRCStats, useRiskMatrix } from "@/hooks/use-analytics";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +19,7 @@ import {
 
 export default function GrcDashboardPage() {
   const { data: grcResponse, isLoading, error } = useGRCStats();
+  const { data: riskMatrix } = useRiskMatrix();
   const grc = grcResponse?.data;
 
   if (isLoading) {
@@ -272,6 +273,88 @@ export default function GrcDashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* 5x5 Risk Heatmap: inherent vs residual */}
+      {riskMatrix && (
+        <div className="grid gap-6 lg:grid-cols-2 mt-6">
+          <RiskHeatmap
+            title="Peta Risiko Inheren (5×5)"
+            description="Sebelum mitigasi — jumlah risiko per sel likelihood × dampak"
+            matrix={riskMatrix.inherent}
+          />
+          <RiskHeatmap
+            title="Peta Risiko Residual (5×5)"
+            description="Setelah mitigasi — hanya risiko yang sudah dinilai ulang"
+            matrix={riskMatrix.residual}
+          />
+        </div>
+      )}
     </div>
+  );
+}
+
+const LIKELIHOOD_SHORT = ["Jarang", "Kecil", "Mungkin", "Besar", "Hampir Pasti"];
+const IMPACT_SHORT = ["Minimal", "Minor", "Moderat", "Mayor", "Katastrofik"];
+
+function heatCellClass(likelihoodIndex: number, impactIndex: number): string {
+  const score = (likelihoodIndex + 1) * (impactIndex + 1);
+  if (score >= 15) return "bg-red-500/80 text-white";
+  if (score >= 8) return "bg-orange-400/80 text-white";
+  if (score >= 4) return "bg-yellow-300/80 text-slate-800";
+  return "bg-emerald-300/70 text-slate-800";
+}
+
+function RiskHeatmap({
+  title,
+  description,
+  matrix,
+}: {
+  title: string;
+  description: string;
+  matrix: number[][];
+}) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-lg">{title}</CardTitle>
+        <CardDescription>{description}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="overflow-x-auto">
+          <table className="w-full text-center text-xs">
+            <tbody>
+              {/* Rows: likelihood from highest to lowest for conventional layout */}
+              {[4, 3, 2, 1, 0].map((li) => (
+                <tr key={li}>
+                  <td className="pr-2 text-right text-[10px] text-muted-foreground whitespace-nowrap">
+                    {LIKELIHOOD_SHORT[li]}
+                  </td>
+                  {matrix[li]?.map((count, im) => (
+                    <td key={im} className="p-1">
+                      <div
+                        className={`h-10 rounded flex items-center justify-center font-bold ${heatCellClass(li, im)} ${count === 0 ? "opacity-30" : ""}`}
+                      >
+                        {count > 0 ? count : ""}
+                      </div>
+                    </td>
+                  ))}
+                </tr>
+              ))}
+              <tr>
+                <td />
+                {IMPACT_SHORT.map((label) => (
+                  <td
+                    key={label}
+                    className="pt-1 text-[10px] text-muted-foreground"
+                  >
+                    {label}
+                  </td>
+                ))}
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

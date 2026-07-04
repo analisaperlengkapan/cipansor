@@ -170,6 +170,11 @@ export class StudentService {
           take: 5,
           orderBy: { visitDate: 'desc' },
         },
+        // Latest growth measurement (carries WHO Z-scores + nutrition status)
+        growthRecords: {
+          take: 1,
+          orderBy: { recordDate: 'desc' },
+        },
         invoices: {
           where: { status: { not: 'PAID' } },
           include: {
@@ -236,6 +241,7 @@ export class StudentService {
           count: unpaidInvoicesCount,
           total: unpaidInvoicesTotal,
         },
+        latestGrowth: student.growthRecords?.[0] ?? null,
       },
     };
   }

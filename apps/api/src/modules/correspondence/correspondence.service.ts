@@ -406,7 +406,7 @@ export const CorrespondenceService = {
       count: number;
     };
 
-    const [totalIncoming, totalOutgoing, pendingReview, needsAction, chartDataRaw] =
+    const [totalIncoming, totalOutgoing, pendingReview, needsAction, urgentLetters, chartDataRaw] =
       await Promise.all([
         // Total Incoming
         prisma.letter.count({ where: { unitId, direction: 'INCOMING' } }),
@@ -419,6 +419,14 @@ export const CorrespondenceService = {
           where: {
             unitId,
             status: { in: ['DRAFT', 'PENDING_REVIEW', 'REVISION_NEEDED'] },
+          },
+        }),
+        // Urgent letters still in flight (not yet archived/disposed)
+        prisma.letter.count({
+          where: {
+            unitId,
+            urgency: { in: ['IMMEDIATE', 'URGENT'] },
+            status: { notIn: ['ARCHIVED', 'DISPOSED'] },
           },
         }),
         // Chart Data (Last 6 Months)
@@ -476,6 +484,7 @@ export const CorrespondenceService = {
         totalOutgoing,
         pendingReview,
         needsAction,
+        urgentLetters,
       },
       chart: Array.from(chartMap.values()),
     };

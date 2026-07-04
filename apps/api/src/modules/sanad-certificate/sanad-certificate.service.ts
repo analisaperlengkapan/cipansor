@@ -720,13 +720,8 @@ export async function getSanadTree(rootTeacherId?: string) {
     }
   });
 
-  // 3. Recursive builder from memory map (with cycle protection)
-  const visited = new Set<string>();
+  // 3. Recursive builder from memory map
   const build = (tId: string, tName: string): any => {
-    if (visited.has(tId)) {
-      return { id: tId, name: tName, title: 'Mudaris', year: '', specialty: 'Sanad Al-Qur\'an', children: [] };
-    }
-    visited.add(tId);
     const childrenNodes = adjMap.get(tId) || [];
     return {
       id: tId,

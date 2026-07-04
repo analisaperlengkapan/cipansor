@@ -407,6 +407,9 @@ describe('PAUD Assessment Service - Narrative Reports', () => {
     it('should create new narrative report', async () => {
       const input = {
         studentId: 'student-1',
+        unitId: 'unit-1',
+        academicYearId: 'year-1',
+        semester: 'GANJIL' as const,
         periodType: PAUDReportPeriod.SEMESTER,
         periodStart: new Date('2024-01-01'),
         periodEnd: new Date('2024-06-30'),
@@ -422,7 +425,7 @@ describe('PAUD Assessment Service - Narrative Reports', () => {
         ...input,
       });
 
-      const result = await paudAssessmentService.createNarrativeReport(input);
+      const result = await paudAssessmentService.createNarrativeReport(input, 'teacher-1');
 
       expect(result).toHaveProperty('id', 'report-1');
     });

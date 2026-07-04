@@ -103,6 +103,18 @@ export interface TahfidzStudentSummary {
     surahName: string;
   }[];
   recentRecords: TahfidzRecord[];
+  estimation?: TahfidzCompletionEstimate;
+}
+
+/** Projection of when a student finishes 30 juz, based on observed pace. */
+export interface TahfidzCompletionEstimate {
+  status: "COMPLETED" | "INSUFFICIENT_DATA" | "PROJECTED";
+  totalAyahMemorized: number;
+  remainingAyah: number;
+  ayahPerDay: number | null;
+  estimatedDays: number | null;
+  estimatedDate: string | Date | null;
+  recordsInWindow: number;
 }
 
 export interface CreateTahfidzInput {

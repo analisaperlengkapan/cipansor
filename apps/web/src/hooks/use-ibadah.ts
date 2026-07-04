@@ -267,6 +267,29 @@ export interface ListTargetsParams {
   search?: string;
 }
 
+export interface IbadahAchievements {
+  totalPoints: number;
+  currentStreak: number;
+  level: number;
+  badges: { id: string; name: string; icon: string }[];
+  nextLevelAt: number;
+  progressToNextLevel: number;
+}
+
+/** Achievements of the logged-in student (GET /ibadah/achievements/me). */
+export function useMyIbadahAchievements() {
+  return useQuery({
+    queryKey: ["ibadah-achievements", "me"],
+    queryFn: async () => {
+      const response = await api.get<ApiResponse<IbadahAchievements>>(
+        "/ibadah/achievements/me",
+      );
+      return response.data.data;
+    },
+    retry: false,
+  });
+}
+
 export function useIbadahTargets(params: ListTargetsParams = {}) {
   return useQuery({
     queryKey: ["ibadah-targets", params],

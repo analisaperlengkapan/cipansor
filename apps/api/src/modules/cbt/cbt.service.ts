@@ -376,9 +376,13 @@ export class CBTService {
       where: { id: examId },
       include: {
         teacher: { select: { userId: true } },
+        // Question/answer counts let the monitoring UI show per-student
+        // progress (answered / total) without shipping answer contents.
+        questionBank: { select: { _count: { select: { questions: true } } } },
         attempts: {
           include: {
             student: { select: { id: true, user: { select: { name: true } } } },
+            _count: { select: { answers: true } },
           },
         },
       },
@@ -997,7 +1001,15 @@ export class CBTService {
   }
 
   /**
-   * Identifies "Killer Questions" (high failure rate) and overall difficulty distribution.
+   * Item analysis per question (classical test theory):
+   * - Difficulty index (P): proportion of graded answers that were correct.
+   *   P < 0.3 hard, 0.3–0.7 medium, > 0.7 easy.
+   * - Discrimination index (D): how well the item separates high scorers from
+   *   low scorers, computed with the standard upper/lower 27% groups:
+   *   D = (correct in upper group − correct in lower group) / group size.
+   *   D ≥ 0.4 excellent, 0.3–0.39 good, 0.2–0.29 marginal, < 0.2 poor.
+   *   Only computed with ≥ 10 finished attempts; null otherwise.
+   * Also flags "killer questions" (high failure rate with enough data).
    */
   static async getExamDifficultyInsights(examId: string) {
     const exam = await prisma.exam.findUnique({
@@ -1021,6 +1033,21 @@ export class CBTService {
 
     if (!exam || !exam.questionBank) return null;
 
+    // Rank attempts by total score in memory (score may be null for
+    // NEEDS_REVIEW attempts; treat those as 0 for ranking purposes).
+    const rankedAttempts = [...exam.attempts].sort(
+      (a, b) => Number(b.score ?? 0) - Number(a.score ?? 0)
+    );
+    const attemptsCount = rankedAttempts.length;
+    const canDiscriminate = attemptsCount >= 10;
+    const groupSize = Math.max(1, Math.floor(attemptsCount * 0.27));
+    const upperGroup = rankedAttempts.slice(0, groupSize);
+    const lowerGroup = rankedAttempts.slice(-groupSize);
+
+    const countCorrect = (group: typeof rankedAttempts, questionId: string) =>
+      group.filter((a) => a.answers.find((ans) => ans.questionId === questionId)?.isCorrect)
+        .length;
+
     const insights = exam.questionBank.questions.map((q) => {
       const answers = exam.attempts
         .map((a) => a.answers.find((ans) => ans.questionId === q.id))
@@ -1030,12 +1057,21 @@ export class CBTService {
       const totalCorrect = answers.filter((ans) => ans?.isCorrect).length;
       const successRate = totalGraded > 0 ? (totalCorrect / totalGraded) * 100 : 0;
 
+      const discriminationIndex = canDiscriminate
+        ? (countCorrect(upperGroup, q.id) - countCorrect(lowerGroup, q.id)) / groupSize
+        : null;
+
       return {
         questionId: q.id,
         content: q.content.substring(0, 100),
         successRate,
+        difficultyIndex: totalGraded > 0 ? totalCorrect / totalGraded : null,
+        discriminationIndex,
         totalGraded,
         isKiller: successRate < 30 && totalGraded > 5,
+        needsReview:
+          (totalGraded > 5 && successRate < 20) ||
+          (discriminationIndex !== null && discriminationIndex < 0.2),
       };
     });
 
@@ -1044,6 +1080,8 @@ export class CBTService {
       title: exam.title,
       questionInsights: insights.sort((a, b) => a.successRate - b.successRate),
       averageSuccessRate: insights.length > 0 ? insights.reduce((sum, i) => sum + i.successRate, 0) / insights.length : 0,
+      totalParticipants: attemptsCount,
+      discriminationGroupSize: canDiscriminate ? groupSize : null,
     };
   }
 }

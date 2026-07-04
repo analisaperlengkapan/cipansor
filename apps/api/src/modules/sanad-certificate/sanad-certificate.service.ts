@@ -352,12 +352,44 @@ export async function getStudentSanadSummary(studentId: string) {
 
 export async function generateCertificate(
   input: GenerateCertificateInput,
-  _context: { userId: string }
+  context: { userId: string }
 ) {
   const sanad = await findSanadById(input.sanadId);
 
-  const certificateNumber = generateCertificateNumber();
-  const verificationCode = generateVerificationCode();
+  // Persist the certificate so `verifyCertificate` can honestly attest it
+  // later. One certificate per (student, juz): regenerating reuses the
+  // existing number/verification code instead of minting a new identity for
+  // the same attainment.
+  const title = `Sertifikat Sanad ${getJuzName(sanad.juz)} (Juz ${sanad.juz})`;
+  let certificate = await prisma.digitalCertificate.findFirst({
+    where: {
+      studentId: sanad.enrollment.student.id,
+      certificateType: 'SANAD',
+      title,
+    },
+  });
+
+  if (!certificate) {
+    certificate = await prisma.digitalCertificate.create({
+      data: {
+        studentId: sanad.enrollment.student.id,
+        certificateType: 'SANAD',
+        title,
+        description: `Pengesahan hafalan Juz ${sanad.juz} oleh ${sanad.teacher.name}`,
+        certificateNumber: generateCertificateNumber(),
+        qrCode: generateVerificationCode(),
+        verificationUrl: `${process.env.APP_URL || 'https://cipansor.app'}/public/verify-sanad`,
+        grade: GRADE_LABELS[sanad.grade as SanadGrade] || sanad.grade || undefined,
+        issueDate: sanad.certifiedAt,
+        signatoryName: input.signedBy || sanad.teacher.name,
+        signatoryTitle: input.signedByTitle || 'Guru Tahfidz',
+        createdById: context.userId,
+      },
+    });
+  }
+
+  const certificateNumber = certificate.certificateNumber;
+  const verificationCode = certificate.qrCode;
 
   // Generate certificate data
   const certificateData = {
@@ -619,7 +651,7 @@ export function generateCertificateHtml(
       <div class="footer">
         <p>No. Sertifikat: <span class="cert-number">${certificateData.certificateNumber}</span></p>
         <p>Kode Verifikasi: ${certificateData.verificationCode}</p>
-        <p>Sertifikat ini dapat diverifikasi di: ${process.env.APP_URL || 'https://cipansor.app'}/verify</p>
+        <p>Sertifikat ini dapat diverifikasi di: ${process.env.APP_URL || 'https://cipansor.app'}/public/verify-sanad</p>
       </div>
     </div>
   </div>
@@ -632,27 +664,56 @@ export function generateCertificateHtml(
 // VERIFY CERTIFICATE
 // ============================================
 
+/**
+ * Verify a certificate against the persisted `DigitalCertificate` records.
+ * A certificate is valid only if its number exists in the database (and, when
+ * a verification code is supplied, the code matches). This endpoint is
+ * public, so the returned projection is limited to what is printed on the
+ * certificate itself — never internal IDs or contact data.
+ */
 export async function verifyCertificate(input: VerifyCertificateInput) {
-  // In production, certificates would be stored in database
-  // For now, we parse the certificate number to extract info
-  const { certificateNumber } = input;
+  const { certificateNumber, verificationCode } = input;
 
-  // Certificate number format: SANAD-YYYYMM-RANDOM
-  const match = certificateNumber.match(/^SANAD-(\d{6})-([A-F0-9]+)$/i);
+  const certificate = await prisma.digitalCertificate.findUnique({
+    where: { certificateNumber },
+    include: {
+      student: {
+        select: {
+          user: { select: { name: true } },
+          unit: { select: { name: true } },
+        },
+      },
+    },
+  });
 
-  if (!match) {
+  if (!certificate) {
     return {
       valid: false,
-      message: 'Format nomor sertifikat tidak valid',
+      message: 'Sertifikat tidak ditemukan. Periksa kembali nomor sertifikat.',
     };
   }
 
-  // In real implementation, lookup certificate in database
+  if (verificationCode && certificate.qrCode !== verificationCode.toUpperCase()) {
+    return {
+      valid: false,
+      message: 'Kode verifikasi tidak cocok dengan sertifikat ini.',
+    };
+  }
+
   return {
     valid: true,
-    message: 'Sertifikat valid',
-    certificateNumber,
-    // Additional data would come from database
+    message: 'Sertifikat valid dan terdaftar di sistem Cipansor',
+    data: {
+      certificateNumber: certificate.certificateNumber,
+      certificateType: certificate.certificateType,
+      title: certificate.title,
+      studentName: certificate.student.user?.name ?? null,
+      grade: certificate.grade,
+      issueDate: certificate.issueDate,
+      unitName: certificate.student.unit?.name ?? null,
+      signatoryName: certificate.signatoryName,
+      signatoryTitle: certificate.signatoryTitle,
+    },
   };
 }
 

@@ -274,8 +274,10 @@ export default function GrcDashboardPage() {
         </Card>
       </div>
 
-      {/* 5x5 Risk Heatmap: inherent vs residual */}
-      {riskMatrix && (
+      {/* 5x5 Risk Heatmap: inherent vs residual. The Array.isArray guard
+          keeps the page alive if the endpoint ever returns an unexpected
+          shape (e.g. intercepted/mocked responses in e2e runs). */}
+      {Array.isArray(riskMatrix?.inherent) && Array.isArray(riskMatrix?.residual) && (
         <div className="grid gap-6 lg:grid-cols-2 mt-6">
           <RiskHeatmap
             title="Peta Risiko Inheren (5×5)"

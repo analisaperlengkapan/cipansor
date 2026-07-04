@@ -66,6 +66,27 @@ test.describe('GRC Dashboard Live Data', () => {
       });
     });
 
+    // Specific risk-matrix mock registered AFTER the broad '**/api/analytics/grc*'
+    // route above so it takes precedence (Playwright matches the most recently
+    // registered route first). Without it the broad mock would answer the
+    // matrix request with the wrong shape and the heatmap would be hidden.
+    await page.route('**/api/analytics/grc/risk-matrix*', async (route) => {
+      const emptyRow = () => [0, 0, 0, 0, 0];
+      const matrix = [emptyRow(), emptyRow(), emptyRow(), emptyRow(), emptyRow()];
+      matrix[4][4] = 1; // one "almost certain × catastrophic" risk
+      await route.fulfill({
+        json: {
+          success: true,
+          data: {
+            likelihoodLabels: ['RARE', 'UNLIKELY', 'POSSIBLE', 'LIKELY', 'ALMOST_CERTAIN'],
+            impactLabels: ['INSIGNIFICANT', 'MINOR', 'MODERATE', 'MAJOR', 'CATASTROPHIC'],
+            inherent: matrix,
+            residual: [emptyRow(), emptyRow(), emptyRow(), emptyRow(), emptyRow()],
+          },
+        },
+      });
+    });
+
     await page.goto('/grc-dashboard');
 
     // Check Strategic Plans card
@@ -83,6 +104,10 @@ test.describe('GRC Dashboard Live Data', () => {
 
     // Check Sharia card
     await expect(page.locator('text=92% Compliant')).toBeVisible();
+
+    // Check the 5x5 risk heatmaps render from the risk-matrix endpoint
+    await expect(page.getByText('Peta Risiko Inheren (5×5)')).toBeVisible();
+    await expect(page.getByText('Peta Risiko Residual (5×5)')).toBeVisible();
   });
 
   test('should show loading state and handle errors', async ({ page }) => {

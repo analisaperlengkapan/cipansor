@@ -41,6 +41,7 @@ import {
   MessageSquare,
   Languages,
   Sparkles,
+  Trophy,
   WashingMachine,
   ShoppingCart,
   CreditCard,
@@ -357,6 +358,11 @@ const studentNavigation: NavGroup[] = [
         title: "Jurnal Ibadah",
         href: "/ibadah",
         icon: Sparkles,
+      },
+      {
+        title: "Prestasi Ibadah",
+        href: "/student/achievements",
+        icon: Trophy,
       },
       {
         title: "Muhadhoroh",

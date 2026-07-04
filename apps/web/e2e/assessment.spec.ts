@@ -121,7 +121,12 @@ test.describe("Assessment - Transcript", () => {
 
     if (await transcriptLink.isVisible({ timeout: 5000 }).catch(() => false)) {
       await transcriptLink.click();
-      await page.waitForLoadState("domcontentloaded", { timeout: 10000 });
+      // Client-side navigation: waitForLoadState("domcontentloaded") resolves
+      // immediately (the event already fired for /assessment), so a synchronous
+      // URL assertion races the router — especially in dev mode on a loaded CI
+      // runner where the target route compiles on demand. waitForURL retries
+      // until the router actually lands on the transcript route.
+      await page.waitForURL(/transcript/, { timeout: 15000 });
       expect(page.url()).toMatch(/transcript/);
     } else {
       // Direct navigation if no link found

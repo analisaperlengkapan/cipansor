@@ -76,17 +76,17 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           persist-credentials: false
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
         with:
           version: ${{ env.PNPM_VERSION }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
@@ -139,7 +139,7 @@ jobs:
       - name: Upload Playwright report
         if: always()
         continue-on-error: true # diagnostic artifact; storage-quota issues must not fail the gate
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-report
           path: apps/web/playwright-report/
@@ -148,7 +148,7 @@ jobs:
       - name: Upload test results (traces/screenshots)
         if: failure()
         continue-on-error: true
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-test-results
           path: apps/web/test-results/
@@ -159,7 +159,7 @@ jobs:
         # step failed and no report was produced). v3 takes the JSON report file.
         if: ${{ always() && github.event_name == 'pull_request' }}
         continue-on-error: true
-        uses: daun/playwright-report-comment@v3
+        uses: daun/playwright-report-comment@v4
         with:
           report-file: apps/web/test-results/results.json
 
@@ -217,17 +217,17 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           persist-credentials: false
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
         with:
           version: ${{ env.PNPM_VERSION }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
@@ -275,7 +275,7 @@ jobs:
       - name: Upload Playwright report
         if: always()
         continue-on-error: true
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-report-${{ matrix.browser }}
           path: apps/web/playwright-report/

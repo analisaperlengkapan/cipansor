@@ -159,3 +159,41 @@ export type VerifyDonationInput = z.infer<typeof verifyDonationSchema>;
 export type UpdateDonationInput = z.infer<typeof updateDonationSchema>;
 
 export type DonationStatsQuery = z.infer<typeof donationStatsQuerySchema>;
+
+// =====================================
+// MUSTAHIK SCHEMAS
+// =====================================
+
+export const MustahikCategoryEnum = z.enum([
+  'FAKIR',
+  'MISKIN',
+  'AMIL',
+  'MUALAF',
+  'RIQAB',
+  'GHARIMIN',
+  'FISABILILLAH',
+  'IBNU_SABIL',
+]);
+
+export const createMustahikSchema = z.object({
+  name: z.string().min(2),
+  nik: z.string().length(16).optional(),
+  address: z.string().optional(),
+  phone: z.string().optional(),
+  category: MustahikCategoryEnum,
+  notes: z.string().optional(),
+});
+
+export const updateMustahikSchema = createMustahikSchema.partial();
+
+// =====================================
+// DISTRIBUTION SCHEMAS
+// =====================================
+
+export const createZisDistributionSchema = z.object({
+  mustahikId: z.string().uuid(),
+  amount: z.number().min(1000),
+  type: PublicDonationTypeEnum,
+  date: z.string().datetime().optional(),
+  description: z.string().optional(),
+});

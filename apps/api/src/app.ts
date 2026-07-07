@@ -111,6 +111,8 @@ import organisasiRoutes from '@/modules/organisasi/organisasi.routes';
 import tataLaksanaRoutes from '@/modules/tatalaksana/tatalaksana.routes';
 import litbangRoutes from '@/modules/litbang/litbang.routes';
 import businessUnitRoutes from '@/modules/business-unit/routes';
+import nonFormalRoutes from '@/modules/non-formal';
+import socialServiceRoutes from '@/modules/social-service';
 
 // Create Express app
 const app = express();
@@ -291,6 +293,8 @@ apiRouter.use('/organisasi', organisasiRoutes);
 apiRouter.use('/tata-laksana', tataLaksanaRoutes);
 apiRouter.use('/litbang', litbangRoutes);
 apiRouter.use('/business-units', businessUnitRoutes);
+apiRouter.use('/non-formal', nonFormalRoutes);
+apiRouter.use('/social-service', socialServiceRoutes);
 
 // API info
 apiRouter.get('/', (_req, res) => {

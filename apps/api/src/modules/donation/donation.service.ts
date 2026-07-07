@@ -819,3 +819,85 @@ export default {
   campaign: campaignService,
   donation: donationService,
 };
+
+// =====================================
+// MUSTAHIK & DISTRIBUTION SERVICE
+// =====================================
+
+export const mustahikService = {
+  async findAll() {
+    return prisma.mustahik.findMany({
+      where: { isActive: true },
+      include: {
+        _count: { select: { distributions: true } },
+      },
+    });
+  },
+
+  async create(data: any) {
+    return prisma.mustahik.create({ data });
+  },
+
+  async distribute(data: any, recordedById: string) {
+    return prisma.$transaction(async (tx) => {
+      // 1. Record Distribution
+      const distribution = await tx.zisDistribution.create({
+        data: {
+          mustahikId: data.mustahikId,
+          amount: new Prisma.Decimal(data.amount),
+          type: data.type,
+          description: data.description,
+          recordedById,
+          date: data.date ? new Date(data.date) : new Date(),
+        },
+      });
+
+      // 2. Integration with Finance (Accounting)
+      const expenseAccount = await tx.accountCode.findFirst({
+        where: {
+          name: { contains: 'Penyaluran', mode: 'insensitive' },
+          type: 'EXPENSE',
+        },
+      });
+
+      const cashAccount = await tx.accountCode.findFirst({
+        where: {
+          name: { contains: 'Kas', mode: 'insensitive' },
+          type: 'ASSET',
+        },
+      });
+
+      if (expenseAccount && cashAccount) {
+        await tx.journalEntry.create({
+          data: {
+            unitId: 'FOUNDATION',
+            accountId: expenseAccount.id,
+            date: new Date(),
+            description: `Penyaluran ${data.type} kepada ${data.mustahikId}`,
+            debit: distribution.amount,
+            credit: 0,
+            reference: distribution.id,
+            referenceType: 'ZIS_DISTRIBUTION',
+            createdById: recordedById,
+          },
+        });
+
+        await tx.journalEntry.create({
+          data: {
+            unitId: 'FOUNDATION',
+            accountId: cashAccount.id,
+            date: new Date(),
+            description: `Penyaluran ${data.type} kepada ${data.mustahikId}`,
+            debit: 0,
+            credit: distribution.amount,
+            reference: distribution.id,
+            referenceType: 'ZIS_DISTRIBUTION',
+            createdById: recordedById,
+          },
+        });
+      }
+
+      return distribution;
+    });
+  },
+};

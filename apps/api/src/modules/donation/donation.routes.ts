@@ -1,6 +1,8 @@
 import { Router } from 'express';
+import { mustahikService } from "./donation.service";
 import { campaignController, donationController } from './donation.controller';
 import { authenticate, authorize, optionalAuth } from '@/middleware/auth';
+import httpStatus from "http-status";
 import { validate } from '@/middleware/validate';
 import { UserRole } from '@prisma/client';
 import {
@@ -10,6 +12,8 @@ import {
   createPublicDonationSchema,
   verifyDonationSchema,
   updateDonationSchema,
+  createMustahikSchema,
+  createZisDistributionSchema,
 } from './donation.schema';
 
 const router = Router();
@@ -210,3 +214,19 @@ router.delete(
 );
 
 export default router;
+
+// Mustahik routes
+router.get('/mustahik', async (req, res) => {
+  const mustahik = await mustahikService.findAll();
+  res.send(mustahik);
+});
+
+router.post('/mustahik', validate(createMustahikSchema), async (req, res) => {
+  const mustahik = await mustahikService.create(req.body);
+  res.status(httpStatus.CREATED).send(mustahik);
+});
+
+router.post('/distribute', validate(createZisDistributionSchema), async (req, res) => {
+  const distribution = await mustahikService.distribute(req.body, (req as any).user.id);
+  res.status(httpStatus.CREATED).send(distribution);
+});

@@ -262,7 +262,7 @@ export default function GrowthTrackingPage() {
                           onSelect={(d) =>
                             d && setFormData({ ...formData, date: d })
                           }
-                          initialFocus
+                          autoFocus
                         />
                       </PopoverContent>
                     </Popover>

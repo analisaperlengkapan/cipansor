@@ -246,7 +246,7 @@ export default function NewEnrollmentPage() {
                         date && setValue("targetCompletionDate", date)
                       }
                       disabled={(date) => date < new Date()}
-                      initialFocus
+                      autoFocus
                     />
                   </PopoverContent>
                 </Popover>

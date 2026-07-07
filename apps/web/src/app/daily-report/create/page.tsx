@@ -306,7 +306,7 @@ export default function CreateDailyReportPage() {
                       mode="single"
                       selected={date}
                       onSelect={(d) => d && setDate(d)}
-                      initialFocus
+                      autoFocus
                     />
                   </PopoverContent>
                 </Popover>

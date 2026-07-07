@@ -106,7 +106,7 @@ export default function ParentDailyReportsPage() {
                     selected={selectedDate}
                     onSelect={(date) => date && setSelectedDate(date)}
                     disabled={(date) => date > new Date()}
-                    initialFocus
+                    autoFocus
                   />
                 </PopoverContent>
               </Popover>

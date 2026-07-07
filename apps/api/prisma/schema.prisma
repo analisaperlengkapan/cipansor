@@ -300,6 +300,7 @@ model User {
   unit                              Unit?                       @relation(fields: [unitId], references: [id])
   userRoles                         UserRoleAssignment[] // NEW: Multi-role assignments
   student                           Student?
+  patient                            Patient?
   teacher                           Teacher?
   staff                             Staff?
   parentOf                          StudentParent[]
@@ -377,6 +378,10 @@ model User {
   paudAssessments                   PAUDDevelopmentAssessment[] @relation("PAUDAssessor")
   paudNarrativeReports              PAUDNarrativeReport[]       @relation("PAUDReportCreator")
   dailyStudentReports               DailyStudentReport[]        @relation("DailyReportCreator")
+  // Clinic relations
+  clinicAppointments                ClinicAppointment[]         @relation("PatientReserved")
+  clinicAppointmentsProcessed       ClinicAppointment[]         @relation("AppointmentProcessor")
+  prescriptions                     Prescription[]              @relation("PrescriptionCreator")
   murojaahRecords                   MurojaahRecord[]            @relation("MurojaahRecorder")
   simaanExaminer                    SimaanExaminer[]
   dashboardSnapshots                DashboardMetricSnapshot[]   @relation("SnapshotCreator")
@@ -459,6 +464,12 @@ model User {
 
   // Business Unit Management
   managedBusinessUnits BusinessUnit[]        @relation("BusinessUnitManager")
+
+  // Course / LMS relations
+  courseTeaching     Course[]            @relation("CourseTeacher")
+  courseEnrollments  CourseEnrollment[]
+  lessonCompletions  LessonCompletion[]
+  assignmentSubmissions AssignmentSubmission[]
 
   @@index([email])
   @@index([role])
@@ -546,6 +557,7 @@ model Unit {
   p5Projects             P5Project[]
   merdekaAssessments     MerdekaAssessment[]
   journalEntries         JournalEntry[]
+  courses                Course[]
   // Canteen relations
   canteenCategories      CanteenCategory[]
   canteenItems           CanteenItem[]
@@ -583,6 +595,7 @@ model Unit {
   marketingCampaigns     MarketingCampaign[]
   leaveBalances          LeaveBalance[]
   departments            Department[]
+  clinicAppointments     ClinicAppointment[]
 
   // Tata Naskah Dinas (E-Office)
   agendaNumbers   AgendaNumber[]
@@ -1033,6 +1046,8 @@ model Student {
   packages                    StudentPackage[]
   assignmentSubmissions       AssignmentSubmission[]
   examAttempts                ExamAttempt[]
+  clinicAppointments          ClinicAppointment[]
+  prescriptions               Prescription[]
 
   @@index([nis])
   @@index([unitId])
@@ -2010,10 +2025,14 @@ model MedicalRecord {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
-  student    Student @relation(fields: [studentId], references: [id])
-  recordedBy User    @relation("MedicalRecorder", fields: [recordedById], references: [id])
+  student    Student? @relation(fields: [studentId], references: [id])
+  patient    Patient? @relation(fields: [patientId], references: [id])
+  recordedBy User     @relation("MedicalRecorder", fields: [recordedById], references: [id])
+
+  patientId String? @map("patient_id")
 
   @@index([studentId])
+  @@index([patientId])
   @@index([visitDate])
   @@index([type])
   @@index([status])
@@ -2038,14 +2057,103 @@ model Medication {
   updatedAt   DateTime  @updatedAt @map("updated_at")
 
   // Relations
-  unit        Unit                 @relation(fields: [unitId], references: [id])
-  supplierRel Supplier?            @relation(fields: [supplierId], references: [id])
-  usageLogs   MedicationUsageLog[]
+  unit              Unit               @relation(fields: [unitId], references: [id])
+  supplierRel       Supplier?          @relation(fields: [supplierId], references: [id])
+  usageLogs         MedicationUsageLog[]
+  prescriptionItems PrescriptionItem[]
 
   @@index([unitId])
   @@index([name])
   @@index([expiryDate])
   @@map("medications")
+}
+
+/// Patient - Umum (Luar Pesantren)
+model Patient {
+  id        String   @id @default(uuid())
+  userId    String?  @unique @map("user_id") // Link ke User jika terdaftar
+  name      String
+  gender    Gender
+  birthDate DateTime @map("birth_date")
+  phone     String?
+  address   String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user           User?               @relation(fields: [userId], references: [id])
+  medicalRecords MedicalRecord[]
+  appointments   ClinicAppointment[]
+  prescriptions  Prescription[]
+
+  @@map("patients")
+}
+
+/// ClinicAppointment - Reservasi Klinik
+model ClinicAppointment {
+  id           String      @id @default(uuid())
+  unitId       String      @map("unit_id")
+  patientId    String?     @map("patient_id")
+  studentId    String?     @map("student_id")
+  userId       String?     @map("user_id") // Pengguna yang membuat reservasi
+  appointmentDate DateTime @map("appointment_date")
+  complaint    String      @db.Text
+  status       String      @default("SCHEDULED") // SCHEDULED, COMPLETED, CANCELLED
+  queueNumber  Int?        @map("queue_number")
+  processedById String?    @map("processed_by_id")
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+
+  // Relations
+  unit        Unit     @relation(fields: [unitId], references: [id])
+  patient     Patient? @relation(fields: [patientId], references: [id])
+  student     Student? @relation(fields: [studentId], references: [id])
+  reservedBy  User?    @relation("PatientReserved", fields: [userId], references: [id])
+  processedBy User?    @relation("AppointmentProcessor", fields: [processedById], references: [id])
+
+  @@index([unitId])
+  @@index([appointmentDate])
+  @@map("clinic_appointments")
+}
+
+/// Prescription - Resep Obat
+model Prescription {
+  id              String   @id @default(uuid())
+  medicalRecordId String?  @unique @map("medical_record_id")
+  patientId       String?  @map("patient_id")
+  studentId       String?  @map("student_id")
+  doctorId        String   @map("doctor_id")
+  notes           String?  @db.Text
+  status          String   @default("PENDING") // PENDING, FULFILLED, CANCELLED
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  patient     Patient?           @relation(fields: [patientId], references: [id])
+  student     Student?           @relation(fields: [studentId], references: [id])
+  doctor      User               @relation("PrescriptionCreator", fields: [doctorId], references: [id])
+  items       PrescriptionItem[]
+
+  @@index([patientId])
+  @@index([studentId])
+  @@map("prescriptions")
+}
+
+/// PrescriptionItem - Item Obat dalam Resep
+model PrescriptionItem {
+  id             String @id @default(uuid())
+  prescriptionId String @map("prescription_id")
+  medicationId   String @map("medication_id")
+  quantity       Int
+  dosage         String // e.g. "3x1"
+  instructions   String?
+
+  // Relations
+  prescription Prescription @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
+  medication   Medication   @relation(fields: [medicationId], references: [id])
+
+  @@index([prescriptionId])
+  @@map("prescription_items")
 }
 
 /// MedicationUsageLog - Log Penggunaan Obat
@@ -4678,9 +4786,30 @@ model Scholarship {
   unit       Unit                   @relation(fields: [unitId], references: [id])
   recipients ScholarshipRecipient[]
   discounts  ScholarshipDiscount[]
+  criteria   ScholarshipCriterion[]
 
   @@index([unitId])
   @@map("scholarships")
+}
+
+/// ScholarshipCriterion - Kriteria Penilaian Beasiswa
+model ScholarshipCriterion {
+  id            String   @id @default(uuid())
+  scholarshipId String   @map("scholarship_id")
+  name          String // Nama kriteria (misal: Penghasilan Orang Tua, Prestasi, Hafalan)
+  description   String?  @db.Text
+  weight        Float // Bobot kriteria (0-1 atau 0-100)
+  type          String // NUMERIC, BOOLEAN, ENUM
+  targetValue   String?  @map("target_value") // Nilai target/ambang batas
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  scholarship Scholarship            @relation(fields: [scholarshipId], references: [id], onDelete: Cascade)
+  assessments ScholarshipAssessment[]
+
+  @@index([scholarshipId])
+  @@map("scholarship_criteria")
 }
 
 /// ScholarshipDiscount - Potongan per Komponen Beasiswa
@@ -4712,6 +4841,7 @@ model ScholarshipRecipient {
   status         String    @default("ACTIVE") // ACTIVE, SUSPENDED, ENDED
   startDate      DateTime  @map("start_date")
   endDate        DateTime? @map("end_date")
+  totalScore     Float?    @map("total_score")
   notes          String?   @db.Text
   approvedById   String?   @map("approved_by_id")
   approvedAt     DateTime? @map("approved_at")
@@ -4719,15 +4849,34 @@ model ScholarshipRecipient {
   updatedAt      DateTime  @updatedAt @map("updated_at")
 
   // Relations
-  scholarship  Scholarship  @relation(fields: [scholarshipId], references: [id])
-  student      Student      @relation(fields: [studentId], references: [id])
-  academicYear AcademicYear @relation(fields: [academicYearId], references: [id])
-  approvedBy   User?        @relation("ScholarshipApprover", fields: [approvedById], references: [id])
+  scholarship  Scholarship             @relation(fields: [scholarshipId], references: [id])
+  student      Student                 @relation(fields: [studentId], references: [id])
+  academicYear AcademicYear            @relation(fields: [academicYearId], references: [id])
+  approvedBy   User?                   @relation("ScholarshipApprover", fields: [approvedById], references: [id])
+  assessments  ScholarshipAssessment[]
 
   @@unique([scholarshipId, studentId, academicYearId])
   @@index([scholarshipId])
   @@index([studentId])
   @@map("scholarship_recipients")
+}
+
+/// ScholarshipAssessment - Detail Penilaian per Kriteria
+model ScholarshipAssessment {
+  id          String   @id @default(uuid())
+  recipientId String   @map("recipient_id")
+  criterionId String   @map("criterion_id")
+  value       String // Nilai aktual
+  score       Float // Skor hasil konversi/perhitungan
+  notes       String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  recipient ScholarshipRecipient @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+  criterion ScholarshipCriterion @relation(fields: [criterionId], references: [id], onDelete: Cascade)
+
+  @@unique([recipientId, criterionId])
+  @@map("scholarship_assessments")
 }
 
 /// AccountCode - Kode Akun Keuangan
@@ -7168,8 +7317,10 @@ model Assignment {
 /// AssignmentSubmission - Pengumpulan Tugas
 model AssignmentSubmission {
   id           String @id @default(uuid())
-  assignmentId String @map("assignment_id")
-  studentId    String @map("student_id")
+  assignmentId String? @map("assignment_id") // Academic assignment
+  courseAssignmentId String? @map("course_assignment_id") // Course LMS assignment
+  studentId    String? @map("student_id")
+  userId       String? @map("user_id") // For non-formal education (general user)
 
   content     String? @db.Text
   attachments Json? // Array of file URLs
@@ -7184,13 +7335,131 @@ model AssignmentSubmission {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
-  assignment Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
-  student    Student    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  assignment       Assignment?       @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  courseAssignment CourseAssignment? @relation(fields: [courseAssignmentId], references: [id], onDelete: Cascade)
+  student          Student?          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  user             User?             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([assignmentId, studentId])
+  @@unique([courseAssignmentId, userId])
   @@index([assignmentId])
+  @@index([courseAssignmentId])
   @@index([studentId])
+  @@index([userId])
   @@map("assignment_submissions")
+}
+
+// =====================================
+// COURSE / LMS MODULE (PENDIDIKAN NON-FORMAL)
+// =====================================
+
+model Course {
+  id           String   @id @default(uuid())
+  unitId       String   @map("unit_id")
+  teacherId    String   @map("teacher_id") // Instructor
+  title        String
+  description  String?  @db.Text
+  category     String // e.g. Keterampilan, Bahasa, Komputer
+  level        String? // Pemula, Menengah, Mahir
+  price        Decimal? @db.Decimal(15, 2)
+  imageUrl     String?  @map("image_url")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  unit        Unit               @relation(fields: [unitId], references: [id])
+  teacher     User               @relation("CourseTeacher", fields: [teacherId], references: [id])
+  modules     CourseModule[]
+  enrollments CourseEnrollment[]
+
+  @@index([unitId])
+  @@index([category])
+  @@map("courses")
+}
+
+model CourseModule {
+  id        String   @id @default(uuid())
+  courseId  String   @map("course_id")
+  title     String
+  order     Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  course      Course             @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons     CourseLesson[]
+  assignments CourseAssignment[]
+
+  @@index([courseId])
+  @@map("course_modules")
+}
+
+model CourseLesson {
+  id          String   @id @default(uuid())
+  moduleId    String   @map("module_id")
+  title       String
+  content     String?  @db.Text // Text content
+  videoUrl    String?  @map("video_url")
+  attachmentUrl String? @map("attachment_url")
+  order       Int      @default(0)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  module      CourseModule       @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  completions LessonCompletion[]
+
+  @@index([moduleId])
+  @@map("course_lessons")
+}
+
+model CourseAssignment {
+  id          String   @id @default(uuid())
+  moduleId    String   @map("module_id")
+  title       String
+  description String?  @db.Text
+  dueDate     DateTime? @map("due_date")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  module      CourseModule           @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  submissions AssignmentSubmission[]
+
+  @@index([moduleId])
+  @@map("course_assignments")
+}
+
+model CourseEnrollment {
+  id          String   @id @default(uuid())
+  courseId    String   @map("course_id")
+  userId      String   @map("user_id")
+  enrolledAt  DateTime @default(now()) @map("enrolled_at")
+  status      String   @default("ACTIVE") // ACTIVE, COMPLETED, DROPPED
+  progress    Float    @default(0) // 0-100
+  completedAt DateTime? @map("completed_at")
+  certificateUrl String? @map("certificate_url")
+
+  // Relations
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([courseId, userId])
+  @@index([courseId])
+  @@index([userId])
+  @@map("course_enrollments")
+}
+
+model LessonCompletion {
+  id        String   @id @default(uuid())
+  lessonId  String   @map("lesson_id")
+  userId    String   @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  lesson CourseLesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  user   User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([lessonId, userId])
+  @@map("lesson_completions")
 }
 
 // =====================================

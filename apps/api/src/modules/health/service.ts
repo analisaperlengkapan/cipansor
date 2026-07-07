@@ -498,6 +498,119 @@ export async function createMedicationUsage(data: CreateMedicationUsageInput, gi
   });
 }
 
+// ==================== CLINIC MANAGEMENT ====================
+
+export async function createPatient(data: {
+  name: string;
+  gender: string;
+  birthDate: string | Date;
+  phone?: string;
+  address?: string;
+  userId?: string;
+}) {
+  return prisma.patient.create({
+    data: {
+      ...data,
+      gender: data.gender as any,
+      birthDate: new Date(data.birthDate),
+    },
+  });
+}
+
+export async function createClinicAppointment(data: {
+  unitId: string;
+  patientId?: string;
+  studentId?: string;
+  userId?: string;
+  appointmentDate: string | Date;
+  complaint: string;
+}) {
+  // Generate queue number for the day
+  const startOfDay = new Date(data.appointmentDate);
+  startOfDay.setHours(0, 0, 0, 0);
+  const endOfDay = new Date(data.appointmentDate);
+  endOfDay.setHours(23, 59, 59, 999);
+
+  const count = await prisma.clinicAppointment.count({
+    where: {
+      unitId: data.unitId,
+      appointmentDate: { gte: startOfDay, lte: endOfDay },
+    },
+  });
+
+  return prisma.clinicAppointment.create({
+    data: {
+      ...data,
+      appointmentDate: new Date(data.appointmentDate),
+      queueNumber: count + 1,
+    },
+  });
+}
+
+export async function createPrescription(data: {
+  medicalRecordId?: string;
+  patientId?: string;
+  studentId?: string;
+  doctorId: string;
+  notes?: string;
+  items: { medicationId: string; quantity: number; dosage: string; instructions?: string }[];
+}) {
+  return prisma.prescription.create({
+    data: {
+      medicalRecordId: data.medicalRecordId,
+      patientId: data.patientId,
+      studentId: data.studentId,
+      doctorId: data.doctorId,
+      notes: data.notes,
+      items: {
+        create: data.items,
+      },
+    },
+    include: {
+      items: true,
+    },
+  });
+}
+
+export async function fulfillPrescription(prescriptionId: string, fulfilledById: string) {
+  return prisma.$transaction(async (tx) => {
+    const prescription = await tx.prescription.findUnique({
+      where: { id: prescriptionId },
+      include: { items: true },
+    });
+
+    if (!prescription) throw new Error('Prescription not found');
+    if (prescription.status !== 'PENDING') throw new Error('Prescription already processed');
+
+    for (const item of prescription.items) {
+      const medication = await tx.medication.findUnique({ where: { id: item.medicationId } });
+      if (!medication || medication.quantity < item.quantity) {
+        throw new Error(`Insufficient stock for medication: ${medication?.name || item.medicationId}`);
+      }
+
+      await tx.medication.update({
+        where: { id: item.medicationId },
+        data: { quantity: { decrement: item.quantity } },
+      });
+
+      await tx.medicationUsageLog.create({
+        data: {
+          medicationId: item.medicationId,
+          studentId: prescription.studentId,
+          quantity: item.quantity,
+          reason: `Resep: ${prescription.id}`,
+          givenById: fulfilledById,
+        },
+      });
+    }
+
+    return tx.prescription.update({
+      where: { id: prescriptionId },
+      data: { status: 'FULFILLED' },
+    });
+  });
+}
+
 // ==================== STATISTICS ====================
 
 export async function getHealthStats(unitId: string): Promise<HealthStats> {

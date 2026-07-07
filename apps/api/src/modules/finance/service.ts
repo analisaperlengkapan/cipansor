@@ -134,11 +134,48 @@ export async function createInvoice(data: CreateInvoiceDto, tx?: Prisma.Transact
       const invoiceNumber = await generateInvoiceNumber(undefined, tx);
 
       const { studentId, paymentTypeId, ...invoiceData } = data;
+
+      // =================================================================
+      // INTEGRATION: Apply Scholarship Discounts
+      // =================================================================
+      let finalAmount = new Prisma.Decimal(data.amount);
+      const scholarships = await dbClient.scholarshipRecipient.findMany({
+        where: {
+          studentId,
+          status: 'ACTIVE',
+          startDate: { lte: new Date() },
+          OR: [{ endDate: null }, { endDate: { gte: new Date() } }],
+        },
+        include: {
+          scholarship: {
+            include: {
+              discounts: true,
+            },
+          },
+        },
+      });
+
+      for (const rec of scholarships) {
+        // Find if this scholarship covers this payment type
+        // In this implementation, we assume if it has specific discounts, apply them.
+        // If it's a general scholarship, it might apply to all.
+        for (const discount of rec.scholarship.discounts) {
+          if (discount.componentId === paymentTypeId) {
+            if (discount.discountType === 'PERCENTAGE') {
+              const deduction = finalAmount.mul(discount.discountValue).div(100);
+              finalAmount = finalAmount.sub(deduction);
+            } else {
+              finalAmount = finalAmount.sub(discount.discountValue);
+            }
+          }
+        }
+      }
+
       invoice = await dbClient.invoice.create({
         data: {
           ...invoiceData,
           invoiceNumber,
-          amount: new Prisma.Decimal(data.amount),
+          amount: finalAmount.lt(0) ? 0 : finalAmount,
           dueDate: new Date(data.dueDate),
           student: { connect: { id: studentId } },
           paymentType: { connect: { id: paymentTypeId } },

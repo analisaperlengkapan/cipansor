@@ -836,7 +836,7 @@ model AcademicYear {
 
   // Perguruan Tinggi (Higher Ed) relations
   courseClasses CourseClass[]
-  krs           KRS[]
+  krs           Krs[]
 
   @@index([isActive])
   @@map("academic_years")
@@ -8436,14 +8436,14 @@ model StudentHigherEd {
   // Relations
   student  Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
   program  StudyProgram @relation(fields: [programId], references: [id])
-  krs      KRS[]
+  krs      Krs[]
 
   @@index([programId])
   @@map("students_higher_ed")
 }
 
 /// KRS - Kartu Rencana Studi
-model KRS {
+model Krs {
   id             String   @id @default(uuid())
   studentHeId    String   @map("student_he_id")
   academicYearId String   @map("academic_year_id")
@@ -8474,7 +8474,7 @@ model CourseEnrollment {
   updatedAt     DateTime @updatedAt @map("updated_at")
 
   // Relations
-  krs   KRS         @relation(fields: [krsId], references: [id], onDelete: Cascade)
+  krs   Krs         @relation(fields: [krsId], references: [id], onDelete: Cascade)
   class CourseClass @relation(fields: [classId], references: [id])
 
   @@unique([krsId, classId])

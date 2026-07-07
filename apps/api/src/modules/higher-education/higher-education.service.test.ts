@@ -53,9 +53,9 @@ describe('HigherEducationService', () => {
     });
   });
 
-  it('should create KRS', async () => {
+  it('should create Krs', async () => {
     const krsData = { studentHeId: 'she-1', academicYearId: 'ay-1', semester: 1 };
-    await higherEducationService.createKRS(krsData);
+    await higherEducationService.createKrs(krsData);
     expect(prisma.krs.create).toHaveBeenCalledWith({
       data: krsData
     });

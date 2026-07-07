@@ -40,15 +40,15 @@ export class HigherEducationController {
     res.status(201).json(enrollment);
   }
 
-  async createKRS(req: Request, res: Response) {
+  async createKrs(req: Request, res: Response) {
     const data = CreateKRSSchema.parse(req.body);
-    const krs = await higherEducationService.createKRS(data);
+    const krs = await higherEducationService.createKrs(data);
     res.status(201).json(krs);
   }
 
-  async addCourseToKRS(req: Request, res: Response) {
+  async addCourseToKrs(req: Request, res: Response) {
     const data = AddCourseToKRSSchema.parse(req.body);
-    const enrollment = await higherEducationService.addCourseToKRS(data.krsId, data.classId);
+    const enrollment = await higherEducationService.addCourseToKrs(data.krsId, data.classId);
     res.status(201).json(enrollment);
   }
 

@@ -42,8 +42,8 @@ export class HigherEducationService {
     });
   }
 
-  // --- KRS ---
-  async createKRS(data: { studentHeId: string; academicYearId: string; semester: number }) {
+  // --- Krs ---
+  async createKrs(data: { studentHeId: string; academicYearId: string; semester: number }) {
     return prisma.krs.create({
       data: {
         studentHeId: data.studentHeId,
@@ -53,7 +53,7 @@ export class HigherEducationService {
     });
   }
 
-  async addCourseToKRS(krsId: string, classId: string) {
+  async addCourseToKrs(krsId: string, classId: string) {
     return prisma.courseEnrollment.create({
       data: {
         krsId,

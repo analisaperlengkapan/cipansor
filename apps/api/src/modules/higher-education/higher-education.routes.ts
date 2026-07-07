@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { higherEducationController } from './higher-education.controller';
-import { asyncHandler } from '../../middleware/async-handler';
+import { asyncHandler } from '../../middleware/error';
 
 const router = Router();
 
@@ -18,8 +18,8 @@ router.post('/courses', asyncHandler(higherEducationController.createCourse));
 router.post('/enroll', asyncHandler(higherEducationController.enrollStudent));
 
 // Academic Records (KRS/Transcript)
-router.post('/krs', asyncHandler(higherEducationController.createKRS));
-router.post('/krs/add-course', asyncHandler(higherEducationController.addCourseToKRS));
+router.post('/krs', asyncHandler(higherEducationController.createKrs));
+router.post('/krs/add-course', asyncHandler(higherEducationController.addCourseToKrs));
 router.get('/students/:studentHeId/transcript', asyncHandler(higherEducationController.getTranscript));
 
 export default router;

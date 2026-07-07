@@ -100,6 +100,24 @@ import {
   QualityStandardType,
   AuditStatus,
   ExamAttemptStatus,
+  LandOwnership,
+  BuildingCondition,
+  OrgPositionStatus,
+  BSCPerspective,
+  ComplianceStatus,
+  FindingSeverity,
+  FollowUpStatus,
+  InternalAuditStatus,
+  ShariaCategory,
+  TrainingStatus,
+  ResearchStatus,
+  InnovationStatus,
+  PlanStatus,
+  PlanType,
+  AssetDisposalReason,
+  WasteCategory,
+  EnvironmentProgramStatus,
+  TahfidzMistakeType,
 } from '@prisma/client';
 import { createPrismaClient } from './client';
 import bcrypt from 'bcryptjs';
@@ -5600,7 +5618,17 @@ async function main() {
 
   // 3. P5 Projects & Assessments
   console.log('   Seeding P5 Projects & Assessments...');
-  const p5Theme = await prisma.p5Theme.findFirst();
+  let p5Theme = await prisma.p5Theme.findFirst();
+  if (!p5Theme) {
+    p5Theme = await prisma.p5Theme.create({
+      data: {
+        code: 'GAYA_HIDUP',
+        name: 'Gaya Hidup Berkelanjutan',
+        description: 'Membangun kesadaran santri untuk berperilaku ramah lingkungan dan mengelola sampah.',
+        isActive: true,
+      },
+    });
+  }
   if (p5Theme) {
     const p5Project = await prisma.p5Project.create({
       data: {
@@ -6233,7 +6261,762 @@ async function main() {
   });
   console.log('   ✅ Talent Profiles & Succession Plans created');
 
-  console.log('🔧 Phase 11, 12 & 13 comprehensive demo data completed!\n');
+  // ============================================
+  // PHASE 14: Comprehensive Demo Data for Empty Tables
+  // ============================================
+  console.log('\n🔧 Seeding Phase 14 comprehensive demo data (Additional Empty Models)...');
+
+  // 1. Assets & Facilities (lands, buildings, room_types, facility_rooms, asset_audits, asset_audit_items, asset_disposals)
+  console.log('   Seeding Lands, Buildings & Facility Rooms...');
+  const land = await prisma.land.create({
+    data: {
+      unitId: pesantren.id,
+      code: 'LND-001',
+      address: 'Jl. Pesantren No. 1, Kota Sukabumi',
+      area: new Prisma.Decimal(5000.0),
+      ownership: LandOwnership.MILIK_SENDIRI,
+      certificateNo: 'CERT-LND-001',
+      certificateDate: new Date('2010-05-20'),
+      acquisitionDate: new Date('2009-12-15'),
+      acquisitionValue: new Prisma.Decimal(2500000000.0),
+      notes: 'Tanah utama kampus pesantren.',
+    },
+  });
+
+  const building = await prisma.building.create({
+    data: {
+      unitId: pesantren.id,
+      landId: land.id,
+      code: 'BLD-A',
+      name: 'Gedung Umar bin Khattab',
+      floors: 3,
+      buildingArea: new Prisma.Decimal(1200.0),
+      yearBuilt: 2012,
+      condition: BuildingCondition.BAIK,
+      notes: 'Gedung utama untuk ruang kelas dan administrasi.',
+    },
+  });
+
+  const roomTypeKelas = await prisma.roomType.create({
+    data: {
+      code: 'KELAS',
+      name: 'Ruang Kelas',
+      description: 'Ruang untuk kegiatan belajar mengajar teori.',
+    },
+  });
+
+  const roomTypeLab = await prisma.roomType.create({
+    data: {
+      code: 'LAB_KOMP',
+      name: 'Laboratorium Komputer',
+      description: 'Ruang praktikum komputer.',
+    },
+  });
+
+  const roomTypePerpus = await prisma.roomType.create({
+    data: {
+      code: 'PERPUS',
+      name: 'Perpustakaan',
+      description: 'Ruang perpustakaan sekolah.',
+    },
+  });
+
+  const facilityRoom1 = await prisma.facilityRoom.create({
+    data: {
+      unitId: pesantren.id,
+      buildingId: building.id,
+      roomTypeId: roomTypeKelas.id,
+      code: 'RM-7A',
+      name: 'Ruang Kelas 7A',
+      floor: 1,
+      length: new Prisma.Decimal(9.0),
+      width: new Prisma.Decimal(8.0),
+      area: new Prisma.Decimal(72.0),
+      capacity: 32,
+      condition: BuildingCondition.BAIK,
+      facilities: ['AC', 'Proyektor', 'Whiteboard', '32 Kursi', '32 Meja'],
+    },
+  });
+
+  const facilityRoom2 = await prisma.facilityRoom.create({
+    data: {
+      unitId: pesantren.id,
+      buildingId: building.id,
+      roomTypeId: roomTypeLab.id,
+      code: 'RM-LAB-01',
+      name: 'Lab Komputer 1',
+      floor: 2,
+      length: new Prisma.Decimal(12.0),
+      width: new Prisma.Decimal(8.0),
+      area: new Prisma.Decimal(96.0),
+      capacity: 25,
+      condition: BuildingCondition.BAIK,
+      facilities: ['AC', 'Proyektor', '25 PC Klien', '1 PC Server', 'LAN Switch'],
+    },
+  });
+
+  // Link some existing assets to the new facility rooms
+  const allAssetsForFacilities = await prisma.asset.findMany();
+  for (let i = 0; i < allAssetsForFacilities.length; i++) {
+    await prisma.asset.update({
+      where: { id: allAssetsForFacilities[i].id },
+      data: { roomId: facilityRoom1.id },
+    });
+  }
+
+  // Asset Audits & Items
+  const assetAudit = await prisma.assetAudit.create({
+    data: {
+      unitId: pesantren.id,
+      date: new Date(),
+      notes: 'Audit sarana prasarana tengah tahun.',
+      status: 'COMPLETED',
+      createdById: adminPesantrenUser.id,
+    },
+  });
+
+  if (allAssetsForFacilities.length > 0) {
+    await prisma.assetAuditItem.create({
+      data: {
+        auditId: assetAudit.id,
+        assetId: allAssetsForFacilities[0].id,
+        systemStatus: 'ACTIVE',
+        actualStatus: 'FOUND',
+        condition: AssetCondition.GOOD,
+        notes: 'Asset dalam kondisi terawat.',
+      },
+    });
+
+    // Asset Disposal
+    await prisma.assetDisposal.create({
+      data: {
+        assetId: allAssetsForFacilities[0].id,
+        date: new Date(),
+        reason: AssetDisposalReason.DAMAGED,
+        notes: 'Kerusakan total pada unit catu daya.',
+        approvedById: superAdminUser.id,
+      },
+    });
+  }
+  console.log('   ✅ Asset & Facilities records created');
+
+  // 2. Org Structure (org_units, org_positions)
+  console.log('   Seeding Org Units & Org Positions...');
+  const orgUnitPendidikan = await prisma.orgUnit.create({
+    data: {
+      unitId: pesantren.id,
+      name: 'Direktorat Pendidikan',
+      code: 'DIR-EDU',
+      description: 'Mengurus seluruh kegiatan akademik dan kurikulum.',
+      level: 1,
+      sortOrder: 1,
+    },
+  });
+
+  const orgUnitKeuangan = await prisma.orgUnit.create({
+    data: {
+      unitId: pesantren.id,
+      name: 'Bagian Keuangan',
+      code: 'DIV-FIN',
+      description: 'Mengurus keuangan dan akuntansi pesantren.',
+      level: 1,
+      sortOrder: 2,
+    },
+  });
+
+  await prisma.orgPosition.create({
+    data: {
+      orgUnitId: orgUnitPendidikan.id,
+      title: 'Direktur Pendidikan',
+      code: 'POS-DIR-EDU',
+      level: 2,
+      status: OrgPositionStatus.ACTIVE,
+      holderId: adminPesantrenUser.id,
+      description: 'Memimpin dan merumuskan kebijakan kurikulum.',
+    },
+  });
+
+  await prisma.orgPosition.create({
+    data: {
+      orgUnitId: orgUnitKeuangan.id,
+      title: 'Staff Administrasi Keuangan',
+      code: 'POS-FIN-STAFF',
+      level: 4,
+      status: OrgPositionStatus.ACTIVE,
+      holderId: teacherPesantrenUser.id,
+      description: 'Melakukan input pembukuan harian.',
+    },
+  });
+  console.log('   ✅ Org Units & Positions created');
+
+  // 3. E-Office (filing_classifications, agenda_numbers, dispositions)
+  console.log('   Seeding E-Office filing, agenda, & dispositions...');
+  const filingClass1 = await prisma.filingClassification.create({
+    data: {
+      code: '000',
+      name: 'Umum',
+      description: 'Urusan umum, ketatausahaan, dan administrasi.',
+      retention: 5,
+      isActive: true,
+    },
+  });
+
+  const filingClass2 = await prisma.filingClassification.create({
+    data: {
+      code: '420',
+      name: 'Pendidikan',
+      description: 'Urusan kurikulum, kesiswaan, dan pengajaran.',
+      retention: 10,
+      isActive: true,
+    },
+  });
+
+  await prisma.agendaNumber.create({
+    data: {
+      unitId: pesantren.id,
+      academicYearId: academicYear.id,
+      type: 'INCOMING',
+      lastNumber: 1,
+      format: '[NO]/SMPIT-AH/IN/[YEAR]',
+    },
+  });
+
+  await prisma.agendaNumber.create({
+    data: {
+      unitId: pesantren.id,
+      academicYearId: academicYear.id,
+      type: 'OUTGOING',
+      lastNumber: 1,
+      format: '[NO]/SMPIT-AH/OUT/[YEAR]',
+    },
+  });
+
+  // Link classification to existing letters
+  const allLetters = await prisma.letter.findMany();
+  for (const l of allLetters) {
+    await prisma.letter.update({
+      where: { id: l.id },
+      data: { classificationId: filingClass2.id },
+    });
+  }
+
+  if (allLetters.length > 0) {
+    await prisma.disposition.create({
+      data: {
+        letterId: allLetters[0].id,
+        senderId: adminPesantrenUser.id,
+        recipientId: teacherPesantrenUser.id,
+        instruction: 'Tolong koordinasikan dengan bagian kurikulum untuk tindak lanjut pelatihan ini.',
+        deadline: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
+        status: 'IN_PROGRESS',
+        notes: 'Musyawarah awal direncanakan hari Kamis.',
+      },
+    });
+  }
+  console.log('   ✅ E-Office helper tables created');
+
+  // 4. Green Campus (environment_programs, waste_management, green_campus_indicators)
+  console.log('   Seeding Green Campus data...');
+  await prisma.environmentProgram.create({
+    data: {
+      unitId: pesantren.id,
+      title: 'Aksi Tanam 1000 Pohon',
+      description: 'Penghijauan lingkungan asrama dan area kebun pesantren.',
+      category: 'PENGHIJAUAN',
+      status: EnvironmentProgramStatus.ACTIVE,
+      startDate: new Date('2026-06-01'),
+      endDate: new Date('2026-08-31'),
+      progress: 45,
+      picId: teacherPesantrenUser.id,
+    },
+  });
+
+  await prisma.environmentProgram.create({
+    data: {
+      unitId: pesantren.id,
+      title: 'Gerakan Zero Single-Use Plastic',
+      description: 'Kampanye bebas plastik sekali pakai di kantin sekolah.',
+      category: 'KAMPANYE',
+      status: EnvironmentProgramStatus.ACTIVE,
+      startDate: new Date('2026-07-01'),
+      endDate: new Date('2026-12-31'),
+      progress: 20,
+      picId: adminPesantrenUser.id,
+    },
+  });
+
+  await prisma.wasteManagement.create({
+    data: {
+      unitId: pesantren.id,
+      category: WasteCategory.ORGANIC,
+      weight: 25.5,
+      method: 'Daur Ulang',
+      recordDate: new Date(),
+      notes: 'Sampah organik dialihkan ke komposter P5.',
+      recordedById: teacherPesantrenUser.id,
+    },
+  });
+
+  await prisma.greenCampusIndicator.create({
+    data: {
+      unitId: pesantren.id,
+      name: 'Rasio Luas Terbuka Hijau',
+      category: 'LANDSCAPE',
+      targetValue: 40.0,
+      currentValue: 35.0,
+      unit: '%',
+      period: 'TAHUNAN',
+      recordDate: new Date(),
+      notes: 'Perlu perluasan taman di belakang asrama putri.',
+    },
+  });
+
+  await prisma.greenCampusIndicator.create({
+    data: {
+      unitId: pesantren.id,
+      name: 'Efisiensi Konsumsi Air Bersih',
+      category: 'WATER',
+      targetValue: 80.0,
+      currentValue: 75.0,
+      unit: 'L/hari/orang',
+      period: 'BULANAN',
+      recordDate: new Date(),
+      notes: 'Penggunaan sensor keran air otomatis mulai dipasang.',
+    },
+  });
+  console.log('   ✅ Green Campus tables created');
+
+  // 5. Research & Development / Litbang (research_projects, research_milestones, innovation_proposals)
+  console.log('   Seeding Litbang (Research & Development)...');
+  const resProject = await prisma.researchProject.create({
+    data: {
+      unitId: pesantren.id,
+      title: 'Pengembangan Metode Murattal Cepat untuk Anak PAUD',
+      abstract: 'Penelitian eksperimental menguji efektivitas metode irama nahawand bagi ingatan balita.',
+      category: 'Pendidikan',
+      status: ResearchStatus.IN_PROGRESS,
+      budget: new Prisma.Decimal(15000000.0),
+      startDate: new Date('2026-05-01'),
+      endDate: new Date('2026-11-30'),
+      leaderId: teacherPesantrenUser.id,
+      progress: 30,
+    },
+  });
+
+  await prisma.researchMilestone.create({
+    data: {
+      projectId: resProject.id,
+      title: 'Desain kurikulum dan pre-test',
+      description: 'Membuat modul materi dan melakukan pre-test kemampuan awal santri PAUD.',
+      dueDate: new Date('2026-06-30'),
+      status: 'COMPLETED',
+      completedAt: new Date('2026-06-28'),
+    },
+  });
+
+  await prisma.researchMilestone.create({
+    data: {
+      projectId: resProject.id,
+      title: 'Penerapan metode nahawand',
+      description: 'Memulai sesi pengenalan irama secara rutin di kelas.',
+      dueDate: new Date('2026-09-15'),
+      status: 'IN_PROGRESS',
+    },
+  });
+
+  await prisma.innovationProposal.create({
+    data: {
+      unitId: pesantren.id,
+      title: 'Aplikasi Tabungan Santri Berbasis Barcode',
+      description: 'Usulan sistem pembayaran non-tunai di kantin menggunakan ID Card santri berkode batang.',
+      category: 'TEKNOLOGI',
+      status: InnovationStatus.IDEA,
+      proposerId: teacherPesantrenUser.id,
+    },
+  });
+  console.log('   ✅ Litbang / R&D tables created');
+
+  // 6. Strategic Planning (strategic_plans, plan_objectives, plan_indicators, plan_activities)
+  console.log('   Seeding Strategic Plans & Objectives...');
+  const stratPlan = await prisma.strategicPlan.create({
+    data: {
+      unitId: pesantren.id,
+      title: 'Rencana Jangka Panjang Cipansor 2026-2030',
+      description: 'Peta jalan pengembangan fasilitas fisik dan mutu pengajaran bertaraf nasional.',
+      type: PlanType.RENSTRA,
+      status: PlanStatus.IN_PROGRESS,
+      startDate: new Date('2026-01-01'),
+      endDate: new Date('2030-12-31'),
+      budget: new Prisma.Decimal(500000000.0),
+      progress: 10.0,
+      createdById: superAdminUser.id,
+    },
+  });
+
+  const planObjective = await prisma.planObjective.create({
+    data: {
+      planId: stratPlan.id,
+      title: 'Akreditasi Institusi Menjadi A',
+      description: 'Memenuhi semua indikator kelayakan BAN-S/M dengan nilai unggul.',
+      perspective: BSCPerspective.PROCESS,
+      priority: PlanPriority.HIGH,
+      weight: 40.0,
+      progress: 15.0,
+    },
+  });
+
+  const planInd = await prisma.planIndicator.create({
+    data: {
+      objectiveId: planObjective.id,
+      name: 'Persentase Guru Bersertifikasi',
+      unit: '%',
+      targetValue: 80.0,
+      currentValue: 60.0,
+    },
+  });
+
+  await prisma.planActivity.create({
+    data: {
+      objectiveId: planObjective.id,
+      title: 'Penyelenggaraan Bimbingan Teknis Kurikulum Merdeka',
+      description: 'Pelatihan internal bersertifikat bagi guru mata pelajaran.',
+      status: PlanStatus.IN_PROGRESS,
+      priority: PlanPriority.HIGH,
+      startDate: new Date('2026-08-01'),
+      endDate: new Date('2026-08-05'),
+      budget: new Prisma.Decimal(25000000.0),
+      picId: teacherPesantrenUser.id,
+    },
+  });
+  console.log('   ✅ Strategic Planning tables created');
+
+  // 7. Supervision & Audits (internal_audits, audit_findings, audit_follow_ups)
+  console.log('   Seeding Internal Audits & Findings...');
+  const intAudit = await prisma.internalAudit.create({
+    data: {
+      unitId: pesantren.id,
+      title: 'Audit Operasional Keuangan Semester Ganjil',
+      auditType: 'Keuangan',
+      scope: 'Verifikasi kecocokan slip pembayaran SPP fisik dengan entri database.',
+      status: InternalAuditStatus.COMPLETED,
+      executedDate: new Date('2026-06-15'),
+      completedDate: new Date('2026-06-18'),
+      leadAuditorId: superAdminUser.id,
+      plannedDate: new Date('2026-06-15'),
+    },
+  });
+
+  const finding = await prisma.auditFinding.create({
+    data: {
+      auditId: intAudit.id,
+      findingNumber: 'FND-001',
+      title: 'Selisih input nominal kas masuk',
+      description: 'Selisih input nominal kas masuk sebesar Rp500.000 pada minggu kedua bulan Juni.',
+      rootCause: 'Pencatatan manual tanpa verifikasi ganda.',
+      recommendation: 'Lakukan rekonsiliasi harian secara ketat.',
+      severity: FindingSeverity.MINOR,
+      category: 'Keuangan',
+    },
+  });
+
+  await prisma.auditFollowUp.create({
+    data: {
+      findingId: finding.id,
+      action: 'Mengevaluasi mutasi rekening koran Mandiri dan mengoreksi jurnal penyesuaian.',
+      status: FollowUpStatus.IN_PROGRESS,
+      evidence: 'Pekerjaan rekonsiliasi sedang berjalan oleh Bendahara.',
+      verifiedById: superAdminUser.id,
+      dueDate: new Date('2026-07-15'),
+    },
+  });
+  console.log('   ✅ Audit & Supervision tables created');
+
+  // 8. Sharia Compliance (sharia_compliances, sharia_audits)
+  console.log('   Seeding Sharia Compliances & Audits...');
+  const compliance = await prisma.shariaCompliance.create({
+    data: {
+      unitId: pesantren.id,
+      category: ShariaCategory.MUAMALAH,
+      title: 'Kesesuaian Akad Ba\'i al-Murabahah',
+      description: 'Pemeriksaan kesesuaian transaksi jual beli murabahah.',
+      standard: 'Kantin wajib memisahkan barang milik pemasok dengan barang milik kantin secara jelas sebelum dijual.',
+      status: ComplianceStatus.COMPLIANT,
+      score: 100,
+      notes: 'Kantin telah mematuhi akad pemisahan barang dagangan.',
+    },
+  });
+
+  await prisma.shariaAudit.create({
+    data: {
+      complianceId: compliance.id,
+      auditorId: adminPesantrenUser.id,
+      auditDate: new Date(),
+      findings: 'Akad sewa kantin menggunakan akad ijarah yang sah. Pembagian hasil kantin bersih.',
+      recommendation: 'Tingkatkan edukasi fikih muamalah bagi para penjaga kantin.',
+      score: 95.0,
+    },
+  });
+  console.log('   ✅ Sharia Compliance tables created');
+
+  // 9. Operations & Miscellaneous
+  console.log('   Seeding Operations & Miscellaneous tables...');
+  // Canteen stock movements
+  const canteenItem = await prisma.canteenItem.findFirst();
+  if (canteenItem) {
+    await prisma.canteenStockMovement.create({
+      data: {
+        itemId: canteenItem.id,
+        type: 'IN',
+        quantity: 50,
+        stockBefore: 10,
+        stockAfter: 60,
+        notes: 'Restock mingguan dari supplier.',
+        createdById: adminPesantrenUser.id,
+      },
+    });
+  }
+
+  // Laundry Status Logs
+  const laundryTx = await prisma.laundryTransaction.findFirst();
+  if (laundryTx) {
+    await prisma.laundryStatusLog.create({
+      data: {
+        transactionId: laundryTx.id,
+        fromStatus: 'RECEIVED',
+        toStatus: 'PROCESSING',
+        notes: 'Pakaian sedang dicuci menggunakan mesin laundry utama.',
+        createdById: adminPesantrenUser.id,
+      },
+    });
+  }
+
+  // Scholarship Discounts
+  const scholarshipForDiscounts = await prisma.scholarship.findFirst();
+  const payComponent = await prisma.paymentComponent.create({
+    data: {
+      unitId: pesantren.id,
+      code: 'SPP',
+      name: 'Sumbangan Pembinaan Pendidikan',
+      category: 'RUTIN',
+      amount: new Prisma.Decimal(500000.0),
+    },
+  });
+
+  if (scholarshipForDiscounts && payComponent) {
+    await prisma.scholarshipDiscount.create({
+      data: {
+        scholarshipId: scholarshipForDiscounts.id,
+        componentId: payComponent.id,
+        discountType: 'PERCENTAGE',
+        discountValue: new Prisma.Decimal(100.0), // 100% discount
+      },
+    });
+  }
+
+  // Task Comments
+  const projectTask = await prisma.projectTask.findFirst();
+  if (projectTask) {
+    await prisma.taskComment.create({
+      data: {
+        taskId: projectTask.id,
+        userId: teacherPesantrenUser.id,
+        content: 'Tolong pastikan instalasi listrik sudah dipasang pipa paralon agar rapi.',
+      },
+    });
+  }
+
+  // Training Programs & Enrollments
+  const training = await prisma.trainingProgram.create({
+    data: {
+      unitId: pesantren.id,
+      title: 'Pelatihan Sertifikasi Kompetensi Guru Abad 21',
+      description: 'Pelatihan pedagogi digital menggunakan teknologi LMS interaktif.',
+      category: 'Pedagogik',
+      trainer: 'Balai Diklat Keagamaan',
+      startDate: new Date('2026-07-20'),
+      endDate: new Date('2026-07-25'),
+      maxParticipants: 30,
+      budget: new Prisma.Decimal(2500000.0),
+      status: TrainingStatus.ONGOING,
+      location: 'Aula Syariah',
+      createdById: superAdminUser.id,
+    },
+  });
+
+  const staffList = await prisma.staff.findMany();
+  if (staffList.length > 0) {
+    await prisma.trainingEnrollment.create({
+      data: {
+        programId: training.id,
+        userId: staffList[0].userId,
+        status: 'ENROLLED',
+      },
+    });
+  }
+
+  // Unit Comparison Reports
+  await prisma.unitComparisonReport.create({
+    data: {
+      academicYearId: academicYear.id,
+      reportType: 'FINANCIAL_BENCHMARK',
+      periodType: 'YEARLY',
+      periodStart: new Date('2026-01-01'),
+      periodEnd: new Date('2026-12-31'),
+      reportData: {
+        title: 'Laporan Tolok Ukur Keuangan Lintas Unit 2026',
+        units: [
+          { name: 'SMP IT Al-Hikmah', revenue: 75000000, expense: 52000000 },
+          { name: 'SD IT Ar-Rahman', revenue: 60000000, expense: 41000000 },
+          { name: 'TK Qur\'an Cipansor', revenue: 25000000, expense: 18000000 },
+        ],
+      },
+    },
+  });
+
+  // Murojaah Mistakes
+  const murojaahRecord = await prisma.murojaahRecord.findFirst();
+  if (murojaahRecord) {
+    await prisma.murojaahMistake.create({
+      data: {
+        murojaahId: murojaahRecord.id,
+        juz: 2,
+        surahNumber: 2,
+        ayahNumber: 142,
+        mistakeType: TahfidzMistakeType.LUPA,
+        description: 'Lupa bagian awal ayat, perlu diulang berkali-kali.',
+      },
+    });
+  }
+
+  // Simaan Examiners
+  const simaanExam = await prisma.simaanExam.findFirst();
+  if (simaanExam) {
+    await prisma.simaanExaminer.create({
+      data: {
+        simaanId: simaanExam.id,
+        examinerId: teacherPesantrenUser.id,
+        notes: 'Penguji utama kelancaran tajwid dan makhraj.',
+      },
+    });
+  }
+
+  // PKG periods & evaluations for teachers
+  const pkgPeriod = await prisma.pKGPeriod.create({
+    data: {
+      unitId: pesantren.id,
+      academicYearId: academicYear.id,
+      name: 'Penilaian Kinerja Guru (PKG) Ganjil 2026',
+      startDate: new Date('2026-06-01'),
+      endDate: new Date('2026-06-30'),
+      status: 'CLOSED',
+    },
+  });
+
+  if (teacherPesantren) {
+    const pkgEval = await prisma.pKGEvaluation.create({
+      data: {
+        periodId: pkgPeriod.id,
+        teacherId: teacherPesantren.id,
+        assessorId: adminPesantrenUser.id,
+        pedagogikScore: new Prisma.Decimal(3.5),
+        kepribadianScore: new Prisma.Decimal(3.8),
+        sosialScore: new Prisma.Decimal(3.6),
+        profesionalScore: new Prisma.Decimal(3.7),
+        totalScore: new Prisma.Decimal(88.5),
+        grade: 'A',
+        recommendation: 'LANJUT',
+        status: 'APPROVED',
+        notes: 'Sangat baik dalam penguasaan kelas dan pemanfaatan media ajar digital.',
+        approvedAt: new Date(),
+      },
+    });
+
+    await prisma.pKGDetail.create({
+      data: {
+        evaluationId: pkgEval.id,
+        competency: 'PEDAGOGIK',
+        indicator: 'P1',
+        indicatorName: 'Menguasai karakteristik peserta didik',
+        assessorScore: 4,
+        finalScore: 4,
+        notes: 'Mampu memetakan kesiapan belajar peserta didik dengan sangat presisi.',
+      },
+    });
+
+    await prisma.pKGDocument.create({
+      data: {
+        evaluationId: pkgEval.id,
+        name: 'Modul Ajar Matematika K-Merdeka',
+        type: 'RPP',
+        fileUrl: '/documents/pkg/modul-mtk.pdf',
+      },
+    });
+  }
+
+  // Dashboard history snapshots
+  await prisma.dashboardHistory.create({
+    data: {
+      unitId: pesantren.id,
+      metrics: {
+        totalStudents: 4,
+        totalTeachers: 2,
+        totalStaff: 4,
+        activeClasses: 2,
+      },
+    },
+  });
+
+  await prisma.dashboardHistory.create({
+    data: {
+      unitId: pesantren.id,
+      metrics: {
+        totalStudents: 5,
+        totalTeachers: 2,
+        totalStaff: 4,
+        activeClasses: 2,
+      },
+    },
+  });
+
+  // Dashboard metric snapshots
+  await prisma.dashboardMetricSnapshot.create({
+    data: {
+      unitId: pesantren.id,
+      metricType: 'student_attendance_rate',
+      metricValue: 94.5,
+      periodType: 'MONTHLY',
+      periodDate: new Date('2026-06-01'),
+    },
+  });
+
+  // Ibadah leaderboards
+  await prisma.ibadahLeaderboard.create({
+    data: {
+      studentId: students[0].id,
+      unitId: pesantren.id,
+      periodType: 'WEEKLY',
+      periodStart: new Date('2026-06-30'),
+      periodEnd: new Date('2026-07-06'),
+      totalPoints: 120,
+      rank: 1,
+    },
+  });
+
+  // Daily Report Photos
+  const dailyReport = await prisma.dailyStudentReport.findFirst();
+  if (dailyReport) {
+    await prisma.dailyReportPhoto.create({
+      data: {
+        reportId: dailyReport.id,
+        photoUrl: '/images/reports/sholat-subuh.jpg',
+        caption: 'Dokumentasi sholat subuh berjamaah di masjid asrama.',
+      },
+    });
+  }
+
+  console.log('   ✅ Operations & Miscellaneous tables created');
+
+  console.log('🔧 Phase 11, 12, 13 & 14 comprehensive demo data completed!\n');
 
   // ============================================
   // E2E: deterministic 2FA for admin accounts

@@ -42,6 +42,7 @@ enum Realm {
   SMP_IT // SMP IT (Islam Terpadu)
   SMA_QURAN // SMA Qur'an
   PESANTREN // Pesantren (cross-unit)
+  PERGURUAN_TINGGI // Perguruan Tinggi
 }
 
 // RoleCode - All possible role codes in the system
@@ -90,6 +91,14 @@ enum RoleCode {
   SMAQ_ORANG_TUA
   SMAQ_SISWA
 
+  // Perguruan Tinggi roles
+  PT_REKTOR
+  PT_DEKAN
+  PT_KAPRODI
+  PT_DOSEN
+  PT_MAHASISWA
+  PT_STAF_AKADEMIK
+
   // Pesantren roles (cross-unit)
   MUSYRIF // Pembina asrama
   MUHAFIDZ // Pengampu tahfidz
@@ -103,6 +112,7 @@ enum UnitType {
   SD_IT // SD Islam Terpadu
   SMP_IT // SMP Islam Terpadu  
   SMA_QURAN // SMA Qur'an
+  PERGURUAN_TINGGI // Perguruan Tinggi
   OTHER
 }
 
@@ -632,6 +642,9 @@ model Unit {
   // Business Units (Unit Usaha)
   businessUnits        BusinessUnit[]
 
+  // Perguruan Tinggi (Higher Ed) relations
+  faculties            Faculty[]
+
   @@index([type])
   @@index([foundationId])
   @@map("units")
@@ -820,6 +833,10 @@ model AcademicYear {
 
   // Risk Management
   risks Risk[]
+
+  // Perguruan Tinggi (Higher Ed) relations
+  courseClasses CourseClass[]
+  krs           KRS[]
 
   @@index([isActive])
   @@map("academic_years")
@@ -1033,6 +1050,9 @@ model Student {
   packages                    StudentPackage[]
   assignmentSubmissions       AssignmentSubmission[]
   examAttempts                ExamAttempt[]
+
+  // Perguruan Tinggi (Higher Ed) relations
+  higherEdProfile             StudentHigherEd?
 
   @@index([nis])
   @@index([unitId])
@@ -5112,6 +5132,9 @@ model BusinessUnit {
   laundryPricings      LaundryPricing[]
   laundryTransactions  LaundryTransaction[]
 
+  // Litbang integration
+  researchProjects     ResearchProject[]
+
   @@unique([unitId, code])
   @@index([unitId])
   @@index([managerId])
@@ -7874,6 +7897,8 @@ model EnvironmentProgram {
   // Relations
   unit Unit  @relation(fields: [unitId], references: [id])
   pic  User? @relation("EnvironmentPIC", fields: [picId], references: [id])
+  courseId String? @map("course_id") // Integration with Academic/Higher Ed
+  course   Course? @relation(fields: [courseId], references: [id])
 
   @@index([unitId])
   @@index([status])
@@ -7912,6 +7937,7 @@ model GreenCampusIndicator {
   unit         String // Satuan pengukuran
   period       String // Periode: Bulanan, Semester, Tahunan
   recordDate   DateTime @map("record_date")
+  carbonEmissions Float? @map("carbon_emissions") // Estimated kg CO2e
   notes        String?  @db.Text
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
@@ -8245,6 +8271,12 @@ model ResearchProject {
   budgetRel  Budget?             @relation(fields: [budgetId], references: [id])
   budgetId   String?             @map("budget_id")
 
+  // Business Unit Integration
+  businessUnitId String?         @map("business_unit_id")
+  businessUnit   BusinessUnit?   @relation(fields: [businessUnitId], references: [id])
+  impactScore    Float?          @map("impact_score") // Skor dampak terhadap unit usaha
+  impactNotes    String?         @map("impact_notes") @db.Text
+
   @@index([unitId])
   @@index([status])
   @@index([leaderId])
@@ -8299,3 +8331,154 @@ model InnovationProposal {
   @@map("innovation_proposals")
 }
 
+
+// =====================================
+// PERGURUAN TINGGI (HIGHER EDUCATION)
+// =====================================
+
+/// Faculty - Fakultas
+model Faculty {
+  id          String   @id @default(uuid())
+  unitId      String   @map("unit_id")
+  name        String
+  code        String   @unique
+  description String?  @db.Text
+  deanId      String?  @map("dean_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  unit     Unit      @relation(fields: [unitId], references: [id])
+  programs StudyProgram[]
+
+  @@index([unitId])
+  @@map("faculties")
+}
+
+/// StudyProgram - Program Studi
+model StudyProgram {
+  id          String   @id @default(uuid())
+  facultyId   String   @map("faculty_id")
+  name        String
+  code        String   @unique
+  degree      String   // S1, S2, D3, dll
+  accreditation String?
+  headId      String?  @map("head_id") // Kaprodi
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  faculty  Faculty   @relation(fields: [facultyId], references: [id], onDelete: Cascade)
+  courses  Course[]
+  students StudentHigherEd[]
+
+  @@index([facultyId])
+  @@map("study_programs")
+}
+
+/// Course - Mata Kuliah
+model Course {
+  id             String   @id @default(uuid())
+  programId      String   @map("program_id")
+  name           String
+  code           String   @unique
+  credits        Int      @default(2) // SKS
+  semester       Int      // Semester penawaran (1-8)
+  description    String?  @db.Text
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  program  StudyProgram @relation(fields: [programId], references: [id], onDelete: Cascade)
+  classes  CourseClass[]
+
+  // Lingkungan integration
+  environmentPrograms EnvironmentProgram[]
+
+  @@index([programId])
+  @@map("courses")
+}
+
+/// CourseClass - Kelas Mata Kuliah
+model CourseClass {
+  id             String   @id @default(uuid())
+  courseId       String   @map("course_id")
+  academicYearId String   @map("academic_year_id")
+  name           String   // e.g., "A", "B", "Eksekutif"
+  lecturerId     String   @map("lecturer_id")
+  capacity       Int      @default(40)
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  course       Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  academicYear AcademicYear @relation(fields: [academicYearId], references: [id])
+  enrollments  CourseEnrollment[]
+
+  @@index([courseId])
+  @@index([academicYearId])
+  @@map("course_classes")
+}
+
+/// StudentHigherEd - Profil Mahasiswa
+model StudentHigherEd {
+  id             String   @id @default(uuid())
+  studentId      String   @unique @map("student_id")
+  programId      String   @map("program_id")
+  nim            String   @unique // Nomor Induk Mahasiswa
+  currentSemester Int     @default(1) @map("current_semester")
+  gpa            Decimal? @db.Decimal(3, 2) // IPK
+  totalCredits   Int      @default(0) @map("total_credits")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  student  Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  program  StudyProgram @relation(fields: [programId], references: [id])
+  krs      KRS[]
+
+  @@index([programId])
+  @@map("students_higher_ed")
+}
+
+/// KRS - Kartu Rencana Studi
+model KRS {
+  id             String   @id @default(uuid())
+  studentHeId    String   @map("student_he_id")
+  academicYearId String   @map("academic_year_id")
+  semester       Int
+  status         String   @default("DRAFT") // DRAFT, SUBMITTED, APPROVED
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  studentHigherEd StudentHigherEd    @relation(fields: [studentHeId], references: [id], onDelete: Cascade)
+  academicYear    AcademicYear       @relation(fields: [academicYearId], references: [id])
+  enrollments     CourseEnrollment[]
+
+  @@unique([studentHeId, academicYearId, semester])
+  @@index([studentHeId])
+  @@map("krs")
+}
+
+/// CourseEnrollment - Pengambilan Mata Kuliah (KRS Detail)
+model CourseEnrollment {
+  id            String   @id @default(uuid())
+  krsId         String   @map("krs_id")
+  classId       String   @map("class_id")
+  grade         Decimal? @db.Decimal(5, 2) // Nilai angka (0-100 atau 0-4)
+  letterGrade   String?  @map("letter_grade") // A, B, C, D, E
+  status        String   @default("ENROLLED") // ENROLLED, COMPLETED, DROPPED
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  krs   KRS         @relation(fields: [krsId], references: [id], onDelete: Cascade)
+  class CourseClass @relation(fields: [classId], references: [id])
+
+  @@unique([krsId, classId])
+  @@index([krsId])
+  @@index([classId])
+  @@map("course_enrollments")
+}

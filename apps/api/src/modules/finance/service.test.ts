@@ -26,6 +26,9 @@ vi.mock('../../lib/prisma', () => {
       count: vi.fn(),
       findUnique: vi.fn(),
     },
+    scholarshipRecipient: {
+      findMany: vi.fn(),
+    },
     $transaction: vi.fn(),
   };
   mockPrisma.$transaction.mockImplementation((callback) => callback(mockPrisma));
@@ -117,6 +120,7 @@ describe('Finance Service Unit Tests', () => {
       };
 
       vi.mocked(prisma.invoice.findFirst).mockResolvedValue(null);
+      vi.mocked((prisma as any).scholarshipRecipient.findMany).mockResolvedValue([]);
       vi.mocked(prisma.invoice.create).mockResolvedValue(mockInvoice as any);
       vi.mocked(notificationService.createNotification).mockResolvedValue({} as any);
 

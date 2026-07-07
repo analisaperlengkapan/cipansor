@@ -2001,7 +2001,7 @@ enum HealthStatus {
 /// MedicalRecord - Rekam Medis
 model MedicalRecord {
   id           String            @id @default(uuid())
-  studentId    String            @map("student_id")
+  studentId    String?            @map("student_id")
   type         MedicalRecordType
   visitDate    DateTime          @map("visit_date")
   complaint    String            @db.Text // Keluhan

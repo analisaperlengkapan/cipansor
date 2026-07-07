@@ -62,7 +62,7 @@ export async function getMedicalRecords(query: QueryMedicalRecordInput & { statu
         ? {
             id: record.student.id,
             nis: record.student.nis,
-            name: record.student.user.name,
+            name: record.student?.user?.name,
             user: record.student.user,
             unit: record.student.unit,
           }
@@ -102,13 +102,13 @@ export async function getMedicalRecordById(id: string) {
 
   return {
     ...record,
-    student: {
+    student: record.student ? {
       id: record.student.id,
       nis: record.student.nis,
-      name: record.student.user.name,
+      name: record.student?.user?.name,
       user: record.student.user,
       unit: record.student.unit,
-    },
+    } : undefined,
     recordedBy: record.recordedBy,
   } as unknown as MedicalRecord;
 }
@@ -218,7 +218,7 @@ export async function createMedicalRecord(data: CreateMedicalRecordInput, record
   // Emit Event for other listeners (e.g., Dashboard)
   eventBus.emit('health:medical-record-created', {
     id: record.id,
-    studentId: record.studentId,
+    studentId: record.studentId || '',
     studentName: record.student?.user?.name || 'Unknown',
     unitId: record.student?.unitId || 'unknown',
     unitName: record.student?.unit?.name || 'Unknown',
@@ -230,12 +230,12 @@ export async function createMedicalRecord(data: CreateMedicalRecordInput, record
 
   return {
     ...record,
-    student: {
+    student: record.student ? {
       id: record.student.id,
       nis: record.student.nis,
-      name: record.student.user.name,
+      name: record.student?.user?.name,
       user: record.student.user,
-    },
+    } : undefined,
   } as unknown as MedicalRecord;
 }
 
@@ -270,12 +270,12 @@ export async function updateMedicalRecord(id: string, data: UpdateMedicalRecordI
 
   return {
     ...record,
-    student: {
+    student: record.student ? {
       id: record.student.id,
       nis: record.student.nis,
-      name: record.student.user.name,
+      name: record.student?.user?.name,
       user: record.student.user,
-    },
+    } : undefined,
   } as unknown as MedicalRecord;
 }
 
@@ -372,7 +372,7 @@ export async function getMedicationById(id: string) {
 export async function createMedication(data: CreateMedicationInput) {
   return prisma.medication.create({
     data: {
-      unitId: data.unitId,
+      unitId: data.unitId!,
       name: data.name,
       genericName: data.genericName,
       type: data.type,
@@ -472,7 +472,7 @@ export async function createMedicationUsage(data: CreateMedicationUsageInput, gi
     const usage = await tx.medicationUsageLog.create({
       data: {
         medicationId: data.medicationId,
-        studentId: data.studentId,
+        studentId: data.studentId!,
         quantity: data.quantity,
         reason: data.reason,
         givenById,
@@ -533,7 +533,7 @@ export async function createClinicAppointment(data: {
 
   const count = await prisma.clinicAppointment.count({
     where: {
-      unitId: data.unitId,
+      unitId: data.unitId!,
       appointmentDate: { gte: startOfDay, lte: endOfDay },
     },
   });
@@ -559,7 +559,7 @@ export async function createPrescription(data: {
     data: {
       medicalRecordId: data.medicalRecordId,
       patientId: data.patientId,
-      studentId: data.studentId,
+      studentId: data.studentId!,
       doctorId: data.doctorId,
       notes: data.notes,
       items: {
@@ -596,7 +596,7 @@ export async function fulfillPrescription(prescriptionId: string, fulfilledById:
       await tx.medicationUsageLog.create({
         data: {
           medicationId: item.medicationId,
-          studentId: prescription.studentId,
+          studentId: prescription.studentId || undefined,
           quantity: item.quantity,
           reason: `Resep: ${prescription.id}`,
           givenById: fulfilledById,
@@ -662,8 +662,8 @@ export async function getHealthStats(unitId: string): Promise<HealthStats> {
 export async function createGrowthRecord(data: CreateGrowthRecordInput, recordedById: string) {
   return prisma.growthRecord.create({
     data: {
-      studentId: data.studentId,
-      unitId: data.unitId,
+      studentId: data.studentId!,
+      unitId: data.unitId!,
       recordDate: data.recordDate,
       weight: data.weight,
       height: data.height,

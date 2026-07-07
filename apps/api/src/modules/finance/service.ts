@@ -104,7 +104,7 @@ async function generateInvoiceNumber(unitId?: string, tx?: Prisma.TransactionCli
   const year = new Date().getFullYear();
   const month = String(new Date().getMonth() + 1).padStart(2, '0');
 
-  const dbClient = tx || prisma;
+  const dbClient: any = tx || prisma;
 
   const lastInvoice = await dbClient.invoice.findFirst({
     where: {
@@ -126,7 +126,7 @@ export async function createInvoice(data: CreateInvoiceDto, tx?: Prisma.Transact
   let invoice;
   // Bug 1 Fix: Do not retry on P2002 if inside a transaction to prevent transaction aborts
   let retries = tx ? 1 : 3;
-  const dbClient = tx || prisma;
+  const dbClient: any = tx || prisma;
 
   while (retries > 0) {
     try {

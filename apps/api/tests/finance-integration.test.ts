@@ -21,6 +21,12 @@ vi.mock('../src/lib/prisma', () => {
     payment: {
       create: vi.fn(),
     },
+    scholarshipRecipient: {
+      findMany: vi.fn(),
+    },
+    student: {
+      findUnique: vi.fn(),
+    },
     $transaction: vi.fn(async (callback) => {
       // Execute the callback with the mockPrisma
       return await callback(mockPrisma);
@@ -57,6 +63,7 @@ describe('Finance Service Integration', () => {
       };
 
       (prisma.invoice.findFirst as any).mockResolvedValue(null); // First invoice of month
+      ((prisma as any).scholarshipRecipient.findMany as any).mockResolvedValue([]);
       (prisma.invoice.create as any).mockResolvedValue(mockInvoice);
 
       // Execute
@@ -81,6 +88,7 @@ describe('Finance Service Integration', () => {
 
     it('should retry generating invoice number on collision', async () => {
       (prisma.invoice.findFirst as any).mockResolvedValue(null);
+      ((prisma as any).scholarshipRecipient.findMany as any).mockResolvedValue([]);
       const p2002Error = new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
         code: 'P2002',
         clientVersion: '5.x',
@@ -130,6 +138,7 @@ describe('Finance Service Integration', () => {
       (prisma.invoice.findUnique as any).mockResolvedValue(mockInvoice);
       (prisma.payment.create as any).mockResolvedValue(mockPayment);
       (prisma.invoice.update as any).mockResolvedValue(mockInvoice);
+      ((prisma as any).student.findUnique as any).mockResolvedValue({ id: 's1', unitId: 'u1', unit: { name: 'Unit' } });
 
       // Execute
       await financeService.createPayment({

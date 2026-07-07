@@ -265,12 +265,12 @@ export class AssignmentsService {
 
     return submissions.map((s) => ({
       ...s,
-      student: {
+      student: s.student ? {
         id: s.student.id,
         nis: s.student.nis,
         name: s.student.user.name,
         photoUrl: s.student.photoUrl,
-      },
+      } : null,
     }));
   }
 }

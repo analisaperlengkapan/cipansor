@@ -236,7 +236,7 @@ export default function ClassDailyReportsPage() {
                       selected={selectedDate}
                       onSelect={(date) => date && setSelectedDate(date)}
                       disabled={(date) => date > new Date()}
-                      initialFocus
+                      autoFocus
                     />
                   </PopoverContent>
                 </Popover>

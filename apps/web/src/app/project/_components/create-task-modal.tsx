@@ -190,7 +190,7 @@ export function CreateTaskModal({
                             today.setHours(0, 0, 0, 0);
                             return date < today;
                           }}
-                          initialFocus
+                          autoFocus
                         />
                       </PopoverContent>
                     </Popover>

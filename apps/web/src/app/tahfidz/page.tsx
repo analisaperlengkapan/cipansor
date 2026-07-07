@@ -252,7 +252,7 @@ export default function TahfidzPage() {
                   mode="single"
                   selected={startDate}
                   onSelect={setStartDate}
-                  initialFocus
+                  autoFocus
                 />
               </PopoverContent>
             </Popover>
@@ -277,7 +277,7 @@ export default function TahfidzPage() {
                   mode="single"
                   selected={endDate}
                   onSelect={setEndDate}
-                  initialFocus
+                  autoFocus
                 />
               </PopoverContent>
             </Popover>

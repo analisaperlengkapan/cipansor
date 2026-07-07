@@ -220,7 +220,7 @@ export default function TKAssessmentListPage() {
                     mode="single"
                     selected={date}
                     onSelect={setDate}
-                    initialFocus
+                    autoFocus
                   />
                 </PopoverContent>
               </Popover>

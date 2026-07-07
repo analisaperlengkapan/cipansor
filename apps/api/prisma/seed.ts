@@ -7014,6 +7014,58 @@ async function main() {
     });
   }
 
+  // Quality Evidences
+  const qualityInd = await prisma.qualityIndicator.findFirst({
+    where: { code: 'IND-KUR-01-A' },
+  });
+  if (qualityInd) {
+    await prisma.qualityEvidence.create({
+      data: {
+        unitId: pesantren.id,
+        indicatorId: qualityInd.id,
+        academicYearId: academicYear.id,
+        name: 'Dokumen Modul Ajar Matematika K-Merdeka',
+        fileUrl: '/documents/quality/modul-mtk-approved.pdf',
+        description: 'Bukti unggahan dokumen RPP/Modul Ajar guru matematika semester ganjil.',
+        uploadedById: teacherPesantrenUser.id,
+      },
+    });
+  }
+
+  // Marketing Campaigns & Interactions
+  const marketingCampaign = await prisma.marketingCampaign.create({
+    data: {
+      unitId: pesantren.id,
+      name: 'Pameran Pendidikan Sukabumi 2026',
+      code: 'CMP-2026-EDUEXPO',
+      description: 'Pameran stan edukasi Cipansor untuk menjaring calon santri baru.',
+      startDate: new Date('2026-05-01'),
+      endDate: new Date('2026-05-05'),
+      budget: new Prisma.Decimal(12500000.0),
+      isActive: true,
+      createdById: superAdminUser.id,
+    },
+  });
+
+  const singleRegistrant = await prisma.registrant.findFirst();
+  if (singleRegistrant) {
+    await prisma.registrant.update({
+      where: { id: singleRegistrant.id },
+      data: { campaignId: marketingCampaign.id },
+    });
+
+    await prisma.marketingInteraction.create({
+      data: {
+        registrantId: singleRegistrant.id,
+        date: new Date(),
+        type: 'CALL',
+        notes: 'Orang tua berminat dan menanyakan tentang fasilitas asrama SMP IT.',
+        nextActionDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+        recordedById: adminPesantrenUser.id,
+      },
+    });
+  }
+
   console.log('   ✅ Operations & Miscellaneous tables created');
 
   console.log('🔧 Phase 11, 12, 13 & 14 comprehensive demo data completed!\n');

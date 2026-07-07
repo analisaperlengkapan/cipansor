@@ -158,8 +158,13 @@ export default function ParentLayout({
     if (!isAuthenticated) {
       router.push("/login?redirect=/parent");
     }
-    // Check if user is a parent role
-    if (user && user.role !== "PARENT" && user.role !== "SUPER_ADMIN") {
+    // Check if user has a parent role code
+    const userRoles = user?.userRoles as Array<{ role: { code: string } }> | undefined;
+    const parentRoleCodes = ["TKQ_ORANG_TUA", "SDIT_ORANG_TUA", "SMPIT_ORANG_TUA", "SMAQ_ORANG_TUA"];
+    const hasParentRole = userRoles?.some((r) => parentRoleCodes.includes(r.role.code));
+    const hasSuperAdminRole = userRoles?.some((r) => r.role.code === "SUPER_ADMIN");
+    
+    if (user && !hasParentRole && !hasSuperAdminRole) {
       router.push("/dashboard");
     }
   }, [isAuthenticated, user, router]);

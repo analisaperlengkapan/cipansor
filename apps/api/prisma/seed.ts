@@ -1223,7 +1223,7 @@ async function main() {
 
   // Create Room Assignments
   let maleRoomIndex = 0;
-  let femaleRoomIndex = 5; // Start from first female room
+  let femaleRoomIndex = 0; // Index for female rooms (0-3)
 
   for (const student of students) {
     const studentData = await prisma.student.findUnique({
@@ -1236,10 +1236,8 @@ async function main() {
       roomData = rooms[maleRoomIndex % 5];
       maleRoomIndex++;
     } else {
-      roomData = rooms[femaleRoomIndex % rooms.length];
-      if (roomData.gender !== Gender.FEMALE) {
-        roomData = rooms[5]; // First female room
-      }
+      // Female rooms start at index 5, there are 4 female rooms (indices 5-8)
+      roomData = rooms[5 + (femaleRoomIndex % 4)];
       femaleRoomIndex++;
     }
 

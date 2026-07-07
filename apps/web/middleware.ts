@@ -109,6 +109,11 @@ function getAuthState(request: NextRequest): {
 function canAccessRoute(role: UserRole, pathname: string): boolean {
   const allowedRoutes = roleRouteAccess[role];
 
+  // If no allowed routes defined for this role, deny access
+  if (!allowedRoutes || allowedRoutes.length === 0) {
+    return false;
+  }
+
   // Super admin has access to everything
   if (allowedRoutes.includes("*")) {
     return true;

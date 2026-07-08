@@ -19,7 +19,7 @@ export class PKAnalyticsService {
         });
 
         const avgScore = pks.length > 0
-          ? pks.reduce((sum, pk) => sum + pk.overallScore, 0) / pks.length
+          ? pks.reduce((sum: number, pk: any) => sum + pk.overallScore, 0) / pks.length
           : 0;
 
         return {
@@ -65,7 +65,7 @@ export class PKAnalyticsService {
     const where: any = { year: period.year };
     if (period.month) where.month = period.month;
 
-    const evaluations = await prisma.pkEvaluation.findMany({
+    const evaluations = await prisma.pKEvaluation.findMany({
       where: {
         ...where,
         status: 'APPROVED',
@@ -81,7 +81,7 @@ export class PKAnalyticsService {
 
     // Group by unit
     const unitGroups: Record<string, any> = {};
-    evaluations.forEach((ev) => {
+    evaluations.forEach((ev: any) => {
       const unitId = ev.pk.user.unitId || 'Yayasan';
       const unitName = ev.pk.user.unit?.name || 'Yayasan';
 

@@ -35,7 +35,7 @@ export class EvaluationService {
     const period = new Date(data.year, data.month - 1, 1);
 
     // Create the evaluation
-    const evaluation = await prisma.pkEvaluation.create({
+    const evaluation = await prisma.pKEvaluation.create({
       data: {
         pkId: data.pkId,
         month: data.month,
@@ -53,7 +53,7 @@ export class EvaluationService {
       realization: 0,
     }));
 
-    await prisma.pkIndicatorEvaluation.createMany({ data: indicatorDetails });
+    await prisma.pKIndicatorEvaluation.createMany({ data: indicatorDetails });
 
     // Initialize behavior details with SAFTI or whatever is configured
     const behaviorValues = await this.getBehavioralValues();
@@ -63,13 +63,13 @@ export class EvaluationService {
       score: 0,
     }));
 
-    await prisma.pkBehaviorEvaluation.createMany({ data: behaviorDetails });
+    await prisma.pKBehaviorEvaluation.createMany({ data: behaviorDetails });
 
     return this.getEvaluationById(evaluation.id);
   }
 
   async getEvaluationById(id: string) {
-    return prisma.pkEvaluation.findUnique({
+    return prisma.pKEvaluation.findUnique({
       where: { id },
       include: {
         pk: {
@@ -89,7 +89,7 @@ export class EvaluationService {
   }
 
   async updateIndicatorRealization(id: string, detailId: string, data: { realization: number; activities?: string }) {
-    const detail = await prisma.pkIndicatorEvaluation.update({
+    const detail = await prisma.pKIndicatorEvaluation.update({
       where: { id: detailId },
       data: {
         realization: data.realization,
@@ -107,7 +107,7 @@ export class EvaluationService {
       score = 100;
     }
 
-    await prisma.pkIndicatorEvaluation.update({
+    await prisma.pKIndicatorEvaluation.update({
       where: { id: detailId },
       data: { score },
     });
@@ -117,7 +117,7 @@ export class EvaluationService {
   }
 
   async updateBehaviorScore(id: string, detailId: string, data: { score: number; notes?: string }) {
-    const detail = await prisma.pkBehaviorEvaluation.update({
+    const detail = await prisma.pKBehaviorEvaluation.update({
       where: { id: detailId },
       data: {
         score: data.score,
@@ -130,7 +130,7 @@ export class EvaluationService {
   }
 
   async recalculateEvaluationScores(evaluationId: string) {
-    const evaluation = await prisma.pkEvaluation.findUnique({
+    const evaluation = await prisma.pKEvaluation.findUnique({
       where: { id: evaluationId },
       include: {
         indicatorDetails: { include: { indicator: true } },
@@ -141,19 +141,19 @@ export class EvaluationService {
     if (!evaluation) return;
 
     // Performance Score: Weighted average of indicators
-    const performanceScore = evaluation.indicatorDetails.reduce((sum, det) => {
+    const performanceScore = evaluation.indicatorDetails.reduce((sum: number, det: any) => {
       return sum + (det.score * det.indicator.weight) / 100;
     }, 0);
 
     // Behavior Score: Average of behavioral values
     const behaviorScore = evaluation.behaviorDetails.length > 0
-      ? evaluation.behaviorDetails.reduce((sum, det) => sum + det.score, 0) / evaluation.behaviorDetails.length
+      ? evaluation.behaviorDetails.reduce((sum: number, det: any) => sum + det.score, 0) / evaluation.behaviorDetails.length
       : 0;
 
     // Overall Score: 70% performance, 30% behavior (standard best practice)
     const overallScore = (performanceScore * 0.7) + (behaviorScore * 0.3);
 
-    await prisma.pkEvaluation.update({
+    await prisma.pKEvaluation.update({
       where: { id: evaluationId },
       data: {
         performanceScore,
@@ -169,7 +169,7 @@ export class EvaluationService {
   }
 
   async approveEvaluation(id: string) {
-    const evaluation = await prisma.pkEvaluation.update({
+    const evaluation = await prisma.pKEvaluation.update({
       where: { id },
       data: { status: 'APPROVED' as PlanStatus },
     });
@@ -199,8 +199,8 @@ export class EvaluationService {
 
     // 1. Update YTD realization for each indicator
     for (const indicator of pk.indicators) {
-      const totalRealization = indicator.evaluations.reduce((sum, ev) => sum + ev.realization, 0);
-      await prisma.pkIndicator.update({
+      const totalRealization = indicator.evaluations.reduce((sum: number, ev: any) => sum + ev.realization, 0);
+      await prisma.pKIndicator.update({
         where: { id: indicator.id },
         data: { realization: totalRealization },
       });
@@ -209,9 +209,9 @@ export class EvaluationService {
     // 2. Update PK total scores (average of approved monthly evaluations)
     const approvedCount = pk.evaluations.length;
     if (approvedCount > 0) {
-      const avgPerformance = pk.evaluations.reduce((sum, ev) => sum + ev.performanceScore, 0) / approvedCount;
-      const avgBehavior = pk.evaluations.reduce((sum, ev) => sum + ev.behaviorScore, 0) / approvedCount;
-      const avgOverall = pk.evaluations.reduce((sum, ev) => sum + ev.overallScore, 0) / approvedCount;
+      const avgPerformance = pk.evaluations.reduce((sum: number, ev: any) => sum + ev.performanceScore, 0) / approvedCount;
+      const avgBehavior = pk.evaluations.reduce((sum: number, ev: any) => sum + ev.behaviorScore, 0) / approvedCount;
+      const avgOverall = pk.evaluations.reduce((sum: number, ev: any) => sum + ev.overallScore, 0) / approvedCount;
 
       await prisma.performanceAgreement.update({
         where: { id: pkId },

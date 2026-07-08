@@ -102,7 +102,7 @@ export class PerformanceAgreementService {
     if (!pk) throw Errors.notFound('PK not found');
     if (pk.indicators.length === 0) throw Errors.badRequest('PK must have at least one indicator');
 
-    const totalWeight = pk.indicators.reduce((sum, ind) => sum + ind.weight, 0);
+    const totalWeight = pk.indicators.reduce((sum: number, ind: any) => sum + ind.weight, 0);
     if (Math.abs(totalWeight - 100) > 0.01) {
       throw Errors.badRequest('Total weight of indicators must be 100%');
     }
@@ -148,7 +148,7 @@ export class PerformanceAgreementService {
       }
     }
 
-    return prisma.pkIndicator.create({
+    return prisma.pKIndicator.create({
       data: {
         pkId: data.pkId,
         title: data.title,
@@ -164,14 +164,14 @@ export class PerformanceAgreementService {
   }
 
   async updateIndicator(id: string, data: any) {
-    return prisma.pkIndicator.update({
+    return prisma.pKIndicator.update({
       where: { id },
       data,
     });
   }
 
   async deleteIndicator(id: string) {
-    return prisma.pkIndicator.delete({ where: { id } });
+    return prisma.pKIndicator.delete({ where: { id } });
   }
 }
 

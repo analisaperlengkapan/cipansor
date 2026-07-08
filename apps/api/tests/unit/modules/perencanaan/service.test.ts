@@ -111,7 +111,9 @@ describe('PerencanaanService', () => {
       expect(mockStrategicPlan.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({
-            unitId: 'unit-1',
+            OR: expect.arrayContaining([
+              expect.objectContaining({ unitId: 'unit-1' })
+            ]),
             type: 'RENSTRA',
           }),
         })

@@ -37,7 +37,10 @@ export const listPlans = asyncHandler(async (req: Request, res: Response) => {
     status: (req.query as any).status,
   });
 
-  const plans = await perencanaanService.getPlans(targetUnitId, query);
+  const plans = await perencanaanService.getPlans(targetUnitId, {
+    ...query,
+    collaboratorId: req.user?.sub,
+  });
   res.json({ success: true, data: plans });
 });
 
@@ -172,4 +175,20 @@ export const updateActivity = asyncHandler(async (req: Request, res: Response) =
 export const deleteActivity = asyncHandler(async (req: Request, res: Response) => {
   await perencanaanService.deleteActivity((req.params as any).id);
   res.json({ success: true, message: 'Activity deleted' });
+});
+
+// ==================== COLLABORATION ====================
+
+export const addCollaborator = asyncHandler(async (req: Request, res: Response) => {
+  const { userId } = req.body;
+  if (!userId) throw Errors.badRequest('User ID is required');
+
+  const collaborator = await perencanaanService.addCollaborator((req.params as any).id, userId);
+  res.status(201).json({ success: true, data: collaborator });
+});
+
+export const removeCollaborator = asyncHandler(async (req: Request, res: Response) => {
+  const { userId } = req.params as any;
+  await perencanaanService.removeCollaborator((req.params as any).id, userId);
+  res.json({ success: true, message: 'Collaborator removed' });
 });

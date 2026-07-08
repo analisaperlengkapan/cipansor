@@ -9,13 +9,29 @@ export class PerencanaanService {
   async createPlan(data: {
     title: string;
     description?: string;
-    type: 'RENSTRA' | 'RKAS' | 'RKT' | 'PROGRAM';
+    type: 'MASTER_PLAN' | 'RENSTRA' | 'RKAS' | 'RKT' | 'PROGRAM';
     startDate: string;
     endDate: string;
     budget?: number;
     unitId: string;
     createdById: string;
+    parentId?: string;
   }) {
+    if (data.parentId) {
+      const parent = await prisma.strategicPlan.findUnique({ where: { id: data.parentId } });
+      if (!parent) throw new Error('Parent plan not found');
+
+      // Best Practice Enforcement:
+      // RKAS must refer to RENSTRA
+      if (data.type === 'RKAS' && parent.type !== 'RENSTRA') {
+        throw new Error('RKAS must refer to a RENSTRA parent plan');
+      }
+      // RENSTRA must refer to MASTER_PLAN
+      if (data.type === 'RENSTRA' && parent.type !== 'MASTER_PLAN') {
+        throw new Error('RENSTRA must refer to a MASTER_PLAN parent plan');
+      }
+    }
+
     return prisma.strategicPlan.create({
       data: {
         title: data.title,
@@ -26,17 +42,24 @@ export class PerencanaanService {
         budget: data.budget ? (data.budget as any) : undefined,
         unit: { connect: { id: data.unitId } },
         createdBy: { connect: { id: data.createdById } },
+        parent: data.parentId ? { connect: { id: data.parentId } } : undefined,
       },
       include: {
         unit: { select: { id: true, name: true } },
         createdBy: { select: { id: true, name: true } },
+        parent: { select: { id: true, title: true, type: true } },
         objectives: true,
       },
     });
   }
 
-  async getPlans(unitId: string, query: { type?: string; status?: string }) {
-    const where: Prisma.StrategicPlanWhereInput = { unitId };
+  async getPlans(unitId: string, query: { type?: string; status?: string; collaboratorId?: string }) {
+    const where: Prisma.StrategicPlanWhereInput = {
+      OR: [
+        { unitId },
+        { collaborators: { some: { userId: query.collaboratorId } } }
+      ]
+    };
     if (query.type) where.type = query.type as any;
     if (query.status) where.status = query.status as any;
 
@@ -46,6 +69,7 @@ export class PerencanaanService {
         unit: { select: { id: true, name: true } },
         createdBy: { select: { id: true, name: true } },
         approvedBy: { select: { id: true, name: true } },
+        parent: { select: { id: true, title: true, type: true } },
         objectives: {
           include: {
             indicators: true,
@@ -55,6 +79,7 @@ export class PerencanaanService {
         },
         risks: { select: { id: true, riskLevel: true, status: true } },
         internalAudits: { select: { id: true, status: true } },
+        collaborators: { include: { user: { select: { id: true, name: true } } } },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -67,6 +92,8 @@ export class PerencanaanService {
         unit: { select: { id: true, name: true } },
         createdBy: { select: { id: true, name: true } },
         approvedBy: { select: { id: true, name: true } },
+        parent: { select: { id: true, title: true, type: true } },
+        collaborators: { include: { user: { select: { id: true, name: true } } } },
         objectives: {
           include: {
             indicators: true,
@@ -265,8 +292,28 @@ export class PerencanaanService {
       include: {
         unit: { select: { id: true, name: true } },
         createdBy: { select: { id: true, name: true } },
+        parent: { select: { id: true, title: true, type: true } },
         objectives: true,
       },
+    });
+  }
+
+  // ==================== COLLABORATION ====================
+
+  async addCollaborator(planId: string, userId: string) {
+    const plan = await prisma.strategicPlan.findUnique({ where: { id: planId } });
+    if (!plan) throw new Error('Plan not found');
+    if (plan.status !== 'DRAFT') throw new Error('Can only add collaborators to DRAFT plans');
+
+    return prisma.planCollaborator.create({
+      data: { planId, userId },
+      include: { user: { select: { id: true, name: true } } },
+    });
+  }
+
+  async removeCollaborator(planId: string, userId: string) {
+    return prisma.planCollaborator.delete({
+      where: { planId_userId: { planId, userId } },
     });
   }
 

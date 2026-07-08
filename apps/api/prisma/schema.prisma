@@ -423,6 +423,7 @@ model User {
   createdPlans       StrategicPlan[] @relation("PlanCreator")
   approvedPlans      StrategicPlan[] @relation("PlanApprover")
   assignedActivities PlanActivity[]  @relation("ActivityPIC")
+  planCollaborations PlanCollaborator[]
 
   // Pengawasan (Internal Audit)
   ledInternalAudits   InternalAudit[] @relation("AuditLead")
@@ -443,6 +444,8 @@ model User {
   successionCurrent       SuccessionPlan[]     @relation("SuccessionCurrent")
   trainingProgramsCreated TrainingProgram[]    @relation("TrainingCreator")
   trainingEnrollments     TrainingEnrollment[]
+  performanceAgreements   PerformanceAgreement[] @relation("UserPK")
+  supervisedAgreements    PerformanceAgreement[] @relation("SupervisorPK")
 
   // Organisasi (Organization Structure)
   orgPositions OrgPosition[] @relation("PositionHolder")
@@ -7540,6 +7543,7 @@ enum BSCPerspective {
 }
 
 enum PlanType {
+  MASTER_PLAN // Rencana Induk (Jangka Panjang, e.g., 20 tahun)
   RENSTRA // Rencana Strategis (5 tahun)
   RKAS // Rencana Kerja dan Anggaran Sekolah
   RKT // Rencana Kerja Tahunan
@@ -7550,6 +7554,7 @@ enum PlanType {
 model StrategicPlan {
   id           String     @id @default(uuid())
   unitId       String     @map("unit_id")
+  parentId     String?    @map("parent_id") // Reference to parent plan (Master Plan -> Renstra -> RKA)
   title        String
   description  String?    @db.Text
   type         PlanType
@@ -7565,17 +7570,36 @@ model StrategicPlan {
   updatedAt    DateTime   @updatedAt @map("updated_at")
 
   // Relations
-  unit           Unit            @relation(fields: [unitId], references: [id])
-  createdBy      User            @relation("PlanCreator", fields: [createdById], references: [id])
-  approvedBy     User?           @relation("PlanApprover", fields: [approvedById], references: [id])
+  unit           Unit             @relation(fields: [unitId], references: [id])
+  parent         StrategicPlan?   @relation("PlanHierarchy", fields: [parentId], references: [id])
+  children       StrategicPlan[]  @relation("PlanHierarchy")
+  createdBy      User             @relation("PlanCreator", fields: [createdById], references: [id])
+  approvedBy     User?            @relation("PlanApprover", fields: [approvedById], references: [id])
   objectives     PlanObjective[]
   risks          Risk[]
   internalAudits InternalAudit[]
+  collaborators  PlanCollaborator[]
+  performanceAgreements PerformanceAgreement[]
 
   @@index([unitId])
   @@index([status])
   @@index([type])
   @@map("strategic_plans")
+}
+
+/// PlanCollaborator - Users who can help edit a strategic plan draft
+model PlanCollaborator {
+  id         String   @id @default(uuid())
+  planId     String   @map("plan_id")
+  userId     String   @map("user_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  // Relations
+  plan StrategicPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  user User          @relation(fields: [userId], references: [id])
+
+  @@unique([planId, userId])
+  @@map("plan_collaborators")
 }
 
 /// PlanObjective - Sasaran/tujuan dari rencana
@@ -7616,6 +7640,7 @@ model PlanIndicator {
 
   // Relations
   objective PlanObjective @relation(fields: [objectiveId], references: [id], onDelete: Cascade)
+  pkIndicators PKIndicator[]
 
   @@index([objectiveId])
   @@map("plan_indicators")
@@ -8299,3 +8324,150 @@ model InnovationProposal {
   @@map("innovation_proposals")
 }
 
+
+// =====================================
+// PERFORMANCE MANAGEMENT (PK & KPI)
+// =====================================
+
+enum CascadingCategory {
+  DIRECT
+  INDIRECT
+  NON_CASCADING
+}
+
+/// PerformanceAgreement - Perjanjian Kinerja (PK) individu/unit
+model PerformanceAgreement {
+  id              String      @id @default(uuid())
+  userId          String      @map("user_id")
+  supervisorId    String?     @map("supervisor_id") // Atasan yang menyetujui
+  supervisorPkId  String?     @map("supervisor_pk_id") // Referensi ke PK atasan untuk cascading
+  strategicPlanId String?     @map("strategic_plan_id") // Referensi ke RKA/Renstra unit
+  periodStart     DateTime    @map("period_start")
+  periodEnd       DateTime    @map("period_end")
+  status          PlanStatus  @default(DRAFT)
+  totalScore      Float       @default(0) // Nilai akhir kinerja (0-100)
+  behaviorScore   Float       @default(0) // Nilai perilaku (0-100)
+  overallScore    Float       @default(0) // Gabungan kinerja & perilaku
+  notes           String?     @db.Text
+  revisionNotes   String?     @db.Text @map("revision_notes")
+  approvedAt      DateTime?   @map("approved_at")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+
+  // Relations
+  user            User                    @relation("UserPK", fields: [userId], references: [id])
+  supervisor      User?                   @relation("SupervisorPK", fields: [supervisorId], references: [id])
+  supervisorPk    PerformanceAgreement?   @relation("PKHierarchy", fields: [supervisorPkId], references: [id])
+  subordinatePks  PerformanceAgreement[]  @relation("PKHierarchy")
+  strategicPlan   StrategicPlan?          @relation(fields: [strategicPlanId], references: [id])
+  indicators      PKIndicator[]
+  evaluations     PKEvaluation[]
+
+  @@index([userId])
+  @@index([supervisorId])
+  @@index([status])
+  @@map("performance_agreements")
+}
+
+/// PKIndicator - Indikator dalam Perjanjian Kinerja
+model PKIndicator {
+  id                     String            @id @default(uuid())
+  pkId                   String            @map("pk_id")
+  title                  String
+  target                 Float             @default(0)
+  unit                   String            // %, dokumen, orang, dll
+  weight                 Float             @default(0) // Bobot (0-100)
+  category               CascadingCategory @default(NON_CASCADING)
+  refIndicatorId         String?           @map("ref_indicator_id") // Referensi ke ID PKIndicator atasan
+  refStrategicIndicatorId String?          @map("ref_strategic_indicator_id") // Referensi ke PlanIndicator (RKA/Renstra)
+  notes                  String?           @db.Text // Catatan keterkaitan (comment)
+  realization            Float             @default(0) // Realisasi akumulatif YTD
+  createdAt              DateTime          @default(now()) @map("created_at")
+  updatedAt              DateTime          @updatedAt @map("updated_at")
+
+  // Relations
+  pk              PerformanceAgreement @relation(fields: [pkId], references: [id], onDelete: Cascade)
+  refIndicator    PKIndicator?         @relation("IndicatorCascading", fields: [refIndicatorId], references: [id])
+  childIndicators PKIndicator[]        @relation("IndicatorCascading")
+  refStrategicIndicator PlanIndicator? @relation(fields: [refStrategicIndicatorId], references: [id])
+  evaluations     PKIndicatorEvaluation[]
+
+  @@index([pkId])
+  @@map("pk_indicators")
+}
+
+/// PKEvaluation - Evaluasi Kinerja Bulanan
+model PKEvaluation {
+  id              String   @id @default(uuid())
+  pkId            String   @map("pk_id")
+  period          DateTime // Awal bulan evaluasi
+  month           Int      // 1-12
+  year            Int
+  performanceScore Float    @default(0) // Skor kinerja periode ini
+  behaviorScore   Float    @default(0) // Skor perilaku periode ini
+  overallScore    Float    @default(0)
+  feedback        String?  @db.Text
+  notes           String?  @db.Text
+  status          PlanStatus @default(DRAFT) // DRAFT, PROPOSED, APPROVED
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  pk              PerformanceAgreement @relation(fields: [pkId], references: [id], onDelete: Cascade)
+  indicatorDetails PKIndicatorEvaluation[]
+  behaviorDetails  PKBehaviorEvaluation[]
+
+  @@unique([pkId, month, year])
+  @@map("pk_evaluations")
+}
+
+/// PKIndicatorEvaluation - Rincian realisasi per indikator tiap bulan
+model PKIndicatorEvaluation {
+  id            String   @id @default(uuid())
+  evaluationId  String   @map("evaluation_id")
+  indicatorId   String   @map("indicator_id")
+  realization   Float    @default(0) // Realisasi di bulan ini
+  activities    String?  @db.Text // Uraian kegiatan
+  score         Float    @default(0) // Skor (target vs realisasi)
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  // Relations
+  evaluation PKEvaluation @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
+  indicator  PKIndicator  @relation(fields: [indicatorId], references: [id], onDelete: Cascade)
+
+  @@index([evaluationId])
+  @@map("pk_indicator_evaluations")
+}
+
+/// BehavioralValue - Master data nilai perilaku (SAFTI)
+model BehavioralValue {
+  id          String   @id @default(uuid())
+  name        String   @unique // Siddiq, Amanah, Fathonah, Tabligh, Istiqomah
+  description String?  @db.Text
+  weight      Float    @default(1)
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  evaluations PKBehaviorEvaluation[]
+
+  @@map("behavioral_values")
+}
+
+/// PKBehaviorEvaluation - Penilaian perilaku per bulan
+model PKBehaviorEvaluation {
+  id              String   @id @default(uuid())
+  evaluationId    String   @map("evaluation_id")
+  behaviorValueId String   @map("behavior_value_id")
+  score           Float    @default(0) // 1-5 or 0-100
+  notes           String?  @db.Text
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  // Relations
+  evaluation    PKEvaluation    @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
+  behaviorValue BehavioralValue @relation(fields: [behaviorValueId], references: [id])
+
+  @@index([evaluationId])
+  @@map("pk_behavior_evaluations")
+}

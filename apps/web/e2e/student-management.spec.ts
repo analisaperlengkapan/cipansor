@@ -95,14 +95,19 @@ test.describe("Student Management - List & View", () => {
       const term = (firstText.match(/[A-Za-z]{3,}/) ?? ["a"])[0].toLowerCase();
 
       await searchInput.fill(term);
+      // Wait for the specific result to appear or for the table to refresh
+      await page.waitForTimeout(1000); // Give it a moment to trigger search
       await waitForLoadingComplete(page);
 
       // Every visible result should match the search term.
-      const resultCount = await rows.count();
-      if (resultCount > 0) {
-        const text = (await rows.first().textContent())?.toLowerCase() ?? "";
-        expect(text).toContain(term);
-      }
+      // Use expect.toPass to handle potential re-renders or delay in filtering
+      await expect(async () => {
+        const resultCount = await rows.count();
+        if (resultCount > 0) {
+          const text = (await rows.first().textContent())?.toLowerCase() ?? "";
+          expect(text).toContain(term);
+        }
+      }).toPass({ timeout: 10000 });
     } else {
       test.skip(true, "Search functionality not found");
     }

@@ -546,6 +546,9 @@ model Unit {
   p5Projects             P5Project[]
   merdekaAssessments     MerdekaAssessment[]
   journalEntries         JournalEntry[]
+  financialPeriods       FinancialPeriod[]
+  reportTemplates        ReportTemplate[]
+  reportNotes            ReportNote[]
   // Canteen relations
   canteenCategories      CanteenCategory[]
   canteenItems           CanteenItem[]
@@ -575,7 +578,6 @@ model Unit {
   immunizationRecords    ImmunizationRecord[]
   dashboardHistory       DashboardHistory[]
   budgets                Budget[]
-  financialPeriods       FinancialPeriod[]
   purchaseRequests       PurchaseRequest[]
   guestBooks             GuestBook[]
   studentVisits          StudentVisit[]
@@ -4743,6 +4745,10 @@ model AccountCode {
   normalBalance    String  @default("DEBIT") @map("normal_balance") // DEBIT, CREDIT
   cashFlowCategory String? @map("cash_flow_category") // OPERATING, INVESTING, FINANCING
 
+  // ISAK 35 & PSAK 109 support
+  netAssetCategory String? @map("net_asset_category") // UNRESTRICTED, TEMPORARILY_RESTRICTED, PERMANENTLY_RESTRICTED
+  ziswafFundType   String? @map("ziswaf_fund_type")   // ZAKAT, INFAK_SEDEKAH, WAKAF, AMIL, NON_HALAL
+
   // Relations
   parent         AccountCode?   @relation("AccountHierarchy", fields: [parentId], references: [id])
   children       AccountCode[]  @relation("AccountHierarchy")
@@ -4797,6 +4803,7 @@ model FinancialPeriod {
 
   unit     Unit  @relation(fields: [unitId], references: [id])
   closedBy User? @relation("PeriodCloser", fields: [closedById], references: [id])
+  reportNotes ReportNote[]
 
   @@unique([unitId, startDate, endDate])
   @@index([unitId])
@@ -6365,6 +6372,41 @@ model UnitComparisonReport {
   @@index([reportType])
   @@index([periodStart, periodEnd])
   @@map("unit_comparison_reports")
+}
+
+/// ReportTemplate - Template untuk CALK atau laporan lainnya
+model ReportTemplate {
+  id          String   @id @default(uuid())
+  unitId      String?  @map("unit_id")
+  name        String // e.g. "CALK Template"
+  type        String // e.g. "CALK", "POLICY"
+  content     String   @db.Text
+  isDefault   Boolean  @default(false) @map("is_default")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  unit Unit? @relation(fields: [unitId], references: [id])
+
+  @@unique([unitId, type])
+  @@map("report_templates")
+}
+
+/// ReportNote - Catatan manual untuk laporan tertentu (CALK)
+model ReportNote {
+  id          String   @id @default(uuid())
+  unitId      String   @map("unit_id")
+  periodId    String?  @map("period_id")
+  reportType  String   @map("report_type")
+  sectionKey  String   @map("section_key") // Identifier untuk bagian mana yang dicatat
+  content     String   @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  unit   Unit             @relation(fields: [unitId], references: [id])
+  period FinancialPeriod? @relation(fields: [periodId], references: [id])
+
+  @@unique([unitId, periodId, reportType, sectionKey])
+  @@map("report_notes")
 }
 
 // =====================================

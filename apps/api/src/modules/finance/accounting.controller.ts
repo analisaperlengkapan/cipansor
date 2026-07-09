@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import * as service from './accounting.service';
+import * as reportsService from './reports.service';
 import * as configService from './accounting-config.service';
 import { CreateAccountDto, CreateJournalDto, UpdateAccountDto } from './schema';
 
@@ -11,6 +12,125 @@ export async function seedAccounts(req: Request, res: Response, next: NextFuncti
   try {
     const result = await service.seedDefaultAccounts();
     res.status(201).json({ message: 'Accounts seeded successfully', data: result });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function saveReportNote(req: Request, res: Response, next: NextFunction) {
+  try {
+    const data = req.body;
+    const result = await reportsService.saveReportNote(data);
+    res.json({ data: result });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getStatementOfActivities(req: Request, res: Response, next: NextFunction) {
+  try {
+    const query = (req.query as any) as any;
+    const now = new Date();
+    const startDate = query.startDate ? new Date(query.startDate) : new Date(now.getFullYear(), 0, 1);
+    const endDate = query.endDate ? new Date(query.endDate) : new Date();
+
+    const result = await reportsService.getStatementOfActivities({
+      unitId: query.unitId,
+      startDate,
+      endDate,
+    });
+    res.json({ data: result });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getCashFlowStatement(req: Request, res: Response, next: NextFunction) {
+  try {
+    const query = (req.query as any) as any;
+    const now = new Date();
+    const startDate = query.startDate ? new Date(query.startDate) : new Date(now.getFullYear(), 0, 1);
+    const endDate = query.endDate ? new Date(query.endDate) : new Date();
+
+    const result = await reportsService.getCashFlowStatement({
+      unitId: query.unitId,
+      startDate,
+      endDate,
+    });
+    res.json({ data: result });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getZiswafReport(req: Request, res: Response, next: NextFunction) {
+  try {
+    const query = (req.query as any) as any;
+    const now = new Date();
+    const startDate = query.startDate ? new Date(query.startDate) : new Date(now.getFullYear(), 0, 1);
+    const endDate = query.endDate ? new Date(query.endDate) : new Date();
+
+    const result = await reportsService.getZiswafReport({
+      unitId: query.unitId,
+      startDate,
+      endDate,
+    });
+    res.json({ data: result });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getBusinessUnitReport(req: Request, res: Response, next: NextFunction) {
+  try {
+    const query = (req.query as any) as any;
+    if (!query.unitId) {
+      return res.status(400).json({ message: 'Unit ID is required' });
+    }
+    const now = new Date();
+    const startDate = query.startDate ? new Date(query.startDate) : new Date(now.getFullYear(), 0, 1);
+    const endDate = query.endDate ? new Date(query.endDate) : new Date();
+
+    const result = await reportsService.getBusinessUnitReport({
+      unitId: query.unitId,
+      startDate,
+      endDate,
+    });
+    res.json({ data: result });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getBudgetVsActualReport(req: Request, res: Response, next: NextFunction) {
+  try {
+    const query = (req.query as any) as any;
+    if (!query.unitId || !query.academicYearId) {
+      return res.status(400).json({ message: 'Unit ID and Academic Year ID are required' });
+    }
+
+    const result = await reportsService.getBudgetVsActualReport({
+      unitId: query.unitId,
+      academicYearId: query.academicYearId,
+    });
+    res.json({ data: result });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getCalkData(req: Request, res: Response, next: NextFunction) {
+  try {
+    const query = (req.query as any) as any;
+    if (!query.unitId) {
+      return res.status(400).json({ message: 'Unit ID is required' });
+    }
+
+    const result = await reportsService.getCalkData({
+      unitId: query.unitId,
+      periodId: query.periodId,
+    });
+    res.json({ data: result });
   } catch (error) {
     next(error);
   }

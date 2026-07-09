@@ -7,7 +7,7 @@ test.describe('Finance Reports', () => {
   });
 
   test('should display all enhanced financial reports', async ({ page }) => {
-    await page.goto('/finance/reports/enhanced');
+    await page.goto('/finance/reports');
 
     // Check for title
     await expect(page.locator('h1')).toContainText('Pusat Laporan Keuangan');

@@ -316,7 +316,7 @@ export default function EditTahfidzPage() {
                         selected={date}
                         onSelect={(d) => d && setValue("date", d)}
                         disabled={(d) => d > new Date()}
-                        initialFocus
+                        autoFocus
                       />
                     </PopoverContent>
                   </Popover>

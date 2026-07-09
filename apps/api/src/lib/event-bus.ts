@@ -126,7 +126,7 @@ export interface TahfidzCreatedEvent {
   recordedAt: Date;
 }
 
-export interface TahfidzUpdatedEvent extends TahfidzCreatedEvent {}
+export type TahfidzUpdatedEvent = TahfidzCreatedEvent;
 
 export interface TahfidzMilestoneEvent {
   studentId: string;

@@ -243,7 +243,7 @@ function RecordAttendanceContent() {
                     selected={date}
                     onSelect={(d) => d && setDate(d)}
                     disabled={(d) => d > new Date()}
-                    initialFocus
+                    autoFocus
                   />
                 </PopoverContent>
               </Popover>

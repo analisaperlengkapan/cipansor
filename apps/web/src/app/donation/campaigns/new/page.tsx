@@ -245,7 +245,7 @@ export default function NewCampaignPage() {
                           onSelect={(date) =>
                             date && setValue("startDate", date)
                           }
-                          initialFocus
+                          autoFocus
                         />
                       </PopoverContent>
                     </Popover>
@@ -281,7 +281,7 @@ export default function NewCampaignPage() {
                           selected={endDate}
                           onSelect={(date) => date && setValue("endDate", date)}
                           disabled={(date) => date < (startDate || new Date())}
-                          initialFocus
+                          autoFocus
                         />
                       </PopoverContent>
                     </Popover>

@@ -205,7 +205,7 @@ export default function AttendancePage() {
                   mode="single"
                   selected={date}
                   onSelect={setDate}
-                  initialFocus
+                  autoFocus
                 />
               </PopoverContent>
             </Popover>

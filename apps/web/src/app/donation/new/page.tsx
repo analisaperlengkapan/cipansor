@@ -432,7 +432,7 @@ export default function NewDonationPage() {
                           date && setValue("paymentDate", date)
                         }
                         disabled={(date) => date > new Date()}
-                        initialFocus
+                        autoFocus
                       />
                     </PopoverContent>
                   </Popover>

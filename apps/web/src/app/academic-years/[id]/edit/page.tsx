@@ -241,7 +241,7 @@ export default function EditAcademicYearPage() {
                         mode="single"
                         selected={startDate}
                         onSelect={(date) => date && setValue("startDate", date)}
-                        initialFocus
+                        autoFocus
                       />
                     </PopoverContent>
                   </Popover>
@@ -277,7 +277,7 @@ export default function EditAcademicYearPage() {
                         disabled={(date) =>
                           startDate ? date <= startDate : false
                         }
-                        initialFocus
+                        autoFocus
                       />
                     </PopoverContent>
                   </Popover>

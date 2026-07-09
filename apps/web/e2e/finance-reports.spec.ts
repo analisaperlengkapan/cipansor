@@ -20,7 +20,7 @@ test.describe('Finance Reports', () => {
     await expect(page.getByRole('tab', { name: 'CALK' })).toBeVisible();
 
     // Activities Tab
-    await page.getByRole('tab', { name: 'Aktivitas' }).click();
+    await page.getByRole('tab', { name: /laba rugi|aktivitas/i }).click();
     await expect(page.getByText('Laporan Penghasilan Komprehensif')).toBeVisible();
 
     // ZISWAF Tab

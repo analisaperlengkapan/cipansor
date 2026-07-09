@@ -177,20 +177,37 @@ export async function getBusinessUnitReport(query: {
     });
 
     const results = await Promise.all(businessUnits.map(async (bu) => {
-        // Business units usually track via specific sub-accounts or cost centers
-        // In this schema, we might need a reference in journal entries or use specific account prefixes
-        // For now, let's assume we filter by description or a specific mapping if it existed
-        // Since schema doesn't have buId in JournalEntry, we might need to filter by Unit if it's 1:1 or use standard logic
+        // Aggregate Canteen Transactions
+        const canteenStats = await prisma.canteenTransaction.aggregate({
+            where: {
+                businessUnitId: bu.id,
+                createdAt: { gte: query.startDate, lte: query.endDate },
+                status: 'COMPLETED'
+            },
+            _sum: { total: true }
+        });
 
-        // Mocking for now based on Unit but should be refined
-        const incomeStatement = await getIncomeStatement({ unitId: bu.unitId, startDate: query.startDate, endDate: query.endDate });
+        // Aggregate Laundry Transactions
+        const laundryStats = await prisma.laundryTransaction.aggregate({
+            where: {
+                businessUnitId: bu.id,
+                createdAt: { gte: query.startDate, lte: query.endDate },
+                paymentStatus: 'PAID'
+            },
+            _sum: { total: true }
+        });
+
+        const totalRevenue = (canteenStats._sum.total?.toNumber() || 0) + (laundryStats._sum.total?.toNumber() || 0);
+
+        // Note: Expenses are typically recorded in JournalEntry and currently don't have a direct BusinessUnitId link.
+        // A more advanced implementation would use Cost Centers or specific AccountCode branches for each BU.
 
         return {
             businessUnitId: bu.id,
             name: bu.name,
-            revenue: incomeStatement.totalRevenue,
-            expense: incomeStatement.totalExpense,
-            netProfit: incomeStatement.netIncome
+            revenue: totalRevenue,
+            expense: 0,
+            netProfit: totalRevenue
         };
     }));
 

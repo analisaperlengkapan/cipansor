@@ -55,6 +55,7 @@ describe('ReportsService', () => {
         { id: '1', netAssetCategory: 'UNRESTRICTED' },
         { id: '2', netAssetCategory: 'UNRESTRICTED' },
       ]);
+      (prisma.journalEntry.aggregate as any).mockResolvedValue({ _sum: { debit: { toNumber: () => 0 }, credit: { toNumber: () => 0 } } });
 
       const result = await reportsService.getStatementOfActivities({ unitId, startDate, endDate });
 

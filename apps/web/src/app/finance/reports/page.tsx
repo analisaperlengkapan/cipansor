@@ -232,11 +232,23 @@ export default function StandardFinanceReportsPage() {
                         </tr>
                       </thead>
                       <tbody>
-                        <tr className="border-b font-semibold">
+                        <tr className="border-b">
+                          <td className="p-3">Saldo Awal Aset Neto</td>
+                          <td className="p-3 text-right">-</td>
+                          <td className="p-3 text-right">-</td>
+                          <td className="p-3 text-right font-bold">{formatCurrency(activities.netAssets.beginning)}</td>
+                        </tr>
+                        <tr className="border-b">
                           <td className="p-3">Perubahan Periode Berjalan</td>
                           <td className="p-3 text-right">{formatCurrency(activities.changeInNetAssets.unrestricted)}</td>
                           <td className="p-3 text-right">{formatCurrency(activities.changeInNetAssets.restricted)}</td>
                           <td className="p-3 text-right font-bold">{formatCurrency(activities.changeInNetAssets.total)}</td>
+                        </tr>
+                        <tr className="border-b bg-muted/50 font-bold">
+                          <td className="p-3">Saldo Akhir Aset Neto</td>
+                          <td className="p-3 text-right">-</td>
+                          <td className="p-3 text-right">-</td>
+                          <td className="p-3 text-right">{formatCurrency(activities.netAssets.ending)}</td>
                         </tr>
                       </tbody>
                     </table>

@@ -52,13 +52,32 @@ export async function getStatementOfActivities(query: {
     };
   };
 
+  const activities = {
+    unrestricted: mapByCategory(revenues).unrestricted.total - mapByCategory(expenses).unrestricted.total,
+    restricted: mapByCategory(revenues).restricted.total - mapByCategory(expenses).restricted.total,
+    total: (mapByCategory(revenues).total - mapByCategory(expenses).total)
+  };
+
+  // For Statement of Changes in Net Assets, we need beginning balances
+  const beginningBalances = await prisma.journalEntry.aggregate({
+    where: {
+      ...(query.unitId && { unitId: query.unitId }),
+      date: { lt: query.startDate },
+      account: { type: { in: ['REVENUE', 'EXPENSE'] } }
+    },
+    _sum: { debit: true, credit: true }
+  });
+
+  // Simplified: Net Assets beginning balance is cumulative surplus/deficit
+  const startBalance = (beginningBalances._sum.credit?.toNumber() || 0) - (beginningBalances._sum.debit?.toNumber() || 0);
+
   return {
     revenues: mapByCategory(revenues),
     expenses: mapByCategory(expenses),
-    changeInNetAssets: {
-       unrestricted: mapByCategory(revenues).unrestricted.total - mapByCategory(expenses).unrestricted.total,
-       restricted: mapByCategory(revenues).restricted.total - mapByCategory(expenses).restricted.total,
-       total: (mapByCategory(revenues).total - mapByCategory(expenses).total)
+    changeInNetAssets: activities,
+    netAssets: {
+        beginning: startBalance,
+        ending: startBalance + activities.total
     }
   };
 }

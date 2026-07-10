@@ -861,6 +861,21 @@ const adminNavigation: NavGroup[] = [
         icon: BookOpen,
       },
       {
+        title: "Amaliyah Tadris",
+        href: "/practicum",
+        icon: ClipboardPenLine,
+      },
+      {
+        title: "Qiyadah (Organisasi)",
+        href: "/student-org",
+        icon: Users,
+      },
+      {
+        title: "Turats Lab",
+        href: "/research",
+        icon: ScrollText,
+      },
+      {
         title: "Takhosus",
         href: "/takhosus",
         icon: BookMarked,

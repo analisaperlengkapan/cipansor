@@ -86,6 +86,9 @@ import { qualityRoutes } from '@/modules/quality/quality.routes';
 import correspondenceRoutes from '@/modules/correspondence/correspondence.routes';
 import riskRoutes from '@/modules/risk/risk.routes';
 import { complaintsRoutes } from '@/modules/complaints/complaints.routes';
+import { practicumRoutes } from '@/modules/practicum/routes';
+import { studentOrgRoutes } from '@/modules/student-org/routes';
+import { researchRoutes } from '@/modules/research/routes';
 
 // Enhancement module routes
 import { paudAssessmentRoutes } from '@/modules/paud-assessment';
@@ -267,6 +270,9 @@ apiRouter.use('/quality', qualityRoutes);
 apiRouter.use('/correspondence', correspondenceRoutes);
 apiRouter.use('/risk', riskRoutes);
 apiRouter.use('/complaints', complaintsRoutes);
+apiRouter.use('/practicum', practicumRoutes);
+apiRouter.use('/student-org', studentOrgRoutes);
+apiRouter.use('/research', researchRoutes);
 
 // Enhancement modules
 apiRouter.use('/paud-assessment', paudAssessmentRoutes);

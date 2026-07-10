@@ -448,6 +448,11 @@ model User {
   trainingEnrollments     TrainingEnrollment[]
 
   // Organisasi (Organization Structure)
+  // Practicum (Amaliyah Tadris) & Turats Lab
+  reviewedPracticums   PracticumLessonPlan[] @relation("PracticumReviewer")
+  practicumEvaluations PracticumEvaluation[] @relation("PracticumEvaluator")
+  reviewedResearches   ResearchSubmission[]  @relation("ResearchReviewer")
+
   orgPositions OrgPosition[] @relation("PositionHolder")
 
   // Tata Laksana (SOP Management)
@@ -574,6 +579,10 @@ model Unit {
   dailyStudentReports    DailyStudentReport[]
   dashboardSnapshots     DashboardMetricSnapshot[]
   unitComparisonReports  UnitComparisonReport[]
+
+  // Qiyadah & Turats Lab
+  studentOrgs    StudentOrg[]
+  researchThemes ResearchTheme[]
   growthRecords          GrowthRecord[]
   immunizationRecords    ImmunizationRecord[]
   dashboardHistory       DashboardHistory[]
@@ -817,6 +826,11 @@ model AcademicYear {
   unitComparisonReports UnitComparisonReport[]
   budgets               Budget[]
   leaveBalances         LeaveBalance[]
+
+  // Practicum, Qiyadah & Turats Lab
+  practicumLessonPlans PracticumLessonPlan[]
+  studentOrgs          StudentOrg[]
+  researchThemes       ResearchTheme[]
   qualityEvidences      QualityEvidence[]
   qualityAudits         QualityAudit[]
   assignments           Assignment[]
@@ -862,6 +876,9 @@ model Class {
   p5Projects         P5Project[]
   merdekaAssessments MerdekaAssessment[]
   assignments        Assignment[]
+
+  // Practicum: classes taught by senior students
+  practicumSchedules PracticumSchedule[]
 
   @@unique([unitId, academicYearId, name])
   @@index([level])
@@ -1029,6 +1046,11 @@ model Student {
   murojaahRecords             MurojaahRecord[]
   simaanExams                 SimaanExam[]
   hafidzStudent               HafidzStudent?
+
+  // Practicum, Qiyadah & Turats Lab
+  practicumLessonPlans PracticumLessonPlan[]
+  orgMemberships       StudentOrgMember[]
+  researchSubmissions  ResearchSubmission[]
   // Health & Growth relations
   growthRecords               GrowthRecord[]
   immunizationRecords         ImmunizationRecord[]
@@ -8310,6 +8332,201 @@ model ResearchMilestone {
 
   @@index([projectId])
   @@map("research_milestones")
+}
+
+// =====================================
+// PRACTICUM (AMALIYAH TADRIS), QIYADAH & TURATS LAB (from PR #295, hardened)
+// =====================================
+
+enum PracticumStatus {
+  DRAFT
+  PENDING_REVIEW
+  REVISION_REQUIRED
+  APPROVED
+  COMPLETED
+}
+
+model PracticumLessonPlan {
+  id             String          @id @default(uuid())
+  studentId      String          @map("student_id")
+  academicYearId String          @map("academic_year_id")
+  subject        String // Materi yang diajarkan
+  topic          String
+  method         String          @db.Text
+  materials      String          @db.Text
+  objectives     String          @db.Text
+  steps          Json // Tahapan mengajar (Muqaddimah, Hissoh, dst)
+  status         PracticumStatus @default(DRAFT)
+  reviewedById   String?         @map("reviewed_by_id")
+  reviewedAt     DateTime?       @map("reviewed_at")
+  reviewNotes    String?         @db.Text
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+
+  student      Student               @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  academicYear AcademicYear          @relation(fields: [academicYearId], references: [id])
+  reviewer     User?                 @relation("PracticumReviewer", fields: [reviewedById], references: [id])
+  evaluations  PracticumEvaluation[]
+  schedules    PracticumSchedule[]
+
+  @@index([studentId])
+  @@index([academicYearId])
+  @@index([status])
+  @@map("practicum_lesson_plans")
+}
+
+model PracticumSchedule {
+  id            String   @id @default(uuid())
+  lessonPlanId  String   @map("lesson_plan_id")
+  targetClassId String   @map("target_class_id") // Kelas yang diajar (junior)
+  date          DateTime
+  startTime     String   @map("start_time")
+  endTime       String   @map("end_time")
+  location      String?
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  lessonPlan  PracticumLessonPlan @relation(fields: [lessonPlanId], references: [id], onDelete: Cascade)
+  targetClass Class               @relation(fields: [targetClassId], references: [id])
+
+  @@index([lessonPlanId])
+  @@map("practicum_schedules")
+}
+
+model PracticumEvaluation {
+  id               String   @id @default(uuid())
+  lessonPlanId     String   @map("lesson_plan_id")
+  evaluatorId      String   @map("evaluator_id") // Ustadz atau Naqid (peer)
+  isPeer           Boolean  @default(false) @map("is_peer")
+  methodScore      Float    @map("method_score") // Thariqah
+  contentScore     Float    @map("content_score") // Maddah
+  languageScore    Float    @map("language_score") // Lughah
+  performanceScore Float    @map("performance_score") // Ahwal
+  totalScore       Float    @map("total_score")
+  feedback         String   @db.Text
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  lessonPlan PracticumLessonPlan @relation(fields: [lessonPlanId], references: [id], onDelete: Cascade)
+  evaluator  User                @relation("PracticumEvaluator", fields: [evaluatorId], references: [id])
+
+  @@index([lessonPlanId])
+  @@map("practicum_evaluations")
+}
+
+model StudentOrg {
+  id             String   @id @default(uuid())
+  unitId         String   @map("unit_id")
+  academicYearId String   @map("academic_year_id")
+  name           String // OPPM, Koordinator, dsb
+  description    String?  @db.Text
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  unit         Unit                 @relation(fields: [unitId], references: [id])
+  academicYear AcademicYear         @relation(fields: [academicYearId], references: [id])
+  positions    StudentOrgPosition[]
+
+  @@index([unitId])
+  @@map("student_orgs")
+}
+
+model StudentOrgPosition {
+  id        String   @id @default(uuid())
+  orgId     String   @map("org_id")
+  name      String // Ketua, Dept Bahasa, dsb
+  level     Int      @default(1)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  org     StudentOrg         @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  members StudentOrgMember[]
+
+  @@index([orgId])
+  @@map("student_org_positions")
+}
+
+model StudentOrgMember {
+  id         String   @id @default(uuid())
+  positionId String   @map("position_id")
+  studentId  String   @map("student_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  position StudentOrgPosition  @relation(fields: [positionId], references: [id], onDelete: Cascade)
+  student  Student             @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  logbooks StudentOrgLogbook[]
+
+  @@unique([positionId, studentId])
+  @@index([studentId])
+  @@map("student_org_members")
+}
+
+model StudentOrgLogbook {
+  id        String   @id @default(uuid())
+  memberId  String   @map("member_id")
+  date      DateTime @db.Date
+  activity  String   @db.Text
+  result    String?  @db.Text
+  notes     String?  @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+
+  member StudentOrgMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@index([memberId])
+  @@index([date])
+  @@map("student_org_logbooks")
+}
+
+model ResearchTheme {
+  id             String   @id @default(uuid())
+  unitId         String   @map("unit_id")
+  academicYearId String   @map("academic_year_id")
+  title          String
+  description    String?  @db.Text
+  category       String? // Fiqh, Aqidah, dst
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  unit         Unit                 @relation(fields: [unitId], references: [id])
+  academicYear AcademicYear         @relation(fields: [academicYearId], references: [id])
+  submissions  ResearchSubmission[]
+
+  @@index([unitId])
+  @@map("research_themes")
+}
+
+model ResearchSubmission {
+  id           String    @id @default(uuid())
+  themeId      String    @map("theme_id")
+  studentId    String    @map("student_id")
+  title        String
+  abstract     String?   @db.Text
+  content      String?   @db.Text
+  status       String    @default("DRAFT") // DRAFT, SUBMITTED, REVIEWED
+  feedback     String?   @db.Text
+  reviewedById String?   @map("reviewed_by_id")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  theme      ResearchTheme       @relation(fields: [themeId], references: [id], onDelete: Cascade)
+  student    Student             @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  reviewer   User?               @relation("ResearchReviewer", fields: [reviewedById], references: [id])
+  references ResearchReference[]
+
+  @@index([themeId])
+  @@index([studentId])
+  @@map("research_submissions")
+}
+
+model ResearchReference {
+  id           String   @id @default(uuid())
+  submissionId String   @map("submission_id")
+  bookTitle    String   @map("book_title")
+  author       String?
+  volume       String?
+  page         String?
+  contentQuote String?  @map("content_quote") @db.Text
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  submission ResearchSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
+  @@index([submissionId])
+  @@map("research_references")
 }
 
 /// InnovationProposal - Usulan inovasi

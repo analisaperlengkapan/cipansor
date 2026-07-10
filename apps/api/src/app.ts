@@ -89,6 +89,8 @@ import { complaintsRoutes } from '@/modules/complaints/complaints.routes';
 import { practicumRoutes } from '@/modules/practicum/routes';
 import { studentOrgRoutes } from '@/modules/student-org/routes';
 import { researchRoutes } from '@/modules/research/routes';
+import nonFormalRoutes from '@/modules/non-formal';
+import socialServiceRoutes from '@/modules/social-service';
 
 // Enhancement module routes
 import { paudAssessmentRoutes } from '@/modules/paud-assessment';
@@ -273,6 +275,8 @@ apiRouter.use('/complaints', complaintsRoutes);
 apiRouter.use('/practicum', practicumRoutes);
 apiRouter.use('/student-org', studentOrgRoutes);
 apiRouter.use('/research', researchRoutes);
+apiRouter.use('/non-formal', nonFormalRoutes);
+apiRouter.use('/social-service', socialServiceRoutes);
 
 // Enhancement modules
 apiRouter.use('/paud-assessment', paudAssessmentRoutes);

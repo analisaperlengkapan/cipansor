@@ -439,6 +439,50 @@ export async function getEducationsByAlumni(alumniId: string) {
   });
 }
 
+/**
+ * Si-Taka: cross-alumni university placement listing + aggregates. All
+ * numbers derive from real AlumniEducation rows — no synthetic fallbacks.
+ */
+export async function getPlacements(unitId?: string) {
+  const educations = await prisma.alumniEducation.findMany({
+    where: unitId ? { alumni: { unitId } } : {},
+    include: {
+      alumni: { select: { id: true, name: true, graduationYear: true } },
+    },
+    orderBy: [{ startYear: 'desc' }, { createdAt: 'desc' }],
+    take: 500,
+  });
+
+  const byPath: Record<string, number> = {};
+  const byInstitution: Record<string, number> = {};
+  let internationalCount = 0;
+  let scholarshipCount = 0;
+
+  for (const edu of educations) {
+    const path = edu.admissionPath || 'Lainnya';
+    byPath[path] = (byPath[path] || 0) + 1;
+    byInstitution[edu.institution] = (byInstitution[edu.institution] || 0) + 1;
+    if (edu.isInternational) internationalCount++;
+    if (edu.scholarshipName) scholarshipCount++;
+  }
+
+  return {
+    placements: educations,
+    stats: {
+      total: educations.length,
+      internationalCount,
+      scholarshipCount,
+      byPath: Object.entries(byPath)
+        .map(([path, count]) => ({ path, count }))
+        .sort((a, b) => b.count - a.count),
+      topInstitutions: Object.entries(byInstitution)
+        .map(([institution, count]) => ({ institution, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10),
+    },
+  };
+}
+
 export async function createEducation(alumniId: string, data: CreateEducationInput) {
   return prisma.alumniEducation.create({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

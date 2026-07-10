@@ -27,6 +27,7 @@ export const createTahfidzSchema = z
     totalAyah: z.number().int().min(1).optional(),
     score: z.number().min(0).max(100).optional(), // For assessment
     notes: z.string().max(1000).optional(),
+    audioUrl: z.string().url().optional(), // E-Simaan recording (uploaded via /upload)
     recordedAt: z.coerce.date().optional(),
   })
   .refine((data) => data.ayahEnd >= data.ayahStart, {

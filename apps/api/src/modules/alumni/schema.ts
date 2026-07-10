@@ -68,6 +68,10 @@ export const createEducationSchema = z.object({
   endYear: z.number().int().min(1980).max(2100).optional(),
   isCompleted: z.boolean().default(false),
   achievements: z.string().optional(),
+  // Si-Taka placement tracking
+  admissionPath: z.string().max(50).optional(), // SNBP, SNBT, Mandiri, Al-Azhar, ...
+  scholarshipName: z.string().max(200).optional(),
+  isInternational: z.boolean().default(false),
 });
 
 export const updateEducationSchema = createEducationSchema.partial();

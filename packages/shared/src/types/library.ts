@@ -30,6 +30,10 @@ export interface Book {
   coverUrl?: string;
   description?: string;
   status: BookStatus;
+  // Maktabah digital collection
+  isDigital?: boolean;
+  fileUrl?: string | null;
+  fileType?: string | null;
   category: BookCategory;
   unit?: {
     id: string;

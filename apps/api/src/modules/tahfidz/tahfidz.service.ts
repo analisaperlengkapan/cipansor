@@ -227,6 +227,7 @@ export class TahfidzService {
         totalAyah,
         score: input.score,
         notes: input.notes,
+        audioUrl: input.audioUrl,
         recordedAt: input.recordedAt || new Date(),
         recordedById,
       },

@@ -3156,6 +3156,7 @@ async function main() {
   // ============================================
   await seedPAUDIndicators(prisma);
   await seedImmunizationReference(prisma);
+  await seedBehavioralValues();
 
   // ============================================
   // PHASE 10: Demo Data Enhancements (Canteen, Laundry, Meals, Kitab Progress, etc.)
@@ -7085,6 +7086,50 @@ async function main() {
   }
 
   console.log('\n✅ Database seeded successfully!');
+}
+
+// SAFTI behavioral values — master data for Perjanjian Kinerja evaluations.
+async function seedBehavioralValues() {
+  console.log('🌱 Seeding SAFTI behavioral values...');
+  const values = [
+    {
+      name: 'Siddiq',
+      description:
+        'Integritas: Jujur, berani membela kebenaran, dan selaras antara pikiran, perkataan, serta perbuatan.',
+      weight: 1,
+    },
+    {
+      name: 'Amanah',
+      description:
+        'Akuntabilitas: Bertanggung jawab terhadap tugas, dapat dipercaya, dan memiliki komitmen tinggi.',
+      weight: 1,
+    },
+    {
+      name: 'Fathonah',
+      description:
+        'Profesionalisme & Inovasi: Kompeten, cerdas dalam mencari solusi, dan terus belajar.',
+      weight: 1,
+    },
+    {
+      name: 'Tabligh',
+      description:
+        'Komunikasi & Kolaborasi: Menyampaikan informasi dengan benar, transparan, dan mampu bekerja sama.',
+      weight: 1,
+    },
+    {
+      name: 'Istiqomah',
+      description: 'Konsistensi: Memiliki keteguhan hati, disiplin, dan pantang menyerah.',
+      weight: 1,
+    },
+  ];
+
+  for (const v of values) {
+    await prisma.behavioralValue.upsert({
+      where: { name: v.name },
+      update: v,
+      create: v,
+    });
+  }
 }
 
 main()

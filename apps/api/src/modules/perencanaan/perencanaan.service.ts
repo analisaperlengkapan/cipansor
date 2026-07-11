@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { Prisma, PlanStatus } from '@prisma/client';
+import { Errors } from '@/middleware/error';
 
 type TransactionClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
 
@@ -9,13 +10,27 @@ export class PerencanaanService {
   async createPlan(data: {
     title: string;
     description?: string;
-    type: 'RENSTRA' | 'RKAS' | 'RKT' | 'PROGRAM';
+    type: 'MASTER_PLAN' | 'RENSTRA' | 'RKAS' | 'RKT' | 'PROGRAM';
     startDate: string;
     endDate: string;
     budget?: number;
     unitId: string;
     createdById: string;
+    parentId?: string;
   }) {
+    if (data.parentId) {
+      const parent = await prisma.strategicPlan.findUnique({ where: { id: data.parentId } });
+      if (!parent) throw Errors.notFound('Parent plan');
+
+      // Cascading hierarchy: MASTER_PLAN -> RENSTRA -> RKAS
+      if (data.type === 'RKAS' && parent.type !== 'RENSTRA') {
+        throw Errors.badRequest('RKAS must refer to a RENSTRA parent plan');
+      }
+      if (data.type === 'RENSTRA' && parent.type !== 'MASTER_PLAN') {
+        throw Errors.badRequest('RENSTRA must refer to a MASTER_PLAN parent plan');
+      }
+    }
+
     return prisma.strategicPlan.create({
       data: {
         title: data.title,
@@ -26,17 +41,29 @@ export class PerencanaanService {
         budget: data.budget ? (data.budget as any) : undefined,
         unit: { connect: { id: data.unitId } },
         createdBy: { connect: { id: data.createdById } },
+        parent: data.parentId ? { connect: { id: data.parentId } } : undefined,
       },
       include: {
         unit: { select: { id: true, name: true } },
         createdBy: { select: { id: true, name: true } },
+        parent: { select: { id: true, title: true, type: true } },
         objectives: true,
       },
     });
   }
 
-  async getPlans(unitId: string, query: { type?: string; status?: string }) {
-    const where: Prisma.StrategicPlanWhereInput = { unitId };
+  async getPlans(
+    unitId: string,
+    query: { type?: string; status?: string; collaboratorId?: string }
+  ) {
+    // A user sees their unit's plans plus any plan they collaborate on.
+    // The collaborator branch is only added when a caller id is present —
+    // `some: { userId: undefined }` would match ANY plan with collaborators.
+    const where: Prisma.StrategicPlanWhereInput = query.collaboratorId
+      ? {
+          OR: [{ unitId }, { collaborators: { some: { userId: query.collaboratorId } } }],
+        }
+      : { unitId };
     if (query.type) where.type = query.type as any;
     if (query.status) where.status = query.status as any;
 
@@ -46,6 +73,8 @@ export class PerencanaanService {
         unit: { select: { id: true, name: true } },
         createdBy: { select: { id: true, name: true } },
         approvedBy: { select: { id: true, name: true } },
+        parent: { select: { id: true, title: true, type: true } },
+        collaborators: { include: { user: { select: { id: true, name: true } } } },
         objectives: {
           include: {
             indicators: true,
@@ -67,6 +96,8 @@ export class PerencanaanService {
         unit: { select: { id: true, name: true } },
         createdBy: { select: { id: true, name: true } },
         approvedBy: { select: { id: true, name: true } },
+        parent: { select: { id: true, title: true, type: true } },
+        collaborators: { include: { user: { select: { id: true, name: true } } } },
         objectives: {
           include: {
             indicators: true,
@@ -349,6 +380,41 @@ export class PerencanaanService {
 
   async deletePlan(id: string) {
     return prisma.strategicPlan.delete({ where: { id } });
+  }
+
+  // ==================== COLLABORATION ====================
+
+  async addCollaborator(planId: string, userId: string, callerId: string, isPrivileged: boolean) {
+    const plan = await prisma.strategicPlan.findUnique({ where: { id: planId } });
+    if (!plan) throw Errors.notFound('Plan');
+    if (!isPrivileged && plan.createdById !== callerId) {
+      throw Errors.forbidden('Only the plan creator or an admin may manage collaborators');
+    }
+    if (plan.status !== PlanStatus.DRAFT) {
+      throw Errors.badRequest('Can only add collaborators to DRAFT plans');
+    }
+
+    return prisma.planCollaborator.create({
+      data: { planId, userId },
+      include: { user: { select: { id: true, name: true } } },
+    });
+  }
+
+  async removeCollaborator(
+    planId: string,
+    userId: string,
+    callerId: string,
+    isPrivileged: boolean
+  ) {
+    const plan = await prisma.strategicPlan.findUnique({ where: { id: planId } });
+    if (!plan) throw Errors.notFound('Plan');
+    if (!isPrivileged && plan.createdById !== callerId) {
+      throw Errors.forbidden('Only the plan creator or an admin may manage collaborators');
+    }
+
+    return prisma.planCollaborator.delete({
+      where: { planId_userId: { planId, userId } },
+    });
   }
 
   // ==================== OBJECTIVES ====================

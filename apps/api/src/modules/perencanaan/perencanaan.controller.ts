@@ -37,7 +37,10 @@ export const listPlans = asyncHandler(async (req: Request, res: Response) => {
     status: (req.query as any).status,
   });
 
-  const plans = await perencanaanService.getPlans(targetUnitId, query);
+  const plans = await perencanaanService.getPlans(targetUnitId, {
+    ...query,
+    collaboratorId: req.user?.sub,
+  });
   res.json({ success: true, data: plans });
 });
 
@@ -184,4 +187,34 @@ export const updateActivity = asyncHandler(async (req: Request, res: Response) =
 export const deleteActivity = asyncHandler(async (req: Request, res: Response) => {
   await perencanaanService.deleteActivity((req.params as any).id);
   res.json({ success: true, message: 'Activity deleted' });
+});
+
+// ==================== COLLABORATION ====================
+
+export const addCollaborator = asyncHandler(async (req: Request, res: Response) => {
+  const callerId = req.user?.sub;
+  if (!callerId) throw Errors.unauthorized();
+  const { userId } = req.body as { userId?: string };
+  if (!userId) throw Errors.badRequest('User ID is required');
+
+  const collaborator = await perencanaanService.addCollaborator(
+    (req.params as any).id,
+    userId,
+    callerId,
+    isPrivileged(req.user?.role)
+  );
+  res.status(201).json({ success: true, data: collaborator });
+});
+
+export const removeCollaborator = asyncHandler(async (req: Request, res: Response) => {
+  const callerId = req.user?.sub;
+  if (!callerId) throw Errors.unauthorized();
+
+  await perencanaanService.removeCollaborator(
+    (req.params as any).id,
+    (req.params as any).userId,
+    callerId,
+    isPrivileged(req.user?.role)
+  );
+  res.json({ success: true, message: 'Collaborator removed' });
 });

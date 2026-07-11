@@ -614,6 +614,8 @@ model Unit {
   dashboardHistory       DashboardHistory[]
   budgets                Budget[]
   financialPeriods       FinancialPeriod[]
+  reportNotes            ReportNote[]
+  reportTemplates        ReportTemplate[]
   purchaseRequests       PurchaseRequest[]
   guestBooks             GuestBook[]
   studentVisits          StudentVisit[]
@@ -4857,6 +4859,10 @@ model AccountCode {
   normalBalance    String  @default("DEBIT") @map("normal_balance") // DEBIT, CREDIT
   cashFlowCategory String? @map("cash_flow_category") // OPERATING, INVESTING, FINANCING
 
+  // ISAK 35 & PSAK 109 support
+  netAssetCategory String? @map("net_asset_category") // UNRESTRICTED, TEMPORARILY_RESTRICTED, PERMANENTLY_RESTRICTED
+  ziswafFundType   String? @map("ziswaf_fund_type") // ZAKAT, INFAK_SEDEKAH, WAKAF, AMIL, NON_HALAL
+
   // Relations
   parent         AccountCode?   @relation("AccountHierarchy", fields: [parentId], references: [id])
   children       AccountCode[]  @relation("AccountHierarchy")
@@ -4909,12 +4915,48 @@ model FinancialPeriod {
   createdAt  DateTime  @default(now()) @map("created_at")
   updatedAt  DateTime  @updatedAt @map("updated_at")
 
-  unit     Unit  @relation(fields: [unitId], references: [id])
-  closedBy User? @relation("PeriodCloser", fields: [closedById], references: [id])
+  unit        Unit         @relation(fields: [unitId], references: [id])
+  closedBy    User?        @relation("PeriodCloser", fields: [closedById], references: [id])
+  reportNotes ReportNote[]
 
   @@unique([unitId, startDate, endDate])
   @@index([unitId])
   @@map("financial_periods")
+}
+
+/// ReportNote - Catatan manual per bagian laporan (CALK)
+model ReportNote {
+  id         String   @id @default(uuid())
+  unitId     String   @map("unit_id")
+  periodId   String?  @map("period_id")
+  reportType String   @map("report_type") // e.g. "CALK"
+  sectionKey String   @map("section_key") // Bagian laporan yang dicatat
+  content    String   @db.Text
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  unit   Unit             @relation(fields: [unitId], references: [id])
+  period FinancialPeriod? @relation(fields: [periodId], references: [id])
+
+  @@unique([unitId, periodId, reportType, sectionKey])
+  @@map("report_notes")
+}
+
+/// ReportTemplate - Template naratif laporan (CALK) per unit atau default
+model ReportTemplate {
+  id        String   @id @default(uuid())
+  unitId    String?  @map("unit_id")
+  name      String // e.g. "CALK Template"
+  type      String // e.g. "CALK", "POLICY"
+  content   String   @db.Text
+  isDefault Boolean  @default(false) @map("is_default")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  unit Unit? @relation(fields: [unitId], references: [id])
+
+  @@unique([unitId, type])
+  @@map("report_templates")
 }
 
 /// JournalEntry - Jurnal Keuangan

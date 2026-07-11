@@ -13,6 +13,8 @@ export async function createAccount(data: {
   normalBalance: string;
   parentId?: string;
   cashFlowCategory?: string;
+  netAssetCategory?: string;
+  ziswafFundType?: string;
   isActive?: boolean;
 }) {
   return prisma.accountCode.create({
@@ -23,6 +25,8 @@ export async function createAccount(data: {
       normalBalance: data.normalBalance,
       parentId: data.parentId,
       cashFlowCategory: data.cashFlowCategory,
+      netAssetCategory: data.netAssetCategory,
+      ziswafFundType: data.ziswafFundType,
       isActive: data.isActive ?? true,
     },
     include: {
@@ -40,6 +44,8 @@ export async function updateAccount(
     normalBalance?: string;
     parentId?: string;
     cashFlowCategory?: string;
+    netAssetCategory?: string;
+    ziswafFundType?: string;
     isActive?: boolean;
   }
 ) {

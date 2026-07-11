@@ -119,10 +119,22 @@ export const createAccountSchema = z.object({
   normalBalance: z.enum(['DEBIT', 'CREDIT']),
   parentId: z.string().uuid().optional(),
   cashFlowCategory: z.string().optional(),
+  netAssetCategory: z
+    .enum(['UNRESTRICTED', 'TEMPORARILY_RESTRICTED', 'PERMANENTLY_RESTRICTED'])
+    .optional(),
+  ziswafFundType: z.enum(['ZAKAT', 'INFAK_SEDEKAH', 'WAKAF', 'AMIL', 'NON_HALAL']).optional(),
   isActive: z.boolean().default(true),
 });
 
 export const updateAccountSchema = createAccountSchema.partial();
+
+export const saveReportNoteSchema = z.object({
+  unitId: z.string().uuid(),
+  periodId: z.string().uuid().optional(),
+  reportType: z.string().min(1),
+  sectionKey: z.string().min(1),
+  content: z.string(),
+});
 
 export const queryAccountSchema = z.object({
   search: z.string().optional(),

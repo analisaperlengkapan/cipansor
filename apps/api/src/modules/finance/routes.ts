@@ -1123,4 +1123,71 @@ router.get(
   accountingController.getIncomeStatement
 );
 
+/**
+ * @swagger
+ * /api/finance/accounting/reports/statement-of-activities:
+ *   get:
+ *     summary: Get Statement of Activities report (ISAK 35)
+ *     tags: [Finance - Accounting]
+ */
+router.get(
+  '/accounting/reports/statement-of-activities',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  validateQuery(queryReportSchema),
+  accountingController.getStatementOfActivities
+);
+
+/**
+ * @swagger
+ * /api/finance/accounting/reports/ziswaf:
+ *   get:
+ *     summary: Get ZISWAF Source and Use of Funds report (PSAK 109)
+ *     tags: [Finance - Accounting]
+ */
+router.get(
+  '/accounting/reports/ziswaf',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  validateQuery(queryReportSchema),
+  accountingController.getZiswafReport
+);
+
+/**
+ * @swagger
+ * /api/finance/accounting/reports/budget-vs-actual:
+ *   get:
+ *     summary: Get Budget vs Actual report per account
+ *     tags: [Finance - Accounting]
+ */
+router.get(
+  '/accounting/reports/budget-vs-actual',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  accountingController.getBudgetVsActualReport
+);
+
+/**
+ * @swagger
+ * /api/finance/accounting/reports/calk:
+ *   get:
+ *     summary: Get CALK notes and narrative template
+ *     tags: [Finance - Accounting]
+ */
+router.get(
+  '/accounting/reports/calk',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  accountingController.getCalkData
+);
+
+/**
+ * @swagger
+ * /api/finance/accounting/reports/notes:
+ *   post:
+ *     summary: Save a CALK section note
+ *     tags: [Finance - Accounting]
+ */
+router.post(
+  '/accounting/reports/notes',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  accountingController.saveReportNote
+);
+
 export default router;

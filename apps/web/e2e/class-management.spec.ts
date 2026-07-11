@@ -201,15 +201,14 @@ test.describe("Class Management - Create and Update", () => {
       await page.waitForURL(/\/classes\/.+\/edit/, { timeout: 10000 });
       await waitForLoadingComplete(page);
 
-      // Wait for the form to hydrate — saving before hydration trips the
-      // required-field validation. The name input is filled by the same
-      // reset() that hydrates unitId, without depending on the units query
-      // resolving into the select's visible text (times out on firefox
-      // under CI load).
-      await expect(page.getByLabel(/nama kelas|class name/i)).not.toHaveValue(
-        "",
-        { timeout: 20000 },
-      );
+      // Wait for the form to hydrate the class's unit into the select —
+      // saving before hydration trips the required-field validation.
+      await expect(
+        page
+          .getByRole("combobox")
+          .filter({ hasText: /sd|smp|sma|tk|pesantren|qur/i })
+          .first(),
+      ).toBeVisible({ timeout: 20000 });
 
       // Update capacity
       const capacityInput = page.getByLabel(/kapasitas|capacity/i);

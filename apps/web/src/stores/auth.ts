@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
+import { AxiosError } from "axios";
 import { User, authApi, rolesApi, LoginRequest } from "@/lib/api";
 
 interface AuthState {
@@ -193,13 +194,24 @@ export const useAuthStore = create<AuthState>()(
             isAuthenticated: true,
             isLoading: false,
           });
-        } catch {
-          localStorage.removeItem("accessToken");
-          localStorage.removeItem("refreshToken");
-          // Also remove from cookies
-          document.cookie = "accessToken=; path=/; max-age=0";
-          document.cookie = "auth-storage=; path=/; max-age=0";
-          set({ user: null, isAuthenticated: false, isLoading: false });
+        } catch (error: unknown) {
+          const status = (error as AxiosError)?.response?.status;
+          if (status === 401 || status === 403) {
+            // Token genuinely rejected — clear the session.
+            localStorage.removeItem("accessToken");
+            localStorage.removeItem("refreshToken");
+            // Also remove from cookies
+            document.cookie = "accessToken=; path=/; max-age=0";
+            document.cookie = "auth-storage=; path=/; max-age=0";
+            set({ user: null, isAuthenticated: false, isLoading: false });
+          } else {
+            // Transient failure (network blip, timeout, 5xx). Do NOT log the
+            // user out over it — keep the existing session and just stop
+            // loading. Otherwise a single slow /auth/me (common on flaky
+            // networks / loaded CI browsers) bounces an authenticated user
+            // to /login mid-navigation.
+            set({ isLoading: false });
+          }
         }
       },
 

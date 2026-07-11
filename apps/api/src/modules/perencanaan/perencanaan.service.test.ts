@@ -228,8 +228,7 @@ describe('Perencanaan Service', () => {
         _sum: { debit: { toNumber: () => 500000 }, credit: { toNumber: () => 100000 } }
       } as any);
 
-      const result = await perencanaanService.getPlanById(planId);
-
+      const result = (await perencanaanService.getPlanById(planId))!;
       expect(result.totalRealization).toBe(400000); // 500k - 100k
       expect(result.financialProgress).toBe(40); // 400k / 1m
       expect(prisma.journalEntry.aggregate).toHaveBeenCalledWith(expect.objectContaining({
@@ -274,8 +273,7 @@ describe('Perencanaan Service', () => {
         _sum: { debit: { toNumber: () => 500000 }, credit: { toNumber: () => 0 } }
       } as any);
 
-      const result = await perencanaanService.getPlanById(planId);
-
+      const result = (await perencanaanService.getPlanById(planId))!;
       // Journal aggregate should be called only ONCE for the shared account
       expect(prisma.journalEntry.aggregate).toHaveBeenCalledTimes(1);
 
@@ -315,8 +313,7 @@ describe('Perencanaan Service', () => {
         { accountId: 'acc-exp', date: new Date('2026-03-05'), debit: 75000, credit: 0 },
       ] as any);
 
-      const result = await perencanaanService.getPlanRealizationTrend('plan-1');
-
+      const result = (await perencanaanService.getPlanRealizationTrend('plan-1'))!;
       expect(result).toEqual({
         planId: 'plan-1',
         trend: [
@@ -335,7 +332,7 @@ describe('Perencanaan Service', () => {
         objectives: [],
       } as any);
 
-      const result = await perencanaanService.getPlanRealizationTrend('plan-1');
+      const result = (await perencanaanService.getPlanRealizationTrend('plan-1'))!;
       expect(result).toEqual({ planId: 'plan-1', trend: [] });
     });
   });

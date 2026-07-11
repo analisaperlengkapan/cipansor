@@ -19,7 +19,7 @@ describe('Assessment Service - getExamAnalytics', () => {
   it('should return null if exam is not found', async () => {
     (prisma.exam.findUnique as any).mockResolvedValue(null);
 
-    const result = await getExamAnalytics('exam-1');
+    const result = (await getExamAnalytics('exam-1'))!;
     expect(result).toBeNull();
   });
 
@@ -33,8 +33,7 @@ describe('Assessment Service - getExamAnalytics', () => {
     };
     (prisma.exam.findUnique as any).mockResolvedValue(mockExam);
 
-    const result = await getExamAnalytics('exam-1');
-
+    const result = (await getExamAnalytics('exam-1'))!;
     expect(result).toMatchObject({
       examId: 'exam-1',
       totalStudents: 2,
@@ -65,8 +64,7 @@ describe('Assessment Service - getExamAnalytics', () => {
 
     (prisma.exam.findUnique as any).mockResolvedValue(mockExam);
 
-    const result = await getExamAnalytics('exam-2');
-
+    const result = (await getExamAnalytics('exam-2'))!;
     // totalScore = 80 + 60 + 90 + 95 = 325
     // average = 325 / 4 = 81.25
     expect(result).toMatchObject({

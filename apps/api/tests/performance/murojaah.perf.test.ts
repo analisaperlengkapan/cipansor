@@ -53,7 +53,7 @@ describe('Murojaah Service Performance', () => {
     ] as any);
 
     // Mock findMany calls
-    vi.mocked(prisma.murojaahRecord.findMany).mockImplementation(async (args) => {
+    (vi.mocked(prisma.murojaahRecord.findMany) as any).mockImplementation(async (args: any) => {
       // Check for coverage query (only select juzStart, juzEnd)
       if (args?.select?.juzStart && !args?.take) {
         return Array.from({ length: recordCount }).map(() => ({ juzStart: 1, juzEnd: 1 })) as any;

@@ -200,7 +200,7 @@ describe('PAUD Assessment Service - Indicators', () => {
         ...input,
       });
 
-      const result = await paudAssessmentService.createIndicator(input);
+      const result = await paudAssessmentService.createIndicator(input as any);
 
       expect(result).toHaveProperty('id', 'new-id');
     });
@@ -221,7 +221,7 @@ describe('PAUD Assessment Service - Indicators', () => {
         code: 'NAM-1',
       });
 
-      await expect(paudAssessmentService.createIndicator(input)).rejects.toThrow(
+      await expect(paudAssessmentService.createIndicator(input as any)).rejects.toThrow(
         'Indicator with this code already exists'
       );
     });
@@ -300,7 +300,7 @@ describe('PAUD Assessment Service - Assessments', () => {
         ...input,
       });
 
-      const result = await paudAssessmentService.createAssessment(input);
+      const result = await paudAssessmentService.createAssessment(input as any, 'user-1');
 
       expect(result).toHaveProperty('id', 'assessment-1');
     });
@@ -316,7 +316,7 @@ describe('PAUD Assessment Service - Assessments', () => {
 
       mocks.mockPrisma.student.findUnique.mockResolvedValue(null);
 
-      await expect(paudAssessmentService.createAssessment(input)).rejects.toThrow(
+      await expect(paudAssessmentService.createAssessment(input as any, 'user-1')).rejects.toThrow(
         'Student not found'
       );
     });
@@ -351,7 +351,7 @@ describe('PAUD Assessment Service - Assessments', () => {
         { id: 'assessment-1', ...input.assessments[0] },
       ]);
 
-      const result = await paudAssessmentService.bulkCreateAssessments(input, 'teacher-1');
+      const result = await paudAssessmentService.bulkCreateAssessments(input as any, 'teacher-1');
 
       expect(result.count).toBe(1);
       expect(result.assessments).toHaveLength(1);

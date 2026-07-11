@@ -601,7 +601,7 @@ describe('DailyReportService', () => {
       const confirmedReport = { ...mockReport, parentReadAt: new Date() };
       vi.mocked(prisma.dailyStudentReport.update).mockResolvedValue(confirmedReport as any);
 
-      const result = await dailyReportService.confirmByParent(mockReportId, {}, mockUserId);
+      const result = await dailyReportService.confirmByParent(mockReportId, {} as any, mockUserId);
 
       expect(result.parentReadAt).toBeTruthy();
       expect(prisma.dailyStudentReport.update).toHaveBeenCalledWith(

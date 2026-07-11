@@ -97,7 +97,7 @@ describe('Laundry Accounting Integration', () => {
       items: [{ itemType: 'Shirt', quantity: 5 }],
     };
 
-    await transactionService.create(unitId, userId, input);
+    await transactionService.create(unitId, userId, input as any);
 
     // Verify journal entries
     expect(prisma.journalEntry.create).toHaveBeenCalledTimes(2);

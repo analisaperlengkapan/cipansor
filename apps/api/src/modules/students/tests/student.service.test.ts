@@ -60,7 +60,7 @@ describe('StudentService', () => {
 
       const result = await service.findAll(
         { page: 1, limit: 10, unitId: 'unit-1' },
-        { role: UserRole.ADMIN, unitId: 'unit-1' }
+        { role: 'ADMIN' as any, unitId: 'unit-1' }
       );
 
       expect(prisma.student.findMany).toHaveBeenCalledWith(

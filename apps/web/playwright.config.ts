@@ -109,6 +109,15 @@ export default defineConfig({
       name: "firefox",
       use: {
         ...devices["Desktop Firefox"],
+        launchOptions: {
+          firefoxUserPrefs: {
+            // On CI Linux (no NetworkManager) Firefox reports
+            // navigator.onLine=false and fires offline events, which pauses
+            // every React Query request (networkMode "online") and shows the
+            // offline banner — tests then fail on pages that never load data.
+            "network.manage-offline-status": false,
+          },
+        },
       },
       dependencies: ["setup"],
     },

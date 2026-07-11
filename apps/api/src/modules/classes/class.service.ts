@@ -168,6 +168,13 @@ export class ClassService {
             name: true,
           },
         },
+        academicYear: {
+          select: {
+            id: true,
+            name: true,
+            isActive: true,
+          },
+        },
         homeroomTeacher: {
           include: {
             user: {

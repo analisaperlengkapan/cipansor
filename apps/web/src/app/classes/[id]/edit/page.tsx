@@ -228,7 +228,13 @@ export default function EditClassPage() {
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Pilih unit">
-                        {units?.find((u) => u.id === selectedUnitId)?.name}
+                        {/* Show the class's current unit immediately from its
+                            own data; don't block the display on the units-list
+                            query resolving. */}
+                        {units?.find((u) => u.id === selectedUnitId)?.name ??
+                          (selectedUnitId === classData.unitId
+                            ? classData.unit?.name
+                            : undefined)}
                       </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
@@ -261,11 +267,12 @@ export default function EditClassPage() {
                             : "Pilih tahun ajaran"
                         }
                       >
-                        {
-                          academicYears?.find(
-                            (ay) => ay.id === watch("academicYearId"),
-                          )?.name
-                        }
+                        {academicYears?.find(
+                          (ay) => ay.id === watch("academicYearId"),
+                        )?.name ??
+                          (watch("academicYearId") === classData.academicYearId
+                            ? classData.academicYear?.name
+                            : undefined)}
                       </SelectValue>
                     </SelectTrigger>
                     <SelectContent>

@@ -104,9 +104,14 @@ export default defineConfig({
       dependencies: ["setup"],
     },
 
-    // Firefox - Cross-browser testing
+    // Firefox - Cross-browser testing.
+    // Secondary browsers run markedly slower than Chromium under CI load
+    // (full-matrix runs take 25-30 min), so heavy integration flows can
+    // exceed the 30s default — give them more headroom to avoid slow-run
+    // flakes without weakening any assertion.
     {
       name: "firefox",
+      timeout: 60_000,
       use: {
         ...devices["Desktop Firefox"],
         launchOptions: {
@@ -122,9 +127,11 @@ export default defineConfig({
       dependencies: ["setup"],
     },
 
-    // Webkit (Safari) - Cross-browser testing
+    // Webkit (Safari) - Cross-browser testing. Slowest engine under CI load;
+    // give it the same extended per-test timeout as Firefox.
     {
       name: "webkit",
+      timeout: 60_000,
       use: {
         ...devices["Desktop Safari"],
       },

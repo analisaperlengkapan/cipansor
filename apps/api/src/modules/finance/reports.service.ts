@@ -304,16 +304,28 @@ export async function saveReportNote(data: {
     sectionKey: string;
     content: string;
 }) {
-    return prisma.reportNote.upsert({
+    // Note: Upsert with nullable unique fields is problematic in Postgres (NULL != NULL).
+    // Using findFirst + update/create instead.
+    const existing = await prisma.reportNote.findFirst({
         where: {
-            unitId_periodId_reportType_sectionKey: {
-                unitId: data.unitId,
-                periodId: data.periodId || null as any,
-                reportType: data.reportType,
-                sectionKey: data.sectionKey
-            }
-        },
-        update: { content: data.content },
-        create: data
+            unitId: data.unitId,
+            periodId: data.periodId || null,
+            reportType: data.reportType,
+            sectionKey: data.sectionKey
+        }
+    });
+
+    if (existing) {
+        return prisma.reportNote.update({
+            where: { id: existing.id },
+            data: { content: data.content }
+        });
+    }
+
+    return prisma.reportNote.create({
+        data: {
+            ...data,
+            periodId: data.periodId || null
+        }
     });
 }

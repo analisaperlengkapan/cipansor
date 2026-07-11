@@ -135,11 +135,18 @@ test.describe("CBT Exams & Grading", () => {
     // data-placeholder, so has-text matching is unreliable. Address them by
     // index (0=Tipe Ujian, 1=Unit, 2=Tahun Ajaran, 3=Mapel, 4=Kelas, 5=Guru,
     // 6=Bank Soal, 7=Status) and pick the option by its text.
+    // Radix triggers/options animate; on starved CI runners (webkit
+    // especially) they never pass Playwright's "stable" check within the
+    // timeout — click with force once visible.
     const pickSelect = async (index: number, optionName: string) => {
-      await page.locator('button[role="combobox"]').nth(index).click();
+      const trigger = page.locator('button[role="combobox"]').nth(index);
+      await trigger.waitFor({ state: "visible" });
+      await trigger.click({ force: true });
       const listbox = page.getByRole("listbox");
       await expect(listbox).toBeVisible();
-      await listbox.getByRole("option", { name: optionName }).first().click();
+      const option = listbox.getByRole("option", { name: optionName }).first();
+      await option.waitFor({ state: "visible" });
+      await option.click({ force: true });
       await expect(listbox).toBeHidden();
     };
 

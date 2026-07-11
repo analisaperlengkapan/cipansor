@@ -311,6 +311,7 @@ model User {
   unit                              Unit?                       @relation(fields: [unitId], references: [id])
   userRoles                         UserRoleAssignment[] // NEW: Multi-role assignments
   student                           Student?
+  patient                           Patient?
   teacher                           Teacher?
   staff                             Staff?
   parentOf                          StudentParent[]
@@ -390,6 +391,10 @@ model User {
   tuVerifiedPayments                Payment[]                   @relation("PaymentTUVerifier")
   finalVerifiedPayments             Payment[]                   @relation("PaymentFinalVerifier")
   dailyStudentReports               DailyStudentReport[]        @relation("DailyReportCreator")
+  // Clinic relations
+  clinicAppointments                ClinicAppointment[]         @relation("PatientReserved")
+  clinicAppointmentsProcessed       ClinicAppointment[]         @relation("AppointmentProcessor")
+  prescriptions                     Prescription[]              @relation("PrescriptionCreator")
   murojaahRecords                   MurojaahRecord[]            @relation("MurojaahRecorder")
   simaanExaminer                    SimaanExaminer[]
   dashboardSnapshots                DashboardMetricSnapshot[]   @relation("SnapshotCreator")
@@ -611,6 +616,7 @@ model Unit {
   marketingCampaigns     MarketingCampaign[]
   leaveBalances          LeaveBalance[]
   departments            Department[]
+  clinicAppointments     ClinicAppointment[]
 
   // Tata Naskah Dinas (E-Office)
   agendaNumbers   AgendaNumber[]
@@ -1086,6 +1092,10 @@ model Student {
 
   // Perguruan Tinggi (Higher Ed)
   higherEdProfile StudentHigherEd?
+
+  // Clinic
+  clinicAppointments ClinicAppointment[]
+  prescriptions      Prescription[]
   // Health & Growth relations
   growthRecords               GrowthRecord[]
   immunizationRecords         ImmunizationRecord[]
@@ -2069,7 +2079,10 @@ enum HealthStatus {
 /// MedicalRecord - Rekam Medis
 model MedicalRecord {
   id           String            @id @default(uuid())
-  studentId    String            @map("student_id")
+  // Nullable: clinic also serves general patients (Patient) outside the
+  // student body — exactly one of studentId/patientId is expected.
+  studentId    String?           @map("student_id")
+  patientId    String?           @map("patient_id")
   type         MedicalRecordType
   visitDate    DateTime          @map("visit_date")
   complaint    String            @db.Text // Keluhan
@@ -2093,10 +2106,12 @@ model MedicalRecord {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
-  student    Student @relation(fields: [studentId], references: [id])
-  recordedBy User    @relation("MedicalRecorder", fields: [recordedById], references: [id])
+  student    Student? @relation(fields: [studentId], references: [id])
+  patient    Patient? @relation(fields: [patientId], references: [id])
+  recordedBy User     @relation("MedicalRecorder", fields: [recordedById], references: [id])
 
   @@index([studentId])
+  @@index([patientId])
   @@index([visitDate])
   @@index([type])
   @@index([status])
@@ -2121,9 +2136,10 @@ model Medication {
   updatedAt   DateTime  @updatedAt @map("updated_at")
 
   // Relations
-  unit        Unit                 @relation(fields: [unitId], references: [id])
-  supplierRel Supplier?            @relation(fields: [supplierId], references: [id])
-  usageLogs   MedicationUsageLog[]
+  unit              Unit                 @relation(fields: [unitId], references: [id])
+  supplierRel       Supplier?            @relation(fields: [supplierId], references: [id])
+  usageLogs         MedicationUsageLog[]
+  prescriptionItems PrescriptionItem[]
 
   @@index([unitId])
   @@index([name])
@@ -4768,6 +4784,7 @@ model Scholarship {
   unit       Unit                   @relation(fields: [unitId], references: [id])
   recipients ScholarshipRecipient[]
   discounts  ScholarshipDiscount[]
+  criteria   ScholarshipCriterion[]
 
   @@index([unitId])
   @@map("scholarships")
@@ -4802,6 +4819,7 @@ model ScholarshipRecipient {
   status         String    @default("ACTIVE") // ACTIVE, SUSPENDED, ENDED
   startDate      DateTime  @map("start_date")
   endDate        DateTime? @map("end_date")
+  totalScore     Float?    @map("total_score") // Hasil scoring otomatis
   notes          String?   @db.Text
   approvedById   String?   @map("approved_by_id")
   approvedAt     DateTime? @map("approved_at")
@@ -4809,10 +4827,11 @@ model ScholarshipRecipient {
   updatedAt      DateTime  @updatedAt @map("updated_at")
 
   // Relations
-  scholarship  Scholarship  @relation(fields: [scholarshipId], references: [id])
-  student      Student      @relation(fields: [studentId], references: [id])
-  academicYear AcademicYear @relation(fields: [academicYearId], references: [id])
-  approvedBy   User?        @relation("ScholarshipApprover", fields: [approvedById], references: [id])
+  scholarship  Scholarship             @relation(fields: [scholarshipId], references: [id])
+  student      Student                 @relation(fields: [studentId], references: [id])
+  academicYear AcademicYear            @relation(fields: [academicYearId], references: [id])
+  approvedBy   User?                   @relation("ScholarshipApprover", fields: [approvedById], references: [id])
+  assessments  ScholarshipAssessment[]
 
   @@unique([scholarshipId, studentId, academicYearId])
   @@index([scholarshipId])
@@ -8956,3 +8975,134 @@ model KrsCourseEnrollment {
   @@index([classId])
   @@map("krs_course_enrollments")
 }
+
+// =====================================
+// CLINIC & SCHOLARSHIP SCORING (from PR #313, hardened)
+// =====================================
+
+/// Patient - Umum (Luar Pesantren)
+model Patient {
+  id        String   @id @default(uuid())
+  userId    String?  @unique @map("user_id") // Link ke User jika terdaftar
+  name      String
+  gender    Gender
+  birthDate DateTime @map("birth_date")
+  phone     String?
+  address   String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user           User?               @relation(fields: [userId], references: [id])
+  medicalRecords MedicalRecord[]
+  appointments   ClinicAppointment[]
+  prescriptions  Prescription[]
+
+  @@map("patients")
+}
+
+/// ClinicAppointment - Reservasi Klinik
+model ClinicAppointment {
+  id           String      @id @default(uuid())
+  unitId       String      @map("unit_id")
+  patientId    String?     @map("patient_id")
+  studentId    String?     @map("student_id")
+  userId       String?     @map("user_id") // Pengguna yang membuat reservasi
+  appointmentDate DateTime @map("appointment_date")
+  complaint    String      @db.Text
+  status       String      @default("SCHEDULED") // SCHEDULED, COMPLETED, CANCELLED
+  queueNumber  Int?        @map("queue_number")
+  processedById String?    @map("processed_by_id")
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+
+  // Relations
+  unit        Unit     @relation(fields: [unitId], references: [id])
+  patient     Patient? @relation(fields: [patientId], references: [id])
+  student     Student? @relation(fields: [studentId], references: [id])
+  reservedBy  User?    @relation("PatientReserved", fields: [userId], references: [id])
+  processedBy User?    @relation("AppointmentProcessor", fields: [processedById], references: [id])
+
+  @@index([unitId])
+  @@index([appointmentDate])
+  @@map("clinic_appointments")
+}
+
+/// Prescription - Resep Obat
+model Prescription {
+  id              String   @id @default(uuid())
+  medicalRecordId String?  @unique @map("medical_record_id")
+  patientId       String?  @map("patient_id")
+  studentId       String?  @map("student_id")
+  doctorId        String   @map("doctor_id")
+  notes           String?  @db.Text
+  status          String   @default("PENDING") // PENDING, FULFILLED, CANCELLED
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  patient     Patient?           @relation(fields: [patientId], references: [id])
+  student     Student?           @relation(fields: [studentId], references: [id])
+  doctor      User               @relation("PrescriptionCreator", fields: [doctorId], references: [id])
+  items       PrescriptionItem[]
+
+  @@index([patientId])
+  @@index([studentId])
+  @@map("prescriptions")
+}
+
+/// PrescriptionItem - Item Obat dalam Resep
+model PrescriptionItem {
+  id             String @id @default(uuid())
+  prescriptionId String @map("prescription_id")
+  medicationId   String @map("medication_id")
+  quantity       Int
+  dosage         String // e.g. "3x1"
+  instructions   String?
+
+  // Relations
+  prescription Prescription @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
+  medication   Medication   @relation(fields: [medicationId], references: [id])
+
+  @@index([prescriptionId])
+  @@map("prescription_items")
+}
+
+/// ScholarshipCriterion - Kriteria Penilaian Beasiswa
+model ScholarshipCriterion {
+  id            String   @id @default(uuid())
+  scholarshipId String   @map("scholarship_id")
+  name          String // Nama kriteria (misal: Penghasilan Orang Tua, Prestasi, Hafalan)
+  description   String?  @db.Text
+  weight        Float // Bobot kriteria (0-1 atau 0-100)
+  type          String // NUMERIC, BOOLEAN, ENUM
+  targetValue   String?  @map("target_value") // Nilai target/ambang batas
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  scholarship Scholarship            @relation(fields: [scholarshipId], references: [id], onDelete: Cascade)
+  assessments ScholarshipAssessment[]
+
+  @@index([scholarshipId])
+  @@map("scholarship_criteria")
+}
+
+/// ScholarshipAssessment - Detail Penilaian per Kriteria
+model ScholarshipAssessment {
+  id          String   @id @default(uuid())
+  recipientId String   @map("recipient_id")
+  criterionId String   @map("criterion_id")
+  value       String // Nilai aktual
+  score       Float // Skor hasil konversi/perhitungan
+  notes       String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  recipient ScholarshipRecipient @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+  criterion ScholarshipCriterion @relation(fields: [criterionId], references: [id], onDelete: Cascade)
+
+  @@unique([recipientId, criterionId])
+  @@map("scholarship_assessments")
+}
+

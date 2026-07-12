@@ -43,6 +43,20 @@ Next.js 16 (App Router) + React 19 client. Read the root `AGENTS.md` first.
   (see `docs/KNOWN_ISSUES.md` — a vitest project for `src` is a pending task).
   Once that project exists, shared hooks/utilities get unit tests too.
 
+## PWA (the mobile app)
+
+The mobile app is this web app shipped as an installable PWA — there is no
+separate mobile codebase. Pieces: `public/manifest.json` + `public/icons/*`,
+`public/sw.js` (service worker), `public/offline.html`, and
+`components/pwa/{service-worker-register,install-prompt}.tsx` mounted in the root
+layout. Rules: never cache `/api/**` in the service worker (auth/session must
+stay fresh); the SW registers in production only **and never under browser
+automation** (`navigator.webdriver`) — a navigation-intercepting SW trips a
+known WebKit+Playwright engine bug, so `ServiceWorkerRegister` skips it to keep
+e2e deterministic across engines (real users are unaffected); keep the manifest
+icons in sync if you regenerate them. See `docs/MOBILE_API.md` for the
+parent-app API contract.
+
 ## Build
 
 - `pnpm build` runs `next build`. `next.config.ts` does NOT ignore type/lint

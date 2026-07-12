@@ -83,7 +83,7 @@ jobs:
       - name: Build Web
         run: pnpm --filter web build
         env:
-          NEXT_PUBLIC_API_URL: http://localhost:3001/api
+          NEXT_PUBLIC_API_URL: http://localhost:3001
           NODE_OPTIONS: --max-old-space-size=4096
 
   # Unit/integration tests, including the DB-backed suite (RUN_DB_TESTS=1).
@@ -195,6 +195,6 @@ jobs:
           push: false
           tags: cipansor-web:latest
           build-args: |
-            NEXT_PUBLIC_API_URL=http://localhost:3001/api
+            NEXT_PUBLIC_API_URL=http://localhost:3001
           cache-from: type=gha
           cache-to: type=gha,mode=max

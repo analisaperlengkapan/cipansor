@@ -91,8 +91,21 @@ test.describe("Student Management - List & View", () => {
         test.skip(true, "No students to search");
         return;
       }
-      const firstText = (await rows.first().textContent()) ?? "";
-      const term = (firstText.match(/[A-Za-z]{3,}/) ?? ["a"])[0].toLowerCase();
+      // Search matches name/NIS, so derive the term from the first row's *name*
+      // cell (rendered in a font-medium element). Deriving it from arbitrary
+      // row text (status, unit, action-button labels) could yield a token the
+      // query can't match — which narrows the table to zero rows and leaves a
+      // whitespace-only empty/skeleton <tr>, making the assertion fail.
+      const nameText =
+        (await rows
+          .first()
+          .locator(".font-medium")
+          .first()
+          .textContent()
+          .catch(() => null)) ??
+        (await rows.first().textContent()) ??
+        "";
+      const term = (nameText.match(/[A-Za-z]{3,}/) ?? ["a"])[0].toLowerCase();
 
       // Typing debounces a refetch of the students list. Wait for that GET to
       // land before asserting, otherwise the table may still show stale rows.
@@ -106,14 +119,15 @@ test.describe("Student Management - List & View", () => {
       await searchResponse;
       await waitForLoadingComplete(page);
 
-      // If the search narrowed to any rows, the term should appear somewhere in
-      // the result set. Check the whole set rather than only the first row —
-      // result ordering isn't guaranteed and the match may be on any column.
-      const resultCount = await rows.count();
-      if (resultCount > 0) {
-        const allText = (await rows.allTextContents()).join(" ").toLowerCase();
-        expect(allText).toContain(term);
-      }
+      // The source student matches its own name, so the term must appear among
+      // the rendered rows. Poll (ignoring whitespace-only skeleton rows) so a
+      // transient loading/empty frame doesn't fail the assertion.
+      await expect(async () => {
+        const texts = (await rows.allTextContents())
+          .map((t) => t.replace(/\s+/g, " ").trim())
+          .filter(Boolean);
+        expect(texts.join(" ").toLowerCase()).toContain(term);
+      }).toPass({ timeout: 7000 });
     } else {
       test.skip(true, "Search functionality not found");
     }

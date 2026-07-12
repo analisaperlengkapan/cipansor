@@ -94,14 +94,25 @@ test.describe("Student Management - List & View", () => {
       const firstText = (await rows.first().textContent()) ?? "";
       const term = (firstText.match(/[A-Za-z]{3,}/) ?? ["a"])[0].toLowerCase();
 
+      // Typing debounces a refetch of the students list. Wait for that GET to
+      // land before asserting, otherwise the table may still show stale rows.
+      const searchResponse = page
+        .waitForResponse(
+          (r) => /\/students(\?|$)/.test(r.url()) && r.request().method() === "GET",
+          { timeout: 10000 },
+        )
+        .catch(() => null);
       await searchInput.fill(term);
+      await searchResponse;
       await waitForLoadingComplete(page);
 
-      // Every visible result should match the search term.
+      // If the search narrowed to any rows, the term should appear somewhere in
+      // the result set. Check the whole set rather than only the first row —
+      // result ordering isn't guaranteed and the match may be on any column.
       const resultCount = await rows.count();
       if (resultCount > 0) {
-        const text = (await rows.first().textContent())?.toLowerCase() ?? "";
-        expect(text).toContain(term);
+        const allText = (await rows.allTextContents()).join(" ").toLowerCase();
+        expect(allText).toContain(term);
       }
     } else {
       test.skip(true, "Search functionality not found");

@@ -201,14 +201,27 @@ test.describe("Class Management - Create and Update", () => {
       await page.waitForURL(/\/classes\/.+\/edit/, { timeout: 10000 });
       await waitForLoadingComplete(page);
 
-      // Wait for the form to hydrate the class's unit into the select —
-      // saving before hydration trips the required-field validation.
-      await expect(
-        page
-          .getByRole("combobox")
-          .filter({ hasText: /sd|smp|sma|tk|pesantren|qur/i })
-          .first(),
-      ).toBeVisible({ timeout: 20000 });
+      // Wait for the form to hydrate the class (name populated from the load).
+      await expect(page.getByLabel(/nama kelas|class name/i)).not.toHaveValue(
+        "",
+        { timeout: 20000 },
+      );
+
+      // Deterministically set the required Unit / Tahun Ajaran selects rather
+      // than relying on the controlled selects being pre-hydrated — on slower
+      // browsers the per-unit list queries can leave them unset, tripping the
+      // required-field validation on save. The edit page always exposes the
+      // class's current unit and year as options, so picking the first option
+      // of each is safe. (These are shadcn <SelectTrigger> buttons; the page
+      // has no other combobox before the form.)
+      const triggers = page.locator('button[role="combobox"]');
+      await triggers.nth(0).click();
+      await page.getByRole("option").first().click({ force: true });
+
+      // Selecting a unit resets the year field; pick a year once it is enabled.
+      await expect(triggers.nth(1)).toBeEnabled({ timeout: 10000 });
+      await triggers.nth(1).click();
+      await page.getByRole("option").first().click({ force: true });
 
       // Update capacity
       const capacityInput = page.getByLabel(/kapasitas|capacity/i);

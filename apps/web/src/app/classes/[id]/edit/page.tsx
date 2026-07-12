@@ -90,15 +90,17 @@ export default function EditClassPage() {
   // option lists so the edit form displays its current values immediately,
   // even before the units/years list queries resolve (or if they fail).
   const unitOptions = useMemo(() => {
-    const list = units ? [...units] : [];
-    if (classData?.unit && !list.some((u) => u.id === classData.unit!.id)) {
-      list.unshift(classData.unit as (typeof list)[number]);
-    }
-    return list;
+    const rest = (units ?? []).filter((u) => u.id !== classData?.unit?.id);
+    return classData?.unit
+      ? [classData.unit as (typeof rest)[number], ...rest]
+      : rest;
   }, [units, classData?.unit]);
 
   const academicYearOptions = useMemo(() => {
     const list = [...academicYears];
+    // Always keep the class's own academic year selectable, even after the
+    // unit select is re-touched (which clears academicYearId) or before the
+    // per-unit years query resolves.
     if (
       classData?.academicYear &&
       !list.some((ay) => ay.id === classData.academicYear!.id)

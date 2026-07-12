@@ -64,10 +64,32 @@ mengirim pengingat tagihan SPP bulan berjalan ke SEMUA orang tua
 
 ## Status implementasi mobile
 
-Backend + web selesai dan teruji. Aplikasi Flutter-nya sendiri **belum
-dibangun di repo ini** — skeleton di PR #298 (login, dashboard, daftar
-tagihan) bisa dijadikan titik awal, tetapi butuh proyek Firebase (FCM),
-signing, dan CI mobile tersendiri. Pengiriman push FCM server-side
-menunggu kredensial `google-services`/service-account; token perangkat
-sudah bisa didaftarkan sejak sekarang sehingga tidak ada perubahan API
-saat sender diaktifkan.
+**Aplikasi mobile dikirim sebagai PWA (Progressive Web App)** dari `apps/web`,
+menggantikan rencana Flutter terpisah di PR #298. Alasannya: web app sudah
+matang dan terintegrasi penuh dengan API ini, sehingga satu basis kode langsung
+menjadi aplikasi yang dapat dipasang di layar utama (Android/iOS) tanpa stack
+Dart terpisah, toko aplikasi, atau CI mobile tambahan.
+
+Yang sudah ada di repo:
+
+- `apps/web/public/manifest.json` — nama, ikon (72–512, maskable), `display:
+  standalone`, shortcuts.
+- `apps/web/public/icons/icon-*.png` — set ikon aplikasi.
+- `apps/web/public/sw.js` — service worker: navigasi network-first + fallback
+  `offline.html`, aset statis cache-first, `/api/**` selalu ke jaringan (tidak
+  pernah di-cache agar data auth/sesi selalu segar). Handler `push` +
+  `notificationclick` sudah siap untuk Web Push.
+- `ServiceWorkerRegister` + `InstallPrompt` (`components/pwa/*`) di root layout —
+  registrasi SW (produksi saja) dan tombol "Pasang aplikasi".
+- Metadata iOS (`appleWebApp`, apple-touch-icon) + `themeColor`.
+
+Portal Orang Tua (`/parent/*`) adalah target utama mobile dan sudah responsif
+(sidebar Sheet di layar kecil).
+
+**Langkah lanjut opsional (butuh kredensial/tooling di luar repo):**
+
+- **Push nyata:** Web Push (VAPID) atau FCM. Endpoint pendaftaran token perangkat
+  (`PUT /notifications/fcm-token`) sudah ada; server-side sender menunggu
+  kredensial VAPID/`google-services`.
+- **APK Play Store:** bungkus PWA yang sama dengan Capacitor (≈95% reuse) —
+  butuh Android SDK/signing (dibangun di luar environment ini).

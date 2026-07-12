@@ -127,7 +127,7 @@ async function checkRule(rule: AlertRule): Promise<AlertTrigger[]> {
 /**
  * Check attendance rule
  */
-async function checkAttendanceRule(rule: AlertRule): Promise<AlertTrigger[]> {
+export async function checkAttendanceRule(rule: AlertRule): Promise<AlertTrigger[]> {
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 

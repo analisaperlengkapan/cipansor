@@ -71,7 +71,7 @@ describe('Dashboard Metrics Job Performance', () => {
     });
 
     // Mock history create with delay
-    vi.mocked(prisma.dashboardHistory.create).mockImplementation(async () => {
+    (vi.mocked(prisma.dashboardHistory.create) as any).mockImplementation(async () => {
       await new Promise((resolve) => setTimeout(resolve, 10)); // 10ms delay
       return {} as any;
     });

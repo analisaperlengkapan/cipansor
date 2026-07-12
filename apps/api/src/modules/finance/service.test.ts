@@ -26,6 +26,10 @@ vi.mock('../../lib/prisma', () => {
       count: vi.fn(),
       findUnique: vi.fn(),
     },
+    scholarshipRecipient: {
+      // No active scholarships by default — invoice amount stays as-is.
+      findMany: vi.fn(async () => []),
+    },
     $transaction: vi.fn(),
   };
   mockPrisma.$transaction.mockImplementation((callback) => callback(mockPrisma));
@@ -126,6 +130,48 @@ describe('Finance Service Unit Tests', () => {
       expect(prisma.invoice.create).toHaveBeenCalled();
       expect(notificationService.createNotification).toHaveBeenCalled();
       expect(result).toEqual(mockInvoice);
+    });
+
+    it('should apply an active scholarship percentage discount to the invoice amount', async () => {
+      const dto = {
+        title: 'Pembayaran SPP Januari',
+        amount: 500000,
+        dueDate: '2026-03-01T00:00:00.000Z',
+        studentId: 'stud-1',
+        paymentTypeId: 'pt-1',
+      };
+
+      vi.mocked(prisma.invoice.findFirst).mockResolvedValue(null);
+      vi.mocked(prisma.scholarshipRecipient.findMany).mockResolvedValue([
+        {
+          id: 'rec-1',
+          scholarship: {
+            discounts: [
+              {
+                componentId: 'pt-1',
+                discountType: 'PERCENTAGE',
+                discountValue: new Prisma.Decimal(50),
+              },
+              // Discount for a different payment type must be ignored.
+              {
+                componentId: 'pt-other',
+                discountType: 'PERCENTAGE',
+                discountValue: new Prisma.Decimal(100),
+              },
+            ],
+          },
+        },
+      ] as any);
+      vi.mocked(prisma.invoice.create).mockResolvedValue({
+        id: 'inv-2',
+        student: { user: { id: 'u1' }, unit: { id: 'unit-1' } },
+      } as any);
+      vi.mocked(notificationService.createNotification).mockResolvedValue({} as any);
+
+      await financeService.createInvoice(dto);
+
+      const createArgs = vi.mocked(prisma.invoice.create).mock.calls[0][0];
+      expect(Number(createArgs.data.amount)).toBe(250000);
     });
   });
 });

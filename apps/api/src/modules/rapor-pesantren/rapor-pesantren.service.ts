@@ -16,6 +16,7 @@ import {
   KitabProgressSummary,
   AkhlakSummary,
   AttendanceSummary,
+  AcademicSummary,
   getGradeFromScore,
 } from './rapor-pesantren.schema';
 import type { Prisma } from '@prisma/client';
@@ -721,6 +722,82 @@ async function getAttendanceSummary(
 // MAIN RAPOR GENERATION
 // =====================
 
+// =====================
+// ACADEMIC SUMMARY (Grade module aggregation)
+// =====================
+
+export async function getAcademicSummary(
+  studentId: string,
+  startDate: Date,
+  endDate: Date,
+  config: RaporConfig
+): Promise<AcademicSummary> {
+  const grades = await prisma.grade.findMany({
+    where: {
+      studentId,
+      gradedAt: { gte: startDate, lte: endDate },
+    },
+    include: { subject: { select: { name: true, passingScore: true } } },
+    orderBy: { gradedAt: 'asc' },
+  });
+
+  if (grades.length === 0) {
+    return { averageScore: 0, grade: 'MAQBUL', totalSubjects: 0, subjects: [], monthlyTrend: [] };
+  }
+
+  const subjectAgg = new Map<
+    string,
+    { total: number; count: number; name: string; passingScore: number }
+  >();
+  const monthAgg = new Map<string, { total: number; count: number }>();
+
+  for (const grade of grades) {
+    const entry = subjectAgg.get(grade.subjectId) ?? {
+      total: 0,
+      count: 0,
+      name: grade.subject.name,
+      passingScore: Number(grade.subject.passingScore),
+    };
+    entry.total += Number(grade.score);
+    entry.count += 1;
+    subjectAgg.set(grade.subjectId, entry);
+
+    const month = grade.gradedAt.toISOString().slice(0, 7);
+    const monthEntry = monthAgg.get(month) ?? { total: 0, count: 0 };
+    monthEntry.total += Number(grade.score);
+    monthEntry.count += 1;
+    monthAgg.set(month, monthEntry);
+  }
+
+  const subjects = [...subjectAgg.values()].map((subject) => {
+    const score = Math.round((subject.total / subject.count) * 100) / 100;
+    return {
+      subjectName: subject.name,
+      score,
+      grade: getGradeFromScore(score, config.gradeThresholds),
+      isPassing: score >= subject.passingScore,
+    };
+  });
+
+  const averageScore =
+    Math.round((subjects.reduce((sum, s) => sum + s.score, 0) / subjects.length) * 100) / 100;
+
+  const monthlyTrend = [...monthAgg.entries()]
+    .map(([month, value]) => ({
+      month,
+      average: Math.round((value.total / value.count) * 100) / 100,
+    }))
+    .sort((a, b) => a.month.localeCompare(b.month));
+
+  return {
+    averageScore,
+    grade: getGradeFromScore(averageScore, config.gradeThresholds),
+    totalSubjects: subjects.length,
+    subjects,
+    monthlyTrend,
+  };
+}
+
 export async function generateRaporPesantren(query: GetRaporQuery): Promise<RaporPesantren> {
   const { studentId, academicYearId, semester, unitId } = query;
 
@@ -752,7 +829,7 @@ export async function generateRaporPesantren(query: GetRaporQuery): Promise<Rapo
   const config = await getRaporConfig(unitId || student.unitId);
 
   // Generate all summaries in parallel
-  const [tahfidz, takhosus, ibadah, muhadhoroh, muhadatsah, kitabProgress, akhlak, attendance] =
+  const [tahfidz, takhosus, ibadah, muhadhoroh, muhadatsah, kitabProgress, akhlak, attendance, academic] =
     await Promise.all([
       getTahfidzSummary(studentId, startDate, endDate, config),
       getTakhosusSummary(studentId, startDate, endDate, config),
@@ -762,6 +839,7 @@ export async function generateRaporPesantren(query: GetRaporQuery): Promise<Rapo
       getKitabProgressSummary(studentId, startDate, endDate, config),
       getAkhlakSummary(studentId, startDate, endDate, config),
       getAttendanceSummary(studentId, startDate, endDate, config),
+      getAcademicSummary(studentId, startDate, endDate, config),
     ]);
 
   // Calculate overall score
@@ -800,6 +878,7 @@ export async function generateRaporPesantren(query: GetRaporQuery): Promise<Rapo
     kitabProgressData: kitabProgress as unknown as Prisma.InputJsonValue,
     akhlakData: akhlak as unknown as Prisma.InputJsonValue,
     attendanceData: attendance as unknown as Prisma.InputJsonValue,
+    academicData: academic as unknown as Prisma.InputJsonValue,
     overallScore,
     overallGrade,
     generatedAt: new Date(),
@@ -1101,6 +1180,7 @@ export async function getRaporPesantrenById(id: string): Promise<RaporPesantren 
     kitabProgress: rapor.kitabProgressData as unknown as KitabProgressSummary,
     akhlak: rapor.akhlakData as unknown as AkhlakSummary,
     attendance: rapor.attendanceData as unknown as AttendanceSummary,
+    academic: (rapor.academicData as unknown as AcademicSummary) ?? undefined,
     overallScore: rapor.overallScore || 0,
     overallGrade: rapor.overallGrade || 'MAQBUL',
     notes: rapor.notes || undefined,

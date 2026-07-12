@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useParams } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -83,6 +83,32 @@ export default function EditClassPage() {
 
   const academicYears = academicYearsData?.data || [];
   const teachersList = teachers?.data || [];
+
+  // Radix <SelectValue> renders the *selected item's* text, not the trigger's
+  // children, so the current unit/year only shows once a matching <SelectItem>
+  // exists. Merge the class's own unit/year (carried on classData) into the
+  // option lists so the edit form displays its current values immediately,
+  // even before the units/years list queries resolve (or if they fail).
+  const unitOptions = useMemo(() => {
+    const rest = (units ?? []).filter((u) => u.id !== classData?.unit?.id);
+    return classData?.unit
+      ? [classData.unit as (typeof rest)[number], ...rest]
+      : rest;
+  }, [units, classData?.unit]);
+
+  const academicYearOptions = useMemo(() => {
+    const list = [...academicYears];
+    // Always keep the class's own academic year selectable, even after the
+    // unit select is re-touched (which clears academicYearId) or before the
+    // per-unit years query resolves.
+    if (
+      classData?.academicYear &&
+      !list.some((ay) => ay.id === classData.academicYear!.id)
+    ) {
+      list.unshift(classData.academicYear as (typeof list)[number]);
+    }
+    return list;
+  }, [academicYears, classData?.academicYear]);
 
   // Populate form with existing data
   useEffect(() => {
@@ -230,7 +256,7 @@ export default function EditClassPage() {
                       <SelectValue placeholder="Pilih unit" />
                     </SelectTrigger>
                     <SelectContent>
-                      {units?.map((unit) => (
+                      {unitOptions.map((unit) => (
                         <SelectItem key={unit.id} value={unit.id}>
                           {unit.name}
                         </SelectItem>
@@ -261,7 +287,7 @@ export default function EditClassPage() {
                       />
                     </SelectTrigger>
                     <SelectContent>
-                      {academicYears?.map((ay) => (
+                      {academicYearOptions.map((ay) => (
                         <SelectItem key={ay.id} value={ay.id}>
                           {ay.name} {ay.isActive && "(Aktif)"}
                         </SelectItem>
@@ -291,7 +317,13 @@ export default function EditClassPage() {
                             ? "Pilih unit terlebih dahulu"
                             : "Pilih wali kelas"
                         }
-                      />
+                      >
+                        {
+                          teachersList?.find(
+                            (t) => t.id === watch("homeroomTeacherId"),
+                          )?.user?.name
+                        }
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       {teachersList?.map((teacher) => (

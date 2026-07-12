@@ -264,6 +264,36 @@ export const procurementService = {
     }
 
     const result = await prisma.$transaction(async (tx) => {
+      // Strict budget block: aggregate the fulfillment total PER BUDGET
+      // (several items can share one budget) and refuse the whole
+      // fulfillment when any budget's remaining amount would be exceeded.
+      const totalPerBudget = new Map<string, number>();
+      for (const fulfillmentItem of input.items) {
+        const prItem = request.items.find((i) => i.id === fulfillmentItem.itemId);
+        if (!prItem?.budgetId) continue;
+        totalPerBudget.set(
+          prItem.budgetId,
+          (totalPerBudget.get(prItem.budgetId) ?? 0) +
+            fulfillmentItem.quantityReceived * fulfillmentItem.actualPrice
+        );
+      }
+      if (totalPerBudget.size > 0) {
+        const budgets = await tx.budget.findMany({
+          where: { id: { in: [...totalPerBudget.keys()] } },
+        });
+        for (const budget of budgets) {
+          const requested = totalPerBudget.get(budget.id) ?? 0;
+          const remaining = Number(budget.amount) - Number(budget.usedAmount);
+          if (requested > remaining) {
+            throw Errors.badRequest(
+              `Anggaran terlampaui (akun ${budget.accountId}): butuh ${requested.toLocaleString(
+                'id-ID'
+              )}, sisa ${remaining.toLocaleString('id-ID')}. Fulfillment diblokir.`
+            );
+          }
+        }
+      }
+
       const updatedRequest = await tx.purchaseRequest.update({
         where: { id },
         data: {

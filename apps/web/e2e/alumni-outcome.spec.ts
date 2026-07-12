@@ -32,11 +32,15 @@ test.describe('Alumni Outcome & Tracer Study', () => {
       .locator('table tbody tr')
       .first()
       .getByRole('link', { name: /detail/i });
-    await expect(firstDetail).toBeVisible();
+    await expect(firstDetail).toBeVisible({ timeout: 20000 });
     await firstDetail.click();
 
     // Detail page exposes the Biodata / Karir & Pendidikan / Prestasi tabs.
-    await expect(page.getByRole('tab', { name: /Karir & Pendidikan/i })).toBeVisible();
+    // Generous timeout: the detail route compiles on first hit and fetches
+    // the profile, which exceeds the default expect timeout on loaded CI.
+    await expect(
+      page.getByRole('tab', { name: /Karir & Pendidikan/i }),
+    ).toBeVisible({ timeout: 20000 });
     await expect(page.getByRole('tab', { name: /Biodata/i })).toBeVisible();
   });
 });

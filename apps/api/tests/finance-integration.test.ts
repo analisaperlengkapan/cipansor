@@ -21,6 +21,10 @@ vi.mock('../src/lib/prisma', () => {
     payment: {
       create: vi.fn(),
     },
+    scholarshipRecipient: {
+      // No active scholarships by default — invoice amount stays as-is.
+      findMany: vi.fn(async () => []),
+    },
     $transaction: vi.fn(async (callback) => {
       // Execute the callback with the mockPrisma
       return await callback(mockPrisma);

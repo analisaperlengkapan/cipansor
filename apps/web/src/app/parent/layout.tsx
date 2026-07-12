@@ -62,6 +62,11 @@ const parentNavItems: NavItem[] = [
     icon: Heart,
   },
   {
+    title: "Konseling",
+    href: "/parent/counseling",
+    icon: Heart,
+  },
+  {
     title: "Izin",
     href: "/parent/permits",
     icon: FileText,

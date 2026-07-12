@@ -104,12 +104,11 @@ describe('DashboardService', () => {
       vi.mocked(prisma.class.count).mockResolvedValue(15);
       vi.mocked(prisma.unit.count).mockResolvedValue(4);
       vi.mocked(prisma.attendance.count).mockResolvedValue(77);
-      vi.mocked(prisma.academicYear.findFirst).mockResolvedValue({
+      (vi.mocked(prisma.academicYear.findFirst) as any).mockResolvedValue({
         id: 'ay-1',
         name: '2024/2025',
         startDate: new Date('2024-07-01'),
         endDate: new Date('2025-06-30'),
-        status: 'ACTIVE',
         createdAt: new Date(),
         updatedAt: new Date(),
       });

@@ -41,6 +41,7 @@ import {
   MessageSquare,
   Languages,
   Sparkles,
+  Trophy,
   WashingMachine,
   ShoppingCart,
   CreditCard,
@@ -52,6 +53,8 @@ import {
   Key,
   MessageSquareWarning,
   Leaf,
+  Globe,
+  Mic,
   type LucideIcon,
 } from "lucide-react";
 
@@ -359,6 +362,11 @@ const studentNavigation: NavGroup[] = [
         icon: Sparkles,
       },
       {
+        title: "Prestasi Ibadah",
+        href: "/student/achievements",
+        icon: Trophy,
+      },
+      {
         title: "Muhadhoroh",
         href: "/muhadhoroh",
         icon: MessageSquare,
@@ -554,6 +562,11 @@ const yayasanNavigation: NavGroup[] = [
       {
         title: "Billing & Pembayaran",
         href: "/finance/billing",
+        icon: Receipt,
+      },
+      {
+        title: "Verifikasi Pembayaran",
+        href: "/finance/verification",
         icon: Receipt,
       },
       {
@@ -793,6 +806,11 @@ const adminNavigation: NavGroup[] = [
         icon: BookMarked,
       },
       {
+        title: "E-Simaan",
+        href: "/tahfidz/e-simaan",
+        icon: Mic,
+      },
+      {
         title: "Peta Al-Quran",
         href: "/tahfidz/quran-map",
         icon: BookCheck,
@@ -841,6 +859,21 @@ const adminNavigation: NavGroup[] = [
         title: "Kitab Kuning",
         href: "/kitab-progress",
         icon: BookOpen,
+      },
+      {
+        title: "Amaliyah Tadris",
+        href: "/practicum",
+        icon: ClipboardPenLine,
+      },
+      {
+        title: "Qiyadah (Organisasi)",
+        href: "/student-org",
+        icon: Users,
+      },
+      {
+        title: "Turats Lab",
+        href: "/research",
+        icon: ScrollText,
       },
       {
         title: "Takhosus",
@@ -973,6 +1006,11 @@ const adminNavigation: NavGroup[] = [
         icon: Library,
       },
       {
+        title: "Maktabah Digital",
+        href: "/library/digital",
+        icon: BookOpen,
+      },
+      {
         title: "Health (UKS)",
         href: "/health",
         icon: Heart,
@@ -1062,6 +1100,11 @@ const adminNavigation: NavGroup[] = [
         title: "Alumni",
         href: "/alumni",
         icon: GraduationCap,
+      },
+      {
+        title: "Si-Taka (Sebaran)",
+        href: "/alumni/placement",
+        icon: Globe,
       },
     ],
   },

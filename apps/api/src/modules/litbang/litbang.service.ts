@@ -46,6 +46,7 @@ export class LitbangService {
     budgetId?: string;
     fundingSource?: string;
     methodology?: string;
+    businessUnitId?: string;
   }) {
     return prisma.researchProject.create({
       data: {
@@ -71,6 +72,9 @@ export class LitbangService {
       findings: string;
       publishedUrl: string;
       progress: number;
+      businessUnitId: string;
+      impactScore: number;
+      impactNotes: string;
     }>
   ) {
     const updateData: any = { ...data };

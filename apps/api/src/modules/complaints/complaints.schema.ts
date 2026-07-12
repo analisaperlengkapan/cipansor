@@ -6,6 +6,10 @@ export const createComplaintSchema = z.object({
   subject: z.string().min(5).max(255),
   description: z.string().min(20),
   location: z.string().optional(),
+  // Si-Peka: precise facility location for damage reports
+  buildingId: z.string().uuid().optional(),
+  roomId: z.string().uuid().optional(),
+  assetId: z.string().uuid().optional(),
   isAnonymous: z.boolean().optional(),
   attachments: z.array(z.string().url()).optional(),
   unitId: z.string().uuid().optional(), // Optional, required for SUPER_ADMIN if token unitId is missing

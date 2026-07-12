@@ -55,6 +55,8 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { useMemo } from "react";
+import { AdmissionsStatsCard } from "@/components/dashboard/AdmissionsStatsCard";
+import { CBTMonitoringWidget } from "@/components/dashboard/CBTMonitoringWidget";
 
 export default function DashboardPage() {
   const { user } = useAuthStore();
@@ -148,6 +150,19 @@ export default function DashboardPage() {
             Berikut ringkasan {user?.unit?.name || "sistem"} hari ini.
           </p>
         </div>
+
+        {/* Admissions & CBT summaries — the API includes these fields only
+            for admin/staff (admissions) and admin/staff/teacher (cbt), so
+            the cards hide themselves for other roles. */}
+        {(stats?.admissions || stats?.cbt) && (
+          <div className="grid gap-4 md:grid-cols-2">
+            <AdmissionsStatsCard
+              stats={stats?.admissions}
+              isLoading={isLoading}
+            />
+            <CBTMonitoringWidget stats={stats?.cbt} isLoading={isLoading} />
+          </div>
+        )}
 
         {/* Main Stats Grid */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

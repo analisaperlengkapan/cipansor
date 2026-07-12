@@ -132,6 +132,16 @@ export async function getTracerStudyStats(req: Request, res: Response, next: Nex
   }
 }
 
+export async function getPlacements(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { unitId } = (req.query as any);
+    const data = await service.getPlacements(unitId as string | undefined);
+    res.json({ success: true, data });
+  } catch (error) {
+    next(error);
+  }
+}
+
 // ==================== CAREER ====================
 
 export async function getCareersByAlumni(req: Request, res: Response, next: NextFunction) {

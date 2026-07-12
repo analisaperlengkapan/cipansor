@@ -65,6 +65,7 @@ export function useBooks(params?: {
   categoryId?: string;
   unitId?: string;
   status?: BookStatus;
+  isDigital?: boolean;
 }) {
   return useQuery({
     queryKey: ["books", params],

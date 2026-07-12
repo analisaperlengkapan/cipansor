@@ -61,13 +61,13 @@ describe('Scheduler Service Performance', () => {
     vi.mocked(prisma.student.findMany).mockResolvedValue(students as any);
 
     // Mock create with delay to simulate DB latency
-    vi.mocked(prisma.notification.create).mockImplementation(async () => {
+    (vi.mocked(prisma.notification.create) as any).mockImplementation(async () => {
       await new Promise((resolve) => setTimeout(resolve, 5)); // 5ms latency per insert
       return {} as any;
     });
 
     // Mock createMany with delay
-    vi.mocked(prisma.notification.createMany).mockImplementation(async () => {
+    (vi.mocked(prisma.notification.createMany) as any).mockImplementation(async () => {
       await new Promise((resolve) => setTimeout(resolve, 20)); // 20ms latency for bulk insert
       return { count: studentCount } as any;
     });

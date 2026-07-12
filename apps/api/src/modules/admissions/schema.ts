@@ -132,6 +132,13 @@ export const verifyDocumentSchema = z.object({
   notes: z.string().optional(),
 });
 
+// Public PPDB tracking: the registrant's birth date acts as a second factor
+// so a leaked/guessed registration number alone cannot expose the record.
+export const trackRegistrantQuerySchema = z.object({
+  registrationNo: z.string().min(3).max(50),
+  birthDate: z.coerce.date(),
+});
+
 export type CreateAdmissionPeriodInput = z.infer<typeof createAdmissionPeriodSchema>;
 export type UpdateAdmissionPeriodInput = z.infer<typeof updateAdmissionPeriodSchema>;
 export type CreateRegistrantInput = z.infer<typeof createRegistrantSchema>;

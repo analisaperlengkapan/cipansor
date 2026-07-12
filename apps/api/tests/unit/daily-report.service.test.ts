@@ -1,6 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { dailyReportService } from '@/modules/daily-report/daily-report.service';
 import { prisma } from '@/lib/prisma';
+import type {
+  CreateDailyReportInput,
+  UpdateDailyReportInput,
+  BulkCreateDailyReportsInput,
+} from '@cipansor/shared';
 import { DailyMood, MealConsumption, UnitType } from '@prisma/client';
 import { whatsAppService } from '@/modules/notifications';
 
@@ -180,7 +185,7 @@ describe('DailyReportService', () => {
 
       await dailyReportService.findAll({ date }, { role: 'ADMIN' });
 
-      const calledWith = vi.mocked(prisma.dailyStudentReport.findMany).mock.calls[0][0];
+      const calledWith = vi.mocked(prisma.dailyStudentReport.findMany).mock.calls[0]![0] as any;
       expect(calledWith.where.reportDate).toHaveProperty('gte');
       expect(calledWith.where.reportDate).toHaveProperty('lt');
     });
@@ -233,7 +238,7 @@ describe('DailyReportService', () => {
 
       await dailyReportService.findAll({ search }, { role: 'ADMIN' });
 
-      const calledWith = vi.mocked(prisma.dailyStudentReport.findMany).mock.calls[0][0];
+      const calledWith = vi.mocked(prisma.dailyStudentReport.findMany).mock.calls[0]![0] as any;
       expect(calledWith.where).toHaveProperty('OR');
       expect(Array.isArray(calledWith.where.OR)).toBe(true);
     });
@@ -287,7 +292,7 @@ describe('DailyReportService', () => {
       const dateWithTime = new Date('2024-01-15T14:30:00');
       await dailyReportService.findByStudentAndDate(mockStudentId, dateWithTime);
 
-      const calledWith = vi.mocked(prisma.dailyStudentReport.findUnique).mock.calls[0][0];
+      const calledWith = vi.mocked(prisma.dailyStudentReport.findUnique).mock.calls[0]![0] as any;
       const reportDate = calledWith.where.studentId_reportDate.reportDate;
       expect(reportDate.getHours()).toBe(0);
       expect(reportDate.getMinutes()).toBe(0);
@@ -300,7 +305,7 @@ describe('DailyReportService', () => {
   // ============================================
 
   describe('create', () => {
-    const createInput = {
+    const createInput: CreateDailyReportInput = {
       studentId: mockStudentId,
       unitId: mockUnitId,
       academicYearId: mockAcademicYearId,
@@ -364,7 +369,7 @@ describe('DailyReportService', () => {
 
       await dailyReportService.create(createInput, mockUserId);
 
-      const calledWith = vi.mocked(prisma.dailyStudentReport.create).mock.calls[0][0];
+      const calledWith = vi.mocked(prisma.dailyStudentReport.create).mock.calls[0]![0] as any;
       const reportDate = calledWith.data.reportDate;
       expect(reportDate.getHours()).toBe(0);
       expect(reportDate.getMinutes()).toBe(0);
@@ -383,7 +388,7 @@ describe('DailyReportService', () => {
 
       await dailyReportService.create(createInput, mockUserId);
 
-      const calledWith = vi.mocked(prisma.dailyStudentReport.create).mock.calls[0][0];
+      const calledWith = vi.mocked(prisma.dailyStudentReport.create).mock.calls[0]![0] as any;
       expect(calledWith.data.photos).toHaveProperty('create');
       expect(Array.isArray(calledWith.data.photos.create)).toBe(true);
     });
@@ -394,13 +399,13 @@ describe('DailyReportService', () => {
       // 'HABIS' (finished) and 'SETENGAH' (half) map to hadBreakfast=true.
       await dailyReportService.create({ ...createInput, breakfastConsumption: 'HABIS' }, mockUserId);
 
-      const calledWith = vi.mocked(prisma.dailyStudentReport.create).mock.calls[0][0];
+      const calledWith = vi.mocked(prisma.dailyStudentReport.create).mock.calls[0]![0] as any;
       expect(calledWith.data.hadBreakfast).toBe(true);
     });
   });
 
   describe('bulkCreate', () => {
-    const bulkInput = {
+    const bulkInput: BulkCreateDailyReportsInput = {
       unitId: mockUnitId,
       academicYearId: mockAcademicYearId,
       reportDate: '2024-01-15',
@@ -512,7 +517,7 @@ describe('DailyReportService', () => {
   // ============================================
 
   describe('update', () => {
-    const updateInput = {
+    const updateInput: UpdateDailyReportInput = {
       morningMood: 'NEUTRAL',
       healthNotes: 'Agak lelah',
       temperature: 37.0,
@@ -596,7 +601,7 @@ describe('DailyReportService', () => {
       const confirmedReport = { ...mockReport, parentReadAt: new Date() };
       vi.mocked(prisma.dailyStudentReport.update).mockResolvedValue(confirmedReport as any);
 
-      const result = await dailyReportService.confirmByParent(mockReportId, {}, mockUserId);
+      const result = await dailyReportService.confirmByParent(mockReportId, {} as any, mockUserId);
 
       expect(result.parentReadAt).toBeTruthy();
       expect(prisma.dailyStudentReport.update).toHaveBeenCalledWith(
@@ -775,7 +780,7 @@ describe('DailyReportService', () => {
         academicYearId: mockAcademicYearId,
       });
 
-      const calledWith = vi.mocked(prisma.dailyStudentReport.findMany).mock.calls[0][0];
+      const calledWith = vi.mocked(prisma.dailyStudentReport.findMany).mock.calls[0]![0] as any;
       expect(calledWith.where.reportDate).toHaveProperty('gte');
       expect(calledWith.where.reportDate).toHaveProperty('lte');
     });
@@ -853,7 +858,7 @@ describe('DailyReportService', () => {
         academicYearId: mockAcademicYearId,
       });
 
-      const calledWith = vi.mocked(prisma.dailyStudentReport.findMany).mock.calls[0][0];
+      const calledWith = vi.mocked(prisma.dailyStudentReport.findMany).mock.calls[0]![0] as any;
       expect(calledWith.where.reportDate).toHaveProperty('gte');
       expect(calledWith.where.reportDate).toHaveProperty('lt');
     });

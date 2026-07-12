@@ -1,6 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import * as service from './service';
 import { getGRCStats as getGRCStatsService } from './grc-analytics.service';
+import { getParentEngagement as getParentEngagementService } from './parent-engagement.service';
+import { getRiskMatrix as getRiskMatrixService } from './grc-analytics.service';
 import type {
   ApiResponse,
   DashboardSummary,
@@ -10,6 +12,7 @@ import type {
   AnalyticsAttendanceSummary,
   AcademicPerformance,
   GRCStats,
+  ParentEngagementStats,
 } from '@cipansor/shared';
 
 export async function getDashboardStats(
@@ -133,6 +136,34 @@ export async function getGRCStats(
   try {
     const { unitId } = (req.query as any);
     const stats = await getGRCStatsService(unitId as string | undefined);
+    res.json({ success: true, data: stats });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getRiskMatrix(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const { unitId } = (req.query as any);
+    const matrix = await getRiskMatrixService(unitId as string | undefined);
+    res.json({ success: true, data: matrix });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getParentEngagementStats(
+  req: Request,
+  res: Response<ApiResponse<ParentEngagementStats>>,
+  next: NextFunction
+) {
+  try {
+    const { unitId } = (req.query as any);
+    const stats = await getParentEngagementService(unitId as string | undefined);
     res.json({ success: true, data: stats });
   } catch (error) {
     next(error);

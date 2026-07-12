@@ -17,6 +17,16 @@ import { UserRole } from '@prisma/client';
 // STAFF ATTENDANCE CONTROLLERS
 // =====================================
 
+export async function getTeachers(req: Request, res: Response, next: NextFunction) {
+  try {
+    const query = res.locals.validatedQuery;
+    const result = await service.getTeachers(query);
+    res.json({ success: true, ...result });
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function getStaffAttendance(req: Request, res: Response, next: NextFunction) {
   try {
     const query = res.locals.validatedQuery;

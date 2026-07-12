@@ -1,5 +1,5 @@
 import { prisma } from '../../lib/prisma';
-import { PaymentStatus, Prisma, NotificationType } from '@prisma/client';
+import { PaymentStatus, PaymentMethod, PaymentVerificationStatus, Prisma, NotificationType, UserRole } from '@prisma/client';
 import * as notificationService from '../notifications/service';
 import { eventBus } from '@/lib/event-bus';
 import { AccountType, JournalReferenceType } from '@cipansor/shared';
@@ -104,7 +104,7 @@ async function generateInvoiceNumber(unitId?: string, tx?: Prisma.TransactionCli
   const year = new Date().getFullYear();
   const month = String(new Date().getMonth() + 1).padStart(2, '0');
 
-  const dbClient = tx || prisma;
+  const dbClient: any = tx || prisma;
 
   const lastInvoice = await dbClient.invoice.findFirst({
     where: {
@@ -126,7 +126,7 @@ export async function createInvoice(data: CreateInvoiceDto, tx?: Prisma.Transact
   let invoice;
   // Bug 1 Fix: Do not retry on P2002 if inside a transaction to prevent transaction aborts
   let retries = tx ? 1 : 3;
-  const dbClient = tx || prisma;
+  const dbClient: any = tx || prisma;
 
   while (retries > 0) {
     try {
@@ -134,11 +134,48 @@ export async function createInvoice(data: CreateInvoiceDto, tx?: Prisma.Transact
       const invoiceNumber = await generateInvoiceNumber(undefined, tx);
 
       const { studentId, paymentTypeId, ...invoiceData } = data;
+
+      // =================================================================
+      // INTEGRATION: Apply Scholarship Discounts
+      // =================================================================
+      let finalAmount = new Prisma.Decimal(data.amount);
+      const scholarships = await dbClient.scholarshipRecipient.findMany({
+        where: {
+          studentId,
+          status: 'ACTIVE',
+          startDate: { lte: new Date() },
+          OR: [{ endDate: null }, { endDate: { gte: new Date() } }],
+        },
+        include: {
+          scholarship: {
+            include: {
+              discounts: true,
+            },
+          },
+        },
+      });
+
+      for (const rec of scholarships) {
+        // Find if this scholarship covers this payment type
+        // In this implementation, we assume if it has specific discounts, apply them.
+        // If it's a general scholarship, it might apply to all.
+        for (const discount of rec.scholarship.discounts) {
+          if (discount.componentId === paymentTypeId) {
+            if (discount.discountType === 'PERCENTAGE') {
+              const deduction = finalAmount.mul(discount.discountValue).div(100);
+              finalAmount = finalAmount.sub(deduction);
+            } else {
+              finalAmount = finalAmount.sub(discount.discountValue);
+            }
+          }
+        }
+      }
+
       invoice = await dbClient.invoice.create({
         data: {
           ...invoiceData,
           invoiceNumber,
-          amount: new Prisma.Decimal(data.amount),
+          amount: finalAmount.lt(0) ? 0 : finalAmount,
           dueDate: new Date(data.dueDate),
           student: { connect: { id: studentId } },
           paymentType: { connect: { id: paymentTypeId } },
@@ -466,6 +503,349 @@ export async function createPayment(data: CreatePaymentDto, userId: string = 'SY
   }
 
   return payment;
+}
+
+// =================================================================
+// PAYMENT PROOF + TWO-STEP VERIFICATION (maker-checker Tata Usaha)
+// =================================================================
+
+interface VerifierContext {
+  sub: string;
+  role: string;
+  unitId: string | null;
+}
+
+/**
+ * Parent/student submits a transfer proof against their own invoice.
+ * Creates a Payment in PENDING_VERIFICATION — the invoice and ledger are
+ * only touched when the payment reaches FINAL_APPROVED.
+ */
+export async function submitPaymentProof(
+  input: {
+    invoiceId: string;
+    amount: number;
+    method: PaymentMethod;
+    referenceNo?: string;
+    proofUrl: string;
+    notes?: string;
+  },
+  currentUser: VerifierContext
+) {
+  const invoice = await prisma.invoice.findUnique({
+    where: { id: input.invoiceId },
+    include: {
+      student: { select: { id: true, userId: true, unitId: true } },
+      paymentType: { select: { name: true } },
+    },
+  });
+  if (!invoice) throw new Error('Invoice not found');
+  if (invoice.status === PaymentStatus.PAID || invoice.status === PaymentStatus.CANCELLED) {
+    throw new Error('Invoice is not payable');
+  }
+
+  // Ownership: parents may only pay their own children's invoices,
+  // students only their own.
+  if (currentUser.role === UserRole.PARENT) {
+    const link = await prisma.studentParent.findUnique({
+      where: {
+        studentId_parentId: { studentId: invoice.student.id, parentId: currentUser.sub },
+      },
+    });
+    if (!link) throw new Error('Access denied: not your child\'s invoice');
+  } else if (currentUser.role === UserRole.STUDENT) {
+    if (invoice.student.userId !== currentUser.sub) {
+      throw new Error('Access denied: not your invoice');
+    }
+  }
+
+  const remaining = invoice.amount.sub(invoice.paidAmount);
+  if (new Prisma.Decimal(input.amount).gt(remaining)) {
+    throw new Error('Amount exceeds the remaining invoice balance');
+  }
+
+  const payment = await prisma.payment.create({
+    data: {
+      invoiceId: input.invoiceId,
+      amount: new Prisma.Decimal(input.amount),
+      method: input.method,
+      referenceNo: input.referenceNo,
+      notes: input.notes,
+      proofUrl: input.proofUrl,
+      verificationStatus: PaymentVerificationStatus.PENDING_VERIFICATION,
+    },
+  });
+
+  try {
+    await notificationService.createNotification({
+      userId: currentUser.sub,
+      title: 'Bukti Pembayaran Diterima',
+      message: `Bukti pembayaran ${invoice.paymentType.name} sedang menunggu verifikasi Tata Usaha.`,
+      type: NotificationType.PAYMENT,
+      link: `/finance/bills/${invoice.id}`,
+      priority: 'LOW',
+      channels: ['IN_APP'],
+      recipientType: 'INDIVIDUAL',
+    });
+  } catch (error) {
+    console.error('Failed to send proof-received notification:', error);
+  }
+
+  return payment;
+}
+
+/**
+ * List payments awaiting verification for the TU queue (unit-scoped for
+ * non-super-admins).
+ */
+export async function getPendingVerifications(
+  currentUser: VerifierContext,
+  query: { page?: number; limit?: number; status?: PaymentVerificationStatus }
+) {
+  const page = query.page ?? 1;
+  const limit = query.limit ?? 20;
+  const status = query.status ?? PaymentVerificationStatus.PENDING_VERIFICATION;
+
+  const where: Prisma.PaymentWhereInput = {
+    verificationStatus: status,
+    ...(currentUser.role !== UserRole.SUPER_ADMIN
+      ? { invoice: { student: { unitId: currentUser.unitId ?? 'none' } } }
+      : {}),
+  };
+
+  const [payments, total] = await Promise.all([
+    prisma.payment.findMany({
+      where,
+      skip: (page - 1) * limit,
+      take: limit,
+      orderBy: { createdAt: 'asc' },
+      include: {
+        invoice: {
+          include: {
+            student: {
+              select: {
+                id: true,
+                nis: true,
+                unitId: true,
+                user: { select: { name: true } },
+              },
+            },
+            paymentType: { select: { name: true } },
+          },
+        },
+        tuVerifiedBy: { select: { id: true, name: true } },
+      },
+    }),
+    prisma.payment.count({ where }),
+  ]);
+
+  return {
+    data: payments,
+    meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
+  };
+}
+
+/**
+ * Two-step verification state machine:
+ *   PENDING_VERIFICATION --TU_APPROVE--> TU_APPROVED --FINAL_APPROVE--> FINAL_APPROVED
+ *   PENDING_VERIFICATION / TU_APPROVED --REJECT--> REJECTED
+ * Invalid transitions throw (idempotent — re-approving a FINAL_APPROVED
+ * payment cannot double-post the invoice or the ledger). The final
+ * approver must be a different user than the TU verifier (separation of
+ * duties), and non-super-admins can only verify payments of their unit.
+ */
+export async function verifyPayment(
+  paymentId: string,
+  action: 'TU_APPROVE' | 'FINAL_APPROVE' | 'REJECT',
+  currentUser: VerifierContext,
+  rejectionReason?: string
+) {
+  const result = await prisma.$transaction(async (tx) => {
+    const payment = await tx.payment.findUnique({
+      where: { id: paymentId },
+      include: {
+        invoice: {
+          include: {
+            student: {
+              include: { user: { select: { id: true, name: true } } },
+            },
+            paymentType: { select: { id: true, name: true, accountId: true } },
+          },
+        },
+      },
+    });
+    if (!payment) throw new Error('Payment not found');
+
+    // Unit scoping
+    if (
+      currentUser.role !== UserRole.SUPER_ADMIN &&
+      payment.invoice.student.unitId !== currentUser.unitId
+    ) {
+      throw new Error('Access denied: payment belongs to another unit');
+    }
+
+    const status = payment.verificationStatus;
+
+    if (action === 'TU_APPROVE') {
+      if (status !== PaymentVerificationStatus.PENDING_VERIFICATION) {
+        throw new Error(`Cannot TU-approve a payment in status ${status}`);
+      }
+      return tx.payment.update({
+        where: { id: paymentId },
+        data: {
+          verificationStatus: PaymentVerificationStatus.TU_APPROVED,
+          tuVerifiedAt: new Date(),
+          tuVerifiedById: currentUser.sub,
+          rejectionReason: null,
+        },
+      });
+    }
+
+    if (action === 'REJECT') {
+      if (
+        status !== PaymentVerificationStatus.PENDING_VERIFICATION &&
+        status !== PaymentVerificationStatus.TU_APPROVED
+      ) {
+        throw new Error(`Cannot reject a payment in status ${status}`);
+      }
+      return tx.payment.update({
+        where: { id: paymentId },
+        data: {
+          verificationStatus: PaymentVerificationStatus.REJECTED,
+          rejectionReason: rejectionReason ?? 'Bukti pembayaran tidak valid',
+        },
+      });
+    }
+
+    // FINAL_APPROVE
+    if (status !== PaymentVerificationStatus.TU_APPROVED) {
+      throw new Error(`Cannot final-approve a payment in status ${status}`);
+    }
+    if (payment.tuVerifiedById === currentUser.sub) {
+      throw new Error('Separation of duties: final approver must differ from the TU verifier');
+    }
+
+    const invoice = payment.invoice;
+    const newPaidAmount = invoice.paidAmount.add(payment.amount);
+    const newStatus: PaymentStatus = newPaidAmount.gte(invoice.amount)
+      ? PaymentStatus.PAID
+      : PaymentStatus.PARTIAL;
+
+    await tx.invoice.update({
+      where: { id: invoice.id },
+      data: { paidAmount: newPaidAmount, status: newStatus },
+    });
+
+    // Ledger posting (same double entry as direct payments)
+    if (invoice.paymentType.accountId && invoice.student.unitId) {
+      const isBank = ['BANK_TRANSFER', 'VIRTUAL_ACCOUNT', 'QRIS', 'EWALLET'].includes(
+        payment.method
+      );
+      const mappingKey = isBank ? ACCOUNT_MAPPING_KEYS.BANK : ACCOUNT_MAPPING_KEYS.CASH;
+      const assetAccount = await getAccountOrFallback(
+        invoice.student.unitId,
+        mappingKey,
+        isBank ? '1102' : '1101',
+        isBank ? 'Bank' : 'Kas'
+      );
+      if (assetAccount) {
+        await tx.journalEntry.create({
+          data: {
+            unitId: invoice.student.unitId,
+            accountId: assetAccount.id,
+            date: new Date(),
+            description: `Pembayaran ${invoice.invoiceNumber} (${payment.method})`,
+            debit: payment.amount,
+            credit: 0,
+            reference: payment.id,
+            referenceType: JournalReferenceType.PAYMENT,
+            createdById: currentUser.sub,
+          },
+        });
+        await tx.journalEntry.create({
+          data: {
+            unitId: invoice.student.unitId,
+            accountId: invoice.paymentType.accountId,
+            date: new Date(),
+            description: `Pendapatan ${invoice.paymentType.name} - ${invoice.student.user.name}`,
+            debit: 0,
+            credit: payment.amount,
+            reference: payment.id,
+            referenceType: JournalReferenceType.PAYMENT,
+            createdById: currentUser.sub,
+          },
+        });
+      }
+    }
+
+    return tx.payment.update({
+      where: { id: paymentId },
+      data: {
+        verificationStatus: PaymentVerificationStatus.FINAL_APPROVED,
+        finalVerifiedAt: new Date(),
+        finalVerifiedById: currentUser.sub,
+      },
+    });
+  });
+
+  // Post-commit notifications (never inside the transaction)
+  try {
+    const payment = await prisma.payment.findUnique({
+      where: { id: paymentId },
+      include: {
+        invoice: {
+          include: {
+            student: {
+              select: {
+                userId: true,
+                parents: { select: { parentId: true } },
+              },
+            },
+            paymentType: { select: { name: true } },
+          },
+        },
+      },
+    });
+    if (payment) {
+      const recipients = [
+        payment.invoice.student.userId,
+        ...payment.invoice.student.parents.map((link) => link.parentId),
+      ];
+      const formatter = new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR',
+        minimumFractionDigits: 0,
+      });
+      const isApproved =
+        payment.verificationStatus === PaymentVerificationStatus.FINAL_APPROVED;
+      const isRejected = payment.verificationStatus === PaymentVerificationStatus.REJECTED;
+      if (isApproved || isRejected) {
+        await Promise.allSettled(
+          recipients.map((userId) =>
+            notificationService.createNotification({
+              userId,
+              title: isApproved ? 'Pembayaran SPP Berhasil' : 'Bukti Pembayaran Ditolak',
+              message: isApproved
+                ? `Pembayaran ${payment.invoice.paymentType.name} sebesar ${formatter.format(
+                    payment.amount.toNumber()
+                  )} telah diverifikasi dan tercatat.`
+                : `Bukti pembayaran ${payment.invoice.paymentType.name} ditolak: ${
+                    payment.rejectionReason ?? '-'
+                  }. Silakan unggah ulang bukti yang valid.`,
+              type: NotificationType.PAYMENT,
+              link: `/finance/bills/${payment.invoiceId}`,
+              priority: 'HIGH',
+              channels: isApproved ? ['IN_APP', 'EMAIL', 'WHATSAPP'] : ['IN_APP'],
+              recipientType: 'INDIVIDUAL',
+            })
+          )
+        );
+      }
+    }
+  } catch (error) {
+    console.error('Failed to send verification notification:', error);
+  }
+
+  return result;
 }
 
 export async function getPayments(query: QueryPaymentDto) {

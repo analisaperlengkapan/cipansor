@@ -26,8 +26,15 @@ test.describe("Integration: Student → Attendance → Report Flow", () => {
     // a link (Button asChild + Link), so match it by the link role.
     await navigateTo(page, "/students");
 
-    await page.getByRole("link", { name: /add student|tambah/i }).first().click();
-    await expect(page).toHaveURL(/\/students\/new/);
+    // Generous timeout: the students list hydrates its role-gated header
+    // action late on loaded CI runners (webkit misses the default 10s).
+    await page
+      .getByRole("link", { name: /add student|tambah/i })
+      .first()
+      .click({ timeout: 30000 });
+    // The /students/new route compiles on first hit in dev mode — navigation
+    // can exceed the default 5s while the click has already landed.
+    await expect(page).toHaveURL(/\/students\/new/, { timeout: 20000 });
     await waitForLoadingComplete(page);
 
     const timestamp = Date.now();

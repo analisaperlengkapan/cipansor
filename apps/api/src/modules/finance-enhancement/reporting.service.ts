@@ -412,12 +412,8 @@ export async function getCashFlowStatement(
 
     // Logic for categorization
     if (acc.type === AccountType.REVENUE || acc.type === AccountType.EXPENSE) {
-      // Revenue (Credit normal) -> negative net debit -> flip
-      // Expense (Debit normal) -> positive net debit
-      // Net Income contribution = -(Revenue) - (Expense) ???
-      // Wait. Revenue is Credit (-100). Expense is Debit (+80). Net = -20.
-      // Net Income = 20.
-      // So contribution is -movement.
+      // Revenue (Credit normal) -> negative net debit; Expense (Debit) -> positive.
+      // Net Income contribution = -movement.
       netIncome -= movement;
     }
   }
@@ -425,31 +421,34 @@ export async function getCashFlowStatement(
   operatingItems.push({ name: 'Laba Bersih (Net Income)', amount: netIncome });
   operatingTotal += netIncome;
 
-  // Now Adjustments (Simplified)
-  // 1. Investing: Fixed Assets
+  // Map movements based on explicit CashFlowCategory, with a heuristic
+  // depreciation add-back as fallback (indirect method).
   for (const acc of accounts) {
     const movement = movements.get(acc.id) || 0;
     if (movement === 0) continue;
 
-    if (acc.cashFlowCategory === CashFlowCategory.INVESTING) {
-      // Asset purchase (Debit) is Cash Outflow.
-      // So +Movement = -Cash.
+    if (acc.cashFlowCategory === CashFlowCategory.OPERATING) {
+      // Working-capital adjustments (e.g. AR/AP changes) — only balance-sheet
+      // accounts; revenue/expense movements are already inside Net Income.
+      if (acc.type !== AccountType.REVENUE && acc.type !== AccountType.EXPENSE) {
+        // Decrease in assets (Credit/-) = cash inflow (+);
+        // increase in liabilities (Credit/-) = cash inflow (+).
+        operatingItems.push({ name: acc.name, amount: -movement });
+        operatingTotal -= movement;
+      }
+    } else if (acc.cashFlowCategory === CashFlowCategory.INVESTING) {
+      // Asset purchase (Debit/+) = cash outflow (-).
       investingItems.push({ name: acc.name, amount: -movement });
       investingTotal -= movement;
     } else if (acc.cashFlowCategory === CashFlowCategory.FINANCING) {
-      // Loan (Credit) is Cash Inflow.
-      // So -Movement = +Cash.
+      // Loan receipt (Credit/-) = cash inflow (+).
       financingItems.push({ name: acc.name, amount: -movement });
       financingTotal -= movement;
-    }
-    // Note: Depreciation should be added back to Operating if we tracked it separately
-    // We assume Net Income includes Depreciation expense, so we need to add it back if we can identify it.
-    // Ideally look for account name "Penyusutan" or "Depreciation"
-    if (
+    } else if (
       acc.name.toLowerCase().includes('penyusutan') ||
       acc.name.toLowerCase().includes('depreciation')
     ) {
-      // Expense (Debit). We subtracted it in Net Income. Now add it back (Cash Inflow equivalent relative to NI)
+      // Non-cash expense (Debit/+) was subtracted in Net Income — add it back.
       operatingItems.push({ name: `Penyesuaian: ${acc.name}`, amount: movement });
       operatingTotal += movement;
     }

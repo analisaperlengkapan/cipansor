@@ -52,6 +52,14 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
           queries: {
             staleTime: 60 * 1000, // 1 minute
             refetchOnWindowFocus: false,
+            // This is a server-backed admin app with no offline-first
+            // behaviour. The default networkMode "online" pauses every query
+            // whenever navigator.onLine is false — a flag that is unreliable
+            // (false negatives in headless/CI browsers, VMs and some
+            // networks), which freezes the whole UI behind the offline
+            // banner even when the backend is reachable. "always" makes
+            // queries attempt regardless and surface real errors normally.
+            networkMode: "always",
             retry: (failureCount, error) => {
               // Don't retry on 4xx errors
               if (error instanceof AxiosError) {
@@ -65,6 +73,7 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
             },
           },
           mutations: {
+            networkMode: "always",
             onError: handleQueryError,
           },
         },

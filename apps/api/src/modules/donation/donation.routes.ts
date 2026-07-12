@@ -1,6 +1,8 @@
 import { Router } from 'express';
+import { mustahikService } from "./donation.service";
 import { campaignController, donationController } from './donation.controller';
 import { authenticate, authorize, optionalAuth } from '@/middleware/auth';
+import httpStatus from "http-status";
 import { validate } from '@/middleware/validate';
 import { UserRole } from '@prisma/client';
 import {
@@ -10,6 +12,8 @@ import {
   createPublicDonationSchema,
   verifyDonationSchema,
   updateDonationSchema,
+  createMustahikSchema,
+  createZisDistributionSchema,
 } from './donation.schema';
 
 const router = Router();
@@ -207,6 +211,42 @@ router.delete(
   '/:id',
   authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
   donationController.delete
+);
+
+// Mustahik (ZIS recipients) — staff-managed master data
+router.get(
+  '/mustahik',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  async (_req, res) => {
+    const mustahik = await mustahikService.findAll();
+    res.send(mustahik);
+  }
+);
+
+router.post(
+  '/mustahik',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  validate(createMustahikSchema),
+  async (req, res) => {
+    const mustahik = await mustahikService.create(req.body);
+    res.status(httpStatus.CREATED).send(mustahik);
+  }
+);
+
+// ZIS distribution posts journal entries — restrict to finance-capable roles.
+router.post(
+  '/distribute',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  validate(createZisDistributionSchema),
+  async (req, res) => {
+    // JWT payload carries the user id in `sub` (the PR read `.id`, which is
+    // undefined and would have broken the recordedBy FK).
+    const distribution = await mustahikService.distribute(
+      req.body,
+      (req as any).user.sub
+    );
+    res.status(httpStatus.CREATED).send(distribution);
+  }
 );
 
 export default router;

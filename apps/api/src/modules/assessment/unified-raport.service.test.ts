@@ -114,7 +114,7 @@ describe('UnifiedRaportService Integration', () => {
     expect(result.student.nisn).toBe('0012345678');
     expect(result.school.name).toBe('SD IT Cipansor');
     expect(result.meta.academicYear).toBe('2024/2025');
-    expect(result.academic.intrakurikuler[0].subjectName).toBe('Matematika');
+    expect((result as any).academic.intrakurikuler[0].subjectName).toBe('Matematika');
     expect(result.islamic.tahfidz.totalJuz).toBe(5);
     expect(result.islamic.grade).toBe('MUMTAZ');
     expect(result.islamic.score).toBe(92);

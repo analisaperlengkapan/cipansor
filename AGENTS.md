@@ -35,6 +35,14 @@ monorepo**:
    discover failures. CI is a backstop only.
 6. **Develop on the feature branch, commit with clear messages, never push to
    `main`.**
+7. **Ship tests with the code — no behavior change merges untested.** Every
+   new/changed API **service or controller** ships with vitest tests in the
+   module's `tests/`; every new/changed **web route or user flow** ships with
+   Playwright e2e coverage in `apps/web/e2e/`. A bug fix ships with a test that
+   fails before the fix and passes after. Exempt: barrels (`index.ts`),
+   type-only files, and pure Zod `schema.ts` (cover them through the
+   service/route that uses them). "Done" means the code **and** its tests are in
+   the same commit and the full local gate — including e2e — is green.
 
 ## Commands
 

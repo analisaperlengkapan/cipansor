@@ -41,8 +41,10 @@ export const defaultLimiter: RateLimitRequestHandler = rateLimit({
  * Prevents brute force attacks
  */
 export const authLimiter: RateLimitRequestHandler = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 5, // Only 5 login attempts per minute
+  // Env-configurable so CI/e2e can raise the ceiling without touching code,
+  // but the DEFAULT stays at 5/min — do not relax the production default.
+  windowMs: config.rateLimit.auth.windowMs,
+  max: config.rateLimit.auth.maxRequests,
   standardHeaders: true,
   legacyHeaders: false,
   message: {

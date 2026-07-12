@@ -50,8 +50,12 @@ separate mobile codebase. Pieces: `public/manifest.json` + `public/icons/*`,
 `public/sw.js` (service worker), `public/offline.html`, and
 `components/pwa/{service-worker-register,install-prompt}.tsx` mounted in the root
 layout. Rules: never cache `/api/**` in the service worker (auth/session must
-stay fresh); the SW registers in production only; keep the manifest icons in sync
-if you regenerate them. See `docs/MOBILE_API.md` for the parent-app API contract.
+stay fresh); the SW registers in production only **and never under browser
+automation** (`navigator.webdriver`) — a navigation-intercepting SW trips a
+known WebKit+Playwright engine bug, so `ServiceWorkerRegister` skips it to keep
+e2e deterministic across engines (real users are unaffected); keep the manifest
+icons in sync if you regenerate them. See `docs/MOBILE_API.md` for the
+parent-app API contract.
 
 ## Build
 

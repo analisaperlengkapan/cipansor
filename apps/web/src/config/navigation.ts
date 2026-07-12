@@ -26,7 +26,6 @@ import {
   Baby,
   Receipt,
   Megaphone,
-  Target,
   Shield,
   UserCog,
   UtensilsCrossed,
@@ -331,11 +330,6 @@ const studentNavigation: NavGroup[] = [
         href: "/tahfidz",
         icon: BookMarked,
       },
-      {
-        title: "Target",
-        href: "/student/target",
-        icon: Target,
-      },
     ],
   },
   {
@@ -580,11 +574,6 @@ const yayasanNavigation: NavGroup[] = [
         icon: ShoppingBag,
       },
       {
-        title: "Donasi Alumni",
-        href: "/alumni/donations",
-        icon: Receipt,
-      },
-      {
         title: "Donation/ZIS",
         href: "/donation",
         icon: HeartHandshake,
@@ -705,7 +694,7 @@ const adminNavigation: NavGroup[] = [
       },
       {
         title: "Role Permissions",
-        href: "/roles",
+        href: "/settings/roles",
         icon: Shield,
         roleCodes: ["SUPER_ADMIN"],
       },
@@ -1063,7 +1052,7 @@ const adminNavigation: NavGroup[] = [
       },
       {
         title: "Kurikulum Merdeka",
-        href: "/kurikulum-merdeka",
+        href: "/curriculum/merdeka",
         icon: BookMarked,
       },
     ],
@@ -1073,12 +1062,12 @@ const adminNavigation: NavGroup[] = [
     items: [
       {
         title: "Student Compliance",
-        href: "/compliance/students",
+        href: "/students/compliance",
         icon: Shield,
       },
       {
         title: "Teacher Compliance",
-        href: "/compliance/teachers",
+        href: "/hr/teachers/compliance",
         icon: Shield,
       },
     ],

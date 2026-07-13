@@ -33,6 +33,12 @@ Mount new modules in `src/app.ts`.
 - Infra: `src/lib/{prisma,redis,jwt,logger,event-bus,realtime}.ts`.
 - Cross-module side effects: emit via `eventBus` (typed `AppEvents`), don't reach
   into other modules' services.
+- **Contracts: `@cipansor/shared`.** A user-facing endpoint's request/response
+  DTO is a shared Zod type reused by the web client — reuse it, or add it to
+  shared when missing (never redeclare per-app). A new endpoint that serves the
+  UI ships with its web consumer in the same change (**golden rule #8**); pure
+  backend-only endpoints (webhooks, cron, health, push, internal orchestrators)
+  are exempt.
 
 ## Prisma 7 specifics
 

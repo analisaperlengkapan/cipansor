@@ -43,6 +43,25 @@ monorepo**:
    type-only files, and pure Zod `schema.ts` (cover them through the
    service/route that uses them). "Done" means the code **and** its tests are in
    the same commit and the full local gate — including e2e — is green.
+8. **Ship features wired end-to-end — no orphaned API, no mocked UI.** A change
+   is not done until both sides are connected:
+   - **New/changed API endpoint that serves a user-facing capability** ships in
+     the same change with its web consumer — a React Query hook in
+     `apps/web/src/hooks/*` plus the page/component that uses it — not a
+     stubbed endpoint waiting for a UI.
+   - **New/changed web feature that needs data** is backed by a real endpoint;
+     never hardcode mock/placeholder data (see `apps/web/AGENTS.md`). If the
+     endpoint is missing, add it to the relevant API module in the same change.
+   - **Contracts live once, in `@cipansor/shared`.** Reuse the existing DTO/Zod
+     type there; only when it genuinely doesn't exist do you add a new one to
+     shared (never redeclare it or fall back to `any` in either app). Backend
+     validates with it at the edge; the web imports the same type.
+   - **Exempt** (backend-only by nature, no UI required): webhooks and
+     third-party callbacks, cron/scheduler jobs, health/readiness probes,
+     internal integration-orchestrator calls, and PWA/push endpoints; and on the
+     web side, purely presentational/static pages with no data needs. When you
+     take an exemption, it should be obvious why from the code — otherwise wire
+     the other side.
 
 ## Commands
 

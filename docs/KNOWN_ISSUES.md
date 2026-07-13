@@ -123,9 +123,14 @@ coverage matrix.
 
 ## 🗺️ Roadmap (remaining follow-ups)
 
-- **Module architecture standardization.** Consistent `routes → controller →
-  service → schema → index` naming across all modules; extract inline handlers
-  from the ~12 controller-less modules. See `apps/api/AGENTS.md` for the standard.
+- **Module architecture standardization.** ✅ **The 12 controller-less modules
+  now follow the standard** — `wallet, payroll, canteen, portfolio, laundry,
+  ibadah, announcements, rapor-pesantren, student-compliance, teacher-compliance,
+  wilayah, pkg` each have a thin `controller.ts` (and, where they were missing,
+  `service.ts`/`schema.ts`), with `routes.ts` reduced to routing + authorize +
+  validate and a controller test per module. Remaining: unify the file-naming
+  convention (`controller.ts` vs `<name>.controller.ts`) across the other
+  modules. See `apps/api/AGENTS.md` for the standard.
 - **Strict build.** Move `tsconfig.build.json` toward `tsconfig.json` strictness
   (fix the Prisma-null and remaining errors) so `build` == `build:strict`, then
   drop the `Parameters<...>[0]` casts added as lenient-config workarounds.

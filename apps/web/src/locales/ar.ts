@@ -236,5 +236,13 @@ export const ar = {
     shariaSummary: "مؤشر الامتثال للشريعة الإسلامية",
     complianceRate: "نسبة الامتثال الشرعي",
     ecoEmissions: "مؤشر انبعاثات الكربون الأخضر",
+    totalStudents: "إجمالي الطلاب",
+    totalStudentsDesc: "الطلاب المسجلين",
+    totalTeachers: "المعلمون",
+    totalTeachersDesc: "طاقم التدريس",
+    totalClasses: "الفصول",
+    totalClassesDesc: "الفصول النشطة",
+    attendanceRate: "الحضور",
+    attendanceRateDesc: "نسبة الحضور",
   },
 };

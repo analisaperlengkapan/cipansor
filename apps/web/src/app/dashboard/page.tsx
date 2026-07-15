@@ -174,31 +174,31 @@ export default function DashboardPage() {
         {/* Main Stats Grid */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <StatsCard
-            title={t("sidebar.students", "Total Santri")}
+            title={t("dashboard.totalStudents", "Total Santri")}
             value={stats?.totalStudents ?? "-"}
-            description={t("sidebar.students", "Santri terdaftar")}
+            description={t("dashboard.totalStudentsDesc", "Santri terdaftar")}
             icon={GraduationCap}
             trend={stats?.studentsGrowth}
             isLoading={isLoading}
           />
           <StatsCard
-            title={t("sidebar.pkgGuru", "Ustadz/Ustadzah")}
+            title={t("dashboard.totalTeachers", "Ustadz/Ustadzah")}
             value={stats?.totalTeachers ?? "-"}
-            description={t("sidebar.hr", "Tenaga pengajar")}
+            description={t("dashboard.totalTeachersDesc", "Tenaga pengajar")}
             icon={Users}
             isLoading={isLoading}
           />
           <StatsCard
-            title={t("sidebar.classes", "Kelas")}
+            title={t("dashboard.totalClasses", "Kelas")}
             value={stats?.totalClasses ?? "-"}
-            description={t("sidebar.classes", "Kelas aktif")}
+            description={t("dashboard.totalClassesDesc", "Kelas aktif")}
             icon={BookOpen}
             isLoading={isLoading}
           />
           <StatsCard
-            title={t("sidebar.attendance", "Kehadiran")}
+            title={t("dashboard.attendanceRate", "Kehadiran")}
             value={stats?.attendanceRate ? `${stats.attendanceRate}%` : "-"}
-            description={t("sidebar.attendanceCalendar", "Tingkat kehadiran")}
+            description={t("dashboard.attendanceRateDesc", "Tingkat kehadiran")}
             icon={Calendar}
             isLoading={isLoading}
           />

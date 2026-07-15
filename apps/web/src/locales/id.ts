@@ -55,7 +55,7 @@ export const id = {
     compliance: "Kepatuhan",
     alumni: "Alumni",
     // Items
-    dashboard_item: "Dasbor",
+    dashboard_item: "Dashboard",
     analytics: "Analisis",
     reports: "Laporan",
     tahfidz: "Tahfidz",
@@ -236,5 +236,13 @@ export const id = {
     shariaSummary: "Kepatuhan Syariah",
     complianceRate: "Tingkat Kepatuhan",
     ecoEmissions: "Emisi Eco-Campus",
+    totalStudents: "Total Santri",
+    totalStudentsDesc: "Santri terdaftar",
+    totalTeachers: "Ustadz/Ustadzah",
+    totalTeachersDesc: "Tenaga pengajar",
+    totalClasses: "Kelas",
+    totalClassesDesc: "Kelas aktif",
+    attendanceRate: "Kehadiran",
+    attendanceRateDesc: "Tingkat kehadiran",
   },
 };

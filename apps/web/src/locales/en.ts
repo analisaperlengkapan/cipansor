@@ -236,5 +236,13 @@ export const en = {
     shariaSummary: "Sharia Compliance Dashboard",
     complianceRate: "Compliance Rate",
     ecoEmissions: "Eco-Campus Carbon",
+    totalStudents: "Total Students",
+    totalStudentsDesc: "Registered students",
+    totalTeachers: "Teachers",
+    totalTeachersDesc: "Teaching staff",
+    totalClasses: "Classes",
+    totalClassesDesc: "Active classes",
+    attendanceRate: "Attendance",
+    attendanceRateDesc: "Attendance rate",
   },
 };

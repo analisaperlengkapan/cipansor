@@ -29,16 +29,6 @@ router.use(authenticate);
 router.get('/stats/tracer', controller.getTracerStudyStats);
 /**
  * @swagger
- * /api/alumni/stats/placements:
- *   get:
- *     summary: Si-Taka - university placement listing + aggregates
- *     tags: [Alumni]
- *     security:
- *       - bearerAuth: []
- */
-router.get('/stats/placements', controller.getPlacements);
-/**
- * @swagger
  * /api/alumni/stats/outcome:
  *   get:
  *     summary: Get alumni outcome analytics (career/education correlation)

@@ -267,21 +267,6 @@ export interface AttendanceSummary {
   grade: string;
 }
 
-export interface AcademicSubjectSummary {
-  subjectName: string;
-  score: number;
-  grade: string;
-  isPassing: boolean;
-}
-
-export interface AcademicSummary {
-  averageScore: number;
-  grade: string;
-  totalSubjects: number;
-  subjects: AcademicSubjectSummary[];
-  monthlyTrend: { month: string; average: number }[];
-}
-
 export interface RaporPesantren {
   id: string;
   studentId: string;
@@ -320,7 +305,6 @@ export interface RaporPesantren {
   kitabProgress: KitabProgressSummary;
   akhlak: AkhlakSummary;
   attendance: AttendanceSummary;
-  academic?: AcademicSummary;
 
   // Overall Scores
   overallScore: number;

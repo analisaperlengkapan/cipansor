@@ -103,71 +103,6 @@ export const queryGrowthRecordSchema = z.object({
   endDate: z.coerce.date().optional(),
 });
 
-// Clinic (poliklinik) schemas — external patients, appointments, prescriptions
-export const createPatientSchema = z.object({
-  name: z.string().min(1),
-  gender: z.enum(['MALE', 'FEMALE']),
-  birthDate: z.coerce.date(),
-  phone: z.string().optional(),
-  address: z.string().optional(),
-  userId: z.string().uuid().optional(),
-});
-
-export const queryPatientSchema = z.object({
-  page: z.coerce.number().int().positive().default(1),
-  limit: z.coerce.number().int().positive().max(100).default(20),
-  search: z.string().optional(),
-});
-
-export const createClinicAppointmentSchema = z
-  .object({
-    unitId: z.string().uuid(),
-    patientId: z.string().uuid().optional(),
-    studentId: z.string().uuid().optional(),
-    appointmentDate: z.coerce.date(),
-    complaint: z.string().min(1),
-  })
-  .refine((d) => d.patientId || d.studentId, {
-    message: 'Either patientId or studentId is required',
-  });
-
-export const queryClinicAppointmentSchema = z.object({
-  page: z.coerce.number().int().positive().default(1),
-  limit: z.coerce.number().int().positive().max(100).default(20),
-  unitId: z.string().uuid().optional(),
-  date: z.coerce.date().optional(),
-  status: z.enum(['SCHEDULED', 'COMPLETED', 'CANCELLED']).optional(),
-});
-
-export const createPrescriptionSchema = z
-  .object({
-    medicalRecordId: z.string().uuid().optional(),
-    patientId: z.string().uuid().optional(),
-    studentId: z.string().uuid().optional(),
-    notes: z.string().optional(),
-    items: z
-      .array(
-        z.object({
-          medicationId: z.string().uuid(),
-          quantity: z.number().int().positive(),
-          dosage: z.string().min(1),
-          instructions: z.string().optional(),
-        })
-      )
-      .min(1),
-  })
-  .refine((d) => d.patientId || d.studentId, {
-    message: 'Either patientId or studentId is required',
-  });
-
-export const queryPrescriptionSchema = z.object({
-  page: z.coerce.number().int().positive().default(1),
-  limit: z.coerce.number().int().positive().max(100).default(20),
-  studentId: z.string().uuid().optional(),
-  patientId: z.string().uuid().optional(),
-  status: z.enum(['PENDING', 'FULFILLED', 'CANCELLED']).optional(),
-});
-
 export type CreateMedicalRecordInput = z.infer<typeof createMedicalRecordSchema>;
 export type UpdateMedicalRecordInput = z.infer<typeof updateMedicalRecordSchema>;
 export type QueryMedicalRecordInput = z.infer<typeof queryMedicalRecordSchema>;
@@ -178,9 +113,3 @@ export type CreateMedicationUsageInput = z.infer<typeof createMedicationUsageSch
 export type QueryMedicationUsageInput = z.infer<typeof queryMedicationUsageSchema>;
 export type CreateGrowthRecordInput = z.infer<typeof createGrowthRecordSchema>;
 export type QueryGrowthRecordInput = z.infer<typeof queryGrowthRecordSchema>;
-export type CreatePatientInput = z.infer<typeof createPatientSchema>;
-export type QueryPatientInput = z.infer<typeof queryPatientSchema>;
-export type CreateClinicAppointmentInput = z.infer<typeof createClinicAppointmentSchema>;
-export type QueryClinicAppointmentInput = z.infer<typeof queryClinicAppointmentSchema>;
-export type CreatePrescriptionInput = z.infer<typeof createPrescriptionSchema>;
-export type QueryPrescriptionInput = z.infer<typeof queryPrescriptionSchema>;

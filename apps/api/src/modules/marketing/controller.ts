@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import * as marketingService from './service';
 import { calculateCampaignROI } from './roi.service';
-import * as roiService from './roi.service';
 import {
   createCampaignSchema,
   logInteractionSchema,
@@ -48,46 +47,6 @@ export const getROIStats = async (req: Request, res: Response, next: NextFunctio
 
     const stats = await calculateCampaignROI(effectiveUnitId);
     res.json({ success: true, data: stats });
-  } catch (error) {
-    next(error);
-  }
-};
-
-function resolveScopedUnitId(req: Request, res: Response): string | undefined | null {
-  const { unitId } = (req.query as any);
-  const user = (req as any).user;
-  let effectiveUnitId = unitId as string | undefined;
-  if (user && user.role !== 'SUPER_ADMIN' && user.role !== 'YAYASAN_ADMIN') {
-    if (!user.unitId || (effectiveUnitId && effectiveUnitId !== user.unitId)) {
-      res.status(403).json({ success: false, error: 'Access to this unit is not allowed' });
-      return null;
-    }
-    effectiveUnitId = user.unitId;
-  }
-  return effectiveUnitId;
-}
-
-export const getAdmissionFunnel = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const effectiveUnitId = resolveScopedUnitId(req, res);
-    if (effectiveUnitId === null) return;
-    const funnel = await roiService.getAdmissionFunnel(effectiveUnitId);
-    res.json({ success: true, data: funnel });
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const getRoiTrend = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const effectiveUnitId = resolveScopedUnitId(req, res);
-    if (effectiveUnitId === null) return;
-    const { months } = (req.query as any);
-    const trend = await roiService.getMonthlyAttributedRevenue(
-      effectiveUnitId,
-      months ? Math.min(Math.max(parseInt(months as string, 10) || 6, 1), 24) : 6
-    );
-    res.json({ success: true, data: trend });
   } catch (error) {
     next(error);
   }

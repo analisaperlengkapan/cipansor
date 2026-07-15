@@ -66,10 +66,7 @@ export interface UpdateRoleInput {
   permissions?: string[];
 }
 
-// NEXT_PUBLIC_API_URL is the API *base* origin (no /api suffix); the `/api`
-// prefix is appended here so every consumer of this env var uses one
-// convention. Callers of this axios instance use bare paths (e.g. "/students").
-const API_URL = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api`;
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
 
 export const api = axios.create({
   baseURL: API_URL,

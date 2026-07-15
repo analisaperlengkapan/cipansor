@@ -11,12 +11,6 @@ export interface Complaint {
   subject: string;
   description: string;
   location?: string;
-  buildingId?: string | null;
-  roomId?: string | null;
-  assetId?: string | null;
-  building?: { id: string; name: string; code: string } | null;
-  room?: { id: string; name: string; code: string } | null;
-  asset?: { id: string; name: string; code: string } | null;
   status: ComplaintStatus;
   priority: string;
   isAnonymous: boolean;

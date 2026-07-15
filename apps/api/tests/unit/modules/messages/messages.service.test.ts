@@ -72,7 +72,7 @@ describe('MessagesService', () => {
   describe('createMessage', () => {
     it('should create a message if recipient exists', async () => {
       const senderId = 'sender-123';
-      const input: any = {
+      const input = {
         recipientId: 'recipient-123',
         subject: 'Test Subject',
         content: 'Test Content',
@@ -98,7 +98,7 @@ describe('MessagesService', () => {
           subject: 'Test',
           content: 'Test',
           category: 'GENERAL',
-        } as any)
+        })
       ).rejects.toThrow(Errors.notFound('Recipient'));
     });
   });

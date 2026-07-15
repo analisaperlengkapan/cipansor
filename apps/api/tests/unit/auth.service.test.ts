@@ -191,9 +191,9 @@ describe('AuthService', () => {
       expect(result).toHaveProperty('user');
       expect(result).toHaveProperty('accessToken');
       expect(result).toHaveProperty('refreshToken');
-      expect((result as any).user.email).toBe('test@example.com');
-      expect((result as any).user).toHaveProperty('academicYearId', 'ay-1');
-      expect((result as any).user).not.toHaveProperty('passwordHash');
+      expect(result.user.email).toBe('test@example.com');
+      expect(result.user).toHaveProperty('academicYearId', 'ay-1');
+      expect(result.user).not.toHaveProperty('passwordHash');
     });
 
     it('strips all sensitive fields from the returned user', async () => {
@@ -211,7 +211,7 @@ describe('AuthService', () => {
       mockPrisma.refreshToken.create.mockResolvedValue({});
       mockPrisma.user.update.mockResolvedValue(mockUser);
 
-      const { user } = (await authService.login(validLoginInput)) as any;
+      const { user } = await authService.login(validLoginInput);
 
       for (const field of [
         'passwordHash',

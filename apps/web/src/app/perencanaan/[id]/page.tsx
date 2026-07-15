@@ -1,15 +1,6 @@
 "use client";
 import { useState } from "react";
 import { safeFormat } from "@/lib/date";
-import {
-  LineChart as RechartsLineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip as RechartsTooltip,
-  ResponsiveContainer,
-} from "recharts";
 import { useParams, useRouter } from "next/navigation";
 
 import { id as localeId } from "date-fns/locale";
@@ -17,7 +8,6 @@ import {
   usePlan,
   useApprovePlan,
   useDeleteActivity,
-  usePlanRealizationTrend,
 } from "@/hooks/use-perencanaan";
 import { PageHeader } from "@/components/shared/page-header";
 import {
@@ -60,7 +50,6 @@ export default function PerencanaanDetailPage() {
   const planId = params.id as string;
 
   const { data: plan, isLoading } = usePlan(planId);
-  const { data: realizationTrend } = usePlanRealizationTrend(planId);
   const approvePlan = useApprovePlan();
   const deleteActivity = useDeleteActivity();
 
@@ -184,44 +173,6 @@ export default function PerencanaanDetailPage() {
                   Dihitung otomatis berdasarkan Jurnal Akuntansi yang relevan.
                 </p>
               </div>
-
-              {realizationTrend && realizationTrend.trend.length > 0 && (
-                <div>
-                  <span className="text-sm font-semibold">
-                    Tren Realisasi Bulanan
-                  </span>
-                  <div className="h-[180px] mt-2">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <RechartsLineChart data={realizationTrend.trend}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="month" tick={{ fontSize: 10 }} />
-                        <YAxis
-                          tick={{ fontSize: 10 }}
-                          tickFormatter={(v: number) =>
-                            `${Math.round(v / 1000000)}jt`
-                          }
-                        />
-                        <RechartsTooltip
-                          formatter={(value) =>
-                            new Intl.NumberFormat("id-ID", {
-                              style: "currency",
-                              currency: "IDR",
-                              minimumFractionDigits: 0,
-                            }).format(Number(value))
-                          }
-                        />
-                        <Line
-                          type="monotone"
-                          dataKey="realization"
-                          name="Realisasi"
-                          stroke="#10b981"
-                          strokeWidth={2}
-                        />
-                      </RechartsLineChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-              )}
             </div>
           </CardContent>
         </Card>

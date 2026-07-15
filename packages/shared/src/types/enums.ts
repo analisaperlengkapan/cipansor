@@ -18,6 +18,8 @@ export enum UnitType {
   SMP_IT = "SMP_IT",
   SMA_QURAN = "SMA_QURAN",
   TK_QURAN = "TK_QURAN",
+  PERGURUAN_TINGGI = "PERGURUAN_TINGGI",
+  UNIT_USAHA = "UNIT_USAHA",
   OTHER = "OTHER",
 }
 

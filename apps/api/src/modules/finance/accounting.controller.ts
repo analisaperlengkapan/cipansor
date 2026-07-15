@@ -1,8 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import * as service from './accounting.service';
-import * as reportsService from './reports.service';
 import * as configService from './accounting-config.service';
-import { CreateAccountDto, CreateJournalDto, UpdateAccountDto, saveReportNoteSchema } from './schema';
+import { CreateAccountDto, CreateJournalDto, UpdateAccountDto } from './schema';
 
 // =====================================
 // ACCOUNTS
@@ -210,96 +209,6 @@ export async function getIncomeStatement(req: Request, res: Response, next: Next
       startDate,
       endDate,
     });
-    res.json({ data: result });
-  } catch (error) {
-    next(error);
-  }
-}
-
-// =====================================
-// ISAK 35 / PSAK 109 REPORTS + CALK
-// =====================================
-
-export async function getStatementOfActivities(req: Request, res: Response, next: NextFunction) {
-  try {
-    const query = (req.query as any) as any;
-    const now = new Date();
-    const startDate = query.startDate
-      ? new Date(query.startDate)
-      : new Date(now.getFullYear(), 0, 1);
-    const endDate = query.endDate ? new Date(query.endDate) : now;
-
-    const result = await reportsService.getStatementOfActivities({
-      unitId: query.unitId,
-      startDate,
-      endDate,
-    });
-    res.json({ data: result });
-  } catch (error) {
-    next(error);
-  }
-}
-
-export async function getZiswafReport(req: Request, res: Response, next: NextFunction) {
-  try {
-    const query = (req.query as any) as any;
-    const now = new Date();
-    const startDate = query.startDate
-      ? new Date(query.startDate)
-      : new Date(now.getFullYear(), 0, 1);
-    const endDate = query.endDate ? new Date(query.endDate) : now;
-
-    const result = await reportsService.getZiswafReport({
-      unitId: query.unitId,
-      startDate,
-      endDate,
-    });
-    res.json({ data: result });
-  } catch (error) {
-    next(error);
-  }
-}
-
-export async function getBudgetVsActualReport(req: Request, res: Response, next: NextFunction) {
-  try {
-    const query = (req.query as any) as any;
-    if (!query.unitId || !query.academicYearId) {
-      res.status(400).json({ message: 'unitId and academicYearId are required' });
-      return;
-    }
-
-    const result = await reportsService.getBudgetVsActualReport({
-      unitId: query.unitId,
-      academicYearId: query.academicYearId,
-    });
-    res.json({ data: result });
-  } catch (error) {
-    next(error);
-  }
-}
-
-export async function getCalkData(req: Request, res: Response, next: NextFunction) {
-  try {
-    const query = (req.query as any) as any;
-    if (!query.unitId) {
-      res.status(400).json({ message: 'unitId is required' });
-      return;
-    }
-
-    const result = await reportsService.getCalkData({
-      unitId: query.unitId,
-      periodId: query.periodId,
-    });
-    res.json({ data: result });
-  } catch (error) {
-    next(error);
-  }
-}
-
-export async function saveReportNote(req: Request, res: Response, next: NextFunction) {
-  try {
-    const data = saveReportNoteSchema.parse(req.body);
-    const result = await reportsService.saveReportNote(data);
     res.json({ data: result });
   } catch (error) {
     next(error);

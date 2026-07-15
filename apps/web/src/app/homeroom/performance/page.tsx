@@ -12,12 +12,26 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Users,
+  TrendingUp,
+  TrendingDown,
+  Clock,
+  FileText,
+  CheckCircle2,
   AlertCircle,
   Star,
+  Award,
   BarChart3,
+  Calendar,
 } from "lucide-react";
 import {
   BarChart,
@@ -34,22 +48,91 @@ import {
   PolarRadiusAxis,
 } from "recharts";
 import { cn } from "@/lib/utils";
-import { useQuery } from "@tanstack/react-query";
-import api from "@/lib/api";
-import type { HomeroomPerformanceOverview } from "@cipansor/shared";
 
-// Hook: real cross-class homeroom performance from the API
-function useHomeroomPerformance() {
-  return useQuery({
-    queryKey: ["homeroom", "performance-overview"],
-    queryFn: async () => {
-      const response = await api.get<{ data: HomeroomPerformanceOverview }>(
-        "/homeroom/performance-overview",
-      );
-      return response.data.data;
+// Mock homeroom teacher performance data
+const mockHomeroomData = [
+  {
+    id: "hr-1",
+    teacherName: "Ust. Ahmad Fadlan",
+    className: "VII A",
+    studentCount: 32,
+    metrics: {
+      dailyReportCompletion: 95,
+      attendanceAccuracy: 98,
+      parentEngagement: 85,
+      tahfidzProgress: 88,
+      behaviorManagement: 90,
+      administrativeTask: 92,
     },
-  });
-}
+    overallScore: 91,
+    trend: "up",
+    monthlyData: [
+      { month: "Jul", score: 85 },
+      { month: "Aug", score: 88 },
+      { month: "Sep", score: 87 },
+      { month: "Oct", score: 90 },
+      { month: "Nov", score: 89 },
+      { month: "Dec", score: 91 },
+    ],
+  },
+  {
+    id: "hr-2",
+    teacherName: "Ustz. Fatimah Nur",
+    className: "VII B",
+    studentCount: 30,
+    metrics: {
+      dailyReportCompletion: 88,
+      attendanceAccuracy: 95,
+      parentEngagement: 92,
+      tahfidzProgress: 82,
+      behaviorManagement: 85,
+      administrativeTask: 88,
+    },
+    overallScore: 88,
+    trend: "up",
+    monthlyData: [
+      { month: "Jul", score: 82 },
+      { month: "Aug", score: 84 },
+      { month: "Sep", score: 85 },
+      { month: "Oct", score: 86 },
+      { month: "Nov", score: 87 },
+      { month: "Dec", score: 88 },
+    ],
+  },
+  {
+    id: "hr-3",
+    teacherName: "Ust. Ibrahim Hakim",
+    className: "VIII A",
+    studentCount: 28,
+    metrics: {
+      dailyReportCompletion: 78,
+      attendanceAccuracy: 90,
+      parentEngagement: 75,
+      tahfidzProgress: 85,
+      behaviorManagement: 80,
+      administrativeTask: 70,
+    },
+    overallScore: 80,
+    trend: "down",
+    monthlyData: [
+      { month: "Jul", score: 85 },
+      { month: "Aug", score: 83 },
+      { month: "Sep", score: 82 },
+      { month: "Oct", score: 81 },
+      { month: "Nov", score: 80 },
+      { month: "Dec", score: 80 },
+    ],
+  },
+];
+
+const METRIC_LABELS: Record<string, string> = {
+  dailyReportCompletion: "Laporan Harian",
+  attendanceAccuracy: "Kehadiran",
+  parentEngagement: "Komunikasi Ortu",
+  tahfidzProgress: "Progress Tahfidz",
+  behaviorManagement: "Pengelolaan Perilaku",
+  administrativeTask: "Administrasi",
+};
 
 const getScoreColor = (score: number) => {
   if (score >= 90) return "text-green-600";
@@ -58,332 +141,263 @@ const getScoreColor = (score: number) => {
   return "text-red-600";
 };
 
-/** Tahfidz activity scaled to 0-100 (20 records/student/month = 100). */
-const tahfidzScore = (perStudent: number) =>
-  Math.min(perStudent / 20, 1) * 100;
+const getScoreBg = (score: number) => {
+  if (score >= 90) return "bg-green-100";
+  if (score >= 80) return "bg-blue-100";
+  if (score >= 70) return "bg-yellow-100";
+  return "bg-red-100";
+};
 
 export default function HomeroomPerformancePage() {
-  const { data, isLoading } = useHomeroomPerformance();
-  const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
+  const [selectedPeriod, setSelectedPeriod] = useState("semester");
+  const [selectedTeacher, setSelectedTeacher] = useState<string>(
+    mockHomeroomData[0].id,
+  );
 
-  const items = data?.items ?? [];
-  const current =
-    items.find((t) => t.classId === selectedClassId) ?? items[0] ?? null;
+  const currentTeacher =
+    mockHomeroomData.find((t) => t.id === selectedTeacher) ||
+    mockHomeroomData[0];
 
-  const radarData = current
-    ? [
-        { metric: "Kehadiran Siswa", value: current.metrics.attendanceRate },
-        {
-          metric: "Disiplin Presensi",
-          value: current.metrics.recordingDiscipline,
-        },
-        { metric: "Akademik", value: current.metrics.academicAverage },
-        {
-          metric: "Aktivitas Tahfidz",
-          value: Math.round(tahfidzScore(current.metrics.tahfidzActivityPerStudent)),
-        },
-      ]
-    : [];
+  // Radar chart data
+  const radarData = Object.entries(currentTeacher.metrics).map(
+    ([key, value]) => ({
+      metric: METRIC_LABELS[key] || key,
+      value,
+      fullMark: 100,
+    }),
+  );
 
-  const comparisonData = items.map((item) => ({
-    name: item.className,
-    score: item.overallScore,
-  }));
+  // Average scores
+  const avgScore = Math.round(
+    mockHomeroomData.reduce((sum, t) => sum + t.overallScore, 0) /
+      mockHomeroomData.length,
+  );
 
   return (
     <MainLayout allowedRoles={["SUPER_ADMIN", "UNIT_ADMIN"]}>
       <div className="space-y-6">
         <PageHeader
           title="Performa Wali Kelas"
-          description="Evaluasi kinerja wali kelas dari data presensi, akademik, tahfidz, dan perilaku (30–90 hari terakhir)"
+          description="Evaluasi kinerja wali kelas berdasarkan multiple metrics"
+          actions={
+            <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="month">Bulan Ini</SelectItem>
+                <SelectItem value="semester">Semester Ini</SelectItem>
+                <SelectItem value="year">Tahun Ini</SelectItem>
+              </SelectContent>
+            </Select>
+          }
         />
 
-        {isLoading ? (
-          <div className="grid gap-4 md:grid-cols-4">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="h-28 rounded-xl" />
-            ))}
-          </div>
-        ) : items.length === 0 ? (
+        {/* Summary Cards */}
+        <div className="grid gap-4 md:grid-cols-4">
           <Card>
             <CardContent className="pt-6">
-              <p className="text-sm text-muted-foreground">
-                Belum ada kelas dengan wali kelas pada tahun ajaran aktif.
-              </p>
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-blue-100 rounded-lg">
+                  <Users className="h-6 w-6 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">
+                    Total Wali Kelas
+                  </p>
+                  <p className="text-2xl font-bold">
+                    {mockHomeroomData.length}
+                  </p>
+                </div>
+              </div>
             </CardContent>
           </Card>
-        ) : (
-          <>
-            {/* Summary Cards */}
-            <div className="grid gap-4 md:grid-cols-4">
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex items-center gap-4">
-                    <div className="p-3 bg-blue-100 rounded-lg">
-                      <Users className="h-6 w-6 text-blue-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">
-                        Total Wali Kelas
-                      </p>
-                      <p className="text-2xl font-bold">{items.length}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
 
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex items-center gap-4">
-                    <div className="p-3 bg-green-100 rounded-lg">
-                      <BarChart3 className="h-6 w-6 text-green-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">
-                        Skor Rata-rata
-                      </p>
-                      <p className="text-2xl font-bold">{data!.averageScore}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-green-100 rounded-lg">
+                  <BarChart3 className="h-6 w-6 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">
+                    Skor Rata-rata
+                  </p>
+                  <p className="text-2xl font-bold">{avgScore}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex items-center gap-4">
-                    <div className="p-3 bg-amber-100 rounded-lg">
-                      <Star className="h-6 w-6 text-amber-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">
-                        Performa Terbaik (≥90)
-                      </p>
-                      <p className="text-2xl font-bold">
-                        {items.filter((t) => t.overallScore >= 90).length}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-amber-100 rounded-lg">
+                  <Star className="h-6 w-6 text-amber-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">
+                    Performa Terbaik
+                  </p>
+                  <p className="text-2xl font-bold">
+                    {
+                      mockHomeroomData.filter((t) => t.overallScore >= 90)
+                        .length
+                    }
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex items-center gap-4">
-                    <div className="p-3 bg-red-100 rounded-lg">
-                      <AlertCircle className="h-6 w-6 text-red-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">
-                        Perlu Perhatian (&lt;80)
-                      </p>
-                      <p className="text-2xl font-bold">
-                        {items.filter((t) => t.overallScore < 80).length}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-red-100 rounded-lg">
+                  <AlertCircle className="h-6 w-6 text-red-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">
+                    Perlu Perhatian
+                  </p>
+                  <p className="text-2xl font-bold">
+                    {mockHomeroomData.filter((t) => t.overallScore < 80).length}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
-            {/* Teacher Cards */}
-            <div className="grid gap-4 md:grid-cols-3">
-              {items.map((teacher) => (
-                <Card
-                  key={teacher.classId}
-                  className={cn(
-                    "cursor-pointer transition-all hover:shadow-lg",
-                    current?.classId === teacher.classId &&
-                      "ring-2 ring-primary",
-                  )}
-                  onClick={() => setSelectedClassId(teacher.classId)}
-                >
-                  <CardContent className="pt-6">
-                    <div className="flex items-start justify-between mb-4">
-                      <div>
-                        <h3 className="font-bold">{teacher.teacherName}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          {teacher.className} • {teacher.studentCount} siswa •{" "}
-                          {teacher.unitName}
-                        </p>
-                      </div>
-                      <div
-                        className={cn(
-                          "text-3xl font-bold",
-                          getScoreColor(teacher.overallScore),
-                        )}
-                      >
-                        {Math.round(teacher.overallScore)}
-                      </div>
-                    </div>
-                    <Badge
-                      variant="outline"
-                      className={cn(
-                        teacher.metrics.behaviorBalance >= 0
-                          ? "text-green-700"
-                          : "text-red-700",
-                      )}
-                    >
-                      Perilaku {teacher.metrics.behaviorBalance >= 0 ? "+" : ""}
-                      {teacher.metrics.behaviorBalance}
+        {/* Teacher Cards */}
+        <div className="grid gap-4 md:grid-cols-3">
+          {mockHomeroomData.map((teacher) => (
+            <Card
+              key={teacher.id}
+              className={cn(
+                "cursor-pointer transition-all hover:shadow-lg",
+                selectedTeacher === teacher.id && "ring-2 ring-primary",
+              )}
+              onClick={() => setSelectedTeacher(teacher.id)}
+            >
+              <CardContent className="pt-6">
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <h3 className="font-bold">{teacher.teacherName}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {teacher.className} • {teacher.studentCount} siswa
+                    </p>
+                  </div>
+                  <div
+                    className={cn(
+                      "text-3xl font-bold",
+                      getScoreColor(teacher.overallScore),
+                    )}
+                  >
+                    {teacher.overallScore}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {teacher.trend === "up" ? (
+                    <Badge className="bg-green-100 text-green-700">
+                      <TrendingUp className="h-3 w-3 mr-1" />
+                      Meningkat
                     </Badge>
-                  </CardContent>
-                </Card>
+                  ) : (
+                    <Badge className="bg-red-100 text-red-700">
+                      <TrendingDown className="h-3 w-3 mr-1" />
+                      Menurun
+                    </Badge>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Detail Charts */}
+        <div className="grid gap-6 lg:grid-cols-2">
+          {/* Radar Chart */}
+          <Card>
+            <CardHeader>
+              <CardTitle>{currentTeacher.teacherName}</CardTitle>
+              <CardDescription>Detail performa per kategori</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <RadarChart data={radarData}>
+                    <PolarGrid />
+                    <PolarAngleAxis dataKey="metric" tick={{ fontSize: 11 }} />
+                    <PolarRadiusAxis angle={30} domain={[0, 100]} />
+                    <Radar
+                      name="Skor"
+                      dataKey="value"
+                      stroke="#6366f1"
+                      fill="#6366f1"
+                      fillOpacity={0.5}
+                    />
+                    <Tooltip />
+                  </RadarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Trend Chart */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Tren Performa</CardTitle>
+              <CardDescription>
+                Perkembangan skor 6 bulan terakhir
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={currentTeacher.monthlyData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" />
+                    <YAxis domain={[0, 100]} />
+                    <Tooltip />
+                    <Bar
+                      dataKey="score"
+                      name="Skor"
+                      fill="#6366f1"
+                      radius={[4, 4, 0, 0]}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Metric Breakdown */}
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              Breakdown Metrik - {currentTeacher.teacherName}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {Object.entries(currentTeacher.metrics).map(([key, value]) => (
+                <div key={key} className="p-4 border rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-medium text-sm">
+                      {METRIC_LABELS[key]}
+                    </span>
+                    <span className={cn("font-bold", getScoreColor(value))}>
+                      {value}%
+                    </span>
+                  </div>
+                  <Progress value={value} className="h-2" />
+                </div>
               ))}
             </div>
-
-            {current && (
-              <>
-                {/* Detail Charts */}
-                <div className="grid gap-6 lg:grid-cols-2">
-                  {/* Radar Chart */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>
-                        {current.teacherName} — {current.className}
-                      </CardTitle>
-                      <CardDescription>
-                        Detail performa per kategori
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="h-[300px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <RadarChart data={radarData}>
-                            <PolarGrid />
-                            <PolarAngleAxis
-                              dataKey="metric"
-                              tick={{ fontSize: 11 }}
-                            />
-                            <PolarRadiusAxis angle={30} domain={[0, 100]} />
-                            <Radar
-                              name="Skor"
-                              dataKey="value"
-                              stroke="#6366f1"
-                              fill="#6366f1"
-                              fillOpacity={0.5}
-                            />
-                            <Tooltip />
-                          </RadarChart>
-                        </ResponsiveContainer>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Comparison Chart */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Perbandingan Antar Kelas</CardTitle>
-                      <CardDescription>
-                        Skor komposit seluruh wali kelas
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="h-[300px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={comparisonData}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                            <YAxis domain={[0, 100]} />
-                            <Tooltip />
-                            <Bar
-                              dataKey="score"
-                              name="Skor"
-                              fill="#6366f1"
-                              radius={[4, 4, 0, 0]}
-                            />
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                {/* Metric Breakdown */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>
-                      Breakdown Metrik — {current.teacherName}
-                    </CardTitle>
-                    <CardDescription>
-                      Kehadiran & presensi 30 hari, akademik 90 hari, tahfidz
-                      per santri 30 hari
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                      {[
-                        {
-                          label: "Kehadiran Siswa",
-                          value: current.metrics.attendanceRate,
-                        },
-                        {
-                          label: "Disiplin Presensi",
-                          value: current.metrics.recordingDiscipline,
-                        },
-                        {
-                          label: "Rata-rata Akademik",
-                          value: current.metrics.academicAverage,
-                        },
-                        {
-                          label: "Aktivitas Tahfidz",
-                          value: Math.round(
-                            tahfidzScore(
-                              current.metrics.tahfidzActivityPerStudent,
-                            ),
-                          ),
-                          detail: `${current.metrics.tahfidzActivityPerStudent} setoran/santri`,
-                        },
-                      ].map((metric) => (
-                        <div key={metric.label} className="p-4 border rounded-lg">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="font-medium text-sm">
-                              {metric.label}
-                            </span>
-                            <span
-                              className={cn(
-                                "font-bold",
-                                getScoreColor(metric.value),
-                              )}
-                            >
-                              {Math.round(metric.value)}%
-                            </span>
-                          </div>
-                          <Progress value={metric.value} className="h-2" />
-                          {"detail" in metric && metric.detail && (
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {metric.detail}
-                            </p>
-                          )}
-                        </div>
-                      ))}
-                      <div className="p-4 border rounded-lg">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="font-medium text-sm">
-                            Saldo Perilaku (Reward − Pelanggaran)
-                          </span>
-                          <span
-                            className={cn(
-                              "font-bold",
-                              current.metrics.behaviorBalance >= 0
-                                ? "text-green-600"
-                                : "text-red-600",
-                            )}
-                          >
-                            {current.metrics.behaviorBalance >= 0 ? "+" : ""}
-                            {current.metrics.behaviorBalance}
-                          </span>
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          30 hari terakhir
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </>
-            )}
-          </>
-        )}
+          </CardContent>
+        </Card>
       </div>
     </MainLayout>
   );

@@ -101,22 +101,11 @@ export async function getStats(req: Request, res: Response, next: NextFunction):
     const context = getContext(req);
     context.unitId = query.unitId;
 
-    // Admissions and CBT summaries are management views: registrant PII
-    // (recent registrant names) is limited to admin/staff roles, while the
-    // aggregate CBT numbers are also useful to teachers. Students/parents
-    // get neither.
-    const isStaff = ['SUPER_ADMIN', 'UNIT_ADMIN', 'STAFF'].includes(context.role ?? '');
-    const seesCBT = isStaff || context.role === 'TEACHER';
-
-    const [result, admissions, cbt] = await Promise.all([
-      dashboardService.getStats(context),
-      isStaff ? dashboardService.getAdmissionsStats(context) : Promise.resolve(undefined),
-      seesCBT ? dashboardService.getCBTSummary(context) : Promise.resolve(undefined),
-    ]);
+    const result = await dashboardService.getStats(context);
 
     res.json({
       success: true,
-      data: { ...result, ...(admissions ? { admissions } : {}), ...(cbt ? { cbt } : {}) },
+      data: result,
     });
   } catch (error) {
     next(error);

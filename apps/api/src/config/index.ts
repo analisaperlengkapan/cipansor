@@ -25,14 +25,6 @@ export const config = {
   rateLimit: {
     windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '60000', 10),
     maxRequests: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100', 10),
-    // Auth (login/2FA) limiter. Deliberately strict by default — this guards
-    // against credential brute-force. CI/e2e environments that need more
-    // headroom should raise RATE_LIMIT_AUTH_MAX_REQUESTS via env instead of
-    // weakening the production default.
-    auth: {
-      windowMs: parseInt(process.env.RATE_LIMIT_AUTH_WINDOW_MS || '60000', 10),
-      maxRequests: parseInt(process.env.RATE_LIMIT_AUTH_MAX_REQUESTS || '5', 10),
-    },
   },
 
   log: {

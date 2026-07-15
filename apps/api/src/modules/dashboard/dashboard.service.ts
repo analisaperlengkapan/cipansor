@@ -18,8 +18,6 @@ import type {
   ViolationRewardStats,
   DashboardMetrics,
   DashboardAlert,
-  AdmissionsStats,
-  CBTStats,
 } from '@cipansor/shared';
 
 export interface DashboardServiceContext {
@@ -650,85 +648,6 @@ export class DashboardService {
     }
 
     return alerts;
-  }
-
-  /**
-   * Admissions (PPDB) summary for the dashboard. Registrants have no direct
-   * unitId; unit scoping goes through their admission period.
-   */
-  async getAdmissionsStats(context: DashboardServiceContext): Promise<AdmissionsStats> {
-    const registrantFilter = context.unitId
-      ? { admissionPeriod: { unitId: context.unitId } }
-      : {};
-
-    const [totalRegistrants, statusCounts, activePeriods, recentRegistrants] =
-      await Promise.all([
-        prisma.registrant.count({ where: registrantFilter }),
-        prisma.registrant.groupBy({
-          by: ['status'],
-          where: registrantFilter,
-          _count: true,
-        }),
-        prisma.admissionPeriod.count({
-          where: {
-            ...(context.unitId ? { unitId: context.unitId } : {}),
-            isActive: true,
-          },
-        }),
-        prisma.registrant.findMany({
-          where: registrantFilter,
-          orderBy: { createdAt: 'desc' },
-          take: 5,
-          select: { id: true, fullName: true, status: true, createdAt: true },
-        }),
-      ]);
-
-    const byStatus: Record<string, number> = {};
-    for (const row of statusCounts) {
-      byStatus[row.status] = Number(row._count);
-    }
-
-    return {
-      totalRegistrants,
-      byStatus,
-      activePeriods,
-      recentRegistrants: recentRegistrants.map((r) => ({
-        id: r.id,
-        fullName: r.fullName,
-        status: r.status,
-        createdAt: r.createdAt.toISOString(),
-      })),
-    };
-  }
-
-  /**
-   * CBT (online exam) summary for the dashboard.
-   */
-  async getCBTSummary(context: DashboardServiceContext): Promise<CBTStats> {
-    const unitFilter = context.unitId ? { unitId: context.unitId } : {};
-    const now = new Date();
-
-    const [totalExams, ongoingExams, upcomingExams, totalAttempts, avgScoreResult] =
-      await Promise.all([
-        prisma.exam.count({ where: unitFilter }),
-        prisma.exam.count({ where: { ...unitFilter, status: 'ONGOING' } }),
-        prisma.exam.count({
-          where: { ...unitFilter, status: 'SCHEDULED', scheduledAt: { gte: now } },
-        }),
-        prisma.examAttempt.count({ where: { exam: unitFilter } }),
-        prisma.examAttempt.aggregate({
-          where: { exam: unitFilter, score: { not: null } },
-          _avg: { score: true },
-        }),
-      ]);
-
-    return {
-      totalExams,
-      ongoingExams,
-      upcomingExams,
-      totalAttempts,
-      avgScore: Number(avgScoreResult._avg.score ?? 0),
-    };
   }
 
   /**

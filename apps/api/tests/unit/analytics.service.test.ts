@@ -13,7 +13,7 @@ vi.mock('@/lib/prisma', () => ({
 
 // Mock Prisma.sql, Prisma.empty and Enums
 vi.mock('@prisma/client', async (importOriginal) => {
-  const actual = (await importOriginal()) as any;
+  const actual = await importOriginal();
   return {
     ...actual,
     Prisma: {

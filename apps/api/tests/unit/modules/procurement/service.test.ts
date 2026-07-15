@@ -62,7 +62,7 @@ vi.mock('@/utils/code-generator', () => ({
 
 // Import service AFTER mocks are set up
 import { procurementService } from '../../../../src/modules/procurement/procurement.service';
-import { ApiError } from '../../../../src/middleware/error';
+import { ValidationError } from '../../../../src/middleware/error';
 
 describe('ProcurementService', () => {
   beforeEach(() => {
@@ -121,7 +121,7 @@ describe('ProcurementService', () => {
         { id: 'budget-low', amount: 1000, usedAmount: 0 },
       ]);
 
-      await expect(procurementService.create(input, 'user-1')).rejects.toThrow(ApiError);
+      await expect(procurementService.create(input, 'user-1')).rejects.toThrow(ValidationError);
     });
   });
 

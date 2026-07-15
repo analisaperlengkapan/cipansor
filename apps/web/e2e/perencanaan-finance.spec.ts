@@ -101,12 +101,8 @@ test.describe("Integration - Perencanaan to Finance linkage", () => {
       });
     });
 
-    // 2. Navigate to Plan Detail. Firefox occasionally aborts this
-    // navigation (NS_BINDING_ABORTED) when the previous page still has
-    // requests in flight — retry once.
-    await page
-      .goto("/perencanaan/plan-1")
-      .catch(() => page.goto("/perencanaan/plan-1"));
+    // 2. Navigate to Plan Detail
+    await page.goto("/perencanaan/plan-1");
     await page.waitForLoadState("domcontentloaded");
 
     // 3. Switch to Activities tab
@@ -136,26 +132,17 @@ test.describe("Integration - Perencanaan to Finance linkage", () => {
     // 5. Fill Form including Budget selection
     await page.getByLabel(/Nama Kegiatan/i).fill("Kegiatan Terintegrasi");
 
-    // Radix select options animate in; on starved CI runners (webkit
-    // especially) they never pass Playwright's "stable" check within the
-    // timeout — click with force once visible.
-    const pickOption = async (name: RegExp) => {
-      const option = page.getByRole("option", { name });
-      await option.waitFor({ state: "visible" });
-      await option.click({ force: true });
-    };
-
     // Select priority
     await page.getByLabel(/Prioritas/i).click();
-    await pickOption(/Tinggi/i);
+    await page.getByRole("option", { name: /Tinggi/i }).click();
 
     // Select PIC
     await page.getByLabel(/Penanggung Jawab/i).click();
-    await pickOption(/Budi PIC/i);
+    await page.getByRole("option", { name: /Budi PIC/i }).click();
 
     // Select Budget
     await page.getByLabel(/Link ke Anggaran Keuangan/i).click();
-    await pickOption(/5-1-01/i);
+    await page.getByRole("option", { name: /5-1-01/i }).click();
 
     // Mock successful creation
     await page.route("**/api/perencanaan/activities", async (route) => {

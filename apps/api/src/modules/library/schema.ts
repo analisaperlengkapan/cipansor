@@ -26,10 +26,6 @@ export const createBookSchema = z.object({
   quantity: z.number().int().positive().default(1),
   coverUrl: z.string().url().optional(),
   description: z.string().optional(),
-  // Maktabah digital collection
-  isDigital: z.boolean().default(false),
-  fileUrl: z.string().url().optional(),
-  fileType: z.string().max(20).optional(),
 });
 
 export const updateBookSchema = createBookSchema.partial().omit({ unitId: true });
@@ -41,9 +37,6 @@ export const queryBookSchema = z.object({
   categoryId: z.string().uuid().optional(),
   search: z.string().optional(),
   status: z.nativeEnum(BookStatus).optional(),
-  isDigital: z
-    .preprocess((v) => (v === 'true' ? true : v === 'false' ? false : v), z.boolean())
-    .optional(),
 });
 
 // Borrowing schemas

@@ -102,7 +102,7 @@ describe('Dashboard Controller - Metrics History', () => {
     (prisma.teacher.count as any).mockResolvedValue(10);
     (prisma.academicYear.findFirst as any).mockResolvedValue({ id: 'ay-1', name: '2024/2025' });
 
-    await getDashboardMetrics(req as Request, res as Response, (() => {}) as any);
+    await getDashboardMetrics(req as Request, res as Response);
 
     expect(statusMock).not.toHaveBeenCalledWith(500);
     expect(jsonMock).toHaveBeenCalledWith(
@@ -149,7 +149,7 @@ describe('Dashboard Controller - Metrics History', () => {
     (prisma.teacher.count as any).mockResolvedValue(10);
     (prisma.academicYear.findFirst as any).mockResolvedValue({ id: 'ay-1', name: '2024/2025' });
 
-    await getDashboardMetrics(req as Request, res as Response, (() => {}) as any);
+    await getDashboardMetrics(req as Request, res as Response);
 
     expect(jsonMock).toHaveBeenCalledWith(
       expect.objectContaining({

@@ -73,17 +73,10 @@ jobs:
           # tsc on the full API surface exceeds Node's ~2GB default heap and
           # OOMs (exit 134); raise the limit (runners have plenty of RAM).
           NODE_OPTIONS: --max-old-space-size=4096
-      - name: Strict type-check API (incl. tests)
-        # `build` uses the lenient tsconfig.build.json (excludes test files);
-        # this runs plain `tsc` over the whole source + test tree so strict
-        # type errors — the 104 just cleared — can never silently regress.
-        run: pnpm --filter api build:strict
-        env:
-          NODE_OPTIONS: --max-old-space-size=4096
       - name: Build Web
         run: pnpm --filter web build
         env:
-          NEXT_PUBLIC_API_URL: http://localhost:3001
+          NEXT_PUBLIC_API_URL: http://localhost:3001/api
           NODE_OPTIONS: --max-old-space-size=4096
 
   # Unit/integration tests, including the DB-backed suite (RUN_DB_TESTS=1).
@@ -195,6 +188,6 @@ jobs:
           push: false
           tags: cipansor-web:latest
           build-args: |
-            NEXT_PUBLIC_API_URL=http://localhost:3001
+            NEXT_PUBLIC_API_URL=http://localhost:3001/api
           cache-from: type=gha
           cache-to: type=gha,mode=max

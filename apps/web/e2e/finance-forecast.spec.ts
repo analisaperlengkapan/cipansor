@@ -49,14 +49,8 @@ test("Finance Cash Flow Forecast Page", async ({ page }) => {
     );
   });
 
-  // Navigate to forecast page. Firefox occasionally aborts this navigation
-  // (NS_BINDING_ABORTED) when the previous page still has requests in
-  // flight — retry once.
-  await page
-    .goto("http://localhost:3000/finance/reports/cash-flow-forecast")
-    .catch(() =>
-      page.goto("http://localhost:3000/finance/reports/cash-flow-forecast"),
-    );
+  // Navigate to forecast page
+  await page.goto("http://localhost:3000/finance/reports/cash-flow-forecast");
 
   // Verify elements
   await expect(page.locator("text=Proyeksi Arus Kas")).toBeVisible();

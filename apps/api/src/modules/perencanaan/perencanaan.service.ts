@@ -1,6 +1,5 @@
 import { prisma } from '@/lib/prisma';
 import { Prisma, PlanStatus } from '@prisma/client';
-import { Errors } from '@/middleware/error';
 
 type TransactionClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
 
@@ -10,27 +9,13 @@ export class PerencanaanService {
   async createPlan(data: {
     title: string;
     description?: string;
-    type: 'MASTER_PLAN' | 'RENSTRA' | 'RKAS' | 'RKT' | 'PROGRAM';
+    type: 'RENSTRA' | 'RKAS' | 'RKT' | 'PROGRAM';
     startDate: string;
     endDate: string;
     budget?: number;
     unitId: string;
     createdById: string;
-    parentId?: string;
   }) {
-    if (data.parentId) {
-      const parent = await prisma.strategicPlan.findUnique({ where: { id: data.parentId } });
-      if (!parent) throw Errors.notFound('Parent plan');
-
-      // Cascading hierarchy: MASTER_PLAN -> RENSTRA -> RKAS
-      if (data.type === 'RKAS' && parent.type !== 'RENSTRA') {
-        throw Errors.badRequest('RKAS must refer to a RENSTRA parent plan');
-      }
-      if (data.type === 'RENSTRA' && parent.type !== 'MASTER_PLAN') {
-        throw Errors.badRequest('RENSTRA must refer to a MASTER_PLAN parent plan');
-      }
-    }
-
     return prisma.strategicPlan.create({
       data: {
         title: data.title,
@@ -41,29 +26,17 @@ export class PerencanaanService {
         budget: data.budget ? (data.budget as any) : undefined,
         unit: { connect: { id: data.unitId } },
         createdBy: { connect: { id: data.createdById } },
-        parent: data.parentId ? { connect: { id: data.parentId } } : undefined,
       },
       include: {
         unit: { select: { id: true, name: true } },
         createdBy: { select: { id: true, name: true } },
-        parent: { select: { id: true, title: true, type: true } },
         objectives: true,
       },
     });
   }
 
-  async getPlans(
-    unitId: string,
-    query: { type?: string; status?: string; collaboratorId?: string }
-  ) {
-    // A user sees their unit's plans plus any plan they collaborate on.
-    // The collaborator branch is only added when a caller id is present —
-    // `some: { userId: undefined }` would match ANY plan with collaborators.
-    const where: Prisma.StrategicPlanWhereInput = query.collaboratorId
-      ? {
-          OR: [{ unitId }, { collaborators: { some: { userId: query.collaboratorId } } }],
-        }
-      : { unitId };
+  async getPlans(unitId: string, query: { type?: string; status?: string }) {
+    const where: Prisma.StrategicPlanWhereInput = { unitId };
     if (query.type) where.type = query.type as any;
     if (query.status) where.status = query.status as any;
 
@@ -73,8 +46,6 @@ export class PerencanaanService {
         unit: { select: { id: true, name: true } },
         createdBy: { select: { id: true, name: true } },
         approvedBy: { select: { id: true, name: true } },
-        parent: { select: { id: true, title: true, type: true } },
-        collaborators: { include: { user: { select: { id: true, name: true } } } },
         objectives: {
           include: {
             indicators: true,
@@ -96,8 +67,6 @@ export class PerencanaanService {
         unit: { select: { id: true, name: true } },
         createdBy: { select: { id: true, name: true } },
         approvedBy: { select: { id: true, name: true } },
-        parent: { select: { id: true, title: true, type: true } },
-        collaborators: { include: { user: { select: { id: true, name: true } } } },
         objectives: {
           include: {
             indicators: true,
@@ -282,71 +251,6 @@ export class PerencanaanService {
   /**
    * Lightweight lookup for authorization checks — no journal aggregation.
    */
-  /**
-   * Monthly realization trend for a plan: journal movements on the plan's
-   * budget accounts, bucketed per month over the plan period (same
-   * account-level attribution caveats as getPlanById).
-   */
-  async getPlanRealizationTrend(id: string) {
-    const plan = await prisma.strategicPlan.findUnique({
-      where: { id },
-      include: {
-        objectives: {
-          include: {
-            activities: {
-              include: {
-                budgetRel: { include: { account: { select: { normalBalance: true } } } },
-              },
-            },
-          },
-        },
-      },
-    });
-    if (!plan) return null;
-
-    const accountBalance = new Map<string, string>();
-    for (const objective of plan.objectives) {
-      for (const activity of objective.activities) {
-        if (activity.budgetRel) {
-          accountBalance.set(
-            activity.budgetRel.accountId,
-            activity.budgetRel.account.normalBalance
-          );
-        }
-      }
-    }
-    if (accountBalance.size === 0) return { planId: id, trend: [] };
-
-    const endOfDay = new Date(plan.endDate);
-    endOfDay.setUTCHours(23, 59, 59, 999);
-
-    const entries = await prisma.journalEntry.findMany({
-      where: {
-        accountId: { in: [...accountBalance.keys()] },
-        unitId: plan.unitId,
-        date: { gte: plan.startDate, lte: endOfDay },
-      },
-      select: { accountId: true, date: true, debit: true, credit: true },
-      take: 10000,
-    });
-
-    const buckets = new Map<string, number>();
-    for (const entry of entries) {
-      const key = `${entry.date.getFullYear()}-${String(entry.date.getMonth() + 1).padStart(2, '0')}`;
-      const isDebitNormal = accountBalance.get(entry.accountId) === 'DEBIT';
-      const movement = isDebitNormal
-        ? Number(entry.debit) - Number(entry.credit)
-        : Number(entry.credit) - Number(entry.debit);
-      buckets.set(key, (buckets.get(key) ?? 0) + movement);
-    }
-
-    const trend = [...buckets.entries()]
-      .map(([month, realization]) => ({ month, realization: Math.max(0, realization) }))
-      .sort((a, b) => a.month.localeCompare(b.month));
-
-    return { planId: id, trend };
-  }
-
   async getPlanForAuth(id: string) {
     return prisma.strategicPlan.findUnique({
       where: { id },
@@ -380,41 +284,6 @@ export class PerencanaanService {
 
   async deletePlan(id: string) {
     return prisma.strategicPlan.delete({ where: { id } });
-  }
-
-  // ==================== COLLABORATION ====================
-
-  async addCollaborator(planId: string, userId: string, callerId: string, isPrivileged: boolean) {
-    const plan = await prisma.strategicPlan.findUnique({ where: { id: planId } });
-    if (!plan) throw Errors.notFound('Plan');
-    if (!isPrivileged && plan.createdById !== callerId) {
-      throw Errors.forbidden('Only the plan creator or an admin may manage collaborators');
-    }
-    if (plan.status !== PlanStatus.DRAFT) {
-      throw Errors.badRequest('Can only add collaborators to DRAFT plans');
-    }
-
-    return prisma.planCollaborator.create({
-      data: { planId, userId },
-      include: { user: { select: { id: true, name: true } } },
-    });
-  }
-
-  async removeCollaborator(
-    planId: string,
-    userId: string,
-    callerId: string,
-    isPrivileged: boolean
-  ) {
-    const plan = await prisma.strategicPlan.findUnique({ where: { id: planId } });
-    if (!plan) throw Errors.notFound('Plan');
-    if (!isPrivileged && plan.createdById !== callerId) {
-      throw Errors.forbidden('Only the plan creator or an admin may manage collaborators');
-    }
-
-    return prisma.planCollaborator.delete({
-      where: { planId_userId: { planId, userId } },
-    });
   }
 
   // ==================== OBJECTIVES ====================

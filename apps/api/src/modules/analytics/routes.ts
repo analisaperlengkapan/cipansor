@@ -217,49 +217,6 @@ router.get('/psb', controller.getPSBStats);
  */
 router.get('/grc', controller.getGRCStats);
 
-/**
- * @swagger
- * /api/analytics/grc/risk-matrix:
- *   get:
- *     summary: Get inherent vs residual 5x5 risk matrices
- *     tags: [Analytics]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: query
- *         name: unitId
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Risk counts per likelihood x impact cell
- */
-router.get('/grc/risk-matrix', controller.getRiskMatrix);
-
-/**
- * @swagger
- * /api/analytics/parent-engagement:
- *   get:
- *     summary: Get parent engagement statistics
- *     description: Active-parent rate, message responsiveness, weekly portal activity, per-class breakdown and low-engagement parents. Contains parent PII, so admin roles only.
- *     tags: [Analytics]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: query
- *         name: unitId
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Parent engagement statistics
- */
-router.get(
-  '/parent-engagement',
-  authorize(UserRole.SUPER_ADMIN, RoleCode.YAYASAN_ADMIN, UserRole.UNIT_ADMIN),
-  controller.getParentEngagementStats
-);
-
 // ============================================
 // FORECAST ENDPOINTS (Predictive Analytics)
 // ============================================

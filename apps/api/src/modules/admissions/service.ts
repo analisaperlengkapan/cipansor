@@ -70,45 +70,6 @@ export async function getAdmissionPeriodById(id: string) {
   });
 }
 
-/**
- * Public PPDB tracking lookup. Requires BOTH the registration number and the
- * registrant's birth date (matched on the calendar day) so the record cannot
- * be enumerated from a registration number alone. Returns null when either
- * factor does not match.
- */
-export async function getRegistrantTrackingInfo(registrationNo: string, birthDate: Date) {
-  const startOfDay = new Date(birthDate);
-  startOfDay.setHours(0, 0, 0, 0);
-  const endOfDay = new Date(birthDate);
-  endOfDay.setHours(23, 59, 59, 999);
-
-  return prisma.registrant.findFirst({
-    where: {
-      registrationNo,
-      birthDate: { gte: startOfDay, lte: endOfDay },
-    },
-    select: {
-      id: true,
-      registrationNo: true,
-      fullName: true,
-      status: true,
-      testScore: true,
-      interviewScore: true,
-      tahfidzScore: true,
-      acceptedAt: true,
-      enrolledAt: true,
-      createdAt: true,
-      admissionPeriod: {
-        select: { name: true, unit: { select: { name: true } } },
-      },
-      documents: {
-        select: { id: true, name: true, isVerified: true },
-        orderBy: { createdAt: 'asc' },
-      },
-    },
-  });
-}
-
 export async function createAdmissionPeriod(data: CreateAdmissionPeriodInput) {
   return prisma.admissionPeriod.create({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

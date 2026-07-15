@@ -140,29 +140,10 @@ export default function ExamMonitoringPage({
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {exam.attempts?.map((attempt: any) => {
-                      const totalQuestions =
-                        exam.questionBank?._count?.questions || 0;
-                      const answeredQuestions = attempt._count?.answers || 0;
-                      const progress =
-                        totalQuestions > 0
-                          ? (answeredQuestions / totalQuestions) * 100
-                          : 0;
-                      return (
+                    {exam.attempts?.map((attempt: any) => (
                       <TableRow key={attempt.id}>
                         <TableCell className="font-medium">
                           {attempt.student?.user?.name || "Unknown"}
-                          {totalQuestions > 0 && (
-                            <div
-                              className="mt-1 w-24 bg-slate-100 h-1 rounded-full overflow-hidden"
-                              title={`${answeredQuestions}/${totalQuestions} soal dijawab`}
-                            >
-                              <div
-                                className={`h-full ${attempt.status === "IN_PROGRESS" ? "bg-blue-500" : "bg-emerald-500"}`}
-                                style={{ width: `${progress}%` }}
-                              />
-                            </div>
-                          )}
                         </TableCell>
                         <TableCell>
                           <Badge
@@ -208,8 +189,7 @@ export default function ExamMonitoringPage({
                           )}
                         </TableCell>
                       </TableRow>
-                      );
-                    })}
+                    ))}
                   </TableBody>
                 </Table>
               </CardContent>
@@ -324,8 +304,6 @@ function DifficultyInsightsTab({ examId }: { examId: string }) {
 
   if (!insights) return null;
 
-  const hasDiscrimination = insights.discriminationGroupSize != null;
-
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -335,9 +313,6 @@ function DifficultyInsightsTab({ examId }: { examId: string }) {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{insights.averageSuccessRate != null ? `${Math.round(insights.averageSuccessRate)}%` : '-'}</div>
-            <p className="text-[10px] text-muted-foreground mt-1">
-              {insights.totalParticipants ?? 0} peserta teranalisis
-            </p>
           </CardContent>
         </Card>
         <Card className="border-l-4 border-l-rose-500">
@@ -352,75 +327,36 @@ function DifficultyInsightsTab({ examId }: { examId: string }) {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Daya Beda Sangat Baik</CardTitle>
+            <CardTitle className="text-sm font-medium">Soal Paling Sulit</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {hasDiscrimination
-                ? `${insights.questionInsights?.filter((q: any) => (q.discriminationIndex ?? 0) >= 0.4).length || 0} Soal`
-                : '-'}
+            <div className="text-2xl font-bold text-sm truncate" title={insights.questionInsights?.[0]?.content || '-'}>
+              {insights.questionInsights?.[0]?.content?.substring(0, 30) || '-'}
             </div>
-            {!hasDiscrimination && (
-              <p className="text-[10px] text-muted-foreground mt-1">
-                Butuh ≥ 10 peserta selesai untuk analisis daya beda
-              </p>
-            )}
           </CardContent>
         </Card>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Analisis Butir Soal</CardTitle>
-          <CardDescription>
-            Indeks kesulitan (P: proporsi jawaban benar) dan daya beda (D:
-            selisih kelompok atas vs bawah 27%). D &lt; 0,2 berarti butir perlu
-            direview.
-          </CardDescription>
+          <CardTitle>Distribusi Kesulitan Soal</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {insights.questionInsights?.map((q: any, index: number) => {
-              const p = q.difficultyIndex;
-              const diffLabel =
-                p == null ? 'Belum ada data' : p < 0.3 ? 'Sukar' : p > 0.7 ? 'Mudah' : 'Sedang';
-              const d = q.discriminationIndex;
-              const discLabel =
-                d == null ? null : d >= 0.4 ? 'Sangat Baik' : d >= 0.3 ? 'Baik' : d >= 0.2 ? 'Cukup' : 'Buruk';
+              const difficulty = q.successRate < 40 ? 'Hard' : q.successRate > 80 ? 'Easy' : 'Medium';
               return (
-                <div
-                  key={q.questionId}
-                  className={`p-4 border rounded-lg flex flex-col gap-2 ${q.needsReview ? 'bg-rose-50/50 border-rose-200' : 'bg-slate-50/50'}`}
-                >
+                <div key={q.questionId} className="p-4 border rounded-lg flex flex-col gap-2 bg-slate-50/50">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-mono text-indigo-400">Q{index + 1}</span>
-                    <div className="flex gap-1">
-                      <Badge variant={diffLabel === 'Sukar' ? 'destructive' : diffLabel === 'Mudah' ? 'default' : 'secondary'} className="text-[10px] h-4">
-                        {diffLabel}
-                      </Badge>
-                      {discLabel && (
-                        <Badge variant={d < 0.2 ? 'destructive' : 'outline'} className="text-[10px] h-4">
-                          Daya Beda: {discLabel}
-                        </Badge>
-                      )}
-                    </div>
+                    <span className="text-[10px] font-mono text-indigo-300">Q{index + 1}</span>
+                    <Badge variant={difficulty === 'Hard' ? 'destructive' : difficulty === 'Easy' ? 'default' : 'secondary'} className="text-[10px] h-4">
+                      {difficulty}
+                    </Badge>
                   </div>
-                  <p className="text-xs text-muted-foreground line-clamp-2 italic">"{q.content}"</p>
-                  <div className="grid grid-cols-2 gap-3 mt-1">
-                    <div>
-                      <span className="text-[10px] text-muted-foreground block uppercase font-semibold">Kesulitan (P)</span>
-                      <span className="text-sm font-mono">{p != null ? p.toFixed(2) : '-'}</span>
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-muted-foreground block uppercase font-semibold">Daya Beda (D)</span>
-                      <span className={`text-sm font-mono ${d != null && d < 0.2 ? 'text-rose-600 font-bold' : ''}`}>
-                        {d != null ? d.toFixed(2) : '-'}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="mt-1">
+                  <p className="text-xs text-muted-foreground line-clamp-1 italic">"{q.content}"</p>
+                  <div className="mt-2">
                     <div className="flex justify-between text-[10px] mb-1">
-                      <span>Success Rate ({q.totalGraded} dinilai)</span>
+                      <span>Success Rate</span>
                       <span className="font-bold">{Math.round(q.successRate)}%</span>
                     </div>
                     <div className="w-full bg-slate-200 h-1 rounded-full overflow-hidden">
@@ -430,11 +366,6 @@ function DifficultyInsightsTab({ examId }: { examId: string }) {
                       />
                     </div>
                   </div>
-                  {q.needsReview && (
-                    <div className="flex items-center gap-1 text-[10px] text-rose-600 font-medium">
-                      <AlertCircle className="w-3 h-3" /> Perlu review/revisi butir
-                    </div>
-                  )}
                 </div>
               );
             })}

@@ -247,12 +247,6 @@ router.delete(
   controller.deleteAnnouncement
 );
 
-// ==================== MOBILE PUSH (FCM) ====================
-
-// Register/refresh the caller's mobile push token (any authenticated user).
-// Body: { token: string | null } — null clears the token on logout.
-router.put('/fcm-token', controller.updateFcmToken);
-
 // ==================== WHATSAPP ====================
 
 router.post(

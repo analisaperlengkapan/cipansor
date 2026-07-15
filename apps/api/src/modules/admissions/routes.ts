@@ -51,11 +51,6 @@ router.post(
   publicRegistrantLimiter,
   controller.createPublicRegistrant
 );
-router.get(
-  '/public/track',
-  publicRegistrantLimiter,
-  controller.trackPublicRegistrantStatus
-);
 
 router.use(authenticate);
 

@@ -41,14 +41,6 @@ export const createJournalEntrySchema = z
 
 // ==================== SCHOLARSHIPS ====================
 
-export const createScholarshipCriterionSchema = z.object({
-  name: z.string().min(2).max(100),
-  description: z.string().optional(),
-  weight: z.number().positive(),
-  type: z.enum(['NUMERIC', 'BOOLEAN', 'ENUM']),
-  targetValue: z.string().optional(),
-});
-
 export const createScholarshipSchema = z.object({
   name: z.string().min(1),
   description: z.string().optional(),

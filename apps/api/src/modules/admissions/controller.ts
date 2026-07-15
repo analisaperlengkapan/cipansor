@@ -9,7 +9,6 @@ import {
   updateRegistrantStatusSchema,
   createRegistrantDocumentSchema,
   verifyDocumentSchema,
-  trackRegistrantQuerySchema,
 } from './schema';
 import { Errors } from '../../middleware/error';
 import { z } from 'zod';
@@ -326,33 +325,6 @@ export async function createPublicRegistrant(
         createdAt: registrant.createdAt,
       },
     });
-  } catch (error) {
-    next(error);
-  }
-}
-
-/**
- * Public PPDB tracking endpoint (`GET /admissions/public/track`). Looks a
- * registrant up by registration number + birth date (two-factor lookup, see
- * `getRegistrantTrackingInfo`) and returns only the whitelisted projection
- * selected there — selection progress, scores, and document verification
- * state. Never expose parent contact data, addresses, or internal notes here:
- * this endpoint is reachable without a session (rate-limited per IP).
- */
-export async function trackPublicRegistrantStatus(
-  req: Request,
-  res: Response,
-  next: NextFunction
-) {
-  try {
-    const { registrationNo, birthDate } = trackRegistrantQuerySchema.parse(req.query);
-
-    const registrant = await service.getRegistrantTrackingInfo(registrationNo, birthDate);
-    if (!registrant) {
-      throw Errors.notFound('Registrant with provided details');
-    }
-
-    res.json({ success: true, data: registrant });
   } catch (error) {
     next(error);
   }

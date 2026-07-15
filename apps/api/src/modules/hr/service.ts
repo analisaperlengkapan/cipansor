@@ -71,54 +71,6 @@ export async function getEmployees(params: {
   };
 }
 
-/**
- * List teachers (Teacher records with user + unit info).
- * Backs the web `useTeachers` hook (homeroom/e-office/dormitory pickers).
- */
-export async function getTeachers(params: {
-  page: number;
-  limit: number;
-  unitId?: string;
-  status?: 'ACTIVE' | 'INACTIVE' | 'ON_LEAVE';
-  search?: string;
-}) {
-  const { page, limit, unitId, status, search } = params;
-  const skip = (page - 1) * limit;
-
-  const where: Prisma.TeacherWhereInput = { deletedAt: null };
-  if (unitId) where.unitId = unitId;
-  if (status === 'ACTIVE') where.user = { isActive: true, deletedAt: null };
-  else if (status === 'INACTIVE') where.user = { isActive: false };
-  if (search) {
-    where.user = {
-      ...((where.user as Prisma.UserWhereInput) ?? {}),
-      name: { contains: search, mode: 'insensitive' },
-    };
-  }
-
-  const [teachers, total] = await Promise.all([
-    prisma.teacher.findMany({
-      where,
-      skip,
-      take: limit,
-      orderBy: { user: { name: 'asc' } },
-      include: {
-        user: { select: { id: true, name: true, email: true, phone: true, isActive: true } },
-        unit: { select: { id: true, name: true } },
-      },
-    }),
-    prisma.teacher.count({ where }),
-  ]);
-
-  return {
-    data: teachers.map((teacher) => ({
-      ...teacher,
-      status: teacher.user.isActive ? ('ACTIVE' as const) : ('INACTIVE' as const),
-    })),
-    meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
-  };
-}
-
 export async function getEmployeeById(id: string) {
   return prisma.user.findUnique({
     where: { id },

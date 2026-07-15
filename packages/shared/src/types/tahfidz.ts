@@ -26,7 +26,6 @@ export interface TahfidzRecord {
   score?: number | null;
   grade?: string | null; // For compatibility if needed, though not in schema
   notes?: string | null;
-  audioUrl?: string | null; // E-Simaan recording
   recordedAt: string | Date;
   recordedById: string;
   createdAt: string | Date;
@@ -104,18 +103,6 @@ export interface TahfidzStudentSummary {
     surahName: string;
   }[];
   recentRecords: TahfidzRecord[];
-  estimation?: TahfidzCompletionEstimate;
-}
-
-/** Projection of when a student finishes 30 juz, based on observed pace. */
-export interface TahfidzCompletionEstimate {
-  status: "COMPLETED" | "INSUFFICIENT_DATA" | "PROJECTED";
-  totalAyahMemorized: number;
-  remainingAyah: number;
-  ayahPerDay: number | null;
-  estimatedDays: number | null;
-  estimatedDate: string | Date | null;
-  recordsInWindow: number;
 }
 
 export interface CreateTahfidzInput {
@@ -129,7 +116,6 @@ export interface CreateTahfidzInput {
   totalAyah?: number;
   score?: number | null;
   notes?: string;
-  audioUrl?: string;
   recordedAt?: Date | string;
 }
 

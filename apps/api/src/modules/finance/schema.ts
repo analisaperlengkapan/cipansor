@@ -90,21 +90,6 @@ export type CreateInvoiceDto = z.infer<typeof createInvoiceSchema>;
 export type UpdateInvoiceDto = z.infer<typeof updateInvoiceSchema>;
 export type QueryInvoiceDto = z.infer<typeof queryInvoiceSchema>;
 
-export const submitPaymentProofSchema = z.object({
-  amount: z.number().positive('Amount must be positive'),
-  method: z.nativeEnum(PaymentMethod),
-  referenceNo: z.string().max(100).optional(),
-  proofUrl: z.string().url('Invalid proof URL'),
-  notes: z.string().max(500).optional(),
-});
-export type SubmitPaymentProofDto = z.infer<typeof submitPaymentProofSchema>;
-
-export const verifyPaymentSchema = z.object({
-  action: z.enum(['TU_APPROVE', 'FINAL_APPROVE', 'REJECT']),
-  rejectionReason: z.string().max(500).optional(),
-});
-export type VerifyPaymentDto = z.infer<typeof verifyPaymentSchema>;
-
 export type CreatePaymentDto = z.infer<typeof createPaymentSchema>;
 export type QueryPaymentDto = z.infer<typeof queryPaymentSchema>;
 
@@ -119,22 +104,10 @@ export const createAccountSchema = z.object({
   normalBalance: z.enum(['DEBIT', 'CREDIT']),
   parentId: z.string().uuid().optional(),
   cashFlowCategory: z.string().optional(),
-  netAssetCategory: z
-    .enum(['UNRESTRICTED', 'TEMPORARILY_RESTRICTED', 'PERMANENTLY_RESTRICTED'])
-    .optional(),
-  ziswafFundType: z.enum(['ZAKAT', 'INFAK_SEDEKAH', 'WAKAF', 'AMIL', 'NON_HALAL']).optional(),
   isActive: z.boolean().default(true),
 });
 
 export const updateAccountSchema = createAccountSchema.partial();
-
-export const saveReportNoteSchema = z.object({
-  unitId: z.string().uuid(),
-  periodId: z.string().uuid().optional(),
-  reportType: z.string().min(1),
-  sectionKey: z.string().min(1),
-  content: z.string(),
-});
 
 export const queryAccountSchema = z.object({
   search: z.string().optional(),

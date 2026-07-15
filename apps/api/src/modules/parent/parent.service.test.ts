@@ -9,7 +9,6 @@ vi.mock('../../lib/prisma', () => {
     grade: { findMany: vi.fn() },
     reward: { findMany: vi.fn() },
     violation: { findMany: vi.fn() },
-    counselingSession: { findMany: vi.fn() },
   };
   return { prisma: mockPrisma };
 });
@@ -28,7 +27,6 @@ const mockPrisma = prisma as unknown as {
   grade: { findMany: ReturnType<typeof vi.fn> };
   reward: { findMany: ReturnType<typeof vi.fn> };
   violation: { findMany: ReturnType<typeof vi.fn> };
-  counselingSession: { findMany: ReturnType<typeof vi.fn> };
 };
 
 describe('ParentService.getChildWeeklyProgress', () => {
@@ -112,55 +110,5 @@ describe('ParentService.getChildWeeklyProgress', () => {
     });
     expect(result.behavior).toEqual({ positive: 0, negative: 0, notes: '' });
     expect(result.academic).toEqual({ averageScore: 0, improvement: '' });
-  });
-});
-
-describe('ParentService.getChildCounseling', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    mockPrisma.studentParent.findUnique.mockResolvedValue({ id: 'link-1' });
-  });
-
-  it('only queries parent-shareable sessions and never exposes psychology data', async () => {
-    mockPrisma.counselingSession.findMany.mockResolvedValue([
-      {
-        id: 'cs-1',
-        scheduledAt: new Date('2026-06-01'),
-        status: 'COMPLETED',
-        summary: 'Sesi adaptasi berjalan baik',
-        recommendations: 'Lanjutkan pendampingan ringan',
-        counselor: { user: { name: 'Ustz. Konselor' } },
-      },
-    ]);
-
-    const result = await parentService.getChildCounseling('p1', 's1');
-
-    // The where clause must restrict to parentNotified/non-confidential
-    expect(mockPrisma.counselingSession.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: {
-          studentId: 's1',
-          OR: [{ parentNotified: true }, { isConfidential: false }],
-        },
-      })
-    );
-    // And the select must not include psychologyData or raw notes
-    const callArgs = mockPrisma.counselingSession.findMany.mock.calls[0][0];
-    expect(callArgs.select).not.toHaveProperty('psychologyData');
-    expect(callArgs.select).not.toHaveProperty('notes');
-
-    expect(result[0]).toEqual({
-      id: 'cs-1',
-      scheduledAt: new Date('2026-06-01'),
-      status: 'COMPLETED',
-      summary: 'Sesi adaptasi berjalan baik',
-      recommendations: 'Lanjutkan pendampingan ringan',
-      counselorName: 'Ustz. Konselor',
-    });
-  });
-
-  it('denies parents without access to the child', async () => {
-    mockPrisma.studentParent.findUnique.mockResolvedValue(null);
-    await expect(parentService.getChildCounseling('p1', 's1')).rejects.toThrow();
   });
 });

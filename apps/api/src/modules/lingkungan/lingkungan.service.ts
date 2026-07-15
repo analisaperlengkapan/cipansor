@@ -12,7 +12,6 @@ export class LingkunganService {
     endDate?: string;
     budget?: number;
     picId?: string;
-    courseId?: string;
     unitId: string;
   }) {
     return prisma.environmentProgram.create({
@@ -24,7 +23,6 @@ export class LingkunganService {
         endDate: data.endDate ? new Date(data.endDate) : undefined,
         budget: data.budget ? new Prisma.Decimal(data.budget) : undefined,
         pic: data.picId ? { connect: { id: data.picId } } : undefined,
-        course: data.courseId ? { connect: { id: data.courseId } } : undefined,
         unit: { connect: { id: data.unitId } },
       },
       include: {
@@ -168,7 +166,6 @@ export class LingkunganService {
     category: string;
     targetValue: number;
     currentValue?: number;
-    carbonEmissions?: number;
     unit: string;
     period: string;
     recordDate: string;
@@ -181,7 +178,6 @@ export class LingkunganService {
         category: data.category,
         targetValue: data.targetValue,
         currentValue: data.currentValue || 0,
-        carbonEmissions: data.carbonEmissions,
         unit: data.unit,
         period: data.period,
         recordDate: new Date(data.recordDate),

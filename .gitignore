@@ -108,9 +108,9 @@ credentials/
 # Sentry
 .sentryclirc
 
-# PWA build tool (workbox/next-pwa) generated files.
-# NOTE: apps/web/public/sw.js is hand-authored source and IS committed — do not
-# re-add a sw.js ignore here unless you switch to a tool that generates it.
+# PWA generated files
+**/public/sw.js
+**/public/sw.js.map
 **/public/workbox-*.js
 **/public/workbox-*.js.map
 

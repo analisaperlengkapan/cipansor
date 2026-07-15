@@ -15,10 +15,8 @@ type UserRole =
   | "STUDENT"
   | "PARENT";
 
-// Public routes that don't require authentication.
-// "/unauthorized" is the access-denied page ProtectedRoute redirects to; it
-// must stay reachable for any user (otherwise RBAC would bounce them off it).
-const publicRoutes = ["/login", "/", "/unauthorized"];
+// Public routes that don't require authentication
+const publicRoutes = ["/login", "/"];
 
 // Role-based dashboard mapping
 const roleDashboardMap: Record<UserRole, string> = {

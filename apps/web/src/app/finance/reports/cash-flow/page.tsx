@@ -17,10 +17,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Download, ArrowLeft } from "lucide-react";
+import {
+  Loader2,
+  Download,
+  ArrowLeft,
+  TrendingUp,
+  TrendingDown,
+} from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
-import type { CashFlowItem } from "@cipansor/shared";
 
 function formatCurrency(amount: number): string {
   return new Intl.NumberFormat("id-ID", {
@@ -46,7 +51,7 @@ export default function CashFlowPage() {
     endDate,
   });
 
-  const renderSection = (title: string, total: number, items: CashFlowItem[]) => (
+  const renderSection = (title: string, total: number, items: any[]) => (
     <div className="space-y-4">
       <div className="flex justify-between items-center border-b pb-2">
         <h3 className="text-lg font-semibold">{title}</h3>
@@ -100,7 +105,7 @@ export default function CashFlowPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="">Semua Unit</SelectItem>
-                    {units?.map((unit) => (
+                    {units?.map((unit: any) => (
                       <SelectItem key={unit.id} value={unit.id}>
                         {unit.name}
                       </SelectItem>
@@ -124,13 +129,9 @@ export default function CashFlowPage() {
                   onChange={(e) => setEndDate(e.target.value)}
                 />
               </div>
-              <Button
-                variant="outline"
-                onClick={() => window.print()}
-                disabled={!report}
-              >
+              <Button variant="outline">
                 <Download className="h-4 w-4 mr-2" />
-                Cetak / PDF
+                Export PDF
               </Button>
             </div>
           </CardContent>

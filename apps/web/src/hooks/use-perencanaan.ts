@@ -135,25 +135,6 @@ export const usePlan = (id: string) => {
   });
 };
 
-export interface PlanRealizationTrend {
-  planId: string;
-  trend: { month: string; realization: number }[];
-}
-
-/** Monthly realization trend (GET /perencanaan/:id/realization-trend). */
-export const usePlanRealizationTrend = (id: string) => {
-  return useQuery({
-    queryKey: ["perencanaan", id, "realization-trend"],
-    queryFn: async () => {
-      const { data: res } = await api.get<{ data: PlanRealizationTrend }>(
-        `/perencanaan/${id}/realization-trend`,
-      );
-      return res.data;
-    },
-    enabled: !!id,
-  });
-};
-
 export const useCreatePlan = () => {
   const queryClient = useQueryClient();
   return useMutation({

@@ -40,7 +40,7 @@ fi
 # Build web if missing
 if [ ! -f apps/web/.next/BUILD_ID ]; then
   echo "Building web..."
-  (cd apps/web && NEXT_PUBLIC_API_URL=http://localhost:3001 pnpm build) >/tmp/webbuild.log 2>&1 \
+  (cd apps/web && NEXT_PUBLIC_API_URL=http://localhost:3001/api pnpm build) >/tmp/webbuild.log 2>&1 \
     && echo "web built" || { echo "WEB BUILD FAILED"; tail -8 /tmp/webbuild.log; }
 fi
 

@@ -71,7 +71,7 @@ describe('Correspondence Service', () => {
 
       vi.mocked(prisma.letter.create).mockResolvedValue({ id: 'letter-1' } as any);
 
-      await CorrespondenceService.createLetter(dto as any, 'user-1');
+      await CorrespondenceService.createLetter(dto, 'user-1');
 
       // Uses transaction
       expect(prisma.letter.create).toHaveBeenCalledWith({

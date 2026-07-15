@@ -10,54 +10,20 @@ export const businessUnitService = {
       ...(params.isActive !== undefined && { isActive: params.isActive }),
     };
 
-    const now = new Date();
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-
-    const [units, canteenMonth, laundryMonth] = await Promise.all([
-      prisma.businessUnit.findMany({
-        where,
-        include: {
-          unit: { select: { id: true, name: true } },
-          manager: { select: { id: true, name: true } },
-          _count: {
-            select: {
-              canteenItems: true,
-              canteenTransactions: true,
-              laundryTransactions: true,
-            },
+    return prisma.businessUnit.findMany({
+      where,
+      include: {
+        unit: { select: { id: true, name: true } },
+        _count: {
+          select: {
+            canteenItems: true,
+            canteenTransactions: true,
+            laundryTransactions: true,
           },
         },
-        orderBy: { name: 'asc' },
-      }),
-      // Current-month revenue per unit (settled transactions only)
-      prisma.canteenTransaction.groupBy({
-        by: ['businessUnitId'],
-        where: { status: 'COMPLETED', createdAt: { gte: monthStart } },
-        _sum: { total: true },
-        _count: { id: true },
-      }),
-      prisma.laundryTransaction.groupBy({
-        by: ['businessUnitId'],
-        where: { status: 'DELIVERED', paymentStatus: 'PAID', createdAt: { gte: monthStart } },
-        _sum: { total: true },
-        _count: { id: true },
-      }),
-    ]);
-
-    const revenueByUnit = new Map<string, { revenue: number; transactions: number }>();
-    for (const row of [...canteenMonth, ...laundryMonth]) {
-      if (!row.businessUnitId) continue;
-      const entry = revenueByUnit.get(row.businessUnitId) ?? { revenue: 0, transactions: 0 };
-      entry.revenue += Number(row._sum.total ?? 0);
-      entry.transactions += row._count.id;
-      revenueByUnit.set(row.businessUnitId, entry);
-    }
-
-    return units.map((bu) => ({
-      ...bu,
-      monthlyRevenue: revenueByUnit.get(bu.id)?.revenue ?? 0,
-      monthlyTransactions: revenueByUnit.get(bu.id)?.transactions ?? 0,
-    }));
+      },
+      orderBy: { name: 'asc' },
+    });
   },
 
   async getById(id: string, unitId?: string) {

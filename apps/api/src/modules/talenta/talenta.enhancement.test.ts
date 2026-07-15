@@ -46,13 +46,13 @@ describe('Talenta Service Enhancement', () => {
       expect(result.profiles.find((p: any) => p.category === 'INVALID')).toBeUndefined();
 
       // Verify score mapping for profiles with assessments
-      const user1 = result.profiles.find((p: any) => p.id === '1')!;
+      const user1 = result.profiles.find((p: any) => p.id === '1');
       expect(user1.name).toBe('User 1');
       expect(user1.performanceScore).toBe(100); // OUTSTANDING
       expect(user1.potentialScore).toBe(100);   // OUTSTANDING
 
       // Verify profiles without assessments default to 0
-      const user3 = result.profiles.find((p: any) => p.id === '3')!;
+      const user3 = result.profiles.find((p: any) => p.id === '3');
       expect(user3.performanceScore).toBe(0);
       expect(user3.potentialScore).toBe(0);
     });

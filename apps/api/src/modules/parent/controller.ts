@@ -168,20 +168,6 @@ export class ParentController {
   }
 
   /**
-   * Get child counseling summaries shared with parents
-   */
-  async getChildCounseling(req: Request, res: Response, next: NextFunction) {
-    try {
-      const parentId = req.user!.sub;
-      const { studentId } = (req.params as any);
-      const data = await parentService.getChildCounseling(parentId, studentId);
-      res.json({ success: true, data });
-    } catch (error) {
-      next(error);
-    }
-  }
-
-  /**
    * Get child violations
    */
   async getChildViolations(req: Request, res: Response, next: NextFunction) {

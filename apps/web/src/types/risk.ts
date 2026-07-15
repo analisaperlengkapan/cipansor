@@ -21,10 +21,6 @@ export interface Risk {
     id: string;
     name: string;
   };
-  auditFindings?: {
-    id: string;
-    severity: string;
-  }[];
 }
 
 export interface RiskMitigation {

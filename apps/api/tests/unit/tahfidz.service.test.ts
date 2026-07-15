@@ -62,7 +62,7 @@ describe('TahfidzService', () => {
         { studentId: 's1', juz: 2, _count: { juz: 1 } },
       ];
 
-      const mockRecentRecords: unknown[] = [];
+      const mockRecentRecords = [];
 
       // Setup mocks
       (prisma.tahfidzRecord.count as any).mockResolvedValue(mockTotalRecords);

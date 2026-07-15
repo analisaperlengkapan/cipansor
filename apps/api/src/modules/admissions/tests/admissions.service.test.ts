@@ -60,7 +60,7 @@ describe('Admissions Service', () => {
 
     vi.mocked(prisma.admissionPeriod.findUnique).mockResolvedValue(mockPeriod as any);
     vi.mocked(prisma.registrant.count).mockResolvedValue(10);
-    (vi.mocked(prisma.registrant.create) as any).mockImplementation(({ data }: any) => Promise.resolve({ ...data, id: 'r1' }));
+    vi.mocked(prisma.registrant.create).mockImplementation(({ data }: any) => Promise.resolve({ ...data, id: 'r1' }));
     // REG_FEE payment type already exists, so no need to create one.
     vi.mocked(prisma.paymentType.findFirst).mockResolvedValue({ id: 'pt1' } as any);
 

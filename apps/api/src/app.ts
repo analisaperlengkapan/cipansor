@@ -86,13 +86,6 @@ import { qualityRoutes } from '@/modules/quality/quality.routes';
 import correspondenceRoutes from '@/modules/correspondence/correspondence.routes';
 import riskRoutes from '@/modules/risk/risk.routes';
 import { complaintsRoutes } from '@/modules/complaints/complaints.routes';
-import { practicumRoutes } from '@/modules/practicum/routes';
-import { studentOrgRoutes } from '@/modules/student-org/routes';
-import { researchRoutes } from '@/modules/research/routes';
-import nonFormalRoutes from '@/modules/non-formal';
-import socialServiceRoutes from '@/modules/social-service';
-import higherEducationRoutes from '@/modules/higher-education/higher-education.routes';
-import performanceAgreementRoutes from '@/modules/performance-management/pk.routes';
 
 // Enhancement module routes
 import { paudAssessmentRoutes } from '@/modules/paud-assessment';
@@ -274,13 +267,6 @@ apiRouter.use('/quality', qualityRoutes);
 apiRouter.use('/correspondence', correspondenceRoutes);
 apiRouter.use('/risk', riskRoutes);
 apiRouter.use('/complaints', complaintsRoutes);
-apiRouter.use('/practicum', practicumRoutes);
-apiRouter.use('/student-org', studentOrgRoutes);
-apiRouter.use('/research', researchRoutes);
-apiRouter.use('/non-formal', nonFormalRoutes);
-apiRouter.use('/social-service', socialServiceRoutes);
-apiRouter.use('/higher-education', higherEducationRoutes);
-apiRouter.use('/performance-agreements', performanceAgreementRoutes);
 
 // Enhancement modules
 apiRouter.use('/paud-assessment', paudAssessmentRoutes);

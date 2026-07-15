@@ -26,7 +26,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { ComplaintCategory } from "@cipansor/shared";
 import { useCreateComplaint } from "@/hooks/use-complaints";
-import { useBuildings, useRooms } from "@/hooks/use-facilities";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -36,16 +35,12 @@ const complaintSchema = z.object({
   subject: z.string().min(5, "Subjek minimal 5 karakter"),
   description: z.string().min(20, "Deskripsi minimal 20 karakter"),
   location: z.string().optional(),
-  // Si-Peka: precise facility location for FACILITY damage reports
-  buildingId: z.string().uuid().optional(),
-  roomId: z.string().uuid().optional(),
   isAnonymous: z.boolean().optional(),
 });
 
 export default function CreateComplaintPage() {
   const router = useRouter();
   const { mutate: createComplaint, isPending } = useCreateComplaint();
-  const { data: buildings } = useBuildings({ limit: 100 });
 
   const form = useForm<z.infer<typeof complaintSchema>>({
     resolver: zodResolver(complaintSchema),
@@ -53,12 +48,6 @@ export default function CreateComplaintPage() {
       isAnonymous: false,
     },
   });
-
-  // Si-Peka: room options depend on the chosen building.
-  const watchedBuildingId = form.watch("buildingId");
-  const { data: rooms } = useRooms(
-    watchedBuildingId ? { buildingId: watchedBuildingId, limit: 100 } : undefined,
-  );
 
   const onSubmit = (values: z.infer<typeof complaintSchema>) => {
     createComplaint(values, {
@@ -150,77 +139,6 @@ export default function CreateComplaintPage() {
                   </FormItem>
                 )}
               />
-
-              {/* Si-Peka: precise facility location (optional) */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="buildingId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Gedung (Opsional)</FormLabel>
-                      <Select
-                        onValueChange={(v) => {
-                          field.onChange(v);
-                          form.setValue("roomId", undefined);
-                        }}
-                        value={field.value ?? ""}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Pilih gedung" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {(buildings || []).map((b) => (
-                            <SelectItem key={b.id} value={b.id}>
-                              {b.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormDescription>
-                        Untuk laporan kerusakan fasilitas
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="roomId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Ruang (Opsional)</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value ?? ""}
-                        disabled={!watchedBuildingId}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue
-                              placeholder={
-                                watchedBuildingId
-                                  ? "Pilih ruang"
-                                  : "Pilih gedung dulu"
-                              }
-                            />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {(rooms || []).map((r) => (
-                            <SelectItem key={r.id} value={r.id}>
-                              {r.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
 
               <FormField
                 control={form.control}

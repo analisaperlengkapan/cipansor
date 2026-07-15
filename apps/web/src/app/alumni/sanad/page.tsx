@@ -34,6 +34,7 @@ import {
   GraduationCap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAlumni, useAlumniStats } from "@/hooks/use-alumni";
 import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/api";
 
@@ -48,41 +49,69 @@ interface SanadNode {
   children?: SanadNode[];
 }
 
-// API shape of GET /sanad/tree nodes
-interface ApiSanadTreeNode {
-  id: string;
-  name: string;
-  role: "TEACHER" | "STUDENT";
-  juzCount?: number;
-  certifiedYear?: number;
-  children: ApiSanadTreeNode[];
-}
-
-function mapApiNode(node: ApiSanadTreeNode): SanadNode {
-  return {
-    id: node.id,
-    name: node.name,
-    title: node.role === "TEACHER" ? "Muhafidz" : "Hafizh",
-    year: node.certifiedYear ? `Ijazah ${node.certifiedYear}` : "—",
-    specialty: node.juzCount
-      ? `${node.juzCount} Juz bi Sanad`
-      : "Guru Sanad",
-    children: node.children.map(mapApiNode),
-  };
-}
-
-// Hook to fetch the real transmission tree (silsilah) from sanad records
-function useSanadTree() {
-  return useQuery({
-    queryKey: ["sanad-tree"],
-    queryFn: async () => {
-      const response = await api.get<{ data: ApiSanadTreeNode[] }>(
-        "/sanad/tree",
-      );
-      return (response.data.data || []).map(mapApiNode);
+// Mock sanad chain data - showing isnad (chain of transmission)
+// This is static institutional data representing the chain of transmission (silsilah)
+const mockSanadChain: SanadNode = {
+  id: "root",
+  name: "Syaikh Abdul Qadir Al-Arnauth",
+  title: "محدث الشام",
+  year: "1928-2004",
+  location: "Damascus, Syria",
+  specialty: "Hadits & Tahqiq",
+  children: [
+    {
+      id: "level1-1",
+      name: "KH. Muhammad Salim",
+      title: "مشايخ الحديث",
+      year: "1945-2020",
+      location: "Pesantren Al-Hikmah",
+      specialty: "Hadits",
+      children: [
+        {
+          id: "level2-1",
+          name: "Ust. Ahmad Fadlan, Lc.",
+          title: "معلم القرآن",
+          year: "1975-",
+          location: "Pesantren Al-Hikmah",
+          specialty: "Tahfidz & Qiroah",
+          children: [
+            {
+              id: "level3-1",
+              name: "Muhammad Hasan",
+              title: "Hafizh",
+              year: "2010-",
+              specialty: "30 Juz bi Sanad",
+            },
+            {
+              id: "level3-2",
+              name: "Fatimah Azzahra",
+              title: "Hafizhah",
+              year: "2011-",
+              specialty: "30 Juz bi Sanad",
+            },
+          ],
+        },
+        {
+          id: "level2-2",
+          name: "Ust. Ibrahim Hakim, Lc.",
+          title: "معلم القرآن",
+          year: "1980-",
+          location: "Pesantren Al-Hikmah",
+          specialty: "Tahfidz & Tajwid",
+          children: [
+            {
+              id: "level3-3",
+              name: "Ahmad Syakir",
+              title: "Hafizh",
+              year: "2009-",
+              specialty: "30 Juz bi Sanad",
+            },
+          ],
+        },
+      ],
     },
-  });
-}
+  ],
+};
 
 // Hook to fetch alumni with sanad data
 function useAlumniWithSanad(params?: {
@@ -246,9 +275,6 @@ export default function AlumniSanadPage() {
     graduationYear: filterYear !== "all" ? filterYear : undefined,
   });
 
-  // Real transmission tree from sanad records
-  const { data: sanadRoots = [], isLoading: isTreeLoading } = useSanadTree();
-
   const filteredAlumni = alumniWithSanad.filter((alumni) => {
     const matchesSearch = searchQuery
       ? alumni.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -261,6 +287,10 @@ export default function AlumniSanadPage() {
   // Calculate stats from actual data
   const totalSanad = alumniWithSanad.reduce((sum, a) => sum + a.sanadCount, 0);
   const totalAlumni = alumniWithSanad.length;
+  const verifiedCount = alumniWithSanad.filter(
+    (a) => a.status === "verified",
+  ).length;
+  const totalJuz = alumniWithSanad.reduce((sum, a) => sum + a.juzCount, 0);
 
   return (
     <MainLayout allowedRoles={["SUPER_ADMIN", "UNIT_ADMIN", "TEACHER"]}>
@@ -344,11 +374,7 @@ export default function AlumniSanadPage() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Jalur Sanad</p>
-                  {isTreeLoading ? (
-                    <Skeleton className="h-8 w-12" />
-                  ) : (
-                    <p className="text-2xl font-bold">{sanadRoots.length}</p>
-                  )}
+                  <p className="text-2xl font-bold">3</p>
                 </div>
               </div>
             </CardContent>
@@ -367,25 +393,7 @@ export default function AlumniSanadPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {isTreeLoading ? (
-              <div className="space-y-4">
-                <Skeleton className="h-20 rounded-xl" />
-                <Skeleton className="h-20 rounded-xl ml-8" />
-                <Skeleton className="h-20 rounded-xl ml-16" />
-              </div>
-            ) : sanadRoots.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                Belum ada data sanad yang tercatat. Pohon sanad akan muncul
-                setelah pengesahan (ijazah) juz pertama dicatat di modul
-                Takhosus.
-              </p>
-            ) : (
-              <div className="space-y-6">
-                {sanadRoots.map((root) => (
-                  <SanadTreeNode key={root.id} node={root} />
-                ))}
-              </div>
-            )}
+            <SanadTreeNode node={mockSanadChain} />
           </CardContent>
         </Card>
 

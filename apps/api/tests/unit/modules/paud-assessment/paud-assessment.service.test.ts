@@ -80,7 +80,7 @@ describe('PAUD Assessment Service', () => {
       // Mock create result (just need it to resolve)
       mockCreate.mockResolvedValue({ id: 'assessment-id' });
 
-      const result = await paudAssessmentService.createClassAssessment(mockInput as any, userId);
+      const result = await paudAssessmentService.createClassAssessment(mockInput, userId);
 
       expect(mockFindUnique).toHaveBeenCalledWith({
         where: { id: 'class-1' },
@@ -95,7 +95,7 @@ describe('PAUD Assessment Service', () => {
     it('should throw error if class does not belong to unit', async () => {
       mockFindUnique.mockResolvedValue({ id: 'class-1', unitId: 'other-unit' });
 
-      await expect(paudAssessmentService.createClassAssessment(mockInput as any, userId)).rejects.toThrow(
+      await expect(paudAssessmentService.createClassAssessment(mockInput, userId)).rejects.toThrow(
         'Class not found or does not belong to this unit'
       );
     });

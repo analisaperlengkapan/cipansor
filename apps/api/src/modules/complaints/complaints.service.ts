@@ -15,9 +15,6 @@ export const complaintsService = {
     subject: string;
     description: string;
     location?: string;
-    buildingId?: string;
-    roomId?: string;
-    assetId?: string;
     isAnonymous?: boolean;
     attachments?: string[];
   }) => {
@@ -29,9 +26,6 @@ export const complaintsService = {
         subject: data.subject,
         description: data.description,
         location: data.location,
-        buildingId: data.buildingId,
-        roomId: data.roomId,
-        assetId: data.assetId,
         isAnonymous: data.isAnonymous || false,
         attachments: data.attachments || [],
         status: 'PENDING',
@@ -89,9 +83,6 @@ export const complaintsService = {
           assignedTo: {
             select: { id: true, name: true },
           },
-          building: { select: { id: true, name: true, code: true } },
-          room: { select: { id: true, name: true, code: true } },
-          asset: { select: { id: true, name: true, code: true } },
           _count: {
             select: { comments: true },
           },
@@ -134,9 +125,6 @@ export const complaintsService = {
       include: {
         user: { select: { id: true, name: true, role: true } },
         assignedTo: { select: { id: true, name: true } },
-        building: { select: { id: true, name: true, code: true } },
-        room: { select: { id: true, name: true, code: true } },
-        asset: { select: { id: true, name: true, code: true } },
         comments: {
           include: {
             user: { select: { id: true, name: true, role: true } },

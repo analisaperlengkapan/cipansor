@@ -81,8 +81,10 @@ export default function NewClassPage() {
     }
   };
 
-  // Academic years are global (no unit relation in the schema) — offer all
-  const filteredAcademicYears = academicYears;
+  // Filter academic years by selected unit
+  const filteredAcademicYears = selectedUnitId
+    ? academicYears?.filter((ay) => ay.unitId === selectedUnitId)
+    : academicYears;
 
   // Filter teachers by selected unit
   const filteredTeachers = selectedUnitId

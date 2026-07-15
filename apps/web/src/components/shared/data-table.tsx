@@ -119,20 +119,7 @@ export function DataTable<TData, TValue>({
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
                   className={cn(onRowClick && "cursor-pointer")}
-                  onClick={(e) => {
-                    // Row navigation must not swallow clicks meant for
-                    // interactive children (action menus, buttons, links) —
-                    // otherwise opening a row menu races the row navigation.
-                    const target = e.target as HTMLElement;
-                    if (
-                      target.closest(
-                        "button, a, input, [role='menu'], [role='menuitem'], [role='checkbox']",
-                      )
-                    ) {
-                      return;
-                    }
-                    onRowClick?.(row.original);
-                  }}
+                  onClick={() => onRowClick?.(row.original)}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>

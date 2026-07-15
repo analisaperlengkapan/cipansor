@@ -539,24 +539,6 @@ router.get('/accreditation/standards', accreditationController.getStandards);
 
 /**
  * @swagger
- * /api/foundation/accreditation/readiness:
- *   get:
- *     summary: Get cross-unit accreditation readiness overview
- *     tags: [Foundation - Accreditation]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Readiness scores per unit across the 8 SNP standards
- */
-router.get(
-  '/accreditation/readiness',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
-  accreditationController.getReadinessOverview
-);
-
-/**
- * @swagger
  * /api/foundation/accreditation/units/{unitId}/status:
  *   get:
  *     summary: Get unit accreditation status and statistics

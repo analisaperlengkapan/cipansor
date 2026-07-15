@@ -163,12 +163,9 @@ test.describe("Student Lifecycle Integration", () => {
     await expect(page.getByText("Analisis Perkembangan Holistik").first()).toBeVisible({ timeout: 15000 });
     await expect(page.getByText("82.5").first()).toBeVisible();
 
-    // Check Boarding Tab. Radix tab triggers animate; on WebKit under CI
-    // load they never pass Playwright's "stable" gate within the timeout —
-    // force the click once visible.
+    // Check Boarding Tab
     const boardingTab = page.getByRole("tab", { name: /Asrama/i });
-    await boardingTab.waitFor({ state: "visible" });
-    await boardingTab.click({ force: true });
+    await boardingTab.click();
 
     await expect(page.getByText("Dinamika Sosial Kamar")).toBeVisible();
     await expect(page.getByText("88%")).toBeVisible();

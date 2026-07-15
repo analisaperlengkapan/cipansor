@@ -317,22 +317,6 @@ export default function TahfidzDetailPage() {
           </Card>
         </div>
 
-        {/* Rekaman E-Simaan */}
-        {record.audioUrl && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                Rekaman Setoran (E-Simaan)
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
-              <audio controls src={record.audioUrl} className="w-full" />
-            </CardContent>
-          </Card>
-        )}
-
         {/* Catatan */}
         {record.notes && (
           <Card>

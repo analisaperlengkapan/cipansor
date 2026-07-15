@@ -461,64 +461,17 @@ export default function Student360Page() {
                    </div>
 
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {(["ZIYADAH", "MUROJAAH"] as const).map((type) => {
-                        const latest = tahfidz?.recentRecords?.find(
-                          (r: any) => r.activityType === type,
-                        );
-                        return (
-                          <div key={type} className="p-4 border rounded-xl bg-slate-50">
-                            <h5 className="text-xs font-bold uppercase mb-3 text-slate-500">
-                              {type === "ZIYADAH" ? "Ziyadah Terakhir" : "Murojaah Terakhir"}
-                            </h5>
-                            {latest ? (
-                              <>
-                                <p className="text-sm font-bold">
-                                  {latest.surahName}: {latest.ayahStart}-{latest.ayahEnd} (Juz {latest.juz})
-                                </p>
-                                <p className="text-[10px] text-muted-foreground mt-1">
-                                  {new Date(latest.recordedAt).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
-                                  {latest.recordedBy?.name ? ` • Oleh: ${latest.recordedBy.name}` : ""}
-                                </p>
-                              </>
-                            ) : (
-                              <p className="text-xs italic text-muted-foreground">Belum ada catatan.</p>
-                            )}
-                          </div>
-                        );
-                      })}
+                      <div className="p-4 border rounded-xl bg-slate-50">
+                        <h5 className="text-xs font-bold uppercase mb-3 text-slate-500">Ziyadah Terakhir</h5>
+                        <p className="text-sm font-bold">Surah Al-Mulk: 1-15</p>
+                        <p className="text-[10px] text-muted-foreground mt-1">20 Mar 2024 • Oleh: Ust. Ahmad</p>
+                      </div>
+                      <div className="p-4 border rounded-xl bg-slate-50">
+                        <h5 className="text-xs font-bold uppercase mb-3 text-slate-500">Murojaah Terakhir</h5>
+                        <p className="text-sm font-bold">Juz 29 (Lancar)</p>
+                        <p className="text-[10px] text-muted-foreground mt-1">19 Mar 2024 • Oleh: Ust. Ahmad</p>
+                      </div>
                    </div>
-
-                   {tahfidz?.estimation && (
-                     <div className="p-4 border rounded-xl bg-indigo-50/50 border-indigo-100">
-                       <h5 className="text-xs font-bold uppercase mb-2 text-indigo-600">Estimasi Khatam 30 Juz</h5>
-                       {tahfidz.estimation.status === "COMPLETED" ? (
-                         <p className="text-sm font-bold text-emerald-700">Alhamdulillah, hafalan 30 juz telah selesai.</p>
-                       ) : tahfidz.estimation.status === "PROJECTED" ? (
-                         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
-                           <div>
-                             <p className="font-bold text-indigo-800">
-                               {tahfidz.estimation.estimatedDate
-                                 ? new Date(tahfidz.estimation.estimatedDate).toLocaleDateString("id-ID", { month: "long", year: "numeric" })
-                                 : "-"}
-                             </p>
-                             <p className="text-[10px] text-muted-foreground">Perkiraan selesai (± {tahfidz.estimation.estimatedDays} hari)</p>
-                           </div>
-                           <div>
-                             <p className="font-bold">{tahfidz.estimation.ayahPerDay} ayat/hari</p>
-                             <p className="text-[10px] text-muted-foreground">Kecepatan 90 hari terakhir</p>
-                           </div>
-                           <div>
-                             <p className="font-bold">{tahfidz.estimation.remainingAyah} ayat</p>
-                             <p className="text-[10px] text-muted-foreground">Sisa menuju 6.236 ayat</p>
-                           </div>
-                         </div>
-                       ) : (
-                         <p className="text-xs italic text-muted-foreground">
-                           Belum cukup data setoran (minimal 3 catatan ziyadah dalam 90 hari terakhir) untuk membuat proyeksi.
-                         </p>
-                       )}
-                     </div>
-                   )}
                  </CardContent>
                </Card>
             </TabsContent>

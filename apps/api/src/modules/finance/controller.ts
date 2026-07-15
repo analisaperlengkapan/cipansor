@@ -9,8 +9,6 @@ import {
   queryInvoiceSchema,
   createPaymentSchema,
   queryPaymentSchema,
-  submitPaymentProofSchema,
-  verifyPaymentSchema,
 } from './schema';
 import { Errors } from '../../middleware/error';
 
@@ -178,81 +176,6 @@ export async function createPayment(req: Request, res: Response, next: NextFunct
       message: 'Payment recorded successfully',
       data: payment,
     });
-  } catch (error) {
-    next(error);
-  }
-}
-
-export async function submitPaymentProof(req: Request, res: Response, next: NextFunction) {
-  try {
-    const { id } = (req.params as any);
-    const data = submitPaymentProofSchema.parse(req.body);
-    const currentUser = {
-      sub: req.user!.sub,
-      role: req.user!.role,
-      unitId: req.user!.unitId,
-    };
-    const payment = await financeService.submitPaymentProof(
-      { invoiceId: id, ...data },
-      currentUser
-    );
-    res.status(201).json({
-      success: true,
-      message: 'Payment proof submitted, awaiting verification',
-      data: payment,
-    });
-  } catch (error) {
-    next(error);
-  }
-}
-
-export async function getPendingVerifications(req: Request, res: Response, next: NextFunction) {
-  try {
-    const currentUser = {
-      sub: req.user!.sub,
-      role: req.user!.role,
-      unitId: req.user!.unitId,
-    };
-    const { page, limit, status } = (req.query as any);
-    const result = await financeService.getPendingVerifications(currentUser, {
-      page: page ? Number(page) : undefined,
-      limit: limit ? Number(limit) : undefined,
-      status,
-    });
-    res.json({ success: true, ...result });
-  } catch (error) {
-    next(error);
-  }
-}
-
-export async function verifyPayment(req: Request, res: Response, next: NextFunction) {
-  try {
-    const { id } = (req.params as any);
-    const data = verifyPaymentSchema.parse(req.body);
-    const currentUser = {
-      sub: req.user!.sub,
-      role: req.user!.role,
-      unitId: req.user!.unitId,
-    };
-    // Final approval is reserved for unit admins / super admins; the TU
-    // step is open to staff as well.
-    if (
-      data.action === 'FINAL_APPROVE' &&
-      !['SUPER_ADMIN', 'UNIT_ADMIN'].includes(currentUser.role)
-    ) {
-      res.status(403).json({
-        success: false,
-        error: { code: 'FORBIDDEN', message: 'Final approval requires an admin role' },
-      });
-      return;
-    }
-    const payment = await financeService.verifyPayment(
-      id,
-      data.action,
-      currentUser,
-      data.rejectionReason
-    );
-    res.json({ success: true, data: payment });
   } catch (error) {
     next(error);
   }

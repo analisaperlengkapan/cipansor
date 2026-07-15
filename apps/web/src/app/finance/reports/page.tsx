@@ -1,17 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { formatCurrency } from "@/lib/utils";
-import { Loader2, Download, ArrowRight, Save } from "lucide-react";
+import { Loader2, Download, ArrowRight } from "lucide-react";
 import Link from "next/link";
-import { toast } from "sonner";
 import {
   Select,
   SelectContent,
@@ -76,53 +74,6 @@ const useBudgetRealization = (unitId: string, academicYearId: string) => {
   });
 };
 
-// ISAK 35 — Laporan Aktivitas
-const useStatementOfActivities = (
-  unitId: string,
-  startDate: string,
-  endDate: string,
-) => {
-  return useQuery({
-    queryKey: ["statement-of-activities", unitId, startDate, endDate],
-    queryFn: async () => {
-      const res = await api.get(
-        "/finance/accounting/reports/statement-of-activities",
-        { params: { unitId, startDate, endDate } },
-      );
-      return res.data.data;
-    },
-    enabled: !!unitId && !!startDate && !!endDate,
-  });
-};
-
-// PSAK 109 — Laporan Sumber dan Penyaluran Dana ZISWAF
-const useZiswafReport = (unitId: string, startDate: string, endDate: string) => {
-  return useQuery({
-    queryKey: ["ziswaf-report", unitId, startDate, endDate],
-    queryFn: async () => {
-      const res = await api.get("/finance/accounting/reports/ziswaf", {
-        params: { unitId, startDate, endDate },
-      });
-      return res.data.data;
-    },
-    enabled: !!unitId && !!startDate && !!endDate,
-  });
-};
-
-// CALK — catatan atas laporan keuangan
-const useCalkData = (unitId: string) => {
-  return useQuery({
-    queryKey: ["calk-data", unitId],
-    queryFn: async () => {
-      const res = await api.get("/finance/accounting/reports/calk", {
-        params: { unitId },
-      });
-      return res.data.data;
-    },
-    enabled: !!unitId,
-  });
-};
-
 const useAcademicYears = () => {
   return useQuery({
     queryKey: ["academic-years"],
@@ -173,43 +124,6 @@ export default function FinanceReportsPage() {
   );
   const { data: realization, isLoading: realizationLoading } =
     useBudgetRealization(unitId, academicYearId);
-  const { data: activities, isLoading: activitiesLoading } =
-    useStatementOfActivities(unitId, startDate, endDate);
-  const { data: ziswaf, isLoading: ziswafLoading } = useZiswafReport(
-    unitId,
-    startDate,
-    endDate,
-  );
-  const { data: calkData, isLoading: calkLoading } = useCalkData(unitId);
-
-  const [calkNote, setCalkNote] = useState("");
-  const queryClient = useQueryClient();
-
-  useEffect(() => {
-    if (calkData?.manualNotes?.[0]?.content) {
-      setCalkNote(calkData.manualNotes[0].content);
-    } else if (calkData?.template) {
-      setCalkNote(calkData.template);
-    } else {
-      setCalkNote("");
-    }
-  }, [calkData]);
-
-  const saveCalkMutation = useMutation({
-    mutationFn: async () => {
-      await api.post("/finance/accounting/reports/notes", {
-        unitId,
-        reportType: "CALK",
-        sectionKey: "umum",
-        content: calkNote,
-      });
-    },
-    onSuccess: () => {
-      toast.success("Catatan CALK tersimpan");
-      queryClient.invalidateQueries({ queryKey: ["calk-data", unitId] });
-    },
-    onError: () => toast.error("Gagal menyimpan catatan CALK"),
-  });
 
   return (
     <div className="space-y-6 p-6">
@@ -297,9 +211,6 @@ export default function FinanceReportsPage() {
             Laba Rugi (Income Statement)
           </TabsTrigger>
           <TabsTrigger value="realisasi">Realisasi Anggaran</TabsTrigger>
-          <TabsTrigger value="aktivitas">Aktivitas (ISAK 35)</TabsTrigger>
-          <TabsTrigger value="ziswaf">ZISWAF (PSAK 109)</TabsTrigger>
-          <TabsTrigger value="calk">CALK</TabsTrigger>
         </TabsList>
 
         <TabsContent value="realisasi" className="space-y-4">
@@ -574,231 +485,6 @@ export default function FinanceReportsPage() {
               ) : (
                 <div className="text-center py-8">
                   Pilih Unit untuk melihat laporan.
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Laporan Aktivitas (ISAK 35) */}
-        <TabsContent value="aktivitas" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Laporan Aktivitas</CardTitle>
-              <CardDescription>
-                Standar ISAK 35 untuk entitas nonlaba — penghasilan dan beban
-                dipisah menjadi tanpa pembatasan dan dengan pembatasan.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {activitiesLoading ? (
-                <Loader2 className="animate-spin" />
-              ) : activities ? (
-                <div className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="p-4 bg-green-50 rounded-lg border border-green-100">
-                      <div className="text-sm text-green-600">
-                        Total Penghasilan
-                      </div>
-                      <div className="text-2xl font-bold text-green-700">
-                        {formatCurrency(activities.revenues.total)}
-                      </div>
-                    </div>
-                    <div className="p-4 bg-red-50 rounded-lg border border-red-100">
-                      <div className="text-sm text-red-600">Total Beban</div>
-                      <div className="text-2xl font-bold text-red-700">
-                        {formatCurrency(activities.expenses.total)}
-                      </div>
-                    </div>
-                    <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
-                      <div className="text-sm text-blue-600">
-                        Perubahan Aset Neto
-                      </div>
-                      <div className="text-2xl font-bold text-blue-700">
-                        {formatCurrency(activities.changeInNetAssets.total)}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="border rounded-md">
-                    <table className="w-full text-sm">
-                      <thead className="bg-muted/50">
-                        <tr>
-                          <th className="p-2 text-left">Komponen</th>
-                          <th className="p-2 text-right">Tanpa Pembatasan</th>
-                          <th className="p-2 text-right">Dengan Pembatasan</th>
-                          <th className="p-2 text-right">Total</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr className="border-b">
-                          <td className="p-2">Penghasilan</td>
-                          <td className="p-2 text-right">
-                            {formatCurrency(
-                              activities.revenues.unrestricted.total,
-                            )}
-                          </td>
-                          <td className="p-2 text-right">
-                            {formatCurrency(
-                              activities.revenues.restricted.total,
-                            )}
-                          </td>
-                          <td className="p-2 text-right font-medium">
-                            {formatCurrency(activities.revenues.total)}
-                          </td>
-                        </tr>
-                        <tr className="border-b">
-                          <td className="p-2">Beban</td>
-                          <td className="p-2 text-right">
-                            {formatCurrency(
-                              activities.expenses.unrestricted.total,
-                            )}
-                          </td>
-                          <td className="p-2 text-right">
-                            {formatCurrency(
-                              activities.expenses.restricted.total,
-                            )}
-                          </td>
-                          <td className="p-2 text-right font-medium">
-                            {formatCurrency(activities.expenses.total)}
-                          </td>
-                        </tr>
-                        <tr className="border-b bg-muted/30 font-semibold">
-                          <td className="p-2">Perubahan Aset Neto</td>
-                          <td className="p-2 text-right">
-                            {formatCurrency(
-                              activities.changeInNetAssets.unrestricted,
-                            )}
-                          </td>
-                          <td className="p-2 text-right">
-                            {formatCurrency(
-                              activities.changeInNetAssets.restricted,
-                            )}
-                          </td>
-                          <td className="p-2 text-right">
-                            {formatCurrency(activities.changeInNetAssets.total)}
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="p-4 rounded-lg border">
-                      <div className="text-sm text-muted-foreground">
-                        Aset Neto Awal Periode
-                      </div>
-                      <div className="text-xl font-bold">
-                        {formatCurrency(activities.netAssets.beginning)}
-                      </div>
-                    </div>
-                    <div className="p-4 rounded-lg border">
-                      <div className="text-sm text-muted-foreground">
-                        Aset Neto Akhir Periode
-                      </div>
-                      <div className="text-xl font-bold">
-                        {formatCurrency(activities.netAssets.ending)}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  Pilih Unit untuk melihat laporan.
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* ZISWAF (PSAK 109) */}
-        <TabsContent value="ziswaf" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Laporan Sumber dan Penyaluran Dana ZISWAF</CardTitle>
-              <CardDescription>
-                Standar PSAK 109 — penerimaan dan penyaluran per jenis dana
-                berdasarkan penandaan akun.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {ziswafLoading ? (
-                <Loader2 className="animate-spin" />
-              ) : ziswaf ? (
-                <div className="border rounded-md">
-                  <table className="w-full text-sm">
-                    <thead className="bg-muted/50">
-                      <tr>
-                        <th className="p-2 text-left">Jenis Dana</th>
-                        <th className="p-2 text-right">Penerimaan</th>
-                        <th className="p-2 text-right">Penyaluran</th>
-                        <th className="p-2 text-right">Perubahan Bersih</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {ziswaf.map((fund: any) => (
-                        <tr key={fund.type} className="border-b">
-                          <td className="p-2 font-medium">
-                            {fund.type.replace(/_/g, "/")}
-                          </td>
-                          <td className="p-2 text-right">
-                            {formatCurrency(fund.receipts)}
-                          </td>
-                          <td className="p-2 text-right">
-                            {formatCurrency(fund.distributions)}
-                          </td>
-                          <td className="p-2 text-right">
-                            {formatCurrency(fund.netChange)}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  Pilih Unit untuk melihat laporan.
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* CALK Editor */}
-        <TabsContent value="calk" className="space-y-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>Catatan Atas Laporan Keuangan (CALK)</CardTitle>
-                <CardDescription>
-                  Narasi kebijakan akuntansi dan penjelasan pos-pos laporan.
-                </CardDescription>
-              </div>
-              <Button
-                onClick={() => saveCalkMutation.mutate()}
-                disabled={!unitId || saveCalkMutation.isPending}
-              >
-                {saveCalkMutation.isPending ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Save className="mr-2 h-4 w-4" />
-                )}
-                Simpan
-              </Button>
-            </CardHeader>
-            <CardContent>
-              {calkLoading ? (
-                <Loader2 className="animate-spin" />
-              ) : unitId ? (
-                <Textarea
-                  value={calkNote}
-                  onChange={(e) => setCalkNote(e.target.value)}
-                  placeholder="Tulis catatan atas laporan keuangan di sini…"
-                  className="min-h-[320px] font-mono text-sm"
-                />
-              ) : (
-                <div className="text-center py-8">
-                  Pilih Unit untuk menyunting CALK.
                 </div>
               )}
             </CardContent>

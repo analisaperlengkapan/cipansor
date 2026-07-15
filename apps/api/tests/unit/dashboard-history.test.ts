@@ -139,7 +139,7 @@ describe('Dashboard Metrics History', () => {
         status: vi.fn().mockReturnThis(),
       } as unknown as Response;
 
-      await getDashboardMetrics(req, res, (() => {}) as any);
+      await getDashboardMetrics(req, res);
 
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -177,7 +177,7 @@ describe('Dashboard Metrics History', () => {
         status: vi.fn().mockReturnThis(),
       } as unknown as Response;
 
-      await getDashboardMetrics(req, res, (() => {}) as any);
+      await getDashboardMetrics(req, res);
 
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({

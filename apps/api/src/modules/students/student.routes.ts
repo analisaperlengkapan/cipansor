@@ -287,35 +287,6 @@ router.get(
 
 /**
  * @swagger
- * /api/students/{id}/complete-profile:
- *   get:
- *     summary: Get complete student profile (Student 360 view)
- *     description: Aggregated academic/attendance/behavior summaries with enrollments and parents. Counseling and medical details are intentionally excluded — use their dedicated permission-guarded endpoints.
- *     tags: [Students]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
- *     responses:
- *       200:
- *         description: Holistic student profile summary
- *       404:
- *         $ref: '#/components/responses/NotFound'
- */
-router.get(
-  '/:id/complete-profile',
-  hasPermission(PERMISSIONS.STUDENT_VIEW),
-  validateParams(studentIdParamSchema),
-  controller.getCompleteProfile
-);
-
-/**
- * @swagger
  * /api/students:
  *   post:
  *     summary: Create student (Admin only)

@@ -138,7 +138,7 @@ interface Student {
 }
 
 // API functions
-const API_BASE = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api`;
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
 
 async function fetchPricing(params?: Record<string, string>) {
   const query = new URLSearchParams(params).toString();

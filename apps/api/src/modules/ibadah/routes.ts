@@ -357,58 +357,6 @@ router.get('/leaderboard', authenticate, async (req, res, next) => {
 });
 
 // ======================
-// ACHIEVEMENTS (GAMIFICATION)
-// ======================
-
-/**
- * @swagger
- * /api/ibadah/achievements/me:
- *   get:
- *     summary: Get the logged-in student's ibadah achievements (points, streak, level, badges)
- *     tags: [Ibadah]
- *     security:
- *       - bearerAuth: []
- */
-router.get('/achievements/me', authenticate, async (req, res, next) => {
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const userId = (req as any).user?.sub as string;
-    const result = await service.getMyAchievements(userId);
-    if (!result) {
-      return res
-        .status(404)
-        .json(ApiResponse.error('No student profile linked to this account'));
-    }
-    res.json(ApiResponse.success(result));
-  } catch (error) {
-    next(error);
-  }
-});
-
-/**
- * @swagger
- * /api/ibadah/achievements/{studentId}:
- *   get:
- *     summary: Get a student's ibadah achievements (staff/teacher view)
- *     tags: [Ibadah]
- *     security:
- *       - bearerAuth: []
- */
-router.get(
-  '/achievements/:studentId',
-  authenticate,
-  isTeacherOrAbove,
-  async (req, res, next) => {
-    try {
-      const result = await service.getStudentAchievements((req.params as any).studentId);
-      res.json(ApiResponse.success(result));
-    } catch (error) {
-      next(error);
-    }
-  }
-);
-
-// ======================
 // STATISTICS
 // ======================
 

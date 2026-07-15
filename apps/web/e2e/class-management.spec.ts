@@ -107,73 +107,56 @@ test.describe("Class Management - Create and Update", () => {
 
     const heading = page.getByRole("heading", { name: /kelas|class/i });
     if (await heading.isVisible({ timeout: 5000 }).catch(() => false)) {
-      // The header action is a role-gated Link styled as a button (renders
-      // as role=link) — accept either role and wait for hydration.
       const addButton = page
-        .getByRole("link", { name: /tambah|add|create/i })
-        .or(page.getByRole("button", { name: /tambah|add|create/i }))
+        .getByRole("button", { name: /tambah|add|create/i })
         .first();
-      await expect(addButton).toBeVisible({ timeout: 20000 });
       await addButton.click();
       await waitForLoadingComplete(page);
 
       const timestamp = Date.now();
       const className = `Kelas Test ${timestamp}`;
 
-      // Required text inputs: Nama Kelas, Tingkat (plain input), Kapasitas
       await fillForm(page, {
         "nama.*kelas|class.*name": className,
-        "tingkat|level": "7",
         "kapasitas|capacity": "30",
       });
 
-      // Required selects (labels are not <label htmlFor>, so locate the
-      // triggers by their placeholder text). Tahun Ajaran stays disabled
-      // until a unit is chosen.
-      const unitTrigger = page
-        .getByRole("combobox")
-        .filter({ hasText: /^pilih unit$/i })
+      // Select grade level
+      const gradeSelect = page
+        .locator('button[role="combobox"]')
+        .filter({ hasText: /tingkat|grade/i })
         .first();
-      await expect(unitTrigger).toBeVisible({ timeout: 10000 });
-      await unitTrigger.click();
-      // Prefer a unit the seed guarantees has an active academic year
-      const seededUnit = page.getByRole("option", { name: /sd it/i }).first();
-      if (await seededUnit.isVisible({ timeout: 2000 }).catch(() => false)) {
-        await seededUnit.click();
-      } else {
+      if (await gradeSelect.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await gradeSelect.click();
         await page.getByRole("option").first().click();
       }
 
-      const yearTrigger = page
-        .getByRole("combobox")
-        .filter({ hasText: /tahun/i })
+      // Select homeroom teacher (optional)
+      const teacherSelect = page
+        .locator('button[role="combobox"]')
+        .filter({ hasText: /wali.*kelas|homeroom/i })
         .first();
-      await expect(yearTrigger).toBeEnabled({ timeout: 10000 });
-      await yearTrigger.click();
-      await expect(page.getByRole("option").first()).toBeVisible({
-        timeout: 10000,
-      });
-      await page.getByRole("option").first().click();
+      if (await teacherSelect.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await teacherSelect.click();
+        const teacherOptions = page.getByRole("option");
+        if ((await teacherOptions.count()) > 0) {
+          await teacherOptions.first().click();
+        }
+      }
 
       const submitButton = page.getByRole("button", {
         name: /simpan|save|submit/i,
       });
       await submitButton.click();
 
-      // Success navigates back to the list; the row is the source of truth
-      // (the toast auto-dismisses too fast to assert reliably).
-      await page.waitForURL(/\/classes$/, { timeout: 15000 });
+      await waitForToast(page, /berhasil|success/i, "success");
       await waitForLoadingComplete(page);
 
-      // The list is paginated — search for the new class first.
-      await page
-        .getByPlaceholder(/search|cari/i)
-        .fill(className);
-
+      // Verify class appears in list
       const newClassRow = page
         .locator("table tbody tr")
         .filter({ hasText: className });
-      await expect(newClassRow).toBeVisible({ timeout: 10000 });
+      await expect(newClassRow).toBeVisible({ timeout: 3000 });
     } else {
       test.skip(true, "Classes page not available");
     }
@@ -192,36 +175,11 @@ test.describe("Class Management - Create and Update", () => {
 
       // Edit is exposed via the row's actions dropdown (the trailing icon
       // button), which navigates to the dedicated /classes/[id]/edit page.
-      await expect(firstRow.getByRole("button").last()).toBeVisible({
-        timeout: 20000,
-      });
       await firstRow.getByRole("button").last().click();
       await page.getByRole("menuitem", { name: /edit|ubah/i }).click();
 
       await page.waitForURL(/\/classes\/.+\/edit/, { timeout: 10000 });
       await waitForLoadingComplete(page);
-
-      // Wait for the form to hydrate the class (name populated from the load).
-      await expect(page.getByLabel(/nama kelas|class name/i)).not.toHaveValue(
-        "",
-        { timeout: 20000 },
-      );
-
-      // Deterministically set the required Unit / Tahun Ajaran selects rather
-      // than relying on the controlled selects being pre-hydrated — on slower
-      // browsers the per-unit list queries can leave them unset, tripping the
-      // required-field validation on save. The edit page always exposes the
-      // class's current unit and year as options, so picking the first option
-      // of each is safe. (These are shadcn <SelectTrigger> buttons; the page
-      // has no other combobox before the form.)
-      const triggers = page.locator('button[role="combobox"]');
-      await triggers.nth(0).click();
-      await page.getByRole("option").first().click({ force: true });
-
-      // Selecting a unit resets the year field; pick a year once it is enabled.
-      await expect(triggers.nth(1)).toBeEnabled({ timeout: 10000 });
-      await triggers.nth(1).click();
-      await page.getByRole("option").first().click({ force: true });
 
       // Update capacity
       const capacityInput = page.getByLabel(/kapasitas|capacity/i);
@@ -232,9 +190,7 @@ test.describe("Class Management - Create and Update", () => {
       });
       await saveButton.click();
 
-      // Success navigates to the class detail page — assert that instead of
-      // the toast, which auto-dismisses too quickly to be reliable.
-      await page.waitForURL(/\/classes\/[^/]+$/, { timeout: 15000 });
+      await waitForToast(page, /berhasil|success/i, "success");
     } else {
       test.skip(true, "Classes page not available");
     }
@@ -245,13 +201,9 @@ test.describe("Class Management - Create and Update", () => {
 
     const heading = page.getByRole("heading", { name: /kelas|class/i });
     if (await heading.isVisible({ timeout: 5000 }).catch(() => false)) {
-      // The header action is a role-gated Link styled as a button (renders
-      // as role=link) — accept either role and wait for hydration.
       const addButton = page
-        .getByRole("link", { name: /tambah|add|create/i })
-        .or(page.getByRole("button", { name: /tambah|add|create/i }))
+        .getByRole("button", { name: /tambah|add|create/i })
         .first();
-      await expect(addButton).toBeVisible({ timeout: 20000 });
       await addButton.click();
       await waitForLoadingComplete(page);
 

@@ -112,7 +112,7 @@ test.describe("Tahfidz Transcript", () => {
     // Login flow
     await page.goto("/login");
     await page.getByLabel(/email/i).fill("superadmin@cipansor.id");
-    await page.getByLabel(/password/i).fill("SuperAdmin123!");
+    await page.getByLabel(/password|kata sandi/i).fill("SuperAdmin123!");
     await page.getByRole("button", { name: /sign in|masuk|login/i }).click();
     await page.waitForURL("**/dashboard");
   });

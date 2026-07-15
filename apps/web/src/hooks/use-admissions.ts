@@ -91,6 +91,40 @@ export function useAdmissionPeriod(id: string) {
   });
 }
 
+export interface TrackedRegistrant {
+  id: string;
+  registrationNo: string;
+  fullName: string;
+  status: RegistrationStatus;
+  testScore: string | number | null;
+  interviewScore: string | number | null;
+  tahfidzScore: string | number | null;
+  acceptedAt: string | null;
+  enrolledAt: string | null;
+  createdAt: string;
+  admissionPeriod?: { name: string; unit?: { name: string } };
+  documents: { id: string; name: string; isVerified: boolean }[];
+}
+
+/**
+ * Public PPDB tracker (GET /admissions/public/track). Requires both the
+ * registration number and birth date; the backend rejects partial matches.
+ */
+export function useTrackRegistrant(registrationNo: string, birthDate: string) {
+  return useQuery({
+    queryKey: ["track-registrant", registrationNo, birthDate],
+    queryFn: async () => {
+      const response = await api.get<{ data: TrackedRegistrant }>(
+        "/admissions/public/track",
+        { params: { registrationNo, birthDate } },
+      );
+      return response.data.data;
+    },
+    enabled: !!registrationNo && !!birthDate,
+    retry: false,
+  });
+}
+
 // --- Admission Waves ---
 export function useAdmissionWaves(params?: any) {
   return useQuery({

@@ -11,6 +11,12 @@ import {
   queryMedicationUsageSchema,
   createGrowthRecordSchema,
   queryGrowthRecordSchema,
+  createPatientSchema,
+  queryPatientSchema,
+  createClinicAppointmentSchema,
+  queryClinicAppointmentSchema,
+  createPrescriptionSchema,
+  queryPrescriptionSchema,
 } from './schema';
 import { Errors } from '../../middleware/error';
 import {
@@ -209,6 +215,88 @@ export async function getHealthStats(req: Request, res: Response, next: NextFunc
     const unitId = (req.params as any).unitId;
     const stats = await service.getHealthStats(unitId);
     res.json({ success: true, data: stats });
+  } catch (error) {
+    next(error);
+  }
+}
+
+// ==================== CLINIC (POLIKLINIK) ====================
+
+export async function createPatient(req: Request, res: Response, next: NextFunction) {
+  try {
+    const data = createPatientSchema.parse(req.body);
+    const patient = await service.createPatient(data);
+    res.status(201).json({ success: true, data: patient });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getPatients(req: Request, res: Response, next: NextFunction) {
+  try {
+    const query = queryPatientSchema.parse(req.query as any);
+    const result = await service.getPatients(query);
+    res.json({ success: true, ...result });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function createClinicAppointment(req: Request, res: Response, next: NextFunction) {
+  try {
+    const data = createClinicAppointmentSchema.parse(req.body);
+    const appointment = await service.createClinicAppointment({
+      ...data,
+      userId: req.user!.sub,
+    });
+    res.status(201).json({ success: true, data: appointment });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getClinicAppointments(req: Request, res: Response, next: NextFunction) {
+  try {
+    const query = queryClinicAppointmentSchema.parse(req.query as any);
+    const result = await service.getClinicAppointments(query);
+    res.json({ success: true, ...result });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function createPrescription(req: Request, res: Response, next: NextFunction) {
+  try {
+    const data = createPrescriptionSchema.parse(req.body);
+    // The prescribing doctor is always the authenticated user — never
+    // taken from the request body.
+    const prescription = await service.createPrescription({
+      ...data,
+      doctorId: req.user!.sub,
+    });
+    res.status(201).json({ success: true, data: prescription });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getPrescriptions(req: Request, res: Response, next: NextFunction) {
+  try {
+    const query = queryPrescriptionSchema.parse(req.query as any);
+    const result = await service.getPrescriptions(query);
+    res.json({ success: true, ...result });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function fulfillPrescription(req: Request, res: Response, next: NextFunction) {
+  try {
+    const prescription = await service.fulfillPrescription(
+      (req.params as any).id,
+      req.user!.sub
+    );
+    res.json({ success: true, data: prescription });
   } catch (error) {
     next(error);
   }

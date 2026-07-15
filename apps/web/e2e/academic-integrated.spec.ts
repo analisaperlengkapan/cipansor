@@ -138,8 +138,10 @@ test.describe('Academic Integrated Flow', () => {
 
      await page.goto('/hr/talenta');
 
-     // Click Succession Planning tab
-     await page.click('text=Succession Planning');
+     // Click Succession Planning tab (Radix trigger — force past the
+     // WebKit "not stable" animation gate).
+     await page.locator('text=Succession Planning').first().waitFor({ state: 'visible' });
+     await page.locator('text=Succession Planning').first().click({ force: true });
 
      // Verify the search UI is visible
      await expect(page.locator('text=AI-Driven Succession Recommendations')).toBeVisible();

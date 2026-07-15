@@ -540,3 +540,40 @@ export function useDeleteAlumniAchievement() {
     },
   });
 }
+
+// ==================== SI-TAKA (PLACEMENTS) ====================
+
+export interface AlumniPlacement {
+  id: string;
+  institution: string;
+  degree: string;
+  field: string;
+  startYear: number;
+  admissionPath?: string | null;
+  scholarshipName?: string | null;
+  isInternational: boolean;
+  alumni: { id: string; name: string; graduationYear: number };
+}
+
+export interface PlacementStats {
+  total: number;
+  internationalCount: number;
+  scholarshipCount: number;
+  byPath: { path: string; count: number }[];
+  topInstitutions: { institution: string; count: number }[];
+}
+
+/** Si-Taka placement data (GET /alumni/stats/placements). */
+export function useAlumniPlacements(unitId?: string) {
+  return useQuery({
+    queryKey: ["alumni", "placements", unitId],
+    queryFn: async () => {
+      const res = await api.get<{
+        data: { placements: AlumniPlacement[]; stats: PlacementStats };
+      }>("/alumni/stats/placements", {
+        params: unitId ? { unitId } : undefined,
+      });
+      return res.data.data;
+    },
+  });
+}

@@ -11,6 +11,30 @@ export interface DashboardStats {
     startDate: string;
     endDate: string;
   };
+  /** Present only for admin/staff roles (see dashboard controller gating). */
+  admissions?: AdmissionsStats;
+  /** Present only for admin/staff/teacher roles. */
+  cbt?: CBTStats;
+}
+
+export interface AdmissionsStats {
+  totalRegistrants: number;
+  byStatus: Record<string, number>;
+  activePeriods: number;
+  recentRegistrants: {
+    id: string;
+    fullName: string;
+    status: string;
+    createdAt: string;
+  }[];
+}
+
+export interface CBTStats {
+  totalExams: number;
+  ongoingExams: number;
+  upcomingExams: number;
+  totalAttempts: number;
+  avgScore: number;
 }
 
 export interface AttendanceStats {

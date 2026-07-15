@@ -34,7 +34,7 @@ export const dailyReportService = {
   // LIST & READ
   // ============================================
 
-  async findAll(query: ListDailyReportsQuery, context: AuthContext) {
+  async findAll(query: Partial<ListDailyReportsQuery>, context: AuthContext) {
     const {
       page = 1,
       limit = 20,

@@ -12,6 +12,16 @@ export async function getStandards(req: Request, res: Response, next: NextFuncti
   }
 }
 
+// Cross-unit accreditation readiness overview
+export async function getReadinessOverview(_req: Request, res: Response, next: NextFunction) {
+  try {
+    const overview = await accreditationService.getAccreditationReadinessOverview();
+    return res.json(ApiResponse.success(overview, 'Readiness overview fetched successfully'));
+  } catch (error) {
+    next(error);
+  }
+}
+
 // Get unit accreditation status and statistics
 export async function getUnitStatus(req: Request, res: Response, next: NextFunction) {
   try {

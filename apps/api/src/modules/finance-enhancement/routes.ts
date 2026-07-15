@@ -9,6 +9,7 @@ import {
   createJournalEntrySchema,
   createScholarshipSchema,
   assignScholarshipSchema,
+  createScholarshipCriterionSchema,
   createPaymentComponentSchema,
 } from './schema';
 import { z } from 'zod';
@@ -118,6 +119,20 @@ router.post(
   financeAdmin(),
   validate(assignScholarshipSchema),
   financeEnhancementController.assignScholarship
+);
+
+// Scholarship scoring (criteria + automated assessment from PR #313)
+router.get('/scholarships/:id/criteria', financeEnhancementController.getScholarshipCriteria);
+router.post(
+  '/scholarships/:id/criteria',
+  financeAdmin(),
+  validate(createScholarshipCriterionSchema),
+  financeEnhancementController.createScholarshipCriterion
+);
+router.post(
+  '/scholarship-recipients/:id/assess',
+  financeAdmin(),
+  financeEnhancementController.assessScholarshipRecipient
 );
 
 // ==================== PAYMENT COMPONENTS ====================

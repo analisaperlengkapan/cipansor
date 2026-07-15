@@ -44,7 +44,7 @@ describe('Marketing Service', () => {
       const mockCampaign = { id: 'camp-1', ...dto, createdById: 'user-1' };
       vi.mocked(prisma.marketingCampaign.create).mockResolvedValue(mockCampaign as any);
 
-      const result = await marketingService.createCampaign(dto, 'user-1');
+      const result = await marketingService.createCampaign(dto as any, 'user-1');
 
       expect(prisma.marketingCampaign.create).toHaveBeenCalledWith({
         data: {
@@ -70,7 +70,7 @@ describe('Marketing Service', () => {
       const mockInteraction = { id: 'int-1', ...dto, recordedById: 'user-1' };
       vi.mocked(prisma.marketingInteraction.create).mockResolvedValue(mockInteraction as any);
 
-      const result = await marketingService.logInteraction(dto, 'user-1');
+      const result = await marketingService.logInteraction(dto as any, 'user-1');
 
       expect(prisma.marketingInteraction.create).toHaveBeenCalledWith({
         data: {

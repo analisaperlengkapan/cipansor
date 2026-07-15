@@ -23,6 +23,19 @@ export const listSanadRecords = asyncHandler(async (req: Request, res: Response)
 });
 
 // ============================================
+// GET SANAD TREE (Silsilah)
+// ============================================
+
+export const getSanadTree = asyncHandler(async (_req: Request, res: Response) => {
+  const tree = await SanadCertificateService.getSanadTree();
+
+  res.json({
+    success: true,
+    data: tree,
+  });
+});
+
+// ============================================
 // GET SANAD BY ID
 // ============================================
 

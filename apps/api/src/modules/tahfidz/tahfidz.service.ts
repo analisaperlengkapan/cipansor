@@ -12,6 +12,96 @@ import type {
   TahfidzRecord,
 } from '@cipansor/shared';
 
+/** Total ayah in the Qur'an (Kufi count), the tahfidz completion target. */
+const TOTAL_QURAN_AYAH = 6236;
+
+/** How far back to look when measuring a student's memorization pace. */
+export const COMPLETION_PACE_WINDOW_DAYS = 90;
+
+export interface TahfidzCompletionEstimate {
+  status: 'COMPLETED' | 'INSUFFICIENT_DATA' | 'PROJECTED';
+  totalAyahMemorized: number;
+  remainingAyah: number;
+  /** Observed ayah/day over the pace window; null unless PROJECTED. */
+  ayahPerDay: number | null;
+  estimatedDays: number | null;
+  estimatedDate: Date | null;
+  recordsInWindow: number;
+}
+
+/**
+ * Estimate when a student will finish all 30 juz, extrapolating the pace
+ * actually observed in the recent window (total ayah setoran divided by the
+ * days elapsed since the first record in the window). Requires at least 3
+ * ziyadah records in the window — fewer yields INSUFFICIENT_DATA rather than
+ * a made-up projection.
+ */
+export function calculateCompletionEstimate(
+  totalAyahMemorized: number,
+  windowRecords: { recordedAt: Date; totalAyah: number }[],
+  now: Date = new Date()
+): TahfidzCompletionEstimate {
+  const remainingAyah = Math.max(0, TOTAL_QURAN_AYAH - totalAyahMemorized);
+
+  if (remainingAyah === 0) {
+    return {
+      status: 'COMPLETED',
+      totalAyahMemorized,
+      remainingAyah: 0,
+      ayahPerDay: null,
+      estimatedDays: 0,
+      estimatedDate: now,
+      recordsInWindow: windowRecords.length,
+    };
+  }
+
+  if (windowRecords.length < 3) {
+    return {
+      status: 'INSUFFICIENT_DATA',
+      totalAyahMemorized,
+      remainingAyah,
+      ayahPerDay: null,
+      estimatedDays: null,
+      estimatedDate: null,
+      recordsInWindow: windowRecords.length,
+    };
+  }
+
+  const firstRecordedAt = windowRecords[0].recordedAt;
+  const daysSpanned = Math.max(
+    1,
+    Math.ceil((now.getTime() - firstRecordedAt.getTime()) / (1000 * 60 * 60 * 24))
+  );
+  const ayahInWindow = windowRecords.reduce((sum, r) => sum + r.totalAyah, 0);
+  const ayahPerDay = ayahInWindow / daysSpanned;
+
+  if (ayahPerDay <= 0) {
+    return {
+      status: 'INSUFFICIENT_DATA',
+      totalAyahMemorized,
+      remainingAyah,
+      ayahPerDay: null,
+      estimatedDays: null,
+      estimatedDate: null,
+      recordsInWindow: windowRecords.length,
+    };
+  }
+
+  const estimatedDays = Math.ceil(remainingAyah / ayahPerDay);
+  const estimatedDate = new Date(now);
+  estimatedDate.setDate(estimatedDate.getDate() + estimatedDays);
+
+  return {
+    status: 'PROJECTED',
+    totalAyahMemorized,
+    remainingAyah,
+    ayahPerDay: Math.round(ayahPerDay * 10) / 10,
+    estimatedDays,
+    estimatedDate,
+    recordsInWindow: windowRecords.length,
+  };
+}
+
 export class TahfidzService {
   /**
    * Get tahfidz records with pagination
@@ -137,6 +227,7 @@ export class TahfidzService {
         totalAyah,
         score: input.score,
         notes: input.notes,
+        audioUrl: input.audioUrl,
         recordedAt: input.recordedAt || new Date(),
         recordedById,
       },
@@ -264,6 +355,9 @@ export class TahfidzService {
       throw Errors.notFound('Student');
     }
 
+    const paceWindowStart = new Date();
+    paceWindowStart.setDate(paceWindowStart.getDate() - COMPLETION_PACE_WINDOW_DAYS);
+
     const [
       activityCounts,
       totalRecords,
@@ -272,6 +366,7 @@ export class TahfidzService {
       surahCovered,
       avgScore,
       recentRecords,
+      paceRecords,
     ] = await Promise.all([
       // 1. Get activity type counts
       prisma.tahfidzRecord.groupBy({
@@ -315,6 +410,16 @@ export class TahfidzService {
           recordedBy: { select: { id: true, name: true } },
         },
       }),
+      // 8. Ziyadah records inside the pace window, for completion estimation
+      prisma.tahfidzRecord.findMany({
+        where: {
+          studentId,
+          activityType: 'ZIYADAH',
+          recordedAt: { gte: paceWindowStart },
+        },
+        select: { recordedAt: true, totalAyah: true },
+        orderBy: { recordedAt: 'asc' },
+      }),
     ]);
 
     return {
@@ -334,6 +439,10 @@ export class TahfidzService {
       juzCovered: juzCovered.map((j) => j.juz).sort((a, b) => a - b),
       surahCovered: surahCovered.sort((a, b) => a.surahNumber - b.surahNumber),
       recentRecords,
+      estimation: calculateCompletionEstimate(
+        totalAyahZiyadah._sum?.totalAyah || 0,
+        paceRecords
+      ),
     };
   }
 

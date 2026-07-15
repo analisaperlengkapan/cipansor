@@ -23,7 +23,20 @@ const storage = multer.diskStorage({
 
 // Configure file filter
 const fileFilter = (_req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
-  const allowedMimes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf', 'video/mp4'];
+  const allowedMimes = [
+    'image/jpeg',
+    'image/png',
+    'image/webp',
+    'application/pdf',
+    'video/mp4',
+    // Audio formats for E-Simaan recitation uploads (MediaRecorder produces
+    // audio/webm on Chromium/Firefox and audio/mp4 on WebKit).
+    'audio/webm',
+    'audio/ogg',
+    'audio/mpeg',
+    'audio/mp4',
+    'audio/wav',
+  ];
 
   if (allowedMimes.includes(file.mimetype)) {
     cb(null, true);

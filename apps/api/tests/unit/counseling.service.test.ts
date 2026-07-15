@@ -47,14 +47,14 @@ describe('CounselingService', () => {
     vi.clearAllMocks();
   });
 
-  const mockUser = {
+  const mockUser: any = {
     sub: 'user-1',
     role: UserRole.TEACHER,
     unitId: 'unit-1',
   };
 
   describe('createSession', () => {
-    const input = {
+    const input: any = {
       studentId: 'student-1',
       category: CounselingCategory.ACADEMIC,
       priority: CounselingPriority.MEDIUM,
@@ -128,7 +128,7 @@ describe('CounselingService', () => {
   });
 
   describe('addNote', () => {
-    const noteInput = {
+    const noteInput: any = {
       content: 'Test Note',
       noteType: 'general',
     };

@@ -56,7 +56,7 @@ describe('Library Service', () => {
 
       vi.mocked(prisma.book.create).mockResolvedValue(expectedBook as any);
 
-      const result = await service.createBook(input);
+      const result = await service.createBook(input as any);
 
       expect(prisma.book.create).toHaveBeenCalledWith({
         data: {

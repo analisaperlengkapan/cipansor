@@ -13,6 +13,7 @@ import {
   ViolationSummary,
   DashboardSummary,
   GRCStats,
+  ParentEngagementStats,
 } from "@cipansor/shared";
 
 export type {
@@ -28,6 +29,7 @@ export type {
   ViolationSummary,
   DashboardSummary,
   GRCStats,
+  ParentEngagementStats,
 };
 
 // Constants
@@ -253,6 +255,41 @@ export function useBenchmarkComparison() {
     queryFn: async () => {
       const res = await api.get<{ data: BenchmarkComparison }>(
         "/analytics/benchmark/compare",
+      );
+      return res.data.data;
+    },
+  });
+}
+
+/** Parent engagement analytics (GET /analytics/parent-engagement, admin only). */
+export function useParentEngagement(unitId?: string) {
+  return useQuery({
+    queryKey: ["analytics", "parent-engagement", unitId],
+    queryFn: async () => {
+      const res = await api.get<{ data: ParentEngagementStats }>(
+        "/analytics/parent-engagement",
+        { params: unitId ? { unitId } : undefined },
+      );
+      return res.data.data;
+    },
+  });
+}
+
+export interface RiskMatrixData {
+  likelihoodLabels: string[];
+  impactLabels: string[];
+  inherent: number[][];
+  residual: number[][];
+}
+
+/** Inherent vs residual 5x5 risk matrix (GET /analytics/grc/risk-matrix). */
+export function useRiskMatrix(unitId?: string) {
+  return useQuery({
+    queryKey: ["analytics", "grc-risk-matrix", unitId],
+    queryFn: async () => {
+      const res = await api.get<{ data: RiskMatrixData }>(
+        "/analytics/grc/risk-matrix",
+        { params: unitId ? { unitId } : undefined },
       );
       return res.data.data;
     },

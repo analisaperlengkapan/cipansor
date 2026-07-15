@@ -19,9 +19,14 @@ router.use(
 router.get('/', perencanaanController.listPlans);
 router.post('/', perencanaanController.createPlan);
 router.get('/:id', perencanaanController.getPlan);
+router.get('/:id/realization-trend', perencanaanController.getPlanRealizationTrend);
 router.put('/:id', perencanaanController.updatePlan);
 router.post('/:id/approve', perencanaanController.approvePlan);
 router.delete('/:id', perencanaanController.deletePlan);
+
+// Collaboration (draft co-editing)
+router.post('/:id/collaborators', perencanaanController.addCollaborator);
+router.delete('/:id/collaborators/:userId', perencanaanController.removeCollaborator);
 
 // Objectives
 router.post('/objectives', perencanaanController.createObjective);

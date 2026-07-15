@@ -99,7 +99,7 @@ describe('StudentService', () => {
       expect(result.summary.violationPoints).toBe(15);
       expect(result.summary.unpaidInvoices.count).toBe(2);
       expect(result.summary.unpaidInvoices.total).toBe(150000);
-      expect(result.summary.boarding.roomName).toBe('Room 101');
+      expect(result.summary.boarding!.roomName).toBe('Room 101');
     });
 
     it('should throw error if student not found', async () => {

@@ -7,7 +7,9 @@ export interface AcademicYear {
   startDate: string;
   endDate: string;
   isActive: boolean;
-  unitId: string;
+  /** Not in the backend model — academic years are global (kept optional for
+   * backward compatibility with older callers). */
+  unitId?: string;
   unit?: {
     id: string;
     name: string;

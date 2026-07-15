@@ -132,10 +132,30 @@ export default function ComplaintDetailPage() {
                   <p className="whitespace-pre-wrap">{complaint.description}</p>
                 </div>
 
-                {complaint.location && (
-                  <div className="text-sm bg-muted p-3 rounded-md">
-                    <span className="font-semibold">Lokasi:</span>{" "}
-                    {complaint.location}
+                {(complaint.location ||
+                  complaint.building ||
+                  complaint.room ||
+                  complaint.asset) && (
+                  <div className="text-sm bg-muted p-3 rounded-md space-y-1">
+                    {complaint.location && (
+                      <div>
+                        <span className="font-semibold">Lokasi:</span>{" "}
+                        {complaint.location}
+                      </div>
+                    )}
+                    {complaint.building && (
+                      <div>
+                        <span className="font-semibold">Gedung:</span>{" "}
+                        {complaint.building.name}
+                        {complaint.room ? ` — ${complaint.room.name}` : ""}
+                      </div>
+                    )}
+                    {complaint.asset && (
+                      <div>
+                        <span className="font-semibold">Aset:</span>{" "}
+                        {complaint.asset.name} ({complaint.asset.code})
+                      </div>
+                    )}
                   </div>
                 )}
               </CardContent>

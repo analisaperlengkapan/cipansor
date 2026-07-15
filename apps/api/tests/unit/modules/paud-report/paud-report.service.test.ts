@@ -121,7 +121,7 @@ describe('PAUDReportService', () => {
       );
 
       // Execute
-      const result = await PAUDReportService.generateReportFromAssessments(input, context as any);
+      const result = await PAUDReportService.generateReportFromAssessments(input as any, context as any);
 
       // Verify
       expect(prisma.growthRecord.findFirst).toHaveBeenCalled();

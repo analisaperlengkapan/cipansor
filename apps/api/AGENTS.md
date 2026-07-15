@@ -56,8 +56,15 @@ Mount new modules in `src/app.ts`.
 
 ## Testing
 
+- **Mandatory (golden rule #7):** every new/changed **service or controller**
+  ships with vitest tests in the module's `tests/`, in the **same commit**. New
+  business logic and every branch of an endpoint get a covering test; a bug fix
+  gets a regression test that fails before the fix. Barrels, type-only files, and
+  pure Zod `schema.ts` are exempt (they're exercised via the service/route).
 - `vitest run`. Unit tests mock Prisma (see existing `tests/unit/**` patterns).
 - Test setup: `tests/setup.ts`. Keep services pure enough to unit-test.
+- Cover the RBAC/privilege-escalation guards (e.g. `auth.service.ts`) explicitly —
+  both the allowed and the forbidden path.
 
 ## Build
 

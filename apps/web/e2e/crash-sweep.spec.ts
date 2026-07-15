@@ -51,7 +51,13 @@ test("crash sweep: no module landing page hits the error boundary", async ({
   const broken: string[] = [];
   for (const route of ROUTES) {
     const pageErrors: string[] = [];
-    const onErr = (e: Error) => pageErrors.push(e.message);
+    const onErr = (e: Error) => {
+      // WebKit surfaces aborted RSC/Link prefetches as page errors
+      // ("Fetch API cannot load ... due to access control checks",
+      // "Load failed") — navigation noise, not app crashes.
+      if (/access control checks|load failed/i.test(e.message)) return;
+      pageErrors.push(e.message);
+    };
     page.on("pageerror", onErr);
     await page.goto(route, { waitUntil: "domcontentloaded" }).catch(() => {});
     await page.waitForTimeout(1500);

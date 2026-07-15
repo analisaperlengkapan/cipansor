@@ -5,6 +5,8 @@ import "./globals.css";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { SkipLink, OfflineBanner } from "@/components/shared";
+import { ServiceWorkerRegister } from "@/components/pwa/service-worker-register";
+import { InstallPrompt } from "@/components/pwa/install-prompt";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,8 +35,14 @@ export const metadata: Metadata = {
   robots: "index, follow",
   icons: {
     icon: "/favicon.ico",
+    apple: "/icons/icon-180.png",
   },
   manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Cipansor",
+  },
   openGraph: {
     type: "website",
     locale: "id_ID",
@@ -48,6 +56,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   themeColor: "#16a34a",
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -65,6 +74,8 @@ export default function RootLayout({
           <OfflineBanner />
           <main id="main-content">{children}</main>
           <Toaster />
+          <ServiceWorkerRegister />
+          <InstallPrompt />
         </QueryProvider>
       </body>
     </html>

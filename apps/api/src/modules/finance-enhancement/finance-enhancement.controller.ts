@@ -228,6 +228,43 @@ export class FinanceEnhancementController {
     }
   }
 
+  // ==================== SCHOLARSHIP SCORING (Si-Beasiswa) ====================
+
+  async createScholarshipCriterion(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { prisma } = await import('@/lib/prisma');
+      const criterion = await prisma.scholarshipCriterion.create({
+        data: { ...req.body, scholarshipId: (req.params as any).id },
+      });
+      res.status(201).json({ success: true, data: criterion });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getScholarshipCriteria(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { prisma } = await import('@/lib/prisma');
+      const criteria = await prisma.scholarshipCriterion.findMany({
+        where: { scholarshipId: (req.params as any).id },
+        orderBy: { createdAt: 'asc' },
+      });
+      res.json({ success: true, data: criteria });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async assessScholarshipRecipient(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { scholarshipScoringService } = await import('../scholarship/scoring.service');
+      const result = await scholarshipScoringService.assessRecipient((req.params as any).id);
+      res.json({ success: true, data: result });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   // ==================== PAYMENT COMPONENTS ====================
 
   async getPaymentComponents(req: Request, res: Response, next: NextFunction) {

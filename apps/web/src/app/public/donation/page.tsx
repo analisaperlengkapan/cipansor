@@ -170,7 +170,10 @@ export default function PublicDonationPage() {
       <header className="bg-emerald-600 text-white">
         <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+            <Link
+              href="/"
+              className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+            >
               <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
                 <Heart className="h-6 w-6" />
               </div>
@@ -178,7 +181,7 @@ export default function PublicDonationPage() {
                 <h1 className="text-xl font-bold">CIPANSOR</h1>
                 <p className="text-sm text-emerald-100">Portal Donasi Online</p>
               </div>
-            </div>
+            </Link>
             <Link href="/">
               <Button variant="ghost" className="text-white hover:bg-white/20">
                 Kembali ke Beranda

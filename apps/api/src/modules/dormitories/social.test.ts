@@ -44,8 +44,7 @@ describe('Dormitory Service - Social Analytics', () => {
 
     vi.mocked(prisma.room.findUnique).mockResolvedValue(mockRoom as any);
 
-    const result = await getRoomSocialAnalytics('room-1');
-
+    const result = (await getRoomSocialAnalytics('room-1'))!;
     // avg violation = (0 + 10) / 2 = 5
     // base harmony = 100 * exp(-5 / 50) = 100 * exp(-0.1) approx 90.48
     // top memorizers = 1 (Student 1)

@@ -12,8 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
   SelectContent,
@@ -22,90 +21,53 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Award,
-  FileText,
+  Shield,
+  Building2,
   CheckCircle2,
   AlertCircle,
-  Clock,
-  Building2,
-  Upload,
-  Download,
-  ExternalLink,
-  Shield,
+  ClipboardList,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
+import api from "@/lib/api";
 
-// Accreditation standards
-const ACCREDITATION_STANDARDS = [
-  { id: "kurikulum", name: "Standar Kurikulum", weight: 15 },
-  { id: "proses", name: "Standar Proses", weight: 15 },
-  { id: "penilaian", name: "Standar Penilaian", weight: 10 },
-  { id: "ptk", name: "Standar PTK", weight: 15 },
-  { id: "sarana", name: "Standar Sarana Prasarana", weight: 15 },
-  { id: "pengelolaan", name: "Standar Pengelolaan", weight: 10 },
-  { id: "pembiayaan", name: "Standar Pembiayaan", weight: 10 },
-  { id: "lulusan", name: "Standar Kompetensi Lulusan", weight: 10 },
-];
+// Shapes returned by GET /foundation/accreditation/readiness
+interface ReadinessStandard {
+  standardCode: string;
+  standardName: string;
+  autoScore: number;
+  needsManualAssessment: boolean;
+}
 
-// Mock accreditation data per unit
-const mockAccreditationData = [
-  {
-    unitId: "pesantren",
-    unitName: "Pesantren Al-Hikmah",
-    currentGrade: "A",
-    score: 92,
-    validUntil: "2027-03-15",
-    status: "VALID",
-    standards: [
-      { id: "kurikulum", score: 95, status: "complete" },
-      { id: "proses", score: 90, status: "complete" },
-      { id: "penilaian", score: 88, status: "complete" },
-      { id: "ptk", score: 94, status: "complete" },
-      { id: "sarana", score: 91, status: "complete" },
-      { id: "pengelolaan", score: 93, status: "complete" },
-      { id: "pembiayaan", score: 89, status: "complete" },
-      { id: "lulusan", score: 96, status: "complete" },
-    ],
-  },
-  {
-    unitId: "sma",
-    unitName: "SMA Al-Quran",
-    currentGrade: "A",
-    score: 88,
-    validUntil: "2026-08-20",
-    status: "VALID",
-    standards: [
-      { id: "kurikulum", score: 90, status: "complete" },
-      { id: "proses", score: 85, status: "complete" },
-      { id: "penilaian", score: 88, status: "needs_update" },
-      { id: "ptk", score: 92, status: "complete" },
-      { id: "sarana", score: 86, status: "needs_update" },
-      { id: "pengelolaan", score: 89, status: "complete" },
-      { id: "pembiayaan", score: 87, status: "complete" },
-      { id: "lulusan", score: 90, status: "complete" },
-    ],
-  },
-  {
-    unitId: "smp",
-    unitName: "SMP IT Al-Hikmah",
-    currentGrade: "B",
-    score: 78,
-    validUntil: "2025-12-10",
-    status: "EXPIRING_SOON",
-    standards: [
-      { id: "kurikulum", score: 80, status: "needs_update" },
-      { id: "proses", score: 75, status: "needs_update" },
-      { id: "penilaian", score: 78, status: "needs_update" },
-      { id: "ptk", score: 82, status: "complete" },
-      { id: "sarana", score: 72, status: "needs_update" },
-      { id: "pengelolaan", score: 80, status: "complete" },
-      { id: "pembiayaan", score: 78, status: "complete" },
-      { id: "lulusan", score: 79, status: "needs_update" },
-    ],
-  },
-];
+interface UnitReadiness {
+  unitId: string;
+  unitName: string;
+  npsn: string | null;
+  currentGrade: string | null;
+  overallReadiness: number;
+  standards: ReadinessStandard[];
+  recommendedActions: string[];
+}
 
-const getGradeBadge = (grade: string) => {
+interface ReadinessOverview {
+  units: UnitReadiness[];
+  averageReadiness: number;
+}
+
+function useAccreditationReadiness() {
+  return useQuery({
+    queryKey: ["foundation", "accreditation-readiness"],
+    queryFn: async () => {
+      const response = await api.get<{ data: ReadinessOverview }>(
+        "/foundation/accreditation/readiness",
+      );
+      return response.data.data;
+    },
+  });
+}
+
+const getGradeBadge = (grade: string | null) => {
+  if (!grade) return <Badge variant="secondary">Belum Terakreditasi</Badge>;
   const colors: Record<string, string> = {
     A: "bg-green-500",
     B: "bg-blue-500",
@@ -115,31 +77,15 @@ const getGradeBadge = (grade: string) => {
   return <Badge className={colors[grade] || "bg-gray-500"}>{grade}</Badge>;
 };
 
-const getStatusBadge = (status: string) => {
-  switch (status) {
-    case "VALID":
-      return <Badge className="bg-green-500">Valid</Badge>;
-    case "EXPIRING_SOON":
-      return <Badge className="bg-amber-500">Segera Berakhir</Badge>;
-    case "EXPIRED":
-      return <Badge variant="destructive">Kadaluarsa</Badge>;
-    default:
-      return <Badge variant="secondary">{status}</Badge>;
-  }
-};
-
 export default function AccreditationReadinessPage() {
   const [selectedUnit, setSelectedUnit] = useState<string>("all");
+  const { data, isLoading } = useAccreditationReadiness();
 
-  const filteredData =
+  const units = data?.units ?? [];
+  const filteredUnits =
     selectedUnit === "all"
-      ? mockAccreditationData
-      : mockAccreditationData.filter((u) => u.unitId === selectedUnit);
-
-  const overallScore = Math.round(
-    mockAccreditationData.reduce((sum, u) => sum + u.score, 0) /
-      mockAccreditationData.length,
-  );
+      ? units
+      : units.filter((u) => u.unitId === selectedUnit);
 
   return (
     <MainLayout
@@ -148,180 +94,189 @@ export default function AccreditationReadinessPage() {
       <div className="space-y-6">
         <PageHeader
           title="Kesiapan Akreditasi"
-          description="Status dan kelengkapan dokumen akreditasi seluruh unit"
+          description="Skor kesiapan akreditasi 8 SNP per unit (dihitung dari data sertifikasi guru, keuangan, dan asesmen mandiri)"
           actions={
-            <div className="flex gap-2">
-              <Select value={selectedUnit} onValueChange={setSelectedUnit}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Semua Unit" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Semua Unit</SelectItem>
-                  {mockAccreditationData.map((u) => (
-                    <SelectItem key={u.unitId} value={u.unitId}>
-                      {u.unitName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button variant="outline">
-                <Download className="mr-2 h-4 w-4" />
-                Export Laporan
-              </Button>
-            </div>
+            <Select value={selectedUnit} onValueChange={setSelectedUnit}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Semua Unit" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Semua Unit</SelectItem>
+                {units.map((u) => (
+                  <SelectItem key={u.unitId} value={u.unitId}>
+                    {u.unitName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           }
         />
 
-        {/* Overall Summary */}
-        <div className="grid gap-4 md:grid-cols-4">
-          <Card className="md:col-span-2 bg-gradient-to-r from-primary/10 to-primary/5">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">
-                    Skor Rata-rata Yayasan
-                  </p>
-                  <p className="text-4xl font-bold text-primary">
-                    {overallScore}
-                  </p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Dari {mockAccreditationData.length} unit pendidikan
-                  </p>
-                </div>
-                <div className="p-4 bg-primary/20 rounded-full">
-                  <Shield className="h-12 w-12 text-primary" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
+        {isLoading || !data ? (
+          <div className="grid gap-4 md:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-28 rounded-xl" />
+            ))}
+          </div>
+        ) : units.length === 0 ? (
           <Card>
             <CardContent className="pt-6">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-green-100 rounded-lg">
-                  <CheckCircle2 className="h-6 w-6 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Akreditasi A</p>
-                  <p className="text-2xl font-bold">
-                    {
-                      mockAccreditationData.filter(
-                        (u) => u.currentGrade === "A",
-                      ).length
-                    }
-                  </p>
-                </div>
-              </div>
+              <p className="text-sm text-muted-foreground">
+                Belum ada unit pendidikan terdaftar.
+              </p>
             </CardContent>
           </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-amber-100 rounded-lg">
-                  <Clock className="h-6 w-6 text-amber-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">
-                    Perlu Diperbaharui
-                  </p>
-                  <p className="text-2xl font-bold">
-                    {
-                      mockAccreditationData.filter(
-                        (u) => u.status === "EXPIRING_SOON",
-                      ).length
-                    }
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Unit Cards */}
-        <div className="grid gap-6">
-          {filteredData.map((unit) => (
-            <Card key={unit.unitId}>
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="p-3 bg-muted rounded-lg">
-                      <Building2 className="h-6 w-6" />
-                    </div>
+        ) : (
+          <>
+            {/* Overall Summary */}
+            <div className="grid gap-4 md:grid-cols-4">
+              <Card className="md:col-span-2 bg-gradient-to-r from-primary/10 to-primary/5">
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
                     <div>
-                      <CardTitle className="flex items-center gap-2">
-                        {unit.unitName}
-                        {getGradeBadge(unit.currentGrade)}
-                      </CardTitle>
-                      <CardDescription>
-                        Valid sampai:{" "}
-                        {new Date(unit.validUntil).toLocaleDateString("id-ID")}
-                      </CardDescription>
+                      <p className="text-sm text-muted-foreground">
+                        Kesiapan Rata-rata Yayasan
+                      </p>
+                      <p className="text-4xl font-bold text-primary">
+                        {data.averageReadiness}
+                      </p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Dari {units.length} unit pendidikan
+                      </p>
+                    </div>
+                    <div className="p-4 bg-primary/20 rounded-full">
+                      <Shield className="h-12 w-12 text-primary" />
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    {getStatusBadge(unit.status)}
-                    <div className="text-right">
-                      <p className="text-3xl font-bold">{unit.score}</p>
-                      <p className="text-xs text-muted-foreground">
-                        Skor Total
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-green-100 rounded-lg">
+                      <CheckCircle2 className="h-6 w-6 text-green-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">
+                        Akreditasi A
+                      </p>
+                      <p className="text-2xl font-bold">
+                        {units.filter((u) => u.currentGrade === "A").length}
                       </p>
                     </div>
                   </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-                  {unit.standards.map((std) => {
-                    const stdInfo = ACCREDITATION_STANDARDS.find(
-                      (s) => s.id === std.id,
-                    );
-                    return (
-                      <div
-                        key={std.id}
-                        className={cn(
-                          "p-3 border rounded-lg",
-                          std.status === "complete"
-                            ? "border-green-200 bg-green-50/50"
-                            : "border-amber-200 bg-amber-50/50",
-                        )}
-                      >
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium">
-                            {stdInfo?.name}
-                          </span>
-                          {std.status === "complete" ? (
-                            <CheckCircle2 className="h-4 w-4 text-green-600" />
-                          ) : (
-                            <AlertCircle className="h-4 w-4 text-amber-600" />
-                          )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-amber-100 rounded-lg">
+                      <ClipboardList className="h-6 w-6 text-amber-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">
+                        Perlu Asesmen Manual
+                      </p>
+                      <p className="text-2xl font-bold">
+                        {
+                          units.filter((u) =>
+                            u.standards.some((s) => s.needsManualAssessment),
+                          ).length
+                        }
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Unit Cards */}
+            <div className="grid gap-6">
+              {filteredUnits.map((unit) => (
+                <Card key={unit.unitId}>
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="p-3 bg-muted rounded-lg">
+                          <Building2 className="h-6 w-6" />
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Progress value={std.score} className="h-2 flex-1" />
-                          <span className="text-sm font-bold">{std.score}</span>
+                        <div>
+                          <CardTitle className="flex items-center gap-2">
+                            {unit.unitName}
+                            {getGradeBadge(unit.currentGrade)}
+                          </CardTitle>
+                          <CardDescription>
+                            {unit.npsn ? `NPSN: ${unit.npsn}` : "NPSN belum terdaftar"}
+                          </CardDescription>
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
-                <div className="flex gap-2 mt-4">
-                  <Button variant="outline" size="sm">
-                    <FileText className="mr-2 h-4 w-4" />
-                    Lihat Dokumen
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    <Upload className="mr-2 h-4 w-4" />
-                    Upload Dokumen
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    <ExternalLink className="mr-2 h-4 w-4" />
-                    Link SISPENA
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                      <div className="text-right">
+                        <p className="text-3xl font-bold">
+                          {unit.overallReadiness}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Skor Kesiapan
+                        </p>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+                      {unit.standards.map((std) => (
+                        <div
+                          key={std.standardCode}
+                          className={cn(
+                            "p-3 border rounded-lg",
+                            !std.needsManualAssessment
+                              ? "border-green-200 bg-green-50/50"
+                              : "border-amber-200 bg-amber-50/50",
+                          )}
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <span
+                              className="text-sm font-medium truncate"
+                              title={std.standardName}
+                            >
+                              {std.standardName}
+                            </span>
+                            {!std.needsManualAssessment ? (
+                              <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0" />
+                            ) : (
+                              <AlertCircle className="h-4 w-4 text-amber-600 shrink-0" />
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Progress
+                              value={std.autoScore}
+                              className="h-2 flex-1"
+                            />
+                            <span className="text-sm font-bold">
+                              {std.autoScore}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    {unit.recommendedActions.length > 0 && (
+                      <div className="mt-4 p-3 border border-amber-200 bg-amber-50/50 rounded-lg">
+                        <p className="text-sm font-medium text-amber-800 mb-1">
+                          Rekomendasi:
+                        </p>
+                        <ul className="text-sm text-amber-700 list-disc pl-5 space-y-0.5">
+                          {unit.recommendedActions.map((action) => (
+                            <li key={action}>{action}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </>
+        )}
       </div>
     </MainLayout>
   );

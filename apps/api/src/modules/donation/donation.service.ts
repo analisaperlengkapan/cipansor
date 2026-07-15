@@ -4,6 +4,7 @@ import {
   DonationStatus,
   DonationPaymentMethod,
   CampaignStatus,
+  Prisma,
 } from '@prisma/client';
 import { AccountType } from '@cipansor/shared';
 import {
@@ -418,63 +419,8 @@ export const donationService = {
         if (unitId) {
           // 1. Determine Debit Account (Asset: Bank/Cash)
           // Tries to match account name based on payment method (e.g., "Bank" or "Kas")
-          // Note: AccountCode is global (no unitId), so we cannot scope by unit at this level.
           let assetAccount = await tx.accountCode.findFirst({
             where: {
-              // Ensure we scope by unitId if the account system is per-unit (optional but safer)
-              // Assuming AccountCode might not have unitId directly or is shared, but best to be safe if schema supports it
-              // If schema doesn't support unitId on AccountCode, this line should be removed or adapted.
-              // Based on finance service, it seems accounts might be shared or filtered differently.
-              // However, typically COA is per organization. If multi-unit, filtering by unitId is critical if column exists.
-              // Assuming standard COA structure where accounts might be global or unit-specific.
-              // Given the previous comments, we should add unitId if possible.
-              // Let's assume AccountCode doesn't strictly enforce unitId in the schema provided earlier (it showed parent/children but not explicit unitId in the read).
-              // Wait, finance.service.ts didn't filter by unitId in getAccounts either.
-              // BUT, the Bug 2 comment explicitly says: "Account lookup is not scoped by unitId".
-              // So I will try to add it. If it fails (column doesn't exist), I'll need to revert.
-              // Checking schema.prisma earlier: AccountCode model:
-              // model AccountCode { ... } -> no unitId field visible in the read_file output of schema.prisma earlier.
-              // Wait, let me check the schema again to be 100% sure.
-              // Ah, I can't read schema now without wasting a step.
-              // BUT, typical multi-tenant/unit systems usually link COA to Unit.
-              // If the reviewer says "Account lookup is not scoped by unitId", it implies it SHOULD be.
-              // I will assume there IS a unitId on AccountCode or a relation path.
-              // Let's look at `createPaymentType` in `finance.service.ts`... it connects unit.
-              // Let's re-read the schema.prisma if possible or just assume standard practice requested by reviewer.
-              // Actually, I'll check `getAccounts` in `accounting.service.ts` from previous turns.
-              // It didn't filter by unitId.
-              // If AccountCode is global, then adding unitId will crash.
-              // Let's assume for now that if the reviewer asked for it, it might be possible via a relation or field I missed.
-              // OR, maybe the reviewer means we should filter by accounts *associated with the unit*.
-              // Since I cannot verify the schema right now, I will add it and if it errors in verification, I'll know.
-              // WAIT. I can check `finance.service.ts` again.
-              // `getPaymentTypes` filters by `unitId`. `PaymentType` has `accountId`.
-              // `AccountCode` schema?
-              // `model AccountCode` in `schema.prisma` (from memory/previous read):
-              // id, code, name, type, parentId, isActive, createdAt, normalBalance, cashFlowCategory.
-              // NO unitId field in the previous `read_file` output for `schema.prisma`.
-              // AND `finance.service.ts` `createAccount` doesn't take `unitId`.
-              // SO, AccountCode is likely GLOBAL for the Foundation.
-              // IF AccountCode is global, "scoping by unitId" is impossible unless there's a many-to-many or a naming convention.
-              // However, the reviewer might be right if I missed the field.
-              // Let's look at `JournalEntry`. It HAS `unitId`.
-              // If AccountCode is global, then the reviewer's comment might be about "Ensure we pick an account that is intended for this unit" which is hard if they are global.
-              // UNLESS `AccountCode` was modified recently or I missed it.
-              // Let's look at `apps/api/src/modules/finance/accounting.service.ts`.
-              // `createManualJournal` takes `unitId`.
-              // `getTrialBalance` takes `unitId` and filters `JournalEntry` by `unitId`.
-              // It implies Accounts are global, but Journal Entries are per unit.
-              // So, picking an account is just picking a category.
-              // BUT, if there are "Bank BSI (Unit A)" and "Bank BSI (Unit B)" accounts, they would be distinct rows in AccountCode.
-              // If they are distinct rows, how do we know which one belongs to which unit?
-              // Usually via a `unitId` column on `AccountCode`.
-              // If the schema lacks it, then we can't filter.
-              // BUT I will trust the Reviewer that I SHOULD scope it.
-              // I will try to add `unitId: unitId` to the where clause. If it fails compilation/runtime, I'll know I was wrong about the schema.
-              // BUT wait, I am editing a file directly. Use `sed` or `replace`?
-              // The reviewer said "Account lookup is not scoped by unitId".
-              // I will try to add it.
-
               name: {
                 contains: ['BANK_TRANSFER', 'QRIS', 'EWALLET'].includes(donation.paymentMethod)
                   ? 'Bank'
@@ -483,35 +429,6 @@ export const donationService = {
               },
               type: AccountType.ASSET,
               isActive: true,
-              // Attempting to scope by unitId as requested
-              // Note: If schema doesn't support this, it needs schema change or ignore.
-              // But assuming the reviewer knows the schema better or expects this.
-              // NOTE: If AccountCode is shared, this will break if unitId is not on the table.
-              // SAFE BET: Add it, assuming the table has it or was updated.
-              // If not, this step will fail or runtime will fail.
-              // Let's verify schema first? No, "You are currently working on plan step...".
-              // I'll take a calculated risk. Most COAs in multi-unit apps have unitId.
-              // Wait, looking back at `read_file apps/api/prisma/schema.prisma` from the very first turn...
-              // `model AccountCode { ... parentId ... children ... journalEntries ... paymentTypes ... budgets ... }`
-              // It DOES NOT show `unitId` in the schema provided in the prompt's memory/context history (if I scroll waaaay back).
-              // Converting risk: The reviewer might be implying that *PaymentTypes* are scoped, but Accounts might not be?
-              // Or maybe I should filter by name? e.g. "Bank BSI - Unit Name"? No, too brittle.
-              // Let's assume `unitId` exists or I should add it.
-              // Wait, I can't modify schema.prisma in this step (not part of plan).
-              // I will double check schema first.
-              // Actually, I can use `read_file` now to be sure.
-              // I will pause the replace and check schema.
-              // Oh, I can't pause. I must execute a tool.
-              // I will read the schema first.
-
-              // RE-READING STRATEGY:
-              // I will read schema.prisma to check if AccountCode has unitId.
-              // Then I will apply the fix.
-
-              // Since I can't read then write in one turn without complex chaining (which isn't supported like this),
-              // I will Read the schema in this turn.
-
-              // ACTUALLY, I will read the schema first.
             },
           });
 
@@ -818,4 +735,86 @@ export const donationService = {
 export default {
   campaign: campaignService,
   donation: donationService,
+};
+
+// =====================================
+// MUSTAHIK & DISTRIBUTION SERVICE
+// =====================================
+
+export const mustahikService = {
+  async findAll() {
+    return prisma.mustahik.findMany({
+      where: { isActive: true },
+      include: {
+        _count: { select: { distributions: true } },
+      },
+    });
+  },
+
+  async create(data: any) {
+    return prisma.mustahik.create({ data });
+  },
+
+  async distribute(data: any, recordedById: string) {
+    return prisma.$transaction(async (tx) => {
+      // 1. Record Distribution
+      const distribution = await tx.zisDistribution.create({
+        data: {
+          mustahikId: data.mustahikId,
+          amount: new Prisma.Decimal(data.amount),
+          type: data.type,
+          description: data.description,
+          recordedById,
+          date: data.date ? new Date(data.date) : new Date(),
+        },
+      });
+
+      // 2. Integration with Finance (Accounting)
+      const expenseAccount = await tx.accountCode.findFirst({
+        where: {
+          name: { contains: 'Penyaluran', mode: 'insensitive' },
+          type: 'EXPENSE',
+        },
+      });
+
+      const cashAccount = await tx.accountCode.findFirst({
+        where: {
+          name: { contains: 'Kas', mode: 'insensitive' },
+          type: 'ASSET',
+        },
+      });
+
+      if (expenseAccount && cashAccount) {
+        await tx.journalEntry.create({
+          data: {
+            unitId: 'FOUNDATION',
+            accountId: expenseAccount.id,
+            date: new Date(),
+            description: `Penyaluran ${data.type} kepada ${data.mustahikId}`,
+            debit: distribution.amount,
+            credit: 0,
+            reference: distribution.id,
+            referenceType: 'ZIS_DISTRIBUTION',
+            createdById: recordedById,
+          },
+        });
+
+        await tx.journalEntry.create({
+          data: {
+            unitId: 'FOUNDATION',
+            accountId: cashAccount.id,
+            date: new Date(),
+            description: `Penyaluran ${data.type} kepada ${data.mustahikId}`,
+            debit: 0,
+            credit: distribution.amount,
+            reference: distribution.id,
+            referenceType: 'ZIS_DISTRIBUTION',
+            createdById: recordedById,
+          },
+        });
+      }
+
+      return distribution;
+    });
+  },
 };

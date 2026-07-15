@@ -19,6 +19,14 @@ router.get(
   homeroomController.getMyClasses.bind(homeroomController)
 );
 
+// GET /homeroom/performance-overview - Cross-class wali kelas performance
+// (teacher evaluation data — admins only)
+router.get(
+  '/performance-overview',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  homeroomController.getPerformanceOverview.bind(homeroomController)
+);
+
 // ======================
 // CLASS ROUTES
 // ======================

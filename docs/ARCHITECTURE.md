@@ -16,7 +16,7 @@ packages/
 ```
 
 Tooling: **pnpm** workspaces + **Turborepo**. Package manager is pinned
-(`packageManager: pnpm@9.0.0`); use `corepack` rather than a global pnpm.
+(`packageManager: pnpm@11.13.0`); use `corepack` rather than a global pnpm.
 
 ## Backend (`apps/api`)
 

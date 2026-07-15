@@ -470,7 +470,6 @@ async function main() {
       description: 'Tata usaha SD IT',
     },
     { code: RoleCode.SDIT_BENDAHARA, name: 'Bendahara Unit SD IT', realm: Realm.SD_IT },
-    { code: RoleCode.SDIT_KOMITE, name: 'Komite Sekolah SD IT', realm: Realm.SD_IT },
     {
       code: RoleCode.SDIT_ORANG_TUA,
       name: 'Orang Tua SD IT',

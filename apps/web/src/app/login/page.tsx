@@ -6,9 +6,11 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAuthStore } from "@/stores/auth";
+import { useI18n } from "@/providers/i18n-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { LanguageSwitcher } from "@/components/layout/language-switcher";
 import {
   Card,
   CardContent,
@@ -38,88 +40,9 @@ const loginSchema = z.object({
 
 type LoginForm = z.infer<typeof loginSchema>;
 
-// Demo credentials for different roles organized by realm
-const demoCredentials = [
-  // Global
-  {
-    role: "Super Admin",
-    email: "superadmin@cipansor.id",
-    password: "SuperAdmin123!",
-    description: "Akses penuh seluruh sistem",
-    realm: "GLOBAL",
-    icon: ShieldCheck,
-    color: "bg-purple-600",
-  },
-  // Yayasan
-  {
-    role: "Ketua Yayasan",
-    email: "ketua@cipansor.id",
-    password: "Ketua123!",
-    description: "Ketua pengurus yayasan",
-    realm: "YAYASAN",
-    icon: Building2,
-    color: "bg-amber-500",
-  },
-  // SMP IT
-  {
-    role: "Admin SMP IT",
-    email: "admin@smpit.sch.id",
-    password: "Admin123!",
-    description: "Administrator SMP IT",
-    realm: "SMP_IT",
-    icon: Building2,
-    color: "bg-blue-500",
-  },
-  {
-    role: "Kepala SMP IT",
-    email: "kepala@smpit.sch.id",
-    password: "Kepala123!",
-    description: "Kepala Sekolah + Guru",
-    realm: "SMP_IT",
-    icon: GraduationCap,
-    color: "bg-blue-600",
-  },
-  {
-    role: "Guru SMP IT",
-    email: "ahmad@smpit.sch.id",
-    password: "Teacher123!",
-    description: "Guru SMP IT",
-    realm: "SMP_IT",
-    icon: GraduationCap,
-    color: "bg-green-500",
-  },
-  {
-    role: "Orang Tua SMP IT",
-    email: "parent1@smpit.sch.id",
-    password: "Parent123!",
-    description: "Orang tua siswa SMP IT",
-    realm: "SMP_IT",
-    icon: Users,
-    color: "bg-orange-500",
-  },
-  {
-    role: "Siswa SMP IT",
-    email: "student1@smpit.sch.id",
-    password: "Student123!",
-    description: "Siswa SMP IT",
-    realm: "SMP_IT",
-    icon: UserCircle,
-    color: "bg-cyan-500",
-  },
-  // SD IT
-  {
-    role: "Admin SD IT",
-    email: "admin@sdit.sch.id",
-    password: "Admin123!",
-    description: "Administrator SD IT",
-    realm: "SD_IT",
-    icon: Building2,
-    color: "bg-green-600",
-  },
-];
-
 export default function LoginPage() {
   const router = useRouter();
+  const { t } = useI18n();
   const {
     login,
     isLoading,
@@ -132,6 +55,86 @@ export default function LoginPage() {
   } = useAuthStore();
   const [showPassword, setShowPassword] = useState(false);
   const [selectedDemo, setSelectedDemo] = useState<string | null>(null);
+
+  // Demo credentials for different roles organized by realm
+  const demoCredentials = [
+    // Global
+    {
+      role: "Super Admin",
+      email: "superadmin@cipansor.id",
+      password: "SuperAdmin123!",
+      description: t("settings.profile.role", "Super Admin"),
+      realm: "GLOBAL",
+      icon: ShieldCheck,
+      color: "bg-purple-600",
+    },
+    // Yayasan
+    {
+      role: t("sidebar.boardMembers", "Ketua Yayasan"),
+      email: "ketua@cipansor.id",
+      password: "Ketua123!",
+      description: t("sidebar.foundation", "Ketua pengurus yayasan"),
+      realm: "YAYASAN",
+      icon: Building2,
+      color: "bg-amber-500",
+    },
+    // SMP IT
+    {
+      role: "Admin SMP IT",
+      email: "admin@smpit.sch.id",
+      password: "Admin123!",
+      description: "Administrator SMP IT",
+      realm: "SMP_IT",
+      icon: Building2,
+      color: "bg-blue-500",
+    },
+    {
+      role: "Kepala SMP IT",
+      email: "kepala@smpit.sch.id",
+      password: "Kepala123!",
+      description: "Kepala Sekolah + Guru",
+      realm: "SMP_IT",
+      icon: GraduationCap,
+      color: "bg-blue-600",
+    },
+    {
+      role: "Guru SMP IT",
+      email: "ahmad@smpit.sch.id",
+      password: "Teacher123!",
+      description: "Guru SMP IT",
+      realm: "SMP_IT",
+      icon: GraduationCap,
+      color: "bg-green-500",
+    },
+    {
+      role: "Orang Tua SMP IT",
+      email: "parent1@smpit.sch.id",
+      password: "Parent123!",
+      description: "Orang tua siswa SMP IT",
+      realm: "SMP_IT",
+      icon: Users,
+      color: "bg-orange-500",
+    },
+    {
+      role: "Siswa SMP IT",
+      email: "student1@smpit.sch.id",
+      password: "Student123!",
+      description: "Siswa SMP IT",
+      realm: "SMP_IT",
+      icon: UserCircle,
+      color: "bg-cyan-500",
+    },
+    // SD IT
+    {
+      role: "Admin SD IT",
+      email: "admin@sdit.sch.id",
+      password: "Admin123!",
+      description: "Administrator SD IT",
+      realm: "SD_IT",
+      icon: Building2,
+      color: "bg-green-600",
+    },
+  ];
 
   const {
     register,
@@ -146,12 +149,6 @@ export default function LoginPage() {
     try {
       clearError();
       await login(data);
-      // Logic handled in store, store updates state which triggers re-render if 2FA needed
-      // If success immediately (no 2FA), we push to dashboard
-      // We can't easily check the result of login action if it returns void
-      // But we can check store state.
-      // Actually `login` in store throws on error.
-      // If requiresTwoFactor is set, we just let the component re-render.
       const state = useAuthStore.getState();
       if (
         !state.requiresTwoFactor &&
@@ -237,7 +234,7 @@ export default function LoginPage() {
               error={error}
             />
             <Button variant="link" className="mt-4 w-full" onClick={resetAuth}>
-              Back to Login
+              {t("common.backToLogin")}
             </Button>
           </CardContent>
         </Card>
@@ -247,15 +244,19 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen bg-linear-to-br from-green-50 to-green-100 dark:from-gray-900 dark:to-gray-800">
+      {/* Floating Language Switcher in top right for easy access on Login page */}
+      <div className="absolute top-4 right-4 z-50">
+        <LanguageSwitcher />
+      </div>
+
       {/* Left side - Demo Credentials */}
       <div className="hidden lg:flex lg:w-1/2 flex-col justify-center p-8 xl:p-12">
         <div className="max-w-md mx-auto">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-            Demo Credentials
+            {t("login.demoCredentials")}
           </h2>
           <p className="text-gray-600 dark:text-gray-300 mb-6">
-            Click any role to try the demo. Each role has different access
-            levels.
+            {t("login.demoDescription")}
           </p>
 
           <div className="grid gap-3">
@@ -296,8 +297,7 @@ export default function LoginPage() {
 
           <div className="mt-6 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-700">
             <p className="text-sm text-amber-800 dark:text-amber-200">
-              <strong>Note:</strong> This is a demo environment. All data is
-              sample data and will be reset periodically.
+              <strong>{t("login.note").split(":")[0]}:</strong> {t("login.note").substring(t("login.note").indexOf(":") + 1)}
             </p>
           </div>
         </div>
@@ -310,9 +310,9 @@ export default function LoginPage() {
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary text-2xl font-bold text-primary-foreground shadow-lg">
               C
             </div>
-            <CardTitle className="text-2xl">Welcome to Cipansor</CardTitle>
+            <CardTitle className="text-2xl">{t("login.welcome")}</CardTitle>
             <CardDescription>
-              Yayasan Pesantren Cipansor Management System
+              {t("login.description")}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -324,7 +324,7 @@ export default function LoginPage() {
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t("login.email")}</Label>
                 <Input
                   id="email"
                   type="email"
@@ -339,7 +339,7 @@ export default function LoginPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">{t("login.password")}</Label>
                 <div className="relative">
                   <Input
                     id="password"
@@ -370,14 +370,14 @@ export default function LoginPage() {
 
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Sign In
+                {t("login.signIn")}
               </Button>
             </form>
 
             {/* Mobile Demo Credentials */}
             <div className="mt-6 border-t pt-4 lg:hidden">
               <p className="text-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                Quick Demo Login
+                {t("login.quickDemoLogin")}
               </p>
               <div className="grid grid-cols-2 gap-2">
                 {demoCredentials.slice(0, 4).map((cred) => {

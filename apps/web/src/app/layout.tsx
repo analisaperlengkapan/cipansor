@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 // Force Global HMR Rebuild
 import { QueryProvider } from "@/components/providers/query-provider";
+import { I18nProvider } from "@/providers/i18n-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { SkipLink, OfflineBanner } from "@/components/shared";
 import { ServiceWorkerRegister } from "@/components/pwa/service-worker-register";
@@ -70,12 +71,14 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <QueryProvider>
-          <SkipLink />
-          <OfflineBanner />
-          <main id="main-content">{children}</main>
-          <Toaster />
-          <ServiceWorkerRegister />
-          <InstallPrompt />
+          <I18nProvider>
+            <SkipLink />
+            <OfflineBanner />
+            <main id="main-content">{children}</main>
+            <Toaster />
+            <ServiceWorkerRegister />
+            <InstallPrompt />
+          </I18nProvider>
         </QueryProvider>
       </body>
     </html>

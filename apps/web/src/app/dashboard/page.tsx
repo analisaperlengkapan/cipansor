@@ -10,6 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useAuthStore } from "@/stores/auth";
+import { useI18n } from "@/providers/i18n-provider";
 import {
   useDashboardStats,
   useAttendanceStats,
@@ -38,7 +39,7 @@ import {
   Pill,
 } from "lucide-react";
 import { format } from "date-fns";
-import { id } from "date-fns/locale";
+import { id, enUS, arSA } from "date-fns/locale";
 import {
   AreaChart,
   Area,
@@ -60,9 +61,16 @@ import { CBTMonitoringWidget } from "@/components/dashboard/CBTMonitoringWidget"
 
 export default function DashboardPage() {
   const { user } = useAuthStore();
+  const { t, locale } = useI18n();
   const { data: stats, isLoading } = useDashboardStats();
   const { data: attendanceData } = useAttendanceStats();
   const { data: financeData } = useFinanceStats();
+
+  const dateFnsLocale = useMemo(() => {
+    if (locale === "ar") return arSA;
+    if (locale === "en") return enUS;
+    return id;
+  }, [locale]);
 
   // New hooks for enhanced dashboard
   const { data: tahfidzData, isLoading: tahfidzLoading } = useTahfidzStats({
@@ -81,7 +89,7 @@ export default function DashboardPage() {
     const allActivities = [
       ...(recentStudents?.data?.map((s) => ({
         id: s.id,
-        title: "Santri Baru",
+        title: t("sidebar.students", "Santri Baru"),
         description: `${s.name} bergabung di ${s.currentClass?.name || "sekolah"}`,
         time: s.createdAt,
         type: "student",
@@ -97,7 +105,7 @@ export default function DashboardPage() {
       })) || []),
       ...(violationData?.recentViolations?.map((v) => ({
         id: v.id,
-        title: "Pelanggaran",
+        title: t("sidebar.violations", "Pelanggaran"),
         description: `${v.studentName} - ${v.type} (${v.points} poin)`,
         time: v.date,
         type: "violation",
@@ -105,7 +113,7 @@ export default function DashboardPage() {
       })) || []),
       ...(violationData?.recentRewards?.map((r) => ({
         id: r.id,
-        title: "Penghargaan",
+        title: t("sidebar.rewards", "Penghargaan"),
         description: `${r.studentName} - ${r.type} (${r.points} poin)`,
         time: r.date,
         type: "reward",
@@ -113,7 +121,7 @@ export default function DashboardPage() {
       })) || []),
       ...(financeData?.recentPayments?.map((p) => ({
         id: p.id,
-        title: "Pembayaran",
+        title: t("sidebar.billing", "Pembayaran"),
         description: `${p.studentName} membayar Rp ${p.amount.toLocaleString("id-ID")}`,
         time: p.date,
         type: "finance",
@@ -121,7 +129,7 @@ export default function DashboardPage() {
       })) || []),
       ...(recentDonations?.map((d) => ({
         id: d.id,
-        title: "Donasi Masuk",
+        title: t("sidebar.donationZis", "Donasi Masuk"),
         description: `${d.donorName} - ${d.type} (Rp ${d.amount.toLocaleString("id-ID")})`,
         time: (d as any).donatedAt || d.createdAt,
         type: "donation",
@@ -136,6 +144,7 @@ export default function DashboardPage() {
     violationData,
     financeData,
     recentDonations,
+    t,
   ]);
 
   return (
@@ -144,16 +153,14 @@ export default function DashboardPage() {
         {/* Welcome Header */}
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
-            Selamat datang, {user?.name}!
+            {t("dashboard.welcome")}, {user?.name}!
           </h1>
           <p className="text-muted-foreground">
-            Berikut ringkasan {user?.unit?.name || "sistem"} hari ini.
+            {t("settings.appearance.compactDescription") ? `${t("common.settings")}: ` : ""}{user?.unit?.name || t("common.system")}
           </p>
         </div>
 
-        {/* Admissions & CBT summaries — the API includes these fields only
-            for admin/staff (admissions) and admin/staff/teacher (cbt), so
-            the cards hide themselves for other roles. */}
+        {/* Admissions & CBT summaries */}
         {(stats?.admissions || stats?.cbt) && (
           <div className="grid gap-4 md:grid-cols-2">
             <AdmissionsStatsCard
@@ -167,31 +174,31 @@ export default function DashboardPage() {
         {/* Main Stats Grid */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <StatsCard
-            title="Total Santri"
+            title={t("sidebar.students", "Total Santri")}
             value={stats?.totalStudents ?? "-"}
-            description="Santri terdaftar"
+            description={t("sidebar.students", "Santri terdaftar")}
             icon={GraduationCap}
             trend={stats?.studentsGrowth}
             isLoading={isLoading}
           />
           <StatsCard
-            title="Ustadz/Ustadzah"
+            title={t("sidebar.pkgGuru", "Ustadz/Ustadzah")}
             value={stats?.totalTeachers ?? "-"}
-            description="Tenaga pengajar"
+            description={t("sidebar.hr", "Tenaga pengajar")}
             icon={Users}
             isLoading={isLoading}
           />
           <StatsCard
-            title="Kelas"
+            title={t("sidebar.classes", "Kelas")}
             value={stats?.totalClasses ?? "-"}
-            description="Kelas aktif"
+            description={t("sidebar.classes", "Kelas aktif")}
             icon={BookOpen}
             isLoading={isLoading}
           />
           <StatsCard
-            title="Kehadiran"
+            title={t("sidebar.attendance", "Kehadiran")}
             value={stats?.attendanceRate ? `${stats.attendanceRate}%` : "-"}
-            description="Tingkat kehadiran"
+            description={t("sidebar.attendanceCalendar", "Tingkat kehadiran")}
             icon={Calendar}
             isLoading={isLoading}
           />
@@ -200,50 +207,50 @@ export default function DashboardPage() {
         {/* Secondary Stats Grid */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           <StatsCard
-            title="Total Hafalan"
+            title={t("sidebar.myHafalan", "Total Hafalan")}
             value={tahfidzData?.totalMemorized?.toLocaleString("id-ID") ?? "-"}
-            description="Total ayat dihafal"
+            description={t("sidebar.quranMap", "Total ayat dihafal")}
             icon={BookOpen}
             isLoading={tahfidzLoading}
           />
           <StatsCard
-            title="Rata-rata Hafalan"
+            title={t("settings.notifications.tahfidz", "Rata-rata Hafalan")}
             value={
               tahfidzData?.averageJuz !== undefined
                 ? `${tahfidzData.averageJuz} Juz`
                 : "-"
             }
-            description="Per santri"
+            description={t("sidebar.tahfidz", "Per santri")}
             icon={Award}
             isLoading={tahfidzLoading}
           />
           <StatsCard
-            title="Pelanggaran"
+            title={t("sidebar.violations", "Pelanggaran")}
             value={violationData?.totalViolations ?? "-"}
-            description="Bulan ini"
+            description={t("sidebar.childDailyReport", "Bulan ini")}
             icon={AlertTriangle}
             variant="destructive"
             isLoading={violationLoading}
           />
           <StatsCard
-            title="Penghargaan"
+            title={t("sidebar.rewards", "Penghargaan")}
             value={violationData?.totalRewards ?? "-"}
-            description="Bulan ini"
+            description={t("sidebar.childDailyReport", "Bulan ini")}
             icon={Award}
             variant="warning"
             isLoading={violationLoading}
           />
           <StatsCard
-            title="Total Unit"
+            title={t("sidebar.units", "Total Unit")}
             value={stats?.totalUnits ?? "-"}
-            description="Unit pendidikan"
+            description={t("sidebar.units", "Unit pendidikan")}
             icon={Building2}
             isLoading={isLoading}
           />
           <StatsCard
-            title="Tahun Ajaran"
+            title={t("sidebar.academicYears", "Tahun Ajaran")}
             value={stats?.activeAcademicYear?.name ?? "-"}
-            description="Tahun ajaran aktif"
+            description={t("sidebar.academicYears", "Tahun ajaran aktif")}
             icon={Calendar}
             isLoading={isLoading}
           />
@@ -256,9 +263,9 @@ export default function DashboardPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <BookOpen className="h-5 w-5" />
-                Progress Tahfidz (Bulanan)
+                {t("sidebar.tahfidz")} Progress
               </CardTitle>
-              <CardDescription>Jumlah ayat yang disetorkan</CardDescription>
+              <CardDescription>{t("sidebar.quranMap", "Jumlah ayat yang disetorkan")}</CardDescription>
             </CardHeader>
             <CardContent>
               {tahfidzLoading ? (
@@ -308,7 +315,7 @@ export default function DashboardPage() {
                 <Award className="h-5 w-5" />
                 Top 5 Hafidz
               </CardTitle>
-              <CardDescription>Capaian hafalan terbanyak</CardDescription>
+              <CardDescription>{t("sidebar.tahfidz", "Capaian hafalan terbanyak")}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -374,7 +381,7 @@ export default function DashboardPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">
-                Donasi & Infak
+                {t("sidebar.donationZis", "Donasi & Infak")}
               </CardTitle>
               <Heart className="h-4 w-4 text-emerald-500" />
             </CardHeader>
@@ -385,7 +392,7 @@ export default function DashboardPage() {
                   : "-"}
               </div>
               <p className="text-xs text-muted-foreground">
-                {donationStats?.pendingVerification ?? 0} menunggu verifikasi
+                {donationStats?.pendingVerification ?? 0} {t("sidebar.verification", "menunggu verifikasi")}
               </p>
             </CardContent>
           </Card>
@@ -398,9 +405,9 @@ export default function DashboardPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Calendar className="h-5 w-5" />
-                Kehadiran 7 Hari Terakhir
+                {t("sidebar.attendanceCalendar", "Kehadiran 7 Hari Terakhir")}
               </CardTitle>
-              <CardDescription>Tingkat kehadiran harian santri</CardDescription>
+              <CardDescription>{t("sidebar.attendanceCalendar", "Tingkat kehadiran harian santri")}</CardDescription>
             </CardHeader>
             <CardContent>
               {attendanceData && attendanceData.length > 0 ? (
@@ -411,7 +418,7 @@ export default function DashboardPage() {
                         item.present + item.absent + item.sick + item.excused;
                       return {
                         date: safeFormat(new Date(item.date), "EEE", {
-                          locale: id,
+                          locale: dateFnsLocale,
                         }),
                         hadir: item.present,
                         sakit: item.sick,
@@ -508,9 +515,9 @@ export default function DashboardPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Activity className="h-5 w-5" />
-                Aktivitas Terbaru
+                {t("dashboard.realtimeAlerts", "Aktivitas Terbaru")}
               </CardTitle>
-              <CardDescription>Kegiatan sistem terkini</CardDescription>
+              <CardDescription>{t("dashboard.realtimeAlerts", "Kegiatan sistem terkini")}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
@@ -521,7 +528,7 @@ export default function DashboardPage() {
                       title={activity.title}
                       description={activity.description}
                       time={safeFormat(new Date(activity.time), "HH:mm", {
-                        locale: id,
+                        locale: dateFnsLocale,
                       })}
                       type={activity.type}
                     />
@@ -543,10 +550,10 @@ export default function DashboardPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <DollarSign className="h-5 w-5" />
-                Keuangan Bulan Ini
+                {t("sidebar.keuangan", "Keuangan Bulan Ini")}
               </CardTitle>
               <CardDescription>
-                Perbandingan tagihan dan pembayaran
+                {t("sidebar.billingAndPayments", "Perbandingan tagihan dan pembayaran")}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -555,17 +562,17 @@ export default function DashboardPage() {
                   <BarChart
                     data={[
                       {
-                        name: "Total Tagihan",
+                        name: t("sidebar.billing", "Total Tagihan"),
                         value: financeData.totalBilled || 0,
                         fill: "#3b82f6",
                       },
                       {
-                        name: "Sudah Bayar",
+                        name: t("sidebar.verification", "Sudah Bayar"),
                         value: financeData.totalPaid || 0,
                         fill: "#22c55e",
                       },
                       {
-                        name: "Belum Bayar",
+                        name: t("sidebar.billingAndPayments", "Belum Bayar"),
                         value: financeData.totalUnpaid || 0,
                         fill: "#f59e0b",
                       },
@@ -617,9 +624,9 @@ export default function DashboardPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <DollarSign className="h-5 w-5" />
-                Distribusi Pembayaran
+                {t("sidebar.billing", "Distribusi Pembayaran")}
               </CardTitle>
-              <CardDescription>Tingkat koleksi pembayaran</CardDescription>
+              <CardDescription>{t("sidebar.billingAndPayments", "Tingkat koleksi pembayaran")}</CardDescription>
             </CardHeader>
             <CardContent>
               {financeData && financeData.totalBilled > 0 ? (
@@ -627,9 +634,9 @@ export default function DashboardPage() {
                   <PieChart>
                     <Pie
                       data={[
-                        { name: "Lunas", value: financeData.totalPaid || 0 },
+                        { name: t("sidebar.verification", "Lunas"), value: financeData.totalPaid || 0 },
                         {
-                          name: "Belum Bayar",
+                          name: t("sidebar.billingAndPayments", "Belum Bayar"),
                           value: financeData.totalUnpaid || 0,
                         },
                       ]}
@@ -676,16 +683,16 @@ export default function DashboardPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Heart className="h-5 w-5" />
-                Kesehatan Santri (Bulan Ini)
+                {t("sidebar.healthUks", "Kesehatan Santri (Bulan Ini)")}
               </CardTitle>
-              <CardDescription>Ringkasan pemeriksaan kesehatan</CardDescription>
+              <CardDescription>{t("sidebar.health", "Ringkasan pemeriksaan kesehatan")}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-4 text-center">
                 <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                   <div className="flex items-center justify-center gap-2 mb-1">
                     <Stethoscope className="h-4 w-4 text-blue-600" />
-                    <span className="text-sm font-medium">Total Periksa</span>
+                    <span className="text-sm font-medium">{t("common.all", "Total Periksa")}</span>
                   </div>
                   <div className="text-2xl font-bold text-blue-600">
                     {healthData?.thisMonthRecords ?? "-"}
@@ -694,7 +701,7 @@ export default function DashboardPage() {
                 <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
                   <div className="flex items-center justify-center gap-2 mb-1">
                     <Pill className="h-4 w-4 text-red-600" />
-                    <span className="text-sm font-medium">Sakit/Obat</span>
+                    <span className="text-sm font-medium">{t("sidebar.health", "Sakit/Obat")}</span>
                   </div>
                   <div className="text-2xl font-bold text-red-600">
                     {healthData?.recordsByType?.find(
@@ -720,15 +727,15 @@ export default function DashboardPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Calendar className="h-5 w-5" />
-                Tahun Ajaran Aktif
+                {t("sidebar.academicYears", "Tahun Ajaran Aktif")}
               </CardTitle>
-              <CardDescription>Informasi tahun ajaran berjalan</CardDescription>
+              <CardDescription>{t("sidebar.academicCalendar", "Informasi tahun ajaran berjalan")}</CardDescription>
             </CardHeader>
             <CardContent>
               {stats?.activeAcademicYear ? (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between pb-2 border-b">
-                    <span className="text-sm text-muted-foreground">Nama</span>
+                    <span className="text-sm text-muted-foreground">{t("settings.profile.fullName", "Nama")}</span>
                     <span className="font-semibold">
                       {stats.activeAcademicYear.name}
                     </span>
@@ -739,7 +746,7 @@ export default function DashboardPage() {
                       {format(
                         new Date(stats.activeAcademicYear.startDate),
                         "d MMM yyyy",
-                        { locale: id },
+                        { locale: dateFnsLocale },
                       )}
                     </span>
                   </div>
@@ -751,7 +758,7 @@ export default function DashboardPage() {
                       {format(
                         new Date(stats.activeAcademicYear.endDate),
                         "d MMM yyyy",
-                        { locale: id },
+                        { locale: dateFnsLocale },
                       )}
                     </span>
                   </div>

@@ -13,6 +13,7 @@ import {
   type NavGroup,
 } from "@/config/navigation";
 import { useAuthStore } from "@/stores/auth";
+import { useI18n } from "@/providers/i18n-provider";
 import { ChevronLeft, LogOut } from "lucide-react";
 
 interface SidebarProps {
@@ -45,9 +46,151 @@ const realmColors: Record<string, string> = {
   SMA_ALQURAN: "bg-emerald-500",
 };
 
+// Sidebar static translation mapping function
+function translateSidebarKey(title: string, t: (key: string, fallback?: string) => string): string {
+  const titleMap: Record<string, string> = {
+    // Groups
+    "Overview": "sidebar.overview",
+    "Mengajar": "sidebar.mengajar",
+    "Wali Kelas": "sidebar.waliKelas",
+    "Pesantren": "sidebar.pesantren",
+    "PKG": "sidebar.pkg",
+    "Informasi": "sidebar.informasi",
+    "Layanan Siswa": "sidebar.layananSiswa",
+    "Administrasi": "sidebar.administrasi",
+    "Hafalan": "sidebar.hafalan",
+    "Akademik": "sidebar.academic",
+    "Kegiatan": "sidebar.kegiatan",
+    "Anak Saya": "sidebar.anakSaya",
+    "Kesiswaan": "sidebar.kesiswaan",
+    "Keuangan": "sidebar.keuangan",
+    "Yayasan": "sidebar.yayasan",
+    "Risk Management": "sidebar.riskManagement",
+    "Management": "sidebar.management",
+    "Academic": "sidebar.academic",
+    "Boarding": "sidebar.boarding",
+    "Administration": "sidebar.administration",
+    "Operations": "sidebar.operations",
+    "Reference Data": "sidebar.referenceData",
+    "Compliance": "sidebar.compliance",
+    "Alumni": "sidebar.alumni",
+
+    // Items
+    "Dashboard": "sidebar.dashboard_item",
+    "Analytics": "sidebar.analytics",
+    "Reports": "sidebar.reports",
+    "Tahfidz": "sidebar.tahfidz",
+    "Kelas Saya": "sidebar.classes",
+    "Siswa": "sidebar.students",
+    "Absensi": "sidebar.attendance",
+    "Mutabaah Yaumiyah": "sidebar.dailyReport",
+    "Portfolio Siswa": "sidebar.portfolio",
+    "Dashboard Wali Kelas": "sidebar.homeroomDashboard",
+    "Absensi Harian": "sidebar.homeroomAttendance",
+    "Catatan Perilaku": "sidebar.homeroomBehavior",
+    "Pesan Orang Tua": "sidebar.homeroomMessages",
+    "Jurnal Ibadah": "sidebar.ibadah",
+    "Muhadhoroh": "sidebar.muhadhoroh",
+    "Muhadatsah": "sidebar.muhadatsah",
+    "Kitab Kuning": "sidebar.kitabKuning",
+    "Penilaian Kinerja": "sidebar.pkgEvaluation",
+    "Pengumuman": "sidebar.announcements",
+    "Aduan & Aspirasi": "sidebar.complaints",
+    "Data Siswa": "sidebar.students",
+    "Kesehatan": "sidebar.health",
+    "Perizinan": "sidebar.permits",
+    "Pelanggaran": "sidebar.violations",
+    "Penghargaan": "sidebar.rewards",
+    "Kampus Hijau": "sidebar.greenCampus",
+    "Hafalan Saya": "sidebar.myHafalan",
+    "Ujian Online": "sidebar.exams",
+    "Portfolio Saya": "sidebar.myPortfolio",
+    "Prestasi Ibadah": "sidebar.achievements",
+    "Muhasabah Harian": "sidebar.myMuhasabah",
+    "Jadwal": "sidebar.schedule",
+    "Data Anak": "sidebar.myData",
+    "Raport": "sidebar.reportCards",
+    "Portfolio Anak": "sidebar.childPortfolio",
+    "Laporan Harian": "sidebar.childDailyReport",
+    "Tagihan & Pembayaran": "sidebar.billingAndPayments",
+    "Foundation": "sidebar.foundation",
+    "Units": "sidebar.units",
+    "Board Members": "sidebar.boardMembers",
+    "Penjaminan Mutu": "sidebar.qualityAssurance",
+    "Laporan Keuangan": "sidebar.financialReports",
+    "Billing & Pembayaran": "sidebar.billing",
+    "Verifikasi Pembayaran": "sidebar.verification",
+    "BOS/BOP": "sidebar.bosBop",
+    "Procurement": "sidebar.procurement",
+    "Donation/ZIS": "sidebar.donationZis",
+    "Public Portal": "sidebar.publicPortal",
+    "Data Alumni": "sidebar.alumniData",
+    "Manajemen Risiko": "sidebar.riskMan",
+    "EMIS Kemenag": "sidebar.emisKemenag",
+    "Campaigns": "sidebar.campaigns",
+    "Leads": "sidebar.leads",
+    "Users & Roles": "sidebar.usersRoles",
+    "Role Permissions": "sidebar.rolePermissions",
+    "Student ID Card": "sidebar.studentIdCard",
+    "Certificates": "sidebar.certificates",
+    "Transcript": "sidebar.transcript",
+    "Classes": "sidebar.classes",
+    "Academic Years": "sidebar.academicYears",
+    "Curriculum": "sidebar.curriculum",
+    "Timetable": "sidebar.timetable",
+    "Assessment": "sidebar.assessment",
+    "Question Banks (CBT)": "sidebar.cbtBanks",
+    "Raport Merdeka": "sidebar.raportMerdeka",
+    "Attendance Calendar": "sidebar.attendanceCalendar",
+    "Academic Calendar": "sidebar.academicCalendar",
+    "E-Simaan": "sidebar.eSimaan",
+    "Peta Al-Quran": "sidebar.quranMap",
+    "Ekstrakurikuler": "sidebar.extracurricular",
+    "Bimbingan Konseling": "sidebar.counseling",
+    "Piket Santri": "sidebar.dutyRoster",
+    "Amaliyah Tadris": "sidebar.amaliyahTadris",
+    "Qiyadah (Organisasi)": "sidebar.qiyadah",
+    "Turats Lab": "sidebar.turatsLab",
+    "Takhosus": "sidebar.takhosus",
+    "Muhasabah": "sidebar.muhasabah",
+    "Dormitories": "sidebar.dormitories",
+    "Accounting": "sidebar.accounting",
+    "Scholarships": "sidebar.scholarships",
+    "Admissions": "sidebar.admissions",
+    "HR": "sidebar.hr",
+    "Staff Attendance": "sidebar.staffAttendance",
+    "PKG Guru": "sidebar.pkgGuru",
+    "Facilities": "sidebar.facilities",
+    "E-Office (Persuratan)": "sidebar.eOffice",
+    "Inventory (Asset)": "sidebar.inventory",
+    "Library": "sidebar.library",
+    "Maktabah Digital": "sidebar.digitalLibrary",
+    "Health (UKS)": "sidebar.healthUks",
+    "Meals": "sidebar.meals",
+    "Canteen/Koperasi": "sidebar.canteen",
+    "Laundry": "sidebar.laundry",
+    "Reception": "sidebar.reception",
+    "Dompet Santri": "sidebar.wallet",
+    "Quick Send": "sidebar.quickSend",
+    "Wilayah": "sidebar.wilayah",
+    "Kurikulum Merdeka": "sidebar.kurikulumMerdeka",
+    "Student Compliance": "sidebar.studentCompliance",
+    "Teacher Compliance": "sidebar.teacherCompliance",
+    "Si-Taka (Sebaran)": "sidebar.placement",
+    "Secrets": "sidebar.secrets"
+  };
+
+  const key = titleMap[title];
+  if (key) {
+    return t(key);
+  }
+  return title;
+}
+
 export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
   const pathname = usePathname();
   const { user, logout } = useAuthStore();
+  const { t } = useI18n();
 
   if (typeof window !== "undefined") {
     console.log("Sidebar rendering, user:", JSON.stringify(user));
@@ -147,7 +290,7 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
           onClick={() => logout()}
         >
           <LogOut className="h-4 w-4" />
-          {!collapsed && <span className="ml-2">Logout</span>}
+          {!collapsed && <span className="ml-2">{t("common.logout")}</span>}
         </Button>
       </div>
     </div>
@@ -167,12 +310,13 @@ function NavGroupComponent({
   collapsed,
   showSeparator,
 }: NavGroupComponentProps) {
+  const { t } = useI18n();
   return (
     <div className="mb-4">
       {showSeparator && <Separator className="mb-4" />}
       {!collapsed && (
         <h4 className="mb-2 px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          {group.title}
+          {translateSidebarKey(group.title, t)}
         </h4>
       )}
       <nav className="space-y-1">
@@ -192,7 +336,7 @@ function NavGroupComponent({
                 )}
               >
                 <Icon className="h-4 w-4" />
-                {!collapsed && <span className="ml-2">{item.title}</span>}
+                {!collapsed && <span className="ml-2">{translateSidebarKey(item.title, t)}</span>}
               </Button>
             </Link>
           );

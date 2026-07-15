@@ -11,11 +11,9 @@ import {
   Moon,
   Monitor,
   Bell,
-  BellOff,
   Globe,
   Palette,
   Volume2,
-  Shield,
   Info,
   Check,
 } from "lucide-react";
@@ -39,10 +37,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { useI18n } from "@/providers/i18n-provider";
+import { Locale } from "@/locales";
 
 // Types
 type Theme = "light" | "dark" | "system";
-type Language = "id" | "en";
 
 interface NotificationSettings {
   email: boolean;
@@ -55,7 +54,7 @@ interface NotificationSettings {
 
 interface AppSettings {
   theme: Theme;
-  language: Language;
+  language: Locale;
   notifications: NotificationSettings;
   soundEnabled: boolean;
   compactMode: boolean;
@@ -81,6 +80,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { User, Lock } from "lucide-react";
 
 export default function SettingsPage() {
+  const { t, locale: globalLocale, setLocale: setGlobalLocale } = useI18n();
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -89,7 +89,6 @@ export default function SettingsPage() {
   const pathname = usePathname();
 
   // Get active tab from URL or default to 'appearance'
-  // Map 'users' to 'account' if needed, or just keep 'account'
   const tabParam = searchParams.get("tab");
   const activeTab = tabParam === "users" ? "account" : tabParam || "appearance";
 
@@ -104,12 +103,19 @@ export default function SettingsPage() {
     const savedSettings = localStorage.getItem("app-settings");
     if (savedSettings) {
       try {
-        setSettings(JSON.parse(savedSettings));
+        const parsed = JSON.parse(savedSettings);
+        setSettings({
+          ...DEFAULT_SETTINGS,
+          ...parsed,
+          language: globalLocale, // Override local setting language with global locale
+        });
       } catch {
         // Use default if parsing fails
       }
+    } else {
+      setSettings((prev) => ({ ...prev, language: globalLocale }));
     }
-  }, []);
+  }, [globalLocale]);
 
   // Apply theme
   useEffect(() => {
@@ -133,9 +139,11 @@ export default function SettingsPage() {
     setIsSaving(true);
     try {
       localStorage.setItem("app-settings", JSON.stringify(settings));
-      toast.success("Pengaturan berhasil disimpan");
+      // Save global locale
+      setGlobalLocale(settings.language);
+      toast.success(t("settings.appearance.toast_success", "Pengaturan berhasil disimpan"));
     } catch {
-      toast.error("Gagal menyimpan pengaturan");
+      toast.error(t("settings.appearance.toast_error", "Gagal menyimpan pengaturan"));
     } finally {
       setIsSaving(false);
     }
@@ -159,31 +167,31 @@ export default function SettingsPage() {
     <div className="container mx-auto py-6 space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Pengaturan</h1>
+        <h1 className="text-3xl font-bold tracking-tight">{t("settings.title")}</h1>
         <p className="text-muted-foreground">
-          Kelola preferensi dan pengaturan aplikasi
+          {t("settings.subtitle")}
         </p>
       </div>
 
       <Tabs value={activeTab} onValueChange={onTabChange} className="space-y-4">
         <TabsList>
           <TabsTrigger value="appearance" className="flex items-center gap-2">
-            <Palette className="h-4 w-4" /> Tampilan
+            <Palette className="h-4 w-4" /> {t("settings.tabs.appearance")}
           </TabsTrigger>
           <TabsTrigger
             value="notifications"
             className="flex items-center gap-2"
           >
-            <Bell className="h-4 w-4" /> Notifikasi
+            <Bell className="h-4 w-4" /> {t("settings.tabs.notifications")}
           </TabsTrigger>
           <TabsTrigger value="profile" className="flex items-center gap-2">
-            <User className="h-4 w-4" /> Profil
+            <User className="h-4 w-4" /> {t("settings.tabs.profile")}
           </TabsTrigger>
           <TabsTrigger value="account" className="flex items-center gap-2">
-            <Lock className="h-4 w-4" /> Akun
+            <Lock className="h-4 w-4" /> {t("settings.tabs.account")}
           </TabsTrigger>
           <TabsTrigger value="about" className="flex items-center gap-2">
-            <Info className="h-4 w-4" /> Tentang
+            <Info className="h-4 w-4" /> {t("settings.tabs.about")}
           </TabsTrigger>
         </TabsList>
 
@@ -192,16 +200,16 @@ export default function SettingsPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Palette className="h-5 w-5" />
-                Tampilan
+                {t("settings.appearance.title")}
               </CardTitle>
               <CardDescription>
-                Sesuaikan tampilan aplikasi sesuai preferensi Anda
+                {t("settings.appearance.description")}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Theme Selection */}
               <div className="space-y-3">
-                <Label>Tema</Label>
+                <Label>{t("settings.appearance.theme")}</Label>
                 <RadioGroup
                   value={settings.theme}
                   onValueChange={(value: Theme) =>
@@ -220,7 +228,7 @@ export default function SettingsPage() {
                       className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
                     >
                       <Sun className="mb-3 h-6 w-6" />
-                      Terang
+                      {t("settings.appearance.light")}
                     </Label>
                   </div>
                   <div>
@@ -234,7 +242,7 @@ export default function SettingsPage() {
                       className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
                     >
                       <Moon className="mb-3 h-6 w-6" />
-                      Gelap
+                      {t("settings.appearance.dark")}
                     </Label>
                   </div>
                   <div>
@@ -248,7 +256,7 @@ export default function SettingsPage() {
                       className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
                     >
                       <Monitor className="mb-3 h-6 w-6" />
-                      Sistem
+                      {t("settings.appearance.system")}
                     </Label>
                   </div>
                 </RadioGroup>
@@ -261,15 +269,15 @@ export default function SettingsPage() {
                 <div className="space-y-0.5">
                   <Label className="flex items-center gap-2">
                     <Globe className="h-4 w-4" />
-                    Bahasa
+                    {t("settings.appearance.language")}
                   </Label>
                   <p className="text-sm text-muted-foreground">
-                    Pilih bahasa untuk antarmuka aplikasi
+                    {t("settings.appearance.languageDescription")}
                   </p>
                 </div>
                 <Select
                   value={settings.language}
-                  onValueChange={(value: Language) =>
+                  onValueChange={(value: Locale) =>
                     setSettings((prev) => ({ ...prev, language: value }))
                   }
                 >
@@ -277,8 +285,9 @@ export default function SettingsPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="id">Bahasa Indonesia</SelectItem>
-                    <SelectItem value="en">English</SelectItem>
+                    <SelectItem value="id">🇮🇩 Bahasa Indonesia</SelectItem>
+                    <SelectItem value="en">🇬🇧 English</SelectItem>
+                    <SelectItem value="ar">🇸🇦 العربية</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -288,9 +297,9 @@ export default function SettingsPage() {
               {/* Compact Mode */}
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label>Mode Compact</Label>
+                  <Label>{t("settings.appearance.compactMode")}</Label>
                   <p className="text-sm text-muted-foreground">
-                    Tampilkan lebih banyak konten dengan ukuran lebih kecil
+                    {t("settings.appearance.compactDescription")}
                   </p>
                 </div>
                 <Switch
@@ -309,19 +318,19 @@ export default function SettingsPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Bell className="h-5 w-5" />
-                Notifikasi
+                {t("settings.notifications.title")}
               </CardTitle>
               <CardDescription>
-                Kelola preferensi notifikasi yang ingin Anda terima
+                {t("settings.notifications.description")}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Email Notifications */}
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label>Notifikasi Email</Label>
+                  <Label>{t("settings.notifications.email")}</Label>
                   <p className="text-sm text-muted-foreground">
-                    Terima notifikasi melalui email
+                    {t("settings.notifications.emailDescription")}
                   </p>
                 </div>
                 <Switch
@@ -337,9 +346,9 @@ export default function SettingsPage() {
               {/* Push Notifications */}
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label>Notifikasi Push</Label>
+                  <Label>{t("settings.notifications.push")}</Label>
                   <p className="text-sm text-muted-foreground">
-                    Terima notifikasi push di browser
+                    {t("settings.notifications.pushDescription")}
                   </p>
                 </div>
                 <Switch
@@ -354,13 +363,13 @@ export default function SettingsPage() {
 
               {/* Notification Categories */}
               <div className="space-y-4">
-                <Label className="text-base">Kategori Notifikasi</Label>
+                <Label className="text-base">{t("settings.notifications.categories")}</Label>
 
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <Label className="font-normal">Kehadiran</Label>
+                    <Label className="font-normal">{t("settings.notifications.attendance")}</Label>
                     <p className="text-sm text-muted-foreground">
-                      Notifikasi kehadiran santri
+                      {t("settings.notifications.attendanceDescription")}
                     </p>
                   </div>
                   <Switch
@@ -373,9 +382,9 @@ export default function SettingsPage() {
 
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <Label className="font-normal">Keuangan</Label>
+                    <Label className="font-normal">{t("settings.notifications.finance")}</Label>
                     <p className="text-sm text-muted-foreground">
-                      Notifikasi tagihan dan pembayaran
+                      {t("settings.notifications.financeDescription")}
                     </p>
                   </div>
                   <Switch
@@ -388,9 +397,9 @@ export default function SettingsPage() {
 
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <Label className="font-normal">Pengumuman</Label>
+                    <Label className="font-normal">{t("settings.notifications.announcements")}</Label>
                     <p className="text-sm text-muted-foreground">
-                      Pengumuman dari pesantren
+                      {t("settings.notifications.announcementsDescription")}
                     </p>
                   </div>
                   <Switch
@@ -403,9 +412,9 @@ export default function SettingsPage() {
 
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <Label className="font-normal">Tahfidz</Label>
+                    <Label className="font-normal">{t("settings.notifications.tahfidz")}</Label>
                     <p className="text-sm text-muted-foreground">
-                      Progress hafalan santri
+                      {t("settings.notifications.tahfidzDescription")}
                     </p>
                   </div>
                   <Switch
@@ -424,10 +433,10 @@ export default function SettingsPage() {
                 <div className="space-y-0.5">
                   <Label className="flex items-center gap-2">
                     <Volume2 className="h-4 w-4" />
-                    Suara Notifikasi
+                    {t("settings.notifications.sound")}
                   </Label>
                   <p className="text-sm text-muted-foreground">
-                    Mainkan suara saat menerima notifikasi
+                    {t("settings.notifications.soundDescription")}
                   </p>
                 </div>
                 <Switch
@@ -446,32 +455,32 @@ export default function SettingsPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <User className="h-5 w-5" />
-                Profil Pengguna
+                {t("settings.profile.title")}
               </CardTitle>
-              <CardDescription>Kelola informasi profil Anda</CardDescription>
+              <CardDescription>{t("settings.profile.description")}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label>Nama Lengkap</Label>
+                  <Label>{t("settings.profile.fullName")}</Label>
                   <div className="p-3 rounded-md bg-muted/50 border">
                     Dr. Ahmad Fauzi, M.Pd.
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label>Email</Label>
+                  <Label>{t("settings.profile.email")}</Label>
                   <div className="p-3 rounded-md bg-muted/50 border">
                     admin@cipansor.id
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label>Peran</Label>
+                  <Label>{t("settings.profile.role")}</Label>
                   <div className="p-3 rounded-md bg-muted/50 border">
                     Super Admin
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label>Unit</Label>
+                  <Label>{t("settings.profile.unit")}</Label>
                   <div className="p-3 rounded-md bg-muted/50 border">
                     SMA Al-Qur'an Cipansor
                   </div>
@@ -486,16 +495,15 @@ export default function SettingsPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Lock className="h-5 w-5" />
-                Keamanan Akun
+                {t("settings.account.title")}
               </CardTitle>
               <CardDescription>
-                Update password dan keamanan akun
+                {t("settings.account.description")}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="p-4 rounded-lg bg-yellow-50 border border-yellow-200 text-yellow-800">
-                Fitur keamanan akun dikelola oleh administrator pusat. Hubungi
-                IT Support untuk reset password.
+              <div className="p-4 rounded-lg bg-yellow-50 border border-yellow-200 text-yellow-800 dark:bg-yellow-950/20 dark:border-yellow-900/50 dark:text-yellow-200">
+                {t("settings.account.alert")}
               </div>
             </CardContent>
           </Card>
@@ -507,29 +515,29 @@ export default function SettingsPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Info className="h-5 w-5" />
-                Tentang Aplikasi
+                {t("settings.about.title")}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <Label className="text-muted-foreground">Nama Aplikasi</Label>
+                  <Label className="text-muted-foreground">{t("settings.about.appName")}</Label>
                   <p className="font-medium">Cipansor Management System</p>
                 </div>
                 <div>
-                  <Label className="text-muted-foreground">Versi</Label>
+                  <Label className="text-muted-foreground">{t("settings.about.version")}</Label>
                   <p className="font-medium">1.0.0</p>
                 </div>
                 <div>
-                  <Label className="text-muted-foreground">Developer</Label>
+                  <Label className="text-muted-foreground">{t("settings.about.developer")}</Label>
                   <p className="font-medium">Yayasan Pesantren Cipansor</p>
                 </div>
                 <div>
                   <Label className="text-muted-foreground">
-                    Terakhir Update
+                    {t("settings.about.lastUpdate")}
                   </Label>
                   <p className="font-medium">
-                    {new Date().toLocaleDateString("id-ID")}
+                    {new Date().toLocaleDateString(globalLocale === "ar" ? "ar-SA" : globalLocale === "en" ? "en-US" : "id-ID")}
                   </p>
                 </div>
               </div>
@@ -542,11 +550,11 @@ export default function SettingsPage() {
       <div className="flex justify-end">
         <Button onClick={saveSettings} disabled={isSaving}>
           {isSaving ? (
-            <>Menyimpan...</>
+            <>{t("common.saving")}</>
           ) : (
             <>
               <Check className="mr-2 h-4 w-4" />
-              Simpan Pengaturan
+              {t("common.saveSettings")}
             </>
           )}
         </Button>

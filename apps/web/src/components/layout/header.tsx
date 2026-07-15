@@ -11,9 +11,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useAuthStore } from "@/stores/auth";
+import { useI18n } from "@/providers/i18n-provider";
 import { Bell, Menu, Settings, User, LogOut } from "lucide-react";
 import Link from "next/link";
 import { RoleSwitcher } from "./role-switcher";
+import { LanguageSwitcher } from "./language-switcher";
 
 interface HeaderProps {
   onMenuClick?: () => void;
@@ -21,6 +23,7 @@ interface HeaderProps {
 
 export function Header({ onMenuClick }: HeaderProps) {
   const { user, logout } = useAuthStore();
+  const { t } = useI18n();
 
   return (
     <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b glass px-4 lg:px-6">
@@ -41,6 +44,9 @@ export function Header({ onMenuClick }: HeaderProps) {
       </div>
 
       <div className="flex items-center gap-2">
+        {/* Language Switcher */}
+        <LanguageSwitcher />
+
         {/* Role Switcher */}
         <RoleSwitcher />
 
@@ -79,13 +85,13 @@ export function Header({ onMenuClick }: HeaderProps) {
             <DropdownMenuItem asChild>
               <Link href="/profile" className="cursor-pointer">
                 <User className="mr-2 h-4 w-4" />
-                Profile
+                {t("common.profile")}
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
               <Link href="/settings" className="cursor-pointer">
                 <Settings className="mr-2 h-4 w-4" />
-                Settings
+                {t("common.settings")}
               </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
@@ -94,7 +100,7 @@ export function Header({ onMenuClick }: HeaderProps) {
               className="cursor-pointer text-red-600"
             >
               <LogOut className="mr-2 h-4 w-4" />
-              Logout
+              {t("common.logout")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

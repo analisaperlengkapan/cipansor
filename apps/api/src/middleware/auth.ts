@@ -38,6 +38,8 @@ const ADMIN_ROLE_CODES: string[] = [
   RoleCode.SDIT_ADMIN,
   RoleCode.SMPIT_ADMIN,
   RoleCode.SMAQ_ADMIN,
+  RoleCode.PT_TATA_USAHA,
+  RoleCode.BUSINESS_MANAGER,
   // Legacy UserRole values — pre-migration tokens carry these as roleCode
   // via buildReqUser fallback. Must be recognised so isAdmin/isAdminRoleCode
   // work for users whose access tokens were minted before the RoleCode migration.
@@ -72,16 +74,27 @@ const LEGACY_ROLE_EXPANSION: Record<string, string[]> = {
     RoleCode.TKQ_GURU, RoleCode.SDIT_GURU, RoleCode.SMPIT_GURU, RoleCode.SMAQ_GURU,
     RoleCode.TKQ_KEPALA_SEKOLAH, RoleCode.SDIT_KEPALA_SEKOLAH,
     RoleCode.SMPIT_KEPALA_SEKOLAH, RoleCode.SMAQ_KEPALA_SEKOLAH,
-    RoleCode.MUSYRIF, RoleCode.MUHAFIDZ, RoleCode.MURABBI, RoleCode.WALI_KAMAR,
+    RoleCode.TKQ_WAKASEK, RoleCode.SDIT_WAKASEK, RoleCode.SMPIT_WAKASEK, RoleCode.SMAQ_WAKASEK,
+    RoleCode.TKQ_WALI_KELAS, RoleCode.SDIT_WALI_KELAS, RoleCode.SMPIT_WALI_KELAS, RoleCode.SMAQ_WALI_KELAS,
+    RoleCode.TKQ_GURU_BK, RoleCode.SDIT_GURU_BK, RoleCode.SMPIT_GURU_BK, RoleCode.SMAQ_GURU_BK,
+    RoleCode.PESANTREN_PENGASUH, RoleCode.PESANTREN_DIREKTUR, RoleCode.USTADZ,
+    RoleCode.MUSYRIF, RoleCode.MUSYRIFAH, RoleCode.MUHAFIDZ, RoleCode.MUHAFIDZAH,
+    RoleCode.MURABBI, RoleCode.WALI_KAMAR,
+    RoleCode.PT_REKTOR, RoleCode.PT_WAKIL_REKTOR, RoleCode.PT_DEKAN, RoleCode.PT_KAPRODI, RoleCode.PT_DOSEN,
   ],
   // Legacy STAFF → all per-unit tata usaha roles
   STAFF: [
     RoleCode.TKQ_TATA_USAHA, RoleCode.SDIT_TATA_USAHA,
     RoleCode.SMPIT_TATA_USAHA, RoleCode.SMAQ_TATA_USAHA,
+    RoleCode.TKQ_BENDAHARA, RoleCode.SDIT_BENDAHARA,
+    RoleCode.SMPIT_BENDAHARA, RoleCode.SMAQ_BENDAHARA,
+    RoleCode.PESANTREN_TATA_USAHA, RoleCode.PT_TATA_USAHA,
+    RoleCode.BUSINESS_MANAGER, RoleCode.BUSINESS_STAFF,
   ],
   // Legacy STUDENT → all per-unit student roles
   STUDENT: [
     RoleCode.TKQ_SISWA, RoleCode.SDIT_SISWA, RoleCode.SMPIT_SISWA, RoleCode.SMAQ_SISWA,
+    RoleCode.PT_MAHASISWA,
   ],
   // Legacy PARENT → all per-unit parent roles
   PARENT: [
@@ -430,10 +443,32 @@ const TEACHER_OR_ABOVE_CODES: string[] = [
   RoleCode.SDIT_KEPALA_SEKOLAH,
   RoleCode.SMPIT_KEPALA_SEKOLAH,
   RoleCode.SMAQ_KEPALA_SEKOLAH,
+  RoleCode.TKQ_WAKASEK,
+  RoleCode.SDIT_WAKASEK,
+  RoleCode.SMPIT_WAKASEK,
+  RoleCode.SMAQ_WAKASEK,
+  RoleCode.TKQ_WALI_KELAS,
+  RoleCode.SDIT_WALI_KELAS,
+  RoleCode.SMPIT_WALI_KELAS,
+  RoleCode.SMAQ_WALI_KELAS,
+  RoleCode.TKQ_GURU_BK,
+  RoleCode.SDIT_GURU_BK,
+  RoleCode.SMPIT_GURU_BK,
+  RoleCode.SMAQ_GURU_BK,
+  RoleCode.PESANTREN_PENGASUH,
+  RoleCode.PESANTREN_DIREKTUR,
+  RoleCode.USTADZ,
   RoleCode.MUSYRIF,
+  RoleCode.MUSYRIFAH,
   RoleCode.MUHAFIDZ,
+  RoleCode.MUHAFIDZAH,
   RoleCode.MURABBI,
   RoleCode.WALI_KAMAR,
+  RoleCode.PT_REKTOR,
+  RoleCode.PT_WAKIL_REKTOR,
+  RoleCode.PT_DEKAN,
+  RoleCode.PT_KAPRODI,
+  RoleCode.PT_DOSEN,
   // Legacy UserRole values for pre-migration tokens
   'TEACHER',
 ];

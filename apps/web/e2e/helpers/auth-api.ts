@@ -31,6 +31,8 @@ export const SEED_USERS = {
   teacher: { email: "fatimah@sdit.sch.id", password: "Teacher123!" },
   parent: { email: "parent3@sdit.sch.id", password: "Parent123!" },
   student: { email: "student3@sdit.sch.id", password: "Student123!" },
+  rektor: { email: "rektor@itsc.ac.id", password: "Rektor123!" },
+  wakasek: { email: "mansyur@smpit.sch.id", password: "Mansyur123!" },
 } satisfies Record<string, SeedUser>;
 
 export type SeedRole = keyof typeof SEED_USERS;

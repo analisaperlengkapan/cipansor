@@ -83,18 +83,55 @@ const ADMIN_ROLES = [
   "SMPIT_KEPALA_SEKOLAH",
   "SMAQ_ADMIN",
   "SMAQ_KEPALA_SEKOLAH",
+  "PT_REKTOR",
+  "PT_DEKAN",
+  "PT_KAPRODI",
+  "PESANTREN_DIREKTUR",
+  "BUSINESS_MANAGER",
 ];
 
-const TEACHER_ROLES = ["TKQ_GURU", "SDIT_GURU", "SMPIT_GURU", "SMAQ_GURU"];
+const TEACHER_ROLES = [
+  "TKQ_GURU",
+  "SDIT_GURU",
+  "SMPIT_GURU",
+  "SMAQ_GURU",
+  "TKQ_WAKASEK",
+  "SDIT_WAKASEK",
+  "SMPIT_WAKASEK",
+  "SMAQ_WAKASEK",
+  "TKQ_WALI_KELAS",
+  "SDIT_WALI_KELAS",
+  "SMPIT_WALI_KELAS",
+  "SMAQ_WALI_KELAS",
+  "TKQ_GURU_BK",
+  "SDIT_GURU_BK",
+  "SMPIT_GURU_BK",
+  "SMAQ_GURU_BK",
+  "USTADZ",
+  "PT_DOSEN",
+];
 
 const STAFF_ROLES = [
   "TKQ_TATA_USAHA",
   "SDIT_TATA_USAHA",
   "SMPIT_TATA_USAHA",
   "SMAQ_TATA_USAHA",
+  "TKQ_BENDAHARA",
+  "SDIT_BENDAHARA",
+  "SMPIT_BENDAHARA",
+  "SMAQ_BENDAHARA",
+  "PESANTREN_TATA_USAHA",
+  "PT_TATA_USAHA",
+  "BUSINESS_STAFF",
 ];
 
-const STUDENT_ROLES = ["TKQ_SISWA", "SDIT_SISWA", "SMPIT_SISWA", "SMAQ_SISWA"];
+const STUDENT_ROLES = [
+  "TKQ_SISWA",
+  "SDIT_SISWA",
+  "SMPIT_SISWA",
+  "SMAQ_SISWA",
+  "PT_MAHASISWA",
+];
 
 const PARENT_ROLES = [
   "TKQ_ORANG_TUA",
@@ -113,7 +150,37 @@ const YAYASAN_ROLES = [
   "YAYASAN_PENGAWAS",
 ];
 
-const PESANTREN_ROLES = ["MUSYRIF", "MUHAFIDZ", "MURABBI", "WALI_KAMAR"];
+const PESANTREN_ROLES = [
+  "PESANTREN_PENGASUH",
+  "PESANTREN_DIREKTUR",
+  "PESANTREN_TATA_USAHA",
+  "USTADZ",
+  "MUSYRIF",
+  "MUSYRIFAH",
+  "MUHAFIDZ",
+  "MUHAFIDZAH",
+  "MURABBI",
+  "WALI_KAMAR",
+];
+
+const ALUMNI_ROLES = [
+  "TKQ_ALUMNI",
+  "SDIT_ALUMNI",
+  "SMPIT_ALUMNI",
+  "SMAQ_ALUMNI",
+  "PT_ALUMNI",
+];
+
+const HIGHER_ED_ROLES = [
+  "PT_REKTOR",
+  "PT_WAKIL_REKTOR",
+  "PT_DEKAN",
+  "PT_KAPRODI",
+  "PT_DOSEN",
+  "PT_TATA_USAHA",
+  "PT_MAHASISWA",
+  "PT_ALUMNI",
+];
 
 // Teacher-specific navigation
 const teacherNavigation: NavGroup[] = [
@@ -1257,7 +1324,20 @@ function isYayasanRole(roleCode: string): boolean {
 
 function isPrincipalRole(roleCode: string): boolean {
   if (!roleCode || typeof roleCode !== "string") return false;
-  return roleCode.includes("KEPALA_SEKOLAH");
+  return (
+    roleCode.includes("KEPALA_SEKOLAH") ||
+    roleCode.includes("PT_REKTOR") ||
+    roleCode.includes("PT_DEKAN") ||
+    roleCode.includes("PESANTREN_DIREKTUR")
+  );
+}
+
+function isHigherEdRole(roleCode: string): boolean {
+  return HIGHER_ED_ROLES.includes(roleCode);
+}
+
+function isAlumniRole(roleCode: string): boolean {
+  return ALUMNI_ROLES.includes(roleCode);
 }
 
 export interface ActiveRole {
@@ -1378,6 +1458,9 @@ export {
   STUDENT_ROLES,
   PARENT_ROLES,
   YAYASAN_ROLES,
+  PESANTREN_ROLES,
+  ALUMNI_ROLES,
+  HIGHER_ED_ROLES,
   isAdminRole,
   isTeacherRole,
   isStaffRole,
@@ -1385,4 +1468,6 @@ export {
   isParentRole,
   isYayasanRole,
   isPrincipalRole,
+  isHigherEdRole,
+  isAlumniRole,
 };

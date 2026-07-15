@@ -36,11 +36,17 @@ describe('middleware/auth RBAC', () => {
       expect(deriveLegacyRole(RoleCode.SDIT_ADMIN)).toBe('UNIT_ADMIN');
       expect(deriveLegacyRole(RoleCode.SDIT_GURU)).toBe('TEACHER');
       expect(deriveLegacyRole(RoleCode.SUPER_ADMIN)).toBe('SUPER_ADMIN');
+      // Test new roles
+      expect(deriveLegacyRole(RoleCode.SMPIT_WAKASEK)).toBe('TEACHER');
+      expect(deriveLegacyRole(RoleCode.PT_REKTOR)).toBe('TEACHER');
+      expect(deriveLegacyRole(RoleCode.BUSINESS_MANAGER)).toBe('STAFF');
     });
 
     it('isAdminRoleCode recognises per-unit admins but not teachers/governance', () => {
       expect(isAdminRoleCode(RoleCode.SUPER_ADMIN)).toBe(true);
       expect(isAdminRoleCode(RoleCode.SDIT_ADMIN)).toBe(true);
+      expect(isAdminRoleCode(RoleCode.PT_TATA_USAHA)).toBe(true);
+      expect(isAdminRoleCode(RoleCode.BUSINESS_MANAGER)).toBe(true);
       expect(isAdminRoleCode(RoleCode.SDIT_GURU)).toBe(false);
       expect(isAdminRoleCode(RoleCode.YAYASAN_PEMBINA)).toBe(false);
     });
@@ -100,9 +106,18 @@ describe('middleware/auth RBAC', () => {
     it('isTeacherOrAbove admits teachers and admins, denies students', () => {
       isTeacherOrAbove(makeReq({ roleCode: RoleCode.SDIT_GURU }), makeRes(), next as unknown as NextFunction);
       expect(next).toHaveBeenCalledWith();
+
       const n2 = vi.fn();
-      isTeacherOrAbove(makeReq({ roleCode: RoleCode.SDIT_SISWA }), makeRes(), n2 as unknown as NextFunction);
-      expect(n2.mock.calls[0][0].statusCode).toBe(403);
+      isTeacherOrAbove(makeReq({ roleCode: RoleCode.SMPIT_WAKASEK }), makeRes(), n2 as unknown as NextFunction);
+      expect(n2).toHaveBeenCalledWith();
+
+      const n3 = vi.fn();
+      isTeacherOrAbove(makeReq({ roleCode: RoleCode.PT_REKTOR }), makeRes(), n3 as unknown as NextFunction);
+      expect(n3).toHaveBeenCalledWith();
+
+      const n4 = vi.fn();
+      isTeacherOrAbove(makeReq({ roleCode: RoleCode.SDIT_SISWA }), makeRes(), n4 as unknown as NextFunction);
+      expect(n4.mock.calls[0][0].statusCode).toBe(403);
     });
   });
 

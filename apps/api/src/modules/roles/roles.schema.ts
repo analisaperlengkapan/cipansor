@@ -4,7 +4,17 @@ import { PERMISSIONS } from './permissions';
 
 export const getRolesQuerySchema = z.object({
   realm: z
-    .enum(['GLOBAL', 'YAYASAN', 'TK_QURAN', 'SD_IT', 'SMP_IT', 'SMA_QURAN', 'PESANTREN'])
+    .enum([
+      'GLOBAL',
+      'YAYASAN',
+      'TK_QURAN',
+      'SD_IT',
+      'SMP_IT',
+      'SMA_QURAN',
+      'PESANTREN',
+      'PERGURUAN_TINGGI',
+      'UNIT_USAHA',
+    ])
     .optional(),
 });
 

@@ -85,40 +85,84 @@ const RoleCode = {
   // TK Qur'an roles
   TKQ_ADMIN: 'TKQ_ADMIN',
   TKQ_KEPALA_SEKOLAH: 'TKQ_KEPALA_SEKOLAH',
+  TKQ_WAKASEK: 'TKQ_WAKASEK',
   TKQ_GURU: 'TKQ_GURU',
+  TKQ_WALI_KELAS: 'TKQ_WALI_KELAS',
+  TKQ_GURU_BK: 'TKQ_GURU_BK',
   TKQ_TATA_USAHA: 'TKQ_TATA_USAHA',
+  TKQ_BENDAHARA: 'TKQ_BENDAHARA',
+  TKQ_KOMITE: 'TKQ_KOMITE',
   TKQ_ORANG_TUA: 'TKQ_ORANG_TUA',
   TKQ_SISWA: 'TKQ_SISWA',
+  TKQ_ALUMNI: 'TKQ_ALUMNI',
 
   // SD IT (Islam Terpadu) roles
   SDIT_ADMIN: 'SDIT_ADMIN',
   SDIT_KEPALA_SEKOLAH: 'SDIT_KEPALA_SEKOLAH',
+  SDIT_WAKASEK: 'SDIT_WAKASEK',
   SDIT_GURU: 'SDIT_GURU',
+  SDIT_WALI_KELAS: 'SDIT_WALI_KELAS',
+  SDIT_GURU_BK: 'SDIT_GURU_BK',
   SDIT_TATA_USAHA: 'SDIT_TATA_USAHA',
+  SDIT_BENDAHARA: 'SDIT_BENDAHARA',
+  SDIT_KOMITE: 'SDIT_KOMITE',
   SDIT_ORANG_TUA: 'SDIT_ORANG_TUA',
   SDIT_SISWA: 'SDIT_SISWA',
+  SDIT_ALUMNI: 'SDIT_ALUMNI',
 
   // SMP IT (Islam Terpadu) roles
   SMPIT_ADMIN: 'SMPIT_ADMIN',
   SMPIT_KEPALA_SEKOLAH: 'SMPIT_KEPALA_SEKOLAH',
+  SMPIT_WAKASEK: 'SMPIT_WAKASEK',
   SMPIT_GURU: 'SMPIT_GURU',
+  SMPIT_WALI_KELAS: 'SMPIT_WALI_KELAS',
+  SMPIT_GURU_BK: 'SMPIT_GURU_BK',
   SMPIT_TATA_USAHA: 'SMPIT_TATA_USAHA',
+  SMPIT_BENDAHARA: 'SMPIT_BENDAHARA',
+  SMPIT_KOMITE: 'SMPIT_KOMITE',
   SMPIT_ORANG_TUA: 'SMPIT_ORANG_TUA',
   SMPIT_SISWA: 'SMPIT_SISWA',
+  SMPIT_ALUMNI: 'SMPIT_ALUMNI',
 
   // SMA Qur'an roles
   SMAQ_ADMIN: 'SMAQ_ADMIN',
   SMAQ_KEPALA_SEKOLAH: 'SMAQ_KEPALA_SEKOLAH',
+  SMAQ_WAKASEK: 'SMAQ_WAKASEK',
   SMAQ_GURU: 'SMAQ_GURU',
+  SMAQ_WALI_KELAS: 'SMAQ_WALI_KELAS',
+  SMAQ_GURU_BK: 'SMAQ_GURU_BK',
   SMAQ_TATA_USAHA: 'SMAQ_TATA_USAHA',
+  SMAQ_BENDAHARA: 'SMAQ_BENDAHARA',
+  SMAQ_KOMITE: 'SMAQ_KOMITE',
   SMAQ_ORANG_TUA: 'SMAQ_ORANG_TUA',
   SMAQ_SISWA: 'SMAQ_SISWA',
+  SMAQ_ALUMNI: 'SMAQ_ALUMNI',
 
   // Pesantren roles (cross-unit)
-  MUSYRIF: 'MUSYRIF', // Pembina asrama
-  MUHAFIDZ: 'MUHAFIDZ', // Pengampu tahfidz
-  MURABBI: 'MURABBI', // Pembina akhlaq
-  WALI_KAMAR: 'WALI_KAMAR', // Penanggung jawab kamar
+  PESANTREN_PENGASUH: 'PESANTREN_PENGASUH',
+  PESANTREN_DIREKTUR: 'PESANTREN_DIREKTUR',
+  PESANTREN_TATA_USAHA: 'PESANTREN_TATA_USAHA',
+  USTADZ: 'USTADZ',
+  MUSYRIF: 'MUSYRIF',
+  MUSYRIFAH: 'MUSYRIFAH',
+  MUHAFIDZ: 'MUHAFIDZ',
+  MUHAFIDZAH: 'MUHAFIDZAH',
+  MURABBI: 'MURABBI',
+  WALI_KAMAR: 'WALI_KAMAR',
+
+  // Perguruan Tinggi roles
+  PT_REKTOR: 'PT_REKTOR',
+  PT_WAKIL_REKTOR: 'PT_WAKIL_REKTOR',
+  PT_DEKAN: 'PT_DEKAN',
+  PT_KAPRODI: 'PT_KAPRODI',
+  PT_DOSEN: 'PT_DOSEN',
+  PT_TATA_USAHA: 'PT_TATA_USAHA',
+  PT_MAHASISWA: 'PT_MAHASISWA',
+  PT_ALUMNI: 'PT_ALUMNI',
+
+  // Business Unit roles
+  BUSINESS_MANAGER: 'BUSINESS_MANAGER',
+  BUSINESS_STAFF: 'BUSINESS_STAFF',
 } as const;
 
 // Define System User ID constant
@@ -287,6 +331,17 @@ async function main() {
     },
   });
 
+  const perguruanTinggi = await prisma.unit.create({
+    data: {
+      foundationId: foundation.id,
+      name: 'Institut Teknologi & Sains Cipansor',
+      type: UnitType.PERGURUAN_TINGGI,
+      address: 'Jl. Raya Kampus Cipansor No. 1, Sukabumi',
+      phone: '0266777888',
+      email: 'info@itsc.ac.id',
+    },
+  });
+
   console.log('✅ Units created');
 
   // ============================================
@@ -360,18 +415,23 @@ async function main() {
       realm: Realm.TK_QURAN,
       description: "Kepala sekolah TK Qur'an",
     },
+    { code: RoleCode.TKQ_WAKASEK, name: "Waka TK Qur'an", realm: Realm.TK_QURAN },
     {
       code: RoleCode.TKQ_GURU,
       name: "Guru TK Qur'an",
       realm: Realm.TK_QURAN,
       description: "Guru TK Qur'an",
     },
+    { code: RoleCode.TKQ_WALI_KELAS, name: "Wali Kelas TK Qur'an", realm: Realm.TK_QURAN },
+    { code: RoleCode.TKQ_GURU_BK, name: "Guru BK TK Qur'an", realm: Realm.TK_QURAN },
     {
       code: RoleCode.TKQ_TATA_USAHA,
       name: "Tata Usaha TK Qur'an",
       realm: Realm.TK_QURAN,
       description: "Tata usaha TK Qur'an",
     },
+    { code: RoleCode.TKQ_BENDAHARA, name: "Bendahara Unit TK Qur'an", realm: Realm.TK_QURAN },
+    { code: RoleCode.TKQ_KOMITE, name: "Komite Sekolah TK Qur'an", realm: Realm.TK_QURAN },
     {
       code: RoleCode.TKQ_ORANG_TUA,
       name: "Orang Tua TK Qur'an",
@@ -384,6 +444,7 @@ async function main() {
       realm: Realm.TK_QURAN,
       description: "Siswa TK Qur'an",
     },
+    { code: RoleCode.TKQ_ALUMNI, name: "Alumni TK Qur'an", realm: Realm.TK_QURAN },
 
     // SD IT (Islam Terpadu) roles
     {
@@ -398,13 +459,18 @@ async function main() {
       realm: Realm.SD_IT,
       description: 'Kepala sekolah SD IT',
     },
+    { code: RoleCode.SDIT_WAKASEK, name: 'Waka SD IT', realm: Realm.SD_IT },
     { code: RoleCode.SDIT_GURU, name: 'Guru SD IT', realm: Realm.SD_IT, description: 'Guru SD IT' },
+    { code: RoleCode.SDIT_WALI_KELAS, name: 'Wali Kelas SD IT', realm: Realm.SD_IT },
+    { code: RoleCode.SDIT_GURU_BK, name: 'Guru BK SD IT', realm: Realm.SD_IT },
     {
       code: RoleCode.SDIT_TATA_USAHA,
       name: 'Tata Usaha SD IT',
       realm: Realm.SD_IT,
       description: 'Tata usaha SD IT',
     },
+    { code: RoleCode.SDIT_BENDAHARA, name: 'Bendahara Unit SD IT', realm: Realm.SD_IT },
+    { code: RoleCode.SDIT_KOMITE, name: 'Komite Sekolah SD IT', realm: Realm.SD_IT },
     {
       code: RoleCode.SDIT_ORANG_TUA,
       name: 'Orang Tua SD IT',
@@ -417,6 +483,7 @@ async function main() {
       realm: Realm.SD_IT,
       description: 'Siswa SD IT',
     },
+    { code: RoleCode.SDIT_ALUMNI, name: 'Alumni SD IT', realm: Realm.SD_IT },
 
     // SMP IT (Islam Terpadu) roles
     {
@@ -431,18 +498,23 @@ async function main() {
       realm: Realm.SMP_IT,
       description: 'Kepala sekolah SMP IT',
     },
+    { code: RoleCode.SMPIT_WAKASEK, name: 'Waka SMP IT', realm: Realm.SMP_IT },
     {
       code: RoleCode.SMPIT_GURU,
       name: 'Guru SMP IT',
       realm: Realm.SMP_IT,
       description: 'Guru SMP IT',
     },
+    { code: RoleCode.SMPIT_WALI_KELAS, name: 'Wali Kelas SMP IT', realm: Realm.SMP_IT },
+    { code: RoleCode.SMPIT_GURU_BK, name: 'Guru BK SMP IT', realm: Realm.SMP_IT },
     {
       code: RoleCode.SMPIT_TATA_USAHA,
       name: 'Tata Usaha SMP IT',
       realm: Realm.SMP_IT,
       description: 'Tata usaha SMP IT',
     },
+    { code: RoleCode.SMPIT_BENDAHARA, name: 'Bendahara Unit SMP IT', realm: Realm.SMP_IT },
+    { code: RoleCode.SMPIT_KOMITE, name: 'Komite Sekolah SMP IT', realm: Realm.SMP_IT },
     {
       code: RoleCode.SMPIT_ORANG_TUA,
       name: 'Orang Tua SMP IT',
@@ -455,6 +527,7 @@ async function main() {
       realm: Realm.SMP_IT,
       description: 'Siswa SMP IT',
     },
+    { code: RoleCode.SMPIT_ALUMNI, name: 'Alumni SMP IT', realm: Realm.SMP_IT },
 
     // SMA Qur'an roles
     {
@@ -469,18 +542,23 @@ async function main() {
       realm: Realm.SMA_QURAN,
       description: "Kepala sekolah SMA Qur'an",
     },
+    { code: RoleCode.SMAQ_WAKASEK, name: "Waka SMA Qur'an", realm: Realm.SMA_QURAN },
     {
       code: RoleCode.SMAQ_GURU,
       name: "Guru SMA Qur'an",
       realm: Realm.SMA_QURAN,
       description: "Guru SMA Qur'an",
     },
+    { code: RoleCode.SMAQ_WALI_KELAS, name: "Wali Kelas SMA Qur'an", realm: Realm.SMA_QURAN },
+    { code: RoleCode.SMAQ_GURU_BK, name: "Guru BK SMA Qur'an", realm: Realm.SMA_QURAN },
     {
       code: RoleCode.SMAQ_TATA_USAHA,
       name: "Tata Usaha SMA Qur'an",
       realm: Realm.SMA_QURAN,
       description: "Tata usaha SMA Qur'an",
     },
+    { code: RoleCode.SMAQ_BENDAHARA, name: "Bendahara Unit SMA Qur'an", realm: Realm.SMA_QURAN },
+    { code: RoleCode.SMAQ_KOMITE, name: "Komite Sekolah SMA Qur'an", realm: Realm.SMA_QURAN },
     {
       code: RoleCode.SMAQ_ORANG_TUA,
       name: "Orang Tua SMA Qur'an",
@@ -493,20 +571,27 @@ async function main() {
       realm: Realm.SMA_QURAN,
       description: "Siswa SMA Qur'an",
     },
+    { code: RoleCode.SMAQ_ALUMNI, name: "Alumni SMA Qur'an", realm: Realm.SMA_QURAN },
 
     // Pesantren roles (cross-unit)
+    { code: RoleCode.PESANTREN_PENGASUH, name: 'Pengasuh Pesantren', realm: Realm.PESANTREN },
+    { code: RoleCode.PESANTREN_DIREKTUR, name: 'Direktur Pesantren', realm: Realm.PESANTREN },
+    { code: RoleCode.PESANTREN_TATA_USAHA, name: 'TU Pesantren', realm: Realm.PESANTREN },
+    { code: RoleCode.USTADZ, name: 'Ustadz Pesantren', realm: Realm.PESANTREN },
     {
       code: RoleCode.MUSYRIF,
-      name: 'Musyrif',
+      name: 'Musyrif (Pembina Putra)',
       realm: Realm.PESANTREN,
-      description: 'Pembina asrama',
+      description: 'Pembina asrama putra',
     },
+    { code: RoleCode.MUSYRIFAH, name: 'Musyrifah (Pembina Putri)', realm: Realm.PESANTREN },
     {
       code: RoleCode.MUHAFIDZ,
-      name: 'Muhafidz',
+      name: 'Muhafidz (Tahfidz Putra)',
       realm: Realm.PESANTREN,
-      description: 'Pengampu tahfidz',
+      description: 'Pengampu tahfidz putra',
     },
+    { code: RoleCode.MUHAFIDZAH, name: 'Muhafidzah (Tahfidz Putri)', realm: Realm.PESANTREN },
     {
       code: RoleCode.MURABBI,
       name: 'Murabbi',
@@ -519,6 +604,20 @@ async function main() {
       realm: Realm.PESANTREN,
       description: 'Penanggung jawab kamar',
     },
+
+    // Perguruan Tinggi
+    { code: RoleCode.PT_REKTOR, name: 'Rektor', realm: Realm.PERGURUAN_TINGGI },
+    { code: RoleCode.PT_WAKIL_REKTOR, name: 'Wakil Rektor', realm: Realm.PERGURUAN_TINGGI },
+    { code: RoleCode.PT_DEKAN, name: 'Dekan', realm: Realm.PERGURUAN_TINGGI },
+    { code: RoleCode.PT_KAPRODI, name: 'Ketua Prodi', realm: Realm.PERGURUAN_TINGGI },
+    { code: RoleCode.PT_DOSEN, name: 'Dosen', realm: Realm.PERGURUAN_TINGGI },
+    { code: RoleCode.PT_TATA_USAHA, name: 'TU Kampus', realm: Realm.PERGURUAN_TINGGI },
+    { code: RoleCode.PT_MAHASISWA, name: 'Mahasiswa', realm: Realm.PERGURUAN_TINGGI },
+    { code: RoleCode.PT_ALUMNI, name: 'Alumni Kampus', realm: Realm.PERGURUAN_TINGGI },
+
+    // Unit Usaha
+    { code: RoleCode.BUSINESS_MANAGER, name: 'Manajer Unit Usaha', realm: Realm.UNIT_USAHA },
+    { code: RoleCode.BUSINESS_STAFF, name: 'Staf Unit Usaha', realm: Realm.UNIT_USAHA },
   ];
 
   const roles: Record<string, any> = {};
@@ -3035,6 +3134,35 @@ async function main() {
   console.log(`   Alumni Events: ${eventsData.length}`);
   console.log(`   Event Attendees: ${totalAttendees}`);
 
+  // Additional specialized users
+  const rektorUser = await prisma.user.create({
+    data: {
+      name: 'Prof. Dr. H. Mujahidin',
+      email: 'rektor@itsc.ac.id',
+      passwordHash: await bcrypt.hash('Rektor123!', 10),
+      role: UserRole.STAFF,
+      unitId: perguruanTinggi.id,
+      isActive: true,
+    },
+  });
+  await prisma.userRoleAssignment.create({
+    data: { userId: rektorUser.id, roleId: roles[RoleCode.PT_REKTOR].id, unitId: perguruanTinggi.id, isPrimary: true },
+  });
+
+  const wakaKurikulumUser = await prisma.user.create({
+    data: {
+      name: 'Ustadz Mansyur, S.Pd.I',
+      email: 'mansyur@smpit.sch.id',
+      passwordHash: await bcrypt.hash('Mansyur123!', 10),
+      role: UserRole.TEACHER,
+      unitId: pesantren.id,
+      isActive: true,
+    },
+  });
+  await prisma.userRoleAssignment.create({
+    data: { userId: wakaKurikulumUser.id, roleId: roles[RoleCode.SMPIT_WAKASEK].id, unitId: pesantren.id, isPrimary: true },
+  });
+
   console.log('\n🔑 Login Credentials:');
   console.log('\n   === SUPER ADMIN (GLOBAL) ===');
   console.log('   Super Admin: superadmin@cipansor.id / SuperAdmin123!');
@@ -3058,6 +3186,7 @@ async function main() {
   console.log('\n   === SMP IT ===');
   console.log('   Admin SMP IT: admin@smpit.sch.id / Admin123!');
   console.log('   Kepala Sekolah SMP IT: kepala@smpit.sch.id / Kepala123!');
+  console.log('   Waka Kurikulum SMP IT: mansyur@smpit.sch.id / Mansyur123!');
   console.log('   Guru SMP IT: ahmad@smpit.sch.id / Teacher123!');
   console.log('   Orang Tua SMP IT: parent1@smpit.sch.id / Parent123!');
   console.log('   Siswa SMP IT: student1@smpit.sch.id / Student123!');
@@ -3065,6 +3194,9 @@ async function main() {
   console.log("\n   === SMA AL-QUR'AN ===");
   console.log("   Admin SMA Al-Qur'an: admin@smaq.sch.id / Admin123!");
   console.log("   Siswa SMA Al-Qur'an: student5@smaq.sch.id / Student123!");
+
+  console.log('\n   === PERGURUAN TINGGI ===');
+  console.log('   Rektor: rektor@itsc.ac.id / Rektor123!');
 
   // ============================================
   // PHASE 9: PAUD Enhancement Seeds

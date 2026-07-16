@@ -1,5 +1,6 @@
 import { test, expect } from "./fixtures/auth.fixture";
 import { LoginPage } from "./page-objects";
+import { loginAs } from "./helpers/auth-api";
 
 /**
  * Assessment Module E2E Tests
@@ -8,9 +9,7 @@ import { LoginPage } from "./page-objects";
 
 test.describe("Assessment - List & Navigation", () => {
   test("should navigate to assessment page", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+    await loginAs(page, "superAdmin");
 
     await page.waitForTimeout(2000);
     await page.goto("/assessment");
@@ -23,9 +22,7 @@ test.describe("Assessment - List & Navigation", () => {
   });
 
   test("should display assessment list or create form", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+    await loginAs(page, "superAdmin");
 
     await page.waitForTimeout(2000);
     await page.goto("/assessment");
@@ -42,9 +39,7 @@ test.describe("Assessment - List & Navigation", () => {
 
 test.describe("Assessment - Report Cards", () => {
   test("should navigate to report cards page", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+    await loginAs(page, "superAdmin");
 
     await page.waitForTimeout(2000);
     await page.goto("/assessment/report-cards");
@@ -54,9 +49,7 @@ test.describe("Assessment - Report Cards", () => {
   });
 
   test("should display report cards list", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+    await loginAs(page, "superAdmin");
 
     await page.waitForTimeout(2000);
     await page.goto("/assessment/report-cards");
@@ -74,9 +67,7 @@ test.describe("Assessment - Report Cards", () => {
   });
 
   test("should navigate to generate report cards page", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+    await loginAs(page, "superAdmin");
 
     await page.waitForTimeout(2000);
     await page.goto("/assessment/report-cards/generate");
@@ -88,9 +79,7 @@ test.describe("Assessment - Report Cards", () => {
 
 test.describe("Assessment - Raport Merdeka", () => {
   test("should navigate to raport merdeka page", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+    await loginAs(page, "superAdmin");
 
     await page.waitForTimeout(2000);
     await page.goto("/assessment/raport-merdeka");

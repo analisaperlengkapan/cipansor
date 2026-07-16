@@ -1,5 +1,5 @@
 import { test, expect } from "./fixtures/auth.fixture";
-import { LoginPage } from "./page-objects";
+import { loginAs } from "./helpers/auth-api";
 
 /**
  * Curriculum Module E2E Tests
@@ -8,9 +8,7 @@ import { LoginPage } from "./page-objects";
 
 test.describe("Curriculum - Navigation", () => {
   test("should navigate to curriculum page", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+    await loginAs(page, "superAdmin");
 
     await page.waitForTimeout(2000);
     await page.goto("/curriculum");
@@ -20,9 +18,7 @@ test.describe("Curriculum - Navigation", () => {
   });
 
   test("should display curriculum interface", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+    await loginAs(page, "superAdmin");
 
     await page.waitForTimeout(2000);
     await page.goto("/curriculum");
@@ -35,9 +31,7 @@ test.describe("Curriculum - Navigation", () => {
 
 test.describe("Curriculum - Features", () => {
   test("should display curriculum structure", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+    await loginAs(page, "superAdmin");
 
     await page.waitForTimeout(2000);
     await page.goto("/curriculum");
@@ -53,9 +47,7 @@ test.describe("Curriculum - Features", () => {
   });
 
   test("should have subject/topic management", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+    await loginAs(page, "superAdmin");
 
     await page.waitForTimeout(2000);
     await page.goto("/curriculum");
@@ -71,9 +63,7 @@ test.describe("Curriculum - Features", () => {
   });
 
   test("should display curriculum details", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+    await loginAs(page, "superAdmin");
 
     await page.waitForTimeout(2000);
     await page.goto("/curriculum");
@@ -91,9 +81,7 @@ test.describe("Curriculum - Features", () => {
 
 test.describe("Curriculum - Performance", () => {
   test("should load curriculum page quickly", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+    await loginAs(page, "superAdmin");
 
     await page.waitForTimeout(2000);
 

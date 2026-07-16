@@ -1,22 +1,16 @@
 import { test, expect } from "./fixtures/auth.fixture";
-import { LoginPage } from "./page-objects";
+import { loginAs } from "./helpers/auth-api";
 
 test.describe("Syariah - Navigation", () => {
   test("should navigate to syariah page", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
-    await page.waitForTimeout(2000);
+    await loginAs(page, "superAdmin");
     await page.goto("/syariah");
     await page.waitForLoadState("domcontentloaded", { timeout: 10000 });
     expect(page.url()).toMatch(/syariah/);
   });
 
   test("should display syariah content", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
-    await page.waitForTimeout(2000);
+    await loginAs(page, "superAdmin");
     await page.goto("/syariah");
     await page.waitForLoadState("domcontentloaded", { timeout: 10000 });
     const content = await page.content();
@@ -27,10 +21,7 @@ test.describe("Syariah - Navigation", () => {
 
 test.describe("Syariah - Features", () => {
   test("should display compliance summary", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
-    await page.waitForTimeout(2000);
+    await loginAs(page, "superAdmin");
     await page.goto("/syariah");
     await page.waitForLoadState("domcontentloaded", { timeout: 10000 });
 
@@ -43,10 +34,7 @@ test.describe("Syariah - Features", () => {
   });
 
   test("should display category breakdown", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
-    await page.waitForTimeout(2000);
+    await loginAs(page, "superAdmin");
     await page.goto("/syariah");
     await page.waitForLoadState("domcontentloaded", { timeout: 10000 });
 
@@ -61,10 +49,7 @@ test.describe("Syariah - Features", () => {
 
 test.describe("Syariah - Performance", () => {
   test("should load page within timeout", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
-    await page.waitForTimeout(2000);
+    await loginAs(page, "superAdmin");
     const startTime = Date.now();
     await page.goto("/syariah");
     await page.waitForLoadState("domcontentloaded", { timeout: 15000 });

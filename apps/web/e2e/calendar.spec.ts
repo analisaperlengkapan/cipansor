@@ -1,5 +1,5 @@
 import { test, expect } from "./fixtures/auth.fixture";
-import { LoginPage } from "./page-objects";
+import { loginAs } from "./helpers/auth-api";
 
 /**
  * Calendar Module E2E Tests
@@ -8,9 +8,7 @@ import { LoginPage } from "./page-objects";
 
 test.describe("Calendar - Navigation", () => {
   test("should navigate to calendar page", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+    await loginAs(page, "superAdmin");
 
     await page.waitForTimeout(2000);
     await page.goto("/calendar");
@@ -20,9 +18,7 @@ test.describe("Calendar - Navigation", () => {
   });
 
   test("should display calendar interface", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+    await loginAs(page, "superAdmin");
 
     await page.waitForTimeout(2000);
     await page.goto("/calendar");
@@ -35,9 +31,7 @@ test.describe("Calendar - Navigation", () => {
 
 test.describe("Calendar - Features", () => {
   test("should display calendar view", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+    await loginAs(page, "superAdmin");
 
     await page.waitForTimeout(2000);
     await page.goto("/calendar");
@@ -57,9 +51,7 @@ test.describe("Calendar - Features", () => {
   });
 
   test("should have event management", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+    await loginAs(page, "superAdmin");
 
     await page.waitForTimeout(2000);
     await page.goto("/calendar");
@@ -77,9 +69,7 @@ test.describe("Calendar - Features", () => {
   });
 
   test("should show month/week views", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+    await loginAs(page, "superAdmin");
 
     await page.waitForTimeout(2000);
     await page.goto("/calendar");
@@ -98,9 +88,7 @@ test.describe("Calendar - Features", () => {
 
 test.describe("Calendar - Performance", () => {
   test("should load calendar quickly", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+    await loginAs(page, "superAdmin");
 
     await page.waitForTimeout(2000);
 

@@ -1,5 +1,5 @@
 import { test, expect } from "./fixtures/auth.fixture";
-import { LoginPage } from "./page-objects";
+import { loginAs } from "./helpers/auth-api";
 
 /**
  * PPDB (Student Registration) E2E Tests
@@ -8,9 +8,7 @@ import { LoginPage } from "./page-objects";
 
 test.describe("PPDB - Main Page", () => {
   test("should navigate to PPDB page", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+    await loginAs(page, "superAdmin");
 
     await page.waitForTimeout(2000);
     await page.goto("/ppdb");
@@ -20,9 +18,7 @@ test.describe("PPDB - Main Page", () => {
   });
 
   test("should display PPDB stats and overview", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+    await loginAs(page, "superAdmin");
 
     await page.waitForTimeout(2000);
     await page.goto("/ppdb");
@@ -34,9 +30,7 @@ test.describe("PPDB - Main Page", () => {
   });
 
   test("should display menu cards for PPDB features", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+    await loginAs(page, "superAdmin");
 
     await page.waitForTimeout(2000);
     await page.goto("/ppdb");
@@ -55,9 +49,7 @@ test.describe("PPDB - Main Page", () => {
 
 test.describe("PPDB - Navigation", () => {
   test("should switch between tabs", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+    await loginAs(page, "superAdmin");
 
     await page.waitForTimeout(2000);
     await page.goto("/ppdb");
@@ -74,9 +66,7 @@ test.describe("PPDB - Navigation", () => {
   });
 
   test("should navigate to waves page", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+    await loginAs(page, "superAdmin");
 
     await page.waitForTimeout(2000);
     await page.goto("/ppdb/waves");
@@ -88,9 +78,7 @@ test.describe("PPDB - Navigation", () => {
 
 test.describe("PPDB - Performance", () => {
   test("should load PPDB page quickly", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+    await loginAs(page, "superAdmin");
 
     await page.waitForTimeout(2000);
 

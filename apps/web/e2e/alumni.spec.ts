@@ -1,5 +1,5 @@
 import { test, expect } from "./fixtures/auth.fixture";
-import { LoginPage } from "./page-objects";
+import { loginAs } from "./helpers/auth-api";
 
 /**
  * Alumni Module E2E Tests
@@ -8,9 +8,7 @@ import { LoginPage } from "./page-objects";
 
 test.describe("Alumni - Navigation", () => {
   test("should navigate to alumni page", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+    await loginAs(page, "superAdmin");
 
     await page.waitForTimeout(2000);
     await page.goto("/alumni");
@@ -20,9 +18,7 @@ test.describe("Alumni - Navigation", () => {
   });
 
   test("should display alumni interface", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+    await loginAs(page, "superAdmin");
 
     await page.waitForTimeout(2000);
     await page.goto("/alumni");
@@ -35,9 +31,7 @@ test.describe("Alumni - Navigation", () => {
 
 test.describe("Alumni - Features", () => {
   test("should display alumni list or directory", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+    await loginAs(page, "superAdmin");
 
     await page.waitForTimeout(2000);
     await page.goto("/alumni");
@@ -53,9 +47,7 @@ test.describe("Alumni - Features", () => {
   });
 
   test("should have search or filter functionality", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+    await loginAs(page, "superAdmin");
 
     await page.waitForTimeout(2000);
     await page.goto("/alumni");
@@ -73,9 +65,7 @@ test.describe("Alumni - Features", () => {
   });
 
   test("should display alumni statistics", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+    await loginAs(page, "superAdmin");
 
     await page.waitForTimeout(2000);
     await page.goto("/alumni");
@@ -97,9 +87,7 @@ test.describe("Alumni - Features", () => {
 
 test.describe("Alumni - Performance", () => {
   test("should load alumni page quickly", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+    await loginAs(page, "superAdmin");
 
     await page.waitForTimeout(2000);
 

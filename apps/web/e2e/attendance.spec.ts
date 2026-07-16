@@ -1,5 +1,5 @@
 import { test, expect } from "./fixtures/auth.fixture";
-import { LoginPage } from "./page-objects";
+import { loginAs } from "./helpers/auth-api";
 
 /**
  * Attendance Module E2E Tests
@@ -8,9 +8,7 @@ import { LoginPage } from "./page-objects";
 
 test.describe("Attendance - Navigation", () => {
   test("should navigate to attendance page", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+    await loginAs(page, "superAdmin");
 
     await page.waitForTimeout(2000);
     await page.goto("/attendance");
@@ -20,9 +18,7 @@ test.describe("Attendance - Navigation", () => {
   });
 
   test("should display attendance interface", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+    await loginAs(page, "superAdmin");
 
     await page.waitForTimeout(2000);
     await page.goto("/attendance");
@@ -35,9 +31,7 @@ test.describe("Attendance - Navigation", () => {
 
 test.describe("Attendance - Features", () => {
   test("should display attendance list or calendar", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+    await loginAs(page, "superAdmin");
 
     await page.waitForTimeout(2000);
     await page.goto("/attendance");
@@ -53,9 +47,7 @@ test.describe("Attendance - Features", () => {
   });
 
   test("should have date selection controls", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+    await loginAs(page, "superAdmin");
 
     await page.waitForTimeout(2000);
     await page.goto("/attendance");
@@ -73,9 +65,7 @@ test.describe("Attendance - Features", () => {
 
 test.describe("Attendance - Performance", () => {
   test("should load attendance page quickly", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+    await loginAs(page, "superAdmin");
 
     await page.waitForTimeout(2000);
 

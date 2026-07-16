@@ -1,5 +1,5 @@
 import { test, expect } from "./fixtures/auth.fixture";
-import { LoginPage } from "./page-objects";
+import { loginAs } from "./helpers/auth-api";
 
 /**
  * PAUD Module E2E Tests
@@ -8,9 +8,7 @@ import { LoginPage } from "./page-objects";
 
 test.describe("PAUD - Main Page", () => {
   test("should navigate to PAUD page", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+    await loginAs(page, "superAdmin");
 
     await page.waitForTimeout(2000);
     await page.goto("/paud");
@@ -20,9 +18,7 @@ test.describe("PAUD - Main Page", () => {
   });
 
   test("should display PAUD overview with stats", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+    await loginAs(page, "superAdmin");
 
     await page.waitForTimeout(2000);
     await page.goto("/paud");
@@ -38,9 +34,7 @@ test.describe("PAUD - Main Page", () => {
   });
 
   test("should display menu cards for PAUD features", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+    await loginAs(page, "superAdmin");
 
     await page.waitForTimeout(2000);
     await page.goto("/paud");
@@ -59,9 +53,7 @@ test.describe("PAUD - Main Page", () => {
 
 test.describe("PAUD - Tabs Navigation", () => {
   test("should switch between tabs", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+    await loginAs(page, "superAdmin");
 
     await page.waitForTimeout(2000);
     await page.goto("/paud");
@@ -80,9 +72,7 @@ test.describe("PAUD - Tabs Navigation", () => {
   });
 
   test("should display quick actions", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+    await loginAs(page, "superAdmin");
 
     await page.waitForTimeout(2000);
     await page.goto("/paud");
@@ -101,9 +91,7 @@ test.describe("PAUD - Tabs Navigation", () => {
 
 test.describe("PAUD - Sub-modules", () => {
   test("should navigate to PAUD assessment page", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+    await loginAs(page, "superAdmin");
 
     await page.waitForTimeout(2000);
     await page.goto("/paud/assessment");
@@ -113,9 +101,7 @@ test.describe("PAUD - Sub-modules", () => {
   });
 
   test("should navigate to daily reports page", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+    await loginAs(page, "superAdmin");
 
     await page.waitForTimeout(2000);
     await page.goto("/paud/daily-reports");
@@ -125,9 +111,7 @@ test.describe("PAUD - Sub-modules", () => {
   });
 
   test("should navigate to PAUD reports page", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+    await loginAs(page, "superAdmin");
 
     await page.waitForTimeout(2000);
     await page.goto("/paud/reports");
@@ -139,9 +123,7 @@ test.describe("PAUD - Sub-modules", () => {
 
 test.describe("PAUD - Performance", () => {
   test("should load PAUD page within acceptable time", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+    await loginAs(page, "superAdmin");
 
     await page.waitForTimeout(2000);
 

@@ -1,6 +1,11 @@
 import * as fs from "fs";
 import * as path from "path";
-import { apiLogin, buildStorageState, SEED_USERS } from "./helpers/auth-api";
+import {
+  apiLogin,
+  buildStorageState,
+  SEED_USERS,
+  type AuthSession,
+} from "./helpers/auth-api";
 
 /**
  * Playwright Global Setup for Cipansor E2E Tests
@@ -62,23 +67,48 @@ async function globalSetup() {
 
   // 3. Pre-authenticate roles via the API and persist storageState, plus a raw
   //    session cache (sessions.json) that loginAs/apiLogin in every worker
-  //    reads — so the whole run performs each login (and admin 2FA) exactly
-  //    once instead of per-worker, which trips the 2FA rate limiter.
+  //    reads — so the whole run performs each login (and admin 2FA) at most
+  //    once instead of per-worker, which trips the strict 2FA rate limiter.
+  //    Sessions from a previous run are reused when their token still works
+  //    (verified against /auth/me), so iterative local runs usually perform
+  //    ZERO 2FA logins and never approach the limiter.
   const sessionsFile = path.join(authDir, "sessions.json");
-  fs.rmSync(sessionsFile, { force: true }); // never reuse stale tokens
+  let previous: Record<string, AuthSession> = {};
+  try {
+    previous = JSON.parse(fs.readFileSync(sessionsFile, "utf8"));
+  } catch {
+    /* no previous sessions */
+  }
+  fs.rmSync(sessionsFile, { force: true }); // workers only ever see verified sessions
+
+  const sessionStillValid = async (session: AuthSession): Promise<boolean> => {
+    try {
+      const res = await fetch(`${apiURL}/auth/me`, {
+        headers: { authorization: `Bearer ${session.accessToken}` },
+      });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  };
+
   if (backendAvailable) {
     console.log("🔐 Pre-authenticating roles via API...");
-    const sessions: Record<string, unknown> = {};
+    const sessions: Record<string, AuthSession> = {};
     for (const [role, file] of Object.entries(ROLE_FILES)) {
       try {
         const user = SEED_USERS[role as keyof typeof SEED_USERS];
-        const session = await apiLogin(user);
+        const reusable = previous[user.email];
+        const session =
+          reusable && (await sessionStillValid(reusable))
+            ? reusable
+            : await apiLogin(user);
         sessions[user.email] = session;
         fs.writeFileSync(
           path.join(authDir, `${file}.json`),
           JSON.stringify(buildStorageState(session), null, 2),
         );
-        console.log(`✅ Saved storageState for ${role}`);
+        console.log(`✅ Saved storageState for ${role}${session === reusable ? " (reused)" : ""}`);
       } catch (error) {
         console.warn(`⚠️ Failed to pre-authenticate ${role}:`, error);
       }

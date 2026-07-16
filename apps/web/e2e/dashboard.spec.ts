@@ -28,8 +28,9 @@ test.describe("Dashboard - Navigation", () => {
 
 test.describe("Dashboard - Metrics", () => {
   test("should display statistics cards", async ({ page }) => {
+    // shadcn Card renders data-slot="card" (no "card" substring in class names)
     const hasCards = await page
-      .locator('[class*="card"], [class*="stat"]')
+      .locator('[data-slot="card"], [class*="card"], [class*="stat"]')
       .first()
       .isVisible({ timeout: 10000 })
       .catch(() => false);

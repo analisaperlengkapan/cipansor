@@ -131,10 +131,23 @@ coverage matrix.
   validate and a controller test per module. Remaining: unify the file-naming
   convention (`controller.ts` vs `<name>.controller.ts`) across the other
   modules. See `apps/api/AGENTS.md` for the standard.
-- **Strict build.** Move `tsconfig.build.json` toward `tsconfig.json` strictness
-  (fix the Prisma-null and remaining errors) so `build` == `build:strict`, then
-  drop the `Parameters<...>[0]` casts added as lenient-config workarounds.
-- **Reduce `no-explicit-any` warnings** (push shared types into `packages/shared`).
+- **Strict build.** ✅ **DONE.** `tsconfig.build.json` extends `tsconfig.json`
+  (identical strictness; build.json only narrows emit scope), and the root
+  config now sets `noEmit` so `build:strict` is a pure typecheck over
+  src+tests+prisma. All `Parameters<...>[0]` service-input casts are gone
+  (Prisma transactions use the official `Prisma.TransactionClient`; the only
+  survivors are email-sms's heterogeneous template-union dispatch).
+- **Reduce `no-explicit-any` warnings.** ✅ **Major pass done: 2278 → 1082**
+  (−52%). Eliminated the `(req as any).user` / `(req.params as any)` /
+  `(req.query as any)` cast families (~1150 sites) via the typed Express
+  augmentation + new `requireUser`/`requireStudentId`/`findStudentIdForUser`/
+  `findTeacherIdForUser` helpers — which surfaced and fixed latent bugs
+  (student self-endpoints in muhasabah/takhosus always 400'd because the JWT
+  never carries `studentId`; assignments teacher/student auto-fill never ran;
+  tahfidz & rapor-pesantren list endpoints skipped zod validation entirely).
+  Remaining 1082 = 603 in test files (mock plumbing) + 479 spread thin across
+  service internals (`where: any` builders) — fix opportunistically per module
+  (use `Prisma.XWhereInput`), not worth a dedicated pass.
 - **Web role alignment.** ✅ **Foundation done:** `src/lib/rbac.ts` is the
   single source of truth (mirrors backend `deriveLegacyRole`); `middleware.ts`
   and `parent/layout.tsx` resolve the effective role from `user.role` OR

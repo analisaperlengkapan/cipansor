@@ -28,14 +28,12 @@ test.describe("Dashboard - Navigation", () => {
 
 test.describe("Dashboard - Metrics", () => {
   test("should display statistics cards", async ({ page }) => {
-    // shadcn Card renders data-slot="card" (no "card" substring in class names)
-    const hasCards = await page
-      .locator('[data-slot="card"], [class*="card"], [class*="stat"]')
-      .first()
-      .isVisible({ timeout: 10000 })
-      .catch(() => false);
-
-    expect(hasCards).toBeTruthy();
+    // shadcn Card renders data-slot="card" (no "card" substring in class
+    // names). First paint sits on an auth-hydration spinner, which can
+    // exceed 10s under parallel worker load — wait for the cards properly.
+    await expect(
+      page.locator('[data-slot="card"], [class*="card"], [class*="stat"]').first(),
+    ).toBeVisible({ timeout: 20000 });
   });
 
   test("should show student count metrics", async ({ page }) => {

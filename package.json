@@ -8,25 +8,34 @@
     "lint": "turbo run lint",
     "test": "turbo run test",
     "clean": "turbo run clean",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\""
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "audit:deps": "node scripts/audit-deps.mjs"
   },
   "devDependencies": {
+    "semver": "^7.7.3",
     "turbo": "latest",
     "prettier": "latest",
-    "typescript": "latest"
+    "typescript": "latest",
+    "yaml": "^2.8.2"
   },
-  "packageManager": "pnpm@9.0.0",
+  "packageManager": "pnpm@9.15.9",
   "pnpm": {
     "overrides": {
-      "qs": "^6.14.1",
+      "qs": "^6.15.2",
       "@types/express-serve-static-core": "5.1.0",
+      "@babel/core": ">=7.29.1",
+      "@hono/node-server": ">=1.19.13",
+      "dompurify": ">=3.4.12",
       "fast-uri": ">=3.1.2",
       "form-data": ">=4.0.6",
       "hono": ">=4.12.25",
+      "js-yaml": ">=4.1.2",
       "multer": ">=2.2.0",
       "next": ">=16.2.5",
       "nodemailer": ">=9.0.1",
+      "postcss": ">=8.5.16",
       "rollup": ">=4.22.4",
+      "vite": "^8.1.4",
       "ws": ">=8.21.0"
     }
   }

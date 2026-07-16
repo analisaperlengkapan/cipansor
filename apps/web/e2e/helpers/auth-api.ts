@@ -1,3 +1,5 @@
+import * as fs from "fs";
+import * as path from "path";
 import type { Page } from "@playwright/test";
 import { generate as generateTotp } from "otplib";
 
@@ -63,10 +65,28 @@ async function postJson(path: string, body: unknown, bearer?: string) {
 // 2FA flow in every beforeEach — that quickly trips the 2FA rate limiter.
 const sessionCache = new Map<string, AuthSession>();
 
+/**
+ * Cross-worker session cache written by global-setup (one real login + 2FA per
+ * role per run). Without it every parallel worker re-authenticates the admin
+ * roles and the strict 2FA rate limiter (10/15min) 429s most of the suite.
+ */
+export const SESSIONS_FILE = path.join(__dirname, "../../.auth/sessions.json");
+
+function readSessionsFile(): Record<string, AuthSession> {
+  try {
+    return JSON.parse(fs.readFileSync(SESSIONS_FILE, "utf8"));
+  } catch {
+    return {};
+  }
+}
+
 /** Authenticate against the API, transparently completing 2FA when required. */
 export async function apiLogin(user: SeedUser): Promise<AuthSession> {
-  const cached = sessionCache.get(user.email);
-  if (cached) return cached;
+  const cached = sessionCache.get(user.email) ?? readSessionsFile()[user.email];
+  if (cached) {
+    sessionCache.set(user.email, cached);
+    return cached;
+  }
   const session = await apiLoginUncached(user);
   sessionCache.set(user.email, session);
   return session;

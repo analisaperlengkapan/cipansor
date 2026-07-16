@@ -60,12 +60,20 @@ async function globalSetup() {
     console.warn("⚠️ Frontend is not accessible:", error);
   }
 
-  // 3. Pre-authenticate roles via the API and persist storageState.
+  // 3. Pre-authenticate roles via the API and persist storageState, plus a raw
+  //    session cache (sessions.json) that loginAs/apiLogin in every worker
+  //    reads — so the whole run performs each login (and admin 2FA) exactly
+  //    once instead of per-worker, which trips the 2FA rate limiter.
+  const sessionsFile = path.join(authDir, "sessions.json");
+  fs.rmSync(sessionsFile, { force: true }); // never reuse stale tokens
   if (backendAvailable) {
     console.log("🔐 Pre-authenticating roles via API...");
+    const sessions: Record<string, unknown> = {};
     for (const [role, file] of Object.entries(ROLE_FILES)) {
       try {
-        const session = await apiLogin(SEED_USERS[role as keyof typeof SEED_USERS]);
+        const user = SEED_USERS[role as keyof typeof SEED_USERS];
+        const session = await apiLogin(user);
+        sessions[user.email] = session;
         fs.writeFileSync(
           path.join(authDir, `${file}.json`),
           JSON.stringify(buildStorageState(session), null, 2),
@@ -75,6 +83,7 @@ async function globalSetup() {
         console.warn(`⚠️ Failed to pre-authenticate ${role}:`, error);
       }
     }
+    fs.writeFileSync(sessionsFile, JSON.stringify(sessions, null, 2));
   } else {
     console.log("⚠️ Skipping pre-authentication (backend unavailable).");
   }

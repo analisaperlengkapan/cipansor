@@ -1,127 +1,68 @@
 import { Page } from '@playwright/test';
+import { apiLogin, injectSession, SEED_USERS, type SeedRole } from './auth-api';
 
 /**
- * Mocks the authenticated user state via Playwright browser context.
+ * Legacy auth helpers, now backed by REAL API authentication.
+ *
+ * These used to inject a fake user + 'mock-jwt-token' into localStorage, which
+ * meant every real API call from the page returned 401 and specs could only
+ * assert against page.route stubs. They now delegate to helpers/auth-api.ts
+ * (apiLogin + injectSession), so pages render real seeded data.
+ *
+ * New specs should import { loginAs } from './auth-api' directly; this file
+ * exists so the older mock-era specs keep working during migration.
+ */
+
+/** Map the RoleCode strings the legacy specs pass to seed roles. */
+const ROLE_CODE_TO_SEED: Record<string, SeedRole> = {
+  SUPER_ADMIN: 'superAdmin',
+  UNIT_ADMIN: 'adminSdit',
+  SDIT_ADMIN: 'adminSdit',
+  TEACHER: 'teacher',
+  SDIT_GURU: 'teacher',
+  PARENT: 'parent',
+  STUDENT: 'student',
+};
+
+function seedRoleFor(roleCode: string): SeedRole {
+  const seedRole = ROLE_CODE_TO_SEED[roleCode];
+  if (!seedRole) {
+    throw new Error(
+      `No seed user mapped for role code "${roleCode}" — add it to ROLE_CODE_TO_SEED in e2e/helpers/auth.ts`,
+    );
+  }
+  return seedRole;
+}
+
+/**
+ * Authenticate as the seed user for the given role code and land on the app
+ * root. Kept for the legacy specs; equivalent to loginAs + goto('/').
  */
 export async function setupAuthenticatedPage(page: Page, roleCode: string = 'SUPER_ADMIN') {
-  await setupMockAuth(page, { roleCode });
+  const session = await apiLogin(SEED_USERS[seedRoleFor(roleCode)]);
+  await injectSession(page, session);
   await page.goto('/');
 }
 
-export async function setupMockAuth(page: Page, options: {
-  roleCode?: string;
-  role?: string;
-  name?: string;
-  realm?: string;
-} = {}) {
-  const {
-    roleCode = 'SUPER_ADMIN',
-    role = 'SUPER_ADMIN',
-    name = 'Super Admin E2E',
-    realm = 'GLOBAL'
-  } = options;
-
-  const user = {
-    id: 'mock-user-id',
-    name,
-    role, // Legacy role
-    email: 'admin@cipansor.test',
-    userRoles: [
-      {
-        id: 'ur-mock',
-        isPrimary: true,
-        role: {
-          id: 'role-mock',
-          code: roleCode,
-          name: role,
-          realm,
-        }
-      }
-    ]
-  };
-
-  const accessToken = 'mock-jwt-token';
-  const authState = {
-    state: {
-      isAuthenticated: true,
-      user,
-    },
-    version: 0
-  };
-  const authStorage = JSON.stringify(authState);
-
-  // Cookies must exist on the very first navigation (the Next middleware reads
-  // them before any page JS runs). Setting them via document.cookie in
-  // addInitScript is too late → the first request to a protected route redirects
-  // to /login. Use context cookies instead.
-  const baseURL = process.env.BASE_URL || "http://localhost:3000";
-  await page.context().addCookies([
-    { name: "accessToken", value: accessToken, url: baseURL },
-    { name: "auth-storage", value: encodeURIComponent(authStorage), url: baseURL },
-  ]);
-
-  // localStorage (read by the auth store / axios interceptor) before page JS.
-  await page.addInitScript(({ token, storage }) => {
-    window.localStorage.setItem('accessToken', token);
-    window.localStorage.setItem('auth-storage', storage);
-  }, { token: accessToken, storage: authStorage });
-
-  // Automatically mock /api/auth/me to prevent logout on hydration
-  await page.route('**/api/auth/me', async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        success: true,
-        data: user,
-      }),
-    });
-  });
-
-  // Mock roles API
-  await page.route('**/api/roles/my-roles', async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        success: true,
-        data: user.userRoles,
-      }),
-    });
-  });
-}
-
 /**
- * Fakes a login action by setting cookies.
+ * Real login for the given role code (despite the historical name). Only the
+ * roleCode option is meaningful now — name/realm came from the fake user.
  */
-export async function login(page: Page) {
-  await page.context().addCookies([{
-    name: 'accessToken',
-    value: 'mock-jwt-token',
-    url: page.url(),
-    path: '/',
-  }]);
+export async function setupMockAuth(
+  page: Page,
+  options: { roleCode?: string; role?: string; name?: string; realm?: string } = {},
+) {
+  const session = await apiLogin(SEED_USERS[seedRoleFor(options.roleCode ?? 'SUPER_ADMIN')]);
+  await injectSession(page, session);
 }
 
 /**
- * Prime the auth cookies the Next middleware reads, BEFORE the first navigation.
- * Specs that mock auth purely via localStorage/addInitScript otherwise get
- * redirected to /login on first load (the middleware runs before page JS, so a
- * document.cookie/localStorage-only setup isn't visible yet). The cookie role
- * only gates middleware *routing*; the page still uses whatever user the spec
- * placed in localStorage.
+ * Prime auth BEFORE the first navigation so the Next middleware doesn't bounce
+ * the spec to /login. Historically set a fake cookie; now injects a real
+ * superAdmin session (cookies + localStorage), so subsequent API calls made by
+ * the page are genuinely authenticated.
  */
 export async function primeAuthCookies(page: Page) {
-  const authStorage = JSON.stringify({
-    state: {
-      user: { id: "mock", name: "Mock", role: "SUPER_ADMIN" },
-      isAuthenticated: true,
-    },
-    version: 0,
-  });
-  const baseURL = process.env.BASE_URL || "http://localhost:3000";
-  await page.context().addCookies([
-    { name: "accessToken", value: "fake-token", url: baseURL },
-    { name: "auth-storage", value: encodeURIComponent(authStorage), url: baseURL },
-  ]);
+  const session = await apiLogin(SEED_USERS.superAdmin);
+  await injectSession(page, session);
 }

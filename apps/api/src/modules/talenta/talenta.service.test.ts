@@ -180,6 +180,48 @@ describe('Talenta Service', () => {
     });
   });
 
+  describe('Unit scoping on reads', () => {
+    it('getSuccessions filters by unit when a unitId is given', async () => {
+      vi.mocked(prisma.successionPlan.findMany).mockResolvedValue([] as any);
+
+      await talentaService.getSuccessions('unit-1');
+
+      expect(prisma.successionPlan.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { unitId: 'unit-1' } }),
+      );
+    });
+
+    it('getSuccessions returns the cross-unit view when unitId is undefined (global super admin)', async () => {
+      vi.mocked(prisma.successionPlan.findMany).mockResolvedValue([] as any);
+
+      await talentaService.getSuccessions(undefined);
+
+      expect(prisma.successionPlan.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: {} }),
+      );
+    });
+
+    it('getProfiles omits the unit filter when unitId is undefined', async () => {
+      vi.mocked(prisma.talentProfile.findMany).mockResolvedValue([] as any);
+
+      await talentaService.getProfiles(undefined, {});
+
+      expect(prisma.talentProfile.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: {} }),
+      );
+    });
+
+    it('getTrainings omits the unit filter when unitId is undefined', async () => {
+      vi.mocked(prisma.trainingProgram.findMany).mockResolvedValue([] as any);
+
+      await talentaService.getTrainings(undefined, {});
+
+      expect(prisma.trainingProgram.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: {} }),
+      );
+    });
+  });
+
   describe('Succession Planning', () => {
     it('should create succession plan', async () => {
       const dto = {
@@ -200,6 +242,26 @@ describe('Talenta Service', () => {
           positionTitle: 'Kepala Sekolah',
           currentHolder: { connect: { id: 'user-1' } },
           successor: { connect: { id: 'user-2' } },
+        }),
+        include: expect.any(Object),
+      });
+    });
+
+    it('should create succession plan with null holder/successor (none selected in dialog)', async () => {
+      vi.mocked(prisma.successionPlan.create).mockResolvedValue({ id: 'succ-2' } as any);
+
+      await talentaService.createSuccession({
+        positionTitle: 'Kepala TU',
+        currentHolderId: null,
+        successorId: null,
+        unitId: 'unit-1',
+      });
+
+      expect(prisma.successionPlan.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          positionTitle: 'Kepala TU',
+          currentHolder: undefined,
+          successor: undefined,
         }),
         include: expect.any(Object),
       });

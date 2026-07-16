@@ -38,8 +38,8 @@ export class TalentaService {
     });
   }
 
-  async getProfiles(unitId: string, query: { category?: string }) {
-    const where: Prisma.TalentProfileWhereInput = { unitId };
+  async getProfiles(unitId: string | undefined, query: { category?: string }) {
+    const where: Prisma.TalentProfileWhereInput = unitId ? { unitId } : {};
     if (query.category) where.category = query.category as any;
 
     return prisma.talentProfile.findMany({
@@ -231,8 +231,8 @@ export class TalentaService {
     });
   }
 
-  async getTrainings(unitId: string, query: { status?: string }) {
-    const where: Prisma.TrainingProgramWhereInput = { unitId };
+  async getTrainings(unitId: string | undefined, query: { status?: string }) {
+    const where: Prisma.TrainingProgramWhereInput = unitId ? { unitId } : {};
     if (query.status) where.status = query.status as any;
 
     return prisma.trainingProgram.findMany({
@@ -291,8 +291,8 @@ export class TalentaService {
 
   async createSuccession(data: {
     positionTitle: string;
-    currentHolderId?: string;
-    successorId?: string;
+    currentHolderId?: string | null;
+    successorId?: string | null;
     readinessLevel?: string;
     priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
     notes?: string;
@@ -319,9 +319,9 @@ export class TalentaService {
     });
   }
 
-  async getSuccessions(unitId: string) {
+  async getSuccessions(unitId: string | undefined) {
     return prisma.successionPlan.findMany({
-      where: { unitId },
+      where: unitId ? { unitId } : {},
       include: {
         currentHolder: { select: { id: true, name: true } },
         successor: {
@@ -349,7 +349,7 @@ export class TalentaService {
    * Enhanced algorithm that considers keyword matches, training completion,
    * Sharia certification bonuses, and organizational position requirements.
    */
-  async suggestSuccessors(positionTitle: string, unitId: string, targetPositionId?: string) {
+  async suggestSuccessors(positionTitle: string, unitId: string | undefined, targetPositionId?: string) {
     // 1. Fetch target position requirements if provided
     let targetRequirements: string[] = [];
     let targetRequirementLevels: Record<string, number> = {};
@@ -380,7 +380,7 @@ export class TalentaService {
     // 2. Fetch ALL eligible talent profiles with their latest assessment and trainings
     const topTalents = await prisma.talentProfile.findMany({
       where: {
-        unitId,
+        ...(unitId ? { unitId } : {}),
         category: { in: ['HIGH_POTENTIAL', 'KEY_TALENT', 'EMERGING'] },
       },
       include: {
@@ -585,9 +585,9 @@ export class TalentaService {
     };
   }
 
-  async getTalentAnalytics(unitId: string) {
+  async getTalentAnalytics(unitId: string | undefined) {
     const talentProfiles = await prisma.talentProfile.findMany({
-      where: { unitId },
+      where: unitId ? { unitId } : {},
       select: {
         id: true,
         category: true,

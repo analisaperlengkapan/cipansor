@@ -38,10 +38,27 @@ function resolveUnitId(req: Request, bodyUnitId?: string): string {
   return unitId;
 }
 
+/**
+ * Unit scope for read/list endpoints. A global SUPER_ADMIN (no assigned unit)
+ * gets the cross-unit view unless they filter explicitly via ?unitId=;
+ * everyone else is pinned to their own unit.
+ */
+function resolveListUnitId(req: Request, queryUnitId?: string): string | undefined {
+  if (req.user?.role === UserRole.SUPER_ADMIN) {
+    return queryUnitId || req.user?.unitId || undefined;
+  }
+
+  const unitId = req.user?.unitId;
+  if (!unitId) {
+    throw Errors.badRequest('Unit ID is required');
+  }
+  return unitId;
+}
+
 // ==================== PROFILES ====================
 
 export const listProfiles = asyncHandler(async (req: Request, res: Response) => {
-  const unitId = resolveUnitId(req, req.query.unitId as string);
+  const unitId = resolveListUnitId(req, req.query.unitId as string);
   const profiles = await talentaService.getProfiles(unitId, {
     category: req.query.category as string,
   });
@@ -92,7 +109,7 @@ export const createAssessment = asyncHandler(async (req: Request, res: Response)
 // ==================== TRAINING ====================
 
 export const listTrainings = asyncHandler(async (req: Request, res: Response) => {
-  const unitId = resolveUnitId(req, req.query.unitId as string);
+  const unitId = resolveListUnitId(req, req.query.unitId as string);
   const trainings = await talentaService.getTrainings(unitId, {
     status: req.query.status as string,
   });
@@ -148,7 +165,7 @@ export const enrollTraining = asyncHandler(async (req: Request, res: Response) =
 // ==================== SUCCESSION ====================
 
 export const listSuccessions = asyncHandler(async (req: Request, res: Response) => {
-  const unitId = resolveUnitId(req, req.query.unitId as string);
+  const unitId = resolveListUnitId(req, req.query.unitId as string);
   const successions = await talentaService.getSuccessions(unitId);
   res.json({ success: true, data: successions });
 });
@@ -182,7 +199,7 @@ export const deleteSuccession = asyncHandler(async (req: Request, res: Response)
 // ==================== SUGGESTIONS ====================
 
 export const suggestSuccessors = asyncHandler(async (req: Request, res: Response) => {
-  const unitId = resolveUnitId(req, req.query.unitId as string);
+  const unitId = resolveListUnitId(req, req.query.unitId as string);
   const positionTitle = req.query.positionTitle as string;
   if (!positionTitle) throw Errors.badRequest('positionTitle query parameter is required');
   const suggestions = await talentaService.suggestSuccessors(positionTitle, unitId);
@@ -192,7 +209,7 @@ export const suggestSuccessors = asyncHandler(async (req: Request, res: Response
 // ==================== ANALYTICS ====================
 
 export const getTalentAnalytics = asyncHandler(async (req: Request, res: Response) => {
-  const unitId = resolveUnitId(req, req.query.unitId as string);
+  const unitId = resolveListUnitId(req, req.query.unitId as string);
   const analytics = await talentaService.getTalentAnalytics(unitId);
   res.json({ success: true, data: analytics });
 });

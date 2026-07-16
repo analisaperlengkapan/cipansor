@@ -67,8 +67,10 @@ export const enrollTrainingSchema = z.object({
 
 export const createSuccessionSchema = z.object({
   positionTitle: z.string().min(1),
-  currentHolderId: z.string().uuid().optional(),
-  successorId: z.string().uuid().optional(),
+  // Nullable to match the create dialog, which sends null when no current
+  // holder / successor candidate is selected (same semantics as update).
+  currentHolderId: z.string().uuid().nullable().optional(),
+  successorId: z.string().uuid().nullable().optional(),
   readinessLevel: z.string().optional(),
   priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']).optional(),
   notes: z.string().optional(),

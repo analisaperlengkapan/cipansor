@@ -154,6 +154,9 @@ export const roleRouteAccess: Record<LegacyRole, string[]> = {
     "/announcements",
     "/settings",
     "/daily-report",
+    // The talenta API (apps/api talenta.routes.ts) authorizes UNIT_ADMIN for
+    // their own unit's talent management — keep the web route reachable too.
+    "/talenta",
   ],
   TEACHER: [
     "/teacher",

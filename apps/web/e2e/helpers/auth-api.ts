@@ -187,6 +187,35 @@ export async function injectSession(page: Page, session: AuthSession) {
   );
 }
 
+/**
+ * Authenticated JSON request against the real API. For spec data setup /
+ * lookup (e.g. find a seeded record's id, create a fixture row, clean up).
+ */
+export async function apiRequest<T = unknown>(
+  session: AuthSession,
+  method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE",
+  apiPath: string,
+  body?: unknown,
+): Promise<T> {
+  const res = await fetch(`${API_URL}${apiPath}`, {
+    method,
+    headers: {
+      "content-type": "application/json",
+      authorization: `Bearer ${session.accessToken}`,
+    },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  const text = await res.text();
+  if (!res.ok) {
+    throw new Error(`${method} ${apiPath} → ${res.status}: ${text.slice(0, 200)}`);
+  }
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    throw new Error(`${method} ${apiPath} → non-JSON response: ${text.slice(0, 120)}`);
+  }
+}
+
 /** Convenience: log in as a seed role and inject the session into the page. */
 export async function loginAs(page: Page, role: SeedRole): Promise<AuthSession> {
   const session = await apiLogin(SEED_USERS[role]);

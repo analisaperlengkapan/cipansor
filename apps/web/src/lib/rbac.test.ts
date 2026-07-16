@@ -148,6 +148,11 @@ describe("rbac — canAccessRoute", () => {
     expect(canAccessRoute("TEACHER", "/finance")).toBe(false);
   });
 
+  it("unit admin can reach talenta (API authorizes UNIT_ADMIN on /talenta routes)", () => {
+    expect(canAccessRoute("UNIT_ADMIN", "/talenta")).toBe(true);
+    expect(canAccessRoute("UNIT_ADMIN", "/talenta/succession")).toBe(true);
+  });
+
   it("staff can reach finance but not the teacher dashboard", () => {
     expect(canAccessRoute("STAFF", "/finance")).toBe(true);
     expect(canAccessRoute("STAFF", "/teacher")).toBe(false);

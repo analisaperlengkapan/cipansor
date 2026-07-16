@@ -80,16 +80,43 @@ function readSessionsFile(): Record<string, AuthSession> {
   }
 }
 
+// Failed logins are cached too: without this, every subsequent test in the
+// worker re-attempts the 2FA flow, hammering (and re-heating) the rate
+// limiter, which turns one warm-limiter setup failure into a full-suite
+// cascade of 429s.
+const failureCache = new Map<string, Error>();
+
 /** Authenticate against the API, transparently completing 2FA when required. */
 export async function apiLogin(user: SeedUser): Promise<AuthSession> {
-  const cached = sessionCache.get(user.email) ?? readSessionsFile()[user.email];
+  const fileSessions = readSessionsFile();
+  const cached = sessionCache.get(user.email) ?? fileSessions[user.email];
   if (cached) {
     sessionCache.set(user.email, cached);
     return cached;
   }
-  const session = await apiLoginUncached(user);
-  sessionCache.set(user.email, session);
-  return session;
+  const priorFailure = failureCache.get(user.email);
+  if (priorFailure) throw priorFailure;
+
+  // If global-setup ran (sessions file exists) but couldn't authenticate this
+  // seed role, don't have every worker retry the 2FA flow — fail fast.
+  const isSeedRole = Object.values(SEED_USERS).some((u) => u.email === user.email);
+  if (isSeedRole && fs.existsSync(SESSIONS_FILE)) {
+    const err = new Error(
+      `global-setup failed to pre-authenticate ${user.email} (see setup logs); ` +
+        "not retrying per-test to avoid hammering the 2FA rate limiter.",
+    );
+    failureCache.set(user.email, err);
+    throw err;
+  }
+
+  try {
+    const session = await apiLoginUncached(user);
+    sessionCache.set(user.email, session);
+    return session;
+  } catch (error) {
+    failureCache.set(user.email, error as Error);
+    throw error;
+  }
 }
 
 async function apiLoginUncached(user: SeedUser): Promise<AuthSession> {

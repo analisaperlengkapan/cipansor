@@ -6,7 +6,36 @@ _Generated 2026-07-16 by the coverage audit; audit drift with `node scripts/e2e-
 
 - **Routes (App Router pages):** 430
 - **Routes visited by ≥1 spec:** 69 (16%)
-- **Spec files:** 78 — 6 real-backend (`loginAs`), 28 mock-intercept (`page.route`, to migrate), 44 other (unauth/public or skipped)
+- **Spec files:** 78 — 30 real-backend (`loginAs`), 28 mock-intercept (`page.route`, to migrate), rest unauth/public or skipped
+
+## Verified full-suite run (chromium, real seeded stack — 2026-07-16)
+
+Stack: local Postgres 16 + Redis (`scripts/dev-stack.sh`), `db:push` +
+`E2E_FIXED_2FA=1 db:seed`, API dev server + web **production** build
+(`next start`; dev-mode Turbopack compile-on-demand times out Playwright's
+240s webServer wait — use `pnpm build && pnpm start` locally).
+
+**Result: 262 passed / 16 failed / 44 skipped (4.1m).**
+
+History of the stabilization (all root-caused, no suppressions):
+1. First honest run: 214 passed / 94 failed — almost every failure was
+   `POST /auth/2fa/login → 429`: 4 workers each re-ran login+2FA per spec,
+   blowing the strict 10/15min limiter. Fixed by cross-worker session cache
+   (`.auth/sessions.json`, written by global-setup, reused while tokens pass
+   `/auth/me`) — **the production rate limiter was left untouched.**
+2. Second run: 259 passed / 19 failed. Remaining failures traced to specs
+   driving the **UI login form as superadmin** (2FA-gated → lands back on
+   /login): migrated 24 spec files to `loginAs`.
+3. Third run (after migration): 262 passed / 16 failed.
+
+### Remaining 16 known failures (backlog, per-page investigation needed)
+
+| Cluster | Specs | Likely cause |
+|---|---|---|
+| "should display X content" governance pages | litbang, organisasi, pengawasan, perencanaan, syariah, tata-laksana, integration-grc ×2 | mock-era heading assertions vs. real rendered content |
+| PAUD sub-module navigation | paud-main ×3 | nav card selectors / route changes |
+| Muhadatsah create page | muhadatsah ×2 | create form selectors |
+| Misc | ppdb waves nav, auth logout, dashboard stat cards | selector drift |
 
 **Legend:** ✅ proven against real backend · 🟡 partially exercised (spec exists but mock-based, or dimension only touched) · ❌ not covered
 

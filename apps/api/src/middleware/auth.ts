@@ -218,6 +218,50 @@ declare global {
 }
 
 /**
+ * Returns the authenticated user attached by `authenticate`, throwing 401 if
+ * absent. Lets controllers on authenticated routes read a non-optional,
+ * fully-typed user instead of casting `req` to `any`.
+ */
+export function requireUser(req: Request): JwtPayload {
+  if (!req.user) {
+    throw Errors.unauthorized();
+  }
+  return req.user;
+}
+
+/**
+ * Resolves the Student record linked to the authenticated user, or null when
+ * the user has no student profile. JWTs deliberately do not embed studentId
+ * (profiles can be linked/unlinked while a token is live), so controllers
+ * must resolve it from the database.
+ */
+export async function findStudentIdForUser(userId: string): Promise<string | null> {
+  const student = await prisma.student.findUnique({
+    where: { userId },
+    select: { id: true },
+  });
+  return student?.id ?? null;
+}
+
+/** Like {@link findStudentIdForUser} but throws 403 when no profile exists. */
+export async function requireStudentId(req: Request): Promise<string> {
+  const studentId = await findStudentIdForUser(requireUser(req).id);
+  if (!studentId) {
+    throw Errors.forbidden('User is not a student');
+  }
+  return studentId;
+}
+
+/** Resolves the Teacher record linked to the authenticated user, or null. */
+export async function findTeacherIdForUser(userId: string): Promise<string | null> {
+  const teacher = await prisma.teacher.findUnique({
+    where: { userId },
+    select: { id: true },
+  });
+  return teacher?.id ?? null;
+}
+
+/**
  * Authentication middleware - verifies JWT token
  * Rejects temporary 2FA tokens
  */

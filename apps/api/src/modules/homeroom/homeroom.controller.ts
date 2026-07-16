@@ -14,7 +14,7 @@ export class HomeroomController {
 
   async getPerformanceOverview(req: Request, res: Response, next: NextFunction) {
     try {
-      const { unitId } = (req.query as any);
+      const { unitId } = req.query;
       const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
       const overview = await homeroomService.getPerformanceOverview(
         user,
@@ -28,7 +28,7 @@ export class HomeroomController {
 
   async getClassDashboard(req: Request, res: Response, next: NextFunction) {
     try {
-      const { classId } = (req.params as any);
+      const { classId } = req.params;
       const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
       const dashboard = await homeroomService.getClassDashboard(classId, user);
       res.json({ data: dashboard });
@@ -39,7 +39,7 @@ export class HomeroomController {
 
   async getHomeroomStudents(req: Request, res: Response, next: NextFunction) {
     try {
-      const { classId } = (req.params as any);
+      const { classId } = req.params;
       const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
       const students = await homeroomService.getHomeroomStudents(classId, user);
       res.json({ data: students });
@@ -50,9 +50,9 @@ export class HomeroomController {
 
   async getAttendanceSummary(req: Request, res: Response, next: NextFunction) {
     try {
-      const { classId } = (req.params as any);
-      const startDate = (req.query as any).startDate as string;
-      const endDate = (req.query as any).endDate as string;
+      const { classId } = req.params;
+      const startDate = req.query.startDate as string;
+      const endDate = req.query.endDate as string;
       const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
       const summary = await homeroomService.getAttendanceSummary(classId, startDate, endDate, user);
       res.json({ data: summary });
@@ -63,7 +63,7 @@ export class HomeroomController {
 
   async getAcademicMonitoring(req: Request, res: Response, next: NextFunction) {
     try {
-      const { classId } = (req.params as any);
+      const { classId } = req.params;
       const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
       const monitoring = await homeroomService.getAcademicMonitoring(classId, user);
       res.json({ data: monitoring });
@@ -74,7 +74,7 @@ export class HomeroomController {
 
   async getStudentDetail(req: Request, res: Response, next: NextFunction) {
     try {
-      const { studentId } = (req.params as any);
+      const { studentId } = req.params;
       const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
       const student = await homeroomService.getStudentDetail(studentId, user);
       res.json({ data: student });
@@ -85,7 +85,7 @@ export class HomeroomController {
 
   async getStudentNotes(req: Request, res: Response, next: NextFunction) {
     try {
-      const { studentId } = (req.params as any);
+      const { studentId } = req.params;
       const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
       const notes = await homeroomService.getStudentNotes(studentId, user);
       res.json({ data: notes });
@@ -106,7 +106,7 @@ export class HomeroomController {
 
   async updateStudentNote(req: Request, res: Response, next: NextFunction) {
     try {
-      const { noteId } = (req.params as any);
+      const { noteId } = req.params;
       const noteType = req.body.noteType || 'violation';
       const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
       const note = await homeroomService.updateStudentNote(noteId, req.body, noteType, user);
@@ -118,8 +118,8 @@ export class HomeroomController {
 
   async deleteStudentNote(req: Request, res: Response, next: NextFunction) {
     try {
-      const { noteId } = (req.params as any);
-      const noteType = ((req.query as any).noteType as 'violation' | 'reward') || 'violation';
+      const { noteId } = req.params;
+      const noteType = (req.query.noteType as 'violation' | 'reward') || 'violation';
       const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
       await homeroomService.deleteStudentNote(noteId, noteType, user);
       res.json({ success: true, message: 'Note deleted successfully' });
@@ -130,7 +130,7 @@ export class HomeroomController {
 
   async getBehaviorRecords(req: Request, res: Response, next: NextFunction) {
     try {
-      const classId = (req.query as any).classId as string;
+      const classId = req.query.classId as string;
       const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
       const records = await homeroomService.getBehaviorRecords(classId, user);
       res.json({ data: records });

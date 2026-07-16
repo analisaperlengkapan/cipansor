@@ -49,7 +49,7 @@ export async function getPhases(req: Request, res: Response, next: NextFunction)
 
 export async function getPhase(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = getPhaseByIdSchema.parse((req.params as any));
+    const { id } = getPhaseByIdSchema.parse(req.params);
     const phase = await kurikulumMerdekaService.getPhaseById(id);
 
     if (!phase) {
@@ -85,7 +85,7 @@ export async function postPhase(req: Request, res: Response, next: NextFunction)
 
 export async function putPhase(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = getPhaseByIdSchema.parse((req.params as any));
+    const { id } = getPhaseByIdSchema.parse(req.params);
     const data = updatePhaseSchema.parse(req.body);
     const phase = await kurikulumMerdekaService.updatePhase(id, data);
 
@@ -103,7 +103,7 @@ export async function putPhase(req: Request, res: Response, next: NextFunction) 
 
 export async function getLearningOutcomes(req: Request, res: Response, next: NextFunction) {
   try {
-    const query = listLearningOutcomesQuerySchema.parse((req.query as any));
+    const query = listLearningOutcomesQuerySchema.parse(req.query);
     const result = await kurikulumMerdekaService.listLearningOutcomes(query);
 
     res.json({
@@ -117,7 +117,7 @@ export async function getLearningOutcomes(req: Request, res: Response, next: Nex
 
 export async function getLearningOutcome(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = getLearningOutcomeByIdSchema.parse((req.params as any));
+    const { id } = getLearningOutcomeByIdSchema.parse(req.params);
     const outcome = await kurikulumMerdekaService.getLearningOutcomeById(id);
 
     if (!outcome) {
@@ -153,7 +153,7 @@ export async function postLearningOutcome(req: Request, res: Response, next: Nex
 
 export async function putLearningOutcome(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = getLearningOutcomeByIdSchema.parse((req.params as any));
+    const { id } = getLearningOutcomeByIdSchema.parse(req.params);
     const data = updateLearningOutcomeSchema.parse(req.body);
     const outcome = await kurikulumMerdekaService.updateLearningOutcome(id, data);
 
@@ -169,7 +169,7 @@ export async function putLearningOutcome(req: Request, res: Response, next: Next
 
 export async function removeLearningOutcome(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = getLearningOutcomeByIdSchema.parse((req.params as any));
+    const { id } = getLearningOutcomeByIdSchema.parse(req.params);
     await kurikulumMerdekaService.deleteLearningOutcome(id);
 
     res.json({
@@ -185,7 +185,7 @@ export async function removeLearningOutcome(req: Request, res: Response, next: N
 
 export async function getLearningObjectives(req: Request, res: Response, next: NextFunction) {
   try {
-    const query = listLearningObjectivesQuerySchema.parse((req.query as any));
+    const query = listLearningObjectivesQuerySchema.parse(req.query);
     const result = await kurikulumMerdekaService.listLearningObjectives(query);
 
     res.json({
@@ -199,7 +199,7 @@ export async function getLearningObjectives(req: Request, res: Response, next: N
 
 export async function getLearningObjective(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = (req.params as any);
+    const { id } = req.params;
     const objective = await kurikulumMerdekaService.getLearningObjectiveById(id);
 
     if (!objective) {
@@ -235,7 +235,7 @@ export async function postLearningObjective(req: Request, res: Response, next: N
 
 export async function putLearningObjective(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = (req.params as any);
+    const { id } = req.params;
     const data = updateLearningObjectiveSchema.parse(req.body);
     const objective = await kurikulumMerdekaService.updateLearningObjective(id, data);
 
@@ -251,7 +251,7 @@ export async function putLearningObjective(req: Request, res: Response, next: Ne
 
 export async function removeLearningObjective(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = (req.params as any);
+    const { id } = req.params;
     await kurikulumMerdekaService.deleteLearningObjective(id);
 
     res.json({
@@ -267,7 +267,7 @@ export async function removeLearningObjective(req: Request, res: Response, next:
 
 export async function getTeachingModules(req: Request, res: Response, next: NextFunction) {
   try {
-    const query = listTeachingModulesQuerySchema.parse((req.query as any));
+    const query = listTeachingModulesQuerySchema.parse(req.query);
     const result = await kurikulumMerdekaService.listTeachingModules(query);
 
     res.json({
@@ -281,7 +281,7 @@ export async function getTeachingModules(req: Request, res: Response, next: Next
 
 export async function getTeachingModule(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = (req.params as any);
+    const { id } = req.params;
     const module = await kurikulumMerdekaService.getTeachingModuleById(id);
 
     if (!module) {
@@ -317,7 +317,7 @@ export async function postTeachingModule(req: Request, res: Response, next: Next
 
 export async function putTeachingModule(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = (req.params as any);
+    const { id } = req.params;
     const data = updateTeachingModuleSchema.parse(req.body);
     const module = await kurikulumMerdekaService.updateTeachingModule(id, data);
 
@@ -333,7 +333,7 @@ export async function putTeachingModule(req: Request, res: Response, next: NextF
 
 export async function removeTeachingModule(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = (req.params as any);
+    const { id } = req.params;
     await kurikulumMerdekaService.deleteTeachingModule(id);
 
     res.json({
@@ -362,7 +362,7 @@ export async function getP5Themes(req: Request, res: Response, next: NextFunctio
 
 export async function getP5Theme(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = (req.params as any);
+    const { id } = req.params;
     const theme = await kurikulumMerdekaService.getP5ThemeById(id);
 
     if (!theme) {
@@ -398,7 +398,7 @@ export async function postP5Theme(req: Request, res: Response, next: NextFunctio
 
 export async function putP5Theme(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = (req.params as any);
+    const { id } = req.params;
     const data = updateP5ThemeSchema.parse(req.body);
     const theme = await kurikulumMerdekaService.updateP5Theme(id, data);
 
@@ -431,7 +431,7 @@ export async function getP5Dimensions(req: Request, res: Response, next: NextFun
 
 export async function getP5Projects(req: Request, res: Response, next: NextFunction) {
   try {
-    const query = listP5ProjectsQuerySchema.parse((req.query as any));
+    const query = listP5ProjectsQuerySchema.parse(req.query);
     const result = await kurikulumMerdekaService.listP5Projects(query);
 
     res.json({
@@ -445,7 +445,7 @@ export async function getP5Projects(req: Request, res: Response, next: NextFunct
 
 export async function getP5Project(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = getP5ProjectByIdSchema.parse((req.params as any));
+    const { id } = getP5ProjectByIdSchema.parse(req.params);
     const project = await kurikulumMerdekaService.getP5ProjectById(id);
 
     if (!project) {
@@ -481,7 +481,7 @@ export async function postP5Project(req: Request, res: Response, next: NextFunct
 
 export async function putP5Project(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = getP5ProjectByIdSchema.parse((req.params as any));
+    const { id } = getP5ProjectByIdSchema.parse(req.params);
     const data = updateP5ProjectSchema.parse(req.body);
     const project = await kurikulumMerdekaService.updateP5Project(id, data);
 
@@ -497,7 +497,7 @@ export async function putP5Project(req: Request, res: Response, next: NextFuncti
 
 export async function removeP5Project(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = getP5ProjectByIdSchema.parse((req.params as any));
+    const { id } = getP5ProjectByIdSchema.parse(req.params);
     await kurikulumMerdekaService.deleteP5Project(id);
 
     res.json({
@@ -513,7 +513,7 @@ export async function removeP5Project(req: Request, res: Response, next: NextFun
 
 export async function getP5Assessments(req: Request, res: Response, next: NextFunction) {
   try {
-    const query = listP5AssessmentsQuerySchema.parse((req.query as any));
+    const query = listP5AssessmentsQuerySchema.parse(req.query);
     const result = await kurikulumMerdekaService.listP5Assessments(query);
 
     res.json({
@@ -527,7 +527,7 @@ export async function getP5Assessments(req: Request, res: Response, next: NextFu
 
 export async function getP5Assessment(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = (req.params as any);
+    const { id } = req.params;
     const assessment = await kurikulumMerdekaService.getP5AssessmentById(id);
 
     if (!assessment) {
@@ -563,7 +563,7 @@ export async function postP5Assessment(req: Request, res: Response, next: NextFu
 
 export async function putP5Assessment(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = (req.params as any);
+    const { id } = req.params;
     const data = updateP5AssessmentSchema.parse(req.body);
     const assessment = await kurikulumMerdekaService.updateP5Assessment(id, data);
 
@@ -579,7 +579,7 @@ export async function putP5Assessment(req: Request, res: Response, next: NextFun
 
 export async function removeP5Assessment(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = (req.params as any);
+    const { id } = req.params;
     await kurikulumMerdekaService.deleteP5Assessment(id);
 
     res.json({
@@ -595,7 +595,7 @@ export async function removeP5Assessment(req: Request, res: Response, next: Next
 
 export async function getMerdekaAssessments(req: Request, res: Response, next: NextFunction) {
   try {
-    const query = listMerdekaAssessmentsQuerySchema.parse((req.query as any));
+    const query = listMerdekaAssessmentsQuerySchema.parse(req.query);
     const result = await kurikulumMerdekaService.listMerdekaAssessments(query);
 
     res.json({
@@ -609,7 +609,7 @@ export async function getMerdekaAssessments(req: Request, res: Response, next: N
 
 export async function getMerdekaAssessment(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = getMerdekaAssessmentByIdSchema.parse((req.params as any));
+    const { id } = getMerdekaAssessmentByIdSchema.parse(req.params);
     const assessment = await kurikulumMerdekaService.getMerdekaAssessmentById(id);
 
     if (!assessment) {
@@ -645,7 +645,7 @@ export async function postMerdekaAssessment(req: Request, res: Response, next: N
 
 export async function putMerdekaAssessment(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = getMerdekaAssessmentByIdSchema.parse((req.params as any));
+    const { id } = getMerdekaAssessmentByIdSchema.parse(req.params);
     const data = updateMerdekaAssessmentSchema.parse(req.body);
     const assessment = await kurikulumMerdekaService.updateMerdekaAssessment(id, data);
 
@@ -661,7 +661,7 @@ export async function putMerdekaAssessment(req: Request, res: Response, next: Ne
 
 export async function removeMerdekaAssessment(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = getMerdekaAssessmentByIdSchema.parse((req.params as any));
+    const { id } = getMerdekaAssessmentByIdSchema.parse(req.params);
     await kurikulumMerdekaService.deleteMerdekaAssessment(id);
 
     res.json({
@@ -677,7 +677,7 @@ export async function removeMerdekaAssessment(req: Request, res: Response, next:
 
 export async function getMerdekaResults(req: Request, res: Response, next: NextFunction) {
   try {
-    const query = listMerdekaResultsQuerySchema.parse((req.query as any));
+    const query = listMerdekaResultsQuerySchema.parse(req.query);
     const result = await kurikulumMerdekaService.listMerdekaResults(query);
 
     res.json({
@@ -691,7 +691,7 @@ export async function getMerdekaResults(req: Request, res: Response, next: NextF
 
 export async function getMerdekaResult(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = (req.params as any);
+    const { id } = req.params;
     const result = await kurikulumMerdekaService.getMerdekaResultById(id);
 
     if (!result) {
@@ -727,7 +727,7 @@ export async function postMerdekaResult(req: Request, res: Response, next: NextF
 
 export async function putMerdekaResult(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = (req.params as any);
+    const { id } = req.params;
     const data = updateMerdekaResultSchema.parse(req.body);
     const result = await kurikulumMerdekaService.updateMerdekaResult(id, data);
 
@@ -743,7 +743,7 @@ export async function putMerdekaResult(req: Request, res: Response, next: NextFu
 
 export async function removeMerdekaResult(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = (req.params as any);
+    const { id } = req.params;
     await kurikulumMerdekaService.deleteMerdekaResult(id);
 
     res.json({
@@ -759,7 +759,7 @@ export async function removeMerdekaResult(req: Request, res: Response, next: Nex
 
 export async function getSummary(req: Request, res: Response, next: NextFunction) {
   try {
-    const { unitId, academicYearId } = (req.query as any) as { unitId?: string; academicYearId?: string };
+    const { unitId, academicYearId } = req.query as { unitId?: string; academicYearId?: string };
     const summary = await kurikulumMerdekaService.getKurikulumMerdekaSummary(
       unitId,
       academicYearId

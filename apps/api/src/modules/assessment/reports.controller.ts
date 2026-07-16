@@ -8,7 +8,7 @@ import { ApiResponse } from '@/utils/response';
 
 export async function getSkhun(req: Request, res: Response, next: NextFunction) {
   try {
-    const { studentId, academicYearId, examPeriod } = (req.query as any);
+    const { studentId, academicYearId, examPeriod } = req.query;
 
     if (!studentId || !academicYearId) {
       return res
@@ -30,8 +30,8 @@ export async function getSkhun(req: Request, res: Response, next: NextFunction) 
 
 export async function getSkhunByStudentId(req: Request, res: Response, next: NextFunction) {
   try {
-    const { studentId } = (req.params as any);
-    const { academicYearId } = (req.query as any);
+    const { studentId } = req.params;
+    const { academicYearId } = req.query;
 
     const skhun = await reportsService.getSkhunByStudent(
       studentId,
@@ -50,7 +50,7 @@ export async function getSkhunByStudentId(req: Request, res: Response, next: Nex
 
 export async function getBulkSkhun(req: Request, res: Response, next: NextFunction) {
   try {
-    const { classId, academicYearId, examPeriod } = (req.query as any);
+    const { classId, academicYearId, examPeriod } = req.query;
 
     if (!classId || !academicYearId) {
       return res.status(400).json(ApiResponse.error('Class ID and Academic Year ID are required'));
@@ -79,8 +79,8 @@ export async function getBulkSkhun(req: Request, res: Response, next: NextFuncti
 
 export async function getTranscript(req: Request, res: Response, next: NextFunction) {
   try {
-    const { studentId } = (req.params as any);
-    const { graduationYear } = (req.query as any);
+    const { studentId } = req.params;
+    const { graduationYear } = req.query;
 
     const transcript = await reportsService.generateTranscript(
       studentId,
@@ -95,7 +95,7 @@ export async function getTranscript(req: Request, res: Response, next: NextFunct
 
 export async function getBulkTranscripts(req: Request, res: Response, next: NextFunction) {
   try {
-    const { classId } = (req.query as any);
+    const { classId } = req.query;
 
     if (!classId) {
       return res.status(400).json(ApiResponse.error('Class ID is required'));
@@ -120,7 +120,7 @@ export async function getBulkTranscripts(req: Request, res: Response, next: Next
 
 export async function getReportCardPrintData(req: Request, res: Response, next: NextFunction) {
   try {
-    const { reportCardId } = (req.params as any);
+    const { reportCardId } = req.params;
 
     const printData = await reportsService.getReportCardPrintData(reportCardId);
 
@@ -136,7 +136,7 @@ export async function getReportCardPrintData(req: Request, res: Response, next: 
 
 export async function exportSkhunExcel(req: Request, res: Response, next: NextFunction) {
   try {
-    const { studentId, academicYearId } = (req.query as any);
+    const { studentId, academicYearId } = req.query;
 
     if (!studentId || !academicYearId) {
       return res
@@ -157,7 +157,7 @@ export async function exportSkhunExcel(req: Request, res: Response, next: NextFu
 
 export async function exportTranscriptExcel(req: Request, res: Response, next: NextFunction) {
   try {
-    const { studentId } = (req.params as any);
+    const { studentId } = req.params;
 
     const exportData = await reportsService.exportTranscriptToExcel(studentId);
 

@@ -12,7 +12,7 @@ import type {
  * GET /api/academic-years
  */
 export const list = asyncHandler(async (req: Request, res: Response) => {
-  const query = (res.locals.validatedQuery || (req.query as any)) as ListAcademicYearsQuery;
+  const query = (res.locals.validatedQuery || req.query) as ListAcademicYearsQuery;
   const result = await academicYearService.findAll(query);
 
   res.json({
@@ -42,7 +42,7 @@ export const getActive = asyncHandler(async (_req: Request, res: Response) => {
  * GET /api/academic-years/:id
  */
 export const getById = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = (req.params as any);
+  const { id } = req.params;
   const academicYear = await academicYearService.findById(id);
 
   res.json({
@@ -70,7 +70,7 @@ export const create = asyncHandler(async (req: Request, res: Response) => {
  * PUT /api/academic-years/:id
  */
 export const update = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = (req.params as any);
+  const { id } = req.params;
   const input: UpdateAcademicYearInput = req.body;
   const academicYear = await academicYearService.update(id, input);
 
@@ -85,7 +85,7 @@ export const update = asyncHandler(async (req: Request, res: Response) => {
  * DELETE /api/academic-years/:id
  */
 export const remove = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = (req.params as any);
+  const { id } = req.params;
   const result = await academicYearService.delete(id);
 
   res.json({

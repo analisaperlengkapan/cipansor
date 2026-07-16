@@ -16,7 +16,7 @@ import { Errors } from '../../middleware/error';
 
 export async function getBookCategories(req: Request, res: Response, next: NextFunction) {
   try {
-    const unitId = (req.query as any).unitId as string | undefined;
+    const unitId = req.query.unitId as string | undefined;
     const categories = await service.getBookCategories(unitId);
     res.json({ success: true, data: categories });
   } catch (error) {
@@ -26,7 +26,7 @@ export async function getBookCategories(req: Request, res: Response, next: NextF
 
 export async function getBookCategoryById(req: Request, res: Response, next: NextFunction) {
   try {
-    const category = await service.getBookCategoryById((req.params as any).id);
+    const category = await service.getBookCategoryById(req.params.id);
     if (!category) {
       throw Errors.notFound('Book category not found');
     }
@@ -49,7 +49,7 @@ export async function createBookCategory(req: Request, res: Response, next: Next
 export async function updateBookCategory(req: Request, res: Response, next: NextFunction) {
   try {
     const data = updateBookCategorySchema.parse(req.body);
-    const category = await service.updateBookCategory((req.params as any).id, data);
+    const category = await service.updateBookCategory(req.params.id, data);
     res.json({ success: true, data: category });
   } catch (error) {
     next(error);
@@ -58,7 +58,7 @@ export async function updateBookCategory(req: Request, res: Response, next: Next
 
 export async function deleteBookCategory(req: Request, res: Response, next: NextFunction) {
   try {
-    await service.deleteBookCategory((req.params as any).id);
+    await service.deleteBookCategory(req.params.id);
     res.json({ success: true, message: 'Book category deleted' });
   } catch (error) {
     next(error);
@@ -69,7 +69,7 @@ export async function deleteBookCategory(req: Request, res: Response, next: Next
 
 export async function getBooks(req: Request, res: Response, next: NextFunction) {
   try {
-    const query = queryBookSchema.parse((req.query as any));
+    const query = queryBookSchema.parse(req.query);
     const result = await service.getBooks(query);
     res.json({ success: true, ...result });
   } catch (error) {
@@ -79,7 +79,7 @@ export async function getBooks(req: Request, res: Response, next: NextFunction) 
 
 export async function getBookById(req: Request, res: Response, next: NextFunction) {
   try {
-    const book = await service.getBookById((req.params as any).id);
+    const book = await service.getBookById(req.params.id);
     if (!book) {
       throw Errors.notFound('Book not found');
     }
@@ -102,7 +102,7 @@ export async function createBook(req: Request, res: Response, next: NextFunction
 export async function updateBook(req: Request, res: Response, next: NextFunction) {
   try {
     const data = updateBookSchema.parse(req.body);
-    const book = await service.updateBook((req.params as any).id, data);
+    const book = await service.updateBook(req.params.id, data);
     if (!book) {
       throw Errors.notFound('Book not found');
     }
@@ -114,7 +114,7 @@ export async function updateBook(req: Request, res: Response, next: NextFunction
 
 export async function deleteBook(req: Request, res: Response, next: NextFunction) {
   try {
-    await service.deleteBook((req.params as any).id);
+    await service.deleteBook(req.params.id);
     res.json({ success: true, message: 'Book deleted' });
   } catch (error) {
     next(error);
@@ -125,7 +125,7 @@ export async function deleteBook(req: Request, res: Response, next: NextFunction
 
 export async function getBorrowings(req: Request, res: Response, next: NextFunction) {
   try {
-    const query = queryBorrowingSchema.parse((req.query as any));
+    const query = queryBorrowingSchema.parse(req.query);
     const result = await service.getBorrowings(query);
     res.json({ success: true, ...result });
   } catch (error) {
@@ -135,7 +135,7 @@ export async function getBorrowings(req: Request, res: Response, next: NextFunct
 
 export async function getBorrowingById(req: Request, res: Response, next: NextFunction) {
   try {
-    const borrowing = await service.getBorrowingById((req.params as any).id);
+    const borrowing = await service.getBorrowingById(req.params.id);
     if (!borrowing) {
       throw Errors.notFound('Borrowing record not found');
     }
@@ -158,7 +158,7 @@ export async function createBorrowing(req: Request, res: Response, next: NextFun
 export async function returnBook(req: Request, res: Response, next: NextFunction) {
   try {
     const data = returnBookSchema.parse(req.body);
-    const result = await service.returnBook((req.params as any).id, data, req.user!.sub);
+    const result = await service.returnBook(req.params.id, data, req.user!.sub);
     res.json({ success: true, data: result });
   } catch (error) {
     next(error);
@@ -167,7 +167,7 @@ export async function returnBook(req: Request, res: Response, next: NextFunction
 
 export async function markAsLost(req: Request, res: Response, next: NextFunction) {
   try {
-    const result = await service.markAsLost((req.params as any).id);
+    const result = await service.markAsLost(req.params.id);
     res.json({ success: true, data: result });
   } catch (error) {
     next(error);
@@ -178,7 +178,7 @@ export async function markAsLost(req: Request, res: Response, next: NextFunction
 
 export async function getLibraryStats(req: Request, res: Response, next: NextFunction) {
   try {
-    const unitId = (req.params as any).unitId;
+    const unitId = req.params.unitId;
     const stats = await service.getLibraryStats(unitId);
     res.json({ success: true, data: stats });
   } catch (error) {

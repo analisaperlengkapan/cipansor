@@ -24,7 +24,7 @@ export async function createPermit(req: Request, res: Response, next: NextFuncti
 
 export async function getPermits(req: Request, res: Response, next: NextFunction) {
   try {
-    const query = queryPermitSchema.parse(res.locals.validatedQuery || (req.query as any));
+    const query = queryPermitSchema.parse(res.locals.validatedQuery || req.query);
     const result = await permitService.getPermits(query);
     res.json({
       success: true,
@@ -37,7 +37,7 @@ export async function getPermits(req: Request, res: Response, next: NextFunction
 
 export async function getPermitById(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = (req.params as any);
+    const { id } = req.params;
     const permit = await permitService.getPermitById(id);
     if (!permit) {
       throw Errors.notFound('Permit');
@@ -53,7 +53,7 @@ export async function getPermitById(req: Request, res: Response, next: NextFunct
 
 export async function updatePermitStatus(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = (req.params as any);
+    const { id } = req.params;
     const data = updatePermitStatusSchema.parse(req.body);
     const userId = req.user?.sub;
 
@@ -74,7 +74,7 @@ export async function updatePermitStatus(req: Request, res: Response, next: Next
 
 export async function markReturned(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = (req.params as any);
+    const { id } = req.params;
     const data = markReturnedSchema.parse(req.body);
     const permit = await permitService.markReturned(id, data.returnedAt);
     res.json({
@@ -89,7 +89,7 @@ export async function markReturned(req: Request, res: Response, next: NextFuncti
 
 export async function markDeparted(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = (req.params as any);
+    const { id } = req.params;
     const permit = await permitService.markDeparted(id);
     res.json({
       success: true,
@@ -103,7 +103,7 @@ export async function markDeparted(req: Request, res: Response, next: NextFuncti
 
 export async function getPermitByCode(req: Request, res: Response, next: NextFunction) {
   try {
-    const { code } = (req.params as any);
+    const { code } = req.params;
     const permit = await permitService.getPermitByCode(code);
     if (!permit) {
       throw Errors.notFound('Permit not found');
@@ -119,7 +119,7 @@ export async function getPermitByCode(req: Request, res: Response, next: NextFun
 
 export async function getStudentActivePermit(req: Request, res: Response, next: NextFunction) {
   try {
-    const { studentId } = (req.params as any);
+    const { studentId } = req.params;
     const permit = await permitService.getStudentActivePermit(studentId);
     res.json({
       success: true,
@@ -132,7 +132,7 @@ export async function getStudentActivePermit(req: Request, res: Response, next: 
 
 export async function getPermitStats(req: Request, res: Response, next: NextFunction) {
   try {
-    const unitId = (req.query as any).unitId as string | undefined;
+    const unitId = req.query.unitId as string | undefined;
     const stats = await permitService.getPermitStats(unitId);
     res.json({
       success: true,

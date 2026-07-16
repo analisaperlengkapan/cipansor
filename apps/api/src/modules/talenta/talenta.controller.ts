@@ -41,15 +41,15 @@ function resolveUnitId(req: Request, bodyUnitId?: string): string {
 // ==================== PROFILES ====================
 
 export const listProfiles = asyncHandler(async (req: Request, res: Response) => {
-  const unitId = resolveUnitId(req, (req.query as any).unitId as string);
+  const unitId = resolveUnitId(req, req.query.unitId as string);
   const profiles = await talentaService.getProfiles(unitId, {
-    category: (req.query as any).category as string,
+    category: req.query.category as string,
   });
   res.json({ success: true, data: profiles });
 });
 
 export const getProfile = asyncHandler(async (req: Request, res: Response) => {
-  const profile = await talentaService.getProfileById((req.params as any).id);
+  const profile = await talentaService.getProfileById(req.params.id);
   if (!profile) throw Errors.notFound('Talent profile not found');
   checkOwnership(req, profile.unitId);
   res.json({ success: true, data: profile });
@@ -63,19 +63,19 @@ export const createProfile = asyncHandler(async (req: Request, res: Response) =>
 });
 
 export const updateProfile = asyncHandler(async (req: Request, res: Response) => {
-  const existing = await talentaService.getProfileById((req.params as any).id);
+  const existing = await talentaService.getProfileById(req.params.id);
   if (!existing) throw Errors.notFound('Talent profile not found');
   checkOwnership(req, existing.unitId);
   const body = updateTalentProfileSchema.parse(req.body);
-  const profile = await talentaService.updateProfile((req.params as any).id, body);
+  const profile = await talentaService.updateProfile(req.params.id, body);
   res.json({ success: true, data: profile });
 });
 
 export const deleteProfile = asyncHandler(async (req: Request, res: Response) => {
-  const existing = await talentaService.getProfileById((req.params as any).id);
+  const existing = await talentaService.getProfileById(req.params.id);
   if (!existing) throw Errors.notFound('Talent profile not found');
   checkOwnership(req, existing.unitId);
-  await talentaService.deleteProfile((req.params as any).id);
+  await talentaService.deleteProfile(req.params.id);
   res.json({ success: true, message: 'Talent profile deleted' });
 });
 
@@ -92,15 +92,15 @@ export const createAssessment = asyncHandler(async (req: Request, res: Response)
 // ==================== TRAINING ====================
 
 export const listTrainings = asyncHandler(async (req: Request, res: Response) => {
-  const unitId = resolveUnitId(req, (req.query as any).unitId as string);
+  const unitId = resolveUnitId(req, req.query.unitId as string);
   const trainings = await talentaService.getTrainings(unitId, {
-    status: (req.query as any).status as string,
+    status: req.query.status as string,
   });
   res.json({ success: true, data: trainings });
 });
 
 export const getTraining = asyncHandler(async (req: Request, res: Response) => {
-  const training = await talentaService.getTrainingById((req.params as any).id);
+  const training = await talentaService.getTrainingById(req.params.id);
   if (!training) throw Errors.notFound('Training program not found');
   checkOwnership(req, training.unitId);
   res.json({ success: true, data: training });
@@ -116,21 +116,21 @@ export const createTraining = asyncHandler(async (req: Request, res: Response) =
 });
 
 export const updateTraining = asyncHandler(async (req: Request, res: Response) => {
-  const existing = await talentaService.getTrainingById((req.params as any).id);
+  const existing = await talentaService.getTrainingById(req.params.id);
   if (!existing) throw Errors.notFound('Training program not found');
   checkOwnership(req, existing.unitId);
 
   const body = updateTrainingSchema.parse(req.body);
-  const training = await talentaService.updateTraining((req.params as any).id, body);
+  const training = await talentaService.updateTraining(req.params.id, body);
   res.json({ success: true, data: training });
 });
 
 export const deleteTraining = asyncHandler(async (req: Request, res: Response) => {
-  const existing = await talentaService.getTrainingById((req.params as any).id);
+  const existing = await talentaService.getTrainingById(req.params.id);
   if (!existing) throw Errors.notFound('Training program not found');
   checkOwnership(req, existing.unitId);
 
-  await talentaService.deleteTraining((req.params as any).id);
+  await talentaService.deleteTraining(req.params.id);
   res.json({ success: true, message: 'Training program deleted' });
 });
 
@@ -148,7 +148,7 @@ export const enrollTraining = asyncHandler(async (req: Request, res: Response) =
 // ==================== SUCCESSION ====================
 
 export const listSuccessions = asyncHandler(async (req: Request, res: Response) => {
-  const unitId = resolveUnitId(req, (req.query as any).unitId as string);
+  const unitId = resolveUnitId(req, req.query.unitId as string);
   const successions = await talentaService.getSuccessions(unitId);
   res.json({ success: true, data: successions });
 });
@@ -161,29 +161,29 @@ export const createSuccession = asyncHandler(async (req: Request, res: Response)
 });
 
 export const updateSuccession = asyncHandler(async (req: Request, res: Response) => {
-  const existing = await talentaService.getSuccessionById((req.params as any).id);
+  const existing = await talentaService.getSuccessionById(req.params.id);
   if (!existing) throw Errors.notFound('Succession plan not found');
   checkOwnership(req, existing.unitId);
 
   const body = updateSuccessionSchema.parse(req.body);
-  const succession = await talentaService.updateSuccession((req.params as any).id, body);
+  const succession = await talentaService.updateSuccession(req.params.id, body);
   res.json({ success: true, data: succession });
 });
 
 export const deleteSuccession = asyncHandler(async (req: Request, res: Response) => {
-  const existing = await talentaService.getSuccessionById((req.params as any).id);
+  const existing = await talentaService.getSuccessionById(req.params.id);
   if (!existing) throw Errors.notFound('Succession plan not found');
   checkOwnership(req, existing.unitId);
 
-  await talentaService.deleteSuccession((req.params as any).id);
+  await talentaService.deleteSuccession(req.params.id);
   res.json({ success: true, message: 'Succession plan deleted' });
 });
 
 // ==================== SUGGESTIONS ====================
 
 export const suggestSuccessors = asyncHandler(async (req: Request, res: Response) => {
-  const unitId = resolveUnitId(req, (req.query as any).unitId as string);
-  const positionTitle = (req.query as any).positionTitle as string;
+  const unitId = resolveUnitId(req, req.query.unitId as string);
+  const positionTitle = req.query.positionTitle as string;
   if (!positionTitle) throw Errors.badRequest('positionTitle query parameter is required');
   const suggestions = await talentaService.suggestSuccessors(positionTitle, unitId);
   res.json({ success: true, data: suggestions });
@@ -192,14 +192,14 @@ export const suggestSuccessors = asyncHandler(async (req: Request, res: Response
 // ==================== ANALYTICS ====================
 
 export const getTalentAnalytics = asyncHandler(async (req: Request, res: Response) => {
-  const unitId = resolveUnitId(req, (req.query as any).unitId as string);
+  const unitId = resolveUnitId(req, req.query.unitId as string);
   const analytics = await talentaService.getTalentAnalytics(unitId);
   res.json({ success: true, data: analytics });
 });
 
 export const getCompetencyGap = asyncHandler(async (req: Request, res: Response) => {
-  const { userId } = (req.params as any);
-  const targetPositionId = (req.query as any).targetPositionId as string | undefined;
+  const { userId } = req.params;
+  const targetPositionId = req.query.targetPositionId as string | undefined;
 
   // Verify unit-level access before returning competency data
   const profile = await talentaService.getProfileByUserId(userId);

@@ -8,7 +8,7 @@ import { CreateSimaanInput, UpdateSimaanResultInput, ListSimaanQuery } from './t
  * (either re-graded to failed or deleted). Must be called within a Prisma transaction.
  */
 async function revertSimaanSideEffects(
-  tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0],
+  tx: Prisma.TransactionClient,
   exam: { id: string; studentId: string; juzStart: number; juzEnd: number },
   enrollment: { id: string; studentId: string; status: string; currentJuz: number; targetJuz: number; completedJuz: number; completedAt: Date | null },
   /** When reverting a delete, the exam is already gone — skip the `id: { not: exam.id }` filter */

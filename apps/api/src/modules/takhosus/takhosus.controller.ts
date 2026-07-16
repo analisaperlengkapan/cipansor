@@ -10,6 +10,8 @@ import { murojaahService } from './murojaah.service';
 import { simaanService } from './simaan.service';
 import { targetService } from './target.service';
 import { ApiResponse } from '@/utils/response';
+import { requireUser, requireStudentId } from '@/middleware/auth';
+import { listMurojaahQuerySchema, listSimaanQuerySchema } from './takhosus.schema';
 
 // =====================================
 // HALAQOH CONTROLLER
@@ -45,7 +47,7 @@ export const halaqohController = {
    */
   async getById(req: Request, res: Response, next: NextFunction) {
     try {
-      const halaqoh = await halaqohService.findById((req.params as any).id);
+      const halaqoh = await halaqohService.findById(req.params.id);
 
       if (!halaqoh) {
         return res.status(404).json(ApiResponse.error('Halaqoh not found'));
@@ -74,7 +76,7 @@ export const halaqohController = {
    */
   async update(req: Request, res: Response, next: NextFunction) {
     try {
-      const halaqoh = await halaqohService.update((req.params as any).id, req.body);
+      const halaqoh = await halaqohService.update(req.params.id, req.body);
       res.json(ApiResponse.success(halaqoh, 'Halaqoh updated successfully'));
     } catch (error) {
       next(error);
@@ -86,7 +88,7 @@ export const halaqohController = {
    */
   async delete(req: Request, res: Response, next: NextFunction) {
     try {
-      await halaqohService.delete((req.params as any).id);
+      await halaqohService.delete(req.params.id);
       res.json(ApiResponse.success(null, 'Halaqoh deleted successfully'));
     } catch (error) {
       next(error);
@@ -98,7 +100,7 @@ export const halaqohController = {
    */
   async getProgress(req: Request, res: Response, next: NextFunction) {
     try {
-      const progress = await progressService.getHalaqohProgress((req.params as any).id);
+      const progress = await progressService.getHalaqohProgress(req.params.id);
 
       if (!progress) {
         return res.status(404).json(ApiResponse.error('Halaqoh not found'));
@@ -144,7 +146,7 @@ export const enrollmentController = {
    */
   async getById(req: Request, res: Response, next: NextFunction) {
     try {
-      const enrollment = await enrollmentService.findById((req.params as any).id);
+      const enrollment = await enrollmentService.findById(req.params.id);
 
       if (!enrollment) {
         return res.status(404).json(ApiResponse.error('Enrollment not found'));
@@ -161,7 +163,7 @@ export const enrollmentController = {
    */
   async getByStudentId(req: Request, res: Response, next: NextFunction) {
     try {
-      const enrollment = await enrollmentService.findByStudentId((req.params as any).studentId);
+      const enrollment = await enrollmentService.findByStudentId(req.params.studentId);
 
       if (!enrollment) {
         return res.status(404).json(ApiResponse.error('Student not enrolled in Takhosus program'));
@@ -193,7 +195,7 @@ export const enrollmentController = {
    */
   async update(req: Request, res: Response, next: NextFunction) {
     try {
-      const enrollment = await enrollmentService.update((req.params as any).id, req.body);
+      const enrollment = await enrollmentService.update(req.params.id, req.body);
       res.json(ApiResponse.success(enrollment, 'Enrollment updated successfully'));
     } catch (error) {
       next(error);
@@ -205,7 +207,7 @@ export const enrollmentController = {
    */
   async delete(req: Request, res: Response, next: NextFunction) {
     try {
-      await enrollmentService.delete((req.params as any).id);
+      await enrollmentService.delete(req.params.id);
       res.json(ApiResponse.success(null, 'Enrollment deleted successfully'));
     } catch (error) {
       next(error);
@@ -259,7 +261,7 @@ export const sanadController = {
    */
   async getById(req: Request, res: Response, next: NextFunction) {
     try {
-      const sanad = await sanadService.findById((req.params as any).id);
+      const sanad = await sanadService.findById(req.params.id);
 
       if (!sanad) {
         return res.status(404).json(ApiResponse.error('Sanad record not found'));
@@ -291,7 +293,7 @@ export const sanadController = {
    */
   async update(req: Request, res: Response, next: NextFunction) {
     try {
-      const sanad = await sanadService.update((req.params as any).id, req.body);
+      const sanad = await sanadService.update(req.params.id, req.body);
       res.json(ApiResponse.success(sanad, 'Sanad record updated successfully'));
     } catch (error) {
       next(error);
@@ -303,7 +305,7 @@ export const sanadController = {
    */
   async delete(req: Request, res: Response, next: NextFunction) {
     try {
-      await sanadService.delete((req.params as any).id);
+      await sanadService.delete(req.params.id);
       res.json(ApiResponse.success(null, 'Sanad record deleted successfully'));
     } catch (error) {
       next(error);
@@ -335,7 +337,7 @@ export const targetController = {
     try {
       const { academicYearId } = req.query;
       const target = await targetService.getByStudentId(
-        (req.params as any).studentId,
+        req.params.studentId,
         academicYearId as string
       );
 
@@ -354,7 +356,7 @@ export const targetController = {
    */
   async getProgress(req: Request, res: Response, next: NextFunction) {
     try {
-      const progress = await targetService.getProgress((req.params as any).studentId);
+      const progress = await targetService.getProgress(req.params.studentId);
 
       if (!progress) {
         return res
@@ -379,7 +381,7 @@ export const progressController = {
    */
   async getStudentProgress(req: Request, res: Response, next: NextFunction) {
     try {
-      const progress = await progressService.getStudentProgress((req.params as any).studentId);
+      const progress = await progressService.getStudentProgress(req.params.studentId);
 
       if (!progress) {
         return res.status(404).json(ApiResponse.error('Student not enrolled in Takhosus program'));
@@ -397,13 +399,9 @@ export const progressController = {
    */
   async getMyProgress(req: Request, res: Response, next: NextFunction) {
     try {
-      const user = (req as any).user;
+      const studentId = await requireStudentId(req);
 
-      if (!user.studentId) {
-        return res.status(400).json(ApiResponse.error('User is not a student'));
-      }
-
-      const progress = await progressService.getStudentProgress(user.studentId);
+      const progress = await progressService.getStudentProgress(studentId);
 
       if (!progress) {
         return res.status(404).json(ApiResponse.error('You are not enrolled in Takhosus program'));
@@ -442,7 +440,16 @@ export const dashboardController = {
 export const murojaahController = {
   async list(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await murojaahService.findAll(req.query as any);
+      const query = listMurojaahQuerySchema.parse(req.query);
+      const result = await murojaahService.findAll({
+        page: query.page,
+        limit: query.limit,
+        studentId: query.studentId,
+        halaqohId: query.halaqohId,
+        startDate: query.startDate ? new Date(query.startDate) : undefined,
+        endDate: query.endDate ? new Date(query.endDate) : undefined,
+        type: query.type,
+      });
       res.json(ApiResponse.success(result.data, 'Murojaah records retrieved', result.pagination));
     } catch (error) {
       next(error);
@@ -451,7 +458,7 @@ export const murojaahController = {
 
   async create(req: Request, res: Response, next: NextFunction) {
     try {
-      const record = await murojaahService.create(req.body, (req as any).user.id);
+      const record = await murojaahService.create(req.body, requireUser(req).id);
       res.status(201).json(ApiResponse.success(record, 'Murojaah record created'));
     } catch (error) {
       next(error);
@@ -460,7 +467,7 @@ export const murojaahController = {
 
   async update(req: Request, res: Response, next: NextFunction) {
     try {
-      const record = await murojaahService.update((req.params as any).id, req.body);
+      const record = await murojaahService.update(req.params.id, req.body);
       res.json(ApiResponse.success(record, 'Murojaah record updated'));
     } catch (error) {
       next(error);
@@ -469,7 +476,7 @@ export const murojaahController = {
 
   async delete(req: Request, res: Response, next: NextFunction) {
     try {
-      await murojaahService.delete((req.params as any).id);
+      await murojaahService.delete(req.params.id);
       res.json(ApiResponse.success(null, 'Murojaah record deleted'));
     } catch (error) {
       next(error);
@@ -484,7 +491,7 @@ export const murojaahController = {
 export const simaanController = {
   async list(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await simaanService.findAll(req.query as any);
+      const result = await simaanService.findAll(listSimaanQuerySchema.parse(req.query));
       res.json(ApiResponse.success(result.exams, 'Simaan exams retrieved', result.pagination));
     } catch (error) {
       next(error);
@@ -493,7 +500,7 @@ export const simaanController = {
 
   async getById(req: Request, res: Response, next: NextFunction) {
     try {
-      const exam = await simaanService.findById((req.params as any).id);
+      const exam = await simaanService.findById(req.params.id);
       res.json(ApiResponse.success(exam));
     } catch (error) {
       next(error);
@@ -502,7 +509,7 @@ export const simaanController = {
 
   async create(req: Request, res: Response, next: NextFunction) {
     try {
-      const exam = await simaanService.create(req.body, (req as any).user.id);
+      const exam = await simaanService.create(req.body, requireUser(req).id);
       res.status(201).json(ApiResponse.success(exam, 'Simaan exam scheduled'));
     } catch (error) {
       next(error);
@@ -511,7 +518,7 @@ export const simaanController = {
 
   async updateResult(req: Request, res: Response, next: NextFunction) {
     try {
-      const exam = await simaanService.updateResult((req.params as any).id, req.body);
+      const exam = await simaanService.updateResult(req.params.id, req.body);
       res.json(ApiResponse.success(exam, 'Simaan result updated'));
     } catch (error) {
       next(error);
@@ -520,7 +527,7 @@ export const simaanController = {
 
   async delete(req: Request, res: Response, next: NextFunction) {
     try {
-      await simaanService.delete((req.params as any).id);
+      await simaanService.delete(req.params.id);
       res.json(ApiResponse.success(null, 'Simaan exam deleted'));
     } catch (error) {
       next(error);

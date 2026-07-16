@@ -3,7 +3,7 @@ import { organisasiService } from "./organisasi.service";
 
 export const getOrgUnits = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const unitId = ((req.query as any).unitId as string) || req.user?.unitId;
+    const unitId = (req.query.unitId as string) || req.user?.unitId;
     if (!unitId) { res.status(400).json({ error: "unitId is required" }); return; }
     const data = await organisasiService.getOrgUnits(unitId);
     res.json({ data });
@@ -12,7 +12,7 @@ export const getOrgUnits = async (req: Request, res: Response, next: NextFunctio
 
 export const getOrgTree = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const unitId = ((req.query as any).unitId as string) || req.user?.unitId;
+    const unitId = (req.query.unitId as string) || req.user?.unitId;
     if (!unitId) { res.status(400).json({ error: "unitId is required" }); return; }
     const data = await organisasiService.getOrgTree(unitId);
     res.json({ data });
@@ -21,7 +21,7 @@ export const getOrgTree = async (req: Request, res: Response, next: NextFunction
 
 export const getOrgUnit = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const data = await organisasiService.getOrgUnit((req.params as any).id);
+    const data = await organisasiService.getOrgUnit(req.params.id);
     res.json({ data });
   } catch (error) { next(error); }
 };
@@ -35,21 +35,21 @@ export const createOrgUnit = async (req: Request, res: Response, next: NextFunct
 
 export const updateOrgUnit = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const data = await organisasiService.updateOrgUnit((req.params as any).id, req.body);
+    const data = await organisasiService.updateOrgUnit(req.params.id, req.body);
     res.json({ data });
   } catch (error) { next(error); }
 };
 
 export const deleteOrgUnit = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    await organisasiService.deleteOrgUnit((req.params as any).id);
+    await organisasiService.deleteOrgUnit(req.params.id);
     res.status(204).send();
   } catch (error) { next(error); }
 };
 
 export const getPositions = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const data = await organisasiService.getPositions((req.params as any).orgUnitId);
+    const data = await organisasiService.getPositions(req.params.orgUnitId);
     res.json({ data });
   } catch (error) { next(error); }
 };
@@ -63,14 +63,14 @@ export const createPosition = async (req: Request, res: Response, next: NextFunc
 
 export const updatePosition = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const data = await organisasiService.updatePosition((req.params as any).id, req.body);
+    const data = await organisasiService.updatePosition(req.params.id, req.body);
     res.json({ data });
   } catch (error) { next(error); }
 };
 
 export const deletePosition = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    await organisasiService.deletePosition((req.params as any).id);
+    await organisasiService.deletePosition(req.params.id);
     res.status(204).send();
   } catch (error) { next(error); }
 };

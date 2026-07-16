@@ -6,9 +6,9 @@ export const DapodikController = {
   async exportStudents(req: Request, res: Response, next: NextFunction) {
     try {
       const options = {
-        unitId: (req.query as any).unitId as string | undefined,
-        academicYearId: (req.query as any).academicYearId as string | undefined,
-        includeInactive: (req.query as any).includeInactive === 'true',
+        unitId: req.query.unitId as string | undefined,
+        academicYearId: req.query.academicYearId as string | undefined,
+        includeInactive: req.query.includeInactive === 'true',
       };
 
       const data = await dapodikService.exportStudentData(options, req.user!);
@@ -32,9 +32,9 @@ export const DapodikController = {
   async exportTeachers(req: Request, res: Response, next: NextFunction) {
     try {
       const options = {
-        unitId: (req.query as any).unitId as string | undefined,
-        academicYearId: (req.query as any).academicYearId as string | undefined,
-        includeInactive: (req.query as any).includeInactive === 'true',
+        unitId: req.query.unitId as string | undefined,
+        academicYearId: req.query.academicYearId as string | undefined,
+        includeInactive: req.query.includeInactive === 'true',
       };
 
       const data = await dapodikService.exportTeacherData(options, req.user!);
@@ -58,8 +58,8 @@ export const DapodikController = {
   async exportRombel(req: Request, res: Response, next: NextFunction) {
     try {
       const options = {
-        unitId: (req.query as any).unitId as string | undefined,
-        academicYearId: (req.query as any).academicYearId as string | undefined,
+        unitId: req.query.unitId as string | undefined,
+        academicYearId: req.query.academicYearId as string | undefined,
       };
 
       const data = await dapodikService.exportRombelData(options, req.user!);
@@ -82,7 +82,7 @@ export const DapodikController = {
   // Export school profile
   async exportSekolah(req: Request, res: Response, next: NextFunction) {
     try {
-      const unitId = (req.params as any).unitId || ((req.query as any).unitId as string);
+      const unitId = req.params.unitId || (req.query.unitId as string);
 
       if (!unitId) {
         return res.status(400).json({
@@ -110,7 +110,7 @@ export const DapodikController = {
   // Get export summary
   async getSummary(req: Request, res: Response, next: NextFunction) {
     try {
-      const unitId = (req.params as any).unitId || ((req.query as any).unitId as string) || req.user?.unitId;
+      const unitId = req.params.unitId || (req.query.unitId as string) || req.user?.unitId;
 
       if (!unitId) {
         return res.status(400).json({
@@ -133,7 +133,7 @@ export const DapodikController = {
   // Validate data
   async validateData(req: Request, res: Response, next: NextFunction) {
     try {
-      const unitId = (req.params as any).unitId || ((req.query as any).unitId as string) || req.user?.unitId;
+      const unitId = req.params.unitId || (req.query.unitId as string) || req.user?.unitId;
 
       if (!unitId) {
         return res.status(400).json({

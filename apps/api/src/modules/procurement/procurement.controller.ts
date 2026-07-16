@@ -7,6 +7,7 @@ import {
   FulfillPurchaseRequestInput,
 } from '@cipansor/shared';
 import { z } from 'zod';
+import { requireUser } from '../../middleware/auth';
 
 // Zod Schemas for Validation
 const createItemSchema = z.object({
@@ -66,7 +67,7 @@ export const procurementController = {
         })),
       };
 
-      const result = await procurementService.create(serviceInput, (req as any).user.id);
+      const result = await procurementService.create(serviceInput, requireUser(req).id);
 
       res.status(201).json({
         success: true,
@@ -80,8 +81,8 @@ export const procurementController = {
 
   findAll: async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { unitId, status } = (req.query as any);
-      const user = (req as any).user;
+      const { unitId, status } = req.query;
+      const user = requireUser(req);
 
       const result = await procurementService.findAll(
         unitId as string,
@@ -101,7 +102,7 @@ export const procurementController = {
 
   findById: async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { id } = (req.params as any);
+      const { id } = req.params;
       const result = await procurementService.findById(id);
       res.json({
         success: true,
@@ -114,7 +115,7 @@ export const procurementController = {
 
   getAuditLogs: async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { id } = (req.params as any);
+      const { id } = req.params;
       const result = await procurementService.getAuditLogs(id);
       res.json({
         success: true,
@@ -127,9 +128,9 @@ export const procurementController = {
 
   updateStatus: async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { id } = (req.params as any);
+      const { id } = req.params;
       const input = updateStatusSchema.parse(req.body);
-      const user = (req as any).user;
+      const user = requireUser(req);
 
       const serviceInput: UpdatePurchaseRequestStatusInput = {
         status: input.status,
@@ -150,9 +151,9 @@ export const procurementController = {
 
   fulfill: async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { id } = (req.params as any);
+      const { id } = req.params;
       const input = fulfillRequestSchema.parse(req.body);
-      const user = (req as any).user;
+      const user = requireUser(req);
 
       const serviceInput: FulfillPurchaseRequestInput = {
         items: input.items as FulfillPurchaseRequestInput['items'],

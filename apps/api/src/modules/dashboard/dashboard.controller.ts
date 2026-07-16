@@ -1,3 +1,4 @@
+import { requireUser } from '@/middleware/auth';
 /**
  * Dashboard Controller (Refactored)
  * Uses Dashboard Service for business logic
@@ -21,10 +22,10 @@ import {
  * Helper to extract context from request
  */
 function getContext(req: Request) {
-  const user = (req as any).user;
+  const user = requireUser(req);
   return {
     userId: user?.id,
-    unitId: typeof (req.query as any).unitId === 'string' ? (req.query as any).unitId : undefined,
+    unitId: typeof req.query.unitId === 'string' ? req.query.unitId : undefined,
     role: user?.role,
   };
 }
@@ -35,7 +36,7 @@ function getContext(req: Request) {
 function verifyUnitAccess(req: Request, unitId?: string): boolean {
   if (!unitId) return true;
 
-  const user = (req as any).user;
+  const user = requireUser(req);
   return user?.unitId === unitId || user?.role === 'SUPER_ADMIN';
 }
 
@@ -49,7 +50,7 @@ export async function getDashboardMetrics(
   next: NextFunction
 ): Promise<void> {
   try {
-    const query = dashboardMetricsQuerySchema.parse((req.query as any));
+    const query = dashboardMetricsQuerySchema.parse(req.query);
 
     if (!verifyUnitAccess(req, query.unitId)) {
       throw new ApiError(ErrorCode.FORBIDDEN, 'You do not have access to this unit');
@@ -97,7 +98,7 @@ export async function getQuickStats(
  */
 export async function getStats(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const query = dashboardStatsQuerySchema.parse((req.query as any));
+    const query = dashboardStatsQuerySchema.parse(req.query);
     const context = getContext(req);
     context.unitId = query.unitId;
 
@@ -133,7 +134,7 @@ export async function getAttendanceStats(
   next: NextFunction
 ): Promise<void> {
   try {
-    const query = attendanceStatsQuerySchema.parse((req.query as any));
+    const query = attendanceStatsQuerySchema.parse(req.query);
     const context = getContext(req);
     context.unitId = query.unitId;
 
@@ -163,7 +164,7 @@ export async function getFinanceStats(
   next: NextFunction
 ): Promise<void> {
   try {
-    const query = financeStatsQuerySchema.parse((req.query as any));
+    const query = financeStatsQuerySchema.parse(req.query);
     const context = getContext(req);
     context.unitId = query.unitId;
 
@@ -188,7 +189,7 @@ export async function getTahfidzStats(
   next: NextFunction
 ): Promise<void> {
   try {
-    const query = tahfidzStatsQuerySchema.parse((req.query as any));
+    const query = tahfidzStatsQuerySchema.parse(req.query);
     const context = getContext(req);
     context.unitId = query.unitId;
 
@@ -215,7 +216,7 @@ export async function getViolationRewardStats(
   next: NextFunction
 ): Promise<void> {
   try {
-    const query = violationRewardStatsQuerySchema.parse((req.query as any));
+    const query = violationRewardStatsQuerySchema.parse(req.query);
     const context = getContext(req);
     context.unitId = query.unitId;
 

@@ -23,7 +23,7 @@ export const CorrespondenceController = {
       // Allow SUPER_ADMIN to query specific unit, otherwise require unitId
       if (!unitId) {
         if (req.user?.role === UserRole.SUPER_ADMIN) {
-          unitId = (req.query as any).unitId as string;
+          unitId = req.query.unitId as string;
         } else {
           throw Errors.forbidden('Access denied: User has no unit assigned');
         }
@@ -32,12 +32,12 @@ export const CorrespondenceController = {
       if (!unitId) throw new Error('Unit ID is required');
 
       const result = await CorrespondenceService.getLetters(unitId, {
-        page: Number((req.query as any).page),
-        limit: Number((req.query as any).limit),
-        direction: (req.query as any).direction as any,
-        status: (req.query as any).status as any,
-        search: (req.query as any).search as string,
-        scope: (req.query as any).scope as any,
+        page: Number(req.query.page),
+        limit: Number(req.query.limit),
+        direction: req.query.direction as any,
+        status: req.query.status as any,
+        search: req.query.search as string,
+        scope: req.query.scope as any,
         userId: req.user!.id,
       });
       res.json({ success: true, ...result });
@@ -48,7 +48,7 @@ export const CorrespondenceController = {
 
   async findOne(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await CorrespondenceService.getLetterById((req.params as any).id);
+      const result = await CorrespondenceService.getLetterById(req.params.id);
       if (!result) throw new Error('Letter not found');
       res.json({ success: true, data: result });
     } catch (error) {
@@ -60,7 +60,7 @@ export const CorrespondenceController = {
     try {
       const { action, notes } = req.body;
       const result = await CorrespondenceService.processReview(
-        (req.params as any).id,
+        req.params.id,
         req.user!.id,
         action,
         notes
@@ -87,7 +87,7 @@ export const CorrespondenceController = {
     try {
       const { status, notes } = req.body;
       const result = await CorrespondenceService.updateDispositionStatus(
-        (req.params as any).id,
+        req.params.id,
         status,
         notes,
         req.user!.id
@@ -105,7 +105,7 @@ export const CorrespondenceController = {
       // Allow SUPER_ADMIN to query specific unit, otherwise require unitId
       if (!unitId) {
         if (req.user?.role === UserRole.SUPER_ADMIN) {
-          unitId = (req.query as any).unitId as string;
+          unitId = req.query.unitId as string;
         } else {
           throw Errors.forbidden('Access denied: User has no unit assigned');
         }

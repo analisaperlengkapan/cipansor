@@ -11,7 +11,7 @@ import { ApiResponse } from '@/utils/response';
  */
 export const listMurojaah = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const query = (req.query as any) as any;
+    const query = req.query as any;
     const result = await murojaahService.findAll(query, {
       role: (req.user as any)?.role,
       unitId: (req.user as any)?.unitId,
@@ -34,7 +34,7 @@ export const listMurojaah = async (req: Request, res: Response, next: NextFuncti
  */
 export const getMurojaahById = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { id } = (req.params as any);
+    const { id } = req.params;
     const record = await murojaahService.findById(id);
     res.json(ApiResponse.success(record));
   } catch (error) {
@@ -60,7 +60,7 @@ export const createMurojaah = async (req: Request, res: Response, next: NextFunc
  */
 export const updateMurojaah = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { id } = (req.params as any);
+    const { id } = req.params;
     const record = await murojaahService.update(id, req.body);
     res.json(ApiResponse.success(record, 'Murojaah record updated successfully'));
   } catch (error) {
@@ -73,7 +73,7 @@ export const updateMurojaah = async (req: Request, res: Response, next: NextFunc
  */
 export const deleteMurojaah = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { id } = (req.params as any);
+    const { id } = req.params;
     const result = await murojaahService.delete(id);
     res.json(ApiResponse.success(result));
   } catch (error) {
@@ -98,7 +98,7 @@ export const addMistake = async (req: Request, res: Response, next: NextFunction
  */
 export const deleteMistake = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { id } = (req.params as any);
+    const { id } = req.params;
     const result = await murojaahService.deleteMistake(id);
     res.json(ApiResponse.success(result));
   } catch (error) {
@@ -111,8 +111,8 @@ export const deleteMistake = async (req: Request, res: Response, next: NextFunct
  */
 export const getStudentHistory = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { studentId } = (req.params as any);
-    const query = (req.query as any) as any;
+    const { studentId } = req.params;
+    const query = req.query as any;
     const result = await murojaahService.getStudentHistory(studentId, query);
     res.json(
       ApiResponse.paginated(
@@ -132,8 +132,8 @@ export const getStudentHistory = async (req: Request, res: Response, next: NextF
  */
 export const getStudentSummary = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { studentId } = (req.params as any);
-    const query = { studentId, ...(req.query as any) } as any;
+    const { studentId } = req.params;
+    const query = { studentId, ...req.query } as any;
     const summary = await murojaahService.getStudentSummary(query);
     res.json(ApiResponse.success(summary));
   } catch (error) {
@@ -146,8 +146,8 @@ export const getStudentSummary = async (req: Request, res: Response, next: NextF
  */
 export const getHalaqohRecords = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { halaqohId } = (req.params as any);
-    const query = { halaqohId, ...(req.query as any) } as any;
+    const { halaqohId } = req.params;
+    const query = { halaqohId, ...req.query } as any;
     const result = await murojaahService.getHalaqohRecords(query);
     res.json(ApiResponse.success(result));
   } catch (error) {
@@ -160,7 +160,7 @@ export const getHalaqohRecords = async (req: Request, res: Response, next: NextF
  */
 export const getMurojaahSchedule = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { studentId } = (req.params as any);
+    const { studentId } = req.params;
     const schedule = await murojaahService.getMurojaahSchedule(studentId);
     res.json(ApiResponse.success(schedule));
   } catch (error) {
@@ -177,7 +177,7 @@ export const getMurojaahSchedule = async (req: Request, res: Response, next: Nex
  */
 export const getQualityDistribution = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const query = (req.query as any) as any;
+    const query = req.query as any;
     const result = await murojaahService.getQualityDistribution(query);
     res.json(ApiResponse.success(result));
   } catch (error) {
@@ -190,7 +190,7 @@ export const getQualityDistribution = async (req: Request, res: Response, next: 
  */
 export const getMistakePatterns = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const query = (req.query as any) as any;
+    const query = req.query as any;
     const result = await murojaahService.getMistakePatterns(query);
     res.json(ApiResponse.success(result));
   } catch (error) {
@@ -203,7 +203,7 @@ export const getMistakePatterns = async (req: Request, res: Response, next: Next
  */
 export const getConsistencyScore = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const query = (req.query as any) as any;
+    const query = req.query as any;
     const result = await murojaahService.getConsistencyScore(query);
     res.json(ApiResponse.success(result));
   } catch (error) {
@@ -216,7 +216,7 @@ export const getConsistencyScore = async (req: Request, res: Response, next: Nex
  */
 export const getTopPerformers = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const query = (req.query as any) as any;
+    const query = req.query as any;
     const result = await murojaahService.getTopPerformers(query);
     res.json(ApiResponse.success(result));
   } catch (error) {

@@ -8,7 +8,7 @@ import { ListUnitsQuery, CreateUnitInput, UpdateUnitInput } from './unit.schema'
  * GET /api/units
  */
 export const list = asyncHandler(async (req: Request, res: Response) => {
-  const query = (res.locals.validatedQuery || (req.query as any)) as ListUnitsQuery;
+  const query = (res.locals.validatedQuery || req.query) as ListUnitsQuery;
   const result = await unitService.findAll(query, {
     role: req.user!.role,
     unitId: req.user!.unitId,
@@ -28,7 +28,7 @@ export const list = asyncHandler(async (req: Request, res: Response) => {
  * GET /api/units/:id
  */
 export const getById = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = (req.params as any);
+  const { id } = req.params;
   const unit = await unitService.findById(id);
 
   res.json({
@@ -56,7 +56,7 @@ export const create = asyncHandler(async (req: Request, res: Response) => {
  * PUT /api/units/:id
  */
 export const update = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = (req.params as any);
+  const { id } = req.params;
   const input: UpdateUnitInput = req.body;
   const unit = await unitService.update(id, input);
 
@@ -71,7 +71,7 @@ export const update = asyncHandler(async (req: Request, res: Response) => {
  * DELETE /api/units/:id
  */
 export const remove = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = (req.params as any);
+  const { id } = req.params;
   const result = await unitService.delete(id);
 
   res.json({

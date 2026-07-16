@@ -2,14 +2,15 @@ import { Request, Response, NextFunction } from 'express';
 import { CBTService } from './cbt.service';
 import { Errors } from '@/middleware/error';
 import { prisma } from '@/lib/prisma';
+import { requireUser } from '@/middleware/auth';
 
 export class CBTController {
   // --- Banks ---
   static async getQuestionBanks(req: Request, res: Response, next: NextFunction) {
     try {
       // Filters
-      const { unitId, subjectId, search } = (req.query as any);
-      const user = (req as any).user;
+      const { unitId, subjectId, search } = req.query;
+      const user = requireUser(req);
 
       const isAdmin = user.role === 'SUPER_ADMIN' || user.role === 'UNIT_ADMIN';
 
@@ -17,7 +18,7 @@ export class CBTController {
         throw Errors.badRequest('User has no unit assigned');
       }
 
-      const filterUnitId = user.role === 'SUPER_ADMIN' ? (unitId as string) : user.unitId;
+      const filterUnitId = user.role === 'SUPER_ADMIN' ? (unitId as string) : (user.unitId ?? undefined);
 
       if (user.role !== 'SUPER_ADMIN' && !filterUnitId) {
         throw Errors.badRequest('unitId is required for data isolation');
@@ -38,8 +39,8 @@ export class CBTController {
 
   static async getTopicMasteryAnalytics(req: Request, res: Response, next: NextFunction) {
     try {
-      const { examId } = (req.params as any);
-      const user = (req as any).user;
+      const { examId } = req.params;
+      const user = requireUser(req);
 
       // Unit-level authorization: verify the exam belongs to the user's unit
       if (user.role !== 'SUPER_ADMIN') {
@@ -79,7 +80,7 @@ export class CBTController {
         throw Errors.badRequest('title is required');
       }
 
-      const user = (req as any).user;
+      const user = requireUser(req);
       const isAdmin = user.role === 'SUPER_ADMIN' || user.role === 'UNIT_ADMIN';
 
       let teacherId = req.body.teacherId;
@@ -117,8 +118,8 @@ export class CBTController {
 
   static async getQuestionBankById(req: Request, res: Response, next: NextFunction) {
     try {
-      const user = (req as any).user;
-      const bank = await CBTService.getQuestionBankById((req.params as any).id, user);
+      const user = requireUser(req);
+      const bank = await CBTService.getQuestionBankById(req.params.id, user);
       res.json({ success: true, data: bank });
     } catch (error) {
       next(error);
@@ -127,8 +128,8 @@ export class CBTController {
 
   static async deleteQuestionBank(req: Request, res: Response, next: NextFunction) {
     try {
-      const user = (req as any).user;
-      await CBTService.deleteQuestionBank((req.params as any).id, user);
+      const user = requireUser(req);
+      await CBTService.deleteQuestionBank(req.params.id, user);
       res.json({ success: true, message: 'Question Bank deleted' });
     } catch (error) {
       next(error);
@@ -138,10 +139,10 @@ export class CBTController {
   // --- Questions ---
   static async addQuestion(req: Request, res: Response, next: NextFunction) {
     try {
-      const user = (req as any).user;
+      const user = requireUser(req);
       const question = await CBTService.addQuestion(
         {
-          bankId: (req.params as any).id,
+          bankId: req.params.id,
           type: req.body.type,
           content: req.body.content,
           options: req.body.options,
@@ -160,9 +161,9 @@ export class CBTController {
 
   static async updateQuestion(req: Request, res: Response, next: NextFunction) {
     try {
-      const user = (req as any).user;
+      const user = requireUser(req);
       const question = await CBTService.updateQuestion(
-        (req.params as any).questionId,
+        req.params.questionId,
         {
           content: req.body.content,
           options: req.body.options,
@@ -181,8 +182,8 @@ export class CBTController {
 
   static async deleteQuestion(req: Request, res: Response, next: NextFunction) {
     try {
-      const user = (req as any).user;
-      await CBTService.deleteQuestion((req.params as any).questionId, user);
+      const user = requireUser(req);
+      await CBTService.deleteQuestion(req.params.questionId, user);
       res.json({ success: true, message: 'Question deleted' });
     } catch (error) {
       next(error);
@@ -192,8 +193,8 @@ export class CBTController {
   // --- Exam Scheduling ---
   static async getExams(req: Request, res: Response, next: NextFunction) {
     try {
-      const user = (req as any).user;
-      const { unitId, academicYearId, subjectId, search, status, page, limit } = (req.query as any);
+      const user = requireUser(req);
+      const { unitId, academicYearId, subjectId, search, status, page, limit } = req.query;
 
       const isAdmin = user.role === 'SUPER_ADMIN' || user.role === 'UNIT_ADMIN';
 
@@ -201,7 +202,7 @@ export class CBTController {
         throw Errors.badRequest('User has no unit assigned');
       }
 
-      const filterUnitId = user.role === 'SUPER_ADMIN' ? (unitId as string) : user.unitId;
+      const filterUnitId = user.role === 'SUPER_ADMIN' ? (unitId as string) : (user.unitId ?? undefined);
 
       if (user.role !== 'SUPER_ADMIN' && !filterUnitId) {
         throw Errors.badRequest('unitId is required for data isolation');
@@ -253,7 +254,7 @@ export class CBTController {
         throw Errors.badRequest('scheduledAt is required');
       }
 
-      const user = (req as any).user;
+      const user = requireUser(req);
       const isAdmin = user.role === 'SUPER_ADMIN' || user.role === 'UNIT_ADMIN';
 
       let teacherId = req.body.teacherId;
@@ -305,8 +306,8 @@ export class CBTController {
 
   static async getExamMonitoring(req: Request, res: Response, next: NextFunction) {
     try {
-      const user = (req as any).user;
-      const monitoringData = await CBTService.getExamMonitoring((req.params as any).examId, user);
+      const user = requireUser(req);
+      const monitoringData = await CBTService.getExamMonitoring(req.params.examId, user);
       res.json({ success: true, data: monitoringData });
     } catch (error) {
       next(error);
@@ -316,8 +317,8 @@ export class CBTController {
   // --- Teacher Grading ---
   static async getAttemptForGrading(req: Request, res: Response, next: NextFunction) {
     try {
-      const user = (req as any).user;
-      const attempt = await CBTService.getAttemptForGrading((req.params as any).attemptId, user);
+      const user = requireUser(req);
+      const attempt = await CBTService.getAttemptForGrading(req.params.attemptId, user);
       res.json({ success: true, data: attempt });
     } catch (error) {
       next(error);
@@ -326,7 +327,7 @@ export class CBTController {
 
   static async gradeEssayAnswer(req: Request, res: Response, next: NextFunction) {
     try {
-      const user = (req as any).user;
+      const user = requireUser(req);
       const { questionId, score, isCorrect } = req.body;
 
       if (!questionId) {
@@ -342,7 +343,7 @@ export class CBTController {
       }
 
       const result = await CBTService.gradeEssayAnswer(
-        (req.params as any).attemptId,
+        req.params.attemptId,
         questionId,
         { score: numericScore, isCorrect: isCorrect ?? false },
         user
@@ -356,12 +357,12 @@ export class CBTController {
   // --- Exam Taking ---
   static async startExam(req: Request, res: Response, next: NextFunction) {
     try {
-      const user = (req as any).user;
+      const user = requireUser(req);
       const student = await prisma.student.findUnique({ where: { userId: user.id } });
       if (!student) {
         throw Errors.unauthorized('User is not a student');
       }
-      const attempt = await CBTService.startExamAttempt((req.params as any).examId, student.id);
+      const attempt = await CBTService.startExamAttempt(req.params.examId, student.id);
       res.status(201).json({ success: true, data: attempt });
     } catch (error) {
       next(error);
@@ -370,12 +371,12 @@ export class CBTController {
 
   static async getAttempt(req: Request, res: Response, next: NextFunction) {
     try {
-      const user = (req as any).user;
+      const user = requireUser(req);
       const student = await prisma.student.findUnique({ where: { userId: user.id } });
       if (!student) {
         throw Errors.unauthorized('User is not a student');
       }
-      const attempt = await CBTService.getAttempt((req.params as any).attemptId, student.id);
+      const attempt = await CBTService.getAttempt(req.params.attemptId, student.id);
       res.json({ success: true, data: attempt });
     } catch (error) {
       next(error);
@@ -385,7 +386,7 @@ export class CBTController {
   static async submitAnswer(req: Request, res: Response, next: NextFunction) {
     try {
       const { questionId, answer } = req.body;
-      const user = (req as any).user;
+      const user = requireUser(req);
 
       if (!questionId) {
         throw Errors.badRequest('questionId is required');
@@ -396,7 +397,7 @@ export class CBTController {
         throw Errors.unauthorized('User is not a student');
       }
 
-      await CBTService.submitAnswer((req.params as any).attemptId, questionId, answer, student.id);
+      await CBTService.submitAnswer(req.params.attemptId, questionId, answer, student.id);
       res.json({ success: true });
     } catch (error) {
       next(error);
@@ -405,14 +406,14 @@ export class CBTController {
 
   static async finishExam(req: Request, res: Response, next: NextFunction) {
     try {
-      const user = (req as any).user;
+      const user = requireUser(req);
 
       const student = await prisma.student.findUnique({ where: { userId: user.id } });
       if (!student) {
         throw Errors.unauthorized('User is not a student');
       }
 
-      const attempt = await CBTService.finishExamAttempt((req.params as any).attemptId, student.id);
+      const attempt = await CBTService.finishExamAttempt(req.params.attemptId, student.id);
       res.json({ success: true, data: attempt });
     } catch (error) {
       next(error);
@@ -421,8 +422,8 @@ export class CBTController {
 
   static async getExamDifficultyInsights(req: Request, res: Response, next: NextFunction) {
     try {
-      const { examId } = (req.params as any);
-      const user = (req as any).user;
+      const { examId } = req.params;
+      const user = requireUser(req);
 
       // Authorization check (Unit level)
       if (user.role !== 'SUPER_ADMIN') {

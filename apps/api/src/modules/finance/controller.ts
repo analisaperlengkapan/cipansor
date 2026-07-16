@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import type { PaymentVerificationStatus } from '@prisma/client';
 import * as financeService from './service';
 import {
   createPaymentTypeSchema,
@@ -34,7 +35,7 @@ export async function createPaymentType(req: Request, res: Response, next: NextF
 
 export async function getPaymentTypes(req: Request, res: Response, next: NextFunction) {
   try {
-    const query = queryPaymentTypeSchema.parse(res.locals.validatedQuery || (req.query as any));
+    const query = queryPaymentTypeSchema.parse(res.locals.validatedQuery || req.query);
     const result = await financeService.getPaymentTypes(query);
     res.json({
       success: true,
@@ -47,7 +48,7 @@ export async function getPaymentTypes(req: Request, res: Response, next: NextFun
 
 export async function getPaymentTypeById(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = (req.params as any);
+    const { id } = req.params;
     const paymentType = await financeService.getPaymentTypeById(id);
     if (!paymentType) {
       throw Errors.notFound('Payment type');
@@ -63,7 +64,7 @@ export async function getPaymentTypeById(req: Request, res: Response, next: Next
 
 export async function updatePaymentType(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = (req.params as any);
+    const { id } = req.params;
     const data = updatePaymentTypeSchema.parse(req.body);
     const paymentType = await financeService.updatePaymentType(id, data);
     res.json({
@@ -78,7 +79,7 @@ export async function updatePaymentType(req: Request, res: Response, next: NextF
 
 export async function deletePaymentType(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = (req.params as any);
+    const { id } = req.params;
     await financeService.deletePaymentType(id);
     res.json({
       success: true,
@@ -109,7 +110,7 @@ export async function createInvoice(req: Request, res: Response, next: NextFunct
 
 export async function getInvoices(req: Request, res: Response, next: NextFunction) {
   try {
-    const query = queryInvoiceSchema.parse(res.locals.validatedQuery || (req.query as any));
+    const query = queryInvoiceSchema.parse(res.locals.validatedQuery || req.query);
     const result = await financeService.getInvoices(query);
     res.json({
       success: true,
@@ -122,7 +123,7 @@ export async function getInvoices(req: Request, res: Response, next: NextFunctio
 
 export async function getInvoiceById(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = (req.params as any);
+    const { id } = req.params;
     const invoice = await financeService.getInvoiceById(id);
     if (!invoice) {
       throw Errors.notFound('Invoice');
@@ -138,7 +139,7 @@ export async function getInvoiceById(req: Request, res: Response, next: NextFunc
 
 export async function updateInvoice(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = (req.params as any);
+    const { id } = req.params;
     const data = updateInvoiceSchema.parse(req.body);
     const invoice = await financeService.updateInvoice(id, data);
     res.json({
@@ -153,7 +154,7 @@ export async function updateInvoice(req: Request, res: Response, next: NextFunct
 
 export async function deleteInvoice(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = (req.params as any);
+    const { id } = req.params;
     await financeService.deleteInvoice(id);
     res.json({
       success: true,
@@ -185,7 +186,7 @@ export async function createPayment(req: Request, res: Response, next: NextFunct
 
 export async function submitPaymentProof(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = (req.params as any);
+    const { id } = req.params;
     const data = submitPaymentProofSchema.parse(req.body);
     const currentUser = {
       sub: req.user!.sub,
@@ -213,11 +214,11 @@ export async function getPendingVerifications(req: Request, res: Response, next:
       role: req.user!.role,
       unitId: req.user!.unitId,
     };
-    const { page, limit, status } = (req.query as any);
+    const { page, limit, status } = req.query;
     const result = await financeService.getPendingVerifications(currentUser, {
       page: page ? Number(page) : undefined,
       limit: limit ? Number(limit) : undefined,
-      status,
+      status: status as PaymentVerificationStatus | undefined,
     });
     res.json({ success: true, ...result });
   } catch (error) {
@@ -227,7 +228,7 @@ export async function getPendingVerifications(req: Request, res: Response, next:
 
 export async function verifyPayment(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = (req.params as any);
+    const { id } = req.params;
     const data = verifyPaymentSchema.parse(req.body);
     const currentUser = {
       sub: req.user!.sub,
@@ -260,7 +261,7 @@ export async function verifyPayment(req: Request, res: Response, next: NextFunct
 
 export async function getPayments(req: Request, res: Response, next: NextFunction) {
   try {
-    const query = queryPaymentSchema.parse(res.locals.validatedQuery || (req.query as any));
+    const query = queryPaymentSchema.parse(res.locals.validatedQuery || req.query);
     const result = await financeService.getPayments(query);
     res.json({
       success: true,
@@ -273,7 +274,7 @@ export async function getPayments(req: Request, res: Response, next: NextFunctio
 
 export async function getPaymentById(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = (req.params as any);
+    const { id } = req.params;
     const payment = await financeService.getPaymentById(id);
     if (!payment) {
       throw Errors.notFound('Payment');
@@ -293,7 +294,7 @@ export async function getPaymentById(req: Request, res: Response, next: NextFunc
 
 export async function getStudentFinanceSummary(req: Request, res: Response, next: NextFunction) {
   try {
-    const { studentId } = (req.params as any);
+    const { studentId } = req.params;
     const summary = await financeService.getStudentFinanceSummary(studentId);
     res.json({
       success: true,
@@ -306,8 +307,8 @@ export async function getStudentFinanceSummary(req: Request, res: Response, next
 
 export async function getUnitFinanceStats(req: Request, res: Response, next: NextFunction) {
   try {
-    const { unitId } = (req.params as any);
-    const month = (req.query as any).month as string | undefined;
+    const { unitId } = req.params;
+    const month = req.query.month as string | undefined;
     const stats = await financeService.getUnitFinanceStats(unitId, month);
     res.json({
       success: true,
@@ -320,7 +321,7 @@ export async function getUnitFinanceStats(req: Request, res: Response, next: Nex
 
 export async function getStudentOutstandingBalances(req: Request, res: Response, next: NextFunction) {
   try {
-    const { unitId } = (req.params as any);
+    const { unitId } = req.params;
     const data = await financeService.getStudentOutstandingBalances(unitId);
     res.json({
       success: true,
@@ -337,7 +338,7 @@ export async function getStudentOutstandingBalances(req: Request, res: Response,
 
 export async function getSppMatrix(req: Request, res: Response, next: NextFunction) {
   try {
-    const { unitId, classId, year, paymentTypeId } = (req.query as any);
+    const { unitId, classId, year, paymentTypeId } = req.query;
 
     const yearNum = year ? parseInt(year as string) : new Date().getFullYear();
 

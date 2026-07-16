@@ -1,7 +1,8 @@
 import { prisma } from '../../lib/prisma';
+import { Prisma } from '@prisma/client';
 import { CreateFinancialPeriodInput } from '@cipansor/shared';
 
-type TransactionClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
+type TransactionClient = Prisma.TransactionClient;
 
 export async function createFinancialPeriod(data: CreateFinancialPeriodInput) {
   const { unitId, name, startDate, endDate, notes } = data;

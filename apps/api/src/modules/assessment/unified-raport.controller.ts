@@ -8,8 +8,8 @@ export class UnifiedRaportController {
    */
   static async generateUnifiedRaport(req: Request, res: Response, next: NextFunction) {
     try {
-      const { studentId } = (req.params as any);
-      const { academicYearId, semester } = (req.query as any);
+      const { studentId } = req.params;
+      const { academicYearId, semester } = req.query;
 
       if (!academicYearId || !semester) {
         return res.status(400).json({
@@ -35,8 +35,8 @@ export class UnifiedRaportController {
    */
   static async getPrintData(req: Request, res: Response, next: NextFunction) {
     try {
-      const { studentId } = (req.params as any);
-      const { academicYearId, semester } = (req.query as any);
+      const { studentId } = req.params;
+      const { academicYearId, semester } = req.query;
 
       if (!academicYearId || !semester) {
         return res.status(400).json({

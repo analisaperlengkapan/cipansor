@@ -2,7 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { Prisma, PlanStatus } from '@prisma/client';
 import { Errors } from '@/middleware/error';
 
-type TransactionClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
+type TransactionClient = Prisma.TransactionClient;
 
 export class PerencanaanService {
   // ==================== STRATEGIC PLANS ====================

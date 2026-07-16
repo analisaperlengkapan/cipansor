@@ -27,7 +27,7 @@ export const employmentHistoryController = {
 
   async findAll(req: Request, res: Response, next: NextFunction) {
     try {
-      const { userId } = (req.params as any);
+      const { userId } = req.params;
       const result = await employmentHistoryService.findAll(userId);
       res.json({ success: true, data: result });
     } catch (error) {

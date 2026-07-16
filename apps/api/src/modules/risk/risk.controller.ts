@@ -23,15 +23,15 @@ export const listRisks = asyncHandler(async (req: Request, res: Response) => {
 
   if (!unitId && !isPrivilegedUser) throw Errors.unauthorized('Unit ID required');
 
-  const targetUnitId = isPrivilegedUser && (req.query as any).unitId ? String((req.query as any).unitId) : unitId;
+  const targetUnitId = isPrivilegedUser && req.query.unitId ? String(req.query.unitId) : unitId;
 
   if (!targetUnitId) throw Errors.badRequest('Unit ID required');
 
   // Validate query parameters to prevent 500 errors on invalid enums
   const query = listRiskQuerySchema.parse({
-    category: (req.query as any).category,
-    riskLevel: (req.query as any).riskLevel,
-    strategicPlanId: (req.query as any).strategicPlanId,
+    category: req.query.category,
+    riskLevel: req.query.riskLevel,
+    strategicPlanId: req.query.strategicPlanId,
     unitId: targetUnitId,
   });
 
@@ -40,7 +40,7 @@ export const listRisks = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const getRisk = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = (req.params as any);
+  const { id } = req.params;
   const risk = await riskService.getRiskById(id);
 
   if (!risk) {
@@ -88,7 +88,7 @@ export const createRisk = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const updateRisk = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = (req.params as any);
+  const { id } = req.params;
 
   const existingRisk = await riskService.getRiskById(id);
   if (!existingRisk) throw Errors.notFound('Risk not found');
@@ -115,7 +115,7 @@ export const updateRisk = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const deleteRisk = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = (req.params as any);
+  const { id } = req.params;
 
   const existingRisk = await riskService.getRiskById(id);
   if (!existingRisk) throw Errors.notFound('Risk not found');
@@ -155,7 +155,7 @@ export const addMitigation = asyncHandler(async (req: Request, res: Response) =>
 });
 
 export const updateMitigation = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = (req.params as any);
+  const { id } = req.params;
 
   // Verify Mitigation Ownership via Risk
   const existingMitigation = await riskService.getMitigationById(id);
@@ -182,7 +182,7 @@ export const updateMitigation = asyncHandler(async (req: Request, res: Response)
 });
 
 export const deleteMitigation = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = (req.params as any);
+  const { id } = req.params;
 
   // Verify Mitigation Ownership via Risk
   const existingMitigation = await riskService.getMitigationById(id);

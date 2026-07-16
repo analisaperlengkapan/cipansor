@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { campaignService, donationService } from './donation.service';
 import { ApiResponse } from '@/utils/response';
+import { requireUser } from '@/middleware/auth';
 
 // =====================================
 // CAMPAIGN CONTROLLER
@@ -12,7 +13,7 @@ export const campaignController = {
    */
   async list(req: Request, res: Response, next: NextFunction) {
     try {
-      const { page = 1, limit = 10, status, unitId } = (req.query as any);
+      const { page = 1, limit = 10, status, unitId } = req.query;
 
       const result = await campaignService.findAll({
         page: Number(page),
@@ -46,7 +47,7 @@ export const campaignController = {
    */
   async getById(req: Request, res: Response, next: NextFunction) {
     try {
-      const campaign = await campaignService.findById((req.params as any).id);
+      const campaign = await campaignService.findById(req.params.id);
 
       if (!campaign) {
         return res.status(404).json(ApiResponse.error('Campaign not found'));
@@ -63,7 +64,7 @@ export const campaignController = {
    */
   async getBySlug(req: Request, res: Response, next: NextFunction) {
     try {
-      const campaign = await campaignService.findBySlug((req.params as any).slug);
+      const campaign = await campaignService.findBySlug(req.params.slug);
 
       if (!campaign) {
         return res.status(404).json(ApiResponse.error('Campaign not found'));
@@ -80,7 +81,7 @@ export const campaignController = {
    */
   async create(req: Request, res: Response, next: NextFunction) {
     try {
-      const user = (req as any).user;
+      const user = requireUser(req);
       const campaign = await campaignService.create(req.body, user.id);
       res.status(201).json(ApiResponse.success(campaign, 'Campaign created successfully'));
     } catch (error) {
@@ -93,7 +94,7 @@ export const campaignController = {
    */
   async update(req: Request, res: Response, next: NextFunction) {
     try {
-      const campaign = await campaignService.update((req.params as any).id, req.body);
+      const campaign = await campaignService.update(req.params.id, req.body);
       res.json(ApiResponse.success(campaign, 'Campaign updated successfully'));
     } catch (error) {
       next(error);
@@ -105,7 +106,7 @@ export const campaignController = {
    */
   async delete(req: Request, res: Response, next: NextFunction) {
     try {
-      await campaignService.delete((req.params as any).id);
+      await campaignService.delete(req.params.id);
       res.json(ApiResponse.success(null, 'Campaign deleted successfully'));
     } catch (error) {
       next(error);
@@ -133,7 +134,7 @@ export const donationController = {
         startDate,
         endDate,
         isAnonymous,
-      } = (req.query as any);
+      } = req.query;
 
       const result = await donationService.findAll({
         page: Number(page),
@@ -160,7 +161,7 @@ export const donationController = {
    */
   async getStats(req: Request, res: Response, next: NextFunction) {
     try {
-      const { campaignId, unitId, type, startDate, endDate } = (req.query as any);
+      const { campaignId, unitId, type, startDate, endDate } = req.query;
 
       const stats = await donationService.getStats({
         campaignId: campaignId as string,
@@ -181,7 +182,7 @@ export const donationController = {
    */
   async getMonthlyReport(req: Request, res: Response, next: NextFunction) {
     try {
-      const { year = new Date().getFullYear() } = (req.query as any);
+      const { year = new Date().getFullYear() } = req.query;
       const report = await donationService.getMonthlyReport(Number(year));
       res.json(ApiResponse.success(report));
     } catch (error) {
@@ -194,7 +195,7 @@ export const donationController = {
    */
   async getRecent(req: Request, res: Response, next: NextFunction) {
     try {
-      const { limit = 10 } = (req.query as any);
+      const { limit = 10 } = req.query;
       const donations = await donationService.getRecent(Number(limit));
       res.json(ApiResponse.success(donations));
     } catch (error) {
@@ -207,7 +208,7 @@ export const donationController = {
    */
   async getById(req: Request, res: Response, next: NextFunction) {
     try {
-      const donation = await donationService.findById((req.params as any).id);
+      const donation = await donationService.findById(req.params.id);
 
       if (!donation) {
         return res.status(404).json(ApiResponse.error('Donation not found'));
@@ -260,8 +261,8 @@ export const donationController = {
    */
   async verify(req: Request, res: Response, next: NextFunction) {
     try {
-      const user = (req as any).user;
-      const donation = await donationService.verify((req.params as any).id, user.id, req.body);
+      const user = requireUser(req);
+      const donation = await donationService.verify(req.params.id, user.id, req.body);
       res.json(ApiResponse.success(donation, 'Donation verified successfully'));
     } catch (error) {
       next(error);
@@ -273,7 +274,7 @@ export const donationController = {
    */
   async update(req: Request, res: Response, next: NextFunction) {
     try {
-      const donation = await donationService.update((req.params as any).id, req.body);
+      const donation = await donationService.update(req.params.id, req.body);
       res.json(ApiResponse.success(donation, 'Donation updated successfully'));
     } catch (error) {
       next(error);
@@ -285,7 +286,7 @@ export const donationController = {
    */
   async delete(req: Request, res: Response, next: NextFunction) {
     try {
-      await donationService.delete((req.params as any).id);
+      await donationService.delete(req.params.id);
       res.json(ApiResponse.success(null, 'Donation deleted successfully'));
     } catch (error) {
       next(error);

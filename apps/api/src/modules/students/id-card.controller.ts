@@ -32,8 +32,8 @@ export class IdCardController {
    */
   static async generateStudentCard(req: Request, res: Response, next: NextFunction) {
     try {
-      const { studentId } = (req.params as any);
-      const config = (req.query as any);
+      const { studentId } = req.params;
+      const config = req.query;
 
       const cardData = await StudentIdCardService.generateIdCard(studentId, {
         templateType: config.template as any,
@@ -58,9 +58,9 @@ export class IdCardController {
    */
   static async generateClassCards(req: Request, res: Response, next: NextFunction) {
     try {
-      const { classId } = (req.params as any);
-      const { academicYearId } = (req.query as any);
-      const config = (req.query as any);
+      const { classId } = req.params;
+      const { academicYearId } = req.query;
+      const config = req.query;
 
       if (!academicYearId) {
         return res.status(400).json({
@@ -117,7 +117,7 @@ export class IdCardController {
    */
   static async verifyQRCodeGet(req: Request, res: Response, next: NextFunction) {
     try {
-      const { q } = (req.query as any);
+      const { q } = req.query;
 
       if (!q) {
         return res.status(400).json({
@@ -139,7 +139,7 @@ export class IdCardController {
    */
   static async getStatistics(req: Request, res: Response, next: NextFunction) {
     try {
-      const { unitId } = (req.params as any);
+      const { unitId } = req.params;
 
       const stats = await StudentIdCardService.getCardStatistics(unitId);
 

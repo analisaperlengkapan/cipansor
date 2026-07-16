@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import * as service from './rapor-pesantren.service';
-import { listRaporQuerySchema } from './rapor-pesantren.schema';
+import { getLegerQuerySchema, listRaporQuerySchema } from './rapor-pesantren.schema';
 import { asyncHandler } from '@/middleware/error';
 import { ApiResponse } from '@/utils/response';
 
@@ -30,7 +30,7 @@ export const generateBatch = asyncHandler(async (req: Request, res: Response) =>
 
 /** GET /api/rapor-pesantren/leger */
 export const getLeger = asyncHandler(async (req: Request, res: Response) => {
-  const result = await service.getLegerPesantren(req.query as any);
+  const result = await service.getLegerPesantren(getLegerQuerySchema.parse(req.query));
   res.json(ApiResponse.success(result));
 });
 

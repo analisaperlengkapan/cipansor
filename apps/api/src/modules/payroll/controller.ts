@@ -1,3 +1,4 @@
+import { requireUser } from '../../middleware/auth';
 import { Request, Response } from 'express';
 import { asyncHandler } from '../../middleware/error';
 import {
@@ -144,7 +145,7 @@ export const getPeriod = asyncHandler(async (req: Request, res: Response) => {
 
 /** POST /api/payroll/periods */
 export const createPeriod = asyncHandler(async (req: Request, res: Response) => {
-  const userId = (req as any).user.id;
+  const userId = requireUser(req).id;
   const period = await payrollPeriodService.create(req.body, userId);
   res
     .status(201)
@@ -159,14 +160,14 @@ export const updatePeriod = asyncHandler(async (req: Request, res: Response) => 
 
 /** POST /api/payroll/periods/:id/approve */
 export const approvePeriod = asyncHandler(async (req: Request, res: Response) => {
-  const userId = (req as any).user.id;
+  const userId = requireUser(req).id;
   const period = await payrollPeriodService.approve(req.params.id, userId, req.body.notes);
   res.json({ success: true, message: 'Periode penggajian berhasil disetujui', data: period });
 });
 
 /** POST /api/payroll/periods/:id/pay */
 export const payPeriod = asyncHandler(async (req: Request, res: Response) => {
-  const userId = (req as any).user.id;
+  const userId = requireUser(req).id;
   const period = await payrollPeriodService.markAsPaid(
     req.params.id,
     new Date(req.body.payDate),

@@ -110,13 +110,13 @@ export const procurementService = {
     unitId?: string,
     status?: PurchaseRequestStatus,
     userId?: string,
-    role?: UserRole
+    role?: string
   ) => {
     const where: any = {};
     if (unitId) where.unitId = unitId;
     if (status) where.status = status;
 
-    const adminRoles: UserRole[] = [UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN];
+    const adminRoles: string[] = [UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN];
     const isAdmin = role && adminRoles.includes(role);
 
     if (!isAdmin) {
@@ -181,7 +181,7 @@ export const procurementService = {
     id: string,
     input: UpdatePurchaseRequestStatusInput,
     approverId: string,
-    approverRole: UserRole
+    approverRole: string
   ) => {
     const request = await prisma.purchaseRequest.findUnique({ where: { id } });
     if (!request) throw Errors.notFound('Purchase Request');

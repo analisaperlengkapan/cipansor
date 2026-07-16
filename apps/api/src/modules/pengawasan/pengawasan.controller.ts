@@ -26,12 +26,12 @@ export const listAudits = asyncHandler(async (req: Request, res: Response) => {
   const isPrivilegedUser = isPrivileged(req.user?.role);
 
   if (!unitId && !isPrivilegedUser) throw Errors.unauthorized('Unit ID required');
-  const targetUnitId = isPrivilegedUser && (req.query as any).unitId ? String((req.query as any).unitId) : unitId;
+  const targetUnitId = isPrivilegedUser && req.query.unitId ? String(req.query.unitId) : unitId;
   if (!targetUnitId) throw Errors.badRequest('Unit ID required');
 
   const query = listAuditQuerySchema.parse({
-    status: (req.query as any).status,
-    auditType: (req.query as any).auditType,
+    status: req.query.status,
+    auditType: req.query.auditType,
   });
 
   const audits = await pengawasanService.getAudits(targetUnitId, query);
@@ -39,7 +39,7 @@ export const listAudits = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const getAudit = asyncHandler(async (req: Request, res: Response) => {
-  const audit = await pengawasanService.getAuditById((req.params as any).id);
+  const audit = await pengawasanService.getAuditById(req.params.id);
   if (!audit) throw Errors.notFound('Audit not found');
 
   if (!isPrivileged(req.user?.role) && audit.unitId !== req.user?.unitId) {
@@ -74,7 +74,7 @@ export const createAudit = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const updateAudit = asyncHandler(async (req: Request, res: Response) => {
-  const existing = await pengawasanService.getAuditById((req.params as any).id);
+  const existing = await pengawasanService.getAuditById(req.params.id);
   if (!existing) throw Errors.notFound('Audit not found');
 
   if (!isPrivileged(req.user?.role) && existing.unitId !== req.user?.unitId) {
@@ -87,19 +87,19 @@ export const updateAudit = asyncHandler(async (req: Request, res: Response) => {
   if (body.executedDate) updateData.executedDate = new Date(body.executedDate);
   if (body.completedDate) updateData.completedDate = new Date(body.completedDate);
 
-  const audit = await pengawasanService.updateAudit((req.params as any).id, updateData);
+  const audit = await pengawasanService.updateAudit(req.params.id, updateData);
   res.json({ success: true, data: audit });
 });
 
 export const deleteAudit = asyncHandler(async (req: Request, res: Response) => {
-  const existing = await pengawasanService.getAuditById((req.params as any).id);
+  const existing = await pengawasanService.getAuditById(req.params.id);
   if (!existing) throw Errors.notFound('Audit not found');
 
   if (!isPrivileged(req.user?.role) && existing.unitId !== req.user?.unitId) {
     throw Errors.forbidden('Access denied');
   }
 
-  await pengawasanService.deleteAudit((req.params as any).id);
+  await pengawasanService.deleteAudit(req.params.id);
   res.json({ success: true, message: 'Audit deleted' });
 });
 
@@ -113,12 +113,12 @@ export const createFinding = asyncHandler(async (req: Request, res: Response) =>
 
 export const updateFinding = asyncHandler(async (req: Request, res: Response) => {
   const body = updateFindingSchema.parse(req.body);
-  const finding = await pengawasanService.updateFinding((req.params as any).id, body);
+  const finding = await pengawasanService.updateFinding(req.params.id, body);
   res.json({ success: true, data: finding });
 });
 
 export const deleteFinding = asyncHandler(async (req: Request, res: Response) => {
-  await pengawasanService.deleteFinding((req.params as any).id);
+  await pengawasanService.deleteFinding(req.params.id);
   res.json({ success: true, message: 'Finding deleted' });
 });
 
@@ -132,12 +132,12 @@ export const createFollowUp = asyncHandler(async (req: Request, res: Response) =
 
 export const updateFollowUp = asyncHandler(async (req: Request, res: Response) => {
   const body = updateFollowUpSchema.parse(req.body);
-  const followUp = await pengawasanService.updateFollowUp((req.params as any).id, body, req.user?.sub);
+  const followUp = await pengawasanService.updateFollowUp(req.params.id, body, req.user?.sub);
   res.json({ success: true, data: followUp });
 });
 
 export const deleteFollowUp = asyncHandler(async (req: Request, res: Response) => {
-  await pengawasanService.deleteFollowUp((req.params as any).id);
+  await pengawasanService.deleteFollowUp(req.params.id);
   res.json({ success: true, message: 'Follow-up deleted' });
 });
 
@@ -156,7 +156,7 @@ export const getAuditSuggestions = asyncHandler(async (req: Request, res: Respon
   // Non-privileged users always use their token unitId.
   let targetUnitId: string | undefined = unitId ?? undefined;
   if (isPrivilegedUser) {
-    const queryUnitId = (req.query as any).unitId ? String((req.query as any).unitId) : undefined;
+    const queryUnitId = req.query.unitId ? String(req.query.unitId) : undefined;
     if (queryUnitId === 'all') {
       targetUnitId = undefined;
     } else if (queryUnitId) {

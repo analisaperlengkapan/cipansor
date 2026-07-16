@@ -25,7 +25,7 @@ export const employeeDocumentController = {
 
   async findAll(req: Request, res: Response, next: NextFunction) {
     try {
-      const { userId } = (req.params as any);
+      const { userId } = req.params;
       const result = await employeeDocumentService.findAll(userId);
       res.json({ success: true, data: result });
     } catch (error) {
@@ -35,7 +35,7 @@ export const employeeDocumentController = {
 
   async delete(req: Request, res: Response, next: NextFunction) {
     try {
-      await employeeDocumentService.delete((req.params as any).id);
+      await employeeDocumentService.delete(req.params.id);
       res.json({ success: true, message: 'Document deleted' });
     } catch (error) {
       next(error);

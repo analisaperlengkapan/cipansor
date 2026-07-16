@@ -116,18 +116,20 @@ Enablement: seed with `E2E_FIXED_2FA=1` (gives admin accounts the known TOTP
 secret — opt-in, never used by a real seed). Bring the stack up with
 `scripts/dev-stack.sh` (Postgres + Redis, no Docker).
 
-**Full-suite verified against the real stack (2026-07-16): 262 passed /
-16 failed / 44 skipped** — see `apps/web/e2e/COVERAGE.md` for the coverage
-matrix (430 routes × nav/CRUD/buttons/fields/RBAC), the stabilization
-history (2FA rate-limiter 429 cascade → cross-worker session cache;
-24 specs migrated off the impossible UI-form superadmin login), and the
-16-failure backlog. Also fixed along the way: `config/index.ts` loaded
-dotenv from a path that never existed, so the *running* API server had no
-DATABASE_URL (prisma CLI masked it).
+**Full chromium suite verified GREEN against the real stack (2026-07-16):
+280 passed / 0 failed (2.9m)** — see `apps/web/e2e/COVERAGE.md` for the
+coverage matrix (430 routes × nav/CRUD/buttons/fields/RBAC) and the full
+stabilization history (2FA rate-limiter 429 cascade → cross-worker session
+cache persisted across runs; 24 specs migrated off the impossible UI-form
+superadmin login; teardown no longer wipes `.auth/`). Also fixed along the
+way: `config/index.ts` loaded dotenv from a path that never existed, so the
+*running* API server had no DATABASE_URL (prisma CLI masked it), and the
+offline banner trusted `navigator.onLine` blindly (now verified against a
+real `/api/health` probe on the web origin).
 
 Remaining: migrate the 28 `page.route` mock-intercept specs onto `loginAs` +
-real backend data, fix the 16 known selector/assertion failures, and grow
-the matrix (69/430 routes currently visited by at least one spec).
+real backend data, and grow the matrix (69/430 routes currently visited by
+at least one spec).
 
 ## 🗺️ Roadmap (remaining follow-ups)
 

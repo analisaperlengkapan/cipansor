@@ -15,7 +15,7 @@ Stack: local Postgres 16 + Redis (`scripts/dev-stack.sh`), `db:push` +
 (`next start`; dev-mode Turbopack compile-on-demand times out Playwright's
 240s webServer wait — use `pnpm build && pnpm start` locally).
 
-**Result: 262 passed / 16 failed / 44 skipped (4.1m).**
+**Final result: 280 passed / 0 failed (2.9m) — fully green.**
 
 History of the stabilization (all root-caused, no suppressions):
 1. First honest run: 214 passed / 94 failed — almost every failure was
@@ -27,15 +27,14 @@ History of the stabilization (all root-caused, no suppressions):
    driving the **UI login form as superadmin** (2FA-gated → lands back on
    /login): migrated 24 spec files to `loginAs`.
 3. Third run (after migration): 262 passed / 16 failed.
-
-### Remaining 16 known failures (backlog, per-page investigation needed)
-
-| Cluster | Specs | Likely cause |
-|---|---|---|
-| "should display X content" governance pages | litbang, organisasi, pengawasan, perencanaan, syariah, tata-laksana, integration-grc ×2 | mock-era heading assertions vs. real rendered content |
-| PAUD sub-module navigation | paud-main ×3 | nav card selectors / route changes |
-| Muhadatsah create page | muhadatsah ×2 | create form selectors |
-| Misc | ppdb waves nav, auth logout, dashboard stat cards | selector drift |
+4. Fourth run: 279 passed / 1 failed — global-teardown was deleting the
+   `.auth/` session files after every run, which forced fresh admin 2FA
+   logins per run and per local iteration (the hidden re-heater of the
+   limiter). Teardown now keeps them; global-setup revalidates before reuse.
+5. Final run: **280 passed / 0 failed**. Last failure was the dashboard
+   stats-card check timing out on the first-paint auth spinner under
+   parallel load (probe confirmed 21 cards render) — replaced the 10s
+   `isVisible` poll with a proper 20s `toBeVisible` expectation.
 
 **Legend:** ✅ proven against real backend · 🟡 partially exercised (spec exists but mock-based, or dimension only touched) · ❌ not covered
 

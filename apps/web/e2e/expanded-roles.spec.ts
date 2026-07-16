@@ -7,7 +7,8 @@ test.describe("Expanded Roles Access Control", () => {
     await page.goto("/dashboard");
 
     // Should be able to see Higher Ed specific navigation labels or items
-    // based on our navigation config updates
+    // rektor uses kepalaSekolahNavigation which contains "Users & Staff" (Indonesian: "Pengguna & Staff" usually, but let's check navigation.ts)
+    // Looking at navigation.ts, kepalaSekolahNavigation has title: "Users & Staff"
     await expect(page.locator("nav")).toContainText("Users & Staff");
   });
 
@@ -15,8 +16,9 @@ test.describe("Expanded Roles Access Control", () => {
     await loginAs(page, "wakasek");
     await page.goto("/dashboard");
 
-    // Should see academic navigation items
-    await expect(page.locator("nav")).toContainText("Classes");
-    await expect(page.locator("nav")).toContainText("Students");
+    // Wakasek is a teacher role, uses teacherNavigation
+    // teacherNavigation has "Kelas Saya" and "Siswa"
+    await expect(page.locator("nav")).toContainText("Kelas Saya");
+    await expect(page.locator("nav")).toContainText("Siswa");
   });
 });

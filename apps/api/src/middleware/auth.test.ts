@@ -38,6 +38,41 @@ describe('middleware/auth RBAC', () => {
       expect(deriveLegacyRole(RoleCode.SUPER_ADMIN)).toBe('SUPER_ADMIN');
     });
 
+    it('deriveLegacyRole maps the expanded hierarchy roles (rebuilt #319)', () => {
+      // Granular school roles
+      expect(deriveLegacyRole(RoleCode.SDIT_WAKASEK)).toBe('TEACHER');
+      expect(deriveLegacyRole(RoleCode.SMPIT_WALI_KELAS)).toBe('TEACHER');
+      expect(deriveLegacyRole(RoleCode.SMAQ_GURU_BK)).toBe('TEACHER');
+      expect(deriveLegacyRole(RoleCode.TKQ_BENDAHARA)).toBe('STAFF');
+      // Pesantren leadership + gender-segregated pembina
+      expect(deriveLegacyRole(RoleCode.PESANTREN_PENGASUH)).toBe('TEACHER');
+      expect(deriveLegacyRole(RoleCode.USTADZ)).toBe('TEACHER');
+      expect(deriveLegacyRole(RoleCode.MUSYRIFAH)).toBe('TEACHER');
+      expect(deriveLegacyRole(RoleCode.MUHAFIDZAH)).toBe('TEACHER');
+      expect(deriveLegacyRole(RoleCode.PESANTREN_TATA_USAHA)).toBe('STAFF');
+      // Perguruan Tinggi
+      expect(deriveLegacyRole(RoleCode.PT_REKTOR)).toBe('TEACHER');
+      expect(deriveLegacyRole(RoleCode.PT_MAHASISWA)).toBe('STUDENT');
+      expect(deriveLegacyRole(RoleCode.PT_TATA_USAHA)).toBe('STAFF');
+      // Business units map to STAFF — never to an admin bucket
+      expect(deriveLegacyRole(RoleCode.BUSINESS_MANAGER)).toBe('STAFF');
+      expect(deriveLegacyRole(RoleCode.BUSINESS_STAFF)).toBe('STAFF');
+      // Cross-unit support staff (library/UKS/security/labs)
+      expect(deriveLegacyRole(RoleCode.PUSTAKAWAN)).toBe('STAFF');
+      expect(deriveLegacyRole(RoleCode.PERAWAT)).toBe('STAFF');
+      expect(deriveLegacyRole(RoleCode.KEAMANAN)).toBe('STAFF');
+      expect(deriveLegacyRole(RoleCode.LABORAN)).toBe('STAFF');
+      // Komite/alumni are deliberately unmapped: fall back to the code itself
+      expect(deriveLegacyRole(RoleCode.SDIT_KOMITE)).toBe(RoleCode.SDIT_KOMITE);
+      expect(deriveLegacyRole(RoleCode.SDIT_ALUMNI)).toBe(RoleCode.SDIT_ALUMNI);
+    });
+
+    it('business/PT administration roles are NOT system admins', () => {
+      expect(isAdminRoleCode(RoleCode.BUSINESS_MANAGER)).toBe(false);
+      expect(isAdminRoleCode(RoleCode.PT_TATA_USAHA)).toBe(false);
+      expect(isAdminRoleCode(RoleCode.PESANTREN_PENGASUH)).toBe(false);
+    });
+
     it('isAdminRoleCode recognises per-unit admins but not teachers/governance', () => {
       expect(isAdminRoleCode(RoleCode.SUPER_ADMIN)).toBe(true);
       expect(isAdminRoleCode(RoleCode.SDIT_ADMIN)).toBe(true);
@@ -103,6 +138,26 @@ describe('middleware/auth RBAC', () => {
       const n2 = vi.fn();
       isTeacherOrAbove(makeReq({ roleCode: RoleCode.SDIT_SISWA }), makeRes(), n2 as unknown as NextFunction);
       expect(n2.mock.calls[0][0].statusCode).toBe(403);
+    });
+
+    it('isTeacherOrAbove admits the expanded educator roles, denies business staff', () => {
+      for (const code of [
+        RoleCode.SDIT_WAKASEK,
+        RoleCode.SMPIT_WALI_KELAS,
+        RoleCode.SMAQ_GURU_BK,
+        RoleCode.USTADZ,
+        RoleCode.MUSYRIFAH,
+        RoleCode.MUHAFIDZAH,
+        RoleCode.PESANTREN_PENGASUH,
+        RoleCode.PT_DOSEN,
+      ]) {
+        const n = vi.fn();
+        isTeacherOrAbove(makeReq({ roleCode: code }), makeRes(), n as unknown as NextFunction);
+        expect(n, code).toHaveBeenCalledWith();
+      }
+      const denied = vi.fn();
+      isTeacherOrAbove(makeReq({ roleCode: RoleCode.BUSINESS_STAFF }), makeRes(), denied as unknown as NextFunction);
+      expect(denied.mock.calls[0][0].statusCode).toBe(403);
     });
   });
 

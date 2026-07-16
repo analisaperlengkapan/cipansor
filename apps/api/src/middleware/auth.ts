@@ -67,21 +67,41 @@ const LEGACY_ROLE_EXPANSION: Record<string, string[]> = {
     RoleCode.SMPIT_ADMIN,
     RoleCode.SMAQ_ADMIN,
   ],
-  // Legacy TEACHER → all per-unit teacher + kepala sekolah + pesantren roles
+  // Legacy TEACHER → all per-unit teacher/kepala-sekolah/wakasek/wali-kelas/
+  // guru-BK roles + pesantren educators (incl. gender-segregated variants)
+  // + Perguruan Tinggi academic roles.
   TEACHER: [
     RoleCode.TKQ_GURU, RoleCode.SDIT_GURU, RoleCode.SMPIT_GURU, RoleCode.SMAQ_GURU,
     RoleCode.TKQ_KEPALA_SEKOLAH, RoleCode.SDIT_KEPALA_SEKOLAH,
     RoleCode.SMPIT_KEPALA_SEKOLAH, RoleCode.SMAQ_KEPALA_SEKOLAH,
-    RoleCode.MUSYRIF, RoleCode.MUHAFIDZ, RoleCode.MURABBI, RoleCode.WALI_KAMAR,
+    RoleCode.TKQ_WAKASEK, RoleCode.SDIT_WAKASEK, RoleCode.SMPIT_WAKASEK, RoleCode.SMAQ_WAKASEK,
+    RoleCode.TKQ_WALI_KELAS, RoleCode.SDIT_WALI_KELAS,
+    RoleCode.SMPIT_WALI_KELAS, RoleCode.SMAQ_WALI_KELAS,
+    RoleCode.TKQ_GURU_BK, RoleCode.SDIT_GURU_BK, RoleCode.SMPIT_GURU_BK, RoleCode.SMAQ_GURU_BK,
+    RoleCode.PESANTREN_PENGASUH, RoleCode.PESANTREN_DIREKTUR, RoleCode.USTADZ,
+    RoleCode.MUSYRIF, RoleCode.MUSYRIFAH, RoleCode.MUHAFIDZ, RoleCode.MUHAFIDZAH,
+    RoleCode.MURABBI, RoleCode.WALI_KAMAR,
+    RoleCode.PT_REKTOR, RoleCode.PT_WAKIL_REKTOR, RoleCode.PT_DEKAN,
+    RoleCode.PT_KAPRODI, RoleCode.PT_DOSEN,
   ],
-  // Legacy STAFF → all per-unit tata usaha roles
+  // Legacy STAFF → all per-unit tata usaha + bendahara roles, pesantren/PT
+  // administration, and business-unit personnel.
+  // NOTE: BUSINESS_MANAGER and PT_TATA_USAHA are deliberately NOT in
+  // ADMIN_ROLE_CODES — running a kantin or a campus office does not grant
+  // system-admin privileges (see the governance note above ADMIN_ROLE_CODES).
   STAFF: [
     RoleCode.TKQ_TATA_USAHA, RoleCode.SDIT_TATA_USAHA,
     RoleCode.SMPIT_TATA_USAHA, RoleCode.SMAQ_TATA_USAHA,
+    RoleCode.TKQ_BENDAHARA, RoleCode.SDIT_BENDAHARA,
+    RoleCode.SMPIT_BENDAHARA, RoleCode.SMAQ_BENDAHARA,
+    RoleCode.PESANTREN_TATA_USAHA, RoleCode.PT_TATA_USAHA, RoleCode.PT_STAF_AKADEMIK,
+    RoleCode.PUSTAKAWAN, RoleCode.PERAWAT, RoleCode.KEAMANAN, RoleCode.LABORAN,
+    RoleCode.BUSINESS_MANAGER, RoleCode.BUSINESS_STAFF,
   ],
-  // Legacy STUDENT → all per-unit student roles
+  // Legacy STUDENT → all per-unit student roles + PT mahasiswa
   STUDENT: [
     RoleCode.TKQ_SISWA, RoleCode.SDIT_SISWA, RoleCode.SMPIT_SISWA, RoleCode.SMAQ_SISWA,
+    RoleCode.PT_MAHASISWA,
   ],
   // Legacy PARENT → all per-unit parent roles
   PARENT: [
@@ -430,10 +450,32 @@ const TEACHER_OR_ABOVE_CODES: string[] = [
   RoleCode.SDIT_KEPALA_SEKOLAH,
   RoleCode.SMPIT_KEPALA_SEKOLAH,
   RoleCode.SMAQ_KEPALA_SEKOLAH,
+  RoleCode.TKQ_WAKASEK,
+  RoleCode.SDIT_WAKASEK,
+  RoleCode.SMPIT_WAKASEK,
+  RoleCode.SMAQ_WAKASEK,
+  RoleCode.TKQ_WALI_KELAS,
+  RoleCode.SDIT_WALI_KELAS,
+  RoleCode.SMPIT_WALI_KELAS,
+  RoleCode.SMAQ_WALI_KELAS,
+  RoleCode.TKQ_GURU_BK,
+  RoleCode.SDIT_GURU_BK,
+  RoleCode.SMPIT_GURU_BK,
+  RoleCode.SMAQ_GURU_BK,
+  RoleCode.PESANTREN_PENGASUH,
+  RoleCode.PESANTREN_DIREKTUR,
+  RoleCode.USTADZ,
   RoleCode.MUSYRIF,
+  RoleCode.MUSYRIFAH,
   RoleCode.MUHAFIDZ,
+  RoleCode.MUHAFIDZAH,
   RoleCode.MURABBI,
   RoleCode.WALI_KAMAR,
+  RoleCode.PT_REKTOR,
+  RoleCode.PT_WAKIL_REKTOR,
+  RoleCode.PT_DEKAN,
+  RoleCode.PT_KAPRODI,
+  RoleCode.PT_DOSEN,
   // Legacy UserRole values for pre-migration tokens
   'TEACHER',
 ];

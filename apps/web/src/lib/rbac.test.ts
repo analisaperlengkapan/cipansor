@@ -45,6 +45,35 @@ describe("rbac — legacy bucket derivation", () => {
     // Unknown → undefined
     expect(deriveLegacyRole("SOME_FUTURE_ROLE")).toBeUndefined();
   });
+
+  it("maps the expanded hierarchy (rebuilt #319) like the backend", () => {
+    // Granular school roles
+    expect(deriveLegacyRole("SDIT_WAKASEK")).toBe("TEACHER");
+    expect(deriveLegacyRole("SMPIT_WALI_KELAS")).toBe("TEACHER");
+    expect(deriveLegacyRole("SMAQ_GURU_BK")).toBe("TEACHER");
+    expect(deriveLegacyRole("TKQ_BENDAHARA")).toBe("STAFF");
+    // Pesantren leadership + gender-segregated pembina
+    expect(deriveLegacyRole("PESANTREN_PENGASUH")).toBe("TEACHER");
+    expect(deriveLegacyRole("USTADZ")).toBe("TEACHER");
+    expect(deriveLegacyRole("MUSYRIFAH")).toBe("TEACHER");
+    expect(deriveLegacyRole("MUHAFIDZAH")).toBe("TEACHER");
+    expect(deriveLegacyRole("PESANTREN_TATA_USAHA")).toBe("STAFF");
+    // Perguruan Tinggi
+    expect(deriveLegacyRole("PT_REKTOR")).toBe("TEACHER");
+    expect(deriveLegacyRole("PT_MAHASISWA")).toBe("STUDENT");
+    expect(deriveLegacyRole("PT_TATA_USAHA")).toBe("STAFF");
+    // Business units → STAFF, never an admin bucket
+    expect(deriveLegacyRole("BUSINESS_MANAGER")).toBe("STAFF");
+    expect(deriveLegacyRole("BUSINESS_STAFF")).toBe("STAFF");
+    // Cross-unit support staff (library/UKS/security/labs)
+    expect(deriveLegacyRole("PUSTAKAWAN")).toBe("STAFF");
+    expect(deriveLegacyRole("PERAWAT")).toBe("STAFF");
+    expect(deriveLegacyRole("KEAMANAN")).toBe("STAFF");
+    expect(deriveLegacyRole("LABORAN")).toBe("STAFF");
+    // Komite/alumni deliberately unmapped (RoleCode-native authorization)
+    expect(deriveLegacyRole("SDIT_KOMITE")).toBeUndefined();
+    expect(deriveLegacyRole("SDIT_ALUMNI")).toBeUndefined();
+  });
 });
 
 describe("rbac — getEffectiveRole", () => {

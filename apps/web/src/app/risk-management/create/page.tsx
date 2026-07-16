@@ -30,6 +30,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useCreateRisk } from "@/hooks/use-risk";
 import { InfoIcon } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { getEffectiveRole } from "@/lib/rbac";
 
 const RiskCategory = [
   "STRATEGIC",
@@ -76,7 +77,8 @@ export default function CreateRiskPage() {
   const { user } = useAuthStore();
   const createRisk = useCreateRisk();
 
-  const isPrivileged = user?.role && PRIVILEGED_ROLES.includes(user.role);
+  const role = getEffectiveRole(user);
+  const isPrivileged = !!role && PRIVILEGED_ROLES.includes(role);
 
   const { data: units } = useQuery({
     queryKey: ["units"],

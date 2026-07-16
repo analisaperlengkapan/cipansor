@@ -1,5 +1,6 @@
 "use client";
 
+import { getEffectiveRole } from "@/lib/rbac";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/auth";
@@ -115,8 +116,10 @@ export function ProtectedRoute({
 
     // Check legacy role-based access (with mapping)
     if (allowedRoles) {
-      // First check direct match with legacy role
-      if (allowedRoles.includes(user.role)) {
+      // First check direct match with the effective legacy role (resolves
+      // RoleCode-only users the same way middleware.ts does)
+      const legacyRole = getEffectiveRole(user);
+      if (legacyRole && allowedRoles.includes(legacyRole)) {
         return true;
       }
 

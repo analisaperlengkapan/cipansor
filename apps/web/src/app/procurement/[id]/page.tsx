@@ -41,6 +41,7 @@ import {
 import { useState } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { FulfillDialog } from "./fulfill-dialog";
+import { getEffectiveRole } from "@/lib/rbac";
 
 export default function ProcurementDetailPage() {
   const { id } = useParams();
@@ -70,10 +71,10 @@ export default function ProcurementDetailPage() {
     );
 
   const canApprove =
-    ["SUPER_ADMIN", "UNIT_ADMIN", "YAYASAN_ADMIN"].includes(user?.role || "") &&
+    ["SUPER_ADMIN", "UNIT_ADMIN", "YAYASAN_ADMIN"].includes(getEffectiveRole(user) || "") &&
     request.status === PurchaseRequestStatus.PENDING;
   const canFulfill =
-    ["SUPER_ADMIN", "UNIT_ADMIN", "YAYASAN_ADMIN"].includes(user?.role || "") &&
+    ["SUPER_ADMIN", "UNIT_ADMIN", "YAYASAN_ADMIN"].includes(getEffectiveRole(user) || "") &&
     (request.status === PurchaseRequestStatus.APPROVED ||
       request.status === PurchaseRequestStatus.ORDERED);
 

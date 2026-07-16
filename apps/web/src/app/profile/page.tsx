@@ -5,6 +5,7 @@
  * User profile management - view and edit profile, change password
  */
 
+import { getEffectiveRole } from "@/lib/rbac";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -177,8 +178,8 @@ export default function ProfilePage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">{user.name}</h1>
           <div className="flex items-center gap-2 mt-1">
-            <Badge className={ROLE_COLORS[user.role] || "bg-gray-100"}>
-              {ROLE_LABELS[user.role] || user.role}
+            <Badge className={ROLE_COLORS[getEffectiveRole(user) ?? user.role] || "bg-gray-100"}>
+              {ROLE_LABELS[getEffectiveRole(user) ?? user.role] || user.role}
             </Badge>
             {user.unit && (
               <Badge variant="outline">
@@ -226,7 +227,7 @@ export default function ProfilePage() {
                     Role
                   </Label>
                   <p className="font-medium">
-                    {ROLE_LABELS[user.role] || user.role}
+                    {ROLE_LABELS[getEffectiveRole(user) ?? user.role] || user.role}
                   </p>
                 </div>
                 <div className="space-y-2">

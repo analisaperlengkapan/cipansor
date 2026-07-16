@@ -30,6 +30,7 @@ import { MoreHorizontal, Eye, Pencil, Trash2 } from "lucide-react";
 import { safeFormat } from "@/lib/date";
 import { toast } from "sonner";
 import { useAuthStore } from "@/stores/auth";
+import { getEffectiveRole } from "@/lib/rbac";
 
 const statusColors: Record<string, string> = {
   ACTIVE: "bg-green-100 text-green-800",
@@ -57,7 +58,7 @@ export default function StudentsPage() {
     limit: pageSize,
     search: search || undefined,
     status: statusFilter === "ALL" ? undefined : statusFilter,
-    unitId: user?.role !== "SUPER_ADMIN" ? user?.unitId : undefined,
+    unitId: getEffectiveRole(user) !== "SUPER_ADMIN" ? user?.unitId : undefined,
   });
 
   const deleteMutation = useDeleteStudent();

@@ -1,5 +1,6 @@
 "use client";
 
+import { getEffectiveRole } from "@/lib/rbac";
 import { useState } from "react";
 import { toast } from "sonner";
 import { MainLayout } from "@/components/layout";
@@ -213,7 +214,7 @@ function Queue({
 
 export default function PaymentVerificationPage() {
   const { user } = useAuthStore();
-  const isAdmin = ["SUPER_ADMIN", "UNIT_ADMIN"].includes(user?.role || "");
+  const isAdmin = ["SUPER_ADMIN", "UNIT_ADMIN"].includes(getEffectiveRole(user) || "");
 
   return (
     <MainLayout allowedRoles={["SUPER_ADMIN", "UNIT_ADMIN", "STAFF"]}>

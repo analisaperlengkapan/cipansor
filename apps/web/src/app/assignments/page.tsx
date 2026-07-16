@@ -8,6 +8,7 @@ import { useAssignments } from "@/hooks/use-assignments";
 import { useAuthStore } from "@/stores/auth";
 import { AssignmentList } from "@/components/assignments/assignment-list";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { getEffectiveRole } from "@/lib/rbac";
 
 export default function AssignmentsPage() {
   const router = useRouter();
@@ -16,8 +17,8 @@ export default function AssignmentsPage() {
   const [pageSize, setPageSize] = useState(10);
 
   // Filter based on role
-  const isTeacher = user?.role === "TEACHER";
-  const isStudent = user?.role === "STUDENT";
+  const isTeacher = getEffectiveRole(user) === "TEACHER";
+  const isStudent = getEffectiveRole(user) === "STUDENT";
 
   // For teacher: show assignments they created
   // For student: show assignments for their class (filtered by backend usually, or we pass studentId)
@@ -39,7 +40,7 @@ export default function AssignmentsPage() {
           title="Assignments"
           description="Manage tasks and homework"
           action={
-            isTeacher || user?.role === "SUPER_ADMIN"
+            isTeacher || getEffectiveRole(user) === "SUPER_ADMIN"
               ? { label: "Create Assignment", href: "/assignments/create" }
               : undefined
           }

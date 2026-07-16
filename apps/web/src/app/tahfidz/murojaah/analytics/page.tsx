@@ -40,6 +40,7 @@ import {
 } from "lucide-react";
 import { format, subDays } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
+import { getEffectiveRole } from "@/lib/rbac";
 
 // Mistake type labels
 const MISTAKE_TYPE_LABELS: Record<string, string> = {
@@ -87,7 +88,7 @@ export default function MurojaahAnalyticsPage() {
 
   const { data: recordsData, isLoading } = useMurojaahRecords({
     classId: selectedClass || undefined,
-    unitId: user?.role !== "SUPER_ADMIN" ? user?.unitId : undefined,
+    unitId: getEffectiveRole(user) !== "SUPER_ADMIN" ? user?.unitId : undefined,
     dateFrom,
     limit: 1000, // Get more records for analytics
   });

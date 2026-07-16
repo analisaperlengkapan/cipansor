@@ -55,6 +55,7 @@ import { toast } from "sonner";
 import { useAuthStore } from "@/stores/auth";
 import { cn } from "@/lib/utils";
 import { DateRange } from "react-day-picker";
+import { getEffectiveRole } from "@/lib/rbac";
 
 const STATUS_LABELS: Record<string, string> = {
   SCHEDULED: "Terjadwal",
@@ -110,7 +111,7 @@ export default function SimaanListPage() {
       ? format(dateRange.from, "yyyy-MM-dd")
       : undefined,
     dateTo: dateRange?.to ? format(dateRange.to, "yyyy-MM-dd") : undefined,
-    unitId: user?.role !== "SUPER_ADMIN" ? user?.unitId : undefined,
+    unitId: getEffectiveRole(user) !== "SUPER_ADMIN" ? user?.unitId : undefined,
   });
 
   const deleteMutation = useDeleteSimaan();

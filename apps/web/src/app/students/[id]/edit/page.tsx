@@ -31,6 +31,7 @@ import {
 import { toast } from "sonner";
 import { Loader2, ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { getEffectiveRole } from "@/lib/rbac";
 
 const studentSchema = z.object({
   nis: z.string().min(1, "NIS is required"),
@@ -218,7 +219,7 @@ export default function EditStudentPage() {
                 <Select
                   value={watch("unitId")}
                   onValueChange={(value) => setValue("unitId", value)}
-                  disabled={user?.role !== "SUPER_ADMIN"}
+                  disabled={getEffectiveRole(user) !== "SUPER_ADMIN"}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select unit" />

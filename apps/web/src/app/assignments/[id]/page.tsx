@@ -16,6 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 import { toast } from "sonner";
+import { getEffectiveRole } from "@/lib/rbac";
 
 export default function AssignmentDetailPage() {
   const { id } = useParams();
@@ -23,10 +24,10 @@ export default function AssignmentDetailPage() {
   const { data: assignment, isLoading } = useAssignment(id as string);
 
   const isTeacher =
-    user?.role === "TEACHER" ||
-    user?.role === "SUPER_ADMIN" ||
-    user?.role === "UNIT_ADMIN";
-  const isStudent = user?.role === "STUDENT";
+    getEffectiveRole(user) === "TEACHER" ||
+    getEffectiveRole(user) === "SUPER_ADMIN" ||
+    getEffectiveRole(user) === "UNIT_ADMIN";
+  const isStudent = getEffectiveRole(user) === "STUDENT";
 
   // Teacher hooks
   const { data: submissions, isLoading: isLoadingSubmissions } =

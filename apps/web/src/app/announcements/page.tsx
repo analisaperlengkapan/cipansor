@@ -67,6 +67,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
+import { getEffectiveRole } from "@/lib/rbac";
 
 const PRIORITY_OPTIONS = [
   { value: 0, label: "Normal", color: "bg-gray-500", icon: Info },
@@ -237,7 +238,7 @@ export default function AnnouncementsPage() {
     }
   };
 
-  const isAdmin = user?.role === "SUPER_ADMIN" || user?.role === "UNIT_ADMIN";
+  const isAdmin = getEffectiveRole(user) === "SUPER_ADMIN" || getEffectiveRole(user) === "UNIT_ADMIN";
 
   if (isLoading) {
     return (

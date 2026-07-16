@@ -42,7 +42,7 @@ import { toast } from "sonner";
 
 // Types
 type Theme = "light" | "dark" | "system";
-type Language = "id" | "en";
+type Language = "id" | "en" | "ar";
 
 interface NotificationSettings {
   email: boolean;
@@ -79,8 +79,10 @@ const DEFAULT_SETTINGS: AppSettings = {
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { User, Lock } from "lucide-react";
+import { useI18n } from "@/providers/i18n-provider";
 
 export default function SettingsPage() {
+  const { locale, setLocale } = useI18n();
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -99,17 +101,20 @@ export default function SettingsPage() {
     router.push(`${pathname}?${params.toString()}`);
   };
 
-  // Load settings from localStorage
+  // Load settings from localStorage. The language field is owned by the
+  // i18n provider (app-locale cookie) — it wins over any stale saved value.
   useEffect(() => {
     const savedSettings = localStorage.getItem("app-settings");
     if (savedSettings) {
       try {
-        setSettings(JSON.parse(savedSettings));
+        setSettings({ ...JSON.parse(savedSettings), language: locale });
       } catch {
         // Use default if parsing fails
       }
+    } else {
+      setSettings((prev) => ({ ...prev, language: locale }));
     }
-  }, []);
+  }, [locale]);
 
   // Apply theme
   useEffect(() => {
@@ -269,9 +274,11 @@ export default function SettingsPage() {
                 </div>
                 <Select
                   value={settings.language}
-                  onValueChange={(value: Language) =>
-                    setSettings((prev) => ({ ...prev, language: value }))
-                  }
+                  onValueChange={(value: Language) => {
+                    setSettings((prev) => ({ ...prev, language: value }));
+                    // Apply immediately app-wide (cookie + <html lang/dir>).
+                    setLocale(value);
+                  }}
                 >
                   <SelectTrigger className="w-[180px]">
                     <SelectValue />
@@ -279,6 +286,7 @@ export default function SettingsPage() {
                   <SelectContent>
                     <SelectItem value="id">Bahasa Indonesia</SelectItem>
                     <SelectItem value="en">English</SelectItem>
+                    <SelectItem value="ar">العربية</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

@@ -14,6 +14,7 @@ import { useAuthStore } from "@/stores/auth";
 import { Bell, Menu, Settings, User, LogOut } from "lucide-react";
 import Link from "next/link";
 import { RoleSwitcher } from "./role-switcher";
+import { LanguageSwitcher } from "./language-switcher";
 
 interface HeaderProps {
   onMenuClick?: () => void;
@@ -43,6 +44,9 @@ export function Header({ onMenuClick }: HeaderProps) {
       <div className="flex items-center gap-2">
         {/* Role Switcher */}
         <RoleSwitcher />
+
+        {/* Language Switcher */}
+        <LanguageSwitcher />
 
         {/* Notifications */}
         <Button variant="ghost" size="icon" asChild>

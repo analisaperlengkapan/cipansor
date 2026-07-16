@@ -517,11 +517,11 @@ export class PerencanaanService {
     objectiveId: string;
     title: string;
     description?: string;
-    picId?: string;
+    picId?: string | null;
     startDate?: string;
     endDate?: string;
     budget?: number;
-    budgetId?: string;
+    budgetId?: string | null;
     priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
   }) {
     return prisma.planActivity.create({

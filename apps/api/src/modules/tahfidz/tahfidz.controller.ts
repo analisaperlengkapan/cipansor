@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 import { TahfidzService, tahfidzService } from './tahfidz.service';
-import { CreateTahfidzInput, UpdateTahfidzInput, GenerateCertificateInput } from '@cipansor/shared';
+import { CreateTahfidzInput, UpdateTahfidzInput } from '@cipansor/shared';
+import { generateCertificateSchema, listTahfidzQuerySchema } from './tahfidz.schema';
 import { getQuranProgressMap } from './tahfidz.analytics';
 import { requireUser } from '../../middleware/auth';
 
@@ -14,17 +15,9 @@ export class TahfidzController {
   findAll = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const currentUser = requireUser(req);
-      const query = {
-        page: Number(req.query.page) || 1,
-        limit: Number(req.query.limit) || 10,
-        studentId: req.query.studentId as string,
-        activityType: req.query.activityType as string,
-        startDate: req.query.startDate as string,
-        endDate: req.query.endDate as string,
-        surah: req.query.surah as string,
-      };
+      const query = listTahfidzQuerySchema.parse(req.query);
 
-      const result = await this.service.findAll(query as Parameters<typeof this.service.findAll>[0], currentUser);
+      const result = await this.service.findAll(query, currentUser);
       // Standard paginated envelope ({ data: [...], meta: { pagination } }) so
       // consumers (tahfidz list, dashboard) get an array at `.data`, matching
       // every other module. Previously this nested the array under data.records,
@@ -106,8 +99,8 @@ export class TahfidzController {
   generateCertificate = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const createdById = requireUser(req).id;
-      const input: GenerateCertificateInput = req.body;
-      const result = await this.service.generateCertificate(input as Parameters<typeof this.service.generateCertificate>[0], createdById);
+      const input = generateCertificateSchema.parse(req.body);
+      const result = await this.service.generateCertificate(input, createdById);
       res.status(201).json({ success: true, data: result });
     } catch (error) {
       next(error);

@@ -4,7 +4,13 @@ import { RoleCode, UserRole } from '@prisma/client';
 
 // Mock infra so importing the middleware has no side effects (no DB/redis/jwt).
 vi.mock('@/lib/jwt', () => ({ verifyToken: vi.fn() }));
-vi.mock('@/lib/prisma', () => ({ prisma: { role: { findUnique: vi.fn() } } }));
+vi.mock('@/lib/prisma', () => ({
+  prisma: {
+    role: { findUnique: vi.fn() },
+    student: { findUnique: vi.fn() },
+    teacher: { findUnique: vi.fn() },
+  },
+}));
 vi.mock('@/lib/redis', () => ({ redis: { get: vi.fn(), setex: vi.fn() } }));
 
 import {
@@ -16,7 +22,12 @@ import {
   deriveLegacyRole,
   isAdminRoleCode,
   isGovernanceRoleCode,
+  requireUser,
+  requireStudentId,
+  findStudentIdForUser,
+  findTeacherIdForUser,
 } from './auth';
+import { prisma } from '@/lib/prisma';
 
 // Minimal express mocks
 const makeRes = () => ({}) as Response;
@@ -187,6 +198,66 @@ describe('middleware/auth RBAC', () => {
         next as unknown as NextFunction
       );
       expect(next).toHaveBeenCalledWith();
+    });
+  });
+
+  describe('requireUser()', () => {
+    it('returns the authenticated user attached by authenticate()', () => {
+      const user = { id: 'u1', roleCode: RoleCode.SUPER_ADMIN };
+      expect(requireUser(makeReq(user))).toBe(user);
+    });
+
+    it('throws 401 when no user is attached', () => {
+      expect(() => requireUser(makeReq(undefined))).toThrowError(
+        expect.objectContaining({ statusCode: 401 })
+      );
+    });
+  });
+
+  describe('student/teacher profile resolution', () => {
+    beforeEach(() => {
+      vi.mocked(prisma.student.findUnique).mockReset();
+      vi.mocked(prisma.teacher.findUnique).mockReset();
+    });
+
+    it('findStudentIdForUser resolves the linked student id', async () => {
+      vi.mocked(prisma.student.findUnique).mockResolvedValue({ id: 's1' } as never);
+      await expect(findStudentIdForUser('u1')).resolves.toBe('s1');
+      expect(prisma.student.findUnique).toHaveBeenCalledWith({
+        where: { userId: 'u1' },
+        select: { id: true },
+      });
+    });
+
+    it('findStudentIdForUser returns null when no profile is linked', async () => {
+      vi.mocked(prisma.student.findUnique).mockResolvedValue(null as never);
+      await expect(findStudentIdForUser('u1')).resolves.toBeNull();
+    });
+
+    it('requireStudentId returns the id for a linked student', async () => {
+      vi.mocked(prisma.student.findUnique).mockResolvedValue({ id: 's1' } as never);
+      await expect(requireStudentId(makeReq({ id: 'u1' }))).resolves.toBe('s1');
+    });
+
+    it('requireStudentId throws 403 for a user without a student profile', async () => {
+      vi.mocked(prisma.student.findUnique).mockResolvedValue(null as never);
+      await expect(requireStudentId(makeReq({ id: 'u1' }))).rejects.toMatchObject({
+        statusCode: 403,
+      });
+    });
+
+    it('requireStudentId throws 401 before hitting the DB when unauthenticated', async () => {
+      await expect(requireStudentId(makeReq(undefined))).rejects.toMatchObject({
+        statusCode: 401,
+      });
+      expect(prisma.student.findUnique).not.toHaveBeenCalled();
+    });
+
+    it('findTeacherIdForUser resolves the linked teacher id or null', async () => {
+      vi.mocked(prisma.teacher.findUnique).mockResolvedValue({ id: 't1' } as never);
+      await expect(findTeacherIdForUser('u1')).resolves.toBe('t1');
+      vi.mocked(prisma.teacher.findUnique).mockResolvedValue(null as never);
+      await expect(findTeacherIdForUser('u1')).resolves.toBeNull();
     });
   });
 });

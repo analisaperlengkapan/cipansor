@@ -85,7 +85,7 @@ export const createAssessment = asyncHandler(async (req: Request, res: Response)
   const userId = req.user?.sub;
   if (!userId) throw Errors.unauthorized('User context missing');
   const body = createAssessmentSchema.parse(req.body);
-  const assessment = await talentaService.createAssessment({ ...body, assessorId: userId } as Parameters<typeof talentaService.createAssessment>[0]);
+  const assessment = await talentaService.createAssessment({ ...body, assessorId: userId });
   res.status(201).json({ success: true, data: assessment });
 });
 
@@ -111,7 +111,7 @@ export const createTraining = asyncHandler(async (req: Request, res: Response) =
   if (!userId) throw Errors.unauthorized('User context missing');
   const body = createTrainingSchema.parse(req.body);
   const unitId = resolveUnitId(req, body.unitId);
-  const training = await talentaService.createTraining({ ...body, unitId, createdById: userId } as Parameters<typeof talentaService.createTraining>[0]);
+  const training = await talentaService.createTraining({ ...body, unitId, createdById: userId });
   res.status(201).json({ success: true, data: training });
 });
 
@@ -156,7 +156,7 @@ export const listSuccessions = asyncHandler(async (req: Request, res: Response) 
 export const createSuccession = asyncHandler(async (req: Request, res: Response) => {
   const body = createSuccessionSchema.parse(req.body);
   const unitId = resolveUnitId(req, body.unitId);
-  const succession = await talentaService.createSuccession({ ...body, unitId } as Parameters<typeof talentaService.createSuccession>[0]);
+  const succession = await talentaService.createSuccession({ ...body, unitId });
   res.status(201).json({ success: true, data: succession });
 });
 

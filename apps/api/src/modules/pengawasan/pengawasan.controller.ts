@@ -68,7 +68,7 @@ export const createAudit = asyncHandler(async (req: Request, res: Response) => {
     ...body,
     unitId: targetUnitId,
     leadAuditorId: userId,
-  } as Parameters<typeof pengawasanService.createAudit>[0]);
+  });
 
   res.status(201).json({ success: true, data: audit });
 });
@@ -107,7 +107,7 @@ export const deleteAudit = asyncHandler(async (req: Request, res: Response) => {
 
 export const createFinding = asyncHandler(async (req: Request, res: Response) => {
   const body = createFindingSchema.parse(req.body);
-  const finding = await pengawasanService.createFinding(body as Parameters<typeof pengawasanService.createFinding>[0]);
+  const finding = await pengawasanService.createFinding(body);
   res.status(201).json({ success: true, data: finding });
 });
 
@@ -126,7 +126,7 @@ export const deleteFinding = asyncHandler(async (req: Request, res: Response) =>
 
 export const createFollowUp = asyncHandler(async (req: Request, res: Response) => {
   const body = createFollowUpSchema.parse(req.body);
-  const followUp = await pengawasanService.createFollowUp(body as Parameters<typeof pengawasanService.createFollowUp>[0]);
+  const followUp = await pengawasanService.createFollowUp(body);
   res.status(201).json({ success: true, data: followUp });
 });
 

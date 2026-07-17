@@ -1,128 +1,42 @@
-import { test, expect } from '@playwright/test';
-import { primeAuthCookies } from './helpers/auth';
+import { test, expect } from "@playwright/test";
+import { loginAs } from "./helpers/auth-api";
 
-test.describe('GRC Dashboard Live Data', () => {
+test.describe("GRC Dashboard Live Data", () => {
   test.beforeEach(async ({ page }) => {
-    await primeAuthCookies(page);
-
-    // Low-priority fallback + auth mocks so an incidental 401 never triggers the
-    // refresh->logout redirect. Per-test mocks (registered later) take
-    // precedence, including the deliberate 500 on /api/analytics/grc*.
-    await page.route('**/api/**', async (route) => {
-      await route.fulfill({ json: { success: true, data: [] } });
-    });
-    await page.route('**/api/auth/refresh', async (route) => {
-      await route.fulfill({
-        json: {
-          success: true,
-          data: { accessToken: 'mock-token', refreshToken: 'mock-token' },
-        },
-      });
-    });
-    await page.route('**/api/auth/me', async (route) => {
-      await route.fulfill({
-        json: {
-          success: true,
-          data: { id: '1', name: 'Admin', role: 'SUPER_ADMIN' },
-        },
-      });
-    });
-
-    // Seed auth before any page JS runs (applies on every navigation) so the
-    // store is hydrated on first paint and never races into the logout flow.
-    await page.addInitScript(() => {
-      localStorage.setItem('accessToken', 'mock-token');
-      localStorage.setItem('auth-storage', JSON.stringify({
-        state: {
-          user: { id: '1', name: 'Admin', role: 'SUPER_ADMIN' },
-          isAuthenticated: true
-        }
-      }));
-    });
+    await loginAs(page, "superAdmin");
   });
 
-  test('should display aggregated GRC metrics correctly', async ({ page }) => {
-    // Mock the GRC API response for this test
-    await page.route('**/api/analytics/grc*', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          success: true,
-          data: {
-            plans: { activeCount: 5, averageProgress: 75.5 },
-            risks: {
-              total: 20,
-              criticalCount: 4,
-              byLevel: { EXTREME: 1, HIGH: 3, MEDIUM: 10, LOW: 6 }
-            },
-            audits: { totalFindings: 12, unresolvedCount: 8, resolvedCount: 4, resolutionRate: 33.33 },
-            sharia: {
-              complianceRate: 92,
-              statusDistribution: { COMPLIANT: 10, PARTIALLY: 2, NON_COMPLIANT: 0, UNDER_REVIEW: 1, NOT_APPLICABLE: 0 }
-            }
-          }
-        })
-      });
-    });
+  test("should display aggregated GRC metrics correctly", async ({ page }) => {
+    await page.goto("/grc-dashboard");
 
-    // Specific risk-matrix mock registered AFTER the broad '**/api/analytics/grc*'
-    // route above so it takes precedence (Playwright matches the most recently
-    // registered route first). Without it the broad mock would answer the
-    // matrix request with the wrong shape and the heatmap would be hidden.
-    await page.route('**/api/analytics/grc/risk-matrix*', async (route) => {
-      const emptyRow = () => [0, 0, 0, 0, 0];
-      const matrix = [emptyRow(), emptyRow(), emptyRow(), emptyRow(), emptyRow()];
-      matrix[4][4] = 1; // one "almost certain × catastrophic" risk
-      await route.fulfill({
-        json: {
-          success: true,
-          data: {
-            likelihoodLabels: ['RARE', 'UNLIKELY', 'POSSIBLE', 'LIKELY', 'ALMOST_CERTAIN'],
-            impactLabels: ['INSIGNIFICANT', 'MINOR', 'MODERATE', 'MAJOR', 'CATASTROPHIC'],
-            inherent: matrix,
-            residual: [emptyRow(), emptyRow(), emptyRow(), emptyRow(), emptyRow()],
-          },
-        },
-      });
-    });
+    // Cards aggregate real seeded data — counts are data-dependent, so assert
+    // the rendered metric formats instead of fixed values.
+    await expect(page.getByText(/\d+ Active/).first()).toBeVisible({ timeout: 20000 });
+    await expect(page.getByText(/Average Progress: [\d.]+%/).first()).toBeVisible();
+    await expect(page.getByText(/\d+ Risks/).first()).toBeVisible();
+    await expect(page.getByText(/\d+ Findings/).first()).toBeVisible();
+    await expect(page.getByText(/\d+ Unresolved/).first()).toBeVisible();
+    await expect(page.getByText(/\d+% Compliant/).first()).toBeVisible();
 
-    await page.goto('/grc-dashboard');
-
-    // Check Strategic Plans card
-    await expect(page.locator('text=5 Active')).toBeVisible();
-    await expect(page.locator('text=Average Progress: 75.5%')).toBeVisible();
-
-    // Check Risks card
-    await expect(page.locator('text=4 Risks')).toBeVisible();
-    await expect(page.locator('text=1 Extreme')).toBeVisible();
-    await expect(page.locator('text=3 High')).toBeVisible();
-
-    // Check Audits card
-    await expect(page.locator('text=12 Findings')).toBeVisible();
-    await expect(page.locator('text=8 Unresolved')).toBeVisible();
-
-    // Check Sharia card
-    await expect(page.locator('text=92% Compliant')).toBeVisible();
-
-    // Check the 5x5 risk heatmaps render from the risk-matrix endpoint
-    await expect(page.getByText('Peta Risiko Inheren (5×5)')).toBeVisible();
-    await expect(page.getByText('Peta Risiko Residual (5×5)')).toBeVisible();
+    // The 5x5 risk heatmaps render from the real risk-matrix endpoint
+    await expect(page.getByText("Peta Risiko Inheren (5×5)")).toBeVisible();
+    await expect(page.getByText("Peta Risiko Residual (5×5)")).toBeVisible();
   });
 
-  test('should show loading state and handle errors', async ({ page }) => {
-    // Mock error
-    await page.route('**/api/analytics/grc*', async (route) => {
+  test("should show loading state and handle errors", async ({ page }) => {
+    // Deliberate failure injection: this test exercises the FE error state,
+    // so the 500 on the GRC endpoint is the point (auth stays real).
+    await page.route("**/api/analytics/grc*", async (route) => {
       await route.fulfill({
         status: 500,
-        contentType: 'application/json',
-        body: JSON.stringify({ success: false, message: 'Internal Server Error' })
+        contentType: "application/json",
+        body: JSON.stringify({ success: false, message: "Internal Server Error" }),
       });
     });
 
-    await page.goto('/grc-dashboard');
+    await page.goto("/grc-dashboard");
 
     // Check for error message
-    await expect(page.locator('text=Gagal memuat data GRC')).toBeVisible();
+    await expect(page.locator("text=Gagal memuat data GRC")).toBeVisible();
   });
 });

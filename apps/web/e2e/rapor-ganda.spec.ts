@@ -1,110 +1,100 @@
-import { test, expect } from '@playwright/test';
-import { setupMockUser, login } from './utils/auth';
+import { test, expect } from "@playwright/test";
+import { apiLogin, apiRequest, injectSession, SEED_USERS } from "./helpers/auth-api";
 
-test.describe('End-to-End: Rapor Ganda (Unified Raport) Generation', () => {
-  test.beforeEach(async ({ page }) => {
-    // Setup super admin access for e2e testing the Assessment module
-    await setupMockUser(page, {
-      role: 'SUPER_ADMIN',
-      unitId: 'unit-sekolah-dasar-1',
-    });
-    await login(page);
-  });
+test.describe("End-to-End: Rapor Ganda (Unified Raport) Generation", () => {
+  test("should load dropdowns, select a student, and generate the unified raport", async ({
+    page,
+  }) => {
+    const session = await apiLogin(SEED_USERS.superAdmin);
+    await injectSession(page, session);
 
-  test('should successfully load dropdowns, select student, and generate unified raport', async ({ page }) => {
-    // 1. Mocking the API resources required for dynamic dropdowns
-    await page.route('**/api/academic-years**', async (route) => {
-      await route.fulfill({
-        json: {
-          data: [{ id: 'ay-2026', name: '2025/2026', isActive: true }]
-        }
-      });
-    });
+    // Resolve the real active year + a class that contains a student with a
+    // computable unified raport.
+    const years = await apiRequest<{ data: Array<{ id: string; name: string }> }>(
+      session,
+      "GET",
+      "/academic-years?isActive=true",
+    );
+    const year = years.data[0];
+    const classes = await apiRequest<{ data: Array<{ id: string; name: string }> }>(
+      session,
+      "GET",
+      "/classes?limit=50",
+    );
 
-    await page.route('**/api/classes**', async (route) => {
-      await route.fulfill({
-        json: {
-          data: [{ id: 'class-1a', name: 'Kelas 1A' }]
-        }
-      });
-    });
-
-    await page.route('**/api/students**', async (route) => {
-      await route.fulfill({
-        json: {
-          data: [{ id: 'stud-001', name: 'Ahmad Hanif', nis: '12345' }]
-        }
-      });
-    });
-
-    // Mocking the ultimate Unified Raport payload from backend orchestrator
-    // We only need to provide the shape the UI expects to render
-    await page.route('**/api/assessment/unified-raport/students/stud-001?academicYearId=ay-2026&semester=1', async (route) => {
-      await route.fulfill({
-        json: {
-          success: true,
+    let picked:
+      | { className: string; studentName: string; nis: string; subjectName: string; homeroom: string }
+      | undefined;
+    outer: for (const cls of classes.data) {
+      const students = await apiRequest<{
+        data: Array<{ id: string; nis: string; user?: { name: string }; name?: string }>;
+      }>(session, "GET", `/students?classId=${cls.id}&limit=100`);
+      for (const s of students.data ?? []) {
+        const raport = await apiRequest<{
           data: {
-            school: { name: 'SDIT IBB', address: 'Bandung' },
-            student: { name: 'Ahmad Hanif', nis: '12345', nisn: '99', class: 'Kelas 1A' },
-            meta: { semester: 1 },
-            academic: {
-              intrakurikuler: {
-                kelompokUmum: [
-                  { subjectName: 'Matematika', nilaiAkhir: 95, predikat: 'Sangat Baik', deskripsi: 'Mumpuni' }
-                ]
-              },
-              p5: [
-                { tema: 'Kewirausahaan', judul: 'Pasar Mini', deskripsiProyek: '-', dimensiTerkait: [] }
-              ]
-            },
-            islamic: {
-              tahfidz: { totalJuz: 2, surahTerakhir: 'Al-Mulk', catatan: 'Mumtaz' },
-              ibadah: { grade: 'A', completionRate: 98 }
-            },
-            signatures: { homeroomTeacher: 'Ustadz Budi' }
-          }
+            academic?: { intrakurikuler?: { kelompokUmum?: Array<{ subjectName: string }> } };
+            signatures?: { homeroomTeacher?: string };
+          };
+        }>(
+          session,
+          "GET",
+          `/assessment/unified-raport/students/${s.id}?academicYearId=${year.id}&semester=1`,
+        ).catch(() => null);
+        const subject = raport?.data?.academic?.intrakurikuler?.kelompokUmum?.[0]?.subjectName;
+        if (subject) {
+          picked = {
+            className: cls.name,
+            studentName: s.user?.name ?? s.name ?? "",
+            nis: s.nis,
+            subjectName: subject,
+            homeroom: raport!.data.signatures?.homeroomTeacher ?? "",
+          };
+          break outer;
         }
-      });
-    });
+      }
+    }
+    expect(picked, "seed should provide a student with a unified raport").toBeTruthy();
+    if (!picked) return;
 
-    // 2. Navigate to the Unified Raport generator page
-    await page.goto('/assessment/unified-raport');
-    await expect(page.getByRole('heading', { name: /Unified SD IT Raport/i })).toBeVisible();
+    await page.goto("/assessment/unified-raport");
+    await expect(page.getByRole("heading", { name: /Unified SD IT Raport/i })).toBeVisible();
 
-    // Select Academic Year
-    await page.getByRole('combobox').nth(0).click();
-    await page.getByRole('option', { name: '2025/2026' }).click();
+    const pickOption = async (index: number, name: string | RegExp) => {
+      const trigger = page.getByRole("combobox").nth(index);
+      const option = page.getByRole("option", { name }).first();
+      // The select becomes enabled and its options populate from React Query
+      // asynchronously (e.g. the student list loads only after a class is
+      // chosen). Wait for the trigger to be actionable, then reopen until the
+      // target option shows.
+      await expect(trigger).toBeEnabled({ timeout: 20000 });
+      await expect(async () => {
+        await trigger.click();
+        await expect(option).toBeVisible({ timeout: 2000 });
+      }).toPass({ timeout: 20000 });
+      await option.click({ force: true });
+    };
 
-    // Select Class
-    await page.getByRole('combobox').nth(1).click();
-    await page.getByRole('option', { name: 'Kelas 1A' }).click();
+    // Year, Class, Student, Semester
+    await pickOption(0, year.name);
+    await pickOption(1, picked.className);
+    await pickOption(2, `${picked.studentName} (${picked.nis})`);
+    await pickOption(3, /Semester 1/i);
 
-    // Select Student
-    await page.getByRole('combobox').nth(2).click();
-    await page.getByRole('option', { name: 'Ahmad Hanif (12345)' }).click();
+    await page.getByRole("button", { name: /Generate Report/i }).click();
 
-    // Select Semester 1
-    await page.getByRole('combobox').nth(3).click();
-    await page.getByRole('option', { name: 'Semester 1 (Ganjil)' }).click();
+    // The real report renders
+    await expect(page.getByText("LAPORAN HASIL BELAJAR (RAPOR)")).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText(new RegExp(`Nama:\\s*${picked.studentName}`, "i"))).toBeVisible();
 
-    // 3. Click Generate Report
-    await page.getByRole('button', { name: /Generate Report/i }).click();
+    // Academic section from the real aggregator
+    await expect(page.getByRole("cell", { name: picked.subjectName }).first()).toBeVisible();
 
-    // 4. Verify Unified Report Output renders on screen
-    await expect(page.getByText('LAPORAN HASIL BELAJAR (RAPOR)')).toBeVisible();
-    // The name appears both in the (now-collapsed) select value and the report
-    // body, so scope to the report's "Nama:" line to avoid strict-mode clashes.
-    await expect(page.getByText(/Nama:\s*Ahmad Hanif/i)).toBeVisible();
-    
-    // Academic Section
-    await expect(page.getByRole('cell', { name: 'Matematika' })).toBeVisible();
-    await expect(page.getByRole('cell', { name: 'Sangat Baik' })).toBeVisible();
+    // Islamic/Tahfidz section header
+    await expect(page.getByText("Tahfidz Al-Qur'an")).toBeVisible();
 
-    // Islamic/Tahfidz Section
-    await expect(page.getByText('Total Hafalan: 2 Juz')).toBeVisible();
-    await expect(page.getByText('Surah Terakhir: Al-Mulk')).toBeVisible();
-
-    // Signatures
-    await expect(page.getByText('Ustadz Budi')).toBeVisible();
+    // Homeroom teacher signature
+    if (picked.homeroom) {
+      await expect(page.getByText(picked.homeroom).first()).toBeVisible();
+    }
   });
 });

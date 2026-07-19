@@ -99,7 +99,7 @@ export const tahfidzService = {
    */
   async getStudentSummary(studentId: string): Promise<TahfidzStudentSummary> {
     const response = await api.get<ApiResponse<TahfidzStudentSummary>>(
-      `/tahfidz/students/${studentId}/summary`,
+      `/tahfidz/summary/${studentId}`,
     );
     return response.data.data;
   },

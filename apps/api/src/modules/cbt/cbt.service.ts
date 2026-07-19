@@ -375,6 +375,37 @@ export class CBTService {
     });
   }
 
+  static async deleteExam(examId: string, user: AuthUser) {
+    const exam = await prisma.exam.findUnique({
+      where: { id: examId },
+      include: {
+        _count: { select: { attempts: true } },
+        teacher: { select: { userId: true } },
+      },
+    });
+    if (!exam) throw Errors.notFound('Exam');
+
+    if (user.role === 'UNIT_ADMIN' && exam.unitId !== user.unitId) {
+      throw Errors.forbidden('You do not have permission to delete exams outside your unit');
+    }
+    if (
+      user.role !== 'SUPER_ADMIN' &&
+      user.role !== 'UNIT_ADMIN' &&
+      exam.teacher?.userId !== user.id
+    ) {
+      throw Errors.forbidden('You do not have permission to delete this exam');
+    }
+
+    // Refuse to delete once students have started/submitted attempts — their
+    // results must not silently disappear.
+    if (exam._count.attempts > 0) {
+      throw Errors.badRequest('Cannot delete an exam that already has student attempts');
+    }
+
+    await prisma.exam.delete({ where: { id: examId } });
+    return { id: examId };
+  }
+
   static async getExamMonitoring(examId: string, user: AuthUser) {
     const exam = await prisma.exam.findUnique({
       where: { id: examId },

@@ -51,11 +51,13 @@ export class AssessmentAnalyticsService {
         _sum: { points: true }
       }),
 
-      // 3.5 Behavior (Rewards): Total reward points within academic year
+      // 3.5 Behavior (Rewards): Total reward points within academic year.
+      // The Reward model timestamps points with `givenAt` (not `occurredAt`,
+      // which belongs to Violation).
       prisma.reward.aggregate({
         where: {
           studentId,
-          ...(yearStart && yearEnd ? { occurredAt: { gte: yearStart, lte: yearEnd } } : {}),
+          ...(yearStart && yearEnd ? { givenAt: { gte: yearStart, lte: yearEnd } } : {}),
         },
         _sum: { points: true }
       }),

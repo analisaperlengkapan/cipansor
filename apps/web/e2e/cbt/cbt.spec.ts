@@ -1,244 +1,119 @@
 import { test, expect } from "@playwright/test";
-import { setupMockAuth } from "../helpers/auth";
+import { apiLogin, apiRequest, injectSession, SEED_USERS } from "../helpers/auth-api";
+
+interface SeedExam {
+  id: string;
+  title: string;
+  status: string;
+  _count?: { attempts: number };
+}
 
 test.describe("CBT Exams & Grading", () => {
-  test.beforeEach(async ({ page }) => {
-    await setupMockAuth(page, { roleCode: 'SUPER_ADMIN' });
-  });
-
   test("Should navigate to exams page and view list", async ({ page }) => {
-    // Mock the exams list API
-    await page.route(/\/api\/cbt\/exams(\?.*)?$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({
-          success: true,
-          data: [
-            {
-              id: "exam-1",
-              title: "Ujian Akhir Semester Ganjil",
-              subject: { name: "Pendidikan Agama Islam" },
-              class: { name: "Kelas 10A" },
-              scheduledAt: new Date().toISOString(),
-              duration: 90,
-              status: "ONGOING",
-              _count: { attempts: 2 },
-            },
-          ],
-        }),
-      });
-    });
+    const session = await apiLogin(SEED_USERS.superAdmin);
+    await injectSession(page, session);
+
+    // Assert a real seeded exam renders in the list
+    const exams = await apiRequest<{ data: SeedExam[] }>(
+      session,
+      "GET",
+      "/cbt/exams?limit=50",
+    );
+    const exam = exams.data?.[0];
+    expect(exam, "seed should provide at least one exam").toBeTruthy();
 
     await page.goto("/cbt/exams");
     await expect(page.getByRole("heading", { name: /jadwal ujian/i })).toBeVisible();
-    await expect(page.getByText("Ujian Akhir Semester Ganjil")).toBeVisible();
+    await expect(page.getByText(exam!.title).first()).toBeVisible({ timeout: 15000 });
   });
 
-  test("Should be able to create new exam", async ({ page }) => {
-    // Mock banks
-    await page.route("**/api/cbt/banks", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({
-          success: true,
-          data: [
-            {
-              id: "bank-1",
-              title: "Bank Soal PAI Kelas 10",
-              _count: { questions: 10 },
-            },
-          ],
-        }),
-      });
-    });
+  test("Should be able to create and delete an exam", async ({ page }) => {
+    const session = await apiLogin(SEED_USERS.superAdmin);
+    await injectSession(page, session);
 
-    // Mock reference data APIs
-    await page.route("**/api/units*", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({
-          success: true,
-          data: [{ id: "unit-1", name: "Unit Satu" }],
-        }),
-      });
-    });
-    await page.route("**/api/academic-years*", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({
-          success: true,
-          data: [{ id: "ay-1", name: "2024/2025" }],
-        }),
-      });
-    });
-    await page.route("**/api/curriculum/subjects*", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({
-          success: true,
-          data: [{ id: "sub-1", name: "Sejarah Kebudayaan Islam" }],
-        }),
-      });
-    });
-    await page.route("**/api/classes*", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({
-          success: true,
-          data: [{ id: "cls-1", name: "Kelas 10A" }],
-        }),
-      });
-    });
-    await page.route("**/api/hr/teachers*", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({
-          success: true,
-          data: [{ id: "teacher-1", user: { name: "Pak Guru" } }],
-        }),
-      });
-    });
-
-    // Mock POST for creating exam
-    await page.route(/\/api\/cbt\/exams(\?.*)?$/, async (route) => {
-      if (route.request().method() === "POST") {
-        await route.fulfill({
-          status: 201,
-          contentType: "application/json",
-          body: JSON.stringify({
-            success: true,
-            data: { id: "new-exam-1" },
-          }),
-        });
-      } else {
-        await route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify({ success: true, data: [] }),
-        });
-      }
-    });
+    const title = `UTS E2E ${Date.now()}`;
 
     await page.goto("/cbt/exams/new");
     await expect(page.getByRole("heading", { name: /buat ujian baru/i })).toBeVisible();
 
-    await page.fill('input[name="title"]', "UTS Sejarah Kebudayaan Islam");
+    await page.getByLabel(/Nama Ujian|Judul/i).first().fill(title).catch(async () => {
+      await page.locator('input[name="title"]').fill(title);
+    });
 
-    // The form's selects are Radix triggers that render their placeholder via
-    // data-placeholder, so has-text matching is unreliable. Address them by
-    // index (0=Tipe Ujian, 1=Unit, 2=Tahun Ajaran, 3=Mapel, 4=Kelas, 5=Guru,
-    // 6=Bank Soal, 7=Status) and pick the option by its text.
-    // Radix triggers/options animate; on starved CI runners (webkit
-    // especially) they never pass Playwright's "stable" check within the
-    // timeout — click with force once visible.
-    const pickSelect = async (index: number, optionName: string) => {
+    // The form's selects are independent Radix comboboxes rendered in order:
+    // 0=Tipe Ujian (prefilled), 1=Unit, 2=Tahun Ajaran, 3=Mapel, 4=Kelas,
+    // 5=Guru, 6=Bank Soal. Each is populated from the real API — pick the
+    // first available option. Triggers/options animate; on starved runners
+    // they never pass Playwright's "stable" gate, so force-click once visible.
+    const pickFirst = async (index: number) => {
       const trigger = page.locator('button[role="combobox"]').nth(index);
-      await trigger.waitFor({ state: "visible" });
+      await trigger.scrollIntoViewIfNeeded();
       await trigger.click({ force: true });
       const listbox = page.getByRole("listbox");
       await expect(listbox).toBeVisible();
-      const option = listbox.getByRole("option", { name: optionName }).first();
+      const option = listbox.getByRole("option").first();
       await option.waitFor({ state: "visible" });
       await option.click({ force: true });
       await expect(listbox).toBeHidden();
     };
 
-    await pickSelect(1, "Unit Satu");
-    await pickSelect(2, "2024/2025");
-    await pickSelect(3, "Sejarah Kebudayaan Islam");
-    await pickSelect(4, "Kelas 10A");
-    await pickSelect(5, "Pak Guru");
-    await pickSelect(6, "Bank Soal PAI Kelas 10");
+    for (const idx of [1, 2, 3, 4, 5, 6]) {
+      await pickFirst(idx);
+    }
 
-    await page.fill('input[name="scheduledAt"]', "2024-12-10T08:00");
-    await page.click("button[type='submit']");
+    await page.locator('input[name="scheduledAt"]').fill("2026-12-10T08:00");
+    await page.getByRole("button", { name: /Simpan|Buat|Jadwalkan/i }).first().click();
 
-    await page.waitForURL("**/cbt/exams");
+    // Persisted through the real API — redirect back to the list
+    await page.waitForURL("**/cbt/exams", { timeout: 15000 });
+
+    // Verify the exam exists via the API, then clean it up through the new
+    // guarded delete endpoint.
+    const list = await apiRequest<{ data: SeedExam[] }>(
+      session,
+      "GET",
+      "/cbt/exams?limit=100",
+    );
+    const created = list.data?.find((e) => e.title === title);
+    expect(created, "created exam should be persisted").toBeTruthy();
+    if (created) {
+      await apiRequest(session, "DELETE", `/cbt/exams/${created.id}`);
+    }
   });
 
   test("Should monitor exam and grade an attempt", async ({ page }) => {
-    // Mock Exam Monitoring
-    await page.route("**/api/cbt/exams/exam-1/monitoring", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({
-          success: true,
-          data: {
-            id: "exam-1",
-            title: "Ujian Akhir Semester Ganjil",
-            status: "ONGOING",
-            attempts: [
-              {
-                id: "attempt-1",
-                status: "COMPLETED",
-                score: "80.00",
-                student: { user: { name: "Ahmad Santoso" } },
-              },
-            ],
-          },
-        }),
-      });
-    });
+    const session = await apiLogin(SEED_USERS.superAdmin);
+    await injectSession(page, session);
 
-    // Mock Insights — shape matches the actual API: { averageSuccessRate, questionInsights }
-    await page.route("**/api/cbt/exams/exam-1/difficulty-insights", async (route) => {
-        await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ success: true, data: { averageSuccessRate: 75, questionInsights: [{ questionId: "q-1", content: "Soal ujian contoh", successRate: 75, totalGraded: 20, isKiller: false }] } }) });
-    });
-    await page.route("**/api/cbt/exams/exam-1/topic-mastery", async (route) => {
-        await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ success: true, data: { items: [] } }) });
-    });
+    // Find a real exam that has at least one attempt to monitor + grade
+    const exams = await apiRequest<{ data: SeedExam[] }>(
+      session,
+      "GET",
+      "/cbt/exams?limit=50",
+    );
+    const exam = exams.data?.find((e) => (e._count?.attempts ?? 0) > 0);
+    expect(exam, "seed should provide an exam with an attempt").toBeTruthy();
+    if (!exam) return;
 
-    await page.goto("/cbt/exams/exam-1/monitoring");
-    await expect(page.getByRole("heading", { name: /monitoring ujian/i })).toBeVisible({ timeout: 15000 });
-    await expect(page.getByText("Ahmad Santoso")).toBeVisible();
+    const monitoring = await apiRequest<{
+      data: { attempts: Array<{ id: string; student?: { user?: { name: string } } }> };
+    }>(session, "GET", `/cbt/exams/${exam.id}/monitoring`);
+    const attempt = monitoring.data.attempts?.[0];
+    expect(attempt, "monitoring should list the attempt").toBeTruthy();
+    const studentName = attempt?.student?.user?.name;
 
-    // Mock Attempt Grading
-    await page.route("**/api/cbt/attempts/attempt-1/grading", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({
-          success: true,
-          data: {
-            id: "attempt-1",
-            score: "80.00",
-            examId: "exam-1",
-            student: { user: { name: "Ahmad Santoso" } },
-            exam: {
-              questionBank: {
-                questions: [
-                  {
-                    id: "q-1",
-                    type: "ESSAY",
-                    content: "<p>Jelaskan makna hijrah.</p>",
-                    points: 20,
-                  },
-                ],
-              },
-            },
-            answers: [
-              {
-                id: "ans-1",
-                questionId: "q-1",
-                answer: "Berpindah dari tempat buruk ke baik.",
-                score: "10.00",
-                isCorrect: false,
-              },
-            ],
-          },
-        }),
-      });
+    await page.goto(`/cbt/exams/${exam.id}/monitoring`);
+    await expect(page.getByRole("heading", { name: /monitoring ujian/i })).toBeVisible({
+      timeout: 15000,
     });
+    if (studentName) {
+      await expect(page.getByText(studentName).first()).toBeVisible();
+    }
 
-    await page.goto("/cbt/attempts/attempt-1/grading");
-    await expect(page.getByRole("heading", { name: /penilaian manual/i })).toBeVisible();
+    // The grading page loads the real attempt
+    await page.goto(`/cbt/attempts/${attempt!.id}/grading`);
+    await expect(page.getByRole("heading", { name: /penilaian manual/i })).toBeVisible({
+      timeout: 15000,
+    });
   });
 });

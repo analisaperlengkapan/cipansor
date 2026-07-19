@@ -304,6 +304,16 @@ export class CBTController {
     }
   }
 
+  static async deleteExam(req: Request, res: Response, next: NextFunction) {
+    try {
+      const user = requireUser(req);
+      await CBTService.deleteExam(req.params.examId, user);
+      res.json({ success: true, message: 'Exam deleted' });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async getExamMonitoring(req: Request, res: Response, next: NextFunction) {
     try {
       const user = requireUser(req);

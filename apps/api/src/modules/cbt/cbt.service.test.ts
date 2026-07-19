@@ -36,6 +36,7 @@ vi.mock('../../lib/prisma', () => ({
       create: vi.fn(),
       findMany: vi.fn(),
       findUnique: vi.fn(),
+      delete: vi.fn(),
     },
     examAttempt: {
       create: vi.fn(),
@@ -134,6 +135,39 @@ describe('CBT Service', () => {
       await CBTService.createExam(dto, { id: 'user-1', role: 'TEACHER', unitId: 'unit-1' });
 
       expect(prisma.exam.create).toHaveBeenCalled();
+    });
+
+    it('should delete an exam with no attempts', async () => {
+      vi.mocked(prisma.exam.findUnique).mockResolvedValue({
+        id: 'exam-1',
+        unitId: 'unit-1',
+        teacher: { userId: 'user-1' },
+        _count: { attempts: 0 },
+      } as any);
+      vi.mocked(prisma.exam.delete).mockResolvedValue({ id: 'exam-1' } as any);
+
+      const result = await CBTService.deleteExam('exam-1', {
+        id: 'admin',
+        role: 'SUPER_ADMIN',
+        unitId: null,
+      });
+
+      expect(prisma.exam.delete).toHaveBeenCalledWith({ where: { id: 'exam-1' } });
+      expect(result).toEqual({ id: 'exam-1' });
+    });
+
+    it('should refuse to delete an exam that already has attempts', async () => {
+      vi.mocked(prisma.exam.findUnique).mockResolvedValue({
+        id: 'exam-1',
+        unitId: 'unit-1',
+        teacher: { userId: 'user-1' },
+        _count: { attempts: 3 },
+      } as any);
+
+      await expect(
+        CBTService.deleteExam('exam-1', { id: 'admin', role: 'SUPER_ADMIN', unitId: null }),
+      ).rejects.toThrow(/attempts/i);
+      expect(prisma.exam.delete).not.toHaveBeenCalled();
     });
 
     it('should allow teacher to grade essay answers and recalculate total score', async () => {

@@ -6,7 +6,12 @@ _Generated 2026-07-16 by the coverage audit; audit drift with `node scripts/e2e-
 
 - **Routes (App Router pages):** 430
 - **Routes visited by ≥1 spec:** 69 (16%)
-- **Spec files:** 78 — 30 real-backend (`loginAs`), 28 mock-intercept (`page.route`, to migrate), rest unauth/public or skipped
+- **Spec files:** 75 — all **active** specs now authenticate for real
+  (`loginAs` / `apiLogin` + `injectSession`) and assert real seeded/API data.
+  The only remaining `page.route` usages are: `grc-live` (one deliberate 500
+  injection to prove an error state) and the config-**ignored** dev utilities
+  (`debug-*`, `generate-screenshots`, `verify-screenshots`, `verify_reception`),
+  which never run in the suite. No active spec relies on mock-intercepted data.
 
 ## Verified full-suite run (chromium, real seeded stack — 2026-07-16)
 

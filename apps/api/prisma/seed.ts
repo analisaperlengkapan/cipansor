@@ -1836,7 +1836,14 @@ async function main() {
   console.log('✅ Admission periods created');
 
   // Create Registrants with various statuses
-  const registrantData = [
+  const registrantData: Array<{
+    name: string;
+    gender: Gender;
+    status: AdmissionStatus;
+    parentName: string;
+    quranAbility?: string;
+    memorizedJuz?: number;
+  }> = [
     {
       name: 'Farid Hidayat',
       gender: Gender.MALE,
@@ -1854,18 +1861,22 @@ async function main() {
       gender: Gender.MALE,
       status: AdmissionStatus.TEST_COMPLETED,
       parentName: 'Bapak Ramadhan',
+      quranAbility: 'TAHFIDZ',
+      memorizedJuz: 5,
     },
     {
       name: 'Salsabila Putri',
       gender: Gender.FEMALE,
       status: AdmissionStatus.DOCUMENT_CHECK,
       parentName: 'Bapak Putra',
+      quranAbility: 'TARTIL',
     },
     {
       name: 'Akbar Maulana',
       gender: Gender.MALE,
       status: AdmissionStatus.REGISTERED,
       parentName: 'Bapak Maulana',
+      quranAbility: 'LANCAR',
     },
     {
       name: 'Azzahra Aulia',
@@ -1881,8 +1892,13 @@ async function main() {
       data: {
         admissionPeriodId: admissionPeriod.id,
         registrationNo: `REG-2024-${String(regCounter++).padStart(4, '0')}`,
+        // `fullName` is the canonical field the API reads; `name` is the
+        // legacy column kept in sync (see admissions service writes).
+        fullName: reg.name,
         name: reg.name,
         gender: reg.gender,
+        quranAbility: reg.quranAbility,
+        memorizedJuz: reg.memorizedJuz,
         birthPlace: 'Sukabumi',
         birthDate: new Date('2012-05-15'),
         address: 'Jl. Pendaftaran No. ' + regCounter + ', Sukabumi',

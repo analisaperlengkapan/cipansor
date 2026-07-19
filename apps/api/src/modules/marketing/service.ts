@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { CreateCampaignInput, LogInteractionInput, UpdateCampaignInput } from './schema';
-import { Prisma } from '@prisma/client';
+import { AdmissionStatus, Prisma } from '@prisma/client';
 
 export const createCampaign = async (data: CreateCampaignInput, userId: string) => {
   return prisma.marketingCampaign.create({
@@ -168,7 +168,15 @@ export const getRecentLeads = async (unitId?: string, limit: number = 5) => {
 
 export const getHighPriorityLeads = async (unitId?: string, limit: number = 10) => {
   const where: Prisma.RegistrantWhereInput = {
-    status: { in: ['REGISTERED', 'TESTED', 'INTERVIEWED'] as any },
+    // Leads still in the admission funnel (not yet accepted/rejected/enrolled)
+    status: {
+      in: [
+        AdmissionStatus.REGISTERED,
+        AdmissionStatus.DOCUMENT_CHECK,
+        AdmissionStatus.TEST_SCHEDULED,
+        AdmissionStatus.TEST_COMPLETED,
+      ],
+    },
   };
   if (unitId) {
     where.admissionPeriod = { unitId };

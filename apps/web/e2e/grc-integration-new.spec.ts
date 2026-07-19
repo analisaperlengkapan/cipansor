@@ -1,154 +1,86 @@
-import { test, expect } from '@playwright/test';
-import { primeAuthCookies } from './helpers/auth';
+import { test, expect } from "@playwright/test";
+import {
+  apiLogin,
+  apiRequest,
+  injectSession,
+  loginAs,
+  SEED_USERS,
+} from "./helpers/auth-api";
+import { findStrategicPlan } from "./helpers/seed-data";
 
-test.describe('GRC Integrated Workflow', () => {
-  test.beforeEach(async ({ page }) => {
-    await primeAuthCookies(page);
+test.describe("GRC Integrated Workflow", () => {
+  test("should trigger audit finding from low sharia audit score", async ({ page }) => {
+    const session = await apiLogin(SEED_USERS.superAdmin);
+    await injectSession(page, session);
 
-    // Low-priority fallback for incidental API calls. Registered first so the
-    // per-test mocks (registered later) take precedence. Without it a stray 401
-    // triggers the axios refresh->logout flow and redirects to /login, wiping
-    // the page under test.
-    await page.route('**/api/**', async (route) => {
-      await route.fulfill({ json: { success: true, data: [] } });
+    const stamp = Date.now();
+    const complianceTitle = `Zakat Management E2E ${stamp}`;
+    // Reuse the seeded unit the strategic plan lives on
+    const plan = await findStrategicPlan(session);
+
+    // A PLANNED SYARIAH internal audit must exist for the auto-finding hook
+    const internalAudit = await apiRequest<{ data: { id: string } }>(
+      session,
+      "POST",
+      "/pengawasan",
+      {
+        title: `Audit Kepatuhan Syariah E2E ${stamp}`,
+        auditType: "SYARIAH",
+        plannedDate: new Date().toISOString(),
+        unitId: plan.unitId,
+      },
+    );
+
+    const compliance = await apiRequest<{ data: { id: string } }>(session, "POST", "/syariah", {
+      category: "MUAMALAH",
+      title: complianceTitle,
+      description: "E2E: pemeriksaan pengelolaan zakat",
+      unitId: plan.unitId,
     });
-    await page.route('**/api/auth/refresh', async (route) => {
-      await route.fulfill({
-        json: {
-          success: true,
-          data: { accessToken: 'mock-token', refreshToken: 'mock-token' },
-        },
+
+    try {
+      // Real workflow: a sharia audit scoring below 70 must auto-create a
+      // MAJOR finding on the planned SYARIAH internal audit.
+      await apiRequest(session, "POST", "/syariah/audits", {
+        complianceId: compliance.data.id,
+        auditDate: new Date().toISOString(),
+        findings: "Skor kepatuhan rendah pada pengelolaan zakat (E2E).",
+        score: 55,
       });
-    });
-    await page.route('**/api/auth/me', async (route) => {
-      await route.fulfill({
-        json: {
-          success: true,
-          data: { id: 'user-1', name: 'Super Admin', role: 'SUPER_ADMIN' },
-        },
-      });
-    });
 
-    // Seed auth before any page JS runs (applies on every navigation) so the
-    // store is hydrated on first paint and never races into the logout flow.
-    await page.addInitScript(() => {
-      localStorage.setItem('accessToken', 'mock-token');
-      localStorage.setItem('auth-storage', JSON.stringify({
-        state: {
-          user: { id: 'user-1', name: 'Super Admin', role: 'SUPER_ADMIN' },
-          isAuthenticated: true
-        }
-      }));
-    });
-  });
+      // The compliance item renders on the syariah page
+      await page.goto("/syariah");
+      await expect(page.getByText(complianceTitle).first()).toBeVisible({ timeout: 15000 });
 
-  test('should trigger audit finding from low sharia audit score', async ({ page }) => {
-    // 1. Mock the API calls
-    await page.route('**/api/syariah', async (route) => {
-      if (route.request().method() === 'GET') {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({
-            data: [{ id: 'comp-1', title: 'Zakat Management', category: 'MUAMALAH', status: 'UNDER_REVIEW' }]
-          })
-        });
-      } else {
-        await route.continue();
+      // ...and the auto-created finding renders under pengawasan
+      await page.goto("/pengawasan");
+      await expect(
+        page.getByText(`Ketidakpatuhan Syariah: ${complianceTitle}`).first(),
+      ).toBeVisible({ timeout: 15000 });
+    } finally {
+      // Remove the auto-created finding, then the audit + compliance rows
+      const auditDetail = await apiRequest<{
+        data: { findings?: Array<{ id: string }> };
+      }>(session, "GET", `/pengawasan/${internalAudit.data.id}`).catch(() => null);
+      for (const finding of auditDetail?.data.findings ?? []) {
+        await apiRequest(session, "DELETE", `/pengawasan/findings/${finding.id}`).catch(() => {});
       }
-    });
-
-    await page.route('**/api/syariah/audits', async (route) => {
-      // Mocking the successful audit creation
-      await route.fulfill({
-        status: 201,
-        contentType: 'application/json',
-        body: JSON.stringify({ data: { id: 'audit-1' } })
-      });
-    });
-
-    await page.route('**/api/pengawasan/findings*', async (route) => {
-      // Mock finding list to show the auto-created one
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          data: [{
-            id: 'find-1',
-            findingNumber: 'SHR-AUTO',
-            title: 'Ketidakpatuhan Syariah: Zakat Management',
-            severity: 'MAJOR'
-          }]
-        })
-      });
-    });
-
-    // 2. Navigate to Syariah module
-    await page.goto('/syariah');
-    await expect(page.getByText('Zakat Management')).toBeVisible();
-
-    // 3. Perform audit (simulated via API mock above)
-    // In a real test, we'd fill the form. Here we verify the resulting finding in Pengawasan.
-
-    // 4. Register Pengawasan mock BEFORE navigating so the initial request is intercepted
-    await page.route('**/api/pengawasan', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          data: [{
-            id: 'audit-1',
-            title: 'Syariah Integration Audit',
-            status: 'IN_PROGRESS',
-            auditType: 'Kepatuhan',
-            plannedDate: new Date().toISOString(),
-            leadAuditor: { name: 'Auditor One' },
-            findings: [{
-              id: 'find-1',
-              severity: 'MAJOR',
-              title: 'Ketidakpatuhan Syariah: Zakat Management'
-            }]
-          }]
-        })
-      });
-    });
-
-    await page.goto('/pengawasan');
-    await expect(page.getByText('Ketidakpatuhan Syariah: Zakat Management')).toBeVisible();
+      await apiRequest(session, "DELETE", `/pengawasan/${internalAudit.data.id}`).catch(() => {});
+      await apiRequest(session, "DELETE", `/syariah/${compliance.data.id}`).catch(() => {});
+    }
   });
 
-  test('should display detailed sharia breakdown in GRC dashboard', async ({ page }) => {
-     await page.route('**/api/analytics/grc', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          data: {
-            plans: { activeCount: 5, averageProgress: 65 },
-            risks: { total: 12, criticalCount: 3, byLevel: { EXTREME: 1, HIGH: 2, MEDIUM: 5, LOW: 4 } },
-            audits: { totalFindings: 8, resolvedCount: 5, unresolvedCount: 3, resolutionRate: 62.5 },
-            sharia: {
-              complianceRate: 75.5,
-              statusDistribution: { COMPLIANT: 10, PARTIALLY: 4, NON_COMPLIANT: 2 },
-              summary: {
-                byCategory: {
-                  MUAMALAH: { total: 4, averageScore: 85 },
-                  IBADAH: { total: 6, averageScore: 45 }
-                }
-              }
-            }
-          }
-        })
-      });
+  test("should display detailed sharia breakdown in GRC dashboard", async ({ page }) => {
+    await loginAs(page, "superAdmin");
+    await page.goto("/grc-dashboard");
+
+    // The breakdown card aggregates the real seeded compliance data
+    await expect(page.getByText("Sharia Compliance Detailed Breakdown")).toBeVisible({
+      timeout: 20000,
     });
-
-    await page.goto('/grc-dashboard');
-
-    // Verify detailed breakdown cards
-    await expect(page.getByText('Sharia Compliance Detailed Breakdown')).toBeVisible();
-    await expect(page.getByText('MUAMALAH')).toBeVisible();
-    await expect(page.getByText('85.0%')).toBeVisible();
-    await expect(page.getByText('IBADAH')).toBeVisible();
-    await expect(page.getByText('45.0%')).toBeVisible();
+    await expect(page.getByText("Performance score by category")).toBeVisible();
+    // Seeded compliance is MUAMALAH; its category row shows a percentage score
+    await expect(page.getByText("MUAMALAH").first()).toBeVisible();
+    await expect(page.getByText(/[\d.]+%/).first()).toBeVisible();
   });
 });

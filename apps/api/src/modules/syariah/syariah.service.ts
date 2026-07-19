@@ -4,10 +4,10 @@ import { Errors } from '@/middleware/error';
 import { pengawasanService } from '../pengawasan/pengawasan.service';
 
 export class SyariahService {
-  async getCompliances(unitId: string, query: { category?: string; status?: string }) {
+  async getCompliances(unitId: string | undefined, query: { category?: string; status?: string }) {
     return prisma.shariaCompliance.findMany({
       where: {
-        unitId,
+        ...(unitId ? { unitId } : {}),
         ...(query.category && { category: query.category as any }),
         ...(query.status && { status: query.status as any }),
       },
@@ -152,9 +152,9 @@ export class SyariahService {
     }
   }
 
-  async getComplianceSummary(unitId: string) {
+  async getComplianceSummary(unitId: string | undefined) {
     const compliances = await prisma.shariaCompliance.findMany({
-      where: { unitId },
+      where: unitId ? { unitId } : {},
     });
 
     const scoredItems = compliances.filter((c) => c.score !== null);
@@ -189,8 +189,9 @@ export class SyariahService {
       nonCompliantItems: compliances.filter((c) => c.status === 'NON_COMPLIANT').length,
     };
 
-    // Integration: Auto-trigger audit if average score is critical
-    if (summary.averageScore > 0 && summary.averageScore < 60) {
+    // Integration: Auto-trigger audit if average score is critical.
+    // Only for a concrete unit — the cross-unit (global) view is read-only.
+    if (unitId && summary.averageScore > 0 && summary.averageScore < 60) {
       await this.triggerEmergencyAudit(unitId, summary.averageScore);
     }
 

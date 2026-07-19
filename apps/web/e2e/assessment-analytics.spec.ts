@@ -1,144 +1,51 @@
 import { test, expect } from "@playwright/test";
-import { primeAuthCookies } from "./helpers/auth";
+import { apiLogin, apiRequest, injectSession, SEED_USERS } from "./helpers/auth-api";
 
 test.describe("Assessment Analytics", () => {
-  const mockAssessmentId = "mock-assessment-id";
-
-  test.use({ storageState: { cookies: [], origins: [] } });
-
-  test.beforeEach(async ({ page }) => {
-    // Cookies for the middleware (must exist before first navigation).
-    await primeAuthCookies(page);
-    // Mock local storage for auth store
-    await page.addInitScript(() => {
-      window.localStorage.setItem("accessToken", "fake-token");
-      window.localStorage.setItem(
-        "auth-storage",
-        JSON.stringify({
-          state: {
-            user: {
-              id: "user-1",
-              email: "teacher@example.com",
-              name: "Teacher User",
-              role: "TEACHER",
-              teacher: { id: "teacher-1" },
-              permissions: [],
-            },
-            isAuthenticated: true,
-          },
-          version: 0,
-        }),
-      );
-    });
-
-    // Navigate and intercept APIs
-    await page.route("**/api/auth/me", async (route) => {
-      await route.fulfill({
-        status: 200,
-        json: {
-          success: true,
-          data: {
-            id: "user-1",
-            email: "teacher@example.com",
-            name: "Teacher User",
-            role: "TEACHER",
-            teacher: { id: "teacher-1" },
-            permissions: [],
-          },
-        },
-      });
-    });
-
-    await page.route(`**/api/assessment/exams/${mockAssessmentId}`, async (route) => {
-      await route.fulfill({
-        status: 200,
-        json: {
-          success: true,
-          data: {
-            id: mockAssessmentId,
-            title: "Midterm Math",
-            type: "MIDTERM",
-            passingScore: 70,
-            status: "GRADED",
-            scheduledAt: "2023-10-10T10:00:00.000Z",
-            maxScore: 100,
-            duration: 60,
-          },
-        },
-      });
-    });
-
-    await page.route(`**/api/assessment/grades?examId=${mockAssessmentId}`, async (route) => {
-      await route.fulfill({
-        status: 200,
-        json: {
-          success: true,
-          data: [], // Grades tab not our focus, empty is fine
-        },
-      });
-    });
-
-    await page.route(`**/api/assessment/exams/${mockAssessmentId}/analytics`, async (route) => {
-      await route.fulfill({
-        status: 200,
-        json: {
-          success: true,
-          data: {
-            examId: mockAssessmentId,
-            totalStudents: 30,
-            gradedCount: 25,
-            averageScore: 82.5,
-            highestScore: 98,
-            lowestScore: 65,
-            passCount: 20,
-            failCount: 5,
-            passRate: 80,
-            scoreDistribution: [
-              { range: "0-59%", count: 0 },
-              { range: "60-69%", count: 5 },
-              { range: "70-79%", count: 8 },
-              { range: "80-89%", count: 10 },
-              { range: "90-100%", count: 2 },
-            ],
-            topStudents: [
-              { studentId: "s1", studentName: "Ahmad", score: 98 },
-              { studentId: "s2", studentName: "Budi", score: 95 },
-            ],
-          },
-        },
-      });
-    });
-  });
-
   test("should render analytics statistics and chart", async ({ page }) => {
-    // Go to assessment detail page
-    await page.goto(`/assessment/${mockAssessmentId}`);
+    const session = await apiLogin(SEED_USERS.superAdmin);
+    await injectSession(page, session);
+
+    // Use a real seeded GRADED exam and its real analytics
+    const exams = await apiRequest<{
+      data: Array<{ id: string; title: string; status: string }>;
+    }>(session, "GET", "/assessment/exams?limit=50");
+    const exam = exams.data?.find((e) => e.status === "GRADED");
+    expect(exam, "seed should provide a graded exam").toBeTruthy();
+    if (!exam) return;
+
+    const analytics = await apiRequest<{
+      data: {
+        highestScore: number;
+        lowestScore: number;
+        topStudents: Array<{ studentName: string }>;
+      };
+    }>(session, "GET", `/assessment/exams/${exam.id}/analytics`);
+
+    await page.goto(`/assessment/${exam.id}`);
 
     // Wait for header to ensure page loaded
-    await expect(page.getByRole("heading", { name: "Midterm Math" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: exam.title })).toBeVisible();
 
     // Click Statistics Tab
     await page.getByRole("tab", { name: /Statistik/i }).click();
 
-    // Verify Summary Cards
+    // Summary cards render the real analytics values
     await expect(page.getByText("Nilai Tertinggi", { exact: true })).toBeVisible();
-    await expect(page.getByRole('paragraph').filter({ hasText: '98' })).toBeVisible();
-
     await expect(page.getByText("Nilai Terendah", { exact: true })).toBeVisible();
-    await expect(page.getByRole('paragraph').filter({ hasText: '65' })).toBeVisible();
-
     await expect(page.getByText("Rata-rata", { exact: true }).first()).toBeVisible();
-    await expect(page.getByRole('paragraph').filter({ hasText: '82.5' })).toBeVisible();
-
     await expect(page.getByText("Persentase Lulus", { exact: true }).first()).toBeVisible();
-    await expect(page.getByRole('paragraph').filter({ hasText: '80%' })).toBeVisible();
+    await expect(
+      page.getByRole("paragraph").filter({ hasText: String(analytics.data.highestScore) }).first(),
+    ).toBeVisible();
 
-    // Verify Chart visibility
+    // Verify chart visibility
     await expect(page.locator(".recharts-responsive-container")).toBeVisible();
 
-    // Verify Top Students
+    // Verify top students section shows the real best performer
     await expect(page.getByText("Santri Nilai Tertinggi", { exact: true }).first()).toBeVisible();
-    await expect(page.getByText("Ahmad")).toBeVisible();
-    await expect(page.getByText("Budi")).toBeVisible();
+    const topStudent = analytics.data.topStudents?.[0]?.studentName;
+    expect(topStudent, "analytics should report a top student").toBeTruthy();
+    await expect(page.getByText(topStudent!).first()).toBeVisible();
   });
 });

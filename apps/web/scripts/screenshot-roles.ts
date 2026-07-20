@@ -89,10 +89,31 @@ function storageStateFor(session: Session) {
     state: { user: session.user, isAuthenticated: true },
     version: 0,
   });
+  // The middleware cookie only needs the fields rbac reads; the full user
+  // object can exceed the 4 KB cookie limit (CDP rejects it outright).
+  const user = session.user as {
+    id?: string;
+    role?: string;
+    unitId?: string | null;
+    userRoles?: Array<{ isPrimary?: boolean; role?: { code?: string } }>;
+  };
+  const slimUser = {
+    id: user.id,
+    role: user.role,
+    unitId: user.unitId,
+    userRoles: (user.userRoles ?? []).map((a) => ({
+      isPrimary: a.isPrimary,
+      role: { code: a.role?.code },
+    })),
+  };
+  const cookieAuthStorage = JSON.stringify({
+    state: { user: slimUser, isAuthenticated: true },
+    version: 0,
+  });
   return {
     cookies: [
       { name: "accessToken", value: session.accessToken },
-      { name: "auth-storage", value: encodeURIComponent(authStorage) },
+      { name: "auth-storage", value: encodeURIComponent(cookieAuthStorage) },
     ].map((c) => ({
       ...c,
       domain: new URL(BASE_URL).hostname,

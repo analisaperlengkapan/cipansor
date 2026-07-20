@@ -6795,10 +6795,29 @@ async function main() {
 
   // 6. Strategic Planning (strategic_plans, plan_objectives, plan_indicators, plan_activities)
   console.log('   Seeding Strategic Plans & Objectives...');
+  // Kaskade perencanaan dimulai dari RPJP (20 tahun), lalu diturunkan ke
+  // Renstra (5 tahun) — mengikuti pola perencanaan berjenjang pemerintah.
+  const rpjpPlan = await prisma.strategicPlan.create({
+    data: {
+      unitId: pesantren.id,
+      title: 'RPJP Yayasan Cipansor 2026-2045',
+      description:
+        'Rencana Pembangunan Jangka Panjang: visi, sasaran visi, misi pembangunan, ' +
+        'arah pembangunan, dan sasaran pokok per tahap lima tahunan.',
+      type: PlanType.RPJP,
+      status: PlanStatus.APPROVED,
+      startDate: new Date('2026-01-01'),
+      endDate: new Date('2045-12-31'),
+      progress: 5.0,
+      createdById: superAdminUser.id,
+    },
+  });
+
   const stratPlan = await prisma.strategicPlan.create({
     data: {
       unitId: pesantren.id,
-      title: 'Rencana Jangka Panjang Cipansor 2026-2030',
+      parentId: rpjpPlan.id,
+      title: 'Renstra Cipansor 2026-2030 (Tahap I RPJP)',
       description: 'Peta jalan pengembangan fasilitas fisik dan mutu pengajaran bertaraf nasional.',
       type: PlanType.RENSTRA,
       status: PlanStatus.IN_PROGRESS,

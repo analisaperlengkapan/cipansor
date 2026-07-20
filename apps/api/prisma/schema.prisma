@@ -7763,18 +7763,18 @@ enum BSCPerspective {
 }
 
 enum PlanType {
-  MASTER_PLAN // Rencana Induk (jangka panjang, mis. 20 tahun)
-  RENSTRA // Rencana Strategis (5 tahun)
-  RKAS // Rencana Kerja dan Anggaran Sekolah
-  RKT // Rencana Kerja Tahunan
-  PROGRAM // Program kerja
+  RPJP // Rencana Pembangunan Jangka Panjang (20 tahun) — akar kaskade
+  RENSTRA // Rencana Strategis (5 tahun) — diturunkan dari RPJP
+  RKT // Rencana Kerja Tahunan — diturunkan dari RENSTRA
+  RKAS // Rencana Kerja dan Anggaran Sekolah — penjabaran anggaran RKT
+  PROGRAM // Program kerja — diturunkan dari RENSTRA
 }
 
 /// StrategicPlan - Rencana strategis yayasan/unit
 model StrategicPlan {
   id           String     @id @default(uuid())
   unitId       String     @map("unit_id")
-  parentId     String?    @map("parent_id") // Hierarchy: MASTER_PLAN -> RENSTRA -> RKAS
+  parentId     String?    @map("parent_id") // Kaskade: RPJP -> RENSTRA -> RKT -> RKAS (PROGRAM di bawah RENSTRA)
   title        String
   description  String?    @db.Text
   type         PlanType

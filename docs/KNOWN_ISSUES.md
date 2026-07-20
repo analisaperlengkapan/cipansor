@@ -204,8 +204,35 @@ injections (`grc-live`, `integration-grc`), none of which mock product data.
   button/field, RBAC) against the seeded local stack.
 - **Workflow completions:** ✅ correspondence letter-signed notification and
   ✅ takhosus certificate-eligibility notification are now wired (via the
-  `notification:send` event bus). Remaining: accounting per-unit config fallback
-  (deferred until `AccountCode` gains a `unitId` column — see the in-code note).
+  `notification:send` event bus). ✅ **Accounting per-unit config fallback
+  done:** `AccountCode` now carries a `unitId`, and `getAccountOrFallback`
+  resolves the code/name fallback strictly within the requesting unit's own
+  chart of accounts (null-`unitId`/legacy rows are excluded, so behaviour for
+  un-assigned data is the same safe default as before — minus the env-flag gate
+  and any cross-unit leak risk). Verified against the live DB (own-unit found,
+  cross-unit blocked, null-shared excluded, explicit mapping wins). See
+  `apps/api/docs/ACCOUNTING_DEPLOYMENT.md`.
+
+## ⚠️ Broken Prisma migration chain (schema-first via `db push`)
+
+The `prisma/migrations/` folder is **not applicable to a fresh database**:
+`20260709000000_add_pesantren_features_294` runs `ALTER TABLE "complaints" …`,
+but no migration ever `CREATE`s the `complaints` table — it exists only in
+`schema.prisma`. The project has been evolving its schema with
+`pnpm --filter api db:push` (schema-first), so the migrations are vestigial and
+`prisma migrate deploy` / `migrate dev` fail (P3006/P3018,
+`relation "complaints" does not exist`).
+
+**Impact:** new changes can only be applied via `db:push` (as done for the
+`AccountCode.unitId` addition above); a clean incremental migration cannot be
+generated until the chain is repaired.
+
+**Fix (dedicated follow-up):** baseline the history — squash the 18 migrations
+into a single migration whose SQL is generated from the current `schema.prisma`
+(`prisma migrate diff --from-empty --to-schema … --script`), verify it applies
+to an empty DB and `migrate diff` against the schema is empty, then mark it
+applied on existing databases with `migrate resolve --applied`. This unblocks
+proper migrations project-wide.
 
 ## 📋 Disposition of the auto-generated PR backlog (#278–#298)
 

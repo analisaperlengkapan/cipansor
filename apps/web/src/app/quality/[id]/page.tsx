@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { EvidenceUploadDialog } from "@/components/quality/evidence-upload-dialog";
+import { authFileUrl } from "@/lib/files";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function StandardDetailPage() {
@@ -166,7 +167,7 @@ export default function StandardDetailPage() {
                                 <div className="flex items-center gap-2">
                                   <Button variant="ghost" size="icon" asChild>
                                     <a
-                                      href={evidence.fileUrl}
+                                      href={authFileUrl(evidence.fileUrl)}
                                       target="_blank"
                                       rel="noopener noreferrer"
                                     >

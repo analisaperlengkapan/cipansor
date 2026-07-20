@@ -1,5 +1,6 @@
 "use client";
 import { useRouter, useParams } from "next/navigation";
+import { authFileUrl } from "@/lib/files";
 import { safeFormat } from "@/lib/date";
 import { MainLayout } from "@/components/layout";
 import { PageHeader } from "@/components/shared";
@@ -315,14 +316,14 @@ export default function TKAssessmentDetailPage() {
                       {assessment.evidences.map((evidence) => (
                         <a
                           key={evidence.id}
-                          href={evidence.fileUrl}
+                          href={authFileUrl(evidence.fileUrl)}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="group relative aspect-square rounded-lg overflow-hidden border bg-muted"
                         >
                           {evidence.fileType.startsWith("image/") ? (
                             <img
-                              src={evidence.fileUrl}
+                              src={authFileUrl(evidence.fileUrl)}
                               alt={evidence.caption || "Evidence"}
                               className="w-full h-full object-cover transition-transform group-hover:scale-105"
                             />

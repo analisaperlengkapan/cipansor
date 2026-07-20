@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { authFileUrl } from "@/lib/files";
 import { safeFormat } from "@/lib/date";
 import {
   useEmployeeDocuments,
@@ -206,7 +207,7 @@ export function DocumentsTab({ userId }: { userId: string }) {
               <TableRow key={doc.id}>
                 <TableCell className="font-medium">
                   <a
-                    href={doc.fileUrl}
+                    href={authFileUrl(doc.fileUrl)}
                     target="_blank"
                     rel="noreferrer"
                     className="flex items-center hover:underline text-blue-600"

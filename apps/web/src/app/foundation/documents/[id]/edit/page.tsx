@@ -1,6 +1,7 @@
 "use client";
 
 import { use, useEffect, useState } from "react";
+import { authFileUrl } from "@/lib/files";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
@@ -291,7 +292,7 @@ export default function EditDocumentPage({ params }: PageProps) {
                           {document.fileUrl.split("/").pop()}
                         </p>
                         <a
-                          href={document.fileUrl}
+                          href={authFileUrl(document.fileUrl)}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-xs text-primary hover:underline"

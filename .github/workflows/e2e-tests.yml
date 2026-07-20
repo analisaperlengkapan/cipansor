@@ -36,6 +36,8 @@ jobs:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/cipansor_test
       REDIS_URL: redis://localhost:6379
       JWT_SECRET: test-jwt-secret-key-for-e2e-testing
+      # Production default is 15m; e2e pins 7d because global-setup logs each
+      # role in ONCE and reuses the tokens for the whole (up to 40-min) run.
       JWT_EXPIRES_IN: 7d
       JWT_REFRESH_EXPIRES_IN: 30d
       CORS_ORIGIN: http://localhost:3000
@@ -182,6 +184,8 @@ jobs:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/cipansor_test
       REDIS_URL: redis://localhost:6379
       JWT_SECRET: test-jwt-secret-key-for-e2e-testing
+      # Production default is 15m; e2e pins 7d because global-setup logs each
+      # role in ONCE and reuses the tokens for the whole (up to 40-min) run.
       JWT_EXPIRES_IN: 7d
       JWT_REFRESH_EXPIRES_IN: 30d
       CORS_ORIGIN: http://localhost:3000

@@ -56,7 +56,7 @@ DATABASE_URL="postgresql://user:password@host:5432/cipansor"
 
 # JWT - WAJIB DIGANTI UNTUK PRODUCTION!
 JWT_SECRET="your-production-secret-minimum-32-characters-long"
-JWT_EXPIRES_IN="7d"
+JWT_EXPIRES_IN="15m"
 JWT_REFRESH_EXPIRES_IN="30d"
 
 # Server

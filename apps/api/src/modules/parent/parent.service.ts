@@ -1,6 +1,6 @@
 import { prisma } from '../../lib/prisma';
 import { ApiError, ErrorCode } from '../../middleware/error';
-import { AttendanceStatus, Invoice, StudentParent } from '@prisma/client';
+import { Prisma, AttendanceStatus, Invoice, StudentParent } from '@prisma/client';
 import { getStudentIbadahStats } from '../ibadah/ibadah.service';
 import * as DormitoryService from '../dormitories/dormitories.service';
 
@@ -192,13 +192,13 @@ export class ParentService {
   ) {
     await this.verifyParentAccess(parentId, studentId);
 
-    const where: any = { studentId };
+    const where: Prisma.AttendanceWhereInput = { studentId };
 
-    if (query.startDate) {
-      where.date = { ...where.date, gte: new Date(query.startDate) };
-    }
-    if (query.endDate) {
-      where.date = { ...where.date, lte: new Date(query.endDate) };
+    if (query.startDate || query.endDate) {
+      const dateFilter: Prisma.DateTimeFilter = {};
+      if (query.startDate) dateFilter.gte = new Date(query.startDate);
+      if (query.endDate) dateFilter.lte = new Date(query.endDate);
+      where.date = dateFilter;
     }
 
     const attendances = await prisma.attendance.findMany({
@@ -395,9 +395,10 @@ export class ParentService {
     const page = query.page || 1;
     const limit = query.limit || 20;
 
-    const where: any = { studentId };
+    const where: Prisma.TahfidzRecordWhereInput = { studentId };
     if (query.activityType) {
-      where.activityType = query.activityType;
+      where.activityType =
+        query.activityType as Prisma.TahfidzRecordWhereInput["activityType"];
     }
 
     const [records, total] = await Promise.all([
@@ -483,7 +484,7 @@ export class ParentService {
   ) {
     await this.verifyParentAccess(parentId, studentId);
 
-    const where: any = { studentId };
+    const where: Prisma.GradeWhereInput = { studentId };
     if (query.academicYearId) {
       where.academicYearId = query.academicYearId;
     }
@@ -891,9 +892,9 @@ export class ParentService {
     const page = query.page || 1;
     const limit = query.limit || 20;
 
-    const where: any = { userId: parentId };
+    const where: Prisma.NotificationWhereInput = { userId: parentId };
     if (query.status) {
-      where.status = query.status;
+      where.status = query.status as Prisma.NotificationWhereInput["status"];
     }
 
     const [notifications, total, unreadCount] = await Promise.all([

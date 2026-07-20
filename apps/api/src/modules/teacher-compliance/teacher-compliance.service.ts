@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 
 /** Fields required for a teacher record to count as compliance-complete. */
 const REQUIRED_FIELDS = [
@@ -79,7 +80,7 @@ export function updateCompliance(teacherId: string, body: Record<string, any>) {
 
 /** Completeness report + summary across teachers (optionally unit/status scoped). */
 export async function getCompletenessReport(filters: CompletenessFilters) {
-  const whereClause: any = {};
+  const whereClause: Prisma.TeacherWhereInput = {};
   if (filters.unitId) whereClause.unitId = filters.unitId;
 
   const teachers = await prisma.teacher.findMany({
@@ -128,7 +129,7 @@ export async function getCompletenessReport(filters: CompletenessFilters) {
 
 /** Teachers ready for SIMTUN/EMIS export + a count of those not yet ready. */
 export async function getSimtunReady(filters: { unitId?: string }) {
-  const whereClause: any = {
+  const whereClause: Prisma.TeacherWhereInput = {
     nik: { not: null },
     nuptk: { not: null },
     birthPlace: { not: null },
@@ -194,7 +195,7 @@ export async function getSimtunReady(filters: { unitId?: string }) {
 
 /** Certification-status report grouped by subject and year. */
 export async function getCertificationReport(filters: { unitId?: string }) {
-  const whereClause: any = {};
+  const whereClause: Prisma.TeacherWhereInput = {};
   if (filters.unitId) whereClause.unitId = filters.unitId;
 
   const teachers = await prisma.teacher.findMany({

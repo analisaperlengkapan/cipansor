@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { NotificationType } from '@prisma/client';
+import { Prisma, NotificationType } from '@prisma/client';
 
 interface CreateAnnouncementInput {
   unitId?: string;
@@ -39,7 +39,7 @@ export class AnnouncementService {
     const { unitId, type, priority, published, page = 1, limit = 20 } = query;
     const skip = (page - 1) * limit;
 
-    const where: any = {};
+    const where: Prisma.AnnouncementWhereInput = {};
 
     // Filter by unit (include global announcements)
     if (unitId) {
@@ -154,7 +154,7 @@ export class AnnouncementService {
 
   // Get stats for dashboard
   async getStats(unitId?: string) {
-    const where: any = {};
+    const where: Prisma.AnnouncementWhereInput = {};
 
     if (unitId) {
       where.OR = [{ unitId }, { unitId: null }];
@@ -201,7 +201,7 @@ export class AnnouncementService {
 
   // Get recent announcements for dashboard
   async getRecent(unitId?: string, limit: number = 5) {
-    const where: any = {
+    const where: Prisma.AnnouncementWhereInput = {
       publishedAt: { lte: new Date() },
     };
 

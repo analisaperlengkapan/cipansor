@@ -1,4 +1,5 @@
 import { prisma } from '../../lib/prisma';
+import { Prisma } from '@prisma/client';
 
 export class TataLaksanaService {
   // ── SOP ───────────────────────────────────────────
@@ -8,9 +9,11 @@ export class TataLaksanaService {
     category?: string;
     search?: string;
   }) {
-    const where: any = {};
+    const where: Prisma.StandardOperatingProcedureWhereInput = {};
     if (params.unitId) where.unitId = params.unitId;
-    if (params.status) where.status = params.status;
+    if (params.status)
+      where.status =
+        params.status as Prisma.StandardOperatingProcedureWhereInput["status"];
     if (params.category) where.category = params.category;
     if (params.search) {
       where.OR = [

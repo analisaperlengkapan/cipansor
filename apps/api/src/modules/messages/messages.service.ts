@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { Errors } from '@/middleware/error';
 import { CreateMessageInput, MessageCategory } from '@cipansor/shared';
 import { logger } from '@/lib/logger';
@@ -59,7 +60,7 @@ export class MessagesService {
     const { page, limit, type, category } = params;
     const skip = (page - 1) * limit;
 
-    const where: any = {};
+    const where: Prisma.MessageWhereInput = {};
 
     if (type === 'inbox') {
       where.recipientId = userId;

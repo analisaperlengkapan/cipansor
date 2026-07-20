@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { WaveStatus } from '@prisma/client';
+import { Prisma, WaveStatus } from '@prisma/client';
 import { CreateWaveInput, UpdateWaveInput } from './ppdb-wave.schema';
 
 export const waveService = {
@@ -10,7 +10,7 @@ export const waveService = {
     const { page, limit, periodId, status } = params;
     const skip = (page - 1) * limit;
 
-    const where: any = {
+    const where: Prisma.AdmissionWaveWhereInput = {
       ...(periodId && { periodId }),
       ...(status && { status: status as WaveStatus }),
     };
@@ -283,9 +283,11 @@ export const waveService = {
     const { page, limit, status } = params;
     const skip = (page - 1) * limit;
 
-    const where: any = {
+    const where: Prisma.RegistrantWhereInput = {
       waveId,
-      ...(status && { status }),
+      ...(status && {
+        status: status as Prisma.RegistrantWhereInput["status"],
+      }),
     };
 
     const [data, total] = await Promise.all([

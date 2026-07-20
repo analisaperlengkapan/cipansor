@@ -166,12 +166,14 @@ injections (`grc-live`, `integration-grc`), none of which mock product data.
   (student self-endpoints in muhasabah/takhosus always 400'd because the JWT
   never carries `studentId`; assignments teacher/student auto-fill never ran;
   tahfidz & rapor-pesantren list endpoints skipped zod validation entirely).
-  Remaining (eslint-authoritative `no-explicit-any` count, api): **~1597** —
-  ≈1110 in test files (mock plumbing) + ≈487 across service internals
-  (`where: any` builders). The earlier "1082" was a grep approximation; eslint
-  counts every `any` token, so the true figure is higher. Fix opportunistically
-  per module — replace `where: any` with `Prisma.<Model>WhereInput`; the
-  service-internal `any` is the tractable, highest-value slice.
+  Remaining (eslint-authoritative `no-explicit-any` count, api): **~1548** —
+  ≈1110 in test files (mock plumbing) + ≈438 across service internals. ✅ **All
+  49 `where: any` / `whereClause: any` query builders are now typed** with
+  `Prisma.<Model>WhereInput`, which surfaced and fixed real looseness — a
+  redundant no-op `not: null` filter on non-nullable `Student` columns and
+  several `string`→enum assignment sites. The remaining service `any` are
+  heterogeneous `as any` casts (many are genuine library/Prisma workarounds) —
+  fix opportunistically per module.
 - **Web role alignment.** ✅ **DONE.** `src/lib/rbac.ts` is the single source of
   truth (mirrors backend `deriveLegacyRole`); `middleware.ts` and
   `parent/layout.tsx` resolve the effective role from `user.role` OR

@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import type {
   ListTargetsQuery,
   CreateTargetInput,
@@ -25,7 +26,7 @@ import type {
 export async function listTargets(query: ListTargetsQuery) {
   const { unitId, category, targetType, isActive, isOptional, search, page, limit } = query;
 
-  const where: any = {};
+  const where: Prisma.DailyIbadahTargetWhereInput = {};
   if (unitId) where.unitId = unitId;
   if (category) where.category = category;
   if (targetType) where.targetType = targetType;
@@ -119,7 +120,7 @@ export async function listRecords(query: ListRecordsQuery) {
     limit,
   } = query;
 
-  const where: any = {};
+  const where: Prisma.DailyIbadahRecordWhereInput = {};
   if (studentId) where.studentId = studentId;
   if (targetId) where.targetId = targetId;
   if (isCompleted !== undefined) where.isCompleted = isCompleted;
@@ -144,7 +145,10 @@ export async function listRecords(query: ListRecordsQuery) {
 
   // Filter by category through target
   if (category) {
-    where.target = { ...where.target, category };
+    where.target = {
+      ...(where.target as Prisma.DailyIbadahTargetWhereInput),
+      category,
+    };
   }
 
   const [records, total] = await Promise.all([
@@ -966,7 +970,7 @@ export async function getClassIbadahStats(query: ClassIbadahStatsQuery) {
 export async function listIslamicEvents(query: ListIslamicEventsQuery) {
   const { unitId, type, hijriMonth, gregorianYear, isHoliday, page, limit } = query;
 
-  const where: any = {};
+  const where: Prisma.IslamicEventWhereInput = {};
   if (unitId !== undefined) where.unitId = unitId;
   if (type) where.type = type;
   if (hijriMonth) where.hijriMonth = hijriMonth;

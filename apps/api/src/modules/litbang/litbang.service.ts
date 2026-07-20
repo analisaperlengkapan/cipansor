@@ -9,9 +9,10 @@ export class LitbangService {
     status?: string;
     category?: string;
   }) {
-    const where: any = {};
+    const where: Prisma.ResearchProjectWhereInput = {};
     if (params.unitId) where.unitId = params.unitId;
-    if (params.status) where.status = params.status;
+    if (params.status)
+      where.status = params.status as Prisma.ResearchProjectWhereInput["status"];
     if (params.category) where.category = params.category;
 
     return prisma.researchProject.findMany({
@@ -231,9 +232,11 @@ export class LitbangService {
     status?: string;
     category?: string;
   }) {
-    const where: any = {};
+    const where: Prisma.InnovationProposalWhereInput = {};
     if (params.unitId) where.unitId = params.unitId;
-    if (params.status) where.status = params.status;
+    if (params.status)
+      where.status =
+        params.status as Prisma.InnovationProposalWhereInput["status"];
     if (params.category) where.category = params.category;
 
     return prisma.innovationProposal.findMany({

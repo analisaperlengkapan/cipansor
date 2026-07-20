@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 
 // The Indonesian administrative-region models are accessed via a loose cast to
 // keep parity with the original handlers (the generated delegates vary by
@@ -36,7 +37,7 @@ export function createProvince(data: { code: string; name: string }) {
 // ==================== REGENCIES ====================
 
 export function listRegencies(filters: RegionListFilters) {
-  const whereClause: any = { ...nameFilter(filters.search) };
+  const whereClause: Prisma.RegencyWhereInput = { ...nameFilter(filters.search) };
   if (filters.provinceId) whereClause.provinceId = filters.provinceId;
   return db.regency.findMany({
     where: whereClause,
@@ -62,7 +63,7 @@ export function createRegency(data: { code: string; name: string; provinceId: st
 // ==================== DISTRICTS ====================
 
 export function listDistricts(filters: RegionListFilters) {
-  const whereClause: any = { ...nameFilter(filters.search) };
+  const whereClause: Prisma.DistrictWhereInput = { ...nameFilter(filters.search) };
   if (filters.regencyId) whereClause.regencyId = filters.regencyId;
   return db.district.findMany({
     where: whereClause,
@@ -90,7 +91,7 @@ export function createDistrict(data: { code: string; name: string; regencyId: st
 export async function listVillages(
   filters: RegionListFilters & { page: number; limit: number },
 ) {
-  const whereClause: any = { ...nameFilter(filters.search) };
+  const whereClause: Prisma.VillageWhereInput = { ...nameFilter(filters.search) };
   if (filters.districtId) whereClause.districtId = filters.districtId;
 
   const { page, limit } = filters;

@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { CreateTargetInput, UpdateTargetInput } from './takhosus.schema';
 
 export class TargetService {
@@ -50,7 +51,7 @@ export class TargetService {
    * Get target by student ID (and optional academic year)
    */
   async getByStudentId(studentId: string, academicYearId?: string) {
-    const where: any = { studentId };
+    const where: Prisma.TahfidzTargetWhereInput = { studentId };
     if (academicYearId) {
       where.academicYearId = academicYearId;
     } else {

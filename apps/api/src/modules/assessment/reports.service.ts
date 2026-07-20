@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 
 // =====================================
 // TYPES
@@ -290,7 +291,7 @@ export async function generateSkhun(
 }
 
 export async function getSkhunByStudent(studentId: string, academicYearId?: string) {
-  const where: any = { studentId };
+  const where: Prisma.ReportCardWhereInput = { studentId };
   if (academicYearId) {
     where.academicYearId = academicYearId;
   }

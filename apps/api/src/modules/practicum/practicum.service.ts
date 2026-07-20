@@ -1,5 +1,5 @@
 import { prisma } from '../../lib/prisma';
-import { PracticumStatus } from '@prisma/client';
+import { Prisma, PracticumStatus } from '@prisma/client';
 
 export class PracticumService {
   // Lesson Plans
@@ -70,7 +70,7 @@ export class PracticumService {
   }
 
   async getSchedules(targetClassId?: string, date?: string) {
-    const where: any = {};
+    const where: Prisma.PracticumScheduleWhereInput = {};
     if (targetClassId) where.targetClassId = targetClassId;
     if (date) {
       const d = new Date(date);

@@ -235,7 +235,7 @@ export async function getInvoices(query: QueryInvoiceDto) {
   const { studentId, paymentTypeId, status, startDate, endDate, overdue, page, limit } = query;
   const skip = (page - 1) * limit;
 
-  const where: any = {
+  const where: Prisma.InvoiceWhereInput = {
     ...(studentId && { studentId }),
     ...(paymentTypeId && { paymentTypeId }),
     ...(status && { status }),

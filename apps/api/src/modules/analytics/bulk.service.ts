@@ -6,7 +6,7 @@
 import { prisma } from '@/lib/prisma';
 import { Prisma, UserRole } from '@prisma/client';
 import { logger } from '@/lib/logger';
-import { createBulkNotifications } from '@/modules/notifications/service';
+import { createBulkNotifications } from '@/modules/notifications/notifications.service';
 import { NotificationType } from '@prisma/client';
 
 // Import result types

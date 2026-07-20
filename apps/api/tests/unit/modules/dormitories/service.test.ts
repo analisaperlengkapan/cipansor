@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { getStudentsByMusyrif } from '../../../../src/modules/dormitories/service';
+import { getStudentsByMusyrif } from '../../../../src/modules/dormitories/dormitories.service';
 import { prisma } from '../../../../src/lib/prisma';
 
 // Mock dependencies

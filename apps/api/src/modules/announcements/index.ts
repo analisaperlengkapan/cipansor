@@ -1,3 +1,3 @@
-export { default as announcementRoutes } from './routes';
-export { announcementService } from './service';
-export * as announcementController from './controller';
+export { default as announcementRoutes } from './announcements.routes';
+export { announcementService } from './announcements.service';
+export * as announcementController from './announcements.controller';

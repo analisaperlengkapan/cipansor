@@ -20,7 +20,7 @@ vi.mock('../pkg.service', () => ({
   getPKGStatistics: vi.fn(),
 }));
 
-import * as controller from '../controller';
+import * as controller from '../pkg.controller';
 import * as pkgService from '../pkg.service';
 
 function mockReqRes(overrides: Partial<Request> = {}) {

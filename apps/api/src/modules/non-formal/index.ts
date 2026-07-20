@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { courseService } from './service';
-import courseRoutes from './routes';
+import { courseService } from './non-formal.service';
+import courseRoutes from './non-formal.routes';
 
 const router = Router();
 

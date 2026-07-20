@@ -75,7 +75,7 @@ import {
   createItem,
   getItems,
   getInventoryStats,
-} from '../../../../src/modules/inventory/service';
+} from '../../../../src/modules/inventory/inventory.service';
 import { prisma } from '../../../../src/lib/prisma';
 import { AssetStatus, AssetCondition } from '@cipansor/shared';
 

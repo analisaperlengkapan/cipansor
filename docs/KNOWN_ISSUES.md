@@ -147,9 +147,11 @@ injections (`grc-live`, `integration-grc`), none of which mock product data.
   ibadah, announcements, rapor-pesantren, student-compliance, teacher-compliance,
   wilayah, pkg` each have a thin `controller.ts` (and, where they were missing,
   `service.ts`/`schema.ts`), with `routes.ts` reduced to routing + authorize +
-  validate and a controller test per module. Remaining: unify the file-naming
-  convention (`controller.ts` vs `<name>.controller.ts`) across the other
-  modules. See `apps/api/AGENTS.md` for the standard.
+  validate and a controller test per module. ✅ **File-naming unified:** all
+  module files now use the `<name>.<type>.ts` convention (Angular/NestJS
+  `feature.type.ts` — 140 files: controller/service/schema/routes), so the
+  `controller.ts` vs `<name>.controller.ts` split is gone. See
+  `apps/api/AGENTS.md` for the standard.
 - **Strict build.** ✅ **DONE.** `tsconfig.build.json` extends `tsconfig.json`
   (identical strictness; build.json only narrows emit scope), and the root
   config now sets `noEmit` so `build:strict` is a pure typecheck over

@@ -74,7 +74,7 @@ vi.mock('@/lib/prisma', () => ({
   },
 }));
 
-vi.mock('../../src/modules/notifications/service', () => ({
+vi.mock('../../src/modules/notifications/notifications.service', () => ({
   createNotification: vi.fn(),
 }));
 

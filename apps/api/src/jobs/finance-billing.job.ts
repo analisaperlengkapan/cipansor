@@ -1,6 +1,6 @@
 import { logger } from '@/lib/logger';
 import { prisma } from '@/lib/prisma';
-import { generateBulkSppInvoices } from '@/modules/finance/service';
+import { generateBulkSppInvoices } from '@/modules/finance/finance.service';
 
 /**
  * Run Monthly Auto-Billing for all recurring PaymentTypes (e.g., SPP)

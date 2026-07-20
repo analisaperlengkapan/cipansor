@@ -7,7 +7,7 @@ vi.mock('../../lib/prisma', () => ({
 }));
 
 import { prisma } from '../../lib/prisma';
-import { getTeachers } from './service';
+import { getTeachers } from './hr.service';
 
 const mocked = prisma as unknown as {
   teacher: { findMany: ReturnType<typeof vi.fn>; count: ReturnType<typeof vi.fn> };

@@ -1,3 +1,3 @@
-export { default as wilayahRoutes } from './routes';
-export * as wilayahController from './controller';
-export * as wilayahService from './service';
+export { default as wilayahRoutes } from './wilayah.routes';
+export * as wilayahController from './wilayah.controller';
+export * as wilayahService from './wilayah.service';

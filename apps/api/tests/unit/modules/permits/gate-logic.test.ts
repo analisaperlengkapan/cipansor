@@ -32,7 +32,7 @@ vi.mock('../../../../src/lib/prisma', () => ({
   prisma: prismaMock,
 }));
 
-vi.mock('../../../../src/modules/notifications/service', () => ({
+vi.mock('../../../../src/modules/notifications/notifications.service', () => ({
   createNotification: vi.fn().mockResolvedValue(undefined),
 }));
 
@@ -53,9 +53,9 @@ vi.mock('@prisma/client', () => ({
   },
 }));
 
-import { markDeparted, markReturned, createPermit } from '../../../../src/modules/permits/service';
+import { markDeparted, markReturned, createPermit } from '../../../../src/modules/permits/permits.service';
 import { PermitStatus, PermitType, NotificationType } from '@prisma/client';
-import { createNotification } from '../../../../src/modules/notifications/service';
+import { createNotification } from '../../../../src/modules/notifications/notifications.service';
 
 describe('Permit Gate Logic', () => {
   beforeEach(() => {

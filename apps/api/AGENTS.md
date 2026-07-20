@@ -6,21 +6,24 @@ Express 5 + Prisma 7 REST API. Read the root `AGENTS.md` first.
 
 ```
 src/modules/<name>/
-  routes.ts      # Router; authenticate/authorize/validate; -> controller
-  controller.ts  # thin; asyncHandler; ApiResponse.success/error/paginated
-  service.ts     # business logic; the only layer that touches Prisma
-  schema.ts      # Zod schemas; export types via z.infer
-  index.ts       # export { <name>Routes }
-  tests/         # vitest, Prisma mocked
+  <name>.routes.ts      # Router; authenticate/authorize/validate; -> controller
+  <name>.controller.ts  # thin; asyncHandler; ApiResponse.success/error/paginated
+  <name>.service.ts     # business logic; the only layer that touches Prisma
+  <name>.schema.ts      # Zod schemas; export types via z.infer
+  index.ts              # export { <name>Routes }
+  tests/                # vitest, Prisma mocked
 ```
 
 Layering: **routes never call Prisma; controllers never embed business logic.**
 Mount new modules in `src/app.ts`.
 
-> Naming is currently inconsistent (some modules use `controller.ts`, others
-> `<name>.controller.ts`; a few keep handlers inline in `routes.ts`). New code
-> should follow the layout above. Standardizing the rest is tracked in
-> `docs/KNOWN_ISSUES.md`.
+> **File naming: `<name>.<type>.ts`.** Every module file carries its type suffix
+> (`finance.controller.ts`, `finance.service.ts`, `finance.schema.ts`,
+> `finance.routes.ts`) — the `feature.type.ts` convention from the Angular style
+> guide and NestJS. It keeps files greppable and unambiguous across ~110 modules
+> (a folder of bare `controller.ts` / `service.ts` tabs is indistinguishable in
+> editors and fuzzy-finders). All controller/service/schema/routes files now
+> follow this; keep new files consistent.
 
 ## Reuse, don't reinvent
 

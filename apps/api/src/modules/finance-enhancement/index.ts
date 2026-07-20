@@ -1,1 +1,1 @@
-export { default as financeEnhancementRoutes } from './routes';
+export { default as financeEnhancementRoutes } from './finance-enhancement.routes';

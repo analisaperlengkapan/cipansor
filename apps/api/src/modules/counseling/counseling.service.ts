@@ -9,7 +9,7 @@ import {
   Prisma,
 } from '@prisma/client';
 import { isAdminRoleCode } from '@/middleware/auth';
-import { createNotification } from '../notifications/service';
+import { createNotification } from '../notifications/notifications.service';
 import {
   CounselingSession as SharedCounselingSession,
   CounselingNote as SharedCounselingNote,

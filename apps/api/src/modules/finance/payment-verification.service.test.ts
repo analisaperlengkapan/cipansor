@@ -13,7 +13,7 @@ vi.mock('../../lib/prisma', () => {
   return { prisma: mockPrisma };
 });
 
-vi.mock('../notifications/service', () => ({
+vi.mock('../notifications/notifications.service', () => ({
   createNotification: vi.fn().mockResolvedValue({}),
 }));
 
@@ -23,7 +23,7 @@ vi.mock('./accounting-config.service', () => ({
 }));
 
 import { prisma } from '../../lib/prisma';
-import { submitPaymentProof, verifyPayment } from './service';
+import { submitPaymentProof, verifyPayment } from './finance.service';
 
 const mocked = prisma as any;
 

@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { notificationScheduler } from '../../src/modules/notifications/scheduler.service';
 import { prisma } from '../../src/lib/prisma';
 import { whatsAppService } from '../../src/modules/notifications/whatsapp.service';
-import * as notificationService from '../../src/modules/notifications/service';
+import * as notificationService from '../../src/modules/notifications/notifications.service';
 
 // Mock dependencies
 vi.mock('../../src/lib/prisma', () => ({
@@ -33,8 +33,8 @@ vi.mock('../../src/modules/notifications/whatsapp.service', () => ({
   },
 }));
 
-vi.mock('../../src/modules/notifications/service', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../src/modules/notifications/service')>();
+vi.mock('../../src/modules/notifications/notifications.service', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../src/modules/notifications/notifications.service')>();
   return {
     ...actual,
     createNotification: vi.fn(),

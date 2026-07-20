@@ -11,7 +11,7 @@
  */
 
 // Core notification service functions
-export * from './service';
+export * from './notifications.service';
 
 // Email/SMS notification service
 export { notificationService, templates, smsTemplates } from './email-sms.service';

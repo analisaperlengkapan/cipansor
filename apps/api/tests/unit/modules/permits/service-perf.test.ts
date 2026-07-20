@@ -33,7 +33,7 @@ vi.mock('../../../../src/lib/prisma', () => ({
 }));
 
 // 3. Mock notifications service
-vi.mock('../../../../src/modules/notifications/service', () => ({
+vi.mock('../../../../src/modules/notifications/notifications.service', () => ({
   createNotification: vi.fn(async () => {
     await new Promise((resolve) => setTimeout(resolve, 50)); // 50ms delay
   }),
@@ -62,9 +62,9 @@ vi.mock('@prisma/client', () => ({
   },
 }));
 
-import { updatePermitStatus } from '../../../../src/modules/permits/service';
+import { updatePermitStatus } from '../../../../src/modules/permits/permits.service';
 import { PermitStatus, PermitType } from '@prisma/client';
-import { createNotification } from '../../../../src/modules/notifications/service';
+import { createNotification } from '../../../../src/modules/notifications/notifications.service';
 
 describe('Permit Service Performance', () => {
   beforeEach(() => {

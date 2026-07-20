@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import * as service from '../../../../src/modules/library/service';
+import * as service from '../../../../src/modules/library/library.service';
 import { prisma } from '../../../../src/lib/prisma';
 import { BookStatus } from '@cipansor/shared';
 

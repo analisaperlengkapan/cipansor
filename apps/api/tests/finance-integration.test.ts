@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import * as financeService from '../src/modules/finance/service';
-import * as notificationService from '../src/modules/notifications/service';
+import * as financeService from '../src/modules/finance/finance.service';
+import * as notificationService from '../src/modules/notifications/notifications.service';
 import { prisma } from '../src/lib/prisma';
 import { PaymentStatus, NotificationType, PaymentMethod, Prisma } from '@prisma/client';
 
 // Mock dependencies
-vi.mock('../src/modules/notifications/service', () => ({
+vi.mock('../src/modules/notifications/notifications.service', () => ({
   createNotification: vi.fn(),
 }));
 

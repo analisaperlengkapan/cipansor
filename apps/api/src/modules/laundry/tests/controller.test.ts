@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Request, Response } from 'express';
 
-vi.mock('../service', () => ({
+vi.mock('../laundry.service', () => ({
   pricingService: { getAll: vi.fn(), getById: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn() },
   transactionService: {
     getAll: vi.fn(), getStats: vi.fn(), getReadyForPickup: vi.fn(), getByStudent: vi.fn(),
@@ -9,8 +9,8 @@ vi.mock('../service', () => ({
   },
 }));
 
-import * as controller from '../controller';
-import { pricingService, transactionService } from '../service';
+import * as controller from '../laundry.controller';
+import { pricingService, transactionService } from '../laundry.service';
 
 function mockReqRes(overrides: Partial<Request> = {}) {
   const req = { query: {}, params: {}, body: {}, user: { unitId: 'unit-1', sub: 'user-1' }, ...overrides } as unknown as Request;

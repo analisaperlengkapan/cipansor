@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { prisma } from '../../../../src/lib/prisma';
-import { batchGraduateStudents } from '../../../../src/modules/alumni/service';
+import { batchGraduateStudents } from '../../../../src/modules/alumni/alumni.service';
 
 vi.mock('../../../../src/lib/prisma', () => ({
   prisma: {

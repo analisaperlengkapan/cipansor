@@ -5,7 +5,7 @@ import {
   updateExam,
   createGrade,
   generateReportCard,
-} from '../../src/modules/assessment/service';
+} from '../../src/modules/assessment/assessment.service';
 import { prisma } from '../../src/lib/prisma';
 import { ExamType } from '@cipansor/shared';
 import { Decimal } from '@prisma/client/runtime/client';

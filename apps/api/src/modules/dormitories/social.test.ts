@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { prisma } from '../../lib/prisma';
-import { getRoomSocialAnalytics } from './service';
+import { getRoomSocialAnalytics } from './dormitories.service';
 
 vi.mock('../../lib/prisma', () => {
   const mockPrisma = {

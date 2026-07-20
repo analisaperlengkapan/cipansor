@@ -37,12 +37,12 @@ vi.mock('../../lib/prisma', () => {
 });
 
 import { prisma } from '../../lib/prisma';
-import * as financeService from './service';
-import * as notificationService from '../notifications/service';
+import * as financeService from './finance.service';
+import * as notificationService from '../notifications/notifications.service';
 
 import { eventBus } from '@/lib/event-bus';
 
-vi.mock('../notifications/service', () => ({
+vi.mock('../notifications/notifications.service', () => ({
   createNotification: vi.fn(),
 }));
 

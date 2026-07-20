@@ -9,7 +9,7 @@ import {
 import { UserRole, AssetCondition, Prisma } from '@prisma/client';
 import { Errors } from '@/middleware/error';
 import { generateUniqueCode, generateBulkUniqueCodes } from '@/utils/code-generator';
-import { createNotification } from '../notifications/service';
+import { createNotification } from '../notifications/notifications.service';
 import { getAccountOrFallback } from '../finance/accounting-config.service';
 
 export const procurementService = {

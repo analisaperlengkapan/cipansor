@@ -29,7 +29,7 @@ vi.mock('../ibadah.service', () => ({
   deleteIslamicEvent: vi.fn(),
 }));
 
-import * as controller from '../controller';
+import * as controller from '../ibadah.controller';
 import * as service from '../ibadah.service';
 
 function mockReqRes(overrides: Partial<Request> = {}) {

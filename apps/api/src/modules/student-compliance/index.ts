@@ -1,3 +1,3 @@
-export { default as studentComplianceRoutes } from './routes';
-export * as studentComplianceController from './controller';
-export * as studentComplianceService from './service';
+export { default as studentComplianceRoutes } from './student-compliance.routes';
+export * as studentComplianceController from './student-compliance.controller';
+export * as studentComplianceService from './student-compliance.service';

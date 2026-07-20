@@ -8,7 +8,7 @@ vi.mock('../../lib/prisma', () => ({
 }));
 
 import { prisma } from '../../lib/prisma';
-import { calculateGrowthZScores, createGrowthRecord } from './service';
+import { calculateGrowthZScores, createGrowthRecord } from './health.service';
 
 const mocked = prisma as any;
 

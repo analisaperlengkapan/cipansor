@@ -1,11 +1,11 @@
 # E2E Coverage Matrix — route × {nav, CRUD, buttons, fields, RBAC}
 
-_Generated 2026-07-16 by the coverage audit; audit drift with `node scripts/e2e-coverage.mjs`. Update cells manually only when a spec **proves** the dimension against the real seeded stack (loginAs + no `page.route` interception)._
+_Headline count + spec-inventory table re-audited 2026-07-20 from source; the route×dimension matrix cells are upgraded manually only when a spec **proves** the dimension against the real seeded stack (loginAs + no `page.route` interception). Re-run `node scripts/e2e-coverage.mjs` to detect drift._
 
 ## Summary
 
 - **Routes (App Router pages):** 430
-- **Routes visited by ≥1 spec:** 69 (16%)
+- **Routes visited by ≥1 spec:** 76 (17%)
 - **Spec files:** 75 — all **active** specs now authenticate for real
   (`loginAs` / `apiLogin` + `injectSession`) and assert real seeded/API data.
   The only remaining `page.route` usages are: `grc-live` (one deliberate 500
@@ -924,84 +924,81 @@ History of the stabilization (all root-caused, no suppressions):
 
 | Spec | Auth | Style | Notes |
 |---|---|---|---|
-| `_batch-sweep.spec.ts` | loginAs | real backend | 0 route(s) visited |
-| `_diag.spec.ts` | loginAs | real backend | 1 route(s) visited |
-| `_verify.spec.ts` | loginAs | real backend | 0 route(s) visited |
-| `academic-integrated.spec.ts` | — | `page.route` mocks | 2 route(s) visited |
-| `academic-years.spec.ts` | — | public/unauthenticated | 2 route(s) visited |
-| `admission-to-class-to-finance.spec.ts` | — | `page.route` mocks | 1 route(s) visited |
-| `admissions-funnel.spec.ts` | — | `page.route` mocks | 1 route(s) visited |
+| `academic-integrated.spec.ts` | loginAs | real backend | 2 route(s) visited |
+| `academic-years.spec.ts` | loginAs | real backend | 1 route(s) visited |
+| `admission-to-class-to-finance.spec.ts` | loginAs | real backend | 1 route(s) visited |
+| `admissions-funnel.spec.ts` | loginAs | real backend | 1 route(s) visited |
 | `alumni-outcome.spec.ts` | — | public/unauthenticated | 1 route(s) visited |
-| `alumni.spec.ts` | — | public/unauthenticated | 2 route(s) visited |
+| `alumni.spec.ts` | loginAs | real backend | 1 route(s) visited |
 | `analytics.spec.ts` | — | public/unauthenticated | 3 route(s) visited |
-| `announcements.spec.ts` | — | public/unauthenticated | 2 route(s) visited |
-| `assessment-analytics.spec.ts` | — | `page.route` mocks | 1 route(s) visited |
-| `assessment.spec.ts` | — | public/unauthenticated | 6 route(s) visited |
-| `attendance-module.spec.ts` | — | skipped | 3 route(s) visited |
-| `attendance.spec.ts` | — | public/unauthenticated | 2 route(s) visited |
+| `announcements.spec.ts` | loginAs | real backend | 1 route(s) visited |
+| `assessment-analytics.spec.ts` | loginAs | real backend | 1 route(s) visited |
+| `assessment.spec.ts` | loginAs | real backend | 4 route(s) visited |
+| `attendance-module.spec.ts` | — | skipped | 1 route(s) visited |
+| `attendance.spec.ts` | loginAs | real backend | 1 route(s) visited |
 | `auth.spec.ts` | — | skipped | 2 route(s) visited |
 | `authenticated-smoke.spec.ts` | loginAs | real backend | 1 route(s) visited |
-| `business-unit-flow.spec.ts` | — | `page.route` mocks | 4 route(s) visited |
-| `calendar.spec.ts` | — | public/unauthenticated | 2 route(s) visited |
-| `canteen.spec.ts` | — | public/unauthenticated | 2 route(s) visited |
-| `cbt/cbt.spec.ts` | — | `page.route` mocks | 4 route(s) visited |
+| `business-unit-flow.spec.ts` | loginAs | real backend | 4 route(s) visited |
+| `calendar.spec.ts` | loginAs | real backend | 1 route(s) visited |
+| `canteen.spec.ts` | loginAs | real backend | 1 route(s) visited |
+| `cbt/cbt.spec.ts` | loginAs | real backend | 4 route(s) visited |
 | `class-management.spec.ts` | — | skipped | 0 route(s) visited |
-| `classes.spec.ts` | — | public/unauthenticated | 2 route(s) visited |
-| `counseling.spec.ts` | — | `page.route` mocks | 2 route(s) visited |
+| `classes.spec.ts` | loginAs | real backend | 1 route(s) visited |
+| `counseling.spec.ts` | loginAs | real backend | 1 route(s) visited |
 | `crash-sweep.spec.ts` | loginAs | real backend | 0 route(s) visited |
-| `curriculum.spec.ts` | — | public/unauthenticated | 2 route(s) visited |
+| `curriculum.spec.ts` | loginAs | real backend | 1 route(s) visited |
 | `dashboard-realtime.spec.ts` | — | public/unauthenticated | 2 route(s) visited |
-| `dashboard.spec.ts` | — | public/unauthenticated | 3 route(s) visited |
+| `dashboard.spec.ts` | loginAs | real backend | 2 route(s) visited |
 | `debug-crash.spec.ts` | — | `page.route` mocks | 0 route(s) visited |
-| `debug-failures.spec.ts` | — | `page.route` mocks | 1 route(s) visited |
-| `dormitories.spec.ts` | — | public/unauthenticated | 2 route(s) visited |
-| `extracurricular.spec.ts` | — | public/unauthenticated | 2 route(s) visited |
-| `finance-forecast.spec.ts` | — | `page.route` mocks | 0 route(s) visited |
+| `debug-failures.spec.ts` | — | `page.route` mocks | 0 route(s) visited |
+| `dormitories.spec.ts` | loginAs | real backend | 1 route(s) visited |
+| `extracurricular.spec.ts` | loginAs | real backend | 1 route(s) visited |
+| `finance-forecast.spec.ts` | loginAs | real backend | 1 route(s) visited |
 | `finance-integration.spec.ts` | — | public/unauthenticated | 3 route(s) visited |
 | `finance-management.spec.ts` | — | skipped | 0 route(s) visited |
-| `finance-reports.spec.ts` | — | `page.route` mocks | 0 route(s) visited |
+| `finance-reports.spec.ts` | loginAs | real backend | 1 route(s) visited |
 | `generate-screenshots.spec.ts` | — | `page.route` mocks | 0 route(s) visited |
-| `grc-integrated.spec.ts` | — | `page.route` mocks | 2 route(s) visited |
-| `grc-integration-new.spec.ts` | — | `page.route` mocks | 3 route(s) visited |
-| `grc-live.spec.ts` | — | `page.route` mocks | 1 route(s) visited |
-| `integrated-boarding-marketing.spec.ts` | — | `page.route` mocks | 1 route(s) visited |
-| `integration-flow.spec.ts` | — | `page.route` mocks | 2 route(s) visited |
+| `grc-integrated.spec.ts` | loginAs | real backend | 2 route(s) visited |
+| `grc-integration-new.spec.ts` | loginAs | real backend | 3 route(s) visited |
+| `grc-live.spec.ts` | loginAs | loginAs + injected route | 1 route(s) visited |
+| `integrated-boarding-marketing.spec.ts` | loginAs | real backend | 1 route(s) visited |
+| `integration-flow.spec.ts` | loginAs | real backend | 2 route(s) visited |
 | `integration-flows.spec.ts` | — | skipped | 0 route(s) visited |
-| `integration-grc.spec.ts` | — | `page.route` mocks | 3 route(s) visited |
-| `integration-pesantren.spec.ts` | — | `page.route` mocks | 1 route(s) visited |
-| `inventory.spec.ts` | — | public/unauthenticated | 2 route(s) visited |
+| `integration-grc.spec.ts` | loginAs | loginAs + injected route | 1 route(s) visited |
+| `integration-pesantren.spec.ts` | loginAs | real backend | 1 route(s) visited |
+| `inventory.spec.ts` | loginAs | real backend | 1 route(s) visited |
 | `landing.spec.ts` | — | public/unauthenticated | 1 route(s) visited |
-| `library.spec.ts` | — | public/unauthenticated | 2 route(s) visited |
+| `library.spec.ts` | loginAs | real backend | 1 route(s) visited |
 | `lingkungan.spec.ts` | — | public/unauthenticated | 2 route(s) visited |
-| `litbang.spec.ts` | — | public/unauthenticated | 2 route(s) visited |
-| `muhadatsah.spec.ts` | — | public/unauthenticated | 3 route(s) visited |
+| `litbang.spec.ts` | loginAs | real backend | 1 route(s) visited |
+| `muhadatsah.spec.ts` | loginAs | real backend | 2 route(s) visited |
 | `new-modular-features-smoke.spec.ts` | — | public/unauthenticated | 3 route(s) visited |
-| `organisasi.spec.ts` | — | public/unauthenticated | 2 route(s) visited |
-| `paud-main.spec.ts` | — | public/unauthenticated | 5 route(s) visited |
-| `pengawasan.spec.ts` | — | public/unauthenticated | 2 route(s) visited |
-| `perencanaan-finance.spec.ts` | — | `page.route` mocks | 2 route(s) visited |
-| `perencanaan-risk.spec.ts` | — | `page.route` mocks | 1 route(s) visited |
-| `perencanaan.spec.ts` | — | public/unauthenticated | 2 route(s) visited |
+| `organisasi.spec.ts` | loginAs | real backend | 1 route(s) visited |
+| `paud-main.spec.ts` | loginAs | real backend | 0 route(s) visited |
+| `pengawasan.spec.ts` | loginAs | real backend | 1 route(s) visited |
+| `perencanaan-finance.spec.ts` | loginAs | real backend | 1 route(s) visited |
+| `perencanaan-risk.spec.ts` | loginAs | real backend | 1 route(s) visited |
+| `perencanaan.spec.ts` | loginAs | real backend | 1 route(s) visited |
 | `pesantren-features-294-smoke.spec.ts` | — | public/unauthenticated | 3 route(s) visited |
-| `ppdb.spec.ts` | — | public/unauthenticated | 3 route(s) visited |
+| `ppdb.spec.ts` | loginAs | real backend | 1 route(s) visited |
 | `pwa.spec.ts` | — | public/unauthenticated | 1 route(s) visited |
-| `rapor-ganda.spec.ts` | — | `page.route` mocks | 1 route(s) visited |
-| `risk-audit-link.spec.ts` | — | `page.route` mocks | 0 route(s) visited |
-| `schedule.spec.ts` | — | public/unauthenticated | 2 route(s) visited |
-| `student-lifecycle-enhanced.spec.ts` | — | `page.route` mocks | 2 route(s) visited |
+| `rapor-ganda.spec.ts` | loginAs | real backend | 1 route(s) visited |
+| `risk-audit-link.spec.ts` | loginAs | real backend | 1 route(s) visited |
+| `schedule.spec.ts` | loginAs | real backend | 1 route(s) visited |
+| `student-lifecycle-enhanced.spec.ts` | loginAs | real backend | 2 route(s) visited |
 | `student-management.spec.ts` | — | skipped | 1 route(s) visited |
-| `syariah.spec.ts` | — | public/unauthenticated | 2 route(s) visited |
+| `syariah.spec.ts` | loginAs | real backend | 1 route(s) visited |
 | `tahfidz-dashboard.spec.ts` | — | skipped | 0 route(s) visited |
-| `tahfidz-transcript.spec.ts` | — | `page.route` mocks | 2 route(s) visited |
-| `talent-matrix-new.spec.ts` | — | `page.route` mocks | 2 route(s) visited |
+| `tahfidz-transcript.spec.ts` | loginAs | real backend | 1 route(s) visited |
+| `talent-matrix-new.spec.ts` | loginAs | real backend | 2 route(s) visited |
 | `talenta.spec.ts` | loginAs | real backend | 1 route(s) visited |
-| `tata-laksana.spec.ts` | — | public/unauthenticated | 2 route(s) visited |
+| `tata-laksana.spec.ts` | loginAs | real backend | 1 route(s) visited |
 | `teacher-management.spec.ts` | — | skipped | 0 route(s) visited |
 | `tk-daily-report.spec.ts` | — | skipped | 1 route(s) visited |
-| `tk-module.spec.ts` | — | skipped | 2 route(s) visited |
+| `tk-module.spec.ts` | — | skipped | 1 route(s) visited |
 | `unauthorized.spec.ts` | — | public/unauthenticated | 1 route(s) visited |
-| `verify-screenshots.spec.ts` | — | `page.route` mocks | 0 route(s) visited |
 | `verify_reception.spec.ts` | — | `page.route` mocks | 1 route(s) visited |
+| `verify-screenshots.spec.ts` | — | `page.route` mocks | 0 route(s) visited |
 
 ## How to move a cell to ✅
 

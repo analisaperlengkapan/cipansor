@@ -1,10 +1,11 @@
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { CreateSupplierInput, UpdateSupplierInput, Supplier } from '@cipansor/shared';
 import { Errors } from '@/middleware/error';
 
 export const suppliersService = {
   findAll: async (search?: string, category?: string, isActive?: boolean) => {
-    const where: any = {};
+    const where: Prisma.SupplierWhereInput = {};
 
     if (search) {
       where.OR = [

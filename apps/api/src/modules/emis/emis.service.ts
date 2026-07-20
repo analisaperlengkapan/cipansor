@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { Errors } from '@/middleware/error';
-import { UserRole, Gender, UnitType } from '@prisma/client';
+import { Prisma, UserRole, Gender, UnitType } from '@prisma/client';
 
 // User type from JwtPayload
 interface AuthenticatedUser {
@@ -138,7 +138,7 @@ export class EmisService {
     }
 
     // Build query
-    const whereClause: any = {
+    const whereClause: Prisma.StudentWhereInput = {
       unitId: targetUnitId,
     };
 
@@ -223,7 +223,7 @@ export class EmisService {
     }
 
     // Build query
-    const whereClause: any = {
+    const whereClause: Prisma.TeacherWhereInput = {
       unitId: targetUnitId,
     };
 

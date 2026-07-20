@@ -10,6 +10,7 @@
  */
 
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/client';
 
 // PKG Indicators per Competency
@@ -110,7 +111,7 @@ export async function listPeriods(params: {
   const { unitId, academicYearId, status, page = 1, limit = 20 } = params;
   const skip = (page - 1) * limit;
 
-  const where: any = {};
+  const where: Prisma.PKGPeriodWhereInput = {};
   if (unitId) where.unitId = unitId;
   if (academicYearId) where.academicYearId = academicYearId;
   if (status) where.status = status;
@@ -231,7 +232,7 @@ export async function listEvaluations(params: {
   const { periodId, teacherId, status, page = 1, limit = 20 } = params;
   const skip = (page - 1) * limit;
 
-  const where: any = {};
+  const where: Prisma.PKGEvaluationWhereInput = {};
   if (periodId) where.periodId = periodId;
   if (teacherId) where.teacherId = teacherId;
   if (status) where.status = status;
@@ -451,7 +452,7 @@ export async function getTeacherPKGHistory(teacherId: string) {
 export async function getPKGStatistics(params: { unitId?: string; periodId?: string }) {
   const { unitId, periodId } = params;
 
-  const where: any = {};
+  const where: Prisma.PKGEvaluationWhereInput = {};
   if (periodId) where.periodId = periodId;
   if (unitId) {
     where.period = { unitId };

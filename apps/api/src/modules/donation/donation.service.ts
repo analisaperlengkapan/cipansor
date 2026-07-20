@@ -27,7 +27,7 @@ export const campaignService = {
     const { page, limit, status, unitId } = params;
     const skip = (page - 1) * limit;
 
-    const where: any = {
+    const where: Prisma.DonationCampaignWhereInput = {
       deletedAt: null,
       ...(status && { status: status as CampaignStatus }),
       ...(unitId && { unitId }),
@@ -235,7 +235,7 @@ export const donationService = {
       params;
     const skip = (page - 1) * limit;
 
-    const where: any = {
+    const where: Prisma.DonationWhereInput = {
       ...(campaignId && { campaignId }),
       ...(unitId && { unitId }),
       ...(status && { status: status as DonationStatus }),
@@ -612,7 +612,7 @@ export const donationService = {
   }) {
     const { campaignId, unitId, type, startDate, endDate } = params;
 
-    const where: any = {
+    const where: Prisma.DonationWhereInput = {
       status: 'VERIFIED',
       ...(campaignId && { campaignId }),
       ...(unitId && { unitId }),

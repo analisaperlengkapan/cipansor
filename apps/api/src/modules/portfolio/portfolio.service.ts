@@ -9,6 +9,7 @@
  */
 
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/client';
 
 // Portfolio types and categories
@@ -104,7 +105,7 @@ export async function getPortfolios(params: {
   } = params;
   const skip = (page - 1) * limit;
 
-  const where: any = {};
+  const where: Prisma.PortfolioWhereInput = {};
   if (studentId) where.studentId = studentId;
   if (type) where.type = type;
   if (category) where.category = category;
@@ -340,7 +341,7 @@ export async function getPortfolioStatistics(params: {
 }) {
   const { studentId, unitId, academicYearId } = params;
 
-  const where: any = {};
+  const where: Prisma.PortfolioWhereInput = {};
   if (studentId) where.studentId = studentId;
   if (academicYearId) where.academicYearId = academicYearId;
   if (unitId) {

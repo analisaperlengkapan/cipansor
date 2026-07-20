@@ -112,7 +112,7 @@ export const procurementService = {
     userId?: string,
     role?: string
   ) => {
-    const where: any = {};
+    const where: Prisma.PurchaseRequestWhereInput = {};
     if (unitId) where.unitId = unitId;
     if (status) where.status = status;
 

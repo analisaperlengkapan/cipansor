@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { MurojaahType, TahfidzMistakeType } from '@prisma/client';
+import { Prisma, MurojaahType, TahfidzMistakeType } from '@prisma/client';
 import { CreateMurojaahInput, UpdateMurojaahInput } from './takhosus.schema';
 
 export const murojaahService = {
@@ -18,7 +18,7 @@ export const murojaahService = {
     const { page, limit, studentId, halaqohId, startDate, endDate, type } = params;
     const skip = (page - 1) * limit;
 
-    const where: any = {
+    const where: Prisma.MurojaahRecordWhereInput = {
       ...(studentId && { studentId }),
       ...(halaqohId && { halaqohId }),
       ...(type && { murojaahType: type }),

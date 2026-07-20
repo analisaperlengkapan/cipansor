@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { MuhasabahMood } from '@prisma/client';
+import { Prisma, MuhasabahMood } from '@prisma/client';
 import { CreateMuhasabahInput, UpdateMuhasabahInput } from './muhasabah.schema';
 
 export const muhasabahService = {
@@ -17,7 +17,7 @@ export const muhasabahService = {
     const { page, limit, studentId, mood, startDate, endDate } = params;
     const skip = (page - 1) * limit;
 
-    const where: any = {
+    const where: Prisma.DailyMuhasabahWhereInput = {
       ...(studentId && { studentId }),
       ...(mood && { mood: mood as MuhasabahMood }),
     };

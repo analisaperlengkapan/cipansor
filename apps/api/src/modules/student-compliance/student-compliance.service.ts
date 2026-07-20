@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 
 /** Fields required for a student record to count as Dapodik-complete. */
 const REQUIRED_FIELDS = [
@@ -72,7 +73,7 @@ export function updateCompliance(studentId: string, data: Record<string, any>) {
 
 /** Completeness report + summary across students (optionally unit/status scoped). */
 export async function getCompletenessReport(filters: CompletenessFilters) {
-  const whereClause: any = {};
+  const whereClause: Prisma.StudentWhereInput = {};
   if (filters.unitId) whereClause.unitId = filters.unitId;
   if (filters.status) whereClause.status = filters.status;
 
@@ -120,11 +121,12 @@ export async function getCompletenessReport(filters: CompletenessFilters) {
 
 /** Students ready for Dapodik export + a count of those not yet ready. */
 export async function getDapodikReady(filters: { unitId?: string }) {
-  const whereClause: any = {
+  // Dapodik readiness gates on the optional national identifiers; birthPlace
+  // and birthDate are non-nullable columns (always present), so a `not: null`
+  // filter on them is a redundant no-op and is intentionally omitted.
+  const whereClause: Prisma.StudentWhereInput = {
     nisn: { not: null },
     nik: { not: null },
-    birthPlace: { not: null },
-    birthDate: { not: null },
   };
   if (filters.unitId) whereClause.unitId = filters.unitId;
 

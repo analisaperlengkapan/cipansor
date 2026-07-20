@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import type {
   CreateSubjectInput,
   UpdateSubjectInput,
@@ -20,7 +21,7 @@ export async function getSubjects(query: SubjectQuery) {
   const { page, limit, unitId, type, search, isActive } = query;
   const skip = (page - 1) * limit;
 
-  const where: any = {};
+  const where: Prisma.SubjectWhereInput = {};
   if (unitId) where.unitId = unitId;
   if (type) where.type = type;
   if (isActive !== undefined) where.isActive = isActive;
@@ -138,7 +139,7 @@ export async function getLessonPlans(query: LessonPlanQuery) {
   const { page, limit, subjectId, teacherId, classId, startDate, endDate } = query;
   const skip = (page - 1) * limit;
 
-  const where: any = {};
+  const where: Prisma.LessonPlanWhereInput = {};
   if (subjectId) where.subjectId = subjectId;
   if (teacherId) where.teacherId = teacherId;
   if (classId) where.classId = classId;
@@ -232,7 +233,7 @@ export async function getSchedules(query: ScheduleQuery) {
   const { page, limit, unitId, academicYearId, classId, teacherId, dayOfWeek, isActive } = query;
   const skip = (page - 1) * limit;
 
-  const where: any = {};
+  const where: Prisma.ScheduleWhereInput = {};
   if (unitId) where.unitId = unitId;
   if (academicYearId) where.academicYearId = academicYearId;
   if (classId) where.classId = classId;
@@ -354,7 +355,7 @@ export async function deleteSchedule(id: string) {
 }
 
 export async function getClassSchedule(classId: string, academicYearId?: string) {
-  const where: any = { classId, isActive: true };
+  const where: Prisma.ScheduleWhereInput = { classId, isActive: true };
   if (academicYearId) where.academicYearId = academicYearId;
 
   return prisma.schedule.findMany({
@@ -368,7 +369,7 @@ export async function getClassSchedule(classId: string, academicYearId?: string)
 }
 
 export async function getTeacherSchedule(teacherId: string, academicYearId?: string) {
-  const where: any = { teacherId, isActive: true };
+  const where: Prisma.ScheduleWhereInput = { teacherId, isActive: true };
   if (academicYearId) where.academicYearId = academicYearId;
 
   return prisma.schedule.findMany({

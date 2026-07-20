@@ -31,6 +31,7 @@ import { useSubjects } from "@/hooks/use-curriculum";
 import { useClasses } from "@/hooks/use-classes";
 import { useTeachers } from "@/hooks/use-teachers";
 import { useAuthStore } from "@/stores/auth";
+import { getEffectiveRole } from "@/lib/rbac";
 
 const examSchema = z.object({
   title: z.string().min(3, "Judul minimal 3 karakter"),
@@ -52,7 +53,7 @@ const examSchema = z.object({
 export default function NewExamPage() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const isAdmin = user?.role === "SUPER_ADMIN" || user?.role === "UNIT_ADMIN";
+  const isAdmin = getEffectiveRole(user) === "SUPER_ADMIN" || getEffectiveRole(user) === "UNIT_ADMIN";
 
   const createExam = useCreateExam();
   const { data: banksRes } = useQuestionBanks();

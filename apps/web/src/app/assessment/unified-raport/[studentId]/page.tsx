@@ -107,12 +107,16 @@ export default function UnifiedRaportPage({ params: paramsPromise }: { params: P
               </TableRow>
             </TableHeader>
             <TableBody>
-              {raport.academic.intrakurikuler.map((subject: any, idx: number) => (
+              {/* The API groups subjects (kelompokUmum + kelompokPesantren) */}
+              {[
+                ...(raport.academic.intrakurikuler?.kelompokUmum ?? []),
+                ...(raport.academic.intrakurikuler?.kelompokPesantren ?? []),
+              ].map((subject: any, idx: number) => (
                 <TableRow key={idx}>
                   <TableCell>{idx + 1}</TableCell>
                   <TableCell className="font-medium">{subject.subjectName}</TableCell>
-                  <TableCell className="text-center font-bold">{subject.finalScore}</TableCell>
-                  <TableCell className="text-xs text-muted-foreground">{subject.competencyDescription}</TableCell>
+                  <TableCell className="text-center font-bold">{subject.nilaiAkhir}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground">{subject.deskripsi}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -189,9 +193,9 @@ export default function UnifiedRaportPage({ params: paramsPromise }: { params: P
           </CardHeader>
           <CardContent>
              <div className="space-y-2">
-                <div className="flex justify-between text-sm"><span>Sakit</span><span>{raport.academic.attendance.sick} hari</span></div>
-                <div className="flex justify-between text-sm"><span>Izin</span><span>{raport.academic.attendance.excused} hari</span></div>
-                <div className="flex justify-between text-sm"><span>Tanpa Keterangan</span><span>{raport.academic.attendance.absent} hari</span></div>
+                <div className="flex justify-between text-sm"><span>Sakit</span><span>{raport.academic.attendance?.sakit ?? 0} hari</span></div>
+                <div className="flex justify-between text-sm"><span>Izin</span><span>{raport.academic.attendance?.izin ?? 0} hari</span></div>
+                <div className="flex justify-between text-sm"><span>Tanpa Keterangan</span><span>{raport.academic.attendance?.alpa ?? 0} hari</span></div>
              </div>
           </CardContent>
         </Card>

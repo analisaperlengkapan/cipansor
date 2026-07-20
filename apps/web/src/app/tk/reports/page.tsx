@@ -50,6 +50,7 @@ import { id as idLocale } from "date-fns/locale";
 import { toast } from "sonner";
 import { useAuthStore } from "@/stores/auth";
 import { cn } from "@/lib/utils";
+import { getEffectiveRole } from "@/lib/rbac";
 
 const STATUS_LABELS: Record<ReportStatus, string> = {
   DRAFT: "Draft",
@@ -91,7 +92,7 @@ export default function TKReportListPage() {
     semester: (semesterFilter as "GANJIL" | "GENAP") || undefined,
     classId: classFilter || undefined,
     academicYearId: academicYearFilter || undefined,
-    unitId: user?.role !== "SUPER_ADMIN" ? user?.unitId : undefined,
+    unitId: getEffectiveRole(user) !== "SUPER_ADMIN" ? user?.unitId : undefined,
   });
 
   const deleteMutation = useDeleteTKReport();

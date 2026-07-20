@@ -9,12 +9,12 @@ export class DutyRosterController {
   async listTypes(req: Request, res: Response, next: NextFunction) {
     try {
       const query = {
-        unitId: (req.query as any).unitId as string | undefined,
-        category: (req.query as any).category as any,
+        unitId: req.query.unitId as string | undefined,
+        category: req.query.category as any,
         isActive:
-          (req.query as any).isActive === 'true' ? true : (req.query as any).isActive === 'false' ? false : undefined,
-        page: parseInt((req.query as any).page as string) || 1,
-        limit: parseInt((req.query as any).limit as string) || 20,
+          req.query.isActive === 'true' ? true : req.query.isActive === 'false' ? false : undefined,
+        page: parseInt(req.query.page as string) || 1,
+        limit: parseInt(req.query.limit as string) || 20,
       };
       const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
       const result = await dutyRosterService.listTypes(query, user);
@@ -26,7 +26,7 @@ export class DutyRosterController {
 
   async getTypeById(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = (req.params as any);
+      const { id } = req.params;
       const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
       const type = await dutyRosterService.getTypeById(id, user);
       res.json({ data: type });
@@ -47,7 +47,7 @@ export class DutyRosterController {
 
   async updateType(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = (req.params as any);
+      const { id } = req.params;
       const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
       const type = await dutyRosterService.updateType(id, req.body, user);
       res.json({ data: type });
@@ -58,7 +58,7 @@ export class DutyRosterController {
 
   async deleteType(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = (req.params as any);
+      const { id } = req.params;
       const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
       await dutyRosterService.deleteType(id, user);
       res.json({ success: true, message: 'Duty type deleted successfully' });
@@ -74,15 +74,15 @@ export class DutyRosterController {
   async listRosters(req: Request, res: Response, next: NextFunction) {
     try {
       const query = {
-        unitId: (req.query as any).unitId as string | undefined,
-        dutyTypeId: (req.query as any).dutyTypeId as string | undefined,
-        studentId: (req.query as any).studentId as string | undefined,
-        date: (req.query as any).date as string | undefined,
-        startDate: (req.query as any).startDate as string | undefined,
-        endDate: (req.query as any).endDate as string | undefined,
-        status: (req.query as any).status as any,
-        page: parseInt((req.query as any).page as string) || 1,
-        limit: parseInt((req.query as any).limit as string) || 50,
+        unitId: req.query.unitId as string | undefined,
+        dutyTypeId: req.query.dutyTypeId as string | undefined,
+        studentId: req.query.studentId as string | undefined,
+        date: req.query.date as string | undefined,
+        startDate: req.query.startDate as string | undefined,
+        endDate: req.query.endDate as string | undefined,
+        status: req.query.status as any,
+        page: parseInt(req.query.page as string) || 1,
+        limit: parseInt(req.query.limit as string) || 50,
       };
       const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
       const result = await dutyRosterService.listRosters(query, user);
@@ -94,7 +94,7 @@ export class DutyRosterController {
 
   async getRosterById(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = (req.params as any);
+      const { id } = req.params;
       const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
       const roster = await dutyRosterService.getRosterById(id, user);
       res.json({ data: roster });
@@ -126,7 +126,7 @@ export class DutyRosterController {
 
   async updateRoster(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = (req.params as any);
+      const { id } = req.params;
       const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
       const roster = await dutyRosterService.updateRoster(id, req.body, user);
       res.json({ data: roster });
@@ -137,7 +137,7 @@ export class DutyRosterController {
 
   async deleteRoster(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = (req.params as any);
+      const { id } = req.params;
       const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
       await dutyRosterService.deleteRoster(id, user);
       res.json({ success: true, message: 'Roster deleted successfully' });
@@ -152,7 +152,7 @@ export class DutyRosterController {
 
   async completeDuty(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = (req.params as any);
+      const { id } = req.params;
       const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
       const roster = await dutyRosterService.completeDuty(id, user);
       res.json({ data: roster });
@@ -163,7 +163,7 @@ export class DutyRosterController {
 
   async markAbsent(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = (req.params as any);
+      const { id } = req.params;
       const { notes } = req.body;
       const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
       const roster = await dutyRosterService.markAbsent(id, notes || '', user);
@@ -175,7 +175,7 @@ export class DutyRosterController {
 
   async assignSubstitute(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = (req.params as any);
+      const { id } = req.params;
       const { substituteId } = req.body;
       const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
       const roster = await dutyRosterService.assignSubstitute(id, substituteId, user);
@@ -187,7 +187,7 @@ export class DutyRosterController {
 
   async verifyDuty(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = (req.params as any);
+      const { id } = req.params;
       const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
       const roster = await dutyRosterService.verifyDuty(id, user);
       res.json({ data: roster });
@@ -202,7 +202,7 @@ export class DutyRosterController {
 
   async getTodayDuties(req: Request, res: Response, next: NextFunction) {
     try {
-      const { unitId } = (req.params as any);
+      const { unitId } = req.params;
       const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
       const rosters = await dutyRosterService.getTodayDuties(unitId, user);
       res.json({ data: rosters });
@@ -213,9 +213,9 @@ export class DutyRosterController {
 
   async getStudentHistory(req: Request, res: Response, next: NextFunction) {
     try {
-      const { studentId } = (req.params as any);
+      const { studentId } = req.params;
       const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
-      const limit = parseInt((req.query as any).limit as string) || 30;
+      const limit = parseInt(req.query.limit as string) || 30;
       const history = await dutyRosterService.getStudentHistory(studentId, user, limit);
       res.json({ data: history });
     } catch (error) {
@@ -225,9 +225,9 @@ export class DutyRosterController {
 
   async getStatistics(req: Request, res: Response, next: NextFunction) {
     try {
-      const { unitId } = (req.params as any);
-      const startDate = (req.query as any).startDate as string | undefined;
-      const endDate = (req.query as any).endDate as string | undefined;
+      const { unitId } = req.params;
+      const startDate = req.query.startDate as string | undefined;
+      const endDate = req.query.endDate as string | undefined;
       const stats = await dutyRosterService.getStatistics(unitId, startDate, endDate);
       res.json({ data: stats });
     } catch (error) {

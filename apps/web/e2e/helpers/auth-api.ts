@@ -1,3 +1,5 @@
+import * as fs from "fs";
+import * as path from "path";
 import type { Page } from "@playwright/test";
 import { generate as generateTotp } from "otplib";
 
@@ -63,13 +65,58 @@ async function postJson(path: string, body: unknown, bearer?: string) {
 // 2FA flow in every beforeEach — that quickly trips the 2FA rate limiter.
 const sessionCache = new Map<string, AuthSession>();
 
+/**
+ * Cross-worker session cache written by global-setup (one real login + 2FA per
+ * role per run). Without it every parallel worker re-authenticates the admin
+ * roles and the strict 2FA rate limiter (10/15min) 429s most of the suite.
+ */
+export const SESSIONS_FILE = path.join(__dirname, "../../.auth/sessions.json");
+
+function readSessionsFile(): Record<string, AuthSession> {
+  try {
+    return JSON.parse(fs.readFileSync(SESSIONS_FILE, "utf8"));
+  } catch {
+    return {};
+  }
+}
+
+// Failed logins are cached too: without this, every subsequent test in the
+// worker re-attempts the 2FA flow, hammering (and re-heating) the rate
+// limiter, which turns one warm-limiter setup failure into a full-suite
+// cascade of 429s.
+const failureCache = new Map<string, Error>();
+
 /** Authenticate against the API, transparently completing 2FA when required. */
 export async function apiLogin(user: SeedUser): Promise<AuthSession> {
-  const cached = sessionCache.get(user.email);
-  if (cached) return cached;
-  const session = await apiLoginUncached(user);
-  sessionCache.set(user.email, session);
-  return session;
+  const fileSessions = readSessionsFile();
+  const cached = sessionCache.get(user.email) ?? fileSessions[user.email];
+  if (cached) {
+    sessionCache.set(user.email, cached);
+    return cached;
+  }
+  const priorFailure = failureCache.get(user.email);
+  if (priorFailure) throw priorFailure;
+
+  // If global-setup ran (sessions file exists) but couldn't authenticate this
+  // seed role, don't have every worker retry the 2FA flow — fail fast.
+  const isSeedRole = Object.values(SEED_USERS).some((u) => u.email === user.email);
+  if (isSeedRole && fs.existsSync(SESSIONS_FILE)) {
+    const err = new Error(
+      `global-setup failed to pre-authenticate ${user.email} (see setup logs); ` +
+        "not retrying per-test to avoid hammering the 2FA rate limiter.",
+    );
+    failureCache.set(user.email, err);
+    throw err;
+  }
+
+  try {
+    const session = await apiLoginUncached(user);
+    sessionCache.set(user.email, session);
+    return session;
+  } catch (error) {
+    failureCache.set(user.email, error as Error);
+    throw error;
+  }
 }
 
 async function apiLoginUncached(user: SeedUser): Promise<AuthSession> {
@@ -138,6 +185,35 @@ export async function injectSession(page: Page, session: AuthSession) {
     },
     [session.accessToken, session.refreshToken, authStorage] as const,
   );
+}
+
+/**
+ * Authenticated JSON request against the real API. For spec data setup /
+ * lookup (e.g. find a seeded record's id, create a fixture row, clean up).
+ */
+export async function apiRequest<T = unknown>(
+  session: AuthSession,
+  method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE",
+  apiPath: string,
+  body?: unknown,
+): Promise<T> {
+  const res = await fetch(`${API_URL}${apiPath}`, {
+    method,
+    headers: {
+      "content-type": "application/json",
+      authorization: `Bearer ${session.accessToken}`,
+    },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  const text = await res.text();
+  if (!res.ok) {
+    throw new Error(`${method} ${apiPath} → ${res.status}: ${text.slice(0, 200)}`);
+  }
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    throw new Error(`${method} ${apiPath} → non-JSON response: ${text.slice(0, 120)}`);
+  }
 }
 
 /** Convenience: log in as a seed role and inject the session into the page. */

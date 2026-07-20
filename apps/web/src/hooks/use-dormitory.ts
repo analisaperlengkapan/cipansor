@@ -283,15 +283,58 @@ export function useDeleteRoom() {
   });
 }
 
+// Shape returned by GET /dormitories/assignments/list — assignments carry
+// assignedAt/endedAt and the student's name nested under `user`.
+interface ApiRoomAssignment {
+  id: string;
+  roomId: string;
+  room?: Room;
+  studentId: string;
+  student?: {
+    id: string;
+    nis: string;
+    gender: string;
+    user?: { id: string; name: string; email?: string };
+  };
+  assignedAt: string;
+  endedAt?: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+function toRoomAssignment(a: ApiRoomAssignment): RoomAssignment {
+  return {
+    id: a.id,
+    roomId: a.roomId,
+    room: a.room,
+    studentId: a.studentId,
+    student: a.student
+      ? {
+          id: a.student.id,
+          name: a.student.user?.name ?? "",
+          nis: a.student.nis,
+          gender: a.student.gender,
+        }
+      : undefined,
+    startDate: a.assignedAt,
+    endDate: a.endedAt ?? undefined,
+    isActive: a.isActive,
+    createdAt: a.createdAt,
+    updatedAt: a.updatedAt,
+  };
+}
+
 // Room Assignment hooks
 export function useRoomAssignments(roomId: string) {
   return useQuery({
     queryKey: ["rooms", roomId, "assignments"],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<RoomAssignment[]>>(
-        `/rooms/${roomId}/assignments`,
+      const response = await api.get<ApiResponse<ApiRoomAssignment[]>>(
+        "/dormitories/assignments/list",
+        { params: { roomId, isActive: true, limit: 100 } },
       );
-      return response.data.data;
+      return (response.data.data ?? []).map(toRoomAssignment);
     },
     enabled: !!roomId,
   });
@@ -301,10 +344,12 @@ export function useStudentRoomAssignment(studentId: string) {
   return useQuery({
     queryKey: ["students", studentId, "room-assignment"],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<RoomAssignment | null>>(
-        `/students/${studentId}/room-assignment`,
+      const response = await api.get<ApiResponse<ApiRoomAssignment[]>>(
+        "/dormitories/assignments/list",
+        { params: { studentId, isActive: true, limit: 1 } },
       );
-      return response.data.data;
+      const assignment = response.data.data?.[0];
+      return assignment ? toRoomAssignment(assignment) : null;
     },
     enabled: !!studentId,
   });
@@ -322,11 +367,11 @@ export function useAssignRoom() {
 
   return useMutation({
     mutationFn: async (data: AssignRoomData) => {
-      const response = await api.post<ApiResponse<RoomAssignment>>(
-        "/room-assignments",
-        data,
+      const response = await api.post<ApiResponse<ApiRoomAssignment>>(
+        "/dormitories/assignments",
+        { studentId: data.studentId, roomId: data.roomId },
       );
-      return response.data.data;
+      return toRoomAssignment(response.data.data);
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
@@ -346,7 +391,7 @@ export function useUnassignRoom() {
 
   return useMutation({
     mutationFn: async (assignmentId: string) => {
-      await api.delete(`/room-assignments/${assignmentId}`);
+      await api.delete(`/dormitories/assignments/${assignmentId}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["rooms"] });

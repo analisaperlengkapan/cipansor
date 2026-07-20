@@ -2,6 +2,10 @@ import { prisma } from '@/lib/prisma';
 import { Prisma, QuestionType } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/client';
 import { Errors } from '@/middleware/error';
+import type { JwtPayload } from '@/lib/jwt';
+
+/** Authenticated caller shape used for unit-scoping checks. */
+type AuthUser = Pick<JwtPayload, 'id' | 'role'> & { unitId?: string | null };
 
 // Types for inputs (can be moved to shared types later)
 interface CreateQuestionBankInput {
@@ -99,7 +103,7 @@ export class CBTService {
     });
   }
 
-  static async getQuestionBankById(id: string, user: { id: string; role: string; unitId?: string }) {
+  static async getQuestionBankById(id: string, user: AuthUser) {
     const bank = await prisma.questionBank.findUnique({
       where: { id },
       include: {
@@ -126,7 +130,7 @@ export class CBTService {
     return bank;
   }
 
-  static async deleteQuestionBank(id: string, user: { id: string; role: string; unitId?: string }) {
+  static async deleteQuestionBank(id: string, user: AuthUser) {
     const bank = await prisma.questionBank.findUnique({
       where: { id },
       include: { teacher: { select: { userId: true } } },
@@ -154,7 +158,7 @@ export class CBTService {
 
   // --- Questions ---
 
-  static async addQuestion(data: CreateQuestionInput, user: { id: string; role: string; unitId?: string }) {
+  static async addQuestion(data: CreateQuestionInput, user: AuthUser) {
     const bank = await prisma.questionBank.findUnique({
       where: { id: data.bankId },
       include: { teacher: { select: { userId: true } } },
@@ -190,7 +194,7 @@ export class CBTService {
   static async updateQuestion(
     id: string,
     data: UpdateQuestionInput,
-    user: { id: string; role: string; unitId?: string }
+    user: AuthUser
   ) {
     const question = await prisma.question.findUnique({
       where: { id },
@@ -216,7 +220,7 @@ export class CBTService {
     });
   }
 
-  static async deleteQuestion(id: string, user: { id: string; role: string; unitId?: string }) {
+  static async deleteQuestion(id: string, user: AuthUser) {
     const question = await prisma.question.findUnique({
       where: { id },
       include: { bank: { include: { teacher: { select: { userId: true } } } } },
@@ -305,7 +309,7 @@ export class CBTService {
     };
   }
 
-  static async createExam(data: CreateExamInput, user: { id: string; role: string; unitId?: string }) {
+  static async createExam(data: CreateExamInput, user: AuthUser) {
     // Enforce unit scope for non-SUPER_ADMIN users
     if (user.role === 'UNIT_ADMIN' && data.unitId !== user.unitId) {
       throw Errors.forbidden('You do not have permission to create exams outside your unit');
@@ -371,7 +375,38 @@ export class CBTService {
     });
   }
 
-  static async getExamMonitoring(examId: string, user: { id: string; role: string; unitId?: string }) {
+  static async deleteExam(examId: string, user: AuthUser) {
+    const exam = await prisma.exam.findUnique({
+      where: { id: examId },
+      include: {
+        _count: { select: { attempts: true } },
+        teacher: { select: { userId: true } },
+      },
+    });
+    if (!exam) throw Errors.notFound('Exam');
+
+    if (user.role === 'UNIT_ADMIN' && exam.unitId !== user.unitId) {
+      throw Errors.forbidden('You do not have permission to delete exams outside your unit');
+    }
+    if (
+      user.role !== 'SUPER_ADMIN' &&
+      user.role !== 'UNIT_ADMIN' &&
+      exam.teacher?.userId !== user.id
+    ) {
+      throw Errors.forbidden('You do not have permission to delete this exam');
+    }
+
+    // Refuse to delete once students have started/submitted attempts — their
+    // results must not silently disappear.
+    if (exam._count.attempts > 0) {
+      throw Errors.badRequest('Cannot delete an exam that already has student attempts');
+    }
+
+    await prisma.exam.delete({ where: { id: examId } });
+    return { id: examId };
+  }
+
+  static async getExamMonitoring(examId: string, user: AuthUser) {
     const exam = await prisma.exam.findUnique({
       where: { id: examId },
       include: {
@@ -407,7 +442,7 @@ export class CBTService {
 
   // --- Teacher Grading ---
 
-  static async getAttemptForGrading(attemptId: string, user: { id: string; role: string; unitId?: string }) {
+  static async getAttemptForGrading(attemptId: string, user: AuthUser) {
     const attempt = await prisma.examAttempt.findUnique({
       where: { id: attemptId },
       include: {
@@ -445,7 +480,7 @@ export class CBTService {
     attemptId: string,
     questionId: string,
     grading: { score: number; isCorrect: boolean },
-    user: { id: string; role: string; unitId?: string }
+    user: AuthUser
   ) {
     // Fetch attempt outside the transaction for authorization checks.
     // The status check is repeated inside the transaction to close the TOCTOU gap.

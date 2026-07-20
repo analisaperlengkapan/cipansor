@@ -19,7 +19,7 @@ import type { ListAttendanceQuery, AttendanceSummaryQuery } from './attendance.s
  */
 export const list = asyncHandler(
   async (req: Request, res: Response<SharedPaginatedResponse<Attendance>>) => {
-    const query = (res.locals.validatedQuery || (req.query as any)) as ListAttendanceQuery;
+    const query = (res.locals.validatedQuery || req.query) as ListAttendanceQuery;
     const result = await attendanceService.findAll(query, {
       role: req.user!.role,
       unitId: req.user!.unitId,
@@ -41,7 +41,7 @@ export const list = asyncHandler(
  */
 export const getById = asyncHandler(
   async (req: Request, res: Response<ApiResponse<Attendance>>) => {
-    const { id } = (req.params as any);
+    const { id } = req.params;
     const attendance = await attendanceService.findById(id);
 
     res.json({
@@ -86,7 +86,7 @@ export const bulkCreate = asyncHandler(
  * PATCH /api/attendance/:id
  */
 export const update = asyncHandler(async (req: Request, res: Response<ApiResponse<Attendance>>) => {
-  const { id } = (req.params as any);
+  const { id } = req.params;
   const input: UpdateAttendanceInput = req.body;
   const attendance = await attendanceService.update(id, input, {
     role: req.user!.role,
@@ -105,7 +105,7 @@ export const update = asyncHandler(async (req: Request, res: Response<ApiRespons
  */
 export const remove = asyncHandler(
   async (req: Request, res: Response<ApiResponse<{ message: string }>>) => {
-    const { id } = (req.params as any);
+    const { id } = req.params;
     const result = await attendanceService.delete(id, {
       role: req.user!.role,
       unitId: req.user!.unitId,
@@ -124,7 +124,7 @@ export const remove = asyncHandler(
  */
 export const getSummary = asyncHandler(
   async (req: Request, res: Response<ApiResponse<AttendanceSummary>>) => {
-    const query = (res.locals.validatedQuery || (req.query as any)) as AttendanceSummaryQuery;
+    const query = (res.locals.validatedQuery || req.query) as AttendanceSummaryQuery;
     const summary = await attendanceService.getSummary(query, {
       role: req.user!.role,
       unitId: req.user!.unitId,
@@ -143,9 +143,9 @@ export const getSummary = asyncHandler(
  */
 export const getCalendar = asyncHandler(
   async (req: Request, res: Response<ApiResponse<AttendanceCalendarResponse>>) => {
-    const { classId } = (req.params as any);
-    const year = parseInt((req.query as any).year as string) || new Date().getFullYear();
-    const month = parseInt((req.query as any).month as string);
+    const { classId } = req.params;
+    const year = parseInt(req.query.year as string) || new Date().getFullYear();
+    const month = parseInt(req.query.month as string);
 
     if (isNaN(month) || month < 0 || month > 11) {
       return res.status(400).json({

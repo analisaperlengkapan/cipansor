@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { getEffectiveRole } from "@/lib/rbac";
 import { safeFormat } from "@/lib/date";
 import {
   useLeaveRequests,
@@ -40,7 +41,7 @@ export default function LeavesPage() {
   // Fetch My Leaves
   // Since backend filters by user automatically if not admin, we can reuse query.
   // But for Admin, they might want to see "All".
-  const isAdmin = user?.role === "SUPER_ADMIN" || user?.role === "UNIT_ADMIN";
+  const isAdmin = getEffectiveRole(user) === "SUPER_ADMIN" || getEffectiveRole(user) === "UNIT_ADMIN";
 
   // For "My Leaves", if admin, we might need to pass their own ID?
   // But admins usually don't apply for leave in this system or they do via same UI.

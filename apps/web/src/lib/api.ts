@@ -251,7 +251,7 @@ export const tahfidzApi = {
 
   getStudentSummary: (studentId: string) =>
     api.get<ApiResponse<TahfidzStudentSummary>>(
-      `/tahfidz/students/${studentId}/summary`,
+      `/tahfidz/summary/${studentId}`,
     ),
 };
 

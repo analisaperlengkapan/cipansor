@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { qualityService } from './quality.service';
 import { asyncHandler, ApiError, ErrorCode } from '@/middleware/error';
 import httpStatus from 'http-status';
+import { requireUser } from '@/middleware/auth';
 
 export const qualityController = {
   getAllStandards: asyncHandler(async (req: Request, res: Response) => {
@@ -13,8 +14,8 @@ export const qualityController = {
   }),
 
   getStandardDetails: asyncHandler(async (req: Request, res: Response) => {
-    const { id } = (req.params as any);
-    const { unitId, academicYearId } = (req.query as any);
+    const { id } = req.params;
+    const { unitId, academicYearId } = req.query;
 
     if (!unitId || !academicYearId) {
       throw new ApiError(ErrorCode.BAD_REQUEST, 'unitId and academicYearId are required');
@@ -37,7 +38,7 @@ export const qualityController = {
   }),
 
   createEvidence: asyncHandler(async (req: Request, res: Response) => {
-    const user = (req as any).user;
+    const user = requireUser(req);
     // Use user.sub as the userId (as defined in JwtPayload)
     const userId = user.sub || user.id;
 
@@ -49,7 +50,7 @@ export const qualityController = {
   }),
 
   deleteEvidence: asyncHandler(async (req: Request, res: Response) => {
-    await qualityService.deleteEvidence((req.params as any).id);
+    await qualityService.deleteEvidence(req.params.id);
     res.json({
       success: true,
       message: 'Evidence deleted successfully',
@@ -57,7 +58,7 @@ export const qualityController = {
   }),
 
   getDashboardSummary: asyncHandler(async (req: Request, res: Response) => {
-    const { unitId, academicYearId } = (req.query as any);
+    const { unitId, academicYearId } = req.query;
 
     if (!unitId || !academicYearId) {
       throw new ApiError(ErrorCode.BAD_REQUEST, 'unitId and academicYearId are required');
@@ -77,9 +78,9 @@ export const qualityController = {
   // --- Audit Management ---
 
   createAudit: asyncHandler(async (req: Request, res: Response) => {
-    const user = (req as any).user;
+    const user = requireUser(req);
 
-    const audit = await qualityService.createAudit(req.body, user.role, user.unitId);
+    const audit = await qualityService.createAudit(req.body, user.role, user.unitId ?? undefined);
 
     res.status(httpStatus.CREATED).json({
       success: true,
@@ -88,8 +89,8 @@ export const qualityController = {
   }),
 
   getAudits: asyncHandler(async (req: Request, res: Response) => {
-    const { unitId, academicYearId } = (req.query as any);
-    const user = (req as any).user;
+    const { unitId, academicYearId } = req.query;
+    const user = requireUser(req);
 
     if (!unitId || !academicYearId) {
       throw new ApiError(ErrorCode.BAD_REQUEST, 'unitId and academicYearId are required');
@@ -99,7 +100,7 @@ export const qualityController = {
       unitId as string,
       academicYearId as string,
       user.role,
-      user.unitId
+      user.unitId ?? undefined
     );
 
     res.json({
@@ -109,10 +110,10 @@ export const qualityController = {
   }),
 
   getAuditDetails: asyncHandler(async (req: Request, res: Response) => {
-    const { id } = (req.params as any);
-    const user = (req as any).user;
+    const { id } = req.params;
+    const user = requireUser(req);
 
-    const audit = await qualityService.getAuditDetails(id, user.role, user.unitId);
+    const audit = await qualityService.getAuditDetails(id, user.role, user.unitId ?? undefined);
 
     if (!audit) {
       throw new ApiError(ErrorCode.NOT_FOUND, 'Audit not found');
@@ -125,8 +126,8 @@ export const qualityController = {
   }),
 
   updateAuditItem: asyncHandler(async (req: Request, res: Response) => {
-    const { itemId } = (req.params as any);
-    const user = (req as any).user;
+    const { itemId } = req.params;
+    const user = requireUser(req);
     const { score, notes } = req.body;
 
     // Use user.sub as the userId (as defined in JwtPayload)
@@ -137,7 +138,7 @@ export const qualityController = {
       { score, notes },
       userId,
       user.role,
-      user.unitId
+      user.unitId ?? undefined
     );
 
     res.json({

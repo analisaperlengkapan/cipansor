@@ -18,7 +18,7 @@ export const employmentHistoryController = {
   async create(req: Request, res: Response, next: NextFunction) {
     try {
       const data = createHistorySchema.parse(req.body);
-      const result = await employmentHistoryService.create(data as Parameters<typeof employmentHistoryService.create>[0]);
+      const result = await employmentHistoryService.create(data);
       res.status(201).json({ success: true, data: result });
     } catch (error) {
       next(error);
@@ -27,7 +27,7 @@ export const employmentHistoryController = {
 
   async findAll(req: Request, res: Response, next: NextFunction) {
     try {
-      const { userId } = (req.params as any);
+      const { userId } = req.params;
       const result = await employmentHistoryService.findAll(userId);
       res.json({ success: true, data: result });
     } catch (error) {

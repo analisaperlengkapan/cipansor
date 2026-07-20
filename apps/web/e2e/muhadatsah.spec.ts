@@ -1,5 +1,5 @@
 import { test, expect } from "./fixtures/auth.fixture";
-import { LoginPage } from "./page-objects";
+import { loginAs } from "./helpers/auth-api";
 
 /**
  * Muhadatsah Module E2E Tests
@@ -8,9 +8,7 @@ import { LoginPage } from "./page-objects";
 
 test.describe("Muhadatsah - Navigation", () => {
   test("should navigate to muhadatsah page", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+    await loginAs(page, "superAdmin");
 
     await page.waitForTimeout(2000);
     await page.goto("/muhadatsah");
@@ -20,9 +18,7 @@ test.describe("Muhadatsah - Navigation", () => {
   });
 
   test("should display muhadatsah list or empty state", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+    await loginAs(page, "superAdmin");
 
     await page.waitForTimeout(2000);
     await page.goto("/muhadatsah");
@@ -53,9 +49,7 @@ test.describe("Muhadatsah - Navigation", () => {
 
 test.describe("Muhadatsah - Create", () => {
   test("should navigate to create muhadatsah page", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+    await loginAs(page, "superAdmin");
 
     await page.waitForTimeout(2000);
     await page.goto("/muhadatsah/new");
@@ -65,9 +59,7 @@ test.describe("Muhadatsah - Create", () => {
   });
 
   test("should display create form elements", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+    await loginAs(page, "superAdmin");
 
     await page.waitForTimeout(2000);
     await page.goto("/muhadatsah/new");
@@ -84,9 +76,7 @@ test.describe("Muhadatsah - Create", () => {
 
 test.describe("Muhadatsah - View & Evaluate", () => {
   test("should allow navigation from list to detail", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+    await loginAs(page, "superAdmin");
 
     await page.waitForTimeout(2000);
     await page.goto("/muhadatsah");
@@ -110,9 +100,7 @@ test.describe("Muhadatsah - View & Evaluate", () => {
 
 test.describe("Muhadatsah - Performance", () => {
   test("should load muhadatsah page within timeout", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+    await loginAs(page, "superAdmin");
 
     await page.waitForTimeout(2000);
 

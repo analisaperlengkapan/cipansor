@@ -1,12 +1,9 @@
 import { test, expect } from "./fixtures/auth.fixture";
-import { LoginPage } from "./page-objects";
+import { loginAs } from "./helpers/auth-api";
 
 test.describe("GRC Integration Flow", () => {
   test.beforeEach(async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
-    await page.waitForTimeout(2000);
+    await loginAs(page, "superAdmin");
   });
 
   test("should load the Executive GRC Dashboard", async ({ page }) => {

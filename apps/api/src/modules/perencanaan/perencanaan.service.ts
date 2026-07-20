@@ -2,7 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { Prisma, PlanStatus } from '@prisma/client';
 import { Errors } from '@/middleware/error';
 
-type TransactionClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
+type TransactionClient = Prisma.TransactionClient;
 
 export class PerencanaanService {
   // ==================== STRATEGIC PLANS ====================
@@ -517,11 +517,11 @@ export class PerencanaanService {
     objectiveId: string;
     title: string;
     description?: string;
-    picId?: string;
+    picId?: string | null;
     startDate?: string;
     endDate?: string;
     budget?: number;
-    budgetId?: string;
+    budgetId?: string | null;
     priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
   }) {
     return prisma.planActivity.create({

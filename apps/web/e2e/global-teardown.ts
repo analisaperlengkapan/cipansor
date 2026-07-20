@@ -11,15 +11,11 @@ import path from "path";
 async function globalTeardown(config: FullConfig) {
   console.log("🧹 Starting E2E Test Global Teardown...");
 
-  // Clean up auth state files (optional - comment out if you want to keep them)
-  const authDir = path.join(__dirname, "../.auth");
-  if (fs.existsSync(authDir)) {
-    const files = fs.readdirSync(authDir);
-    for (const file of files) {
-      fs.unlinkSync(path.join(authDir, file));
-    }
-    console.log("✅ Cleaned up authentication state files");
-  }
+  // NOTE: .auth/ session/storageState files are deliberately KEPT (dir is
+  // gitignored). global-setup revalidates them against /auth/me on the next
+  // run and reuses tokens that still work — deleting them here forced a fresh
+  // admin 2FA login on every run/iteration, which trips the strict 2FA rate
+  // limiter (10/15min) during local iterative runs.
 
   // Clean up old screenshots (keep only last 100)
   const screenshotsDir = path.join(__dirname, "../test-results/screenshots");

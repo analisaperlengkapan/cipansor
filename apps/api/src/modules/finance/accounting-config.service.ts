@@ -1,6 +1,7 @@
 import { prisma } from '../../lib/prisma';
+import { Prisma } from '@prisma/client';
 
-type TransactionClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
+type TransactionClient = Prisma.TransactionClient;
 
 export const ACCOUNT_MAPPING_KEYS = {
   CASH: 'ACCOUNT_MAPPING_CASH',

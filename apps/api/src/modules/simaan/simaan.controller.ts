@@ -8,7 +8,7 @@ import { ApiResponse } from '@/utils/response';
 
 export const listSimaan = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const query = (req.query as any) as any;
+    const query = req.query as any;
     const result = await simaanService.findAll(query);
     res.json(
       ApiResponse.paginated(
@@ -25,7 +25,7 @@ export const listSimaan = async (req: Request, res: Response, next: NextFunction
 
 export const getSimaanById = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { id } = (req.params as any);
+    const { id } = req.params;
     const record = await simaanService.findById(id);
     res.json(ApiResponse.success(record));
   } catch (error) {
@@ -44,7 +44,7 @@ export const createSimaan = async (req: Request, res: Response, next: NextFuncti
 
 export const updateSimaan = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { id } = (req.params as any);
+    const { id } = req.params;
     const record = await simaanService.update(id, req.body);
     res.json(ApiResponse.success(record, 'Simaan exam updated successfully'));
   } catch (error) {
@@ -54,7 +54,7 @@ export const updateSimaan = async (req: Request, res: Response, next: NextFuncti
 
 export const deleteSimaan = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { id } = (req.params as any);
+    const { id } = req.params;
     const result = await simaanService.delete(id);
     res.json(ApiResponse.success(result));
   } catch (error) {
@@ -73,7 +73,7 @@ export const addExaminer = async (req: Request, res: Response, next: NextFunctio
 
 export const updateExaminer = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { id } = (req.params as any);
+    const { id } = req.params;
     const examiner = await simaanService.updateExaminer(id, req.body);
     res.json(ApiResponse.success(examiner, 'Examiner updated successfully'));
   } catch (error) {
@@ -83,7 +83,7 @@ export const updateExaminer = async (req: Request, res: Response, next: NextFunc
 
 export const deleteExaminer = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { id } = (req.params as any);
+    const { id } = req.params;
     const result = await simaanService.deleteExaminer(id);
     res.json(ApiResponse.success(result));
   } catch (error) {
@@ -102,8 +102,8 @@ export const submitScores = async (req: Request, res: Response, next: NextFuncti
 
 export const getStudentSummary = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { studentId } = (req.params as any);
-    const query = { studentId, ...(req.query as any) } as any;
+    const { studentId } = req.params;
+    const query = { studentId, ...req.query } as any;
     const summary = await simaanService.getStudentSummary(query);
     res.json(ApiResponse.success(summary));
   } catch (error) {
@@ -113,8 +113,8 @@ export const getStudentSummary = async (req: Request, res: Response, next: NextF
 
 export const getHalaqohRecords = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { halaqohId } = (req.params as any);
-    const query = { halaqohId, ...(req.query as any) } as any;
+    const { halaqohId } = req.params;
+    const query = { halaqohId, ...req.query } as any;
     const result = await simaanService.getHalaqohRecords(query);
     res.json(ApiResponse.success(result));
   } catch (error) {
@@ -124,8 +124,8 @@ export const getHalaqohRecords = async (req: Request, res: Response, next: NextF
 
 export const getUpcomingExams = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const halaqohId = (req.query as any).halaqohId as string | undefined;
-    const days = (req.query as any).days ? parseInt((req.query as any).days as string) : 7;
+    const halaqohId = req.query.halaqohId as string | undefined;
+    const days = req.query.days ? parseInt(req.query.days as string) : 7;
     const exams = await simaanService.getUpcomingExams(halaqohId, days);
     res.json(ApiResponse.success(exams));
   } catch (error) {

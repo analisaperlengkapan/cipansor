@@ -1,121 +1,84 @@
-import { test, expect } from '@playwright/test';
-import { setupMockUser, login } from './utils/auth';
+import { test, expect } from "@playwright/test";
+import { apiLogin, apiRequest, injectSession, SEED_USERS } from "./helpers/auth-api";
 
-test.describe('End-to-End: PPDB Registration to Finance & Medical', () => {
-  const registrant = {
-    id: 'mock-reg-1',
-    fullName: 'Budi E2E Test',
-    name: 'Budi E2E Test',
-    registrationNo: 'REG-2026-001',
-    status: 'ACCEPTED', // Crucial status that triggers the Onboarding button
-    unitId: 'unit-sekolah-dasar-1',
-    gender: 'MALE',
-    birthPlace: 'Tasikmalaya',
-    birthDate: '2015-05-01T00:00:00.000Z',
-    parentName: 'Bapak Budi',
-    parentPhone: '08123456789',
-    createdAt: new Date().toISOString(),
-    enrolledAt: null, // Not yet onboarded
-  };
+test.describe("End-to-End: PPDB Registration to Finance & Medical", () => {
+  test("should execute the integrated student onboarding orchestrator", async ({ page }) => {
+    const session = await apiLogin(SEED_USERS.superAdmin);
+    await injectSession(page, session);
 
-  test.beforeEach(async ({ page }) => {
-    // Setup super admin access for e2e testing the admissions module.
-    await setupMockUser(page, {
-      role: 'SUPER_ADMIN',
-      unitId: 'unit-sekolah-dasar-1',
+    // Resolve a real admission period + its unit, then create a throwaway
+    // ACCEPTED registrant to onboard for real.
+    const periods = await apiRequest<{
+      data: Array<{ id: string; unitId: string }>;
+    }>(session, "GET", "/admissions/periods");
+    const period = periods.data?.[0];
+    expect(period, "seed should provide an admission period").toBeTruthy();
+    if (!period) return;
+
+    // Unique parent contact per run — onboarding provisions a parent account,
+    // so reused contact details would collide across runs.
+    const stamp = Date.now();
+    const fullName = `Budi Onboard E2E ${stamp}`;
+    const created = await apiRequest<{ data: { id: string; registrationNo: string } }>(
+      session,
+      "POST",
+      "/admissions/registrants",
+      {
+        admissionPeriodId: period.id,
+        fullName,
+        gender: "MALE",
+        birthPlace: "Tasikmalaya",
+        birthDate: "2015-05-01T00:00:00.000Z",
+        address: "Jl. Pendaftaran E2E No. 1",
+        fatherName: `Bapak Budi ${stamp}`,
+        motherName: `Ibu Budi ${stamp}`,
+        parentName: `Bapak Budi ${stamp}`,
+        parentPhone: `0813${String(stamp).slice(-8)}`,
+        parentEmail: `wali.e2e.${stamp}@example.com`,
+        email: `budi.e2e.${stamp}@example.com`,
+      },
+    );
+    const registrantId = created.data.id;
+    // The integrated onboarding button only shows for ACCEPTED registrants.
+    await apiRequest(session, "PATCH", `/admissions/registrants/${registrantId}/status`, {
+      status: "ACCEPTED",
     });
-    await login(page);
 
-    // ProtectedRoute (inside MainLayout) calls /api/auth/me on mount; mock it so
-    // the page renders instead of redirecting to /login.
-    await page.route('**/api/auth/me', async (route) => {
-      await route.fulfill({
-        json: {
-          success: true,
-          data: {
-            id: 'user-1',
-            name: 'Super Admin E2E',
-            role: 'SUPER_ADMIN',
-            unitId: 'unit-sekolah-dasar-1',
-          },
-        },
+    try {
+      // Admin opens the registration listing, finds the registrant, opens detail.
+      await page.goto("/ppdb/registrations");
+      await expect(page.getByRole("heading", { name: /Pendaftar/i })).toBeVisible();
+
+      await page.getByPlaceholder(/cari|search/i).first().fill(fullName).catch(() => {});
+      await page.getByRole("link", { name: fullName }).first().click();
+
+      await expect(page.getByRole("heading", { name: fullName })).toBeVisible({ timeout: 15000 });
+
+      // The integrated onboarding button is present because status is ACCEPTED.
+      const onboardButton = page.getByRole("button", {
+        name: /Eksekusi Onboarding Terpadu/i,
       });
-    });
+      await expect(onboardButton).toBeVisible();
 
-    // List of registrants (the page uses GET /admissions/registrants?<query>).
-    // The trailing "*" matches the query string but not the "/:id" detail path.
-    await page.route('**/api/admissions/registrants*', async (route) => {
-      await route.fulfill({
-        json: {
-          data: [registrant],
-          meta: { total: 1, page: 1, limit: 50, totalPages: 1 },
-        },
-      });
-    });
+      // Execute the real orchestrator (creates a student/user, enrolls, sets
+      // the registrant to ENROLLED).
+      await onboardButton.click();
 
-    // Detail fetch (GET /admissions/registrants/:id).
-    await page.route('**/api/admissions/registrants/mock-reg-1', async (route) => {
-      await route.fulfill({ json: { success: true, data: registrant } });
-    });
-  });
+      await expect(
+        page.getByText("Siswa berhasil di-Onboard secara terpadu!"),
+      ).toBeVisible({ timeout: 20000 });
 
-  test('should successfully execute E2E Student Onboarding', async ({ page }) => {
-    // 1. Admin navigates to the registration listing.
-    await page.goto('/ppdb/registrations');
-    await expect(page.getByRole('heading', { name: /Pendaftar/i })).toBeVisible();
-
-    // 2. Open the accepted registrant's detail.
-    await page.getByText('Budi E2E Test').click();
-    await expect(page.getByRole('heading', { name: 'Budi E2E Test' })).toBeVisible();
-
-    // The integrated onboarding button shows because status is ACCEPTED.
-    const onboardButton = page.getByRole('button', {
-      name: /Eksekusi Onboarding Terpadu/i,
-    });
-    await expect(onboardButton).toBeVisible();
-
-    // 3. Intercept the orchestrator POST and verify the payload contract.
-    let orchestratorHit = false;
-    await page.route('**/api/admissions/waves/onboard-registrant', async (route) => {
-      orchestratorHit = true;
-      const request = route.request();
-      expect(request.method()).toBe('POST');
-      const payload = request.postDataJSON();
-      expect(payload.registrantId).toBe('mock-reg-1');
-      expect(payload.unitId).toBe('unit-sekolah-dasar-1');
-      await route.fulfill({
-        json: {
-          success: true,
-          message: 'Registrant onboarded successfully (E2E Integration complete)',
-          data: {
-            success: true,
-            studentId: 'stud-new-1',
-            invoiceId: 'inv-spp-1',
-            medicalRecordId: 'med-1',
-          },
-        },
-      });
-    });
-
-    // The status update fired immediately after onboarding.
-    let statusUpdateHit = false;
-    await page.route('**/api/admissions/registrants/*/status', async (route) => {
-      statusUpdateHit = true;
-      const payload = route.request().postDataJSON();
-      expect(payload.status).toBe('ENROLLED');
-      await route.fulfill({
-        json: { success: true, data: { status: 'ENROLLED' } },
-      });
-    });
-
-    // 4. Execute the end-to-end orchestrator action.
-    await onboardButton.click();
-
-    // 5. Verify the success toast and that both endpoints were called.
-    await expect(
-      page.getByText('Siswa berhasil di-Onboard secara terpadu!'),
-    ).toBeVisible();
-    expect(orchestratorHit).toBeTruthy();
-    expect(statusUpdateHit).toBeTruthy();
+      // Verify the workflow persisted: the registrant is now ENROLLED and a
+      // student record exists.
+      const detail = await apiRequest<{
+        data: { status: string; studentId?: string | null };
+      }>(session, "GET", `/admissions/registrants/${registrantId}`);
+      expect(detail.data.status).toBe("ENROLLED");
+      expect(detail.data.studentId, "onboarding should link a created student").toBeTruthy();
+    } finally {
+      // Best-effort cleanup of the throwaway registrant (the created student is
+      // cleared by the next full-suite reseed).
+      await apiRequest(session, "DELETE", `/admissions/registrants/${registrantId}`).catch(() => {});
+    }
   });
 });

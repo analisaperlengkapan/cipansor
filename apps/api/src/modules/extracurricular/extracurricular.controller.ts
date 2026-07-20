@@ -29,7 +29,7 @@ export class ExtracurricularController {
 
   async list(req: Request, res: Response, next: NextFunction) {
     try {
-      const query = listExtracurricularsQuerySchema.parse((req.query as any));
+      const query = listExtracurricularsQuerySchema.parse(req.query);
       const user = req.user as AuthenticatedUser;
       const result = await extracurricularService.findAll(query, user);
       res.json(result);
@@ -40,7 +40,7 @@ export class ExtracurricularController {
 
   async getById(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = (req.params as any);
+      const { id } = req.params;
       const user = req.user as AuthenticatedUser;
       const extracurricular = await extracurricularService.findById(id, user);
       res.json({ data: extracurricular });
@@ -62,7 +62,7 @@ export class ExtracurricularController {
 
   async update(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = (req.params as any);
+      const { id } = req.params;
       const input = updateExtracurricularSchema.parse(req.body);
       const user = req.user as AuthenticatedUser;
       const extracurricular = await extracurricularService.update(id, input, user);
@@ -74,7 +74,7 @@ export class ExtracurricularController {
 
   async delete(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = (req.params as any);
+      const { id } = req.params;
       const user = req.user as AuthenticatedUser;
       await extracurricularService.delete(id, user);
       res.json({ success: true, message: 'Extracurricular deleted successfully' });
@@ -111,7 +111,7 @@ export class ExtracurricularController {
 
   async updateEnrollment(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = (req.params as any);
+      const { id } = req.params;
       const input = updateEnrollmentSchema.parse(req.body);
       const user = req.user as AuthenticatedUser;
       const enrollment = await extracurricularService.updateEnrollment(id, input, user);
@@ -123,7 +123,7 @@ export class ExtracurricularController {
 
   async listEnrollments(req: Request, res: Response, next: NextFunction) {
     try {
-      const query = listEnrollmentsQuerySchema.parse((req.query as any));
+      const query = listEnrollmentsQuerySchema.parse(req.query);
       const user = req.user as AuthenticatedUser;
       const result = await extracurricularService.listEnrollments(query, user);
       res.json(result);
@@ -149,7 +149,7 @@ export class ExtracurricularController {
 
   async listAttendance(req: Request, res: Response, next: NextFunction) {
     try {
-      const query = listAttendanceQuerySchema.parse((req.query as any));
+      const query = listAttendanceQuerySchema.parse(req.query);
       const user = req.user as AuthenticatedUser;
       const result = await extracurricularService.listAttendance(query, user);
       res.json(result);
@@ -160,7 +160,7 @@ export class ExtracurricularController {
 
   async getAttendanceSummary(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = (req.params as any);
+      const { id } = req.params;
       const user = req.user as AuthenticatedUser;
       const summary = await extracurricularService.getAttendanceSummary(id, user);
       res.json({ data: summary });
@@ -186,7 +186,7 @@ export class ExtracurricularController {
 
   async listAchievements(req: Request, res: Response, next: NextFunction) {
     try {
-      const query = listAchievementsQuerySchema.parse((req.query as any));
+      const query = listAchievementsQuerySchema.parse(req.query);
       const user = req.user as AuthenticatedUser;
       const result = await extracurricularService.listAchievements(query, user);
       res.json(result);
@@ -197,7 +197,7 @@ export class ExtracurricularController {
 
   async deleteAchievement(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = (req.params as any);
+      const { id } = req.params;
       const user = req.user as AuthenticatedUser;
       await extracurricularService.deleteAchievement(id, user);
       res.json({ success: true, message: 'Achievement deleted successfully' });
@@ -212,7 +212,7 @@ export class ExtracurricularController {
 
   async getStudentExtracurriculars(req: Request, res: Response, next: NextFunction) {
     try {
-      const { studentId } = (req.params as any);
+      const { studentId } = req.params;
       const user = req.user as AuthenticatedUser;
       const result = await extracurricularService.getStudentExtracurriculars(studentId, user);
       res.json({ data: result });
@@ -223,8 +223,8 @@ export class ExtracurricularController {
 
   async getStatistics(req: Request, res: Response, next: NextFunction) {
     try {
-      const { unitId } = (req.params as any);
-      const { academicYearId } = (req.query as any);
+      const { unitId } = req.params;
+      const { academicYearId } = req.query;
       const stats = await extracurricularService.getStatistics(
         unitId,
         academicYearId as string | undefined

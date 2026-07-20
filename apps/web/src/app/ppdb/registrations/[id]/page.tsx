@@ -7,7 +7,6 @@ import { PageHeader } from "@/components/shared/page-header";
 import {
   useRegistrant,
   useOnboardRegistrant,
-  useUpdateRegistrantStatus,
 } from "@/hooks/use-admissions";
 import { useAuth } from "@/hooks/use-auth";
 import { safeFormat } from "@/lib/date";
@@ -51,14 +50,19 @@ export default function RegistrationDetailPage({
   const { user } = useAuth();
   const { data: registrant, isLoading } = useRegistrant(params.id);
   const onboard = useOnboardRegistrant();
-  const updateStatus = useUpdateRegistrantStatus();
   const [isOnboarding, setIsOnboarding] = useState(false);
 
   const handleOnboard = async () => {
     if (!registrant) return;
+    // The registrant carries its unit via the admission period. The detail API
+    // nests it as `admissionPeriod.unit.id`; fall back to the admin's own unit.
+    const period = registrant.admissionPeriod as
+      | { unitId?: string; unit?: { id?: string } }
+      | undefined;
     const unitId =
       registrant.unitId ||
-      registrant.admissionPeriod?.unitId ||
+      period?.unit?.id ||
+      period?.unitId ||
       (user as { unitId?: string } | null)?.unitId;
     if (!unitId) {
       toast.error("Unit tidak diketahui untuk pendaftar ini.");
@@ -67,11 +71,13 @@ export default function RegistrationDetailPage({
 
     setIsOnboarding(true);
     try {
-      // 1. Run the integrated onboarding orchestrator (creates student,
-      //    invoice, medical record, parent account).
+      // The integrated onboarding orchestrator creates the student, invoice,
+      // medical record, and parent account, and enrolls the registrant
+      // (setting its status to ENROLLED) inside one transaction. Do NOT also
+      // PATCH the status to ENROLLED here — the status endpoint forbids that
+      // transition ("use the enrollment endpoint instead"), which previously
+      // made every onboarding surface an error toast despite succeeding.
       await onboard.mutateAsync({ registrantId: registrant.id, unitId });
-      // 2. Mark the registrant as enrolled.
-      await updateStatus.mutateAsync({ id: registrant.id, status: "ENROLLED" });
       toast.success("Siswa berhasil di-Onboard secara terpadu!");
     } catch (e: unknown) {
       const message =

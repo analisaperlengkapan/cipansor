@@ -20,7 +20,7 @@ permissions:
 
 env:
   NODE_VERSION: '22'
-  PNPM_VERSION: '9.0.0'
+  PNPM_VERSION: '9.15.9'
 
 jobs:
   # Lint (build the shared package first so its types resolve).
@@ -158,9 +158,12 @@ jobs:
       # Fail the build on known high/critical advisories in the dependency tree.
       # (actions/dependency-review-action + CodeQL would add PR-diff scanning and
       # SAST, but both require GitHub Advanced Security, which isn't enabled on
-      # this repo — pnpm audit + Dependabot are the working equivalents here.)
+      # this repo — this audit + Dependabot are the working equivalents here.)
+      # NOTE: `pnpm audit` (through 11.x) still calls npm's retired audit
+      # endpoint and dies with HTTP 410, so we query the bulk advisory
+      # endpoint directly — see scripts/audit-deps.mjs.
       - name: Audit dependencies
-        run: pnpm audit --prod --audit-level high
+        run: pnpm run audit:deps
 
   # Docker build sanity check (main only).
   docker-build:

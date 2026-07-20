@@ -110,6 +110,30 @@ describe('Marketing Service', () => {
     });
   });
 
+  describe('getHighPriorityLeads', () => {
+    it('should filter on valid AdmissionStatus funnel values and score leads', async () => {
+      vi.mocked(prisma.registrant.findMany).mockResolvedValue([
+        { id: 'r-1', fullName: 'Lead Iqra', quranAbility: 'IQRA', memorizedJuz: null },
+        { id: 'r-2', fullName: 'Lead Tahfidz', quranAbility: 'TAHFIDZ', memorizedJuz: 10 },
+      ] as any);
+
+      const result = await marketingService.getHighPriorityLeads(undefined, 10);
+
+      expect(prisma.registrant.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            status: {
+              in: ['REGISTERED', 'DOCUMENT_CHECK', 'TEST_SCHEDULED', 'TEST_COMPLETED'],
+            },
+          },
+        })
+      );
+      // Sorted by score desc; tahfidz + juz bonus capped at 100
+      expect(result[0]).toMatchObject({ id: 'r-2', leadScore: 100 });
+      expect(result[1]).toMatchObject({ id: 'r-1', leadScore: 55 });
+    });
+  });
+
   describe('getUpcomingFollowUps', () => {
     it('should fetch interactions with future nextActionDate', async () => {
       vi.mocked(prisma.marketingInteraction.findMany).mockResolvedValue([

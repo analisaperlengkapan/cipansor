@@ -23,7 +23,7 @@ import {
 
 export async function listLands(req: Request, res: Response, next: NextFunction) {
   try {
-    const query = listLandsQuerySchema.parse((req.query as any));
+    const query = listLandsQuerySchema.parse(req.query);
     const result = await facilitiesService.listLands(query);
 
     res.json({
@@ -37,7 +37,7 @@ export async function listLands(req: Request, res: Response, next: NextFunction)
 
 export async function getLand(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = landIdParamSchema.parse((req.params as any));
+    const { id } = landIdParamSchema.parse(req.params);
     const land = await facilitiesService.getLandById(id);
 
     if (!land) {
@@ -73,7 +73,7 @@ export async function createLand(req: Request, res: Response, next: NextFunction
 
 export async function updateLand(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = landIdParamSchema.parse((req.params as any));
+    const { id } = landIdParamSchema.parse(req.params);
     const data = updateLandSchema.parse(req.body);
     const land = await facilitiesService.updateLand(id, data);
 
@@ -89,7 +89,7 @@ export async function updateLand(req: Request, res: Response, next: NextFunction
 
 export async function deleteLand(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = landIdParamSchema.parse((req.params as any));
+    const { id } = landIdParamSchema.parse(req.params);
     await facilitiesService.deleteLand(id);
 
     res.json({
@@ -111,7 +111,7 @@ export async function deleteLand(req: Request, res: Response, next: NextFunction
 
 export async function listBuildings(req: Request, res: Response, next: NextFunction) {
   try {
-    const query = listBuildingsQuerySchema.parse((req.query as any));
+    const query = listBuildingsQuerySchema.parse(req.query);
     const result = await facilitiesService.listBuildings(query);
 
     res.json({
@@ -125,7 +125,7 @@ export async function listBuildings(req: Request, res: Response, next: NextFunct
 
 export async function getBuilding(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = buildingIdParamSchema.parse((req.params as any));
+    const { id } = buildingIdParamSchema.parse(req.params);
     const building = await facilitiesService.getBuildingById(id);
 
     if (!building) {
@@ -161,7 +161,7 @@ export async function createBuilding(req: Request, res: Response, next: NextFunc
 
 export async function updateBuilding(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = buildingIdParamSchema.parse((req.params as any));
+    const { id } = buildingIdParamSchema.parse(req.params);
     const data = updateBuildingSchema.parse(req.body);
     const building = await facilitiesService.updateBuilding(id, data);
 
@@ -177,7 +177,7 @@ export async function updateBuilding(req: Request, res: Response, next: NextFunc
 
 export async function deleteBuilding(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = buildingIdParamSchema.parse((req.params as any));
+    const { id } = buildingIdParamSchema.parse(req.params);
     await facilitiesService.deleteBuilding(id);
 
     res.json({
@@ -212,7 +212,7 @@ export async function listRoomTypes(req: Request, res: Response, next: NextFunct
 
 export async function getRoomType(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = roomTypeIdParamSchema.parse((req.params as any));
+    const { id } = roomTypeIdParamSchema.parse(req.params);
     const roomType = await facilitiesService.getRoomTypeById(id);
 
     if (!roomType) {
@@ -248,7 +248,7 @@ export async function createRoomType(req: Request, res: Response, next: NextFunc
 
 export async function updateRoomType(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = roomTypeIdParamSchema.parse((req.params as any));
+    const { id } = roomTypeIdParamSchema.parse(req.params);
     const data = updateRoomTypeSchema.parse(req.body);
     const roomType = await facilitiesService.updateRoomType(id, data);
 
@@ -264,7 +264,7 @@ export async function updateRoomType(req: Request, res: Response, next: NextFunc
 
 export async function deleteRoomType(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = roomTypeIdParamSchema.parse((req.params as any));
+    const { id } = roomTypeIdParamSchema.parse(req.params);
     await facilitiesService.deleteRoomType(id);
 
     res.json({
@@ -286,7 +286,7 @@ export async function deleteRoomType(req: Request, res: Response, next: NextFunc
 
 export async function listRooms(req: Request, res: Response, next: NextFunction) {
   try {
-    const query = listRoomsQuerySchema.parse((req.query as any));
+    const query = listRoomsQuerySchema.parse(req.query);
     const result = await facilitiesService.listRooms(query);
 
     res.json({
@@ -300,7 +300,7 @@ export async function listRooms(req: Request, res: Response, next: NextFunction)
 
 export async function getRoom(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = roomIdParamSchema.parse((req.params as any));
+    const { id } = roomIdParamSchema.parse(req.params);
     const room = await facilitiesService.getRoomById(id);
 
     if (!room) {
@@ -336,7 +336,7 @@ export async function createRoom(req: Request, res: Response, next: NextFunction
 
 export async function updateRoom(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = roomIdParamSchema.parse((req.params as any));
+    const { id } = roomIdParamSchema.parse(req.params);
     const data = updateRoomSchema.parse(req.body);
     const room = await facilitiesService.updateRoom(id, data);
 
@@ -352,7 +352,7 @@ export async function updateRoom(req: Request, res: Response, next: NextFunction
 
 export async function deleteRoom(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = roomIdParamSchema.parse((req.params as any));
+    const { id } = roomIdParamSchema.parse(req.params);
     await facilitiesService.deleteRoom(id);
 
     res.json({
@@ -368,7 +368,7 @@ export async function deleteRoom(req: Request, res: Response, next: NextFunction
 
 export async function getFacilitiesSummary(req: Request, res: Response, next: NextFunction) {
   try {
-    const query = summaryQuerySchema.parse((req.query as any));
+    const query = summaryQuerySchema.parse(req.query);
     const summary = await facilitiesService.getFacilitiesSummary(query);
 
     res.json({

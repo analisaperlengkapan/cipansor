@@ -368,7 +368,7 @@ export const itemService = {
 // `unitId` parameter AND include it in both the lock key and the WHERE
 // clause of the `findFirst` query — they must stay in sync.
 const generateTransactionNo = async (
-  tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0],
+  tx: Prisma.TransactionClient,
 ): Promise<string> => {
   const today = new Date();
   const dateStr = today.toISOString().slice(0, 10).replace(/-/g, '');

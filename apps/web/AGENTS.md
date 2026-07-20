@@ -11,9 +11,12 @@ Next.js 16 (App Router) + React 19 client. Read the root `AGENTS.md` first.
   `src/lib/api-client.ts` is a back-compat re-export; import from `lib/api`.
 - **No mock/placeholder data in pages.** If an endpoint is missing, add it to the
   API rather than hardcoding. (Pages still carrying mock data are listed in
-  `docs/KNOWN_ISSUES.md`.)
+  `docs/KNOWN_ISSUES.md`.) This is the web half of **golden rule #8** (ship
+  features wired end-to-end): a page needing data is backed by a real endpoint in
+  the same change.
 - **Types come from `@cipansor/shared`.** Don't redeclare DTOs or use `any` for
-  API payloads.
+  API payloads. Reuse the shared contract; only add a new one to `@cipansor/shared`
+  when it truly doesn't exist yet (golden rule #8).
 - **Roles:** route protection (`middleware.ts`), navigation (`src/config/navigation.ts`),
   and the auth store (`src/stores/auth.ts`) must reflect real backend `RoleCode`
   + permissions. (Aligning the legacy `UserRole` usage here is tracked in

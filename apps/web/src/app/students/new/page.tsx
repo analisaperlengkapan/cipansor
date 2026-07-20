@@ -32,6 +32,7 @@ import { Loader2, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
 import { createStudentSchema, type CreateStudentInput } from "@cipansor/shared";
+import { getEffectiveRole } from "@/lib/rbac";
 
 // Use strict validation from shared
 // We can extend here if needed for UI-specific validaton (e.g. terms acceptance)
@@ -54,7 +55,7 @@ export default function NewStudentPage() {
   } = useForm<StudentForm>({
     resolver: zodResolver(studentSchema) as any,
     defaultValues: {
-      unitId: user?.role !== "SUPER_ADMIN" ? user?.unitId : "",
+      unitId: getEffectiveRole(user) !== "SUPER_ADMIN" ? user?.unitId : "",
       enrollmentDate: new Date().toISOString().split("T")[0] as any,
     },
   });
@@ -172,7 +173,7 @@ export default function NewStudentPage() {
                 <Select
                   value={watch("unitId")}
                   onValueChange={(value) => setValue("unitId", value)}
-                  disabled={user?.role !== "SUPER_ADMIN"}
+                  disabled={getEffectiveRole(user) !== "SUPER_ADMIN"}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select unit" />

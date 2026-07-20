@@ -9,7 +9,7 @@ import {
 } from '@prisma/client';
 import { Errors } from '@/middleware/error';
 
-type TransactionClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
+type TransactionClient = Prisma.TransactionClient;
 
 export class RiskService {
   async createRisk(data: Prisma.RiskCreateInput): Promise<Risk> {

@@ -34,7 +34,7 @@ export class RaportMerdekaController {
    */
   static async getCPMapping(req: Request, res: Response, next: NextFunction) {
     try {
-      const { subjectCode, gradeLevel } = (req.params as any);
+      const { subjectCode, gradeLevel } = req.params;
 
       const cpMapping = RaportMerdekaService.getCPMapping(subjectCode, gradeLevel);
 
@@ -63,7 +63,7 @@ export class RaportMerdekaController {
    */
   static async getTPMapping(req: Request, res: Response, next: NextFunction) {
     try {
-      const { subjectCode, fase } = (req.params as any);
+      const { subjectCode, fase } = req.params;
 
       const tpList = RaportMerdekaService.getTPMapping(subjectCode, fase);
 
@@ -83,8 +83,8 @@ export class RaportMerdekaController {
    */
   static async generateStudentRaport(req: Request, res: Response, next: NextFunction) {
     try {
-      const { studentId } = (req.params as any);
-      const { academicYearId, semester } = (req.query as any);
+      const { studentId } = req.params;
+      const { academicYearId, semester } = req.query;
 
       if (!academicYearId || !semester) {
         return res.status(400).json({
@@ -110,8 +110,8 @@ export class RaportMerdekaController {
    */
   static async generateClassRaport(req: Request, res: Response, next: NextFunction) {
     try {
-      const { classId } = (req.params as any);
-      const { academicYearId, semester } = (req.query as any);
+      const { classId } = req.params;
+      const { academicYearId, semester } = req.query;
 
       if (!academicYearId || !semester) {
         return res.status(400).json({
@@ -137,7 +137,7 @@ export class RaportMerdekaController {
    */
   static async getCapaianMapping(req: Request, res: Response, next: NextFunction) {
     try {
-      const score = parseFloat((req.query as any).score as string);
+      const score = parseFloat(req.query.score as string);
 
       if (isNaN(score)) {
         return res.status(400).json({

@@ -15,7 +15,7 @@ import { ProjectStatus } from '@prisma/client';
 export async function createProject(req: Request, res: Response, next: NextFunction) {
   try {
     const data = createProjectSchema.parse(req);
-    const unitId = data.body.unitId || (req as any).user?.unitId;
+    const unitId = data.body.unitId || req.user?.unitId;
 
     if (!unitId) {
       throw Errors.badRequest('Unit is required to create a project');
@@ -35,8 +35,8 @@ export async function createProject(req: Request, res: Response, next: NextFunct
 export async function getProjects(req: Request, res: Response, next: NextFunction) {
   try {
     const filter = {
-      unitId: (req as any).user?.unitId,
-      status: (req.query as any).status as ProjectStatus,
+      unitId: req.user?.unitId ?? undefined,
+      status: req.query.status as ProjectStatus,
     };
     const projects = await service.getProjects(filter);
     res.json(projects);
@@ -47,11 +47,11 @@ export async function getProjects(req: Request, res: Response, next: NextFunctio
 
 export async function getProjectById(req: Request, res: Response, next: NextFunction) {
   try {
-    const project = await service.getProjectById((req.params as any).id);
+    const project = await service.getProjectById(req.params.id);
     if (!project) {
       throw Errors.notFound('Project not found');
     }
-    if (project.unitId !== (req as any).user?.unitId) {
+    if (project.unitId !== req.user?.unitId) {
       throw Errors.forbidden('Access denied');
     }
     res.json(project);
@@ -62,12 +62,12 @@ export async function getProjectById(req: Request, res: Response, next: NextFunc
 
 export async function updateProject(req: Request, res: Response, next: NextFunction) {
   try {
-    const project = await service.getProjectById((req.params as any).id);
-    if (!project || project.unitId !== (req as any).user?.unitId) {
+    const project = await service.getProjectById(req.params.id);
+    if (!project || project.unitId !== req.user?.unitId) {
       throw Errors.notFound('Project not found');
     }
     const data = updateProjectSchema.parse(req);
-    const updated = await service.updateProject((req.params as any).id, data.body);
+    const updated = await service.updateProject(req.params.id, data.body);
     res.json(updated);
   } catch (error) {
     next(error);
@@ -76,11 +76,11 @@ export async function updateProject(req: Request, res: Response, next: NextFunct
 
 export async function deleteProject(req: Request, res: Response, next: NextFunction) {
   try {
-    const project = await service.getProjectById((req.params as any).id);
-    if (!project || project.unitId !== (req as any).user?.unitId) {
+    const project = await service.getProjectById(req.params.id);
+    if (!project || project.unitId !== req.user?.unitId) {
       throw Errors.notFound('Project not found');
     }
-    await service.deleteProject((req.params as any).id);
+    await service.deleteProject(req.params.id);
     res.status(204).send();
   } catch (error) {
     next(error);
@@ -89,12 +89,12 @@ export async function deleteProject(req: Request, res: Response, next: NextFunct
 
 export async function createTask(req: Request, res: Response, next: NextFunction) {
   try {
-    const project = await service.getProjectById((req.params as any).projectId);
-    if (!project || project.unitId !== (req as any).user?.unitId) {
+    const project = await service.getProjectById(req.params.projectId);
+    if (!project || project.unitId !== req.user?.unitId) {
       throw Errors.notFound('Project not found');
     }
     const data = createProjectTaskSchema.parse(req);
-    const task = await service.createTask((req.params as any).projectId, data.body, req.user!.sub);
+    const task = await service.createTask(req.params.projectId, data.body, req.user!.sub);
     res.status(201).json(task);
   } catch (error) {
     next(error);
@@ -103,13 +103,13 @@ export async function createTask(req: Request, res: Response, next: NextFunction
 
 export async function updateTask(req: Request, res: Response, next: NextFunction) {
   try {
-    const task = await service.getTaskById((req.params as any).taskId);
-    if (!task || task.project.unitId !== (req as any).user?.unitId) {
+    const task = await service.getTaskById(req.params.taskId);
+    if (!task || task.project.unitId !== req.user?.unitId) {
       throw Errors.notFound('Task not found');
     }
 
     const data = updateProjectTaskSchema.parse(req);
-    const updatedTask = await service.updateTask((req.params as any).taskId, data.body, req.user!.sub);
+    const updatedTask = await service.updateTask(req.params.taskId, data.body, req.user!.sub);
     res.json(updatedTask);
   } catch (error) {
     next(error);
@@ -118,8 +118,8 @@ export async function updateTask(req: Request, res: Response, next: NextFunction
 
 export async function updateTaskPosition(req: Request, res: Response, next: NextFunction) {
   try {
-    const task = await service.getTaskById((req.params as any).taskId);
-    if (!task || task.project.unitId !== (req as any).user?.unitId) {
+    const task = await service.getTaskById(req.params.taskId);
+    if (!task || task.project.unitId !== req.user?.unitId) {
       throw Errors.notFound('Task not found');
     }
 
@@ -133,7 +133,7 @@ export async function updateTaskPosition(req: Request, res: Response, next: Next
       }
     }
 
-    const updatedTask = await service.updateTaskPosition((req.params as any).taskId, data.body);
+    const updatedTask = await service.updateTaskPosition(req.params.taskId, data.body);
     res.json(updatedTask);
   } catch (error) {
     next(error);
@@ -142,12 +142,12 @@ export async function updateTaskPosition(req: Request, res: Response, next: Next
 
 export async function deleteTask(req: Request, res: Response, next: NextFunction) {
   try {
-    const task = await service.getTaskById((req.params as any).taskId);
-    if (!task || task.project.unitId !== (req as any).user?.unitId) {
+    const task = await service.getTaskById(req.params.taskId);
+    if (!task || task.project.unitId !== req.user?.unitId) {
       throw Errors.notFound('Task not found');
     }
 
-    await service.deleteTask((req.params as any).taskId);
+    await service.deleteTask(req.params.taskId);
     res.status(204).send();
   } catch (error) {
     next(error);
@@ -156,13 +156,13 @@ export async function deleteTask(req: Request, res: Response, next: NextFunction
 
 export async function createColumn(req: Request, res: Response, next: NextFunction) {
   try {
-    const project = await service.getProjectById((req.params as any).projectId);
-    if (!project || project.unitId !== (req as any).user?.unitId) {
+    const project = await service.getProjectById(req.params.projectId);
+    if (!project || project.unitId !== req.user?.unitId) {
       throw Errors.notFound('Project not found');
     }
 
     const data = createColumnSchema.parse(req);
-    const column = await service.createColumn((req.params as any).projectId, data.body);
+    const column = await service.createColumn(req.params.projectId, data.body);
     res.status(201).json(column);
   } catch (error) {
     next(error);
@@ -171,13 +171,13 @@ export async function createColumn(req: Request, res: Response, next: NextFuncti
 
 export async function updateColumn(req: Request, res: Response, next: NextFunction) {
   try {
-    const column = await service.getColumnById((req.params as any).columnId);
-    if (!column || column.project.unitId !== (req as any).user?.unitId) {
+    const column = await service.getColumnById(req.params.columnId);
+    if (!column || column.project.unitId !== req.user?.unitId) {
       throw Errors.notFound('Column not found');
     }
 
     const data = updateColumnSchema.parse(req);
-    const updatedColumn = await service.updateColumn((req.params as any).columnId, data.body);
+    const updatedColumn = await service.updateColumn(req.params.columnId, data.body);
     res.json(updatedColumn);
   } catch (error) {
     next(error);
@@ -186,12 +186,12 @@ export async function updateColumn(req: Request, res: Response, next: NextFuncti
 
 export async function deleteColumn(req: Request, res: Response, next: NextFunction) {
   try {
-    const column = await service.getColumnById((req.params as any).columnId);
-    if (!column || column.project.unitId !== (req as any).user?.unitId) {
+    const column = await service.getColumnById(req.params.columnId);
+    if (!column || column.project.unitId !== req.user?.unitId) {
       throw Errors.notFound('Column not found');
     }
 
-    await service.deleteColumn((req.params as any).columnId);
+    await service.deleteColumn(req.params.columnId);
     res.status(204).send();
   } catch (error) {
     next(error);

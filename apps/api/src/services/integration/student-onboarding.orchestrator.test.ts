@@ -102,6 +102,16 @@ describe('StudentOnboardingOrchestrator', () => {
       expect(result.studentId).toBe('stud-1');
       expect(result.userId).toBe('user-stud-1');
 
+      // Guard the NIS sequence query: it must use positional substr(nis, N),
+      // not SUBSTRING(nis FROM $param) — the latter binds the position as text
+      // and Postgres then picks the regex form, so the max sequence never
+      // parses and every second onboarding collides on the generated NIS.
+      const rawQueries = vi
+        .mocked(txMock.$queryRaw)
+        .mock.calls.map((call) => (call[0] as unknown as string[]).join(''));
+      expect(rawQueries.some((q) => q.includes('substr(nis'))).toBe(true);
+      expect(rawQueries.some((q) => /SUBSTRING\(nis FROM/i.test(q))).toBe(false);
+
       // Verify user creation
       expect(txMock.user.create).toHaveBeenCalledTimes(2); // Student and Parent
 

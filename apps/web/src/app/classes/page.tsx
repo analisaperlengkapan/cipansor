@@ -31,6 +31,7 @@ import {
 import { MoreHorizontal, Eye, Pencil, Trash2, Users } from "lucide-react";
 import { toast } from "sonner";
 import { useAuthStore } from "@/stores/auth";
+import { getEffectiveRole } from "@/lib/rbac";
 
 export default function ClassesPage() {
   const router = useRouter();
@@ -51,7 +52,7 @@ export default function ClassesPage() {
     unitId:
       unitFilter !== "ALL"
         ? unitFilter
-        : user?.role !== "SUPER_ADMIN"
+        : getEffectiveRole(user) !== "SUPER_ADMIN"
           ? user?.unitId
           : undefined,
   });
@@ -183,7 +184,7 @@ export default function ClassesPage() {
           title="Classes"
           description="Manage classes and enrollments"
           action={
-            ["SUPER_ADMIN", "UNIT_ADMIN"].includes(user?.role || "")
+            ["SUPER_ADMIN", "UNIT_ADMIN"].includes(getEffectiveRole(user) || "")
               ? { label: "Add Class", href: "/classes/new" }
               : undefined
           }
@@ -211,7 +212,7 @@ export default function ClassesPage() {
               ))}
             </SelectContent>
           </Select>
-          {user?.role === "SUPER_ADMIN" && (
+          {getEffectiveRole(user) === "SUPER_ADMIN" && (
             <Select value={unitFilter} onValueChange={setUnitFilter}>
               <SelectTrigger className="w-full md:w-48">
                 <SelectValue placeholder="All Units" />

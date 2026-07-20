@@ -50,6 +50,7 @@ import { toast } from "sonner";
 import { useAuthStore } from "@/stores/auth";
 import { cn } from "@/lib/utils";
 import { DateRange } from "react-day-picker";
+import { getEffectiveRole } from "@/lib/rbac";
 
 const ATTENDANCE_LABELS: Record<string, string> = {
   PRESENT: "Hadir",
@@ -113,7 +114,7 @@ export default function DailyReportListPage() {
       ? format(dateRange.from, "yyyy-MM-dd")
       : undefined,
     dateTo: dateRange?.to ? format(dateRange.to, "yyyy-MM-dd") : undefined,
-    unitId: user?.role !== "SUPER_ADMIN" ? user?.unitId : undefined,
+    unitId: getEffectiveRole(user) !== "SUPER_ADMIN" ? user?.unitId : undefined,
   });
 
   const deleteMutation = useDeleteDailyReport();

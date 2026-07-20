@@ -9,6 +9,7 @@ import {
   assignHandlerSchema,
 } from './complaints.schema';
 import { prisma } from '@/lib/prisma';
+import { requireUser } from '@/middleware/auth';
 
 export const complaintsController = {
   create: async (req: Request, res: Response) => {
@@ -22,7 +23,7 @@ export const complaintsController = {
       }
 
       // req.user is guaranteed by authenticate middleware
-      const user = (req as any).user;
+      const user = requireUser(req);
       const unitId = user.unitId;
 
       // For SUPER_ADMIN creating a complaint, they must specify unitId if not present in token
@@ -52,8 +53,8 @@ export const complaintsController = {
 
   findAll: async (req: Request, res: Response) => {
     try {
-      const user = (req as any).user;
-      const { status, category, page, limit } = (req.query as any);
+      const user = requireUser(req);
+      const { status, category, page, limit } = req.query;
 
       const result = await complaintsService.findAll({
         unitId: user.unitId,
@@ -73,8 +74,8 @@ export const complaintsController = {
 
   findOne: async (req: Request, res: Response) => {
     try {
-      const { id } = (req.params as any);
-      const user = (req as any).user;
+      const { id } = req.params;
+      const user = requireUser(req);
 
       const complaint = await complaintsService.findOne(id, user.sub, user.role, user.unitId);
 
@@ -102,8 +103,8 @@ export const complaintsController = {
         });
       }
 
-      const user = (req as any).user;
-      const { id } = (req.params as any);
+      const user = requireUser(req);
+      const { id } = req.params;
       const { status, resolution } = validation.data;
 
       // Existence and Unit Authorization Check
@@ -143,8 +144,8 @@ export const complaintsController = {
         });
       }
 
-      const user = (req as any).user;
-      const { id } = (req.params as any);
+      const user = requireUser(req);
+      const { id } = req.params;
       const { handlerId } = validation.data;
 
       // Existence and Unit Authorization Check
@@ -182,8 +183,8 @@ export const complaintsController = {
         });
       }
 
-      const { id } = (req.params as any);
-      const user = (req as any).user;
+      const { id } = req.params;
+      const user = requireUser(req);
       const { content, isInternal } = validation.data;
 
       // Verify access using findOne logic (throws Unauthorized if no access)

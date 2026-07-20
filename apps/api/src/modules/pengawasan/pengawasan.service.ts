@@ -42,8 +42,8 @@ export class PengawasanService {
     });
   }
 
-  async getAudits(unitId: string, query: { status?: string; auditType?: string; strategicPlanId?: string; riskId?: string }) {
-    const where: Prisma.InternalAuditWhereInput = { unitId };
+  async getAudits(unitId: string | undefined, query: { status?: string; auditType?: string; strategicPlanId?: string; riskId?: string }) {
+    const where: Prisma.InternalAuditWhereInput = unitId ? { unitId } : {};
     if (query.status) where.status = query.status as any;
     if (query.auditType) where.auditType = query.auditType;
     if (query.strategicPlanId) where.strategicPlanId = query.strategicPlanId;

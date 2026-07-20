@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuthStore } from "@/stores/auth";
+import { getEffectiveRole } from "@/lib/rbac";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -161,9 +162,14 @@ export default function ParentLayout({
     if (!isAuthenticated) {
       router.push("/login?redirect=/parent");
     }
-    // Check if user is a parent role
-    if (user && user.role !== "PARENT" && user.role !== "SUPER_ADMIN") {
-      router.push("/dashboard");
+    // Check if user is a parent role. Resolve the effective bucket so that
+    // per-unit parent RoleCodes (SDIT_ORANG_TUA, …) are recognised, not just
+    // the legacy "PARENT" string.
+    if (user) {
+      const role = getEffectiveRole(user);
+      if (role !== "PARENT" && role !== "SUPER_ADMIN") {
+        router.push("/dashboard");
+      }
     }
   }, [isAuthenticated, user, router]);
 

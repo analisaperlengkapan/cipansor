@@ -40,6 +40,7 @@ export const listMurojaahQuerySchema = z.object({
   page: z.coerce.number().min(1).default(1),
   limit: z.coerce.number().min(1).max(100).default(20),
   studentId: z.string().uuid().optional(),
+  halaqohId: z.string().uuid().optional(),
   teacherId: z.string().uuid().optional(),
   classId: z.string().uuid().optional(),
   unitId: z.string().uuid().optional(),

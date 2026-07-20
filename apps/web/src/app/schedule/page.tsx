@@ -1,5 +1,6 @@
 "use client";
 
+import { getEffectiveRole } from "@/lib/rbac";
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -23,7 +24,7 @@ import {
   useDeleteSchedule,
 } from "@/hooks/use-schedule";
 import { useAuth } from "@/hooks/use-auth";
-import { DayOfWeek, UserRole } from "@cipansor/shared";
+import { DayOfWeek } from "@cipansor/shared";
 import {
   Dialog,
   DialogContent,
@@ -53,10 +54,9 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function SchedulePage() {
   const { user } = useAuth();
+  const role = getEffectiveRole(user);
   const isAdminOrTeacher =
-    user?.role === UserRole.SUPER_ADMIN ||
-    user?.role === UserRole.UNIT_ADMIN ||
-    user?.role === UserRole.TEACHER;
+    role === "SUPER_ADMIN" || role === "UNIT_ADMIN" || role === "TEACHER";
   const [selectedDay, setSelectedDay] = useState<number>(new Date().getDay()); // 0 = Sunday
 
   const days = [

@@ -1,3 +1,4 @@
+import { requireUser, findStudentIdForUser, findTeacherIdForUser } from '@/middleware/auth';
 import { Request, Response } from 'express';
 import { asyncHandler } from '@/middleware/error';
 import { assignmentsService } from './assignments.service';
@@ -11,10 +12,13 @@ import {
 export const assignmentsController = {
   create: asyncHandler(async (req: Request, res: Response) => {
     const input: CreateAssignmentRequest = req.body;
-    const user = (req as any).user;
+    const user = requireUser(req);
 
-    if (user.role === 'TEACHER' && user.teacher?.id) {
-      input.teacherId = user.teacher.id;
+    if (user.role === 'TEACHER') {
+      const teacherId = await findTeacherIdForUser(user.id);
+      if (teacherId) {
+        input.teacherId = teacherId;
+      }
     }
 
     const assignment = await assignmentsService.create(input);
@@ -22,11 +26,14 @@ export const assignmentsController = {
   }),
 
   findAll: asyncHandler(async (req: Request, res: Response) => {
-    const query = (req.query as any) as any;
-    const user = (req as any).user;
+    const query = req.query as any;
+    const user = requireUser(req);
 
-    if (user.role === 'STUDENT' && user.student?.id) {
-      query.studentId = user.student.id;
+    if (user.role === 'STUDENT') {
+      const studentId = await findStudentIdForUser(user.id);
+      if (studentId) {
+        query.studentId = studentId;
+      }
     }
 
     const result = await assignmentsService.findAll(query);
@@ -34,31 +41,34 @@ export const assignmentsController = {
   }),
 
   findOne: asyncHandler(async (req: Request, res: Response) => {
-    const { id } = (req.params as any);
+    const { id } = req.params;
     const assignment = await assignmentsService.findOne(id);
     res.json({ success: true, data: assignment });
   }),
 
   update: asyncHandler(async (req: Request, res: Response) => {
-    const { id } = (req.params as any);
+    const { id } = req.params;
     const input: UpdateAssignmentRequest = req.body;
     const assignment = await assignmentsService.update(id, input);
     res.json({ success: true, data: assignment });
   }),
 
   delete: asyncHandler(async (req: Request, res: Response) => {
-    const { id } = (req.params as any);
+    const { id } = req.params;
     await assignmentsService.delete(id);
     res.json({ success: true, message: 'Assignment deleted' });
   }),
 
   submit: asyncHandler(async (req: Request, res: Response) => {
-    const { id } = (req.params as any);
+    const { id } = req.params;
     const input: SubmitAssignmentRequest = req.body;
-    const user = (req as any).user;
+    const user = requireUser(req);
 
-    if (user.role === 'STUDENT' && user.student?.id) {
-      input.studentId = user.student.id;
+    if (user.role === 'STUDENT') {
+      const studentId = await findStudentIdForUser(user.id);
+      if (studentId) {
+        input.studentId = studentId;
+      }
     }
 
     const submission = await assignmentsService.submit(id, input);
@@ -66,13 +76,13 @@ export const assignmentsController = {
   }),
 
   getSubmissions: asyncHandler(async (req: Request, res: Response) => {
-    const { id } = (req.params as any);
+    const { id } = req.params;
     const submissions = await assignmentsService.getSubmissions(id);
     res.json({ success: true, data: submissions });
   }),
 
   grade: asyncHandler(async (req: Request, res: Response) => {
-    const { id, studentId } = (req.params as any);
+    const { id, studentId } = req.params;
     const input: GradeSubmissionRequest = req.body;
     const submission = await assignmentsService.grade(id, studentId, input);
     res.json({ success: true, data: submission });

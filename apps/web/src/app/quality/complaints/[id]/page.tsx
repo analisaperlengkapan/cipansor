@@ -1,5 +1,6 @@
 "use client";
 import { MainLayout } from "@/components/layout/main-layout";
+import { getEffectiveRole } from "@/lib/rbac";
 import { safeFormat } from "@/lib/date";
 import { useParams } from "next/navigation";
 import {
@@ -55,7 +56,7 @@ export default function ComplaintDetailPage() {
 
   // Check if user is admin/staff based on UserRole enum values (legacy format in JWT)
   // Teachers are excluded from management actions (status update, assignment)
-  const role = user?.role || "";
+  const role = getEffectiveRole(user) || "";
   const isAdminOrStaff =
     role === "SUPER_ADMIN" || role === "UNIT_ADMIN" || role === "STAFF";
 

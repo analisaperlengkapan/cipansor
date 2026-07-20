@@ -4,7 +4,13 @@ import { RoleCode, UserRole } from '@prisma/client';
 
 // Mock infra so importing the middleware has no side effects (no DB/redis/jwt).
 vi.mock('@/lib/jwt', () => ({ verifyToken: vi.fn() }));
-vi.mock('@/lib/prisma', () => ({ prisma: { role: { findUnique: vi.fn() } } }));
+vi.mock('@/lib/prisma', () => ({
+  prisma: {
+    role: { findUnique: vi.fn() },
+    student: { findUnique: vi.fn() },
+    teacher: { findUnique: vi.fn() },
+  },
+}));
 vi.mock('@/lib/redis', () => ({ redis: { get: vi.fn(), setex: vi.fn() } }));
 
 import {
@@ -16,7 +22,12 @@ import {
   deriveLegacyRole,
   isAdminRoleCode,
   isGovernanceRoleCode,
+  requireUser,
+  requireStudentId,
+  findStudentIdForUser,
+  findTeacherIdForUser,
 } from './auth';
+import { prisma } from '@/lib/prisma';
 
 // Minimal express mocks
 const makeRes = () => ({}) as Response;
@@ -36,6 +47,41 @@ describe('middleware/auth RBAC', () => {
       expect(deriveLegacyRole(RoleCode.SDIT_ADMIN)).toBe('UNIT_ADMIN');
       expect(deriveLegacyRole(RoleCode.SDIT_GURU)).toBe('TEACHER');
       expect(deriveLegacyRole(RoleCode.SUPER_ADMIN)).toBe('SUPER_ADMIN');
+    });
+
+    it('deriveLegacyRole maps the expanded hierarchy roles (rebuilt #319)', () => {
+      // Granular school roles
+      expect(deriveLegacyRole(RoleCode.SDIT_WAKASEK)).toBe('TEACHER');
+      expect(deriveLegacyRole(RoleCode.SMPIT_WALI_KELAS)).toBe('TEACHER');
+      expect(deriveLegacyRole(RoleCode.SMAQ_GURU_BK)).toBe('TEACHER');
+      expect(deriveLegacyRole(RoleCode.TKQ_BENDAHARA)).toBe('STAFF');
+      // Pesantren leadership + gender-segregated pembina
+      expect(deriveLegacyRole(RoleCode.PESANTREN_PENGASUH)).toBe('TEACHER');
+      expect(deriveLegacyRole(RoleCode.USTADZ)).toBe('TEACHER');
+      expect(deriveLegacyRole(RoleCode.MUSYRIFAH)).toBe('TEACHER');
+      expect(deriveLegacyRole(RoleCode.MUHAFIDZAH)).toBe('TEACHER');
+      expect(deriveLegacyRole(RoleCode.PESANTREN_TATA_USAHA)).toBe('STAFF');
+      // Perguruan Tinggi
+      expect(deriveLegacyRole(RoleCode.PT_REKTOR)).toBe('TEACHER');
+      expect(deriveLegacyRole(RoleCode.PT_MAHASISWA)).toBe('STUDENT');
+      expect(deriveLegacyRole(RoleCode.PT_TATA_USAHA)).toBe('STAFF');
+      // Business units map to STAFF — never to an admin bucket
+      expect(deriveLegacyRole(RoleCode.BUSINESS_MANAGER)).toBe('STAFF');
+      expect(deriveLegacyRole(RoleCode.BUSINESS_STAFF)).toBe('STAFF');
+      // Cross-unit support staff (library/UKS/security/labs)
+      expect(deriveLegacyRole(RoleCode.PUSTAKAWAN)).toBe('STAFF');
+      expect(deriveLegacyRole(RoleCode.PERAWAT)).toBe('STAFF');
+      expect(deriveLegacyRole(RoleCode.KEAMANAN)).toBe('STAFF');
+      expect(deriveLegacyRole(RoleCode.LABORAN)).toBe('STAFF');
+      // Komite/alumni are deliberately unmapped: fall back to the code itself
+      expect(deriveLegacyRole(RoleCode.SDIT_KOMITE)).toBe(RoleCode.SDIT_KOMITE);
+      expect(deriveLegacyRole(RoleCode.SDIT_ALUMNI)).toBe(RoleCode.SDIT_ALUMNI);
+    });
+
+    it('business/PT administration roles are NOT system admins', () => {
+      expect(isAdminRoleCode(RoleCode.BUSINESS_MANAGER)).toBe(false);
+      expect(isAdminRoleCode(RoleCode.PT_TATA_USAHA)).toBe(false);
+      expect(isAdminRoleCode(RoleCode.PESANTREN_PENGASUH)).toBe(false);
     });
 
     it('isAdminRoleCode recognises per-unit admins but not teachers/governance', () => {
@@ -104,6 +150,26 @@ describe('middleware/auth RBAC', () => {
       isTeacherOrAbove(makeReq({ roleCode: RoleCode.SDIT_SISWA }), makeRes(), n2 as unknown as NextFunction);
       expect(n2.mock.calls[0][0].statusCode).toBe(403);
     });
+
+    it('isTeacherOrAbove admits the expanded educator roles, denies business staff', () => {
+      for (const code of [
+        RoleCode.SDIT_WAKASEK,
+        RoleCode.SMPIT_WALI_KELAS,
+        RoleCode.SMAQ_GURU_BK,
+        RoleCode.USTADZ,
+        RoleCode.MUSYRIFAH,
+        RoleCode.MUHAFIDZAH,
+        RoleCode.PESANTREN_PENGASUH,
+        RoleCode.PT_DOSEN,
+      ]) {
+        const n = vi.fn();
+        isTeacherOrAbove(makeReq({ roleCode: code }), makeRes(), n as unknown as NextFunction);
+        expect(n, code).toHaveBeenCalledWith();
+      }
+      const denied = vi.fn();
+      isTeacherOrAbove(makeReq({ roleCode: RoleCode.BUSINESS_STAFF }), makeRes(), denied as unknown as NextFunction);
+      expect(denied.mock.calls[0][0].statusCode).toBe(403);
+    });
   });
 
   describe('sameUnit()', () => {
@@ -132,6 +198,66 @@ describe('middleware/auth RBAC', () => {
         next as unknown as NextFunction
       );
       expect(next).toHaveBeenCalledWith();
+    });
+  });
+
+  describe('requireUser()', () => {
+    it('returns the authenticated user attached by authenticate()', () => {
+      const user = { id: 'u1', roleCode: RoleCode.SUPER_ADMIN };
+      expect(requireUser(makeReq(user))).toBe(user);
+    });
+
+    it('throws 401 when no user is attached', () => {
+      expect(() => requireUser(makeReq(undefined))).toThrowError(
+        expect.objectContaining({ statusCode: 401 })
+      );
+    });
+  });
+
+  describe('student/teacher profile resolution', () => {
+    beforeEach(() => {
+      vi.mocked(prisma.student.findUnique).mockReset();
+      vi.mocked(prisma.teacher.findUnique).mockReset();
+    });
+
+    it('findStudentIdForUser resolves the linked student id', async () => {
+      vi.mocked(prisma.student.findUnique).mockResolvedValue({ id: 's1' } as never);
+      await expect(findStudentIdForUser('u1')).resolves.toBe('s1');
+      expect(prisma.student.findUnique).toHaveBeenCalledWith({
+        where: { userId: 'u1' },
+        select: { id: true },
+      });
+    });
+
+    it('findStudentIdForUser returns null when no profile is linked', async () => {
+      vi.mocked(prisma.student.findUnique).mockResolvedValue(null as never);
+      await expect(findStudentIdForUser('u1')).resolves.toBeNull();
+    });
+
+    it('requireStudentId returns the id for a linked student', async () => {
+      vi.mocked(prisma.student.findUnique).mockResolvedValue({ id: 's1' } as never);
+      await expect(requireStudentId(makeReq({ id: 'u1' }))).resolves.toBe('s1');
+    });
+
+    it('requireStudentId throws 403 for a user without a student profile', async () => {
+      vi.mocked(prisma.student.findUnique).mockResolvedValue(null as never);
+      await expect(requireStudentId(makeReq({ id: 'u1' }))).rejects.toMatchObject({
+        statusCode: 403,
+      });
+    });
+
+    it('requireStudentId throws 401 before hitting the DB when unauthenticated', async () => {
+      await expect(requireStudentId(makeReq(undefined))).rejects.toMatchObject({
+        statusCode: 401,
+      });
+      expect(prisma.student.findUnique).not.toHaveBeenCalled();
+    });
+
+    it('findTeacherIdForUser resolves the linked teacher id or null', async () => {
+      vi.mocked(prisma.teacher.findUnique).mockResolvedValue({ id: 't1' } as never);
+      await expect(findTeacherIdForUser('u1')).resolves.toBe('t1');
+      vi.mocked(prisma.teacher.findUnique).mockResolvedValue(null as never);
+      await expect(findTeacherIdForUser('u1')).resolves.toBeNull();
     });
   });
 });

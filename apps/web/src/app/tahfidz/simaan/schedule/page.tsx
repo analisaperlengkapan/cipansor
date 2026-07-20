@@ -47,6 +47,7 @@ import {
   parseISO,
 } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
+import { getEffectiveRole } from "@/lib/rbac";
 
 // Exam type labels
 const EXAM_TYPE_LABELS: Record<string, string> = {
@@ -91,7 +92,7 @@ export default function SimaanSchedulePage() {
 
   const { data: monthExams, isLoading } = useSimaanExams({
     halaqohId: selectedClass || undefined,
-    unitId: user?.role !== "SUPER_ADMIN" ? user?.unitId : undefined,
+    unitId: getEffectiveRole(user) !== "SUPER_ADMIN" ? user?.unitId : undefined,
     dateFrom,
     dateTo,
     limit: 100,

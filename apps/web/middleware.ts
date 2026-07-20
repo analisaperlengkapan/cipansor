@@ -5,78 +5,22 @@
 
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-
-// User roles enum - must match backend
-type UserRole =
-  | "SUPER_ADMIN"
-  | "UNIT_ADMIN"
-  | "TEACHER"
-  | "STAFF"
-  | "STUDENT"
-  | "PARENT";
+import {
+  canAccessRoute,
+  getDashboardForRole,
+  getEffectiveRole,
+  type LegacyRole,
+} from "@/lib/rbac";
 
 // Public routes that don't require authentication.
 // "/unauthorized" is the access-denied page ProtectedRoute redirects to; it
 // must stay reachable for any user (otherwise RBAC would bounce them off it).
 const publicRoutes = ["/login", "/", "/unauthorized"];
 
-// Role-based dashboard mapping
-const roleDashboardMap: Record<UserRole, string> = {
-  SUPER_ADMIN: "/dashboard",
-  UNIT_ADMIN: "/dashboard",
-  TEACHER: "/teacher",
-  STAFF: "/staff",
-  STUDENT: "/student",
-  PARENT: "/parent",
-};
-
-// Role-based route access control
-const roleRouteAccess: Record<UserRole, string[]> = {
-  SUPER_ADMIN: ["*"], // Access to all routes
-  UNIT_ADMIN: [
-    "/dashboard",
-    "/students",
-    "/classes",
-    "/teachers",
-    "/staff",
-    "/finance",
-    "/tahfidz",
-    "/health",
-    "/permits",
-    "/violations",
-    "/rewards",
-    "/reports",
-    "/announcements",
-    "/settings",
-    "/daily-report",
-  ],
-  TEACHER: [
-    "/teacher",
-    "/tahfidz",
-    "/classes",
-    "/students",
-    "/attendance",
-    "/announcements",
-    "/daily-report",
-  ],
-  STAFF: [
-    "/staff",
-    "/students",
-    "/health",
-    "/permits",
-    "/violations",
-    "/rewards",
-    "/finance",
-    "/announcements",
-  ],
-  STUDENT: ["/student", "/tahfidz", "/schedule", "/announcements"],
-  PARENT: ["/parent"],
-};
-
 // Helper function to get auth state from cookie
 function getAuthState(request: NextRequest): {
   isAuthenticated: boolean;
-  role?: UserRole;
+  role?: LegacyRole;
 } {
   // Check for auth storage in cookies (set by zustand persist)
   const authStorage = request.cookies.get("auth-storage")?.value;
@@ -84,11 +28,13 @@ function getAuthState(request: NextRequest): {
   if (authStorage) {
     try {
       const parsed = JSON.parse(authStorage);
-      if (parsed.state?.isAuthenticated === true && parsed.state?.user?.role) {
-        return {
-          isAuthenticated: true,
-          role: parsed.state.user.role as UserRole,
-        };
+      if (parsed.state?.isAuthenticated === true && parsed.state?.user) {
+        // Prefer the legacy `user.role` bucket (still emitted by the backend);
+        // fall back to deriving it from `userRoles[].role.code` (RoleCode).
+        const role = getEffectiveRole(parsed.state.user);
+        if (role) {
+          return { isAuthenticated: true, role };
+        }
       }
     } catch {
       // Parse error - not authenticated
@@ -105,29 +51,6 @@ function getAuthState(request: NextRequest): {
   }
 
   return { isAuthenticated: false };
-}
-
-// Helper function to check if role can access route
-function canAccessRoute(role: UserRole, pathname: string): boolean {
-  const allowedRoutes = roleRouteAccess[role];
-
-  // If no allowed routes defined for this role, deny access
-  if (!allowedRoutes || allowedRoutes.length === 0) {
-    return false;
-  }
-
-  // Super admin has access to everything
-  if (allowedRoutes.includes("*")) {
-    return true;
-  }
-
-  // Check if pathname starts with any allowed route
-  return allowedRoutes.some((route) => pathname.startsWith(route));
-}
-
-// Helper function to get dashboard for role
-function getDashboardForRole(role?: UserRole): string {
-  return role ? roleDashboardMap[role] : "/dashboard";
 }
 
 export function middleware(request: NextRequest) {

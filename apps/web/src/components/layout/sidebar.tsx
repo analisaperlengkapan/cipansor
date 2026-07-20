@@ -1,5 +1,6 @@
 "use client";
 
+import { getEffectiveRole } from "@/lib/rbac";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -61,7 +62,7 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
   const navigation = activeRole
     ? getNavigationForRoleCode(activeRole.role.code)
     : user
-      ? getNavigationForRole(user.role)
+      ? getNavigationForRole(getEffectiveRole(user) ?? user.role)
       : [];
 
   return (

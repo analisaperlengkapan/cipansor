@@ -20,12 +20,16 @@ export const listCompliances = asyncHandler(async (req: Request, res: Response) 
   const unitId = req.user?.unitId;
   const isPrivilegedUser = isPrivileged(req.user?.role as UserRole);
   if (!unitId && !isPrivilegedUser) throw Errors.unauthorized('Unit ID required');
-  const targetUnitId = isPrivilegedUser && (req.query as any).unitId ? String((req.query as any).unitId) : unitId;
-  if (!targetUnitId) throw Errors.badRequest('Unit ID required');
+  const targetUnitId =
+    isPrivilegedUser && req.query.unitId ? String(req.query.unitId) : unitId ?? undefined;
+  // A global SUPER_ADMIN (no assigned unit) gets the cross-unit view
+  if (!targetUnitId && req.user?.role !== UserRole.SUPER_ADMIN) {
+    throw Errors.badRequest('Unit ID required');
+  }
 
   const query = listComplianceQuerySchema.parse({
-    category: (req.query as any).category,
-    status: (req.query as any).status,
+    category: req.query.category,
+    status: req.query.status,
   });
 
   const compliances = await syariahService.getCompliances(targetUnitId, query);
@@ -33,7 +37,7 @@ export const listCompliances = asyncHandler(async (req: Request, res: Response) 
 });
 
 export const getCompliance = asyncHandler(async (req: Request, res: Response) => {
-  const compliance = await syariahService.getComplianceById((req.params as any).id as string);
+  const compliance = await syariahService.getComplianceById(req.params.id as string);
   if (!compliance) throw Errors.notFound('Compliance item not found');
   if (!isPrivileged(req.user?.role as UserRole) && compliance.unitId !== req.user?.unitId) {
     throw Errors.forbidden('Access denied');
@@ -54,24 +58,24 @@ export const createCompliance = asyncHandler(async (req: Request, res: Response)
 });
 
 export const updateCompliance = asyncHandler(async (req: Request, res: Response) => {
-  const existing = await syariahService.getComplianceById((req.params as any).id as string);
+  const existing = await syariahService.getComplianceById(req.params.id as string);
   if (!existing) throw Errors.notFound('Compliance item not found');
   if (!isPrivileged(req.user?.role as UserRole) && existing.unitId !== req.user?.unitId) {
     throw Errors.forbidden('Access denied');
   }
 
   const body = updateComplianceSchema.parse(req.body);
-  const compliance = await syariahService.updateCompliance((req.params as any).id as string, body, req.user?.sub);
+  const compliance = await syariahService.updateCompliance(req.params.id as string, body, req.user?.sub);
   res.json({ success: true, data: compliance });
 });
 
 export const deleteCompliance = asyncHandler(async (req: Request, res: Response) => {
-  const existing = await syariahService.getComplianceById((req.params as any).id as string);
+  const existing = await syariahService.getComplianceById(req.params.id as string);
   if (!existing) throw Errors.notFound('Compliance item not found');
   if (!isPrivileged(req.user?.role as UserRole) && existing.unitId !== req.user?.unitId) {
     throw Errors.forbidden('Access denied');
   }
-  await syariahService.deleteCompliance((req.params as any).id as string);
+  await syariahService.deleteCompliance(req.params.id as string);
   res.json({ success: true, message: 'Compliance item deleted' });
 });
 
@@ -88,8 +92,12 @@ export const getSummary = asyncHandler(async (req: Request, res: Response) => {
   const unitId = req.user?.unitId;
   const isPrivilegedUser = isPrivileged(req.user?.role as UserRole);
   if (!unitId && !isPrivilegedUser) throw Errors.unauthorized('Unit ID required');
-  const targetUnitId = isPrivilegedUser && (req.query as any).unitId ? String((req.query as any).unitId) : unitId;
-  if (!targetUnitId) throw Errors.badRequest('Unit ID required');
+  const targetUnitId =
+    isPrivilegedUser && req.query.unitId ? String(req.query.unitId) : unitId ?? undefined;
+  // A global SUPER_ADMIN (no assigned unit) gets the cross-unit view
+  if (!targetUnitId && req.user?.role !== UserRole.SUPER_ADMIN) {
+    throw Errors.badRequest('Unit ID required');
+  }
 
   const summary = await syariahService.getComplianceSummary(targetUnitId);
   res.json({ success: true, data: summary });

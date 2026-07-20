@@ -8,7 +8,7 @@ import { ListUsersQuery, CreateUserInput, UpdateUserInput } from './user.schema'
  * GET /api/users
  */
 export const list = asyncHandler(async (req: Request, res: Response) => {
-  const query = (res.locals.validatedQuery || (req.query as any)) as ListUsersQuery;
+  const query = (res.locals.validatedQuery || req.query) as ListUsersQuery;
   const result = await userService.findAll(query, {
     role: req.user!.role,
     unitId: req.user!.unitId,
@@ -28,7 +28,7 @@ export const list = asyncHandler(async (req: Request, res: Response) => {
  * GET /api/users/:id
  */
 export const getById = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = (req.params as any);
+  const { id } = req.params;
   const user = await userService.findById(id);
 
   res.json({
@@ -56,7 +56,7 @@ export const create = asyncHandler(async (req: Request, res: Response) => {
  * PUT /api/users/:id
  */
 export const update = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = (req.params as any);
+  const { id } = req.params;
   const input: UpdateUserInput = req.body;
   const user = await userService.update(id, input, {
     role: req.user!.role,
@@ -74,7 +74,7 @@ export const update = asyncHandler(async (req: Request, res: Response) => {
  * DELETE /api/users/:id
  */
 export const remove = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = (req.params as any);
+  const { id } = req.params;
   const result = await userService.delete(id);
 
   res.json({

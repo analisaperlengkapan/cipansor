@@ -19,7 +19,7 @@ export class RolesController {
    */
   async getAllRoles(req: Request, res: Response, next: NextFunction) {
     try {
-      const query = (req.query as any) as GetRolesQuery;
+      const query = req.query as GetRolesQuery;
       const roles = await rolesService.getAllRoles(query.realm as Realm);
       res.json({ success: true, data: roles });
     } catch (error) {
@@ -32,7 +32,7 @@ export class RolesController {
    */
   async getRoleById(req: Request, res: Response, next: NextFunction) {
     try {
-      const role = await rolesService.getRoleById((req.params as any).id);
+      const role = await rolesService.getRoleById(req.params.id);
       res.json({ success: true, data: role });
     } catch (error) {
       next(error);
@@ -58,7 +58,7 @@ export class RolesController {
   async updateRole(req: Request, res: Response, next: NextFunction) {
     try {
       const input = req.body as UpdateRoleInput;
-      const role = await rolesService.updateRole((req.params as any).id, input);
+      const role = await rolesService.updateRole(req.params.id, input);
       res.json({ success: true, data: role });
     } catch (error) {
       next(error);
@@ -83,7 +83,7 @@ export class RolesController {
    */
   async getUserRoles(req: Request, res: Response, next: NextFunction) {
     try {
-      const roles = await rolesService.getUserRoles((req.params as any).userId);
+      const roles = await rolesService.getUserRoles(req.params.userId);
       res.json({ success: true, data: roles });
     } catch (error) {
       next(error);
@@ -113,7 +113,7 @@ export class RolesController {
    */
   async removeRoleAssignment(req: Request, res: Response, next: NextFunction) {
     try {
-      await rolesService.removeRoleAssignment((req.params as any).id);
+      await rolesService.removeRoleAssignment(req.params.id);
       res.status(204).send();
     } catch (error) {
       next(error);
@@ -125,7 +125,7 @@ export class RolesController {
    */
   async setPrimaryRole(req: Request, res: Response, next: NextFunction) {
     try {
-      const userId = (req.params as any).userId;
+      const userId = req.params.userId;
       const input = req.body as SetPrimaryRoleInput;
       const assignment = await rolesService.setPrimaryRole(userId, input.roleAssignmentId);
       res.json({ success: true, data: assignment });

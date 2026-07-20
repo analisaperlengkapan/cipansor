@@ -181,26 +181,63 @@ export function useOnlineStatus(
   };
 }
 
+/** Same-origin probe used to verify a claimed offline state. */
+const OFFLINE_PROBE_URL = "/api/health";
+/** Re-verify cadence while the browser claims to be offline. */
+const OFFLINE_RECHECK_MS = 15000;
+
 /**
- * Simple hook to check if browser is online
+ * Simple hook to check if browser is online.
+ *
+ * `navigator.onLine === false` is only a HINT: VPNs, proxies, some Linux
+ * network managers, and automated browsers misreport it, and a missed
+ * `online` event leaves it stale after a network switch. So before declaring
+ * offline we verify with a real same-origin request, and while offline we
+ * keep re-checking so a wrong verdict self-heals.
  */
 export function useIsOnline(): boolean {
-  const [isOnline, setIsOnline] = useState(
-    typeof navigator !== "undefined" ? navigator.onLine : true,
-  );
+  const [isOffline, setIsOffline] = useState(false);
 
   useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
+    let cancelled = false;
+
+    const verifyOffline = async () => {
+      if (navigator.onLine) {
+        setIsOffline(false);
+        return;
+      }
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        const res = await fetch(OFFLINE_PROBE_URL, {
+          method: "HEAD",
+          cache: "no-store",
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
+        // Any response at all means the network works, whatever onLine says.
+        if (!cancelled) setIsOffline(!res.ok);
+      } catch {
+        if (!cancelled) setIsOffline(true);
+      }
+    };
+
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => void verifyOffline();
 
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
 
+    void verifyOffline();
+    const intervalId = setInterval(() => void verifyOffline(), OFFLINE_RECHECK_MS);
+
     return () => {
+      cancelled = true;
+      clearInterval(intervalId);
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
     };
   }, []);
 
-  return isOnline;
+  return !isOffline;
 }

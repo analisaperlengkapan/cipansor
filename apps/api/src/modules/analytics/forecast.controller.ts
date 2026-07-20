@@ -4,6 +4,7 @@
 
 import { Request, Response, NextFunction } from 'express';
 import * as forecastService from './forecast.service';
+import { requireUser } from '../../middleware/auth';
 
 /**
  * Resolve the unitId a forecast request should be scoped to, given the
@@ -24,9 +25,9 @@ function resolveForecastUnitId(
   req: Request,
   res: Response
 ): { ok: true; unitId: string | undefined } | { ok: false } {
-  const { unitId } = (req.query as any);
+  const { unitId } = req.query;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const user = (req as any).user;
+  const user = requireUser(req);
 
   let effectiveUnitId = unitId as string | undefined;
   if (user && user.role !== 'SUPER_ADMIN' && user.role !== 'YAYASAN_ADMIN') {

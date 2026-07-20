@@ -1,73 +1,30 @@
 import { test, expect } from "@playwright/test";
-import { primeAuthCookies } from "./helpers/auth";
+import { loginAs } from "./helpers/auth-api";
 
 test("Finance Cash Flow Forecast Page", async ({ page }) => {
   test.setTimeout(60000);
 
-  // Cookies the Next middleware reads must exist before the first navigation.
-  await primeAuthCookies(page);
-
-  // Mock Auth & Session
-  await page.route("**/api/auth/me", async (route) => {
-    await route.fulfill({
-      json: {
-        success: true,
-        data: { id: "user-1", name: "Finance Admin", role: "UNIT_ADMIN", unitId: "unit-1" },
-      },
-    });
-  });
-
-  // Mock Forecast API
-  await page.route("**/api/finance-enhancement/reports/cash-flow-forecast*", async (route) => {
-    await route.fulfill({
-      json: {
-        success: true,
-        data: {
-          initialBalance: 50000000,
-          forecast: [
-            { month: "Jan 24", income: 10000000, expense: 5000000, netFlow: 5000000, balance: 55000000 },
-            { month: "Feb 24", income: 12000000, expense: 8000000, netFlow: 4000000, balance: 59000000 },
-            { month: "Mar 24", income: 15000000, expense: 20000000, netFlow: -5000000, balance: 54000000 },
-          ],
-        },
-      },
-    });
-  });
-
-  // Bypass login by setting localStorage
-  await page.goto("http://localhost:3000/");
-  await page.evaluate(() => {
-    localStorage.setItem("accessToken", "fake-token");
-    localStorage.setItem(
-      "auth-storage",
-      JSON.stringify({
-        state: {
-          user: { id: "user-1", name: "Finance Admin", role: "UNIT_ADMIN", unitId: "unit-1" },
-          isAuthenticated: true,
-        },
-      })
-    );
-  });
+  // Unit admin with an assigned unit — the forecast endpoint is unit-scoped
+  await loginAs(page, "adminSdit");
 
   // Navigate to forecast page. Firefox occasionally aborts this navigation
   // (NS_BINDING_ABORTED) when the previous page still has requests in
   // flight — retry once.
   await page
-    .goto("http://localhost:3000/finance/reports/cash-flow-forecast")
-    .catch(() =>
-      page.goto("http://localhost:3000/finance/reports/cash-flow-forecast"),
-    );
+    .goto("/finance/reports/cash-flow-forecast")
+    .catch(() => page.goto("/finance/reports/cash-flow-forecast"));
 
-  // Verify elements
-  await expect(page.locator("text=Proyeksi Arus Kas")).toBeVisible();
-  await expect(page.locator("text=Rp 50.000.000")).toBeVisible(); // Initial balance
+  // Verify structure rendered from the real forecast endpoint (amounts are
+  // data-dependent, so assert Rp formatting rather than fixed values)
+  await expect(page.locator("text=Proyeksi Arus Kas")).toBeVisible({ timeout: 20000 });
   await expect(page.locator("text=Net Perubahan Kas")).toBeVisible();
+  await expect(page.getByText(/Rp\s?[\d.,]+/).first()).toBeVisible();
 
   // Verify Chart presence (Recharts renders svg/div)
   await expect(page.locator(".recharts-responsive-container")).toHaveCount(2);
 
-  // Verify Table data specifically in the table body to avoid chart labels
+  // The projection table renders one row per forecast month
   const table = page.locator("table");
-  await expect(table.locator("td:has-text('Jan 24')")).toBeVisible();
-  await expect(table.locator("td:has-text('Rp 54.000.000')")).toBeVisible(); // Final balance
+  await expect(table).toBeVisible();
+  expect(await table.locator("tbody tr").count()).toBeGreaterThan(0);
 });

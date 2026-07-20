@@ -1,8 +1,11 @@
 import dotenv from 'dotenv';
 import path from 'path';
 
-// Load .env file from root
-dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
+// Load apps/api/.env (works from both src/ via tsx and dist/ when compiled,
+// since each sits directly under apps/api), then the repo-root .env as a
+// fallback for anything not set (dotenv never overrides existing vars).
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+dotenv.config({ path: path.resolve(__dirname, '../../../../.env') });
 
 export const config = {
   env: process.env.NODE_ENV || 'development',

@@ -34,7 +34,7 @@ export class ParentController {
   async getChildProfile(req: Request, res: Response, next: NextFunction) {
     try {
       const parentId = req.user!.sub;
-      const { studentId } = (req.params as any);
+      const { studentId } = req.params;
       const data = await parentService.getChildProfile(parentId, studentId);
       res.json({ success: true, data });
     } catch (error) {
@@ -48,8 +48,8 @@ export class ParentController {
   async getChildAttendance(req: Request, res: Response, next: NextFunction) {
     try {
       const parentId = req.user!.sub;
-      const { studentId } = (req.params as any);
-      const data = await parentService.getChildAttendance(parentId, studentId, (req.query as any) as any);
+      const { studentId } = req.params;
+      const data = await parentService.getChildAttendance(parentId, studentId, req.query as any);
       res.json({ success: true, data });
     } catch (error) {
       next(error);
@@ -62,8 +62,8 @@ export class ParentController {
   async getChildTahfidz(req: Request, res: Response, next: NextFunction) {
     try {
       const parentId = req.user!.sub;
-      const { studentId } = (req.params as any);
-      const data = await parentService.getChildTahfidz(parentId, studentId, (req.query as any) as any);
+      const { studentId } = req.params;
+      const data = await parentService.getChildTahfidz(parentId, studentId, req.query as any);
       res.json({ success: true, data });
     } catch (error) {
       next(error);
@@ -76,8 +76,8 @@ export class ParentController {
   async getChildIbadah(req: Request, res: Response, next: NextFunction) {
     try {
       const parentId = req.user!.sub;
-      const { studentId } = (req.params as any);
-      const { startDate, endDate } = (req.query as any);
+      const { studentId } = req.params;
+      const { startDate, endDate } = req.query;
 
       // Default to current month if dates not provided
       const now = new Date();
@@ -113,8 +113,8 @@ export class ParentController {
   async getChildGrades(req: Request, res: Response, next: NextFunction) {
     try {
       const parentId = req.user!.sub;
-      const { studentId } = (req.params as any);
-      const data = await parentService.getChildGrades(parentId, studentId, (req.query as any) as any);
+      const { studentId } = req.params;
+      const data = await parentService.getChildGrades(parentId, studentId, req.query as any);
       res.json({ success: true, data });
     } catch (error) {
       next(error);
@@ -127,11 +127,11 @@ export class ParentController {
   async getChildWeeklyProgress(req: Request, res: Response, next: NextFunction) {
     try {
       const parentId = req.user!.sub;
-      const { studentId } = (req.params as any);
+      const { studentId } = req.params;
       const data = await parentService.getChildWeeklyProgress(
         parentId,
         studentId,
-        (req.query as any) as any
+        req.query as any
       );
       res.json({ success: true, data });
     } catch (error) {
@@ -145,7 +145,7 @@ export class ParentController {
   async getChildReportCards(req: Request, res: Response, next: NextFunction) {
     try {
       const parentId = req.user!.sub;
-      const { studentId } = (req.params as any);
+      const { studentId } = req.params;
       const data = await parentService.getChildReportCards(parentId, studentId);
       res.json({ success: true, data });
     } catch (error) {
@@ -159,7 +159,7 @@ export class ParentController {
   async getChildFinance(req: Request, res: Response, next: NextFunction) {
     try {
       const parentId = req.user!.sub;
-      const { studentId } = (req.params as any);
+      const { studentId } = req.params;
       const data = await parentService.getChildFinance(parentId, studentId);
       res.json({ success: true, data });
     } catch (error) {
@@ -173,7 +173,7 @@ export class ParentController {
   async getChildCounseling(req: Request, res: Response, next: NextFunction) {
     try {
       const parentId = req.user!.sub;
-      const { studentId } = (req.params as any);
+      const { studentId } = req.params;
       const data = await parentService.getChildCounseling(parentId, studentId);
       res.json({ success: true, data });
     } catch (error) {
@@ -187,7 +187,7 @@ export class ParentController {
   async getChildViolations(req: Request, res: Response, next: NextFunction) {
     try {
       const parentId = req.user!.sub;
-      const { studentId } = (req.params as any);
+      const { studentId } = req.params;
       const data = await parentService.getChildViolations(parentId, studentId);
       res.json({ success: true, data });
     } catch (error) {
@@ -201,7 +201,7 @@ export class ParentController {
   async getChildRewards(req: Request, res: Response, next: NextFunction) {
     try {
       const parentId = req.user!.sub;
-      const { studentId } = (req.params as any);
+      const { studentId } = req.params;
       const data = await parentService.getChildRewards(parentId, studentId);
       res.json({ success: true, data });
     } catch (error) {
@@ -215,7 +215,7 @@ export class ParentController {
   async getChildHealth(req: Request, res: Response, next: NextFunction) {
     try {
       const parentId = req.user!.sub;
-      const { studentId } = (req.params as any);
+      const { studentId } = req.params;
       const data = await parentService.getChildHealth(parentId, studentId);
       res.json({ success: true, data });
     } catch (error) {
@@ -229,7 +229,7 @@ export class ParentController {
   async getChildPermits(req: Request, res: Response, next: NextFunction) {
     try {
       const parentId = req.user!.sub;
-      const { studentId } = (req.params as any);
+      const { studentId } = req.params;
       const data = await parentService.getChildPermits(parentId, studentId);
       res.json({ success: true, data });
     } catch (error) {
@@ -243,7 +243,7 @@ export class ParentController {
   async createPermitRequest(req: Request, res: Response, next: NextFunction) {
     try {
       const parentId = req.user!.sub;
-      const { studentId } = (req.params as any);
+      const { studentId } = req.params;
       const data = await parentService.createPermitRequest(parentId, studentId, req.body);
       res.status(201).json({ success: true, data });
     } catch (error) {
@@ -270,7 +270,7 @@ export class ParentController {
   async getNotifications(req: Request, res: Response, next: NextFunction) {
     try {
       const parentId = req.user!.sub;
-      const data = await parentService.getNotifications(parentId, (req.query as any) as any);
+      const data = await parentService.getNotifications(parentId, req.query as any);
       res.json({ success: true, ...data });
     } catch (error) {
       next(error);
@@ -283,7 +283,7 @@ export class ParentController {
   async markNotificationRead(req: Request, res: Response, next: NextFunction) {
     try {
       const parentId = req.user!.sub;
-      const { notificationId } = (req.params as any);
+      const { notificationId } = req.params;
       const data = await parentService.markNotificationRead(parentId, notificationId);
       res.json({ success: true, data });
     } catch (error) {

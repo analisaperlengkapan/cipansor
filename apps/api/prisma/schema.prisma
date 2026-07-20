@@ -43,6 +43,7 @@ enum Realm {
   SMA_QURAN // SMA Qur'an
   PESANTREN // Pesantren (cross-unit)
   PERGURUAN_TINGGI // Perguruan Tinggi
+  UNIT_USAHA // Business units (Kantin, Laundry, Koperasi, dll)
 }
 
 // RoleCode - All possible role codes in the system
@@ -62,48 +63,92 @@ enum RoleCode {
   // TK Qur'an roles
   TKQ_ADMIN
   TKQ_KEPALA_SEKOLAH
+  TKQ_WAKASEK // Wakil kepala sekolah
   TKQ_GURU
+  TKQ_WALI_KELAS // Wali kelas
+  TKQ_GURU_BK // Guru bimbingan konseling
   TKQ_TATA_USAHA
+  TKQ_BENDAHARA // Bendahara unit
+  TKQ_KOMITE // Komite sekolah
   TKQ_ORANG_TUA
   TKQ_SISWA
+  TKQ_ALUMNI
 
   // SD IT (Islam Terpadu) roles
   SDIT_ADMIN
   SDIT_KEPALA_SEKOLAH
+  SDIT_WAKASEK
   SDIT_GURU
+  SDIT_WALI_KELAS
+  SDIT_GURU_BK
   SDIT_TATA_USAHA
+  SDIT_BENDAHARA
+  SDIT_KOMITE
   SDIT_ORANG_TUA
   SDIT_SISWA
+  SDIT_ALUMNI
 
   // SMP IT (Islam Terpadu) roles
   SMPIT_ADMIN
   SMPIT_KEPALA_SEKOLAH
+  SMPIT_WAKASEK
   SMPIT_GURU
+  SMPIT_WALI_KELAS
+  SMPIT_GURU_BK
   SMPIT_TATA_USAHA
+  SMPIT_BENDAHARA
+  SMPIT_KOMITE
   SMPIT_ORANG_TUA
   SMPIT_SISWA
+  SMPIT_ALUMNI
 
   // SMA Qur'an roles
   SMAQ_ADMIN
   SMAQ_KEPALA_SEKOLAH
+  SMAQ_WAKASEK
   SMAQ_GURU
+  SMAQ_WALI_KELAS
+  SMAQ_GURU_BK
   SMAQ_TATA_USAHA
+  SMAQ_BENDAHARA
+  SMAQ_KOMITE
   SMAQ_ORANG_TUA
   SMAQ_SISWA
+  SMAQ_ALUMNI
 
   // Perguruan Tinggi roles
   PT_REKTOR
+  PT_WAKIL_REKTOR
   PT_DEKAN
   PT_KAPRODI
   PT_DOSEN
   PT_MAHASISWA
   PT_STAF_AKADEMIK
+  PT_TATA_USAHA
+  PT_ALUMNI
 
   // Pesantren roles (cross-unit)
-  MUSYRIF // Pembina asrama
-  MUHAFIDZ // Pengampu tahfidz
+  PESANTREN_PENGASUH // Kyai / pimpinan tertinggi pesantren
+  PESANTREN_DIREKTUR // Pengelola operasional harian
+  PESANTREN_TATA_USAHA // Admin pesantren
+  USTADZ // Guru pengampu kitab/pesantren
+  MUSYRIF // Pembina asrama (putra)
+  MUSYRIFAH // Pembina asrama (putri)
+  MUHAFIDZ // Pengampu tahfidz (putra)
+  MUHAFIDZAH // Pengampu tahfidz (putri)
   MURABBI // Pembina akhlaq
   WALI_KAMAR // Penanggung jawab kamar
+
+  // Cross-unit support staff (yayasan-wide services backed by real modules:
+  // library, clinic/health, permits/gate security, practicum labs)
+  PUSTAKAWAN // Pustakawan / pengelola perpustakaan
+  PERAWAT // Perawat / petugas UKS & klinik
+  KEAMANAN // Satpam / keamanan
+  LABORAN // Laboran / petugas laboratorium & praktikum
+
+  // Business Unit roles
+  BUSINESS_MANAGER // Manajer unit usaha
+  BUSINESS_STAFF // Staf unit usaha
 }
 
 enum UnitType {
@@ -113,6 +158,7 @@ enum UnitType {
   SMP_IT // SMP Islam Terpadu  
   SMA_QURAN // SMA Qur'an
   PERGURUAN_TINGGI // Perguruan Tinggi
+  UNIT_USAHA // Business unit (Kantin, Laundry, Koperasi, dll)
   OTHER
 }
 

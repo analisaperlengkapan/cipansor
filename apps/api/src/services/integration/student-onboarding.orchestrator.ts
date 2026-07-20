@@ -83,11 +83,17 @@ export class StudentOnboardingOrchestrator {
       // Find the absolute maximum sequence number for this unit and year (ignoring legacy formats).
       // We parse the integer value directly in the SQL to handle numbers > 9999 properly.
       // Note: The table name in Prisma PostgreSQL is typically "students" or "Student" mapped.
-      const prefixLen = prefix.length + 1; // +1 for SQL substring which is 1-indexed
+      // Use substr(text, position): its second argument is unambiguously a
+      // start index. `SUBSTRING(nis FROM $1)` binds $1 as text, which makes
+      // Postgres pick the POSIX-regex form (`SUBSTRING(string FROM pattern)`)
+      // instead of the positional form — so the sequence never parsed and
+      // maxSeq stayed 0, making every second onboarding in a unit/year collide
+      // on the generated NIS.
+      const prefixLen = prefix.length + 1; // +1 for SQL substr which is 1-indexed
       const results = await tx.$queryRaw<Array<{ max_seq: number | null }>>`
-        SELECT MAX(CAST(SUBSTRING(nis FROM ${prefixLen}) AS INTEGER)) as max_seq
+        SELECT MAX(CAST(substr(nis, ${prefixLen}) AS INTEGER)) as max_seq
         FROM "students"
-        WHERE "unit_id" = ${unitId} AND nis LIKE ${prefix + '%'} AND SUBSTRING(nis FROM ${prefixLen}) ~ '^[0-9]+$'
+        WHERE "unit_id" = ${unitId} AND nis LIKE ${prefix + '%'} AND substr(nis, ${prefixLen}) ~ '^[0-9]+$'
       `;
 
       let maxSeq = 0;

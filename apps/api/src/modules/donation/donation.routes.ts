@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { mustahikService } from "./donation.service";
 import { campaignController, donationController } from './donation.controller';
-import { authenticate, authorize, optionalAuth } from '@/middleware/auth';
+import { requireUser, authenticate, authorize, optionalAuth } from '@/middleware/auth';
 import httpStatus from "http-status";
 import { validate } from '@/middleware/validate';
 import { UserRole } from '@prisma/client';
@@ -243,7 +243,7 @@ router.post(
     // undefined and would have broken the recordedBy FK).
     const distribution = await mustahikService.distribute(
       req.body,
-      (req as any).user.sub
+      requireUser(req).sub
     );
     res.status(httpStatus.CREATED).send(distribution);
   }

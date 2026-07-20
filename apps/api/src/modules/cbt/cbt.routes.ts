@@ -65,6 +65,12 @@ router.post(
   authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
   CBTController.createExam
 );
+router.delete(
+  '/exams/:examId',
+  authenticate,
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
+  CBTController.deleteExam
+);
 router.get(
   '/exams/:examId/monitoring',
   authenticate,

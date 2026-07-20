@@ -17,7 +17,7 @@ import type {
 // ============================================
 
 export const listReports = asyncHandler(async (req: Request, res: Response) => {
-  const query = (res.locals.validatedQuery || (req.query as any)) as ListReportsQuery;
+  const query = (res.locals.validatedQuery || req.query) as ListReportsQuery;
   const context = {
     role: req.user!.role,
     unitId: req.user!.unitId || null,
@@ -40,7 +40,7 @@ export const listReports = asyncHandler(async (req: Request, res: Response) => {
 // ============================================
 
 export const getReportById = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = (req.params as any);
+  const { id } = req.params;
   const context = {
     role: req.user!.role,
     unitId: req.user!.unitId || null,
@@ -76,7 +76,7 @@ export const createReport = asyncHandler(async (req: Request, res: Response) => 
 // ============================================
 
 export const updateReport = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = (req.params as any);
+  const { id } = req.params;
   const input = req.body as UpdateReportInput;
   const context = { role: req.user!.role, unitId: req.user!.unitId || null, userId: req.user!.sub };
 
@@ -93,7 +93,7 @@ export const updateReport = asyncHandler(async (req: Request, res: Response) => 
 // ============================================
 
 export const deleteReport = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = (req.params as any);
+  const { id } = req.params;
   const context = { role: req.user!.role, unitId: req.user!.unitId || null, userId: req.user!.sub };
   await PAUDReportService.deleteReport(id, context);
 
@@ -140,7 +140,7 @@ export const bulkGenerateReports = asyncHandler(async (req: Request, res: Respon
 // ============================================
 
 export const finalizeReport = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = (req.params as any);
+  const { id } = req.params;
   const input = req.body as FinalizeReportInput;
   const context = { role: req.user!.role, unitId: req.user!.unitId || null, userId: req.user!.sub };
 
@@ -157,7 +157,7 @@ export const finalizeReport = asyncHandler(async (req: Request, res: Response) =
 // ============================================
 
 export const markAsPrinted = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = (req.params as any);
+  const { id } = req.params;
   const context = { role: req.user!.role, unitId: req.user!.unitId || null, userId: req.user!.sub };
   const report = await PAUDReportService.markAsPrinted(id, context);
 
@@ -172,7 +172,7 @@ export const markAsPrinted = asyncHandler(async (req: Request, res: Response) =>
 // ============================================
 
 export const addPhoto = asyncHandler(async (req: Request, res: Response) => {
-  const { id: reportId } = (req.params as any);
+  const { id: reportId } = req.params;
   const input = req.body as AddPhotoInput;
   const context = { role: req.user!.role, unitId: req.user!.unitId || null, userId: req.user!.sub };
 
@@ -189,7 +189,7 @@ export const addPhoto = asyncHandler(async (req: Request, res: Response) => {
 // ============================================
 
 export const updatePhoto = asyncHandler(async (req: Request, res: Response) => {
-  const { photoId } = (req.params as any);
+  const { photoId } = req.params;
   const input = req.body as UpdatePhotoInput;
 
   const context = { role: req.user!.role, unitId: req.user!.unitId || null, userId: req.user!.sub };
@@ -206,7 +206,7 @@ export const updatePhoto = asyncHandler(async (req: Request, res: Response) => {
 // ============================================
 
 export const deletePhoto = asyncHandler(async (req: Request, res: Response) => {
-  const { photoId } = (req.params as any);
+  const { photoId } = req.params;
   const context = { role: req.user!.role, unitId: req.user!.unitId || null, userId: req.user!.sub };
   await PAUDReportService.deletePhoto(photoId, context);
 
@@ -221,7 +221,7 @@ export const deletePhoto = asyncHandler(async (req: Request, res: Response) => {
 // ============================================
 
 export const getReportPdf = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = (req.params as any);
+  const { id } = req.params;
   const context = {
     role: req.user!.role,
     unitId: req.user!.unitId || null,

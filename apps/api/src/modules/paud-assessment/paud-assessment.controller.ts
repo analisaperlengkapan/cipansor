@@ -30,7 +30,7 @@ import type {
  * GET /api/paud-assessment/indicators
  */
 export const listIndicators = asyncHandler(async (req: Request, res: Response) => {
-  const query = (res.locals.validatedQuery || (req.query as any)) as ListIndicatorsQuery;
+  const query = (res.locals.validatedQuery || req.query) as ListIndicatorsQuery;
   const result = await paudAssessmentService.findAllIndicators(query, {
     role: req.user!.role,
     unitId: req.user!.unitId,
@@ -50,7 +50,7 @@ export const listIndicators = asyncHandler(async (req: Request, res: Response) =
  * GET /api/paud-assessment/indicators/:id
  */
 export const getIndicatorById = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = (req.params as any);
+  const { id } = req.params;
   const indicator = await paudAssessmentService.findIndicatorById(id);
 
   res.json({
@@ -78,7 +78,7 @@ export const createIndicator = asyncHandler(async (req: Request, res: Response) 
  * PUT /api/paud-assessment/indicators/:id
  */
 export const updateIndicator = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = (req.params as any);
+  const { id } = req.params;
   const input: UpdatePAUDIndicatorInput = req.body;
   const indicator = await paudAssessmentService.updateIndicator(id, input);
 
@@ -93,7 +93,7 @@ export const updateIndicator = asyncHandler(async (req: Request, res: Response) 
  * DELETE /api/paud-assessment/indicators/:id
  */
 export const deleteIndicator = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = (req.params as any);
+  const { id } = req.params;
   const result = await paudAssessmentService.deleteIndicator(id);
 
   res.json({
@@ -111,7 +111,7 @@ export const deleteIndicator = asyncHandler(async (req: Request, res: Response) 
  * GET /api/paud-assessment/assessments
  */
 export const listAssessments = asyncHandler(async (req: Request, res: Response) => {
-  const query = (res.locals.validatedQuery || (req.query as any)) as ListAssessmentsQuery;
+  const query = (res.locals.validatedQuery || req.query) as ListAssessmentsQuery;
   const result = await paudAssessmentService.findAllAssessments(query, {
     role: req.user!.role,
     unitId: req.user!.unitId,
@@ -131,7 +131,7 @@ export const listAssessments = asyncHandler(async (req: Request, res: Response) 
  * GET /api/paud-assessment/assessments/:id
  */
 export const getAssessmentById = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = (req.params as any);
+  const { id } = req.params;
   const assessment = await paudAssessmentService.findAssessmentById(id);
 
   res.json({
@@ -187,7 +187,7 @@ export const createClassAssessment = asyncHandler(async (req: Request, res: Resp
  * PUT /api/paud-assessment/assessments/:id
  */
 export const updateAssessment = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = (req.params as any);
+  const { id } = req.params;
   const input: UpdatePAUDAssessmentInput = req.body;
   const assessment = await paudAssessmentService.updateAssessment(id, input);
 
@@ -202,7 +202,7 @@ export const updateAssessment = asyncHandler(async (req: Request, res: Response)
  * DELETE /api/paud-assessment/assessments/:id
  */
 export const deleteAssessment = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = (req.params as any);
+  const { id } = req.params;
   const result = await paudAssessmentService.deleteAssessment(id);
 
   res.json({
@@ -234,7 +234,7 @@ export const createEvidence = asyncHandler(async (req: Request, res: Response) =
  * DELETE /api/paud-assessment/evidences/:id
  */
 export const deleteEvidence = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = (req.params as any);
+  const { id } = req.params;
   const result = await paudAssessmentService.deleteEvidence(id);
 
   res.json({
@@ -252,7 +252,7 @@ export const deleteEvidence = asyncHandler(async (req: Request, res: Response) =
  * GET /api/paud-assessment/reports
  */
 export const listNarrativeReports = asyncHandler(async (req: Request, res: Response) => {
-  const query = (res.locals.validatedQuery || (req.query as any)) as ListNarrativeReportsQuery;
+  const query = (res.locals.validatedQuery || req.query) as ListNarrativeReportsQuery;
   const result = await paudAssessmentService.findAllNarrativeReports(query, {
     role: req.user!.role,
     unitId: req.user!.unitId,
@@ -272,7 +272,7 @@ export const listNarrativeReports = asyncHandler(async (req: Request, res: Respo
  * GET /api/paud-assessment/reports/:id
  */
 export const getNarrativeReportById = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = (req.params as any);
+  const { id } = req.params;
   const report = await paudAssessmentService.findNarrativeReportById(id);
 
   res.json({
@@ -300,7 +300,7 @@ export const createNarrativeReport = asyncHandler(async (req: Request, res: Resp
  * PUT /api/paud-assessment/reports/:id
  */
 export const updateNarrativeReport = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = (req.params as any);
+  const { id } = req.params;
   const input: UpdatePAUDNarrativeReportInput = req.body;
   const report = await paudAssessmentService.updateNarrativeReport(id, input);
 
@@ -315,7 +315,7 @@ export const updateNarrativeReport = asyncHandler(async (req: Request, res: Resp
  * POST /api/paud-assessment/reports/:id/finalize
  */
 export const finalizeNarrativeReport = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = (req.params as any);
+  const { id } = req.params;
   const input: FinalizePAUDReportInput = req.body;
   const report = await paudAssessmentService.finalizeNarrativeReport(id, input);
 
@@ -330,7 +330,7 @@ export const finalizeNarrativeReport = asyncHandler(async (req: Request, res: Re
  * DELETE /api/paud-assessment/reports/:id
  */
 export const deleteNarrativeReport = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = (req.params as any);
+  const { id } = req.params;
   const result = await paudAssessmentService.deleteNarrativeReport(id);
 
   res.json({
@@ -348,7 +348,7 @@ export const deleteNarrativeReport = asyncHandler(async (req: Request, res: Resp
  * GET /api/paud-assessment/summary/student
  */
 export const getStudentSummary = asyncHandler(async (req: Request, res: Response) => {
-  const query = (res.locals.validatedQuery || (req.query as any)) as AssessmentSummaryQuery;
+  const query = (res.locals.validatedQuery || req.query) as AssessmentSummaryQuery;
   const summary = await paudAssessmentService.getStudentAssessmentSummary(query);
 
   res.json({
@@ -362,7 +362,7 @@ export const getStudentSummary = asyncHandler(async (req: Request, res: Response
  * GET /api/paud-assessment/summary/class
  */
 export const getClassSummary = asyncHandler(async (req: Request, res: Response) => {
-  const query = (res.locals.validatedQuery || (req.query as any)) as ClassSummaryQuery;
+  const query = (res.locals.validatedQuery || req.query) as ClassSummaryQuery;
   const summary = await paudAssessmentService.getClassSummary(query);
 
   res.json({

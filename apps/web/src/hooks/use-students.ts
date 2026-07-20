@@ -278,7 +278,12 @@ export function useStudentsByClass(classId: string) {
       const response = await api.get<PaginatedResponse<Student>>("/students", {
         params: { classId, limit: 100 },
       });
-      return response.data.data || [];
+      // Students carry their display name on the related user record; normalize
+      // it onto `name` so dropdowns don't render blank labels (see useStudents).
+      return (response.data.data ?? []).map((s) => ({
+        ...s,
+        name: s.name ?? (s as { user?: { name?: string } }).user?.name ?? "",
+      }));
     },
     enabled: !!classId,
   });

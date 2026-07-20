@@ -39,7 +39,7 @@ export async function getStaffAttendance(req: Request, res: Response, next: Next
 
 export async function getRetentionRisk(req: Request, res: Response, next: NextFunction) {
   try {
-    const { unitId } = (req.query as any);
+    const { unitId } = req.query;
     const user = req.user!;
 
     const targetUnitId = user.role === 'SUPER_ADMIN' ? (unitId as string) : user.unitId;
@@ -54,7 +54,7 @@ export async function getRetentionRisk(req: Request, res: Response, next: NextFu
 
 export async function getStaffAttendanceById(req: Request, res: Response, next: NextFunction) {
   try {
-    const attendance = await service.getStaffAttendanceById((req.params as any).id);
+    const attendance = await service.getStaffAttendanceById(req.params.id);
     if (!attendance) {
       throw Errors.notFound('Attendance record not found');
     }
@@ -77,7 +77,7 @@ export async function createStaffAttendance(req: Request, res: Response, next: N
 export async function updateStaffAttendance(req: Request, res: Response, next: NextFunction) {
   try {
     const data = updateStaffAttendanceSchema.parse(req.body);
-    const attendance = await service.updateStaffAttendance((req.params as any).id, data);
+    const attendance = await service.updateStaffAttendance(req.params.id, data);
     res.json({ success: true, data: attendance });
   } catch (error) {
     next(error);
@@ -100,8 +100,8 @@ export async function getStaffAttendanceSummary(req: Request, res: Response, nex
       month: z.coerce.number().min(1).max(12),
       year: z.coerce.number().min(2000).max(2100),
     });
-    const { month, year } = schema.parse((req.query as any));
-    const summary = await service.getStaffAttendanceSummary((req.params as any).staffId, month, year);
+    const { month, year } = schema.parse(req.query);
+    const summary = await service.getStaffAttendanceSummary(req.params.staffId, month, year);
     res.json({ success: true, data: summary });
   } catch (error) {
     next(error);
@@ -110,7 +110,7 @@ export async function getStaffAttendanceSummary(req: Request, res: Response, nex
 
 export async function deleteStaffAttendance(req: Request, res: Response, next: NextFunction) {
   try {
-    await service.deleteStaffAttendance((req.params as any).id);
+    await service.deleteStaffAttendance(req.params.id);
     res.json({ success: true, message: 'Attendance record deleted successfully' });
   } catch (error) {
     next(error);
@@ -169,7 +169,7 @@ export async function getLeaves(req: Request, res: Response, next: NextFunction)
 
 export async function getLeaveById(req: Request, res: Response, next: NextFunction) {
   try {
-    const leave = await service.getLeaveById((req.params as any).id);
+    const leave = await service.getLeaveById(req.params.id);
     if (!leave) {
       throw Errors.notFound('Leave request not found');
     }
@@ -207,7 +207,7 @@ export async function createLeave(req: Request, res: Response, next: NextFunctio
 export async function updateLeave(req: Request, res: Response, next: NextFunction) {
   try {
     const data = updateLeaveSchema.parse(req.body);
-    const leave = await service.updateLeave((req.params as any).id, data);
+    const leave = await service.updateLeave(req.params.id, data);
     res.json({ success: true, data: leave });
   } catch (error) {
     next(error);
@@ -221,7 +221,7 @@ export async function approveLeave(req: Request, res: Response, next: NextFuncti
     if (!approverId) {
       throw Errors.unauthorized('User not authenticated');
     }
-    const leave = await service.approveLeave((req.params as any).id, approverId, data);
+    const leave = await service.approveLeave(req.params.id, approverId, data);
     res.json({ success: true, data: leave });
   } catch (error) {
     next(error);
@@ -230,7 +230,7 @@ export async function approveLeave(req: Request, res: Response, next: NextFuncti
 
 export async function cancelLeave(req: Request, res: Response, next: NextFunction) {
   try {
-    const leave = await service.cancelLeave((req.params as any).id);
+    const leave = await service.cancelLeave(req.params.id);
     res.json({ success: true, data: leave, message: 'Leave request cancelled' });
   } catch (error) {
     next(error);
@@ -239,7 +239,7 @@ export async function cancelLeave(req: Request, res: Response, next: NextFunctio
 
 export async function deleteLeave(req: Request, res: Response, next: NextFunction) {
   try {
-    await service.deleteLeave((req.params as any).id);
+    await service.deleteLeave(req.params.id);
     res.json({ success: true, message: 'Leave request deleted successfully' });
   } catch (error) {
     next(error);
@@ -249,8 +249,8 @@ export async function deleteLeave(req: Request, res: Response, next: NextFunctio
 export async function getLeaveBalance(req: Request, res: Response, next: NextFunction) {
   try {
     const schema = z.object({ year: z.coerce.number().min(2000).max(2100) });
-    const { year } = schema.parse((req.query as any));
-    const balance = await service.getLeaveBalance((req.params as any).staffId, year);
+    const { year } = schema.parse(req.query);
+    const balance = await service.getLeaveBalance(req.params.staffId, year);
     res.json({ success: true, data: balance });
   } catch (error) {
     next(error);
@@ -273,7 +273,7 @@ export async function getStaffList(req: Request, res: Response, next: NextFuncti
 
 export async function getStaffById(req: Request, res: Response, next: NextFunction) {
   try {
-    const staff = await service.getStaffById((req.params as any).id);
+    const staff = await service.getStaffById(req.params.id);
     if (!staff) {
       throw Errors.notFound('Staff not found');
     }

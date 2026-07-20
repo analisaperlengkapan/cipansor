@@ -9,13 +9,13 @@ export class KitabProgressController {
   async listKitab(req: Request, res: Response, next: NextFunction) {
     try {
       const query = {
-        category: (req.query as any).category as any,
-        level: (req.query as any).level as any,
-        search: (req.query as any).search as string | undefined,
+        category: req.query.category as any,
+        level: req.query.level as any,
+        search: req.query.search as string | undefined,
         isActive:
-          (req.query as any).isActive === 'true' ? true : (req.query as any).isActive === 'false' ? false : undefined,
-        page: parseInt((req.query as any).page as string) || 1,
-        limit: parseInt((req.query as any).limit as string) || 20,
+          req.query.isActive === 'true' ? true : req.query.isActive === 'false' ? false : undefined,
+        page: parseInt(req.query.page as string) || 1,
+        limit: parseInt(req.query.limit as string) || 20,
       };
       const result = await kitabProgressService.listKitab(query);
       res.json(result);
@@ -26,7 +26,7 @@ export class KitabProgressController {
 
   async getKitabById(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = (req.params as any);
+      const { id } = req.params;
       const kitab = await kitabProgressService.getKitabById(id);
       res.json({ data: kitab });
     } catch (error) {
@@ -45,7 +45,7 @@ export class KitabProgressController {
 
   async updateKitab(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = (req.params as any);
+      const { id } = req.params;
       const kitab = await kitabProgressService.updateKitab(id, req.body);
       res.json({ data: kitab });
     } catch (error) {
@@ -55,7 +55,7 @@ export class KitabProgressController {
 
   async deleteKitab(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = (req.params as any);
+      const { id } = req.params;
       await kitabProgressService.deleteKitab(id);
       res.json({ success: true, message: 'Kitab deleted successfully' });
     } catch (error) {
@@ -70,12 +70,12 @@ export class KitabProgressController {
   async listProgress(req: Request, res: Response, next: NextFunction) {
     try {
       const query = {
-        kitabId: (req.query as any).kitabId as string | undefined,
-        studentId: (req.query as any).studentId as string | undefined,
-        teacherId: (req.query as any).teacherId as string | undefined,
-        academicYearId: (req.query as any).academicYearId as string | undefined,
-        page: parseInt((req.query as any).page as string) || 1,
-        limit: parseInt((req.query as any).limit as string) || 20,
+        kitabId: req.query.kitabId as string | undefined,
+        studentId: req.query.studentId as string | undefined,
+        teacherId: req.query.teacherId as string | undefined,
+        academicYearId: req.query.academicYearId as string | undefined,
+        page: parseInt(req.query.page as string) || 1,
+        limit: parseInt(req.query.limit as string) || 20,
       };
       const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
       const result = await kitabProgressService.listProgress(query, user);
@@ -163,8 +163,8 @@ export class KitabProgressController {
 
   async getStatistics(req: Request, res: Response, next: NextFunction) {
     try {
-      const unitId = (req.query as any).unitId as string | undefined;
-      const academicYearId = (req.query as any).academicYearId as string | undefined;
+      const unitId = req.query.unitId as string | undefined;
+      const academicYearId = req.query.academicYearId as string | undefined;
       const stats = await kitabProgressService.getStatistics(unitId, academicYearId);
       res.json({ data: stats });
     } catch (error) {
@@ -174,7 +174,7 @@ export class KitabProgressController {
 
   async getStudentReport(req: Request, res: Response, next: NextFunction) {
     try {
-      const { studentId } = (req.params as any);
+      const { studentId } = req.params;
       const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
       const report = await kitabProgressService.getStudentReport(studentId, user);
       res.json({ data: report });

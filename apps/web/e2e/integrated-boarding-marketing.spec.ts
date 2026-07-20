@@ -1,30 +1,18 @@
-import { test, expect } from '@playwright/test';
-import { setupAuthenticatedPage } from './helpers/auth';
+import { test, expect } from "@playwright/test";
+import { loginAs } from "./helpers/auth-api";
 
-test.describe('Marketing ROI & Boarding Command Center', () => {
+test.describe("Marketing ROI & Boarding Command Center", () => {
   test.beforeEach(async ({ page }) => {
-    await setupAuthenticatedPage(page, 'SUPER_ADMIN');
+    await loginAs(page, "superAdmin");
   });
 
-  test('should display Boarding Command Center metrics', async ({ page }) => {
-    await page.route('**/api/dormitories', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          success: true,
-          data: [
-            { id: 'd1', name: 'Asrama Al-Fatih', code: 'AF1', gender: 'MALE', _count: { rooms: 10 } }
-          ]
-        })
-      });
-    });
+  test("should display Boarding Command Center metrics", async ({ page }) => {
+    await page.goto("/musyrif/boarding-center");
 
-    await page.goto('/musyrif/boarding-center');
-
-    await expect(page.getByText('Boarding Command Center')).toBeVisible();
-    await expect(page.getByText('All Zones Active')).toBeVisible();
-    await expect(page.getByText('Asrama Al-Fatih')).toBeVisible();
-    await expect(page.getByText('Social Harmony Score', { exact: true })).toBeVisible();
+    await expect(page.getByText("Boarding Command Center")).toBeVisible();
+    await expect(page.getByText("All Zones Active")).toBeVisible();
+    // Real seeded dormitory served by /api/dormitories
+    await expect(page.getByText("Asrama Putra Al-Hikmah")).toBeVisible();
+    await expect(page.getByText("Social Harmony Score", { exact: true }).first()).toBeVisible();
   });
 });

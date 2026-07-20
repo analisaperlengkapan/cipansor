@@ -1,5 +1,5 @@
 import { test, expect } from "./fixtures/auth.fixture";
-import { LoginPage } from "./page-objects";
+import { loginAs } from "./helpers/auth-api";
 
 /**
  * Extracurricular Module E2E Tests
@@ -8,9 +8,7 @@ import { LoginPage } from "./page-objects";
 
 test.describe("Extracurricular - Navigation", () => {
   test("should navigate to extracurricular page", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+    await loginAs(page, "superAdmin");
 
     await page.waitForTimeout(2000);
     await page.goto("/extracurricular");
@@ -20,9 +18,7 @@ test.describe("Extracurricular - Navigation", () => {
   });
 
   test("should display extracurricular interface", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+    await loginAs(page, "superAdmin");
 
     await page.waitForTimeout(2000);
     await page.goto("/extracurricular");
@@ -35,9 +31,7 @@ test.describe("Extracurricular - Navigation", () => {
 
 test.describe("Extracurricular - Features", () => {
   test("should display activity or club list", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+    await loginAs(page, "superAdmin");
 
     await page.waitForTimeout(2000);
     await page.goto("/extracurricular");
@@ -55,9 +49,7 @@ test.describe("Extracurricular - Features", () => {
   });
 
   test("should have add activity functionality", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+    await loginAs(page, "superAdmin");
 
     await page.waitForTimeout(2000);
     await page.goto("/extracurricular");
@@ -73,9 +65,7 @@ test.describe("Extracurricular - Features", () => {
   });
 
   test("should display student participation", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+    await loginAs(page, "superAdmin");
 
     await page.waitForTimeout(2000);
     await page.goto("/extracurricular");
@@ -93,9 +83,7 @@ test.describe("Extracurricular - Features", () => {
   });
 
   test("should show activity schedules", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+    await loginAs(page, "superAdmin");
 
     await page.waitForTimeout(2000);
     await page.goto("/extracurricular");
@@ -113,9 +101,7 @@ test.describe("Extracurricular - Features", () => {
 
 test.describe("Extracurricular - Performance", () => {
   test("should load extracurricular page quickly", async ({ page }) => {
-    const login = new LoginPage(page);
-    await page.goto("/login");
-    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+    await loginAs(page, "superAdmin");
 
     await page.waitForTimeout(2000);
 

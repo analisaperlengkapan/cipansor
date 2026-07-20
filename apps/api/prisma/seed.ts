@@ -30,6 +30,7 @@ import {
   AlumniEventType,
   Prisma,
   Realm,
+  RoleCode,
   KitabCategory,
   KitabLevel,
   BusinessUnitType,
@@ -127,58 +128,10 @@ import { seedPAUDIndicators } from './seeds/paud-indicators';
 import { seedImmunizationReference } from './seeds/immunization-reference';
 import { PERMISSIONS } from '../src/modules/roles/permissions';
 
-// RoleCode - All possible role codes in the system
-const RoleCode = {
-  // Global
-  SUPER_ADMIN: 'SUPER_ADMIN',
-
-  // Yayasan roles
-  YAYASAN_ADMIN: 'YAYASAN_ADMIN',
-  YAYASAN_PEMBINA: 'YAYASAN_PEMBINA',
-  YAYASAN_KETUA: 'YAYASAN_KETUA',
-  YAYASAN_SEKRETARIS: 'YAYASAN_SEKRETARIS',
-  YAYASAN_BENDAHARA: 'YAYASAN_BENDAHARA',
-  YAYASAN_ANGGOTA: 'YAYASAN_ANGGOTA',
-  YAYASAN_PENGAWAS: 'YAYASAN_PENGAWAS',
-
-  // TK Qur'an roles
-  TKQ_ADMIN: 'TKQ_ADMIN',
-  TKQ_KEPALA_SEKOLAH: 'TKQ_KEPALA_SEKOLAH',
-  TKQ_GURU: 'TKQ_GURU',
-  TKQ_TATA_USAHA: 'TKQ_TATA_USAHA',
-  TKQ_ORANG_TUA: 'TKQ_ORANG_TUA',
-  TKQ_SISWA: 'TKQ_SISWA',
-
-  // SD IT (Islam Terpadu) roles
-  SDIT_ADMIN: 'SDIT_ADMIN',
-  SDIT_KEPALA_SEKOLAH: 'SDIT_KEPALA_SEKOLAH',
-  SDIT_GURU: 'SDIT_GURU',
-  SDIT_TATA_USAHA: 'SDIT_TATA_USAHA',
-  SDIT_ORANG_TUA: 'SDIT_ORANG_TUA',
-  SDIT_SISWA: 'SDIT_SISWA',
-
-  // SMP IT (Islam Terpadu) roles
-  SMPIT_ADMIN: 'SMPIT_ADMIN',
-  SMPIT_KEPALA_SEKOLAH: 'SMPIT_KEPALA_SEKOLAH',
-  SMPIT_GURU: 'SMPIT_GURU',
-  SMPIT_TATA_USAHA: 'SMPIT_TATA_USAHA',
-  SMPIT_ORANG_TUA: 'SMPIT_ORANG_TUA',
-  SMPIT_SISWA: 'SMPIT_SISWA',
-
-  // SMA Qur'an roles
-  SMAQ_ADMIN: 'SMAQ_ADMIN',
-  SMAQ_KEPALA_SEKOLAH: 'SMAQ_KEPALA_SEKOLAH',
-  SMAQ_GURU: 'SMAQ_GURU',
-  SMAQ_TATA_USAHA: 'SMAQ_TATA_USAHA',
-  SMAQ_ORANG_TUA: 'SMAQ_ORANG_TUA',
-  SMAQ_SISWA: 'SMAQ_SISWA',
-
-  // Pesantren roles (cross-unit)
-  MUSYRIF: 'MUSYRIF', // Pembina asrama
-  MUHAFIDZ: 'MUHAFIDZ', // Pengampu tahfidz
-  MURABBI: 'MURABBI', // Pembina akhlaq
-  WALI_KAMAR: 'WALI_KAMAR', // Penanggung jawab kamar
-} as const;
+// RoleCode comes straight from the generated Prisma client — do NOT keep a
+// local copy here. A shadow copy previously drifted out of sync with the
+// schema (it was missing every Perguruan Tinggi role) and broke the build
+// whenever the enum gained values.
 
 // Define System User ID constant
 export const SYSTEM_USER_ID = '00000000-0000-0000-0000-000000000000';
@@ -553,18 +506,158 @@ async function main() {
       description: "Siswa SMA Qur'an",
     },
 
+    // Granular school roles (wakasek / wali kelas / guru BK / bendahara /
+    // komite / alumni) for each unit
+    ...(
+      [
+        ['TKQ', "TK Qur'an", Realm.TK_QURAN],
+        ['SDIT', 'SD IT', Realm.SD_IT],
+        ['SMPIT', 'SMP IT', Realm.SMP_IT],
+        ['SMAQ', "SMA Qur'an", Realm.SMA_QURAN],
+      ] as const
+    ).flatMap(([prefix, unitLabel, realm]) => [
+      {
+        code: RoleCode[`${prefix}_WAKASEK`],
+        name: `Wakil Kepala ${unitLabel}`,
+        realm,
+        description: `Wakil kepala sekolah ${unitLabel}`,
+      },
+      {
+        code: RoleCode[`${prefix}_WALI_KELAS`],
+        name: `Wali Kelas ${unitLabel}`,
+        realm,
+        description: `Wali kelas ${unitLabel}`,
+      },
+      {
+        code: RoleCode[`${prefix}_GURU_BK`],
+        name: `Guru BK ${unitLabel}`,
+        realm,
+        description: `Guru bimbingan konseling ${unitLabel}`,
+      },
+      {
+        code: RoleCode[`${prefix}_BENDAHARA`],
+        name: `Bendahara ${unitLabel}`,
+        realm,
+        description: `Bendahara unit ${unitLabel}`,
+      },
+      {
+        code: RoleCode[`${prefix}_KOMITE`],
+        name: `Komite ${unitLabel}`,
+        realm,
+        description: `Komite sekolah ${unitLabel}`,
+      },
+      {
+        code: RoleCode[`${prefix}_ALUMNI`],
+        name: `Alumni ${unitLabel}`,
+        realm,
+        description: `Alumni ${unitLabel}`,
+      },
+    ]),
+
+    // Perguruan Tinggi roles
+    {
+      code: RoleCode.PT_REKTOR,
+      name: 'Rektor',
+      realm: Realm.PERGURUAN_TINGGI,
+      description: 'Rektor perguruan tinggi',
+    },
+    {
+      code: RoleCode.PT_WAKIL_REKTOR,
+      name: 'Wakil Rektor',
+      realm: Realm.PERGURUAN_TINGGI,
+      description: 'Wakil rektor perguruan tinggi',
+    },
+    {
+      code: RoleCode.PT_DEKAN,
+      name: 'Dekan',
+      realm: Realm.PERGURUAN_TINGGI,
+      description: 'Dekan fakultas',
+    },
+    {
+      code: RoleCode.PT_KAPRODI,
+      name: 'Ketua Program Studi',
+      realm: Realm.PERGURUAN_TINGGI,
+      description: 'Ketua program studi',
+    },
+    {
+      code: RoleCode.PT_DOSEN,
+      name: 'Dosen',
+      realm: Realm.PERGURUAN_TINGGI,
+      description: 'Dosen pengajar',
+    },
+    {
+      code: RoleCode.PT_MAHASISWA,
+      name: 'Mahasiswa',
+      realm: Realm.PERGURUAN_TINGGI,
+      description: 'Mahasiswa perguruan tinggi',
+    },
+    {
+      code: RoleCode.PT_STAF_AKADEMIK,
+      name: 'Staf Akademik',
+      realm: Realm.PERGURUAN_TINGGI,
+      description: 'Staf akademik perguruan tinggi',
+    },
+    {
+      code: RoleCode.PT_TATA_USAHA,
+      name: 'Tata Usaha PT',
+      realm: Realm.PERGURUAN_TINGGI,
+      description: 'Tata usaha perguruan tinggi',
+    },
+    {
+      code: RoleCode.PT_ALUMNI,
+      name: 'Alumni PT',
+      realm: Realm.PERGURUAN_TINGGI,
+      description: 'Alumni perguruan tinggi',
+    },
+
     // Pesantren roles (cross-unit)
+    {
+      code: RoleCode.PESANTREN_PENGASUH,
+      name: 'Pengasuh Pesantren',
+      realm: Realm.PESANTREN,
+      description: 'Kyai / pimpinan tertinggi pesantren',
+    },
+    {
+      code: RoleCode.PESANTREN_DIREKTUR,
+      name: 'Direktur Pesantren',
+      realm: Realm.PESANTREN,
+      description: 'Pengelola operasional harian pesantren',
+    },
+    {
+      code: RoleCode.PESANTREN_TATA_USAHA,
+      name: 'Tata Usaha Pesantren',
+      realm: Realm.PESANTREN,
+      description: 'Administrasi pesantren',
+    },
+    {
+      code: RoleCode.USTADZ,
+      name: 'Ustadz',
+      realm: Realm.PESANTREN,
+      description: 'Guru pengampu kitab/pesantren',
+    },
     {
       code: RoleCode.MUSYRIF,
       name: 'Musyrif',
       realm: Realm.PESANTREN,
-      description: 'Pembina asrama',
+      description: 'Pembina asrama (putra)',
+    },
+    {
+      code: RoleCode.MUSYRIFAH,
+      name: 'Musyrifah',
+      realm: Realm.PESANTREN,
+      description: 'Pembina asrama (putri)',
     },
     {
       code: RoleCode.MUHAFIDZ,
       name: 'Muhafidz',
       realm: Realm.PESANTREN,
-      description: 'Pengampu tahfidz',
+      description: 'Pengampu tahfidz (putra)',
+    },
+    {
+      code: RoleCode.MUHAFIDZAH,
+      name: 'Muhafidzah',
+      realm: Realm.PESANTREN,
+      description: 'Pengampu tahfidz (putri)',
     },
     {
       code: RoleCode.MURABBI,
@@ -577,6 +670,46 @@ async function main() {
       name: 'Wali Kamar',
       realm: Realm.PESANTREN,
       description: 'Penanggung jawab kamar',
+    },
+
+    // Cross-unit support staff (yayasan-wide services)
+    {
+      code: RoleCode.PUSTAKAWAN,
+      name: 'Pustakawan',
+      realm: Realm.YAYASAN,
+      description: 'Pengelola perpustakaan',
+    },
+    {
+      code: RoleCode.PERAWAT,
+      name: 'Perawat',
+      realm: Realm.YAYASAN,
+      description: 'Perawat / petugas UKS & klinik',
+    },
+    {
+      code: RoleCode.KEAMANAN,
+      name: 'Keamanan',
+      realm: Realm.YAYASAN,
+      description: 'Satpam / petugas keamanan',
+    },
+    {
+      code: RoleCode.LABORAN,
+      name: 'Laboran',
+      realm: Realm.YAYASAN,
+      description: 'Petugas laboratorium & praktikum',
+    },
+
+    // Business Unit roles
+    {
+      code: RoleCode.BUSINESS_MANAGER,
+      name: 'Manajer Unit Usaha',
+      realm: Realm.UNIT_USAHA,
+      description: 'Manajer unit usaha (kantin, laundry, koperasi, dll)',
+    },
+    {
+      code: RoleCode.BUSINESS_STAFF,
+      name: 'Staf Unit Usaha',
+      realm: Realm.UNIT_USAHA,
+      description: 'Staf unit usaha',
     },
   ];
 
@@ -1703,7 +1836,14 @@ async function main() {
   console.log('✅ Admission periods created');
 
   // Create Registrants with various statuses
-  const registrantData = [
+  const registrantData: Array<{
+    name: string;
+    gender: Gender;
+    status: AdmissionStatus;
+    parentName: string;
+    quranAbility?: string;
+    memorizedJuz?: number;
+  }> = [
     {
       name: 'Farid Hidayat',
       gender: Gender.MALE,
@@ -1721,18 +1861,22 @@ async function main() {
       gender: Gender.MALE,
       status: AdmissionStatus.TEST_COMPLETED,
       parentName: 'Bapak Ramadhan',
+      quranAbility: 'TAHFIDZ',
+      memorizedJuz: 5,
     },
     {
       name: 'Salsabila Putri',
       gender: Gender.FEMALE,
       status: AdmissionStatus.DOCUMENT_CHECK,
       parentName: 'Bapak Putra',
+      quranAbility: 'TARTIL',
     },
     {
       name: 'Akbar Maulana',
       gender: Gender.MALE,
       status: AdmissionStatus.REGISTERED,
       parentName: 'Bapak Maulana',
+      quranAbility: 'LANCAR',
     },
     {
       name: 'Azzahra Aulia',
@@ -1748,8 +1892,13 @@ async function main() {
       data: {
         admissionPeriodId: admissionPeriod.id,
         registrationNo: `REG-2024-${String(regCounter++).padStart(4, '0')}`,
+        // `fullName` is the canonical field the API reads; `name` is the
+        // legacy column kept in sync (see admissions service writes).
+        fullName: reg.name,
         name: reg.name,
         gender: reg.gender,
+        quranAbility: reg.quranAbility,
+        memorizedJuz: reg.memorizedJuz,
         birthPlace: 'Sukabumi',
         birthDate: new Date('2012-05-15'),
         address: 'Jl. Pendaftaran No. ' + regCounter + ', Sukabumi',

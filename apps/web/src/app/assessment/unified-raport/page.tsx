@@ -11,19 +11,21 @@ import { Loader2, Printer } from "lucide-react";
 import { useAcademicYears } from "@/hooks/use-academic-years";
 import { useClasses } from "@/hooks/use-classes";
 import { useStudentsByClass } from "@/hooks/use-students";
+import api from "@/lib/api";
 
-// Basic API fetcher wrapper if @/lib/api doesn't work as expected in this context,
-// but usually it does. I'll use standard fetch for safety in this snippet.
+// Fetch the unified raport through the shared axios client so the request
+// carries auth and hits the real API origin (a bare relative fetch would go to
+// the Next server, which does not serve /api).
 const fetchUnifiedRaport = async (
   studentId: string,
   academicYearId: string,
   semester: number,
 ) => {
-  const res = await fetch(
-    `/api/assessment/unified-raport/students/${studentId}?academicYearId=${academicYearId}&semester=${semester}`,
+  const res = await api.get(
+    `/assessment/unified-raport/students/${studentId}`,
+    { params: { academicYearId, semester } },
   );
-  if (!res.ok) throw new Error("Failed to fetch report");
-  return res.json();
+  return res.data;
 };
 
 export default function UnifiedRaportPage() {
@@ -266,10 +268,10 @@ export default function UnifiedRaportPage() {
                       Total Hafalan: {data.data.islamic.tahfidz.totalJuz} Juz
                     </p>
                     <p>
-                      Surah Terakhir: {data.data.islamic.tahfidz.surahTerakhir}
+                      Surah Terakhir: {data.data.islamic.tahfidz.latestSurah}
                     </p>
                     <p className="mt-2 italic">
-                      "{data.data.islamic.tahfidz.catatan}"
+                      Predikat: {data.data.islamic.tahfidz.averageGrade}
                     </p>
                   </div>
                 </div>

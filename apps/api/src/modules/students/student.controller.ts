@@ -8,7 +8,7 @@ import { ListStudentsQuery, CreateStudentInput, UpdateStudentInput } from './stu
  * GET /api/students
  */
 export const list = asyncHandler(async (req: Request, res: Response) => {
-  const query = (res.locals.validatedQuery || (req.query as any)) as ListStudentsQuery;
+  const query = (res.locals.validatedQuery || req.query) as ListStudentsQuery;
   const result = await studentService.findAll(query, {
     role: req.user!.role,
     unitId: req.user!.unitId,
@@ -28,7 +28,7 @@ export const list = asyncHandler(async (req: Request, res: Response) => {
  * GET /api/students/:id
  */
 export const getById = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = (req.params as any);
+  const { id } = req.params;
   const student = await studentService.findById(id);
 
   res.json({
@@ -42,7 +42,7 @@ export const getById = asyncHandler(async (req: Request, res: Response) => {
  * GET /api/students/:id/complete-profile
  */
 export const getCompleteProfile = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = (req.params as any);
+  const { id } = req.params;
   const student = await studentService.getCompleteProfile(id);
 
   res.json({
@@ -70,7 +70,7 @@ export const create = asyncHandler(async (req: Request, res: Response) => {
  * PUT /api/students/:id
  */
 export const update = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = (req.params as any);
+  const { id } = req.params;
   const input: UpdateStudentInput = req.body;
   const student = await studentService.update(id, input);
 
@@ -85,7 +85,7 @@ export const update = asyncHandler(async (req: Request, res: Response) => {
  * DELETE /api/students/:id
  */
 export const remove = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = (req.params as any);
+  const { id } = req.params;
   const result = await studentService.delete(id);
 
   res.json({

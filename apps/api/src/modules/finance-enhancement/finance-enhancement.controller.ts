@@ -1,3 +1,4 @@
+import { requireUser } from '../../middleware/auth';
 import { Request, Response, NextFunction } from 'express';
 import { financeEnhancementService } from './finance-enhancement.service';
 import {
@@ -32,8 +33,8 @@ import {
 
 // Helper for parsing pagination params
 const parsePagination = (req: Request) => ({
-  page: Number((req.query as any).page) || 1,
-  limit: Number((req.query as any).limit) || 20,
+  page: Number(req.query.page) || 1,
+  limit: Number(req.query.limit) || 20,
 });
 
 export class FinanceEnhancementController {
@@ -41,7 +42,7 @@ export class FinanceEnhancementController {
 
   async getAccountCodes(req: Request, res: Response, next: NextFunction) {
     try {
-      const { type, isActive, search } = (req.query as any);
+      const { type, isActive, search } = req.query;
       const { page, limit } = parsePagination(req);
 
       const result = await financeEnhancementService.getAccountCodes({
@@ -60,7 +61,7 @@ export class FinanceEnhancementController {
 
   async getBudgetRealizationReport(req: Request, res: Response, next: NextFunction) {
     try {
-      const { unitId, academicYearId } = (req.query as any);
+      const { unitId, academicYearId } = req.query;
 
       if (!unitId || !academicYearId) {
         return res
@@ -88,7 +89,7 @@ export class FinanceEnhancementController {
 
   async updateAccountCode(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = (req.params as any);
+      const { id } = req.params;
       const input: UpdateAccountCodeInput = req.body;
       const result = await financeEnhancementService.updateAccountCode(id, input);
       res.json({ success: true, data: result });
@@ -101,7 +102,7 @@ export class FinanceEnhancementController {
 
   async getJournalEntries(req: Request, res: Response, next: NextFunction) {
     try {
-      const { unitId, accountId, startDate, endDate, search } = (req.query as any);
+      const { unitId, accountId, startDate, endDate, search } = req.query;
       const { page, limit } = parsePagination(req);
 
       const result = await financeEnhancementService.getJournalEntries({
@@ -123,7 +124,7 @@ export class FinanceEnhancementController {
   async createJournalEntry(req: Request, res: Response, next: NextFunction) {
     try {
       const input: CreateJournalEntryInput = req.body;
-      const userId = (req as any).user.id;
+      const userId = requireUser(req).id;
 
       const result = await financeEnhancementService.createJournalEntry({
         ...input,
@@ -140,7 +141,7 @@ export class FinanceEnhancementController {
 
   async getJournalEntryById(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = (req.params as any);
+      const { id } = req.params;
       const result = await financeEnhancementService.getJournalEntryById(id);
 
       if (!result) {
@@ -157,7 +158,7 @@ export class FinanceEnhancementController {
 
   async getScholarships(req: Request, res: Response, next: NextFunction) {
     try {
-      const { unitId, type, source, isActive } = (req.query as any);
+      const { unitId, type, source, isActive } = req.query;
       const { page, limit } = parsePagination(req);
 
       const result = await financeEnhancementService.getScholarships({
@@ -187,7 +188,7 @@ export class FinanceEnhancementController {
 
   async getScholarshipById(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = (req.params as any);
+      const { id } = req.params;
       const result = await financeEnhancementService.getScholarshipById(id);
 
       if (!result) {
@@ -202,8 +203,8 @@ export class FinanceEnhancementController {
 
   async getScholarshipRecipients(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = (req.params as any);
-      const { status } = (req.query as any);
+      const { id } = req.params;
+      const { status } = req.query;
       const { page, limit } = parsePagination(req);
 
       const result = await financeEnhancementService.getScholarshipRecipients(id, {
@@ -234,7 +235,7 @@ export class FinanceEnhancementController {
     try {
       const { prisma } = await import('@/lib/prisma');
       const criterion = await prisma.scholarshipCriterion.create({
-        data: { ...req.body, scholarshipId: (req.params as any).id },
+        data: { ...req.body, scholarshipId: req.params.id },
       });
       res.status(201).json({ success: true, data: criterion });
     } catch (error) {
@@ -246,7 +247,7 @@ export class FinanceEnhancementController {
     try {
       const { prisma } = await import('@/lib/prisma');
       const criteria = await prisma.scholarshipCriterion.findMany({
-        where: { scholarshipId: (req.params as any).id },
+        where: { scholarshipId: req.params.id },
         orderBy: { createdAt: 'asc' },
       });
       res.json({ success: true, data: criteria });
@@ -258,7 +259,7 @@ export class FinanceEnhancementController {
   async assessScholarshipRecipient(req: Request, res: Response, next: NextFunction) {
     try {
       const { scholarshipScoringService } = await import('../scholarship/scoring.service');
-      const result = await scholarshipScoringService.assessRecipient((req.params as any).id);
+      const result = await scholarshipScoringService.assessRecipient(req.params.id);
       res.json({ success: true, data: result });
     } catch (error) {
       next(error);
@@ -269,7 +270,7 @@ export class FinanceEnhancementController {
 
   async getPaymentComponents(req: Request, res: Response, next: NextFunction) {
     try {
-      const { unitId, category, isActive } = (req.query as any);
+      const { unitId, category, isActive } = req.query;
       const { page, limit } = parsePagination(req);
 
       const result = await financeEnhancementService.getPaymentComponents({
@@ -300,7 +301,7 @@ export class FinanceEnhancementController {
 
   async getTrialBalance(req: Request, res: Response, next: NextFunction) {
     try {
-      const { unitId, startDate, endDate } = (req.query as any);
+      const { unitId, startDate, endDate } = req.query;
 
       if (!unitId || !startDate || !endDate) {
         return res
@@ -323,7 +324,7 @@ export class FinanceEnhancementController {
 
   async getGeneralLedger(req: Request, res: Response, next: NextFunction) {
     try {
-      const { unitId, accountId, startDate, endDate } = (req.query as any);
+      const { unitId, accountId, startDate, endDate } = req.query;
 
       if (!unitId || !startDate || !endDate || !accountId) {
         return res
@@ -349,7 +350,7 @@ export class FinanceEnhancementController {
 
   async getCashFlowStatement(req: Request, res: Response, next: NextFunction) {
     try {
-      const { unitId, startDate, endDate } = (req.query as any);
+      const { unitId, startDate, endDate } = req.query;
 
       if (!unitId || !startDate || !endDate) {
         return res
@@ -371,7 +372,7 @@ export class FinanceEnhancementController {
 
   async getIncomeExpenseReport(req: Request, res: Response, next: NextFunction) {
     try {
-      const { unitId, startDate, endDate } = (req.query as any);
+      const { unitId, startDate, endDate } = req.query;
 
       if (!unitId || !startDate || !endDate) {
         return res
@@ -393,7 +394,7 @@ export class FinanceEnhancementController {
 
   async getBalanceSheet(req: Request, res: Response, next: NextFunction) {
     try {
-      const { unitId, date } = (req.query as any);
+      const { unitId, date } = req.query;
 
       if (!unitId || !date) {
         return res.status(400).json({ success: false, message: 'Unit ID and Date are required' });
@@ -411,8 +412,8 @@ export class FinanceEnhancementController {
 
   async getCashFlowForecast(req: Request, res: Response, next: NextFunction) {
     try {
-      const { unitId, months } = (req.query as any);
-      const user = (req as any).user;
+      const { unitId, months } = req.query;
+      const user = requireUser(req);
 
       if (!unitId) {
         return res.status(400).json({ success: false, message: 'Unit ID is required' });
@@ -442,7 +443,7 @@ export class FinanceEnhancementController {
 
   async getBudgets(req: Request, res: Response, next: NextFunction) {
     try {
-      const { unitId, academicYearId } = (req.query as any);
+      const { unitId, academicYearId } = req.query;
       const { page, limit } = parsePagination(req);
 
       const result = await getBudgets({
@@ -461,7 +462,7 @@ export class FinanceEnhancementController {
   async createBudget(req: Request, res: Response, next: NextFunction) {
     try {
       const input: CreateBudgetInput = req.body;
-      const userId = (req as any).user.id;
+      const userId = requireUser(req).id;
 
       const result = await createBudget({
         ...input,
@@ -476,7 +477,7 @@ export class FinanceEnhancementController {
 
   async updateBudget(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = (req.params as any);
+      const { id } = req.params;
       const input: UpdateBudgetInput = req.body;
       const result = await updateBudget(id, input);
       res.json({ success: true, data: result });
@@ -487,7 +488,7 @@ export class FinanceEnhancementController {
 
   async deleteBudget(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = (req.params as any);
+      const { id } = req.params;
       await deleteBudget(id);
       res.json({ success: true, message: 'Budget deleted successfully' });
     } catch (error) {
@@ -497,9 +498,9 @@ export class FinanceEnhancementController {
 
   async getBudgetUtilizationAlerts(req: Request, res: Response, next: NextFunction) {
     try {
-      const { unitId, academicYearId } = (req.query as any);
+      const { unitId, academicYearId } = req.query;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const user = (req as any).user;
+      const user = requireUser(req);
 
       // Unit-level authorization mirrors the cash-flow forecast endpoint:
       // a UNIT_ADMIN must not be able to query another unit's budget alerts
@@ -551,7 +552,7 @@ export class FinanceEnhancementController {
 
   async getFinancialPeriods(req: Request, res: Response, next: NextFunction) {
     try {
-      const { unitId } = (req.query as any);
+      const { unitId } = req.query;
       const { page, limit } = parsePagination(req);
 
       const result = await getFinancialPeriods({
@@ -578,7 +579,7 @@ export class FinanceEnhancementController {
 
   async getConsolidatedBudget(req: Request, res: Response, next: NextFunction) {
     try {
-      const { academicYearId } = (req.query as any);
+      const { academicYearId } = req.query;
 
       if (!academicYearId) {
         return res
@@ -598,8 +599,8 @@ export class FinanceEnhancementController {
 
   async closeFinancialPeriod(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = (req.params as any);
-      const userId = (req as any).user.id;
+      const { id } = req.params;
+      const userId = requireUser(req).id;
       const result = await closePeriod(id, userId);
       res.json({ success: true, data: result });
     } catch (error) {

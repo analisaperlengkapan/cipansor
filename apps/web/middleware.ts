@@ -7,20 +7,20 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import {
   canAccessRoute,
+  getActiveRoleCode,
   getDashboardForRole,
-  getEffectiveRole,
-  type LegacyRole,
 } from "@/lib/rbac";
 
 // Public routes that don't require authentication.
 // "/unauthorized" is the access-denied page ProtectedRoute redirects to; it
 // must stay reachable for any user (otherwise RBAC would bounce them off it).
-const publicRoutes = ["/login", "/", "/unauthorized"];
+// "/public" hosts the public donation portal.
+const publicRoutes = ["/login", "/", "/unauthorized", "/public"];
 
 // Helper function to get auth state from cookie
 function getAuthState(request: NextRequest): {
   isAuthenticated: boolean;
-  role?: LegacyRole;
+  role?: string;
 } {
   // Check for auth storage in cookies (set by zustand persist)
   const authStorage = request.cookies.get("auth-storage")?.value;
@@ -29,9 +29,10 @@ function getAuthState(request: NextRequest): {
     try {
       const parsed = JSON.parse(authStorage);
       if (parsed.state?.isAuthenticated === true && parsed.state?.user) {
-        // Prefer the legacy `user.role` bucket (still emitted by the backend);
-        // fall back to deriving it from `userRoles[].role.code` (RoleCode).
-        const role = getEffectiveRole(parsed.state.user);
+        // The active RoleCode (primary assignment) drives both route access
+        // and the dashboard redirect; legacy-bucket users are mapped to a
+        // representative RoleCode inside the rbac helpers.
+        const role = getActiveRoleCode(parsed.state.user);
         if (role) {
           return { isAuthenticated: true, role };
         }
@@ -58,7 +59,10 @@ export function middleware(request: NextRequest) {
 
   // Check if the route is public
   const isPublicRoute = publicRoutes.some(
-    (route) => pathname === route || pathname.startsWith("/login"),
+    (route) =>
+      pathname === route ||
+      pathname.startsWith("/login") ||
+      pathname.startsWith("/public/"),
   );
 
   // Get authentication state

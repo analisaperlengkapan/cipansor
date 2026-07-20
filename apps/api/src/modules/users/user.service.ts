@@ -1,7 +1,8 @@
 import { prisma } from '@/lib/prisma';
 import { hashPassword } from '@/lib/password';
 import { Errors } from '@/middleware/error';
-import { UserRole, Prisma } from '@prisma/client';
+import { UserRole, Prisma, type Unit } from '@prisma/client';
+import { resolveLegacyRoleToRoleCode } from '@/modules/auth/auth.service';
 import type { ListUsersQuery, CreateUserInput, UpdateUserInput } from './user.schema';
 
 export class UserService {
@@ -165,8 +166,9 @@ export class UserService {
     }
 
     // If unit provided, check it exists
+    let unit: Unit | null = null;
     if (input.unitId) {
-      const unit = await prisma.unit.findFirst({
+      unit = await prisma.unit.findFirst({
         where: { id: input.unitId, deletedAt: null },
       });
       if (!unit) {
@@ -174,10 +176,23 @@ export class UserService {
       }
     }
 
+    // Login requires a UserRoleAssignment, so resolve the concrete RoleCode
+    // up front and refuse to create an account that could never log in.
+    const roleCode = resolveLegacyRoleToRoleCode(input.role, unit?.type);
+    if (!roleCode) {
+      throw Errors.badRequest(
+        `Cannot map role ${input.role} for this unit type — assign a specific role code instead`
+      );
+    }
+    const role = await prisma.role.findUnique({ where: { code: roleCode } });
+    if (!role) {
+      throw Errors.badRequest(`Role ${roleCode} is not seeded in the roles table`);
+    }
+
     // Hash password
     const passwordHash = await hashPassword(input.password);
 
-    // Create user
+    // Create user + primary role assignment together
     const user = await prisma.user.create({
       data: {
         name: input.name,
@@ -186,6 +201,14 @@ export class UserService {
         role: input.role as UserRole,
         unitId: input.unitId || null,
         isActive: true,
+        userRoles: {
+          create: {
+            roleId: role.id,
+            unitId: input.unitId || null,
+            isPrimary: true,
+            isActive: true,
+          },
+        },
       },
       include: { unit: true },
     });

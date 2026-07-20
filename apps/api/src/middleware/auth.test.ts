@@ -98,7 +98,7 @@ describe('middleware/auth RBAC', () => {
     });
   });
 
-  describe('authorize() bidirectional legacy expansion', () => {
+  describe('authorize() legacy forward expansion', () => {
     it('allows an exact RoleCode match', () => {
       authorize(RoleCode.SDIT_ADMIN)(makeReq({ roleCode: RoleCode.SDIT_ADMIN }), makeRes(), next as unknown as NextFunction);
       expect(next).toHaveBeenCalledWith();
@@ -109,9 +109,10 @@ describe('middleware/auth RBAC', () => {
       expect(next).toHaveBeenCalledWith();
     });
 
-    it('reverse-expands: authorize(SDIT_ADMIN) admits a pre-migration UNIT_ADMIN token', () => {
+    it('no reverse expansion: tokens always carry a real RoleCode, so a raw bucket string is denied', () => {
       authorize(RoleCode.SDIT_ADMIN)(makeReq({ roleCode: 'UNIT_ADMIN' }), makeRes(), next as unknown as NextFunction);
-      expect(next).toHaveBeenCalledWith();
+      expect(lastError(next)).toBeDefined();
+      expect(lastError(next).statusCode).toBe(403);
     });
 
     it('denies an insufficient role with FORBIDDEN', () => {

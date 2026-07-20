@@ -4,14 +4,7 @@ import { getEffectiveRole } from "@/lib/rbac";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/auth";
-import {
-  ADMIN_ROLES,
-  TEACHER_ROLES,
-  STAFF_ROLES,
-  STUDENT_ROLES,
-  PARENT_ROLES,
-  YAYASAN_ROLES,
-} from "@/config/navigation";
+import { LEGACY_ROLE_EXPANSION, isLegacyRole } from "@cipansor/shared";
 
 interface UserRole {
   id: string;
@@ -35,24 +28,10 @@ interface ProtectedRouteProps {
   allowedRealms?: string[]; // Realms (GLOBAL, YAYASAN, PAUD, etc.)
 }
 
-// Map legacy roles to RoleCode categories
+// Map legacy roles to RoleCode categories (canonical bridge from shared)
 function mapLegacyRoleToRoleCodes(legacyRole: string): string[] {
-  switch (legacyRole) {
-    case "SUPER_ADMIN":
-      return ["SUPER_ADMIN"];
-    case "UNIT_ADMIN":
-      return ADMIN_ROLES.filter((r) => r !== "SUPER_ADMIN");
-    case "TEACHER":
-      return TEACHER_ROLES;
-    case "STAFF":
-      return STAFF_ROLES;
-    case "STUDENT":
-      return STUDENT_ROLES;
-    case "PARENT":
-      return PARENT_ROLES;
-    default:
-      return [legacyRole];
-  }
+  if (isLegacyRole(legacyRole)) return LEGACY_ROLE_EXPANSION[legacyRole];
+  return [legacyRole];
 }
 
 export function ProtectedRoute({

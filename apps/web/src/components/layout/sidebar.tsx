@@ -1,6 +1,6 @@
 "use client";
 
-import { getEffectiveRole } from "@/lib/rbac";
+import { getActiveRoleCode } from "@/lib/rbac";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -8,11 +8,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import {
-  getNavigationForRole,
-  getNavigationForRoleCode,
-  type NavGroup,
-} from "@/config/navigation";
+import { getNavigationForRoleCode, type NavGroup } from "@/config/navigation";
 import { useAuthStore } from "@/stores/auth";
 import { ChevronLeft, LogOut } from "lucide-react";
 
@@ -50,20 +46,15 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
   const pathname = usePathname();
   const { user, logout } = useAuthStore();
 
-  if (typeof window !== "undefined") {
-    console.log("Sidebar rendering, user:", JSON.stringify(user));
-  }
-
   // Get active role from userRoles
   const userRoles = user?.userRoles as UserRole[] | undefined;
   const activeRole = userRoles?.find((r) => r.isPrimary) || userRoles?.[0];
 
-  // Get navigation based on active role code or fallback to legacy role
-  const navigation = activeRole
-    ? getNavigationForRoleCode(activeRole.role.code)
-    : user
-      ? getNavigationForRole(getEffectiveRole(user) ?? user.role)
-      : [];
+  // Menu derives from the active RoleCode (registry-driven)
+  const activeRoleCode = activeRole?.role.code ?? getActiveRoleCode(user);
+  const navigation = activeRoleCode
+    ? getNavigationForRoleCode(activeRoleCode)
+    : [];
 
   return (
     <div

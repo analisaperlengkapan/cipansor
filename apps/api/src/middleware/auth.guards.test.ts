@@ -36,7 +36,6 @@ describe('isAdmin', () => {
     RoleCode.SUPER_ADMIN,
     RoleCode.YAYASAN_ADMIN,
     RoleCode.SDIT_ADMIN,
-    'UNIT_ADMIN', // pre-migration legacy token
   ])('allows admin roleCode %s', (roleCode) => {
     const next = vi.fn() as unknown as NextFunction & ReturnType<typeof vi.fn>;
     isAdmin(mockReq({ id: 'u1', roleCode }), res, next);

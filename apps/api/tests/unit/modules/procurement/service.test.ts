@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { PurchaseRequestStatus } from '@cipansor/shared';
 
 // Mock Notification Service first to avoid import issues
-vi.mock('../../../../src/modules/notifications/service', () => ({
+vi.mock('../../../../src/modules/notifications/notifications.service', () => ({
   createNotification: vi.fn(),
 }));
 

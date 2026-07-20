@@ -4,7 +4,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { prismaMock, resetPrismaMocks } from '../mocks/prisma.mock';
-import * as analyticsService from '@/modules/analytics/service';
+import * as analyticsService from '@/modules/analytics/analytics.service';
 
 // Mock Prisma
 vi.mock('@/lib/prisma', () => ({

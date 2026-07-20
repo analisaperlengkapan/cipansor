@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Request, Response } from 'express';
 
-vi.mock('../service', () => ({
+vi.mock('../wilayah.service', () => ({
   listProvinces: vi.fn(),
   getProvinceById: vi.fn(),
   createProvince: vi.fn(),
@@ -16,8 +16,8 @@ vi.mock('../service', () => ({
   createVillage: vi.fn(),
 }));
 
-import * as controller from '../controller';
-import * as service from '../service';
+import * as controller from '../wilayah.controller';
+import * as service from '../wilayah.service';
 
 function mockReqRes(overrides: Partial<Request> = {}) {
   const req = { query: {}, params: {}, body: {}, ...overrides } as unknown as Request;

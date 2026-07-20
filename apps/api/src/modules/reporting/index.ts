@@ -3,6 +3,6 @@
  * Phase 7A.3 - Advanced Reporting
  */
 
-export { reportingService } from './service';
-export type { ReportType, ReportFormat } from './service';
-export { default as reportingRoutes } from './routes';
+export { reportingService } from './reporting.service';
+export type { ReportType, ReportFormat } from './reporting.service';
+export { default as reportingRoutes } from './reporting.routes';

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import * as service from '../../src/modules/notifications/service';
+import * as service from '../../src/modules/notifications/notifications.service';
 import { prisma } from '../../src/lib/prisma';
 
 // Mock prisma

@@ -27,7 +27,7 @@ vi.mock('@prisma/client', () => {
 });
 
 // Import service
-import { getLibraryStats } from '../../../../src/modules/library/service';
+import { getLibraryStats } from '../../../../src/modules/library/library.service';
 import { prisma } from '../../../../src/lib/prisma';
 
 describe('Library Service - Stats Optimization', () => {

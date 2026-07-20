@@ -21,30 +21,30 @@ import assignmentsRoutes from '@/modules/assignments/assignments.routes';
 import academicYearRoutes from '@/modules/academic-years/academic-year.routes';
 import attendanceRoutes from '@/modules/attendance/attendance.routes';
 import tahfidzRoutes from '@/modules/tahfidz/tahfidz.routes';
-import dormitoryRoutes from '@/modules/dormitories/routes';
-import permitRoutes from '@/modules/permits/routes';
-import violationRoutes from '@/modules/violations/routes';
-import rewardRoutes from '@/modules/rewards/routes';
-import financeRoutes from '@/modules/finance/routes';
-import foundationRoutes from '@/modules/foundation/routes';
+import dormitoryRoutes from '@/modules/dormitories/dormitories.routes';
+import permitRoutes from '@/modules/permits/permits.routes';
+import violationRoutes from '@/modules/violations/violations.routes';
+import rewardRoutes from '@/modules/rewards/rewards.routes';
+import financeRoutes from '@/modules/finance/finance.routes';
+import foundationRoutes from '@/modules/foundation/foundation.routes';
 // Legacy `psb` module has been superseded by the unified `admissions` module
 // (mounted at `/api/admissions`). Removed from the router so external callers
 // do not silently keep using endpoints whose data shape and field names have
 // diverged from the new module (e.g. `name` vs `fullName`, `registrationNumber`
 // vs `registrationNo`).
-import hrRoutes from '@/modules/hr/routes';
-import libraryRoutes from '@/modules/library/routes';
-import healthRoutes from '@/modules/health/routes';
-import inventoryRoutes from '@/modules/inventory/routes';
-import notificationRoutes from '@/modules/notifications/routes';
+import hrRoutes from '@/modules/hr/hr.routes';
+import libraryRoutes from '@/modules/library/library.routes';
+import healthRoutes from '@/modules/health/health.routes';
+import inventoryRoutes from '@/modules/inventory/inventory.routes';
+import notificationRoutes from '@/modules/notifications/notifications.routes';
 import messageRoutes from '@/modules/messages/messages.routes';
-import curriculumRoutes from '@/modules/curriculum/routes';
-import assessmentRoutes from '@/modules/assessment/routes';
+import curriculumRoutes from '@/modules/curriculum/curriculum.routes';
+import assessmentRoutes from '@/modules/assessment/assessment.routes';
 import { cbtRoutes } from '@/modules/cbt/cbt.routes';
-import alumniRoutes from '@/modules/alumni/routes';
-import analyticsRoutes from '@/modules/analytics/routes';
-import parentRoutes from '@/modules/parent/routes';
-import reportingRoutes from '@/modules/reporting/routes';
+import alumniRoutes from '@/modules/alumni/alumni.routes';
+import analyticsRoutes from '@/modules/analytics/analytics.routes';
+import parentRoutes from '@/modules/parent/parent.routes';
+import reportingRoutes from '@/modules/reporting/reporting.routes';
 import rolesRoutes from '@/modules/roles/roles.routes';
 import { takhosusRoutes } from '@/modules/takhosus';
 import { muhasabahRoutes } from '@/modules/muhasabah';
@@ -61,10 +61,10 @@ import { walletRoutes } from '@/modules/wallet';
 import { canteenRoutes } from '@/modules/canteen';
 import { laundryRoutes } from '@/modules/laundry';
 import { payrollRoutes } from '@/modules/payroll';
-import pkgRoutes from '@/modules/pkg/routes';
-import portfolioRoutes from '@/modules/portfolio/routes';
-import ibadahRoutes from '@/modules/ibadah/routes';
-import raporPesantrenRoutes from '@/modules/rapor-pesantren/routes';
+import pkgRoutes from '@/modules/pkg/pkg.routes';
+import portfolioRoutes from '@/modules/portfolio/portfolio.routes';
+import ibadahRoutes from '@/modules/ibadah/ibadah.routes';
+import raporPesantrenRoutes from '@/modules/rapor-pesantren/rapor-pesantren.routes';
 import { procurementRoutes } from '@/modules/procurement/procurement.routes';
 import { supplierRoutes } from '@/modules/suppliers/suppliers.routes';
 import { uploadRoutes } from '@/modules/upload/upload.routes';
@@ -86,9 +86,9 @@ import { qualityRoutes } from '@/modules/quality/quality.routes';
 import correspondenceRoutes from '@/modules/correspondence/correspondence.routes';
 import riskRoutes from '@/modules/risk/risk.routes';
 import { complaintsRoutes } from '@/modules/complaints/complaints.routes';
-import { practicumRoutes } from '@/modules/practicum/routes';
-import { studentOrgRoutes } from '@/modules/student-org/routes';
-import { researchRoutes } from '@/modules/research/routes';
+import { practicumRoutes } from '@/modules/practicum/practicum.routes';
+import { studentOrgRoutes } from '@/modules/student-org/student-org.routes';
+import { researchRoutes } from '@/modules/research/research.routes';
 import nonFormalRoutes from '@/modules/non-formal';
 import socialServiceRoutes from '@/modules/social-service';
 import higherEducationRoutes from '@/modules/higher-education/higher-education.routes';
@@ -104,9 +104,9 @@ import { dashboardEnhancementRoutes } from '@/modules/dashboard-enhancement';
 import { sanadCertificateRouter } from '@/modules/sanad-certificate';
 import dashboardRoutes from '@/modules/dashboard/dashboard.routes';
 import receptionRoutes from '@/modules/reception/reception.routes';
-import marketingRoutes from '@/modules/marketing/routes';
+import marketingRoutes from '@/modules/marketing/marketing.routes';
 import { announcementRoutes } from '@/modules/announcements';
-import projectRoutes from '@/modules/project/routes';
+import projectRoutes from '@/modules/project/project.routes';
 
 // New modules
 import perencanaanRoutes from '@/modules/perencanaan/perencanaan.routes';
@@ -117,7 +117,7 @@ import talentaRoutes from '@/modules/talenta/talenta.routes';
 import organisasiRoutes from '@/modules/organisasi/organisasi.routes';
 import tataLaksanaRoutes from '@/modules/tatalaksana/tatalaksana.routes';
 import litbangRoutes from '@/modules/litbang/litbang.routes';
-import businessUnitRoutes from '@/modules/business-unit/routes';
+import businessUnitRoutes from '@/modules/business-unit/business-unit.routes';
 
 // Create Express app
 const app = express();

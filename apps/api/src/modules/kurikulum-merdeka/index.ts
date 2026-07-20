@@ -1,1 +1,1 @@
-export { default as kurikulumMerdekaRoutes } from './routes';
+export { default as kurikulumMerdekaRoutes } from './kurikulum-merdeka.routes';

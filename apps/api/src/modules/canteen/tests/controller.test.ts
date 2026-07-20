@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Request, Response } from 'express';
 
-vi.mock('../service', () => ({
+vi.mock('../canteen.service', () => ({
   categoryService: { getAll: vi.fn(), getById: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn(), getBusinessEfficiency: vi.fn() },
   itemService: { getAll: vi.fn(), getById: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn(), getLowStockItems: vi.fn() },
   transactionService: { getAll: vi.fn(), getById: vi.fn(), create: vi.fn(), updateStatus: vi.fn(), getStats: vi.fn() },
@@ -13,8 +13,8 @@ vi.mock('../../../utils/resolve-unit-id', () => ({
   isSuperAdminUser: vi.fn(),
 }));
 
-import * as controller from '../controller';
-import { categoryService, transactionService } from '../service';
+import * as controller from '../canteen.controller';
+import { categoryService, transactionService } from '../canteen.service';
 import { resolveUnitId, isSuperAdminUser } from '../../../utils/resolve-unit-id';
 
 function mockReqRes(overrides: Partial<Request> = {}) {

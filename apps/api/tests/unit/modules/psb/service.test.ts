@@ -56,7 +56,7 @@ vi.mock('@prisma/client', () => ({
   },
 }));
 
-import * as psbService from '../../../../src/modules/psb/service';
+import * as psbService from '../../../../src/modules/psb/psb.service';
 import { prisma } from '../../../../src/lib/prisma';
 import { AdmissionStatus, Gender } from '@prisma/client';
 

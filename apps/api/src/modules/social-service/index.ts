@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { socialService } from './service';
-import socialRoutes from './routes';
+import { socialService } from './social-service.service';
+import socialRoutes from './social-service.routes';
 
 const router = Router();
 

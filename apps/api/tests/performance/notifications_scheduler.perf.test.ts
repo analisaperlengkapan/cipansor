@@ -4,7 +4,7 @@ import {
   notificationScheduler,
 } from '../../src/modules/notifications/scheduler.service';
 import { prisma } from '../../src/lib/prisma';
-import * as notificationService from '../../src/modules/notifications/service';
+import * as notificationService from '../../src/modules/notifications/notifications.service';
 import { NotificationType, AttendanceStatus } from '@prisma/client';
 
 // Mock prisma

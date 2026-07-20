@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import * as controller from '../../src/modules/notifications/controller';
-import * as service from '../../src/modules/notifications/service';
+import * as controller from '../../src/modules/notifications/notifications.controller';
+import * as service from '../../src/modules/notifications/notifications.service';
 import { Errors } from '../../src/middleware/error';
 
-vi.mock('../../src/modules/notifications/service');
+vi.mock('../../src/modules/notifications/notifications.service');
 vi.mock('../../src/modules/notifications/whatsapp.service');
 vi.mock('../../src/modules/notifications/scheduler.service');
 

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { prisma } from '../../lib/prisma';
-import * as healthService from './service';
+import * as healthService from './health.service';
 import { attendanceService } from '../attendance/attendance.service';
 import { eventBus } from '../../lib/event-bus';
 

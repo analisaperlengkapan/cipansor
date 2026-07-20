@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Request, Response } from 'express';
 
-vi.mock('../service', () => ({
+vi.mock('../announcements.service', () => ({
   announcementService: {
     findAll: vi.fn(),
     getStats: vi.fn(),
@@ -13,8 +13,8 @@ vi.mock('../service', () => ({
   },
 }));
 
-import * as controller from '../controller';
-import { announcementService } from '../service';
+import * as controller from '../announcements.controller';
+import { announcementService } from '../announcements.service';
 
 /** Build a minimal Express req/res pair for controller unit tests. */
 function mockReqRes(overrides: Partial<Request> = {}) {

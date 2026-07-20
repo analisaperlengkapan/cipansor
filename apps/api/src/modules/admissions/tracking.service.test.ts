@@ -7,7 +7,7 @@ vi.mock('@/lib/prisma', () => ({
 }));
 
 import { prisma } from '@/lib/prisma';
-import { getRegistrantTrackingInfo } from './service';
+import { getRegistrantTrackingInfo } from './admissions.service';
 
 const mocked = prisma as unknown as {
   registrant: { findFirst: ReturnType<typeof vi.fn> };

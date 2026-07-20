@@ -25,7 +25,7 @@ vi.mock('@prisma/client', () => ({
   }
 }));
 
-import { transactionService } from '../service';
+import { transactionService } from '../laundry.service';
 import { prisma } from '@/lib/prisma';
 
 vi.mock('@/lib/prisma', () => ({

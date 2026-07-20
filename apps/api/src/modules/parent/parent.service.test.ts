@@ -16,10 +16,10 @@ vi.mock('../../lib/prisma', () => {
 
 // External module-load imports the service pulls in — stub so import succeeds.
 vi.mock('../ibadah/ibadah.service', () => ({ getStudentIbadahStats: vi.fn() }));
-vi.mock('../dormitories/service', () => ({}));
+vi.mock('../dormitories/dormitories.service', () => ({}));
 
 import { prisma } from '../../lib/prisma';
-import { parentService } from './service';
+import { parentService } from './parent.service';
 
 const mockPrisma = prisma as unknown as {
   studentParent: { findUnique: ReturnType<typeof vi.fn> };

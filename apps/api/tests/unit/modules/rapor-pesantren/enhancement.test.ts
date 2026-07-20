@@ -57,7 +57,7 @@ vi.mock('@/lib/prisma', () => ({
   prisma: prismaMock,
 }));
 
-vi.mock('@/modules/notifications/service', () => notificationMock);
+vi.mock('@/modules/notifications/notifications.service', () => notificationMock);
 
 // Import the service under test
 import {

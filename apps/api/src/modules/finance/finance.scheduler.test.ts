@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../../lib/prisma';
-import { generateRecurringBills } from './service';
+import { generateRecurringBills } from './finance.service';
 
 // Mock all external dependencies
 vi.mock('../../lib/prisma', () => ({

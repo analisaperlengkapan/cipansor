@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { qualityController } from './quality.controller';
 import { authenticate, authorize } from '@/middleware/auth';
 import { validate } from '@/middleware/validate';
-import { createEvidenceSchema, createAuditSchema, updateAuditItemSchema } from './schema';
+import { createEvidenceSchema, createAuditSchema, updateAuditItemSchema } from './quality.schema';
 import { UserRole } from '@prisma/client';
 
 const router = Router();

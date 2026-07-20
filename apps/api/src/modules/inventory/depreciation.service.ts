@@ -1,6 +1,6 @@
 import { prisma } from '../../lib/prisma';
 import { AssetStatus } from '@prisma/client';
-import { calculateDepreciation } from './service';
+import { calculateDepreciation } from './inventory.service';
 import { createDepreciationJournal } from './asset-accounting.service';
 
 export async function runMonthlyDepreciation(unitId: string, date: Date, userId: string) {

@@ -67,7 +67,7 @@ vi.mock('../../../../src/lib/prisma', () => {
 });
 
 // Import service after mocking
-import * as service from '../../../../src/modules/health/service';
+import * as service from '../../../../src/modules/health/health.service';
 
 describe('Health Service', () => {
   beforeEach(() => {

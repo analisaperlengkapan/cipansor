@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { runMonthlyDepreciation } from './depreciation.service';
 import { prisma } from '../../lib/prisma';
-import * as inventoryService from './service';
+import * as inventoryService from './inventory.service';
 import * as assetAccountingService from './asset-accounting.service';
 
 // Mock Prisma Client Enums
@@ -33,7 +33,7 @@ vi.mock('../../lib/prisma', () => ({
   },
 }));
 
-vi.mock('./service', () => ({
+vi.mock('./inventory.service', () => ({
   calculateDepreciation: vi.fn(),
 }));
 

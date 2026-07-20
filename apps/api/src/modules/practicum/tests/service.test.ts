@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { practicumService } from '../service';
+import { practicumService } from '../practicum.service';
 import { prisma } from '../../../lib/prisma';
 
 vi.mock('../../../lib/prisma', () => ({

@@ -4,7 +4,7 @@
  */
 
 import { prisma } from '@/lib/prisma';
-import { createNotification } from '@/modules/notifications/service';
+import { createNotification } from '@/modules/notifications/notifications.service';
 import { NotificationType, AttendanceStatus } from '@prisma/client';
 import { logger } from '@/lib/logger';
 

@@ -44,7 +44,7 @@ vi.mock('@prisma/client', async (importOriginal) => {
 });
 
 // Import service after mocks
-import { createEmployee } from '../../../../src/modules/hr/service';
+import { createEmployee } from '../../../../src/modules/hr/hr.service';
 
 vi.mock('bcryptjs', () => ({
   default: {

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Request, Response } from 'express';
 
-vi.mock('../service', () => ({
+vi.mock('../payroll.service', () => ({
   salaryComponentService: {
     list: vi.fn(),
     getById: vi.fn(),
@@ -36,12 +36,12 @@ vi.mock('../service', () => ({
   },
 }));
 
-import * as controller from '../controller';
+import * as controller from '../payroll.controller';
 import {
   salaryComponentService,
   payrollPeriodService,
   payrollService,
-} from '../service';
+} from '../payroll.service';
 
 function mockReqRes(overrides: Partial<Request> = {}) {
   const req = {

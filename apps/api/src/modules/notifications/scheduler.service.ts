@@ -15,9 +15,9 @@ import {
   createBulkNotifications,
   createManyNotifications,
   mapTypeToPrisma,
-} from './service';
+} from './notifications.service';
 import { whatsAppService } from './whatsapp.service';
-import { CreateNotificationInput } from './schema';
+import { CreateNotificationInput } from './notifications.schema';
 import { NotificationType, AttendanceStatus, PaymentStatus, Prisma } from '@prisma/client';
 import { NotificationPriority, NotificationChannel, RecipientType } from '@cipansor/shared';
 import { logger } from '../../lib/logger';

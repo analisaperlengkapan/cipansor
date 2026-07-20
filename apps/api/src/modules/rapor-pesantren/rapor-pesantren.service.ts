@@ -20,7 +20,7 @@ import {
   getGradeFromScore,
 } from './rapor-pesantren.schema';
 import type { Prisma } from '@prisma/client';
-import { createNotification } from '../notifications/service';
+import { createNotification } from '../notifications/notifications.service';
 
 // =====================
 // CONFIG MANAGEMENT

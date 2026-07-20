@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Request, Response } from 'express';
 
-vi.mock('../service', () => ({
+vi.mock('../wallet.service', () => ({
   walletService: {
     listWallets: vi.fn(),
     getSummary: vi.fn(),
@@ -15,8 +15,8 @@ vi.mock('../service', () => ({
   },
 }));
 
-import * as controller from '../controller';
-import { walletService } from '../service';
+import * as controller from '../wallet.controller';
+import { walletService } from '../wallet.service';
 
 function mockReqRes(overrides: Partial<Request> = {}) {
   const req = {

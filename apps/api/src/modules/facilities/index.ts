@@ -1,1 +1,1 @@
-export { default as facilitiesRoutes } from './routes';
+export { default as facilitiesRoutes } from './facilities.routes';

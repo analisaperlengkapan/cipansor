@@ -13,7 +13,7 @@ vi.mock('../rapor-pesantren.service', () => ({
   deleteRaporPesantren: vi.fn(),
 }));
 
-import * as controller from '../controller';
+import * as controller from '../rapor-pesantren.controller';
 import * as service from '../rapor-pesantren.service';
 
 function mockReqRes(overrides: Partial<Request> = {}) {

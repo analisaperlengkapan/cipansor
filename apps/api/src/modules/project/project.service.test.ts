@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { prisma } from '../../lib/prisma';
-import * as projectService from './service';
-import * as notificationService from '../notifications/service';
+import * as projectService from './project.service';
+import * as notificationService from '../notifications/notifications.service';
 import { ProjectStatus, TaskPriority } from '@prisma/client';
 
 // Mock all external dependencies
@@ -31,7 +31,7 @@ vi.mock('../../lib/prisma', () => ({
   },
 }));
 
-vi.mock('../notifications/service', () => ({
+vi.mock('../notifications/notifications.service', () => ({
   createNotification: vi.fn(),
 }));
 

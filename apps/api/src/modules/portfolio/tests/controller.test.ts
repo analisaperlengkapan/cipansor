@@ -20,7 +20,7 @@ vi.mock('../portfolio.service', () => ({
   getStudentShowcase: vi.fn(),
 }));
 
-import * as controller from '../controller';
+import * as controller from '../portfolio.controller';
 import * as portfolioService from '../portfolio.service';
 
 function mockReqRes(overrides: Partial<Request> = {}) {

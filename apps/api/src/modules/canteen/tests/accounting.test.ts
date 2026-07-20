@@ -25,7 +25,7 @@ vi.mock('@prisma/client', () => ({
   }
 }));
 
-import { transactionService } from '../service';
+import { transactionService } from '../canteen.service';
 import { prisma } from '@/lib/prisma';
 import { JournalReferenceType } from '@cipansor/shared';
 

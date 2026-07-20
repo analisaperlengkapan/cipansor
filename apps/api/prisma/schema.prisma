@@ -588,6 +588,7 @@ model Unit {
   classes                Class[]
   dormitories            Dormitory[]
   paymentTypes           PaymentType[]
+  accountCodes           AccountCode[]
   admissionPeriods       AdmissionPeriod[]
   bookCategories         BookCategory[]
   books                  Book[]
@@ -4899,6 +4900,11 @@ model AccountCode {
   name      String
   type      String // ASSET, LIABILITY, EQUITY, REVENUE, EXPENSE
   parentId  String?  @map("parent_id")
+  // Owning unit for per-unit charts of accounts. Nullable = legacy/shared row
+  // not yet assigned to a unit; unit-scoped account resolution matches only
+  // rows whose unitId equals the requesting unit (never null-shared), so
+  // fallbacks stay off for unassigned data — no cross-unit journal leak.
+  unitId    String?  @map("unit_id")
   isActive  Boolean  @default(true) @map("is_active")
   createdAt DateTime @default(now()) @map("created_at")
 
@@ -4912,11 +4918,13 @@ model AccountCode {
   // Relations
   parent         AccountCode?   @relation("AccountHierarchy", fields: [parentId], references: [id])
   children       AccountCode[]  @relation("AccountHierarchy")
+  unit           Unit?          @relation(fields: [unitId], references: [id])
   journalEntries JournalEntry[]
   paymentTypes   PaymentType[]
   budgets        Budget[]
 
   @@index([type])
+  @@index([unitId])
   @@map("account_codes")
 }
 

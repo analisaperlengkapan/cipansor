@@ -52,33 +52,22 @@ export async function setAccountMapping(unitId: string, key: string, accountId: 
 }
 
 /**
- * Helper to get a mapped account or fallback to a default code/search.
- * Accepts an optional transaction client to ensure reads participate
- * in the caller's transaction when used inside prisma.$transaction.
+ * Helper to get a mapped account or fall back to a UNIT-SCOPED default
+ * code/name lookup. Accepts an optional transaction client so reads
+ * participate in the caller's transaction inside prisma.$transaction.
  *
- * CROSS-UNIT SAFETY: The fallback lookups (by code or name) are NOT scoped
- * by unitId because the AccountCode model does not carry a unitId column.
- * In multi-unit deployments, falling back to a code/name lookup could bind
- * a unit to another unit's chart of accounts, producing cross-unit journal
- * entries that are hard to reconcile later.
- *
- * Policy:
- *   - Primary path (Settings-based mapping) IS unit-scoped — always safe.
- *   - Fallback paths are GATED by `ACCOUNTING_ALLOW_UNSCOPED_FALLBACK` env
- *     var (default: disabled). When disabled, we return null and the caller
- *     (e.g. canteen service) skips journal creation with its existing
- *     "missing account mapping" warning. This forces operators to configure
- *     unit-specific mappings via setAccountMapping() before journals are
- *     posted — eliminating the cross-unit leak risk in production.
- *   - When explicitly enabled (single-unit dev/test setups), fallbacks work
- *     as before and emit a WARN log for visibility.
- *
- * TODO: When AccountCode gains a `unitId` column, replace fallbacks with
- * unit-scoped findFirst calls and remove the env-flag gate.
+ * UNIT SCOPING (no cross-unit leak): every path is scoped to `unitId`.
+ *   1. Primary path — Settings-based mapping — is unit-keyed (operator's
+ *      explicit choice; resolved by account id).
+ *   2/3. Fallback code/name lookups filter `AccountCode.unitId === unitId`,
+ *      so a unit can only ever resolve its OWN chart of accounts — never
+ *      another unit's. Rows with a null `unitId` (legacy/shared, not yet
+ *      assigned to a unit) are intentionally excluded: until an operator
+ *      assigns accounts to the unit the fallbacks return null and the caller
+ *      skips journal creation (its existing "missing mapping" behaviour) — the
+ *      same safe default as before, now without the env-flag gate and with no
+ *      cross-unit leak possible.
  */
-const ALLOW_UNSCOPED_FALLBACK =
-  process.env.ACCOUNTING_ALLOW_UNSCOPED_FALLBACK === 'true';
-
 export async function getAccountOrFallback(
   unitId: string,
   key: string,
@@ -86,54 +75,31 @@ export async function getAccountOrFallback(
   fallbackNameSearch?: string,
   tx: TransactionClient | typeof prisma = prisma
 ) {
-  // 1. Try Mapping (unit-scoped via Settings) — always safe
+  // 1. Try Mapping (unit-scoped via Settings — operator's explicit choice).
   const mappedId = await getAccountMapping(unitId, key, tx);
   if (mappedId) {
     const account = await tx.accountCode.findUnique({ where: { id: mappedId } });
     if (account) return account;
   }
 
-  // 2 & 3: Unscoped fallback paths are disabled by default in production.
-  // Callers treat a null return as "missing mapping" and skip journals.
-  if (!ALLOW_UNSCOPED_FALLBACK) {
-    return null;
-  }
-
-  // 2. Try Fallback Code (NOT unit-scoped — see CROSS-UNIT SAFETY note above)
+  // 2. Fallback by code — scoped to this unit's own chart of accounts.
   if (fallbackCode) {
     const account = await tx.accountCode.findFirst({
-      where: { code: fallbackCode, isActive: true },
+      where: { code: fallbackCode, isActive: true, unitId },
     });
-    if (account) {
-      // eslint-disable-next-line no-console
-      console.warn(
-        `[AccountingConfig] Unit ${unitId} is using an unscoped fallback AccountCode ` +
-        `(code=${fallbackCode}, id=${account.id}) for mapping key '${key}'. ` +
-        `This may reference a different unit's chart of accounts. ` +
-        `Configure a unit-specific mapping via Settings to resolve.`
-      );
-      return account;
-    }
+    if (account) return account;
   }
 
-  // 3. Try Name Search (NOT unit-scoped — see CROSS-UNIT SAFETY note above)
+  // 3. Fallback by name — scoped to this unit's own chart of accounts.
   if (fallbackNameSearch) {
     const account = await tx.accountCode.findFirst({
       where: {
         name: { contains: fallbackNameSearch, mode: 'insensitive' },
         isActive: true,
+        unitId,
       },
     });
-    if (account) {
-      // eslint-disable-next-line no-console
-      console.warn(
-        `[AccountingConfig] Unit ${unitId} is using an unscoped fallback AccountCode ` +
-        `(name~=${fallbackNameSearch}, id=${account.id}) for mapping key '${key}'. ` +
-        `This may reference a different unit's chart of accounts. ` +
-        `Configure a unit-specific mapping via Settings to resolve.`
-      );
-      return account;
-    }
+    if (account) return account;
   }
 
   return null;

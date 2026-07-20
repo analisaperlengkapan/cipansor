@@ -12,12 +12,12 @@ Journal entries are **skipped with a warning log** (not failed) when:
 
 1. The financial period covering the transaction date is **closed**
    (`financial_periods.is_closed = true`). See
-   `apps/api/src/modules/canteen/service.ts:607-620` (create) and
-   `apps/api/src/modules/canteen/service.ts:939-952` (refund/cancel).
+   `apps/api/src/modules/canteen/canteen.service.ts:607-620` (create) and
+   `apps/api/src/modules/canteen/canteen.service.ts:939-952` (refund/cancel).
 2. The required **account mappings are missing** for the unit
    (`sales_revenue`, `cogs`, `inventory_asset`, `cash`,
    `wallet_liability`). See
-   `apps/api/src/modules/canteen/service.ts:669-678`.
+   `apps/api/src/modules/canteen/canteen.service.ts:669-678`.
 
 In both cases the sale/refund itself completes. Reconciliation must then be
 performed manually by the accounting team (e.g. via adjusting journal
@@ -25,14 +25,24 @@ entries).
 
 ## Required Configuration Before Go-Live
 
-Because `ACCOUNTING_ALLOW_UNSCOPED_FALLBACK` defaults to **disabled** in
-production (see
-`apps/api/src/modules/finance/accounting-config.service.ts:80-82`), the
-unscoped fallback (by account code or name) will NOT be used. This means:
+Account resolution for canteen (and payroll, laundry, wallet, donation,
+inventory, …) journals follows a **unit-scoped** chain — see
+`getAccountOrFallback` in
+`apps/api/src/modules/finance/accounting-config.service.ts`:
 
-> **No canteen journal entries will be created until unit-specific account
-> mappings are configured in the Settings table for every unit running
-> canteen operations.**
+1. An explicit Settings mapping for the unit (the operator's deliberate choice).
+2. A fallback lookup of the unit's own chart of accounts by account **code**.
+3. A fallback lookup of the unit's own chart of accounts by account **name**.
+
+All three are scoped to the requesting unit: a unit can only ever resolve
+`AccountCode` rows whose `unitId` equals its own id. Rows with a null `unitId`
+(legacy / not yet assigned to a unit) are **never** matched by the fallback.
+This means:
+
+> **No canteen journal entries will be created for a unit until either (a)
+> explicit Settings mappings are configured for it, or (b) the unit's
+> `AccountCode` rows carry that unit's `unitId`.** This is the safe default and
+> makes a cross-unit chart-of-accounts leak impossible.
 
 ### Setup Checklist (per unit)
 
@@ -52,7 +62,7 @@ unscoped fallback (by account code or name) will NOT be used. This means:
    create BU-specific mappings using the key prefix
    `BU_{businessUnitId}_{ACCOUNT_MAPPING_KEY}`. The canteen service
    automatically prefers BU-specific mappings over unit-level ones. See
-   `apps/api/src/modules/canteen/service.ts:622`.
+   `apps/api/src/modules/canteen/canteen.service.ts:622`.
 4. Ensure the financial period covering the expected first sale date is
    **open** (`is_closed = false`).
 
@@ -71,18 +81,20 @@ skipped journal entries. Expected patterns:
 Any of these warnings indicates a reconciliation gap that must be closed
 manually.
 
-## Development / Single-Unit Environments
+## Assigning a Chart of Accounts to a Unit
 
-For local development or single-unit test deployments where configuring
-per-unit mappings is impractical, set:
+The old unscoped env-flag fallback (`ACCOUNTING_ALLOW_UNSCOPED_FALLBACK`) has
+been **removed**. Instead, `AccountCode.unitId` records which unit owns each
+account, and the code/name fallback is scoped to it. To let a unit's canteen
+(or other module) post journals via the fallback without configuring a Settings
+mapping per key, set `unitId` on that unit's chart of accounts:
 
-```bash
-ACCOUNTING_ALLOW_UNSCOPED_FALLBACK=true
-```
+- **New accounts:** create them with `unitId` set to the owning unit.
+- **Existing (legacy, `unitId = null`) accounts:** assign them to a unit before
+  relying on the fallback, e.g.
+  `UPDATE account_codes SET unit_id = '<unitId>' WHERE …`.
 
-With this flag enabled, missing Settings mappings fall back to a global
-`AccountCode` lookup by code (e.g. `4101`) and then by name (e.g.
-`Pendapatan Kantin`). A `[AccountingConfig]` warning is still emitted on
-every fallback use so the reliance is visible. **Do not enable this in
-multi-unit production environments** — the fallback is NOT unit-scoped and
-could bind a unit to another unit's chart of accounts.
+Because the fallback matches only rows whose `unitId` equals the requesting
+unit, this is safe in multi-unit deployments — no configuration can bind a unit
+to another unit's accounts. For explicit control, prefer per-unit Settings
+mappings (step 1 above); they always win over the code/name fallback.

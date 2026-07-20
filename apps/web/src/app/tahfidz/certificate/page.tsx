@@ -293,7 +293,7 @@ export default function TahfidzCertificatePage() {
     if (!currentCertNumber) {
       setIsGenerating(true);
       try {
-        const res = await api.post("/tahfidz/certificates", {
+        const res = await api.post("/tahfidz/certificates/generate", {
           studentId: selectedStudent.id,
           certificateType: formData.certificateType,
           issueDate: formData.tanggalSertifikat,

@@ -151,21 +151,4 @@ export const tahfidzService = {
     );
     return response.data.data;
   },
-
-  /**
-   * Generate tahfidz certificate for student
-   */
-  async generateCertificate(
-    studentId: string,
-    options?: {
-      type: "juz" | "surah" | "full";
-      juzNumber?: number;
-      surahNumber?: number;
-    },
-  ): Promise<{ downloadUrl: string; certificateId: string }> {
-    const response = await api.post<
-      ApiResponse<{ downloadUrl: string; certificateId: string }>
-    >(`/tahfidz/students/${studentId}/certificate`, options);
-    return response.data.data;
-  },
 };

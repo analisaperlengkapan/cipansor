@@ -25,6 +25,12 @@ overview see [`ARCHITECTURE.md`](./ARCHITECTURE.md).
   mocks and a low-priority `/api/**` fallback, removing the logout-redirect races.
 - **Removed stale artifacts.** `dashboard/dashboard.controller.ts.old` and the
   dead `apps/web/e2e/temp/` placeholder spec.
+- **Tahfidz certificate endpoint fixed.** The certificate page POSTed to
+  `/tahfidz/certificates` (nonexistent → 404); repointed to the real
+  `/tahfidz/certificates/generate`. Also removed a dead, uncalled
+  `tahfidzService.generateCertificate` helper that targeted another nonexistent
+  path (`/tahfidz/students/:id/certificate`) with a signature that never matched
+  the backend.
 
 - **Destroyed Prisma schema restored.** `schema.prisma` (237 models, 133 enums)
   had been truncated to a stub, breaking the entire backend; restored from the
@@ -127,9 +133,12 @@ way: `config/index.ts` loaded dotenv from a path that never existed, so the
 offline banner trusted `navigator.onLine` blindly (now verified against a
 real `/api/health` probe on the web origin).
 
-Remaining: migrate the 28 `page.route` mock-intercept specs onto `loginAs` +
-real backend data, and grow the matrix (69/430 routes currently visited by
-at least one spec).
+Remaining: grow the matrix (76/430 routes currently visited by at least one
+spec). The `page.route` mock-intercept migration is **complete** — every
+active spec authenticates for real (`loginAs`); the only remaining `page.route`
+usages are 5 config-**ignored** dev utilities (`debug-*`, `generate-screenshots`,
+`verify-screenshots`, `verify_reception`) and 2 deliberate error-state
+injections (`grc-live`, `integration-grc`), none of which mock product data.
 
 ## 🗺️ Roadmap (remaining follow-ups)
 
@@ -155,15 +164,21 @@ at least one spec).
   (student self-endpoints in muhasabah/takhosus always 400'd because the JWT
   never carries `studentId`; assignments teacher/student auto-fill never ran;
   tahfidz & rapor-pesantren list endpoints skipped zod validation entirely).
-  Remaining 1082 = 603 in test files (mock plumbing) + 479 spread thin across
-  service internals (`where: any` builders) — fix opportunistically per module
-  (use `Prisma.XWhereInput`), not worth a dedicated pass.
-- **Web role alignment.** ✅ **Foundation done:** `src/lib/rbac.ts` is the
-  single source of truth (mirrors backend `deriveLegacyRole`); `middleware.ts`
-  and `parent/layout.tsx` resolve the effective role from `user.role` OR
-  `userRoles[].role.code` (RoleCode-aware, legacy-compatible, no lockout).
-  Remaining: ~40 pages still read `user.role` directly for UI concerns —
-  migrate them to `getEffectiveRole`/permissions incrementally.
+  Remaining (eslint-authoritative `no-explicit-any` count, api): **~1597** —
+  ≈1110 in test files (mock plumbing) + ≈487 across service internals
+  (`where: any` builders). The earlier "1082" was a grep approximation; eslint
+  counts every `any` token, so the true figure is higher. Fix opportunistically
+  per module — replace `where: any` with `Prisma.<Model>WhereInput`; the
+  service-internal `any` is the tractable, highest-value slice.
+- **Web role alignment.** ✅ **DONE.** `src/lib/rbac.ts` is the single source of
+  truth (mirrors backend `deriveLegacyRole`); `middleware.ts` and
+  `parent/layout.tsx` resolve the effective role from `user.role` OR
+  `userRoles[].role.code` (RoleCode-aware, legacy-compatible, no lockout). The
+  UI-gating reads were migrated to `getEffectiveRole` (commit `3f673fe`, 23
+  files). The only surviving `user.role` reads are legitimate **non-gating**
+  uses — displaying/editing **another** entity's role (`users/[id]`,
+  `quality/complaints/[id]`) or already using the
+  `getEffectiveRole(user) ?? user.role` fallback (`profile`).
 - **Replace remaining FE mock data** with real API calls. ✅ **DONE — all
   previously-mocked pages are now real-API:** `foundation/dashboard`,
   `foundation/finance/consolidation`, `analytics/education`,

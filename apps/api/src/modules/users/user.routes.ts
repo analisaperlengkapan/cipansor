@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authenticate, isAdmin } from '@/middleware/auth';
+import { authenticate, isAdmin, isAdminOrSelf } from '@/middleware/auth';
 import { validate, validateQuery, validateParams } from '@/middleware/error';
 import * as controller from './user.controller';
 import {
@@ -18,7 +18,7 @@ router.use(authenticate);
  * @swagger
  * /api/users:
  *   get:
- *     summary: List users
+ *     summary: List users (Admin only)
  *     description: Get paginated list of users with optional filters
  *     tags: [Users]
  *     security:
@@ -75,13 +75,13 @@ router.use(authenticate);
  *       401:
  *         $ref: '#/components/responses/Unauthorized'
  */
-router.get('/', validateQuery(listUsersQuerySchema), controller.list);
+router.get('/', isAdmin, validateQuery(listUsersQuerySchema), controller.list);
 
 /**
  * @swagger
  * /api/users/{id}:
  *   get:
- *     summary: Get user by ID
+ *     summary: Get user by ID (Admin, or the user themselves)
  *     description: Get user details by their ID
  *     tags: [Users]
  *     security:
@@ -111,7 +111,7 @@ router.get('/', validateQuery(listUsersQuerySchema), controller.list);
  *       401:
  *         $ref: '#/components/responses/Unauthorized'
  */
-router.get('/:id', validateParams(userIdParamSchema), controller.getById);
+router.get('/:id', isAdminOrSelf(), validateParams(userIdParamSchema), controller.getById);
 
 /**
  * @swagger
@@ -162,7 +162,7 @@ router.post('/', isAdmin, validate(createUserSchema), controller.create);
  * @swagger
  * /api/users/{id}:
  *   put:
- *     summary: Update user
+ *     summary: Update user (Admin only)
  *     description: Update user information
  *     tags: [Users]
  *     security:
@@ -206,6 +206,7 @@ router.post('/', isAdmin, validate(createUserSchema), controller.create);
  */
 router.put(
   '/:id',
+  isAdmin,
   validateParams(userIdParamSchema),
   validate(updateUserSchema),
   controller.update

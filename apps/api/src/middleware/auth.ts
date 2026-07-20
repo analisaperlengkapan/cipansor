@@ -480,6 +480,30 @@ export function isAdmin(req: Request, res: Response, next: NextFunction) {
 }
 
 /**
+ * Allow admins, or the authenticated user acting on their own record
+ * (matched against the route param, default `:id`). Non-admins get 403 for
+ * anyone else's record — this is what stops a student/parent account from
+ * enumerating or reading other users via /api/users/:id.
+ */
+export function isAdminOrSelf(paramName: string = 'id') {
+  return function isAdminOrSelfGuard(req: Request, res: Response, next: NextFunction) {
+    if (!req.user) {
+      return next(Errors.unauthorized());
+    }
+
+    if (req.user.id === req.params[paramName]) {
+      return next();
+    }
+
+    if (!ADMIN_ROLE_CODES.includes(req.user.roleCode)) {
+      return next(Errors.forbidden('Admin access required'));
+    }
+
+    next();
+  };
+}
+
+/**
  * RoleCodes that pass the isTeacherOrAbove check.
  * Computed once at module load (like ADMIN_ROLE_CODES) to avoid
  * re-creating the array on every request.

@@ -66,97 +66,7 @@ import {
 } from "@/hooks/use-muhadatsah";
 import { useAuthStore } from "@/stores/auth";
 
-// Demo data
-const DEMO_RECORDS = [
-  {
-    id: "1",
-    topic: "في السوق - Di Pasar",
-    student: {
-      id: "s1",
-      nis: "2024001",
-      name: "Ahmad Fauzi",
-      class: { name: "IX A" },
-    },
-    partner: { id: "s2", nis: "2024002", name: "Muhammad Rizki" },
-    scheduledAt: "2024-03-15T09:00:00.000Z",
-    language: "Arabic",
-    status: "SCHEDULED" as MuhadatsahStatus,
-    totalScore: null,
-    grade: null,
-    duration: null,
-  },
-  {
-    id: "2",
-    topic: "Daily Routine",
-    student: {
-      id: "s3",
-      nis: "2024003",
-      name: "Fatimah Zahra",
-      class: { name: "VIII A" },
-    },
-    partner: { id: "s4", nis: "2024004", name: "Khadijah Nur" },
-    scheduledAt: "2024-03-10T09:00:00.000Z",
-    language: "English",
-    status: "COMPLETED" as MuhadatsahStatus,
-    totalScore: 88,
-    grade: "B",
-    duration: 10,
-  },
-  {
-    id: "3",
-    topic: "في المدرسة - Di Sekolah",
-    student: {
-      id: "s5",
-      nis: "2024005",
-      name: "Ibrahim Malik",
-      class: { name: "VII A" },
-    },
-    partner: { id: "s6", nis: "2024006", name: "Yusuf Abdillah" },
-    scheduledAt: "2024-03-09T14:00:00.000Z",
-    language: "Arabic",
-    status: "COMPLETED" as MuhadatsahStatus,
-    totalScore: 92,
-    grade: "A",
-    duration: 15,
-  },
-  {
-    id: "4",
-    topic: "At the Hospital",
-    student: {
-      id: "s7",
-      nis: "2024007",
-      name: "Aisyah Putri",
-      class: { name: "IX B" },
-    },
-    partner: null,
-    scheduledAt: "2024-03-08T10:00:00.000Z",
-    language: "English",
-    status: "CANCELLED" as MuhadatsahStatus,
-    totalScore: null,
-    grade: null,
-    duration: null,
-  },
-];
 
-// Demo upcoming
-const DEMO_UPCOMING_RECORDS = [
-  {
-    id: "u1",
-    student: { name: "Ahmad Fauzi" },
-    partner: { name: "Muhammad Rizki" },
-    topic: "في السوق",
-    scheduledAt: "2024-03-15T09:00:00.000Z",
-    language: "Arabic",
-  },
-  {
-    id: "u2",
-    student: { name: "Siti Aisyah" },
-    partner: { name: "Fatimah Zahra" },
-    topic: "At the Library",
-    scheduledAt: "2024-03-16T09:00:00.000Z",
-    language: "English",
-  },
-];
 
 export default function MuhadatsahPage() {
   const { user } = useAuthStore();
@@ -182,9 +92,9 @@ export default function MuhadatsahPage() {
   const { data: topPerformersData } = useTopPerformers(unitId, undefined, 5);
   const { data: availablePartnersData } = useMatchPartners(unitId, "Arabic");
 
-  const records = listData?.data || DEMO_RECORDS;
+  const records = listData?.data ?? [];
   const meta = listData?.meta || {
-    total: DEMO_RECORDS.length,
+    total: 0,
     page: 1,
     limit: 10,
     totalPages: 1,
@@ -208,89 +118,24 @@ export default function MuhadatsahPage() {
     );
   });
 
-  // Demo stats
-  const stats = statsData || {
-    total: 234,
-    byStatus: [
-      { status: "COMPLETED", count: 198 },
-      { status: "SCHEDULED", count: 32 },
-      { status: "CANCELLED", count: 4 },
-    ],
-    byLanguage: [
-      { language: "Arabic", count: 156 },
-      { language: "English", count: 78 },
-    ],
-    averages: {
-      fluency: 76.5,
-      grammar: 74.2,
-      vocabulary: 78.8,
-      pronunciation: 72.4,
-      total: 75.5,
+  const stats = {
+    total: statsData?.total ?? 0,
+    byStatus: statsData?.byStatus ?? [],
+    byLanguage: statsData?.byLanguage ?? [],
+    averages: statsData?.averages ?? {
+      fluency: 0,
+      grammar: 0,
+      vocabulary: 0,
+      pronunciation: 0,
+      total: 0,
     },
   };
 
-  // Demo top performers
-  const topPerformers = topPerformersData || [
-    {
-      studentId: "s1",
-      name: "Fatimah Zahra",
-      nis: "2024003",
-      class: "VIII A",
-      averageScore: 92,
-      totalSessions: 18,
-    },
-    {
-      studentId: "s2",
-      name: "Ahmad Fauzi",
-      nis: "2024001",
-      class: "IX A",
-      averageScore: 88,
-      totalSessions: 22,
-    },
-    {
-      studentId: "s3",
-      name: "Muhammad Rizki",
-      nis: "2024002",
-      class: "IX B",
-      averageScore: 86,
-      totalSessions: 15,
-    },
-    {
-      studentId: "s4",
-      name: "Khadijah Nur",
-      nis: "2024005",
-      class: "VII B",
-      averageScore: 84,
-      totalSessions: 12,
-    },
-    {
-      studentId: "s5",
-      name: "Ibrahim Malik",
-      nis: "2024004",
-      class: "VII A",
-      averageScore: 82,
-      totalSessions: 14,
-    },
-  ];
+  const topPerformers = topPerformersData ?? [];
 
-  const upcomingRecords = upcomingData || DEMO_UPCOMING_RECORDS;
+  const upcomingRecords = upcomingData ?? [];
 
-  // Demo available partners
-  const availablePartners = availablePartnersData || [
-    { id: "p1", nis: "2024010", name: "Ali Imran", class: { name: "VIII A" } },
-    {
-      id: "p2",
-      nis: "2024011",
-      name: "Bilal Ahmad",
-      class: { name: "VIII B" },
-    },
-    {
-      id: "p3",
-      nis: "2024012",
-      name: "Hamzah Yusuf",
-      class: { name: "VII A" },
-    },
-  ];
+  const availablePartners = availablePartnersData ?? [];
 
   return (
     <div className="container mx-auto py-6 space-y-6">

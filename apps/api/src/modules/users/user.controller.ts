@@ -10,7 +10,7 @@ import { ListUsersQuery, CreateUserInput, UpdateUserInput } from './user.schema'
 export const list = asyncHandler(async (req: Request, res: Response) => {
   const query = (res.locals.validatedQuery || req.query) as ListUsersQuery;
   const result = await userService.findAll(query, {
-    role: req.user!.role,
+    roleCode: req.user!.roleCode,
     unitId: req.user!.unitId,
   });
 
@@ -43,7 +43,10 @@ export const getById = asyncHandler(async (req: Request, res: Response) => {
  */
 export const create = asyncHandler(async (req: Request, res: Response) => {
   const input: CreateUserInput = req.body;
-  const user = await userService.create(input, req.user!.role);
+  const user = await userService.create(input, {
+    roleCode: req.user!.roleCode,
+    unitId: req.user!.unitId,
+  });
 
   res.status(201).json({
     success: true,
@@ -59,7 +62,8 @@ export const update = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
   const input: UpdateUserInput = req.body;
   const user = await userService.update(id, input, {
-    role: req.user!.role,
+    roleCode: req.user!.roleCode,
+    unitId: req.user!.unitId,
     sub: req.user!.sub,
   });
 

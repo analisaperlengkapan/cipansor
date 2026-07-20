@@ -106,3 +106,123 @@ export const PERMISSION_GROUPS = {
   ADMISSION: [PERMISSIONS.ADMISSION_VIEW, PERMISSIONS.ADMISSION_MANAGE],
   SYSTEM: [PERMISSIONS.SETTINGS_MANAGE],
 };
+
+const ALL_PERMISSIONS = Object.values(PERMISSIONS);
+const ALL_VIEW_PERMISSIONS = ALL_PERMISSIONS.filter((p) => p.endsWith('_VIEW'));
+
+/**
+ * Default permission set per RoleCode, seeded into the Role records (and
+ * embedded into JWTs at login). Least-privilege by function:
+ *
+ * - SUPER_ADMIN: everything.
+ * - Unit/foundation admins: everything except role-permission management
+ *   (only SUPER_ADMIN edits the permission matrix). A unit admin's DATA
+ *   scope is their own unit — enforced by unitId scoping in the services,
+ *   not by this list.
+ * - Yayasan governance: read-only oversight (every *_VIEW).
+ * - Kepala sekolah / wakasek: oversight views + academic management.
+ * - Guru (incl. wali kelas & BK): students, academics, exams/grades, tahfidz.
+ * - Pesantren leaders/educators: dormitory + tahfidz (+ leaders get views).
+ * - Tata usaha: student administration, admissions, finance view, inventory.
+ * - Bendahara: finance.
+ * - Support staff: their service module only.
+ * - Business units: inventory + finance view.
+ * - Students/parents/komite/alumni: none (self-service endpoints are gated
+ *   by authenticate + ownership, not by the permission layer).
+ */
+export function defaultPermissionsForRole(code: string): Permission[] {
+  if (code === 'SUPER_ADMIN') return [...ALL_PERMISSIONS];
+
+  if (code === 'YAYASAN_ADMIN' || code.endsWith('_ADMIN')) {
+    return ALL_PERMISSIONS.filter((p) => p !== PERMISSIONS.ROLE_MANAGE);
+  }
+
+  if (code.startsWith('YAYASAN_')) return [...ALL_VIEW_PERMISSIONS];
+
+  if (code.endsWith('_KEPALA_SEKOLAH') || code.endsWith('_WAKASEK')) {
+    return [
+      ...ALL_VIEW_PERMISSIONS,
+      PERMISSIONS.ACADEMIC_MANAGE,
+      PERMISSIONS.EXAM_MANAGE,
+      PERMISSIONS.GRADE_MANAGE,
+    ];
+  }
+
+  if (
+    code.endsWith('_GURU') ||
+    code.endsWith('_WALI_KELAS') ||
+    code.endsWith('_GURU_BK') ||
+    ['PT_REKTOR', 'PT_WAKIL_REKTOR', 'PT_DEKAN', 'PT_KAPRODI', 'PT_DOSEN'].includes(code)
+  ) {
+    return [
+      PERMISSIONS.STUDENT_VIEW,
+      PERMISSIONS.ACADEMIC_VIEW,
+      PERMISSIONS.ACADEMIC_MANAGE,
+      PERMISSIONS.EXAM_VIEW,
+      PERMISSIONS.EXAM_MANAGE,
+      PERMISSIONS.GRADE_VIEW,
+      PERMISSIONS.GRADE_MANAGE,
+      PERMISSIONS.TAHFIDZ_VIEW,
+      PERMISSIONS.TAHFIDZ_MANAGE,
+      PERMISSIONS.LIBRARY_VIEW,
+      PERMISSIONS.HEALTH_VIEW,
+    ];
+  }
+
+  if (['PESANTREN_PENGASUH', 'PESANTREN_DIREKTUR'].includes(code)) {
+    return [
+      ...ALL_VIEW_PERMISSIONS,
+      PERMISSIONS.DORMITORY_MANAGE,
+      PERMISSIONS.TAHFIDZ_MANAGE,
+    ];
+  }
+
+  if (
+    ['USTADZ', 'MUSYRIF', 'MUSYRIFAH', 'MUHAFIDZ', 'MUHAFIDZAH', 'MURABBI', 'WALI_KAMAR'].includes(
+      code
+    )
+  ) {
+    return [
+      PERMISSIONS.STUDENT_VIEW,
+      PERMISSIONS.DORMITORY_VIEW,
+      PERMISSIONS.DORMITORY_MANAGE,
+      PERMISSIONS.TAHFIDZ_VIEW,
+      PERMISSIONS.TAHFIDZ_MANAGE,
+    ];
+  }
+
+  if (code.endsWith('_TATA_USAHA') || code === 'PT_STAF_AKADEMIK') {
+    return [
+      PERMISSIONS.STUDENT_VIEW,
+      PERMISSIONS.STUDENT_CREATE,
+      PERMISSIONS.STUDENT_UPDATE,
+      PERMISSIONS.ADMISSION_VIEW,
+      PERMISSIONS.ADMISSION_MANAGE,
+      PERMISSIONS.TEACHER_VIEW,
+      PERMISSIONS.STAFF_VIEW,
+      PERMISSIONS.ACADEMIC_VIEW,
+      PERMISSIONS.FINANCE_VIEW,
+      PERMISSIONS.INVENTORY_VIEW,
+      PERMISSIONS.INVENTORY_MANAGE,
+      PERMISSIONS.LIBRARY_VIEW,
+      PERMISSIONS.HEALTH_VIEW,
+    ];
+  }
+
+  if (code.endsWith('_BENDAHARA')) {
+    return [PERMISSIONS.STUDENT_VIEW, PERMISSIONS.FINANCE_VIEW, PERMISSIONS.FINANCE_MANAGE];
+  }
+
+  if (code === 'PUSTAKAWAN') return [PERMISSIONS.LIBRARY_VIEW, PERMISSIONS.LIBRARY_MANAGE];
+  if (code === 'PERAWAT')
+    return [PERMISSIONS.STUDENT_VIEW, PERMISSIONS.HEALTH_VIEW, PERMISSIONS.HEALTH_MANAGE];
+  if (code === 'KEAMANAN') return [PERMISSIONS.STUDENT_VIEW];
+  if (code === 'LABORAN') return [PERMISSIONS.INVENTORY_VIEW, PERMISSIONS.ACADEMIC_VIEW];
+
+  if (code.startsWith('BUSINESS_')) {
+    return [PERMISSIONS.INVENTORY_VIEW, PERMISSIONS.INVENTORY_MANAGE, PERMISSIONS.FINANCE_VIEW];
+  }
+
+  // Students, parents, komite, alumni: self-service only.
+  return [];
+}

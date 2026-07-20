@@ -63,91 +63,7 @@ import {
   MuhadhorohStatus,
 } from "@/hooks/use-muhadhoroh";
 
-// Demo data for illustration
-const DEMO_RECORDS = [
-  {
-    id: "1",
-    topic: "Pentingnya Menuntut Ilmu",
-    student: {
-      id: "s1",
-      nis: "2024001",
-      name: "Ahmad Fauzi",
-      class: { name: "IX A" },
-    },
-    scheduledAt: "2024-03-15T08:00:00.000Z",
-    language: "Indonesian",
-    status: "SCHEDULED" as MuhadhorohStatus,
-    totalScore: null,
-    grade: null,
-    duration: null,
-  },
-  {
-    id: "2",
-    topic: "أهمية الصبر في الإسلام",
-    student: {
-      id: "s2",
-      nis: "2024002",
-      name: "Muhammad Rizki",
-      class: { name: "IX B" },
-    },
-    scheduledAt: "2024-03-10T08:00:00.000Z",
-    language: "Arabic",
-    status: "COMPLETED" as MuhadhorohStatus,
-    totalScore: 85,
-    grade: "B",
-    duration: 7,
-  },
-  {
-    id: "3",
-    topic: "The Importance of Honesty",
-    student: {
-      id: "s3",
-      nis: "2024003",
-      name: "Fatimah Zahra",
-      class: { name: "VIII A" },
-    },
-    scheduledAt: "2024-03-09T08:00:00.000Z",
-    language: "English",
-    status: "COMPLETED" as MuhadhorohStatus,
-    totalScore: 92,
-    grade: "A",
-    duration: 5,
-  },
-  {
-    id: "4",
-    topic: "Menjaga Kebersihan Lingkungan",
-    student: {
-      id: "s4",
-      nis: "2024004",
-      name: "Ibrahim Malik",
-      class: { name: "VII A" },
-    },
-    scheduledAt: "2024-03-08T08:00:00.000Z",
-    language: "Indonesian",
-    status: "CANCELLED" as MuhadhorohStatus,
-    totalScore: null,
-    grade: null,
-    duration: null,
-  },
-];
 
-// Demo upcoming
-const DEMO_UPCOMING_RECORDS = [
-  {
-    id: "u1",
-    student: { name: "Ahmad Fauzi" },
-    topic: "Pentingnya Menuntut Ilmu",
-    scheduledAt: "2024-03-15T08:00:00.000Z",
-    language: "Indonesian",
-  },
-  {
-    id: "u2",
-    student: { name: "Siti Aisyah" },
-    topic: "فضل الصدقة",
-    scheduledAt: "2024-03-16T08:00:00.000Z",
-    language: "Arabic",
-  },
-];
 
 export default function MuhadhorohPage() {
   // Get user from auth context
@@ -174,9 +90,9 @@ export default function MuhadhorohPage() {
   const { data: statsData } = useMuhadhorohStatistics(unitId);
   const { data: topPerformersData } = useTopPerformers(unitId, 5);
 
-  const records = listData?.data || DEMO_RECORDS;
+  const records = listData?.data ?? [];
   const meta = listData?.meta || {
-    total: DEMO_RECORDS.length,
+    total: 0,
     page: 1,
     limit: 10,
     totalPages: 1,
@@ -193,72 +109,21 @@ export default function MuhadhorohPage() {
     );
   });
 
-  // Demo stats
-  const stats = statsData || {
-    total: 156,
-    byStatus: [
-      { status: "COMPLETED", count: 120 },
-      { status: "SCHEDULED", count: 28 },
-      { status: "CANCELLED", count: 8 },
-    ],
-    byLanguage: [
-      { language: "Indonesian", count: 85 },
-      { language: "Arabic", count: 42 },
-      { language: "English", count: 29 },
-    ],
-    averages: {
-      content: 78.5,
-      delivery: 76.2,
-      language: 74.8,
-      total: 76.5,
+  const stats = {
+    total: statsData?.total ?? 0,
+    byStatus: statsData?.byStatus ?? [],
+    byLanguage: statsData?.byLanguage ?? [],
+    averages: statsData?.averages ?? {
+      content: 0,
+      delivery: 0,
+      language: 0,
+      total: 0,
     },
   };
 
-  // Demo top performers
-  const topPerformers = topPerformersData || [
-    {
-      studentId: "s1",
-      name: "Fatimah Zahra",
-      nis: "2024003",
-      class: "VIII A",
-      averageScore: 92,
-      totalSessions: 12,
-    },
-    {
-      studentId: "s2",
-      name: "Ahmad Fauzi",
-      nis: "2024001",
-      class: "IX A",
-      averageScore: 88,
-      totalSessions: 15,
-    },
-    {
-      studentId: "s3",
-      name: "Muhammad Rizki",
-      nis: "2024002",
-      class: "IX B",
-      averageScore: 85,
-      totalSessions: 10,
-    },
-    {
-      studentId: "s4",
-      name: "Khadijah Nur",
-      nis: "2024005",
-      class: "VII B",
-      averageScore: 83,
-      totalSessions: 8,
-    },
-    {
-      studentId: "s5",
-      name: "Ibrahim Malik",
-      nis: "2024004",
-      class: "VII A",
-      averageScore: 80,
-      totalSessions: 11,
-    },
-  ];
+  const topPerformers = topPerformersData ?? [];
 
-  const upcomingRecords = upcomingData || DEMO_UPCOMING_RECORDS;
+  const upcomingRecords = upcomingData ?? [];
 
   return (
     <div className="container mx-auto py-6 space-y-6">

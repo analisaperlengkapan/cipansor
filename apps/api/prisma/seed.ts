@@ -126,7 +126,7 @@ import { seedWilayahIndonesia } from './seeds/wilayah-indonesia';
 import { seedKurikulumMerdeka, seedAccountCodes } from './seeds/kurikulum-merdeka';
 import { seedPAUDIndicators } from './seeds/paud-indicators';
 import { seedImmunizationReference } from './seeds/immunization-reference';
-import { PERMISSIONS } from '../src/modules/roles/permissions';
+import { PERMISSIONS, defaultPermissionsForRole } from '../src/modules/roles/permissions';
 
 // RoleCode comes straight from the generated Prisma client — do NOT keep a
 // local copy here. A shadow copy previously drifted out of sync with the
@@ -715,7 +715,16 @@ async function main() {
 
   const roles: Record<string, any> = {};
   for (const roleData of rolesData) {
-    const role = await prisma.role.create({ data: roleData });
+    // Every role gets its default permission set (roles the catalog lists
+    // with explicit permissions keep them). Without this, only SUPER_ADMIN
+    // had permissions and every hasPermission-gated route 403'd for everyone
+    // else.
+    const role = await prisma.role.create({
+      data: {
+        permissions: defaultPermissionsForRole(roleData.code),
+        ...roleData,
+      },
+    });
     roles[roleData.code] = role;
   }
 

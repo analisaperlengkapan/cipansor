@@ -14,7 +14,6 @@ router.use(authenticate);
 const leadership = () =>
   authorize(
     RoleCode.SUPER_ADMIN,
-    RoleCode.YAYASAN_ADMIN,
     RoleCode.YAYASAN_KETUA,
     RoleCode.YAYASAN_PENGAWAS,
     RoleCode.TKQ_ADMIN,

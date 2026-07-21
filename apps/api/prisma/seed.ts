@@ -126,7 +126,14 @@ import { seedWilayahIndonesia } from './seeds/wilayah-indonesia';
 import { seedKurikulumMerdeka, seedAccountCodes } from './seeds/kurikulum-merdeka';
 import { seedPAUDIndicators } from './seeds/paud-indicators';
 import { seedImmunizationReference } from './seeds/immunization-reference';
-import { PERMISSIONS } from '../src/modules/roles/permissions';
+import { PERMISSIONS, permissionsForRoleCode } from '../src/modules/roles/permissions';
+// Imported from source (not the built dist) so a stale @cipansor/shared build
+// can't leave the seeded demo logins out of sync with what the web login page
+// lists. This is the single source of truth for the per-role demo accounts.
+import {
+  DEMO_ACCOUNTS,
+  DEMO_PASSWORD,
+} from '../../../packages/shared/src/types/demo-accounts';
 
 // RoleCode comes straight from the generated Prisma client — do NOT keep a
 // local copy here. A shadow copy previously drifted out of sync with the
@@ -173,7 +180,7 @@ async function main() {
     data: {
       id: SYSTEM_USER_ID,
       name: 'SYSTEM',
-      email: 'system@cipansor.id',
+      email: 'system@cipansor.or.id',
       passwordHash: await bcrypt.hash('System123!', 10),
       role: UserRole.SUPER_ADMIN,
       isActive: true,
@@ -193,8 +200,8 @@ async function main() {
       taxId: '01.234.567.8-901.000',
       address: 'Jl. Cipansor No. 1, Kec. Sukabumi, Kota Sukabumi, Jawa Barat',
       phone: '0266100001',
-      email: 'yayasan@cipansor.id',
-      website: 'https://cipansor.id',
+      email: 'yayasan@cipansor.or.id',
+      website: 'https://cipansor.or.id',
       vision:
         'Menjadi lembaga pendidikan Islam terdepan yang menghasilkan generasi Qurani berakhlak mulia',
       mission:
@@ -210,31 +217,31 @@ async function main() {
       name: 'KH. Muhammad Yusuf',
       position: 'Ketua',
       phone: '081234567890',
-      email: 'ketua@cipansor.id',
+      email: 'ketua@cipansor.or.id',
     },
     {
       name: 'H. Ahmad Fauzi',
       position: 'Wakil Ketua',
       phone: '081234567891',
-      email: 'wakil@cipansor.id',
+      email: 'wakil@cipansor.or.id',
     },
     {
       name: 'Hj. Siti Fatimah',
       position: 'Sekretaris',
       phone: '081234567892',
-      email: 'sekretaris@cipansor.id',
+      email: 'sekretaris@cipansor.or.id',
     },
     {
       name: 'H. Abdullah Rahman',
       position: 'Bendahara',
       phone: '081234567893',
-      email: 'bendahara@cipansor.id',
+      email: 'bendahara@cipansor.or.id',
     },
     {
       name: 'Ustadz Hasan Basri',
       position: 'Anggota',
       phone: '081234567894',
-      email: 'anggota1@cipansor.id',
+      email: 'anggota1@cipansor.or.id',
     },
   ];
 
@@ -258,22 +265,22 @@ async function main() {
   const pesantren = await prisma.unit.create({
     data: {
       foundationId: foundation.id,
-      name: 'SMP IT Al-Hikmah',
+      name: 'SMP IT Cipansor',
       type: UnitType.SMP_IT,
-      address: 'Jl. Pesantren No. 1, Kota Sukabumi',
-      phone: '0266123456',
-      email: 'info@smpit.sch.id',
+      address: 'Kp. Cipansor, Kec. Kadipaten, Kab. Tasikmalaya, Jawa Barat 46157',
+      phone: '0811110400',
+      email: 'smpit@cipansor.or.id',
     },
   });
 
   const sdIt = await prisma.unit.create({
     data: {
       foundationId: foundation.id,
-      name: 'SD IT Ar-Rahman',
+      name: 'SD IT Cipansor',
       type: UnitType.SD_IT,
-      address: 'Jl. Pendidikan No. 10, Kota Sukabumi',
-      phone: '0266789012',
-      email: 'info@sdit.sch.id',
+      address: 'Kp. Cipansor, Kec. Kadipaten, Kab. Tasikmalaya, Jawa Barat 46157',
+      phone: '0811110400',
+      email: 'sdit@cipansor.or.id',
     },
   });
 
@@ -282,9 +289,9 @@ async function main() {
       foundationId: foundation.id,
       name: "TK Qur'an Cipansor",
       type: UnitType.TK_QURAN,
-      address: "Jl. TK Qur'an No. 5, Kota Sukabumi",
-      phone: '0266345678',
-      email: 'info@tkquran.sch.id',
+      address: 'Kp. Cipansor, Kec. Kadipaten, Kab. Tasikmalaya, Jawa Barat 46157',
+      phone: '0811110400',
+      email: 'tkquran@cipansor.or.id',
     },
   });
 
@@ -293,9 +300,23 @@ async function main() {
       foundationId: foundation.id,
       name: "SMA Qur'an Cipansor",
       type: UnitType.SMA_QURAN,
-      address: "Jl. Al-Qur'an No. 1, Kota Sukabumi",
-      phone: '0266456789',
-      email: 'info@smaquran.sch.id',
+      address: 'Kp. Cipansor, Kec. Kadipaten, Kab. Tasikmalaya, Jawa Barat 46157',
+      phone: '0811110400',
+      email: 'smaquran@cipansor.or.id',
+    },
+  });
+
+  // The PT_* RoleCodes existed but had no unit to belong to, so every
+  // Perguruan Tinggi demo account was created with `unitId: null` and every
+  // unit-scoped query returned nothing for them.
+  const perguruanTinggi = await prisma.unit.create({
+    data: {
+      foundationId: foundation.id,
+      name: 'STAI Cipansor',
+      type: UnitType.PERGURUAN_TINGGI,
+      address: 'Kp. Cipansor, Kec. Kadipaten, Kab. Tasikmalaya, Jawa Barat 46157',
+      phone: '0811110400',
+      email: 'stai@cipansor.or.id',
     },
   });
 
@@ -315,13 +336,8 @@ async function main() {
       permissions: Object.values(PERMISSIONS),
     },
 
-    // Yayasan roles
-    {
-      code: RoleCode.YAYASAN_ADMIN,
-      name: 'Admin Yayasan',
-      realm: Realm.YAYASAN,
-      description: 'Administrator yayasan',
-    },
+    // Yayasan roles. No YAYASAN_ADMIN — foundation administration is done by
+    // SUPER_ADMIN; what remains here are the governance organs.
     {
       code: RoleCode.YAYASAN_PEMBINA,
       name: 'Pembina',
@@ -390,12 +406,8 @@ async function main() {
       realm: Realm.TK_QURAN,
       description: "Orang tua siswa TK Qur'an",
     },
-    {
-      code: RoleCode.TKQ_SISWA,
-      name: "Siswa TK Qur'an",
-      realm: Realm.TK_QURAN,
-      description: "Siswa TK Qur'an",
-    },
+    // No TKQ_SISWA: TK Qur'an santri hold no login. Their Student records are
+    // still created, with a User row carrying the legacy STUDENT role only.
 
     // SD IT (Islam Terpadu) roles
     {
@@ -528,12 +540,19 @@ async function main() {
         realm,
         description: `Wali kelas ${unitLabel}`,
       },
-      {
-        code: RoleCode[`${prefix}_GURU_BK`],
-        name: `Guru BK ${unitLabel}`,
-        realm,
-        description: `Guru bimbingan konseling ${unitLabel}`,
-      },
+      // Guru BK exists only at SMP IT and SMA Qur'an. TK Qur'an and SD IT have
+      // no dedicated counselling teacher — the wali kelas covers it — so those
+      // RoleCodes do not exist and must not be generated here.
+      ...(prefix === 'SMPIT' || prefix === 'SMAQ'
+        ? [
+            {
+              code: RoleCode[`${prefix}_GURU_BK`],
+              name: `Guru BK ${unitLabel}`,
+              realm,
+              description: `Guru bimbingan konseling ${unitLabel}`,
+            },
+          ]
+        : []),
       {
         code: RoleCode[`${prefix}_BENDAHARA`],
         name: `Bendahara ${unitLabel}`,
@@ -546,12 +565,18 @@ async function main() {
         realm,
         description: `Komite sekolah ${unitLabel}`,
       },
-      {
-        code: RoleCode[`${prefix}_ALUMNI`],
-        name: `Alumni ${unitLabel}`,
-        realm,
-        description: `Alumni ${unitLabel}`,
-      },
+      // Alumni portals exist from SMP IT upwards. TK Qur'an and SD IT leavers
+      // continue within the pesantren rather than becoming alumni of a unit.
+      ...(prefix === 'SMPIT' || prefix === 'SMAQ'
+        ? [
+            {
+              code: RoleCode[`${prefix}_ALUMNI`],
+              name: `Alumni ${unitLabel}`,
+              realm,
+              description: `Alumni ${unitLabel}`,
+            },
+          ]
+        : []),
     ]),
 
     // Perguruan Tinggi roles
@@ -715,17 +740,119 @@ async function main() {
 
   const roles: Record<string, any> = {};
   for (const roleData of rolesData) {
-    const role = await prisma.role.create({ data: roleData });
+    // Only SUPER_ADMIN used to carry a `permissions` array, so 80 of the 81
+    // roles were seeded with none and every hasPermission()-gated endpoint
+    // returned 403 for them. Resolve from the shared matrix instead of
+    // relying on each entry above to remember.
+    const role = await prisma.role.create({
+      data: {
+        ...roleData,
+        permissions:
+          'permissions' in roleData && roleData.permissions
+            ? roleData.permissions
+            : permissionsForRoleCode(roleData.code),
+      },
+    });
     roles[roleData.code] = role;
   }
 
-  console.log('✅ Roles created');
+  const rolesWithoutPermissions = rolesData.filter(
+    (r) => permissionsForRoleCode(r.code).length === 0 && r.code !== 'SUPER_ADMIN'
+  );
+  console.log(
+    `✅ Roles created (${rolesData.length}; ${rolesWithoutPermissions.length} intentionally permission-less: students, parents, alumni)`
+  );
+
+  // ============================================
+  // DEMO ACCOUNTS — one working login per RoleCode (81 total).
+  // Source of truth: packages/shared/src/types/demo-accounts.ts, which the web
+  // login page also renders — so every advertised credential actually logs in.
+  // All share DEMO_PASSWORD. Emails use @demo.cipansor.or.id and never collide
+  // with the hand-authored users below (different domains).
+  // ============================================
+  /** Roles that live inside the pesantren but whose code carries no unit prefix. */
+  const PESANTREN_REALM_ROLES = new Set([
+    'PESANTREN_PENGASUH', 'PESANTREN_DIREKTUR', 'PESANTREN_TATA_USAHA',
+    'USTADZ', 'MUSYRIF', 'MUSYRIFAH', 'MUHAFIDZ', 'MUHAFIDZAH', 'MURABBI',
+    'WALI_KAMAR', 'KEAMANAN', 'PERAWAT', 'PUSTAKAWAN', 'LABORAN',
+  ]);
+  const demoUnitIdFor = (code: string): string | undefined => {
+    if (code.startsWith('TKQ_')) return tkQuran.id;
+    if (code.startsWith('SDIT_')) return sdIt.id;
+    if (code.startsWith('SMPIT_')) return pesantren.id;
+    if (code.startsWith('SMAQ_')) return smaQuran.id;
+    if (code.startsWith('PT_')) return perguruanTinggi.id;
+    // Pesantren-realm and shared operational roles carry no unit prefix, so
+    // they used to fall through to `undefined` and every unit-scoped query
+    // came back empty for them. They all work inside the pesantren.
+    if (PESANTREN_REALM_ROLES.has(code)) return pesantren.id;
+    // SUPER_ADMIN, YAYASAN_* and the business-unit roles are deliberately
+    // left unit-less: the first two are foundation-wide, and business units
+    // are a separate entity from the academic units.
+    return undefined;
+  };
+  // Legacy UserRole bucket per RoleCode. Mirrors the web ROLE_CODE_TO_LEGACY /
+  // backend deriveLegacyRole so middleware routes each demo user to the right
+  // dashboard. Unmapped edge roles (komite → STAFF, alumni → STUDENT) get a
+  // sensible bucket rather than a dead undefined.
+  const demoLegacyRoleFor = (code: string): UserRole => {
+    if (code === 'SUPER_ADMIN') return UserRole.SUPER_ADMIN;
+    if (code.startsWith('YAYASAN_') || code.endsWith('_ADMIN'))
+      return UserRole.UNIT_ADMIN;
+    if (code.endsWith('_SISWA') || code === 'PT_MAHASISWA' || code.endsWith('_ALUMNI'))
+      return UserRole.STUDENT;
+    if (code.endsWith('_ORANG_TUA')) return UserRole.PARENT;
+    const teacherSuffix = ['_GURU', '_KEPALA_SEKOLAH', '_WAKASEK', '_WALI_KELAS', '_GURU_BK'];
+    if (teacherSuffix.some((s) => code.endsWith(s))) return UserRole.TEACHER;
+    const teacherExact = [
+      'PESANTREN_PENGASUH', 'PESANTREN_DIREKTUR', 'USTADZ', 'MUSYRIF', 'MUSYRIFAH',
+      'MUHAFIDZ', 'MUHAFIDZAH', 'MURABBI', 'WALI_KAMAR',
+      'PT_REKTOR', 'PT_WAKIL_REKTOR', 'PT_DEKAN', 'PT_KAPRODI', 'PT_DOSEN',
+    ];
+    if (teacherExact.includes(code)) return UserRole.TEACHER;
+    return UserRole.STAFF;
+  };
+  const demoPasswordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
+  // Kept so the domain rows for these personas can be created further down,
+  // once classes, students and teachers exist.
+  const demoUsers = new Map<string, { id: string; name: string; unitId?: string }>();
+  let demoCreated = 0;
+  for (const acc of DEMO_ACCOUNTS) {
+    const role = roles[acc.roleCode];
+    if (!role) {
+      console.warn(`⚠️  Demo account skipped — unknown roleCode ${acc.roleCode}`);
+      continue;
+    }
+    const unitId = demoUnitIdFor(acc.roleCode);
+    const demoUser = await prisma.user.create({
+      data: {
+        name: acc.name,
+        email: acc.email,
+        passwordHash: demoPasswordHash,
+        role: demoLegacyRoleFor(acc.roleCode),
+        unitId,
+        isActive: true,
+      },
+    });
+    await prisma.userRoleAssignment.create({
+      data: {
+        userId: demoUser.id,
+        roleId: role.id,
+        unitId,
+        isPrimary: true,
+        isActive: true,
+      },
+    });
+    demoUsers.set(acc.roleCode, { id: demoUser.id, name: acc.name, unitId });
+    demoCreated++;
+  }
+  console.log(`✅ Demo accounts created (${demoCreated} of ${DEMO_ACCOUNTS.length})`);
 
   // Create Super Admin with role assignment
   const superAdminUser = await prisma.user.create({
     data: {
       name: 'Super Admin',
-      email: 'superadmin@cipansor.id',
+      email: 'superadmin@cipansor.or.id',
       passwordHash: await bcrypt.hash('SuperAdmin123!', 10),
       role: UserRole.SUPER_ADMIN,
       isActive: true,
@@ -745,7 +872,7 @@ async function main() {
   const ketuaYayasanUser = await prisma.user.create({
     data: {
       name: 'KH. Muhammad Yusuf',
-      email: 'ketua@cipansor.id',
+      email: 'ketua@cipansor.or.id',
       passwordHash: await bcrypt.hash('Ketua123!', 10),
       role: UserRole.STAFF,
       isActive: true,
@@ -773,7 +900,7 @@ async function main() {
   const sekretarisYayasanUser = await prisma.user.create({
     data: {
       name: 'Hj. Siti Fatimah',
-      email: 'sekretaris@cipansor.id',
+      email: 'sekretaris@cipansor.or.id',
       passwordHash: await bcrypt.hash('Sekretaris123!', 10),
       role: UserRole.STAFF,
       isActive: true,
@@ -792,7 +919,7 @@ async function main() {
   const bendaharaYayasanUser = await prisma.user.create({
     data: {
       name: 'H. Abdullah Rahman',
-      email: 'bendahara@cipansor.id',
+      email: 'bendahara@cipansor.or.id',
       passwordHash: await bcrypt.hash('Bendahara123!', 10),
       role: UserRole.STAFF,
       isActive: true,
@@ -808,25 +935,8 @@ async function main() {
     },
   });
 
-  // Admin Yayasan
-  const adminYayasanUser = await prisma.user.create({
-    data: {
-      name: 'Admin Yayasan',
-      email: 'admin.yayasan@cipansor.id',
-      passwordHash: await bcrypt.hash('AdminYayasan123!', 10),
-      role: UserRole.UNIT_ADMIN,
-      isActive: true,
-    },
-  });
-
-  await prisma.userRoleAssignment.create({
-    data: {
-      userId: adminYayasanUser.id,
-      roleId: roles[RoleCode.YAYASAN_ADMIN].id,
-      isPrimary: true,
-      isActive: true,
-    },
-  });
+  // No "Admin Yayasan" user. Foundation-level administration belongs to
+  // SUPER_ADMIN, so this account had no role left to hold.
 
   // Create Unit Admins with role assignments
   const adminPesantrenUser = await prisma.user.create({
@@ -1102,13 +1212,6 @@ async function main() {
       roleCode: RoleCode.SDIT_SISWA,
     },
     {
-      name: 'Fatimah Zahra',
-      gender: Gender.FEMALE,
-      email: 'student4@tkq.sch.id',
-      unitId: tkQuran.id,
-      roleCode: RoleCode.TKQ_SISWA,
-    },
-    {
       name: 'Abdullah Rahman',
       gender: Gender.MALE,
       email: 'student5@smaq.sch.id',
@@ -1241,6 +1344,110 @@ async function main() {
     }
   }
   console.log('✅ StudentParent relations created');
+
+  // ============================================
+  // DEMO PERSONAS — give them the domain rows their portals read from.
+  //
+  // The demo loop above created 81 logins, but only User + role assignment.
+  // A `*_SISWA` account with no `Student` row, a `*_ORANG_TUA` with no
+  // `StudentParent` link and a `*_GURU` with no `Teacher` row all log in fine
+  // and then land on a portal with nothing in it — every list empty, every
+  // per-student call 404. The Playwright role audit read that as a dozen
+  // "near-blank" pages before the cause was traced here.
+  //
+  // Each persona gets a real row in its own unit, so the demo shows the
+  // product working rather than a shell.
+  // ============================================
+  const demoUnitClasses = new Map<string, string>([
+    [pesantren.id, class7A.id],
+    [sdIt.id, class1A.id],
+  ]);
+
+  /** One class per unit, so students of every realm can be enrolled. */
+  const classForUnit = async (unitId: string, level: string): Promise<string> => {
+    const existing = demoUnitClasses.get(unitId);
+    if (existing) return existing;
+    const created = await prisma.class.create({
+      data: {
+        unitId,
+        academicYearId: academicYear.id,
+        name: `${level}A`,
+        level,
+        capacity: 30,
+      },
+    });
+    demoUnitClasses.set(unitId, created.id);
+    return created.id;
+  };
+
+  const demoStudentByUnit = new Map<string, string>();
+  let demoStudents = 0;
+  let demoTeachers = 0;
+  let demoParents = 0;
+  let demoNis = 9000;
+
+  for (const [roleCode, demo] of demoUsers) {
+    if (!demo.unitId) continue;
+
+    const isStudent = roleCode.endsWith('_SISWA') || roleCode === 'PT_MAHASISWA';
+    const isParent = roleCode.endsWith('_ORANG_TUA');
+    const isTeacher =
+      demoLegacyRoleFor(roleCode) === UserRole.TEACHER && !roleCode.endsWith('_KEPALA_SEKOLAH');
+
+    if (isStudent) {
+      const student = await prisma.student.create({
+        data: {
+          userId: demo.id,
+          unitId: demo.unitId,
+          nis: String(++demoNis),
+          nisn: `00${String(demoNis).padStart(8, '0')}`,
+          gender: Gender.MALE,
+          birthPlace: 'Tasikmalaya',
+          birthDate: new Date('2012-05-17'),
+          address: 'Kp. Cipansor, Kec. Kadipaten, Kab. Tasikmalaya',
+          parentName: 'Orang Tua Demo',
+          parentPhone: '081234567890',
+        },
+      });
+      await prisma.classEnrollment.create({
+        data: {
+          studentId: student.id,
+          classId: await classForUnit(demo.unitId, roleCode === 'PT_MAHASISWA' ? '1' : '7'),
+          status: 'active',
+        },
+      });
+      // Remember it so this unit's demo parent can be linked to it below.
+      demoStudentByUnit.set(demo.unitId, student.id);
+      demoStudents++;
+    } else if (isTeacher) {
+      await prisma.teacher.create({
+        data: {
+          userId: demo.id,
+          unitId: demo.unitId,
+          nip: `1990${String(demoNis++).padStart(11, '0')}`,
+        },
+      });
+      demoTeachers++;
+    } else if (isParent) {
+      demoParents++; // linked in the second pass, once every student exists
+    }
+  }
+
+  // Second pass: the parent of a unit is linked to that unit's demo student.
+  // Done separately because map iteration order does not guarantee the
+  // student was created before the parent.
+  for (const [roleCode, demo] of demoUsers) {
+    if (!roleCode.endsWith('_ORANG_TUA') || !demo.unitId) continue;
+    const studentId = demoStudentByUnit.get(demo.unitId);
+    if (!studentId) continue;
+    await prisma.studentParent.create({
+      data: { studentId, parentId: demo.id, relation: 'father', isPrimary: true },
+    });
+  }
+
+  console.log(
+    `✅ Demo personas wired (${demoStudents} students, ${demoTeachers} teachers, ${demoParents} parents)`
+  );
 
   // Create Attendance records for today
   const today = new Date();
@@ -1617,25 +1824,25 @@ async function main() {
   const staffData = [
     {
       name: 'Pak Bambang Sutejo',
-      email: 'bambang@cipansor.id',
+      email: 'bambang@cipansor.or.id',
       position: 'Kepala TU',
       department: 'Administrasi',
     },
     {
       name: 'Ibu Dewi Kartika',
-      email: 'dewi@cipansor.id',
+      email: 'dewi@cipansor.or.id',
       position: 'Staff Keuangan',
       department: 'Keuangan',
     },
     {
       name: 'Pak Rudi Hartono',
-      email: 'rudi@cipansor.id',
+      email: 'rudi@cipansor.or.id',
       position: 'Security',
       department: 'Keamanan',
     },
     {
       name: 'Ibu Sri Wahyuni',
-      email: 'sri@cipansor.id',
+      email: 'sri@cipansor.or.id',
       position: 'Petugas Kesehatan',
       department: 'Kesehatan',
     },
@@ -3271,12 +3478,12 @@ async function main() {
 
   console.log('\n🔑 Login Credentials:');
   console.log('\n   === SUPER ADMIN (GLOBAL) ===');
-  console.log('   Super Admin: superadmin@cipansor.id / SuperAdmin123!');
+  console.log('   Super Admin: superadmin@cipansor.or.id / SuperAdmin123!');
 
   console.log('\n   === YAYASAN ===');
-  console.log('   Ketua Yayasan: ketua@cipansor.id / Ketua123!');
-  console.log('   Pembina Yayasan: pembina@cipansor.id / Pembina123!');
-  console.log('   Pengawas Yayasan: pengawas@cipansor.id / Pengawas123!');
+  console.log('   Ketua Yayasan: ketua@cipansor.or.id / Ketua123!');
+  console.log('   Pembina Yayasan: pembina@cipansor.or.id / Pembina123!');
+  console.log('   Pengawas Yayasan: pengawas@cipansor.or.id / Pengawas123!');
 
   console.log('\n   === PAUD ===');
   console.log('   Admin PAUD: admin@paud.sch.id / Admin123!');
@@ -4122,7 +4329,7 @@ async function main() {
       unitId: pesantren.id,
       donorName: 'H. Muhammad Yusuf',
       donorPhone: '081234567890',
-      donorEmail: 'ketua@cipansor.id',
+      donorEmail: 'ketua@cipansor.or.id',
       isAnonymous: false,
       type: PublicDonationType.WAKAF,
       amount: new Prisma.Decimal(50000000),
@@ -5363,8 +5570,8 @@ async function main() {
         title: 'Sertifikat Tahfidz Juz 30',
         description: 'Diberikan atas keberhasilan menyelesaikan hafalan Al-Qur\'an Juz 30.',
         certificateNumber: 'CERT-TFZ-30-2024001',
-        qrCode: 'https://cipansor.id/verify/CERT-TFZ-30-2024001',
-        verificationUrl: 'https://cipansor.id/verify/CERT-TFZ-30-2024001',
+        qrCode: 'https://cipansor.or.id/verify/CERT-TFZ-30-2024001',
+        verificationUrl: 'https://cipansor.or.id/verify/CERT-TFZ-30-2024001',
         grade: 'MUMTAZ',
         issueDate: new Date('2024-10-15'),
         signatoryName: 'KH. Abdullah Syukur',

@@ -3,29 +3,51 @@ import api, { ApiResponse, PaginatedResponse } from "@/lib/api";
 
 // ==================== TYPES ====================
 
+/**
+ * A child as `GET /parent/children` actually returns it.
+ *
+ * This used to declare a nested `student` object with a `class` and a
+ * `birthDate`. The API returns none of that: it flattens the StudentParent
+ * join and — importantly — sets `id` to the *student's* id, because every
+ * downstream route is `/parent/children/{studentId}/…`. Nesting it would break
+ * all of them.
+ *
+ * The mismatch was invisible for as long as the demo parents had no children:
+ * an empty array meant `children.find(c => c.student.id === …)` never ran. The
+ * moment a parent had one, the portal died with "Cannot read properties of
+ * undefined (reading 'id')" and rendered the error boundary instead of a
+ * sidebar. Keep this type honest against `parent.service.ts#getChildren`.
+ */
 export interface ParentChild {
+  /** The student's id — not the parent-child link id. */
   id: string;
-  student: {
-    id: string;
-    nis: string;
-    name: string;
-    gender: "MALE" | "FEMALE";
-    birthDate: string;
-    photoUrl?: string;
-    status: "ACTIVE" | "INACTIVE" | "GRADUATED";
-    class?: {
-      id: string;
-      name: string;
-      gradeLevel: number;
-    };
-    unit?: {
-      id: string;
-      name: string;
-      type: string;
-    };
-  };
-  relation: "FATHER" | "MOTHER" | "GUARDIAN" | "OTHER";
+  nis: string;
+  nisn?: string | null;
+  name: string;
+  gender: "MALE" | "FEMALE";
+  birthPlace?: string | null;
+  birthDate?: string | null;
+  address?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  photoUrl?: string | null;
+  status: string;
+  relation: string;
   isPrimary: boolean;
+  unitId: string;
+  unit?: {
+    id: string;
+    name: string;
+    type: string;
+  } | null;
+  currentClass?: {
+    id: string;
+    name: string;
+    level: string;
+    academicYear?: { id: string; name: string; isActive: boolean };
+    /** `user.id` is the messaging recipient — the Teacher id is not a User id. */
+    homeroomTeacher?: { id: string; user: { id: string; name: string } } | null;
+  } | null;
 }
 
 export interface ChildSummary {

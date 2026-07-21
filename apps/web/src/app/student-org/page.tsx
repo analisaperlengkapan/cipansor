@@ -1,11 +1,12 @@
 'use client';
+import { MainLayout } from "@/components/layout";
 
 import { useStudentOrgs } from '@/hooks/student-org/use-student-org';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import Link from 'next/link';
 
-export default function StudentOrgPage() {
+function StudentOrgPageContent() {
   const { data: orgs, isLoading } = useStudentOrgs();
 
   return (
@@ -48,5 +49,13 @@ export default function StudentOrgPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function StudentOrgPageWithShell() {
+  return (
+    <MainLayout>
+      <StudentOrgPageContent />
+    </MainLayout>
   );
 }

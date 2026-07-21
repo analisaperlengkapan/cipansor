@@ -24,7 +24,7 @@ import {
   Building2,
   TrendingUp,
   TrendingDown,
-  DollarSign,
+  Banknote,
   Wallet,
   PiggyBank,
   CreditCard,

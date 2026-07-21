@@ -1,4 +1,5 @@
 "use client";
+import { MainLayout } from "@/components/layout";
 import { useState } from "react";
 import { safeFormat } from "@/lib/date";
 
@@ -33,7 +34,7 @@ import {
   Award,
   Bell,
   ClipboardList,
-  DollarSign,
+  Banknote,
   Building2,
   RefreshCw,
   CheckCircle,
@@ -59,7 +60,7 @@ import {
   type PendingTask,
 } from "@/hooks/use-staff-dashboard";
 
-export default function StaffDashboard() {
+function StaffDashboardContent() {
   const { user } = useAuthStore();
   const { stats, pendingTasks, recentActivity, isLoading, refetch } =
     useStaffDashboard();
@@ -129,7 +130,7 @@ export default function StaffDashboard() {
     {
       title: "Keuangan",
       description: "Pembayaran siswa",
-      icon: DollarSign,
+      icon: Banknote,
       href: "/finance",
       color: "bg-green-500",
     },
@@ -684,5 +685,13 @@ export default function StaffDashboard() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+export default function StaffDashboardWithShell() {
+  return (
+    <MainLayout>
+      <StaffDashboardContent />
+    </MainLayout>
   );
 }

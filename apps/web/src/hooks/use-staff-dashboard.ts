@@ -114,6 +114,7 @@ export function useStaffDashboardStats() {
         api
           .get<PaginatedResponse<unknown>>("/permits", {
             params: { status: "PENDING", unitId: user?.unitId, limit: 1 },
+            skipErrorToast: true,
           })
           .catch(() => ({ data: { meta: { pagination: { total: 0 } } } })),
 
@@ -121,6 +122,7 @@ export function useStaffDashboardStats() {
         api
           .get<PaginatedResponse<unknown>>("/health", {
             params: { status: "ACTIVE", unitId: user?.unitId, limit: 1 },
+            skipErrorToast: true,
           })
           .catch(() => ({ data: { meta: { pagination: { total: 0 } } } })),
 
@@ -128,6 +130,7 @@ export function useStaffDashboardStats() {
         api
           .get<PaginatedResponse<unknown>>("/violations", {
             params: { date: today, unitId: user?.unitId, limit: 1 },
+            skipErrorToast: true,
           })
           .catch(() => ({ data: { meta: { pagination: { total: 0 } } } })),
 
@@ -135,6 +138,7 @@ export function useStaffDashboardStats() {
         api
           .get<PaginatedResponse<unknown>>("/rewards", {
             params: { date: today, unitId: user?.unitId, limit: 1 },
+            skipErrorToast: true,
           })
           .catch(() => ({ data: { meta: { pagination: { total: 0 } } } })),
 
@@ -150,6 +154,7 @@ export function useStaffDashboardStats() {
             }>
           >("/attendance/summary", {
             params: { date: today, unitId: user?.unitId },
+            skipErrorToast: true,
           })
           .catch(() => ({
             data: {
@@ -161,6 +166,7 @@ export function useStaffDashboardStats() {
         api
           .get<PaginatedResponse<unknown>>("/students", {
             params: { status: "ACTIVE", unitId: user?.unitId, limit: 1 },
+            skipErrorToast: true,
           })
           .catch(() => ({ data: { meta: { pagination: { total: 0 } } } })),
       ]);
@@ -212,6 +218,7 @@ export function useStaffPendingTasks(limit: number = 10) {
           }>
         >("/permits", {
           params: { status: "PENDING", unitId: user?.unitId, limit: 5 },
+          skipErrorToast: true,
         })
         .catch(() => ({ data: { data: [] } }));
 
@@ -241,6 +248,7 @@ export function useStaffPendingTasks(limit: number = 10) {
           }>
         >("/health", {
           params: { status: "ACTIVE", unitId: user?.unitId, limit: 5 },
+          skipErrorToast: true,
         })
         .catch(() => ({ data: { data: [] } }));
 
@@ -298,6 +306,7 @@ export function useStaffRecentActivity(limit: number = 10) {
           }>
         >("/permits", {
           params: { unitId: user?.unitId, limit: 5 },
+          skipErrorToast: true,
         })
         .catch(() => ({ data: { data: [] } }));
 
@@ -330,6 +339,7 @@ export function useStaffRecentActivity(limit: number = 10) {
           }>
         >("/violations", {
           params: { unitId: user?.unitId, limit: 5 },
+          skipErrorToast: true,
         })
         .catch(() => ({ data: { data: [] } }));
 
@@ -357,6 +367,7 @@ export function useStaffRecentActivity(limit: number = 10) {
           }>
         >("/rewards", {
           params: { unitId: user?.unitId, limit: 5 },
+          skipErrorToast: true,
         })
         .catch(() => ({ data: { data: [] } }));
 

@@ -1,4 +1,5 @@
 "use client";
+import { MainLayout } from "@/components/layout";
 
 import { useGRCStats, useRiskMatrix } from "@/hooks/use-analytics";
 import { PageHeader } from "@/components/shared/page-header";
@@ -17,7 +18,7 @@ import {
   Legend
 } from "recharts";
 
-export default function GrcDashboardPage() {
+function GrcDashboardPageContent() {
   const { data: grcResponse, isLoading, error } = useGRCStats();
   const { data: riskMatrix } = useRiskMatrix();
   const grc = grcResponse?.data;
@@ -358,5 +359,13 @@ function RiskHeatmap({
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+export default function GrcDashboardPageWithShell() {
+  return (
+    <MainLayout>
+      <GrcDashboardPageContent />
+    </MainLayout>
   );
 }

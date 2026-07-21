@@ -16,20 +16,36 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Loader2,
-  Eye,
-  EyeOff,
-  ShieldCheck,
-  Building2,
-  GraduationCap,
-  Users,
-  UserCircle,
-} from "lucide-react";
+import { Loader2, Eye, EyeOff } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  getDashboardForRole,
+  getEffectiveRole,
+  getPrimaryRoleCode,
+} from "@/lib/rbac";
 import { TwoFactorVerify } from "@/components/auth/TwoFactorVerify";
 import { TwoFactorSetup } from "@/components/auth/TwoFactorSetup";
 import { toast } from "sonner";
+import {
+  DEMO_ACCOUNTS,
+  DEMO_TABS,
+  DEMO_PASSWORD,
+  type DemoAccount,
+} from "@cipansor/shared";
+
+/**
+ * Where to send a user after sign-in.
+ *
+ * This used to be a hardcoded "/dashboard" for everyone, which only appeared to
+ * work because the middleware bounced roles that could not reach /dashboard on
+ * to their own landing page. Once /dashboard became reachable for more buckets
+ * that bounce stopped happening and teachers were dropped on the admin
+ * dashboard. Resolve the destination properly instead of relying on a redirect.
+ */
+function landingRouteForCurrentUser(): string {
+  const { user } = useAuthStore.getState();
+  return getDashboardForRole(getEffectiveRole(user), getPrimaryRoleCode(user));
+}
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -38,85 +54,59 @@ const loginSchema = z.object({
 
 type LoginForm = z.infer<typeof loginSchema>;
 
-// Demo credentials for different roles organized by realm
-const demoCredentials = [
-  // Global
-  {
-    role: "Super Admin",
-    email: "superadmin@cipansor.id",
-    password: "SuperAdmin123!",
-    description: "Akses penuh seluruh sistem",
-    realm: "GLOBAL",
-    icon: ShieldCheck,
-    color: "bg-purple-600",
-  },
-  // Yayasan
-  {
-    role: "Ketua Yayasan",
-    email: "ketua@cipansor.id",
-    password: "Ketua123!",
-    description: "Ketua pengurus yayasan",
-    realm: "YAYASAN",
-    icon: Building2,
-    color: "bg-amber-500",
-  },
-  // SMP IT
-  {
-    role: "Admin SMP IT",
-    email: "admin@smpit.sch.id",
-    password: "Admin123!",
-    description: "Administrator SMP IT",
-    realm: "SMP_IT",
-    icon: Building2,
-    color: "bg-blue-500",
-  },
-  {
-    role: "Kepala SMP IT",
-    email: "kepala@smpit.sch.id",
-    password: "Kepala123!",
-    description: "Kepala Sekolah + Guru",
-    realm: "SMP_IT",
-    icon: GraduationCap,
-    color: "bg-blue-600",
-  },
-  {
-    role: "Guru SMP IT",
-    email: "ahmad@smpit.sch.id",
-    password: "Teacher123!",
-    description: "Guru SMP IT",
-    realm: "SMP_IT",
-    icon: GraduationCap,
-    color: "bg-green-500",
-  },
-  {
-    role: "Orang Tua SMP IT",
-    email: "parent1@smpit.sch.id",
-    password: "Parent123!",
-    description: "Orang tua siswa SMP IT",
-    realm: "SMP_IT",
-    icon: Users,
-    color: "bg-orange-500",
-  },
-  {
-    role: "Siswa SMP IT",
-    email: "student1@smpit.sch.id",
-    password: "Student123!",
-    description: "Siswa SMP IT",
-    realm: "SMP_IT",
-    icon: UserCircle,
-    color: "bg-cyan-500",
-  },
-  // SD IT
-  {
-    role: "Admin SD IT",
-    email: "admin@sdit.sch.id",
-    password: "Admin123!",
-    description: "Administrator SD IT",
-    realm: "SD_IT",
-    icon: Building2,
-    color: "bg-green-600",
-  },
-];
+// Next.js hardcodes process.env.NODE_ENV to "production" during `next build`,
+// so a NODE_ENV check would compile the demo panel out of every built image.
+// Gate on an explicit public build flag instead: set NEXT_PUBLIC_SHOW_DEMO_LOGIN
+// = "true" for demo deployments, leave it unset for a real launch.
+const SHOW_DEMO_LOGIN = process.env.NEXT_PUBLIC_SHOW_DEMO_LOGIN === "true";
+
+// One accent colour per realm tab, used for the fallback initial avatar.
+const groupColor: Record<string, string> = {
+  YAYASAN: "bg-amber-500",
+  PESANTREN: "bg-emerald-600",
+  TK_QURAN: "bg-pink-500",
+  SD_IT: "bg-green-600",
+  SMP_IT: "bg-blue-600",
+  SMA_QURAN: "bg-teal-600",
+  PERGURUAN_TINGGI: "bg-indigo-600",
+  SARANA_USAHA: "bg-slate-600",
+};
+
+// First meaningful letter of a name, skipping honorifics/titles.
+function avatarInitial(name: string): string {
+  const stripped = name
+    .replace(
+      /^(H\.|Hj\.|K\.H\.|KH\.|Drs\.|Dra\.|Dr\.|Prof\.|Ns\.|Lc\.|M\.Ag\.|Ustadz|Ustadzah|Bunda|Ananda|Ibu|Bapak)\s*/gi,
+      "",
+    )
+    .trim();
+  return (stripped || name).charAt(0).toUpperCase();
+}
+
+function DemoAvatar({ acc, size = 10 }: { acc: DemoAccount; size?: number }) {
+  const dim = size === 8 ? "h-8 w-8" : "h-10 w-10";
+  if (acc.photo) {
+    // eslint-disable-next-line @next/next/no-img-element
+    return (
+      <img
+        src={acc.photo}
+        alt={acc.name}
+        className={cn(dim, "rounded-full object-cover flex-shrink-0")}
+      />
+    );
+  }
+  return (
+    <div
+      className={cn(
+        dim,
+        "flex items-center justify-center rounded-full text-white text-sm font-semibold flex-shrink-0",
+        groupColor[acc.group] ?? "bg-gray-500",
+      )}
+    >
+      {avatarInitial(acc.name)}
+    </div>
+  );
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -132,6 +122,7 @@ export default function LoginPage() {
   } = useAuthStore();
   const [showPassword, setShowPassword] = useState(false);
   const [selectedDemo, setSelectedDemo] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<string>(DEMO_TABS[0]?.key ?? "");
 
   const {
     register,
@@ -146,37 +137,33 @@ export default function LoginPage() {
     try {
       clearError();
       await login(data);
-      // Logic handled in store, store updates state which triggers re-render if 2FA needed
-      // If success immediately (no 2FA), we push to dashboard
-      // We can't easily check the result of login action if it returns void
-      // But we can check store state.
-      // Actually `login` in store throws on error.
-      // If requiresTwoFactor is set, we just let the component re-render.
       const state = useAuthStore.getState();
       if (
         !state.requiresTwoFactor &&
         !state.requiresTwoFactorSetup &&
         state.isAuthenticated
       ) {
-        router.push("/dashboard");
+        router.push(landingRouteForCurrentUser());
       }
     } catch {
       // Error is handled in store
     }
   };
 
-  const handleDemoLogin = (credential: (typeof demoCredentials)[0]) => {
+  const handleDemoLogin = (acc: DemoAccount) => {
     clearError();
-    setSelectedDemo(credential.role);
-    setValue("email", credential.email);
-    setValue("password", credential.password);
+    setSelectedDemo(acc.email);
+    setValue("email", acc.email);
+    setValue("password", acc.password);
   };
 
-  const handleQuickLogin = async (credential: (typeof demoCredentials)[0]) => {
+  const handleQuickLogin = async (acc: DemoAccount) => {
     try {
       clearError();
-      setSelectedDemo(credential.role);
-      await login({ email: credential.email, password: credential.password });
+      setSelectedDemo(acc.email);
+      setValue("email", acc.email);
+      setValue("password", acc.password);
+      await login({ email: acc.email, password: acc.password });
 
       const state = useAuthStore.getState();
       if (
@@ -184,12 +171,14 @@ export default function LoginPage() {
         !state.requiresTwoFactorSetup &&
         state.isAuthenticated
       ) {
-        router.push("/dashboard");
+        router.push(landingRouteForCurrentUser());
       }
     } catch {
       // Error is handled in store
     }
   };
+
+  const visibleAccounts = DEMO_ACCOUNTS.filter((a) => a.group === activeTab);
 
   if (requiresTwoFactorSetup) {
     return (
@@ -230,7 +219,7 @@ export default function LoginPage() {
               onVerify={async (token) => {
                 try {
                   await verifyTwoFactor(token);
-                  router.push("/dashboard");
+                  router.push(landingRouteForCurrentUser());
                 } catch {}
               }}
               isLoading={isLoading}
@@ -248,71 +237,112 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen bg-linear-to-br from-green-50 to-green-100 dark:from-gray-900 dark:to-gray-800">
       {/* Left side - Demo Credentials */}
-      <div className="hidden lg:flex lg:w-1/2 flex-col justify-center p-8 xl:p-12">
-        <div className="max-w-md mx-auto">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-            Demo Credentials
-          </h2>
-          <p className="text-gray-600 dark:text-gray-300 mb-6">
-            Click any role to try the demo. Each role has different access
-            levels.
-          </p>
+      {SHOW_DEMO_LOGIN && (
+        <div className="hidden lg:flex lg:w-1/2 flex-col justify-center p-8 xl:p-12">
+          <div className="max-w-lg mx-auto w-full">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+              Kredensial Demo
+            </h2>
+            <p className="text-gray-600 dark:text-gray-300 mb-3">
+              Klik salah satu akun untuk langsung masuk. Setiap peran memiliki
+              hak akses dan menu yang berbeda.
+            </p>
 
-          <div className="grid gap-3">
-            {demoCredentials.map((cred) => {
-              const Icon = cred.icon;
-              return (
+            <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-2 text-sm dark:border-green-800 dark:bg-green-900/20">
+              <span className="text-gray-600 dark:text-gray-300">
+                Password untuk semua akun:{" "}
+              </span>
+              <code className="font-mono font-semibold text-green-800 dark:text-green-200">
+                {DEMO_PASSWORD}
+              </code>
+            </div>
+
+            {/* Realm Selector Tabs */}
+            <div className="flex flex-wrap gap-2 mb-4">
+              {DEMO_TABS.map((tab) => {
+                const count = DEMO_ACCOUNTS.filter(
+                  (a) => a.group === tab.key,
+                ).length;
+                return (
+                  <button
+                    key={tab.key}
+                    onClick={() => {
+                      setActiveTab(tab.key);
+                      setSelectedDemo(null);
+                    }}
+                    className={cn(
+                      "px-3 py-1.5 text-xs font-semibold rounded-full border transition-all whitespace-nowrap",
+                      activeTab === tab.key
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:bg-gray-50",
+                    )}
+                  >
+                    {tab.label}
+                    <span className="ml-1.5 opacity-60">{count}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="grid gap-2 max-h-[420px] overflow-y-auto pr-1 scrollbar-thin">
+              {visibleAccounts.map((acc) => (
                 <button
-                  key={cred.role}
-                  onClick={() => handleQuickLogin(cred)}
+                  key={acc.email}
+                  onClick={() => handleQuickLogin(acc)}
                   disabled={isLoading}
                   className={cn(
-                    "flex items-center gap-3 p-3 rounded-lg border text-left transition-all",
+                    "flex items-center gap-3 p-2.5 rounded-lg border text-left transition-all",
                     "hover:bg-white hover:shadow-md dark:hover:bg-gray-800",
                     "disabled:opacity-50 disabled:cursor-not-allowed",
-                    selectedDemo === cred.role && isLoading
+                    selectedDemo === acc.email && isLoading
                       ? "bg-white shadow-md ring-2 ring-primary dark:bg-gray-800"
                       : "bg-white/50 dark:bg-gray-800/50",
                   )}
                 >
-                  <div className={cn("p-2 rounded-lg text-white", cred.color)}>
-                    <Icon className="h-5 w-5" />
-                  </div>
+                  <DemoAvatar acc={acc} />
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium text-gray-900 dark:text-white">
-                      {cred.role}
+                    <div className="font-medium text-gray-900 dark:text-white truncate">
+                      {acc.name}
                     </div>
                     <div className="text-sm text-gray-500 dark:text-gray-400 truncate">
-                      {cred.description}
+                      {acc.description}
+                    </div>
+                    <div className="text-2xs text-gray-400 dark:text-gray-500 truncate font-mono">
+                      {acc.email}
                     </div>
                   </div>
-                  {selectedDemo === cred.role && isLoading && (
-                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                  {selectedDemo === acc.email && isLoading && (
+                    <Loader2 className="h-4 w-4 animate-spin text-primary flex-shrink-0" />
                   )}
                 </button>
-              );
-            })}
-          </div>
+              ))}
+            </div>
 
-          <div className="mt-6 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-700">
-            <p className="text-sm text-amber-800 dark:text-amber-200">
-              <strong>Note:</strong> This is a demo environment. All data is
-              sample data and will be reset periodically.
-            </p>
+            <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-700">
+              <p className="text-sm text-amber-800 dark:text-amber-200">
+                <strong>Catatan:</strong> Ini lingkungan demo. Seluruh data
+                adalah contoh dan dapat direset berkala.
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Right side - Login Form */}
       <div className="flex-1 flex items-center justify-center p-4">
         <Card className="w-full max-w-md shadow-xl">
           <CardHeader className="text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary text-2xl font-bold text-primary-foreground shadow-lg">
-              C
+            <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-white p-1 shadow-md">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/logo.png"
+                alt="Cipansor Logo"
+                className="h-full w-full object-contain rounded-full"
+              />
             </div>
-            <CardTitle className="text-2xl">Welcome to Cipansor</CardTitle>
+            <CardTitle className="text-2xl">Selamat Datang di Cipansor</CardTitle>
             <CardDescription>
-              Yayasan Pesantren Cipansor Management System
+              Sistem Manajemen Yayasan Pesantren Cipansor
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -344,7 +374,7 @@ export default function LoginPage() {
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
-                    placeholder="Enter your password"
+                    placeholder="Masukkan password"
                     {...register("password")}
                   />
                   <Button
@@ -370,62 +400,67 @@ export default function LoginPage() {
 
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Sign In
+                Masuk
               </Button>
             </form>
 
             {/* Mobile Demo Credentials */}
-            <div className="mt-6 border-t pt-4 lg:hidden">
-              <p className="text-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                Quick Demo Login
-              </p>
-              <div className="grid grid-cols-2 gap-2">
-                {demoCredentials.slice(0, 4).map((cred) => {
-                  const Icon = cred.icon;
-                  return (
+            {SHOW_DEMO_LOGIN && (
+              <div className="mt-6 border-t pt-4 lg:hidden">
+                <p className="text-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Login Demo Cepat
+                </p>
+                <p className="text-center text-2xs text-gray-500 dark:text-gray-400 mb-3">
+                  Password semua akun:{" "}
+                  <code className="font-mono">{DEMO_PASSWORD}</code>
+                </p>
+
+                {/* Mobile Tabs */}
+                <div className="flex gap-1.5 mb-3 overflow-x-auto pb-1 scrollbar-none">
+                  {DEMO_TABS.map((tab) => (
                     <button
-                      key={cred.role}
-                      onClick={() => handleDemoLogin(cred)}
-                      disabled={isLoading}
+                      key={tab.key}
+                      type="button"
+                      onClick={() => setActiveTab(tab.key)}
                       className={cn(
-                        "flex items-center gap-2 p-2 rounded-lg border text-left transition-all text-sm",
-                        "hover:bg-muted disabled:opacity-50",
+                        "px-2.5 py-1 text-2xs font-semibold rounded-full border transition-all whitespace-nowrap",
+                        activeTab === tab.key
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "bg-muted text-muted-foreground border-transparent hover:bg-muted/80",
                       )}
                     >
-                      <div
-                        className={cn("p-1.5 rounded text-white", cred.color)}
-                      >
-                        <Icon className="h-3.5 w-3.5" />
-                      </div>
-                      <span className="font-medium truncate">{cred.role}</span>
+                      {tab.label}
                     </button>
-                  );
-                })}
-              </div>
-              <div className="flex gap-2 mt-2">
-                {demoCredentials.slice(4).map((cred) => {
-                  const Icon = cred.icon;
-                  return (
+                  ))}
+                </div>
+
+                <div className="grid gap-2 max-h-[200px] overflow-y-auto pr-1 scrollbar-thin">
+                  {visibleAccounts.map((acc) => (
                     <button
-                      key={cred.role}
-                      onClick={() => handleDemoLogin(cred)}
+                      key={acc.email}
+                      type="button"
+                      onClick={() => handleDemoLogin(acc)}
                       disabled={isLoading}
                       className={cn(
-                        "flex-1 flex items-center gap-2 p-2 rounded-lg border text-left transition-all text-sm",
+                        "flex items-center gap-2 p-2 rounded-lg border text-left transition-all text-xs",
                         "hover:bg-muted disabled:opacity-50",
+                        selectedDemo === acc.email
+                          ? "ring-2 ring-primary"
+                          : "",
                       )}
                     >
-                      <div
-                        className={cn("p-1.5 rounded text-white", cred.color)}
-                      >
-                        <Icon className="h-3.5 w-3.5" />
+                      <DemoAvatar acc={acc} size={8} />
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium truncate">{acc.name}</div>
+                        <div className="text-2xs text-muted-foreground truncate">
+                          {acc.description}
+                        </div>
                       </div>
-                      <span className="font-medium truncate">{cred.role}</span>
                     </button>
-                  );
-                })}
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </CardContent>
         </Card>
       </div>

@@ -15,7 +15,7 @@ import { requireUser } from '../../middleware/auth';
  * forecast by passing a different `unitId`, nor by omitting it entirely
  * (which would otherwise return aggregated data across ALL units — see
  * forecast.service.ts where `unitId` is only spread when truthy).
- * SUPER_ADMIN and YAYASAN_ADMIN may scope to any (or all) unit(s).
+ * SUPER_ADMIN may scope to any (or all) unit(s).
  *
  * Returns `{ ok: true, unitId }` on success, or `{ ok: false }` after
  * having already written a 403 response — callers should early-return
@@ -30,7 +30,7 @@ function resolveForecastUnitId(
   const user = requireUser(req);
 
   let effectiveUnitId = unitId as string | undefined;
-  if (user && user.role !== 'SUPER_ADMIN' && user.role !== 'YAYASAN_ADMIN') {
+  if (user && user.role !== 'SUPER_ADMIN') {
     if (!user.unitId) {
       res.status(403).json({ success: false, error: 'Access to this unit is not allowed' });
       return { ok: false };

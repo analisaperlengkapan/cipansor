@@ -1,4 +1,5 @@
 "use client";
+import { MainLayout } from "@/components/layout";
 
 import { useAdmissionPeriods, useRegistrants } from "@/hooks/use-admissions";
 import { PageHeader } from "@/components/shared/page-header";
@@ -21,7 +22,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 
-export default function UnifiedAdmissionsDashboard() {
+function UnifiedAdmissionsDashboardContent() {
   const { data: periodsResponse, isLoading: loadingPeriods } = useAdmissionPeriods();
   const { data: registrantsResponse, isLoading: loadingRegistrants } = useRegistrants({ limit: 10 });
 
@@ -187,5 +188,13 @@ export default function UnifiedAdmissionsDashboard() {
          </div>
       </div>
     </div>
+  );
+}
+
+export default function UnifiedAdmissionsDashboardWithShell() {
+  return (
+    <MainLayout>
+      <UnifiedAdmissionsDashboardContent />
+    </MainLayout>
   );
 }

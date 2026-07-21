@@ -1,4 +1,5 @@
 "use client";
+import { MainLayout } from "@/components/layout";
 
 import { useState } from "react";
 import {
@@ -85,7 +86,7 @@ const pieLabelFormatter = ({ name, percent }: any) =>
 const categoryLabelFormatter = ({ category, percent }: any) =>
   `${category}: ${(percent * 100).toFixed(0)}%`;
 
-export default function AnalyticsPage() {
+function AnalyticsPageContent() {
   const [activeTab, setActiveTab] = useState("overview");
   const [timeRange, setTimeRange] = useState<TimeRange>("MONTHLY");
 
@@ -1036,5 +1037,13 @@ export default function AnalyticsPage() {
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+export default function AnalyticsPageWithShell() {
+  return (
+    <MainLayout>
+      <AnalyticsPageContent />
+    </MainLayout>
   );
 }

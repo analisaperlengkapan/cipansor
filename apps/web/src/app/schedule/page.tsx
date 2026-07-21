@@ -1,4 +1,5 @@
 "use client";
+import { MainLayout } from "@/components/layout";
 
 import { getEffectiveRole } from "@/lib/rbac";
 import { useState } from "react";
@@ -52,7 +53,7 @@ import {
 import { Loader2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
-export default function SchedulePage() {
+function SchedulePageContent() {
   const { user } = useAuth();
   const role = getEffectiveRole(user);
   const isAdminOrTeacher =
@@ -434,5 +435,13 @@ function ScheduleFormDialog({ onSuccess }: { onSuccess: () => void }) {
         </form>
       </DialogContent>
     </Dialog>
+  );
+}
+
+export default function SchedulePageWithShell() {
+  return (
+    <MainLayout>
+      <SchedulePageContent />
+    </MainLayout>
   );
 }

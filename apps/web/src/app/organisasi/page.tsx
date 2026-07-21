@@ -1,4 +1,5 @@
 "use client";
+import { MainLayout } from "@/components/layout";
 
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -148,7 +149,7 @@ function OrgTreeNode({ node, depth = 0 }: { node: any; depth?: number }) {
   );
 }
 
-export default function OrganisasiPage() {
+function OrganisasiPageContent() {
   const [unitDialogOpen, setUnitDialogOpen] = useState(false);
   const [positionDialogOpen, setPositionDialogOpen] = useState(false);
 
@@ -209,5 +210,13 @@ export default function OrganisasiPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function OrganisasiPageWithShell() {
+  return (
+    <MainLayout>
+      <OrganisasiPageContent />
+    </MainLayout>
   );
 }

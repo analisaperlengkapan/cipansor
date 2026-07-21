@@ -73,7 +73,7 @@ export function DashboardErrorFallback({
             <p>
               Jika masalah berlanjut, hubungi{" "}
               <a
-                href="mailto:support@cipansor.id"
+                href="mailto:support@cipansor.or.id"
                 className="text-blue-600 hover:underline"
               >
                 dukungan teknis

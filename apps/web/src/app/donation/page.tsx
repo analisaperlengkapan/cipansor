@@ -13,7 +13,7 @@ import {
   Filter,
   TrendingUp,
   Users,
-  DollarSign,
+  Banknote,
   Clock,
   CheckCircle2,
 } from "lucide-react";
@@ -191,7 +191,7 @@ export default function DonationPage() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <DollarSign className="h-4 w-4 text-green-500" />
+              <Banknote className="h-4 w-4 text-green-500" />
               <span className="text-sm text-muted-foreground">
                 Total Terkumpul
               </span>

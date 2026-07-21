@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { DollarSign, TrendingUp, CheckCircle } from "lucide-react";
+import { Banknote, TrendingUp, CheckCircle } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { id } from "date-fns/locale";
 
@@ -128,7 +128,7 @@ export function RecentPaymentsWidget({
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg flex items-center gap-2">
-            <DollarSign className="h-5 w-5" />
+            <Banknote className="h-5 w-5" />
             Pembayaran Terbaru
           </CardTitle>
           <div className="flex items-center gap-2">

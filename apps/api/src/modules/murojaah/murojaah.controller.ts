@@ -11,7 +11,11 @@ import { ApiResponse } from '@/utils/response';
  */
 export const listMurojaah = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const query = req.query as any;
+    // `validateQuery` parks the parsed result in `res.locals.validatedQuery`
+    // (Express 5 makes `req.query` read-only). Reading `req.query` directly
+    // discarded the schema's page=1/limit=20 defaults, so a call that omitted
+    // `page` computed `skip: NaN` and Prisma answered with a 500.
+    const query = (res.locals.validatedQuery || req.query) as any;
     const result = await murojaahService.findAll(query, {
       role: (req.user as any)?.role,
       unitId: (req.user as any)?.unitId,
@@ -112,7 +116,7 @@ export const deleteMistake = async (req: Request, res: Response, next: NextFunct
 export const getStudentHistory = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { studentId } = req.params;
-    const query = req.query as any;
+    const query = (res.locals.validatedQuery || req.query) as any;
     const result = await murojaahService.getStudentHistory(studentId, query);
     res.json(
       ApiResponse.paginated(
@@ -177,7 +181,7 @@ export const getMurojaahSchedule = async (req: Request, res: Response, next: Nex
  */
 export const getQualityDistribution = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const query = req.query as any;
+    const query = (res.locals.validatedQuery || req.query) as any;
     const result = await murojaahService.getQualityDistribution(query);
     res.json(ApiResponse.success(result));
   } catch (error) {
@@ -190,7 +194,7 @@ export const getQualityDistribution = async (req: Request, res: Response, next: 
  */
 export const getMistakePatterns = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const query = req.query as any;
+    const query = (res.locals.validatedQuery || req.query) as any;
     const result = await murojaahService.getMistakePatterns(query);
     res.json(ApiResponse.success(result));
   } catch (error) {
@@ -203,7 +207,7 @@ export const getMistakePatterns = async (req: Request, res: Response, next: Next
  */
 export const getConsistencyScore = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const query = req.query as any;
+    const query = (res.locals.validatedQuery || req.query) as any;
     const result = await murojaahService.getConsistencyScore(query);
     res.json(ApiResponse.success(result));
   } catch (error) {
@@ -216,7 +220,7 @@ export const getConsistencyScore = async (req: Request, res: Response, next: Nex
  */
 export const getTopPerformers = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const query = req.query as any;
+    const query = (res.locals.validatedQuery || req.query) as any;
     const result = await murojaahService.getTopPerformers(query);
     res.json(ApiResponse.success(result));
   } catch (error) {

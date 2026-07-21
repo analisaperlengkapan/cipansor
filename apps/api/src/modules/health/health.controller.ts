@@ -220,6 +220,20 @@ export async function getHealthStats(req: Request, res: Response, next: NextFunc
   }
 }
 
+/**
+ * Yayasan-wide health summary. The web app has called GET /api/health/summary
+ * from the dashboard and the health page since those pages were written; the
+ * route never existed, so both silently rendered empty cards.
+ */
+export async function getHealthSummary(_req: Request, res: Response, next: NextFunction) {
+  try {
+    const stats = await service.getHealthStats();
+    res.json({ success: true, data: stats });
+  } catch (error) {
+    next(error);
+  }
+}
+
 // ==================== CLINIC (POLIKLINIK) ====================
 
 export async function createPatient(req: Request, res: Response, next: NextFunction) {

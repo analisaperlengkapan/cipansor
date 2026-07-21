@@ -18,16 +18,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { api } from "@/lib/api";
+// Children come from `useParentChildren`'s shared `ParentChild` shape.
+// Each of these pages used to declare its own local `Child` with a nested
+// `student` object the API never returns — see use-parent-portal.ts.
+import type { ParentChild } from "@/hooks/use-parent-portal";
 import { HeartHandshake, Calendar, User } from "lucide-react";
 
-interface Child {
-  id: string;
-  student: {
-    id: string;
-    nis: string;
-    name: string;
-  };
-}
 
 interface CounselingSummary {
   id: string;
@@ -46,18 +42,18 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 export default function ParentCounselingPage() {
-  const [children, setChildren] = useState<Child[]>([]);
+  const [children, setChildren] = useState<ParentChild[]>([]);
   const [selectedChildId, setSelectedChildId] = useState<string>("");
   const [sessions, setSessions] = useState<CounselingSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     api
-      .get<{ data: Child[] }>("/parent/children")
+      .get<{ data: ParentChild[] }>("/parent/children")
       .then((res) => {
         const list = res.data.data || [];
         setChildren(list);
-        if (list.length > 0) setSelectedChildId(list[0].student.id);
+        if (list.length > 0) setSelectedChildId(list[0].id);
         else setIsLoading(false);
       })
       .catch(() => setIsLoading(false));
@@ -91,8 +87,8 @@ export default function ParentCounselingPage() {
             </SelectTrigger>
             <SelectContent>
               {children.map((child) => (
-                <SelectItem key={child.student.id} value={child.student.id}>
-                  {child.student.name}
+                <SelectItem key={child.id} value={child.id}>
+                  {child.name}
                 </SelectItem>
               ))}
             </SelectContent>

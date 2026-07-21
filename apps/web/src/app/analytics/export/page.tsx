@@ -33,7 +33,7 @@ import {
   FileSpreadsheet,
   Users,
   Calendar,
-  DollarSign,
+  Banknote,
   BookOpen,
   ArrowLeft,
   Loader2,
@@ -69,7 +69,7 @@ const EXPORT_TYPES: ExportType[] = [
     id: "finance",
     name: "Data Keuangan",
     description: "Export data tagihan dan pembayaran",
-    icon: <DollarSign className="h-5 w-5" />,
+    icon: <Banknote className="h-5 w-5" />,
     endpoint: "/analytics/export/finance",
   },
   {

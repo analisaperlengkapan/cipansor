@@ -36,6 +36,8 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV BUILD_STANDALONE=1
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+ARG NEXT_PUBLIC_SHOW_DEMO_LOGIN=false
+ENV NEXT_PUBLIC_SHOW_DEMO_LOGIN=${NEXT_PUBLIC_SHOW_DEMO_LOGIN}
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
 COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_modules
@@ -55,6 +57,14 @@ RUN addgroup -S nodejs -g 1001 && adduser -S nextjs -u 1001
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/public ./apps/web/public
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static ./apps/web/.next/static
+
+# next/image writes optimised variants here. docker-compose mounts a named
+# volume at this path so the cache survives redeploys; creating the directory
+# here — owned by the runtime user — makes Docker seed that volume with the
+# right ownership. Without it Docker creates the mountpoint as root, uid 1001
+# cannot write, and every image is re-optimised on every single request.
+RUN mkdir -p /app/apps/web/.next/cache/images \
+ && chown -R nextjs:nodejs /app/apps/web/.next/cache
 
 USER nextjs
 EXPOSE 3000

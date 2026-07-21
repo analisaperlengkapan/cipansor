@@ -24,7 +24,7 @@ import { Errors } from './error';
 // (YAYASAN_PENGAWAS) should NOT automatically bypass admin-only security
 // guards just because they were historically bucketed under legacy UNIT_ADMIN.
 // Users that need BOTH governance AND system-admin privileges must be
-// explicitly assigned YAYASAN_ADMIN (or a per-unit admin RoleCode) in
+// explicitly assigned a per-unit admin RoleCode (or SUPER_ADMIN) in
 // addition to their governance role.
 //
 // Legacy compatibility: pre-migration tokens carrying `role: 'UNIT_ADMIN'`
@@ -33,7 +33,6 @@ import { Errors } from './error';
 // expandRoleCodes() for bidirectional legacy mapping, independent of this list.
 const ADMIN_ROLE_CODES: string[] = [
   RoleCode.SUPER_ADMIN,
-  RoleCode.YAYASAN_ADMIN,
   RoleCode.TKQ_ADMIN,
   RoleCode.SDIT_ADMIN,
   RoleCode.SMPIT_ADMIN,
@@ -55,7 +54,6 @@ const LEGACY_ROLE_EXPANSION: Record<string, string[]> = {
   SUPER_ADMIN: [RoleCode.SUPER_ADMIN],
   // Legacy UNIT_ADMIN → all per-unit admin RoleCodes + Yayasan governance roles
   UNIT_ADMIN: [
-    RoleCode.YAYASAN_ADMIN,
     RoleCode.YAYASAN_PEMBINA,
     RoleCode.YAYASAN_KETUA,
     RoleCode.YAYASAN_SEKRETARIS,
@@ -77,7 +75,7 @@ const LEGACY_ROLE_EXPANSION: Record<string, string[]> = {
     RoleCode.TKQ_WAKASEK, RoleCode.SDIT_WAKASEK, RoleCode.SMPIT_WAKASEK, RoleCode.SMAQ_WAKASEK,
     RoleCode.TKQ_WALI_KELAS, RoleCode.SDIT_WALI_KELAS,
     RoleCode.SMPIT_WALI_KELAS, RoleCode.SMAQ_WALI_KELAS,
-    RoleCode.TKQ_GURU_BK, RoleCode.SDIT_GURU_BK, RoleCode.SMPIT_GURU_BK, RoleCode.SMAQ_GURU_BK,
+    RoleCode.SMPIT_GURU_BK, RoleCode.SMAQ_GURU_BK,
     RoleCode.PESANTREN_PENGASUH, RoleCode.PESANTREN_DIREKTUR, RoleCode.USTADZ,
     RoleCode.MUSYRIF, RoleCode.MUSYRIFAH, RoleCode.MUHAFIDZ, RoleCode.MUHAFIDZAH,
     RoleCode.MURABBI, RoleCode.WALI_KAMAR,
@@ -100,7 +98,7 @@ const LEGACY_ROLE_EXPANSION: Record<string, string[]> = {
   ],
   // Legacy STUDENT → all per-unit student roles + PT mahasiswa
   STUDENT: [
-    RoleCode.TKQ_SISWA, RoleCode.SDIT_SISWA, RoleCode.SMPIT_SISWA, RoleCode.SMAQ_SISWA,
+    RoleCode.SDIT_SISWA, RoleCode.SMPIT_SISWA, RoleCode.SMAQ_SISWA,
     RoleCode.PT_MAHASISWA,
   ],
   // Legacy PARENT → all per-unit parent roles
@@ -502,8 +500,6 @@ const TEACHER_OR_ABOVE_CODES: string[] = [
   RoleCode.SDIT_WALI_KELAS,
   RoleCode.SMPIT_WALI_KELAS,
   RoleCode.SMAQ_WALI_KELAS,
-  RoleCode.TKQ_GURU_BK,
-  RoleCode.SDIT_GURU_BK,
   RoleCode.SMPIT_GURU_BK,
   RoleCode.SMAQ_GURU_BK,
   RoleCode.PESANTREN_PENGASUH,

@@ -38,7 +38,7 @@ import {
   FileText,
   Users,
   UserCheck,
-  DollarSign,
+  Banknote,
   BookOpen,
   GraduationCap,
   UserCog,
@@ -97,7 +97,7 @@ const REPORT_TYPES: Array<{
     type: "finance",
     label: "Keuangan",
     description: "Tagihan & pembayaran",
-    icon: DollarSign,
+    icon: Banknote,
   },
   {
     type: "tahfidz",

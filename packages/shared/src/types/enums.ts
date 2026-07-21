@@ -6,7 +6,6 @@ export enum UserRole {
   STUDENT = "STUDENT",
   PARENT = "PARENT",
   STAFF = "STAFF",
-  YAYASAN_ADMIN = "YAYASAN_ADMIN",
   YAYASAN_PENGAWAS = "YAYASAN_PENGAWAS",
 }
 
@@ -43,6 +42,23 @@ export enum DayOfWeek {
   SATURDAY = "SATURDAY",
   SUNDAY = "SUNDAY",
 }
+
+/**
+ * `Date.getDay()` index (0 = Sunday) to the enum the API expects.
+ *
+ * The API's schedule filter takes the enum name; passing the raw number is a
+ * 400. Both the student and teacher "Jadwal Hari Ini" widgets did exactly
+ * that, so neither ever showed a lesson. Convert here, once.
+ */
+export const DAY_OF_WEEK_BY_INDEX: readonly DayOfWeek[] = [
+  DayOfWeek.SUNDAY,
+  DayOfWeek.MONDAY,
+  DayOfWeek.TUESDAY,
+  DayOfWeek.WEDNESDAY,
+  DayOfWeek.THURSDAY,
+  DayOfWeek.FRIDAY,
+  DayOfWeek.SATURDAY,
+];
 
 // Attendance Status
 export enum AttendanceStatus {

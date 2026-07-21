@@ -82,6 +82,6 @@ test.describe("Landing Page", () => {
       exact: true,
     });
     await expect(donasiLink).toBeVisible();
-    await expect(donasiLink).toHaveAttribute("href", "/public/donation");
+    await expect(donasiLink).toHaveAttribute("href", "/wakaf-infaq");
   });
 });

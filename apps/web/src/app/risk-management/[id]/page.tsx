@@ -241,7 +241,7 @@ export default function RiskDetailPage() {
                 {risk.auditFindings.map((finding: any) => (
                   <div key={finding.id} className="text-xs border-b pb-2 last:border-0 last:pb-0">
                     <Link
-                      href={`/pengawasan/audit/${finding.auditId}`}
+                      href={`/pengawasan/${finding.auditId}`}
                       className="font-semibold hover:underline block mb-1"
                     >
                       {finding.findingNumber}: {finding.title}

@@ -36,7 +36,7 @@ import {
 } from "recharts";
 import {
   Building2,
-  DollarSign,
+  Banknote,
   UserCheck,
   GraduationCap,
   FileText,
@@ -120,7 +120,7 @@ export default function ExecutiveDashboard() {
               <CardTitle className="text-sm font-medium">
                 Net Income (Consolidated)
               </CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
+              <Banknote className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div

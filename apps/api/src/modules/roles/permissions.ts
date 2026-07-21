@@ -106,3 +106,143 @@ export const PERMISSION_GROUPS = {
   ADMISSION: [PERMISSIONS.ADMISSION_VIEW, PERMISSIONS.ADMISSION_MANAGE],
   SYSTEM: [PERMISSIONS.SETTINGS_MANAGE],
 };
+
+// ---------------------------------------------------------------------------
+// Role → permission matrix
+// ---------------------------------------------------------------------------
+//
+// Until this existed, the seed gave permissions to SUPER_ADMIN and to nobody
+// else: 81 roles in the database, 1 with a non-empty permission array. Because
+// hasPermission() implicitly waves SUPER_ADMIN through, that was invisible in
+// testing as super admin and produced a blanket 403 for all 80 other roles on
+// every hasPermission()-gated endpoint. GET /api/students is the busiest of
+// them, so a musyrif could not open the santri list that is the whole point of
+// their account.
+//
+// Route-level authorize() checks are unaffected — this only fills the gap for
+// permission-gated routes. Keep the two consistent when adding either.
+
+const P = PERMISSIONS;
+
+const VIEW_ONLY_ACADEMIC: Permission[] = [
+  P.STUDENT_VIEW,
+  P.ACADEMIC_VIEW,
+  P.EXAM_VIEW,
+  P.GRADE_VIEW,
+];
+
+/** Everything except role administration and system settings. */
+const UNIT_ADMIN_PERMISSIONS: Permission[] = [
+  P.USER_VIEW,
+  P.STUDENT_VIEW, P.STUDENT_CREATE, P.STUDENT_UPDATE, P.STUDENT_DELETE,
+  P.TEACHER_VIEW, P.TEACHER_MANAGE, P.STAFF_VIEW, P.STAFF_MANAGE,
+  P.ACADEMIC_VIEW, P.ACADEMIC_MANAGE,
+  P.EXAM_VIEW, P.EXAM_MANAGE, P.GRADE_VIEW, P.GRADE_MANAGE,
+  P.FINANCE_VIEW, P.FINANCE_MANAGE,
+  P.INVENTORY_VIEW, P.INVENTORY_MANAGE,
+  P.LIBRARY_VIEW, P.LIBRARY_MANAGE,
+  P.HEALTH_VIEW, P.HEALTH_MANAGE,
+  P.DORMITORY_VIEW, P.DORMITORY_MANAGE,
+  P.TAHFIDZ_VIEW, P.TAHFIDZ_MANAGE,
+  P.ADMISSION_VIEW, P.ADMISSION_MANAGE,
+];
+
+/** Governance: read broadly, change nothing. Pengawas is an auditor. */
+const YAYASAN_OVERSIGHT: Permission[] = [
+  P.USER_VIEW, P.STUDENT_VIEW, P.TEACHER_VIEW, P.STAFF_VIEW,
+  P.ACADEMIC_VIEW, P.EXAM_VIEW, P.GRADE_VIEW, P.FINANCE_VIEW,
+  P.INVENTORY_VIEW, P.LIBRARY_VIEW, P.HEALTH_VIEW,
+  P.DORMITORY_VIEW, P.TAHFIDZ_VIEW, P.ADMISSION_VIEW,
+];
+
+/** Classroom teaching: own students, own grades. */
+const TEACHING: Permission[] = [
+  ...VIEW_ONLY_ACADEMIC, P.EXAM_MANAGE, P.GRADE_MANAGE, P.TAHFIDZ_VIEW,
+];
+
+/** Kepala sekolah / wakasek run a unit but do not administer the system. */
+const UNIT_LEADERSHIP: Permission[] = [
+  ...TEACHING,
+  P.STUDENT_UPDATE, P.TEACHER_VIEW, P.STAFF_VIEW, P.ACADEMIC_MANAGE,
+  P.FINANCE_VIEW, P.HEALTH_VIEW, P.LIBRARY_VIEW, P.INVENTORY_VIEW,
+  P.DORMITORY_VIEW, P.TAHFIDZ_MANAGE, P.ADMISSION_VIEW,
+];
+
+/** Asrama staff supervise santri: dormitory + tahfidz + pastoral view. */
+const PENGASUHAN: Permission[] = [
+  P.STUDENT_VIEW, P.DORMITORY_VIEW, P.DORMITORY_MANAGE,
+  P.TAHFIDZ_VIEW, P.TAHFIDZ_MANAGE, P.HEALTH_VIEW, P.ACADEMIC_VIEW,
+];
+
+const SUFFIX_PERMISSIONS: Array<[RegExp, Permission[]]> = [
+  [/_ADMIN$/, UNIT_ADMIN_PERMISSIONS],
+  [/_KEPALA_SEKOLAH$|_WAKASEK$/, UNIT_LEADERSHIP],
+  [/_WALI_KELAS$|_GURU$|_GURU_BK$/, TEACHING],
+  [/_TATA_USAHA$/, [P.USER_VIEW, P.STUDENT_VIEW, P.STUDENT_CREATE, P.STUDENT_UPDATE,
+                    P.TEACHER_VIEW, P.STAFF_VIEW, P.ACADEMIC_VIEW, P.ADMISSION_VIEW,
+                    P.ADMISSION_MANAGE]],
+  [/_BENDAHARA$/, [P.STUDENT_VIEW, P.FINANCE_VIEW, P.FINANCE_MANAGE]],
+  [/_KOMITE$/, [P.STUDENT_VIEW, P.ACADEMIC_VIEW, P.FINANCE_VIEW]],
+  [/_ALUMNI$/, []],
+  [/_SISWA$|_MAHASISWA$/, []],
+  [/_ORANG_TUA$/, []],
+];
+
+const EXPLICIT_PERMISSIONS: Record<string, Permission[]> = {
+  SUPER_ADMIN: Object.values(P),
+
+  // No YAYASAN_ADMIN: it was the only yayasan role holding USER_CREATE /
+  // USER_UPDATE / ROLE_VIEW, and those now belong to SUPER_ADMIN alone. The
+  // rest of the yayasan roles are oversight, not administration.
+  YAYASAN_KETUA: [...YAYASAN_OVERSIGHT, P.FINANCE_MANAGE],
+  YAYASAN_PEMBINA: YAYASAN_OVERSIGHT,
+  YAYASAN_PENGAWAS: YAYASAN_OVERSIGHT,
+  YAYASAN_ANGGOTA: YAYASAN_OVERSIGHT,
+  YAYASAN_SEKRETARIS: [...YAYASAN_OVERSIGHT, P.USER_VIEW, P.STUDENT_UPDATE],
+  YAYASAN_BENDAHARA: [...YAYASAN_OVERSIGHT, P.FINANCE_MANAGE],
+
+  PESANTREN_PENGASUH: [...UNIT_LEADERSHIP, ...PENGASUHAN],
+  PESANTREN_DIREKTUR: [...UNIT_LEADERSHIP, ...PENGASUHAN],
+  PESANTREN_TATA_USAHA: [P.STUDENT_VIEW, P.STUDENT_CREATE, P.STUDENT_UPDATE,
+                         P.ACADEMIC_VIEW, P.DORMITORY_VIEW, P.ADMISSION_VIEW],
+  USTADZ: [...TEACHING, P.DORMITORY_VIEW],
+  MUSYRIF: PENGASUHAN,
+  MUSYRIFAH: PENGASUHAN,
+  MUHAFIDZ: PENGASUHAN,
+  MUHAFIDZAH: PENGASUHAN,
+  MURABBI: PENGASUHAN,
+  WALI_KAMAR: [P.STUDENT_VIEW, P.DORMITORY_VIEW],
+
+  PT_REKTOR: UNIT_LEADERSHIP,
+  PT_WAKIL_REKTOR: UNIT_LEADERSHIP,
+  PT_DEKAN: UNIT_LEADERSHIP,
+  PT_KAPRODI: UNIT_LEADERSHIP,
+  PT_DOSEN: TEACHING,
+  PT_STAF_AKADEMIK: [P.STUDENT_VIEW, P.ACADEMIC_VIEW, P.EXAM_VIEW, P.GRADE_VIEW],
+
+  PUSTAKAWAN: [P.STUDENT_VIEW, P.LIBRARY_VIEW, P.LIBRARY_MANAGE],
+  PERAWAT: [P.STUDENT_VIEW, P.HEALTH_VIEW, P.HEALTH_MANAGE],
+  LABORAN: [P.STUDENT_VIEW, P.INVENTORY_VIEW, P.INVENTORY_MANAGE, P.ACADEMIC_VIEW],
+  KEAMANAN: [P.STUDENT_VIEW],
+  BUSINESS_MANAGER: [P.FINANCE_VIEW, P.FINANCE_MANAGE, P.INVENTORY_VIEW, P.INVENTORY_MANAGE],
+  BUSINESS_STAFF: [P.INVENTORY_VIEW],
+};
+
+/**
+ * Permissions for a RoleCode. Explicit entries win; otherwise the code's
+ * suffix decides, so the per-unit roles (TKQ_/SDIT_/SMPIT_/SMAQ_) resolve by
+ * function rather than needing 4 near-identical entries each.
+ *
+ * Unknown codes get `[]` — deliberately. A role nobody has classified should
+ * not silently inherit access; it shows up as a 403 and gets classified.
+ */
+export function permissionsForRoleCode(roleCode: string): Permission[] {
+  const explicit = EXPLICIT_PERMISSIONS[roleCode];
+  if (explicit) return Array.from(new Set(explicit));
+
+  for (const [pattern, permissions] of SUFFIX_PERMISSIONS) {
+    if (pattern.test(roleCode)) return Array.from(new Set(permissions));
+  }
+
+  return [];
+}

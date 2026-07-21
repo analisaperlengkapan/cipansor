@@ -1,4 +1,5 @@
 "use client";
+import { siteConfig, addressLines } from "@/config/site";
 import { useParams, useRouter } from "next/navigation";
 import { safeFormat } from "@/lib/date";
 import { Button } from "@/components/ui/button";
@@ -268,15 +269,12 @@ export default function PrintReportCardMerdekaPage() {
                     KEMENTERIAN AGAMA REPUBLIK INDONESIA
                   </p>
                   <h1 className="text-lg font-bold uppercase">
-                    Yayasan Pesantren Cipansor
+                    {siteConfig.legalName}
                   </h1>
+                  <p className="text-xs">{addressLines.join(", ")}</p>
                   <p className="text-xs">
-                    Jl. Pesantren No. 123, Kec. Ciparay, Kab. Bandung, Jawa
-                    Barat 40381
-                  </p>
-                  <p className="text-xs">
-                    Telp: (022) 1234567 | Email: info@cipansor.sch.id | NSM:
-                    121232040001
+                    Telp: {siteConfig.contact.phone} | Email:{" "}
+                    {siteConfig.contact.email} | NSM: 121232040001
                   </p>
                 </div>
                 <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center text-xl">

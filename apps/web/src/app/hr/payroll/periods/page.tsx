@@ -57,7 +57,7 @@ import {
   Calendar,
   Eye,
   Lock,
-  DollarSign,
+  Banknote,
   Users,
   CheckCircle,
   Clock,

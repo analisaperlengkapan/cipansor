@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { asyncHandler } from '@/middleware/error';
 import { SanadCertificateService } from './sanad-certificate.service';
+import type { ListSanadQuery } from './sanad-certificate.schema';
 
 // ============================================
 // LIST SANAD RECORDS
@@ -13,7 +14,16 @@ export const listSanadRecords = asyncHandler(async (req: Request, res: Response)
     userId: req.user!.sub,
   };
 
-  const result = await SanadCertificateService.findAllSanadRecords(req.query as any, context);
+  // Read what `validateQuery` produced, not the raw query. Express 5 makes
+  // `req.query` read-only, so the middleware parks the parsed result in
+  // `res.locals.validatedQuery`; casting `req.query as any` here threw that
+  // away along with the schema's page=1/limit=20 defaults. A caller sending
+  // only `?limit=50` left `page` undefined, `skip` became NaN, and Prisma
+  // rejected the query with "Argument `skip` is missing" — a 500 on a plain
+  // list call.
+  const query = (res.locals.validatedQuery || req.query) as ListSanadQuery;
+
+  const result = await SanadCertificateService.findAllSanadRecords(query, context);
 
   res.json({
     success: true,

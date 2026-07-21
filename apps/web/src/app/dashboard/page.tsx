@@ -29,7 +29,7 @@ import {
   TrendingUp,
   TrendingDown,
   Activity,
-  DollarSign,
+  Banknote,
   Calendar,
   AlertTriangle,
   Award,
@@ -542,7 +542,7 @@ export default function DashboardPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <DollarSign className="h-5 w-5" />
+                <Banknote className="h-5 w-5" />
                 Keuangan Bulan Ini
               </CardTitle>
               <CardDescription>
@@ -616,7 +616,7 @@ export default function DashboardPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <DollarSign className="h-5 w-5" />
+                <Banknote className="h-5 w-5" />
                 Distribusi Pembayaran
               </CardTitle>
               <CardDescription>Tingkat koleksi pembayaran</CardDescription>

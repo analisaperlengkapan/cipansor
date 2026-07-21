@@ -46,6 +46,16 @@ const customStorage = {
   },
 };
 
+/**
+ * In-flight `/auth/me` request, shared by every caller.
+ *
+ * Two things ask for the user on a cold load: `onRehydrateStorage` below, and
+ * `ProtectedRoute` when it mounts. Without this they each issue their own
+ * request, doubling auth traffic on every page load — which matters because
+ * the API rate-limits per IP and a pesantren shares one.
+ */
+let inFlightFetchUser: Promise<void> | null = null;
+
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
@@ -105,10 +115,13 @@ export const useAuthStore = create<AuthState>()(
           const message =
             error instanceof Error ? error.message : "Login failed";
           const axiosError = error as {
-            response?: { data?: { message?: string } };
+            response?: { data?: { error?: { message?: string }; message?: string } };
           };
           set({
-            error: axiosError.response?.data?.message || message,
+            error:
+              axiosError.response?.data?.error?.message ||
+              axiosError.response?.data?.message ||
+              message,
             isLoading: false,
           });
           throw error;
@@ -148,10 +161,13 @@ export const useAuthStore = create<AuthState>()(
           const message =
             error instanceof Error ? error.message : "2FA Verification failed";
           const axiosError = error as {
-            response?: { data?: { message?: string } };
+            response?: { data?: { error?: { message?: string }; message?: string } };
           };
           set({
-            error: axiosError.response?.data?.message || message,
+            error:
+              axiosError.response?.data?.error?.message ||
+              axiosError.response?.data?.message ||
+              message,
             isLoading: false,
           });
           throw error;
@@ -185,34 +201,42 @@ export const useAuthStore = create<AuthState>()(
           set({ isAuthenticated: false, user: null });
           return;
         }
+        if (inFlightFetchUser) return inFlightFetchUser;
 
         set({ isLoading: true });
-        try {
-          const response = await authApi.me();
-          set({
-            user: response.data.data,
-            isAuthenticated: true,
-            isLoading: false,
-          });
-        } catch (error: unknown) {
-          const status = (error as AxiosError)?.response?.status;
-          if (status === 401 || status === 403) {
-            // Token genuinely rejected — clear the session.
-            localStorage.removeItem("accessToken");
-            localStorage.removeItem("refreshToken");
-            // Also remove from cookies
-            document.cookie = "accessToken=; path=/; max-age=0";
-            document.cookie = "auth-storage=; path=/; max-age=0";
-            set({ user: null, isAuthenticated: false, isLoading: false });
-          } else {
-            // Transient failure (network blip, timeout, 5xx). Do NOT log the
-            // user out over it — keep the existing session and just stop
-            // loading. Otherwise a single slow /auth/me (common on flaky
-            // networks / loaded CI browsers) bounces an authenticated user
-            // to /login mid-navigation.
-            set({ isLoading: false });
+        const run = async () => {
+          try {
+            const response = await authApi.me();
+            set({
+              user: response.data.data,
+              isAuthenticated: true,
+              isLoading: false,
+            });
+          } catch (error: unknown) {
+            const status = (error as AxiosError)?.response?.status;
+            if (status === 401 || status === 403) {
+              // Token genuinely rejected — clear the session.
+              localStorage.removeItem("accessToken");
+              localStorage.removeItem("refreshToken");
+              // Also remove from cookies
+              document.cookie = "accessToken=; path=/; max-age=0";
+              document.cookie = "auth-storage=; path=/; max-age=0";
+              set({ user: null, isAuthenticated: false, isLoading: false });
+            } else {
+              // Transient failure (network blip, timeout, 5xx). Do NOT log the
+              // user out over it — keep the existing session and just stop
+              // loading. Otherwise a single slow /auth/me (common on flaky
+              // networks / loaded CI browsers) bounces an authenticated user
+              // to /login mid-navigation.
+              set({ isLoading: false });
+            }
           }
-        }
+        };
+
+        inFlightFetchUser = run().finally(() => {
+          inFlightFetchUser = null;
+        });
+        return inFlightFetchUser;
       },
 
       switchRole: async (roleAssignmentId: string) => {
@@ -236,10 +260,13 @@ export const useAuthStore = create<AuthState>()(
           const message =
             error instanceof Error ? error.message : "Failed to switch role";
           const axiosError = error as {
-            response?: { data?: { message?: string } };
+            response?: { data?: { error?: { message?: string }; message?: string } };
           };
           set({
-            error: axiosError.response?.data?.message || message,
+            error:
+              axiosError.response?.data?.error?.message ||
+              axiosError.response?.data?.message ||
+              message,
             isLoading: false,
           });
           throw error;

@@ -50,7 +50,7 @@ import {
   Eye,
   Edit,
   Calendar,
-  DollarSign,
+  Banknote,
   Building2,
   UserCheck,
   UserX,
@@ -146,7 +146,7 @@ export default function HRPage() {
             </Button>
             <Button variant="outline" asChild>
               <Link href="/hr/payroll">
-                <DollarSign className="mr-2 h-4 w-4" />
+                <Banknote className="mr-2 h-4 w-4" />
                 Penggajian
               </Link>
             </Button>

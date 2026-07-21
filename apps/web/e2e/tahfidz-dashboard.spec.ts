@@ -17,7 +17,7 @@ test.describe("Tahfidz Dashboard", () => {
     const login = new loginPage.LoginPage(page);
     await login.goto();
     await login.loginAndWaitForDashboard(
-      "superadmin@cipansor.id",
+      "superadmin@cipansor.or.id",
       "SuperAdmin123!",
     );
 
@@ -197,7 +197,7 @@ test.describe("Tahfidz Dashboard - Real-time Updates", () => {
     const login = new loginPage.LoginPage(page);
     await login.goto();
     await login.loginAndWaitForDashboard(
-      "superadmin@cipansor.id",
+      "superadmin@cipansor.or.id",
       "SuperAdmin123!",
     );
 
@@ -229,7 +229,7 @@ test.describe("Tahfidz Dashboard - Export & Print", () => {
     const login = new loginPage.LoginPage(page);
     await login.goto();
     await login.loginAndWaitForDashboard(
-      "superadmin@cipansor.id",
+      "superadmin@cipansor.or.id",
       "SuperAdmin123!",
     );
 

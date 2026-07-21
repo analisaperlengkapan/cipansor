@@ -95,10 +95,34 @@ function VerifySanadContent() {
           </div>
         </div>
         <h1 className="text-3xl font-bold tracking-tight">
-          Verifikasi Sertifikat
+          Verifikasi Sertifikat Sanad
         </h1>
-        <p className="text-muted-foreground mt-2">
-          Periksa keaslian sertifikat Sanad/Tahfidz yang diterbitkan Cipansor.
+        <p className="text-muted-foreground mt-2 text-pretty">
+          Periksa keaslian sertifikat Sanad dan Tahfidz yang diterbitkan
+          Yayasan Pesantren Cipansor.
+        </p>
+      </div>
+
+      {/*
+        This page was the thinnest on the site (~250 characters) — a form and
+        nothing else. Explaining what a sanad is and why verification exists
+        gives it standalone value, which is what the Ad Grants content policy
+        asks for and what a reader who arrives cold actually needs.
+      */}
+      <div className="mb-8 space-y-4 text-muted-foreground">
+        <p className="leading-relaxed">
+          <strong className="text-foreground">Sanad</strong> adalah mata rantai
+          periwayatan yang menghubungkan bacaan Al-Qur&rsquo;an seorang santri
+          kepada gurunya, guru kepada gurunya, hingga bersambung sampai
+          Rasulullah shallallahu &lsquo;alaihi wasallam. Sertifikat sanad
+          menjadi bukti bahwa hafalan dan bacaan santri telah disimak serta
+          disahkan oleh musyrif yang berwenang.
+        </p>
+        <p className="leading-relaxed">
+          Setiap sertifikat yang diterbitkan Pesantren Cipansor memuat nomor
+          unik dan kode verifikasi. Lembaga pendidikan, calon pemberi kerja,
+          maupun wali santri dapat memastikan keasliannya di halaman ini tanpa
+          perlu menghubungi pesantren terlebih dahulu.
         </p>
       </div>
 

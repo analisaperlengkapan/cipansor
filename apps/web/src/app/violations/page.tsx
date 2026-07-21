@@ -1,4 +1,5 @@
 "use client";
+import { MainLayout } from "@/components/layout";
 // Force HMR Rebuild
 import { useState } from "react";
 import { safeFormat } from "@/lib/date";
@@ -62,7 +63,7 @@ function getCategoryBadge(category: ViolationCategory) {
   );
 }
 
-export default function ViolationsPage() {
+function ViolationsPageContent() {
   const [activeTab, setActiveTab] = useState<"violations" | "types">(
     "violations",
   );
@@ -388,5 +389,13 @@ export default function ViolationsPage() {
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+export default function ViolationsPageWithShell() {
+  return (
+    <MainLayout>
+      <ViolationsPageContent />
+    </MainLayout>
   );
 }

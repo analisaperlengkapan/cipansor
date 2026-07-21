@@ -63,9 +63,12 @@ export function InstallPrompt() {
       aria-label="Pasang aplikasi Cipansor"
       className="fixed inset-x-4 bottom-4 z-50 mx-auto flex max-w-md items-center gap-3 rounded-lg border bg-background p-4 shadow-lg sm:left-auto sm:right-4 sm:mx-0"
     >
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary font-bold text-primary-foreground">
-        C
-      </div>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/logo.png"
+        alt="Cipansor"
+        className="h-10 w-10 shrink-0 rounded-lg bg-white object-contain p-1"
+      />
       <div className="min-w-0 flex-1">
         <p className="text-sm font-medium">Pasang aplikasi Cipansor</p>
         <p className="text-xs text-muted-foreground">

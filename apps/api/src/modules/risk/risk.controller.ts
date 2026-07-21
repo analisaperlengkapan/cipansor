@@ -11,7 +11,7 @@ import {
 } from './risk.validation';
 import { UserRole, RoleCode, Prisma } from '@prisma/client';
 
-const PRIVILEGED_ROLES: string[] = [UserRole.SUPER_ADMIN, RoleCode.YAYASAN_ADMIN, RoleCode.YAYASAN_KETUA];
+const PRIVILEGED_ROLES: string[] = [UserRole.SUPER_ADMIN, RoleCode.YAYASAN_KETUA];
 
 function isPrivileged(role?: string): boolean {
   return role ? PRIVILEGED_ROLES.includes(role) : false;

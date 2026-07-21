@@ -64,7 +64,7 @@ import {
   Search,
   Loader2,
   Pencil,
-  DollarSign,
+  Banknote,
   User,
   Settings2,
 } from "lucide-react";
@@ -397,7 +397,7 @@ export default function StaffSalaryPage() {
               <CardTitle className="text-sm font-medium">
                 Total Gaji Pokok
               </CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
+              <Banknote className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">

@@ -17,7 +17,7 @@ test.describe("Generate Screenshots Expanded", () => {
     const mockUser = {
       id: "user-123",
       name: "Dr. Ahmad Fauzi, M.Pd.",
-      email: "admin@cipansor.id",
+      email: "admin@cipansor.or.id",
       role: "SUPER_ADMIN",
       unitId: "unit-sma",
       unit: { id: "unit-sma", name: "SMA Al-Qur'an Cipansor" },
@@ -159,8 +159,8 @@ test.describe("Generate Screenshots Expanded", () => {
               legalName: "Yayasan Pendidikan Cipansor Sejahtera",
               address: "Jl. Raya Cipansor KM 12, Tasikmalaya",
               phone: "(0265) 1234567",
-              email: "yayasan@cipansor.id",
-              website: "https://cipansor.id",
+              email: "yayasan@cipansor.or.id",
+              website: "https://cipansor.or.id",
               foundedDate: "1995-05-15T00:00:00.000Z",
               vision:
                 "Mewujudkan generasi Rabbani yang unggul dalam ilmu dan adab.",
@@ -213,7 +213,7 @@ test.describe("Generate Screenshots Expanded", () => {
               unit: { id: "unit-sma", name: "SMA Al-Qur'an" },
               employeeType: "PERMANENT",
               joinDate: mockDate,
-              email: "hamzah@cipansor.id",
+              email: "hamzah@cipansor.or.id",
               phoneNumber: "081234567890",
               address: "Jl. Pesantren No. 1",
             }),
@@ -234,7 +234,7 @@ test.describe("Generate Screenshots Expanded", () => {
                 unit: { id: "unit-sma", name: "SMA Al-Qur'an" },
                 employeeType: "PERMANENT",
                 joinDate: mockDate,
-                email: "hamzah@cipansor.id",
+                email: "hamzah@cipansor.or.id",
               },
             ]),
           ),
@@ -292,7 +292,7 @@ test.describe("Generate Screenshots Expanded", () => {
               {
                 id: "u1",
                 name: "System Admin",
-                email: "admin@cipansor.id",
+                email: "admin@cipansor.or.id",
                 isActive: true,
                 createdAt: mockDate,
                 userRoles: [
@@ -312,7 +312,7 @@ test.describe("Generate Screenshots Expanded", () => {
               {
                 id: "u2",
                 name: "Operator SMA",
-                email: "sma@cipansor.id",
+                email: "sma@cipansor.or.id",
                 isActive: true,
                 createdAt: mockDate,
                 userRoles: [
@@ -3934,7 +3934,7 @@ test.describe("Generate Screenshots Expanded", () => {
           user: {
             id: isParent ? "parent-1" : "user-123",
             name: isParent ? "Bapak Ahmad" : "Dr. Ahmad Fauzi, M.Pd.",
-            email: isParent ? "parent@example.com" : "admin@cipansor.id",
+            email: isParent ? "parent@example.com" : "admin@cipansor.or.id",
             // Restore actual PARENT role, but ensure full structure
             role: isParent ? "PARENT" : "SUPER_ADMIN",
             unitId: unitId,
@@ -4024,7 +4024,7 @@ test.describe("Generate Screenshots Expanded", () => {
             : {
                 id: "user-123",
                 name: "Dr. Ahmad Fauzi, M.Pd.",
-                email: "admin@cipansor.id",
+                email: "admin@cipansor.or.id",
                 role: "SUPER_ADMIN",
                 unitId: unitId || "unit-sma",
                 unit: {
@@ -4101,7 +4101,7 @@ test.describe("Generate Screenshots Expanded", () => {
         const mockUserConfig = {
           id: isParent ? "parent-1" : "user-123",
           name: isParent ? "Bapak Ahmad" : "Dr. Ahmad Fauzi, M.Pd.",
-          email: isParent ? "parent@example.com" : "admin@cipansor.id",
+          email: isParent ? "parent@example.com" : "admin@cipansor.or.id",
           role: isParent ? "PARENT" : "SUPER_ADMIN",
           unitId: currentUnitId,
           unit: { id: currentUnitId, name: currentUnitName },

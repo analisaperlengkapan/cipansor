@@ -18,7 +18,7 @@ test.describe("Student Management - List & View", () => {
     const login = new LoginPage(page);
     await login.goto();
     await login.loginAndWaitForDashboard(
-      "superadmin@cipansor.id",
+      "superadmin@cipansor.or.id",
       "SuperAdmin123!",
     );
 
@@ -230,7 +230,7 @@ test.describe("Student Management - Create", () => {
     const login = new loginPage.LoginPage(page);
     await login.goto();
     await login.loginAndWaitForDashboard(
-      "superadmin@cipansor.id",
+      "superadmin@cipansor.or.id",
       "SuperAdmin123!",
     );
 
@@ -348,7 +348,7 @@ test.describe("Student Management - Update", () => {
     const login = new loginPage.LoginPage(page);
     await login.goto();
     await login.loginAndWaitForDashboard(
-      "superadmin@cipansor.id",
+      "superadmin@cipansor.or.id",
       "SuperAdmin123!",
     );
 
@@ -399,7 +399,7 @@ test.describe("Student Management - Delete", () => {
     const login = new loginPage.LoginPage(page);
     await login.goto();
     await login.loginAndWaitForDashboard(
-      "superadmin@cipansor.id",
+      "superadmin@cipansor.or.id",
       "SuperAdmin123!",
     );
 
@@ -451,7 +451,7 @@ test.describe("Student Management - Export", () => {
     const login = new loginPage.LoginPage(page);
     await login.goto();
     await login.loginAndWaitForDashboard(
-      "superadmin@cipansor.id",
+      "superadmin@cipansor.or.id",
       "SuperAdmin123!",
     );
 

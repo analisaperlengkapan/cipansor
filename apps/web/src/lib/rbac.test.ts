@@ -1,4 +1,6 @@
 import { describe, it, expect } from "vitest";
+import fs from "node:fs";
+import path from "node:path";
 import {
   canAccessRoute,
   deriveLegacyRole,
@@ -8,6 +10,14 @@ import {
   roleRouteAccess,
   type LegacyRole,
 } from "./rbac";
+import {
+  getNavigationForRoleCode,
+  type NavGroup,
+} from "@/config/navigation";
+import { DEMO_ACCOUNTS } from "@cipansor/shared";
+
+/** All 81 RoleCodes, taken from the demo-account catalogue (one per role). */
+const ALL_ROLE_CODES = DEMO_ACCOUNTS.map((a) => a.roleCode);
 
 describe("rbac — legacy bucket derivation", () => {
   it("identifies the six legacy buckets", () => {
@@ -72,7 +82,7 @@ describe("rbac — legacy bucket derivation", () => {
     expect(deriveLegacyRole("LABORAN")).toBe("STAFF");
     // Komite/alumni deliberately unmapped (RoleCode-native authorization)
     expect(deriveLegacyRole("SDIT_KOMITE")).toBeUndefined();
-    expect(deriveLegacyRole("SDIT_ALUMNI")).toBeUndefined();
+    expect(deriveLegacyRole("SMPIT_ALUMNI")).toBeUndefined();
   });
 });
 
@@ -100,7 +110,7 @@ describe("rbac — getEffectiveRole", () => {
   });
 
   it("derives from a RoleCode sitting in user.role", () => {
-    expect(getEffectiveRole({ role: "YAYASAN_ADMIN" })).toBe("UNIT_ADMIN");
+    expect(getEffectiveRole({ role: "YAYASAN_KETUA" })).toBe("UNIT_ADMIN");
   });
 
   it("returns undefined for empty/unknown input", () => {
@@ -141,11 +151,15 @@ describe("rbac — canAccessRoute", () => {
     expect(canAccessRoute("PARENT", "/students")).toBe(false);
   });
 
-  it("teacher can reach teaching routes but not admin settings", () => {
+  it("teacher can reach teaching routes but not foundation administration", () => {
     expect(canAccessRoute("TEACHER", "/teacher")).toBe(true);
     expect(canAccessRoute("TEACHER", "/tahfidz/murojaah")).toBe(true);
-    expect(canAccessRoute("TEACHER", "/settings")).toBe(false);
+    // /settings is per-user preferences (appearance/language/notifications),
+    // linked from the header menu for every signed-in user — not admin config.
+    expect(canAccessRoute("TEACHER", "/settings")).toBe(true);
     expect(canAccessRoute("TEACHER", "/finance")).toBe(false);
+    expect(canAccessRoute("TEACHER", "/units")).toBe(false);
+    expect(canAccessRoute("TEACHER", "/procurement")).toBe(false);
   });
 
   it("unit admin can reach talenta (API authorizes UNIT_ADMIN on /talenta routes)", () => {
@@ -174,5 +188,110 @@ describe("rbac — canAccessRoute", () => {
     ).forEach((role) => {
       expect(roleRouteAccess[role].length).toBeGreaterThan(0);
     });
+  });
+});
+
+describe("rbac — navigation and route access stay in sync", () => {
+  // These two files are one contract seen from both ends: navigation.ts decides
+  // what a role is shown, rbac.ts decides what it may open. When they drift the
+  // sidebar renders links that bounce the user to /unauthorized — which is
+  // exactly what happened before this suite existed (188 of 292 links dead).
+  const navToBucket: Array<[NavGroup[], LegacyRole]> = [
+    [getNavigationForRoleCode("SUPER_ADMIN"), "SUPER_ADMIN"],
+    [getNavigationForRoleCode("YAYASAN_KETUA"), "UNIT_ADMIN"],
+    [getNavigationForRoleCode("SMPIT_GURU"), "TEACHER"],
+    [getNavigationForRoleCode("SMPIT_KEPALA_SEKOLAH"), "TEACHER"],
+    [getNavigationForRoleCode("PESANTREN_PENGASUH"), "TEACHER"],
+    [getNavigationForRoleCode("MUSYRIF"), "TEACHER"],
+    [getNavigationForRoleCode("PT_REKTOR"), "TEACHER"],
+    [getNavigationForRoleCode("PT_DOSEN"), "TEACHER"],
+    [getNavigationForRoleCode("SMPIT_TATA_USAHA"), "STAFF"],
+    [getNavigationForRoleCode("SDIT_KOMITE"), "STAFF"],
+    [getNavigationForRoleCode("SMPIT_SISWA"), "STUDENT"],
+    [getNavigationForRoleCode("PT_MAHASISWA"), "STUDENT"],
+    [getNavigationForRoleCode("SMPIT_ALUMNI"), "STUDENT"],
+    [getNavigationForRoleCode("SMPIT_ORANG_TUA"), "PARENT"],
+  ];
+
+  it.each(navToBucket)(
+    "every rendered sidebar link is reachable by its bucket",
+    (nav, bucket) => {
+      const unreachable = nav
+        .flatMap((group) => group.items.map((item) => item.href))
+        .filter((href) => !canAccessRoute(bucket, href));
+      expect(unreachable).toEqual([]);
+    },
+  );
+
+  it("gives every one of the 81 RoleCodes a real menu, not the stub", () => {
+    // The fallback nav is Dashboard + Notifications + Settings. Any RoleCode
+    // landing on it has simply been forgotten.
+    const stubSize = 3;
+    const forgotten = ALL_ROLE_CODES.filter((code) => {
+      const nav = getNavigationForRoleCode(code);
+      const items = nav.flatMap((g) => g.items);
+      return items.length <= stubSize;
+    });
+    expect(forgotten).toEqual([]);
+  });
+});
+
+describe("navigation — every menu link points at a page that exists", () => {
+  // /foundation/board shipped in the Yayasan sidebar with no page behind it.
+  // Because Next prefetches sidebar links, that 404 fired on *every* page load
+  // for those roles. Walk the app directory so a missing page fails here first.
+  const APP_DIR = path.join(process.cwd(), "src", "app");
+
+  function routeExists(href: string): boolean {
+    const segments = href.split("/").filter(Boolean);
+    let dir = APP_DIR;
+    for (const segment of segments) {
+      const literal = path.join(dir, segment);
+      if (fs.existsSync(literal) && fs.statSync(literal).isDirectory()) {
+        dir = literal;
+        continue;
+      }
+      // fall back to a dynamic segment ([id], [slug], ...)
+      const dynamic = fs
+        .readdirSync(dir, { withFileTypes: true })
+        .find((e) => e.isDirectory() && e.name.startsWith("["));
+      if (!dynamic) return false;
+      dir = path.join(dir, dynamic.name);
+    }
+    return fs.existsSync(path.join(dir, "page.tsx"));
+  }
+
+  const ROLE_SAMPLE = [
+    "SUPER_ADMIN",
+    "YAYASAN_KETUA",
+    "SMPIT_GURU",
+    "SMPIT_KEPALA_SEKOLAH",
+    "PESANTREN_PENGASUH",
+    "MUSYRIF",
+    "PT_REKTOR",
+    "PT_DOSEN",
+    "PT_MAHASISWA",
+    "SMPIT_TATA_USAHA",
+    "SDIT_KOMITE",
+    "SMPIT_SISWA",
+    "SMPIT_ALUMNI",
+    "SMPIT_ORANG_TUA",
+  ];
+
+  it.each(ROLE_SAMPLE)("%s has no dead menu links", (roleCode) => {
+    const dead = getNavigationForRoleCode(roleCode)
+      .flatMap((group) => group.items.map((item) => item.href))
+      .filter((href) => !routeExists(href));
+    expect(dead).toEqual([]);
+  });
+
+  it.each(ROLE_SAMPLE)("%s lists no route twice", (roleCode) => {
+    const hrefs = getNavigationForRoleCode(roleCode).flatMap((group) =>
+      group.items.map((item) => item.href),
+    );
+    const duplicated = [...new Set(hrefs)].filter(
+      (href) => hrefs.filter((h) => h === href).length > 1,
+    );
+    expect(duplicated).toEqual([]);
   });
 });

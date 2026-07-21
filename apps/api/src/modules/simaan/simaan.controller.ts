@@ -8,7 +8,11 @@ import { ApiResponse } from '@/utils/response';
 
 export const listSimaan = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const query = req.query as any;
+    // `validateQuery` parks the parsed result in `res.locals.validatedQuery`
+    // (Express 5 makes `req.query` read-only). Reading `req.query` directly
+    // discarded the schema's page=1/limit=20 defaults, so a call that omitted
+    // `page` computed `skip: NaN` and Prisma answered with a 500.
+    const query = (res.locals.validatedQuery || req.query) as any;
     const result = await simaanService.findAll(query);
     res.json(
       ApiResponse.paginated(

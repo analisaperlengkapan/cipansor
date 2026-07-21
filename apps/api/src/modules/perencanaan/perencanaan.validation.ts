@@ -3,7 +3,7 @@ import { z } from 'zod';
 export const createPlanSchema = z.object({
   title: z.string().min(3, 'Judul minimal 3 karakter'),
   description: z.string().optional(),
-  type: z.enum(['MASTER_PLAN', 'RENSTRA', 'RKAS', 'RKT', 'PROGRAM']),
+  type: z.enum(['RPJP', 'RENSTRA', 'RKA']),
   startDate: z.string().datetime(),
   endDate: z.string().datetime(),
   budget: z.number().positive().optional(),
@@ -14,7 +14,7 @@ export const createPlanSchema = z.object({
 export const updatePlanSchema = z.object({
   title: z.string().min(3).optional(),
   description: z.string().optional(),
-  type: z.enum(['MASTER_PLAN', 'RENSTRA', 'RKAS', 'RKT', 'PROGRAM']).optional(),
+  type: z.enum(['RPJP', 'RENSTRA', 'RKA']).optional(),
   status: z.enum(['DRAFT', 'PROPOSED', 'APPROVED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED']).optional(),
   startDate: z.string().datetime().optional(),
   endDate: z.string().datetime().optional(),
@@ -85,7 +85,7 @@ export const updateActivitySchema = z.object({
 });
 
 export const listPlanQuerySchema = z.object({
-  type: z.enum(['MASTER_PLAN', 'RENSTRA', 'RKAS', 'RKT', 'PROGRAM']).optional(),
+  type: z.enum(['RPJP', 'RENSTRA', 'RKA']).optional(),
   status: z.enum(['DRAFT', 'PROPOSED', 'APPROVED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED']).optional(),
   unitId: z.string().uuid().optional(),
 });

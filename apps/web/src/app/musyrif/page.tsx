@@ -1,4 +1,5 @@
 "use client";
+import { MainLayout } from "@/components/layout";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -64,7 +65,7 @@ import {
 import { formatDistanceToNow } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 
-export default function MusyrifDashboard() {
+function MusyrifDashboardContent() {
   const router = useRouter();
   const { user } = useAuthStore();
   const [search, setSearch] = useState("");
@@ -740,5 +741,13 @@ function MusyrifSkeleton() {
         ))}
       </div>
     </div>
+  );
+}
+
+export default function MusyrifDashboardWithShell() {
+  return (
+    <MainLayout>
+      <MusyrifDashboardContent />
+    </MainLayout>
   );
 }

@@ -49,14 +49,13 @@ export async function getIntegratedRiskAlerts(req: Request, res: Response, next:
       return res.status(400).json({ success: false, error: 'academicYearId is required' });
     }
 
-    // Unit-level authorization: SUPER_ADMIN and YAYASAN_ADMIN have cross-unit
+    // Unit-level authorization: SUPER_ADMIN has cross-unit
     // visibility (consistent with the forecast controller's `resolveForecastUnitId`
     // helper and the admissions `getPriorityLeads` controller). All other roles
     // are scoped to their own unit and must not be able to query another unit's
     // integrated risk alerts by passing a different `unitId`.
     if (
       user.role !== 'SUPER_ADMIN' &&
-      user.role !== 'YAYASAN_ADMIN' &&
       user.unitId !== unitId
     ) {
       throw Errors.forbidden('Access to this unit is not allowed');

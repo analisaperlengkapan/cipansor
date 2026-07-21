@@ -16,7 +16,7 @@ router.use(authenticate);
 
 router.get('/exams/:id/analytics', controller.getExamAnalytics);
 router.get('/units/:unitId/analytics', authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER), controller.getUnitEducationAnalytics);
-router.get('/analytics/integrated-alerts', authorize(UserRole.SUPER_ADMIN, RoleCode.YAYASAN_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER), controller.getIntegratedRiskAlerts);
+router.get('/analytics/integrated-alerts', authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER), controller.getIntegratedRiskAlerts);
 router.get('/students/:studentId/holistic', authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER), controller.getStudentHolisticAnalytics);
 
 /**

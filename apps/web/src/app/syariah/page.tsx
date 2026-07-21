@@ -1,4 +1,5 @@
 "use client";
+import { MainLayout } from "@/components/layout";
 
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -236,7 +237,7 @@ function RecordAuditDialog({ complianceId, onClose }: { complianceId: string; on
 }
 
 // ─── Main Page ──────────────────────────────────────
-export default function SyariahPage() {
+function SyariahPageContent() {
   const [filterCategory, setFilterCategory] = useState<string | undefined>();
   const [complianceDialogOpen, setComplianceDialogOpen] = useState(false);
   const [auditComplianceId, setAuditComplianceId] = useState<string | null>(null);
@@ -382,5 +383,13 @@ export default function SyariahPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function SyariahPageWithShell() {
+  return (
+    <MainLayout>
+      <SyariahPageContent />
+    </MainLayout>
   );
 }

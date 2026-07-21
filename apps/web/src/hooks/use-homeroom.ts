@@ -246,14 +246,23 @@ export function useHomeroomDashboard(classId: string | undefined) {
   });
 }
 
-// Get my homeroom class (Legacy/Single Default)
+/**
+ * The single homeroom class of the signed-in wali kelas.
+ *
+ * This used to GET /homeroom/my-class, which the API has never served — the
+ * only endpoint is the plural /homeroom/my-classes. It 404'd on every render
+ * of the behaviour and messages pages. Take the first class from the list
+ * rather than adding a singular endpoint that would duplicate it; a wali kelas
+ * normally has exactly one.
+ */
 export function useMyHomeroomClass() {
-  return useQuery<HomeroomClass>({
-    queryKey: ["homeroom", "my-class"],
+  return useQuery<HomeroomClass | undefined>({
+    queryKey: ["homeroom", "my-classes", "first"],
     queryFn: async () => {
-      const response =
-        await api.get<ApiResponse<HomeroomClass>>("/homeroom/my-class");
-      return response.data.data;
+      const { data } = await api.get<ApiResponse<HomeroomClass[]>>(
+        "/homeroom/my-classes",
+      );
+      return data.data?.[0];
     },
   });
 }

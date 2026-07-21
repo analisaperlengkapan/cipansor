@@ -16,7 +16,7 @@ test.describe("Attendance - Daily Marking", () => {
     const login = new LoginPage(page);
     await login.goto();
     await login.loginAndWaitForDashboard(
-      "superadmin@cipansor.id",
+      "superadmin@cipansor.or.id",
       "SuperAdmin123!",
     );
 
@@ -189,7 +189,7 @@ test.describe("Attendance - View Records", () => {
     const login = new loginPage.LoginPage(page);
     await login.goto();
     await login.loginAndWaitForDashboard(
-      "superadmin@cipansor.id",
+      "superadmin@cipansor.or.id",
       "SuperAdmin123!",
     );
 
@@ -218,7 +218,7 @@ test.describe("Attendance - View Records", () => {
     const login = new loginPage.LoginPage(page);
     await login.goto();
     await login.loginAndWaitForDashboard(
-      "superadmin@cipansor.id",
+      "superadmin@cipansor.or.id",
       "SuperAdmin123!",
     );
 
@@ -256,7 +256,7 @@ test.describe("Attendance - Reports", () => {
     const login = new loginPage.LoginPage(page);
     await login.goto();
     await login.loginAndWaitForDashboard(
-      "superadmin@cipansor.id",
+      "superadmin@cipansor.or.id",
       "SuperAdmin123!",
     );
 
@@ -300,7 +300,7 @@ test.describe("Attendance - Reports", () => {
     const login = new loginPage.LoginPage(page);
     await login.goto();
     await login.loginAndWaitForDashboard(
-      "superadmin@cipansor.id",
+      "superadmin@cipansor.or.id",
       "SuperAdmin123!",
     );
 
@@ -329,7 +329,7 @@ test.describe("Attendance - Integration with Dashboard", () => {
     const login = new loginPage.LoginPage(page);
     await login.goto();
     await login.loginAndWaitForDashboard(
-      "superadmin@cipansor.id",
+      "superadmin@cipansor.or.id",
       "SuperAdmin123!",
     );
 

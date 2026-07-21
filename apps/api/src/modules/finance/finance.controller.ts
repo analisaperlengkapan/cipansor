@@ -305,6 +305,19 @@ export async function getStudentFinanceSummary(req: Request, res: Response, next
   }
 }
 
+/**
+ * Yayasan-wide financial summary. See financeService.getFinancialSummary for
+ * why `academicYearId` is accepted but not applied.
+ */
+export async function getFinancialSummary(_req: Request, res: Response, next: NextFunction) {
+  try {
+    const summary = await financeService.getFinancialSummary();
+    res.json({ success: true, data: summary });
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function getUnitFinanceStats(req: Request, res: Response, next: NextFunction) {
   try {
     const { unitId } = req.params;

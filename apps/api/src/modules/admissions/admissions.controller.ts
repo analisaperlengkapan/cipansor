@@ -234,7 +234,7 @@ export async function deleteRegistrantDocument(req: Request, res: Response, next
 /**
  * Return the single most-relevant currently-active admission period for a
  * public landing page / registration form. Exposed WITHOUT authentication so
- * the public PPDB page (`apps/web/src/app/public/ppdb/page.tsx`) can bootstrap
+ * the public PPDB page (`apps/web/src/app/public/spmb/page.tsx`) can bootstrap
  * the registration form. Returns `null` inside `data` when no period is
  * active (the frontend handles this by showing a "pendaftaran belum dibuka"
  * message).
@@ -270,6 +270,35 @@ export async function getPublicActiveAdmissionPeriod(
       },
     });
     res.json({ success: true, data: period });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Public unit list for the unauthenticated SPMB form's "unit tujuan" dropdown.
+ *
+ * The form previously called the authenticated `GET /units`, which 401s for an
+ * anonymous visitor — leaving prospective parents with an empty dropdown on the
+ * page the landing hero sends them to.
+ *
+ * Projection whitelist: id, name, type. Nothing else. Anything added here is
+ * exposed to anonymous callers, so do not widen it to include contact details,
+ * counts, or the foundation relation.
+ */
+export async function getPublicUnits(
+  _req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const { prisma } = await import('../../lib/prisma');
+    const units = await prisma.unit.findMany({
+      where: { deletedAt: null },
+      select: { id: true, name: true, type: true },
+      orderBy: { name: 'asc' },
+    });
+    res.json({ success: true, data: units });
   } catch (error) {
     next(error);
   }
@@ -369,10 +398,10 @@ export async function getPriorityLeads(req: Request, res: Response, next: NextFu
     // query another unit's priority leads by guessing/knowing its unitId,
     // nor by omitting `unitId` entirely (which would otherwise return
     // leads across ALL units — see lead-scoring.service.ts where
-    // `unitId` is only spread when truthy). SUPER_ADMIN and
-    // YAYASAN_ADMIN can scope to any (or all) unit(s).
+    // `unitId` is only spread when truthy). SUPER_ADMIN can scope to
+    // any (or all) unit(s).
     let effectiveUnitId = unitId as string | undefined;
-    if (user && user.role !== 'SUPER_ADMIN' && user.role !== 'YAYASAN_ADMIN') {
+    if (user && user.role !== 'SUPER_ADMIN') {
       if (!user.unitId) {
         throw Errors.forbidden('Access to this unit is not allowed');
       }

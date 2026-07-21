@@ -27,7 +27,7 @@ import {
   Bell,
   RefreshCw,
   Filter,
-  DollarSign,
+  Banknote,
   Send,
   Download,
   CheckCircle2,

@@ -47,7 +47,7 @@ import {
   Bell,
   RefreshCw,
   Download,
-  DollarSign,
+  Banknote,
 } from "lucide-react";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
@@ -696,7 +696,7 @@ export default function ExecutiveDashboardPage() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <DollarSign className="h-5 w-5 text-green-600" />
+                  <Banknote className="h-5 w-5 text-green-600" />
                   <CardTitle>Ringkasan Keuangan</CardTitle>
                 </div>
                 <Badge

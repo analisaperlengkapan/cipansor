@@ -1,0 +1,121 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import Image from "next/image";
+import { notFound } from "next/navigation";
+import { Check } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { PublicPage } from "@/components/landing/public-page";
+import { siteConfig, educationUnits } from "@/config/site";
+import { unitDetails } from "@/config/content";
+
+/** Pre-render all five units — the set is fixed and small. */
+export function generateStaticParams() {
+  return educationUnits.map((unit) => ({ slug: unit.slug }));
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const unit = educationUnits.find((u) => u.slug === slug);
+  if (!unit) return {};
+  return {
+    title: `${unit.name} — ${siteConfig.legalName}`,
+    description: unit.description,
+    metadataBase: new URL(siteConfig.url),
+    alternates: { canonical: `/unit/${unit.slug}` },
+  };
+}
+
+export default async function UnitDetailPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const unit = educationUnits.find((u) => u.slug === slug);
+  const detail = unitDetails[slug];
+  if (!unit || !detail) notFound();
+
+  return (
+    <PublicPage
+      title={unit.name}
+      lead={unit.tagline}
+      breadcrumb={[
+        { label: "Unit Pendidikan", href: "/unit" },
+        { label: unit.shortName, href: `/unit/${unit.slug}` },
+      ]}
+    >
+      <div className="max-w-3xl space-y-6">
+        <div className="flex items-center gap-4">
+          <Image
+            src={unit.logo}
+            alt=""
+            width={64}
+            height={64}
+            className="h-16 w-16 object-contain"
+          />
+          <p className="text-sm font-semibold uppercase tracking-wide text-primary">
+            {detail.jenjang}
+          </p>
+        </div>
+
+        <p className="leading-relaxed text-muted-foreground">{detail.intro}</p>
+        <p className="leading-relaxed text-muted-foreground">{unit.description}</p>
+
+        <h2 className="pt-4 text-2xl font-semibold tracking-tight">
+          Yang Dipelajari di {unit.shortName}
+        </h2>
+        <ul className="space-y-3">
+          {detail.highlights.map((item) => (
+            <li key={item} className="flex items-start gap-3">
+              <Check
+                className="mt-1 h-4 w-4 shrink-0 text-primary"
+                aria-hidden="true"
+              />
+              <span className="leading-relaxed text-muted-foreground">{item}</span>
+            </li>
+          ))}
+        </ul>
+
+        <div className="mt-10 rounded-lg border border-border bg-muted/30 p-6">
+          <h2 className="text-xl font-bold">Pendaftaran {unit.name}</h2>
+          <p className="mt-2 text-muted-foreground">
+            Pendaftaran SPMB dibuka untuk seluruh unit pendidikan. Silakan mendaftar
+            secara online atau hubungi kami untuk bertanya lebih dulu.
+          </p>
+          <div className="mt-5 flex flex-wrap gap-3">
+            <Button asChild>
+              <Link href="/public/spmb">Daftar SPMB</Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/kontak">Hubungi Kami</Link>
+            </Button>
+          </div>
+        </div>
+
+        <nav aria-label="Unit lainnya" className="pt-6">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            Unit lainnya
+          </h2>
+          <ul className="mt-3 flex flex-wrap gap-2">
+            {educationUnits
+              .filter((u) => u.slug !== unit.slug)
+              .map((u) => (
+                <li key={u.slug}>
+                  <Link
+                    href={`/unit/${u.slug}`}
+                    className="inline-block rounded-full border border-border px-4 py-1.5 text-sm transition-colors hover:border-primary hover:text-primary"
+                  >
+                    {u.name}
+                  </Link>
+                </li>
+              ))}
+          </ul>
+        </nav>
+      </div>
+    </PublicPage>
+  );
+}

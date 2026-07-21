@@ -88,7 +88,7 @@ test.describe("Authentication", () => {
     page,
   }) => {
     await loginPage.loginAndWaitForDashboard(
-      "superadmin@cipansor.id",
+      "superadmin@cipansor.or.id",
       "SuperAdmin123!",
     );
 
@@ -105,7 +105,7 @@ test.describe("Authentication", () => {
 
   test("should persist session after page reload", async ({ page }) => {
     await loginPage.loginAndWaitForDashboard(
-      "superadmin@cipansor.id",
+      "superadmin@cipansor.or.id",
       "SuperAdmin123!",
     );
 
@@ -122,7 +122,7 @@ test.describe("Authentication", () => {
 
     // Login first with simple flow
     await page.goto("/login");
-    await loginPage.login("superadmin@cipansor.id", "SuperAdmin123!");
+    await loginPage.login("superadmin@cipansor.or.id", "SuperAdmin123!");
 
     // Wait for navigation to dashboard (multiple possible URLs)
     await Promise.race([
@@ -163,7 +163,7 @@ test.describe("Authentication", () => {
     // Simulate network failure
     await page.route("**/api/auth/login", (route) => route.abort("failed"));
 
-    await loginPage.login("superadmin@cipansor.id", "SuperAdmin123!");
+    await loginPage.login("superadmin@cipansor.or.id", "SuperAdmin123!");
 
     // Should show error message or stay on login page
     const errorMessage = page.getByText(/network|koneksi|gagal|error|failed/i);
@@ -185,7 +185,7 @@ test.describe("Role-based Access Control", () => {
     const loginPage = new LoginPage(page);
     await loginPage.goto();
     await loginPage.loginAndWaitForDashboard(
-      "superadmin@cipansor.id",
+      "superadmin@cipansor.or.id",
       "SuperAdmin123!",
     );
 

@@ -1,4 +1,5 @@
 "use client";
+import { siteConfig, addressLines } from "@/config/site";
 import { useRaporDetail, RaporPesantren } from "@/hooks/use-rapor-pesantren";
 import { safeFormat } from "@/lib/date";
 import { useParams } from "next/navigation";
@@ -65,13 +66,12 @@ export default function RaporPrintPage() {
             </div>
           </div>
           <p className="text-sm mt-1">
-            {rapor.unit?.address ||
-              "Jl. Raya Cipansor No. 1, Desa Cipansor, Kec. Cipansor, Kab. Cipansor"}
+            {rapor.unit?.address || addressLines.join(", ")}
           </p>
           <p className="text-sm">
-            Telp: {rapor.unit?.phone || "(021) 1234567"} | Email:{" "}
-            {rapor.unit?.email || "info@cipansor.sch.id"} | Website:{" "}
-            {rapor.unit?.website || "www.cipansor.sch.id"}
+            Telp: {rapor.unit?.phone || siteConfig.contact.phone} | Email:{" "}
+            {rapor.unit?.email || siteConfig.contact.email} | Website:{" "}
+            {rapor.unit?.website || siteConfig.url.replace(/^https?:\/\//, "")}
           </p>
         </div>
 

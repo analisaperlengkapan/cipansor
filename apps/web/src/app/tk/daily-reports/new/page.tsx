@@ -137,7 +137,7 @@ export default function CreateDailyReportPage() {
             // const url = await uploadService.upload(photo.file);
 
             // Using a placeholder URL for now to satisfy the requirement
-            const mockUrl = `https://storage.cipansor.id/daily-reports/${report.id}/${photo.id}.jpg`;
+            const mockUrl = `https://storage.cipansor.or.id/daily-reports/${report.id}/${photo.id}.jpg`;
 
             if (!photo.file) return;
 

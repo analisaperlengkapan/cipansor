@@ -18,7 +18,7 @@ router.get(
   '/',
   authorize(
     RoleCode.SUPER_ADMIN,
-    RoleCode.YAYASAN_ADMIN, RoleCode.TKQ_ADMIN, RoleCode.SDIT_ADMIN, RoleCode.SMPIT_ADMIN, RoleCode.SMAQ_ADMIN,
+    RoleCode.TKQ_ADMIN, RoleCode.SDIT_ADMIN, RoleCode.SMPIT_ADMIN, RoleCode.SMAQ_ADMIN,
     RoleCode.TKQ_TATA_USAHA, RoleCode.SDIT_TATA_USAHA, RoleCode.SMPIT_TATA_USAHA, RoleCode.SMAQ_TATA_USAHA,
     'UNIT_ADMIN', 'STAFF', // Legacy pre-migration token values
   ),
@@ -30,7 +30,7 @@ router.get(
   '/:id',
   authorize(
     RoleCode.SUPER_ADMIN,
-    RoleCode.YAYASAN_ADMIN, RoleCode.TKQ_ADMIN, RoleCode.SDIT_ADMIN, RoleCode.SMPIT_ADMIN, RoleCode.SMAQ_ADMIN,
+    RoleCode.TKQ_ADMIN, RoleCode.SDIT_ADMIN, RoleCode.SMPIT_ADMIN, RoleCode.SMAQ_ADMIN,
     RoleCode.TKQ_TATA_USAHA, RoleCode.SDIT_TATA_USAHA, RoleCode.SMPIT_TATA_USAHA, RoleCode.SMAQ_TATA_USAHA,
     'UNIT_ADMIN', 'STAFF', // Legacy pre-migration token values
   ),
@@ -42,7 +42,7 @@ router.get(
   '/:id/performance',
   authorize(
     RoleCode.SUPER_ADMIN,
-    RoleCode.YAYASAN_ADMIN, RoleCode.TKQ_ADMIN, RoleCode.SDIT_ADMIN, RoleCode.SMPIT_ADMIN, RoleCode.SMAQ_ADMIN,
+    RoleCode.TKQ_ADMIN, RoleCode.SDIT_ADMIN, RoleCode.SMPIT_ADMIN, RoleCode.SMAQ_ADMIN,
     RoleCode.TKQ_TATA_USAHA, RoleCode.SDIT_TATA_USAHA, RoleCode.SMPIT_TATA_USAHA, RoleCode.SMAQ_TATA_USAHA,
     'UNIT_ADMIN', 'STAFF', // Legacy pre-migration token values
   ),
@@ -54,7 +54,7 @@ router.get(
   '/:id/efficiency',
   authorize(
     RoleCode.SUPER_ADMIN,
-    RoleCode.YAYASAN_ADMIN, RoleCode.TKQ_ADMIN, RoleCode.SDIT_ADMIN, RoleCode.SMPIT_ADMIN, RoleCode.SMAQ_ADMIN,
+    RoleCode.TKQ_ADMIN, RoleCode.SDIT_ADMIN, RoleCode.SMPIT_ADMIN, RoleCode.SMAQ_ADMIN,
     RoleCode.TKQ_TATA_USAHA, RoleCode.SDIT_TATA_USAHA, RoleCode.SMPIT_TATA_USAHA, RoleCode.SMAQ_TATA_USAHA,
     'UNIT_ADMIN', 'STAFF', // Legacy pre-migration token values
   ),
@@ -66,7 +66,7 @@ router.post(
   '/',
   authorize(
     RoleCode.SUPER_ADMIN,
-    RoleCode.YAYASAN_ADMIN, RoleCode.TKQ_ADMIN, RoleCode.SDIT_ADMIN, RoleCode.SMPIT_ADMIN, RoleCode.SMAQ_ADMIN,
+    RoleCode.TKQ_ADMIN, RoleCode.SDIT_ADMIN, RoleCode.SMPIT_ADMIN, RoleCode.SMAQ_ADMIN,
     'UNIT_ADMIN', // Legacy pre-migration token value
   ),
   validate(CreateBusinessUnitSchema),
@@ -78,7 +78,7 @@ router.put(
   '/:id',
   authorize(
     RoleCode.SUPER_ADMIN,
-    RoleCode.YAYASAN_ADMIN, RoleCode.TKQ_ADMIN, RoleCode.SDIT_ADMIN, RoleCode.SMPIT_ADMIN, RoleCode.SMAQ_ADMIN,
+    RoleCode.TKQ_ADMIN, RoleCode.SDIT_ADMIN, RoleCode.SMPIT_ADMIN, RoleCode.SMAQ_ADMIN,
     'UNIT_ADMIN', // Legacy pre-migration token value
   ),
   validate(UpdateBusinessUnitSchema),
@@ -90,7 +90,7 @@ router.delete(
   '/:id',
   authorize(
     RoleCode.SUPER_ADMIN,
-    RoleCode.YAYASAN_ADMIN, RoleCode.TKQ_ADMIN, RoleCode.SDIT_ADMIN, RoleCode.SMPIT_ADMIN, RoleCode.SMAQ_ADMIN,
+    RoleCode.TKQ_ADMIN, RoleCode.SDIT_ADMIN, RoleCode.SMPIT_ADMIN, RoleCode.SMAQ_ADMIN,
     'UNIT_ADMIN', // Legacy pre-migration token value
   ),
   businessUnitController.delete

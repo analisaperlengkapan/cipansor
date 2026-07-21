@@ -157,7 +157,7 @@ export function useStudentReportCards(studentId?: string) {
     queryKey: ["report-cards", "student", studentId],
     queryFn: async () => {
       const response = await api.get<ApiResponse<ReportCardListItem[]>>(
-        `/report-cards/students/${studentId}`,
+        `/assessment/report-cards/students/${studentId}`,
       );
       return response.data.data;
     },
@@ -171,7 +171,7 @@ export function useParentReportCard(reportCardId?: string) {
     queryKey: ["parent-report-cards", reportCardId],
     queryFn: async () => {
       const response = await api.get<ApiResponse<ParentReportCard>>(
-        `/report-cards/${reportCardId}`,
+        `/assessment/report-cards/${reportCardId}`,
       );
       return response.data.data;
     },
@@ -214,7 +214,7 @@ export function useMyChildrenReportCards() {
             reportCards: ReportCardListItem[];
           }[]
         >
-      >("/report-cards/my-children");
+      >("/assessment/report-cards/my-children");
       return response.data.data;
     },
   });
@@ -224,7 +224,7 @@ export function useMyChildrenReportCards() {
 export function useDownloadReportCard() {
   return useMutation({
     mutationFn: async (reportCardId: string) => {
-      const response = await api.get(`/report-cards/${reportCardId}/download`, {
+      const response = await api.get(`/assessment/report-cards/${reportCardId}/download`, {
         responseType: "blob",
       });
       return response.data;
@@ -260,7 +260,7 @@ export function useClassReportCards(classId?: string, semester?: number) {
             reportCard?: ReportCardListItem;
           }[]
         >
-      >(`/report-cards/classes/${classId}?${params.toString()}`);
+      >(`/assessment/report-cards/classes/${classId}?${params.toString()}`);
       return response.data.data;
     },
     enabled: !!classId,
@@ -272,7 +272,7 @@ export function useParentPublishReportCard() {
   return useMutation({
     mutationFn: async (reportCardId: string) => {
       const response = await api.post<ApiResponse<ParentReportCard>>(
-        `/report-cards/${reportCardId}/publish`,
+        `/assessment/report-cards/${reportCardId}/publish`,
       );
       return response.data.data;
     },
@@ -284,7 +284,7 @@ export function useBulkPublishReportCards() {
   return useMutation({
     mutationFn: async (reportCardIds: string[]) => {
       const response = await api.post<ApiResponse<{ published: number }>>(
-        "/report-cards/bulk-publish",
+        "/assessment/report-cards/bulk-publish",
         {
           reportCardIds,
         },

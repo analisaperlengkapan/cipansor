@@ -1,11 +1,12 @@
 "use client";
+import { MainLayout } from "@/components/layout";
 
 import { RiskHeatmap } from "@/components/risk/risk-heatmap";
 import { RiskList } from "./risk-list";
 import { PageHeader } from "@/components/shared/page-header";
 import { useRisks } from "@/hooks/use-risk";
 
-export default function RiskManagementPage() {
+function RiskManagementPageContent() {
   const { data: risks } = useRisks();
 
   return (
@@ -47,5 +48,13 @@ export default function RiskManagementPage() {
 
       <RiskList />
     </div>
+  );
+}
+
+export default function RiskManagementPageWithShell() {
+  return (
+    <MainLayout>
+      <RiskManagementPageContent />
+    </MainLayout>
   );
 }

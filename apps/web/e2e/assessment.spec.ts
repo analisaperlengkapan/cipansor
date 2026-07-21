@@ -95,7 +95,7 @@ test.describe("Assessment - Transcript", () => {
     // Deterministic auth (apiLogin + injected session) avoids the flaky
     // UI-login + fixed-timeout race that could redirect to /login mid-test.
     await login.loginAndWaitForDashboard(
-      "superadmin@cipansor.id",
+      "superadmin@cipansor.or.id",
       "SuperAdmin123!",
     );
 

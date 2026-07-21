@@ -52,6 +52,10 @@ export class ParentService {
                         id: true,
                         user: {
                           select: {
+                            // The parent's "kirim pesan ke wali kelas" flow needs
+                            // the teacher's *User* id as the recipient; the
+                            // Teacher id is a different entity.
+                            id: true,
                             name: true,
                           },
                         },
@@ -68,11 +72,26 @@ export class ParentService {
       },
     });
 
+    // `id` is deliberately the *student* id, not the StudentParent link id:
+    // every downstream route is `/parent/children/{studentId}/…`.
+    //
+    // The biodata below (nisn, birth details, contact) is what the "Data Anak"
+    // page renders. It used to call `/parent/children/{id}` for it — a route
+    // that was never built — so those fields were always blank. Returning them
+    // here costs one row per child and removes a request.
     return children.map((sp: (typeof children)[0]) => ({
       id: sp.student.id,
       name: sp.student.user.name,
       nis: sp.student.nis,
+      nisn: sp.student.nisn,
       gender: sp.student.gender,
+      birthPlace: sp.student.birthPlace,
+      birthDate: sp.student.birthDate,
+      address: sp.student.address,
+      // Student has no phone/email of its own — the contact on file is the
+      // guardian's, plus the login email on the linked user.
+      phone: sp.student.parentPhone,
+      email: sp.student.user.email,
       photoUrl: sp.student.photoUrl,
       status: sp.student.status,
       relation: sp.relation,

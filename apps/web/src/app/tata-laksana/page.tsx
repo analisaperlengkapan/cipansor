@@ -1,4 +1,5 @@
 "use client";
+import { MainLayout } from "@/components/layout";
 
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -103,7 +104,7 @@ function SOPFormDialog({ onClose }: { onClose: () => void }) {
   );
 }
 
-export default function TataLaksanaPage() {
+function TataLaksanaPageContent() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
@@ -234,5 +235,13 @@ export default function TataLaksanaPage() {
         isLoading={deleteSOP.isPending}
       />
     </div>
+  );
+}
+
+export default function TataLaksanaPageWithShell() {
+  return (
+    <MainLayout>
+      <TataLaksanaPageContent />
+    </MainLayout>
   );
 }

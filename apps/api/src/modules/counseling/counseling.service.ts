@@ -45,7 +45,6 @@ import {
  * permissions in addition to these service-layer checks.
  */
 const FOUNDATION_LEVEL_ROLES: string[] = [
-  RoleCode.YAYASAN_ADMIN,
   RoleCode.YAYASAN_PEMBINA,
   RoleCode.YAYASAN_KETUA,
   RoleCode.YAYASAN_SEKRETARIS,

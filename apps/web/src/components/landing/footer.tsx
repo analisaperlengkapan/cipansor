@@ -1,12 +1,6 @@
 import Link from "next/link";
-import {
-  Facebook,
-  Instagram,
-  Youtube,
-  MapPin,
-  Phone,
-  Mail,
-} from "lucide-react";
+import { MapPin, Phone, Mail } from "lucide-react";
+import { Facebook, Instagram, Youtube } from "@/components/icons/social";
 
 export function LandingFooter() {
   return (

@@ -54,10 +54,8 @@ import {
   Plus,
   ExternalLink,
   Loader2,
-  Linkedin,
-  Instagram,
-  Facebook,
 } from "lucide-react";
+import { Linkedin, Instagram, Facebook } from "@/components/icons/social";
 
 import { id as idLocale } from "date-fns/locale";
 import Link from "next/link";

@@ -14,7 +14,22 @@ vi.mock('@/lib/prisma', () => ({
     },
     user: {
       findFirst: vi.fn(),
+      findUnique: vi.fn(),
       create: vi.fn(),
+    },
+    // Needed by linkGuardian: creating a student must also produce the
+    // guardian account, the StudentParent row and the guardian's unit role.
+    studentParent: {
+      findFirst: vi.fn(),
+      findMany: vi.fn(),
+      create: vi.fn(),
+    },
+    userRoleAssignment: {
+      findMany: vi.fn(),
+      create: vi.fn(),
+    },
+    role: {
+      findFirst: vi.fn(),
     },
     unit: {
       findFirst: vi.fn(),
@@ -163,11 +178,25 @@ describe('StudentService', () => {
       unitId: 'unit-1',
     };
 
+    /** Mocks the guardian side so create() can run end to end. */
+    function mockGuardianPath() {
+      (prisma.user.findUnique as any).mockResolvedValue(null);
+      (prisma.studentParent.findFirst as any).mockResolvedValue(null);
+      (prisma.studentParent.create as any).mockResolvedValue({ id: 'link-1' });
+      (prisma.studentParent.findMany as any).mockResolvedValue([
+        { student: { unitId: 'unit-1', unit: { type: 'SD_IT' } } },
+      ]);
+      (prisma.userRoleAssignment.findMany as any).mockResolvedValue([]);
+      (prisma.userRoleAssignment.create as any).mockResolvedValue({ id: 'ura-1' });
+      (prisma.role.findFirst as any).mockResolvedValue({ id: 'role-ortu' });
+    }
+
     it('should create student and user successfully', async () => {
       // Setup mocks
       (prisma.student.findFirst as any).mockResolvedValue(null); // No existing NIS
       (prisma.user.findFirst as any).mockResolvedValue(null); // No existing Email
       (prisma.unit.findFirst as any).mockResolvedValue({ id: 'unit-1' }); // Unit exists
+      mockGuardianPath();
 
       const mockCreatedUser = { id: 'user-1', email: '12345@student.cipansor.local' };
       const mockCreatedStudent = { id: 'student-1', userId: 'user-1', ...mockInput };
@@ -194,6 +223,67 @@ describe('StudentService', () => {
       (prisma.student.findFirst as any).mockResolvedValue({ id: 'existing' });
 
       await expect(service.create(mockInput)).rejects.toThrow('NIS already exists');
+    });
+
+    // The whole point of the change: parentName/parentPhone used to be stored
+    // as text on the student row and nothing else, so the wali had no account,
+    // no link and no unit scope — a child with no guardian in every sense that
+    // the system can act on.
+    it('links a real guardian, not just parent text fields', async () => {
+      (prisma.student.findFirst as any).mockResolvedValue(null);
+      (prisma.user.findFirst as any).mockResolvedValue(null);
+      (prisma.unit.findFirst as any).mockResolvedValue({ id: 'unit-1', type: 'SD_IT' });
+      mockGuardianPath();
+
+      (prisma.user.create as any)
+        .mockResolvedValueOnce({ id: 'user-1' }) // the santri
+        .mockResolvedValueOnce({ id: 'wali-1' }); // the wali
+      (prisma.student.create as any).mockResolvedValue({ id: 'student-1' });
+
+      await service.create(mockInput);
+
+      // A guardian account was created…
+      expect(prisma.user.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ name: 'Parent', role: 'PARENT' }),
+        })
+      );
+
+      // …the student was linked to it…
+      expect(prisma.studentParent.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ studentId: 'student-1', parentId: 'wali-1' }),
+        })
+      );
+
+      // …and the guardian got the unit role their child implies.
+      expect(prisma.userRoleAssignment.create).toHaveBeenCalled();
+    });
+
+    it('reuses an existing guardian rather than creating a duplicate', async () => {
+      (prisma.student.findFirst as any).mockResolvedValue(null);
+      (prisma.user.findFirst as any).mockResolvedValue(null);
+      (prisma.unit.findFirst as any).mockResolvedValue({ id: 'unit-1', type: 'SD_IT' });
+      mockGuardianPath();
+
+      // A wali already registered by phone — the second sibling must attach to
+      // the same account, which is what keeps one login with several children.
+      (prisma.user.findFirst as any)
+        .mockResolvedValueOnce(null) // email uniqueness check for the santri
+        .mockResolvedValueOnce({ id: 'wali-existing' }); // guardian lookup by phone
+
+      (prisma.user.create as any).mockResolvedValue({ id: 'user-2' });
+      (prisma.student.create as any).mockResolvedValue({ id: 'student-2' });
+
+      await service.create({ ...mockInput, nis: '67890' });
+
+      expect(prisma.studentParent.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ parentId: 'wali-existing' }),
+        })
+      );
+      // Only the santri's own account was created, not a second guardian.
+      expect(prisma.user.create).toHaveBeenCalledTimes(1);
     });
   });
 

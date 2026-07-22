@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto';
 import { seesAllUnits } from '@/utils/resolve-unit-id';
 import { studentsHoldLogins } from '@/utils/student-login-policy';
+import { linkGuardian, type GuardianClient } from '@/utils/link-guardian';
 import { prisma } from '@/lib/prisma';
 import { hashPassword } from '@/lib/password';
 import { Errors } from '@/middleware/error';
@@ -468,6 +469,17 @@ export class StudentService {
             },
           },
         },
+      });
+
+      // Link the guardian for real. Before this, parentName/parentPhone were
+      // stored on the student row and nowhere else, so every santri added
+      // through the admin form was an orphan relationally: the wali had no
+      // account, no StudentParent row, and no unit scope.
+      await linkGuardian(tx as unknown as GuardianClient, {
+        studentId: student.id,
+        name: input.parentName,
+        phone: input.parentPhone,
+        email: input.parentEmail,
       });
 
       // Enroll in class if provided

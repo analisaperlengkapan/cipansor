@@ -122,6 +122,7 @@ import {
 } from '@prisma/client';
 import { createPrismaClient } from './client';
 import bcrypt from 'bcryptjs';
+import { randomBytes } from 'crypto';
 import { seedWilayahIndonesia } from './seeds/wilayah-indonesia';
 import { seedKurikulumMerdeka, seedAccountCodes } from './seeds/kurikulum-merdeka';
 import { seedPAUDIndicators } from './seeds/paud-indicators';
@@ -176,17 +177,29 @@ async function main() {
   // ============================================
   // SYSTEM USER
   // ============================================
+  // A placeholder row so that machine-written records have an author to point
+  // at (talenta.service uses this id as the assessorId fallback). It is not a
+  // login.
+  //
+  // It used to be created active, SUPER_ADMIN, with the password 'System123!'
+  // — and it could log in. Not through a role assignment, which it never had,
+  // but through the legacy `User.role` fallback in authService.login. Being
+  // admin without 2FA, that login returns `requiresTwoFactorSetup` plus a
+  // 10-minute token, so whoever knew the seeded password could enrol their own
+  // authenticator on a super-admin account. isActive: false is checked before
+  // any of that, and the password is now an unguessable random string rather
+  // than a documented one.
   await prisma.user.create({
     data: {
       id: SYSTEM_USER_ID,
       name: 'SYSTEM',
       email: 'system@cipansor.or.id',
-      passwordHash: await bcrypt.hash('System123!', 10),
+      passwordHash: await bcrypt.hash(randomBytes(32).toString('hex'), 10),
       role: UserRole.SUPER_ADMIN,
-      isActive: true,
+      isActive: false,
     },
   });
-  console.log('✅ System user created');
+  console.log('✅ System user created (login disabled)');
 
   // ============================================
   // PHASE 3: Foundation / Yayasan
@@ -1911,30 +1924,40 @@ async function main() {
   // ============================================
 
   // Create Staff users and profiles
+  // Each entry carries the RoleCode its job actually is. These four were the
+  // only seeded users created with a legacy `role` and no UserRoleAssignment,
+  // so they logged in solely through the legacy fallback in authService.login
+  // — arriving with an empty permission list, which silently fails every
+  // hasPermission-gated route. Removing that fallback would lock them out
+  // outright, so the assignment they should always have had is created below.
   const staffData = [
     {
       name: 'Pak Bambang Sutejo',
       email: 'bambang@cipansor.or.id',
       position: 'Kepala TU',
       department: 'Administrasi',
+      roleCode: RoleCode.SMPIT_TATA_USAHA,
     },
     {
       name: 'Ibu Dewi Kartika',
       email: 'dewi@cipansor.or.id',
       position: 'Staff Keuangan',
       department: 'Keuangan',
+      roleCode: RoleCode.SMPIT_BENDAHARA,
     },
     {
       name: 'Pak Rudi Hartono',
       email: 'rudi@cipansor.or.id',
       position: 'Security',
       department: 'Keamanan',
+      roleCode: RoleCode.KEAMANAN,
     },
     {
       name: 'Ibu Sri Wahyuni',
       email: 'sri@cipansor.or.id',
       position: 'Petugas Kesehatan',
       department: 'Kesehatan',
+      roleCode: RoleCode.PERAWAT,
     },
   ];
 
@@ -1948,6 +1971,16 @@ async function main() {
         passwordHash: await bcrypt.hash('Staff123!', 10),
         role: UserRole.STAFF,
         unitId: smpIt.id,
+        isActive: true,
+      },
+    });
+
+    await prisma.userRoleAssignment.create({
+      data: {
+        userId: user.id,
+        roleId: roles[data.roleCode].id,
+        unitId: smpIt.id,
+        isPrimary: true,
         isActive: true,
       },
     });

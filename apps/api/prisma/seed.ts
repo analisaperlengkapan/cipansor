@@ -948,22 +948,45 @@ async function main() {
     },
   });
 
-  // Ketua Yayasan has multiple roles
-  await prisma.userRoleAssignment.createMany({
-    data: [
-      {
-        userId: ketuaYayasanUser.id,
-        roleId: roles[RoleCode.YAYASAN_KETUA].id,
-        isPrimary: true,
-        isActive: true,
-      },
-      {
-        userId: ketuaYayasanUser.id,
-        roleId: roles[RoleCode.YAYASAN_PEMBINA].id,
-        isPrimary: false,
-        isActive: true,
-      },
-    ],
+  // Ketua is Pengurus, and only Pengurus.
+  //
+  // This block used to give the same account YAYASAN_KETUA and
+  // YAYASAN_PEMBINA, under a comment reading "Ketua Yayasan has multiple
+  // roles". UU 16/2001 Pasal 29 forbids exactly that: an anggota Pembina may
+  // not concurrently be Pengurus or Pengawas, because the organ that appoints
+  // cannot also be the one that executes. The database now refuses it too (see
+  // the trg_yayasan_organ_exclusive migration), so this seed would fail loudly
+  // rather than reproduce the violation.
+  //
+  // Multi-role accounts are still demonstrated, and legitimately — see the
+  // komite members and staff who are also wali further down.
+  await prisma.userRoleAssignment.create({
+    data: {
+      userId: ketuaYayasanUser.id,
+      roleId: roles[RoleCode.YAYASAN_KETUA].id,
+      isPrimary: true,
+      isActive: true,
+    },
+  });
+
+  // Pembina is a separate person, as the law requires.
+  const pembinaYayasanUser = await prisma.user.create({
+    data: {
+      name: 'KH. Abdurrahman Wahid Nurcholis',
+      email: 'pembina@cipansor.or.id',
+      passwordHash: await bcrypt.hash('Pembina123!', 10),
+      role: UserRole.STAFF,
+      isActive: true,
+    },
+  });
+
+  await prisma.userRoleAssignment.create({
+    data: {
+      userId: pembinaYayasanUser.id,
+      roleId: roles[RoleCode.YAYASAN_PEMBINA].id,
+      isPrimary: true,
+      isActive: true,
+    },
   });
 
   const sekretarisYayasanUser = await prisma.user.create({

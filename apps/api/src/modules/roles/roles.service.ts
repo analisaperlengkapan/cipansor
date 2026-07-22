@@ -3,6 +3,8 @@ import { redis } from '@/lib/redis';
 import { Errors } from '@/middleware/error';
 import { Realm } from '@prisma/client';
 import type { CreateRoleInput, UpdateRoleInput } from './roles.schema';
+import { findOrganConflict } from '@/utils/role-eligibility';
+import { isParentRole } from '@/utils/parent-scope';
 
 export class RolesService {
   /**
@@ -172,6 +174,42 @@ export class RolesService {
 
     if (existing) {
       throw Errors.conflict('User already has this role');
+    }
+
+    // Eligibility. Checked here rather than only in the UI because this route
+    // is reachable without the UI, and a rule that lives only in a form is not
+    // a rule.
+    const heldRoles = await prisma.userRoleAssignment.findMany({
+      where: { userId, isActive: true },
+      select: { role: { select: { code: true } } },
+    });
+
+    // Yayasan organs are mutually exclusive by statute — see role-eligibility.
+    const conflict = findOrganConflict(
+      role.code,
+      heldRoles.map((h) => h.role.code)
+    );
+    if (conflict) {
+      throw Errors.badRequest(conflict.message);
+    }
+
+    // A guardian role without a child at that unit produces an account with an
+    // empty parent portal, scoped to a school it has no business seeing.
+    if (isParentRole(role.code)) {
+      if (!unitId) {
+        throw Errors.badRequest('Peran orang tua/wali harus disertai unit');
+      }
+      const hasChildThere = await prisma.studentParent.findFirst({
+        where: { parentId: userId, student: { unitId } },
+        select: { id: true },
+      });
+      if (!hasChildThere) {
+        throw Errors.badRequest(
+          'Tidak dapat memberikan peran orang tua/wali: pengguna ini belum ' +
+            'terhubung dengan santri mana pun di unit tersebut. Tautkan anaknya ' +
+            'terlebih dahulu.'
+        );
+      }
     }
 
     // If this is primary, unset other primary roles

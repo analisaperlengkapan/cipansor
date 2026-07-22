@@ -52,6 +52,24 @@ export function requiredParentRoles(children: ChildScope[]): RequiredParentRole[
 }
 
 /**
+ * True when this role only makes sense for someone with a child at that unit.
+ *
+ * Used to refuse a guardian role handed out on its own. "Wali tanpa anak" is
+ * the shape of the mistake: someone is given SDIT_ORANG_TUA, gains a parent
+ * portal, and it is empty — or worse, they are scoped to a school no child of
+ * theirs attends.
+ *
+ * Note the asymmetry with the reverse rule. A guardian *account* may exist
+ * before any link — SPMB creates one while the registrant is still being
+ * processed — so "reject a parent with no children" cannot be a blanket check
+ * at creation time. It is the *role* that requires the child, and this is the
+ * moment to say so.
+ */
+export function isParentRole(roleCode: string): boolean {
+  return (Object.values(PARENT_ROLE_BY_UNIT_TYPE) as string[]).includes(roleCode);
+}
+
+/**
  * The minimal slice of Prisma this needs, so it works with both the client and
  * a transaction client without either being imported here.
  */

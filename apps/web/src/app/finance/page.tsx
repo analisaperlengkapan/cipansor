@@ -41,6 +41,7 @@ import {
 } from "@/components/ui/table";
 import { Pagination } from "@/components/shared";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TunggakanPanel } from "@/components/finance/tunggakan-panel";
 import {
   useBills,
   useFinancialSummary,
@@ -100,9 +101,13 @@ function FinancePageContent() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Keuangan</h1>
+          {/* Titled for what this page is. It was "Keuangan", which read as
+              the whole finance area while showing only santri billing — and
+              the menu entry pointing here was labelled "Laporan Keuangan",
+              which it is not. Financial statements are at /finance/accounting. */}
+          <h1 className="text-3xl font-bold tracking-tight">Tagihan &amp; SPP</h1>
           <p className="text-muted-foreground">
-            Kelola tagihan dan pembayaran santri
+            Kelola tagihan, tunggakan, dan pembayaran santri
           </p>
         </div>
         <div className="flex gap-2">
@@ -211,6 +216,7 @@ function FinancePageContent() {
       <Tabs defaultValue="bills" className="space-y-4">
         <TabsList>
           <TabsTrigger value="bills">Daftar Tagihan</TabsTrigger>
+          <TabsTrigger value="tunggakan">Tunggakan</TabsTrigger>
           <TabsTrigger value="summary">Ringkasan</TabsTrigger>
         </TabsList>
 
@@ -450,6 +456,10 @@ function FinancePageContent() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="tunggakan" className="space-y-4">
+          <TunggakanPanel />
         </TabsContent>
       </Tabs>
     </div>

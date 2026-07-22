@@ -1,13 +1,17 @@
 import { prisma } from '@/lib/prisma';
 import { Errors } from '@/middleware/error';
-import { UnitType, Prisma, UserRole } from '@prisma/client';
+import { UnitType, Prisma } from '@prisma/client';
+import { isFoundationScopedRole } from '@/utils/resolve-unit-id';
 import type { ListUnitsQuery, CreateUnitInput, UpdateUnitInput } from './unit.schema';
 
 export class UnitService {
   /**
    * Get all units with pagination
    */
-  async findAll(query: ListUnitsQuery, currentUser: { role: string; unitId: string | null }) {
+  async findAll(
+    query: ListUnitsQuery,
+    currentUser: { role: string; roleCode?: string | null; unitId: string | null }
+  ) {
     const { page, limit, search, type } = query;
     const skip = (page - 1) * limit;
 
@@ -15,8 +19,13 @@ export class UnitService {
       deletedAt: null,
     };
 
-    // Non-super-admin can only see their own unit
-    if (currentUser.role !== UserRole.SUPER_ADMIN) {
+    // Unit-scoped roles see only their own unit. Foundation-scoped roles (the
+    // yayasan board, plus SUPER_ADMIN) see all of them — this used to test
+    // `role !== SUPER_ADMIN`, and because deriveLegacyRole() maps YAYASAN_* to
+    // the legacy 'UNIT_ADMIN' string, the board fell into the unit branch with
+    // a null unitId and got `where.id = 'none'`: an empty list on every
+    // foundation-level screen.
+    if (!isFoundationScopedRole(currentUser.roleCode)) {
       where.id = currentUser.unitId || 'none';
     }
 

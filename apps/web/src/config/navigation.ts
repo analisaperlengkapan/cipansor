@@ -635,20 +635,27 @@ const yayasanNavigation: NavGroup[] = [
   {
     title: "Keuangan",
     items: [
+      // "Laporan Keuangan" used to point here, at /finance — a santri billing
+      // dashboard, not a financial report. The actual financial statements
+      // (neraca, laba rugi, arus kas) live at /finance/accounting and were
+      // filed under Administration, so nobody looking for a laporan keuangan
+      // in the Keuangan menu could find one. /finance/billing was a second,
+      // overlapping tagihan screen that reported a different outstanding total
+      // than /finance did; it is now the Tunggakan tab of this page.
       {
-        title: "Laporan Keuangan",
+        title: "Tagihan & SPP",
         href: "/finance",
-        icon: Wallet,
-      },
-      {
-        title: "Billing & Pembayaran",
-        href: "/finance/billing",
         icon: Receipt,
       },
       {
         title: "Verifikasi Pembayaran",
         href: "/finance/verification",
         icon: Receipt,
+      },
+      {
+        title: "Laporan Keuangan",
+        href: "/finance/accounting",
+        icon: Wallet,
       },
       {
         title: "BOS/BOP",
@@ -991,14 +998,14 @@ const adminNavigation: NavGroup[] = [
     title: "Administration",
     items: [
       {
-        title: "Finance",
+        title: "Tagihan & SPP",
         href: "/finance",
-        icon: Wallet,
+        icon: Receipt,
       },
       {
-        title: "Billing",
-        href: "/finance/billing",
-        icon: Receipt,
+        title: "Laporan Keuangan",
+        href: "/finance/accounting",
+        icon: Wallet,
       },
       {
         title: "BOS/BOP",
@@ -1009,11 +1016,6 @@ const adminNavigation: NavGroup[] = [
         title: "Procurement",
         href: "/procurement",
         icon: ShoppingBag,
-      },
-      {
-        title: "Accounting",
-        href: "/finance/accounting",
-        icon: Receipt,
       },
       {
         title: "Scholarships",
@@ -1672,7 +1674,7 @@ const komiteNavigation: NavGroup[] = [
   {
     title: "Keuangan",
     items: [
-      { title: "Laporan Keuangan", href: "/finance", icon: Receipt },
+      { title: "Tagihan & SPP", href: "/finance", icon: Receipt },
       { title: "Donasi & Wakaf", href: "/donation", icon: HeartHandshake },
     ],
   },

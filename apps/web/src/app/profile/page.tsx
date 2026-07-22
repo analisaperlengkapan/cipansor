@@ -33,7 +33,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { demoPhotoForEmail } from "@/lib/demo-avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Form,
@@ -94,6 +95,7 @@ const ROLE_LABELS: Record<string, string> = {
 
 function ProfilePageContent() {
   const { user, fetchUser } = useAuthStore();
+  const photo = demoPhotoForEmail(user?.email);
   const [activeTab, setActiveTab] = useState("profile");
 
   const updateUser = useUpdateUser();
@@ -172,6 +174,10 @@ function ProfilePageContent() {
       {/* Header */}
       <div className="flex items-center gap-4">
         <Avatar className="h-20 w-20">
+          {/* Same lookup the header and sidebar use. This page is the one place
+              a user goes to look at their own profile, so it was the worst
+              place to be the only avatar still showing a bare initial. */}
+          {photo && <AvatarImage src={photo} alt={user.name} />}
           <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
             {user.name.charAt(0).toUpperCase()}
           </AvatarFallback>

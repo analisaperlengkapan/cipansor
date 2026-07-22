@@ -848,6 +848,45 @@ async function main() {
   }
   console.log(`✅ Demo accounts created (${demoCreated} of ${DEMO_ACCOUNTS.length})`);
 
+  // Secondary role assignments.
+  //
+  // The loop above gives every demo account exactly one role, which meant no
+  // seeded user ever had two — so the role switcher in the header had nothing
+  // to switch between and silently collapsed to a static badge on every
+  // account. The component, the store action and POST /roles/switch were all
+  // fine; only the data never exercised them.
+  //
+  // These pairings are the ones that genuinely occur in a pesantren: a kepala
+  // sekolah who still teaches, and a yayasan treasurer who also keeps a unit's
+  // books. The second is deliberately cross-realm (YAYASAN + SD_IT) so the
+  // switcher's realm grouping is exercised too.
+  const SECONDARY_ROLES: Array<{ primary: string; secondary: string }> = [
+    { primary: 'SMPIT_KEPALA_SEKOLAH', secondary: 'SMPIT_GURU' },
+    { primary: 'YAYASAN_BENDAHARA', secondary: 'SDIT_BENDAHARA' },
+  ];
+  let secondaryCreated = 0;
+  for (const pair of SECONDARY_ROLES) {
+    const holder = demoUsers.get(pair.primary);
+    const secondaryRole = roles[pair.secondary];
+    if (!holder || !secondaryRole) {
+      console.warn(
+        `⚠️  Secondary role skipped — ${pair.primary} → ${pair.secondary}`
+      );
+      continue;
+    }
+    await prisma.userRoleAssignment.create({
+      data: {
+        userId: holder.id,
+        roleId: secondaryRole.id,
+        unitId: demoUnitIdFor(pair.secondary),
+        isPrimary: false,
+        isActive: true,
+      },
+    });
+    secondaryCreated++;
+  }
+  console.log(`✅ Secondary role assignments created (${secondaryCreated})`);
+
   // Create Super Admin with role assignment
   const superAdminUser = await prisma.user.create({
     data: {

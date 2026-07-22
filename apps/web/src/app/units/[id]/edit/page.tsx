@@ -28,11 +28,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useUnit, useUpdateUnit, UNIT_TYPES } from "@/hooks/use-units";
+import { useUnit, useUpdateUnit, UNIT_TYPES, UNIT_TYPE_VALUES } from "@/hooks/use-units";
 
 const unitSchema = z.object({
   name: z.string().min(1, "Nama unit wajib diisi"),
-  type: z.enum(["PESANTREN", "TK_QURAN", "SD_IT", "SMP_IT", "SMA_QURAN"], {
+  // Derived from UNIT_TYPES so the form can never accept a narrower set than
+  // the database holds — this literal list had fallen two values behind.
+  type: z.enum(UNIT_TYPE_VALUES, {
     required_error: "Tipe unit wajib dipilih",
   }),
   address: z.string().optional(),

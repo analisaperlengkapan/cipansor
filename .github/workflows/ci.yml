@@ -47,6 +47,13 @@ jobs:
       - name: Lint Web
         run: pnpm --filter web lint
 
+      # The main web tsconfig excludes e2e/**, so the Playwright specs were
+      # never typechecked anywhere: an identifier that was used but never
+      # declared only failed at runtime, minutes into the E2E job. This catches
+      # it here in seconds instead.
+      - name: Typecheck E2E specs
+        run: pnpm --filter web typecheck:e2e
+
   # Build all packages (this also type-checks: api via tsc, web via next build).
   build:
     name: Build

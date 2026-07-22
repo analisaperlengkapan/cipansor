@@ -11,6 +11,7 @@ export const list = asyncHandler(async (req: Request, res: Response) => {
   const query = (res.locals.validatedQuery || req.query) as ListUnitsQuery;
   const result = await unitService.findAll(query, {
     role: req.user!.role,
+    roleCode: req.user!.roleCode,
     unitId: req.user!.unitId,
   });
 

@@ -22,9 +22,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Cipansor - Pesantren Management System",
-  description: "Yayasan Pesantren Cipansor Management System",
-  applicationName: "Cipansor",
+  // Product name. `publisher` below stays the legal entity.
+  title: "Sistem Informasi Cipansor",
+  description:
+    "Sistem Informasi Cipansor — layanan digital Yayasan Pesantren Cipansor.",
+  applicationName: "Sistem Informasi Cipansor",
   keywords: [
     "pesantren",
     "management",
@@ -49,9 +51,10 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "id_ID",
-    siteName: "Cipansor",
-    title: "Cipansor - Pesantren Management System",
-    description: "Yayasan Pesantren Cipansor Management System",
+    siteName: "Sistem Informasi Cipansor",
+    title: "Sistem Informasi Cipansor",
+    description:
+      "Sistem Informasi Cipansor — layanan digital Yayasan Pesantren Cipansor.",
   },
 };
 

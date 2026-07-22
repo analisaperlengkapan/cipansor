@@ -1,5 +1,7 @@
 export const id = {
   common: {
+    /** Product name. The legal entity stays "Yayasan Pesantren Cipansor". */
+    appName: "Sistem Informasi Cipansor",
     save: "Simpan",
     saving: "Menyimpan...",
     saveSettings: "Simpan Pengaturan",
@@ -20,7 +22,7 @@ export const id = {
   },
   login: {
     welcome: "Selamat Datang di Cipansor",
-    description: "Sistem Manajemen Yayasan Pesantren Cipansor",
+    description: "Sistem Informasi Cipansor",
     email: "Email",
     password: "Kata Sandi",
     signIn: "Masuk",

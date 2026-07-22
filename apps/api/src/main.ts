@@ -12,6 +12,7 @@ Sentry.init({
 
 import { app } from './app';
 import { config } from '@/config';
+import { assertProductionSecrets } from '@/config/assert-secrets';
 import { logger } from '@/lib/logger';
 import { prisma } from '@/lib/prisma';
 import { initializeScheduler, stopScheduler } from '@/jobs';
@@ -23,6 +24,10 @@ const PORT = config.port;
 
 async function bootstrap() {
   try {
+    // Before anything else, and before the port opens. Serving traffic signed
+    // by a key published in .env.example is worse than not serving at all.
+    assertProductionSecrets();
+
     // Test database connection
     logger.info('Connecting to database...');
     await prisma.$connect();

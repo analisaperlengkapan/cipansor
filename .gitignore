@@ -18,6 +18,12 @@ build/
 .env.*.local
 .env.development
 .env.production
+# Backups made while rotating secrets contain the previous live key. `.env`
+# alone does not match `.env.bak-2026-07-22`, so `git add -A` would have
+# committed one.
+.env.bak*
+.env.backup*
+*.env.bak
 
 # IDE & Editor
 .vscode/

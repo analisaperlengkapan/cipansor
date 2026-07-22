@@ -1,6 +1,7 @@
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import { randomUUID } from 'crypto';
 import { Request, Response, NextFunction } from 'express';
 import { verifyToken } from '@/lib/jwt';
 import { Errors } from './error';
@@ -87,11 +88,18 @@ const storage = multer.diskStorage({
     cb(null, uploadDir);
   },
   filename: (_req, file, cb) => {
-    // Unique name; extension comes from the MIME table above, never from the
-    // client-supplied filename (which could smuggle .php, .html, ...).
-    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+    // Extension comes from the MIME table above, never from the client-supplied
+    // filename (which could smuggle .php, .html, ...).
+    //
+    // The name itself is crypto-random rather than `Date.now()` plus
+    // `Math.random()`. uploadsAuth below proves *that* a caller is signed in but
+    // not *which* files they may read, so until that gap is closed the filename
+    // is the only thing standing between one santri's documents and another
+    // parent's browser. A timestamp plus a non-cryptographic PRNG is guessable:
+    // the upload minute is often known, and Math.random() is not seeded for
+    // unpredictability. This is defence in depth, not authorisation.
     const extension = ALLOWED_TYPES[file.mimetype]?.extension ?? '.bin';
-    cb(null, `${uniqueSuffix}${extension}`);
+    cb(null, `${randomUUID()}${extension}`);
   },
 });
 
@@ -202,6 +210,21 @@ export const handleSingleUpload = (fieldName: string) => {
  * Browsers fetch these via <img src>/<a href>, which cannot send an
  * Authorization header, so a valid access token is also accepted as a
  * `?token=` query parameter (appended by the web client's authFileUrl helper).
+ *
+ * KNOWN LIMIT — authentication, not authorisation. This proves the caller is
+ * signed in. It does not check that *this* caller may read *this* file: any
+ * valid access token, including a santri's or a parent's, opens every file in
+ * the directory. Closing that needs an ownership index — a lookup from stored
+ * filename back to the record that references it (Student.photoUrl,
+ * StudentDocument.fileUrl, and the rest) — which does not exist yet. Until it
+ * does, filenames are crypto-random (see the storage config above) so they
+ * cannot be enumerated, and that is the only thing separating one family's
+ * documents from another's. Treat it as an open item, not as done.
+ *
+ * Second known limit: passing the token in the query string writes it into the
+ * nginx access log, which uses the default `combined` format and records the
+ * full request URI. Short access-token TTLs limit the damage. The proper fix is
+ * a short-lived URL signed for one file rather than the session token itself.
  */
 export function uploadsAuth(req: Request, _res: Response, next: NextFunction) {
   try {

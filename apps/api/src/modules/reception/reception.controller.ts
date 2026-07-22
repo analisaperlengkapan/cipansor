@@ -3,17 +3,40 @@ import * as ReceptionService from './reception.service';
 import { ApiResponse } from '@cipansor/shared';
 import { ReceptionStats, GuestBook, StudentVisit, StudentPackage } from '@cipansor/shared';
 import { Errors } from '../../middleware/error';
+import { isFoundationScopedRole } from '../../utils/resolve-unit-id';
 
 /**
- * Resolve the unit scope for reception operations. Unit staff use their own
- * unit; foundation-level accounts (super admin / yayasan) have no unitId and
- * must select one via ?unitId= (or body.unitId). Missing scope is a 400 —
- * never a 401, which the web client treats as "session expired".
+ * Resolve the unit scope for reception operations.
+ *
+ * Unit staff always use the unit in their own JWT. A *foundation-scoped* role
+ * has no unitId — there is no single unit it belongs to — so it names one
+ * explicitly. Missing scope is a 400, never a 401, which the web client treats
+ * as "session expired" and bounces on.
+ *
+ * The role check is the point. Without it this read
+ * `req.user?.unitId || fromQuery || fromBody`, which trusts the caller's own
+ * parameter for *anyone* holding a JWT with no unitId. The comment claimed
+ * those are only super admin and yayasan; production says otherwise —
+ * BUSINESS_MANAGER and BUSINESS_STAFF are active accounts with no unit and no
+ * foundation remit, and could have read any unit's guest book and santri
+ * visits by passing ?unitId=. utils/resolve-unit-id.ts states the rule this
+ * restores: never let a non-foundation caller choose its own scope.
+ *
+ * The body is still consulted, unlike resolveUnitId, because the write routes
+ * here take their unit from the submitted form. That is safe now only because
+ * the source no longer decides anything — the role does.
  */
 function requireUnitId(req: Request): string {
+  const own = req.user?.unitId;
+  if (own) return own;
+
+  if (!isFoundationScopedRole(req.user?.roleCode)) {
+    throw Errors.forbidden('Account has no unit assigned');
+  }
+
   const fromQuery = typeof req.query.unitId === 'string' ? req.query.unitId : undefined;
   const fromBody = typeof req.body?.unitId === 'string' ? req.body.unitId : undefined;
-  const unitId = req.user?.unitId || fromQuery || fromBody;
+  const unitId = fromQuery || fromBody;
   if (!unitId) {
     throw Errors.badRequest('unitId is required (foundation-level accounts must pass ?unitId=)');
   }

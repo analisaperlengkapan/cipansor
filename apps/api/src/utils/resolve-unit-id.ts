@@ -45,3 +45,39 @@ export function resolveUnitId(req: Request): string | undefined {
 export function isSuperAdminUser(req: Request): boolean {
   return req.user?.roleCode === RoleCode.SUPER_ADMIN;
 }
+
+/**
+ * Roles whose remit is the whole foundation rather than one unit.
+ *
+ * The yayasan board oversees every unit and holds the `*_VIEW` permissions to
+ * match (see YAYASAN_OVERSIGHT in modules/roles/permissions.ts), but its users
+ * have no `unitId` — there is no single unit they belong to. Services that
+ * scoped with `where.unitId = currentUser.unitId || 'none'` therefore returned
+ * nothing at all for them: the Ketua Yayasan opened /units and was told
+ * "Belum ada unit" while five units existed.
+ *
+ * The reason it looked correct in review is that `deriveLegacyRole()` maps
+ * every YAYASAN_* code onto the legacy 'UNIT_ADMIN' string, so a check written
+ * as `role !== SUPER_ADMIN` silently classified the board as unit admins. Any
+ * scoping decision must be made on `roleCode`, never on the legacy `role`.
+ */
+export const FOUNDATION_SCOPE_ROLES: readonly string[] = [
+  RoleCode.SUPER_ADMIN,
+  RoleCode.YAYASAN_PEMBINA,
+  RoleCode.YAYASAN_KETUA,
+  RoleCode.YAYASAN_SEKRETARIS,
+  RoleCode.YAYASAN_BENDAHARA,
+  RoleCode.YAYASAN_ANGGOTA,
+  RoleCode.YAYASAN_PENGAWAS,
+];
+
+/**
+ * True when the role sees across all units rather than being pinned to one.
+ *
+ * This grants *breadth*, not power: what a foundation role may do with what it
+ * can see is still decided by its permission list. Use it only to widen a
+ * `where` clause, never to skip an authorize() check.
+ */
+export function isFoundationScopedRole(roleCode?: string | null): boolean {
+  return !!roleCode && FOUNDATION_SCOPE_ROLES.includes(roleCode);
+}

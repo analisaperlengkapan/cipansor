@@ -15,11 +15,36 @@ import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, CheckCircle2, FileCheck } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useUnits } from "@/hooks/use-units";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function QualityDashboardPage() {
   const { user } = useAuth();
   const { data: activeAcademicYear } = useActiveAcademicYear();
-  const unitId = user?.unitId;
+
+  // SPMI is measured per unit, but the yayasan board oversees every unit and
+  // belongs to none — user.unitId is null for them. This page used to read
+  // that null as "not entitled" and show "Akses Dibatasi", locking the very
+  // roles whose job is to review mutu across units out of the mutu dashboard.
+  // Foundation users pick a unit instead; unit users stay pinned to theirs.
+  const { data: units } = useUnits();
+  const isFoundationUser = !user?.unitId;
+  const [selectedUnitId, setSelectedUnitId] = useState<string>("");
+
+  useEffect(() => {
+    if (isFoundationUser && !selectedUnitId && units?.length) {
+      setSelectedUnitId(units[0].id);
+    }
+  }, [isFoundationUser, selectedUnitId, units]);
+
+  const unitId = user?.unitId ?? selectedUnitId;
 
   const { data: dashboardData, isLoading } = useQualityDashboard(
     unitId || "",
@@ -29,13 +54,14 @@ export default function QualityDashboardPage() {
   // We also need the raw standards to map dashboard data (which has Enum types) to actual IDs for linking
   const { data: allStandards } = useQualityStandards();
 
-  if (!unitId) {
+  if (isFoundationUser && !unitId) {
     return (
       <MainLayout>
         <div className="p-8 text-center">
-          <h2 className="text-2xl font-bold">Akses Dibatasi</h2>
+          <h2 className="text-2xl font-bold">Belum ada unit</h2>
           <p className="text-muted-foreground">
-            Anda harus terhubung dengan unit untuk melihat dashboard ini.
+            Tambahkan unit pendidikan terlebih dahulu untuk memantau capaian
+            mutu.
           </p>
         </div>
       </MainLayout>
@@ -58,13 +84,30 @@ export default function QualityDashboardPage() {
   return (
     <MainLayout>
       <div className="space-y-6 p-6">
-        <div className="flex flex-col gap-2">
-          <h1 className="text-3xl font-bold tracking-tight">
-            Penjaminan Mutu (SPMI)
-          </h1>
-          <p className="text-muted-foreground">
-            Dashboard pemenuhan 8 Standar Nasional Pendidikan.
-          </p>
+        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div className="flex flex-col gap-2">
+            <h1 className="text-3xl font-bold tracking-tight">
+              Penjaminan Mutu (SPMI)
+            </h1>
+            <p className="text-muted-foreground">
+              Dashboard pemenuhan 8 Standar Nasional Pendidikan.
+            </p>
+          </div>
+
+          {isFoundationUser && (
+            <Select value={selectedUnitId} onValueChange={setSelectedUnitId}>
+              <SelectTrigger className="w-full md:w-64" aria-label="Pilih unit">
+                <SelectValue placeholder="Pilih unit" />
+              </SelectTrigger>
+              <SelectContent>
+                {units?.map((unit) => (
+                  <SelectItem key={unit.id} value={unit.id}>
+                    {unit.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

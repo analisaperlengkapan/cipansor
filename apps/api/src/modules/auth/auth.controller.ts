@@ -53,8 +53,19 @@ export const refreshToken = asyncHandler(async (req: Request, res: Response) => 
  */
 export const logout = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user!.sub;
-  const { refreshToken } = req.body;
+  // `?? {}` is load-bearing. The web client calls POST /auth/logout with no
+  // body, and Express 5 leaves req.body undefined for a bodyless request
+  // instead of defaulting it to {} the way Express 4 did. Destructuring it
+  // threw a TypeError, so every single logout answered 500 — and, far worse,
+  // threw *before* authService.logout() ran, which meant no refresh token was
+  // ever revoked. Sessions stayed resumable for the full 30-day refresh
+  // lifetime after the user had logged out. The store swallows the error
+  // client-side, so the only visible symptom was an "Internal server error"
+  // toast on the login page.
+  const { refreshToken } = req.body ?? {};
 
+  // Undefined here is meaningful, not a fallback: authService.logout() revokes
+  // every refresh token for the user when no specific token is named.
   await authService.logout(userId, refreshToken);
 
   res.json({

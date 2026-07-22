@@ -13,6 +13,7 @@ import { gotoAuthedPage } from "./helpers/page-helpers";
  * raced rehydration and lost on WebKit. Wait for the page's own <h1> first.
  */
 const HEADING = "Muhadatsah";
+const NEW_HEADING = "Jadwalkan Muhadatsah";
 
 test.describe("Muhadatsah - Navigation", () => {
   test("should navigate to muhadatsah page", async ({ page }) => {

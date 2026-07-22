@@ -1,0 +1,17 @@
+{
+  // The main tsconfig excludes e2e/**, so nothing ever typechecked the
+  // Playwright specs. An undefined identifier in a spec only surfaced as a
+  // runtime failure seven minutes into a CI Playwright run — that is how a
+  // `NEW_HEADING` that was used but never declared reached CI.
+  //
+  // Files the specs import (src/config, src/lib) are still checked transitively
+  // by the compiler; they are kept out of `include` so this config does not
+  // also drag in the vitest suites, whose jest-dom matchers need their own
+  // type setup.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "include": ["e2e/**/*.ts", "playwright.config.ts"],
+  "exclude": ["node_modules"]
+}

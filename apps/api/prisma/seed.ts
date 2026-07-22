@@ -51,6 +51,9 @@ import {
   LetterUrgency,
   LetterNature,
   LetterStatus,
+  EducationLevel,
+  OccupationType,
+  IncomeRange,
   PublicDonationType,
   DonationPaymentMethod,
   DonationStatus,
@@ -1312,6 +1315,102 @@ async function main() {
     },
   ];
 
+  /**
+   * Family circumstances, one per studentConfigs entry.
+   *
+   * Every santri had zero socio-economic data, so the scholarship scoring ran
+   * on nothing and every applicant tied at 0 on the "penghasilan" criterion.
+   * These are ordinary Kabupaten Tasikmalaya households — a smallholder
+   * farmer, a market trader, a civil servant, a labourer — so a demo ranking
+   * has something real to sort.
+   *
+   * The third entry is deliberately a yatim living with an uncle: that is the
+   * case the old fatherIncome-only scoring ranked *last* despite being the
+   * neediest, and it is worth having in the demo data as a standing check.
+   */
+  const familyProfiles = [
+    {
+      // Petani penggarap, ibu di rumah. Anak sulung dari empat bersaudara.
+      numberOfSiblings: 3,
+      childOrder: 1,
+      livingWith: 'Orang tua',
+      fatherName: 'Dedi Supriadi',
+      fatherEducation: EducationLevel.SMA,
+      fatherOccupation: OccupationType.PETANI,
+      fatherIncome: IncomeRange.RANGE_1JT_2JT,
+      motherName: 'Euis Kurniasih',
+      motherEducation: EducationLevel.SMP,
+      motherOccupation: OccupationType.IBU_RUMAH_TANGGA,
+      motherIncome: IncomeRange.TIDAK_BERPENGHASILAN,
+      isPkh: true,
+      kipNumber: '3206071204120001',
+    },
+    {
+      // Buruh harian + warung kecil. Dua penghasilan kecil.
+      numberOfSiblings: 2,
+      childOrder: 2,
+      livingWith: 'Orang tua',
+      fatherName: 'Asep Saepudin',
+      fatherEducation: EducationLevel.SMP,
+      fatherOccupation: OccupationType.BURUH,
+      fatherIncome: IncomeRange.RANGE_1JT_2JT,
+      motherName: 'Neneng Hasanah',
+      motherEducation: EducationLevel.SMP,
+      motherOccupation: OccupationType.PEDAGANG,
+      motherIncome: IncomeRange.KURANG_500K,
+      isKks: true,
+    },
+    {
+      // Yatim. Ayah wafat, ibu berdagang di pasar, tinggal bersama paman.
+      numberOfSiblings: 1,
+      childOrder: 1,
+      livingWith: 'Wali (paman)',
+      fatherName: 'Alm. Ujang Solihin',
+      fatherEducation: EducationLevel.SMA,
+      fatherOccupation: OccupationType.SUDAH_MENINGGAL,
+      fatherIncome: null,
+      motherName: 'Imas Maesaroh',
+      motherEducation: EducationLevel.SD,
+      motherOccupation: OccupationType.PEDAGANG,
+      motherIncome: IncomeRange.KURANG_500K,
+      guardianName: 'Rahmat Hidayat',
+      guardianRelation: 'Paman',
+      guardianEducation: EducationLevel.SMA,
+      guardianOccupation: OccupationType.WIRASWASTA,
+      guardianIncome: IncomeRange.RANGE_2JT_5JT,
+      isPkh: true,
+    },
+    {
+      // Guru PNS dan perawat. Keluarga mampu — pembanding di peringkat.
+      numberOfSiblings: 1,
+      childOrder: 2,
+      livingWith: 'Orang tua',
+      fatherName: 'Wawan Setiawan',
+      fatherEducation: EducationLevel.S1,
+      fatherOccupation: OccupationType.PNS,
+      fatherIncome: IncomeRange.RANGE_5JT_10JT,
+      motherName: 'Lilis Nurhayati',
+      motherEducation: EducationLevel.D3,
+      motherOccupation: OccupationType.PEGAWAI_SWASTA,
+      motherIncome: IncomeRange.RANGE_2JT_5JT,
+    },
+    {
+      // Pedagang kelontong, ibu menjahit di rumah.
+      numberOfSiblings: 4,
+      childOrder: 3,
+      livingWith: 'Orang tua',
+      fatherName: 'Endang Sutisna',
+      fatherEducation: EducationLevel.SMA,
+      fatherOccupation: OccupationType.PEDAGANG,
+      fatherIncome: IncomeRange.RANGE_2JT_5JT,
+      motherName: 'Yuyun Yuningsih',
+      motherEducation: EducationLevel.SMA,
+      motherOccupation: OccupationType.WIRASWASTA,
+      motherIncome: IncomeRange.KURANG_500K,
+      isPkh: true,
+    },
+  ];
+
   for (let i = 0; i < studentConfigs.length; i++) {
     const studentData = studentConfigs[i];
     const user = await prisma.user.create({
@@ -1348,8 +1447,10 @@ async function main() {
           `2012-${String((i % 12) + 1).padStart(2, '0')}-${String((i % 28) + 1).padStart(2, '0')}`
         ),
         address: `Jl. Santri No. ${i + 1}, Sukabumi`,
-        parentName: `Bapak ${studentData.name.split(' ')[0]}`,
+        parentName: familyProfiles[i].fatherName,
         parentPhone: `0812345678${String(i).padStart(2, '0')}`,
+        fatherPhone: `0812345678${String(i).padStart(2, '0')}`,
+        ...familyProfiles[i],
       },
     });
 
@@ -1568,8 +1669,12 @@ async function main() {
           birthPlace: 'Tasikmalaya',
           birthDate: new Date('2012-05-17'),
           address: 'Kp. Cipansor, Kec. Kadipaten, Kab. Tasikmalaya',
-          parentName: 'Orang Tua Demo',
           parentPhone: '081234567890',
+          // Cycle the same family profiles so every demo santri has economic
+          // circumstances too. Without this, ten of the fourteen santri had no
+          // household data and the scholarship ranking could not separate them.
+          ...familyProfiles[demoStudents % familyProfiles.length],
+          parentName: familyProfiles[demoStudents % familyProfiles.length].fatherName,
         },
       });
       await prisma.classEnrollment.create({
@@ -1675,6 +1780,7 @@ async function main() {
       nis: '2024SDB1',
       gender: Gender.MALE,
       birthDate: '2017-04-18',
+      roleCode: RoleCode.SDIT_SISWA,
     },
     {
       name: 'Hafshah Bahtiar',
@@ -1684,6 +1790,7 @@ async function main() {
       nis: '2024SMB1',
       gender: Gender.FEMALE,
       birthDate: '2012-09-05',
+      roleCode: RoleCode.SMPIT_SISWA,
     },
   ]) {
     const siblingUser = await prisma.user.create({
@@ -1693,6 +1800,19 @@ async function main() {
         passwordHash: await bcrypt.hash('Student123!', 10),
         role: UserRole.STUDENT,
         unitId: sibling.unit.id,
+        isActive: true,
+      },
+    });
+    // Without this the account has users.role = STUDENT but no assignment, so
+    // it could only log in through the legacy User.role fallback. Once that
+    // fallback is removed these two siblings are locked out entirely — an
+    // account that exists, has a password, and cannot sign in.
+    await prisma.userRoleAssignment.create({
+      data: {
+        userId: siblingUser.id,
+        roleId: roles[sibling.roleCode].id,
+        unitId: sibling.unit.id,
+        isPrimary: true,
         isActive: true,
       },
     });
@@ -7866,6 +7986,23 @@ async function main() {
       data: { isTwoFactorEnabled: true, twoFactorSecret: fixedSecret, twoFactorSecretPending: null },
     });
     console.log(`🔐 [E2E] Pre-enabled 2FA on ${updated.count} admin account(s) with a fixed secret`);
+  }
+
+  // Invariant check. An active account with no active UserRoleAssignment can
+  // only sign in through the legacy User.role fallback, and that fallback is
+  // being removed — such an account has a password and cannot use it. Two
+  // siblings shipped in exactly that state because their seed block created
+  // the user and the student row but not the assignment, and nothing looked.
+  const orphanAccounts = await prisma.user.findMany({
+    where: { isActive: true, userRoles: { none: { isActive: true } } },
+    select: { email: true },
+  });
+
+  if (orphanAccounts.length > 0) {
+    throw new Error(
+      `Seed produced ${orphanAccounts.length} active account(s) with no active role ` +
+        `assignment, which cannot log in: ${orphanAccounts.map((u) => u.email).join(', ')}`
+    );
   }
 
   console.log('\n✅ Database seeded successfully!');

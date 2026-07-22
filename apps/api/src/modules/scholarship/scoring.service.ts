@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { ScholarshipCriterion } from '@prisma/client';
+import { householdIncome, needScore } from '@/utils/household-income';
 
 export class ScholarshipScoringService {
   /**
@@ -98,20 +99,16 @@ export class ScholarshipScoringService {
       const target = criterion.targetValue ? parseFloat(criterion.targetValue) : 100;
       score = Math.min(100, (Number(value) / target) * 100);
     } else if (criterion.name.toLowerCase().includes('penghasilan')) {
-      // Economy status: lower household income scores higher for
-      // need-based scholarships. Keys are the IncomeRange enum values.
-      value = student.fatherIncome || 'UNKNOWN';
-      const incomeScores: Record<string, number> = {
-        TIDAK_BERPENGHASILAN: 100,
-        KURANG_500K: 100,
-        RANGE_500K_1JT: 90,
-        RANGE_1JT_2JT: 80,
-        RANGE_2JT_5JT: 60,
-        RANGE_5JT_10JT: 40,
-        RANGE_10JT_20JT: 20,
-        LEBIH_20JT: 10,
-      };
-      score = incomeScores[value as string] ?? 0;
+      // Economy status: the poorer the household, the higher the score.
+      //
+      // This read `student.fatherIncome` alone, which inverted the result for
+      // the families the criterion exists to find: a santri whose father has
+      // died has no fatherIncome, so they scored 0 — the lowest possible —
+      // while a comfortable single-earner family scored higher. It also
+      // ignored working mothers entirely. See utils/household-income.
+      const income = householdIncome(student);
+      value = income.known ? income.bracket : 'UNKNOWN';
+      score = needScore(income);
     } else {
       // Default to manual/placeholder
       value = 'MANUAL_REQUIRED';

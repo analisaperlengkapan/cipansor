@@ -58,6 +58,7 @@ import { ArrowLeft, Plus, Trash2, Star, Building2, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { RoleAssignment, Role } from "@/lib/api";
+import { yayasanOrganConflict } from "@/lib/yayasan-organ";
 
 export default function UserRolesPage() {
   const params = useParams();
@@ -101,9 +102,25 @@ export default function UserRolesPage() {
     return allRoles?.find((r) => r.id === selectedRoleId);
   }, [allRoles, selectedRoleId]);
 
+  // Shown before submitting so the clash is visible in the form rather than
+  // arriving as a toast from the server. The server and a DB trigger enforce
+  // it regardless — see lib/yayasan-organ.ts.
+  const organConflict = useMemo(() => {
+    if (!selectedRole || !userRoles) return null;
+    return yayasanOrganConflict(
+      selectedRole.code,
+      userRoles.map((ur) => ur.role?.code).filter((c): c is string => !!c),
+    );
+  }, [selectedRole, userRoles]);
+
   const handleAssignRole = async () => {
     if (!selectedRoleId) {
       toast.error("Please select a role");
+      return;
+    }
+
+    if (organConflict) {
+      toast.error(organConflict);
       return;
     }
 
@@ -265,6 +282,14 @@ export default function UserRolesPage() {
                       </p>
                     </div>
                   )}
+                {organConflict && (
+                  <p
+                    role="alert"
+                    className="rounded-md bg-destructive/10 p-3 text-sm text-destructive"
+                  >
+                    {organConflict}
+                  </p>
+                )}
               </div>
               <DialogFooter>
                 <Button
@@ -275,7 +300,11 @@ export default function UserRolesPage() {
                 </Button>
                 <Button
                   onClick={handleAssignRole}
-                  disabled={!selectedRoleId || assignRoleMutation.isPending}
+                  disabled={
+                    !selectedRoleId ||
+                    !!organConflict ||
+                    assignRoleMutation.isPending
+                  }
                 >
                   {assignRoleMutation.isPending
                     ? "Assigning..."

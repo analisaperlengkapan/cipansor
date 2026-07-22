@@ -7,10 +7,18 @@ import { expect } from "@playwright/test";
  */
 
 /**
- * Wait for loading spinner to disappear
+ * Wait for loading spinner to disappear.
+ *
+ * Deliberately does NOT match [role="progressbar"]. A progress bar is content
+ * here, not a loading state: the tahfidz dashboard renders one per santri to
+ * show hafalan progress, and Radix marks a bar whose value is not yet known as
+ * `data-state="indeterminate"` — which never resolves and is not supposed to.
+ * Matching it made this helper wait out its full timeout on any page that
+ * happened to have data, so the tahfidz tests only passed while the seed left
+ * those tables empty.
  */
 export async function waitForLoadingComplete(page: Page, timeout = 15000) {
-  const spinner = page.locator('.animate-spin, [role="progressbar"], .loading');
+  const spinner = page.locator('.animate-spin, [aria-busy="true"], .loading');
   await expect(spinner).not.toBeVisible({ timeout });
 }
 

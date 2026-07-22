@@ -10,9 +10,17 @@ import {
 import { useI18n } from "@/providers/i18n-provider";
 import { LOCALES, LOCALE_LABELS } from "@/locales";
 import { Check, Languages } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-/** Header dropdown for switching the UI language (id / en / ar + RTL). */
-export function LanguageSwitcher() {
+/**
+ * Header dropdown for switching the UI language (id / en / ar + RTL).
+ *
+ * `compact` shrinks the trigger from 40px to 32px for the public landing
+ * header, whose row has only ~36px of slack between 1024px and 1279px — see
+ * the measurement note in components/landing/navbar.tsx. The hit area stays
+ * above the 24px minimum target size, and the app header keeps the full size.
+ */
+export function LanguageSwitcher({ compact = false }: { compact?: boolean }) {
   const { locale, setLocale, t } = useI18n();
 
   return (
@@ -21,10 +29,11 @@ export function LanguageSwitcher() {
         <Button
           variant="ghost"
           size="icon"
+          className={cn(compact && "h-8 w-8")}
           aria-label={t("common.language")}
           title={t("common.language")}
         >
-          <Languages className="h-5 w-5" />
+          <Languages className={compact ? "h-4 w-4" : "h-5 w-5"} />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">

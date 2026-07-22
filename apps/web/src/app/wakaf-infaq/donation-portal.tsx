@@ -1,6 +1,8 @@
 "use client";
 import { donationConfig } from "@/config/site";
 import { LegalIdentity } from "@/components/landing/legal-identity";
+import { publicContentFor } from "@/config/content.i18n";
+import { useI18n } from "@/providers/i18n-provider";
 import { useState } from "react";
 import { safeFormat } from "@/lib/date";
 import { Button } from "@/components/ui/button";
@@ -89,6 +91,9 @@ const programIcons: Record<string, React.ComponentType<{ className?: string }>> 
   };
 
 export function DonationPortal() {
+  // Client component, so the locale comes from the hook rather than the cookie
+  // read — the same content module either way.
+  const { locale } = useI18n();
   const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(
     null,
   );
@@ -433,7 +438,10 @@ export function DonationPortal() {
         {/* A donor deciding whether to transfer money is exactly who needs the
             registration number and independent verification. */}
         <section className="mb-12">
-          <LegalIdentity variant="donation" />
+          <LegalIdentity
+            variant="donation"
+            copy={publicContentFor(locale).legalIdentity}
+          />
         </section>
 
         {/*

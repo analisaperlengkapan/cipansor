@@ -19,6 +19,31 @@ export const en = {
     system: "System",
     backToLogin: "Back to Login",
   },
+  // Nav labels are kept to one or two words on purpose. The first version
+  // glossed them here — "Wakaf & Infaq (Giving)", "SPMB Admissions" — and the
+  // header then needed 1027px inside a 960px row, which squeezed the brand
+  // until its text clipped. The gloss belongs on the page it introduces, where
+  // there is room for a sentence; the menu only has to be recognisable.
+  public: {
+    nav: {
+      home: "Home",
+      profile: "About",
+      programs: "Programs",
+      units: "Units",
+      news: "News",
+      // Wakaf (endowment) and infaq (voluntary giving) are distinct
+      // instruments with no single English equivalent; the donation page
+      // explains both.
+      donate: "Wakaf & Infaq",
+      loginPortal: "Login",
+      // SPMB is the admission process by the name every family, notice board
+      // and letter uses. Translating it would leave a visitor unable to match
+      // this button to the form they were told to look for.
+      register: "SPMB",
+      toggleMenu: "Open menu",
+    },
+    breadcrumbLabel: "Breadcrumb",
+  },
   login: {
     welcome: "Welcome to Cipansor",
     description: "Cipansor Information System",

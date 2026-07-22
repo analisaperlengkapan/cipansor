@@ -109,6 +109,19 @@ export const updateRegistrantStatusSchema = z.object({
   notes: z.string().optional(),
 });
 
+/**
+ * Record that a registrant settled their daftar ulang fee.
+ *
+ * `paidAt` defaults to now rather than being required, because the common case
+ * is a clerk confirming a payment in front of them. It stays settable so a
+ * transfer that cleared yesterday can be recorded with the date it cleared.
+ */
+export const recordRegistrationFeeSchema = z.object({
+  paidAt: z.coerce.date().optional(),
+  amount: z.number().min(0).optional(),
+  note: z.string().max(1000).optional(),
+});
+
 export const queryRegistrantSchema = z.object({
   page: z.coerce.number().min(1).default(1),
   limit: z.coerce.number().min(1).max(100).default(20),
@@ -145,4 +158,5 @@ export type CreateRegistrantInput = z.infer<typeof createRegistrantSchema>;
 export type UpdateRegistrantInput = z.infer<typeof updateRegistrantSchema>;
 export type UpdateRegistrantScoreInput = z.infer<typeof updateRegistrantScoreSchema>;
 export type UpdateRegistrantStatusInput = z.infer<typeof updateRegistrantStatusSchema>;
+export type RecordRegistrationFeeInput = z.infer<typeof recordRegistrationFeeSchema>;
 export type CreateRegistrantDocumentInput = z.infer<typeof createRegistrantDocumentSchema>;

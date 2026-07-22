@@ -189,6 +189,36 @@ export function useOnboardRegistrant() {
   });
 }
 
+/**
+ * Record daftar ulang payment. Enrolment is gated on this, so it has to
+ * invalidate the registrant detail — the onboarding button reads the same
+ * field and would otherwise stay disabled after a successful payment.
+ */
+export function useRecordRegistrationFee() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      note,
+      amount,
+    }: {
+      id: string;
+      note?: string;
+      amount?: number;
+    }) => {
+      const response = await api.patch(
+        `/admissions/registrants/${id}/registration-fee`,
+        { note, amount },
+      );
+      return response.data.data;
+    },
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: ["admission-registrant", id] });
+      queryClient.invalidateQueries({ queryKey: ["admission-registrants"] });
+    },
+  });
+}
+
 export function useUpdateRegistrantStatus() {
   const queryClient = useQueryClient();
   return useMutation({

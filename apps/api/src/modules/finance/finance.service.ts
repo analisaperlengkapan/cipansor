@@ -983,6 +983,85 @@ export async function getUnitFinanceStats(unitId: string, month?: string) {
   };
 }
 
+/**
+ * Yayasan-wide financial summary for the finance and foundation dashboards.
+ *
+ * The web app has called GET /api/finance/summary since those pages were
+ * written, but the route never existed — every card rendered zero. Shape
+ * matches the `FinancialSummary` interface in apps/web/src/hooks/use-finance.ts.
+ *
+ * NOTE ON `academicYearId`: the caller passes one, but Invoice has no academic
+ * year column — it hangs off the student and the payment type, neither of
+ * which is dated. Accepting and ignoring it keeps the existing callers working;
+ * making it a real filter needs a schema change, so it is deliberately not
+ * pretended here.
+ */
+export async function getFinancialSummary() {
+  const now = new Date();
+
+  const [invoices, recentPayments] = await Promise.all([
+    prisma.invoice.findMany({
+      select: {
+        amount: true,
+        paidAmount: true,
+        status: true,
+        dueDate: true,
+        paymentType: { select: { name: true } },
+      },
+    }),
+    prisma.payment.findMany({
+      take: 10,
+      orderBy: { paidAt: 'desc' },
+      include: {
+        invoice: {
+          select: {
+            invoiceNumber: true,
+            student: { select: { id: true, nis: true, user: { select: { name: true } } } },
+          },
+        },
+      },
+    }),
+  ]);
+
+  const zero = new Prisma.Decimal(0);
+  let totalBilled = zero;
+  let totalPaid = zero;
+  let totalOverdue = zero;
+
+  const byType = new Map<string, { total: Prisma.Decimal; paid: Prisma.Decimal }>();
+
+  for (const inv of invoices) {
+    totalBilled = totalBilled.add(inv.amount);
+    totalPaid = totalPaid.add(inv.paidAmount);
+
+    const unpaid = inv.amount.sub(inv.paidAmount);
+    const isSettled = inv.status === PaymentStatus.PAID;
+    if (!isSettled && inv.dueDate < now && unpaid.gt(0)) {
+      totalOverdue = totalOverdue.add(unpaid);
+    }
+
+    const name = inv.paymentType?.name ?? 'Lainnya';
+    const bucket = byType.get(name) ?? { total: zero, paid: zero };
+    byType.set(name, { total: bucket.total.add(inv.amount), paid: bucket.paid.add(inv.paidAmount) });
+  }
+
+  return {
+    totalBilled: totalBilled.toNumber(),
+    totalPaid: totalPaid.toNumber(),
+    totalOutstanding: totalBilled.sub(totalPaid).toNumber(),
+    totalOverdue: totalOverdue.toNumber(),
+    billsByType: Array.from(byType.entries())
+      .map(([type, v]) => ({
+        type,
+        total: v.total.toNumber(),
+        paid: v.paid.toNumber(),
+        outstanding: v.total.sub(v.paid).toNumber(),
+      }))
+      .sort((a, b) => b.total - a.total),
+    recentPayments,
+  };
+}
+
 export async function getStudentOutstandingBalances(unitId: string) {
   const invoices = await prisma.invoice.findMany({
     where: {

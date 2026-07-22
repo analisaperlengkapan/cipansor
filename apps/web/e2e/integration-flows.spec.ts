@@ -18,7 +18,7 @@ test.describe("Integration: Student → Attendance → Report Flow", () => {
     const login = new LoginPage(page);
     await login.goto();
     await login.loginAndWaitForDashboard(
-      "superadmin@cipansor.id",
+      "superadmin@cipansor.or.id",
       "SuperAdmin123!",
     );
 
@@ -186,7 +186,7 @@ test.describe("Integration: Dashboard → Module Navigation", () => {
     const login = new LoginPage(page);
     await login.goto();
     await login.loginAndWaitForDashboard(
-      "superadmin@cipansor.id",
+      "superadmin@cipansor.or.id",
       "SuperAdmin123!",
     );
 
@@ -239,7 +239,7 @@ test.describe("Integration: Student → Tahfidz Progress", () => {
     const login = new LoginPage(page);
     await login.goto();
     await login.loginAndWaitForDashboard(
-      "superadmin@cipansor.id",
+      "superadmin@cipansor.or.id",
       "SuperAdmin123!",
     );
 
@@ -285,7 +285,7 @@ test.describe("Integration: PAUD Assessment → Report Generation", () => {
     const login = new LoginPage(page);
     await login.goto();
     await login.loginAndWaitForDashboard(
-      "superadmin@cipansor.id",
+      "superadmin@cipansor.or.id",
       "SuperAdmin123!",
     );
 
@@ -398,7 +398,7 @@ test.describe("Integration: Finance → Dashboard Sync", () => {
     const login = new LoginPage(page);
     await login.goto();
     await login.loginAndWaitForDashboard(
-      "superadmin@cipansor.id",
+      "superadmin@cipansor.or.id",
       "SuperAdmin123!",
     );
 
@@ -435,7 +435,7 @@ test.describe("Integration: Multi-user Collaboration", () => {
     const login = new LoginPage(page);
     await login.goto();
     await login.loginAndWaitForDashboard(
-      "superadmin@cipansor.id",
+      "superadmin@cipansor.or.id",
       "SuperAdmin123!",
     );
 
@@ -444,7 +444,7 @@ test.describe("Integration: Multi-user Collaboration", () => {
     const login2 = new LoginPage(page2);
     await login2.goto();
     await login2.loginAndWaitForDashboard(
-      "superadmin@cipansor.id",
+      "superadmin@cipansor.or.id",
       "SuperAdmin123!",
     );
 

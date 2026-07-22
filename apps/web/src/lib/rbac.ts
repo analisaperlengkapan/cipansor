@@ -42,7 +42,6 @@ export const ROLE_CODE_TO_LEGACY: Record<string, LegacyRole> = {
   SUPER_ADMIN: "SUPER_ADMIN",
 
   // Yayasan governance + per-unit admins → UNIT_ADMIN
-  YAYASAN_ADMIN: "UNIT_ADMIN",
   YAYASAN_PEMBINA: "UNIT_ADMIN",
   YAYASAN_KETUA: "UNIT_ADMIN",
   YAYASAN_SEKRETARIS: "UNIT_ADMIN",
@@ -72,8 +71,6 @@ export const ROLE_CODE_TO_LEGACY: Record<string, LegacyRole> = {
   SDIT_WALI_KELAS: "TEACHER",
   SMPIT_WALI_KELAS: "TEACHER",
   SMAQ_WALI_KELAS: "TEACHER",
-  TKQ_GURU_BK: "TEACHER",
-  SDIT_GURU_BK: "TEACHER",
   SMPIT_GURU_BK: "TEACHER",
   SMAQ_GURU_BK: "TEACHER",
   PESANTREN_PENGASUH: "TEACHER",
@@ -112,7 +109,6 @@ export const ROLE_CODE_TO_LEGACY: Record<string, LegacyRole> = {
   BUSINESS_STAFF: "STAFF",
 
   // Students → STUDENT
-  TKQ_SISWA: "STUDENT",
   SDIT_SISWA: "STUDENT",
   SMPIT_SISWA: "STUDENT",
   SMAQ_SISWA: "STUDENT",
@@ -123,6 +119,12 @@ export const ROLE_CODE_TO_LEGACY: Record<string, LegacyRole> = {
   SDIT_ORANG_TUA: "PARENT",
   SMPIT_ORANG_TUA: "PARENT",
   SMAQ_ORANG_TUA: "PARENT",
+
+  // Komite and alumni are deliberately absent — this map mirrors the backend
+  // (apps/api middleware/auth.ts ROLE_CODE_TO_LEGACY_ROLE), which leaves them
+  // unmapped for RoleCode-native authorization. They still reach the app via
+  // the persisted `user.role` column, and their menus come from
+  // getNavigationForRoleCode(), which is RoleCode-based already.
 };
 
 /** Role → default dashboard landing route. */
@@ -135,50 +137,196 @@ export const roleDashboardMap: Record<LegacyRole, string> = {
   PARENT: "/parent",
 };
 
-/** Role → allowed route prefixes (`"*"` = all). */
+/**
+ * Role → allowed route prefixes (`"*"` = all).
+ *
+ * Kept in sync with `config/navigation.ts`: each bucket lists exactly what the
+ * navigations mapped to it expose, plus the routes every signed-in user needs.
+ * These two files are the same contract seen from opposite ends — if a sidebar
+ * shows a link, the middleware here must let it through, otherwise the user
+ * gets bounced to /unauthorized by a menu we drew ourselves. Add a nav item,
+ * add its prefix here.
+ *
+ * This is UX-level gating only. The real authorization boundary is the API,
+ * which checks permissions per RoleCode.
+ */
 export const roleRouteAccess: Record<LegacyRole, string[]> = {
   SUPER_ADMIN: ["*"],
   UNIT_ADMIN: [
-    "/dashboard",
-    "/students",
-    "/classes",
-    "/teachers",
-    "/staff",
-    "/finance",
-    "/tahfidz",
-    "/health",
-    "/permits",
-    "/violations",
-    "/rewards",
-    "/reports",
+    "/academic-years",
+    "/admissions",
+    "/alumni",
+    "/analytics",
     "/announcements",
-    "/settings",
+    "/assessment",
+    "/attendance",
+    "/calendar",
+    "/canteen",
+    "/cbt/banks",
+    "/classes",
+    "/counseling",
+    "/curriculum",
     "/daily-report",
-    // The talenta API (apps/api talenta.routes.ts) authorizes UNIT_ADMIN for
-    // their own unit's talent management — keep the web route reachable too.
+    "/dashboard",
+    "/donation",
+    "/dormitories",
+    "/duty-roster",
+    "/e-office",
+    "/emis",
+    "/extracurricular",
+    "/facilities",
+    "/finance",
+    "/foundation",
+    "/health",
+    "/hr",
+    "/ibadah",
+    "/inventory",
+    "/kitab-progress",
+    "/laundry",
+    "/library",
+    "/marketing",
+    "/meals",
+    "/muhadatsah",
+    "/muhadhoroh",
+    "/muhasabah",
+    "/notifications",
+    "/permits",
+    "/pkg",
+    "/portfolio",
+    "/practicum",
+    "/procurement",
+    "/profile",
+    "/wakaf-infaq",
+    "/quality",
+    "/reception",
+    "/reports",
+    "/research",
+    "/rewards",
+    "/risk-management",
+    "/settings",
+    "/student-org",
+    "/students",
+    "/tahfidz",
+    "/takhosus",
     "/talenta",
+    "/unauthorized",
+    "/units",
+    "/users",
+    "/violations",
+    "/wilayah",
   ],
   TEACHER: [
-    "/teacher",
-    "/tahfidz",
-    "/classes",
-    "/students",
-    "/attendance",
+    "/admissions",
+    "/alumni",
+    "/analytics",
     "/announcements",
+    "/assessment",
+    "/assignments",
+    "/attendance",
+    "/canteen",
+    "/certificates",
+    "/classes",
+    "/counseling",
+    "/curriculum",
     "/daily-report",
+    "/dashboard",
+    "/dormitories",
+    "/duty-roster",
+    "/extracurricular",
+    "/health",
+    "/homeroom",
+    "/hr",
+    "/ibadah",
+    "/kitab-progress",
+    "/laundry",
+    "/library",
+    "/litbang",
+    "/meals",
+    "/muhadatsah",
+    "/muhadhoroh",
+    "/muhasabah",
+    "/musyrif",
+    "/notifications",
+    "/permits",
+    "/pkg",
+    "/portfolio",
+    "/practicum",
+    "/profile",
+    "/quality",
+    "/rapor-pesantren",
+    "/reports",
+    "/research",
+    "/rewards",
+    "/schedule",
+    "/settings",
+    "/student-org",
+    "/students",
+    "/tahfidz",
+    "/takhosus",
+    "/teacher",
+    "/unauthorized",
+    "/users",
+    "/violations",
   ],
   STAFF: [
+    "/analytics",
+    "/announcements",
+    "/donation",
+    "/finance",
+    "/health",
+    "/lingkungan",
+    "/notifications",
+    "/permits",
+    "/profile",
+    "/quality",
+    "/reports",
+    "/rewards",
+    "/schedule",
+    "/settings",
     "/staff",
     "/students",
-    "/health",
-    "/permits",
+    "/unauthorized",
     "/violations",
-    "/rewards",
-    "/finance",
-    "/announcements",
   ],
-  STUDENT: ["/student", "/tahfidz", "/schedule", "/announcements"],
-  PARENT: ["/parent"],
+  STUDENT: [
+    "/alumni",
+    "/announcements",
+    "/assessment",
+    "/assignments",
+    "/attendance",
+    "/certificates",
+    "/classes",
+    "/counseling",
+    "/donation",
+    "/extracurricular",
+    "/ibadah",
+    "/kitab-progress",
+    "/library",
+    "/muhadatsah",
+    "/muhadhoroh",
+    "/muhasabah",
+    "/notifications",
+    "/portfolio",
+    "/practicum",
+    "/profile",
+    "/quality/complaints",
+    "/research",
+    "/schedule",
+    "/settings",
+    "/student",
+    "/student-org",
+    "/tahfidz",
+    "/unauthorized",
+    "/wallet",
+  ],
+  PARENT: [
+    "/notifications",
+    "/parent",
+    "/profile",
+    "/quality/complaints",
+    "/settings",
+    "/unauthorized",
+  ],
 };
 
 /** Type guard: is this string one of the six legacy buckets? */
@@ -243,10 +391,55 @@ export function canAccessRoute(
   const allowed = roleRouteAccess[role];
   if (!allowed || allowed.length === 0) return false;
   if (allowed.includes("*")) return true;
-  return allowed.some((route) => pathname.startsWith(route));
+  // Match on segment boundaries, not raw string prefixes: a plain startsWith
+  // would let "/student" also grant "/students" (the whole admin student
+  // roster) to every student.
+  return allowed.some(
+    (route) => pathname === route || pathname.startsWith(`${route}/`),
+  );
 }
 
+/**
+ * RoleCode-level landing overrides.
+ *
+ * The six legacy buckets are too coarse for a few RoleCodes: alumni collapse
+ * into STUDENT and komite into STAFF, which would drop them on a student or
+ * staff dashboard full of data that is not theirs. These land them on the page
+ * their own sidebar actually starts with.
+ */
+const roleCodeDashboardOverrides: Record<string, string> = {
+  SMPIT_ALUMNI: "/alumni",
+  SMAQ_ALUMNI: "/alumni",
+  PT_ALUMNI: "/alumni",
+  TKQ_KOMITE: "/reports",
+  SDIT_KOMITE: "/reports",
+  SMPIT_KOMITE: "/reports",
+  SMAQ_KOMITE: "/reports",
+  // Kepala sekolah sit in the TEACHER bucket but run a unit, so their sidebar
+  // opens on the management dashboard rather than the teaching one.
+  TKQ_KEPALA_SEKOLAH: "/dashboard",
+  SDIT_KEPALA_SEKOLAH: "/dashboard",
+  SMPIT_KEPALA_SEKOLAH: "/dashboard",
+  SMAQ_KEPALA_SEKOLAH: "/dashboard",
+};
+
 /** The dashboard a role should land on. */
-export function getDashboardForRole(role: LegacyRole | undefined): string {
+export function getDashboardForRole(
+  role: LegacyRole | undefined,
+  roleCode?: string | null,
+): string {
+  if (roleCode && roleCodeDashboardOverrides[roleCode]) {
+    return roleCodeDashboardOverrides[roleCode];
+  }
   return role ? roleDashboardMap[role] : "/dashboard";
+}
+
+/** The primary RoleCode for a user, if any. */
+export function getPrimaryRoleCode(
+  user: RbacUser | null | undefined,
+): string | undefined {
+  const assignments = user?.userRoles ?? [];
+  const primary =
+    assignments.find((a) => a?.isPrimary) ?? assignments[0] ?? undefined;
+  return primary?.role?.code ?? undefined;
 }

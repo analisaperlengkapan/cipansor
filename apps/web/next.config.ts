@@ -28,6 +28,38 @@ const nextConfig: NextConfig = {
     formats: ["image/avif", "image/webp"],
   },
 
+  /**
+   * Permanent redirects for renamed public paths.
+   *
+   * The site is live, indexed, and a Google Ad Grants account depends on
+   * landing pages that do not 404 — so a renamed public URL always keeps a 308
+   * shipped in the same deploy. Kemendikdasmen replaced PPDB with SPMB from the
+   * 2025/2026 intake, but printed materials and search results still carry the
+   * old path.
+   */
+  async redirects() {
+    return [
+      {
+        source: "/public/ppdb",
+        destination: "/public/spmb",
+        permanent: true,
+      },
+      {
+        source: "/public/ppdb/:path*",
+        destination: "/public/spmb/:path*",
+        permanent: true,
+      },
+      // "Wakaf & Infaq" is the term the pesantren uses, and the donation page
+      // now lives under that name instead of being a second, differently-named
+      // copy of the same thing.
+      {
+        source: "/public/donation",
+        destination: "/wakaf-infaq",
+        permanent: true,
+      },
+    ];
+  },
+
   // Security headers
   async headers() {
     return [

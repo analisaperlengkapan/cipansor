@@ -1,4 +1,5 @@
 "use client";
+import { MainLayout } from "@/components/layout";
 
 /**
  * Settings Page
@@ -81,7 +82,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { User, Lock } from "lucide-react";
 import { useI18n } from "@/providers/i18n-provider";
 
-export default function SettingsPage() {
+function SettingsPageContent() {
   const { locale, setLocale } = useI18n();
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
   const [isSaving, setIsSaving] = useState(false);
@@ -469,7 +470,7 @@ export default function SettingsPage() {
                 <div className="space-y-2">
                   <Label>Email</Label>
                   <div className="p-3 rounded-md bg-muted/50 border">
-                    admin@cipansor.id
+                    admin@cipansor.or.id
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -560,5 +561,13 @@ export default function SettingsPage() {
         </Button>
       </div>
     </div>
+  );
+}
+
+export default function SettingsPageWithShell() {
+  return (
+    <MainLayout>
+      <SettingsPageContent />
+    </MainLayout>
   );
 }

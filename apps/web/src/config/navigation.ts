@@ -54,6 +54,11 @@ import {
   Leaf,
   Globe,
   Mic,
+  Microscope,
+  FlaskConical,
+  Briefcase,
+  BookOpenCheck,
+  NotebookPen,
   type LucideIcon,
 } from "lucide-react";
 
@@ -75,7 +80,6 @@ export interface NavGroup {
 // Role codes by category for navigation permissions
 const ADMIN_ROLES = [
   "SUPER_ADMIN",
-  "YAYASAN_ADMIN",
   "YAYASAN_KETUA",
   "TKQ_ADMIN",
   "TKQ_KEPALA_SEKOLAH",
@@ -100,8 +104,6 @@ const TEACHER_ROLES = [
   "SDIT_WALI_KELAS",
   "SMPIT_WALI_KELAS",
   "SMAQ_WALI_KELAS",
-  "TKQ_GURU_BK",
-  "SDIT_GURU_BK",
   "SMPIT_GURU_BK",
   "SMAQ_GURU_BK",
 ];
@@ -117,6 +119,7 @@ const STAFF_ROLES = [
   "SMAQ_BENDAHARA",
   "PESANTREN_TATA_USAHA",
   "PT_TATA_USAHA",
+  "PT_STAF_AKADEMIK",
   "PUSTAKAWAN",
   "PERAWAT",
   "KEAMANAN",
@@ -125,7 +128,9 @@ const STAFF_ROLES = [
   "BUSINESS_STAFF",
 ];
 
-const STUDENT_ROLES = ["TKQ_SISWA", "SDIT_SISWA", "SMPIT_SISWA", "SMAQ_SISWA"];
+// PT_MAHASISWA is a student too, but gets its own nav (ptMahasiswaNavigation)
+// rather than the pesantren/school one, so it is deliberately not listed here.
+const STUDENT_ROLES = ["SDIT_SISWA", "SMPIT_SISWA", "SMAQ_SISWA"];
 
 const PARENT_ROLES = [
   "TKQ_ORANG_TUA",
@@ -135,7 +140,6 @@ const PARENT_ROLES = [
 ];
 
 const YAYASAN_ROLES = [
-  "YAYASAN_ADMIN",
   "YAYASAN_PEMBINA",
   "YAYASAN_KETUA",
   "YAYASAN_SEKRETARIS",
@@ -144,9 +148,10 @@ const YAYASAN_ROLES = [
   "YAYASAN_PENGAWAS",
 ];
 
-const PESANTREN_ROLES = [
-  "PESANTREN_PENGASUH",
-  "PESANTREN_DIREKTUR",
+// Pesantren leadership vs. field pengasuhan staff — they get different menus.
+const PESANTREN_PIMPINAN_ROLES = ["PESANTREN_PENGASUH", "PESANTREN_DIREKTUR"];
+
+const PESANTREN_PENGASUHAN_ROLES = [
   "USTADZ",
   "MUSYRIF",
   "MUSYRIFAH",
@@ -154,6 +159,34 @@ const PESANTREN_ROLES = [
   "MUHAFIDZAH",
   "MURABBI",
   "WALI_KAMAR",
+];
+
+const PESANTREN_ROLES = [
+  ...PESANTREN_PIMPINAN_ROLES,
+  ...PESANTREN_PENGASUHAN_ROLES,
+];
+
+// Perguruan Tinggi. PT_TATA_USAHA and PT_STAF_AKADEMIK are staff (see
+// STAFF_ROLES); PT_ALUMNI is covered by ALUMNI_ROLES.
+const PT_PIMPINAN_ROLES = [
+  "PT_REKTOR",
+  "PT_WAKIL_REKTOR",
+  "PT_DEKAN",
+  "PT_KAPRODI",
+];
+
+// School committee — external oversight stakeholders, one per unit.
+const KOMITE_ROLES = [
+  "TKQ_KOMITE",
+  "SDIT_KOMITE",
+  "SMPIT_KOMITE",
+  "SMAQ_KOMITE",
+];
+
+const ALUMNI_ROLES = [
+  "SMPIT_ALUMNI",
+  "SMAQ_ALUMNI",
+  "PT_ALUMNI",
 ];
 
 // Teacher-specific navigation
@@ -469,11 +502,6 @@ const parentNavigation: NavGroup[] = [
         icon: FileSpreadsheet,
       },
       {
-        title: "Portfolio Anak",
-        href: "/parent/portfolio",
-        icon: FolderOpen,
-      },
-      {
         title: "Kesehatan",
         href: "/parent/health",
         icon: Heart,
@@ -503,6 +531,16 @@ const parentNavigation: NavGroup[] = [
         href: "/parent/rewards",
         icon: Award,
       },
+      {
+        title: "Ibadah",
+        href: "/parent/ibadah",
+        icon: BookOpenCheck,
+      },
+      {
+        title: "Konseling",
+        href: "/parent/counseling",
+        icon: HeartHandshake,
+      },
     ],
   },
   {
@@ -512,6 +550,21 @@ const parentNavigation: NavGroup[] = [
         title: "Tagihan & Pembayaran",
         href: "/parent/finance",
         icon: Receipt,
+      },
+    ],
+  },
+  {
+    title: "Komunikasi",
+    items: [
+      {
+        title: "Buku Penghubung",
+        href: "/parent/buku-penghubung",
+        icon: NotebookPen,
+      },
+      {
+        title: "Pesan",
+        href: "/parent/messages",
+        icon: MessageSquare,
       },
     ],
   },
@@ -568,11 +621,6 @@ const yayasanNavigation: NavGroup[] = [
         icon: School,
       },
       {
-        title: "Board Members",
-        href: "/foundation/board",
-        icon: Users,
-      },
-      {
         title: "Penjaminan Mutu",
         href: "/quality",
         icon: Award,
@@ -619,7 +667,7 @@ const yayasanNavigation: NavGroup[] = [
       },
       {
         title: "Public Portal",
-        href: "/public/donation",
+        href: "/wakaf-infaq",
         icon: HeartHandshake,
       },
     ],
@@ -682,7 +730,6 @@ const adminNavigation: NavGroup[] = [
         icon: FileSpreadsheet,
         roleCodes: [
           "SUPER_ADMIN",
-          "YAYASAN_ADMIN",
           "TKQ_ADMIN",
           "SDIT_ADMIN",
           "SMPIT_ADMIN",
@@ -1087,7 +1134,7 @@ const adminNavigation: NavGroup[] = [
         title: "Wilayah",
         href: "/wilayah",
         icon: Building2,
-        roleCodes: ["SUPER_ADMIN", "YAYASAN_ADMIN"],
+        roleCodes: ["SUPER_ADMIN"],
       },
       {
         title: "Kurikulum Merdeka",
@@ -1187,7 +1234,7 @@ const kepalaSekolahNavigation: NavGroup[] = [
       },
       {
         title: "Teachers",
-        href: "/hr/teachers",
+        href: "/hr/employees",
         icon: Users,
       },
       {
@@ -1299,6 +1346,391 @@ const kepalaSekolahNavigation: NavGroup[] = [
   },
 ];
 
+// Pesantren leadership (Pengasuh, Direktur) — oversight across pengasuhan,
+// tahfidz/diniyah, boarding services and reporting.
+const pesantrenPimpinanNavigation: NavGroup[] = [
+  {
+    title: "Overview",
+    items: [
+      { title: "Dashboard", href: "/teacher", icon: LayoutDashboard },
+      { title: "Analitik", href: "/analytics", icon: BarChart3 },
+    ],
+  },
+  {
+    title: "Santri & Pengasuhan",
+    items: [
+      { title: "Data Santri", href: "/students", icon: GraduationCap },
+      { title: "Musyrif & Halaqoh", href: "/musyrif", icon: UserCog },
+      { title: "Asrama", href: "/dormitories", icon: Home },
+      { title: "Perizinan", href: "/permits", icon: ScrollText },
+      { title: "Pelanggaran", href: "/violations", icon: AlertTriangle },
+      { title: "Prestasi & Reward", href: "/rewards", icon: Trophy },
+    ],
+  },
+  {
+    title: "Tahfidz & Diniyah",
+    items: [
+      { title: "Tahfidz", href: "/tahfidz", icon: BookMarked },
+      { title: "Takhosus", href: "/takhosus", icon: BookCheck },
+      { title: "Kitab Kuning", href: "/kitab-progress", icon: BookOpen },
+      { title: "Jurnal Ibadah", href: "/ibadah", icon: Sparkles },
+      { title: "Muhadhoroh", href: "/muhadhoroh", icon: Mic },
+      { title: "Muhadatsah", href: "/muhadatsah", icon: Languages },
+    ],
+  },
+  {
+    title: "Kesantrian",
+    items: [
+      { title: "Muhasabah", href: "/muhasabah", icon: ClipboardPenLine },
+      { title: "Konseling", href: "/counseling", icon: HeartHandshake },
+      { title: "Kesehatan", href: "/health", icon: Heart },
+      { title: "Piket & Jaga", href: "/duty-roster", icon: Clock },
+    ],
+  },
+  {
+    title: "Layanan Asrama",
+    items: [
+      { title: "Dapur & Konsumsi", href: "/meals", icon: UtensilsCrossed },
+      { title: "Laundry", href: "/laundry", icon: WashingMachine },
+      { title: "Kantin", href: "/canteen", icon: ShoppingCart },
+    ],
+  },
+  {
+    title: "Laporan",
+    items: [
+      {
+        title: "Rapor Pesantren",
+        href: "/rapor-pesantren",
+        icon: FileSpreadsheet,
+      },
+      { title: "Laporan", href: "/reports", icon: FileBarChart },
+    ],
+  },
+  {
+    title: "Informasi",
+    items: [
+      { title: "Pengumuman", href: "/announcements", icon: Bell },
+      {
+        title: "Aduan & Aspirasi",
+        href: "/quality/complaints",
+        icon: MessageSquareWarning,
+      },
+    ],
+  },
+];
+
+// Pesantren field staff (Ustadz, Musyrif/ah, Muhafidz/ah, Murabbi, Wali Kamar)
+// — day-to-day pengasuhan of the santri they are responsible for.
+const pesantrenPengasuhanNavigation: NavGroup[] = [
+  {
+    title: "Overview",
+    items: [{ title: "Dashboard", href: "/teacher", icon: LayoutDashboard }],
+  },
+  {
+    title: "Halaqoh & Tahfidz",
+    items: [
+      { title: "Tahfidz", href: "/tahfidz", icon: BookMarked },
+      { title: "Takhosus", href: "/takhosus", icon: BookCheck },
+      { title: "Kitab Kuning", href: "/kitab-progress", icon: BookOpen },
+    ],
+  },
+  {
+    title: "Pengasuhan",
+    items: [
+      { title: "Santri Binaan", href: "/students", icon: GraduationCap },
+      { title: "Asrama", href: "/dormitories", icon: Home },
+      { title: "Musyrif", href: "/musyrif", icon: UserCog },
+      { title: "Mutabaah Yaumiyah", href: "/daily-report", icon: Activity },
+      { title: "Jurnal Ibadah", href: "/ibadah", icon: Sparkles },
+      { title: "Muhasabah", href: "/muhasabah", icon: ClipboardPenLine },
+    ],
+  },
+  {
+    title: "Kedisiplinan",
+    items: [
+      { title: "Perizinan", href: "/permits", icon: ScrollText },
+      { title: "Pelanggaran", href: "/violations", icon: AlertTriangle },
+      { title: "Prestasi & Reward", href: "/rewards", icon: Trophy },
+      { title: "Piket & Jaga", href: "/duty-roster", icon: Clock },
+    ],
+  },
+  {
+    title: "Kegiatan",
+    items: [
+      { title: "Muhadhoroh", href: "/muhadhoroh", icon: Mic },
+      { title: "Muhadatsah", href: "/muhadatsah", icon: Languages },
+      { title: "Jadwal", href: "/schedule", icon: Calendar },
+    ],
+  },
+  {
+    title: "Layanan",
+    items: [
+      { title: "Kesehatan", href: "/health", icon: Heart },
+      { title: "Laundry", href: "/laundry", icon: WashingMachine },
+      { title: "Konsumsi", href: "/meals", icon: UtensilsCrossed },
+    ],
+  },
+  {
+    title: "Laporan",
+    items: [
+      {
+        title: "Rapor Pesantren",
+        href: "/rapor-pesantren",
+        icon: FileSpreadsheet,
+      },
+    ],
+  },
+  {
+    title: "Informasi",
+    items: [
+      { title: "Pengumuman", href: "/announcements", icon: Bell },
+      {
+        title: "Aduan & Aspirasi",
+        href: "/quality/complaints",
+        icon: MessageSquareWarning,
+      },
+    ],
+  },
+];
+
+// Perguruan Tinggi leadership (Rektor, Wakil Rektor, Dekan, Kaprodi).
+const ptPimpinanNavigation: NavGroup[] = [
+  {
+    title: "Overview",
+    items: [
+      { title: "Dashboard", href: "/teacher", icon: LayoutDashboard },
+      { title: "Analitik", href: "/analytics", icon: BarChart3 },
+      { title: "Laporan", href: "/reports", icon: FileBarChart },
+    ],
+  },
+  {
+    title: "Akademik",
+    items: [
+      { title: "Kurikulum", href: "/curriculum", icon: BookOpen },
+      { title: "Kelas & Mata Kuliah", href: "/classes", icon: School },
+      { title: "Jadwal Kuliah", href: "/schedule", icon: Calendar },
+      { title: "Penilaian", href: "/assessment", icon: ClipboardList },
+      { title: "Presensi", href: "/attendance", icon: ClipboardCheck },
+    ],
+  },
+  {
+    title: "Kemahasiswaan",
+    items: [
+      { title: "Data Mahasiswa", href: "/students", icon: GraduationCap },
+      { title: "Organisasi Mahasiswa", href: "/student-org", icon: Users },
+      { title: "UKM & Ekstrakurikuler", href: "/extracurricular", icon: Drama },
+      { title: "Konseling", href: "/counseling", icon: HeartHandshake },
+    ],
+  },
+  {
+    title: "Penelitian & Pengabdian",
+    items: [
+      { title: "Penelitian", href: "/research", icon: Microscope },
+      { title: "Litbang", href: "/litbang", icon: FileBarChart },
+      { title: "Praktikum", href: "/practicum", icon: FlaskConical },
+      { title: "Perpustakaan", href: "/library", icon: Library },
+    ],
+  },
+  {
+    title: "Alumni & Sertifikasi",
+    items: [
+      { title: "Direktori Alumni", href: "/alumni", icon: Users },
+      { title: "Penempatan Karier", href: "/alumni/placement", icon: Briefcase },
+      { title: "Sertifikat", href: "/certificates", icon: Award },
+    ],
+  },
+  {
+    title: "Mutu",
+    items: [
+      { title: "Penjaminan Mutu", href: "/quality", icon: Shield },
+      {
+        title: "Aduan & Aspirasi",
+        href: "/quality/complaints",
+        icon: MessageSquareWarning,
+      },
+    ],
+  },
+  {
+    title: "Informasi",
+    items: [{ title: "Pengumuman", href: "/announcements", icon: Bell }],
+  },
+];
+
+// Perguruan Tinggi lecturers.
+const ptDosenNavigation: NavGroup[] = [
+  {
+    title: "Overview",
+    items: [{ title: "Dashboard", href: "/teacher", icon: LayoutDashboard }],
+  },
+  {
+    title: "Mengajar",
+    items: [
+      { title: "Kelas & Mata Kuliah", href: "/classes", icon: School },
+      { title: "Jadwal Kuliah", href: "/schedule", icon: Calendar },
+      { title: "Presensi", href: "/attendance", icon: ClipboardCheck },
+      { title: "Tugas", href: "/assignments", icon: FileText },
+      { title: "Penilaian", href: "/assessment", icon: ClipboardList },
+      { title: "Mahasiswa", href: "/students", icon: GraduationCap },
+    ],
+  },
+  {
+    title: "Penelitian",
+    items: [
+      { title: "Penelitian", href: "/research", icon: Microscope },
+      { title: "Praktikum", href: "/practicum", icon: FlaskConical },
+      { title: "Perpustakaan", href: "/library", icon: Library },
+    ],
+  },
+  {
+    title: "Bimbingan",
+    items: [
+      { title: "Konseling", href: "/counseling", icon: HeartHandshake },
+      { title: "Portfolio Mahasiswa", href: "/portfolio", icon: FolderOpen },
+    ],
+  },
+  {
+    title: "Kinerja",
+    items: [
+      { title: "Penilaian Kinerja", href: "/pkg", icon: ClipboardPenLine },
+    ],
+  },
+  {
+    title: "Informasi",
+    items: [
+      { title: "Pengumuman", href: "/announcements", icon: Bell },
+      {
+        title: "Aduan & Aspirasi",
+        href: "/quality/complaints",
+        icon: MessageSquareWarning,
+      },
+    ],
+  },
+];
+
+// Perguruan Tinggi students — distinct from the pesantren/school student nav
+// (no tahfidz/pesantren groups, adds UKM, praktikum and billing).
+const ptMahasiswaNavigation: NavGroup[] = [
+  {
+    title: "Overview",
+    items: [{ title: "Dashboard", href: "/student", icon: LayoutDashboard }],
+  },
+  {
+    title: "Akademik",
+    items: [
+      { title: "Jadwal Kuliah", href: "/schedule", icon: Calendar },
+      { title: "Kelas & Mata Kuliah", href: "/classes", icon: School },
+      { title: "Tugas", href: "/assignments", icon: FileText },
+      { title: "Nilai", href: "/assessment", icon: ClipboardList },
+      { title: "Presensi", href: "/attendance", icon: ClipboardCheck },
+      { title: "Portfolio Saya", href: "/portfolio", icon: FolderOpen },
+    ],
+  },
+  {
+    title: "Kemahasiswaan",
+    items: [
+      { title: "Organisasi Mahasiswa", href: "/student-org", icon: Users },
+      { title: "UKM & Ekstrakurikuler", href: "/extracurricular", icon: Drama },
+      { title: "Praktikum", href: "/practicum", icon: FlaskConical },
+      { title: "Konseling", href: "/counseling", icon: HeartHandshake },
+    ],
+  },
+  {
+    title: "Sumber Daya",
+    items: [
+      { title: "Perpustakaan", href: "/library", icon: Library },
+      { title: "Penelitian", href: "/research", icon: Microscope },
+    ],
+  },
+  {
+    title: "Keuangan",
+    items: [{ title: "Dompet Digital", href: "/wallet", icon: Wallet }],
+  },
+  {
+    title: "Informasi",
+    items: [
+      { title: "Pengumuman", href: "/announcements", icon: Bell },
+      {
+        title: "Aduan & Aspirasi",
+        href: "/quality/complaints",
+        icon: MessageSquareWarning,
+      },
+    ],
+  },
+];
+
+// Komite Sekolah — external stakeholders. Oversight and transparency only,
+// no operational data entry.
+const komiteNavigation: NavGroup[] = [
+  {
+    title: "Pengawasan",
+    items: [
+      { title: "Laporan Sekolah", href: "/reports", icon: FileBarChart },
+      { title: "Analitik", href: "/analytics", icon: BarChart3 },
+      { title: "Penjaminan Mutu", href: "/quality", icon: Shield },
+    ],
+  },
+  {
+    title: "Keuangan",
+    items: [
+      { title: "Laporan Keuangan", href: "/finance", icon: Receipt },
+      { title: "Donasi & Wakaf", href: "/donation", icon: HeartHandshake },
+    ],
+  },
+  {
+    title: "Kesiswaan",
+    items: [
+      { title: "Data Siswa", href: "/students", icon: GraduationCap },
+      { title: "Prestasi Siswa", href: "/rewards", icon: Trophy },
+    ],
+  },
+  {
+    title: "Partisipasi",
+    items: [
+      {
+        title: "Aduan & Aspirasi",
+        href: "/quality/complaints",
+        icon: MessageSquareWarning,
+      },
+      { title: "Pengumuman", href: "/announcements", icon: Bell },
+      { title: "Agenda Kegiatan", href: "/schedule", icon: Calendar },
+    ],
+  },
+];
+
+// Alumni across every unit (school, pesantren and PT).
+const alumniNavigation: NavGroup[] = [
+  {
+    title: "Alumni",
+    items: [
+      { title: "Direktori Alumni", href: "/alumni", icon: Users },
+      { title: "Penempatan Karier", href: "/alumni/placement", icon: Briefcase },
+      { title: "Sanad Keilmuan", href: "/alumni/sanad", icon: ScrollText },
+    ],
+  },
+  {
+    title: "Dokumen Saya",
+    items: [
+      { title: "Sertifikat", href: "/certificates", icon: Award },
+      { title: "Portfolio", href: "/portfolio", icon: FolderOpen },
+    ],
+  },
+  {
+    title: "Kontribusi",
+    items: [
+      { title: "Donasi & Wakaf", href: "/donation", icon: HeartHandshake },
+      {
+        title: "Aduan & Aspirasi",
+        href: "/quality/complaints",
+        icon: MessageSquareWarning,
+      },
+    ],
+  },
+  {
+    title: "Informasi",
+    items: [{ title: "Pengumuman", href: "/announcements", icon: Bell }],
+  },
+];
+
 export const navigationConfig: NavGroup[] = adminNavigation;
 
 // Role category helpers
@@ -1370,6 +1802,37 @@ export function getNavigationForRoleCode(roleCode: string): NavGroup[] {
         ),
       }))
       .filter((group) => group.items.length > 0);
+  }
+
+  // Pesantren: leadership and field pengasuhan staff get different menus
+  if (PESANTREN_PIMPINAN_ROLES.includes(roleCode)) {
+    return pesantrenPimpinanNavigation;
+  }
+
+  if (PESANTREN_PENGASUHAN_ROLES.includes(roleCode)) {
+    return pesantrenPengasuhanNavigation;
+  }
+
+  // Perguruan Tinggi
+  if (PT_PIMPINAN_ROLES.includes(roleCode)) {
+    return ptPimpinanNavigation;
+  }
+
+  if (roleCode === "PT_DOSEN") {
+    return ptDosenNavigation;
+  }
+
+  if (roleCode === "PT_MAHASISWA") {
+    return ptMahasiswaNavigation;
+  }
+
+  // Komite sekolah (external oversight) and alumni
+  if (KOMITE_ROLES.includes(roleCode)) {
+    return komiteNavigation;
+  }
+
+  if (ALUMNI_ROLES.includes(roleCode)) {
+    return alumniNavigation;
   }
 
   // Teacher roles
@@ -1449,6 +1912,12 @@ export {
   STUDENT_ROLES,
   PARENT_ROLES,
   YAYASAN_ROLES,
+  PESANTREN_ROLES,
+  PESANTREN_PIMPINAN_ROLES,
+  PESANTREN_PENGASUHAN_ROLES,
+  PT_PIMPINAN_ROLES,
+  KOMITE_ROLES,
+  ALUMNI_ROLES,
   isAdminRole,
   isTeacherRole,
   isStaffRole,

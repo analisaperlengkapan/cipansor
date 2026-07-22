@@ -1,4 +1,5 @@
 "use client";
+import { MainLayout } from "@/components/layout";
 
 import { useState } from "react";
 import Link from "next/link";
@@ -50,7 +51,7 @@ import {
   Permit,
 } from "@/hooks/use-permits";
 
-export default function PermitsPage() {
+function PermitsPageContent() {
   const [page, setPage] = useState(1);
   const [permitType, setPermitType] = useState<PermitType | "">("");
   const [status, setStatus] = useState<PermitStatus | "">("");
@@ -394,5 +395,13 @@ export default function PermitsPage() {
         isLoading={returnMutation.isPending}
       />
     </div>
+  );
+}
+
+export default function PermitsPageWithShell() {
+  return (
+    <MainLayout>
+      <PermitsPageContent />
+    </MainLayout>
   );
 }

@@ -139,7 +139,12 @@ export function ProtectedRoute({
     }
   }, [user, hasAccess, router]);
 
-  if (isLoading) {
+  // Revalidating an existing session must not blank the app shell. `fetchUser`
+  // runs on every mount, so gating on `isLoading` alone replaced the sidebar
+  // and header with a full-screen spinner on *every* page load, for as long as
+  // /auth/me took — the audit saw pages with no shell at all after 1.8s. The
+  // persisted user is good enough to render with; only a cold start waits.
+  if (isLoading && !user) {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>

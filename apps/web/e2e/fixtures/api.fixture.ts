@@ -68,7 +68,7 @@ export class APIMocker {
   async mockAuth(
     user = {
       id: "test-user-id",
-      email: "test@cipansor.id",
+      email: "test@cipansor.or.id",
       name: "Test User",
       role: "SUPER_ADMIN",
     },

@@ -10,7 +10,7 @@ export class PerencanaanService {
   async createPlan(data: {
     title: string;
     description?: string;
-    type: 'MASTER_PLAN' | 'RENSTRA' | 'RKAS' | 'RKT' | 'PROGRAM';
+    type: 'RPJP' | 'RENSTRA' | 'RKA';
     startDate: string;
     endDate: string;
     budget?: number;
@@ -22,12 +22,14 @@ export class PerencanaanService {
       const parent = await prisma.strategicPlan.findUnique({ where: { id: data.parentId } });
       if (!parent) throw Errors.notFound('Parent plan');
 
-      // Cascading hierarchy: MASTER_PLAN -> RENSTRA -> RKAS
-      if (data.type === 'RKAS' && parent.type !== 'RENSTRA') {
-        throw Errors.badRequest('RKAS must refer to a RENSTRA parent plan');
+      // Cascading hierarchy: RPJP -> RENSTRA -> RKA. Each level's closing
+      // targets are the next level's contract, so a plan may only hang off
+      // the level directly above it.
+      if (data.type === 'RKA' && parent.type !== 'RENSTRA') {
+        throw Errors.badRequest('RKA must refer to a RENSTRA parent plan');
       }
-      if (data.type === 'RENSTRA' && parent.type !== 'MASTER_PLAN') {
-        throw Errors.badRequest('RENSTRA must refer to a MASTER_PLAN parent plan');
+      if (data.type === 'RENSTRA' && parent.type !== 'RPJP') {
+        throw Errors.badRequest('RENSTRA must refer to an RPJP parent plan');
       }
     }
 
@@ -134,7 +136,7 @@ export class PerencanaanService {
     // 2. The date range filter uses the plan's startDate/endDate, not the Budget
     //    model's academicYearId. For multi-year RENSTRA plans, realization will span
     //    multiple academic years, while the linked Budget may only cover one year.
-    //    Short-lived plans (RKAS, RKT, PROGRAM) are typically aligned with a single
+    //    Short-lived plans (an annual RKA) are typically aligned with a single
     //    academic year so this mismatch is less impactful for them.
     try {
       // 1. Collect all unique accountIds and their normalBalance across every activity
@@ -163,7 +165,9 @@ export class PerencanaanService {
           const journalAggregates = await prisma.journalEntry.aggregate({
             where: {
               accountId,
-              unitId: plan.unitId,
+              // See note in scheduler.service.ts: null unit means foundation-wide,
+              // so the filter is omitted rather than matched against NULL.
+              unitId: plan.unitId ?? undefined,
               date: {
                 gte: plan.startDate,
                 lte: endOfDay,
@@ -323,7 +327,7 @@ export class PerencanaanService {
     const entries = await prisma.journalEntry.findMany({
       where: {
         accountId: { in: [...accountBalance.keys()] },
-        unitId: plan.unitId,
+        unitId: plan.unitId ?? undefined,
         date: { gte: plan.startDate, lte: endOfDay },
       },
       select: { accountId: true, date: true, debit: true, credit: true },

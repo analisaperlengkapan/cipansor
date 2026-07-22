@@ -1,4 +1,5 @@
 "use client";
+import { MainLayout } from "@/components/layout";
 
 /**
  * PKG (Penilaian Kinerja Guru) Page
@@ -86,7 +87,7 @@ const statusLabels: Record<string, string> = {
   ARCHIVED: "Arsip",
 };
 
-export default function PKGPage() {
+function PKGPageContent() {
   const router = useRouter();
   const { user } = useAuthStore();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -545,5 +546,13 @@ export default function PKGPage() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+export default function PKGPageWithShell() {
+  return (
+    <MainLayout>
+      <PKGPageContent />
+    </MainLayout>
   );
 }

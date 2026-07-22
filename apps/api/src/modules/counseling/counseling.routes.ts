@@ -18,7 +18,6 @@ router.use(authenticate);
 const teacherAndAbove = () =>
   authorize(
     RoleCode.SUPER_ADMIN,
-    RoleCode.YAYASAN_ADMIN,
     RoleCode.TKQ_ADMIN, RoleCode.SDIT_ADMIN, RoleCode.SMPIT_ADMIN, RoleCode.SMAQ_ADMIN,
     RoleCode.TKQ_GURU, RoleCode.SDIT_GURU, RoleCode.SMPIT_GURU, RoleCode.SMAQ_GURU,
     RoleCode.TKQ_KEPALA_SEKOLAH, RoleCode.SDIT_KEPALA_SEKOLAH,
@@ -30,7 +29,6 @@ const teacherAndAbove = () =>
 const adminOnly = () =>
   authorize(
     RoleCode.SUPER_ADMIN,
-    RoleCode.YAYASAN_ADMIN,
     RoleCode.TKQ_ADMIN, RoleCode.SDIT_ADMIN, RoleCode.SMPIT_ADMIN, RoleCode.SMAQ_ADMIN,
     'UNIT_ADMIN', // Legacy pre-migration token value
   );
@@ -38,7 +36,6 @@ const adminOnly = () =>
 const teacherOrParent = () =>
   authorize(
     RoleCode.SUPER_ADMIN,
-    RoleCode.YAYASAN_ADMIN,
     RoleCode.TKQ_ADMIN, RoleCode.SDIT_ADMIN, RoleCode.SMPIT_ADMIN, RoleCode.SMAQ_ADMIN,
     RoleCode.TKQ_GURU, RoleCode.SDIT_GURU, RoleCode.SMPIT_GURU, RoleCode.SMAQ_GURU,
     RoleCode.TKQ_KEPALA_SEKOLAH, RoleCode.SDIT_KEPALA_SEKOLAH,

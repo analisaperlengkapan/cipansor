@@ -9,8 +9,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuthStore } from "@/stores/auth";
+import { demoPhotoForEmail } from "@/lib/demo-avatar";
 import { Bell, Menu, Settings, User, LogOut } from "lucide-react";
 import Link from "next/link";
 import { RoleSwitcher } from "./role-switcher";
@@ -64,6 +65,12 @@ export function Header({ onMenuClick }: HeaderProps) {
               className="relative h-10 w-10 rounded-full"
             >
               <Avatar className="h-10 w-10">
+                {demoPhotoForEmail(user?.email) && (
+                  <AvatarImage
+                    src={demoPhotoForEmail(user?.email)}
+                    alt={user?.name || "User"}
+                  />
+                )}
                 <AvatarFallback>
                   {user?.name?.charAt(0).toUpperCase() || "U"}
                 </AvatarFallback>

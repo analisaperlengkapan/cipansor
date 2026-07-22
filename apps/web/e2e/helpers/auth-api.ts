@@ -28,7 +28,7 @@ export interface SeedUser {
 
 /** Seed credentials, keyed by a friendly role name. */
 export const SEED_USERS = {
-  superAdmin: { email: "superadmin@cipansor.id", password: "SuperAdmin123!" },
+  superAdmin: { email: "superadmin@cipansor.or.id", password: "SuperAdmin123!" },
   adminSdit: { email: "admin@sdit.sch.id", password: "Admin123!" },
   teacher: { email: "fatimah@sdit.sch.id", password: "Teacher123!" },
   parent: { email: "parent3@sdit.sch.id", password: "Parent123!" },

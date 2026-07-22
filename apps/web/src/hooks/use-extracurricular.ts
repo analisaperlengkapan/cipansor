@@ -281,7 +281,7 @@ export function useExtracurriculars(params: ExtracurricularListParams = {}) {
     queryKey: ["extracurriculars", params],
     queryFn: async () => {
       const response = await api.get<PaginatedResponse<Extracurricular>>(
-        "/extracurriculars",
+        "/extracurricular",
         {
           params,
         },
@@ -296,7 +296,7 @@ export function useExtracurricular(id: string) {
     queryKey: ["extracurriculars", id],
     queryFn: async () => {
       const response = await api.get<ApiResponse<Extracurricular>>(
-        `/extracurriculars/${id}`,
+        `/extracurricular/${id}`,
       );
       return response.data.data;
     },
@@ -310,7 +310,7 @@ export function useCreateExtracurricular() {
   return useMutation({
     mutationFn: async (data: CreateExtracurricularInput) => {
       const response = await api.post<ApiResponse<Extracurricular>>(
-        "/extracurriculars",
+        "/extracurricular",
         data,
       );
       return response.data.data;
@@ -327,7 +327,7 @@ export function useUpdateExtracurricular() {
   return useMutation({
     mutationFn: async ({ id, ...data }: UpdateExtracurricularInput) => {
       const response = await api.put<ApiResponse<Extracurricular>>(
-        `/extracurriculars/${id}`,
+        `/extracurricular/${id}`,
         data,
       );
       return response.data.data;
@@ -346,7 +346,7 @@ export function useDeleteExtracurricular() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      await api.delete(`/extracurriculars/${id}`);
+      await api.delete(`/extracurricular/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["extracurriculars"] });
@@ -363,7 +363,7 @@ export function useExtracurricularEnrollments(
     queryKey: ["extracurricular-enrollments", extracurricularId, params],
     queryFn: async () => {
       const response = await api.get<ApiResponse<ExtracurricularEnrollment[]>>(
-        `/extracurriculars/${extracurricularId}/enrollments`,
+        `/extracurricular/${extracurricularId}/enrollments`,
         { params },
       );
       return response.data.data;
@@ -377,7 +377,7 @@ export function useMyExtracurricularEnrollments() {
     queryKey: ["my-extracurricular-enrollments"],
     queryFn: async () => {
       const response = await api.get<ApiResponse<ExtracurricularEnrollment[]>>(
-        "/extracurriculars/my-enrollments",
+        "/extracurricular/my-enrollments",
       );
       return response.data.data;
     },
@@ -390,7 +390,7 @@ export function useEnrollStudentToExtracurricular() {
   return useMutation({
     mutationFn: async (data: EnrollStudentInput) => {
       const response = await api.post<ApiResponse<ExtracurricularEnrollment>>(
-        `/extracurriculars/${data.extracurricularId}/enroll`,
+        `/extracurricular/${data.extracurricularId}/enroll`,
         data,
       );
       return response.data.data;
@@ -418,7 +418,7 @@ export function useApproveEnrollment() {
       extracurricularId: string;
     }) => {
       const response = await api.post<ApiResponse<ExtracurricularEnrollment>>(
-        `/extracurriculars/enrollments/${enrollmentId}/approve`,
+        `/extracurricular/enrollments/${enrollmentId}/approve`,
       );
       return response.data.data;
     },
@@ -444,7 +444,7 @@ export function useRejectEnrollment() {
       reason: string;
     }) => {
       const response = await api.post<ApiResponse<ExtracurricularEnrollment>>(
-        `/extracurriculars/enrollments/${enrollmentId}/reject`,
+        `/extracurricular/enrollments/${enrollmentId}/reject`,
         { reason },
       );
       return response.data.data;
@@ -466,7 +466,7 @@ export function useExtracurricularAttendance(
     queryKey: ["extracurricular-attendance", extracurricularId, date],
     queryFn: async () => {
       const response = await api.get<ApiResponse<ExtracurricularAttendance[]>>(
-        `/extracurriculars/${extracurricularId}/attendance`,
+        `/extracurricular/${extracurricularId}/attendance`,
         { params: { date } },
       );
       return response.data.data;
@@ -489,7 +489,7 @@ export function useRecordExtracurricularAttendance() {
       }>;
     }) => {
       const response = await api.post<ApiResponse<ExtracurricularAttendance[]>>(
-        `/extracurriculars/${data.extracurricularId}/attendance`,
+        `/extracurricular/${data.extracurricularId}/attendance`,
         { date: data.date, records: data.records },
       );
       return response.data.data;
@@ -510,7 +510,7 @@ export function useExtracurricularAchievements(
     queryKey: ["extracurricular-achievements", params],
     queryFn: async () => {
       const response = await api.get<ApiResponse<ExtracurricularAchievement[]>>(
-        "/extracurriculars/achievements",
+        "/extracurricular/achievements",
         { params },
       );
       return response.data.data;
@@ -524,7 +524,7 @@ export function useCreateAchievement() {
   return useMutation({
     mutationFn: async (data: CreateAchievementInput) => {
       const response = await api.post<ApiResponse<ExtracurricularAchievement>>(
-        "/extracurriculars/achievements",
+        "/extracurricular/achievements",
         data,
       );
       return response.data.data;

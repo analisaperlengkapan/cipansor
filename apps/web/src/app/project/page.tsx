@@ -1,4 +1,5 @@
 "use client";
+import { MainLayout } from "@/components/layout";
 import { useState } from "react";
 import { safeFormat } from "@/lib/date";
 import { useQuery } from "@tanstack/react-query";
@@ -10,7 +11,7 @@ import { CreateProjectModal } from "./_components/create-project-modal";
 
 import { Badge } from "@/components/ui/badge";
 
-export default function ProjectListPage() {
+function ProjectListPageContent() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   const { data: projects, isLoading } = useQuery({
@@ -104,4 +105,12 @@ function getStatusVariant(status: string) {
 
 function formatStatus(status: string) {
   return status.replace(/_/g, " ");
+}
+
+export default function ProjectListPageWithShell() {
+  return (
+    <MainLayout>
+      <ProjectListPageContent />
+    </MainLayout>
+  );
 }

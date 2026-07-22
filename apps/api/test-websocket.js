@@ -10,7 +10,7 @@ async function testWebSocket() {
   console.log('1️⃣ Logging in...');
   try {
     const loginResponse = await axios.post('http://localhost:3001/api/auth/login', {
-      email: 'superadmin@cipansor.id',
+      email: 'superadmin@cipansor.or.id',
       password: 'SuperAdmin123!'
     });
     

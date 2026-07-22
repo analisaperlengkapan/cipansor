@@ -37,7 +37,7 @@ import {
   TrendingDown,
   Minus,
   Users,
-  DollarSign,
+  Banknote,
   AlertTriangle,
   BookOpen,
   ArrowLeft,
@@ -239,7 +239,7 @@ export default function ForecastPage() {
                 <CardTitle className="text-sm font-medium">
                   Prediksi Pembayaran
                 </CardTitle>
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
+                <Banknote className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">

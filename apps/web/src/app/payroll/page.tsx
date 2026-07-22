@@ -1,4 +1,5 @@
 "use client";
+import { MainLayout } from "@/components/layout";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -47,7 +48,6 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-  DollarSign,
   Users,
   Calendar,
   FileText,
@@ -107,7 +107,7 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 import { useUnits } from "@/hooks/use-units";
 
-export default function PayrollPage() {
+function PayrollPageContent() {
   const { user } = useAuth();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("periods");
@@ -1312,5 +1312,13 @@ export default function PayrollPage() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+export default function PayrollPageWithShell() {
+  return (
+    <MainLayout>
+      <PayrollPageContent />
+    </MainLayout>
   );
 }

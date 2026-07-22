@@ -1,5 +1,15 @@
 # Docker Compose for Cipansor
 # Development and Production configurations
+#
+# Resource limits are sized for a 2 vCPU / 8 GB host with no swap. The four
+# services together reserve ~2 vCPU and ~3.9 GB, leaving headroom for the OS
+# and nginx. Raise these together if the host is resized.
+
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
 
 services:
   # PostgreSQL Database
@@ -7,19 +17,27 @@ services:
     image: postgres:16-alpine
     container_name: cipansor-db
     restart: unless-stopped
+    logging: *default-logging
     environment:
       POSTGRES_DB: cipansor
       POSTGRES_USER: ${DB_USER:-postgres}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    # Loopback-only: the API reaches this over the cipansor-network bridge.
+    # Publishing on 0.0.0.0 exposes the database to the public internet.
     ports:
-      - "${DB_PORT:-5432}:5432"
+      - "127.0.0.1:${DB_PORT:-5432}:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d cipansor"]
       interval: 10s
       timeout: 5s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 1G
     networks:
       - cipansor-network
 
@@ -30,29 +48,46 @@ services:
       dockerfile: apps/api/Dockerfile
     container_name: cipansor-api
     restart: unless-stopped
+    logging: *default-logging
     environment:
+      # Deliberately NOT driven by .env's NODE_ENV=development. This API is
+      # internet-facing, and outside production the error middleware returns
+      # raw error.message to clients (middleware/error.ts) and the invalid
+      # ENCRYPTION_KEY guard downgrades from throw to console.warn
+      # (utils/encryption.ts). Flip this only for a local, non-public stack.
       NODE_ENV: production
       PORT: 3001
       DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/cipansor
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
       JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-30d}
+      # Falls back to a public hardcoded key inside the API if unset.
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-}
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
       LOG_LEVEL: ${LOG_LEVEL:-info}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      # Exempts ONLY the seeded *@demo.cipansor.or.id accounts from the mandatory
+      # 2FA wall, so the credentials published on /login actually work. Must be
+      # false for a real launch — set it together with NEXT_PUBLIC_SHOW_DEMO_LOGIN.
+      DEMO_MODE: ${DEMO_MODE:-false}
     ports:
-      - "${API_PORT:-3001}:3001"
+      - "127.0.0.1:${API_PORT:-3001}:3001"
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3001/health || exit 1"]
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:3001/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: "0.75"
+          memory: 1536M
     networks:
       - cipansor-network
 
@@ -63,23 +98,45 @@ services:
       dockerfile: apps/web/Dockerfile
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001}
+        # "true" shows the demo-login credential panel on /login. Enable for
+        # demo deployments, leave unset for a real launch.
+        NEXT_PUBLIC_SHOW_DEMO_LOGIN: ${NEXT_PUBLIC_SHOW_DEMO_LOGIN:-false}
     container_name: cipansor-web
     restart: unless-stopped
+    logging: *default-logging
     environment:
+      # The runner stage ships a Next standalone production bundle, so this
+      # stays production regardless of NODE_ENV elsewhere — the dev bundles
+      # simply are not in the image.
       NODE_ENV: production
       PORT: 3000
+      # Next standalone's server.js binds to $HOSTNAME. Docker sets that to the
+      # container ID, so without this the server listens only on the container's
+      # eth0 address and every loopback healthcheck fails.
+      HOSTNAME: "0.0.0.0"
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001}
+    volumes:
+      # next/image resizes on first request and caches the result here. Without
+      # a volume that cache dies with every redeploy, so the next visitor — very
+      # plausibly the Google Ad Grants reviewer — regenerates every image and
+      # sees the landing page take ~7s instead of ~600ms.
+      - web-image-cache:/app/apps/web/.next/cache/images
     ports:
-      - "${WEB_PORT:-3000}:3000"
+      - "127.0.0.1:${WEB_PORT:-3000}:3000"
     depends_on:
       api:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:3000"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 1G
     networks:
       - cipansor-network
 
@@ -88,22 +145,36 @@ services:
     image: redis:7-alpine
     container_name: cipansor-redis
     restart: unless-stopped
-    command: redis-server --appendonly yes
+    logging: *default-logging
+    # Bounded memory so a runaway key set cannot OOM a swapless host.
+    command: >
+      redis-server --appendonly yes
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
     volumes:
       - redis_data:/data
+    # Loopback-only. This instance has no requirepass set, so publishing it on
+    # 0.0.0.0 left an unauthenticated Redis open to the internet.
     ports:
-      - "${REDIS_PORT:-6379}:6379"
+      - "127.0.0.1:${REDIS_PORT:-6379}:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 384M
     networks:
       - cipansor-network
 
 volumes:
   postgres_data:
   redis_data:
+  # Survives redeploys so the optimised landing-page images stay warm.
+  web-image-cache:
 
 networks:
   cipansor-network:

@@ -3,7 +3,7 @@ import { test, expect, Page } from "@playwright/test";
 const MOCK_USER = {
   id: "user-123",
   name: "Admin Cipansor",
-  email: "admin@cipansor.id",
+  email: "admin@cipansor.or.id",
   role: "SUPER_ADMIN",
   avatar: "https://ui.shadcn.com/avatars/01.png",
   unit: {

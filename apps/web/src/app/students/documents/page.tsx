@@ -1,5 +1,6 @@
 "use client";
 
+import { siteConfig, addressLines } from "@/config/site";
 import { useState, useRef } from "react";
 import { safeFormat } from "@/lib/date";
 import { MainLayout } from "@/components/layout/main-layout";
@@ -430,11 +431,10 @@ export default function SuratKeteranganPage() {
   const renderSuratPreview = () => {
     if (!selectedStudent || !selectedTemplate) return null;
 
-    const unitName = selectedStudent.unit?.name || "Yayasan Pesantren Cipansor";
-    const unitAddress =
-      "Jl. Pesantren No. 123, Kec. Ciparay, Kab. Bandung, Jawa Barat 40381";
-    const unitPhone = "(022) 1234567";
-    const unitEmail = "info@cipansor.sch.id";
+    const unitName = selectedStudent.unit?.name || siteConfig.legalName;
+    const unitAddress = addressLines.join(", ");
+    const unitPhone = siteConfig.contact.phone;
+    const unitEmail = siteConfig.contact.email;
 
     return (
       <div

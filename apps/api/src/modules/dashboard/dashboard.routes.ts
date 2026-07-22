@@ -12,6 +12,7 @@ import {
   getAttendanceStats,
   getFinanceStats,
   getTahfidzStats,
+  getViolationRewardStats,
 } from './dashboard.controller';
 
 const router = Router();
@@ -145,5 +146,30 @@ router.get('/finance', authenticate, getFinanceStats);
  *         description: Tahfidz stats retrieved successfully
  */
 router.get('/tahfidz', authenticate, getTahfidzStats);
+
+/**
+ * @openapi
+ * /api/dashboard/violation-reward:
+ *   get:
+ *     tags:
+ *       - Dashboard
+ *     summary: Get violation and reward stats for dashboard
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: unitId
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: period
+ *         schema:
+ *           type: string
+ *           enum: [week, month, year]
+ *     responses:
+ *       200:
+ *         description: Violation and reward stats retrieved successfully
+ */
+router.get('/violation-reward', authenticate, getViolationRewardStats);
 
 export default router;

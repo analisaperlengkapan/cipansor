@@ -7,7 +7,7 @@ test.describe("Pesantren features (#294 rebuild)", () => {
   test.beforeEach(async ({ page }) => {
     const login = new LoginPage(page);
     await login.loginAndWaitForDashboard(
-      "superadmin@cipansor.id",
+      "superadmin@cipansor.or.id",
       "SuperAdmin123!",
     );
   });

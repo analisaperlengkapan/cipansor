@@ -1,4 +1,5 @@
 "use client";
+import { MainLayout } from "@/components/layout";
 
 import { useAuthStore } from "@/stores/auth";
 import {
@@ -36,7 +37,7 @@ import {
 import { formatDistanceToNow } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 
-export default function StudentDashboard() {
+function StudentDashboardContent() {
   const { user } = useAuthStore();
   const {
     progress,
@@ -457,5 +458,13 @@ function StudentDashboardSkeleton() {
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function StudentDashboardWithShell() {
+  return (
+    <MainLayout>
+      <StudentDashboardContent />
+    </MainLayout>
   );
 }

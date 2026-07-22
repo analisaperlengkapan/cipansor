@@ -1,4 +1,5 @@
 "use client";
+import { MainLayout } from "@/components/layout";
 
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -44,7 +45,6 @@ import {
   Search,
   RefreshCw,
   Package,
-  DollarSign,
   TrendingUp,
   AlertTriangle,
   Trash2,
@@ -196,7 +196,7 @@ const formatRupiah = (amount: number) => {
   }).format(amount);
 };
 
-export default function CanteenPage() {
+function CanteenPageContent() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("pos");
   const [search, setSearch] = useState("");
@@ -377,7 +377,7 @@ export default function CanteenPage() {
       {
         title: "Pendapatan Hari Ini",
         value: formatRupiah(stats?.summary?.totalRevenue || 0),
-        icon: DollarSign,
+        icon: Banknote,
         color: "text-green-600",
         bgColor: "bg-green-100",
       },
@@ -1039,5 +1039,13 @@ export default function CanteenPage() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+export default function CanteenPageWithShell() {
+  return (
+    <MainLayout>
+      <CanteenPageContent />
+    </MainLayout>
   );
 }

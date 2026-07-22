@@ -68,7 +68,7 @@ const formSchema = z.object({
   strategicPlanId: z.string().optional(),
 });
 
-const PRIVILEGED_ROLES = ["SUPER_ADMIN", "YAYASAN_ADMIN", "YAYASAN_KETUA"];
+const PRIVILEGED_ROLES = ["SUPER_ADMIN", "YAYASAN_KETUA"];
 
 export default function CreateRiskPage() {
   const router = useRouter();

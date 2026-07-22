@@ -29,10 +29,10 @@ export const getROIStats = async (req: Request, res: Response, next: NextFunctio
     // Unit-level authorization: a UNIT_ADMIN must not be able to query
     // another unit's marketing ROI by guessing/knowing its unitId, nor
     // by omitting `unitId` entirely (which would otherwise return ROI
-    // across ALL units). SUPER_ADMIN and YAYASAN_ADMIN can scope to any
+    // across ALL units). SUPER_ADMIN can scope to any
     // (or all) unit(s).
     let effectiveUnitId = unitId as string | undefined;
-    if (user && user.role !== 'SUPER_ADMIN' && user.role !== 'YAYASAN_ADMIN') {
+    if (user && user.role !== 'SUPER_ADMIN') {
       if (!user.unitId) {
         return res
           .status(403)
@@ -58,7 +58,7 @@ function resolveScopedUnitId(req: Request, res: Response): string | undefined | 
   const { unitId } = req.query;
   const user = requireUser(req);
   let effectiveUnitId = unitId as string | undefined;
-  if (user && user.role !== 'SUPER_ADMIN' && user.role !== 'YAYASAN_ADMIN') {
+  if (user && user.role !== 'SUPER_ADMIN') {
     if (!user.unitId || (effectiveUnitId && effectiveUnitId !== user.unitId)) {
       res.status(403).json({ success: false, error: 'Access to this unit is not allowed' });
       return null;

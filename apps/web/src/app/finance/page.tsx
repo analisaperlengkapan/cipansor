@@ -1,4 +1,5 @@
 "use client";
+import { MainLayout } from "@/components/layout";
 
 import { useState } from "react";
 import Link from "next/link";
@@ -6,7 +7,7 @@ import {
   CreditCard,
   Plus,
   Search,
-  DollarSign,
+  Banknote,
   TrendingUp,
   AlertCircle,
   CheckCircle,
@@ -62,7 +63,7 @@ function formatCurrency(amount: number) {
   }).format(amount);
 }
 
-export default function FinancePage() {
+function FinancePageContent() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [billType, setBillType] = useState<BillType | "ALL">("ALL");
@@ -152,7 +153,7 @@ export default function FinancePage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Total Tagihan</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <Banknote className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -441,7 +442,7 @@ export default function FinancePage() {
                 </Table>
               ) : (
                 <div className="flex flex-col items-center justify-center py-8">
-                  <DollarSign className="h-8 w-8 text-muted-foreground" />
+                  <Banknote className="h-8 w-8 text-muted-foreground" />
                   <p className="mt-2 text-muted-foreground">
                     Belum ada data ringkasan
                   </p>
@@ -452,5 +453,13 @@ export default function FinancePage() {
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+export default function FinancePageWithShell() {
+  return (
+    <MainLayout>
+      <FinancePageContent />
+    </MainLayout>
   );
 }

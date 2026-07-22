@@ -1,4 +1,5 @@
 "use client";
+import { MainLayout } from "@/components/layout";
 
 /**
  * Profile Page
@@ -91,7 +92,7 @@ const ROLE_LABELS: Record<string, string> = {
   PARENT: "Wali Santri",
 };
 
-export default function ProfilePage() {
+function ProfilePageContent() {
   const { user, fetchUser } = useAuthStore();
   const [activeTab, setActiveTab] = useState("profile");
 
@@ -431,5 +432,13 @@ export default function ProfilePage() {
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+export default function ProfilePageWithShell() {
+  return (
+    <MainLayout>
+      <ProfilePageContent />
+    </MainLayout>
   );
 }

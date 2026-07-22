@@ -31,7 +31,7 @@ function resolveLegacyRoleToRoleCode(
       case UnitType.SMP_IT: return RoleCode.SMPIT_ADMIN;
       case UnitType.SMA_QURAN: return RoleCode.SMAQ_ADMIN;
       // PESANTREN / OTHER / unknown: no dedicated per-unit admin RoleCode exists.
-      // Do NOT silently fall back to YAYASAN_ADMIN — that would be a privilege
+      // Do NOT silently fall back to a foundation-level role — that would be a privilege
       // escalation (foundation-level governance) for a unit-level admin.
       // Caller must supply `roleCode` explicitly for these unit types.
       default: return null;
@@ -64,7 +64,12 @@ function resolveLegacyRoleToRoleCode(
       [UnitType.SMA_QURAN]: RoleCode.SMAQ_TATA_USAHA,
     },
     STUDENT: {
-      [UnitType.TK_QURAN]: RoleCode.TKQ_SISWA,
+      // No TK_QURAN entry: children of that age do not hold logins, so there is
+      // no student RoleCode to map to and this returns null — the caller then
+      // rejects with "send roleCode instead", which is the correct answer.
+      // Creating the *record* for a TK santri is unaffected: `student.service.ts`
+      // creates the User with the legacy STUDENT role and no RoleCode
+      // assignment, satisfying the NOT NULL `students.user_id`.
       [UnitType.SD_IT]: RoleCode.SDIT_SISWA,
       [UnitType.SMP_IT]: RoleCode.SMPIT_SISWA,
       [UnitType.SMA_QURAN]: RoleCode.SMAQ_SISWA,
@@ -170,8 +175,17 @@ export class AuthService {
       role: deriveLegacyRole(roleCode),
     };
 
+    // Public demo accounts are exempt from 2FA. Their credentials are printed
+    // on the login page on purpose, so a mandatory authenticator step makes the
+    // privileged demo roles impossible for a visitor to open. Gated behind an
+    // explicit env flag AND the seeded demo email domain, so real accounts —
+    // including real admins — are never affected.
+    const isDemoAccount =
+      process.env.DEMO_MODE === 'true' &&
+      user.email.endsWith('@demo.cipansor.or.id');
+
     // Check for 2FA
-    if (user.isTwoFactorEnabled) {
+    if (user.isTwoFactorEnabled && !isDemoAccount) {
       const tempToken = generateAccessToken(
         { ...basePayload, isTemp: true },
         '5m'
@@ -184,7 +198,7 @@ export class AuthService {
     }
 
     // Force 2FA setup for Admin/Super Admin
-    if (isUserAdmin && !user.isTwoFactorEnabled) {
+    if (isUserAdmin && !user.isTwoFactorEnabled && !isDemoAccount) {
       const tempToken = generateAccessToken(
         { ...basePayload, isTemp: true },
         '10m'

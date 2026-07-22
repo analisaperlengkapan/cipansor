@@ -9,6 +9,7 @@ import { config } from '@/config';
 import { logger } from '@/lib/logger';
 import { errorHandler, notFoundHandler } from '@/middleware/error';
 import { defaultLimiter, authLimiter } from '@/middleware/rate-limit';
+import { normalizePagination } from '@/middleware/normalize-pagination';
 import { swaggerSpec } from '@/config/swagger';
 
 // Import routes
@@ -197,13 +198,27 @@ if (config.env !== 'production') {
 // API routes
 const apiRouter = express.Router();
 
-// Apply stricter rate limiting to auth routes
-// Apply stricter rate limiting to auth routes
+// Query strings are strings; several services take `limit`/`page` as numbers
+// and hand them to Prisma unvalidated. Normalise once here so no module can
+// forget. See middleware/normalize-pagination.ts.
+apiRouter.use(normalizePagination);
+
+// Apply the strict brute-force limiter to credential-bearing endpoints ONLY.
+//
+// It used to guard the whole /auth router, which also covered GET /auth/me —
+// the session lookup the web app issues on every page load. At 5 requests per
+// minute that returns 429 to a user who simply clicks through six pages, and
+// because express-rate-limit keys on IP it fires for an entire school sharing
+// one NAT gateway, not per user. /me, /logout and /2fa/status are read-only
+// session calls with nothing to brute force, so they stay unlimited.
+// (2fa/enable, 2fa/login and 2fa/disable carry their own twoFactorLimiter.)
 if (config.env !== 'test' && config.env !== 'development') {
-  apiRouter.use('/auth', authLimiter, authRoutes);
-} else {
-  apiRouter.use('/auth', authRoutes);
+  apiRouter.use('/auth/login', authLimiter);
+  apiRouter.use('/auth/register', authLimiter);
+  apiRouter.use('/auth/refresh', authLimiter);
+  apiRouter.use('/auth/password', authLimiter);
 }
+apiRouter.use('/auth', authRoutes);
 apiRouter.use('/users', userRoutes);
 apiRouter.use('/units', unitRoutes);
 apiRouter.use('/students', studentRoutes);

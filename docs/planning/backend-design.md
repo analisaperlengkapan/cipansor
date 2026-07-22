@@ -591,7 +591,7 @@ modules/
     "id": "uuid",
     "certificateNumber": "CIPANSOR/SANAD/2025/001",
     "verificationCode": "ABC123XYZ",
-    "publicVerificationUrl": "https://cipansor.id/verify/ABC123XYZ",
+    "publicVerificationUrl": "https://cipansor.or.id/verify/ABC123XYZ",
     "certificateUrl": "https://...",
     "issuedAt": "2025-12-05T12:00:00Z"
   }
@@ -1488,7 +1488,7 @@ class PDFService {
       riwayat: sanad.riwayat,
       certifiedAt: formatDate(sanad.certifiedAt),
       verificationCode: sanad.verificationCode,
-      qrCodeUrl: `https://cipansor.id/verify/${sanad.verificationCode}`,
+      qrCodeUrl: `https://cipansor.or.id/verify/${sanad.verificationCode}`,
     });
 
     return this.htmlToPDF(html, {

@@ -90,7 +90,7 @@ import {
   Phone,
   Mail,
   Calendar,
-  DollarSign,
+  Banknote,
   BarChart3,
   PieChart as PieChartIcon,
   RefreshCw,

@@ -1,4 +1,5 @@
 "use client";
+import { MainLayout } from "@/components/layout";
 
 import { useState, useEffect } from "react";
 import { Edit, Sparkles, CheckCircle2 } from "lucide-react";
@@ -498,7 +499,7 @@ function SuccessionFormDialog({ onClose, initialData }: { onClose: () => void; i
 }
 
 // ─── Main Page ──────────────────────────────────────
-export default function TalentaPage() {
+function TalentaPageContent() {
   const [profileDialogOpen, setProfileDialogOpen] = useState(false);
   const [assessmentDialogOpen, setAssessmentDialogOpen] = useState(false);
   const [trainingDialogOpen, setTrainingDialogOpen] = useState(false);
@@ -758,5 +759,13 @@ export default function TalentaPage() {
         isLoading={deleteProfile.isPending || deleteTraining.isPending || deleteSuccession.isPending}
       />
     </div>
+  );
+}
+
+export default function TalentaPageWithShell() {
+  return (
+    <MainLayout>
+      <TalentaPageContent />
+    </MainLayout>
   );
 }

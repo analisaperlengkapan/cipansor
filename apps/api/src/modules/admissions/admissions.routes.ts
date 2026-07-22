@@ -41,11 +41,12 @@ router.use('/waves', waveRoutes);
 
 // ==================== PUBLIC ENDPOINTS ====================
 // Mounted BEFORE `authenticate` so the unauthenticated public PPDB page
-// (`apps/web/src/app/public/ppdb/page.tsx`) can bootstrap the registration
+// (`apps/web/src/app/public/spmb/page.tsx`) can bootstrap the registration
 // form and submit a new registrant without a session. The handlers return a
 // deliberately trimmed projection of the underlying records — see the JSDoc
 // on the corresponding controllers for the exact whitelist.
 router.get('/public/active-period', controller.getPublicActiveAdmissionPeriod);
+router.get('/public/units', controller.getPublicUnits);
 router.post(
   '/public/registrants',
   publicRegistrantLimiter,
@@ -60,16 +61,14 @@ router.get(
 router.use(authenticate);
 
 // Lead scoring / priority leads.
-// `controller.getPriorityLeads` exempts SUPER_ADMIN and YAYASAN_ADMIN from
-// unit-level scoping (they may query any/all units), but the route-level
-// `authorize` previously omitted YAYASAN_ADMIN — making the controller's
-// branch unreachable for that role and surfacing 403s instead of the
-// intended cross-unit view. Add YAYASAN_ADMIN here so the two layers agree.
+// `controller.getPriorityLeads` exempts SUPER_ADMIN from unit-level scoping
+// (it may query any/all units). Route-level `authorize` and the controller's
+// scoping branch must stay in agreement: a role allowed through here but not
+// exempted below sees 403s instead of the intended cross-unit view.
 router.get(
   '/leads/priority',
   authorize(
     UserRole.SUPER_ADMIN,
-    RoleCode.YAYASAN_ADMIN,
     UserRole.UNIT_ADMIN,
     UserRole.STAFF
   ),
@@ -107,14 +106,14 @@ router.get(
  *       200:
  *         description: List of admission periods
  */
-// Read-only listing/detail routes also expose YAYASAN_ADMIN since the
-// foundation-level admin needs cross-unit oversight. Write routes
+// Read-only listing/detail routes are open to unit admins for cross-unit
+// oversight; foundation-level access is SUPER_ADMIN. Write routes
 // (POST/PUT/DELETE and the enroll/score/status mutations below) remain
 // restricted to SUPER_ADMIN/UNIT_ADMIN — foundation-level admins are
 // expected to read but not directly mutate admissions records.
 router.get(
   '/periods',
-  authorize(UserRole.SUPER_ADMIN, RoleCode.YAYASAN_ADMIN, UserRole.UNIT_ADMIN),
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
   validateQuery(queryAdmissionPeriodSchema),
   controller.getAdmissionPeriods
 );
@@ -181,7 +180,7 @@ router.post(
  */
 router.get(
   '/periods/:id',
-  authorize(UserRole.SUPER_ADMIN, RoleCode.YAYASAN_ADMIN, UserRole.UNIT_ADMIN),
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
   controller.getAdmissionPeriodById
 );
 
@@ -205,7 +204,7 @@ router.get(
  */
 router.get(
   '/periods/:id/stats',
-  authorize(UserRole.SUPER_ADMIN, RoleCode.YAYASAN_ADMIN, UserRole.UNIT_ADMIN),
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
   controller.getAdmissionPeriodStats
 );
 
@@ -293,7 +292,6 @@ router.get(
   '/registrants',
   authorize(
     UserRole.SUPER_ADMIN,
-    RoleCode.YAYASAN_ADMIN,
     UserRole.UNIT_ADMIN,
     UserRole.STAFF
   ),
@@ -369,7 +367,6 @@ router.get(
   '/registrants/:id',
   authorize(
     UserRole.SUPER_ADMIN,
-    RoleCode.YAYASAN_ADMIN,
     UserRole.UNIT_ADMIN,
     UserRole.STAFF
   ),
@@ -553,7 +550,6 @@ router.get(
   '/registrants/:registrantId/documents',
   authorize(
     UserRole.SUPER_ADMIN,
-    RoleCode.YAYASAN_ADMIN,
     UserRole.UNIT_ADMIN,
     UserRole.STAFF
   ),

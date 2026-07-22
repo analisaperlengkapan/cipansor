@@ -34,6 +34,8 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { api } from "@/lib/api";
+// Shared shape — see use-parent-portal.ts.
+import type { ParentChild } from "@/hooks/use-parent-portal";
 import { toast } from "sonner";
 import {
   MessageSquare,
@@ -69,20 +71,6 @@ import { MessageCategory, Message } from "@cipansor/shared";
 // TYPES
 // ========================================
 
-interface Child {
-  id: string;
-  student: {
-    id: string;
-    nis: string;
-    name: string;
-    class?: {
-      name: string;
-      teacher?: {
-        name: string;
-      };
-    };
-  };
-}
 
 interface WeeklyProgress {
   week: string;
@@ -114,7 +102,7 @@ interface WeeklyProgress {
 
 export default function BukuPenghubungPage() {
   const [loading, setLoading] = useState(true);
-  const [children, setChildren] = useState<Child[]>([]);
+  const [children, setChildren] = useState<ParentChild[]>([]);
   const [selectedChildId, setSelectedChildId] = useState<string>("");
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -162,7 +150,7 @@ export default function BukuPenghubungPage() {
         setChildren(childrenData);
 
         if (childrenData.length > 0 && !selectedChildId) {
-          setSelectedChildId(childrenData[0].student.id);
+          setSelectedChildId(childrenData[0].id);
         }
       } catch (err) {
         console.error("Failed to fetch children:", err);
@@ -197,7 +185,7 @@ export default function BukuPenghubungPage() {
     };
   }, [selectedChildId]);
 
-  const selectedChild = children.find((c) => c.student.id === selectedChildId);
+  const selectedChild = children.find((c) => c.id === selectedChildId);
 
   const filteredEntries = entries.filter((entry) => {
     const matchCategory =
@@ -222,22 +210,14 @@ export default function BukuPenghubungPage() {
       return;
     }
 
-    if (!selectedChild?.student.class?.teacher) {
+    // The recipient is the homeroom teacher's *User* id. `/parent/children`
+    // now returns it; this used to send the literal string
+    // "system-admin-uuid", so every message a parent wrote failed.
+    const recipientId = selectedChild?.currentClass?.homeroomTeacher?.user?.id;
+    if (!recipientId) {
       toast.error("Data Wali Kelas tidak ditemukan");
       return;
     }
-
-    // Since we don't have the teacher's User ID directly in the Child interface usually,
-    // we might need to fetch it or rely on a specific endpoint like POST /messages/teacher/:studentId
-    // For now, let's assume the backend handles routing to the homeroom teacher if we pass a special recipient or if we know the ID.
-    // Ideally the 'children' endpoint should return teacherId.
-    // Let's assume for this implementation we need to mock the recipient ID or use a placeholder if not available.
-    // In a real scenario, `selectedChild.student.class.homeroomTeacherId` would be available.
-
-    // Fallback: This will fail if we don't have a valid UUID.
-    // We'll trust the user to have a valid setup or the backend to handle it.
-    // Assuming we can send to a system admin if no teacher found for demo.
-    const recipientId = "system-admin-uuid"; // Placeholder, replace with real ID logic
 
     createMessage.mutate(
       {
@@ -365,15 +345,15 @@ export default function BukuPenghubungPage() {
           </p>
         </div>
         <div className="flex items-center gap-4">
-          {/* Child Selector */}
+          {/* ParentChild Selector */}
           <Select value={selectedChildId} onValueChange={setSelectedChildId}>
             <SelectTrigger className="w-[200px]">
               <SelectValue placeholder="Pilih anak" />
             </SelectTrigger>
             <SelectContent>
               {children.map((child) => (
-                <SelectItem key={child.student.id} value={child.student.id}>
-                  {child.student.name}
+                <SelectItem key={child.id} value={child.id}>
+                  {child.name}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -392,7 +372,7 @@ export default function BukuPenghubungPage() {
                 <DialogTitle>Kirim Pesan ke Guru</DialogTitle>
                 <DialogDescription>
                   Kirim pesan kepada wali kelas atau guru{" "}
-                  {selectedChild?.student.name}
+                  {selectedChild?.name}
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
@@ -465,27 +445,27 @@ export default function BukuPenghubungPage() {
         </div>
       </div>
 
-      {/* Child Info Card */}
+      {/* ParentChild Info Card */}
       {selectedChild && (
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-4">
               <Avatar className="h-16 w-16">
                 <AvatarFallback className="bg-primary/10 text-primary text-xl">
-                  {selectedChild.student.name.charAt(0)}
+                  {selectedChild.name.charAt(0)}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1">
                 <h3 className="text-lg font-semibold">
-                  {selectedChild.student.name}
+                  {selectedChild.name}
                 </h3>
                 <p className="text-sm text-muted-foreground">
-                  NIS: {selectedChild.student.nis} • Kelas:{" "}
-                  {selectedChild.student.class?.name || "-"}
+                  NIS: {selectedChild.nis} • Kelas:{" "}
+                  {selectedChild.currentClass?.name || "-"}
                 </p>
                 <p className="text-sm text-muted-foreground">
                   Wali Kelas:{" "}
-                  {selectedChild.student.class?.teacher?.name || "-"}
+                  {selectedChild.currentClass?.homeroomTeacher?.user?.name || "-"}
                 </p>
               </div>
               {/* Quran Map Link */}
@@ -522,7 +502,7 @@ export default function BukuPenghubungPage() {
             <CardHeader>
               <CardTitle>Laporan Harian Santri</CardTitle>
               <CardDescription>
-                Aktivitas harian {selectedChild?.student.name}
+                Aktivitas harian {selectedChild?.name}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -872,7 +852,7 @@ export default function BukuPenghubungPage() {
                     {weeklyProgress.week}
                   </CardTitle>
                   <CardDescription>
-                    Ringkasan perkembangan {selectedChild?.student.name} minggu
+                    Ringkasan perkembangan {selectedChild?.name} minggu
                     ini
                   </CardDescription>
                 </CardHeader>

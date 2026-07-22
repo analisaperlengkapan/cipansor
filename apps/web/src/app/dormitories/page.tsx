@@ -1,4 +1,5 @@
 "use client";
+import { MainLayout } from "@/components/layout";
 
 import { useState } from "react";
 import Link from "next/link";
@@ -38,7 +39,7 @@ import {
 } from "@/hooks/use-dormitory";
 import { useUnits } from "@/hooks/use-units";
 
-export default function DormitoriesPage() {
+function DormitoriesPageContent() {
   const [page, setPage] = useState(1);
   const [unitId, setUnitId] = useState<string>("");
   const [type, setType] = useState<DormitoryType | "">("");
@@ -320,5 +321,13 @@ export default function DormitoriesPage() {
         variant="destructive"
       />
     </div>
+  );
+}
+
+export default function DormitoriesPageWithShell() {
+  return (
+    <MainLayout>
+      <DormitoriesPageContent />
+    </MainLayout>
   );
 }

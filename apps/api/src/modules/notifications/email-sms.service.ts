@@ -178,7 +178,7 @@ const templates = {
 // SMS templates
 const smsTemplates = {
   paymentReminder: (data: { studentName: string; amount: string; dueDate: string }) =>
-    `[Cipansor] Pengingat: Tagihan ${data.studentName} sebesar ${data.amount} jatuh tempo ${data.dueDate}. Info: portal.cipansor.id`,
+    `[Cipansor] Pengingat: Tagihan ${data.studentName} sebesar ${data.amount} jatuh tempo ${data.dueDate}. Info: portal.cipansor.or.id`,
 
   violationNotification: (data: { studentName: string; type: string }) =>
     `[Cipansor] Pemberitahuan: ${data.studentName} melakukan pelanggaran (${data.type}). Cek portal untuk detail.`,
@@ -380,7 +380,7 @@ class NotificationService {
 
     try {
       const info = await transporter.sendMail({
-        from: process.env.SMTP_FROM || '"Cipansor System" <no-reply@cipansor.id>',
+        from: process.env.SMTP_FROM || '"Cipansor System" <no-reply@cipansor.or.id>',
         to: recipientEmail,
         subject: subject,
         html: htmlContent,

@@ -20,7 +20,7 @@ const router = Router();
 router.post(
   '/',
   authenticate,
-  authorize(RoleCode.SUPER_ADMIN, RoleCode.YAYASAN_ADMIN),
+  authorize(RoleCode.SUPER_ADMIN),
   validate(CreateStudentOrgSchema),
   asyncHandler(async (req, res) => {
     const data = await studentOrgService.createOrg(req.body);

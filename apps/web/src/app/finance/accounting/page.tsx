@@ -43,7 +43,7 @@ import {
   BookOpen,
   RefreshCw,
   Filter,
-  DollarSign,
+  Banknote,
   TrendingUp,
   TrendingDown,
   Download,
@@ -708,7 +708,7 @@ function ReportsTab() {
             </CardHeader>
             <CardContent>
               <div className="flex items-center">
-                <DollarSign className="h-5 w-5 text-primary mr-2" />
+                <Banknote className="h-5 w-5 text-primary mr-2" />
                 <span
                   className={`text-2xl font-bold ${incomeExpense.summary.netIncome >= 0 ? "text-green-600" : "text-red-600"}`}
                 >

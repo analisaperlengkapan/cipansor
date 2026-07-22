@@ -1,4 +1,5 @@
 "use client";
+import { MainLayout } from "@/components/layout";
 import { useState } from "react";
 import { safeFormat } from "@/lib/date";
 import Link from "next/link";
@@ -402,7 +403,7 @@ function SickBayMonitor({ summaryData }: { summaryData: any }) {
 
 // --- MAIN PAGE ---
 
-export default function HealthPage() {
+function HealthPageContent() {
   const [page, setPage] = useState(1);
   const [typeFilter, setTypeFilter] = useState<string>("ALL");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
@@ -668,5 +669,13 @@ export default function HealthPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function HealthPageWithShell() {
+  return (
+    <MainLayout>
+      <HealthPageContent />
+    </MainLayout>
   );
 }

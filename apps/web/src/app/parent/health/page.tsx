@@ -19,6 +19,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { api } from "@/lib/api";
+// Children come from `useParentChildren`'s shared `ParentChild` shape.
+// Each of these pages used to declare its own local `Child` with a nested
+// `student` object the API never returns — see use-parent-portal.ts.
+import type { ParentChild } from "@/hooks/use-parent-portal";
 import {
   Heart,
   Activity,
@@ -29,14 +33,6 @@ import {
   AlertTriangle,
 } from "lucide-react";
 
-interface Child {
-  id: string;
-  student: {
-    id: string;
-    nis: string;
-    name: string;
-  };
-}
 
 interface HealthRecord {
   id: string;
@@ -75,7 +71,7 @@ export default function HealthPage() {
   const selectedStudentId = searchParams.get("studentId");
 
   const [loading, setLoading] = useState(true);
-  const [children, setChildren] = useState<Child[]>([]);
+  const [children, setChildren] = useState<ParentChild[]>([]);
   const [selectedChild, setSelectedChild] = useState<string>("");
   const [records, setRecords] = useState<HealthRecord[]>([]);
   const [profile, setProfile] = useState<HealthProfile | null>(null);
@@ -91,10 +87,10 @@ export default function HealthPage() {
         if (childrenData.length > 0) {
           const defaultChild = selectedStudentId
             ? childrenData.find(
-                (c: Child) => c.student.id === selectedStudentId,
-              )?.student.id
-            : childrenData[0].student.id;
-          setSelectedChild(defaultChild || childrenData[0].student.id);
+                (c: ParentChild) => c.id === selectedStudentId,
+              )?.id
+            : childrenData[0].id;
+          setSelectedChild(defaultChild || childrenData[0].id);
         }
       } catch (err) {
         console.error("Failed to fetch children:", err);
@@ -175,8 +171,8 @@ export default function HealthPage() {
             </SelectTrigger>
             <SelectContent>
               {children.map((child) => (
-                <SelectItem key={child.student.id} value={child.student.id}>
-                  {child.student.name}
+                <SelectItem key={child.id} value={child.id}>
+                  {child.name}
                 </SelectItem>
               ))}
             </SelectContent>

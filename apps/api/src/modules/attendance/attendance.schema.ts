@@ -48,11 +48,23 @@ export const attendanceIdParamSchema = z.object({
 });
 
 // Summary query
+/**
+ * Summary filters.
+ *
+ * `startDate`/`endDate` used to be mandatory, which made two real callers 400:
+ * the unit dashboards ask for a single day (`?date=…&unitId=…`) and the
+ * student pages ask for one student with no range at all. Both are reasonable
+ * questions, so `date` is accepted as a one-day shorthand and an omitted range
+ * now means "no date filter" instead of an error. `unitId` lets a super admin
+ * scope to one unit; everyone else is already scoped to their own.
+ */
 export const attendanceSummaryQuerySchema = z.object({
   classId: z.string().uuid().optional(),
   studentId: z.string().uuid().optional(),
-  startDate: z.string(), // YYYY-MM-DD required
-  endDate: z.string(), // YYYY-MM-DD required
+  unitId: z.string().uuid().optional(),
+  date: z.string().optional(), // YYYY-MM-DD — single day
+  startDate: z.string().optional(), // YYYY-MM-DD
+  endDate: z.string().optional(), // YYYY-MM-DD
 });
 
 // Export inferred types (optional, but we use shared types in service)

@@ -1,4 +1,5 @@
 "use client";
+import { MainLayout } from "@/components/layout";
 
 /**
  * Reports Page
@@ -90,7 +91,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   DISCIPLINE: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
 };
 
-export default function ReportsPage() {
+function ReportsPageContent() {
   // State
   const [activeTab, setActiveTab] = useState<string>("overview");
   const [selectedReport, setSelectedReport] = useState<ExportReportType | null>(
@@ -1070,5 +1071,13 @@ function FinanceReportView({
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function ReportsPageWithShell() {
+  return (
+    <MainLayout>
+      <ReportsPageContent />
+    </MainLayout>
   );
 }

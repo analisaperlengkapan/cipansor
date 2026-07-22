@@ -1,4 +1,5 @@
 "use client";
+import { MainLayout } from "@/components/layout";
 
 import { useState } from "react";
 import { safeFormat } from "@/lib/date";
@@ -63,7 +64,7 @@ import {
   WashingMachine,
   Eye,
   Tag,
-  DollarSign,
+  Banknote,
   TrendingUp,
   AlertCircle,
   Calendar,
@@ -1276,7 +1277,7 @@ function TransactionsTab() {
 }
 
 // Main Page Component
-export default function LaundryPage() {
+function LaundryPageContent() {
   const { data: transactionsData } = useQuery({
     queryKey: ["laundry-transactions"],
     queryFn: () => fetchTransactions(),
@@ -1345,7 +1346,7 @@ export default function LaundryPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Pendapatan</CardTitle>
-            <DollarSign className="h-4 w-4 text-green-600" />
+            <Banknote className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -1376,5 +1377,13 @@ export default function LaundryPage() {
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+export default function LaundryPageWithShell() {
+  return (
+    <MainLayout>
+      <LaundryPageContent />
+    </MainLayout>
   );
 }

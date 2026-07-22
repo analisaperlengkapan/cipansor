@@ -17,7 +17,7 @@ export interface AuthUser {
 // against the actual backend rather than mock data.
 export const testUsers: Record<string, AuthUser> = {
   superAdmin: {
-    email: "superadmin@cipansor.id",
+    email: "superadmin@cipansor.or.id",
     password: "SuperAdmin123!",
     role: "SUPER_ADMIN",
   },

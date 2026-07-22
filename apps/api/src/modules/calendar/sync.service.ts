@@ -34,7 +34,7 @@ export function generateICalendar(
   ];
 
   events.forEach((event) => {
-    const uid = `${event.id}@cipansor.id`;
+    const uid = `${event.id}@cipansor.or.id`;
     const dtstamp = formatICalDate(new Date());
     const dtstart = event.allDay
       ? formatICalDateOnly(event.startDate)

@@ -14,6 +14,9 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api";
+// Shared shape — see use-parent-portal.ts. This page previously declared
+// its own `Child` with a nested `student` the API never returned.
+import type { ParentChild } from "@/hooks/use-parent-portal";
 import {
   Users,
   GraduationCap,
@@ -28,33 +31,6 @@ import {
   ChevronRight,
 } from "lucide-react";
 
-interface Child {
-  id: string;
-  student: {
-    id: string;
-    nis: string;
-    nisn?: string;
-    name: string;
-    birthDate?: string;
-    birthPlace?: string;
-    gender?: string;
-    address?: string;
-    phone?: string;
-    email?: string;
-    photo?: string;
-    class?: {
-      id: string;
-      name: string;
-      gradeLevel: number;
-    };
-    unit?: {
-      id: string;
-      name: string;
-    };
-  };
-  relation: string;
-  isPrimary: boolean;
-}
 
 interface AttendanceSummary {
   period: string;
@@ -119,8 +95,8 @@ export default function ChildrenPage() {
   const selectedId = searchParams.get("id");
 
   const [loading, setLoading] = useState(true);
-  const [children, setChildren] = useState<Child[]>([]);
-  const [selectedChild, setSelectedChild] = useState<Child | null>(null);
+  const [children, setChildren] = useState<ParentChild[]>([]);
+  const [selectedChild, setSelectedChild] = useState<ParentChild | null>(null);
   const [activeTab, setActiveTab] = useState("profile");
 
   // Detail data
@@ -140,7 +116,7 @@ export default function ChildrenPage() {
         // Auto-select child if ID is provided or select first child
         if (childrenData.length > 0) {
           const childToSelect = selectedId
-            ? childrenData.find((c: Child) => c.student.id === selectedId)
+            ? childrenData.find((c: ParentChild) => c.id === selectedId)
             : childrenData[0];
           if (childToSelect) {
             setSelectedChild(childToSelect);
@@ -162,7 +138,7 @@ export default function ChildrenPage() {
     const fetchDetails = async () => {
       setDetailLoading(true);
       try {
-        const studentId = selectedChild.student.id;
+        const studentId = selectedChild.id;
 
         // Fetch based on active tab
         if (activeTab === "attendance") {
@@ -243,12 +219,12 @@ export default function ChildrenPage() {
             <CardContent className="p-4">
               <div className="flex items-center gap-4">
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary font-bold">
-                  {child.student.name.charAt(0)}
+                  {child.name.charAt(0)}
                 </div>
                 <div className="flex-1">
-                  <p className="font-medium">{child.student.name}</p>
+                  <p className="font-medium">{child.name}</p>
                   <p className="text-sm text-muted-foreground">
-                    {child.student.nis} •{" "}
+                    {child.nis} •{" "}
                     {relationLabels[child.relation] || child.relation}
                   </p>
                 </div>
@@ -259,26 +235,26 @@ export default function ChildrenPage() {
         ))}
       </div>
 
-      {/* Selected Child Details */}
+      {/* Selected ParentChild Details */}
       {selectedChild && (
         <Card>
           <CardHeader>
             <div className="flex items-center gap-4">
               <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-2xl">
-                {selectedChild.student.name.charAt(0)}
+                {selectedChild.name.charAt(0)}
               </div>
               <div>
-                <CardTitle>{selectedChild.student.name}</CardTitle>
+                <CardTitle>{selectedChild.name}</CardTitle>
                 <CardDescription className="flex items-center gap-2 mt-1">
-                  <Badge variant="secondary">{selectedChild.student.nis}</Badge>
-                  {selectedChild.student.class && (
+                  <Badge variant="secondary">{selectedChild.nis}</Badge>
+                  {selectedChild.currentClass && (
                     <Badge variant="outline">
-                      {selectedChild.student.class.name}
+                      {selectedChild.currentClass.name}
                     </Badge>
                   )}
-                  {selectedChild.student.unit && (
+                  {selectedChild.unit && (
                     <Badge variant="outline">
-                      {selectedChild.student.unit.name}
+                      {selectedChild.unit.name}
                     </Badge>
                   )}
                 </CardDescription>
@@ -318,32 +294,32 @@ export default function ChildrenPage() {
                       <label className="text-sm font-medium text-muted-foreground">
                         NIS
                       </label>
-                      <p className="mt-1">{selectedChild.student.nis}</p>
+                      <p className="mt-1">{selectedChild.nis}</p>
                     </div>
-                    {selectedChild.student.nisn && (
+                    {selectedChild.nisn && (
                       <div>
                         <label className="text-sm font-medium text-muted-foreground">
                           NISN
                         </label>
-                        <p className="mt-1">{selectedChild.student.nisn}</p>
+                        <p className="mt-1">{selectedChild.nisn}</p>
                       </div>
                     )}
                     <div>
                       <label className="text-sm font-medium text-muted-foreground">
                         Nama Lengkap
                       </label>
-                      <p className="mt-1">{selectedChild.student.name}</p>
+                      <p className="mt-1">{selectedChild.name}</p>
                     </div>
-                    {selectedChild.student.birthPlace &&
-                      selectedChild.student.birthDate && (
+                    {selectedChild.birthPlace &&
+                      selectedChild.birthDate && (
                         <div>
                           <label className="text-sm font-medium text-muted-foreground">
                             Tempat, Tanggal Lahir
                           </label>
                           <p className="mt-1">
-                            {selectedChild.student.birthPlace},{" "}
+                            {selectedChild.birthPlace},{" "}
                             {new Date(
-                              selectedChild.student.birthDate,
+                              selectedChild.birthDate,
                             ).toLocaleDateString("id-ID", {
                               day: "numeric",
                               month: "long",
@@ -352,13 +328,13 @@ export default function ChildrenPage() {
                           </p>
                         </div>
                       )}
-                    {selectedChild.student.gender && (
+                    {selectedChild.gender && (
                       <div>
                         <label className="text-sm font-medium text-muted-foreground">
                           Jenis Kelamin
                         </label>
                         <p className="mt-1">
-                          {selectedChild.student.gender === "MALE"
+                          {selectedChild.gender === "MALE"
                             ? "Laki-laki"
                             : "Perempuan"}
                         </p>
@@ -366,32 +342,32 @@ export default function ChildrenPage() {
                     )}
                   </div>
                   <div className="space-y-4">
-                    {selectedChild.student.class && (
+                    {selectedChild.currentClass && (
                       <div>
                         <label className="text-sm font-medium text-muted-foreground">
                           Kelas
                         </label>
                         <p className="mt-1">
-                          {selectedChild.student.class.name}
+                          {selectedChild.currentClass.name}
                         </p>
                       </div>
                     )}
-                    {selectedChild.student.unit && (
+                    {selectedChild.unit && (
                       <div>
                         <label className="text-sm font-medium text-muted-foreground">
                           Unit
                         </label>
                         <p className="mt-1">
-                          {selectedChild.student.unit.name}
+                          {selectedChild.unit.name}
                         </p>
                       </div>
                     )}
-                    {selectedChild.student.address && (
+                    {selectedChild.address && (
                       <div>
                         <label className="text-sm font-medium text-muted-foreground">
                           Alamat
                         </label>
-                        <p className="mt-1">{selectedChild.student.address}</p>
+                        <p className="mt-1">{selectedChild.address}</p>
                       </div>
                     )}
                     <div>
@@ -680,7 +656,7 @@ export default function ChildrenPage() {
               <TabsContent value="more" className="mt-6">
                 <div className="grid gap-4 md:grid-cols-2">
                   <a
-                    href={`/parent/violations?studentId=${selectedChild.student.id}`}
+                    href={`/parent/violations?studentId=${selectedChild.id}`}
                   >
                     <Card className="cursor-pointer hover:border-primary transition-colors">
                       <CardContent className="p-4 flex items-center gap-4">
@@ -695,7 +671,7 @@ export default function ChildrenPage() {
                     </Card>
                   </a>
                   <a
-                    href={`/parent/rewards?studentId=${selectedChild.student.id}`}
+                    href={`/parent/rewards?studentId=${selectedChild.id}`}
                   >
                     <Card className="cursor-pointer hover:border-primary transition-colors">
                       <CardContent className="p-4 flex items-center gap-4">
@@ -710,7 +686,7 @@ export default function ChildrenPage() {
                     </Card>
                   </a>
                   <a
-                    href={`/parent/health?studentId=${selectedChild.student.id}`}
+                    href={`/parent/health?studentId=${selectedChild.id}`}
                   >
                     <Card className="cursor-pointer hover:border-primary transition-colors">
                       <CardContent className="p-4 flex items-center gap-4">
@@ -725,7 +701,7 @@ export default function ChildrenPage() {
                     </Card>
                   </a>
                   <a
-                    href={`/parent/finance?studentId=${selectedChild.student.id}`}
+                    href={`/parent/finance?studentId=${selectedChild.id}`}
                   >
                     <Card className="cursor-pointer hover:border-primary transition-colors">
                       <CardContent className="p-4 flex items-center gap-4">

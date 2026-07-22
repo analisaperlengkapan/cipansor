@@ -11,7 +11,7 @@ test("verify reception pages", async ({ page }) => {
         data: {
           id: "admin-1",
           name: "Super Admin",
-          email: "admin@cipansor.id",
+          email: "admin@cipansor.or.id",
           role: "SUPER_ADMIN",
           unitId: "unit-1",
         },

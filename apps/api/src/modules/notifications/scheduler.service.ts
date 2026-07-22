@@ -312,7 +312,10 @@ export class SchedulerService {
         const sums = await prisma.journalEntry.aggregate({
           where: {
             accountId,
-            unitId: plan.unitId,
+            // A foundation-wide plan has no unit. Passing `null` here would filter for
+            // journal entries whose unitId IS NULL; `undefined` omits the filter so the
+            // aggregate spans every unit, which is what a yayasan-level plan means.
+            unitId: plan.unitId ?? undefined,
             date: { gte: plan.startDate, lte: endOfDay },
           },
           _sum: { debit: true, credit: true },
@@ -327,7 +330,10 @@ export class SchedulerService {
       if (realization <= budget * 1.2) continue;
 
       const admins = await prisma.user.findMany({
-        where: { role: 'UNIT_ADMIN', unitId: plan.unitId, isActive: true, deletedAt: null },
+        // Foundation-wide plans have no unit admin; `undefined` would notify every
+        // unit admin in the system, so those plans notify nobody here and are left to
+        // SUPER_ADMIN oversight.
+        where: { role: 'UNIT_ADMIN', unitId: plan.unitId ?? '', isActive: true, deletedAt: null },
         select: { id: true },
       });
       const pct = Math.round((realization / budget) * 100);

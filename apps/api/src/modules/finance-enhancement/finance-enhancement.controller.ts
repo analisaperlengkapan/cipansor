@@ -508,7 +508,7 @@ export class FinanceEnhancementController {
       // otherwise return alerts across ALL units — see budget.service.ts
       // where `unitId` is only spread when truthy).
       let effectiveUnitId = unitId as string | undefined;
-      if (user && user.role !== 'SUPER_ADMIN' && user.role !== 'YAYASAN_ADMIN') {
+      if (user && user.role !== 'SUPER_ADMIN') {
         if (!user.unitId) {
           return res
             .status(403)

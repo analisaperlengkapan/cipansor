@@ -396,6 +396,20 @@ router.post('/usage', controller.createMedicationUsage);
  */
 router.get('/stats/:unitId', controller.getHealthStats);
 
+/**
+ * @swagger
+ * /api/health/summary:
+ *   get:
+ *     summary: Health statistics across every unit
+ *     tags: [Health]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Yayasan-wide health summary
+ */
+router.get('/summary', controller.getHealthSummary);
+
 // ==================== GROWTH RECORDS ====================
 
 /**

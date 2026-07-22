@@ -47,7 +47,21 @@ const STATUS_STEP_INDEX: Record<string, number> = {
   CANCELLED: 0,
 };
 
-export default function TrackPPDBPage() {
+/**
+ * Registration lookup: form, error state, and result stepper.
+ *
+ * This lived only inside `/public/spmb/track`, a page nothing linked to — it
+ * was reachable through the sitemap alone. Meanwhile the "Cek Status" tab on
+ * the SPMB page, which that page's own instructions tell parents to use, was a
+ * dead stub: an unbound <Input> and a <Button> with no onClick, so typing a
+ * registration number and pressing the button did nothing at all. The stub
+ * also asked only for the registration number, while the endpoint requires the
+ * birth date too (a two-factor lookup — see `getRegistrantTrackingInfo`).
+ *
+ * Extracted here so the tab and the standalone page run the same code, rather
+ * than one working copy and one imitation of it.
+ */
+export function RegistrationTracker() {
   const [regNo, setRegNo] = useState("");
   const [birthDate, setBirthDate] = useState("");
   const [searchParams, setSearchParams] = useState({ no: "", dob: "" });
@@ -71,16 +85,7 @@ export default function TrackPPDBPage() {
     registrant?.status === "REJECTED" || registrant?.status === "CANCELLED";
 
   return (
-    <div className="container mx-auto py-12 px-4 max-w-3xl">
-      <div className="text-center mb-10">
-        <h1 className="text-4xl font-black tracking-tight mb-2">
-          Lacak Pendaftaran
-        </h1>
-        <p className="text-muted-foreground">
-          Masukkan nomor pendaftaran dan tanggal lahir calon santri
-        </p>
-      </div>
-
+    <>
       <Card className="mb-8 border-2">
         <CardContent className="pt-6">
           <form
@@ -88,21 +93,34 @@ export default function TrackPPDBPage() {
             className="grid grid-cols-1 md:grid-cols-3 gap-4"
           >
             <div className="space-y-2">
-              <label className="text-xs font-bold uppercase text-muted-foreground">
+              <label
+                htmlFor="track-reg-no"
+                className="text-xs font-bold uppercase text-muted-foreground"
+              >
                 No. Pendaftaran
               </label>
+              {/*
+                The placeholder used to read "PSB-2026...", a year no record
+                contains. Registration numbers are issued per period, so the
+                example must not imply a particular intake.
+              */}
               <Input
-                placeholder="PSB-2026..."
+                id="track-reg-no"
+                placeholder="Contoh: PSB-0001"
                 value={regNo}
                 onChange={(e) => setRegNo(e.target.value)}
                 required
               />
             </div>
             <div className="space-y-2">
-              <label className="text-xs font-bold uppercase text-muted-foreground">
+              <label
+                htmlFor="track-birth-date"
+                className="text-xs font-bold uppercase text-muted-foreground"
+              >
                 Tanggal Lahir
               </label>
               <Input
+                id="track-birth-date"
                 type="date"
                 value={birthDate}
                 onChange={(e) => setBirthDate(e.target.value)}
@@ -112,9 +130,12 @@ export default function TrackPPDBPage() {
             <div className="flex items-end">
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2
+                    className="mr-2 h-4 w-4 animate-spin"
+                    aria-hidden="true"
+                  />
                 ) : (
-                  <Search className="mr-2 h-4 w-4" />
+                  <Search className="mr-2 h-4 w-4" aria-hidden="true" />
                 )}
                 Cek Status
               </Button>
@@ -176,7 +197,7 @@ export default function TrackPPDBPage() {
                           : "bg-white border-slate-200 text-slate-300"
                       }`}
                     >
-                      <Icon className="w-5 h-5" />
+                      <Icon className="w-5 h-5" aria-hidden="true" />
                     </div>
                     <span
                       className={`text-[10px] md:text-xs font-bold uppercase text-center w-16 md:w-24 ${
@@ -193,7 +214,8 @@ export default function TrackPPDBPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-slate-50 rounded-2xl">
               <div className="space-y-4">
                 <h3 className="font-bold flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-primary" /> Riwayat
+                  <Clock className="w-4 h-4 text-primary" aria-hidden="true" />{" "}
+                  Riwayat
                 </h3>
                 <div className="space-y-3">
                   <div className="flex gap-3 items-start">
@@ -227,8 +249,11 @@ export default function TrackPPDBPage() {
 
               <div className="space-y-4">
                 <h3 className="font-bold flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-primary" /> Verifikasi
-                  Dokumen
+                  <FileText
+                    className="w-4 h-4 text-primary"
+                    aria-hidden="true"
+                  />{" "}
+                  Verifikasi Dokumen
                 </h3>
                 <div className="space-y-2">
                   {registrant.documents?.length > 0 ? (
@@ -258,7 +283,7 @@ export default function TrackPPDBPage() {
             {isEnrolled && (
               <div className="mt-6 p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-4">
                 <div className="w-12 h-12 rounded-full bg-emerald-500 flex items-center justify-center text-white shrink-0">
-                  <GraduationCap className="w-6 h-6" />
+                  <GraduationCap className="w-6 h-6" aria-hidden="true" />
                 </div>
                 <div>
                   <p className="font-bold text-emerald-900">
@@ -275,6 +300,6 @@ export default function TrackPPDBPage() {
           </CardContent>
         </Card>
       )}
-    </div>
+    </>
   );
 }

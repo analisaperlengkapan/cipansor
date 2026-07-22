@@ -126,6 +126,10 @@ import { randomBytes } from 'crypto';
 import { seedWilayahIndonesia } from './seeds/wilayah-indonesia';
 import { seedKurikulumMerdeka, seedAccountCodes } from './seeds/kurikulum-merdeka';
 import { seedPAUDIndicators } from './seeds/paud-indicators';
+import {
+  syncParentRoleAssignments,
+  type ParentScopeClient,
+} from '../src/utils/parent-scope';
 import { seedImmunizationReference } from './seeds/immunization-reference';
 import { PERMISSIONS, permissionsForRoleCode } from '../src/modules/roles/permissions';
 // Imported from source (not the built dist) so a stale @cipansor/shared build
@@ -1590,6 +1594,197 @@ async function main() {
 
   console.log(
     `✅ Demo personas wired (${demoStudents} students, ${demoTeachers} teachers, ${demoParents} parents)`
+  );
+
+  // ---------------------------------------------------------------------
+  // Families: siblings across units, and parents who are also something else
+  // ---------------------------------------------------------------------
+  //
+  // Until now every wali had exactly one child in exactly one unit, so three
+  // situations the pesantren actually has were unrepresented:
+  //
+  //   - a family with children at several jenjang at once. A wali with a child
+  //     in TK, one in SD and one in SMP must reach all three units, which means
+  //     three parent-role assignments on ONE account, not three accounts.
+  //   - komite sekolah members. All four were seeded with zero children, but a
+  //     komite is drawn from the wali murid — a member with no child in the
+  //     school is not a komite member.
+  //   - a wali who is also staff. A guru whose own child studies here, or a
+  //     pengurus yayasan who is also a parent, is one person with one login and
+  //     more than one role.
+  //
+  // The Bahtiar family is the first: three siblings, one wali, three units.
+  const bahtiarChildren: Array<{ id: string }> = [];
+
+  const bahtiarTk = await prisma.user.create({
+    data: {
+      name: 'Zahra Bahtiar',
+      email: 'tkq-b01@murid.cipansor.local',
+      passwordHash: null,
+      role: UserRole.STUDENT,
+      unitId: tkQuran.id,
+      isActive: false,
+    },
+  });
+  bahtiarChildren.push(
+    await prisma.student.create({
+      data: {
+        userId: bahtiarTk.id,
+        unitId: tkQuran.id,
+        nis: '2024TKB1',
+        nisn: '0120000001',
+        gender: Gender.FEMALE,
+        birthPlace: 'Tasikmalaya',
+        birthDate: new Date('2021-01-09'),
+        address: 'Kp. Cipansor, Kec. Kadipaten, Kab. Tasikmalaya',
+        parentName: 'Bapak Hendra Bahtiar',
+        parentPhone: '081223340001',
+      },
+    })
+  );
+
+  for (const sibling of [
+    {
+      name: 'Yusuf Bahtiar',
+      email: 'yusuf.bahtiar@sdit.sch.id',
+      unit: sdIt,
+      classId: class1A.id,
+      nis: '2024SDB1',
+      gender: Gender.MALE,
+      birthDate: '2017-04-18',
+    },
+    {
+      name: 'Hafshah Bahtiar',
+      email: 'hafshah.bahtiar@smpit.sch.id',
+      unit: smpIt,
+      classId: class7A.id,
+      nis: '2024SMB1',
+      gender: Gender.FEMALE,
+      birthDate: '2012-09-05',
+    },
+  ]) {
+    const siblingUser = await prisma.user.create({
+      data: {
+        name: sibling.name,
+        email: sibling.email,
+        passwordHash: await bcrypt.hash('Student123!', 10),
+        role: UserRole.STUDENT,
+        unitId: sibling.unit.id,
+        isActive: true,
+      },
+    });
+    const created = await prisma.student.create({
+      data: {
+        userId: siblingUser.id,
+        unitId: sibling.unit.id,
+        nis: sibling.nis,
+        nisn: `013${sibling.nis.slice(-5)}`,
+        gender: sibling.gender,
+        birthPlace: 'Tasikmalaya',
+        birthDate: new Date(sibling.birthDate),
+        address: 'Kp. Cipansor, Kec. Kadipaten, Kab. Tasikmalaya',
+        parentName: 'Bapak Hendra Bahtiar',
+        parentPhone: '081223340001',
+      },
+    });
+    await prisma.classEnrollment.create({
+      data: { studentId: created.id, classId: sibling.classId, status: 'active' },
+    });
+    bahtiarChildren.push(created);
+  }
+
+  const waliBahtiar = await prisma.user.create({
+    data: {
+      name: 'Bapak Hendra Bahtiar',
+      email: 'hendra.bahtiar@wali.cipansor.or.id',
+      passwordHash: await bcrypt.hash('Parent123!', 10),
+      role: UserRole.PARENT,
+      // No single unit: the reconciliation below gives this account one parent
+      // role per unit its children study in.
+      unitId: null,
+      isActive: true,
+    },
+  });
+
+  for (const child of bahtiarChildren) {
+    await prisma.studentParent.create({
+      data: { studentId: child.id, parentId: waliBahtiar.id, relation: 'father', isPrimary: true },
+    });
+  }
+
+  // Komite members are wali murid. Each is linked to a child already enrolled
+  // in the school whose komite they sit on.
+  const komiteChildByRole: Array<{ roleCode: string; studentId?: string }> = [
+    { roleCode: 'TKQ_KOMITE', studentId: tkPupils[1]?.id },
+    { roleCode: 'SDIT_KOMITE', studentId: students[2]?.id },
+    { roleCode: 'SMPIT_KOMITE', studentId: students[1]?.id },
+    { roleCode: 'SMAQ_KOMITE', studentId: students[3]?.id },
+  ];
+  for (const entry of komiteChildByRole) {
+    const komite = demoUsers.get(entry.roleCode);
+    if (!komite || !entry.studentId) continue;
+    await prisma.studentParent.create({
+      data: {
+        studentId: entry.studentId,
+        parentId: komite.id,
+        relation: 'mother',
+        isPrimary: false,
+      },
+    });
+  }
+
+  // Staff who are also wali. One guru and one pengurus yayasan, each a single
+  // account that will end up holding both roles.
+  const staffWali: Array<{ roleCode: string; studentId?: string }> = [
+    { roleCode: 'SDIT_GURU', studentId: students[0]?.id },
+    { roleCode: 'YAYASAN_ANGGOTA', studentId: tkPupils[2]?.id },
+  ];
+  for (const entry of staffWali) {
+    const staff = demoUsers.get(entry.roleCode);
+    if (!staff || !entry.studentId) continue;
+    await prisma.studentParent.create({
+      data: {
+        studentId: entry.studentId,
+        parentId: staff.id,
+        relation: 'father',
+        isPrimary: false,
+      },
+    });
+  }
+
+  // ---------------------------------------------------------------------
+  // Parent roles are derived from the children, never written by hand
+  // ---------------------------------------------------------------------
+  //
+  // The rule: a wali holds exactly one `*_ORANG_TUA` assignment per unit in
+  // which they have a child. Computing it here, after every StudentParent row
+  // exists, means the two can never drift — a wali cannot be scoped to a unit
+  // no child of theirs attends, and cannot be missing one where a child does.
+  //
+  // Perguruan Tinggi has no guardian role and is skipped on purpose: a
+  // mahasiswa is an adult, and inventing a wali role for them would be
+  // modelling something the institution does not do.
+  // The rule itself lives in utils/parent-scope.ts so that this seed and the
+  // SPMB onboarding path cannot disagree about it. Running it after every
+  // StudentParent row exists means a wali is scoped to exactly the units their
+  // children study in — never one more, never one fewer.
+  let parentRolesAdded = 0;
+  const parentIds = [
+    ...new Set(
+      (await prisma.studentParent.findMany({ select: { parentId: true } })).map(
+        (l) => l.parentId
+      )
+    ),
+  ];
+  for (const parentId of parentIds) {
+    parentRolesAdded += await syncParentRoleAssignments(
+      prisma as unknown as ParentScopeClient,
+      parentId
+    );
+  }
+
+  console.log(
+    `✅ Families wired (Bahtiar siblings across 3 units, komite & staff as wali, ${parentRolesAdded} parent roles derived)`
   );
 
   // Create Attendance records for today

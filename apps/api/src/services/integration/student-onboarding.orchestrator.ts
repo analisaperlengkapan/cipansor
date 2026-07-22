@@ -1,6 +1,10 @@
 import { prisma } from '@/lib/prisma';
 import { Errors } from '@/middleware/error';
 import { PaymentStatus, Registrant } from '@prisma/client';
+import {
+  syncParentRoleAssignments,
+  type ParentScopeClient,
+} from '@/utils/parent-scope';
 
 export class StudentOnboardingOrchestrator {
   /**
@@ -195,6 +199,19 @@ export class StudentOnboardingOrchestrator {
             isPrimary: true,
           }
         });
+
+        // Give the guardian the role their child implies.
+        //
+        // This step did not exist: a wali onboarded through SPMB got a User row
+        // with the legacy `role: 'PARENT'` and no UserRoleAssignment at all, so
+        // they signed in only through the legacy fallback — with an empty
+        // permission list, which silently fails every permission-gated route —
+        // and had no unit scope. It also means a second child at another
+        // jenjang now widens the same account instead of needing a new one.
+        await syncParentRoleAssignments(
+          tx as unknown as ParentScopeClient,
+          parentUser.id
+        );
       }
 
       // 5. Setup initial Health/UKS record (Empty but ready)

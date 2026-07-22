@@ -11,6 +11,88 @@ import {
   UpdateRoomAssignmentDto,
   QueryRoomAssignmentDto,
 } from './dormitories.schema';
+import { Errors } from '../../middleware/error';
+import { seesAllUnits } from '@/utils/resolve-unit-id';
+
+// =====================================
+// ROOM ACCESS
+// =====================================
+
+/**
+ * Throws unless the user has a reason to see the santri inside this room.
+ *
+ * The check this replaces was `room.dormitory.unitId !== user.unitId` — it
+ * asked who *owns the building*, which is a different question. An asrama
+ * houses santri from every school: the seed alone puts SD IT, SMP IT and SMA
+ * Qur'an santri into dormitories recorded under SMP IT, because
+ * `Dormitory.unitId` can only name one unit and someone had to pick. So the
+ * old check refused a musyrif the very kamar they supervise, and refused the
+ * yayasan board outright (their unitId is null, and it matches nothing).
+ *
+ * It also protected nothing. `/rooms/:id/occupancy` carries the same role
+ * guard, had no unit check at all, and returns the same roster — so the 403
+ * turned away the people with a legitimate claim while the data stayed one
+ * route away for everyone else. Both now come through here.
+ *
+ * The reasons, cheapest first:
+ *   - foundation and boarding-wide roles see every unit by remit;
+ *   - the unit that runs the asrama keeps its view of it;
+ *   - a unit's staff may see a room that houses that unit's own santri;
+ *   - a musyrif assigned to the room, or to its asrama, supervises it.
+ *
+ * The last one rarely fires today, because the boarding roleCodes short-circuit
+ * on the first. It is here because an explicit assignment is the durable reason
+ * — it holds for a guru registered as musyrif without a boarding roleCode, and
+ * it does not depend on CROSS_UNIT_SCOPE_ROLES staying complete.
+ *
+ * Missing rooms are reported as 404 before any of this, matching the previous
+ * behaviour: existence was never the secret being kept.
+ */
+export async function assertRoomAccess(
+  user: {
+    id: string;
+    role?: string | null;
+    roleCode?: string | null;
+    unitId?: string | null;
+  },
+  roomId: string
+): Promise<void> {
+  if (seesAllUnits(user)) return;
+
+  const room = await prisma.room.findUnique({
+    where: { id: roomId },
+    select: {
+      dormitoryId: true,
+      dormitory: { select: { unitId: true } },
+      assignments: {
+        where: { isActive: true },
+        select: { student: { select: { unitId: true } } },
+      },
+    },
+  });
+  if (!room) {
+    throw Errors.notFound('Room not found');
+  }
+
+  if (user.unitId) {
+    if (room.dormitory.unitId === user.unitId) return;
+    if (room.assignments.some((a) => a.student.unitId === user.unitId)) return;
+  }
+
+  const supervises = await prisma.musyrifAssignment.findFirst({
+    where: {
+      isActive: true,
+      musyrif: { userId: user.id },
+      // A null roomId on the assignment means the whole asrama, which is how
+      // getStudentsByMusyrif reads it too.
+      OR: [{ roomId }, { roomId: null, dormitoryId: room.dormitoryId }],
+    },
+    select: { id: true },
+  });
+  if (supervises) return;
+
+  throw Errors.forbidden('Access to this room is not allowed');
+}
 
 // =====================================
 // DORMITORY SERVICE

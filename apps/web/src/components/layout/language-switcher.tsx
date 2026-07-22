@@ -32,6 +32,11 @@ export function LanguageSwitcher({ compact = false }: { compact?: boolean }) {
           className={cn(compact && "h-8 w-8")}
           aria-label={t("common.language")}
           title={t("common.language")}
+          // Stable across locales. The accessible name is (correctly)
+          // translated — "Bahasa" / "Language" / "اللغة" — so a test that
+          // switches language twice cannot keep finding the trigger by name;
+          // it would look for the label of the language it just left.
+          data-testid="language-switcher"
         >
           <Languages className={compact ? "h-4 w-4" : "h-5 w-5"} />
         </Button>

@@ -18,15 +18,15 @@ import { publicContentFor } from "../src/config/content.i18n";
  * the menu *and* the prose must have changed, without a manual reload.
  */
 
-const LANGUAGE_LABEL = id.common.language;
-
 /** Open the header's language menu and pick a language by its native name. */
 async function switchTo(page: import("@playwright/test").Page, label: string) {
-  // Both the desktop and mobile switchers are in the DOM at every width; one
-  // is hidden by CSS. `.first()` would pick whichever comes first in source
-  // order rather than the one on screen, so filter by visibility.
+  // Found by test id, not by accessible name: the name is translated, so a
+  // test that switches language more than once would look for the trigger by
+  // the label of the language it just left. Both the desktop and mobile
+  // switchers are in the DOM at every width; one is hidden by CSS, so filter
+  // to the visible one.
   await page
-    .getByRole("button", { name: LANGUAGE_LABEL })
+    .getByTestId("language-switcher")
     .filter({ visible: true })
     .first()
     .click();
@@ -35,12 +35,14 @@ async function switchTo(page: import("@playwright/test").Page, label: string) {
 
 test("the public header offers a language switcher at all", async ({ page }) => {
   await page.goto("/");
-  await expect(
-    page
-      .getByRole("button", { name: LANGUAGE_LABEL })
-      .filter({ visible: true })
-      .first(),
-  ).toBeVisible();
+  const trigger = page
+    .getByTestId("language-switcher")
+    .filter({ visible: true })
+    .first();
+  await expect(trigger).toBeVisible();
+  // The accessible name is the translated word for "language" — the default
+  // locale is Indonesian, so it reads "Bahasa" on first paint.
+  await expect(trigger).toHaveAccessibleName(id.common.language);
 });
 
 test("switching language changes the menu and the server-rendered prose", async ({

@@ -8,6 +8,11 @@ import {
   UpdateLetterInput,
 } from '@cipansor/shared';
 import { eventBus } from '@/lib/event-bus';
+import {
+  assertLetterAccess,
+  letterScopeWhere,
+  type LetterActor,
+} from '@/utils/letter-access';
 
 export const CorrespondenceService = {
   // Helper: Generate Auto Number
@@ -135,8 +140,14 @@ export const CorrespondenceService = {
     });
   },
 
+  /**
+   * `unitId` is an optional *narrowing* on top of what `actor` may see — not
+   * the access rule itself. Foundation and cross-unit roles have no unit of
+   * their own, so `undefined` means "every unit they are entitled to", not
+   * "no rows".
+   */
   async getLetters(
-    unitId: string,
+    unitId: string | undefined,
     params: {
       page?: number;
       limit?: number;
@@ -145,35 +156,44 @@ export const CorrespondenceService = {
       search?: string;
       scope?: 'ALL' | 'PERSONAL';
       userId?: string;
+      actor: LetterActor;
     }
   ) {
     const page = params.page || 1;
     const limit = params.limit || 10;
     const skip = (page - 1) * limit;
 
-    const where: Prisma.LetterWhereInput = {
-      unitId,
-      direction: params.direction ? (params.direction as any) : undefined,
-      status: params.status ? (params.status as any) : undefined,
-      OR: params.search
-        ? [
-            { subject: { contains: params.search, mode: 'insensitive' } },
-            { letterNumber: { contains: params.search, mode: 'insensitive' } },
-            { senderName: { contains: params.search, mode: 'insensitive' } },
-          ]
-        : undefined,
-    };
+    // Every independent restriction is its own AND term. Written as sibling
+    // keys, a second `OR` would silently replace the first — the same way the
+    // dormitory filter lost its unit scope.
+    const and: Prisma.LetterWhereInput[] = [letterScopeWhere(params.actor)];
+
+    if (unitId) and.push({ unitId });
+
+    if (params.search) {
+      and.push({
+        OR: [
+          { subject: { contains: params.search, mode: 'insensitive' } },
+          { letterNumber: { contains: params.search, mode: 'insensitive' } },
+          { senderName: { contains: params.search, mode: 'insensitive' } },
+        ],
+      });
+    }
 
     if (params.scope === 'PERSONAL' && params.userId) {
-      where.AND = [
-        {
-          OR: [
-            { recipients: { some: { userId: params.userId } } },
-            { dispositions: { some: { recipientId: params.userId } } },
-          ],
-        },
-      ];
+      and.push({
+        OR: [
+          { recipients: { some: { userId: params.userId } } },
+          { dispositions: { some: { recipientId: params.userId } } },
+        ],
+      });
     }
+
+    const where: Prisma.LetterWhereInput = {
+      direction: params.direction ? (params.direction as any) : undefined,
+      status: params.status ? (params.status as any) : undefined,
+      AND: and,
+    };
 
     const [total, data] = await Promise.all([
       prisma.letter.count({ where }),
@@ -206,7 +226,14 @@ export const CorrespondenceService = {
     };
   },
 
-  async getLetterById(id: string) {
+  /**
+   * `actor` is required, not optional: this route used to return any letter to
+   * any authenticated caller. Making the parameter mandatory means a future
+   * caller cannot reintroduce the hole by simply forgetting to pass it.
+   */
+  async getLetterById(id: string, actor: LetterActor) {
+    await assertLetterAccess(actor, id);
+
     return await prisma.letter.findUnique({
       where: { id },
       include: {
@@ -316,12 +343,13 @@ export const CorrespondenceService = {
     return { success: true };
   },
 
-  async createDisposition(data: CreateDispositionInput) {
-    // Check if letter exists
-    const letter = await prisma.letter.findUnique({
-      where: { id: data.letterId },
-    });
-    if (!letter) throw new Error('Letter not found');
+  /**
+   * Anyone authenticated could previously inject a disposition into any
+   * letter's chain — and because a disposition is itself a grant of access,
+   * that was also a way to grant yourself the letter.
+   */
+  async createDisposition(data: CreateDispositionInput, actor: LetterActor) {
+    const letter = await assertLetterAccess(actor, data.letterId);
 
     const disposition = await prisma.disposition.create({
       data: {
@@ -336,10 +364,11 @@ export const CorrespondenceService = {
       },
     });
 
-    // Update letter status if it was just received
-    if (letter.status === 'SENT' || letter.status === 'ARCHIVED') {
-      // logic to mark letter as 'DISPOSED' or 'IN_PROGRESS' if needed
-    }
+    // NOTE: an empty `if (letter.status === 'SENT' || 'ARCHIVED') {}` stub sat
+    // here, so a letter's status never advanced to DISPOSED and the last
+    // recipient had no way to close the chain. Removed rather than left
+    // looking implemented; the status transitions arrive with the disposition
+    // workflow rework, which needs the flow-history table to be meaningful.
 
     // Notify Recipient
     eventBus.emit('notification:send', {
@@ -398,7 +427,10 @@ export const CorrespondenceService = {
     return updatedDisposition;
   },
 
-  async getDashboardStats(unitId: string) {
+  /** `unitId` undefined = foundation-wide totals (see getLetters). */
+  async getDashboardStats(unitId?: string) {
+    // The counts below rely on Prisma reading an `undefined` field as "no
+    // filter". The raw chart query has no such affordance, so it branches.
     // Type definition for Raw SQL Result
     type ChartDataRow = {
       month_key: string;
@@ -429,14 +461,15 @@ export const CorrespondenceService = {
             status: { notIn: ['ARCHIVED', 'DISPOSED'] },
           },
         }),
-        // Chart Data (Last 6 Months)
+        // Chart Data (Last 6 Months). `unit_id = NULL` never matches, so a
+        // foundation caller needs the predicate dropped, not parameterised.
         prisma.$queryRaw<ChartDataRow[]>`
         SELECT
           TO_CHAR(date, 'YYYY-MM') as month_key,
           direction,
           COUNT(*)::int as count
         FROM letters
-        WHERE unit_id = ${unitId}
+        WHERE (${unitId ?? null}::text IS NULL OR unit_id = ${unitId ?? null})
           AND date >= NOW() - INTERVAL '6 months'
         GROUP BY 1, 2
         ORDER BY 1 ASC

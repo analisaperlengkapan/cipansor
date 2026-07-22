@@ -1,10 +1,29 @@
-import { Router, Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { CorrespondenceService } from './correspondence.service';
-import { authenticate, authorize } from '@/middleware/auth';
-import { UserRole } from '@prisma/client';
-import { z } from 'zod';
-import { validate } from '@/middleware/validate';
 import { Errors } from '@/middleware/error';
+import {
+  choosesUnit,
+  handlesUnitCorrespondence,
+  type LetterActor,
+} from '@/utils/letter-access';
+
+/**
+ * The caller, in the shape the access rules expect.
+ *
+ * Scoping decisions here must be made on `roleCode`. The previous version
+ * branched on the legacy `role`, and since deriveLegacyRole() maps every
+ * YAYASAN_* code onto 'UNIT_ADMIN', the yayasan board fell through to the
+ * "no unit assigned" branch and was answered with 403 — the sekretaris and
+ * ketua yayasan could not open the letter list their own workflow depends on.
+ */
+function actorOf(req: Request): LetterActor {
+  return {
+    id: req.user!.id,
+    role: req.user?.role,
+    roleCode: req.user?.roleCode,
+    unitId: req.user?.unitId,
+  };
+}
 
 export const CorrespondenceController = {
   async create(req: Request, res: Response, next: NextFunction) {
@@ -18,20 +37,14 @@ export const CorrespondenceController = {
 
   async findAll(req: Request, res: Response, next: NextFunction) {
     try {
-      let unitId = req.user?.unitId;
-
-      // Allow SUPER_ADMIN to query specific unit, otherwise require unitId
-      if (!unitId) {
-        if (req.user?.role === UserRole.SUPER_ADMIN) {
-          unitId = req.query.unitId as string;
-        } else {
-          throw Errors.forbidden('Access denied: User has no unit assigned');
-        }
-      }
-
-      if (!unitId) throw new Error('Unit ID is required');
+      const actor = actorOf(req);
+      // `?unitId=` narrows, it never widens: it is honoured only for callers
+      // who already see every unit, and the scope clause inside the service
+      // applies regardless of what the query string says.
+      const unitId = choosesUnit(actor) ? (req.query.unitId as string | undefined) : undefined;
 
       const result = await CorrespondenceService.getLetters(unitId, {
+        actor,
         page: Number(req.query.page),
         limit: Number(req.query.limit),
         direction: req.query.direction as any,
@@ -48,8 +61,7 @@ export const CorrespondenceController = {
 
   async findOne(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await CorrespondenceService.getLetterById(req.params.id);
-      if (!result) throw new Error('Letter not found');
+      const result = await CorrespondenceService.getLetterById(req.params.id, actorOf(req));
       res.json({ success: true, data: result });
     } catch (error) {
       next(error);
@@ -73,10 +85,10 @@ export const CorrespondenceController = {
 
   async createDisposition(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await CorrespondenceService.createDisposition({
-        ...req.body,
-        senderId: req.user!.id,
-      });
+      const result = await CorrespondenceService.createDisposition(
+        { ...req.body, senderId: req.user!.id },
+        actorOf(req)
+      );
       res.status(201).json({ success: true, data: result });
     } catch (error) {
       next(error);
@@ -100,18 +112,19 @@ export const CorrespondenceController = {
 
   async getStats(req: Request, res: Response, next: NextFunction) {
     try {
-      let unitId = req.user?.unitId;
+      const actor = actorOf(req);
 
-      // Allow SUPER_ADMIN to query specific unit, otherwise require unitId
-      if (!unitId) {
-        if (req.user?.role === UserRole.SUPER_ADMIN) {
-          unitId = req.query.unitId as string;
-        } else {
-          throw Errors.forbidden('Access denied: User has no unit assigned');
-        }
+      // The dashboard is an office tool: it reports on a unit's letter book as
+      // a whole, which is exactly what someone outside the correspondence
+      // function has no business seeing. Gated here rather than scoped,
+      // because per-person counts would be a different feature.
+      if (!choosesUnit(actor) && !handlesUnitCorrespondence(actor)) {
+        throw Errors.forbidden('Anda tidak memiliki akses ke statistik persuratan');
       }
 
-      if (!unitId) throw new Error('Unit ID is required');
+      const unitId = choosesUnit(actor)
+        ? (req.query.unitId as string | undefined)
+        : (actor.unitId ?? undefined);
 
       const result = await CorrespondenceService.getDashboardStats(unitId);
       res.json({ success: true, data: result });

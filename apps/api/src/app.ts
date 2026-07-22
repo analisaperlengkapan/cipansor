@@ -161,9 +161,12 @@ app.use((req, _res, next) => {
 // Compression
 app.use(compression());
 
-// Static files
+// Stored uploads hold personal data (student photos/documents), so serving
+// them requires a valid access token — via Authorization header or ?token=
+// (see uploadsAuth). Directory listing stays off; static only serves files.
 import path from 'path';
-app.use('/uploads', express.static(path.join(process.cwd(), 'public/uploads')));
+import { uploadsAuth } from './middleware/upload';
+app.use('/uploads', uploadsAuth, express.static(path.join(process.cwd(), 'public/uploads')));
 
 // Rate limiting - apply to all routes except health check
 // Active in all environments except test and development

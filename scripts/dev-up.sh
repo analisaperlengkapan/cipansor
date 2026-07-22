@@ -17,6 +17,8 @@ DATABASE_URL="postgresql://postgres@127.0.0.1:5432/cipansor?schema=public"
 SHADOW_DATABASE_URL="postgresql://postgres@127.0.0.1:5432/cipansor_shadow?schema=public"
 REDIS_URL="redis://127.0.0.1:6379"
 JWT_SECRET="local-test-secret-key-for-verification-only"
+# Production default is 15m; local dev/e2e pins 7d so cached e2e sessions
+# (reused across runs by global-setup) don't expire mid-iteration.
 JWT_EXPIRES_IN=7d
 JWT_REFRESH_EXPIRES_IN=30d
 CORS_ORIGIN=http://localhost:3000

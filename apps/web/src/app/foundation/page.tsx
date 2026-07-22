@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { authFileUrl } from "@/lib/files";
 import { safeFormat } from "@/lib/date";
 import { MainLayout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
@@ -524,7 +525,7 @@ export default function FoundationPage() {
                             <div className="flex justify-end gap-2">
                               <Button variant="ghost" size="icon" asChild>
                                 <a
-                                  href={doc.fileUrl}
+                                  href={authFileUrl(doc.fileUrl)}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                 >
@@ -532,7 +533,7 @@ export default function FoundationPage() {
                                 </a>
                               </Button>
                               <Button variant="ghost" size="icon" asChild>
-                                <a href={doc.fileUrl} download>
+                                <a href={authFileUrl(doc.fileUrl)} download>
                                   <Download className="h-4 w-4" />
                                 </a>
                               </Button>

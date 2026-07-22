@@ -1,6 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
+import { authFileUrl } from "@/lib/files";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -669,7 +670,7 @@ export default function EditTKAssessmentPage() {
                               className="relative aspect-square rounded-md overflow-hidden border group"
                             >
                               <img
-                                src={evidence.fileUrl}
+                                src={authFileUrl(evidence.fileUrl)}
                                 alt="Evidence"
                                 className="object-cover w-full h-full"
                               />

@@ -8,6 +8,7 @@ import { MainLayout } from "@/components/layout";
  * Kategori: Akademik, P5, Ekstrakurikuler, Prestasi, Seni, Tahfidz
  */
 import { useState } from "react";
+import { authFileUrl } from "@/lib/files";
 import { safeFormat } from "@/lib/date";
 import { useRouter } from "next/navigation";
 import {
@@ -340,7 +341,7 @@ function PortfolioPageContent() {
               <div className="h-32 bg-gradient-to-br from-primary/20 to-primary/5 relative">
                 {portfolio.files?.[0]?.fileUrl && (
                   <img
-                    src={portfolio.files[0].fileUrl}
+                    src={authFileUrl(portfolio.files[0].fileUrl)}
                     alt={portfolio.title}
                     className="w-full h-full object-cover"
                   />

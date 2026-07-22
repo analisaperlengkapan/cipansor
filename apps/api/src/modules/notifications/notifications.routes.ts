@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import * as controller from './notifications.controller';
-import { authenticate, authorize } from '../../middleware/auth';
+import { authenticate, authorize, isSuperAdmin } from '../../middleware/auth';
 import { UserRole } from '@prisma/client';
 
 const router = Router();
@@ -155,6 +155,15 @@ router.post(
 );
 
 router.get('/stats', authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.getStats);
+
+// Channel policy: which external channels (email/SMS/WhatsApp) the system
+// may use. Read: admins. Write: SUPER_ADMIN only (system-wide switch).
+router.get(
+  '/settings/channels',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  controller.getChannelPolicy
+);
+router.put('/settings/channels', isSuperAdmin, controller.updateChannelPolicy);
 
 // Templates (Admin Only)
 router.get(

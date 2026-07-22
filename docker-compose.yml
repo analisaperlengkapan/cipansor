@@ -59,7 +59,7 @@ services:
       PORT: 3001
       DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/cipansor
       JWT_SECRET: ${JWT_SECRET}
-      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-15m}
       JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-30d}
       # Falls back to a public hardcoded key inside the API if unset.
       ENCRYPTION_KEY: ${ENCRYPTION_KEY:-}

@@ -1,14 +1,18 @@
 import { prisma } from '@/lib/prisma';
 import { hashPassword } from '@/lib/password';
 import { Errors } from '@/middleware/error';
-import { UserRole, Prisma } from '@prisma/client';
+import { UserRole, Prisma, type Unit } from '@prisma/client';
+import { resolveLegacyRoleToRoleCode } from '@/modules/auth/auth.service';
 import type { ListUsersQuery, CreateUserInput, UpdateUserInput } from './user.schema';
 
 export class UserService {
   /**
    * Get all users with pagination and filters
    */
-  async findAll(query: ListUsersQuery, currentUser: { role: string; unitId: string | null }) {
+  async findAll(
+    query: ListUsersQuery,
+    currentUser: { roleCode: string; unitId: string | null }
+  ) {
     const { page, limit, search, role, unitId } = query;
     const skip = (page - 1) * limit;
 
@@ -17,8 +21,11 @@ export class UserService {
       deletedAt: null,
     };
 
-    // Filter by unit for non-super-admin
-    if (currentUser.role !== UserRole.SUPER_ADMIN) {
+    // Unit admins are scoped to their own unit; only SUPER_ADMIN sees across
+    // units (foundation-level administration is a SUPER_ADMIN concern — there
+    // is no separate YAYASAN_ADMIN role).
+    const foundationWide = currentUser.roleCode === 'SUPER_ADMIN';
+    if (!foundationWide) {
       where.unitId = currentUser.unitId;
     } else if (unitId) {
       where.unitId = unitId;
@@ -144,10 +151,24 @@ export class UserService {
   /**
    * Create new user
    */
-  async create(input: CreateUserInput, creatorRole: string) {
-    // Only Super Admin can create Super Admin
-    if (input.role === 'SUPER_ADMIN' && creatorRole !== UserRole.SUPER_ADMIN) {
-      throw Errors.forbidden('Only Super Admin can create Super Admin');
+  async create(input: CreateUserInput, creator: { roleCode: string; unitId: string | null }) {
+    // Admin accounts (super admin AND unit admins) are provisioned by
+    // SUPER_ADMIN only — the intended flow for a new unit is: super admin
+    // creates the unit, then creates that unit's single admin user.
+    if (
+      (input.role === 'SUPER_ADMIN' || input.role === 'UNIT_ADMIN') &&
+      creator.roleCode !== 'SUPER_ADMIN'
+    ) {
+      throw Errors.forbidden('Only Super Admin can create admin accounts');
+    }
+
+    // Unit admins operate inside exactly one unit: they may only create
+    // users for their own unit. Only SUPER_ADMIN is foundation-scoped.
+    if (
+      creator.roleCode !== 'SUPER_ADMIN' &&
+      input.unitId !== creator.unitId
+    ) {
+      throw Errors.forbidden('Unit admins can only create users in their own unit');
     }
 
     // Check if email exists
@@ -165,8 +186,9 @@ export class UserService {
     }
 
     // If unit provided, check it exists
+    let unit: Unit | null = null;
     if (input.unitId) {
-      const unit = await prisma.unit.findFirst({
+      unit = await prisma.unit.findFirst({
         where: { id: input.unitId, deletedAt: null },
       });
       if (!unit) {
@@ -174,10 +196,23 @@ export class UserService {
       }
     }
 
+    // Login requires a UserRoleAssignment, so resolve the concrete RoleCode
+    // up front and refuse to create an account that could never log in.
+    const roleCode = resolveLegacyRoleToRoleCode(input.role, unit?.type);
+    if (!roleCode) {
+      throw Errors.badRequest(
+        `Cannot map role ${input.role} for this unit type — assign a specific role code instead`
+      );
+    }
+    const role = await prisma.role.findUnique({ where: { code: roleCode } });
+    if (!role) {
+      throw Errors.badRequest(`Role ${roleCode} is not seeded in the roles table`);
+    }
+
     // Hash password
     const passwordHash = await hashPassword(input.password);
 
-    // Create user
+    // Create user + primary role assignment together
     const user = await prisma.user.create({
       data: {
         name: input.name,
@@ -186,6 +221,14 @@ export class UserService {
         role: input.role as UserRole,
         unitId: input.unitId || null,
         isActive: true,
+        userRoles: {
+          create: {
+            roleId: role.id,
+            unitId: input.unitId || null,
+            isPrimary: true,
+            isActive: true,
+          },
+        },
       },
       include: { unit: true },
     });
@@ -197,7 +240,11 @@ export class UserService {
   /**
    * Update user
    */
-  async update(id: string, input: UpdateUserInput, currentUser: { role: string; sub: string }) {
+  async update(
+    id: string,
+    input: UpdateUserInput,
+    currentUser: { roleCode: string; unitId: string | null; sub: string }
+  ) {
     const user = await prisma.user.findFirst({
       where: { id, deletedAt: null },
     });
@@ -206,9 +253,20 @@ export class UserService {
       throw Errors.notFound('User');
     }
 
-    // Only Super Admin can update role
-    if (input.role && currentUser.role !== UserRole.SUPER_ADMIN) {
+    const isSuper = currentUser.roleCode === 'SUPER_ADMIN';
+    const foundationWide = isSuper;
+
+    // Unit admins may only touch users of their own unit.
+    if (!foundationWide && user.unitId !== currentUser.unitId) {
+      throw Errors.forbidden('Unit admins can only manage users in their own unit');
+    }
+
+    // Only Super Admin can change roles or move users between units.
+    if (input.role && !isSuper) {
       throw Errors.forbidden('Only Super Admin can change roles');
+    }
+    if (input.unitId && input.unitId !== user.unitId && !isSuper) {
+      throw Errors.forbidden('Only Super Admin can move users between units');
     }
 
     // Check email uniqueness if changing

@@ -18,7 +18,7 @@ import crypto from 'crypto';
  * Returns null if the legacy value cannot be mapped — in that case the caller
  * should reject with a helpful error message.
  */
-function resolveLegacyRoleToRoleCode(
+export function resolveLegacyRoleToRoleCode(
   legacyRole: string,
   unitType: UnitType | null | undefined,
 ): RoleCode | null {
@@ -143,32 +143,18 @@ export class AuthService {
       throw Errors.unauthorized('Invalid email or password');
     }
 
-    // Determine active role (primary or first role).
-    // Fall back to the legacy User.role column for users who have not yet been
-    // migrated to UserRoleAssignment records.  This prevents a total lockout
-    // when the code is deployed before the data migration has run.
+    // Determine active role (primary or first role). Every account must have
+    // a UserRoleAssignment (the seeds create them); accounts without one
+    // cannot log in — assign a role via /users/:id/roles first.
     const primaryAssignment = user.userRoles.find((r) => r.isPrimary) || user.userRoles[0];
-
-    let roleCode: string;
-    let permissions: string[];
-    let roleId: string | undefined;
-    let assignmentUnitId: string | null | undefined;
-
-    if (primaryAssignment) {
-      roleCode = primaryAssignment.role.code;
-      permissions = (primaryAssignment.role.permissions as string[]) || [];
-      roleId = primaryAssignment.roleId;
-      assignmentUnitId = primaryAssignment.unitId;
-    } else if (user.role) {
-      // Legacy fallback: user has no UserRoleAssignment but still has the
-      // deprecated User.role column populated.
-      roleCode = user.role; // e.g. 'SUPER_ADMIN', 'UNIT_ADMIN', 'TEACHER'
-      permissions = [];
-      roleId = undefined;
-      assignmentUnitId = undefined;
-    } else {
+    if (!primaryAssignment) {
       throw Errors.forbidden('No active role assignment found for this user');
     }
+
+    const roleCode = primaryAssignment.role.code;
+    const permissions = (primaryAssignment.role.permissions as string[]) || [];
+    const roleId = primaryAssignment.roleId;
+    const assignmentUnitId = primaryAssignment.unitId;
 
     const isUserAdmin = isAdminRoleCode(roleCode);
 
@@ -309,8 +295,8 @@ export class AuthService {
 
     // Privilege escalation guard: only SUPER_ADMIN can create ANY admin-level
     // role. Without this, a unit-admin (e.g. TKQ_ADMIN) could create an admin
-    // for a different unit (e.g. SMAQ_ADMIN) or a foundation-level admin
-    // (e.g. YAYASAN_ADMIN), bypassing organizational boundaries.
+    // for a different unit (e.g. SMAQ_ADMIN) or a foundation-level SUPER_ADMIN,
+    // bypassing organizational boundaries.
     //
     // NOTE: SUPER_ADMIN creating SUPER_ADMIN falls through the earlier guard
     // (line 284) because both sides of the condition are SUPER_ADMIN. This

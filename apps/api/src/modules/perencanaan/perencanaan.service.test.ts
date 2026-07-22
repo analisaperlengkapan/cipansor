@@ -9,6 +9,7 @@ vi.mock('../../lib/prisma', () => ({
       create: vi.fn(),
       findMany: vi.fn(),
       findUnique: vi.fn(),
+      findFirst: vi.fn().mockResolvedValue(null),
       update: vi.fn(),
       delete: vi.fn(),
     },
@@ -64,6 +65,22 @@ describe('Perencanaan Service', () => {
         }),
         include: expect.any(Object),
       });
+    });
+
+    it('rejects a second active RENSTRA (only one combined RENSTRA allowed)', async () => {
+      vi.mocked(prisma.strategicPlan.findFirst).mockResolvedValue({ id: 'existing' } as any);
+
+      await expect(
+        perencanaanService.createPlan({
+          title: 'Renstra kedua',
+          type: 'RENSTRA' as any,
+          startDate: new Date().toISOString(),
+          endDate: new Date().toISOString(),
+          unitId: 'unit-1',
+          createdById: 'user-1',
+        })
+      ).rejects.toMatchObject({ statusCode: 400 });
+      expect(prisma.strategicPlan.create).not.toHaveBeenCalled();
     });
 
     it('should approve plan', async () => {

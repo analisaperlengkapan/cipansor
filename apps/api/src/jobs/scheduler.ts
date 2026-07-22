@@ -7,6 +7,7 @@ import {
 } from './dashboard-snapshot.job';
 import { aggregateDashboardMetrics } from './dashboard-metrics.job';
 import { runMonthlyAutoBilling } from './finance-billing.job';
+import { sendMonthlySppReminders } from './spp-reminder.job';
 
 /**
  * Scheduler Module
@@ -113,6 +114,25 @@ export function initializeScheduler(): void {
   scheduledTasks.push(autoBillingTask);
   logger.info('[Scheduler] Auto-billing job scheduled at 04:00 WIB on the 1st of each month');
 
+  // SPP reminder: after auto-billing has generated the month's invoices,
+  // remind every parent with an unpaid invoice (in-app + WhatsApp).
+  const sppReminderTask = cron.schedule(
+    '0 6 1 * *',
+    async () => {
+      logger.info('[Scheduler] Running monthly SPP reminder job');
+      try {
+        await sendMonthlySppReminders();
+      } catch (error) {
+        logger.error('[Scheduler] SPP reminder job failed:', error);
+      }
+    },
+    {
+      timezone: 'Asia/Jakarta',
+    }
+  );
+  scheduledTasks.push(sppReminderTask);
+  logger.info('[Scheduler] SPP reminder job scheduled at 06:00 WIB on the 1st of each month');
+
   logger.info(`[Scheduler] ${scheduledTasks.length} jobs scheduled successfully`);
 }
 
@@ -129,7 +149,13 @@ export function stopScheduler(): void {
  * Run a specific job manually (for testing or manual trigger)
  */
 export async function runJob(
-  jobName: 'dashboard-metrics' | 'daily-snapshot' | 'weekly-summary' | 'cleanup' | 'auto-billing'
+  jobName:
+    | 'dashboard-metrics'
+    | 'daily-snapshot'
+    | 'weekly-summary'
+    | 'cleanup'
+    | 'auto-billing'
+    | 'spp-reminder'
 ): Promise<void> {
   logger.info(`[Scheduler] Manually running job: ${jobName}`);
 
@@ -148,6 +174,9 @@ export async function runJob(
       break;
     case 'auto-billing':
       await runMonthlyAutoBilling();
+      break;
+    case 'spp-reminder':
+      await sendMonthlySppReminders();
       break;
     default:
       throw new Error(`Unknown job: ${jobName}`);

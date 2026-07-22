@@ -366,3 +366,36 @@ export async function triggerScheduledTask(req: Request, res: Response, next: Ne
     next(error);
   }
 }
+
+/**
+ * GET /notifications/settings/channels — current external-channel policy.
+ */
+export async function getChannelPolicy(req: Request, res: Response, next: NextFunction) {
+  try {
+    const policy = await service.getChannelPolicy();
+    res.json({ success: true, data: policy });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * PUT /notifications/settings/channels — update the policy (SUPER_ADMIN).
+ */
+export async function updateChannelPolicy(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { EMAIL, SMS, WHATSAPP } = req.body ?? {};
+    for (const [name, v] of Object.entries({ EMAIL, SMS, WHATSAPP })) {
+      if (typeof v !== 'boolean') {
+        return res.status(400).json({
+          success: false,
+          error: { code: 'VALIDATION_ERROR', message: `${name} must be a boolean` },
+        });
+      }
+    }
+    await service.updateChannelPolicy({ EMAIL, SMS, WHATSAPP });
+    res.json({ success: true, data: { EMAIL, SMS, WHATSAPP } });
+  } catch (error) {
+    next(error);
+  }
+}

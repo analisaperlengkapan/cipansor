@@ -18,6 +18,27 @@ export class PerencanaanService {
     createdById: string;
     parentId?: string;
   }) {
+    // RPJP and RENSTRA are yayasan-level umbrella documents: the foundation
+    // keeps exactly one live copy of each (a single combined plan), and only
+    // its downstream RKA may be split per unit. Refuse a second active one so
+    // the cascade always has a single root. Superseded plans (COMPLETED /
+    // CANCELLED) don't count, so a new cycle can still replace an old one.
+    if (data.type === 'RPJP' || data.type === 'RENSTRA') {
+      const existing = await prisma.strategicPlan.findFirst({
+        where: {
+          type: data.type,
+          // Superseded plans don't block a new cycle.
+          status: { notIn: ['COMPLETED', 'CANCELLED'] },
+        },
+        select: { id: true },
+      });
+      if (existing) {
+        throw Errors.badRequest(
+          `Hanya boleh ada satu ${data.type} aktif untuk yayasan (gabungan).`
+        );
+      }
+    }
+
     if (data.parentId) {
       const parent = await prisma.strategicPlan.findUnique({ where: { id: data.parentId } });
       if (!parent) throw Errors.notFound('Parent plan');

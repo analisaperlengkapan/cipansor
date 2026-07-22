@@ -1,5 +1,6 @@
 "use client";
 import { useRouter } from "next/navigation";
+import { authFileUrl } from "@/lib/files";
 import { safeFormat } from "@/lib/date";
 import { useCorrespondence } from "@/hooks/use-correspondence";
 import { useAuth } from "@/hooks/use-auth";
@@ -401,7 +402,7 @@ export default function LetterDetailPage({
                   </span>
                   <Button variant="ghost" size="sm" asChild>
                     <a
-                      href={letter.fileUrl}
+                      href={authFileUrl(letter.fileUrl)}
                       target="_blank"
                       rel="noopener noreferrer"
                     >
@@ -423,7 +424,7 @@ export default function LetterDetailPage({
               </CardHeader>
               <CardContent>
                 <object
-                  data={letter.fileUrl}
+                  data={authFileUrl(letter.fileUrl)}
                   type="application/pdf"
                   className="w-full h-[600px] rounded border bg-muted"
                 >
@@ -432,7 +433,7 @@ export default function LetterDetailPage({
                     <p className="mb-2">Pratinjau tidak tersedia.</p>
                     <Button variant="outline" size="sm" asChild>
                       <a
-                        href={letter.fileUrl}
+                        href={authFileUrl(letter.fileUrl)}
                         target="_blank"
                         rel="noopener noreferrer"
                       >

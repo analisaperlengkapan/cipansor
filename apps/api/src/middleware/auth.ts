@@ -1,8 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
 import { RoleCode } from '@prisma/client';
+import {
+  ADMIN_ROLE_CODES as SHARED_ADMIN_ROLE_CODES,
+  GOVERNANCE_ROLE_CODES as SHARED_GOVERNANCE_ROLE_CODES,
+  LEGACY_ROLE_EXPANSION as SHARED_LEGACY_ROLE_EXPANSION,
+} from '@cipansor/shared';
 import { verifyToken, JwtPayload } from '@/lib/jwt';
 import { prisma } from '@/lib/prisma';
-import { redis } from '@/lib/redis';
 import { Errors } from './error';
 
 // RoleCodes that are considered "admin" across the system.
@@ -24,122 +28,40 @@ import { Errors } from './error';
 // (YAYASAN_PENGAWAS) should NOT automatically bypass admin-only security
 // guards just because they were historically bucketed under legacy UNIT_ADMIN.
 // Users that need BOTH governance AND system-admin privileges must be
-// explicitly assigned a per-unit admin RoleCode (or SUPER_ADMIN) in
-// addition to their governance role.
+// explicitly assigned SUPER_ADMIN (foundation) or a per-unit admin RoleCode
+// in addition to their governance role.
 //
 // Legacy compatibility: pre-migration tokens carrying `role: 'UNIT_ADMIN'`
 // still pass isAdmin() via the 'UNIT_ADMIN' string below. Routes that use
 // authorize(YAYASAN_PEMBINA, ...) still work because authorize() uses
 // expandRoleCodes() for bidirectional legacy mapping, independent of this list.
-const ADMIN_ROLE_CODES: string[] = [
-  RoleCode.SUPER_ADMIN,
-  RoleCode.TKQ_ADMIN,
-  RoleCode.SDIT_ADMIN,
-  RoleCode.SMPIT_ADMIN,
-  RoleCode.SMAQ_ADMIN,
-  // Legacy UserRole values — pre-migration tokens carry these as roleCode
-  // via buildReqUser fallback. Must be recognised so isAdmin/isAdminRoleCode
-  // work for users whose access tokens were minted before the RoleCode migration.
-  'UNIT_ADMIN',
-];
+const ADMIN_ROLE_CODES: string[] = [...SHARED_ADMIN_ROLE_CODES];
 
 /**
  * Backward-compatible mapping from legacy UserRole enum values to RoleCode values.
  * authorize() expands these so that existing route files using UserRole.UNIT_ADMIN,
  * UserRole.TEACHER, UserRole.STAFF etc. continue to work until fully migrated.
- * TODO: Remove this mapping once all route files are migrated to RoleCode.
+ * The mapping itself lives in @cipansor/shared (packages/shared/src/roles.ts)
+ * so web and API derive the buckets from one source; a sync test in
+ * middleware/roles-sync.test.ts pins it against the Prisma RoleCode enum.
+ * TODO: Remove once all route files are migrated to RoleCode.
  */
-const LEGACY_ROLE_EXPANSION: Record<string, string[]> = {
-  // SUPER_ADMIN exists in both enums — identity mapping
-  SUPER_ADMIN: [RoleCode.SUPER_ADMIN],
-  // Legacy UNIT_ADMIN → all per-unit admin RoleCodes + Yayasan governance roles
-  UNIT_ADMIN: [
-    RoleCode.YAYASAN_PEMBINA,
-    RoleCode.YAYASAN_KETUA,
-    RoleCode.YAYASAN_SEKRETARIS,
-    RoleCode.YAYASAN_BENDAHARA,
-    RoleCode.YAYASAN_ANGGOTA,
-    RoleCode.YAYASAN_PENGAWAS,
-    RoleCode.TKQ_ADMIN,
-    RoleCode.SDIT_ADMIN,
-    RoleCode.SMPIT_ADMIN,
-    RoleCode.SMAQ_ADMIN,
-  ],
-  // Legacy TEACHER → all per-unit teacher/kepala-sekolah/wakasek/wali-kelas/
-  // guru-BK roles + pesantren educators (incl. gender-segregated variants)
-  // + Perguruan Tinggi academic roles.
-  TEACHER: [
-    RoleCode.TKQ_GURU, RoleCode.SDIT_GURU, RoleCode.SMPIT_GURU, RoleCode.SMAQ_GURU,
-    RoleCode.TKQ_KEPALA_SEKOLAH, RoleCode.SDIT_KEPALA_SEKOLAH,
-    RoleCode.SMPIT_KEPALA_SEKOLAH, RoleCode.SMAQ_KEPALA_SEKOLAH,
-    RoleCode.TKQ_WAKASEK, RoleCode.SDIT_WAKASEK, RoleCode.SMPIT_WAKASEK, RoleCode.SMAQ_WAKASEK,
-    RoleCode.TKQ_WALI_KELAS, RoleCode.SDIT_WALI_KELAS,
-    RoleCode.SMPIT_WALI_KELAS, RoleCode.SMAQ_WALI_KELAS,
-    RoleCode.SMPIT_GURU_BK, RoleCode.SMAQ_GURU_BK,
-    RoleCode.PESANTREN_PENGASUH, RoleCode.PESANTREN_DIREKTUR, RoleCode.USTADZ,
-    RoleCode.MUSYRIF, RoleCode.MUSYRIFAH, RoleCode.MUHAFIDZ, RoleCode.MUHAFIDZAH,
-    RoleCode.MURABBI, RoleCode.WALI_KAMAR,
-    RoleCode.PT_REKTOR, RoleCode.PT_WAKIL_REKTOR, RoleCode.PT_DEKAN,
-    RoleCode.PT_KAPRODI, RoleCode.PT_DOSEN,
-  ],
-  // Legacy STAFF → all per-unit tata usaha + bendahara roles, pesantren/PT
-  // administration, and business-unit personnel.
-  // NOTE: BUSINESS_MANAGER and PT_TATA_USAHA are deliberately NOT in
-  // ADMIN_ROLE_CODES — running a kantin or a campus office does not grant
-  // system-admin privileges (see the governance note above ADMIN_ROLE_CODES).
-  STAFF: [
-    RoleCode.TKQ_TATA_USAHA, RoleCode.SDIT_TATA_USAHA,
-    RoleCode.SMPIT_TATA_USAHA, RoleCode.SMAQ_TATA_USAHA,
-    RoleCode.TKQ_BENDAHARA, RoleCode.SDIT_BENDAHARA,
-    RoleCode.SMPIT_BENDAHARA, RoleCode.SMAQ_BENDAHARA,
-    RoleCode.PESANTREN_TATA_USAHA, RoleCode.PT_TATA_USAHA, RoleCode.PT_STAF_AKADEMIK,
-    RoleCode.PUSTAKAWAN, RoleCode.PERAWAT, RoleCode.KEAMANAN, RoleCode.LABORAN,
-    RoleCode.BUSINESS_MANAGER, RoleCode.BUSINESS_STAFF,
-  ],
-  // Legacy STUDENT → all per-unit student roles + PT mahasiswa
-  STUDENT: [
-    RoleCode.SDIT_SISWA, RoleCode.SMPIT_SISWA, RoleCode.SMAQ_SISWA,
-    RoleCode.PT_MAHASISWA,
-  ],
-  // Legacy PARENT → all per-unit parent roles
-  PARENT: [
-    RoleCode.TKQ_ORANG_TUA, RoleCode.SDIT_ORANG_TUA,
-    RoleCode.SMPIT_ORANG_TUA, RoleCode.SMAQ_ORANG_TUA,
-  ],
-};
+const LEGACY_ROLE_EXPANSION: Record<string, string[]> = SHARED_LEGACY_ROLE_EXPANSION;
 
 /**
- * Expand a list of role identifiers **bidirectionally**:
- *
- * 1. Legacy → New: 'UNIT_ADMIN' expands to all per-unit admin RoleCodes.
- * 2. New → Legacy: RoleCode.SDIT_ADMIN also adds 'UNIT_ADMIN' so that
- *    pre-migration tokens (whose roleCode is the legacy string) still match.
- *
- * This ensures that when a route is migrated from
- *   `authorize(UserRole.UNIT_ADMIN, UserRole.STAFF)`
- * to
- *   `authorize(RoleCode.SDIT_ADMIN, RoleCode.SDIT_TATA_USAHA)`
- * pre-migration tokens carrying roleCode='UNIT_ADMIN' or 'STAFF' are
- * automatically included without the developer needing to remember to add
- * the legacy strings manually.
- *
- * Values that are already valid RoleCodes pass through unchanged.
+ * Expand a list of role identifiers: legacy bucket names ('UNIT_ADMIN',
+ * 'TEACHER', ...) used by unmigrated `authorize(UserRole.X)` call sites are
+ * expanded to their RoleCode lists; native RoleCodes pass through unchanged.
+ * Tokens always carry a real RoleCode, so no reverse expansion exists.
  */
 function expandRoleCodes(codes: string[]): string[] {
   const expanded = new Set<string>();
   for (const code of codes) {
-    // Forward expansion: legacy value → new RoleCodes
     const mapping = LEGACY_ROLE_EXPANSION[code];
     if (mapping) {
       mapping.forEach((rc) => expanded.add(rc));
     }
-    // Always add the original value so that native RoleCodes pass through
     expanded.add(code);
-    // Reverse expansion: new RoleCode → legacy value for pre-migration tokens
-    const legacyRole = ROLE_CODE_TO_LEGACY_ROLE[code];
-    if (legacyRole) {
-      expanded.add(legacyRole);
-    }
   }
   return Array.from(expanded);
 }
@@ -179,29 +101,16 @@ export function deriveLegacyRole(roleCode: string): string {
 }
 
 /**
- * Build a safe `req.user` object from a decoded JWT payload.
- *
- * Tokens minted **before** the RoleCode migration carry `role` (legacy
- * UserRole string) but NOT `roleCode` / `permissions`.  Tokens minted
- * **after** the migration carry `roleCode` and `permissions` (and may
- * or may not carry `role`).
- *
- * This helper normalises both shapes so that downstream code can rely
- * on `req.user.roleCode` AND `req.user.role` always being populated.
+ * Build a safe `req.user` object from a decoded JWT payload. Tokens always
+ * carry `roleCode` + `permissions`; `req.user.role` is derived from the
+ * roleCode for the modules that still branch on the coarse UserRole buckets.
  */
 function buildReqUser(payload: JwtPayload): JwtPayload {
-  // Determine the canonical roleCode — prefer the new field, fall back
-  // to the legacy `role` field for pre-migration tokens.
-  const roleCode: string = payload.roleCode || payload.role || '';
-
   return {
     ...payload,
     id: payload.sub,
-    roleCode,
     permissions: payload.permissions || [],
-    // Derive legacy role from the canonical roleCode so unmigrated
-    // controllers that read `req.user.role` keep working.
-    role: deriveLegacyRole(roleCode),
+    role: deriveLegacyRole(payload.roleCode),
   };
 }
 
@@ -380,18 +289,13 @@ export function authorize(...allowedRoleCodes: string[]) {
  * performance (no DB/Redis lookup per request).
  *
  * TRADE-OFF: Permission changes (grant or revoke) do NOT take effect until
- * the user's access token expires and is refreshed, or the user re-logs in.
- * For urgent revocations (e.g. security incidents), invalidate the user's
- * refresh tokens via AuthService.logout() to force a re-login.
- *
- * BACKWARD COMPATIBILITY: Pre-migration tokens do NOT carry `permissions`
- * but DO carry `roleId`. For those tokens we fall back to a cached DB lookup
- * (Redis + 5 min TTL) so users with valid sessions aren't locked out of
- * permission-gated routes until their token naturally refreshes. This path
- * goes away once all pre-migration tokens have expired.
+ * the user's access token expires and is refreshed (access tokens live 15
+ * minutes), or the user re-logs in. For urgent revocations (e.g. security
+ * incidents), invalidate the user's refresh tokens via AuthService.logout()
+ * to force a re-login.
  */
 export function hasPermission(permission: string) {
-  return async (req: Request, res: Response, next: NextFunction) => {
+  return (req: Request, res: Response, next: NextFunction) => {
     if (!req.user) {
       return next(Errors.unauthorized());
     }
@@ -401,44 +305,7 @@ export function hasPermission(permission: string) {
       return next();
     }
 
-    let permissions = req.user.permissions || [];
-
-    // Legacy fallback: pre-migration tokens carry `roleId` but not
-    // `permissions`. Look them up from the Role record via Redis cache.
-    if (permissions.length === 0 && req.user.roleId) {
-      try {
-        const cacheKey = `role:permissions:${req.user.roleId}`;
-        let cached: string[] | null = null;
-
-        try {
-          const raw = await redis.get(cacheKey);
-          if (raw) cached = JSON.parse(raw);
-        } catch (redisError) {
-          // eslint-disable-next-line no-console
-          console.error('Redis error in hasPermission:', redisError);
-        }
-
-        if (cached) {
-          permissions = cached;
-        } else {
-          const role = await prisma.role.findUnique({
-            where: { id: req.user.roleId },
-            select: { permissions: true },
-          });
-
-          if (role) {
-            permissions = (role.permissions as string[]) || [];
-            // Cache for 5 minutes to mitigate stale permissions
-            redis
-              .setex(cacheKey, 300, JSON.stringify(permissions))
-              .catch((e) => console.error('Redis cache set error:', e));
-          }
-        }
-      } catch (error) {
-        return next(error);
-      }
-    }
-
+    const permissions = req.user.permissions || [];
     if (!permissions.includes(permission)) {
       return next(Errors.forbidden(`Missing permission: ${permission}`));
     }
@@ -478,46 +345,37 @@ export function isAdmin(req: Request, res: Response, next: NextFunction) {
 }
 
 /**
+ * Allow admins, or the authenticated user acting on their own record
+ * (matched against the route param, default `:id`). Non-admins get 403 for
+ * anyone else's record — this is what stops a student/parent account from
+ * enumerating or reading other users via /api/users/:id.
+ */
+export function isAdminOrSelf(paramName: string = 'id') {
+  return function isAdminOrSelfGuard(req: Request, res: Response, next: NextFunction) {
+    if (!req.user) {
+      return next(Errors.unauthorized());
+    }
+
+    if (req.user.id === req.params[paramName]) {
+      return next();
+    }
+
+    if (!ADMIN_ROLE_CODES.includes(req.user.roleCode)) {
+      return next(Errors.forbidden('Admin access required'));
+    }
+
+    next();
+  };
+}
+
+/**
  * RoleCodes that pass the isTeacherOrAbove check.
  * Computed once at module load (like ADMIN_ROLE_CODES) to avoid
  * re-creating the array on every request.
  */
 const TEACHER_OR_ABOVE_CODES: string[] = [
   ...ADMIN_ROLE_CODES,
-  RoleCode.TKQ_GURU,
-  RoleCode.SDIT_GURU,
-  RoleCode.SMPIT_GURU,
-  RoleCode.SMAQ_GURU,
-  RoleCode.TKQ_KEPALA_SEKOLAH,
-  RoleCode.SDIT_KEPALA_SEKOLAH,
-  RoleCode.SMPIT_KEPALA_SEKOLAH,
-  RoleCode.SMAQ_KEPALA_SEKOLAH,
-  RoleCode.TKQ_WAKASEK,
-  RoleCode.SDIT_WAKASEK,
-  RoleCode.SMPIT_WAKASEK,
-  RoleCode.SMAQ_WAKASEK,
-  RoleCode.TKQ_WALI_KELAS,
-  RoleCode.SDIT_WALI_KELAS,
-  RoleCode.SMPIT_WALI_KELAS,
-  RoleCode.SMAQ_WALI_KELAS,
-  RoleCode.SMPIT_GURU_BK,
-  RoleCode.SMAQ_GURU_BK,
-  RoleCode.PESANTREN_PENGASUH,
-  RoleCode.PESANTREN_DIREKTUR,
-  RoleCode.USTADZ,
-  RoleCode.MUSYRIF,
-  RoleCode.MUSYRIFAH,
-  RoleCode.MUHAFIDZ,
-  RoleCode.MUHAFIDZAH,
-  RoleCode.MURABBI,
-  RoleCode.WALI_KAMAR,
-  RoleCode.PT_REKTOR,
-  RoleCode.PT_WAKIL_REKTOR,
-  RoleCode.PT_DEKAN,
-  RoleCode.PT_KAPRODI,
-  RoleCode.PT_DOSEN,
-  // Legacy UserRole values for pre-migration tokens
-  'TEACHER',
+  ...SHARED_LEGACY_ROLE_EXPANSION.TEACHER,
 ];
 
 /**
@@ -577,14 +435,7 @@ export function isAdminRoleCode(roleCode: string): boolean {
  * role (e.g. YAYASAN_PEMBINA), gaining cross-unit read access and legacy
  * UNIT_ADMIN-level permissions via LEGACY_ROLE_EXPANSION.
  */
-const GOVERNANCE_ROLE_CODES: string[] = [
-  RoleCode.YAYASAN_PEMBINA,
-  RoleCode.YAYASAN_KETUA,
-  RoleCode.YAYASAN_SEKRETARIS,
-  RoleCode.YAYASAN_BENDAHARA,
-  RoleCode.YAYASAN_ANGGOTA,
-  RoleCode.YAYASAN_PENGAWAS,
-];
+const GOVERNANCE_ROLE_CODES: string[] = [...SHARED_GOVERNANCE_ROLE_CODES];
 
 /**
  * Helper: check if a roleCode is a Yayasan-level governance role.

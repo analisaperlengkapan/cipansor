@@ -1,5 +1,9 @@
 import { Prisma, NotificationStatus } from '@prisma/client';
 import { prisma } from '../../lib/prisma';
+import {
+  notificationService as channelService,
+  type NotificationChannel,
+} from './email-sms.service';
 import crypto from 'node:crypto';
 import type {
   CreateNotificationInput,
@@ -170,6 +174,53 @@ export async function getNotificationById(id: string) {
   return notification;
 }
 
+// ---------------------------------------------------------------------------
+// Channel policy — which EXTERNAL channels the system may use (IN_APP is
+// always on). Stored as a Setting row (key NOTIFICATION_CHANNELS); managed
+// by SUPER_ADMIN via /notifications/settings/channels.
+// ---------------------------------------------------------------------------
+
+export interface ChannelPolicy {
+  EMAIL: boolean;
+  SMS: boolean;
+  WHATSAPP: boolean;
+}
+
+const DEFAULT_CHANNEL_POLICY: ChannelPolicy = { EMAIL: true, SMS: true, WHATSAPP: true };
+
+export async function getChannelPolicy(): Promise<ChannelPolicy> {
+  try {
+    const setting = await prisma.setting.findFirst({
+      where: { key: 'NOTIFICATION_CHANNELS' },
+    });
+    const value = setting?.value as Partial<ChannelPolicy> | null;
+    return { ...DEFAULT_CHANNEL_POLICY, ...(value ?? {}) };
+  } catch {
+    return DEFAULT_CHANNEL_POLICY;
+  }
+}
+
+export async function updateChannelPolicy(policy: ChannelPolicy) {
+  const existing = await prisma.setting.findFirst({
+    where: { key: 'NOTIFICATION_CHANNELS' },
+  });
+  if (existing) {
+    return prisma.setting.update({
+      where: { id: existing.id },
+      data: { value: policy as unknown as Prisma.InputJsonValue },
+    });
+  }
+  const unit = await prisma.unit.findFirst({ select: { id: true } });
+  if (!unit) throw new Error('No unit exists to attach the setting to');
+  return prisma.setting.create({
+    data: {
+      unitId: unit.id,
+      key: 'NOTIFICATION_CHANNELS',
+      value: policy as unknown as Prisma.InputJsonValue,
+    },
+  });
+}
+
 export async function createNotification(data: CreateNotificationInput) {
   const { dbType, originalType } = mapTypeToPrisma(data.type ?? 'INFO');
 
@@ -194,6 +245,46 @@ export async function createNotification(data: CreateNotificationInput) {
   };
 
   const notification = await prisma.notification.create({ data: createData });
+
+  // Fan out to external channels (EMAIL/SMS/WHATSAPP) listed on the
+  // notification. The in-app row above is the record; external dispatch is
+  // best-effort and must never fail the caller.
+  const externalChannels = (channels ?? []).filter(
+    (c): c is Exclude<NotificationChannel, 'IN_APP' | 'PUSH'> =>
+      c === 'EMAIL' || c === 'SMS' || c === 'WHATSAPP'
+  );
+  if (externalChannels.length > 0 && data.userId) {
+    try {
+      // Respect the system-wide channel policy (super-admin managed).
+      const policy = await getChannelPolicy();
+      const allowed = externalChannels.filter((c) => policy[c]);
+      const user =
+        allowed.length > 0
+          ? await prisma.user.findUnique({
+              where: { id: data.userId },
+              select: { email: true, phone: true },
+            })
+          : null;
+      if (user) {
+        await Promise.allSettled(
+          allowed.map((channel) =>
+            channelService.dispatchExternal({
+              channel,
+              userId: data.userId,
+              recipientEmail: user.email ?? undefined,
+              recipientPhone: user.phone ?? undefined,
+              type: 'GENERAL',
+              title: data.title,
+              message: data.message,
+            })
+          )
+        );
+      }
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error('External notification dispatch failed:', error);
+    }
+  }
 
   if (originalType) {
     return { ...notification, type: originalType };

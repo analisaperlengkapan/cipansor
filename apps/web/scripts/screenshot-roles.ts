@@ -1,0 +1,269 @@
+/**
+ * Visual QA per role: log in as each representative account, open every menu
+ * item its role should see (straight from the nav registry), assert the page
+ * actually opens (no bounce to a dashboard, no 404/error screen), and save a
+ * screenshot per page.
+ *
+ * Usage (stack must be running — see scripts/dev-up.sh):
+ *   ../api/node_modules/.bin/tsx scripts/screenshot-roles.ts [outDir] [roleFilter]
+ *
+ * Output: <outDir>/<role>/<path>.png + <outDir>/report.json, and a failure
+ * summary on stdout. Exit code 1 when any page fails.
+ */
+
+import fs from "fs";
+import path from "path";
+import { chromium, type Browser, type Page } from "@playwright/test";
+import { generate as generateTotp } from "otplib";
+import { ALL_ROLE_CODES } from "@cipansor/shared";
+import { getNavigationForRoleCode } from "../src/config/navigation";
+import { getDashboardForRole, deriveLegacyRole } from "../src/lib/rbac";
+
+/** Flatten a role's navigation groups into the list of menu paths to visit. */
+function menuPathsForRole(roleCode: string): string[] {
+  return getNavigationForRoleCode(roleCode).flatMap((group) =>
+    group.items.map((item) => item.href),
+  );
+}
+
+const API_URL = process.env.API_URL || "http://localhost:3001/api";
+const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
+const FIXED_2FA_SECRET =
+  process.env.E2E_2FA_SECRET || "NTGHH5U5LDHIYARFFNGFQKQHARJU7GBE";
+
+const OUT_DIR = process.argv[2] || path.join(__dirname, "../.qa-screens");
+const ROLE_FILTER = process.argv[3];
+
+interface RoleAccount {
+  label: string;
+  roleCode: string;
+  email: string;
+  password: string;
+}
+
+// One QA account per RoleCode (provisioned by the QA seed SQL):
+// qa-<code>@qa.cipansor.id / Teacher123!; admin roles carry the fixed 2FA secret.
+const ACCOUNTS: RoleAccount[] = ALL_ROLE_CODES.map((code) => ({
+  label: code.toLowerCase().replace(/_/g, "-"),
+  roleCode: code,
+  email: `qa-${code.toLowerCase().replace(/_/g, "-")}@qa.cipansor.id`,
+  password: "Teacher123!",
+}));
+
+interface Session {
+  user: Record<string, unknown>;
+  accessToken: string;
+  refreshToken: string;
+}
+
+async function postJson(apiPath: string, body: unknown, bearer?: string) {
+  const res = await fetch(`${API_URL}${apiPath}`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      ...(bearer ? { authorization: `Bearer ${bearer}` } : {}),
+    },
+    body: JSON.stringify(body),
+  });
+  return res.json() as Promise<{ data?: Record<string, unknown> }>;
+}
+
+async function login(account: RoleAccount): Promise<Session> {
+  const login = await postJson("/auth/login", {
+    email: account.email,
+    password: account.password,
+  });
+  const data = login?.data as Record<string, unknown> | undefined;
+  if (!data) throw new Error(`Login failed for ${account.email}: ${JSON.stringify(login)}`);
+
+  if (data.requiresTwoFactor) {
+    const token = await generateTotp({ secret: FIXED_2FA_SECRET });
+    const verified = await postJson("/auth/2fa/login", { token }, data.tempToken as string);
+    if (!verified?.data?.accessToken) {
+      throw new Error(`2FA failed for ${account.email}: ${JSON.stringify(verified)}`);
+    }
+    return verified.data as unknown as Session;
+  }
+  if (!data.accessToken) {
+    throw new Error(`Unexpected login response for ${account.email}: ${JSON.stringify(data)}`);
+  }
+  return data as unknown as Session;
+}
+
+function storageStateFor(session: Session) {
+  const origin = new URL(BASE_URL).origin;
+  const authStorage = JSON.stringify({
+    state: { user: session.user, isAuthenticated: true },
+    version: 0,
+  });
+  // The middleware cookie only needs the fields rbac reads; the full user
+  // object can exceed the 4 KB cookie limit (CDP rejects it outright).
+  const user = session.user as {
+    id?: string;
+    role?: string;
+    unitId?: string | null;
+    userRoles?: Array<{ isPrimary?: boolean; role?: { code?: string } }>;
+  };
+  const slimUser = {
+    id: user.id,
+    role: user.role,
+    unitId: user.unitId,
+    userRoles: (user.userRoles ?? []).map((a) => ({
+      isPrimary: a.isPrimary,
+      role: { code: a.role?.code },
+    })),
+  };
+  const cookieAuthStorage = JSON.stringify({
+    state: { user: slimUser, isAuthenticated: true },
+    version: 0,
+  });
+  return {
+    cookies: [
+      { name: "accessToken", value: session.accessToken },
+      { name: "auth-storage", value: encodeURIComponent(cookieAuthStorage) },
+    ].map((c) => ({
+      ...c,
+      domain: new URL(BASE_URL).hostname,
+      path: "/",
+      expires: Math.floor(Date.now() / 1000) + 86400,
+      httpOnly: false,
+      secure: false,
+      sameSite: "Lax" as const,
+    })),
+    origins: [
+      {
+        origin,
+        localStorage: [
+          { name: "accessToken", value: session.accessToken },
+          { name: "refreshToken", value: session.refreshToken },
+          { name: "auth-storage", value: authStorage },
+        ],
+      },
+    ],
+  };
+}
+
+interface PageResult {
+  role: string;
+  path: string;
+  finalPath: string;
+  ok: boolean;
+  problems: string[];
+  screenshot: string;
+}
+
+async function checkPage(page: Page, role: string, target: string, outDir: string): Promise<PageResult> {
+  const problems: string[] = [];
+  const consoleErrors: string[] = [];
+  const onConsole = (msg: { type(): string; text(): string }) => {
+    if (msg.type() === "error") consoleErrors.push(msg.text());
+  };
+  page.on("console", onConsole);
+
+  try {
+    await page.goto(`${BASE_URL}${target}`, { waitUntil: "domcontentloaded", timeout: 45000 });
+    await page.waitForTimeout(1200);
+  } catch (e) {
+    problems.push(`navigation failed: ${(e as Error).message.split("\n")[0]}`);
+  }
+  page.off("console", onConsole);
+
+  const finalPath = new URL(page.url()).pathname;
+  if (finalPath !== target && !finalPath.startsWith(`${target}/`)) {
+    problems.push(`bounced to ${finalPath}`);
+  }
+
+  const bodyText = (await page.locator("body").innerText().catch(() => "")).slice(0, 4000);
+  for (const marker of [
+    "Application error",
+    "This page could not be found",
+    "Internal Server Error",
+    "Unhandled Runtime Error",
+  ]) {
+    if (bodyText.includes(marker)) problems.push(`error text: ${marker}`);
+  }
+  if (/^\s*404\s*$/m.test(bodyText)) problems.push("404 page");
+
+  const relevantConsole = consoleErrors.filter(
+    (t) => !t.includes("Failed to load resource"),
+  );
+  if (relevantConsole.length > 0) {
+    problems.push(`console errors: ${relevantConsole.slice(0, 2).join(" | ").slice(0, 200)}`);
+  }
+
+  const file = path.join(outDir, `${target === "/" ? "root" : target.slice(1).replace(/\//g, "__")}.png`);
+  await page.screenshot({ path: file, fullPage: false }).catch(() => undefined);
+
+  return { role, path: target, finalPath, ok: problems.length === 0, problems, screenshot: file };
+}
+
+async function run() {
+  const accounts = ROLE_FILTER
+    ? ACCOUNTS.filter((a) => a.label.includes(ROLE_FILTER))
+    : ACCOUNTS;
+
+  fs.mkdirSync(OUT_DIR, { recursive: true });
+  // PLAYWRIGHT_CHROMIUM points at a system/preinstalled chromium when the
+  // pinned browser build for this @playwright/test version is not downloaded.
+  const browser: Browser = await chromium.launch({
+    executablePath: process.env.PLAYWRIGHT_CHROMIUM || undefined,
+  });
+  const results: PageResult[] = [];
+
+  for (const account of accounts) {
+    const roleDir = path.join(OUT_DIR, account.label);
+    fs.mkdirSync(roleDir, { recursive: true });
+
+    let session: Session;
+    try {
+      session = await login(account);
+    } catch (e) {
+      console.error(`✗ LOGIN ${account.label}: ${(e as Error).message}`);
+      results.push({
+        role: account.label, path: "(login)", finalPath: "", ok: false,
+        problems: [(e as Error).message], screenshot: "",
+      });
+      continue;
+    }
+
+    const context = await browser.newContext({
+      storageState: storageStateFor(session),
+      viewport: { width: 1440, height: 900 },
+    });
+    const page = await context.newPage();
+
+    const targets = Array.from(
+      new Set([
+        getDashboardForRole(
+          deriveLegacyRole(account.roleCode),
+          account.roleCode,
+        ),
+        ...menuPathsForRole(account.roleCode),
+      ]),
+    );
+
+    for (const target of targets) {
+      const r = await checkPage(page, account.label, target, roleDir);
+      results.push(r);
+      console.log(`${r.ok ? "✓" : "✗"} [${account.label}] ${target}${r.ok ? "" : " — " + r.problems.join("; ")}`);
+    }
+
+    await context.close();
+  }
+
+  await browser.close();
+
+  const failures = results.filter((r) => !r.ok);
+  fs.writeFileSync(path.join(OUT_DIR, "report.json"), JSON.stringify(results, null, 2));
+  console.log(`\n${results.length} pages checked, ${failures.length} failures.`);
+  if (failures.length > 0) {
+    console.log("\nFailures:");
+    for (const f of failures) console.log(`  [${f.role}] ${f.path}: ${f.problems.join("; ")}`);
+    process.exit(1);
+  }
+}
+
+run().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});

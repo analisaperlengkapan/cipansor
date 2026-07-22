@@ -4,6 +4,45 @@ import { Card, CardContent } from "@/components/ui/card";
 import { legalIdentity } from "@/config/content";
 
 /**
+ * The wordmarks of every body that has verified the yayasan's nonprofit status.
+ *
+ * Shared by both blocks below so a new verifier is added in config alone. Uses
+ * plain <img> rather than next/image: one badge is an SVG, and next/image
+ * refuses SVG unless `dangerouslyAllowSVG` is enabled globally — which would
+ * push *every* SVG through the optimiser for the sake of one logo. Both files
+ * are self-hosted (checked for scripts and external references first) rather
+ * than hotlinked, so a badge cannot break on the page Google reviews, and they
+ * cost no third-party request.
+ */
+function VerifierMarks() {
+  return (
+    <>
+      {legalIdentity.verification.verifiers.map((v) => (
+        <span
+          key={v.name}
+          className={
+            v.onDark
+              ? "inline-flex items-center rounded-md bg-neutral-900 px-2 py-1"
+              : "inline-flex items-center"
+          }
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={v.logo}
+            alt={`Terverifikasi oleh ${v.name}`}
+            width={v.width}
+            height={22}
+            loading="lazy"
+            decoding="async"
+            className="h-[22px] w-auto"
+          />
+        </span>
+      ))}
+    </>
+  );
+}
+
+/**
  * Legal standing and independent verification.
  *
  * Shown on the profile and donation pages: the two places where a visitor asks
@@ -65,18 +104,8 @@ export function LegalIdentityStrip() {
           </dl>
 
           <div className="flex flex-col items-start gap-3 md:items-end">
-            <span className="inline-flex items-center gap-3">
-              {/* Plain <img>: see the note in LegalIdentity below. */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={verification.logo}
-                alt={verification.authority}
-                width={132}
-                height={22}
-                loading="lazy"
-                decoding="async"
-                className="h-[22px] w-auto"
-              />
+            <span className="inline-flex flex-wrap items-center gap-3">
+              <VerifierMarks />
               <span className="inline-flex items-center gap-1.5 text-sm font-medium text-primary">
                 <ShieldCheck className="h-4 w-4" aria-hidden="true" />
                 Status nirlaba terverifikasi
@@ -161,38 +190,13 @@ export function LegalIdentity({
                     {verification.registeredId}
                   </dd>
                 </dl>
-                {verification.logo ? (
-                  <span className="mt-4 flex flex-wrap items-center gap-3">
-                    {/*
-                      A plain <img>, not next/image: the badge is an SVG, and
-                      next/image refuses SVG unless `dangerouslyAllowSVG` is
-                      switched on globally — which would permit *any* SVG
-                      through the optimiser for the sake of one logo. This file
-                      is self-hosted and was checked for scripts and external
-                      references before being added, and a 7 KB vector has
-                      nothing to gain from the optimiser anyway.
-                    */}
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={verification.logo}
-                      alt={verification.authority}
-                      width={132}
-                      height={22}
-                      loading="lazy"
-                      decoding="async"
-                      className="h-[22px] w-auto"
-                    />
-                    <span className="inline-flex items-center gap-1.5 text-sm font-medium text-primary">
-                      <ShieldCheck className="h-4 w-4" aria-hidden="true" />
-                      Status nirlaba terverifikasi
-                    </span>
-                  </span>
-                ) : (
-                  <p className="mt-4 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/5 px-3 py-1.5 text-sm font-medium text-primary">
+                <span className="mt-4 flex flex-wrap items-center gap-3">
+                  <VerifierMarks />
+                  <span className="inline-flex items-center gap-1.5 text-sm font-medium text-primary">
                     <ShieldCheck className="h-4 w-4" aria-hidden="true" />
-                    Terverifikasi oleh {verification.authority}
-                  </p>
-                )}
+                    Status nirlaba terverifikasi
+                  </span>
+                </span>
               </div>
             </div>
           </CardContent>

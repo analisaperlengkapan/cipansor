@@ -63,31 +63,40 @@ export function LandingNavbar() {
               priority
               className="h-8 w-8 object-contain"
             />
-            <span className="whitespace-nowrap text-lg font-bold tracking-tight text-foreground">
+            <span className="whitespace-nowrap text-base xl:text-lg font-bold tracking-tight text-foreground">
               Pesantren Cipansor
             </span>
           </Link>
 
           {/*
-            Switch at 1100px, measured rather than guessed.
+            The constraint is `container`, not the viewport.
 
-            This used to sit at `xl` (1280px) on the estimate that the row
-            needed ~1220px. Measured in the browser it needs 1062px: 202px of
-            brand, 796px of nav, 64px of container padding. The 218px of slack
-            mattered, because 1280px is exactly where a 1920x1080 laptop lands
-            at 150% Windows scaling — and a hair under it once the scrollbar is
-            counted. Anyone on that very common setup, or at 175%, got the
-            mobile hamburger on a full-size desktop screen.
+            A previous pass measured the row at a 1280px viewport, found it
+            needed 1062px, and moved the switch to `min-[1100px]`. That number
+            was measured against the wrong thing. `container` caps its width at
+            the active breakpoint, so between 1024px and 1279px the row is
+            1024px wide no matter how wide the window is — 960px of content
+            after `lg:px-8`. The nav needed 998px, so it overflowed and the
+            brand was squeezed into the first link. The original `xl` note was
+            right about the collision even though its estimate was off.
 
-            1100px gives the row ~38px of real clearance. `lg` (1024px) would
-            not: 1024 - 64 of padding leaves 960 for 998px of content, so it
-            would overflow — which is what the earlier note about the brand
-            "colliding with the first item" was seeing. Below 1100 the
-            hamburger is the right answer, not a squeezed row.
+            The band 1024-1279 is the only tight one (960px available; at
+            1280-1535 the row is 1216px, above that 1472px). So the row is made
+            to fit *there* rather than the breakpoint pushed up: `gap-3` and a
+            `text-base` brand below `xl` bring it to 184 + 740 = 924px, leaving
+            36px. Full spacing returns at `xl`, where there is 226px spare.
+
+            That lets the desktop nav start at `lg` (1024px) — wider coverage
+            than either 1100 or 1280, and it fixes the 1920x1080 laptop at 150%
+            scaling (1280 CSS px, or just under once the scrollbar is counted)
+            that fell to the hamburger before. Below 1024 the container drops to
+            768px and the hamburger is genuinely the right answer.
+
             `whitespace-nowrap` keeps a label from breaking mid-phrase
-            ("Program / Unggulan").
+            ("Program / Unggulan"). Verified with Playwright at 1024, 1280 and
+            1920; see the sweep in nav-breakpoint.spec.ts.
           */}
-          <nav className="hidden min-[1100px]:flex items-center gap-5 2xl:gap-6">
+          <nav className="hidden lg:flex items-center gap-3 xl:gap-5 2xl:gap-6">
             {navItems.map((item) => (
               <Link
                 key={item.href}
@@ -97,7 +106,7 @@ export function LandingNavbar() {
                 {item.title}
               </Link>
             ))}
-            <div className="flex items-center gap-2 pl-2 border-l border-border ml-2">
+            <div className="flex items-center gap-2 pl-2 border-l border-border">
               <Link href="/login">
                 <Button size="sm" variant="outline" className="gap-2 whitespace-nowrap">
                   <User className="h-4 w-4" />
@@ -112,8 +121,10 @@ export function LandingNavbar() {
             </div>
           </nav>
 
-          {/* Mobile Nav — must mirror the desktop breakpoint above. */}
-          <div className="min-[1100px]:hidden">
+          {/* Mobile Nav — must mirror the desktop breakpoint above. If these
+              two ever disagree, both render and `justify-between` silently
+              eats the gap between brand and nav. */}
+          <div className="lg:hidden">
             <Sheet>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon">

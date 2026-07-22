@@ -66,9 +66,9 @@ export const profileSections: ContentBlock[] = [
  * visitor — and a reviewer — can confirm the organisation is what it says it
  * is. Every claim here must be checkable against a document the yayasan holds.
  *
- * Word these as *facts*, never as endorsement: Goodstack verifies that an
- * organisation's nonprofit status is genuine; it does not accredit, rate, or
- * recommend the pesantren, and saying otherwise would be an overclaim.
+ * Word these as *facts*, never as endorsement: Goodstack and TechSoup verify
+ * that an organisation's nonprofit status is genuine; neither accredits, rates,
+ * or recommends the pesantren, and saying otherwise would be an overclaim.
  */
 export const legalIdentity = {
   decree: {
@@ -82,7 +82,35 @@ export const legalIdentity = {
     title: "Verifikasi Status Nirlaba",
     authority: "Goodstack",
     description:
-      "Status nirlaba Yayasan Pesantren Cipansor telah diverifikasi secara independen oleh Goodstack, penyedia verifikasi organisasi nirlaba berskala internasional yang dipakai berbagai program sosial global untuk memastikan keabsahan sebuah lembaga.",
+      "Status nirlaba Yayasan Pesantren Cipansor telah diverifikasi secara independen oleh Goodstack dan TechSoup — dua lembaga verifikasi organisasi nirlaba berskala internasional yang dipakai berbagai program sosial global untuk memastikan keabsahan sebuah lembaga.",
+    /**
+     * Every organisation that has independently verified the yayasan's
+     * nonprofit status. A list, not a single field, because there is now more
+     * than one and hard-coding the second would mean editing two render sites
+     * again the next time.
+     *
+     * `onDark` exists because TechSoup publishes its wordmark in a reversed
+     * (white) form. Dropped onto the light card it reads as a broken image —
+     * only the orange "soup" survives. It is shown on a dark chip instead,
+     * which is what that artwork is for. Recolouring someone else's trademark
+     * to fit our palette is not an option.
+     */
+    verifiers: [
+      {
+        name: "Goodstack",
+        logo: "/images/goodstack.svg",
+        // 22px tall, width from the artwork's own aspect ratio.
+        width: 132,
+        onDark: false,
+      },
+      {
+        name: "TechSoup",
+        logo: "/images/techsoup.png",
+        // Source artwork is 314x60, so 22px tall lands at ~115px wide.
+        width: 115,
+        onDark: true,
+      },
+    ],
     /**
      * Goodstack's own wordmark, self-hosted rather than hotlinked so the badge
      * cannot break on the page Google reviews and costs no third-party request.

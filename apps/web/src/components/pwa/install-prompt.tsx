@@ -11,8 +11,45 @@ interface BeforeInstallPromptEvent extends Event {
 
 const DISMISS_KEY = "pwa-install-dismissed-until";
 
+/**
+ * The first version of this banner stored a permanent "1" under its own key.
+ * Renaming the key without reading the old one meant every visitor who had
+ * already dismissed it was asked again. Honoured here, and treated as
+ * permanent, because that is what the user agreed to at the time.
+ */
+const LEGACY_DISMISS_KEY = "pwa-install-dismissed";
+
 /** How long "X" hides the banner for. */
 const SNOOZE_DAYS = 30;
+
+/**
+ * True while the user's dismissal still stands.
+ *
+ * Checked on every attempt to show the banner, not once on mount. Chrome
+ * re-fires `beforeinstallprompt` as the user moves around, and in this app the
+ * component lives in the root layout and never remounts — so a mount-time
+ * check let the banner come straight back after being dismissed, on every
+ * navigation. That was the reported bug.
+ */
+function isSnoozed(): boolean {
+  try {
+    if (localStorage.getItem(LEGACY_DISMISS_KEY) === "1") return true;
+    const until = Number(localStorage.getItem(DISMISS_KEY) || 0);
+    return until > 0 && Date.now() < until;
+  } catch {
+    // Private mode or blocked storage: better to stay quiet than to nag.
+    return true;
+  }
+}
+
+/** Already installed — asking again would be nonsense. */
+function isInstalled(): boolean {
+  if (typeof window === "undefined") return false;
+  return (
+    window.matchMedia?.("(display-mode: standalone)").matches === true ||
+    (window.navigator as { standalone?: boolean }).standalone === true
+  );
+}
 
 declare global {
   interface Window {
@@ -39,13 +76,12 @@ export function InstallPrompt() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-
-    // Previously a permanent "1" flag: one tap on X and the banner never came
-    // back on that browser, with no way to undo short of clearing site data.
-    const until = Number(localStorage.getItem(DISMISS_KEY) || 0);
-    if (until && Date.now() < until) return;
+    if (isInstalled()) return;
 
     const accept = (e: BeforeInstallPromptEvent) => {
+      // Re-checked here rather than once above: this runs again every time
+      // Chrome re-fires the event, long after mount.
+      if (isSnoozed() || isInstalled()) return;
       setDeferred(e);
       setVisible(true);
     };
@@ -82,10 +118,15 @@ export function InstallPrompt() {
   };
 
   const dismiss = () => {
-    localStorage.setItem(
-      DISMISS_KEY,
-      String(Date.now() + SNOOZE_DAYS * 24 * 60 * 60 * 1000),
-    );
+    try {
+      localStorage.setItem(
+        DISMISS_KEY,
+        String(Date.now() + SNOOZE_DAYS * 24 * 60 * 60 * 1000),
+      );
+    } catch {
+      // Storage unavailable. The banner still closes for this page-session;
+      // dropping the click entirely would be worse than forgetting it later.
+    }
     setVisible(false);
   };
 

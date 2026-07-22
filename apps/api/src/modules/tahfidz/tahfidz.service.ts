@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { seesAllUnits } from '@/utils/resolve-unit-id';
 import { logger } from '@/lib/logger';
 import { Errors } from '@/middleware/error';
 import { UserRole, TahfidzActivityType, Prisma } from '@prisma/client';
@@ -106,14 +107,19 @@ export class TahfidzService {
   /**
    * Get tahfidz records with pagination
    */
-  async findAll(query: ListTahfidzQuery, currentUser: { role: string; unitId: string | null }) {
+  async findAll(
+    query: ListTahfidzQuery,
+    currentUser: { role: string; roleCode?: string | null; unitId: string | null }
+  ) {
     const { page, limit, studentId, activityType, startDate, endDate, surah } = query;
     const skip = (page - 1) * limit;
 
     const where: Prisma.TahfidzRecordWhereInput = {};
 
-    // Filter by unit for non-super-admins
-    if (currentUser.role !== UserRole.SUPER_ADMIN) {
+    // A muhafidz teaches santri from every academic unit that boards, so
+    // pinning them to their own unitId silently hid the SD IT santri they
+    // teach. seesAllUnits() also restores the yayasan board's oversight view.
+    if (!seesAllUnits(currentUser)) {
       where.student = {
         unitId: currentUser.unitId || 'none',
       };

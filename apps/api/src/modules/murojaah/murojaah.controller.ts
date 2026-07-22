@@ -18,6 +18,7 @@ export const listMurojaah = async (req: Request, res: Response, next: NextFuncti
     const query = (res.locals.validatedQuery || req.query) as any;
     const result = await murojaahService.findAll(query, {
       role: (req.user as any)?.role,
+      roleCode: (req.user as any)?.roleCode,
       unitId: (req.user as any)?.unitId,
     });
     res.json(

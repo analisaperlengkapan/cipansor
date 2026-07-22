@@ -92,6 +92,7 @@ describe('Correspondence Service', () => {
         limit: 10,
         scope: 'PERSONAL',
         userId: 'user-1',
+        actor: { id: 'user-1', roleCode: 'SUPER_ADMIN', unitId: null },
       });
 
       expect(prisma.letter.findMany).toHaveBeenCalledWith({
@@ -180,12 +181,15 @@ describe('Correspondence Service', () => {
       vi.mocked(prisma.letter.findUnique).mockResolvedValue({ id: 'letter-1', status: 'RECEIVED' } as any);
       vi.mocked(prisma.disposition.create).mockResolvedValue({ id: 'disp-1' } as any);
 
-      await CorrespondenceService.createDisposition({
-        letterId: 'letter-1',
-        senderId: 'user-1',
-        recipientId: 'user-2',
-        instruction: 'Tolong hadiri',
-      });
+      await CorrespondenceService.createDisposition(
+        {
+          letterId: 'letter-1',
+          senderId: 'user-1',
+          recipientId: 'user-2',
+          instruction: 'Tolong hadiri',
+        },
+        { id: 'user-1', roleCode: 'SUPER_ADMIN', unitId: null }
+      );
 
       expect(prisma.disposition.create).toHaveBeenCalledWith({
         data: expect.objectContaining({

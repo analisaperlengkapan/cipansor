@@ -1,4 +1,6 @@
 import { randomUUID } from 'crypto';
+import { seesAllUnits } from '@/utils/resolve-unit-id';
+import { studentsHoldLogins } from '@/utils/student-login-policy';
 import { prisma } from '@/lib/prisma';
 import { hashPassword } from '@/lib/password';
 import { Errors } from '@/middleware/error';
@@ -9,7 +11,10 @@ export class StudentService {
   /**
    * Get all students with pagination
    */
-  async findAll(query: ListStudentsQuery, currentUser: { role: string; unitId: string | null }) {
+  async findAll(
+    query: ListStudentsQuery,
+    currentUser: { role: string; roleCode?: string | null; unitId: string | null }
+  ) {
     const { page, limit, search, unitId, classId, gender } = query;
     const skip = (page - 1) * limit;
 
@@ -17,8 +22,10 @@ export class StudentService {
       deletedAt: null,
     };
 
-    // Filter by unit
-    if (currentUser.role !== UserRole.SUPER_ADMIN) {
+    // Unit filter. seesAllUnits() covers both the yayasan board (no unitId at
+    // all, so this used to resolve to 'none' and return nothing) and the
+    // boarding/shared-service staff, whose santri span several academic units.
+    if (!seesAllUnits(currentUser)) {
       where.unitId = currentUser.unitId || 'none';
     } else if (unitId) {
       where.unitId = unitId;
@@ -404,11 +411,18 @@ export class StudentService {
     // Generate email if not provided
     const email = input.email || `${input.nis}@student.cipansor.local`;
 
-    // Hash password — auto-generate a compliant one when none is supplied
-    // (students are issued a password to reset later rather than choosing one).
-    const rawPassword =
-      input.password ?? `Aa1${randomUUID().replace(/-/g, '').slice(0, 12)}`;
-    const passwordHash = await hashPassword(rawPassword);
+    // Whether this pupil gets an account at all. TK Qur'an pupils never do —
+    // they are four to six years old — so the row created below is an identity
+    // carrying their name, with no credential and no ability to sign in.
+    // Without this, adding a TK pupil through the UI issued them a password.
+    const withLogin = studentsHoldLogins(unit.type);
+
+    // Students are issued a password to reset later rather than choosing one.
+    const passwordHash = withLogin
+      ? await hashPassword(
+          input.password ?? `Aa1${randomUUID().replace(/-/g, '').slice(0, 12)}`
+        )
+      : null;
 
     // Create user and student in transaction
     const student = await prisma.$transaction(async (tx) => {
@@ -420,7 +434,7 @@ export class StudentService {
           passwordHash,
           role: UserRole.STUDENT,
           unitId,
-          isActive: true,
+          isActive: withLogin,
         },
       });
 

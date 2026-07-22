@@ -122,9 +122,14 @@ import {
 } from '@prisma/client';
 import { createPrismaClient } from './client';
 import bcrypt from 'bcryptjs';
+import { randomBytes } from 'crypto';
 import { seedWilayahIndonesia } from './seeds/wilayah-indonesia';
 import { seedKurikulumMerdeka, seedAccountCodes } from './seeds/kurikulum-merdeka';
 import { seedPAUDIndicators } from './seeds/paud-indicators';
+import {
+  syncParentRoleAssignments,
+  type ParentScopeClient,
+} from '../src/utils/parent-scope';
 import { seedImmunizationReference } from './seeds/immunization-reference';
 import { PERMISSIONS, permissionsForRoleCode } from '../src/modules/roles/permissions';
 // Imported from source (not the built dist) so a stale @cipansor/shared build
@@ -176,17 +181,29 @@ async function main() {
   // ============================================
   // SYSTEM USER
   // ============================================
+  // A placeholder row so that machine-written records have an author to point
+  // at (talenta.service uses this id as the assessorId fallback). It is not a
+  // login.
+  //
+  // It used to be created active, SUPER_ADMIN, with the password 'System123!'
+  // — and it could log in. Not through a role assignment, which it never had,
+  // but through the legacy `User.role` fallback in authService.login. Being
+  // admin without 2FA, that login returns `requiresTwoFactorSetup` plus a
+  // 10-minute token, so whoever knew the seeded password could enrol their own
+  // authenticator on a super-admin account. isActive: false is checked before
+  // any of that, and the password is now an unguessable random string rather
+  // than a documented one.
   await prisma.user.create({
     data: {
       id: SYSTEM_USER_ID,
       name: 'SYSTEM',
       email: 'system@cipansor.or.id',
-      passwordHash: await bcrypt.hash('System123!', 10),
+      passwordHash: await bcrypt.hash(randomBytes(32).toString('hex'), 10),
       role: UserRole.SUPER_ADMIN,
-      isActive: true,
+      isActive: false,
     },
   });
-  console.log('✅ System user created');
+  console.log('✅ System user created (login disabled)');
 
   // ============================================
   // PHASE 3: Foundation / Yayasan
@@ -262,7 +279,7 @@ async function main() {
   console.log('✅ Board members created');
 
   // Create Units
-  const pesantren = await prisma.unit.create({
+  const smpIt = await prisma.unit.create({
     data: {
       foundationId: foundation.id,
       name: 'SMP IT Cipansor',
@@ -770,7 +787,21 @@ async function main() {
   // All share DEMO_PASSWORD. Emails use @demo.cipansor.or.id and never collide
   // with the hand-authored users below (different domains).
   // ============================================
-  /** Roles that live inside the pesantren but whose code carries no unit prefix. */
+  /**
+   * Boarding-side and shared-service roles, whose codes carry no unit prefix.
+   *
+   * These people serve the pesantren (asrama, tahfidz, kitab) and the shared
+   * services — keamanan, perawat, pustakawan, laboran — none of which belong to
+   * one school. The data model gives a user exactly one `unitId`, so there is no
+   * honest way to express that here.
+   *
+   * They are pointed at SMP IT because that is where the boarding santri are
+   * seeded, which makes their unit-scoped queries return the right rows today.
+   * It is the least-wrong single choice, not a correct one: the moment boarding
+   * santri exist in SMA Qur'an as well, a musyrif will be unable to see the
+   * santri in their own asrama. Fixing that needs cross-unit scope for these
+   * roles, the same way isFoundationScopedRole() handles the yayasan board.
+   */
   const PESANTREN_REALM_ROLES = new Set([
     'PESANTREN_PENGASUH', 'PESANTREN_DIREKTUR', 'PESANTREN_TATA_USAHA',
     'USTADZ', 'MUSYRIF', 'MUSYRIFAH', 'MUHAFIDZ', 'MUHAFIDZAH', 'MURABBI',
@@ -779,13 +810,12 @@ async function main() {
   const demoUnitIdFor = (code: string): string | undefined => {
     if (code.startsWith('TKQ_')) return tkQuran.id;
     if (code.startsWith('SDIT_')) return sdIt.id;
-    if (code.startsWith('SMPIT_')) return pesantren.id;
+    if (code.startsWith('SMPIT_')) return smpIt.id;
     if (code.startsWith('SMAQ_')) return smaQuran.id;
     if (code.startsWith('PT_')) return perguruanTinggi.id;
-    // Pesantren-realm and shared operational roles carry no unit prefix, so
-    // they used to fall through to `undefined` and every unit-scoped query
-    // came back empty for them. They all work inside the pesantren.
-    if (PESANTREN_REALM_ROLES.has(code)) return pesantren.id;
+    // Boarding-side and shared-service roles: see PESANTREN_REALM_ROLES above
+    // for why they land on SMP IT and what that costs.
+    if (PESANTREN_REALM_ROLES.has(code)) return smpIt.id;
     // SUPER_ADMIN, YAYASAN_* and the business-unit roles are deliberately
     // left unit-less: the first two are foundation-wide, and business units
     // are a separate entity from the academic units.
@@ -918,22 +948,45 @@ async function main() {
     },
   });
 
-  // Ketua Yayasan has multiple roles
-  await prisma.userRoleAssignment.createMany({
-    data: [
-      {
-        userId: ketuaYayasanUser.id,
-        roleId: roles[RoleCode.YAYASAN_KETUA].id,
-        isPrimary: true,
-        isActive: true,
-      },
-      {
-        userId: ketuaYayasanUser.id,
-        roleId: roles[RoleCode.YAYASAN_PEMBINA].id,
-        isPrimary: false,
-        isActive: true,
-      },
-    ],
+  // Ketua is Pengurus, and only Pengurus.
+  //
+  // This block used to give the same account YAYASAN_KETUA and
+  // YAYASAN_PEMBINA, under a comment reading "Ketua Yayasan has multiple
+  // roles". UU 16/2001 Pasal 29 forbids exactly that: an anggota Pembina may
+  // not concurrently be Pengurus or Pengawas, because the organ that appoints
+  // cannot also be the one that executes. The database now refuses it too (see
+  // the trg_yayasan_organ_exclusive migration), so this seed would fail loudly
+  // rather than reproduce the violation.
+  //
+  // Multi-role accounts are still demonstrated, and legitimately — see the
+  // komite members and staff who are also wali further down.
+  await prisma.userRoleAssignment.create({
+    data: {
+      userId: ketuaYayasanUser.id,
+      roleId: roles[RoleCode.YAYASAN_KETUA].id,
+      isPrimary: true,
+      isActive: true,
+    },
+  });
+
+  // Pembina is a separate person, as the law requires.
+  const pembinaYayasanUser = await prisma.user.create({
+    data: {
+      name: 'KH. Abdurrahman Wahid Nurcholis',
+      email: 'pembina@cipansor.or.id',
+      passwordHash: await bcrypt.hash('Pembina123!', 10),
+      role: UserRole.STAFF,
+      isActive: true,
+    },
+  });
+
+  await prisma.userRoleAssignment.create({
+    data: {
+      userId: pembinaYayasanUser.id,
+      roleId: roles[RoleCode.YAYASAN_PEMBINA].id,
+      isPrimary: true,
+      isActive: true,
+    },
   });
 
   const sekretarisYayasanUser = await prisma.user.create({
@@ -984,7 +1037,7 @@ async function main() {
       email: 'admin@smpit.sch.id',
       passwordHash: await bcrypt.hash('Admin123!', 10),
       role: UserRole.UNIT_ADMIN,
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       isActive: true,
     },
   });
@@ -993,7 +1046,7 @@ async function main() {
     data: {
       userId: adminPesantrenUser.id,
       roleId: roles[RoleCode.SMPIT_ADMIN].id,
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       isPrimary: true,
       isActive: true,
     },
@@ -1027,7 +1080,7 @@ async function main() {
       email: 'kepala@smpit.sch.id',
       passwordHash: await bcrypt.hash('Kepala123!', 10),
       role: UserRole.TEACHER,
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       isActive: true,
     },
   });
@@ -1037,14 +1090,14 @@ async function main() {
       {
         userId: kepalaSmpItUser.id,
         roleId: roles[RoleCode.SMPIT_KEPALA_SEKOLAH].id,
-        unitId: pesantren.id,
+        unitId: smpIt.id,
         isPrimary: true,
         isActive: true,
       },
       {
         userId: kepalaSmpItUser.id,
         roleId: roles[RoleCode.SMPIT_GURU].id,
-        unitId: pesantren.id,
+        unitId: smpIt.id,
         isPrimary: false,
         isActive: true,
       },
@@ -1089,7 +1142,7 @@ async function main() {
       email: 'ahmad@smpit.sch.id',
       passwordHash: await bcrypt.hash('Teacher123!', 10),
       role: UserRole.TEACHER,
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       isActive: true,
     },
   });
@@ -1098,7 +1151,7 @@ async function main() {
     data: {
       userId: teacherPesantrenUser.id,
       roleId: roles[RoleCode.SMPIT_GURU].id,
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       isPrimary: true,
       isActive: true,
     },
@@ -1107,7 +1160,7 @@ async function main() {
   const teacherPesantren = await prisma.teacher.create({
     data: {
       userId: teacherPesantrenUser.id,
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       nip: '198501012010011001',
     },
   });
@@ -1148,7 +1201,7 @@ async function main() {
       email: 'tu@smpit.sch.id',
       passwordHash: await bcrypt.hash('TataUsaha123!', 10),
       role: UserRole.STAFF,
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       isActive: true,
     },
   });
@@ -1157,7 +1210,7 @@ async function main() {
     data: {
       userId: tuSmpItUser.id,
       roleId: roles[RoleCode.SMPIT_TATA_USAHA].id,
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       isPrimary: true,
       isActive: true,
     },
@@ -1202,7 +1255,7 @@ async function main() {
   // Create Classes
   const class7A = await prisma.class.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       academicYearId: academicYear.id,
       name: '7A',
       level: '7',
@@ -1233,14 +1286,14 @@ async function main() {
       name: 'Muhammad Rizky',
       gender: Gender.MALE,
       email: 'student1@smpit.sch.id',
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       roleCode: RoleCode.SMPIT_SISWA,
     },
     {
       name: 'Ahmad Fauzan',
       gender: Gender.MALE,
       email: 'student2@smpit.sch.id',
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       roleCode: RoleCode.SMPIT_SISWA,
     },
     {
@@ -1316,6 +1369,77 @@ async function main() {
 
   console.log('✅ Students created and enrolled');
 
+  // ---------------------------------------------------------------------
+  // TK Qur'an pupils — recorded, but with no account
+  // ---------------------------------------------------------------------
+  //
+  // The RoleCode enum has no TKQ_SISWA on purpose: children of this age do not
+  // hold logins. Nothing then created any TK pupils, so TK Qur'an ended up with
+  // three teachers, no class and nobody enrolled — and the PAUD development
+  // assessment attached itself to a SMA Qur'an santri, because that was the
+  // only student left to point at.
+  //
+  // A pupil without a login is still a pupil. Each gets a Student row, and a
+  // User row that is an *identity*: it carries the name (Student has no name
+  // column of its own), has `passwordHash: null` so no credential exists at
+  // all, is inactive so login is refused before anything else, and holds no
+  // role assignment. See utils/student-login-policy.ts.
+  const classTkA = await prisma.class.create({
+    data: {
+      unitId: tkQuran.id,
+      academicYearId: academicYear.id,
+      name: 'TK A',
+      level: 'A',
+      capacity: 20,
+    },
+  });
+
+  const tkPupilConfigs = [
+    { name: 'Aisyah Nur Fadhilah', gender: Gender.FEMALE, birthDate: '2021-03-14' },
+    { name: 'Umar Abdul Aziz', gender: Gender.MALE, birthDate: '2021-07-02' },
+    { name: 'Khadijah Salsabila', gender: Gender.FEMALE, birthDate: '2020-11-20' },
+  ];
+
+  const tkPupils = [];
+  for (let i = 0; i < tkPupilConfigs.length; i++) {
+    const data = tkPupilConfigs[i];
+    const identity = await prisma.user.create({
+      data: {
+        name: data.name,
+        // Not a mailbox — an identifier. The column is unique and required, and
+        // these children have no address of their own.
+        email: `tkq-${String(i + 1).padStart(3, '0')}@murid.cipansor.local`,
+        passwordHash: null,
+        role: UserRole.STUDENT,
+        unitId: tkQuran.id,
+        isActive: false,
+      },
+    });
+
+    const pupil = await prisma.student.create({
+      data: {
+        userId: identity.id,
+        unitId: tkQuran.id,
+        nis: `2024TK${String(i + 1).padStart(2, '0')}`,
+        nisn: `01${String(i + 1).padStart(8, '0')}`,
+        gender: data.gender,
+        birthPlace: 'Tasikmalaya',
+        birthDate: new Date(data.birthDate),
+        address: 'Kp. Cipansor, Kec. Kadipaten, Kab. Tasikmalaya',
+        parentName: `Orang tua ${data.name.split(' ')[0]}`,
+        parentPhone: `08122200${String(i + 1).padStart(2, '0')}`,
+      },
+    });
+
+    await prisma.classEnrollment.create({
+      data: { studentId: pupil.id, classId: classTkA.id, status: 'active' },
+    });
+
+    tkPupils.push(pupil);
+  }
+
+  console.log(`✅ TK Qur'an pupils created (${tkPupils.length}, no logins)`);
+
   // Create Parent users (wali santri) with role assignments
   const parentUsers = [];
   const parentNames = [
@@ -1323,14 +1447,14 @@ async function main() {
       name: 'Bapak Rizky (Wali)',
       email: 'parent1@smpit.sch.id',
       studentIdx: 0,
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       roleCode: RoleCode.SMPIT_ORANG_TUA,
     },
     {
       name: 'Ibu Fauzan (Wali)',
       email: 'parent2@smpit.sch.id',
       studentIdx: 1,
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       roleCode: RoleCode.SMPIT_ORANG_TUA,
     },
     {
@@ -1398,7 +1522,7 @@ async function main() {
   // product working rather than a shell.
   // ============================================
   const demoUnitClasses = new Map<string, string>([
-    [pesantren.id, class7A.id],
+    [smpIt.id, class7A.id],
     [sdIt.id, class1A.id],
   ]);
 
@@ -1472,6 +1596,13 @@ async function main() {
     }
   }
 
+  // TK Qur'an has no demo student of its own — there is no TKQ_SISWA role to
+  // create one from — so the demo TK parent had nobody to be a parent of and
+  // opened a portal with no child in it. Point it at a real TK pupil.
+  if (tkPupils.length > 0) {
+    demoStudentByUnit.set(tkQuran.id, tkPupils[0].id);
+  }
+
   // Second pass: the parent of a unit is linked to that unit's demo student.
   // Done separately because map iteration order does not guarantee the
   // student was created before the parent.
@@ -1486,6 +1617,197 @@ async function main() {
 
   console.log(
     `✅ Demo personas wired (${demoStudents} students, ${demoTeachers} teachers, ${demoParents} parents)`
+  );
+
+  // ---------------------------------------------------------------------
+  // Families: siblings across units, and parents who are also something else
+  // ---------------------------------------------------------------------
+  //
+  // Until now every wali had exactly one child in exactly one unit, so three
+  // situations the pesantren actually has were unrepresented:
+  //
+  //   - a family with children at several jenjang at once. A wali with a child
+  //     in TK, one in SD and one in SMP must reach all three units, which means
+  //     three parent-role assignments on ONE account, not three accounts.
+  //   - komite sekolah members. All four were seeded with zero children, but a
+  //     komite is drawn from the wali murid — a member with no child in the
+  //     school is not a komite member.
+  //   - a wali who is also staff. A guru whose own child studies here, or a
+  //     pengurus yayasan who is also a parent, is one person with one login and
+  //     more than one role.
+  //
+  // The Bahtiar family is the first: three siblings, one wali, three units.
+  const bahtiarChildren: Array<{ id: string }> = [];
+
+  const bahtiarTk = await prisma.user.create({
+    data: {
+      name: 'Zahra Bahtiar',
+      email: 'tkq-b01@murid.cipansor.local',
+      passwordHash: null,
+      role: UserRole.STUDENT,
+      unitId: tkQuran.id,
+      isActive: false,
+    },
+  });
+  bahtiarChildren.push(
+    await prisma.student.create({
+      data: {
+        userId: bahtiarTk.id,
+        unitId: tkQuran.id,
+        nis: '2024TKB1',
+        nisn: '0120000001',
+        gender: Gender.FEMALE,
+        birthPlace: 'Tasikmalaya',
+        birthDate: new Date('2021-01-09'),
+        address: 'Kp. Cipansor, Kec. Kadipaten, Kab. Tasikmalaya',
+        parentName: 'Bapak Hendra Bahtiar',
+        parentPhone: '081223340001',
+      },
+    })
+  );
+
+  for (const sibling of [
+    {
+      name: 'Yusuf Bahtiar',
+      email: 'yusuf.bahtiar@sdit.sch.id',
+      unit: sdIt,
+      classId: class1A.id,
+      nis: '2024SDB1',
+      gender: Gender.MALE,
+      birthDate: '2017-04-18',
+    },
+    {
+      name: 'Hafshah Bahtiar',
+      email: 'hafshah.bahtiar@smpit.sch.id',
+      unit: smpIt,
+      classId: class7A.id,
+      nis: '2024SMB1',
+      gender: Gender.FEMALE,
+      birthDate: '2012-09-05',
+    },
+  ]) {
+    const siblingUser = await prisma.user.create({
+      data: {
+        name: sibling.name,
+        email: sibling.email,
+        passwordHash: await bcrypt.hash('Student123!', 10),
+        role: UserRole.STUDENT,
+        unitId: sibling.unit.id,
+        isActive: true,
+      },
+    });
+    const created = await prisma.student.create({
+      data: {
+        userId: siblingUser.id,
+        unitId: sibling.unit.id,
+        nis: sibling.nis,
+        nisn: `013${sibling.nis.slice(-5)}`,
+        gender: sibling.gender,
+        birthPlace: 'Tasikmalaya',
+        birthDate: new Date(sibling.birthDate),
+        address: 'Kp. Cipansor, Kec. Kadipaten, Kab. Tasikmalaya',
+        parentName: 'Bapak Hendra Bahtiar',
+        parentPhone: '081223340001',
+      },
+    });
+    await prisma.classEnrollment.create({
+      data: { studentId: created.id, classId: sibling.classId, status: 'active' },
+    });
+    bahtiarChildren.push(created);
+  }
+
+  const waliBahtiar = await prisma.user.create({
+    data: {
+      name: 'Bapak Hendra Bahtiar',
+      email: 'hendra.bahtiar@wali.cipansor.or.id',
+      passwordHash: await bcrypt.hash('Parent123!', 10),
+      role: UserRole.PARENT,
+      // No single unit: the reconciliation below gives this account one parent
+      // role per unit its children study in.
+      unitId: null,
+      isActive: true,
+    },
+  });
+
+  for (const child of bahtiarChildren) {
+    await prisma.studentParent.create({
+      data: { studentId: child.id, parentId: waliBahtiar.id, relation: 'father', isPrimary: true },
+    });
+  }
+
+  // Komite members are wali murid. Each is linked to a child already enrolled
+  // in the school whose komite they sit on.
+  const komiteChildByRole: Array<{ roleCode: string; studentId?: string }> = [
+    { roleCode: 'TKQ_KOMITE', studentId: tkPupils[1]?.id },
+    { roleCode: 'SDIT_KOMITE', studentId: students[2]?.id },
+    { roleCode: 'SMPIT_KOMITE', studentId: students[1]?.id },
+    { roleCode: 'SMAQ_KOMITE', studentId: students[3]?.id },
+  ];
+  for (const entry of komiteChildByRole) {
+    const komite = demoUsers.get(entry.roleCode);
+    if (!komite || !entry.studentId) continue;
+    await prisma.studentParent.create({
+      data: {
+        studentId: entry.studentId,
+        parentId: komite.id,
+        relation: 'mother',
+        isPrimary: false,
+      },
+    });
+  }
+
+  // Staff who are also wali. One guru and one pengurus yayasan, each a single
+  // account that will end up holding both roles.
+  const staffWali: Array<{ roleCode: string; studentId?: string }> = [
+    { roleCode: 'SDIT_GURU', studentId: students[0]?.id },
+    { roleCode: 'YAYASAN_ANGGOTA', studentId: tkPupils[2]?.id },
+  ];
+  for (const entry of staffWali) {
+    const staff = demoUsers.get(entry.roleCode);
+    if (!staff || !entry.studentId) continue;
+    await prisma.studentParent.create({
+      data: {
+        studentId: entry.studentId,
+        parentId: staff.id,
+        relation: 'father',
+        isPrimary: false,
+      },
+    });
+  }
+
+  // ---------------------------------------------------------------------
+  // Parent roles are derived from the children, never written by hand
+  // ---------------------------------------------------------------------
+  //
+  // The rule: a wali holds exactly one `*_ORANG_TUA` assignment per unit in
+  // which they have a child. Computing it here, after every StudentParent row
+  // exists, means the two can never drift — a wali cannot be scoped to a unit
+  // no child of theirs attends, and cannot be missing one where a child does.
+  //
+  // Perguruan Tinggi has no guardian role and is skipped on purpose: a
+  // mahasiswa is an adult, and inventing a wali role for them would be
+  // modelling something the institution does not do.
+  // The rule itself lives in utils/parent-scope.ts so that this seed and the
+  // SPMB onboarding path cannot disagree about it. Running it after every
+  // StudentParent row exists means a wali is scoped to exactly the units their
+  // children study in — never one more, never one fewer.
+  let parentRolesAdded = 0;
+  const parentIds = [
+    ...new Set(
+      (await prisma.studentParent.findMany({ select: { parentId: true } })).map(
+        (l) => l.parentId
+      )
+    ),
+  ];
+  for (const parentId of parentIds) {
+    parentRolesAdded += await syncParentRoleAssignments(
+      prisma as unknown as ParentScopeClient,
+      parentId
+    );
+  }
+
+  console.log(
+    `✅ Families wired (Bahtiar siblings across 3 units, komite & staff as wali, ${parentRolesAdded} parent roles derived)`
   );
 
   // Create Attendance records for today
@@ -1543,9 +1865,11 @@ async function main() {
   // ============================================
 
   // Create Dormitories
+  // No unitId: both asrama are run by the yayasan and take santri from SD IT,
+  // SMP IT and SMA Qur'an alike — which is exactly what the room assignments
+  // below do. Naming one school here is what made SMP IT look like the owner.
   const dormitoryPutra = await prisma.dormitory.create({
     data: {
-      unitId: pesantren.id,
       name: 'Asrama Putra Al-Hikmah',
       code: 'AP-01',
       gender: Gender.MALE,
@@ -1556,7 +1880,6 @@ async function main() {
 
   const dormitoryPutri = await prisma.dormitory.create({
     data: {
-      unitId: pesantren.id,
       name: 'Asrama Putri Al-Hikmah',
       code: 'AW-01',
       gender: Gender.FEMALE,
@@ -1631,7 +1954,44 @@ async function main() {
     });
   }
 
-  console.log('✅ Room assignments created');
+  // Boarding is compulsory at SMP IT and SMA Qur'an, so a santri there without
+  // a bed is missing data, not a santri who lives at home. The demo personas
+  // are created before the asrama exists and so were never placed — which is
+  // why production currently shows santri who must board and have no kamar.
+  // TK Qur'an is deliberately not included: those pupils go home daily.
+  const mandatoryBoarders = await prisma.student.findMany({
+    where: {
+      status: 'active',
+      unit: { type: { in: [UnitType.SMP_IT, UnitType.SMA_QURAN] } },
+      roomAssignments: { none: { isActive: true } },
+    },
+    select: { id: true, gender: true },
+  });
+
+  for (const boarder of mandatoryBoarders) {
+    let roomData;
+    if (boarder.gender === Gender.MALE) {
+      roomData = rooms[maleRoomIndex % 5];
+      maleRoomIndex++;
+    } else {
+      roomData = rooms[5 + (femaleRoomIndex % 4)];
+      femaleRoomIndex++;
+    }
+
+    await prisma.roomAssignment.create({
+      data: {
+        roomId: roomData.room.id,
+        studentId: boarder.id,
+        assignedAt: new Date('2024-07-15'),
+        isActive: true,
+        notes: 'Penempatan awal tahun ajaran 2024/2025',
+      },
+    });
+  }
+
+  console.log(
+    `✅ Room assignments created (+${mandatoryBoarders.length} santri wajib mondok)`
+  );
 
   // Create Permits
   const permitStatuses = [
@@ -1784,7 +2144,7 @@ async function main() {
   for (const pt of paymentTypesData) {
     const paymentType = await prisma.paymentType.create({
       data: {
-        unitId: pesantren.id,
+        unitId: smpIt.id,
         name: pt.name,
         code: pt.code,
         amount: pt.amount,
@@ -1860,30 +2220,40 @@ async function main() {
   // ============================================
 
   // Create Staff users and profiles
+  // Each entry carries the RoleCode its job actually is. These four were the
+  // only seeded users created with a legacy `role` and no UserRoleAssignment,
+  // so they logged in solely through the legacy fallback in authService.login
+  // — arriving with an empty permission list, which silently fails every
+  // hasPermission-gated route. Removing that fallback would lock them out
+  // outright, so the assignment they should always have had is created below.
   const staffData = [
     {
       name: 'Pak Bambang Sutejo',
       email: 'bambang@cipansor.or.id',
       position: 'Kepala TU',
       department: 'Administrasi',
+      roleCode: RoleCode.SMPIT_TATA_USAHA,
     },
     {
       name: 'Ibu Dewi Kartika',
       email: 'dewi@cipansor.or.id',
       position: 'Staff Keuangan',
       department: 'Keuangan',
+      roleCode: RoleCode.SMPIT_BENDAHARA,
     },
     {
       name: 'Pak Rudi Hartono',
       email: 'rudi@cipansor.or.id',
       position: 'Security',
       department: 'Keamanan',
+      roleCode: RoleCode.KEAMANAN,
     },
     {
       name: 'Ibu Sri Wahyuni',
       email: 'sri@cipansor.or.id',
       position: 'Petugas Kesehatan',
       department: 'Kesehatan',
+      roleCode: RoleCode.PERAWAT,
     },
   ];
 
@@ -1896,7 +2266,17 @@ async function main() {
         email: data.email,
         passwordHash: await bcrypt.hash('Staff123!', 10),
         role: UserRole.STAFF,
-        unitId: pesantren.id,
+        unitId: smpIt.id,
+        isActive: true,
+      },
+    });
+
+    await prisma.userRoleAssignment.create({
+      data: {
+        userId: user.id,
+        roleId: roles[data.roleCode].id,
+        unitId: smpIt.id,
+        isPrimary: true,
         isActive: true,
       },
     });
@@ -1904,7 +2284,7 @@ async function main() {
     const staff = await prisma.staff.create({
       data: {
         userId: user.id,
-        unitId: pesantren.id,
+        unitId: smpIt.id,
         nip: `199${i}0101202001${String(i + 1).padStart(3, '0')}`,
         position: data.position,
         department: data.department,
@@ -2041,7 +2421,7 @@ async function main() {
   // Create Admission Period
   const admissionPeriod = await prisma.admissionPeriod.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       academicYearId: academicYear.id,
       name: 'PSB 2024/2025 Gelombang 1',
       startDate: new Date('2024-03-01'),
@@ -2061,7 +2441,7 @@ async function main() {
 
   const admissionPeriod2 = await prisma.admissionPeriod.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       academicYearId: academicYear.id,
       name: 'PSB 2024/2025 Gelombang 2',
       startDate: new Date('2024-06-01'),
@@ -2226,7 +2606,7 @@ async function main() {
   for (const cat of bookCategoriesData) {
     const category = await prisma.bookCategory.create({
       data: {
-        unitId: pesantren.id,
+        unitId: smpIt.id,
         name: cat.name,
         code: cat.code,
         description: cat.description,
@@ -2301,7 +2681,7 @@ async function main() {
   for (const bookData of booksData) {
     const book = await prisma.book.create({
       data: {
-        unitId: pesantren.id,
+        unitId: smpIt.id,
         categoryId: bookCategories[bookData.categoryIdx].id,
         title: bookData.title,
         author: bookData.author,
@@ -2411,7 +2791,7 @@ async function main() {
 
     const medication = await prisma.medication.create({
       data: {
-        unitId: pesantren.id,
+        unitId: smpIt.id,
         name: med.name,
         genericName: med.genericName,
         type: med.type,
@@ -2613,7 +2993,7 @@ async function main() {
 
     const asset = await prisma.asset.create({
       data: {
-        unitId: pesantren.id,
+        unitId: smpIt.id,
         categoryId: assetCategories[assetData.categoryIdx].id,
         code: `INV-${assetCategories[assetData.categoryIdx].code}-${String(assetCounter++).padStart(4, '0')}`,
         name: assetData.name,
@@ -2714,7 +3094,7 @@ async function main() {
 
     await prisma.announcement.create({
       data: {
-        unitId: pesantren.id,
+        unitId: smpIt.id,
         title: ann.title,
         content: ann.content,
         type: NotificationType.ANNOUNCEMENT,
@@ -2804,7 +3184,7 @@ async function main() {
   for (const subj of subjectsData) {
     const subject = await prisma.subject.create({
       data: {
-        unitId: pesantren.id,
+        unitId: smpIt.id,
         code: subj.code,
         name: subj.name,
         type: subj.type,
@@ -2819,7 +3199,7 @@ async function main() {
   console.log('✅ Subjects created');
 
   // Seed Kurikulum Merdeka Learning Outcomes (sekarang subjects sudah ada)
-  await seedKurikulumMerdeka(prisma, pesantren.id, academicYear.id);
+  await seedKurikulumMerdeka(prisma, smpIt.id, academicYear.id);
 
   // Assign teacher to subjects
   for (let i = 0; i < 4; i++) {
@@ -2854,7 +3234,7 @@ async function main() {
   for (const sched of schedulesData) {
     await prisma.schedule.create({
       data: {
-        unitId: pesantren.id,
+        unitId: smpIt.id,
         academicYearId: academicYear.id,
         classId: class7A.id,
         subjectId: subjects[sched.subjectIdx].id,
@@ -2959,7 +3339,7 @@ async function main() {
 
     const exam = await prisma.exam.create({
       data: {
-        unitId: pesantren.id,
+        unitId: smpIt.id,
         academicYearId: academicYear.id,
         subjectId: subjects[examData.subjectIdx].id,
         classId: class7A.id,
@@ -3166,7 +3546,7 @@ async function main() {
     const data = alumniData[idx];
     const alum = await prisma.alumni.create({
       data: {
-        unitId: pesantren.id,
+        unitId: smpIt.id,
         registrationNo: `ALM-${data.graduationYear}-${String(idx + 1).padStart(4, '0')}`,
         name: data.name,
         gender: data.gender,
@@ -3362,7 +3742,7 @@ async function main() {
     await prisma.alumniDonation.create({
       data: {
         alumniId: alumni[don.alumniIdx].id,
-        unitId: pesantren.id,
+        unitId: smpIt.id,
         type: don.type,
         amount: don.amount ? new Prisma.Decimal(don.amount) : null,
         description: don.description,
@@ -3420,7 +3800,7 @@ async function main() {
     const evt = eventsData[idx];
     const event = await prisma.alumniEvent.create({
       data: {
-        unitId: pesantren.id,
+        unitId: smpIt.id,
         type: evt.type,
         name: evt.name,
         description: evt.description,
@@ -3526,7 +3906,9 @@ async function main() {
 
   console.log('\n   === PAUD ===');
   console.log('   Admin PAUD: admin@paud.sch.id / Admin123!');
-  console.log('   Siswa PAUD: student4@paud.sch.id / Student123!');
+  // No pupil login is printed here on purpose: TK Qur'an children hold no
+  // accounts. The line used to advertise student4@paud.sch.id / Student123!,
+  // credentials for an account that no longer exists.
 
   console.log('\n   === SD IT ===');
   console.log('   Admin SD IT: admin@sdit.sch.id / Admin123!');
@@ -3633,7 +4015,7 @@ async function main() {
   // 2. Business Units & Canteen
   const canteenBU = await prisma.businessUnit.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       name: 'Koperasi & Kantin Pesantren',
       code: 'KOP-01',
       type: BusinessUnitType.CANTEEN,
@@ -3644,7 +4026,7 @@ async function main() {
 
   const laundryBU = await prisma.businessUnit.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       name: 'Jasa Laundry Al-Hikmah',
       code: 'LDR-01',
       type: BusinessUnitType.LAUNDRY,
@@ -3656,7 +4038,7 @@ async function main() {
 
   const foodCategory = await prisma.canteenCategory.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       businessUnitId: canteenBU.id,
       name: 'Makanan',
       description: 'Makanan berat dan ringan',
@@ -3666,7 +4048,7 @@ async function main() {
 
   const drinkCategory = await prisma.canteenCategory.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       businessUnitId: canteenBU.id,
       name: 'Minuman',
       description: 'Aneka minuman dingin dan hangat',
@@ -3676,7 +4058,7 @@ async function main() {
 
   const stationeryCategory = await prisma.canteenCategory.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       businessUnitId: canteenBU.id,
       name: 'Alat Tulis',
       description: 'Buku, pensil, bolpoin, dll',
@@ -3687,7 +4069,7 @@ async function main() {
 
   const nasgor = await prisma.canteenItem.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       businessUnitId: canteenBU.id,
       categoryId: foodCategory.id,
       code: 'CNT-001',
@@ -3702,7 +4084,7 @@ async function main() {
 
   const esteh = await prisma.canteenItem.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       businessUnitId: canteenBU.id,
       categoryId: drinkCategory.id,
       code: 'CNT-002',
@@ -3717,7 +4099,7 @@ async function main() {
 
   const bukutulis = await prisma.canteenItem.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       businessUnitId: canteenBU.id,
       categoryId: stationeryCategory.id,
       code: 'CNT-003',
@@ -3735,7 +4117,7 @@ async function main() {
   if (students.length > 0) {
     const canteenTx1 = await prisma.canteenTransaction.create({
       data: {
-        unitId: pesantren.id,
+        unitId: smpIt.id,
         businessUnitId: canteenBU.id,
         transactionNo: `CNT-20260630-0001`,
         studentId: students[0].id,
@@ -3774,7 +4156,7 @@ async function main() {
 
     const canteenTx2 = await prisma.canteenTransaction.create({
       data: {
-        unitId: pesantren.id,
+        unitId: smpIt.id,
         businessUnitId: canteenBU.id,
         transactionNo: `CNT-20260630-0002`,
         studentId: students[1].id,
@@ -3804,7 +4186,7 @@ async function main() {
   // 3. Laundry
   const regulerPricing = await prisma.laundryPricing.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       businessUnitId: laundryBU.id,
       name: 'Cuci Setrika Reguler',
       pricePerKg: new Prisma.Decimal(6000),
@@ -3816,7 +4198,7 @@ async function main() {
 
   const expressPricing = await prisma.laundryPricing.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       businessUnitId: laundryBU.id,
       name: 'Cuci Setrika Express',
       pricePerKg: new Prisma.Decimal(10000),
@@ -3830,7 +4212,7 @@ async function main() {
   if (students.length > 0) {
     const laundryTx1 = await prisma.laundryTransaction.create({
       data: {
-        unitId: pesantren.id,
+        unitId: smpIt.id,
         businessUnitId: laundryBU.id,
         transactionNo: `LDR-20260630-0001`,
         studentId: students[0].id,
@@ -3874,7 +4256,7 @@ async function main() {
 
   const breakfastMenu = await prisma.mealMenu.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       date: menuDate1,
       mealType: MealType.BREAKFAST,
       mainDish: 'Nasi Kuning',
@@ -3887,7 +4269,7 @@ async function main() {
 
   const lunchMenu = await prisma.mealMenu.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       date: menuDate1,
       mealType: MealType.LUNCH,
       mainDish: 'Nasi Putih',
@@ -3902,7 +4284,7 @@ async function main() {
 
   const dinnerMenu = await prisma.mealMenu.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       date: menuDate1,
       mealType: MealType.DINNER,
       mainDish: 'Nasi Putih',
@@ -3952,7 +4334,7 @@ async function main() {
   // 5. Extracurriculars
   const scout = await prisma.extracurricular.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       name: 'Pramuka Penggalang',
       code: 'EXC-001',
       category: ExtracurricularCategory.SCOUTING,
@@ -3970,7 +4352,7 @@ async function main() {
 
   const hadroh = await prisma.extracurricular.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       name: 'Hadroh Seni Musik Islami',
       code: 'EXC-002',
       category: ExtracurricularCategory.ARTS,
@@ -4017,7 +4399,7 @@ async function main() {
   // 6. Duty Roster (Piket)
   const masjidDuty = await prisma.dutyType.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       name: 'Piket Kebersihan Masjid',
       code: 'PKT-MSJ',
       category: DutyCategory.WORSHIP,
@@ -4030,7 +4412,7 @@ async function main() {
 
   const asramaDuty = await prisma.dutyType.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       name: 'Piket Kebersihan Koridor Asrama',
       code: 'PKT-ASM',
       category: DutyCategory.DORMITORY,
@@ -4072,7 +4454,7 @@ async function main() {
   // 7. Daily Ibadah & Muhasabah
   const sholatTahajudTarget = await prisma.dailyIbadahTarget.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       name: 'Sholat Tahajud',
       category: 'SHOLAT',
       description: 'Melaksanakan sholat tahajud minimal 2 rakaat',
@@ -4085,7 +4467,7 @@ async function main() {
 
   const dhuhaTarget = await prisma.dailyIbadahTarget.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       name: 'Sholat Dhuha',
       category: 'SHOLAT',
       description: 'Melaksanakan sholat dhuha minimal 2 rakaat',
@@ -4098,7 +4480,7 @@ async function main() {
 
   const tilawahTarget = await prisma.dailyIbadahTarget.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       name: 'Tilawah Al-Quran',
       category: 'TILAWAH',
       description: 'Tilawah mandiri harian',
@@ -4171,7 +4553,7 @@ async function main() {
   if (students.length >= 2) {
     await prisma.muhadhoroh.create({
       data: {
-        unitId: pesantren.id,
+        unitId: smpIt.id,
         studentId: students[0].id,
         scheduledAt: menuDate2,
         topic: 'Urgensi Menuntut Ilmu dalam Islam',
@@ -4191,7 +4573,7 @@ async function main() {
 
     await prisma.muhadatsah.create({
       data: {
-        unitId: pesantren.id,
+        unitId: smpIt.id,
         studentId: students[0].id,
         partnerId: students[1].id,
         scheduledAt: menuDate2,
@@ -4218,7 +4600,7 @@ async function main() {
   if (students.length > 0) {
     counselingSession = await prisma.counselingSession.create({
       data: {
-        unitId: pesantren.id,
+        unitId: smpIt.id,
         studentId: students[0].id,
         counselorId: teacherPesantren.id,
         category: CounselingCategory.ACADEMIC,
@@ -4264,7 +4646,7 @@ async function main() {
   // 10. GuestBook & visits & packages
   await prisma.guestBook.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       name: 'Ir. H. Joko Santoso',
       institution: 'Kementerian Agama Kota Sukabumi',
       purpose: 'Monitoring dan evaluasi fasilitas ruang kelas dan laboratorium sekolah',
@@ -4281,7 +4663,7 @@ async function main() {
     await prisma.studentVisit.create({
       data: {
         studentId: students[0].id,
-        unitId: pesantren.id,
+        unitId: smpIt.id,
         visitorName: 'Bapak Hidayat',
         relationship: 'Orang Tua (Ayah)',
         needs: 'Mengantar pakaian hangat tambahan serta obat asma',
@@ -4294,7 +4676,7 @@ async function main() {
     await prisma.studentPackage.create({
       data: {
         studentId: students[0].id,
-        unitId: pesantren.id,
+        unitId: smpIt.id,
         senderName: 'Ibu Hidayat',
         senderPhone: '08123457001',
         expedition: 'J&T Express',
@@ -4311,7 +4693,7 @@ async function main() {
   // 11. E-Office (Letter)
   await prisma.letter.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       direction: LetterDirection.INCOMING,
       agendaNumber: 'AGN/2026/0045',
       letterNumber: 'SRT-KEMENAG-109',
@@ -4330,7 +4712,7 @@ async function main() {
 
   await prisma.letter.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       direction: LetterDirection.OUTGOING,
       letterNumber: '085/SMPIT-AH/VII/2026',
       date: new Date(),
@@ -4349,7 +4731,7 @@ async function main() {
   // 12. Donation/ZIS
   const campaign = await prisma.donationCampaign.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       title: 'Wakaf Pembangunan Menara Masjid Al-Hikmah',
       slug: 'wakaf-menara-masjid',
       description: 'Program wakaf dan donasi terbuka untuk merampungkan pembangunan menara masjid utama Al-Hikmah.',
@@ -4365,7 +4747,7 @@ async function main() {
   await prisma.donation.create({
     data: {
       campaignId: campaign.id,
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       donorName: 'H. Muhammad Yusuf',
       donorPhone: '081234567890',
       donorEmail: 'ketua@cipansor.or.id',
@@ -4384,7 +4766,7 @@ async function main() {
 
   await prisma.donation.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       donorName: 'Hamba Allah',
       isAnonymous: true,
       type: PublicDonationType.INFAK,
@@ -4402,7 +4784,7 @@ async function main() {
   // 13. Scholarships
   const scholarship = await prisma.scholarship.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       name: 'Beasiswa Santri Huffadz Berprestasi',
       description: 'Pembebasan biaya SPP 100% bagi santri yang mencapai hafalan minimal 5 Juz dalam satu semester',
       source: 'YAYASAN',
@@ -4433,7 +4815,7 @@ async function main() {
   // 14. Halaqoh & Takhosus
   const halaqoh = await prisma.halaqoh.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       name: 'Halaqoh Abu Bakar As-Siddiq',
       code: 'HLQ-001',
       teacherId: teacherPesantrenUser.id,
@@ -4527,9 +4909,9 @@ async function main() {
       userId: teacherPesantrenUser.id,
       action: 'CREATE',
       entity: 'BOS_ALLOCATION',
-      entityId: `${pesantren.id}-${curYear}-Q1`,
+      entityId: `${smpIt.id}-${curYear}-Q1`,
       newValues: {
-        unitId: pesantren.id,
+        unitId: smpIt.id,
         year: curYear,
         quarter: 1,
         totalAmount: 10000000,
@@ -4547,9 +4929,9 @@ async function main() {
       userId: teacherPesantrenUser.id,
       action: 'CREATE',
       entity: 'BOS_EXPENSE',
-      entityId: `${pesantren.id}-${curYear}-Q1`,
+      entityId: `${smpIt.id}-${curYear}-Q1`,
       newValues: {
-        unitId: pesantren.id,
+        unitId: smpIt.id,
         componentCode: 'BOS-05',
         componentName: 'Pengelolaan Sekolah',
         amount: 1500000,
@@ -4566,9 +4948,9 @@ async function main() {
       userId: teacherPesantrenUser.id,
       action: 'CREATE',
       entity: 'BOS_EXPENSE',
-      entityId: `${pesantren.id}-${curYear}-Q1`,
+      entityId: `${smpIt.id}-${curYear}-Q1`,
       newValues: {
-        unitId: pesantren.id,
+        unitId: smpIt.id,
         componentCode: 'BOS-07',
         componentName: 'Langganan Daya dan Jasa',
         amount: 2500000,
@@ -4615,7 +4997,7 @@ async function main() {
 
   const pr1 = await prisma.purchaseRequest.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       code: 'PR-202606-0001',
       requesterId: teacherPesantrenUser.id,
       preferredSupplierId: supplier1.id,
@@ -4652,7 +5034,7 @@ async function main() {
 
   const pr2 = await prisma.purchaseRequest.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       code: 'PR-202606-0002',
       requesterId: teacherPesantrenUser.id,
       preferredSupplierId: supplier2.id,
@@ -4696,7 +5078,7 @@ async function main() {
         createdById: superAdminUser.id,
       },
       {
-        unitId: pesantren.id,
+        unitId: smpIt.id,
         title: 'Khataman Al-Quran Akbar',
         description: 'Acara khataman Al-Quran untuk santri yang telah khatam 30 juz.',
         eventType: EventType.RELIGIOUS,
@@ -4721,7 +5103,7 @@ async function main() {
         createdById: superAdminUser.id,
       },
       {
-        unitId: pesantren.id,
+        unitId: smpIt.id,
         title: 'Rapat Dewan Guru Bulanan',
         description: 'Rapat koordinasi guru dan musyrif membahas perkembangan santri.',
         eventType: EventType.MEETING,
@@ -4798,7 +5180,7 @@ async function main() {
   // --- Daily Schedule Template & Activities (Pesantren) ---
   const scheduleTemplate = await prisma.dailyScheduleTemplate.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       name: 'Jadwal Hari Biasa (Senin-Kamis)',
       isDefault: true,
       isActive: true,
@@ -4807,7 +5189,7 @@ async function main() {
 
   const scheduleTemplateFriday = await prisma.dailyScheduleTemplate.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       name: 'Jadwal Hari Jumat',
       isDefault: false,
       isActive: true,
@@ -4842,7 +5224,7 @@ async function main() {
   const musyrif1 = await prisma.musyrif.create({
     data: {
       userId: teacherPesantrenUser.id,
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       teacherId: teacherPesantren.id,
       code: 'MSF-001',
       phone: '081234567890',
@@ -5079,7 +5461,7 @@ async function main() {
         },
         {
           studentId: students[0].id,
-          unitId: pesantren.id,
+          unitId: smpIt.id,
           recordDate: new Date('2024-08-20'),
           weight: 42.0,
           height: 155.5,
@@ -5140,7 +5522,7 @@ async function main() {
   // --- Complaints ---
   const complaint1 = await prisma.complaint.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       userId: parentUsers[0]?.user?.id || teacherPesantrenUser.id,
       category: ComplaintCategory.FACILITY,
       subject: 'AC Ruang Kelas 7A Tidak Berfungsi',
@@ -5164,7 +5546,7 @@ async function main() {
 
   await prisma.complaint.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       category: ComplaintCategory.SERVICE,
       subject: 'Variasi Menu Makan Kurang',
       description: 'Mohon ditambahkan variasi menu makan siang. Beberapa santri mengeluhkan menu yang monoton.',
@@ -5180,7 +5562,7 @@ async function main() {
   // --- Department (HRM) ---
   const deptKurikulum = await prisma.department.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       code: 'KUR',
       name: 'Kurikulum & Pengajaran',
       description: 'Bagian yang menangani kurikulum, pengajaran, dan evaluasi akademik.',
@@ -5191,7 +5573,7 @@ async function main() {
 
   await prisma.department.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       code: 'KEP',
       name: 'Kepesantrenan',
       description: 'Bagian yang menangani kegiatan kepesantrenan, asrama, dan pembinaan santri.',
@@ -5202,7 +5584,7 @@ async function main() {
 
   await prisma.department.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       code: 'TU',
       name: 'Tata Usaha',
       description: 'Bagian administrasi dan tata usaha.',
@@ -5215,7 +5597,7 @@ async function main() {
   await prisma.leaveBalance.createMany({
     data: [
       {
-        unitId: pesantren.id,
+        unitId: smpIt.id,
         academicYearId: academicYear.id,
         userId: teacherPesantrenUser.id,
         leaveType: LeaveType.ANNUAL,
@@ -5225,7 +5607,7 @@ async function main() {
         notes: 'Sisa cuti tahunan.',
       },
       {
-        unitId: pesantren.id,
+        unitId: smpIt.id,
         academicYearId: academicYear.id,
         userId: teacherPesantrenUser.id,
         leaveType: LeaveType.SICK,
@@ -5625,7 +6007,7 @@ async function main() {
   // --- Kitab Master, Assignment, Progress & Records ---
   const kitabFathulMuin = await prisma.kitab.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       name: 'Fathul Mu\'in',
       author: 'Syekh Zainuddin Al-Malibari',
       category: KitabCategory.FIQH,
@@ -5639,7 +6021,7 @@ async function main() {
 
   const kitabTafsirJalalain = await prisma.kitab.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       name: 'Tafsir Al-Jalalain',
       author: 'Jalaluddin Al-Mahalli & Jalaluddin As-Suyuthi',
       category: KitabCategory.TAFSIR,
@@ -5742,7 +6124,7 @@ async function main() {
     await prisma.raporPesantren.create({
       data: {
         studentId: students[0].id,
-        unitId: pesantren.id,
+        unitId: smpIt.id,
         academicYearId: academicYear.id,
         semester: 1,
         status: 'PUBLISHED',
@@ -5776,7 +6158,13 @@ async function main() {
   console.log('   ✅ Rapor Pesantren created');
 
   // --- PAUD Development Assessment & Narrative Reports ---
-  if (students.length > 3) {
+  //
+  // Assessed against a TK pupil, not `students[3]`. That index is Abdullah
+  // Rahman of SMA Qur'an — a teenager — and the rows still claimed
+  // `unitId: tkQuran.id`, so an early-childhood development record described
+  // someone ten years too old for it. There were simply no TK pupils to point
+  // at until they were seeded above.
+  if (tkPupils.length > 0) {
     const paudIndicators = await prisma.pAUDDevelopmentIndicator.findMany({
       where: { OR: [{ unitId: tkQuran.id }, { unitId: null }] },
       take: 2,
@@ -5785,7 +6173,7 @@ async function main() {
     if (paudIndicators.length > 0) {
       const paudAssessment = await prisma.pAUDDevelopmentAssessment.create({
         data: {
-          studentId: students[3].id,
+          studentId: tkPupils[0].id,
           unitId: tkQuran.id,
           academicYearId: academicYear.id,
           semester: 'GANJIL',
@@ -5813,7 +6201,7 @@ async function main() {
 
     const narrativeReport = await prisma.pAUDNarrativeReport.create({
       data: {
-        studentId: students[3].id,
+        studentId: tkPupils[0].id,
         unitId: tkQuran.id,
         academicYearId: academicYear.id,
         semester: 'GANJIL',
@@ -5856,7 +6244,7 @@ async function main() {
   console.log('   Seeding Assignments & Submissions...');
   const assignment1 = await prisma.assignment.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       academicYearId: academicYear.id,
       teacherId: teacherPesantren.id,
       subjectId: subjects[0].id, // Matematika
@@ -5870,7 +6258,7 @@ async function main() {
 
   const assignment2 = await prisma.assignment.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       academicYearId: academicYear.id,
       teacherId: teacherPesantren.id,
       subjectId: subjects[0].id, // Matematika
@@ -5963,7 +6351,7 @@ async function main() {
     // Seed MerdekaAssessment
     const merdekaAssessment = await prisma.merdekaAssessment.create({
       data: {
-        unitId: pesantren.id,
+        unitId: smpIt.id,
         classId: class7A.id,
         subjectId: subjects[0].id,
         learningObjectiveId: loObjective1.id,
@@ -6026,7 +6414,7 @@ async function main() {
   if (p5Theme) {
     const p5Project = await prisma.p5Project.create({
       data: {
-        unitId: pesantren.id,
+        unitId: smpIt.id,
         academicYearId: academicYear.id,
         themeId: p5Theme.id,
         classId: class7A.id,
@@ -6082,7 +6470,7 @@ async function main() {
   console.log('   Seeding Questions & CBT Exam Attempts...');
   const qBank = await prisma.questionBank.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       subjectId: subjects[0].id, // Matematika
       teacherId: teacherPesantren.id,
       title: 'Kumpulan Soal Matematika Kelas VII Semester Ganjil',
@@ -6113,7 +6501,7 @@ async function main() {
   });
 
   const exam = await prisma.exam.findFirst({
-    where: { unitId: pesantren.id },
+    where: { unitId: smpIt.id },
   });
 
   if (exam && students.length > 0) {
@@ -6180,7 +6568,7 @@ async function main() {
   console.log('   Seeding Accounting Financial Periods, Budgets & Journal Entries...');
   const finPeriod = await prisma.financialPeriod.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       name: 'Juni 2026',
       startDate: new Date('2026-06-01'),
       endDate: new Date('2026-06-30'),
@@ -6208,7 +6596,7 @@ async function main() {
   if (mtkAccount) {
     await prisma.budget.create({
       data: {
-        unitId: pesantren.id,
+        unitId: smpIt.id,
         academicYearId: academicYear.id,
         accountId: mtkAccount.id,
         amount: new Prisma.Decimal(5000000.0),
@@ -6223,7 +6611,7 @@ async function main() {
   if (electricityAccount) {
     await prisma.budget.create({
       data: {
-        unitId: pesantren.id,
+        unitId: smpIt.id,
         academicYearId: academicYear.id,
         accountId: electricityAccount.id,
         amount: new Prisma.Decimal(12000000.0),
@@ -6238,7 +6626,7 @@ async function main() {
   if (kasAccount && sppAccount) {
     await prisma.journalEntry.create({
       data: {
-        unitId: pesantren.id,
+        unitId: smpIt.id,
         accountId: kasAccount.id,
         date: new Date(),
         description: 'Penerimaan SPP siswa Muhammad Rizky kelas 7A',
@@ -6252,7 +6640,7 @@ async function main() {
 
     await prisma.journalEntry.create({
       data: {
-        unitId: pesantren.id,
+        unitId: smpIt.id,
         accountId: sppAccount.id,
         date: new Date(),
         description: 'Penerimaan SPP siswa Muhammad Rizky kelas 7A',
@@ -6346,7 +6734,7 @@ async function main() {
 
   const payPeriod = await prisma.payrollPeriod.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       name: 'Gaji Bulanan Juni 2026',
       month: 6,
       year: 2026,
@@ -6431,7 +6819,7 @@ async function main() {
   console.log('   Seeding Projects & Kanban Boards...');
   const project1 = await prisma.project.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       name: 'Pembangunan Gedung Kelas Baru Tahap II',
       description: 'Proyek pembangunan 3 lokal ruang kelas baru tingkat SMP IT di lantai 2.',
       status: ProjectStatus.IN_PROGRESS,
@@ -6516,7 +6904,7 @@ async function main() {
   console.log('   Seeding Standard Operating Procedures...');
   const sop1 = await prisma.standardOperatingProcedure.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       documentNumber: 'SOP-RECEPT-001',
       title: 'Prosedur Penerimaan Tamu dan Kunjungan Wali Santri',
       category: 'RECEPTION',
@@ -6540,7 +6928,7 @@ async function main() {
   console.log('   Seeding Risk Registers & Mitigations...');
   const risk1 = await prisma.risk.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       code: 'RSK-001',
       description: 'Risiko keterlambatan pembayaran SPP santri di atas tanggal 10 setiap bulannya, yang dapat menghambat cashflow operasional yayasan.',
       category: RiskCategory.FINANCIAL,
@@ -6588,7 +6976,7 @@ async function main() {
 
   const qualAudit = await prisma.qualityAudit.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       code: 'AMI-2024-01',
       name: 'Audit Mutu Internal Proses Akademik 2024/2025',
       academicYearId: academicYear.id,
@@ -6614,7 +7002,7 @@ async function main() {
   const tProfile = await prisma.talentProfile.create({
     data: {
       userId: teacherPesantrenUser.id,
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       category: TalentCategory.HIGH_POTENTIAL,
       currentRole: 'Guru Tetap SMP IT / Wali Kelas 7A',
       potentialRole: 'Kepala Bidang Kurikulum SMP IT',
@@ -6643,7 +7031,7 @@ async function main() {
 
   await prisma.successionPlan.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       positionTitle: 'Kepala Bidang Kurikulum SMP IT',
       currentHolderId: adminPesantrenUser.id,
       successorId: tProfile.id,
@@ -6664,7 +7052,7 @@ async function main() {
   console.log('   Seeding Lands, Buildings & Facility Rooms...');
   const land = await prisma.land.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       code: 'LND-001',
       address: 'Jl. Pesantren No. 1, Kota Sukabumi',
       area: new Prisma.Decimal(5000.0),
@@ -6679,7 +7067,7 @@ async function main() {
 
   const building = await prisma.building.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       landId: land.id,
       code: 'BLD-A',
       name: 'Gedung Umar bin Khattab',
@@ -6717,7 +7105,7 @@ async function main() {
 
   const facilityRoom1 = await prisma.facilityRoom.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       buildingId: building.id,
       roomTypeId: roomTypeKelas.id,
       code: 'RM-7A',
@@ -6734,7 +7122,7 @@ async function main() {
 
   const facilityRoom2 = await prisma.facilityRoom.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       buildingId: building.id,
       roomTypeId: roomTypeLab.id,
       code: 'RM-LAB-01',
@@ -6761,7 +7149,7 @@ async function main() {
   // Asset Audits & Items
   const assetAudit = await prisma.assetAudit.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       date: new Date(),
       notes: 'Audit sarana prasarana tengah tahun.',
       status: 'COMPLETED',
@@ -6798,7 +7186,7 @@ async function main() {
   console.log('   Seeding Org Units & Org Positions...');
   const orgUnitPendidikan = await prisma.orgUnit.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       name: 'Direktorat Pendidikan',
       code: 'DIR-EDU',
       description: 'Mengurus seluruh kegiatan akademik dan kurikulum.',
@@ -6809,7 +7197,7 @@ async function main() {
 
   const orgUnitKeuangan = await prisma.orgUnit.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       name: 'Bagian Keuangan',
       code: 'DIV-FIN',
       description: 'Mengurus keuangan dan akuntansi pesantren.',
@@ -6867,7 +7255,7 @@ async function main() {
 
   await prisma.agendaNumber.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       academicYearId: academicYear.id,
       type: 'INCOMING',
       lastNumber: 1,
@@ -6877,7 +7265,7 @@ async function main() {
 
   await prisma.agendaNumber.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       academicYearId: academicYear.id,
       type: 'OUTGOING',
       lastNumber: 1,
@@ -6913,7 +7301,7 @@ async function main() {
   console.log('   Seeding Green Campus data...');
   await prisma.environmentProgram.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       title: 'Aksi Tanam 1000 Pohon',
       description: 'Penghijauan lingkungan asrama dan area kebun pesantren.',
       category: 'PENGHIJAUAN',
@@ -6927,7 +7315,7 @@ async function main() {
 
   await prisma.environmentProgram.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       title: 'Gerakan Zero Single-Use Plastic',
       description: 'Kampanye bebas plastik sekali pakai di kantin sekolah.',
       category: 'KAMPANYE',
@@ -6941,7 +7329,7 @@ async function main() {
 
   await prisma.wasteManagement.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       category: WasteCategory.ORGANIC,
       weight: 25.5,
       method: 'Daur Ulang',
@@ -6953,7 +7341,7 @@ async function main() {
 
   await prisma.greenCampusIndicator.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       name: 'Rasio Luas Terbuka Hijau',
       category: 'LANDSCAPE',
       targetValue: 40.0,
@@ -6967,7 +7355,7 @@ async function main() {
 
   await prisma.greenCampusIndicator.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       name: 'Efisiensi Konsumsi Air Bersih',
       category: 'WATER',
       targetValue: 80.0,
@@ -6984,7 +7372,7 @@ async function main() {
   console.log('   Seeding Litbang (Research & Development)...');
   const resProject = await prisma.researchProject.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       title: 'Pengembangan Metode Murattal Cepat untuk Anak PAUD',
       abstract: 'Penelitian eksperimental menguji efektivitas metode irama nahawand bagi ingatan balita.',
       category: 'Pendidikan',
@@ -7020,7 +7408,7 @@ async function main() {
 
   await prisma.innovationProposal.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       title: 'Aplikasi Tabungan Santri Berbasis Barcode',
       description: 'Usulan sistem pembayaran non-tunai di kantin menggunakan ID Card santri berkode batang.',
       category: 'TEKNOLOGI',
@@ -7034,7 +7422,7 @@ async function main() {
   console.log('   Seeding Strategic Plans & Objectives...');
   const stratPlan = await prisma.strategicPlan.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       title: 'Rencana Jangka Panjang Cipansor 2026-2030',
       description: 'Peta jalan pengembangan fasilitas fisik dan mutu pengajaran bertaraf nasional.',
       type: PlanType.RENSTRA,
@@ -7088,7 +7476,7 @@ async function main() {
   console.log('   Seeding Internal Audits & Findings...');
   const intAudit = await prisma.internalAudit.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       title: 'Audit Operasional Keuangan Semester Ganjil',
       auditType: 'Keuangan',
       scope: 'Verifikasi kecocokan slip pembayaran SPP fisik dengan entri database.',
@@ -7129,7 +7517,7 @@ async function main() {
   console.log('   Seeding Sharia Compliances & Audits...');
   const compliance = await prisma.shariaCompliance.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       category: ShariaCategory.MUAMALAH,
       title: 'Kesesuaian Akad Ba\'i al-Murabahah',
       description: 'Pemeriksaan kesesuaian transaksi jual beli murabahah.',
@@ -7188,7 +7576,7 @@ async function main() {
   const scholarshipForDiscounts = await prisma.scholarship.findFirst();
   const payComponent = await prisma.paymentComponent.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       code: 'SPP',
       name: 'Sumbangan Pembinaan Pendidikan',
       category: 'RUTIN',
@@ -7222,7 +7610,7 @@ async function main() {
   // Training Programs & Enrollments
   const training = await prisma.trainingProgram.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       title: 'Pelatihan Sertifikasi Kompetensi Guru Abad 21',
       description: 'Pelatihan pedagogi digital menggunakan teknologi LMS interaktif.',
       category: 'Pedagogik',
@@ -7297,7 +7685,7 @@ async function main() {
   // PKG periods & evaluations for teachers
   const pkgPeriod = await prisma.pKGPeriod.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       academicYearId: academicYear.id,
       name: 'Penilaian Kinerja Guru (PKG) Ganjil 2026',
       startDate: new Date('2026-06-01'),
@@ -7350,7 +7738,7 @@ async function main() {
   // Dashboard history snapshots
   await prisma.dashboardHistory.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       metrics: {
         totalStudents: 4,
         totalTeachers: 2,
@@ -7362,7 +7750,7 @@ async function main() {
 
   await prisma.dashboardHistory.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       metrics: {
         totalStudents: 5,
         totalTeachers: 2,
@@ -7375,7 +7763,7 @@ async function main() {
   // Dashboard metric snapshots
   await prisma.dashboardMetricSnapshot.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       metricType: 'student_attendance_rate',
       metricValue: 94.5,
       periodType: 'MONTHLY',
@@ -7387,7 +7775,7 @@ async function main() {
   await prisma.ibadahLeaderboard.create({
     data: {
       studentId: students[0].id,
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       periodType: 'WEEKLY',
       periodStart: new Date('2026-06-30'),
       periodEnd: new Date('2026-07-06'),
@@ -7415,7 +7803,7 @@ async function main() {
   if (qualityInd) {
     await prisma.qualityEvidence.create({
       data: {
-        unitId: pesantren.id,
+        unitId: smpIt.id,
         indicatorId: qualityInd.id,
         academicYearId: academicYear.id,
         name: 'Dokumen Modul Ajar Matematika K-Merdeka',
@@ -7429,7 +7817,7 @@ async function main() {
   // Marketing Campaigns & Interactions
   const marketingCampaign = await prisma.marketingCampaign.create({
     data: {
-      unitId: pesantren.id,
+      unitId: smpIt.id,
       name: 'Pameran Pendidikan Sukabumi 2026',
       code: 'CMP-2026-EDUEXPO',
       description: 'Pameran stan edukasi Cipansor untuk menjaring calon santri baru.',

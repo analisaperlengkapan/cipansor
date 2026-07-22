@@ -22,21 +22,22 @@ export function useCorrespondence(unitId?: string) {
   const queryClient = useQueryClient();
 
   // Get Letters List
+  //
+  // Deliberately NOT gated on `unitId`. Foundation-level accounts — the
+  // sekretaris and ketua yayasan, who are the middle of every routing chain —
+  // have no unit, so `enabled: !!unitId` meant their e-office page fetched
+  // nothing and rendered empty. The server decides scope now: omitting unitId
+  // asks for "everything I am entitled to", which for a unit-scoped user is
+  // still only their own unit.
   const useLetters = (params: Omit<GetLettersParams, "unitId">) => {
     return useQuery({
-      queryKey: ["letters", unitId, params],
+      queryKey: ["letters", unitId ?? "all", params],
       queryFn: async () => {
-        if (!unitId)
-          return {
-            data: [],
-            meta: { total: 0, page: 1, limit: 10, totalPages: 0 },
-          };
         const response = await api.get("/correspondence/letters", {
-          params: { ...params, unitId },
+          params: unitId ? { ...params, unitId } : params,
         });
         return response.data;
       },
-      enabled: !!unitId,
     });
   };
 
@@ -125,18 +126,17 @@ export function useCorrespondence(unitId?: string) {
     },
   });
 
-  // Get Stats
+  // Get Stats — same reasoning as useLetters: no unit is a valid scope, not a
+  // reason to skip the request.
   const useStats = () => {
     return useQuery({
-      queryKey: ["letters", "stats", unitId],
+      queryKey: ["letters", "stats", unitId ?? "all"],
       queryFn: async () => {
-        if (!unitId) return null;
         const response = await api.get("/correspondence/stats", {
-          params: { unitId },
+          params: unitId ? { unitId } : undefined,
         });
         return response.data.data;
       },
-      enabled: !!unitId,
     });
   };
 

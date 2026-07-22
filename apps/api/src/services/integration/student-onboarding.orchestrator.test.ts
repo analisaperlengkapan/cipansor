@@ -72,7 +72,19 @@ describe('StudentOnboardingOrchestrator', () => {
           create: vi.fn().mockResolvedValue({ id: 'stud-1', nis: 'NIS-2026-SMP-0001' }),
         },
         studentParent: { 
-          create: vi.fn().mockResolvedValue({ id: 'sp-1' }) 
+          create: vi.fn().mockResolvedValue({ id: 'sp-1' }),
+          // Read back by syncParentRoleAssignments to work out which units the
+          // guardian now has a child in.
+          findMany: vi.fn().mockResolvedValue([
+            { student: { unitId: 'unit-1', unit: { type: 'SMP_IT' } } },
+          ]),
+        },
+        role: {
+          findFirst: vi.fn().mockResolvedValue({ id: 'role-smpit-ortu' }),
+        },
+        userRoleAssignment: {
+          findMany: vi.fn().mockResolvedValue([]),
+          create: vi.fn().mockResolvedValue({ id: 'ura-1' }),
         },
         classEnrollment: {
           create: vi.fn().mockResolvedValue({ id: 'ce-1' })
@@ -124,6 +136,21 @@ describe('StudentOnboardingOrchestrator', () => {
           relation: 'parent'
         })
       }));
+
+      // The guardian must come out of onboarding with a role, not just a link.
+      // Before this, a wali created by SPMB had a User row and no
+      // UserRoleAssignment at all: they signed in only through the legacy
+      // fallback, with an empty permission list, and had no unit scope.
+      expect(txMock.userRoleAssignment.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            userId: 'user-parent-1',
+            roleId: 'role-smpit-ortu',
+            unitId: 'unit-1',
+            isActive: true,
+          }),
+        })
+      );
 
       // Verify class enrollment setup
       expect(txMock.classEnrollment.create).toHaveBeenCalledWith(expect.objectContaining({

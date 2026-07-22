@@ -14,17 +14,17 @@ router.use(authenticate);
 // Stats
 router.get(
   '/stats',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, RoleCode.YAYASAN_ADMIN),
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
   marketingController.getStats
 );
 router.get(
   '/leads/high-priority',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, RoleCode.YAYASAN_ADMIN),
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
   marketingController.getHighPriorityLeads
 );
 router.get(
   '/leads/recent',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, RoleCode.YAYASAN_ADMIN),
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
   marketingController.getRecentLeads
 );
 router.get(
@@ -34,17 +34,17 @@ router.get(
 );
 router.get(
   '/roi',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, RoleCode.YAYASAN_ADMIN),
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
   marketingController.getROIStats
 );
 router.get(
   '/roi/trend',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, RoleCode.YAYASAN_ADMIN),
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
   marketingController.getRoiTrend
 );
 router.get(
   '/funnel',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, RoleCode.YAYASAN_ADMIN),
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
   marketingController.getAdmissionFunnel
 );
 
@@ -56,12 +56,12 @@ router.post(
 );
 router.get(
   '/campaigns',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, RoleCode.YAYASAN_ADMIN),
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
   marketingController.getCampaigns
 );
 router.get(
   '/campaigns/:id',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, RoleCode.YAYASAN_ADMIN),
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
   marketingController.getCampaignById
 );
 router.patch(

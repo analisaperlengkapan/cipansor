@@ -42,7 +42,7 @@ Token didapat dari endpoint POST /api/auth/login
       `,
       contact: {
         name: 'Cipansor Team',
-        email: 'dev@cipansor.id',
+        email: 'dev@cipansor.or.id',
       },
       license: {
         name: 'MIT',

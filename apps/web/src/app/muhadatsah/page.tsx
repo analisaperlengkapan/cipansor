@@ -1,4 +1,5 @@
 "use client";
+import { MainLayout } from "@/components/layout";
 
 import { useState } from "react";
 import { safeFormat } from "@/lib/date";
@@ -68,7 +69,7 @@ import { useAuthStore } from "@/stores/auth";
 
 
 
-export default function MuhadatsahPage() {
+function MuhadatsahPageContent() {
   const { user } = useAuthStore();
   const unitId = user?.unitId || user?.unit?.id;
 
@@ -718,5 +719,13 @@ export default function MuhadatsahPage() {
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+export default function MuhadatsahPageWithShell() {
+  return (
+    <MainLayout>
+      <MuhadatsahPageContent />
+    </MainLayout>
   );
 }

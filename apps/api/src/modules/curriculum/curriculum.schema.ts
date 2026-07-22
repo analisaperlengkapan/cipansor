@@ -83,6 +83,10 @@ export const scheduleQuerySchema = z.object({
   academicYearId: z.string().uuid().optional(),
   classId: z.string().uuid().optional(),
   teacherId: z.string().uuid().optional(),
+  // A student's timetable is their class's timetable. The student dashboard
+  // was already passing `studentId`; because Zod strips unknown keys it was
+  // silently ignored and the widget received every schedule in the school.
+  studentId: z.string().uuid().optional(),
   dayOfWeek: z
     .enum(['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'])
     .optional(),

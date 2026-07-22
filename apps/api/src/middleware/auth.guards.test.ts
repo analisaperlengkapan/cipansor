@@ -34,8 +34,8 @@ describe('isAdmin', () => {
 
   it.each([
     RoleCode.SUPER_ADMIN,
-    RoleCode.YAYASAN_ADMIN,
     RoleCode.SDIT_ADMIN,
+    RoleCode.SMPIT_ADMIN,
   ])('allows admin roleCode %s', (roleCode) => {
     const next = vi.fn() as unknown as NextFunction & ReturnType<typeof vi.fn>;
     isAdmin(mockReq({ id: 'u1', roleCode }), res, next);

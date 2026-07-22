@@ -28,8 +28,8 @@ import { Errors } from './error';
 // (YAYASAN_PENGAWAS) should NOT automatically bypass admin-only security
 // guards just because they were historically bucketed under legacy UNIT_ADMIN.
 // Users that need BOTH governance AND system-admin privileges must be
-// explicitly assigned YAYASAN_ADMIN (or a per-unit admin RoleCode) in
-// addition to their governance role.
+// explicitly assigned SUPER_ADMIN (foundation) or a per-unit admin RoleCode
+// in addition to their governance role.
 //
 // Legacy compatibility: pre-migration tokens carrying `role: 'UNIT_ADMIN'`
 // still pass isAdmin() via the 'UNIT_ADMIN' string below. Routes that use

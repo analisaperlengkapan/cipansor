@@ -56,7 +56,7 @@ export function useViolationTypes(params?: {
   return useQuery({
     queryKey: ["violation-types", params],
     queryFn: async () => {
-      const response = await api.get<ViolationType[]>("/violation-types", {
+      const response = await api.get<ViolationType[]>("/violations/categories", {
         params,
       });
       return response.data;
@@ -68,7 +68,7 @@ export function useViolationType(id: string) {
   return useQuery({
     queryKey: ["violation-types", id],
     queryFn: async () => {
-      const response = await api.get<ViolationType>(`/violation-types/${id}`);
+      const response = await api.get<ViolationType>(`/violations/categories/${id}`);
       return response.data;
     },
     enabled: !!id,
@@ -86,7 +86,7 @@ export function useCreateViolationType() {
       points: number;
       isActive?: boolean;
     }) => {
-      const response = await api.post<ViolationType>("/violation-types", data);
+      const response = await api.post<ViolationType>("/violations/categories", data);
       return response.data;
     },
     onSuccess: () => {
@@ -113,7 +113,7 @@ export function useUpdateViolationType() {
       };
     }) => {
       const response = await api.put<ViolationType>(
-        `/violation-types/${id}`,
+        `/violations/categories/${id}`,
         data,
       );
       return response.data;
@@ -129,7 +129,7 @@ export function useDeleteViolationType() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      await api.delete(`/violation-types/${id}`);
+      await api.delete(`/violations/categories/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["violation-types"] });

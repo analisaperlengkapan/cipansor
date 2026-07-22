@@ -12,10 +12,13 @@ test.describe("Organisasi - Navigation", () => {
   test("should display organisasi content", async ({ page }) => {
     await loginAs(page, "superAdmin");
     await page.goto("/organisasi");
-    await page.waitForLoadState("domcontentloaded", { timeout: 10000 });
-    const content = await page.content();
-    expect(content.length).toBeGreaterThan(1000);
-    expect(content).toContain("Struktur"); // "Struktur Organisasi" or similar usually is present
+    // These pages wrap themselves in MainLayout, whose ProtectedRoute renders
+    // nothing until the persisted session has rehydrated. Snapshotting
+    // page.content() at domcontentloaded therefore captured an empty shell.
+    // Wait for the page's own h1 instead of racing it.
+    await expect(
+      page.getByRole("heading", { name: "Struktur Organisasi", level: 1 }),
+    ).toBeVisible({ timeout: 15000 });
   });
 });
 

@@ -69,7 +69,6 @@ const {
     },
     mockRoleCode: {
       SUPER_ADMIN: 'SUPER_ADMIN',
-      YAYASAN_ADMIN: 'YAYASAN_ADMIN',
       TKQ_ADMIN: 'TKQ_ADMIN',
       SDIT_ADMIN: 'SDIT_ADMIN',
       SMPIT_ADMIN: 'SMPIT_ADMIN',

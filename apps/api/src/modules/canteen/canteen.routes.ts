@@ -22,16 +22,14 @@ router.use(authenticate);
 // plus the legacy pre-migration token values still present on older sessions.
 const MANAGE_ROLES = [
   RoleCode.SUPER_ADMIN,
-  RoleCode.TKQ_ADMIN, RoleCode.SDIT_ADMIN, RoleCode.SMPIT_ADMIN, RoleCode.SMAQ_ADMIN, RoleCode.YAYASAN_ADMIN,
-  RoleCode.TKQ_TATA_USAHA, RoleCode.SDIT_TATA_USAHA, RoleCode.SMPIT_TATA_USAHA, RoleCode.SMAQ_TATA_USAHA,
+  RoleCode.TKQ_ADMIN, RoleCode.SDIT_ADMIN, RoleCode.SMPIT_ADMIN, RoleCode.SMAQ_ADMIN, RoleCode.TKQ_TATA_USAHA, RoleCode.SDIT_TATA_USAHA, RoleCode.SMPIT_TATA_USAHA, RoleCode.SMAQ_TATA_USAHA,
   'UNIT_ADMIN', 'STAFF',
 ] as const;
 
 // Destructive actions (delete) are limited to admins — no tata usaha / staff.
 const ADMIN_ROLES = [
   RoleCode.SUPER_ADMIN,
-  RoleCode.TKQ_ADMIN, RoleCode.SDIT_ADMIN, RoleCode.SMPIT_ADMIN, RoleCode.SMAQ_ADMIN, RoleCode.YAYASAN_ADMIN,
-  'UNIT_ADMIN',
+  RoleCode.TKQ_ADMIN, RoleCode.SDIT_ADMIN, RoleCode.SMPIT_ADMIN, RoleCode.SMAQ_ADMIN, 'UNIT_ADMIN',
 ] as const;
 
 // ==================== CATEGORY ====================

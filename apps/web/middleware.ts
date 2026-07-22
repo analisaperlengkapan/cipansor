@@ -7,20 +7,41 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import {
   canAccessRoute,
-  getActiveRoleCode,
   getDashboardForRole,
+  getPrimaryRoleCode,
+  getEffectiveRole,
+  type LegacyRole,
 } from "@/lib/rbac";
 
 // Public routes that don't require authentication.
 // "/unauthorized" is the access-denied page ProtectedRoute redirects to; it
 // must stay reachable for any user (otherwise RBAC would bounce them off it).
-// "/public" hosts the public donation portal.
-const publicRoutes = ["/login", "/", "/unauthorized", "/public"];
+const publicRoutes = ["/login", "/", "/unauthorized"];
+
+/**
+ * Public marketing pages, reachable with no session at all.
+ *
+ * These are the pages Google indexes and the Ad Grants review visits. Anything
+ * added under these prefixes must stay readable to an anonymous visitor —
+ * bouncing a prospective parent to the staff login screen is what got the Ad
+ * Grants application rejected the first time.
+ *
+ * (`/public/*` is already exempt because the matcher below excludes it.)
+ */
+const publicPrefixes = [
+  "/profil",
+  "/program-unggulan",
+  "/unit",
+  "/berita",
+  "/wakaf-infaq",
+  "/kontak",
+];
 
 // Helper function to get auth state from cookie
 function getAuthState(request: NextRequest): {
   isAuthenticated: boolean;
-  role?: string;
+  role?: LegacyRole;
+  roleCode?: string;
 } {
   // Check for auth storage in cookies (set by zustand persist)
   const authStorage = request.cookies.get("auth-storage")?.value;
@@ -29,12 +50,15 @@ function getAuthState(request: NextRequest): {
     try {
       const parsed = JSON.parse(authStorage);
       if (parsed.state?.isAuthenticated === true && parsed.state?.user) {
-        // The active RoleCode (primary assignment) drives both route access
-        // and the dashboard redirect; legacy-bucket users are mapped to a
-        // representative RoleCode inside the rbac helpers.
-        const role = getActiveRoleCode(parsed.state.user);
+        // Prefer the legacy `user.role` bucket (still emitted by the backend);
+        // fall back to deriving it from `userRoles[].role.code` (RoleCode).
+        const role = getEffectiveRole(parsed.state.user);
         if (role) {
-          return { isAuthenticated: true, role };
+          return {
+            isAuthenticated: true,
+            role,
+            roleCode: getPrimaryRoleCode(parsed.state.user),
+          };
         }
       }
     } catch {
@@ -58,15 +82,17 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Check if the route is public
-  const isPublicRoute = publicRoutes.some(
-    (route) =>
-      pathname === route ||
-      pathname.startsWith("/login") ||
-      pathname.startsWith("/public/"),
-  );
+  const isPublicRoute =
+    publicRoutes.some(
+      (route) => pathname === route || pathname.startsWith("/login"),
+    ) ||
+    // Match on segment boundaries so "/unit" never also grants "/units".
+    publicPrefixes.some(
+      (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+    );
 
   // Get authentication state
-  const { isAuthenticated, role } = getAuthState(request);
+  const { isAuthenticated, role, roleCode } = getAuthState(request);
 
   // Redirect unauthenticated users to login
   if (!isPublicRoute && !isAuthenticated) {
@@ -77,14 +103,14 @@ export function middleware(request: NextRequest) {
 
   // Redirect authenticated users from login to their role-specific dashboard
   if (pathname === "/login" && isAuthenticated) {
-    const dashboard = getDashboardForRole(role);
+    const dashboard = getDashboardForRole(role, roleCode);
     return NextResponse.redirect(new URL(dashboard, request.url));
   }
 
   // Redirect from root to appropriate page
   if (pathname === "/") {
     if (isAuthenticated) {
-      const dashboard = getDashboardForRole(role);
+      const dashboard = getDashboardForRole(role, roleCode);
       return NextResponse.redirect(new URL(dashboard, request.url));
     }
     // Allow unauthenticated users to see landing page
@@ -95,7 +121,7 @@ export function middleware(request: NextRequest) {
   if (isAuthenticated && role && !isPublicRoute) {
     if (!canAccessRoute(role, pathname)) {
       // Redirect to their proper dashboard if trying to access unauthorized route
-      const dashboard = getDashboardForRole(role);
+      const dashboard = getDashboardForRole(role, roleCode);
       return NextResponse.redirect(new URL(dashboard, request.url));
     }
   }

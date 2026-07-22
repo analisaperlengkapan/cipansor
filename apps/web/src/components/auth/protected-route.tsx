@@ -4,7 +4,14 @@ import { getEffectiveRole } from "@/lib/rbac";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/auth";
-import { LEGACY_ROLE_EXPANSION, isLegacyRole } from "@cipansor/shared";
+import {
+  ADMIN_ROLES,
+  TEACHER_ROLES,
+  STAFF_ROLES,
+  STUDENT_ROLES,
+  PARENT_ROLES,
+  YAYASAN_ROLES,
+} from "@/config/navigation";
 
 interface UserRole {
   id: string;
@@ -28,10 +35,24 @@ interface ProtectedRouteProps {
   allowedRealms?: string[]; // Realms (GLOBAL, YAYASAN, PAUD, etc.)
 }
 
-// Map legacy roles to RoleCode categories (canonical bridge from shared)
+// Map legacy roles to RoleCode categories
 function mapLegacyRoleToRoleCodes(legacyRole: string): string[] {
-  if (isLegacyRole(legacyRole)) return LEGACY_ROLE_EXPANSION[legacyRole];
-  return [legacyRole];
+  switch (legacyRole) {
+    case "SUPER_ADMIN":
+      return ["SUPER_ADMIN"];
+    case "UNIT_ADMIN":
+      return ADMIN_ROLES.filter((r) => r !== "SUPER_ADMIN");
+    case "TEACHER":
+      return TEACHER_ROLES;
+    case "STAFF":
+      return STAFF_ROLES;
+    case "STUDENT":
+      return STUDENT_ROLES;
+    case "PARENT":
+      return PARENT_ROLES;
+    default:
+      return [legacyRole];
+  }
 }
 
 export function ProtectedRoute({
@@ -118,7 +139,12 @@ export function ProtectedRoute({
     }
   }, [user, hasAccess, router]);
 
-  if (isLoading) {
+  // Revalidating an existing session must not blank the app shell. `fetchUser`
+  // runs on every mount, so gating on `isLoading` alone replaced the sidebar
+  // and header with a full-screen spinner on *every* page load, for as long as
+  // /auth/me took — the audit saw pages with no shell at all after 1.8s. The
+  // persisted user is good enough to render with; only a cold start waits.
+  if (isLoading && !user) {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>

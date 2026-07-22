@@ -29,7 +29,7 @@ import {
   Mail,
   MessageSquare,
   Smartphone,
-  DollarSign,
+  Banknote,
   UserCheck,
   GraduationCap,
   BookOpen,
@@ -118,7 +118,7 @@ const NOTIFICATION_TYPES = [
   {
     key: "paymentReminders",
     label: "Pengingat Pembayaran",
-    icon: DollarSign,
+    icon: Banknote,
     description: "Tagihan dan jatuh tempo",
   },
   {

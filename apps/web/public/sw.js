@@ -5,7 +5,11 @@
  *  - API (/api/**): never handled here — always go to network (no stale auth data)
  *  - push: show notification (ready for Web Push once a subscription exists)
  */
-const CACHE = "cipansor-v1";
+// Bump this version whenever precached assets (manifest, icons, offline page)
+// change. The activate handler deletes every cache whose name != CACHE, so a
+// new version forces returning clients to drop stale icons/manifest — without
+// it the old PWA icon is served from cache-first storage indefinitely.
+const CACHE = "cipansor-v2";
 const OFFLINE_URL = "/offline.html";
 const PRECACHE = [OFFLINE_URL, "/manifest.json", "/icons/icon-192.png"];
 

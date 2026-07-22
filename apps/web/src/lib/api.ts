@@ -1,5 +1,15 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 import { toast } from "sonner";
+
+// Allow any request to opt out of the global error toast in the response
+// interceptor. Best-effort aggregation calls (the role dashboards fire several
+// parallel requests the user may not be authorised for) set this so a 403/404
+// on one of them doesn't spam "missing permission" / "route not found".
+declare module "axios" {
+  export interface AxiosRequestConfig {
+    skipErrorToast?: boolean;
+  }
+}
 import {
   User,
   LoginRequest,
@@ -92,34 +102,61 @@ api.interceptors.request.use(
   (error) => Promise.reject(error),
 );
 
-// Single-flight token refresh. Several requests failing with 401 at the same
-// time must share ONE /auth/refresh call: refresh tokens rotate on use, so
-// parallel refreshes race — the first wins and every loser gets a 401, which
-// used to log the user out mid-navigation.
-let refreshPromise: Promise<string | null> | null = null;
+/**
+ * Single-flight refresh.
+ *
+ * The API rotates refresh tokens: `/auth/refresh` deletes the presented token
+ * and issues a new one. A page that fires several requests in parallel with an
+ * expired access token therefore used to send several concurrent refreshes —
+ * the first rotated the token and the rest presented one the server had just
+ * deleted, got 401 "Refresh token not found", and the catch below logged the
+ * user out. That is exactly what the audit caught: pages bouncing to /login
+ * and then, via middleware, to the role dashboard, losing the requested page.
+ *
+ * Now the first 401 performs the refresh and everyone else awaits its result.
+ */
+let refreshInFlight: Promise<string> | null = null;
 
-async function refreshAccessToken(): Promise<string | null> {
-  if (!refreshPromise) {
-    refreshPromise = (async () => {
-      const refreshToken =
-        typeof window !== "undefined"
-          ? localStorage.getItem("refreshToken")
-          : null;
-      if (!refreshToken) return null;
-
-      const response = await axios.post(`${API_URL}/auth/refresh`, {
-        refreshToken,
-      });
-      const { accessToken, refreshToken: newRefreshToken } =
-        response.data.data;
-      localStorage.setItem("accessToken", accessToken);
-      localStorage.setItem("refreshToken", newRefreshToken);
-      return accessToken as string;
-    })().finally(() => {
-      refreshPromise = null;
-    });
+/**
+ * There is no session to refresh.
+ *
+ * This is NOT the same as a rejected session. An anonymous visitor on a public
+ * page (`/public/spmb`, `/wakaf-infaq`) whose page happens to call a
+ * protected endpoint will land here — and bouncing them to /login would be
+ * wrong: they never claimed to be logged in. Treating this as a definitive
+ * logout sent the landing page's "Daftar SPMB" call-to-action straight to the
+ * staff login screen.
+ */
+class NoSessionError extends Error {
+  constructor() {
+    super("No session to refresh");
+    this.name = "NoSessionError";
   }
-  return refreshPromise;
+}
+
+function refreshAccessToken(): Promise<string> {
+  if (refreshInFlight) return refreshInFlight;
+
+  refreshInFlight = (async () => {
+    const refreshToken =
+      typeof window !== "undefined"
+        ? localStorage.getItem("refreshToken")
+        : null;
+    if (!refreshToken) throw new NoSessionError();
+
+    const response = await axios.post(`${API_URL}/auth/refresh`, {
+      refreshToken,
+    });
+    const { accessToken, refreshToken: newRefreshToken } = response.data.data;
+    localStorage.setItem("accessToken", accessToken);
+    localStorage.setItem("refreshToken", newRefreshToken);
+    document.cookie = `accessToken=${accessToken}; path=/; max-age=86400; samesite=lax`;
+    return accessToken as string;
+  })().finally(() => {
+    refreshInFlight = null;
+  });
+
+  return refreshInFlight;
 }
 
 // Response interceptor for token refresh
@@ -128,50 +165,95 @@ api.interceptors.response.use(
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & {
       _retry?: boolean;
+      skipErrorToast?: boolean;
     };
 
-    // Handle 401 Unauthorized (Token Refresh)
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // Auth endpoints that should NEVER trigger token refresh —
+    // their 401 means "wrong credentials", not "expired token".
+    const authPaths = ["/auth/login", "/auth/register", "/auth/refresh"];
+    const requestUrl = originalRequest?.url ?? "";
+    const isAuthEndpoint = authPaths.some((p) => requestUrl.includes(p));
+
+    // Handle 401 Unauthorized (Token Refresh) — skip for auth endpoints
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retry &&
+      !isAuthEndpoint
+    ) {
       originalRequest._retry = true;
 
       try {
         const accessToken = await refreshAccessToken();
-        if (accessToken) {
-          if (originalRequest.headers) {
-            originalRequest.headers.Authorization = `Bearer ${accessToken}`;
-          }
-          return api(originalRequest);
+        if (originalRequest.headers) {
+          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
         }
+        return api(originalRequest);
       } catch (refreshError) {
-        // Only a rejected refresh TOKEN means the session is over; transient
-        // failures (network, 5xx) should not nuke the session.
-        const status = (refreshError as AxiosError).response?.status;
-        if (status === 401 || status === 403) {
-          localStorage.removeItem("accessToken");
-          localStorage.removeItem("refreshToken");
-          if (
-            typeof window !== "undefined" &&
-            !window.location.pathname.includes("/login")
-          ) {
-            window.location.href = "/login";
-          }
+        // An anonymous visitor never had a session to lose. Public pages call
+        // protected endpoints (the SPMB page reads /units), and bouncing a
+        // prospective parent to the staff login screen over that 401 is far
+        // worse than letting the caller render its own empty state.
+        const hadSession =
+          typeof window !== "undefined" && !!localStorage.getItem("accessToken");
+        if (!hadSession) {
+          return Promise.reject(error);
+        }
+
+        // Only a definitive rejection means the session is really gone. A 429
+        // from the rate limiter, a 5xx or a dropped connection says nothing
+        // about the token's validity, and logging the user out over one would
+        // throw away a working session — the same reasoning as `fetchUser` in
+        // stores/auth.ts.
+        const status = (refreshError as AxiosError)?.response?.status;
+        const isDefinitive =
+          refreshError instanceof NoSessionError ||
+          status === 400 ||
+          status === 401 ||
+          status === 403;
+        if (!isDefinitive) {
+          return Promise.reject(error);
+        }
+
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+        document.cookie = "accessToken=; path=/; max-age=0";
+        document.cookie = "auth-storage=; path=/; max-age=0";
+        if (
+          typeof window !== "undefined" &&
+          !window.location.pathname.includes("/login")
+        ) {
+          window.location.href = "/login";
         }
       }
     }
 
-    // Global Error Handling (except for 401 which is handled above)
-    if (error.response?.status !== 401) {
-      const data = error.response?.data as any;
-      const message =
-        data?.error?.message ||
-        data?.message ||
-        error.message ||
-        "Terjadi kesalahan sistem";
-      const code = data?.error?.code;
+    // Extract the human-readable error message from the API response envelope
+    const data = error.response?.data as any;
+    const friendlyMessage =
+      data?.error?.message ||
+      data?.message ||
+      error.message ||
+      "Terjadi kesalahan sistem";
+    const code = data?.error?.code;
 
-      toast.error(message, {
+    // Show toast for all errors EXCEPT 401 on non-auth endpoints
+    // (those are handled by the refresh logic above or silently redirected)
+    // and EXCEPT calls that opted out via `skipErrorToast` — best-effort
+    // aggregation calls (e.g. the role dashboards fire several parallel
+    // requests the user may not be authorised for) handle their own failures
+    // and must not spam "missing permission" / "route not found" toasts.
+    if (
+      !originalRequest?.skipErrorToast &&
+      (error.response?.status !== 401 || isAuthEndpoint)
+    ) {
+      toast.error(friendlyMessage, {
         description: code ? `Error Code: ${code}` : undefined,
       });
+    }
+
+    // Attach the friendly message so downstream catch blocks get it easily
+    if (data?.error?.message) {
+      error.message = data.error.message;
     }
 
     return Promise.reject(error);
@@ -267,7 +349,7 @@ export const tahfidzApi = {
   deleteRecord: (id: string) => api.delete<ApiResponse<void>>(`/tahfidz/${id}`),
 
   getDashboard: (params: { unitId?: string; year?: number; month?: number }) =>
-    api.get<ApiResponse<TahfidzDashboardStats>>("/tahfidz/dashboard", {
+    api.get<ApiResponse<TahfidzDashboardStats>>("/tahfidz/stats", {
       params,
     }),
 

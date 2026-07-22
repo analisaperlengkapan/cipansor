@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState, useEffect } from "react";
-import { Menu, X, BookOpen, User } from "lucide-react";
+import { Menu, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -13,11 +14,21 @@ import {
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 
+/**
+ * Real pages, not on-page anchors.
+ *
+ * These used to be `#about`, `#programs`, `#units`, `#news` — the whole site
+ * was one document with five hash links, which left search engines (and the
+ * Google Ad Grants review, which rejected the account for exactly this) with a
+ * single indexable URL and no substantial content behind the menu.
+ */
 const navItems = [
-  { title: "Beranda", href: "#hero" },
-  { title: "Tentang Kami", href: "#about" },
-  { title: "Program", href: "#programs" },
-  { title: "Statistik", href: "#stats" },
+  { title: "Beranda", href: "/" },
+  { title: "Profil", href: "/profil" },
+  { title: "Program Unggulan", href: "/program-unggulan" },
+  { title: "Unit Pendidikan", href: "/unit" },
+  { title: "Berita", href: "/berita" },
+  { title: "Wakaf & Infaq", href: "/wakaf-infaq" },
 ];
 
 export function LandingNavbar() {
@@ -43,43 +54,56 @@ export function LandingNavbar() {
     >
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <BookOpen className="h-5 w-5" />
-            </div>
-            <span className="text-lg font-bold tracking-tight text-foreground">
+          <Link href="/" className="flex items-center gap-2">
+            <Image
+              src="/images/cipansor/logo-cipansor.webp"
+              alt="Logo Pesantren Cipansor"
+              width={32}
+              height={32}
+              priority
+              className="h-8 w-8 object-contain"
+            />
+            <span className="whitespace-nowrap text-lg font-bold tracking-tight text-foreground">
               Pesantren Cipansor
             </span>
-          </div>
+          </Link>
 
-          {/* Desktop Nav */}
-          <nav className="hidden md:flex items-center gap-6">
+          {/*
+            Desktop nav appears at `xl`, not `md`.
+            Six labels plus two buttons plus the brand measure ~1220px. At `md`
+            (768px) they wrapped onto a second line; at `lg` (1024px) the brand
+            text collided with the first item. `xl` (1280px) is the first
+            breakpoint where the row genuinely fits — below it the hamburger is
+            the correct answer, not a squeezed row. `whitespace-nowrap` keeps a
+            label from ever breaking mid-phrase ("Program / Unggulan").
+          */}
+          <nav className="hidden xl:flex items-center gap-5 2xl:gap-6">
             {navItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+                className="whitespace-nowrap text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
               >
                 {item.title}
               </Link>
             ))}
             <div className="flex items-center gap-2 pl-2 border-l border-border ml-2">
               <Link href="/login">
-                <Button size="sm" variant="outline" className="gap-2">
+                <Button size="sm" variant="outline" className="gap-2 whitespace-nowrap">
                   <User className="h-4 w-4" />
                   Login Portal
                 </Button>
               </Link>
-              <Link href="/public/ppdb">
-                <Button size="sm" className="bg-primary hover:bg-primary/90">
-                  Daftar PPDB
+              <Link href="/public/spmb">
+                <Button size="sm" className="whitespace-nowrap bg-primary hover:bg-primary/90">
+                  Daftar SPMB
                 </Button>
               </Link>
             </div>
           </nav>
 
-          {/* Mobile Nav */}
-          <div className="md:hidden">
+          {/* Mobile Nav — must mirror the desktop breakpoint above. */}
+          <div className="xl:hidden">
             <Sheet>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon">
@@ -90,9 +114,13 @@ export function LandingNavbar() {
               <SheetContent side="right">
                 <SheetHeader>
                   <SheetTitle className="text-left flex items-center gap-2">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                      <BookOpen className="h-5 w-5" />
-                    </div>
+                    <Image
+                      src="/images/cipansor/logo-cipansor.webp"
+                      alt="Logo Pesantren Cipansor"
+                      width={32}
+                      height={32}
+                      className="h-8 w-8 object-contain"
+                    />
                     Pesantren Cipansor
                   </SheetTitle>
                 </SheetHeader>
@@ -113,9 +141,9 @@ export function LandingNavbar() {
                       Login Portal
                     </Button>
                   </Link>
-                  <Link href="/public/ppdb">
+                  <Link href="/public/spmb">
                     <Button className="w-full justify-start">
-                      Daftar PPDB
+                      Daftar SPMB
                     </Button>
                   </Link>
                 </div>

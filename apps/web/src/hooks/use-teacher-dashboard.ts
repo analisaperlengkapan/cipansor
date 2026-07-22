@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { useAuthStore } from "@/stores/auth";
+import { DAY_OF_WEEK_BY_INDEX } from "@cipansor/shared";
 
 // Types
 export interface TeacherStats {
@@ -129,7 +130,8 @@ export function useTeacherTodaySchedule() {
     queryFn: async (): Promise<TeachingScheduleItem[]> => {
       try {
         const today = new Date();
-        const dayOfWeek = today.getDay();
+        // The API filters on the DayOfWeek enum, not the numeric index.
+        const dayOfWeek = DAY_OF_WEEK_BY_INDEX[today.getDay()];
 
         const response = await api.get("/curriculum/schedules", {
           params: {

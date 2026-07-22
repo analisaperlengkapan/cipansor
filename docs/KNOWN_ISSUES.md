@@ -4,6 +4,55 @@ Status of production-readiness work and the remaining roadmap. Updated as part o
 the production-readiness / architecture-standardization effort. For the system
 overview see [`ARCHITECTURE.md`](./ARCHITECTURE.md).
 
+## ✅ Resolved by the 2026-07-21 Playwright role audit
+
+Found by logging in as one demo account per role and walking every link the
+sidebar renders. All of these were invisible when testing as super admin on a
+warm session.
+
+- **Authenticated users were thrown off the page they requested.** Three
+  independent causes, each confirmed from the captured document redirect chain
+  (`200 /inventory | 307 /login -> /dashboard | 200 /dashboard`):
+  1. *Refresh-token stampede.* The API rotates refresh tokens, so parallel
+     requests with an expired access token each fired `/auth/refresh`; the first
+     rotated it and the rest presented a token the server had just deleted, and
+     the axios catch block wiped the session. Now single-flight, and only
+     400/401/403 counts as a real logout — a 429 or network blip no longer
+     discards a working session.
+  2. *Pre-rehydration redirect.* `zustand/persist` reports
+     `isAuthenticated: false` on first render; the parent layout redirected on
+     it, and middleware bounced `/login` back to the PARENT dashboard — which is
+     `/parent`. All thirteen `/parent/*` links landed on the portal home.
+  3. *The spinner ate the app shell.* `ProtectedRoute` rendered a full-screen
+     spinner whenever `isLoading` and re-fetched on every mount, so the sidebar
+     and header vanished on every page load. Now gated on `isLoading && !user`;
+     `fetchUser` is single-flight, halving `/auth/me` traffic.
+- **`validateQuery` results were being discarded.** Express 5 makes `req.query`
+  read-only, so the middleware parks the parsed value in
+  `res.locals.validatedQuery`. Six modules read `req.query` anyway, losing the
+  schema's `page`/`limit` defaults — `skip` became `NaN` and Prisma returned a
+  500 on `GET /api/sanad?limit=50`. Guarded by
+  `apps/api/src/middleware/validated-query.test.ts`.
+- **nginx swallowed the whole Kesehatan module.** `location /health` is a prefix
+  match, so `/health/records`, `/health/medications` and the rest were proxied
+  to the API's health check. Moved to `location = /healthz`. **Any external
+  uptime monitor must be repointed**; container healthchecks hit `:3001`
+  directly and are unaffected.
+- **The 81 demo accounts had no domain rows.** No `Student` for `*_SISWA`, no
+  `Teacher` for `*_GURU`/`MUSYRIF`/`PT_DOSEN`, no `StudentParent` for
+  `*_ORANG_TUA`, and no `PERGURUAN_TINGGI` unit at all — so every `PT_*` account
+  had `unitId: null`. They logged in and landed on empty portals, which the
+  audit reported as "near-blank" pages. Fixed in `prisma/seed.ts`; because the
+  seed starts with `TRUNCATE … CASCADE`, existing databases are updated with the
+  additive, idempotent `wire-demo-personas.sql` instead.
+- **Contract mismatches.** `/api/attendance/summary` demanded a mandatory
+  `startDate`+`endDate` pair (a single day and an unbounded student history are
+  both legitimate); `/api/curriculum/schedules` silently stripped the
+  `studentId` the student dashboard was already sending, so the timetable widget
+  queried the whole school; and both the student and teacher "Jadwal Hari Ini"
+  widgets sent `dayOfWeek` as a number where the API expects `MONDAY` — now a
+  shared `DAY_OF_WEEK_BY_INDEX` in `@cipansor/shared`.
+
 ## ✅ Resolved in this effort
 
 - **FE↔BE double-`/api` bug (false green).** Seven React Query hooks

@@ -342,7 +342,7 @@ export async function enrollRegistrant(
       user = await tx.user.create({
         data: {
           name: registrant.name,
-          email: registrant.email || `${studentData.nis}@student.cipansor.id`,
+          email: registrant.email || `${studentData.nis}@student.cipansor.or.id`,
           passwordHash: '$2a$10$defaultpasswordhash', // Should be changed on first login
           role: 'STUDENT',
           unitId: registrant.admissionPeriod.unitId,

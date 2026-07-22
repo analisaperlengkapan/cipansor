@@ -74,7 +74,7 @@ export async function bulkImportStudents(
       await (prisma as any).$transaction(async (tx: any) => {
         const user = await tx.user.create({
           data: {
-            email: row.email || `${row.nis}@student.cipansor.id`,
+            email: row.email || `${row.nis}@student.cipansor.or.id`,
             name: row.name,
             phone: row.phone,
             role: 'STUDENT',

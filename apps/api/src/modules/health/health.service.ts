@@ -706,7 +706,14 @@ export async function fulfillPrescription(prescriptionId: string, fulfilledById:
 
 // ==================== STATISTICS ====================
 
-export async function getHealthStats(unitId: string): Promise<HealthStats> {
+/**
+ * Health statistics, scoped to a unit or across every unit.
+ *
+ * `unitId` is optional because the dashboard and the health landing page want
+ * a yayasan-wide figure and have no unit in scope. Prisma treats an
+ * `undefined` filter as "no filter", so the same query serves both.
+ */
+export async function getHealthStats(unitId?: string): Promise<HealthStats> {
   const today = new Date();
   const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 

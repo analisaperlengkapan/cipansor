@@ -1,4 +1,5 @@
 "use client";
+import { MainLayout } from "@/components/layout";
 
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -52,28 +53,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, Pencil, Trash2, CheckCircle, Filter, X } from "lucide-react";
 
 // ─── Schemas ────────────────────────────────────────────────
-const planFormSchema = z
-  .object({
-    title: z.string().min(3, "Judul minimal 3 karakter"),
-    description: z.string().optional(),
-    type: z.enum(["RPJP", "RENSTRA", "RKAS", "RKT", "PROGRAM"]),
-    parentId: z.string().optional(),
-    startDate: z.string().min(1, "Tanggal mulai wajib"),
-    endDate: z.string().min(1, "Tanggal selesai wajib"),
-    budget: z.string().optional(),
-  })
-  .superRefine((values, ctx) => {
-    const allowed = ALLOWED_PARENT_TYPES[values.type];
-    if (allowed && !values.parentId) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["parentId"],
-        message: `${typeLabel[values.type]} harus diturunkan dari ${allowed
-          .map((t) => typeLabel[t])
-          .join(" / ")}`,
-      });
-    }
-  });
+const planFormSchema = z.object({
+  title: z.string().min(3, "Judul minimal 3 karakter"),
+  description: z.string().optional(),
+  type: z.enum(["RPJP", "RENSTRA", "RKA"]),
+  startDate: z.string().min(1, "Tanggal mulai wajib"),
+  endDate: z.string().min(1, "Tanggal selesai wajib"),
+  budget: z.string().optional(),
+});
 
 type PlanFormValues = z.infer<typeof planFormSchema>;
 
@@ -87,32 +74,18 @@ const statusColor: Record<string, string> = {
   CANCELLED: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300",
 };
 
+// RPJP was in the database enum but absent from this list, so the longest-horizon
+// document was the one plan type the UI could not create.
 const typeLabel: Record<string, string> = {
-  RPJP: "RPJP (Rencana Pembangunan Jangka Panjang)",
-  RENSTRA: "Renstra (Rencana Strategis)",
-  RKT: "RKT (Rencana Kerja Tahunan)",
-  RKAS: "RKA/RKAS (Rencana Kerja & Anggaran)",
-  PROGRAM: "Program Kerja",
-};
-
-// Kaskade perencanaan-kinerja (pola SAKIP): RPJP (20 th) -> Renstra (5 th)
-// -> RKT (tahunan) -> RKA/RKAS (anggaran) -> Perjanjian Kinerja -> evaluasi.
-// RPJP & Renstra tunggal (dokumen gabungan yayasan); turunannya boleh banyak
-// (per unit / per tahun).
-const ALLOWED_PARENT_TYPES: Record<string, string[] | null> = {
-  RPJP: null,
-  RENSTRA: ["RPJP"],
-  RKT: ["RENSTRA"],
-  RKAS: ["RKT"],
-  PROGRAM: ["RENSTRA"],
+  RPJP: "RPJP",
+  RENSTRA: "Renstra",
+  RKA: "RKA",
 };
 
 const typeOptions = [
-  { value: "RPJP", label: "RPJP — Jangka Panjang (20 Tahun)" },
-  { value: "RENSTRA", label: "Renstra — Strategis (5 Tahun)" },
-  { value: "RKT", label: "RKT — Kerja Tahunan" },
-  { value: "RKAS", label: "RKA/RKAS — Kerja & Anggaran" },
-  { value: "PROGRAM", label: "Program Kerja" },
+  { value: "RPJP", label: "RPJP — Rencana Pembangunan Jangka Panjang (20 Tahun)" },
+  { value: "RENSTRA", label: "Renstra — Rencana Strategis (5 Tahun)" },
+  { value: "RKA", label: "RKA — Rencana Kerja dan Anggaran (1 Tahun)" },
 ];
 
 const statusOptions = [
@@ -134,7 +107,6 @@ function PlanFormDialog({
 }) {
   const createPlan = useCreatePlan();
   const updatePlan = useUpdatePlan();
-  const { data: allPlans } = usePlans({});
   const isEdit = !!editData;
 
   const form = useForm<PlanFormValues>({
@@ -142,8 +114,7 @@ function PlanFormDialog({
     defaultValues: {
       title: editData?.title || "",
       description: editData?.description || "",
-      type: editData?.type || "RPJP",
-      parentId: editData?.parentId || undefined,
+      type: editData?.type || "RKA",
       startDate: editData?.startDate
         ? new Date(editData.startDate).toISOString().split("T")[0]
         : "",
@@ -154,19 +125,9 @@ function PlanFormDialog({
     },
   });
 
-  const selectedType = form.watch("type");
-  const allowedParentTypes = ALLOWED_PARENT_TYPES[selectedType];
-  const parentTypeLabel = (allowedParentTypes ?? [])
-    .map((t) => typeLabel[t])
-    .join(" / ");
-  const parentCandidates = (allPlans ?? []).filter(
-    (p: { id: string; type: string }) => allowedParentTypes?.includes(p.type),
-  );
-
   const onSubmit = async (values: PlanFormValues) => {
     const payload = {
       ...values,
-      parentId: values.parentId || undefined,
       startDate: new Date(values.startDate).toISOString(),
       endDate: new Date(values.endDate).toISOString(),
       budget: values.budget ? Number(values.budget) : undefined,
@@ -191,7 +152,7 @@ function PlanFormDialog({
         <DialogDescription>
           {isEdit
             ? "Perbarui informasi rencana strategis."
-            : "Kaskade: RPJP (20 th) \u2192 Renstra (5 th) \u2192 RKT \u2192 RKAS; program kerja diturunkan dari Renstra."}
+            : "Isi data RPJP, Renstra, atau RKA."}
         </DialogDescription>
       </DialogHeader>
 
@@ -241,44 +202,6 @@ function PlanFormDialog({
               </FormItem>
             )}
           />
-
-          {allowedParentTypes && (
-            <FormField
-              control={form.control}
-              name="parentId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Induk ({parentTypeLabel})</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue
-                          placeholder={
-                            parentCandidates.length > 0
-                              ? "Pilih rencana induk"
-                              : `Belum ada ${parentTypeLabel} — buat itu dahulu`
-                          }
-                        />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {parentCandidates.map(
-                        (p: { id: string; title: string }) => (
-                          <SelectItem key={p.id} value={p.id}>
-                            {p.title}
-                          </SelectItem>
-                        ),
-                      )}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          )}
 
           <FormField
             control={form.control}
@@ -360,7 +283,7 @@ function PlanFormDialog({
 }
 
 // ─── Main Page ──────────────────────────────────────────────
-export default function PerencanaanPage() {
+function PerencanaanPageContent() {
   const [filterType, setFilterType] = useState<string | undefined>();
   const [filterStatus, setFilterStatus] = useState<string | undefined>();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -412,7 +335,7 @@ export default function PerencanaanPage() {
       <div className="flex items-center justify-between">
         <PageHeader
           title="Perencanaan Strategis"
-          description="Kaskade perencanaan yayasan: RPJP \u2192 Renstra \u2192 RKT \u2192 RKAS \u2192 Program Kerja."
+          description="Kelola RPJP, Renstra, dan RKA yayasan."
         />
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
@@ -641,5 +564,13 @@ export default function PerencanaanPage() {
         isLoading={deletePlan.isPending}
       />
     </div>
+  );
+}
+
+export default function PerencanaanPageWithShell() {
+  return (
+    <MainLayout>
+      <PerencanaanPageContent />
+    </MainLayout>
   );
 }

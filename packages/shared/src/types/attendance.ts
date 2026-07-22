@@ -66,9 +66,13 @@ export interface UpdateAttendanceInput {
 }
 
 export interface AttendanceSummary {
+  /**
+   * The range actually summarised. Both ends are absent when the caller asked
+   * for a student's whole history rather than a window.
+   */
   period: {
-    startDate: string;
-    endDate: string;
+    startDate?: string;
+    endDate?: string;
   };
   counts: {
     total: number;

@@ -1,4 +1,5 @@
 "use client";
+import { MainLayout } from "@/components/layout";
 
 import { useState } from "react";
 import Link from "next/link";
@@ -199,7 +200,7 @@ function DepreciationSettingsDialog({ unitId }: { unitId?: string }) {
   );
 }
 
-export default function InventoryPage() {
+function InventoryPageContent() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [categoryId, setCategoryId] = useState<string>("all");
@@ -500,5 +501,13 @@ export default function InventoryPage() {
         />
       )}
     </div>
+  );
+}
+
+export default function InventoryPageWithShell() {
+  return (
+    <MainLayout>
+      <InventoryPageContent />
+    </MainLayout>
   );
 }

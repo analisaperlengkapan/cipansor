@@ -1,4 +1,5 @@
 "use client";
+import { MainLayout } from "@/components/layout";
 
 import { useState } from "react";
 import { safeFormat } from "@/lib/date";
@@ -68,7 +69,7 @@ function getStatusBadge(status: BorrowStatus) {
   );
 }
 
-export default function LibraryPage() {
+function LibraryPageContent() {
   const [activeTab, setActiveTab] = useState<"books" | "borrows">("books");
   const [booksPage, setBooksPage] = useState(1);
   const [borrowsPage, setBorrowsPage] = useState(1);
@@ -432,5 +433,13 @@ export default function LibraryPage() {
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+export default function LibraryPageWithShell() {
+  return (
+    <MainLayout>
+      <LibraryPageContent />
+    </MainLayout>
   );
 }

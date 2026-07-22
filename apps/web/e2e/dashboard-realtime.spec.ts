@@ -19,7 +19,7 @@ test.describe("Dashboard Real-time Features", () => {
     const login = new loginPage.LoginPage(page);
     await login.goto();
     await login.loginAndWaitForDashboard(
-      "superadmin@cipansor.id",
+      "superadmin@cipansor.or.id",
       "SuperAdmin123!",
     );
 
@@ -166,7 +166,7 @@ test.describe("Dashboard Data Refresh", () => {
     const login = new loginPage.LoginPage(page);
     await login.goto();
     await login.loginAndWaitForDashboard(
-      "superadmin@cipansor.id",
+      "superadmin@cipansor.or.id",
       "SuperAdmin123!",
     );
 
@@ -209,7 +209,7 @@ test.describe("Dashboard Data Refresh", () => {
     const login = new loginPage.LoginPage(page);
     await login.goto();
     await login.loginAndWaitForDashboard(
-      "superadmin@cipansor.id",
+      "superadmin@cipansor.or.id",
       "SuperAdmin123!",
     );
 
@@ -243,7 +243,7 @@ test.describe("Dashboard Performance", () => {
     const login = new loginPage.LoginPage(page);
     await login.goto();
     await login.loginAndWaitForDashboard(
-      "superadmin@cipansor.id",
+      "superadmin@cipansor.or.id",
       "SuperAdmin123!",
     );
 
@@ -274,7 +274,7 @@ test.describe("Dashboard Performance", () => {
     const login = new loginPage.LoginPage(page);
     await login.goto();
     await login.loginAndWaitForDashboard(
-      "superadmin@cipansor.id",
+      "superadmin@cipansor.or.id",
       "SuperAdmin123!",
     );
 

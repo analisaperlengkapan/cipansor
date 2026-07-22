@@ -1,4 +1,5 @@
 "use client";
+import { MainLayout } from "@/components/layout";
 
 import { useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
@@ -25,7 +26,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Trash2, FlaskConical, Lightbulb, BookOpen, TrendingUp, DollarSign } from "lucide-react";
+import { Plus, Trash2, FlaskConical, Lightbulb, BookOpen, TrendingUp, Banknote } from "lucide-react";
 
 const projectFormSchema = z.object({
   unitId: z.string().min(1, "Unit wajib"),
@@ -240,7 +241,7 @@ function ProjectCard({ project, onDelete }: { project: any; onDelete: () => void
           <div className="pt-2 border-t space-y-2">
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground flex items-center gap-1">
-                <DollarSign className="h-3 w-3" /> Realisasi Anggaran
+                <Banknote className="h-3 w-3" /> Realisasi Anggaran
               </span>
               <span className="font-medium">{Math.round(finances.percentage)}%</span>
             </div>
@@ -256,7 +257,7 @@ function ProjectCard({ project, onDelete }: { project: any; onDelete: () => void
   );
 }
 
-export default function LitbangPage() {
+function LitbangPageContent() {
   const [projectDialogOpen, setProjectDialogOpen] = useState(false);
   const [proposalDialogOpen, setProposalDialogOpen] = useState(false);
   const [deleteState, setDeleteState] = useState<{ type: string; id: string } | null>(null);
@@ -399,5 +400,13 @@ export default function LitbangPage() {
         isLoading={deleteProject.isPending || deleteProposal.isPending}
       />
     </div>
+  );
+}
+
+export default function LitbangPageWithShell() {
+  return (
+    <MainLayout>
+      <LitbangPageContent />
+    </MainLayout>
   );
 }

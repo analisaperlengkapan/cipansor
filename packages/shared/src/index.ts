@@ -32,3 +32,4 @@ export * from "./types/library";
 export * from "./types/supplier";
 export * from "./types/assignment";
 export * from "./roles";
+export * from "./types/demo-accounts";

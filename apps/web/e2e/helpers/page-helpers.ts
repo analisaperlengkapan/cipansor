@@ -7,11 +7,49 @@ import { expect } from "@playwright/test";
  */
 
 /**
- * Wait for loading spinner to disappear
+ * Wait for loading spinner to disappear.
+ *
+ * Deliberately does NOT match [role="progressbar"]. A progress bar is content
+ * here, not a loading state: the tahfidz dashboard renders one per santri to
+ * show hafalan progress, and Radix marks a bar whose value is not yet known as
+ * `data-state="indeterminate"` — which never resolves and is not supposed to.
+ * Matching it made this helper wait out its full timeout on any page that
+ * happened to have data, so the tahfidz tests only passed while the seed left
+ * those tables empty.
  */
 export async function waitForLoadingComplete(page: Page, timeout = 15000) {
-  const spinner = page.locator('.animate-spin, [role="progressbar"], .loading');
+  const spinner = page.locator('.animate-spin, [aria-busy="true"], .loading');
   await expect(spinner).not.toBeVisible({ timeout });
+}
+
+/**
+ * Navigate to an authenticated page and wait for it to actually render.
+ *
+ * Two traps make the obvious `goto` + `waitForLoadState("domcontentloaded")`
+ * unreliable, and they compound:
+ *
+ * 1. Pages that wrap themselves in MainLayout render *nothing* until
+ *    ProtectedRoute has rehydrated the persisted session, so domcontentloaded
+ *    fires against an empty shell.
+ * 2. `locator.isVisible({ timeout })` does not wait. Playwright marks that
+ *    option `@deprecated — This option is ignored` and returns immediately, so
+ *    a probe that looks like it allows 5s actually samples the page once.
+ *
+ * Together they turn "check the page has content" into a coin flip that lands
+ * right on Chromium and wrong on WebKit, which rehydrates a little later.
+ * Waiting for the page's own <h1> is the signal that the gate has opened;
+ * assert real content only after this resolves.
+ */
+export async function gotoAuthedPage(
+  page: Page,
+  path: string,
+  heading: string | RegExp,
+  timeout = 15000,
+) {
+  await page.goto(path);
+  await expect(
+    page.getByRole("heading", { name: heading, level: 1 }),
+  ).toBeVisible({ timeout });
 }
 
 /**

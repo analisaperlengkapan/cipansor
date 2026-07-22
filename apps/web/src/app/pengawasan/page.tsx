@@ -1,4 +1,5 @@
 "use client";
+import { MainLayout } from "@/components/layout";
 
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -277,7 +278,7 @@ function AddFindingDialog({ auditId, onClose }: { auditId: string; onClose: () =
 }
 
 // ─── Main Page ──────────────────────────────────────
-export default function PengawasanPage() {
+function PengawasanPageContent() {
   const [filterStatus, setFilterStatus] = useState<string | undefined>();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editItem, setEditItem] = useState<any>(null);
@@ -463,5 +464,13 @@ export default function PengawasanPage() {
         isLoading={deleteAudit.isPending}
       />
     </div>
+  );
+}
+
+export default function PengawasanPageWithShell() {
+  return (
+    <MainLayout>
+      <PengawasanPageContent />
+    </MainLayout>
   );
 }

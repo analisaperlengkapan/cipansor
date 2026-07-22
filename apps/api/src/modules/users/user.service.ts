@@ -21,10 +21,10 @@ export class UserService {
       deletedAt: null,
     };
 
-    // Unit admins are scoped to their own unit; SUPER_ADMIN and the
-    // foundation-level YAYASAN_ADMIN see across units.
-    const foundationWide =
-      currentUser.roleCode === 'SUPER_ADMIN' || currentUser.roleCode === 'YAYASAN_ADMIN';
+    // Unit admins are scoped to their own unit; only SUPER_ADMIN sees across
+    // units (foundation-level administration is a SUPER_ADMIN concern — there
+    // is no separate YAYASAN_ADMIN role).
+    const foundationWide = currentUser.roleCode === 'SUPER_ADMIN';
     if (!foundationWide) {
       where.unitId = currentUser.unitId;
     } else if (unitId) {
@@ -163,10 +163,9 @@ export class UserService {
     }
 
     // Unit admins operate inside exactly one unit: they may only create
-    // users for their own unit. YAYASAN_ADMIN is foundation-scoped.
+    // users for their own unit. Only SUPER_ADMIN is foundation-scoped.
     if (
       creator.roleCode !== 'SUPER_ADMIN' &&
-      creator.roleCode !== 'YAYASAN_ADMIN' &&
       input.unitId !== creator.unitId
     ) {
       throw Errors.forbidden('Unit admins can only create users in their own unit');
@@ -255,7 +254,7 @@ export class UserService {
     }
 
     const isSuper = currentUser.roleCode === 'SUPER_ADMIN';
-    const foundationWide = isSuper || currentUser.roleCode === 'YAYASAN_ADMIN';
+    const foundationWide = isSuper;
 
     // Unit admins may only touch users of their own unit.
     if (!foundationWide && user.unitId !== currentUser.unitId) {

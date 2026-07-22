@@ -52,7 +52,7 @@ import {
   useDeleteFoundationDocument,
   useFoundationBoardMembers,
   useDeleteFoundationBoardMember,
-  useFinancialSummary,
+  useFoundationFinancialOverview,
   DOCUMENT_TYPE_LABELS,
   type DocumentType,
 } from "@/hooks";
@@ -86,7 +86,7 @@ import {
   Save,
   Eye,
   AlertTriangle,
-  DollarSign,
+  Banknote,
   TrendingUp,
   TrendingDown,
 } from "lucide-react";
@@ -103,7 +103,11 @@ export default function FoundationPage() {
   const { data: foundation, isLoading } = useFoundation();
   const { data: documents } = useFoundationDocuments();
   const { data: boardMembers } = useFoundationBoardMembers();
-  const { data: financialSummary } = useFinancialSummary(foundation?.id);
+  // This used to call useFinancialSummary(foundation?.id) — the SPP/invoice
+  // summary hook, passed a foundation id where it expects an academic year id.
+  // Every read below was cast through `as any` because the shapes do not match
+  // at all. The endpoint this page actually wants is /foundation/stats/financial.
+  const { data: financialSummary } = useFoundationFinancialOverview();
   const updateFoundation = useUpdateFoundation();
   const deleteDocument = useDeleteFoundationDocument();
   const deleteBoardMember = useDeleteFoundationBoardMember();
@@ -217,7 +221,7 @@ export default function FoundationPage() {
               Pengurus
             </TabsTrigger>
             <TabsTrigger value="financial" className="flex items-center gap-2">
-              <DollarSign className="h-4 w-4" />
+              <Banknote className="h-4 w-4" />
               Keuangan
             </TabsTrigger>
           </TabsList>
@@ -722,13 +726,13 @@ export default function FoundationPage() {
                 <CardContent>
                   <div className="text-2xl font-bold text-green-600">
                     {formatCurrency(
-                      (financialSummary as any)?.currentMonth?.revenue || 0,
+                      financialSummary?.currentMonth?.revenue || 0,
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground">
                     Bulan lalu:{" "}
                     {formatCurrency(
-                      (financialSummary as any)?.lastMonth?.revenue || 0,
+                      financialSummary?.lastMonth?.revenue || 0,
                     )}
                   </p>
                 </CardContent>
@@ -743,13 +747,13 @@ export default function FoundationPage() {
                 <CardContent>
                   <div className="text-2xl font-bold text-red-600">
                     {formatCurrency(
-                      (financialSummary as any)?.currentMonth?.expense || 0,
+                      financialSummary?.currentMonth?.expense || 0,
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground">
                     Bulan lalu:{" "}
                     {formatCurrency(
-                      (financialSummary as any)?.lastMonth?.expense || 0,
+                      financialSummary?.lastMonth?.expense || 0,
                     )}
                   </p>
                 </CardContent>
@@ -759,14 +763,14 @@ export default function FoundationPage() {
                   <CardTitle className="text-sm font-medium">
                     Saldo Bersih
                   </CardTitle>
-                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+                  <Banknote className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                   <div
-                    className={`text-2xl font-bold ${((financialSummary as any)?.currentMonth?.net || 0) >= 0 ? "text-green-600" : "text-red-600"}`}
+                    className={`text-2xl font-bold ${(financialSummary?.currentMonth?.net || 0) >= 0 ? "text-green-600" : "text-red-600"}`}
                   >
                     {formatCurrency(
-                      (financialSummary as any)?.currentMonth?.net || 0,
+                      financialSummary?.currentMonth?.net || 0,
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground">
@@ -788,11 +792,11 @@ export default function FoundationPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="h-[300px]">
-                    {(financialSummary as any)?.expenseComposition?.length ? (
+                    {financialSummary?.expenseComposition?.length ? (
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                           <Pie
-                            data={(financialSummary as any).expenseComposition}
+                            data={financialSummary.expenseComposition}
                             cx="50%"
                             cy="50%"
                             labelLine={false}
@@ -801,7 +805,7 @@ export default function FoundationPage() {
                             dataKey="value"
                             nameKey="name"
                           >
-                            {(financialSummary as any).expenseComposition.map(
+                            {financialSummary.expenseComposition.map(
                               (
                                 entry: { name: string; value: number },
                                 index: number,
@@ -842,9 +846,9 @@ export default function FoundationPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="h-[300px]">
-                    {(financialSummary as any)?.byUnit?.length ? (
+                    {financialSummary?.byUnit?.length ? (
                       <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={(financialSummary as any).byUnit}>
+                        <BarChart data={financialSummary.byUnit}>
                           <CartesianGrid
                             strokeDasharray="3 3"
                             vertical={false}
@@ -910,8 +914,8 @@ export default function FoundationPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {(financialSummary as any)?.units?.length ? (
-                      (financialSummary as any).units.map((unit: any) => (
+                    {financialSummary?.units?.length ? (
+                      financialSummary.units.map((unit: any) => (
                         <TableRow key={unit.unitId}>
                           <TableCell className="font-medium">
                             {unit.unitName}

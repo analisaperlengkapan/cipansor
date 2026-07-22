@@ -10,7 +10,7 @@ export class PerencanaanService {
   async createPlan(data: {
     title: string;
     description?: string;
-    type: 'RPJP' | 'RENSTRA' | 'RKAS' | 'RKT' | 'PROGRAM';
+    type: 'RPJP' | 'RENSTRA' | 'RKA';
     startDate: string;
     endDate: string;
     budget?: number;
@@ -18,76 +18,39 @@ export class PerencanaanService {
     createdById: string;
     parentId?: string;
   }) {
-    // Kaskade perencanaan-kinerja (pola SAKIP — Perpres 29/2014,
-    // PermenPAN-RB 53/2014, diadaptasi untuk yayasan):
-    //   RPJP (20 th) -> RENSTRA (5 th) -> RKT (rencana kinerja tahunan)
-    //   -> RKAS (rencana kerja & anggaran) -> Perjanjian Kinerja (modul PK)
-    //   -> pengukuran & evaluasi kinerja (PKEvaluation).
-    // RPJP dan RENSTRA bersifat TUNGGAL untuk seluruh yayasan (dokumen
-    // gabungan; satu yang berjalan pada satu masa). Turunannya (RKT, RKAS,
-    // PROGRAM) boleh lebih dari satu — mis. per unit atau per tahun.
-    const ALLOWED_PARENT_TYPES: Record<string, string[] | null> = {
-      RPJP: null,
-      RENSTRA: ['RPJP'],
-      RKT: ['RENSTRA'],
-      RKAS: ['RKT'],
-      PROGRAM: ['RENSTRA'],
-    };
-    const allowedParents = ALLOWED_PARENT_TYPES[data.type];
-
+    // RPJP and RENSTRA are yayasan-level umbrella documents: the foundation
+    // keeps exactly one live copy of each (a single combined plan), and only
+    // its downstream RKA may be split per unit. Refuse a second active one so
+    // the cascade always has a single root. Superseded plans (COMPLETED /
+    // CANCELLED) don't count, so a new cycle can still replace an old one.
     if (data.type === 'RPJP' || data.type === 'RENSTRA') {
       const existing = await prisma.strategicPlan.findFirst({
         where: {
           type: data.type,
+          // Superseded plans don't block a new cycle.
           status: { notIn: ['COMPLETED', 'CANCELLED'] },
         },
-        select: { id: true, title: true },
+        select: { id: true },
       });
       if (existing) {
         throw Errors.badRequest(
-          `${data.type} sudah ada dan masih berjalan ("${existing.title}") — ` +
-            `${data.type} adalah dokumen gabungan tunggal untuk seluruh yayasan. ` +
-            'Selesaikan/batalkan yang lama sebelum membuat yang baru.'
+          `Hanya boleh ada satu ${data.type} aktif untuk yayasan (gabungan).`
         );
       }
     }
 
-    // RKT juga dokumen gabungan: satu rencana kinerja tahunan yayasan per
-    // periode. Pemecahan per unit terjadi satu tingkat di bawahnya, pada
-    // RKA/RKAS (boleh banyak — per unit organisasi).
-    if (data.type === 'RKT') {
-      const overlapping = await prisma.strategicPlan.findFirst({
-        where: {
-          type: 'RKT',
-          status: { notIn: ['COMPLETED', 'CANCELLED'] },
-          startDate: { lte: new Date(data.endDate) },
-          endDate: { gte: new Date(data.startDate) },
-        },
-        select: { id: true, title: true },
-      });
-      if (overlapping) {
-        throw Errors.badRequest(
-          `Sudah ada RKT aktif pada periode tersebut ("${overlapping.title}") — ` +
-            'RKT adalah dokumen gabungan yayasan per tahun; pecah per unit di RKA/RKAS.'
-        );
-      }
-    }
-
-    if (allowedParents === null && data.parentId) {
-      throw Errors.badRequest('RPJP is the root of the planning cascade and cannot have a parent');
-    }
-    if (allowedParents !== null) {
-      if (!data.parentId) {
-        throw Errors.badRequest(
-          `${data.type} must be derived from a ${allowedParents.join(' or ')} — planning starts from RPJP`
-        );
-      }
+    if (data.parentId) {
       const parent = await prisma.strategicPlan.findUnique({ where: { id: data.parentId } });
       if (!parent) throw Errors.notFound('Parent plan');
-      if (!allowedParents.includes(parent.type)) {
-        throw Errors.badRequest(
-          `${data.type} must refer to a ${allowedParents.join(' or ')} parent plan`
-        );
+
+      // Cascading hierarchy: RPJP -> RENSTRA -> RKA. Each level's closing
+      // targets are the next level's contract, so a plan may only hang off
+      // the level directly above it.
+      if (data.type === 'RKA' && parent.type !== 'RENSTRA') {
+        throw Errors.badRequest('RKA must refer to a RENSTRA parent plan');
+      }
+      if (data.type === 'RENSTRA' && parent.type !== 'RPJP') {
+        throw Errors.badRequest('RENSTRA must refer to an RPJP parent plan');
       }
     }
 
@@ -194,7 +157,7 @@ export class PerencanaanService {
     // 2. The date range filter uses the plan's startDate/endDate, not the Budget
     //    model's academicYearId. For multi-year RENSTRA plans, realization will span
     //    multiple academic years, while the linked Budget may only cover one year.
-    //    Short-lived plans (RKAS, RKT, PROGRAM) are typically aligned with a single
+    //    Short-lived plans (an annual RKA) are typically aligned with a single
     //    academic year so this mismatch is less impactful for them.
     try {
       // 1. Collect all unique accountIds and their normalBalance across every activity
@@ -223,7 +186,9 @@ export class PerencanaanService {
           const journalAggregates = await prisma.journalEntry.aggregate({
             where: {
               accountId,
-              unitId: plan.unitId,
+              // See note in scheduler.service.ts: null unit means foundation-wide,
+              // so the filter is omitted rather than matched against NULL.
+              unitId: plan.unitId ?? undefined,
               date: {
                 gte: plan.startDate,
                 lte: endOfDay,
@@ -383,7 +348,7 @@ export class PerencanaanService {
     const entries = await prisma.journalEntry.findMany({
       where: {
         accountId: { in: [...accountBalance.keys()] },
-        unitId: plan.unitId,
+        unitId: plan.unitId ?? undefined,
         date: { gte: plan.startDate, lte: endOfDay },
       },
       select: { accountId: true, date: true, debit: true, credit: true },

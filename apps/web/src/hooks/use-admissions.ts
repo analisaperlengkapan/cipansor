@@ -218,7 +218,7 @@ export function useActivePeriod() {
     queryKey: ["active-admission-period"],
     queryFn: async () => {
       // Use the unauthenticated public endpoint so this hook works on the
-      // public PPDB page (`/public/ppdb`) where no user is logged in. The
+      // public PPDB page (`/public/spmb`) where no user is logged in. The
       // authenticated `/admissions/periods` list is behind `authenticate`
       // + `authorize(SUPER_ADMIN, UNIT_ADMIN)` and would return 401/403 for
       // anonymous visitors, breaking the registration form.

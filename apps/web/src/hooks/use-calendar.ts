@@ -144,7 +144,7 @@ export function useCalendarEvents(params: CalendarEventParams = {}) {
     queryKey: ["calendar-events", params],
     queryFn: async () => {
       const response = await api.get<PaginatedResponse<CalendarEvent>>(
-        "/calendar/events",
+        "/calendar",
         { params },
       );
       return response.data;
@@ -157,7 +157,7 @@ export function useCalendarEvent(id: string) {
     queryKey: ["calendar-events", id],
     queryFn: async () => {
       const response = await api.get<ApiResponse<CalendarEvent>>(
-        `/calendar/events/${id}`,
+        `/calendar/${id}`,
       );
       return response.data.data;
     },
@@ -172,7 +172,7 @@ export function useMonthEvents(year: number, month: number, unitId?: string) {
       const startDate = new Date(year, month, 1).toISOString().split("T")[0];
       const endDate = new Date(year, month + 1, 0).toISOString().split("T")[0];
       const response = await api.get<ApiResponse<CalendarEvent[]>>(
-        "/calendar/events",
+        "/calendar",
         {
           params: { startDate, endDate, unitId, limit: 100 },
         },
@@ -222,7 +222,7 @@ export function useCreateCalendarEvent() {
   return useMutation({
     mutationFn: async (data: CreateCalendarEventData) => {
       const response = await api.post<ApiResponse<CalendarEvent>>(
-        "/calendar/events",
+        "/calendar",
         data,
       );
       return response.data.data;
@@ -245,7 +245,7 @@ export function useUpdateCalendarEvent() {
       data: Partial<CreateCalendarEventData>;
     }) => {
       const response = await api.patch<ApiResponse<CalendarEvent>>(
-        `/calendar/events/${id}`,
+        `/calendar/${id}`,
         data,
       );
       return response.data.data;
@@ -264,7 +264,7 @@ export function useDeleteCalendarEvent() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      await api.delete(`/calendar/events/${id}`);
+      await api.delete(`/calendar/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["calendar-events"] });

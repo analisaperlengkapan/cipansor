@@ -17,7 +17,6 @@ router.use(authenticate);
 // applicable (see e.g. `getCashFlowForecast`).
 const forecastViewer = authorize(
   UserRole.SUPER_ADMIN,
-  RoleCode.YAYASAN_ADMIN,
   UserRole.UNIT_ADMIN
 );
 
@@ -256,7 +255,7 @@ router.get('/grc/risk-matrix', controller.getRiskMatrix);
  */
 router.get(
   '/parent-engagement',
-  authorize(UserRole.SUPER_ADMIN, RoleCode.YAYASAN_ADMIN, UserRole.UNIT_ADMIN),
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
   controller.getParentEngagementStats
 );
 

@@ -60,18 +60,24 @@ test.describe("Analytics Dashboard", () => {
     ).toBeVisible();
   });
 
-  test("should navigate to export page", async ({ page }) => {
+  test("sends users to Reports rather than exporting from here", async ({
+    page,
+  }) => {
     await page.goto("/analytics");
 
-    // The quick-link anchors can be overlapped by the dashboard charts, so
-    // trigger the anchor's own navigation rather than a positional click.
-    const exportLink = page.getByRole("link", { name: /export/i });
-    await expect(exportLink).toHaveAttribute("href", /analytics\/export/);
+    // Analytics no longer exports. It used to carry an "Export Laporan"
+    // dropdown, an Export link and four per-tab CSV buttons, all duplicating
+    // /reports through a separate implementation with nothing keeping the two
+    // in agreement. This asserts the single remaining route to a document.
+    const reportsLink = page.getByRole("link", { name: /buat laporan/i });
+    await expect(reportsLink).toHaveAttribute("href", "/reports");
     await Promise.all([
-      page.waitForURL(/analytics\/export/, { timeout: 15000 }),
-      exportLink.evaluate((el) => (el as HTMLElement).click()),
+      page.waitForURL(/\/reports/, { timeout: 15000 }),
+      reportsLink.evaluate((el) => (el as HTMLElement).click()),
     ]);
-    await expect(page.getByRole("heading", { name: /export/i })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Laporan", level: 1 }),
+    ).toBeVisible({ timeout: 15000 });
   });
 });
 

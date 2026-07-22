@@ -1,4 +1,5 @@
 "use client";
+import { MainLayout } from "@/components/layout";
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
@@ -114,7 +115,7 @@ const DAYS_OF_WEEK = [
   "Sabtu",
 ];
 
-export default function DutyRosterPage() {
+function DutyRosterPageContent() {
   const [selectedDate, setSelectedDate] = useState(
     new Date().toISOString().split("T")[0],
   );
@@ -627,5 +628,13 @@ export default function DutyRosterPage() {
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+export default function DutyRosterPageWithShell() {
+  return (
+    <MainLayout>
+      <DutyRosterPageContent />
+    </MainLayout>
   );
 }

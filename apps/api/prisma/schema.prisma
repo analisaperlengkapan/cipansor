@@ -52,7 +52,12 @@ enum RoleCode {
   SUPER_ADMIN
 
   // Yayasan roles
-  YAYASAN_ADMIN
+  //
+  // No YAYASAN_ADMIN: foundation-level administration is performed by
+  // SUPER_ADMIN. Every `authorize()` that once listed YAYASAN_ADMIN also
+  // listed SUPER_ADMIN, so removing it changed no endpoint's reachability.
+  // The remaining yayasan roles are governance organs (Pembina, Pengurus,
+  // Pengawas), not administrators.
   YAYASAN_PEMBINA
   YAYASAN_KETUA
   YAYASAN_SEKRETARIS
@@ -66,13 +71,17 @@ enum RoleCode {
   TKQ_WAKASEK // Wakil kepala sekolah
   TKQ_GURU
   TKQ_WALI_KELAS // Wali kelas
-  TKQ_GURU_BK // Guru bimbingan konseling
+  // No TKQ_GURU_BK: a dedicated counselling teacher is not part of the TK
+  // Qur'an establishment.
   TKQ_TATA_USAHA
   TKQ_BENDAHARA // Bendahara unit
   TKQ_KOMITE // Komite sekolah
   TKQ_ORANG_TUA
-  TKQ_SISWA
-  TKQ_ALUMNI
+  // No TKQ_SISWA / TKQ_ALUMNI: children of TK Qur'an age do not hold logins,
+  // and there is no alumni portal for them. Student records still exist —
+  // `student.service.ts` creates the User row with the legacy STUDENT role and
+  // no RoleCode assignment, so `students.user_id` (NOT NULL) is still
+  // satisfied. Guardians use TKQ_ORANG_TUA.
 
   // SD IT (Islam Terpadu) roles
   SDIT_ADMIN
@@ -80,13 +89,14 @@ enum RoleCode {
   SDIT_WAKASEK
   SDIT_GURU
   SDIT_WALI_KELAS
-  SDIT_GURU_BK
+  // No SDIT_GURU_BK: counselling at SD IT is handled by the wali kelas.
   SDIT_TATA_USAHA
   SDIT_BENDAHARA
   SDIT_KOMITE
   SDIT_ORANG_TUA
   SDIT_SISWA
-  SDIT_ALUMNI
+  // No SDIT_ALUMNI: primary-school alumni have no portal of their own.
+  // SMPIT_ALUMNI and above are retained.
 
   // SMP IT (Islam Terpadu) roles
   SMPIT_ADMIN
@@ -7762,19 +7772,34 @@ enum BSCPerspective {
   LEARNING
 }
 
+/// The three documents of the planning cascade, in descending horizon:
+///
+///   RPJP    (20 yr) Visi → Sasaran Visi (IUP) → Arah Pembangunan → Sasaran
+///                   Pokok, with IUP targets per Tahap
+///   RENSTRA  (5 yr) Visi → Misi → Tujuan (IKU) → Sasaran Strategis →
+///                   Program (IKP) → Kegiatan (IKK, target per year)
+///   RKA      (1 yr) the current year's Kegiatan → sub-kegiatan + schedule +
+///                   PIC + RAB
+///
+/// Each level's closing targets are the next level's contract, which is what
+/// `parentId` records. Replaces MASTER_PLAN / RKAS / RKT / PROGRAM: RKAS and
+/// RKT were two names for the annual budget document (RKA), and PROGRAM was a
+/// *level inside* Renstra, not a document — it is a PlanObjective.
 enum PlanType {
-  RPJP // Rencana Pembangunan Jangka Panjang (20 tahun) — akar kaskade
-  RENSTRA // Rencana Strategis (5 tahun) — diturunkan dari RPJP
-  RKT // Rencana Kerja Tahunan — diturunkan dari RENSTRA
-  RKAS // Rencana Kerja dan Anggaran Sekolah — penjabaran anggaran RKT
-  PROGRAM // Program kerja — diturunkan dari RENSTRA
+  RPJP
+  RENSTRA
+  RKA
 }
 
 /// StrategicPlan - Rencana strategis yayasan/unit
 model StrategicPlan {
-  id           String     @id @default(uuid())
-  unitId       String     @map("unit_id")
-  parentId     String?    @map("parent_id") // Kaskade: RPJP -> RENSTRA -> RKT -> RKAS (PROGRAM di bawah RENSTRA)
+  id String @id @default(uuid())
+  /// Null for foundation-wide plans. RPJP and Renstra are yayasan-level
+  /// documents covering every unit, so requiring a unit made the foundation's
+  /// own plans impossible to represent — they had to be filed against an
+  /// arbitrary school. Unit-level plans (a school's own RKA) still set it.
+  unitId       String?    @map("unit_id")
+  parentId     String?    @map("parent_id") // Hierarchy: RPJP -> RENSTRA -> RKA
   title        String
   description  String?    @db.Text
   type         PlanType
@@ -7790,7 +7815,7 @@ model StrategicPlan {
   updatedAt    DateTime   @updatedAt @map("updated_at")
 
   // Relations
-  unit           Unit             @relation(fields: [unitId], references: [id])
+  unit           Unit?            @relation(fields: [unitId], references: [id])
   parent         StrategicPlan?   @relation("PlanHierarchy", fields: [parentId], references: [id])
   children       StrategicPlan[]  @relation("PlanHierarchy")
   createdBy      User             @relation("PlanCreator", fields: [createdById], references: [id])

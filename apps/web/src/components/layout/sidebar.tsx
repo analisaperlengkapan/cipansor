@@ -1,15 +1,21 @@
 "use client";
 
-import { getActiveRoleCode } from "@/lib/rbac";
+import { getEffectiveRole } from "@/lib/rbac";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { getNavigationForRoleCode, type NavGroup } from "@/config/navigation";
+import {
+  getNavigationForRole,
+  getNavigationForRoleCode,
+  type NavGroup,
+} from "@/config/navigation";
 import { useAuthStore } from "@/stores/auth";
+import { demoPhotoForEmail } from "@/lib/demo-avatar";
 import { ChevronLeft, LogOut } from "lucide-react";
 
 interface SidebarProps {
@@ -50,14 +56,16 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
   const userRoles = user?.userRoles as UserRole[] | undefined;
   const activeRole = userRoles?.find((r) => r.isPrimary) || userRoles?.[0];
 
-  // Menu derives from the active RoleCode (registry-driven)
-  const activeRoleCode = activeRole?.role.code ?? getActiveRoleCode(user);
-  const navigation = activeRoleCode
-    ? getNavigationForRoleCode(activeRoleCode)
-    : [];
+  // Get navigation based on active role code or fallback to legacy role
+  const navigation = activeRole
+    ? getNavigationForRoleCode(activeRole.role.code)
+    : user
+      ? getNavigationForRole(getEffectiveRole(user) ?? user.role)
+      : [];
 
   return (
-    <div
+    <aside
+      aria-label="Menu utama"
       className={cn(
         "flex h-screen flex-col border-r sidebar-gradient transition-all duration-300",
         collapsed ? "w-16" : "w-64",
@@ -67,15 +75,27 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
       <div className="flex h-16 items-center justify-between border-b px-4">
         {!collapsed && (
           <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold">
-              C
-            </div>
-            <span className="font-semibold">Cipansor</span>
+            <Image
+              src="/logo.png"
+              alt="Logo Pesantren Cipansor"
+              width={32}
+              height={32}
+              priority
+              className="h-8 w-8 object-contain rounded-lg"
+            />
+            <span className="font-semibold text-foreground">Cipansor</span>
           </Link>
         )}
         {collapsed && (
-          <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold">
-            C
+          <div className="mx-auto flex h-8 w-8 items-center justify-center">
+            <Image
+              src="/logo.png"
+              alt="Logo Pesantren Cipansor"
+              width={32}
+              height={32}
+              priority
+              className="h-8 w-8 object-contain rounded-lg"
+            />
           </div>
         )}
         {onToggle && !collapsed && (
@@ -102,9 +122,18 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
       <div className="border-t p-4">
         {!collapsed && user && (
           <div className="mb-4 flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted text-sm font-medium">
-              {user.name?.charAt(0).toUpperCase()}
-            </div>
+            {demoPhotoForEmail(user.email) ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={demoPhotoForEmail(user.email)}
+                alt={user.name ?? "User"}
+                className="h-10 w-10 rounded-full object-cover"
+              />
+            ) : (
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted text-sm font-medium">
+                {user.name?.charAt(0).toUpperCase()}
+              </div>
+            )}
             <div className="flex-1 overflow-hidden">
               <p className="truncate text-sm font-medium">{user.name}</p>
               {activeRole && (
@@ -142,7 +171,7 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
           {!collapsed && <span className="ml-2">Logout</span>}
         </Button>
       </div>
-    </div>
+    </aside>
   );
 }
 

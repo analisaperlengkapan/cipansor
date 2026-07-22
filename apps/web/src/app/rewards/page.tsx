@@ -1,4 +1,5 @@
 "use client";
+import { MainLayout } from "@/components/layout";
 import { useState } from "react";
 import { safeFormat } from "@/lib/date";
 import Link from "next/link";
@@ -65,7 +66,7 @@ function getCategoryBadge(category: RewardCategory) {
   );
 }
 
-export default function RewardsPage() {
+function RewardsPageContent() {
   const [activeTab, setActiveTab] = useState<
     "rewards" | "types" | "leaderboard"
   >("rewards");
@@ -530,5 +531,13 @@ export default function RewardsPage() {
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+export default function RewardsPageWithShell() {
+  return (
+    <MainLayout>
+      <RewardsPageContent />
+    </MainLayout>
   );
 }

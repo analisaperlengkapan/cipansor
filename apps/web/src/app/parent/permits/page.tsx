@@ -32,6 +32,10 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { api } from "@/lib/api";
+// Children come from `useParentChildren`'s shared `ParentChild` shape.
+// Each of these pages used to declare its own local `Child` with a nested
+// `student` object the API never returns — see use-parent-portal.ts.
+import type { ParentChild } from "@/hooks/use-parent-portal";
 import { toast } from "sonner";
 import {
   FileText,
@@ -44,15 +48,6 @@ import {
   QrCode,
 } from "lucide-react";
 
-interface Child {
-  id: string;
-  student: {
-    id: string;
-    nis: string;
-    name: string;
-  };
-  relation: string;
-}
 
 interface Permit {
   id: string;
@@ -77,7 +72,7 @@ export default function PermitsPage() {
   const selectedStudentId = searchParams.get("studentId");
 
   const [loading, setLoading] = useState(true);
-  const [children, setChildren] = useState<Child[]>([]);
+  const [children, setChildren] = useState<ParentChild[]>([]);
   const [selectedChild, setSelectedChild] = useState<string>("");
   const [permits, setPermits] = useState<Permit[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -101,10 +96,10 @@ export default function PermitsPage() {
         if (childrenData.length > 0) {
           const defaultChild = selectedStudentId
             ? childrenData.find(
-                (c: Child) => c.student.id === selectedStudentId,
-              )?.student.id
-            : childrenData[0].student.id;
-          setSelectedChild(defaultChild || childrenData[0].student.id);
+                (c: ParentChild) => c.id === selectedStudentId,
+              )?.id
+            : childrenData[0].id;
+          setSelectedChild(defaultChild || childrenData[0].id);
         }
       } catch (err) {
         console.error("Failed to fetch children:", err);
@@ -212,7 +207,7 @@ export default function PermitsPage() {
   };
 
   const selectedChildData = children.find(
-    (c) => c.student.id === selectedChild,
+    (c) => c.id === selectedChild,
   );
 
   return (
@@ -232,8 +227,8 @@ export default function PermitsPage() {
               </SelectTrigger>
               <SelectContent>
                 {children.map((child) => (
-                  <SelectItem key={child.student.id} value={child.student.id}>
-                    {child.student.name}
+                  <SelectItem key={child.id} value={child.id}>
+                    {child.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -251,7 +246,7 @@ export default function PermitsPage() {
               <DialogHeader>
                 <DialogTitle>Ajukan Izin</DialogTitle>
                 <DialogDescription>
-                  Ajukan izin untuk {selectedChildData?.student.name}
+                  Ajukan izin untuk {selectedChildData?.name}
                 </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleSubmit}>

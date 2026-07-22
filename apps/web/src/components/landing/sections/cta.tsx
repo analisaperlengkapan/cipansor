@@ -24,7 +24,7 @@ export function CtaSection() {
                   Pesantren Cipansor. Kuota terbatas!
                 </p>
               </div>
-              <Link href="/public/ppdb">
+              <Link href="/public/spmb">
                 <Button
                   size="lg"
                   variant="secondary"
@@ -52,7 +52,7 @@ export function CtaSection() {
                   pembangunan fasilitas pesantren.
                 </p>
               </div>
-              <Link href="/public/donation">
+              <Link href="/wakaf-infaq">
                 <Button size="lg" className="w-full sm:w-auto gap-2">
                   Salurkan Donasi <ArrowRight className="h-4 w-4" />
                 </Button>

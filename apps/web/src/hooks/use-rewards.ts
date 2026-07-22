@@ -70,7 +70,7 @@ export function useRewardTypes(params?: {
   return useQuery({
     queryKey: ["reward-types", params],
     queryFn: async () => {
-      const response = await api.get<RewardType[]>("/reward-types", { params });
+      const response = await api.get<RewardType[]>("/rewards/categories", { params });
       return response.data;
     },
   });
@@ -80,7 +80,7 @@ export function useRewardType(id: string) {
   return useQuery({
     queryKey: ["reward-types", id],
     queryFn: async () => {
-      const response = await api.get<RewardType>(`/reward-types/${id}`);
+      const response = await api.get<RewardType>(`/rewards/categories/${id}`);
       return response.data;
     },
     enabled: !!id,
@@ -98,7 +98,7 @@ export function useCreateRewardType() {
       points: number;
       isActive?: boolean;
     }) => {
-      const response = await api.post<RewardType>("/reward-types", data);
+      const response = await api.post<RewardType>("/rewards/categories", data);
       return response.data;
     },
     onSuccess: () => {
@@ -124,7 +124,7 @@ export function useUpdateRewardType() {
         isActive?: boolean;
       };
     }) => {
-      const response = await api.put<RewardType>(`/reward-types/${id}`, data);
+      const response = await api.put<RewardType>(`/rewards/categories/${id}`, data);
       return response.data;
     },
     onSuccess: () => {
@@ -138,7 +138,7 @@ export function useDeleteRewardType() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      await api.delete(`/reward-types/${id}`);
+      await api.delete(`/rewards/categories/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["reward-types"] });

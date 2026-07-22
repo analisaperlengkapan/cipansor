@@ -8,8 +8,8 @@ vi.mock('../../lib/prisma', () => ({
     strategicPlan: {
       create: vi.fn(),
       findMany: vi.fn(),
-      findFirst: vi.fn(),
       findUnique: vi.fn(),
+      findFirst: vi.fn().mockResolvedValue(null),
       update: vi.fn(),
       delete: vi.fn(),
     },
@@ -43,13 +43,13 @@ describe('Perencanaan Service', () => {
   });
 
   describe('Strategic Plans', () => {
-    it('should create an RPJP as the cascade root (no parent)', async () => {
-      vi.mocked(prisma.strategicPlan.findFirst).mockResolvedValue(null as any);
+    it('should create a plan', async () => {
       const dto = {
-        title: 'RPJP Yayasan 2026-2045',
-        type: 'RPJP' as any,
+        title: 'Rencana Jangka Panjang',
+        type: 'RENSTRA' as any,
         startDate: new Date().toISOString(),
         endDate: new Date().toISOString(),
+        budget: 50000000,
         unitId: 'unit-1',
         createdById: 'user-1',
       };
@@ -60,89 +60,16 @@ describe('Perencanaan Service', () => {
 
       expect(prisma.strategicPlan.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
-          title: 'RPJP Yayasan 2026-2045',
-          type: 'RPJP',
-        }),
-        include: expect.any(Object),
-      });
-    });
-
-    it('rejects an RPJP with a parent', async () => {
-      await expect(
-        perencanaanService.createPlan({
-          title: 'RPJP salah',
-          type: 'RPJP' as any,
-          startDate: new Date().toISOString(),
-          endDate: new Date().toISOString(),
-          unitId: 'unit-1',
-          createdById: 'user-1',
-          parentId: 'plan-x',
-        })
-      ).rejects.toMatchObject({ statusCode: 400 });
-    });
-
-    it('rejects a RENSTRA without an RPJP parent (planning starts from RPJP)', async () => {
-      await expect(
-        perencanaanService.createPlan({
-          title: 'Renstra tanpa induk',
-          type: 'RENSTRA' as any,
-          startDate: new Date().toISOString(),
-          endDate: new Date().toISOString(),
-          unitId: 'unit-1',
-          createdById: 'user-1',
-        })
-      ).rejects.toMatchObject({ statusCode: 400 });
-    });
-
-    it('creates a RENSTRA derived from an RPJP', async () => {
-      vi.mocked(prisma.strategicPlan.findFirst).mockResolvedValue(null as any);
-      vi.mocked(prisma.strategicPlan.findUnique).mockResolvedValue({
-        id: 'rpjp-1',
-        type: 'RPJP',
-      } as any);
-      vi.mocked(prisma.strategicPlan.create).mockResolvedValue({ id: 'plan-2' } as any);
-
-      await perencanaanService.createPlan({
-        title: 'Renstra Tahap I',
-        type: 'RENSTRA' as any,
-        startDate: new Date().toISOString(),
-        endDate: new Date().toISOString(),
-        unitId: 'unit-1',
-        createdById: 'user-1',
-        parentId: 'rpjp-1',
-      });
-
-      expect(prisma.strategicPlan.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({
+          title: 'Rencana Jangka Panjang',
           type: 'RENSTRA',
-          parent: { connect: { id: 'rpjp-1' } },
         }),
         include: expect.any(Object),
       });
     });
 
-    it('rejects a second active RPJP (single combined document)', async () => {
-      vi.mocked(prisma.strategicPlan.findFirst).mockResolvedValue({
-        id: 'rpjp-1',
-        title: 'RPJP Yayasan 2026-2045',
-      } as any);
-      await expect(
-        perencanaanService.createPlan({
-          title: 'RPJP kedua',
-          type: 'RPJP' as any,
-          startDate: new Date().toISOString(),
-          endDate: new Date().toISOString(),
-          unitId: 'unit-1',
-          createdById: 'user-1',
-        })
-      ).rejects.toMatchObject({ statusCode: 400 });
-    });
+    it('rejects a second active RENSTRA (only one combined RENSTRA allowed)', async () => {
+      vi.mocked(prisma.strategicPlan.findFirst).mockResolvedValue({ id: 'existing' } as any);
 
-    it('rejects a second active RENSTRA (single combined document)', async () => {
-      vi.mocked(prisma.strategicPlan.findFirst).mockResolvedValue({
-        id: 'renstra-1',
-        title: 'Renstra 2026-2030',
-      } as any);
       await expect(
         perencanaanService.createPlan({
           title: 'Renstra kedua',
@@ -151,49 +78,9 @@ describe('Perencanaan Service', () => {
           endDate: new Date().toISOString(),
           unitId: 'unit-1',
           createdById: 'user-1',
-          parentId: 'rpjp-1',
         })
       ).rejects.toMatchObject({ statusCode: 400 });
-    });
-
-    it('rejects an RKT overlapping an active RKT (one combined RKT per period)', async () => {
-      vi.mocked(prisma.strategicPlan.findUnique).mockResolvedValue({
-        id: 'renstra-1',
-        type: 'RENSTRA',
-      } as any);
-      vi.mocked(prisma.strategicPlan.findFirst).mockResolvedValue({
-        id: 'rkt-2026',
-        title: 'RKT 2026',
-      } as any);
-      await expect(
-        perencanaanService.createPlan({
-          title: 'RKT 2026 duplikat',
-          type: 'RKT' as any,
-          startDate: new Date('2026-01-01').toISOString(),
-          endDate: new Date('2026-12-31').toISOString(),
-          unitId: 'unit-1',
-          createdById: 'user-1',
-          parentId: 'renstra-1',
-        })
-      ).rejects.toMatchObject({ statusCode: 400 });
-    });
-
-    it('rejects an RKAS whose parent is not an RKT', async () => {
-      vi.mocked(prisma.strategicPlan.findUnique).mockResolvedValue({
-        id: 'renstra-1',
-        type: 'RENSTRA',
-      } as any);
-      await expect(
-        perencanaanService.createPlan({
-          title: 'RKAS salah induk',
-          type: 'RKAS' as any,
-          startDate: new Date().toISOString(),
-          endDate: new Date().toISOString(),
-          unitId: 'unit-1',
-          createdById: 'user-1',
-          parentId: 'renstra-1',
-        })
-      ).rejects.toMatchObject({ statusCode: 400 });
+      expect(prisma.strategicPlan.create).not.toHaveBeenCalled();
     });
 
     it('should approve plan', async () => {

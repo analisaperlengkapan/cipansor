@@ -40,6 +40,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { api } from "@/lib/api";
+// Children come from `useParentChildren`'s shared `ParentChild` shape.
+// Each of these pages used to declare its own local `Child` with a nested
+// `student` object the API never returns — see use-parent-portal.ts.
+import type { ParentChild } from "@/hooks/use-parent-portal";
 import {
   Receipt,
   CreditCard,
@@ -60,15 +64,6 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-interface Child {
-  id: string;
-  student: {
-    id: string;
-    nis: string;
-    name: string;
-  };
-  relation: string;
-}
 
 interface Invoice {
   id: string;
@@ -297,7 +292,7 @@ export default function FinancePage() {
   const selectedStudentId = searchParams.get("studentId");
 
   const [loading, setLoading] = useState(true);
-  const [children, setChildren] = useState<Child[]>([]);
+  const [children, setChildren] = useState<ParentChild[]>([]);
   const [selectedChild, setSelectedChild] = useState<string>("");
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [proofInvoice, setProofInvoice] = useState<Invoice | null>(null);
@@ -316,10 +311,10 @@ export default function FinancePage() {
         if (childrenData.length > 0) {
           const defaultChild = selectedStudentId
             ? childrenData.find(
-                (c: Child) => c.student.id === selectedStudentId,
-              )?.student.id
-            : childrenData[0].student.id;
-          setSelectedChild(defaultChild || childrenData[0].student.id);
+                (c: ParentChild) => c.id === selectedStudentId,
+              )?.id
+            : childrenData[0].id;
+          setSelectedChild(defaultChild || childrenData[0].id);
         }
       } catch (err) {
         console.error("Failed to fetch children:", err);
@@ -427,8 +422,8 @@ export default function FinancePage() {
             </SelectTrigger>
             <SelectContent>
               {children.map((child) => (
-                <SelectItem key={child.student.id} value={child.student.id}>
-                  {child.student.name}
+                <SelectItem key={child.id} value={child.id}>
+                  {child.name}
                 </SelectItem>
               ))}
             </SelectContent>

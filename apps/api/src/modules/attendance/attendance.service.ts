@@ -397,20 +397,32 @@ export class AttendanceService {
     query: AttendanceSummaryQuery,
     currentUser: { role: string; unitId: string | null }
   ): Promise<AttendanceSummary> {
-    const { classId, studentId, startDate, endDate } = query;
+    const { classId, studentId, unitId, date, startDate, endDate } = query;
 
-    const where: Prisma.AttendanceWhereInput = {
-      date: {
-        gte: new Date(startDate),
-        lte: new Date(endDate),
-      },
-    };
+    const where: Prisma.AttendanceWhereInput = {};
+
+    // Same day-boundary handling as the list endpoint: `date` is stored as a
+    // timestamp, so a single day has to be a range or it matches only records
+    // that happen to sit exactly on midnight.
+    if (date) {
+      const d = new Date(date);
+      where.date = {
+        gte: new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 0, 0, 0, 0)),
+        lte: new Date(
+          Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 23, 59, 59, 999)
+        ),
+      };
+    } else if (startDate && endDate) {
+      where.date = { gte: new Date(startDate), lte: new Date(endDate) };
+    }
 
     // Filter by unit for non-super-admins
     if (currentUser.role !== UserRole.SUPER_ADMIN) {
       where.student = {
         unitId: currentUser.unitId || 'none',
       };
+    } else if (unitId) {
+      where.student = { unitId };
     }
 
     if (classId) {
@@ -477,9 +489,10 @@ export class AttendanceService {
       percentages[key] = total > 0 ? ((counts[key] / total) * 100).toFixed(1) : '0';
     });
 
-    // Ensure type safety for the return
+    // Ensure type safety for the return. `date` is the single-day shorthand,
+    // so echo it back as both ends of the range.
     return {
-      period: { startDate, endDate },
+      period: { startDate: date ?? startDate, endDate: date ?? endDate },
       counts: counts as AttendanceSummary['counts'],
       percentages: percentages as AttendanceSummary['percentages'],
     };

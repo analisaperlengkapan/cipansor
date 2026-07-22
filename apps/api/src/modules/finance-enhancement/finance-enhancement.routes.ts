@@ -21,7 +21,6 @@ import { z } from 'zod';
 const financeAdmin = () =>
   authorize(
     RoleCode.SUPER_ADMIN,
-    RoleCode.YAYASAN_ADMIN,
     RoleCode.TKQ_ADMIN,
     RoleCode.SDIT_ADMIN,
     RoleCode.SMPIT_ADMIN,

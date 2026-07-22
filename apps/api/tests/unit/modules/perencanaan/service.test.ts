@@ -74,8 +74,6 @@ describe('PerencanaanService', () => {
       };
 
       mockStrategicPlan.create.mockResolvedValue(mockResult);
-      mockStrategicPlan.findFirst.mockResolvedValue(null); // no active RENSTRA yet
-      mockStrategicPlan.findUnique.mockResolvedValue({ id: 'rpjp-1', type: 'RPJP' });
 
       const result = await service.createPlan({
         title: 'RENSTRA 2025-2030',
@@ -84,7 +82,6 @@ describe('PerencanaanService', () => {
         endDate: '2030-12-31T00:00:00.000Z',
         unitId: 'unit-1',
         createdById: 'user-1',
-        parentId: 'rpjp-1',
       });
 
       expect(result.id).toBe('plan-1');

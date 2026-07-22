@@ -589,6 +589,24 @@ router.get(
  *       200:
  *         description: Unit finance statistics (revenue, collection rate, etc.)
  */
+/**
+ * @swagger
+ * /api/finance/summary:
+ *   get:
+ *     summary: Yayasan-wide financial summary
+ *     tags: [Finance]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Totals, breakdown by payment type, and recent payments
+ */
+router.get(
+  '/summary',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  controller.getFinancialSummary
+);
+
 router.get(
   '/unit/:unitId/stats',
   authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),

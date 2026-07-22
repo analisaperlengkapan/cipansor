@@ -3,7 +3,7 @@
   "name": "Cipansor - Pesantren Management System",
   "short_name": "Cipansor",
   "description": "Yayasan Pesantren Cipansor Management System",
-  "start_url": "/login",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#16a34a",

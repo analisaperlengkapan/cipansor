@@ -1,8 +1,10 @@
 "use client";
 
+import { siteConfig } from "@/config/site";
+import { LandingNavbar } from "@/components/landing/navbar";
+import { LandingFooter } from "@/components/landing/footer";
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -29,7 +31,9 @@ import {
   useCreateRegistration,
   Gender,
 } from "@/hooks/use-admissions";
-import { useUnits } from "@/hooks/use-units";
+import { usePublicUnits } from "@/hooks/use-units";
+import { getPeriodWindow } from "@/lib/admission-period";
+import { RegistrationTracker } from "@/components/admissions/registration-tracker";
 import {
   CheckCircle2,
   User,
@@ -130,11 +134,26 @@ const QURAN_ABILITIES = [
   { value: "HAFIDZ", label: "Sudah hafal beberapa juz" },
 ];
 
-export default function PublicPPDBPage() {
+/**
+ * The page used to branch on the mere existence of a period, so an expired one
+ * rendered the green "Gelombang pendaftaran aktif hingga 31 Mei 2024" banner
+ * and the full six-step form. The countdown's `Math.max(0, …)` then displayed
+ * "0 Hari" instead of a negative number — the contradiction was on screen but
+ * never acted on.
+ *
+ * The API does reject late submissions (`admissions.controller.ts` re-checks
+ * the window server-side), but only at submit: a parent filled in their
+ * child's name, NIK, address and documents before being told, in English,
+ * "Admission period is not open for registration". The window has to be
+ * checked before the form is offered, not after it is completed.
+ */
+export function SpmbForm() {
   const { data: activePeriod } = useActivePeriod();
-  const { data: units = [] } = useUnits();
+  const { data: units = [] } = usePublicUnits();
   const createRegistration = useCreateRegistration();
   const searchParams = useSearchParams();
+
+  const periodWindow = getPeriodWindow(activePeriod);
 
   const [activeTab, setActiveTab] = useState("info");
   const [currentStep, setCurrentStep] = useState(0);
@@ -330,30 +349,57 @@ export default function PublicPPDBPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* Header */}
-      <header className="bg-white shadow-sm sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <Link href="/">
-            <div className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-              <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center text-white font-bold">
-                C
-              </div>
-              <span className="font-bold text-xl text-gray-900">PSB Online</span>
-            </div>
-          </Link>
-          <div className="flex items-center gap-4">
-            <div className="text-sm text-muted-foreground hidden sm:block">
-              Penerimaan Santri Baru Tahun Ajaran{" "}
-              {activePeriod?.academicYear?.name || "..."}
-            </div>
-            <Link href="/">
-              <Button variant="outline" size="sm">
-                Kembali ke Beranda
-              </Button>
-            </Link>
-          </div>
+      <LandingNavbar />
+
+      {/*
+        The page had no <h1> and only ~650 characters — the thinnest page on the
+        site, and the one every ad would point at. Its own header also read
+        "PSB Online": Kemendikdasmen replaced PPDB/PSB with SPMB from the
+        2025/2026 intake, so the page contradicted the rest of the site.
+      */}
+      <section className="border-b border-border bg-white pt-16">
+        <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-8">
+          <h1 className="text-3xl font-bold tracking-tight md:text-4xl">
+            Pendaftaran SPMB {siteConfig.name}
+          </h1>
+          <p className="mt-4 text-lg text-muted-foreground text-pretty">
+            {/*
+              This used to end "...dan tidak dipungut biaya." The active period
+              in the record carries a registrationFee of Rp 350.000, so the page
+              asserted free registration while the system charged for it. Fee
+              and unit are period-scoped: they are now stated from the period
+              itself, in the banner below, and not fixed here.
+            */}
+            Sistem Penerimaan Murid Baru (SPMB) Yayasan Pesantren Cipansor
+            melayani seluruh unit pendidikan: TK Qur&rsquo;an, SD IT, SMP IT,
+            SMA Qur&rsquo;an, dan program Takhosus. Pendaftaran dilakukan
+            secara online. Unit dan biaya pendaftaran mengikuti gelombang yang
+            sedang dibuka.
+          </p>
+          <p className="mt-3 text-muted-foreground">
+            Isi formulir pada tab <strong>Informasi &amp; Pendaftaran</strong>,
+            lalu simpan nomor pendaftaran Anda untuk memantau perkembangan
+            seleksi melalui tab <strong>Cek Status</strong>. Bila ada
+            pertanyaan, hubungi kami di{" "}
+            <a
+              href={`tel:+${siteConfig.contact.phoneE164}`}
+              className="font-medium text-primary underline underline-offset-4"
+            >
+              {siteConfig.contact.phone}
+            </a>{" "}
+            atau melalui{" "}
+            <a
+              href={siteConfig.contact.whatsapp}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-primary underline underline-offset-4"
+            >
+              WhatsApp
+            </a>
+            .
+          </p>
         </div>
-      </header>
+      </section>
 
       <main className="flex-1 max-w-3xl mx-auto px-4 py-8 w-full">
         <Tabs
@@ -368,20 +414,66 @@ export default function PublicPPDBPage() {
 
           {/* Info & Registration Tab */}
           <TabsContent value="info" className="space-y-6">
-            {!activePeriod ? (
+            {periodWindow !== "open" ? (
               <Card>
                 <CardContent className="py-12 text-center">
                   <div className="w-16 h-16 bg-gray-100 rounded-full mx-auto mb-4 flex items-center justify-center">
-                    <Calendar className="h-8 w-8 text-gray-400" />
+                    <Calendar
+                      className="h-8 w-8 text-gray-400"
+                      aria-hidden="true"
+                    />
                   </div>
-                  <h3 className="text-lg font-semibold">
-                    Pendaftaran Belum Dibuka
-                  </h3>
-                  <p className="text-muted-foreground mt-2">
-                    Mohon maaf, saat ini belum ada periode penerimaan santri
-                    baru yang aktif. Silakan hubungi panitia untuk informasi
-                    lebih lanjut.
+                  {/* h2, matching the period-name heading in the open state:
+                      this card replaces it, so the outline stays h1 -> h2 -> h3
+                      whichever branch renders. */}
+                  <h2 className="text-lg font-semibold">
+                    {periodWindow === "upcoming"
+                      ? "Pendaftaran Belum Dibuka"
+                      : periodWindow === "closed"
+                        ? "Pendaftaran Telah Ditutup"
+                        : "Pendaftaran Belum Dibuka"}
+                  </h2>
+                  <p className="mx-auto mt-2 max-w-md text-muted-foreground text-pretty">
+                    {periodWindow === "upcoming" && activePeriod ? (
+                      <>
+                        Pendaftaran {activePeriod.name} akan dibuka pada{" "}
+                        <strong>
+                          {format(
+                            new Date(activePeriod.startDate),
+                            "d MMMM yyyy",
+                            { locale: idLocale },
+                          )}
+                        </strong>
+                        . Silakan kembali pada tanggal tersebut.
+                      </>
+                    ) : periodWindow === "closed" && activePeriod ? (
+                      <>
+                        Periode {activePeriod.name} telah ditutup pada{" "}
+                        <strong>
+                          {format(
+                            new Date(activePeriod.endDate),
+                            "d MMMM yyyy",
+                            { locale: idLocale },
+                          )}
+                        </strong>
+                        . Informasi gelombang berikutnya akan diumumkan melalui
+                        halaman ini. Untuk menanyakan ketersediaan kuota,
+                        silakan hubungi panitia SPMB.
+                      </>
+                    ) : (
+                      <>
+                        Mohon maaf, saat ini belum ada periode penerimaan murid
+                        baru yang dibuka. Silakan hubungi panitia untuk
+                        informasi lebih lanjut.
+                      </>
+                    )}
                   </p>
+                  {/*
+                    No contact buttons here. A closed form needs to offer a way
+                    through, but the "Butuh Bantuan?" card below is outside the
+                    tabs and always visible with the same number and address —
+                    repeating them put the identical pair twice on one screen.
+                  */}
                 </CardContent>
               </Card>
             ) : (
@@ -401,18 +493,46 @@ export default function PublicPPDBPage() {
                             { locale: idLocale },
                           )}
                         </p>
+                        {/*
+                          Which unit this period admits to, and what it costs.
+                          Both are period-scoped in the data, so stating either
+                          as fixed page copy contradicts the record as soon as
+                          a different period becomes current.
+                        */}
+                        <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-sm text-green-800">
+                          {activePeriod.unit?.name && (
+                            <span>
+                              Unit: <strong>{activePeriod.unit.name}</strong>
+                            </span>
+                          )}
+                          <span>
+                            Biaya pendaftaran:{" "}
+                            <strong>
+                              {Number(activePeriod.registrationFee) > 0
+                                ? new Intl.NumberFormat("id-ID", {
+                                    style: "currency",
+                                    currency: "IDR",
+                                    minimumFractionDigits: 0,
+                                  }).format(Number(activePeriod.registrationFee))
+                                : "Gratis"}
+                            </strong>
+                          </span>
+                        </div>
                       </div>
-                      <div className="bg-white/50 p-3 rounded-lg border border-green-100 backdrop-blur-sm">
+                      <div className="bg-white/50 p-3 rounded-lg border border-green-100 backdrop-blur-sm self-start">
                         <div className="text-sm text-green-800 font-medium">
                           Sisa Waktu
                         </div>
+                        {/*
+                          No `Math.max(0, …)` clamp here any more. This branch
+                          only renders while the window is open, so the value
+                          cannot be negative; clamping it was what let an
+                          expired period display a reassuring "0 Hari".
+                        */}
                         <div className="text-2xl font-bold text-green-600">
-                          {Math.max(
-                            0,
-                            differenceInDays(
-                              new Date(activePeriod.endDate),
-                              new Date(),
-                            ),
+                          {differenceInDays(
+                            new Date(activePeriod.endDate),
+                            new Date(),
                           )}{" "}
                           Hari
                         </div>
@@ -1067,29 +1187,26 @@ export default function PublicPPDBPage() {
             )}
           </TabsContent>
 
-          {/* Check Status Tab */}
+          {/*
+            Check Status Tab.
+
+            This was an unbound <Input> beside a <Button> with no onClick — the
+            page instructs parents to track their registration here, and the
+            button did nothing when pressed. It also promised the registration
+            number would arrive "via SMS/WhatsApp", which nothing in the system
+            sends; the number is shown once, in the confirmation dialog after
+            submitting.
+          */}
           <TabsContent value="check">
-            <Card>
-              <CardHeader>
-                <CardTitle>Cek Status Pendaftaran</CardTitle>
-                <CardDescription>
-                  Masukkan nomor pendaftaran untuk melihat status
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Contoh: PSB-2024-0001"
-                    className="flex-1"
-                  />
-                  <Button>Cek Status</Button>
-                </div>
-                <p className="text-sm text-muted-foreground text-center">
-                  Nomor pendaftaran dikirimkan via SMS/WhatsApp setelah formulir
-                  disubmit.
-                </p>
-              </CardContent>
-            </Card>
+            <h2 className="mb-1 text-xl font-semibold">
+              Cek Status Pendaftaran
+            </h2>
+            <p className="mb-6 text-sm text-muted-foreground">
+              Masukkan nomor pendaftaran dan tanggal lahir calon santri. Nomor
+              pendaftaran ditampilkan setelah formulir berhasil dikirim —
+              simpan nomor tersebut untuk memantau proses seleksi.
+            </p>
+            <RegistrationTracker />
           </TabsContent>
         </Tabs>
 
@@ -1098,25 +1215,27 @@ export default function PublicPPDBPage() {
           <CardContent className="pt-6">
             <div className="flex flex-col md:flex-row items-center justify-between gap-6">
               <div>
-                <h4 className="font-semibold text-lg mb-2">Butuh Bantuan?</h4>
+                {/* h3, not h4: the preceding heading is an h2, and skipping a
+                    level breaks the document outline for screen readers. */}
+                <h3 className="font-semibold text-lg mb-2">Butuh Bantuan?</h3>
                 <p className="text-muted-foreground">
-                  Hubungi panitia PSB untuk informasi lebih lanjut
+                  Hubungi panitia SPMB untuk informasi lebih lanjut
                 </p>
               </div>
               <div className="flex flex-col sm:flex-row gap-4">
                 <a
-                  href="tel:+6281234567890"
+                  href={`tel:+${siteConfig.contact.phoneE164}`}
                   className="flex items-center gap-2 text-blue-600 hover:underline"
                 >
                   <Phone className="h-4 w-4" />
-                  0812-3456-7890
+                  {siteConfig.contact.phone}
                 </a>
                 <a
-                  href="mailto:psb@cipansor.id"
+                  href={`mailto:${siteConfig.contact.email}`}
                   className="flex items-center gap-2 text-blue-600 hover:underline"
                 >
                   <Mail className="h-4 w-4" />
-                  psb@cipansor.id
+                  {siteConfig.contact.email}
                 </a>
               </div>
             </div>
@@ -1124,14 +1243,10 @@ export default function PublicPPDBPage() {
         </Card>
       </main>
 
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <p className="text-gray-400">
-            © 2024 Yayasan Pendidikan Islam CIPANSOR. Semua hak dilindungi.
-          </p>
-        </div>
-      </footer>
+      {/* Shared site footer. The bespoke one here carried
+          "© 2024 Yayasan Pendidikan Islam CIPANSOR" — a stale year and the
+          wrong legal name (it is Yayasan Pesantren Cipansor). */}
+      <LandingFooter />
 
       {/* Success Dialog */}
       <Dialog open={!!successData} onOpenChange={() => setSuccessData(null)}>

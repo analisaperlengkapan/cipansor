@@ -59,7 +59,7 @@ import {
   CheckCircle,
   Clock,
   Lock,
-  DollarSign,
+  Banknote,
   Users,
   TrendingUp,
   AlertCircle,
@@ -352,7 +352,7 @@ export default function PayrollPeriodDetailPage({ params }: PageProps) {
                     {payPayroll.isPending ? (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     ) : (
-                      <DollarSign className="mr-2 h-4 w-4" />
+                      <Banknote className="mr-2 h-4 w-4" />
                     )}
                     Bayar Semua ({calculatedCount + approvedCount})
                   </Button>
@@ -384,7 +384,7 @@ export default function PayrollPeriodDetailPage({ params }: PageProps) {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Gaji Pokok</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
+              <Banknote className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
@@ -491,7 +491,7 @@ export default function PayrollPeriodDetailPage({ params }: PageProps) {
                     onClick={handlePaySelected}
                     disabled={payPayroll.isPending}
                   >
-                    <DollarSign className="mr-2 h-4 w-4" />
+                    <Banknote className="mr-2 h-4 w-4" />
                     Bayar ({selectedPayrolls.length})
                   </Button>
                 </div>

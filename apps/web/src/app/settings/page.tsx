@@ -1,4 +1,5 @@
 "use client";
+import { MainLayout } from "@/components/layout";
 
 /**
  * Settings Page
@@ -78,11 +79,11 @@ const DEFAULT_SETTINGS: AppSettings = {
 
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { api } from "@/lib/api";
-import { useAuthStore } from "@/stores/auth";
-import { getActiveRoleCode } from "@/lib/rbac";
 import { User, Lock } from "lucide-react";
 import { useI18n } from "@/providers/i18n-provider";
+import { api } from "@/lib/api";
+import { useAuthStore } from "@/stores/auth";
+import { getPrimaryRoleCode } from "@/lib/rbac";
 
 interface ChannelPolicy {
   EMAIL: boolean;
@@ -91,9 +92,10 @@ interface ChannelPolicy {
 }
 
 /**
- * System-wide notification channel switches (super admin only): choose
- * whether the system sends via email, SMS, and/or WhatsApp. In-app
- * notifications are always on.
+ * System-wide notification channel switches (super admin only): choose whether
+ * the system delivers via email, SMS, and/or WhatsApp. In-app notifications are
+ * always on. Backed by the NOTIFICATION_CHANNELS setting the API reads before
+ * fanning out any external notification (e.g. the monthly SPP reminder).
  */
 function SystemChannelPolicyCard() {
   const [policy, setPolicy] = useState<ChannelPolicy | null>(null);
@@ -166,10 +168,9 @@ function SystemChannelPolicyCard() {
   );
 }
 
-export default function SettingsPage() {
+function SettingsPageContent() {
   const { user } = useAuthStore();
-  const isSuperAdmin = getActiveRoleCode(user) === "SUPER_ADMIN";
-
+  const isSuperAdmin = getPrimaryRoleCode(user) === "SUPER_ADMIN";
   const { locale, setLocale } = useI18n();
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
   const [isSaving, setIsSaving] = useState(false);
@@ -401,7 +402,6 @@ export default function SettingsPage() {
         </TabsContent>
 
         <TabsContent value="notifications" className="space-y-4">
-          {isSuperAdmin && <SystemChannelPolicyCard />}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -536,6 +536,8 @@ export default function SettingsPage() {
               </div>
             </CardContent>
           </Card>
+
+          {isSuperAdmin && <SystemChannelPolicyCard />}
         </TabsContent>
 
         <TabsContent value="profile" className="space-y-4">
@@ -558,7 +560,7 @@ export default function SettingsPage() {
                 <div className="space-y-2">
                   <Label>Email</Label>
                   <div className="p-3 rounded-md bg-muted/50 border">
-                    admin@cipansor.id
+                    admin@cipansor.or.id
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -649,5 +651,13 @@ export default function SettingsPage() {
         </Button>
       </div>
     </div>
+  );
+}
+
+export default function SettingsPageWithShell() {
+  return (
+    <MainLayout>
+      <SettingsPageContent />
+    </MainLayout>
   );
 }

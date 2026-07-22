@@ -1,4 +1,5 @@
 "use client";
+import { MainLayout } from "@/components/layout";
 
 import { useState } from "react";
 import Link from "next/link";
@@ -71,7 +72,7 @@ const statusColors: Record<AlumniStatus, string> = {
   INACTIVE: "bg-gray-100 text-gray-800",
 };
 
-export default function AlumniPage() {
+function AlumniPageContent() {
   const [activeTab, setActiveTab] = useState("alumni");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -729,5 +730,13 @@ export default function AlumniPage() {
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+export default function AlumniPageWithShell() {
+  return (
+    <MainLayout>
+      <AlumniPageContent />
+    </MainLayout>
   );
 }

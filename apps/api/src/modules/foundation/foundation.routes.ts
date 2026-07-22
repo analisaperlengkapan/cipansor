@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { UserRole } from '@prisma/client';
+import { RoleCode } from '@prisma/client';
 import * as controller from './foundation.controller';
 import * as accreditationController from './accreditation.controller';
 import { authenticate, authorize } from '../../middleware/auth';
@@ -9,6 +9,35 @@ import { queryFoundationSchema, queryBoardMemberSchema, queryDocumentSchema } fr
 const router = Router();
 
 router.use(authenticate);
+
+/**
+ * This module is the yayasan's own workspace, so the yayasan governance roles
+ * must be able to read it. Every route here used to be
+ * `authorize(UserRole.SUPER_ADMIN)`, and SUPER_ADMIN is an identity mapping —
+ * it does NOT expand to the YAYASAN_* RoleCodes. The result was that the
+ * ketua, pengawas and pembina got 403 on every link their own sidebar showed
+ * them.
+ */
+const YAYASAN_READ = [
+  RoleCode.SUPER_ADMIN,
+  RoleCode.YAYASAN_PEMBINA,
+  RoleCode.YAYASAN_KETUA,
+  RoleCode.YAYASAN_SEKRETARIS,
+  RoleCode.YAYASAN_BENDAHARA,
+  RoleCode.YAYASAN_ANGGOTA,
+  RoleCode.YAYASAN_PENGAWAS,
+];
+
+/**
+ * Writes stay narrow. Pengawas is an internal auditor and anggota is an
+ * ordinary board member — neither should be able to edit the record they
+ * oversee, and bendahara's remit is finance, not governance documents.
+ */
+const YAYASAN_WRITE = [
+  RoleCode.SUPER_ADMIN,
+  RoleCode.YAYASAN_KETUA,
+  RoleCode.YAYASAN_SEKRETARIS,
+];
 
 // ==================== FOUNDATIONS ====================
 
@@ -39,7 +68,7 @@ router.use(authenticate);
  */
 router.get(
   '/',
-  authorize(UserRole.SUPER_ADMIN),
+  authorize(...YAYASAN_READ),
   validateQuery(queryFoundationSchema),
   controller.getFoundations
 );
@@ -81,47 +110,9 @@ router.get(
  *       201:
  *         description: Foundation created
  */
-router.post('/', authorize(UserRole.SUPER_ADMIN), controller.createFoundation);
+router.post('/', authorize(...YAYASAN_WRITE), controller.createFoundation);
 
-/**
- * @swagger
- * /api/foundation/{id}:
- *   get:
- *     summary: Get foundation by ID
- *     tags: [Foundation]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Foundation details
- */
-router.get('/:id', authorize(UserRole.SUPER_ADMIN), controller.getFoundationById);
 
-/**
- * @swagger
- * /api/foundation/{id}/stats:
- *   get:
- *     summary: Get foundation statistics
- *     tags: [Foundation]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Foundation statistics (units, students, staff)
- */
-router.get('/:id/stats', authorize(UserRole.SUPER_ADMIN), controller.getFoundationStats);
 
 // ==================== EXECUTIVE DASHBOARD ANALYTICS ====================
 
@@ -137,7 +128,7 @@ router.get('/:id/stats', authorize(UserRole.SUPER_ADMIN), controller.getFoundati
  *       200:
  *         description: Executive summary with totals and growth
  */
-router.get('/stats/executive', authorize(UserRole.SUPER_ADMIN), controller.getExecutiveSummary);
+router.get('/stats/executive', authorize(...YAYASAN_READ), controller.getExecutiveSummary);
 
 /**
  * @swagger
@@ -151,7 +142,7 @@ router.get('/stats/executive', authorize(UserRole.SUPER_ADMIN), controller.getEx
  *       200:
  *         description: Financial data with month comparison and unit breakdown
  */
-router.get('/stats/financial', authorize(UserRole.SUPER_ADMIN), controller.getFinancialOverview);
+router.get('/stats/financial', authorize(...YAYASAN_READ), controller.getFinancialOverview);
 
 /**
  * @swagger
@@ -165,53 +156,15 @@ router.get('/stats/financial', authorize(UserRole.SUPER_ADMIN), controller.getFi
  *       200:
  *         description: Unit comparison with student/teacher ratios
  */
-router.get('/stats/units', authorize(UserRole.SUPER_ADMIN), controller.getUnitComparison);
+router.get('/stats/units', authorize(...YAYASAN_READ), controller.getUnitComparison);
 
-/**
- * @swagger
- * /api/foundation/{id}:
- *   put:
- *     summary: Update foundation
- *     tags: [Foundation]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Foundation updated
- */
-router.put('/:id', authorize(UserRole.SUPER_ADMIN), controller.updateFoundation);
 
-/**
- * @swagger
- * /api/foundation/{id}:
- *   delete:
- *     summary: Delete foundation
- *     tags: [Foundation]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       204:
- *         description: Foundation deleted
- */
-router.delete('/:id', authorize(UserRole.SUPER_ADMIN), controller.deleteFoundation);
 
 // ==================== BOARD MEMBERS ====================
 
 /**
  * @swagger
- * /api/foundation/board-members/list:
+ * /api/foundation/board-members:
  *   get:
  *     summary: List board members
  *     tags: [Foundation]
@@ -239,8 +192,8 @@ router.delete('/:id', authorize(UserRole.SUPER_ADMIN), controller.deleteFoundati
  *         description: List of board members
  */
 router.get(
-  '/board-members/list',
-  authorize(UserRole.SUPER_ADMIN),
+  '/board-members',
+  authorize(...YAYASAN_READ),
   validateQuery(queryBoardMemberSchema),
   controller.getBoardMembers
 );
@@ -285,7 +238,7 @@ router.get(
  *       201:
  *         description: Board member added
  */
-router.post('/board-members', authorize(UserRole.SUPER_ADMIN), controller.createBoardMember);
+router.post('/board-members', authorize(...YAYASAN_WRITE), controller.createBoardMember);
 
 /**
  * @swagger
@@ -305,7 +258,7 @@ router.post('/board-members', authorize(UserRole.SUPER_ADMIN), controller.create
  *       200:
  *         description: Board member details
  */
-router.get('/board-members/:id', authorize(UserRole.SUPER_ADMIN), controller.getBoardMemberById);
+router.get('/board-members/:id', authorize(...YAYASAN_READ), controller.getBoardMemberById);
 
 /**
  * @swagger
@@ -325,7 +278,7 @@ router.get('/board-members/:id', authorize(UserRole.SUPER_ADMIN), controller.get
  *       200:
  *         description: Board member updated
  */
-router.put('/board-members/:id', authorize(UserRole.SUPER_ADMIN), controller.updateBoardMember);
+router.put('/board-members/:id', authorize(...YAYASAN_WRITE), controller.updateBoardMember);
 
 /**
  * @swagger
@@ -356,7 +309,7 @@ router.put('/board-members/:id', authorize(UserRole.SUPER_ADMIN), controller.upd
  */
 router.patch(
   '/board-members/:id/end-term',
-  authorize(UserRole.SUPER_ADMIN),
+  authorize(...YAYASAN_WRITE),
   controller.endBoardMemberTerm
 );
 
@@ -378,13 +331,13 @@ router.patch(
  *       204:
  *         description: Board member deleted
  */
-router.delete('/board-members/:id', authorize(UserRole.SUPER_ADMIN), controller.deleteBoardMember);
+router.delete('/board-members/:id', authorize(...YAYASAN_WRITE), controller.deleteBoardMember);
 
 // ==================== DOCUMENTS ====================
 
 /**
  * @swagger
- * /api/foundation/documents/list:
+ * /api/foundation/documents:
  *   get:
  *     summary: List foundation documents
  *     tags: [Foundation]
@@ -412,8 +365,8 @@ router.delete('/board-members/:id', authorize(UserRole.SUPER_ADMIN), controller.
  *         description: List of foundation documents
  */
 router.get(
-  '/documents/list',
-  authorize(UserRole.SUPER_ADMIN),
+  '/documents',
+  authorize(...YAYASAN_READ),
   validateQuery(queryDocumentSchema),
   controller.getDocuments
 );
@@ -459,7 +412,7 @@ router.get(
  *       201:
  *         description: Document added
  */
-router.post('/documents', authorize(UserRole.SUPER_ADMIN), controller.createDocument);
+router.post('/documents', authorize(...YAYASAN_WRITE), controller.createDocument);
 
 /**
  * @swagger
@@ -479,7 +432,7 @@ router.post('/documents', authorize(UserRole.SUPER_ADMIN), controller.createDocu
  *       200:
  *         description: Document details
  */
-router.get('/documents/:id', authorize(UserRole.SUPER_ADMIN), controller.getDocumentById);
+router.get('/documents/:id', authorize(...YAYASAN_READ), controller.getDocumentById);
 
 /**
  * @swagger
@@ -499,7 +452,7 @@ router.get('/documents/:id', authorize(UserRole.SUPER_ADMIN), controller.getDocu
  *       200:
  *         description: Document updated
  */
-router.put('/documents/:id', authorize(UserRole.SUPER_ADMIN), controller.updateDocument);
+router.put('/documents/:id', authorize(...YAYASAN_WRITE), controller.updateDocument);
 
 /**
  * @swagger
@@ -519,7 +472,7 @@ router.put('/documents/:id', authorize(UserRole.SUPER_ADMIN), controller.updateD
  *       204:
  *         description: Document deleted
  */
-router.delete('/documents/:id', authorize(UserRole.SUPER_ADMIN), controller.deleteDocument);
+router.delete('/documents/:id', authorize(...YAYASAN_WRITE), controller.deleteDocument);
 
 // ==================== ACCREDITATION ====================
 
@@ -551,7 +504,7 @@ router.get('/accreditation/standards', accreditationController.getStandards);
  */
 router.get(
   '/accreditation/readiness',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  authorize(...YAYASAN_READ),
   accreditationController.getReadinessOverview
 );
 
@@ -671,8 +624,97 @@ router.post('/accreditation/units/:unitId/simulate', accreditationController.sim
  */
 router.post(
   '/accreditation/assessment',
-  authorize(UserRole.SUPER_ADMIN),
+  authorize(...YAYASAN_WRITE),
   accreditationController.submitAssessment
 );
+
+
+// ==================== FOUNDATION BY ID ====================
+//
+// Registered last on purpose. `/:id` is a single-segment wildcard, so if these
+// sit above the literal routes it swallows `/board-members`, `/documents` and
+// `/stats` — which is exactly why the list endpoints had been given an
+// artificial `/list` suffix. Express matches in registration order; keep every
+// literal path above this line.
+
+/**
+ * @swagger
+ * /api/foundation/{id}:
+ *   get:
+ *     summary: Get foundation by ID
+ *     tags: [Foundation]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Foundation details
+ */
+router.get('/:id', authorize(...YAYASAN_READ), controller.getFoundationById);
+
+/**
+ * @swagger
+ * /api/foundation/{id}/stats:
+ *   get:
+ *     summary: Get foundation statistics
+ *     tags: [Foundation]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Foundation statistics (units, students, staff)
+ */
+router.get('/:id/stats', authorize(...YAYASAN_READ), controller.getFoundationStats);
+
+/**
+ * @swagger
+ * /api/foundation/{id}:
+ *   put:
+ *     summary: Update foundation
+ *     tags: [Foundation]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Foundation updated
+ */
+router.put('/:id', authorize(...YAYASAN_WRITE), controller.updateFoundation);
+
+/**
+ * @swagger
+ * /api/foundation/{id}:
+ *   delete:
+ *     summary: Delete foundation
+ *     tags: [Foundation]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       204:
+ *         description: Foundation deleted
+ */
+router.delete('/:id', authorize(...YAYASAN_WRITE), controller.deleteFoundation);
 
 export default router;

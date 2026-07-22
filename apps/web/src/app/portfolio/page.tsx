@@ -1,4 +1,5 @@
 "use client";
+import { MainLayout } from "@/components/layout";
 
 /**
  * Portfolio Page - Digital Student Portfolio
@@ -95,7 +96,7 @@ const typeColors: Record<string, string> = {
   OTHER: "bg-gray-100 text-gray-700",
 };
 
-export default function PortfolioPage() {
+function PortfolioPageContent() {
   const router = useRouter();
   const { user } = useAuthStore();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -551,5 +552,13 @@ export default function PortfolioPage() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+export default function PortfolioPageWithShell() {
+  return (
+    <MainLayout>
+      <PortfolioPageContent />
+    </MainLayout>
   );
 }

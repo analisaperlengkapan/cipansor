@@ -75,7 +75,9 @@ describe('middleware/auth RBAC', () => {
       expect(deriveLegacyRole(RoleCode.LABORAN)).toBe('STAFF');
       // Komite/alumni are deliberately unmapped: fall back to the code itself
       expect(deriveLegacyRole(RoleCode.SDIT_KOMITE)).toBe(RoleCode.SDIT_KOMITE);
-      expect(deriveLegacyRole(RoleCode.SDIT_ALUMNI)).toBe(RoleCode.SDIT_ALUMNI);
+      // SDIT_ALUMNI was the second example here; primary-school alumni no
+      // longer have a role, so SMPIT_ALUMNI now stands in for the alumni case.
+      expect(deriveLegacyRole(RoleCode.SMPIT_ALUMNI)).toBe(RoleCode.SMPIT_ALUMNI);
     });
 
     it('business/PT administration roles are NOT system admins', () => {

@@ -1,13 +1,23 @@
 import { describe, it, expect } from "vitest";
+import fs from "node:fs";
+import path from "node:path";
 import {
   canAccessRoute,
   deriveLegacyRole,
-  getActiveRoleCode,
   getDashboardForRole,
   getEffectiveRole,
   isLegacyRole,
+  roleRouteAccess,
   type LegacyRole,
 } from "./rbac";
+import {
+  getNavigationForRoleCode,
+  type NavGroup,
+} from "@/config/navigation";
+import { DEMO_ACCOUNTS } from "@cipansor/shared";
+
+/** All 81 RoleCodes, taken from the demo-account catalogue (one per role). */
+const ALL_ROLE_CODES = DEMO_ACCOUNTS.map((a) => a.roleCode);
 
 describe("rbac — legacy bucket derivation", () => {
   it("identifies the six legacy buckets", () => {
@@ -72,7 +82,7 @@ describe("rbac — legacy bucket derivation", () => {
     expect(deriveLegacyRole("LABORAN")).toBe("STAFF");
     // Komite/alumni deliberately unmapped (RoleCode-native authorization)
     expect(deriveLegacyRole("SDIT_KOMITE")).toBeUndefined();
-    expect(deriveLegacyRole("SDIT_ALUMNI")).toBeUndefined();
+    expect(deriveLegacyRole("SMPIT_ALUMNI")).toBeUndefined();
   });
 });
 
@@ -100,7 +110,7 @@ describe("rbac — getEffectiveRole", () => {
   });
 
   it("derives from a RoleCode sitting in user.role", () => {
-    expect(getEffectiveRole({ role: "YAYASAN_ADMIN" })).toBe("UNIT_ADMIN");
+    expect(getEffectiveRole({ role: "YAYASAN_KETUA" })).toBe("UNIT_ADMIN");
   });
 
   it("returns undefined for empty/unknown input", () => {
@@ -128,118 +138,160 @@ describe("rbac — getDashboardForRole", () => {
   });
 });
 
-describe("rbac — canAccessRoute (RoleCode-native)", () => {
+describe("rbac — canAccessRoute", () => {
   it("super admin reaches every route", () => {
     expect(canAccessRoute("SUPER_ADMIN", "/anything/deep")).toBe(true);
     expect(canAccessRoute("SUPER_ADMIN", "/settings/roles")).toBe(true);
   });
 
-  it("parent is confined to /parent (+ shared info routes)", () => {
-    expect(canAccessRoute("SDIT_ORANG_TUA", "/parent")).toBe(true);
-    expect(canAccessRoute("SDIT_ORANG_TUA", "/parent/finance")).toBe(true);
-    expect(canAccessRoute("SDIT_ORANG_TUA", "/dashboard")).toBe(false);
-    expect(canAccessRoute("SDIT_ORANG_TUA", "/students")).toBe(false);
+  it("parent is confined to /parent", () => {
+    expect(canAccessRoute("PARENT", "/parent")).toBe(true);
+    expect(canAccessRoute("PARENT", "/parent/finance")).toBe(true);
+    expect(canAccessRoute("PARENT", "/dashboard")).toBe(false);
+    expect(canAccessRoute("PARENT", "/students")).toBe(false);
   });
 
-  it("teacher can reach teaching routes but not admin settings", () => {
-    expect(canAccessRoute("SDIT_GURU", "/teacher")).toBe(true);
-    expect(canAccessRoute("SDIT_GURU", "/tahfidz/murojaah")).toBe(true);
-    expect(canAccessRoute("SDIT_GURU", "/settings")).toBe(false);
-    expect(canAccessRoute("SDIT_GURU", "/finance")).toBe(false);
-  });
-
-  it("covers the per-function staff roles (registry-driven)", () => {
-    expect(canAccessRoute("PUSTAKAWAN", "/library")).toBe(true);
-    expect(canAccessRoute("PUSTAKAWAN", "/finance")).toBe(false);
-    expect(canAccessRoute("PERAWAT", "/health")).toBe(true);
-    expect(canAccessRoute("BUSINESS_MANAGER", "/canteen")).toBe(true);
-    expect(canAccessRoute("MUSYRIF", "/dormitories")).toBe(true);
-    expect(canAccessRoute("MUSYRIF", "/users")).toBe(false);
-    expect(canAccessRoute("SDIT_KEPALA_SEKOLAH", "/users")).toBe(false);
-    expect(canAccessRoute("SDIT_KEPALA_SEKOLAH", "/hr")).toBe(false);
-    expect(canAccessRoute("SDIT_KEPALA_SEKOLAH", "/admissions")).toBe(false);
-    expect(canAccessRoute("SDIT_KEPALA_SEKOLAH", "/analytics")).toBe(true);
-  });
-
-  it("always allows the shared utility routes", () => {
-    for (const role of ["SDIT_SISWA", "MUSYRIF", "SDIT_KOMITE", "PT_ALUMNI"]) {
-      expect(canAccessRoute(role, "/profile")).toBe(true);
-      expect(canAccessRoute(role, "/notifications")).toBe(true);
-    }
+  it("teacher can reach teaching routes but not foundation administration", () => {
+    expect(canAccessRoute("TEACHER", "/teacher")).toBe(true);
+    expect(canAccessRoute("TEACHER", "/tahfidz/murojaah")).toBe(true);
+    // /settings is per-user preferences (appearance/language/notifications),
+    // linked from the header menu for every signed-in user — not admin config.
+    expect(canAccessRoute("TEACHER", "/settings")).toBe(true);
+    expect(canAccessRoute("TEACHER", "/finance")).toBe(false);
+    expect(canAccessRoute("TEACHER", "/units")).toBe(false);
+    expect(canAccessRoute("TEACHER", "/procurement")).toBe(false);
   });
 
   it("unit admin can reach talenta (API authorizes UNIT_ADMIN on /talenta routes)", () => {
-    expect(canAccessRoute("SDIT_ADMIN", "/talenta")).toBe(true);
-    expect(canAccessRoute("SDIT_ADMIN", "/talenta/succession")).toBe(true);
+    expect(canAccessRoute("UNIT_ADMIN", "/talenta")).toBe(true);
+    expect(canAccessRoute("UNIT_ADMIN", "/talenta/succession")).toBe(true);
   });
 
-  it("tata usaha can reach finance but not the teacher dashboard", () => {
-    expect(canAccessRoute("SDIT_TATA_USAHA", "/finance")).toBe(true);
-    expect(canAccessRoute("SDIT_TATA_USAHA", "/teacher")).toBe(false);
+  it("staff can reach finance but not the teacher dashboard", () => {
+    expect(canAccessRoute("STAFF", "/finance")).toBe(true);
+    expect(canAccessRoute("STAFF", "/teacher")).toBe(false);
   });
 
   it("student is confined to student routes", () => {
-    expect(canAccessRoute("SDIT_SISWA", "/student")).toBe(true);
-    expect(canAccessRoute("SDIT_SISWA", "/schedule")).toBe(true);
-    expect(canAccessRoute("SDIT_SISWA", "/finance")).toBe(false);
+    expect(canAccessRoute("STUDENT", "/student")).toBe(true);
+    expect(canAccessRoute("STUDENT", "/schedule")).toBe(true);
+    expect(canAccessRoute("STUDENT", "/finance")).toBe(false);
   });
 
   it("denies when role is undefined", () => {
     expect(canAccessRoute(undefined, "/dashboard")).toBe(false);
   });
 
-  it("every representative role can open its own dashboard", () => {
-    for (const roleCode of [
-      "YAYASAN_ADMIN",
-      "SDIT_ADMIN",
-      "SDIT_GURU",
-      "MUSYRIF",
-      "SDIT_TATA_USAHA",
-      "PUSTAKAWAN",
-      "SDIT_SISWA",
-      "SDIT_ORANG_TUA",
-    ]) {
-      expect(canAccessRoute(roleCode, getDashboardForRole(roleCode))).toBe(true);
+  it("every non-super role has a non-empty allow list", () => {
+    (
+      Object.keys(roleRouteAccess) as LegacyRole[]
+    ).forEach((role) => {
+      expect(roleRouteAccess[role].length).toBeGreaterThan(0);
+    });
+  });
+});
+
+describe("rbac — navigation and route access stay in sync", () => {
+  // These two files are one contract seen from both ends: navigation.ts decides
+  // what a role is shown, rbac.ts decides what it may open. When they drift the
+  // sidebar renders links that bounce the user to /unauthorized — which is
+  // exactly what happened before this suite existed (188 of 292 links dead).
+  const navToBucket: Array<[NavGroup[], LegacyRole]> = [
+    [getNavigationForRoleCode("SUPER_ADMIN"), "SUPER_ADMIN"],
+    [getNavigationForRoleCode("YAYASAN_KETUA"), "UNIT_ADMIN"],
+    [getNavigationForRoleCode("SMPIT_GURU"), "TEACHER"],
+    [getNavigationForRoleCode("SMPIT_KEPALA_SEKOLAH"), "TEACHER"],
+    [getNavigationForRoleCode("PESANTREN_PENGASUH"), "TEACHER"],
+    [getNavigationForRoleCode("MUSYRIF"), "TEACHER"],
+    [getNavigationForRoleCode("PT_REKTOR"), "TEACHER"],
+    [getNavigationForRoleCode("PT_DOSEN"), "TEACHER"],
+    [getNavigationForRoleCode("SMPIT_TATA_USAHA"), "STAFF"],
+    [getNavigationForRoleCode("SDIT_KOMITE"), "STAFF"],
+    [getNavigationForRoleCode("SMPIT_SISWA"), "STUDENT"],
+    [getNavigationForRoleCode("PT_MAHASISWA"), "STUDENT"],
+    [getNavigationForRoleCode("SMPIT_ALUMNI"), "STUDENT"],
+    [getNavigationForRoleCode("SMPIT_ORANG_TUA"), "PARENT"],
+  ];
+
+  it.each(navToBucket)(
+    "every rendered sidebar link is reachable by its bucket",
+    (nav, bucket) => {
+      const unreachable = nav
+        .flatMap((group) => group.items.map((item) => item.href))
+        .filter((href) => !canAccessRoute(bucket, href));
+      expect(unreachable).toEqual([]);
+    },
+  );
+
+  it("gives every one of the 81 RoleCodes a real menu, not the stub", () => {
+    // The fallback nav is Dashboard + Notifications + Settings. Any RoleCode
+    // landing on it has simply been forgotten.
+    const stubSize = 3;
+    const forgotten = ALL_ROLE_CODES.filter((code) => {
+      const nav = getNavigationForRoleCode(code);
+      const items = nav.flatMap((g) => g.items);
+      return items.length <= stubSize;
+    });
+    expect(forgotten).toEqual([]);
+  });
+});
+
+describe("navigation — every menu link points at a page that exists", () => {
+  // /foundation/board shipped in the Yayasan sidebar with no page behind it.
+  // Because Next prefetches sidebar links, that 404 fired on *every* page load
+  // for those roles. Walk the app directory so a missing page fails here first.
+  const APP_DIR = path.join(process.cwd(), "src", "app");
+
+  function routeExists(href: string): boolean {
+    const segments = href.split("/").filter(Boolean);
+    let dir = APP_DIR;
+    for (const segment of segments) {
+      const literal = path.join(dir, segment);
+      if (fs.existsSync(literal) && fs.statSync(literal).isDirectory()) {
+        dir = literal;
+        continue;
+      }
+      // fall back to a dynamic segment ([id], [slug], ...)
+      const dynamic = fs
+        .readdirSync(dir, { withFileTypes: true })
+        .find((e) => e.isDirectory() && e.name.startsWith("["));
+      if (!dynamic) return false;
+      dir = path.join(dir, dynamic.name);
     }
-  });
-});
+    return fs.existsSync(path.join(dir, "page.tsx"));
+  }
 
-describe("rbac — getActiveRoleCode", () => {
-  it("prefers the primary RoleCode assignment", () => {
-    const user = {
-      role: "TEACHER",
-      userRoles: [
-        { isPrimary: false, role: { code: "SDIT_GURU" } },
-        { isPrimary: true, role: { code: "MUSYRIF" } },
-      ],
-    };
-    expect(getActiveRoleCode(user)).toBe("MUSYRIF");
+  const ROLE_SAMPLE = [
+    "SUPER_ADMIN",
+    "YAYASAN_KETUA",
+    "SMPIT_GURU",
+    "SMPIT_KEPALA_SEKOLAH",
+    "PESANTREN_PENGASUH",
+    "MUSYRIF",
+    "PT_REKTOR",
+    "PT_DOSEN",
+    "PT_MAHASISWA",
+    "SMPIT_TATA_USAHA",
+    "SDIT_KOMITE",
+    "SMPIT_SISWA",
+    "SMPIT_ALUMNI",
+    "SMPIT_ORANG_TUA",
+  ];
+
+  it.each(ROLE_SAMPLE)("%s has no dead menu links", (roleCode) => {
+    const dead = getNavigationForRoleCode(roleCode)
+      .flatMap((group) => group.items.map((item) => item.href))
+      .filter((href) => !routeExists(href));
+    expect(dead).toEqual([]);
   });
 
-  it("accepts SUPER_ADMIN in user.role (also a RoleCode) but no other bucket", () => {
-    expect(getActiveRoleCode({ role: "SUPER_ADMIN" })).toBe("SUPER_ADMIN");
-    expect(getActiveRoleCode({ role: "PARENT" })).toBeUndefined();
-  });
-
-  it("passes a raw RoleCode in user.role through", () => {
-    expect(getActiveRoleCode({ role: "PUSTAKAWAN" })).toBe("PUSTAKAWAN");
-  });
-
-  it("returns undefined without any role information", () => {
-    expect(getActiveRoleCode(null)).toBeUndefined();
-    expect(getActiveRoleCode({})).toBeUndefined();
-  });
-});
-
-describe("rbac — dashboards per RoleCode", () => {
-  it("routes pesantren educators to /musyrif", () => {
-    expect(getDashboardForRole("MUSYRIF")).toBe("/musyrif");
-    expect(getDashboardForRole("USTADZ")).toBe("/musyrif");
-  });
-  it("routes school teachers to /teacher", () => {
-    expect(getDashboardForRole("SDIT_GURU")).toBe("/teacher");
-  });
-  it("routes support staff to /staff", () => {
-    expect(getDashboardForRole("PUSTAKAWAN")).toBe("/staff");
+  it.each(ROLE_SAMPLE)("%s lists no route twice", (roleCode) => {
+    const hrefs = getNavigationForRoleCode(roleCode).flatMap((group) =>
+      group.items.map((item) => item.href),
+    );
+    const duplicated = [...new Set(hrefs)].filter(
+      (href) => hrefs.filter((h) => h === href).length > 1,
+    );
+    expect(duplicated).toEqual([]);
   });
 });

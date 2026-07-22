@@ -1,37 +1,133 @@
 /**
- * Client-side RBAC helpers — used by `middleware.ts`, `ProtectedRoute`, and
- * the role-scoped layouts.
+ * Client-side RBAC helpers — the single source of truth for the web app's
+ * route protection and dashboard routing (used by `middleware.ts` and the
+ * role-scoped layouts).
  *
- * Two sources of truth, both shared:
- *  - Role vocabulary & bucket grouping: `@cipansor/shared` (roles.ts), kept
- *    in sync with the backend by an API-side test.
- *  - Route access: derived from the navigation registry
- *    (`@/config/nav-registry`) — a role may open exactly the routes its menu
- *    links to (plus a few always-allowed utility routes). No second
- *    hand-maintained allow-list.
+ * The backend already collapses the rich `RoleCode` vocabulary
+ * (`SDIT_GURU`, `YAYASAN_BENDAHARA`, …) down to a legacy `UserRole` bucket
+ * via `deriveLegacyRole()` (see `apps/api/src/middleware/auth.ts`) and ships
+ * it as `user.role`. This module mirrors that mapping so the web side can
+ * derive the same bucket directly from `user.userRoles[].role.code` when the
+ * legacy field is absent — keeping the two vocabularies aligned without
+ * forcing a big-bang migration of the ~40 pages that still read `user.role`.
  *
- * Everything here is RoleCode-native. The six coarse `LegacyRole` buckets
- * survive only as a GROUPING (derived from the RoleCode) for pages that
- * branch on "is this an admin/teacher/student"-level distinctions.
+ * IMPORTANT: `ROLE_CODE_TO_LEGACY` must stay in sync with the backend's
+ * `LEGACY_ROLE_EXPANSION`. If you add a RoleCode there, mirror it here.
  */
 
-import {
-  ROLE_CODE_TO_LEGACY,
-  isLegacyRole,
-  legacyRoleFor,
-  type LegacyRole,
-} from "@cipansor/shared";
-import { roleCodeCanAccess } from "@/config/nav-registry";
+/** The six coarse buckets the route/dashboard maps are keyed on. */
+export type LegacyRole =
+  | "SUPER_ADMIN"
+  | "UNIT_ADMIN"
+  | "TEACHER"
+  | "STAFF"
+  | "STUDENT"
+  | "PARENT";
 
-export { ROLE_CODE_TO_LEGACY, isLegacyRole };
-export type { LegacyRole };
+const LEGACY_ROLES: readonly LegacyRole[] = [
+  "SUPER_ADMIN",
+  "UNIT_ADMIN",
+  "TEACHER",
+  "STAFF",
+  "STUDENT",
+  "PARENT",
+];
 
-/** Derive the legacy bucket for a RoleCode, or `undefined` if unmapped. */
-export function deriveLegacyRole(roleCode: string): LegacyRole | undefined {
-  return legacyRoleFor(roleCode);
-}
+/**
+ * RoleCode → legacy bucket. Mirrors the backend `LEGACY_ROLE_EXPANSION`
+ * inverted (first mapping wins). Governance Yayasan roles intentionally
+ * collapse to `UNIT_ADMIN`, matching the backend.
+ */
+export const ROLE_CODE_TO_LEGACY: Record<string, LegacyRole> = {
+  SUPER_ADMIN: "SUPER_ADMIN",
 
-/** Role bucket → default dashboard landing route. */
+  // Yayasan governance + per-unit admins → UNIT_ADMIN
+  YAYASAN_PEMBINA: "UNIT_ADMIN",
+  YAYASAN_KETUA: "UNIT_ADMIN",
+  YAYASAN_SEKRETARIS: "UNIT_ADMIN",
+  YAYASAN_BENDAHARA: "UNIT_ADMIN",
+  YAYASAN_ANGGOTA: "UNIT_ADMIN",
+  YAYASAN_PENGAWAS: "UNIT_ADMIN",
+  TKQ_ADMIN: "UNIT_ADMIN",
+  SDIT_ADMIN: "UNIT_ADMIN",
+  SMPIT_ADMIN: "UNIT_ADMIN",
+  SMAQ_ADMIN: "UNIT_ADMIN",
+
+  // Teachers + kepala sekolah/wakasek/wali kelas/guru BK + pesantren
+  // educators (incl. gender-segregated variants) + PT academics → TEACHER
+  TKQ_GURU: "TEACHER",
+  SDIT_GURU: "TEACHER",
+  SMPIT_GURU: "TEACHER",
+  SMAQ_GURU: "TEACHER",
+  TKQ_KEPALA_SEKOLAH: "TEACHER",
+  SDIT_KEPALA_SEKOLAH: "TEACHER",
+  SMPIT_KEPALA_SEKOLAH: "TEACHER",
+  SMAQ_KEPALA_SEKOLAH: "TEACHER",
+  TKQ_WAKASEK: "TEACHER",
+  SDIT_WAKASEK: "TEACHER",
+  SMPIT_WAKASEK: "TEACHER",
+  SMAQ_WAKASEK: "TEACHER",
+  TKQ_WALI_KELAS: "TEACHER",
+  SDIT_WALI_KELAS: "TEACHER",
+  SMPIT_WALI_KELAS: "TEACHER",
+  SMAQ_WALI_KELAS: "TEACHER",
+  SMPIT_GURU_BK: "TEACHER",
+  SMAQ_GURU_BK: "TEACHER",
+  PESANTREN_PENGASUH: "TEACHER",
+  PESANTREN_DIREKTUR: "TEACHER",
+  USTADZ: "TEACHER",
+  MUSYRIF: "TEACHER",
+  MUSYRIFAH: "TEACHER",
+  MUHAFIDZ: "TEACHER",
+  MUHAFIDZAH: "TEACHER",
+  MURABBI: "TEACHER",
+  WALI_KAMAR: "TEACHER",
+  PT_REKTOR: "TEACHER",
+  PT_WAKIL_REKTOR: "TEACHER",
+  PT_DEKAN: "TEACHER",
+  PT_KAPRODI: "TEACHER",
+  PT_DOSEN: "TEACHER",
+
+  // Tata usaha + bendahara + pesantren/PT administration + business units
+  // → STAFF (business managers are NOT admins — see backend note)
+  TKQ_TATA_USAHA: "STAFF",
+  SDIT_TATA_USAHA: "STAFF",
+  SMPIT_TATA_USAHA: "STAFF",
+  SMAQ_TATA_USAHA: "STAFF",
+  TKQ_BENDAHARA: "STAFF",
+  SDIT_BENDAHARA: "STAFF",
+  SMPIT_BENDAHARA: "STAFF",
+  SMAQ_BENDAHARA: "STAFF",
+  PESANTREN_TATA_USAHA: "STAFF",
+  PT_TATA_USAHA: "STAFF",
+  PT_STAF_AKADEMIK: "STAFF",
+  PUSTAKAWAN: "STAFF",
+  PERAWAT: "STAFF",
+  KEAMANAN: "STAFF",
+  LABORAN: "STAFF",
+  BUSINESS_MANAGER: "STAFF",
+  BUSINESS_STAFF: "STAFF",
+
+  // Students → STUDENT
+  SDIT_SISWA: "STUDENT",
+  SMPIT_SISWA: "STUDENT",
+  SMAQ_SISWA: "STUDENT",
+  PT_MAHASISWA: "STUDENT",
+
+  // Parents → PARENT
+  TKQ_ORANG_TUA: "PARENT",
+  SDIT_ORANG_TUA: "PARENT",
+  SMPIT_ORANG_TUA: "PARENT",
+  SMAQ_ORANG_TUA: "PARENT",
+
+  // Komite and alumni are deliberately absent — this map mirrors the backend
+  // (apps/api middleware/auth.ts ROLE_CODE_TO_LEGACY_ROLE), which leaves them
+  // unmapped for RoleCode-native authorization. They still reach the app via
+  // the persisted `user.role` column, and their menus come from
+  // getNavigationForRoleCode(), which is RoleCode-based already.
+};
+
+/** Role → default dashboard landing route. */
 export const roleDashboardMap: Record<LegacyRole, string> = {
   SUPER_ADMIN: "/dashboard",
   UNIT_ADMIN: "/dashboard",
@@ -40,6 +136,211 @@ export const roleDashboardMap: Record<LegacyRole, string> = {
   STUDENT: "/student",
   PARENT: "/parent",
 };
+
+/**
+ * Role → allowed route prefixes (`"*"` = all).
+ *
+ * Kept in sync with `config/navigation.ts`: each bucket lists exactly what the
+ * navigations mapped to it expose, plus the routes every signed-in user needs.
+ * These two files are the same contract seen from opposite ends — if a sidebar
+ * shows a link, the middleware here must let it through, otherwise the user
+ * gets bounced to /unauthorized by a menu we drew ourselves. Add a nav item,
+ * add its prefix here.
+ *
+ * This is UX-level gating only. The real authorization boundary is the API,
+ * which checks permissions per RoleCode.
+ */
+export const roleRouteAccess: Record<LegacyRole, string[]> = {
+  SUPER_ADMIN: ["*"],
+  UNIT_ADMIN: [
+    "/academic-years",
+    "/admissions",
+    "/alumni",
+    "/analytics",
+    "/announcements",
+    "/assessment",
+    "/attendance",
+    "/calendar",
+    "/canteen",
+    "/cbt/banks",
+    "/classes",
+    "/counseling",
+    "/curriculum",
+    "/daily-report",
+    "/dashboard",
+    "/donation",
+    "/dormitories",
+    "/duty-roster",
+    "/e-office",
+    "/emis",
+    "/extracurricular",
+    "/facilities",
+    "/finance",
+    "/foundation",
+    "/health",
+    "/hr",
+    "/ibadah",
+    "/inventory",
+    "/kitab-progress",
+    "/laundry",
+    "/library",
+    "/marketing",
+    "/meals",
+    "/muhadatsah",
+    "/muhadhoroh",
+    "/muhasabah",
+    "/notifications",
+    "/permits",
+    "/pkg",
+    "/portfolio",
+    "/practicum",
+    "/procurement",
+    "/profile",
+    "/wakaf-infaq",
+    "/quality",
+    "/reception",
+    "/reports",
+    "/research",
+    "/rewards",
+    "/risk-management",
+    "/settings",
+    "/student-org",
+    "/students",
+    "/tahfidz",
+    "/takhosus",
+    "/talenta",
+    "/unauthorized",
+    "/units",
+    "/users",
+    "/violations",
+    "/wilayah",
+  ],
+  TEACHER: [
+    "/admissions",
+    "/alumni",
+    "/analytics",
+    "/announcements",
+    "/assessment",
+    "/assignments",
+    "/attendance",
+    "/canteen",
+    "/certificates",
+    "/classes",
+    "/counseling",
+    "/curriculum",
+    "/daily-report",
+    "/dashboard",
+    "/dormitories",
+    "/duty-roster",
+    "/extracurricular",
+    "/health",
+    "/homeroom",
+    "/hr",
+    "/ibadah",
+    "/kitab-progress",
+    "/laundry",
+    "/library",
+    "/litbang",
+    "/meals",
+    "/muhadatsah",
+    "/muhadhoroh",
+    "/muhasabah",
+    "/musyrif",
+    "/notifications",
+    "/permits",
+    "/pkg",
+    "/portfolio",
+    "/practicum",
+    "/profile",
+    "/quality",
+    "/rapor-pesantren",
+    "/reports",
+    "/research",
+    "/rewards",
+    "/schedule",
+    "/settings",
+    "/student-org",
+    "/students",
+    "/tahfidz",
+    "/takhosus",
+    "/teacher",
+    "/unauthorized",
+    "/users",
+    "/violations",
+  ],
+  STAFF: [
+    "/analytics",
+    "/announcements",
+    "/donation",
+    "/finance",
+    "/health",
+    "/lingkungan",
+    "/notifications",
+    "/permits",
+    "/profile",
+    "/quality",
+    "/reports",
+    "/rewards",
+    "/schedule",
+    "/settings",
+    "/staff",
+    "/students",
+    "/unauthorized",
+    "/violations",
+  ],
+  STUDENT: [
+    "/alumni",
+    "/announcements",
+    "/assessment",
+    "/assignments",
+    "/attendance",
+    "/certificates",
+    "/classes",
+    "/counseling",
+    "/donation",
+    "/extracurricular",
+    "/ibadah",
+    "/kitab-progress",
+    "/library",
+    "/muhadatsah",
+    "/muhadhoroh",
+    "/muhasabah",
+    "/notifications",
+    "/portfolio",
+    "/practicum",
+    "/profile",
+    "/quality/complaints",
+    "/research",
+    "/schedule",
+    "/settings",
+    "/student",
+    "/student-org",
+    "/tahfidz",
+    "/unauthorized",
+    "/wallet",
+  ],
+  PARENT: [
+    "/notifications",
+    "/parent",
+    "/profile",
+    "/quality/complaints",
+    "/settings",
+    "/unauthorized",
+  ],
+};
+
+/** Type guard: is this string one of the six legacy buckets? */
+export function isLegacyRole(value: unknown): value is LegacyRole {
+  return (
+    typeof value === "string" && LEGACY_ROLES.includes(value as LegacyRole)
+  );
+}
+
+/** Derive the legacy bucket for a RoleCode, or `undefined` if unmapped. */
+export function deriveLegacyRole(roleCode: string): LegacyRole | undefined {
+  if (isLegacyRole(roleCode)) return roleCode;
+  return ROLE_CODE_TO_LEGACY[roleCode];
+}
 
 /** Minimal shape of the persisted user needed for RBAC decisions. */
 export interface RbacUser {
@@ -51,73 +352,94 @@ export interface RbacUser {
 }
 
 /**
- * Resolve the user's ACTIVE RoleCode: the primary assignment first, then the
- * first assignment. `user.role` is only consulted when it already is a
- * RoleCode (e.g. SUPER_ADMIN) — every seeded account carries assignments.
+ * Resolve the effective legacy bucket for a user.
+ *
+ * Backward-compatible by design: the legacy `user.role` field (still emitted
+ * by the backend) wins when it is a valid bucket, so existing behavior is
+ * preserved exactly. Only when it is missing/invalid do we derive the bucket
+ * from the primary `userRoles[].role.code` (RoleCode) — the alignment path.
  */
-export function getActiveRoleCode(
+export function getEffectiveRole(
   user: RbacUser | null | undefined,
-): string | undefined {
+): LegacyRole | undefined {
   if (!user) return undefined;
+
+  if (isLegacyRole(user.role)) return user.role;
 
   const assignments = user.userRoles ?? [];
   const primary =
     assignments.find((a) => a?.isPrimary) ?? assignments[0] ?? undefined;
   const code = primary?.role?.code;
-  if (code) return code;
+  if (code) {
+    const derived = deriveLegacyRole(code);
+    if (derived) return derived;
+  }
 
-  if (typeof user.role === "string" && legacyRoleFor(user.role)) {
-    // A raw RoleCode sitting in user.role (SUPER_ADMIN is also a RoleCode).
-    if (!isLegacyRole(user.role) || user.role === "SUPER_ADMIN") {
-      return user.role;
-    }
+  // Last-ditch: a raw RoleCode sitting in `user.role`.
+  if (typeof user.role === "string") {
+    return deriveLegacyRole(user.role);
   }
   return undefined;
+}
+
+/** Can this role reach `pathname`? */
+export function canAccessRoute(
+  role: LegacyRole | undefined,
+  pathname: string,
+): boolean {
+  if (!role) return false;
+  const allowed = roleRouteAccess[role];
+  if (!allowed || allowed.length === 0) return false;
+  if (allowed.includes("*")) return true;
+  // Match on segment boundaries, not raw string prefixes: a plain startsWith
+  // would let "/student" also grant "/students" (the whole admin student
+  // roster) to every student.
+  return allowed.some(
+    (route) => pathname === route || pathname.startsWith(`${route}/`),
+  );
 }
 
 /**
- * The coarse bucket for a user (derived from the active RoleCode). Pages use
- * this for "admin vs teacher vs student"-level branching.
+ * RoleCode-level landing overrides.
+ *
+ * The six legacy buckets are too coarse for a few RoleCodes: alumni collapse
+ * into STUDENT and komite into STAFF, which would drop them on a student or
+ * staff dashboard full of data that is not theirs. These land them on the page
+ * their own sidebar actually starts with.
  */
-export function getEffectiveRole(
-  user: RbacUser | null | undefined,
-): LegacyRole | undefined {
-  const code = getActiveRoleCode(user);
-  if (code) return legacyRoleFor(code);
-  // No assignments: a bucket in user.role is still meaningful for grouping.
-  if (user && isLegacyRole(user.role)) return user.role;
-  return undefined;
-}
+const roleCodeDashboardOverrides: Record<string, string> = {
+  SMPIT_ALUMNI: "/alumni",
+  SMAQ_ALUMNI: "/alumni",
+  PT_ALUMNI: "/alumni",
+  TKQ_KOMITE: "/reports",
+  SDIT_KOMITE: "/reports",
+  SMPIT_KOMITE: "/reports",
+  SMAQ_KOMITE: "/reports",
+  // Kepala sekolah sit in the TEACHER bucket but run a unit, so their sidebar
+  // opens on the management dashboard rather than the teaching one.
+  TKQ_KEPALA_SEKOLAH: "/dashboard",
+  SDIT_KEPALA_SEKOLAH: "/dashboard",
+  SMPIT_KEPALA_SEKOLAH: "/dashboard",
+  SMAQ_KEPALA_SEKOLAH: "/dashboard",
+};
 
-/** Can this RoleCode open `pathname`? Derived from the nav registry. */
-export function canAccessRoute(
-  roleCode: string | undefined,
-  pathname: string,
-): boolean {
-  if (!roleCode) return false;
-  return roleCodeCanAccess(roleCode, pathname);
-}
-
-/** The dashboard a RoleCode should land on. */
-export function getDashboardForRole(roleCode: string | undefined): string {
-  if (!roleCode) return "/dashboard";
-  // Pesantren educators have their own dashboard even though their coarse
-  // bucket is TEACHER.
-  if (
-    [
-      "MUSYRIF",
-      "MUSYRIFAH",
-      "MUHAFIDZ",
-      "MUHAFIDZAH",
-      "MURABBI",
-      "WALI_KAMAR",
-      "USTADZ",
-      "PESANTREN_PENGASUH",
-      "PESANTREN_DIREKTUR",
-    ].includes(roleCode)
-  ) {
-    return "/musyrif";
+/** The dashboard a role should land on. */
+export function getDashboardForRole(
+  role: LegacyRole | undefined,
+  roleCode?: string | null,
+): string {
+  if (roleCode && roleCodeDashboardOverrides[roleCode]) {
+    return roleCodeDashboardOverrides[roleCode];
   }
-  const bucket = isLegacyRole(roleCode) ? roleCode : legacyRoleFor(roleCode);
-  return bucket ? roleDashboardMap[bucket] : "/dashboard";
+  return role ? roleDashboardMap[role] : "/dashboard";
+}
+
+/** The primary RoleCode for a user, if any. */
+export function getPrimaryRoleCode(
+  user: RbacUser | null | undefined,
+): string | undefined {
+  const assignments = user?.userRoles ?? [];
+  const primary =
+    assignments.find((a) => a?.isPrimary) ?? assignments[0] ?? undefined;
+  return primary?.role?.code ?? undefined;
 }

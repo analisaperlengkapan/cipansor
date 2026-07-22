@@ -39,7 +39,7 @@ export async function getOutcomeAnalytics(req: Request, res: Response, next: Nex
 
     // Enforce tenant scope: non-super-admin users can only view their own unit's outcomes
     let effectiveUnitId = unitId as string | undefined;
-    if (user && user.role !== 'SUPER_ADMIN' && user.role !== 'YAYASAN_ADMIN') {
+    if (user && user.role !== 'SUPER_ADMIN') {
       if (!user.unitId) {
         return res.status(403).json({ success: false, error: { code: 'FORBIDDEN', message: 'Access to this unit is not allowed' } });
       }

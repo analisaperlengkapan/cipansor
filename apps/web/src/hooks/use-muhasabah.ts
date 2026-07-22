@@ -186,7 +186,7 @@ export function useMyMuhasabahStats() {
     queryKey: ["muhasabah", "stats"],
     queryFn: async () => {
       const response =
-        await api.get<ApiResponse<MuhasabahStats>>("/muhasabah/stats");
+        await api.get<ApiResponse<MuhasabahStats>>("/muhasabah/me/stats");
       return response.data.data;
     },
   });

@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api";
+import type { ParentChild } from "@/hooks/use-parent-portal";
 import Link from "next/link";
 import {
   Users,
@@ -29,25 +30,6 @@ import {
   Star,
   HeartHandshake,
 } from "lucide-react";
-
-interface Child {
-  id: string;
-  student: {
-    id: string;
-    nis: string;
-    name: string;
-    class?: {
-      name: string;
-      gradeLevel: number;
-    };
-    unit?: {
-      name: string;
-    };
-    photo?: string;
-  };
-  relation: string;
-  isPrimary: boolean;
-}
 
 interface ChildSummary {
   studentId: string;
@@ -106,7 +88,7 @@ interface DashboardData {
 export default function ParentDashboardPage() {
   const { user } = useAuthStore();
   const [loading, setLoading] = useState(true);
-  const [children, setChildren] = useState<Child[]>([]);
+  const [children, setChildren] = useState<ParentChild[]>([]);
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -196,7 +178,7 @@ export default function ParentDashboardPage() {
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
         {children.map((child) => {
           const summary = dashboard?.children.find(
-            (c) => c.studentId === child.student.id,
+            (c) => c.studentId === child.id,
           );
 
           return (
@@ -204,18 +186,18 @@ export default function ParentDashboardPage() {
               <CardHeader className="bg-primary/5 pb-4">
                 <div className="flex items-center gap-4">
                   <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-2xl">
-                    {child.student.name.charAt(0)}
+                    {child.name.charAt(0)}
                   </div>
                   <div className="flex-1">
                     <CardTitle className="text-lg">
-                      {child.student.name}
+                      {child.name}
                     </CardTitle>
                     <CardDescription>
                       <div className="flex flex-wrap gap-2 mt-1">
-                        <Badge variant="secondary">{child.student.nis}</Badge>
-                        {child.student.class && (
+                        <Badge variant="secondary">{child.nis}</Badge>
+                        {child.currentClass && (
                           <Badge variant="outline">
-                            {child.student.class.name}
+                            {child.currentClass.name}
                           </Badge>
                         )}
                       </div>
@@ -337,7 +319,7 @@ export default function ParentDashboardPage() {
                 {/* View Details Button */}
                 <div className="mt-4 flex gap-2">
                   <Link
-                    href={`/parent/children?id=${child.student.id}`}
+                    href={`/parent/children?id=${child.id}`}
                     className="flex-1"
                   >
                     <Button variant="outline" className="w-full">

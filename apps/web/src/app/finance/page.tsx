@@ -1,4 +1,5 @@
 "use client";
+import { MainLayout } from "@/components/layout";
 
 import { useState } from "react";
 import Link from "next/link";
@@ -6,7 +7,7 @@ import {
   CreditCard,
   Plus,
   Search,
-  DollarSign,
+  Banknote,
   TrendingUp,
   AlertCircle,
   CheckCircle,
@@ -40,6 +41,7 @@ import {
 } from "@/components/ui/table";
 import { Pagination } from "@/components/shared";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TunggakanPanel } from "@/components/finance/tunggakan-panel";
 import {
   useBills,
   useFinancialSummary,
@@ -62,7 +64,7 @@ function formatCurrency(amount: number) {
   }).format(amount);
 }
 
-export default function FinancePage() {
+function FinancePageContent() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [billType, setBillType] = useState<BillType | "ALL">("ALL");
@@ -99,9 +101,13 @@ export default function FinancePage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Keuangan</h1>
+          {/* Titled for what this page is. It was "Keuangan", which read as
+              the whole finance area while showing only santri billing — and
+              the menu entry pointing here was labelled "Laporan Keuangan",
+              which it is not. Financial statements are at /finance/accounting. */}
+          <h1 className="text-3xl font-bold tracking-tight">Tagihan &amp; SPP</h1>
           <p className="text-muted-foreground">
-            Kelola tagihan dan pembayaran santri
+            Kelola tagihan, tunggakan, dan pembayaran santri
           </p>
         </div>
         <div className="flex gap-2">
@@ -152,7 +158,7 @@ export default function FinancePage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Total Tagihan</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <Banknote className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -210,6 +216,7 @@ export default function FinancePage() {
       <Tabs defaultValue="bills" className="space-y-4">
         <TabsList>
           <TabsTrigger value="bills">Daftar Tagihan</TabsTrigger>
+          <TabsTrigger value="tunggakan">Tunggakan</TabsTrigger>
           <TabsTrigger value="summary">Ringkasan</TabsTrigger>
         </TabsList>
 
@@ -441,7 +448,7 @@ export default function FinancePage() {
                 </Table>
               ) : (
                 <div className="flex flex-col items-center justify-center py-8">
-                  <DollarSign className="h-8 w-8 text-muted-foreground" />
+                  <Banknote className="h-8 w-8 text-muted-foreground" />
                   <p className="mt-2 text-muted-foreground">
                     Belum ada data ringkasan
                   </p>
@@ -450,7 +457,19 @@ export default function FinancePage() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="tunggakan" className="space-y-4">
+          <TunggakanPanel />
+        </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+export default function FinancePageWithShell() {
+  return (
+    <MainLayout>
+      <FinancePageContent />
+    </MainLayout>
   );
 }

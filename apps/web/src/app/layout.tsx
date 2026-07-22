@@ -75,6 +75,26 @@ export default async function RootLayout({
 
   return (
     <html lang={locale} dir={dirFor(locale)} suppressHydrationWarning>
+      <head>
+        {/*
+          Capture `beforeinstallprompt` before React exists.
+
+          Chrome fires it as soon as it has decided the app is installable,
+          which is routinely earlier than hydration — and the event fires
+          exactly once. InstallPrompt attaches its listener in a useEffect, so
+          on any load where hydration lost that race the event was simply
+          dropped and the install banner never appeared again for that visit.
+          It looked intermittent, and got steadily worse as the bundle grew.
+
+          This runs before the body parses, stashes the event, and lets the
+          React component pick it up whenever it mounts.
+        */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){window.__installPromptEvent=null;window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();window.__installPromptEvent=e;window.dispatchEvent(new Event('installpromptready'));});})();`,
+          }}
+        />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >

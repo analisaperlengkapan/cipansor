@@ -52,7 +52,7 @@ import {
   TrendingUp,
   CreditCard,
   Users,
-  DollarSign,
+  Banknote,
   Settings,
   ShieldAlert,
 } from "lucide-react";
@@ -301,7 +301,7 @@ export default function WalletPage() {
       {
         title: "Total Saldo",
         value: formatRupiah(summary?.totalBalance || 0),
-        icon: DollarSign,
+        icon: Banknote,
         color: "text-green-600",
         bgColor: "bg-green-100",
       },

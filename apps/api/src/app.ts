@@ -9,6 +9,7 @@ import { config } from '@/config';
 import { logger } from '@/lib/logger';
 import { errorHandler, notFoundHandler } from '@/middleware/error';
 import { defaultLimiter, authLimiter } from '@/middleware/rate-limit';
+import { normalizePagination } from '@/middleware/normalize-pagination';
 import { swaggerSpec } from '@/config/swagger';
 
 // Import routes
@@ -141,6 +142,22 @@ app.use(
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Express 5 leaves `req.body` **undefined** when a request carries no body (or
+// no matching Content-Type); Express 4 defaulted it to {}. Forty-two
+// controllers destructure `req.body` directly, so any of them reached without
+// a body throws a TypeError and answers 500 with no useful message. That is
+// exactly how POST /auth/logout — which the web client calls with no body —
+// broke: it 500'd before revoking anything, leaving refresh tokens live for
+// their full 30-day lifetime after logout.
+//
+// Restoring the Express 4 default here fixes the whole class at once rather
+// than relying on every controller to remember a `?? {}`. It is deliberately
+// placed after the parsers so a genuinely parsed body is never overwritten.
+app.use((req, _res, next) => {
+  if (req.body === undefined) req.body = {};
+  next();
+});
+
 // Compression
 app.use(compression());
 
@@ -200,13 +217,27 @@ if (config.env !== 'production') {
 // API routes
 const apiRouter = express.Router();
 
-// Apply stricter rate limiting to auth routes
-// Apply stricter rate limiting to auth routes
+// Query strings are strings; several services take `limit`/`page` as numbers
+// and hand them to Prisma unvalidated. Normalise once here so no module can
+// forget. See middleware/normalize-pagination.ts.
+apiRouter.use(normalizePagination);
+
+// Apply the strict brute-force limiter to credential-bearing endpoints ONLY.
+//
+// It used to guard the whole /auth router, which also covered GET /auth/me —
+// the session lookup the web app issues on every page load. At 5 requests per
+// minute that returns 429 to a user who simply clicks through six pages, and
+// because express-rate-limit keys on IP it fires for an entire school sharing
+// one NAT gateway, not per user. /me, /logout and /2fa/status are read-only
+// session calls with nothing to brute force, so they stay unlimited.
+// (2fa/enable, 2fa/login and 2fa/disable carry their own twoFactorLimiter.)
 if (config.env !== 'test' && config.env !== 'development') {
-  apiRouter.use('/auth', authLimiter, authRoutes);
-} else {
-  apiRouter.use('/auth', authRoutes);
+  apiRouter.use('/auth/login', authLimiter);
+  apiRouter.use('/auth/register', authLimiter);
+  apiRouter.use('/auth/refresh', authLimiter);
+  apiRouter.use('/auth/password', authLimiter);
 }
+apiRouter.use('/auth', authRoutes);
 apiRouter.use('/users', userRoutes);
 apiRouter.use('/units', unitRoutes);
 apiRouter.use('/students', studentRoutes);

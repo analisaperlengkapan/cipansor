@@ -1,4 +1,5 @@
 "use client";
+import { MainLayout } from "@/components/layout";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -54,7 +55,7 @@ import {
 
 const PAGE_SIZE = 10;
 
-export default function RaporPesantrenPage() {
+function RaporPesantrenPageContent() {
   const router = useRouter();
 
   // Filters
@@ -617,5 +618,13 @@ export default function RaporPesantrenPage() {
         variant="destructive"
       />
     </div>
+  );
+}
+
+export default function RaporPesantrenPageWithShell() {
+  return (
+    <MainLayout>
+      <RaporPesantrenPageContent />
+    </MainLayout>
   );
 }

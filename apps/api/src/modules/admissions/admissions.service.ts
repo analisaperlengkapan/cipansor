@@ -733,7 +733,7 @@ export async function enrollRegistrant(
       user = await tx.user.create({
         data: {
           name: registrant.fullName,
-          email: registrant.email || `${studentData.nis}@student.cipansor.id`,
+          email: registrant.email || `${studentData.nis}@student.cipansor.or.id`,
           passwordHash: prehashedPassword,
           role: 'STUDENT',
           unitId: registrant.admissionPeriod.unitId,

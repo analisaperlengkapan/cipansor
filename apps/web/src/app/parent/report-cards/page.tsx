@@ -49,18 +49,18 @@ export default function ParentReportCardsPage() {
   const children = useMemo(() => {
     return (
       childrenData?.map((c) => ({
-        id: c.student.id,
-        nis: c.student.nis,
-        name: c.student.name,
-        gender: c.student.gender,
-        photo: c.student.photoUrl || null,
+        id: c.id,
+        nis: c.nis,
+        name: c.name,
+        gender: c.gender,
+        photo: c.photoUrl || null,
         class: {
-          id: c.student.class?.id || "",
-          name: c.student.class?.name || "-",
+          id: c.currentClass?.id || "",
+          name: c.currentClass?.name || "-",
         },
         unit: {
-          id: c.student.unit?.id || "",
-          name: c.student.unit?.name || "-",
+          id: c.unit?.id || "",
+          name: c.unit?.name || "-",
         },
       })) || []
     );

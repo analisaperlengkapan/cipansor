@@ -16,8 +16,15 @@ import path from "path";
 import { chromium, type Browser, type Page } from "@playwright/test";
 import { generate as generateTotp } from "otplib";
 import { ALL_ROLE_CODES } from "@cipansor/shared";
-import { menuEntriesForRole } from "../src/config/nav-registry";
-import { getDashboardForRole } from "../src/lib/rbac";
+import { getNavigationForRoleCode } from "../src/config/navigation";
+import { getDashboardForRole, deriveLegacyRole } from "../src/lib/rbac";
+
+/** Flatten a role's navigation groups into the list of menu paths to visit. */
+function menuPathsForRole(roleCode: string): string[] {
+  return getNavigationForRoleCode(roleCode).flatMap((group) =>
+    group.items.map((item) => item.href),
+  );
+}
 
 const API_URL = process.env.API_URL || "http://localhost:3001/api";
 const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
@@ -227,8 +234,11 @@ async function run() {
 
     const targets = Array.from(
       new Set([
-        getDashboardForRole(account.roleCode),
-        ...menuEntriesForRole(account.roleCode).map((e) => e.path),
+        getDashboardForRole(
+          deriveLegacyRole(account.roleCode),
+          account.roleCode,
+        ),
+        ...menuPathsForRole(account.roleCode),
       ]),
     );
 

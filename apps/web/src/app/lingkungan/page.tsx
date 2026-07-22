@@ -1,4 +1,5 @@
 "use client";
+import { MainLayout } from "@/components/layout";
 
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -307,7 +308,7 @@ function IndicatorFormDialog({ onClose }: { onClose: () => void }) {
 }
 
 // ─── Main Page ──────────────────────────────────────
-export default function LingkunganPage() {
+function LingkunganPageContent() {
   const [programDialogOpen, setProgramDialogOpen] = useState(false);
   const [wasteDialogOpen, setWasteDialogOpen] = useState(false);
   const [indicatorDialogOpen, setIndicatorDialogOpen] = useState(false);
@@ -544,5 +545,13 @@ export default function LingkunganPage() {
         isLoading={deleteProgram.isPending}
       />
     </div>
+  );
+}
+
+export default function LingkunganPageWithShell() {
+  return (
+    <MainLayout>
+      <LingkunganPageContent />
+    </MainLayout>
   );
 }

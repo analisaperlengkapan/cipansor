@@ -1,4 +1,5 @@
 "use client";
+import { MainLayout } from "@/components/layout";
 
 import { useState, useMemo } from "react";
 import {
@@ -46,7 +47,6 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   ArrowLeftRight,
-  DollarSign,
   Users,
   TrendingUp,
   AlertTriangle,
@@ -154,7 +154,7 @@ const StudentPicker = ({
   </div>
 );
 
-export default function WalletPage() {
+function WalletPageContent() {
   const [activeTab, setActiveTab] = useState("wallets");
   const [search, setSearch] = useState("");
   const [selectedUnitId, setSelectedUnitId] = useState<string>("ALL");
@@ -317,7 +317,7 @@ export default function WalletPage() {
       {
         title: "Total Saldo",
         value: formatCurrency(summary?.totalBalance || 0),
-        icon: DollarSign,
+        icon: Banknote,
         color: "text-green-600",
         bgColor: "bg-green-100",
       },
@@ -1150,5 +1150,13 @@ export default function WalletPage() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+export default function WalletPageWithShell() {
+  return (
+    <MainLayout>
+      <WalletPageContent />
+    </MainLayout>
   );
 }

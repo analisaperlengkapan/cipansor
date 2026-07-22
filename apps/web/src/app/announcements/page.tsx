@@ -1,4 +1,5 @@
 "use client";
+import { MainLayout } from "@/components/layout";
 
 import { useState } from "react";
 import { safeFormat } from "@/lib/date";
@@ -89,7 +90,7 @@ const ROLE_OPTIONS = [
   { value: "STAFF", label: "Staff" },
 ];
 
-export default function AnnouncementsPage() {
+function AnnouncementsPageContent() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -679,5 +680,13 @@ export default function AnnouncementsPage() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+export default function AnnouncementsPageWithShell() {
+  return (
+    <MainLayout>
+      <AnnouncementsPageContent />
+    </MainLayout>
   );
 }

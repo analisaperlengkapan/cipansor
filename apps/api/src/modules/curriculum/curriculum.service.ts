@@ -230,13 +230,25 @@ export async function markLessonPlanComplete(id: string) {
 // =====================================
 
 export async function getSchedules(query: ScheduleQuery) {
-  const { page, limit, unitId, academicYearId, classId, teacherId, dayOfWeek, isActive } = query;
+  const { page, limit, unitId, academicYearId, classId, teacherId, studentId, dayOfWeek, isActive } =
+    query;
   const skip = (page - 1) * limit;
 
   const where: Prisma.ScheduleWhereInput = {};
   if (unitId) where.unitId = unitId;
   if (academicYearId) where.academicYearId = academicYearId;
   if (classId) where.classId = classId;
+  // Resolve a student to the class(es) they are actively enrolled in — a
+  // student's timetable is their class's timetable. A student with no active
+  // enrolment must return nothing rather than fall through to an unfiltered
+  // timetable showing the whole school.
+  if (studentId && !classId) {
+    const enrollments = await prisma.classEnrollment.findMany({
+      where: { studentId, status: 'active' },
+      select: { classId: true },
+    });
+    where.classId = { in: enrollments.map((e) => e.classId) };
+  }
   if (teacherId) where.teacherId = teacherId;
   if (dayOfWeek) where.dayOfWeek = dayOfWeek;
   if (isActive !== undefined) where.isActive = isActive;

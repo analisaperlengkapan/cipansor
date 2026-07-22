@@ -6,12 +6,18 @@ test.describe('Finance & Billing Integration', () => {
   test.use({ storageState: '.auth/superAdmin.json' });
 
   test('Billing & Arrears (Tunggakan) management page', async ({ page }) => {
+    // /finance/billing was a second billing screen that overlapped /finance and
+    // disagreed with it on the outstanding total. It is now the Tunggakan tab
+    // of /finance, and the old path redirects so existing links still work —
+    // this asserts both halves of that.
     await page.goto('/finance/billing');
+    await expect(page).toHaveURL(/\/finance$/);
 
-    // Page loads with the arrears management UI.
     await expect(
-      page.getByRole('heading', { name: 'Billing & Tunggakan' }),
-    ).toBeVisible();
+      page.getByRole('heading', { name: 'Tagihan & SPP', level: 1 }),
+    ).toBeVisible({ timeout: 15000 });
+
+    await page.getByRole('tab', { name: 'Tunggakan' }).click();
 
     // Outstanding summary card and the unit filter are present (the arrears
     // list itself requires picking a unit first).

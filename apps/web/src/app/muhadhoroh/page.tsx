@@ -1,4 +1,5 @@
 "use client";
+import { MainLayout } from "@/components/layout";
 
 import { useState } from "react";
 import { safeFormat } from "@/lib/date";
@@ -65,7 +66,7 @@ import {
 
 
 
-export default function MuhadhorohPage() {
+function MuhadhorohPageContent() {
   // Get user from auth context
   const { user } = useAuthStore();
   const unitId = user?.unitId || user?.unit?.id;
@@ -588,5 +589,13 @@ export default function MuhadhorohPage() {
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+export default function MuhadhorohPageWithShell() {
+  return (
+    <MainLayout>
+      <MuhadhorohPageContent />
+    </MainLayout>
   );
 }

@@ -1,4 +1,5 @@
 "use client";
+import { MainLayout } from "@/components/layout";
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
@@ -38,7 +39,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useHomeroomClasses, useHomeroomDashboard } from "@/hooks/use-homeroom";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
-export default function HomeroomDashboardPage() {
+function HomeroomDashboardPageContent() {
   const [selectedTab, setSelectedTab] = useState("overview");
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
 
@@ -165,19 +166,19 @@ export default function HomeroomDashboardPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Link href={`/homeroom/${classInfo.id}/attendance`}>
+          <Link href="/homeroom/attendance">
             <Button>
               <ClipboardList className="h-4 w-4 mr-2" />
               Absensi
             </Button>
           </Link>
-          <Link href={`/homeroom/${classInfo.id}/behavior`}>
+          <Link href="/homeroom/behavior">
             <Button variant="outline">
               <BookOpen className="h-4 w-4 mr-2" />
               Catatan Perilaku
             </Button>
           </Link>
-          <Link href={`/homeroom/${classInfo.id}/messages`}>
+          <Link href="/homeroom/messages">
             <Button variant="outline">
               <MessageCircle className="h-4 w-4 mr-2" />
               Pesan Wali
@@ -379,7 +380,7 @@ export default function HomeroomDashboardPage() {
                   </div>
                 </div>
                 <div className="mt-4">
-                  <Link href={`/homeroom/${classInfo.id}/attendance`}>
+                  <Link href="/homeroom/attendance">
                     <Button variant="outline" className="w-full">
                       Detail Absensi
                       <ChevronRight className="h-4 w-4 ml-2" />
@@ -502,7 +503,7 @@ export default function HomeroomDashboardPage() {
                   </p>
                 )}
                 <div className="mt-4">
-                  <Link href={`/homeroom/${classInfo.id}/behavior`}>
+                  <Link href="/homeroom/behavior">
                     <Button variant="outline" className="w-full">
                       Lihat Semua Catatan
                       <ChevronRight className="h-4 w-4 ml-2" />
@@ -563,7 +564,7 @@ export default function HomeroomDashboardPage() {
                         <td className="py-3 px-2 text-center">
                           <div className="flex items-center justify-center gap-1">
                             <Link
-                              href={`/homeroom/${classInfo.id}/students/${student.id}`}
+                              href={`/homeroom/students/${student.id}`}
                             >
                               <Button
                                 variant="ghost"
@@ -594,5 +595,13 @@ export default function HomeroomDashboardPage() {
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+export default function HomeroomDashboardPageWithShell() {
+  return (
+    <MainLayout>
+      <HomeroomDashboardPageContent />
+    </MainLayout>
   );
 }

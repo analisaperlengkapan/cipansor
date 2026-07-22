@@ -28,7 +28,7 @@ Panduan deployment sistem Cipansor untuk production.
 
 ### Domain & SSL
 
-- Domain yang sudah terkonfigurasi (contoh: cipansor.id)
+- Domain yang sudah terkonfigurasi (contoh: cipansor.or.id)
 - SSL certificate (bisa menggunakan Let's Encrypt)
 
 ---
@@ -64,10 +64,10 @@ PORT=3001
 NODE_ENV=production
 
 # Frontend
-NEXT_PUBLIC_API_URL="https://api.cipansor.id"
+NEXT_PUBLIC_API_URL="https://api.cipansor.or.id"
 
 # CORS
-CORS_ORIGIN="https://cipansor.id,https://www.cipansor.id"
+CORS_ORIGIN="https://cipansor.or.id,https://www.cipansor.or.id"
 
 # Logging
 LOG_LEVEL=info
@@ -112,11 +112,11 @@ JWT_SECRET=your-super-secret-production-key-min-32-chars
 # API
 API_PORT=3001
 LOG_LEVEL=info
-CORS_ORIGIN=https://cipansor.id
+CORS_ORIGIN=https://cipansor.or.id
 
 # Web
 WEB_PORT=3000
-NEXT_PUBLIC_API_URL=https://api.cipansor.id
+NEXT_PUBLIC_API_URL=https://api.cipansor.or.id
 
 # Redis
 REDIS_PORT=6379
@@ -330,6 +330,6 @@ kill -9 <PID>
 
 ## Support
 
-- Documentation: https://docs.cipansor.id
-- Email: support@cipansor.id
+- Documentation: https://docs.cipansor.or.id
+- Email: support@cipansor.or.id
 - Issues: https://github.com/analisaperlengkapan/cipansor/issues

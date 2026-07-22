@@ -15,7 +15,7 @@ const ASPECT_KEYS = ["NAM", "FM", "KOG", "BHS", "SE", "SNI"];
 async function login(page: import("@playwright/test").Page) {
   const lp = new LoginPage(page);
   await lp.goto();
-  await lp.loginAndWaitForDashboard("superadmin@cipansor.id", "SuperAdmin123!");
+  await lp.loginAndWaitForDashboard("superadmin@cipansor.or.id", "SuperAdmin123!");
 }
 
 // Radix Select renders the placeholder via data-placeholder, so `hasText`

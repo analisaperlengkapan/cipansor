@@ -152,7 +152,7 @@ export function useDutyRosters(params?: {
     queryKey: ["duty-rosters", params],
     queryFn: async () => {
       const response = await api.get<PaginatedResponse<DutyRoster>>(
-        `/duty-rosters?${queryParams.toString()}`,
+        `/duty-roster?${queryParams.toString()}`,
       );
       return response.data;
     },
@@ -165,7 +165,7 @@ export function useDutyRoster(id?: string) {
     queryKey: ["duty-rosters", id],
     queryFn: async () => {
       const response = await api.get<ApiResponse<DutyRoster>>(
-        `/duty-rosters/${id}`,
+        `/duty-roster/${id}`,
       );
       return response.data.data;
     },
@@ -226,7 +226,7 @@ export function useDutyStatistics(params?: {
     queryKey: ["duty-statistics", params],
     queryFn: async () => {
       const response = await api.get<ApiResponse<DutyStatistics>>(
-        `/duty-rosters/statistics?${queryParams.toString()}`,
+        `/duty-roster/statistics?${queryParams.toString()}`,
       );
       return response.data.data;
     },
@@ -240,7 +240,7 @@ export function useCreateDutyRoster() {
   return useMutation({
     mutationFn: async (data: CreateDutyRosterInput) => {
       const response = await api.post<ApiResponse<DutyRoster>>(
-        "/duty-rosters",
+        "/duty-roster",
         data,
       );
       return response.data.data;
@@ -265,7 +265,7 @@ export function useUpdateDutyRoster() {
       data: Partial<CreateDutyRosterInput>;
     }) => {
       const response = await api.put<ApiResponse<DutyRoster>>(
-        `/duty-rosters/${id}`,
+        `/duty-roster/${id}`,
         data,
       );
       return response.data.data;
@@ -287,7 +287,7 @@ export function useDeleteDutyRoster() {
   return useMutation({
     mutationFn: async (id: string) => {
       const response = await api.delete<ApiResponse<void>>(
-        `/duty-rosters/${id}`,
+        `/duty-roster/${id}`,
       );
       return response.data;
     },
@@ -403,7 +403,7 @@ export function useExportDutyReport() {
       if (params.format) queryParams.append("format", params.format);
 
       const response = await api.get(
-        `/duty-rosters/export?${queryParams.toString()}`,
+        `/duty-roster/export?${queryParams.toString()}`,
         {
           responseType: "blob",
         },

@@ -17,7 +17,7 @@ test.describe("Tahfidz Dashboard", () => {
     const login = new loginPage.LoginPage(page);
     await login.goto();
     await login.loginAndWaitForDashboard(
-      "superadmin@cipansor.id",
+      "superadmin@cipansor.or.id",
       "SuperAdmin123!",
     );
 
@@ -124,28 +124,25 @@ test.describe("Tahfidz Dashboard", () => {
     }
   });
 
-  test("should navigate to recent record detail", async ({ page }) => {
-    // Check if there are records
+  test("should display recent record rows with data", async ({ page }) => {
+    // This test used to click the first row and assert that a modal opened or
+    // the URL changed. Neither is implemented — the recent-records table is a
+    // read-only summary — and the assertion only ever passed because the table
+    // was empty and the test skipped itself. Now that the seed creates tahfidz
+    // records, it asserts what the table actually does: render them.
     const firstRow = page.locator("table tbody tr").first();
     const hasRows = await firstRow
       .isVisible({ timeout: 5000 })
       .catch(() => false);
 
-    if (hasRows) {
-      await firstRow.click();
-
-      // Should navigate to detail page or open modal
-      // Adjust based on your actual implementation
-      const isModal = await page
-        .locator('[role="dialog"]')
-        .isVisible({ timeout: 3000 })
-        .catch(() => false);
-      const urlChanged = !page.url().includes("/dashboard");
-
-      expect(isModal || urlChanged).toBeTruthy();
-    } else {
-      test.skip(true, "No data available to test navigation");
+    if (!hasRows) {
+      test.skip(true, "No tahfidz records seeded");
+      return;
     }
+
+    const cells = firstRow.locator("td");
+    expect(await cells.count()).toBeGreaterThan(1);
+    await expect(firstRow).not.toBeEmpty();
   });
 
   test("should refresh data when refresh button clicked", async ({ page }) => {
@@ -197,7 +194,7 @@ test.describe("Tahfidz Dashboard - Real-time Updates", () => {
     const login = new loginPage.LoginPage(page);
     await login.goto();
     await login.loginAndWaitForDashboard(
-      "superadmin@cipansor.id",
+      "superadmin@cipansor.or.id",
       "SuperAdmin123!",
     );
 
@@ -229,7 +226,7 @@ test.describe("Tahfidz Dashboard - Export & Print", () => {
     const login = new loginPage.LoginPage(page);
     await login.goto();
     await login.loginAndWaitForDashboard(
-      "superadmin@cipansor.id",
+      "superadmin@cipansor.or.id",
       "SuperAdmin123!",
     );
 

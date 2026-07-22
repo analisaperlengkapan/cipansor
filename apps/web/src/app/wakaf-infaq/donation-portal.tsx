@@ -1,4 +1,6 @@
 "use client";
+import { donationConfig } from "@/config/site";
+import { LegalIdentity } from "@/components/landing/legal-identity";
 import { useState } from "react";
 import { safeFormat } from "@/lib/date";
 import { Button } from "@/components/ui/button";
@@ -33,7 +35,6 @@ import {
 } from "@/components/ui/dialog";
 import {
   usePublicCampaigns,
-  useCampaign,
   useCreatePublicDonation,
   DONATION_TYPES,
   PAYMENT_METHODS,
@@ -46,7 +47,7 @@ import {
 import {
   Heart,
   HandHeart,
-  Target,
+  GraduationCap,
   Users,
   Calendar,
   CheckCircle2,
@@ -58,15 +59,11 @@ import {
   Gift,
   Building2,
   Phone,
-  Mail,
-  MapPin,
-  ChevronRight,
-  ExternalLink,
+  ShieldCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import { id as idLocale } from "date-fns/locale";
-import Link from "next/link";
 
 const paymentIcons: Record<
   PaymentMethod,
@@ -79,7 +76,19 @@ const paymentIcons: Record<
   OTHERS: CreditCard,
 };
 
-export default function PublicDonationPage() {
+/**
+ * One icon per program, keyed by akad. Every card previously rendered the same
+ * HandHeart, so the icons distinguished nothing and were pure decoration —
+ * the same flaw that made the old eight-card "Jenis Donasi" grid useless.
+ */
+const programIcons: Record<string, React.ComponentType<{ className?: string }>> =
+  {
+    WAKAF: Building2,
+    BEASISWA: GraduationCap,
+    INFAK: HandHeart,
+  };
+
+export function DonationPortal() {
   const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(
     null,
   );
@@ -166,41 +175,20 @@ export default function PublicDonationPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-emerald-50 to-white">
-      {/* Header */}
-      <header className="bg-emerald-600 text-white">
-        <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between">
-            <Link
-              href="/"
-              className="flex items-center gap-3 hover:opacity-80 transition-opacity"
-            >
-              <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-                <Heart className="h-6 w-6" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold">CIPANSOR</h1>
-                <p className="text-sm text-emerald-100">Portal Donasi Online</p>
-              </div>
-            </Link>
-            <Link href="/">
-              <Button variant="ghost" className="text-white hover:bg-white/20">
-                Kembali ke Beranda
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </header>
 
-      {/* Hero Section */}
-      <section className="bg-emerald-600 text-white pb-20 pt-8">
+      {/* Hero. Copy follows the yayasan's own "Investasi Akhirat" campaign
+          material rather than generic donation wording. */}
+      <section className="bg-emerald-600 text-white pb-20 pt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <HandHeart className="h-16 w-16 mx-auto mb-6 opacity-90" />
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Mari Berbagi Kebaikan
-          </h2>
-          <p className="text-lg text-emerald-100 max-w-2xl mx-auto mb-8">
-            Setiap donasi Anda akan membantu pengembangan pendidikan Islam dan
-            memberikan manfaat bagi ribuan santri di Yayasan CIPANSOR
+          <h1 className="text-4xl md:text-5xl font-bold mb-2 text-balance">
+            {donationConfig.headline}
+          </h1>
+          <p className="text-xl text-emerald-100 mb-6">
+            {donationConfig.subheadline}
+          </p>
+          <p className="text-lg text-emerald-100 max-w-2xl mx-auto mb-8 text-pretty">
+            {donationConfig.lead}
           </p>
           <Button
             size="lg"
@@ -216,136 +204,126 @@ export default function PublicDonationPage() {
         </div>
       </section>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-12">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          <Card className="bg-white shadow-lg">
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center">
-                  <Target className="h-6 w-6 text-emerald-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">
-                    Kampanye Aktif
-                  </p>
-                  <p className="text-2xl font-bold">{activeCampaigns.length}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="bg-white shadow-lg">
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <Users className="h-6 w-6 text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Donatur</p>
-                  <p className="text-2xl font-bold">
-                    {activeCampaigns.reduce((sum, c) => sum + c.donorCount, 0)}+
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="bg-white shadow-lg">
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center">
-                  <Banknote className="h-6 w-6 text-amber-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">
-                    Total Terkumpul
-                  </p>
-                  <p className="text-2xl font-bold">
-                    {formatCurrency(
-                      activeCampaigns.reduce(
-                        (sum, c) => sum + c.collectedAmount,
-                        0,
-                      ),
-                    )}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+      {/*
+        No negative top margin. The `-mt-12` here used to float a statistics
+        card over the hero, and when that card was removed the next element —
+        a plain dark heading — was pulled onto the emerald background and
+        rendered dark-on-green. Overlapping the hero makes the layout depend
+        on what the first child happens to be, and on whether the data that
+        renders it exists at all. A normal margin cannot break that way.
+      */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12">
+        {/*
+          Aggregate fundraising figures ("Total Donatur 25+", "Total Terkumpul
+          Rp 125.000.000") used to sit here. They were read from the seeded demo
+          campaign, not from real giving — the `donations` table held a different
+          number entirely — and the "+" implied "lebih dari" on a figure that was
+          exact. Publishing invented fundraising totals on a nonprofit's donation
+          page is misrepresentation, and Google Ad Grants suspends accounts for
+          it. The same rule is already written at the top of `config/site.ts`.
 
-        {/* Active Campaigns */}
-        <section className="mb-12">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-2xl font-bold">Kampanye Donasi</h3>
-          </div>
+          A card counting the open campaigns also used to sit here. Above a
+          grid of exactly that many campaign cards, it told the reader nothing
+          they could not see.
+        */}
 
-          {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="h-80" />
-              ))}
-            </div>
-          ) : activeCampaigns.length === 0 ? (
-            <Card className="text-center py-12">
-              <CardContent>
-                <Heart className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">
-                  Belum ada kampanye aktif saat ini
-                </p>
-                <Button
-                  variant="outline"
-                  className="mt-4"
-                  onClick={() => {
-                    setSelectedCampaignId(null);
-                    setShowForm(true);
-                  }}
-                >
-                  Donasi Umum
-                </Button>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {activeCampaigns.map((campaign) => (
-                <CampaignCard
-                  key={campaign.id}
-                  campaign={campaign}
-                  onDonate={() => {
-                    setSelectedCampaignId(campaign.id);
-                    setShowForm(true);
-                  }}
-                />
-              ))}
-            </div>
-          )}
-        </section>
+        {/*
+          Campaigns are time-bound appeals, and there are usually none. The
+          section is omitted entirely when the list is empty rather than
+          showing "Belum ada kampanye aktif" — an empty state directly under
+          the hero reads as a dormant organisation, which is the opposite of
+          what a donation page is for, and it pushed the three standing
+          programs (the actual way to give) below the fold. Nothing is lost by
+          omitting it: the hero and every program card open the same form.
+        */}
+        {(isLoading || activeCampaigns.length > 0) && (
+          <section className="mb-12">
+            <h2 className="text-2xl font-bold mb-6">Kampanye Donasi</h2>
 
-        {/* Donation Types */}
-        <section className="mb-12">
-          <h3 className="text-2xl font-bold mb-6 text-center">Jenis Donasi</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {DONATION_TYPES.slice(0, 8).map((type) => (
-              <Card
-                key={type.value}
-                className="hover:shadow-lg transition-shadow cursor-pointer"
-                onClick={() => {
-                  setFormData({ ...formData, type: type.value });
-                  setShowForm(true);
-                }}
-              >
-                <CardContent className="pt-6 text-center">
-                  <div className="w-12 h-12 bg-emerald-100 rounded-full mx-auto mb-3 flex items-center justify-center">
-                    <Heart className="h-6 w-6 text-emerald-600" />
-                  </div>
-                  <p className="font-medium">{type.label}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </section>
+            {isLoading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[1, 2, 3].map((i) => (
+                  <Skeleton key={i} className="h-80" />
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {activeCampaigns.map((campaign) => (
+                  <CampaignCard
+                    key={campaign.id}
+                    campaign={campaign}
+                    onDonate={() => {
+                      setSelectedCampaignId(campaign.id);
+                      setShowForm(true);
+                    }}
+                  />
+                ))}
+              </div>
+            )}
+          </section>
+        )}
+
+        {/*
+          A separate "Jenis Donasi" grid of eight akad used to sit here, above
+          the three published programs. It gave the page two competing
+          taxonomies with nothing explaining how they related — a donor could
+          not tell whether to pick a "jenis" or a "program" — and all eight
+          cards carried the same heart icon, so the grid conveyed nothing the
+          labels did not. The akad is still selectable inside the donation form,
+          where it belongs. The three programs below are now the page-level
+          choice, which is what "Cara Berdonasi" step 1 actually instructs.
+        */}
 
         {/* Bank Info */}
         <section className="mb-12">
+          <h2 className="text-2xl font-bold text-center mb-2">
+            Pilihan Program Kebaikan
+          </h2>
+          <p className="mx-auto mb-6 max-w-2xl text-center text-muted-foreground">
+            {donationConfig.programsIntro}
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            {donationConfig.programs.map((program) => {
+              const ProgramIcon = programIcons[program.type] ?? HandHeart;
+              return (
+              <Card
+                key={program.title}
+                className="flex flex-col bg-white transition-shadow hover:shadow-lg"
+              >
+                <CardHeader>
+                  <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center mb-2">
+                    <ProgramIcon className="h-5 w-5 text-emerald-600" aria-hidden="true" />
+                  </div>
+                  <CardTitle className="text-lg">{program.title}</CardTitle>
+                </CardHeader>
+                <CardContent className="flex flex-1 flex-col">
+                  <CardDescription className="flex-1 text-base leading-relaxed">
+                    {program.description}
+                  </CardDescription>
+                  {/* "Pilih Program" is step 1 of Cara Berdonasi — so it has to
+                      be clickable. These cards were inert text while a
+                      different grid was the interactive one. */}
+                  <Button
+                    variant="outline"
+                    className="mt-5 w-full"
+                    onClick={() => {
+                      setFormData({
+                        ...formData,
+                        type: program.type as DonationType,
+                      });
+                      setSelectedCampaignId(null);
+                      setShowForm(true);
+                    }}
+                  >
+                    Pilih Program Ini
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </CardContent>
+              </Card>
+              );
+            })}
+          </div>
+
           <Card className="bg-emerald-50 border-emerald-200">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -353,82 +331,131 @@ export default function PublicDonationPage() {
                 Informasi Rekening
               </CardTitle>
               <CardDescription>
-                Transfer donasi ke rekening berikut
+                Transfer donasi ke rekening resmi Yayasan Pesantren Cipansor
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="p-4 bg-white rounded-lg border">
-                  <p className="font-semibold text-lg mb-2">
-                    Bank Syariah Indonesia (BSI)
-                  </p>
-                  <p className="text-2xl font-mono font-bold text-emerald-600 mb-1">
-                    7788990011
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    a.n. Yayasan CIPANSOR
-                  </p>
-                </div>
-                <div className="p-4 bg-white rounded-lg border">
-                  <p className="font-semibold text-lg mb-2">Bank Muamalat</p>
-                  <p className="text-2xl font-mono font-bold text-emerald-600 mb-1">
-                    1234567890
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    a.n. Yayasan CIPANSOR
-                  </p>
-                </div>
+            <CardContent className="space-y-6">
+              {/*
+                Account number is sourced from the pesantren's own wakaf-infaq
+                page via donationConfig. Do not replace with placeholder digits.
+              */}
+              <div className="p-4 bg-white rounded-lg border">
+                <p className="font-semibold text-lg mb-2">
+                  {donationConfig.bank.name}
+                </p>
+                <p className="text-2xl font-mono font-bold text-emerald-600 mb-1">
+                  {donationConfig.bank.accountNumber}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  a.n. {donationConfig.bank.accountHolder}
+                </p>
+              </div>
+
+              <div className="p-4 bg-white rounded-lg border space-y-3">
+                <p className="font-semibold">Konfirmasi Donasi</p>
+                <p className="text-sm text-muted-foreground">
+                  Setelah transfer, kirim bukti melalui WhatsApp dengan format{" "}
+                  <span className="font-mono font-medium text-foreground">
+                    {donationConfig.confirmation.format}
+                  </span>
+                  . Contoh:{" "}
+                  <span className="font-mono text-foreground">
+                    {donationConfig.confirmation.example}
+                  </span>
+                  .
+                </p>
+                <a
+                  href={`https://wa.me/${donationConfig.confirmation.whatsappE164}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 font-medium text-emerald-600 hover:underline"
+                >
+                  <Phone className="h-4 w-4" />
+                  Konfirmasi via WhatsApp{" "}
+                  {donationConfig.confirmation.whatsappNumber}
+                </a>
               </div>
             </CardContent>
           </Card>
         </section>
 
-        {/* Contact */}
-        <section className="mb-12">
+        {/* Cara Berdonasi + trust, taken from the yayasan's donation poster.
+            The transparency pledge is the reassurance a first-time donor looks
+            for, and it was missing from the page entirely. */}
+        <section className="mb-12 grid grid-cols-1 gap-6 lg:grid-cols-2">
           <Card>
-            <CardContent className="pt-6">
-              <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-                <div>
-                  <h4 className="font-semibold text-lg mb-2">Butuh Bantuan?</h4>
-                  <p className="text-muted-foreground">
-                    Hubungi kami untuk informasi lebih lanjut tentang donasi
-                  </p>
-                </div>
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <a
-                    href="tel:+6281234567890"
-                    className="flex items-center gap-2 text-emerald-600 hover:underline"
-                  >
-                    <Phone className="h-4 w-4" />
-                    0812-3456-7890
-                  </a>
-                  <a
-                    href="mailto:donasi@cipansor.id"
-                    className="flex items-center gap-2 text-emerald-600 hover:underline"
-                  >
-                    <Mail className="h-4 w-4" />
-                    donasi@cipansor.id
-                  </a>
-                </div>
-              </div>
+            <CardHeader>
+              <CardTitle>Cara Berdonasi</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ol className="space-y-4">
+                {donationConfig.steps.map((step, i) => (
+                  <li key={step.title} className="flex gap-3">
+                    <span
+                      aria-hidden="true"
+                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-sm font-bold text-emerald-700"
+                    >
+                      {i + 1}
+                    </span>
+                    <div>
+                      <p className="font-medium">{step.title}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {step.description}
+                      </p>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-emerald-50 border-emerald-200">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <ShieldCheck className="h-5 w-5 text-emerald-600" />
+                {donationConfig.commitment.title}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="leading-relaxed text-muted-foreground">
+                {donationConfig.commitment.text}
+              </p>
+              <blockquote className="border-l-4 border-emerald-300 pl-4 text-sm italic text-muted-foreground">
+                &ldquo;{donationConfig.hadith.text}&rdquo;
+                <footer className="mt-1 not-italic">
+                  ({donationConfig.hadith.source})
+                </footer>
+              </blockquote>
             </CardContent>
           </Card>
         </section>
+
+        {/* A donor deciding whether to transfer money is exactly who needs the
+            registration number and independent verification. */}
+        <section className="mb-12">
+          <LegalIdentity variant="donation" />
+        </section>
+
+        {/*
+          A "Butuh Bantuan?" card repeating the phone number and email used to
+          sit here — directly above the site footer, which already lists both,
+          plus WhatsApp and the address. Two copies of the same contact details
+          one scroll apart is noise, and the footer's version is more complete.
+        */}
       </main>
 
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <p className="text-gray-400">
-            © 2024 Yayasan Pendidikan Islam CIPANSOR. Semua hak dilindungi.
+      {/* Closing verse. Not a footer — the site footer is supplied by the
+          page wrapper; this used to be a second one with a stale copyright. */}
+      <section className="bg-gray-900 py-10 text-white">
+        <div className="mx-auto max-w-3xl px-4 text-center sm:px-6 lg:px-8">
+          <p className="text-sm leading-relaxed text-gray-300">
+            &ldquo;Perumpamaan orang yang menginfakkan hartanya di jalan Allah
+            seperti sebutir biji yang menumbuhkan tujuh tangkai, pada setiap
+            tangkai ada seratus biji.&rdquo;
           </p>
-          <p className="text-sm text-gray-500 mt-2">
-            "Perumpamaan orang yang menginfakkan hartanya di jalan Allah seperti
-            sebutir biji yang menumbuhkan tujuh tangkai, pada setiap tangkai ada
-            seratus biji." (QS. Al-Baqarah: 261)
-          </p>
+          <p className="mt-2 text-xs text-gray-500">QS. Al-Baqarah: 261</p>
         </div>
-      </footer>
+      </section>
 
       {/* Donation Form Dialog */}
       <Dialog open={showForm} onOpenChange={setShowForm}>

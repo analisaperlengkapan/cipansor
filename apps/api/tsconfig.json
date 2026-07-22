@@ -4,7 +4,12 @@
     "module": "commonjs",
     "lib": ["ES2022"],
     "outDir": "./dist",
-    "rootDir": ".",
+    // No `rootDir` here on purpose: this config is `noEmit`, so rootDir would
+    // only act as a constraint on which files may be included — and prisma/seed.ts
+    // deliberately imports the demo-account list from packages/shared/src (see
+    // the comment there) so a stale shared build cannot desync the seeded logins
+    // from the login page. tsconfig.build.json, which does emit, pins
+    // rootDir to ./src and excludes prisma/, so the dist layout is unaffected.
     "strict": true,
     "noEmit": true,
     "noImplicitAny": true,

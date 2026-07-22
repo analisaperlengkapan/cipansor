@@ -87,6 +87,19 @@ COPY --from=builder --chown=expressjs:nodejs /app/apps/api/prisma ./apps/api/pri
 COPY --from=builder --chown=expressjs:nodejs /app/packages/shared/dist ./packages/shared/dist
 COPY --from=builder --chown=expressjs:nodejs /app/packages/shared/package.json ./packages/shared/
 
+# Runtime-written directories, created and owned here rather than left to the
+# app. It writes `logs/` and `public/uploads/` relative to its cwd, and until
+# now that only worked by accident: BuildKit chowns the parent directories it
+# implicitly creates for a `COPY --chown`, so /app/apps/api came out owned by
+# expressjs. Under the classic builder those parents are root-owned, the very
+# first mkdir fails with EACCES, and the process exits before it serves a
+# request. Chown the directories themselves only — a recursive chown over
+# node_modules would rewrite the largest layer in the image for nothing.
+RUN mkdir -p /app/apps/api/logs /app/apps/api/public/uploads \
+ && chown expressjs:nodejs \
+      /app /app/apps /app/apps/api \
+      /app/apps/api/logs /app/apps/api/public /app/apps/api/public/uploads
+
 USER expressjs
 WORKDIR /app/apps/api
 EXPOSE 3001

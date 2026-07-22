@@ -14,7 +14,7 @@ test.describe("TK Daily Report", () => {
     await loginPage.goto();
     // Login as teacher or superadmin
     await loginPage.loginAndWaitForDashboard(
-      "superadmin@cipansor.id",
+      "superadmin@cipansor.or.id",
       "SuperAdmin123!",
     );
   });

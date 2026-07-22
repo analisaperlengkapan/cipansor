@@ -35,7 +35,7 @@ export default function CampaignsPage() {
   };
 
   const copyTrackingLink = (id: string) => {
-    const url = `${window.location.origin}/public/ppdb?campaign_id=${id}`;
+    const url = `${window.location.origin}/public/spmb?campaign_id=${id}`;
     navigator.clipboard.writeText(url);
     toast.success("Link tersalin ke clipboard");
   };

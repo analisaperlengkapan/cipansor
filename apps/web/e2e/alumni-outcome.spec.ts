@@ -6,7 +6,7 @@ test.describe('Alumni Outcome & Tracer Study', () => {
     const login = new LoginPage(page);
     await login.goto();
     await login.loginAndWaitForDashboard(
-      'superadmin@cipansor.id',
+      'superadmin@cipansor.or.id',
       'SuperAdmin123!',
     );
   });

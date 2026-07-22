@@ -26,7 +26,6 @@ const perSchool = (suffix: string): string[] =>
 /** System administrators: full administrative UI + admin-only API routes. */
 export const ADMIN_ROLE_CODES: readonly string[] = [
   "SUPER_ADMIN",
-  "YAYASAN_ADMIN",
   ...perSchool("ADMIN"),
 ];
 
@@ -53,7 +52,10 @@ export const VICE_PRINCIPAL_ROLE_CODES: readonly string[] = perSchool("WAKASEK")
 export const SCHOOL_TEACHER_ROLE_CODES: readonly string[] = [
   ...perSchool("GURU"),
   ...perSchool("WALI_KELAS"),
-  ...perSchool("GURU_BK"),
+  // BK counselors exist only at the secondary units (TK Qur'an and SD IT
+  // have none), matching the RoleCode enum.
+  "SMPIT_GURU_BK",
+  "SMAQ_GURU_BK",
 ];
 
 /** Pesantren leadership (kyai / operational director). */
@@ -109,9 +111,11 @@ export const BUSINESS_ROLE_CODES: readonly string[] = [
 /** PT non-academic staff (PT_TATA_USAHA already counts as tata usaha). */
 export const PT_STAFF_ROLE_CODES: readonly string[] = ["PT_STAF_AKADEMIK"];
 
-/** Students across school units + PT. */
+/** Students across school units + PT. TK Qur'an has no per-student SISWA role. */
 export const STUDENT_ROLE_CODES: readonly string[] = [
-  ...perSchool("SISWA"),
+  "SDIT_SISWA",
+  "SMPIT_SISWA",
+  "SMAQ_SISWA",
   "PT_MAHASISWA",
 ];
 
@@ -121,9 +125,10 @@ export const PARENT_ROLE_CODES: readonly string[] = perSchool("ORANG_TUA");
 /** School committees (komite sekolah). */
 export const KOMITE_ROLE_CODES: readonly string[] = perSchool("KOMITE");
 
-/** Alumni across school units + PT. */
+/** Alumni across the secondary units + PT (no TK Qur'an / SD IT alumni role). */
 export const ALUMNI_ROLE_CODES: readonly string[] = [
-  ...perSchool("ALUMNI"),
+  "SMPIT_ALUMNI",
+  "SMAQ_ALUMNI",
   "PT_ALUMNI",
 ];
 
@@ -180,7 +185,6 @@ export const LEGACY_ROLES: readonly LegacyRole[] = [
 export const LEGACY_ROLE_EXPANSION: Record<LegacyRole, string[]> = {
   SUPER_ADMIN: ["SUPER_ADMIN"],
   UNIT_ADMIN: [
-    "YAYASAN_ADMIN",
     ...GOVERNANCE_ROLE_CODES,
     ...perSchool("ADMIN"),
   ],

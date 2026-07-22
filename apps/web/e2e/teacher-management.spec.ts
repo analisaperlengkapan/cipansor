@@ -17,7 +17,7 @@ test.describe("Teacher Management - List and View", () => {
     const login = new LoginPage(page);
     await login.goto();
     await login.loginAndWaitForDashboard(
-      "superadmin@cipansor.id",
+      "superadmin@cipansor.or.id",
       "SuperAdmin123!",
     );
 
@@ -53,7 +53,7 @@ test.describe("Teacher Management - List and View", () => {
     const login = new LoginPage(page);
     await login.goto();
     await login.loginAndWaitForDashboard(
-      "superadmin@cipansor.id",
+      "superadmin@cipansor.or.id",
       "SuperAdmin123!",
     );
 
@@ -99,7 +99,7 @@ test.describe("Teacher Management - List and View", () => {
     const login = new LoginPage(page);
     await login.goto();
     await login.loginAndWaitForDashboard(
-      "superadmin@cipansor.id",
+      "superadmin@cipansor.or.id",
       "SuperAdmin123!",
     );
 
@@ -146,7 +146,7 @@ test.describe("Teacher Management - List and View", () => {
     const login = new LoginPage(page);
     await login.goto();
     await login.loginAndWaitForDashboard(
-      "superadmin@cipansor.id",
+      "superadmin@cipansor.or.id",
       "SuperAdmin123!",
     );
 
@@ -196,7 +196,7 @@ test.describe("Teacher Management - Create", () => {
     const login = new LoginPage(page);
     await login.goto();
     await login.loginAndWaitForDashboard(
-      "superadmin@cipansor.id",
+      "superadmin@cipansor.or.id",
       "SuperAdmin123!",
     );
 
@@ -265,7 +265,7 @@ test.describe("Teacher Management - Create", () => {
     const login = new LoginPage(page);
     await login.goto();
     await login.loginAndWaitForDashboard(
-      "superadmin@cipansor.id",
+      "superadmin@cipansor.or.id",
       "SuperAdmin123!",
     );
 
@@ -297,7 +297,7 @@ test.describe("Teacher Management - Create", () => {
     const login = new LoginPage(page);
     await login.goto();
     await login.loginAndWaitForDashboard(
-      "superadmin@cipansor.id",
+      "superadmin@cipansor.or.id",
       "SuperAdmin123!",
     );
 
@@ -332,7 +332,7 @@ test.describe("Teacher Management - Update", () => {
     const login = new LoginPage(page);
     await login.goto();
     await login.loginAndWaitForDashboard(
-      "superadmin@cipansor.id",
+      "superadmin@cipansor.or.id",
       "SuperAdmin123!",
     );
 
@@ -377,7 +377,7 @@ test.describe("Teacher Management - Delete", () => {
     const login = new LoginPage(page);
     await login.goto();
     await login.loginAndWaitForDashboard(
-      "superadmin@cipansor.id",
+      "superadmin@cipansor.or.id",
       "SuperAdmin123!",
     );
 
@@ -452,7 +452,7 @@ test.describe("Teacher Management - Subject Assignment", () => {
     const login = new LoginPage(page);
     await login.goto();
     await login.loginAndWaitForDashboard(
-      "superadmin@cipansor.id",
+      "superadmin@cipansor.or.id",
       "SuperAdmin123!",
     );
 
@@ -510,7 +510,7 @@ test.describe("Teacher Management - Subject Assignment", () => {
     const login = new LoginPage(page);
     await login.goto();
     await login.loginAndWaitForDashboard(
-      "superadmin@cipansor.id",
+      "superadmin@cipansor.or.id",
       "SuperAdmin123!",
     );
 
@@ -564,7 +564,7 @@ test.describe("Teacher Management - Export", () => {
     const login = new LoginPage(page);
     await login.goto();
     await login.loginAndWaitForDashboard(
-      "superadmin@cipansor.id",
+      "superadmin@cipansor.or.id",
       "SuperAdmin123!",
     );
 

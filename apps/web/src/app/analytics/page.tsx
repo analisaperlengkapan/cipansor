@@ -1,6 +1,8 @@
 "use client";
+import { MainLayout } from "@/components/layout";
 
 import { useState } from "react";
+import Link from "next/link";
 import {
   Card,
   CardContent,
@@ -50,11 +52,7 @@ import {
   TIME_RANGES,
   TIME_RANGE_LABELS,
   type TimeRange,
-  downloadReport,
-  type ExportReportFormat,
 } from "@/hooks";
-import { Download } from "lucide-react";
-import { toast } from "sonner";
 
 const COLORS = [
   "#0088FE",
@@ -85,7 +83,7 @@ const pieLabelFormatter = ({ name, percent }: any) =>
 const categoryLabelFormatter = ({ category, percent }: any) =>
   `${category}: ${(percent * 100).toFixed(0)}%`;
 
-export default function AnalyticsPage() {
+function AnalyticsPageContent() {
   const [activeTab, setActiveTab] = useState("overview");
   const [timeRange, setTimeRange] = useState<TimeRange>("MONTHLY");
 
@@ -99,74 +97,19 @@ export default function AnalyticsPage() {
     useFinanceReport(filter);
   const { data: academicStats, isLoading: academicLoading } =
     useAcademicPerformance(filter);
-  const { data: tahfidzStats, isLoading: tahfidzLoading } =
-    useTahfidzProgress(filter);
-
-  const handleExport = (
-    reportType: string,
-    format: ExportReportFormat = "JSON",
-  ) => {
-    const date = new Date().toISOString().split("T")[0];
-    let data: unknown;
-    let filename: string;
-
-    switch (reportType) {
-      case "students":
-        data = studentStats?.data;
-        filename = `Statistik_Santri_${date}`;
-        break;
-      case "attendance":
-        data = attendanceStats?.data;
-        filename = `Statistik_Kehadiran_${date}`;
-        break;
-      case "finance":
-        data = financeStats?.data;
-        filename = `Statistik_Keuangan_${date}`;
-        break;
-      case "academic":
-        data = academicStats?.data;
-        filename = `Statistik_Akademik_${date}`;
-        break;
-      case "tahfidz":
-        data = tahfidzStats?.data;
-        filename = `Statistik_Tahfidz_${date}`;
-        break;
-      case "all":
-      default:
-        data = {
-          exportedAt: new Date().toISOString(),
-          timeRange,
-          students: studentStats?.data,
-          attendance: attendanceStats?.data,
-          finance: financeStats?.data,
-          academic: academicStats?.data,
-          tahfidz: tahfidzStats?.data,
-        };
-        filename = `Analitik_Lengkap_${date}`;
-    }
-
-    if (!data) {
-      toast.error("Data tidak tersedia untuk di-export");
-      return;
-    }
-
-    try {
-      downloadReport(data, filename, format);
-      toast.success(`Berhasil mengunduh ${filename}.${format.toLowerCase()}`);
-    } catch {
-      toast.error("Gagal mengunduh laporan");
-    }
-  };
+  const { data: tahfidzStats } = useTahfidzProgress(filter);
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">
-            Analitik & Laporan
-          </h1>
+          {/* Was "Analitik & Laporan", which claimed a job /reports already
+              does. The three Overview pages now have one role each: Dashboard
+              is what needs attention today, Analytics is trends, and Reports
+              is the only place that produces a document. */}
+          <h1 className="text-3xl font-bold tracking-tight">Analitik</h1>
           <p className="text-muted-foreground">
-            Dashboard analitik dan laporan komprehensif
+            Tren dan perbandingan lintas periode
           </p>
         </div>
         <div className="flex gap-2">
@@ -191,20 +134,12 @@ export default function AnalyticsPage() {
           <Button variant="outline" asChild>
             <a href="/analytics/forecast">📈 Forecast</a>
           </Button>
+          {/* Export lives in /reports now. Keeping a second export surface
+              here meant two places generated the same documents by different
+              code paths, with no guarantee they agreed. */}
           <Button variant="outline" asChild>
-            <a href="/analytics/export">📊 Export</a>
+            <Link href="/reports">📄 Buat Laporan</Link>
           </Button>
-          <Select
-            onValueChange={(v) => handleExport("all", v as ExportReportFormat)}
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Export Laporan" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="JSON">Export JSON</SelectItem>
-              <SelectItem value="CSV">Export CSV</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
       </div>
 
@@ -408,17 +343,6 @@ export default function AnalyticsPage() {
 
         {/* Students Tab */}
         <TabsContent value="students" className="space-y-4">
-          <div className="flex justify-end">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleExport("students", "CSV")}
-              disabled={studentLoading}
-            >
-              <Download className="mr-2 h-4 w-4" />
-              Export Santri
-            </Button>
-          </div>
           <div className="grid gap-4 md:grid-cols-4">
             <Card>
               <CardHeader className="pb-2">
@@ -551,17 +475,6 @@ export default function AnalyticsPage() {
 
         {/* Attendance Tab */}
         <TabsContent value="attendance" className="space-y-4">
-          <div className="flex justify-end">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleExport("attendance", "CSV")}
-              disabled={attendanceLoading}
-            >
-              <Download className="mr-2 h-4 w-4" />
-              Export Kehadiran
-            </Button>
-          </div>
           <div className="grid gap-4 md:grid-cols-5">
             <Card>
               <CardHeader className="pb-2">
@@ -704,17 +617,6 @@ export default function AnalyticsPage() {
 
         {/* Finance Tab */}
         <TabsContent value="finance" className="space-y-4">
-          <div className="flex justify-end">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleExport("finance", "CSV")}
-              disabled={financeLoading}
-            >
-              <Download className="mr-2 h-4 w-4" />
-              Export Keuangan
-            </Button>
-          </div>
           <div className="grid gap-4 md:grid-cols-4">
             <Card>
               <CardHeader className="pb-2">
@@ -846,17 +748,6 @@ export default function AnalyticsPage() {
 
         {/* Academic Tab */}
         <TabsContent value="academic" className="space-y-4">
-          <div className="flex justify-end">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleExport("academic", "CSV")}
-              disabled={academicLoading}
-            >
-              <Download className="mr-2 h-4 w-4" />
-              Export Akademik
-            </Button>
-          </div>
           <div className="grid gap-4 md:grid-cols-3">
             <Card>
               <CardHeader className="pb-2">
@@ -1036,5 +927,13 @@ export default function AnalyticsPage() {
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+export default function AnalyticsPageWithShell() {
+  return (
+    <MainLayout>
+      <AnalyticsPageContent />
+    </MainLayout>
   );
 }

@@ -57,9 +57,7 @@ export const complaintsService = {
     // SUPER_ADMIN sees all if unitId is null, otherwise filters by unitId
     if (role === UserRole.SUPER_ADMIN) {
       if (unitId) where.unitId = unitId;
-    } else {
-      // Other roles must have a unitId
-      if (!unitId) throw new Error('Unit ID required');
+    } else if (unitId) {
       where.unitId = unitId;
     }
 
@@ -67,11 +65,21 @@ export const complaintsService = {
     if (category) where.category = category;
 
     // Access Control
+    //
+    // Unit-scoped access requires a unit. A user with no unit assignment —
+    // normal for the Perguruan Tinggi roles, and for anyone not yet attached
+    // to a unit — used to hit a bare `throw new Error('Unit ID required')`,
+    // which the error handler reported as a 500 and broke the page outright.
+    // Falling through to an unfiltered query instead would be worse: it would
+    // hand a unit admin with no unit every complaint in the yayasan. So they
+    // are demoted to seeing only their own, which is the safe reading of
+    // "scoped to a unit you do not have".
     const hasFullAccess =
       role === UserRole.SUPER_ADMIN ||
-      role === UserRole.UNIT_ADMIN ||
-      role === UserRole.STAFF ||
-      role === UserRole.TEACHER;
+      (!!unitId &&
+        (role === UserRole.UNIT_ADMIN ||
+          role === UserRole.STAFF ||
+          role === UserRole.TEACHER));
 
     // Students/Parents only see their own
     if (!hasFullAccess) {

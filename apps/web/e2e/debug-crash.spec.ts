@@ -20,7 +20,7 @@ test.describe("Debug Crashes", () => {
     const mockUser = {
       id: "user-123",
       name: "Dr. Ahmad Fauzi, M.Pd.",
-      email: "admin@cipansor.id",
+      email: "admin@cipansor.or.id",
       role: "SUPER_ADMIN",
       unitId: "unit-sma",
       unit: { id: "unit-sma", name: "SMA Al-Qur'an Cipansor" },
@@ -210,7 +210,7 @@ test.describe("Debug Crashes", () => {
               {
                 id: "u1",
                 name: "System Admin",
-                email: "admin@cipansor.id",
+                email: "admin@cipansor.or.id",
                 isActive: true,
                 createdAt: mockDate,
                 userRoles: [{ role: { name: "Super Admin" } }],

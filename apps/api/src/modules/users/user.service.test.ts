@@ -42,7 +42,7 @@ describe('user.service unit scoping (one admin per unit)', () => {
   it('rejects a non-super creator making a SUPER_ADMIN', async () => {
     const input = { role: 'SUPER_ADMIN' } as CreateUserInput;
     await expect(
-      userService.create(input, { roleCode: 'YAYASAN_ADMIN', unitId: null })
+      userService.create(input, { roleCode: 'SDIT_ADMIN', unitId: unitA })
     ).rejects.toMatchObject({ statusCode: 403 });
   });
 

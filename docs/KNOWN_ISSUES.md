@@ -299,6 +299,46 @@ injections (`grc-live`, `integration-grc`), none of which mock product data.
   cross-unit blocked, null-shared excluded, explicit mapping wins). See
   `apps/api/docs/ACCOUNTING_DEPLOYMENT.md`.
 
+### New follow-ups surfaced by the 2026-07-22 critique
+
+- **Consolidate the live `-enhancement`/`litbang`/`research` modules by design,
+  not by delete.** `dashboard-enhancement`, `finance-enhancement`, `litbang`, and
+  `research` are separately mounted and in active use — merging them is a
+  contract-changing refactor (route-name collisions with `dashboard`, ~34 web
+  call sites into `/finance-enhancement`, separate nav/RBAC entries), so it was
+  deliberately *not* rushed as part of dead-code removal.
+- **`/ppdb` → `/admissions/registrants`.** Build the canonical admissions
+  registrant listing/detail (currently unbuilt dead-links), move the onboarding
+  UI there, then redirect `/ppdb`. Until then `/ppdb/registrations` stays because
+  it is the only built onboarding entry point.
+- **`ViolationType` / `RewardType` have no backend model.** The violations and
+  rewards "Types" tabs assume CRUD-able type objects, but `/violations/categories`
+  and `/rewards/categories` only return the category enum. The pages were hardened
+  not to crash; either build the models/endpoints or drop the Types tabs.
+- **Menu vs middleware (still ~25 combinations).** The per-role sweep found roles
+  whose nav offers a route the middleware then bounces to `/unauthorized` — e.g.
+  most non-teaching staff (`*_TATA_USAHA`, `*_BENDAHARA`, `*_KOMITE`, pustakawan,
+  perawat, keamanan, laboran, business-*) get `/students`; alumni get
+  `/alumni/sanad`; `PT_MAHASISWA` gets `/classes`. Decide per route: grant access
+  or hide the menu item. `screenshot-roles` reproduces the list.
+- **Prettier is not enforced and the tree isn't clean.** `prettier --check`
+  currently flags ~464 files, so it can't go into CI as-is. Do a one-time
+  `pnpm format` pass, land it as its own commit, then add the check.
+- **Consolidate the six kitab models** (`Kitab`, `KitabKuning`, `KitabAssignment`,
+  `KitabProgress`, `KitabProgressRecord`, `KitabStudentProgress`) into one design —
+  deferred because it needs a destructive migration.
+- **README/branding + LICENSE.** The system moved PSB/PPDB → SPMB; the README
+  copy and screenshots still say PSB. And it advertises an MIT badge + links a
+  `LICENSE` file that does not exist — add the file or drop the claim (an owner
+  decision).
+- **Regulation-driven additions** (from the field/regulatory review): UU PDP
+  27/2022 (student = child = specific personal data — parental-consent records,
+  a privacy policy, data-subject access/erasure, data-access audit); ISAK 35
+  non-profit financial statements + the UU Yayasan annual-report package;
+  backup/restore scripts + a DR runbook (currently none, for a DB of children's
+  and financial data); a zakat *collection* (muzakki) model to complement the
+  existing distribution side.
+
 ## ⚠️ Broken Prisma migration chain (schema-first via `db push`)
 
 The `prisma/migrations/` folder is **not applicable to a fresh database**:

@@ -64,19 +64,33 @@ test("hamburger replaces the nav below lg, and never doubles up", async ({
   ).toBeVisible();
 });
 
-test("desktop nav and hamburger are never shown together", async ({ page }) => {
+test("exactly one of nav and hamburger is shown, at every width", async ({
+  page,
+}) => {
   // Both visible means three flex items share the row, and justify-between
   // eats the gap between brand and nav without either one overflowing — how
-  // the collision hid from a class-name assertion.
+  // the collision hid from a class-name assertion in the first place.
+  //
+  // Asserted per width rather than by comparing two booleans. The first
+  // version read them with `isVisible()`, which is documented as not waiting:
+  // it returned false for *both* before the header had rendered, and the test
+  // failed reporting "Expected: not false" — a true statement about an empty
+  // page, not about the layout. `toBeVisible`/`toBeHidden` retry, and saying
+  // which one is expected at each width means a failure names the real
+  // problem.
   for (const width of [1023, 1024, 1280]) {
     await page.setViewportSize({ width, height: 800 });
     await page.goto("/");
 
-    const navShown = await page.locator("header nav").isVisible();
-    const burgerShown = await page
-      .getByRole("button", { name: "Toggle menu" })
-      .isVisible();
+    const nav = page.locator("header nav");
+    const burger = page.getByRole("button", { name: "Toggle menu" });
 
-    expect(navShown).not.toBe(burgerShown);
+    if (width < 1024) {
+      await expect(burger).toBeVisible();
+      await expect(nav).toBeHidden();
+    } else {
+      await expect(nav).toBeVisible();
+      await expect(burger).toBeHidden();
+    }
   }
 });

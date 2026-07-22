@@ -69,15 +69,25 @@ export function LandingNavbar() {
           </Link>
 
           {/*
-            Desktop nav appears at `xl`, not `md`.
-            Six labels plus two buttons plus the brand measure ~1220px. At `md`
-            (768px) they wrapped onto a second line; at `lg` (1024px) the brand
-            text collided with the first item. `xl` (1280px) is the first
-            breakpoint where the row genuinely fits — below it the hamburger is
-            the correct answer, not a squeezed row. `whitespace-nowrap` keeps a
-            label from ever breaking mid-phrase ("Program / Unggulan").
+            Switch at 1100px, measured rather than guessed.
+
+            This used to sit at `xl` (1280px) on the estimate that the row
+            needed ~1220px. Measured in the browser it needs 1062px: 202px of
+            brand, 796px of nav, 64px of container padding. The 218px of slack
+            mattered, because 1280px is exactly where a 1920x1080 laptop lands
+            at 150% Windows scaling — and a hair under it once the scrollbar is
+            counted. Anyone on that very common setup, or at 175%, got the
+            mobile hamburger on a full-size desktop screen.
+
+            1100px gives the row ~38px of real clearance. `lg` (1024px) would
+            not: 1024 - 64 of padding leaves 960 for 998px of content, so it
+            would overflow — which is what the earlier note about the brand
+            "colliding with the first item" was seeing. Below 1100 the
+            hamburger is the right answer, not a squeezed row.
+            `whitespace-nowrap` keeps a label from breaking mid-phrase
+            ("Program / Unggulan").
           */}
-          <nav className="hidden xl:flex items-center gap-5 2xl:gap-6">
+          <nav className="hidden min-[1100px]:flex items-center gap-5 2xl:gap-6">
             {navItems.map((item) => (
               <Link
                 key={item.href}
@@ -103,7 +113,7 @@ export function LandingNavbar() {
           </nav>
 
           {/* Mobile Nav — must mirror the desktop breakpoint above. */}
-          <div className="xl:hidden">
+          <div className="min-[1100px]:hidden">
             <Sheet>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon">
@@ -111,7 +121,7 @@ export function LandingNavbar() {
                   <span className="sr-only">Toggle menu</span>
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right">
+              <SheetContent side="right" className="p-6">
                 <SheetHeader>
                   <SheetTitle className="text-left flex items-center gap-2">
                     <Image

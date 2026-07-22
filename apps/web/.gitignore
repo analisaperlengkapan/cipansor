@@ -52,4 +52,7 @@ e2e/_*.spec.ts
 
 # e2e screenshot temp artifacts
 e2e/temp/
+
+# per-role QA screenshot sweep output (scripts/screenshot-roles.ts)
+.qa-screens/
 apps/web/

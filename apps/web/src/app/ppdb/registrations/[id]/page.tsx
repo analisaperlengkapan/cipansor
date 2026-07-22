@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import {
   useRegistrant,
   useOnboardRegistrant,
+  useRecordRegistrationFee,
 } from "@/hooks/use-admissions";
 import { useAuth } from "@/hooks/use-auth";
 import { safeFormat } from "@/lib/date";
@@ -19,7 +20,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Loader2, Rocket, GraduationCap } from "lucide-react";
+import { Loader2, Rocket, GraduationCap, Wallet } from "lucide-react";
 
 const STATUS_LABEL: Record<string, string> = {
   REGISTERED: "Mendaftar",
@@ -50,7 +51,18 @@ export default function RegistrationDetailPage({
   const { user } = useAuth();
   const { data: registrant, isLoading } = useRegistrant(params.id);
   const onboard = useOnboardRegistrant();
+  const recordFee = useRecordRegistrationFee();
   const [isOnboarding, setIsOnboarding] = useState(false);
+
+  const handleRecordFee = async () => {
+    if (!registrant) return;
+    try {
+      await recordFee.mutateAsync({ id: registrant.id });
+      toast.success("Pelunasan daftar ulang tercatat.");
+    } catch {
+      toast.error("Gagal mencatat pelunasan daftar ulang.");
+    }
+  };
 
   const handleOnboard = async () => {
     if (!registrant) return;
@@ -109,8 +121,14 @@ export default function RegistrationDetailPage({
     );
   }
 
+  // Acceptance is an academic decision; daftar ulang is a separate one. The
+  // API refuses to onboard an unpaid registrant, so the button reflects that
+  // rather than offering an action that will fail.
+  const feeSettled = Boolean(registrant.registrationFeePaidAt);
   const canOnboard =
-    registrant.status === "ACCEPTED" && !registrant.enrolledAt;
+    registrant.status === "ACCEPTED" && !registrant.enrolledAt && feeSettled;
+  const awaitingFee =
+    registrant.status === "ACCEPTED" && !registrant.enrolledAt && !feeSettled;
 
   return (
     <MainLayout>
@@ -124,6 +142,35 @@ export default function RegistrationDetailPage({
             {STATUS_LABEL[registrant.status] ?? registrant.status}
           </Badge>
         </div>
+
+        {awaitingFee && (
+          <Card className="border-l-4 border-l-amber-500 bg-amber-50/40">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Wallet className="h-5 w-5 text-amber-600" /> Menunggu Daftar Ulang
+              </CardTitle>
+              <CardDescription>
+                Pendaftar sudah diterima, tetapi biaya daftar ulang belum
+                tercatat lunas. Onboarding terpadu terbuka setelah pelunasan
+                dicatat.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button
+                variant="outline"
+                onClick={handleRecordFee}
+                disabled={recordFee.isPending}
+              >
+                {recordFee.isPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Wallet className="mr-2 h-4 w-4" />
+                )}
+                Catat Pelunasan Daftar Ulang
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
         {canOnboard && (
           <Card className="border-l-4 border-l-emerald-500 bg-emerald-50/40">

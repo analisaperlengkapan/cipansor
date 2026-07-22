@@ -44,6 +44,16 @@ test.describe("End-to-End: PPDB Registration to Finance & Medical", () => {
       status: "ACCEPTED",
     });
 
+    // Acceptance is an academic decision, not daftar ulang. Enrolment is gated
+    // on the fee being settled, so record it — this is the step a clerk does
+    // at the front desk before onboarding.
+    await apiRequest(
+      session,
+      "PATCH",
+      `/admissions/registrants/${registrantId}/registration-fee`,
+      { note: "Lunas via E2E" },
+    );
+
     try {
       // Admin opens the registration listing, finds the registrant, opens detail.
       await page.goto("/ppdb/registrations");

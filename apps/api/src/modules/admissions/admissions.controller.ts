@@ -7,6 +7,7 @@ import {
   updateRegistrantSchema,
   updateRegistrantScoreSchema,
   updateRegistrantStatusSchema,
+  recordRegistrationFeeSchema,
   createRegistrantDocumentSchema,
   verifyDocumentSchema,
   trackRegistrantQuerySchema,
@@ -132,6 +133,17 @@ export async function updateRegistrantScore(req: Request, res: Response, next: N
   try {
     const data = updateRegistrantScoreSchema.parse(req.body);
     const registrant = await service.updateRegistrantScore(req.params.id, data);
+    res.json({ success: true, data: registrant });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function recordRegistrationFee(req: Request, res: Response, next: NextFunction) {
+  try {
+    const data = recordRegistrationFeeSchema.parse(req.body);
+    const user = requireUser(req);
+    const registrant = await service.recordRegistrationFee(req.params.id, data, user.id);
     res.json({ success: true, data: registrant });
   } catch (error) {
     next(error);

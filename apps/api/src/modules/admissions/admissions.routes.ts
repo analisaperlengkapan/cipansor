@@ -472,6 +472,26 @@ router.patch(
 
 /**
  * @swagger
+ * /api/admissions/registrants/{id}/registration-fee:
+ *   patch:
+ *     summary: Catat pelunasan biaya daftar ulang
+ *     description: >
+ *       Counterpart to the enrolment gate — a registrant cannot become an
+ *       active santri until this is recorded. STAFF is included because
+ *       recording a payment at the front desk is tata usaha work, not an
+ *       admin-only decision.
+ *     responses:
+ *       200:
+ *         description: Pelunasan tercatat
+ */
+router.patch(
+  '/registrants/:id/registration-fee',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  controller.recordRegistrationFee
+);
+
+/**
+ * @swagger
  * /api/admissions/registrants/{id}/enroll:
  *   post:
  *     summary: Enroll accepted registrant as student

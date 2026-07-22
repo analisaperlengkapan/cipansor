@@ -10,8 +10,10 @@ import {
   UpdateRegistrantInput,
   UpdateRegistrantScoreInput,
   UpdateRegistrantStatusInput,
+  RecordRegistrationFeeInput,
   CreateRegistrantDocumentInput,
 } from './admissions.schema';
+import { Errors } from '../../middleware/error';
 
 // `CreateRegistrantInput` already defines `source` and `campaignId` as
 // optional (see `createRegistrantSchema` in ./schema.ts), so there's no need
@@ -501,6 +503,40 @@ export async function updateRegistrantScore(id: string, data: UpdateRegistrantSc
         ...(shouldAdvanceStatus ? { status: AdmissionStatus.TEST_COMPLETED } : {}),
       },
     });
+  });
+}
+
+/**
+ * Record daftar ulang payment for a registrant.
+ *
+ * The counterpart to the enrolment gate. Adding the gate without this would
+ * have left an admin told "belum melunasi" with no way to say otherwise — a
+ * rule with no door through it, which stops the SPMB flow rather than
+ * ordering it.
+ */
+export async function recordRegistrationFee(
+  id: string,
+  data: RecordRegistrationFeeInput,
+  verifiedById: string
+) {
+  const registrant = await prisma.registrant.findUnique({
+    where: { id },
+    include: { admissionPeriod: { select: { registrationFee: true } } },
+  });
+
+  if (!registrant) throw Errors.notFound('Registrant');
+
+  return prisma.registrant.update({
+    where: { id },
+    data: {
+      registrationFeePaidAt: data.paidAt ?? new Date(),
+      // Falls back to what the period charges, so the common "paid in full"
+      // case needs no amount and the record still says how much.
+      registrationFeeAmount:
+        data.amount != null ? data.amount : (registrant.admissionPeriod?.registrationFee ?? null),
+      registrationFeeVerifiedById: verifiedById,
+      registrationFeeNote: data.note,
+    },
   });
 }
 

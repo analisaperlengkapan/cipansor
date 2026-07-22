@@ -2555,6 +2555,19 @@ async function main() {
             ? new Date()
             : undefined,
         enrolledAt: reg.status === AdmissionStatus.ENROLLED ? new Date() : undefined,
+        // Daftar ulang settled for those who got that far. Enrollment is gated
+        // on this now (utils/admission-fee-gate), so leaving it null would
+        // make the accepted demo registrant un-enrollable and the SPMB demo a
+        // dead end. Registrants still in selection have not paid, which is
+        // correct: the fee falls due on acceptance, not on applying.
+        registrationFeePaidAt:
+          reg.status === AdmissionStatus.ACCEPTED || reg.status === AdmissionStatus.ENROLLED
+            ? new Date()
+            : undefined,
+        registrationFeeAmount:
+          reg.status === AdmissionStatus.ACCEPTED || reg.status === AdmissionStatus.ENROLLED
+            ? admissionPeriod.registrationFee
+            : undefined,
         notes:
           reg.status === AdmissionStatus.REJECTED
             ? 'Tidak memenuhi persyaratan usia minimum'

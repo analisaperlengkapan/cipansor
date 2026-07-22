@@ -81,3 +81,59 @@ export const FOUNDATION_SCOPE_ROLES: readonly string[] = [
 export function isFoundationScopedRole(roleCode?: string | null): boolean {
   return !!roleCode && FOUNDATION_SCOPE_ROLES.includes(roleCode);
 }
+
+/**
+ * Roles that work across the academic units rather than inside one.
+ *
+ * The asrama houses santri from SD IT, SMP IT and SMA Qur'an together, and the
+ * shared services — klinik, perpustakaan, keamanan, laboratorium — serve the
+ * whole campus. None of these people belong to a school, but the data model
+ * gives a user exactly one `unitId`, so the seed assigns them to SMP IT
+ * because that is where most santri are.
+ *
+ * That made their unit-scoped queries return *most* of the right rows and
+ * silently drop the rest: a muhafidz opening tahfidz records simply could not
+ * see the SD IT santri they teach, with nothing to indicate rows were missing.
+ * Granting breadth here is what actually matches the job.
+ */
+export const CROSS_UNIT_SCOPE_ROLES: readonly string[] = [
+  RoleCode.PESANTREN_PENGASUH,
+  RoleCode.PESANTREN_DIREKTUR,
+  RoleCode.PESANTREN_TATA_USAHA,
+  RoleCode.USTADZ,
+  RoleCode.MUSYRIF,
+  RoleCode.MUSYRIFAH,
+  RoleCode.MUHAFIDZ,
+  RoleCode.MUHAFIDZAH,
+  RoleCode.MURABBI,
+  RoleCode.WALI_KAMAR,
+  RoleCode.KEAMANAN,
+  RoleCode.PERAWAT,
+  RoleCode.PUSTAKAWAN,
+  RoleCode.LABORAN,
+];
+
+/**
+ * True when the role's remit spans every unit — the foundation board, or the
+ * boarding and shared-service staff.
+ *
+ * Like isFoundationScopedRole this only ever *widens* a `where` clause. What
+ * the role may do with the rows it can now see is still its permission list.
+ */
+export function seesAllUnits(user: {
+  roleCode?: string | null;
+  /**
+   * Legacy UserRole. Consulted **only** to recognise SUPER_ADMIN, for callers
+   * that predate roleCode and still pass `role` alone. It is deliberately not
+   * used for anything else: deriveLegacyRole() maps every YAYASAN_* code onto
+   * 'UNIT_ADMIN', so trusting `role` generally is exactly what hid the
+   * foundation board's scope in the first place.
+   */
+  role?: string | null;
+}): boolean {
+  if (user.role === RoleCode.SUPER_ADMIN) return true;
+  return (
+    isFoundationScopedRole(user.roleCode) ||
+    (!!user.roleCode && CROSS_UNIT_SCOPE_ROLES.includes(user.roleCode))
+  );
+}

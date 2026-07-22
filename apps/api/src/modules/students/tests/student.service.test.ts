@@ -81,7 +81,10 @@ describe('StudentService', () => {
       (prisma.student.findMany as any).mockResolvedValue([]);
       (prisma.student.count as any).mockResolvedValue(0);
 
-      await service.findAll({ page: 1, limit: 10 }, { role: UserRole.SUPER_ADMIN, unitId: null });
+      await service.findAll(
+        { page: 1, limit: 10 },
+        { role: UserRole.SUPER_ADMIN, roleCode: 'SUPER_ADMIN', unitId: null }
+      );
 
       // Verify unitId is NOT enforced in where clause
       expect(prisma.student.findMany).toHaveBeenCalledWith(
@@ -89,6 +92,59 @@ describe('StudentService', () => {
           where: expect.not.objectContaining({
             unitId: expect.anything(), // Should check what 'where' actually contains
           }),
+        })
+      );
+    });
+
+    it('lets the yayasan board see every unit despite having no unitId', async () => {
+      (prisma.student.findMany as any).mockResolvedValue([]);
+      (prisma.student.count as any).mockResolvedValue(0);
+
+      // A foundation role carries no unitId. The old check tested the legacy
+      // `role`, which deriveLegacyRole maps to 'UNIT_ADMIN' for every YAYASAN_*
+      // code, so this fell into the unit branch and filtered on 'none'.
+      await service.findAll(
+        { page: 1, limit: 10 },
+        { role: 'UNIT_ADMIN' as any, roleCode: 'YAYASAN_KETUA', unitId: null }
+      );
+
+      expect(prisma.student.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.not.objectContaining({ unitId: expect.anything() }),
+        })
+      );
+    });
+
+    it('lets boarding staff see santri from other academic units', async () => {
+      (prisma.student.findMany as any).mockResolvedValue([]);
+      (prisma.student.count as any).mockResolvedValue(0);
+
+      // A muhafidz is seeded into SMP IT because a user has one unitId, but the
+      // santri they teach are spread across SD IT and SMP IT.
+      await service.findAll(
+        { page: 1, limit: 10 },
+        { role: 'TEACHER' as any, roleCode: 'MUHAFIDZ', unitId: 'unit-smpit' }
+      );
+
+      expect(prisma.student.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.not.objectContaining({ unitId: expect.anything() }),
+        })
+      );
+    });
+
+    it('still pins an ordinary unit role to its own unit', async () => {
+      (prisma.student.findMany as any).mockResolvedValue([]);
+      (prisma.student.count as any).mockResolvedValue(0);
+
+      await service.findAll(
+        { page: 1, limit: 10 },
+        { role: 'TEACHER' as any, roleCode: 'SDIT_GURU', unitId: 'unit-sdit' }
+      );
+
+      expect(prisma.student.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ unitId: 'unit-sdit' }),
         })
       );
     });

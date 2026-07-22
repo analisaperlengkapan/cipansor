@@ -42,6 +42,13 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import {
+  LetterType,
+  LetterNature,
+  LETTER_TYPE_LABELS,
+  LETTER_NATURE_LABELS,
+} from "@cipansor/shared";
+import { LetterFlowHistory } from "@/components/e-office/letter-flow-history";
 
 export default function LetterDetailPage({
   params,
@@ -373,9 +380,24 @@ export default function LetterDetailPage({
                 </div>
                 <div>
                   <label className="text-xs font-medium text-muted-foreground">
+                    Jenis Naskah
+                  </label>
+                  <p>
+                    {letter.type
+                      ? LETTER_TYPE_LABELS[letter.type as LetterType]
+                      : "Surat Dinas (Korespondensi)"}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">
                     Sifat
                   </label>
-                  <p>{letter.nature}</p>
+                  {/* Was the raw enum (e.g. "STRICTLY_CONFIDENTIAL"); the
+                      label reads as Indonesian, matching the form. */}
+                  <p>
+                    {LETTER_NATURE_LABELS[letter.nature as LetterNature] ??
+                      letter.nature}
+                  </p>
                 </div>
                 <div>
                   <label className="text-xs font-medium text-muted-foreground">
@@ -452,6 +474,19 @@ export default function LetterDetailPage({
             </CardHeader>
             <CardContent>
               <DispositionTimeline dispositions={letter.dispositions} />
+            </CardContent>
+          </Card>
+
+          {/* The full flow history: every forward, paraf, return and archive,
+              in order. Distinct from the disposition list above, which shows
+              only the routing hops; this also captures verification and
+              revision, which is what "who returned this and when" needs. */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Histori Alur Surat</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <LetterFlowHistory events={letter.flowEvents} />
             </CardContent>
           </Card>
         </div>

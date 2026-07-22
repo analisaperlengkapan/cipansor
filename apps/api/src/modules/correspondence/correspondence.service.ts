@@ -1,4 +1,11 @@
-import { PrismaClient, Prisma } from '@prisma/client';
+import {
+  PrismaClient,
+  Prisma,
+  LetterFlowAction,
+  LetterStatus as DbLetterStatus,
+  LetterType as DbLetterType,
+  LetterNature as DbLetterNature,
+} from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import {
   CreateLetterInput,
@@ -13,6 +20,51 @@ import {
   letterScopeWhere,
   type LetterActor,
 } from '@/utils/letter-access';
+import {
+  assertMayArchive,
+  assertMayResubmit,
+  assertMayReview,
+  statusAfterApproval,
+  statusAfterResubmit,
+  type ReviewerRung,
+} from '@/utils/letter-workflow';
+import { AGENDA_TYPE_CODE, assertNatureAllowed } from '@/utils/letter-naskah';
+
+/** Anything that can run a query — the live client or a transaction handle. */
+type Db = Prisma.TransactionClient | PrismaClient;
+
+/**
+ * Append one entry to a letter's history.
+ *
+ * Always called with the same transaction that performed the change, so a
+ * letter cannot move without the move being recorded — a history written
+ * afterwards, outside the transaction, is a history with holes in it exactly
+ * when something went wrong and the record matters most.
+ */
+async function recordFlow(
+  db: Db,
+  entry: {
+    letterId: string;
+    actorId: string;
+    action: LetterFlowAction;
+    targetId?: string | null;
+    fromStatus?: DbLetterStatus | null;
+    toStatus?: DbLetterStatus | null;
+    note?: string | null;
+  }
+) {
+  await db.letterFlowEvent.create({
+    data: {
+      letterId: entry.letterId,
+      actorId: entry.actorId,
+      action: entry.action,
+      targetId: entry.targetId ?? null,
+      fromStatus: entry.fromStatus ?? null,
+      toStatus: entry.toStatus ?? null,
+      note: entry.note ?? null,
+    },
+  });
+}
 
 export const CorrespondenceService = {
   // Helper: Generate Auto Number
@@ -65,6 +117,12 @@ export const CorrespondenceService = {
   },
 
   async createLetter(data: CreateLetterInput, userId: string) {
+    // Jenis naskah menentukan sifat mana yang sah dan buku nomor mana yang
+    // dipakai. Divalidasi sebelum apa pun ditulis: menolak setelah nomor
+    // agenda terlanjur naik akan meninggalkan lubang di buku agenda.
+    const type = (data.type as DbLetterType | undefined) ?? DbLetterType.SURAT_DINAS;
+    assertNatureAllowed(type, data.nature as unknown as DbLetterNature);
+
     // Get active academic year
     const activeYear = await prisma.academicYear.findFirst({
       where: { isActive: true },
@@ -81,7 +139,14 @@ export const CorrespondenceService = {
       // Typically only generated when status is READY or SIGNED, but we'll allow draft numbering if needed
       // Or just leave it empty for DRAFT
       if (data.status !== 'DRAFT') {
-        letterNumber = await this.generateNumber(data.unitId, 'OUTGOING', academicYearId);
+        // Per jenis, not one shared counter: on paper an SK has its own agenda
+        // book, and sharing a counter would make SK numbers skip every time an
+        // ordinary letter went out.
+        letterNumber = await this.generateNumber(
+          data.unitId,
+          AGENDA_TYPE_CODE[type],
+          academicYearId
+        );
       }
     }
 
@@ -91,6 +156,7 @@ export const CorrespondenceService = {
         data: {
           unitId: data.unitId,
           direction: data.direction as any, // Enum mapping might need care
+          type,
           classificationId: data.classificationId,
           agendaNumber: agendaNumber,
           letterNumber: letterNumber,
@@ -133,6 +199,26 @@ export const CorrespondenceService = {
             unitId: data.unitId,
             isCC: false,
           })),
+        });
+      }
+
+      await recordFlow(tx, {
+        letterId: letter.id,
+        actorId: userId,
+        action: LetterFlowAction.CREATED,
+        toStatus: letter.status,
+        note: letter.subject,
+      });
+
+      // A draft that is created straight into review has been submitted, and
+      // saying so keeps the history readable: otherwise the first approval
+      // appears with nothing before it explaining why anyone was reviewing.
+      if (letter.status !== DbLetterStatus.DRAFT && data.reviewerIds?.length) {
+        await recordFlow(tx, {
+          letterId: letter.id,
+          actorId: userId,
+          action: LetterFlowAction.SUBMITTED,
+          toStatus: letter.status,
         });
       }
 
@@ -264,6 +350,15 @@ export const CorrespondenceService = {
           },
           orderBy: { createdAt: 'desc' },
         },
+        // Oldest first: this is read as a story, and a story told backwards
+        // makes the reader reconstruct the order themselves.
+        flowEvents: {
+          include: {
+            actor: { select: { name: true } },
+            target: { select: { name: true } },
+          },
+          orderBy: { createdAt: 'asc' },
+        },
       },
     });
   },
@@ -275,47 +370,89 @@ export const CorrespondenceService = {
     notes?: string
   ) {
     const result = await prisma.$transaction(async (tx) => {
-      // 1. Update Reviewer Status
-      const review = await tx.letterReviewer.findUnique({
-        where: {
-          letterId_reviewerId: {
-            letterId,
-            reviewerId,
-          },
-        },
+      // The whole ladder is read, not just the caller's own rung: whether this
+      // reviewer may act at all depends on the rungs below them. The previous
+      // version fetched only the caller's row, which is why the signer could
+      // sign a draft the sekretaris had never opened.
+      const letter = await tx.letter.findUnique({
+        where: { id: letterId },
+        select: { id: true, status: true, createdById: true, reviewers: true },
       });
+      if (!letter) throw new Error('Letter not found');
 
-      if (!review) throw new Error('Reviewer not assigned to this letter');
+      const ladder: ReviewerRung[] = letter.reviewers.map((r) => ({
+        id: r.id,
+        reviewerId: r.reviewerId,
+        order: r.order,
+        status: r.status,
+        isSigner: r.isSigner,
+      }));
 
-      const status = action === 'APPROVE' ? 'APPROVED' : 'REJECTED';
+      const mine = assertMayReview(letter.status, ladder, reviewerId);
+
+      const nextStatus =
+        action === 'APPROVE'
+          ? statusAfterApproval(ladder, reviewerId)
+          : DbLetterStatus.REVISION_NEEDED;
+
       await tx.letterReviewer.update({
-        where: { id: review.id },
+        where: { id: mine.id },
         data: {
-          status,
+          status: action === 'APPROVE' ? 'APPROVED' : 'REJECTED',
           notes,
           reviewedAt: new Date(),
         },
       });
 
-      // 2. Check Workflow Logic
-      let signed = false;
-      if (action === 'REJECT') {
-        // If rejected, set letter to Revision Needed
-        await tx.letter.update({
-          where: { id: letterId },
-          data: { status: 'REVISION_NEEDED' as any },
-        });
-      } else if (review.isSigner) {
-        // If signer approves, the letter is signed.
-        await tx.letter.update({
-          where: { id: letterId },
-          data: { status: 'SIGNED' as any },
-        });
-        signed = true;
-      }
+      await tx.letter.update({
+        where: { id: letterId },
+        data: { status: nextStatus },
+      });
 
-      return { success: true, signed };
+      await recordFlow(tx, {
+        letterId,
+        actorId: reviewerId,
+        action:
+          action === 'REJECT'
+            ? LetterFlowAction.REVISION_REQUESTED
+            : nextStatus === DbLetterStatus.SIGNED
+              ? LetterFlowAction.SIGNED
+              : LetterFlowAction.APPROVED,
+        // Returning a draft is addressed to its author; the history should say
+        // who it went back to, not only who sent it back.
+        targetId: action === 'REJECT' ? letter.createdById : null,
+        fromStatus: letter.status,
+        toStatus: nextStatus,
+        note: notes,
+      });
+
+      return {
+        success: true,
+        signed: nextStatus === DbLetterStatus.SIGNED,
+        rejected: action === 'REJECT',
+        authorId: letter.createdById,
+        status: nextStatus,
+      };
     });
+
+    // A returned draft is only actionable if its author hears about it.
+    // Nothing told them before, so REVISION_NEEDED was a silent dead end.
+    if (result.rejected) {
+      const letter = await prisma.letter.findUnique({
+        where: { id: letterId },
+        select: { subject: true, unitId: true },
+      });
+      eventBus.emit('notification:send', {
+        userId: result.authorId,
+        unitId: letter?.unitId,
+        type: 'REMINDER',
+        title: 'Surat Dikembalikan untuk Revisi',
+        message: `Konsep "${letter?.subject ?? ''}" dikembalikan${
+          notes ? `: ${notes}` : '.'
+        }`,
+        data: { letterId, link: `/e-office/letter/${letterId}` },
+      });
+    }
 
     // Post-commit: when a letter has been signed, notify its creator so they can
     // proceed (dispatch/archive). Done outside the transaction so the listener
@@ -344,6 +481,108 @@ export const CorrespondenceService = {
   },
 
   /**
+   * Send a returned draft back up the ladder.
+   *
+   * This route did not exist. Rejecting a draft set it to REVISION_NEEDED and
+   * there it stayed — the author could edit the text but had no way to put it
+   * back into review, so every returned letter was abandoned. A rule with no
+   * way to satisfy it is not a rule, it is a trap.
+   */
+  async resubmitLetter(letterId: string, actor: LetterActor, note?: string) {
+    await assertLetterAccess(actor, letterId);
+
+    return await prisma.$transaction(async (tx) => {
+      const letter = await tx.letter.findUnique({
+        where: { id: letterId },
+        select: { id: true, status: true, createdById: true, reviewers: true },
+      });
+      if (!letter) throw new Error('Letter not found');
+
+      assertMayResubmit(letter.status, letter.createdById, actor.id);
+
+      const ladder: ReviewerRung[] = letter.reviewers.map((r) => ({
+        id: r.id,
+        reviewerId: r.reviewerId,
+        order: r.order,
+        status: r.status,
+        isSigner: r.isSigner,
+      }));
+      const nextStatus = statusAfterResubmit(ladder);
+
+      // Every paraf is cleared, not only those below the rejector — see the
+      // reasoning in letter-workflow.ts. An approval given to the previous
+      // text says nothing about the text now being sent.
+      await tx.letterReviewer.updateMany({
+        where: { letterId },
+        data: { status: 'PENDING', reviewedAt: null },
+      });
+
+      await tx.letter.update({
+        where: { id: letterId },
+        data: { status: nextStatus },
+      });
+
+      await recordFlow(tx, {
+        letterId,
+        actorId: actor.id,
+        action: LetterFlowAction.RESUBMITTED,
+        fromStatus: letter.status,
+        toStatus: nextStatus,
+        note,
+      });
+
+      return { id: letterId, status: nextStatus };
+    });
+  },
+
+  /**
+   * Close a letter's journey.
+   *
+   * The end of the chain the tata usaha described: the last official to hold
+   * the letter files it. Nothing could do this before — an empty
+   * `if (status === 'SENT' || 'ARCHIVED') {}` stub sat where the transition
+   * belonged, so no letter ever reached ARCHIVED and the disposition chain had
+   * no ending.
+   */
+  async archiveLetter(letterId: string, actor: LetterActor, note?: string) {
+    await assertLetterAccess(actor, letterId);
+
+    return await prisma.$transaction(async (tx) => {
+      const letter = await tx.letter.findUnique({
+        where: { id: letterId },
+        select: { id: true, status: true },
+      });
+      if (!letter) throw new Error('Letter not found');
+
+      assertMayArchive(letter.status);
+
+      // Any disposition still open is closed with the letter. Leaving them
+      // PENDING would keep the letter on its recipients' to-do lists forever
+      // while the letter itself was filed and done.
+      await tx.disposition.updateMany({
+        where: { letterId, status: { not: 'COMPLETED' } },
+        data: { status: 'COMPLETED', completedAt: new Date() },
+      });
+
+      await tx.letter.update({
+        where: { id: letterId },
+        data: { status: DbLetterStatus.ARCHIVED },
+      });
+
+      await recordFlow(tx, {
+        letterId,
+        actorId: actor.id,
+        action: LetterFlowAction.ARCHIVED,
+        fromStatus: letter.status,
+        toStatus: DbLetterStatus.ARCHIVED,
+        note,
+      });
+
+      return { id: letterId, status: DbLetterStatus.ARCHIVED };
+    });
+  },
+
+  /**
    * Anyone authenticated could previously inject a disposition into any
    * letter's chain — and because a disposition is itself a grant of access,
    * that was also a way to grant yourself the letter.
@@ -351,24 +590,53 @@ export const CorrespondenceService = {
   async createDisposition(data: CreateDispositionInput, actor: LetterActor) {
     const letter = await assertLetterAccess(actor, data.letterId);
 
-    const disposition = await prisma.disposition.create({
-      data: {
-        letterId: data.letterId,
-        senderId: data.senderId,
-        recipientId: data.recipientId,
-        instruction: data.instruction,
-        deadline: data.deadline ? new Date(data.deadline) : null,
-        parentDispositionId: data.parentDispositionId,
-        status: 'PENDING',
-        notes: data.notes,
-      },
-    });
+    if (letter.status === DbLetterStatus.ARCHIVED) {
+      throw new Error(
+        'Surat sudah diarsipkan; buka kembali arsipnya sebelum mendisposisikan.'
+      );
+    }
 
-    // NOTE: an empty `if (letter.status === 'SENT' || 'ARCHIVED') {}` stub sat
-    // here, so a letter's status never advanced to DISPOSED and the last
-    // recipient had no way to close the chain. Removed rather than left
-    // looking implemented; the status transitions arrive with the disposition
-    // workflow rework, which needs the flow-history table to be meaningful.
+    const disposition = await prisma.$transaction(async (tx) => {
+      const created = await tx.disposition.create({
+        data: {
+          letterId: data.letterId,
+          senderId: data.senderId,
+          recipientId: data.recipientId,
+          instruction: data.instruction,
+          deadline: data.deadline ? new Date(data.deadline) : null,
+          parentDispositionId: data.parentDispositionId,
+          status: 'PENDING',
+          notes: data.notes,
+        },
+      });
+
+      // The transition an empty `if (status === 'SENT' || 'ARCHIVED') {}` stub
+      // used to stand in for, so no letter ever left the status it was created
+      // with. Only incoming letters are disposed; an outgoing letter's chain
+      // is its reviewers.
+      if (
+        letter.direction === 'INCOMING' &&
+        letter.status !== DbLetterStatus.DISPOSED
+      ) {
+        await tx.letter.update({
+          where: { id: letter.id },
+          data: { status: DbLetterStatus.DISPOSED },
+        });
+      }
+
+      await recordFlow(tx, {
+        letterId: letter.id,
+        actorId: data.senderId,
+        action: LetterFlowAction.DISPOSED,
+        targetId: data.recipientId,
+        fromStatus: letter.status,
+        toStatus:
+          letter.direction === 'INCOMING' ? DbLetterStatus.DISPOSED : letter.status,
+        note: data.instruction,
+      });
+
+      return created;
+    });
 
     // Notify Recipient
     eventBus.emit('notification:send', {
@@ -395,17 +663,35 @@ export const CorrespondenceService = {
       throw new Error('Unauthorized access to this disposition');
     }
 
-    const updatedDisposition = await prisma.disposition.update({
-      where: { id },
-      data: {
-        status,
-        notes: notes
-          ? disposition.notes
-            ? `${disposition.notes}\n\n[UPDATE] ${notes}`
-            : notes
-          : undefined,
-        completedAt: status === 'COMPLETED' ? new Date() : null,
-      },
+    const updatedDisposition = await prisma.$transaction(async (tx) => {
+      const updated = await tx.disposition.update({
+        where: { id },
+        data: {
+          status,
+          // Notes are still concatenated here for the disposition's own
+          // summary, but the history below is where each update is kept
+          // separately — one text column cannot say when each line was added
+          // or by whom, which is the whole question being asked of it.
+          notes: notes
+            ? disposition.notes
+              ? `${disposition.notes}\n\n[UPDATE] ${notes}`
+              : notes
+            : undefined,
+          completedAt: status === 'COMPLETED' ? new Date() : null,
+        },
+      });
+
+      if (userId) {
+        await recordFlow(tx, {
+          letterId: disposition.letterId,
+          actorId: userId,
+          action: LetterFlowAction.DISPOSITION_UPDATED,
+          targetId: disposition.senderId,
+          note: notes ? `[${status}] ${notes}` : `[${status}]`,
+        });
+      }
+
+      return updated;
     });
 
     // Notify Sender if Completed

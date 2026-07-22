@@ -83,6 +83,32 @@ export const CorrespondenceController = {
     }
   },
 
+  async resubmit(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await CorrespondenceService.resubmitLetter(
+        req.params.id,
+        actorOf(req),
+        req.body?.note
+      );
+      res.json({ success: true, data: result });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async archive(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await CorrespondenceService.archiveLetter(
+        req.params.id,
+        actorOf(req),
+        req.body?.note
+      );
+      res.json({ success: true, data: result });
+    } catch (error) {
+      next(error);
+    }
+  },
+
   async createDisposition(req: Request, res: Response, next: NextFunction) {
     try {
       const result = await CorrespondenceService.createDisposition(

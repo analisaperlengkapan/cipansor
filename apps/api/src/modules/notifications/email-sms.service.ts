@@ -15,6 +15,7 @@ import { logger } from '../../lib/logger';
 import { Twilio } from 'twilio';
 import { config } from '../../config';
 import nodemailer from 'nodemailer';
+import { whatsAppService } from './whatsapp.service';
 
 // Notification templates
 const templates = {
@@ -193,7 +194,7 @@ const smsTemplates = {
     `[Cipansor] Kode OTP Anda: ${data.code}. Jangan bagikan kode ini.`,
 };
 
-export type NotificationChannel = 'EMAIL' | 'SMS' | 'PUSH' | 'IN_APP';
+export type NotificationChannel = 'EMAIL' | 'SMS' | 'WHATSAPP' | 'PUSH' | 'IN_APP';
 export type ServiceNotificationType =
   | 'WELCOME'
   | 'PASSWORD_RESET'
@@ -289,6 +290,9 @@ class NotificationService {
           break;
         case 'SMS':
           result = await this.sendSMS(options);
+          break;
+        case 'WHATSAPP':
+          result = await this.sendWhatsApp(options);
           break;
         case 'IN_APP':
           result = { success: true, channel, messageId: notificationLog.id };
@@ -440,6 +444,64 @@ class NotificationService {
         success: false,
         channel: 'SMS',
         error: error instanceof Error ? error.message : 'Twilio error',
+      };
+    }
+  }
+
+  /**
+   * Route a message to an EXTERNAL channel (email/SMS/WhatsApp) without
+   * creating an in-app Notification row — used by notifications.service,
+   * which has already persisted the in-app record and now fans out to the
+   * external channels listed on it.
+   */
+  async dispatchExternal(options: SendNotificationOptions): Promise<NotificationResult> {
+    switch (options.channel) {
+      case 'EMAIL':
+        return this.sendEmail(options);
+      case 'SMS':
+        return this.sendSMS(options);
+      case 'WHATSAPP':
+        return this.sendWhatsApp(options);
+      default:
+        return { success: false, channel: options.channel, error: 'Not an external channel' };
+    }
+  }
+
+  /**
+   * Send a WhatsApp message through the module's multi-provider WhatsApp
+   * service (whatsapp.service.ts). Default provider is Meta's WhatsApp
+   * Business Cloud API — direct, no BSP middleman; configure via
+   * WA_PROVIDER / WA_ACCESS_TOKEN / WA_PHONE_NUMBER_ID. The SIMULATOR
+   * provider (default when unconfigured) logs instead of sending.
+   */
+  private async sendWhatsApp(options: SendNotificationOptions): Promise<NotificationResult> {
+    const { recipientPhone, message } = options;
+
+    if (!recipientPhone) {
+      return { success: false, channel: 'WHATSAPP', error: 'Recipient phone required' };
+    }
+
+    const redactedMessage = message.replace(/\b\d{4,8}\b/g, '****');
+    logger.info(`[WHATSAPP] To: ${recipientPhone}, Message: ${redactedMessage}`);
+
+    try {
+      const result = await whatsAppService.sendMessage({
+        to: recipientPhone,
+        message,
+        type: 'text',
+      });
+      return {
+        success: result.success,
+        channel: 'WHATSAPP',
+        messageId: result.messageId,
+        error: result.error,
+      };
+    } catch (error) {
+      logger.error('Failed to send WhatsApp:', error);
+      return {
+        success: false,
+        channel: 'WHATSAPP',
+        error: error instanceof Error ? error.message : 'WhatsApp error',
       };
     }
   }

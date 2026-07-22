@@ -73,6 +73,7 @@ export const config = {
     authToken: process.env.TWILIO_AUTH_TOKEN,
     phoneNumber: process.env.TWILIO_PHONE_NUMBER,
   },
+
 } as const;
 
 export type Config = typeof config;

@@ -78,10 +78,98 @@ const DEFAULT_SETTINGS: AppSettings = {
 
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { api } from "@/lib/api";
+import { useAuthStore } from "@/stores/auth";
+import { getActiveRoleCode } from "@/lib/rbac";
 import { User, Lock } from "lucide-react";
 import { useI18n } from "@/providers/i18n-provider";
 
+interface ChannelPolicy {
+  EMAIL: boolean;
+  SMS: boolean;
+  WHATSAPP: boolean;
+}
+
+/**
+ * System-wide notification channel switches (super admin only): choose
+ * whether the system sends via email, SMS, and/or WhatsApp. In-app
+ * notifications are always on.
+ */
+function SystemChannelPolicyCard() {
+  const [policy, setPolicy] = useState<ChannelPolicy | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    api
+      .get("/notifications/settings/channels")
+      .then((res) => setPolicy(res.data.data))
+      .catch(() => setPolicy(null));
+  }, []);
+
+  const update = async (key: keyof ChannelPolicy, value: boolean) => {
+    if (!policy) return;
+    const next = { ...policy, [key]: value };
+    setPolicy(next);
+    setSaving(true);
+    try {
+      await api.put("/notifications/settings/channels", next);
+      toast.success("Kebijakan kanal notifikasi disimpan");
+    } catch {
+      setPolicy(policy);
+      toast.error("Gagal menyimpan kebijakan kanal");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (!policy) return null;
+
+  const rows: Array<{ key: keyof ChannelPolicy; label: string; desc: string }> =
+    [
+      {
+        key: "WHATSAPP",
+        label: "WhatsApp",
+        desc: "Kirim notifikasi (mis. tagihan SPP) via WhatsApp Business API",
+      },
+      { key: "EMAIL", label: "Email", desc: "Kirim notifikasi melalui email" },
+      { key: "SMS", label: "SMS", desc: "Kirim notifikasi melalui SMS" },
+    ];
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Bell className="h-5 w-5" />
+          Kanal Notifikasi Sistem
+        </CardTitle>
+        <CardDescription>
+          Pilih kanal pengiriman notifikasi untuk seluruh sistem (hanya super
+          admin). Notifikasi dalam aplikasi selalu aktif.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {rows.map((row) => (
+          <div key={row.key} className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label>{row.label}</Label>
+              <p className="text-sm text-muted-foreground">{row.desc}</p>
+            </div>
+            <Switch
+              checked={policy[row.key]}
+              disabled={saving}
+              onCheckedChange={(checked) => update(row.key, checked)}
+            />
+          </div>
+        ))}
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function SettingsPage() {
+  const { user } = useAuthStore();
+  const isSuperAdmin = getActiveRoleCode(user) === "SUPER_ADMIN";
+
   const { locale, setLocale } = useI18n();
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
   const [isSaving, setIsSaving] = useState(false);
@@ -313,6 +401,7 @@ export default function SettingsPage() {
         </TabsContent>
 
         <TabsContent value="notifications" className="space-y-4">
+          {isSuperAdmin && <SystemChannelPolicyCard />}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">

@@ -4,6 +4,23 @@ import { ApiResponse } from '@cipansor/shared';
 import { ReceptionStats, GuestBook, StudentVisit, StudentPackage } from '@cipansor/shared';
 import { Errors } from '../../middleware/error';
 
+/**
+ * Resolve the unit scope for reception operations. Unit staff use their own
+ * unit; foundation-level accounts (super admin / yayasan) have no unitId and
+ * must select one via ?unitId= (or body.unitId). Missing scope is a 400 —
+ * never a 401, which the web client treats as "session expired".
+ */
+function requireUnitId(req: Request): string {
+  const fromQuery = typeof req.query.unitId === 'string' ? req.query.unitId : undefined;
+  const fromBody = typeof req.body?.unitId === 'string' ? req.body.unitId : undefined;
+  const unitId = req.user?.unitId || fromQuery || fromBody;
+  if (!unitId) {
+    throw Errors.badRequest('unitId is required (foundation-level accounts must pass ?unitId=)');
+  }
+  return unitId;
+}
+
+
 // --- Stats ---
 
 export const getStats = async (
@@ -12,10 +29,7 @@ export const getStats = async (
   next: NextFunction
 ) => {
   try {
-    if (!req.user?.unitId) {
-      throw Errors.unauthorized('User does not have a unit assigned');
-    }
-    const data = await ReceptionService.getStats(req.user.unitId);
+    const data = await ReceptionService.getStats(requireUnitId(req));
     res.json({ success: true, data });
   } catch (error) {
     next(error);
@@ -30,10 +44,7 @@ export const getGuestBooks = async (
   next: NextFunction
 ) => {
   try {
-    if (!req.user?.unitId) {
-      throw Errors.unauthorized('User does not have a unit assigned');
-    }
-    const data = await ReceptionService.getGuestBooks(req.user.unitId, req.query);
+    const data = await ReceptionService.getGuestBooks(requireUnitId(req), req.query);
     res.json({ success: true, data });
   } catch (error) {
     next(error);
@@ -46,10 +57,7 @@ export const createGuestBook = async (
   next: NextFunction
 ) => {
   try {
-    if (!req.user?.unitId || !req.user.id) {
-      throw Errors.unauthorized('User does not have a unit assigned');
-    }
-    const data = await ReceptionService.createGuestBook(req.user.unitId, req.user.id, req.body);
+    const data = await ReceptionService.createGuestBook(requireUnitId(req), req.user!.id, req.body);
     res.status(201).json({ success: true, data });
   } catch (error) {
     next(error);
@@ -77,10 +85,7 @@ export const getStudentVisits = async (
   next: NextFunction
 ) => {
   try {
-    if (!req.user?.unitId) {
-      throw Errors.unauthorized('User does not have a unit assigned');
-    }
-    const data = await ReceptionService.getStudentVisits(req.user.unitId, req.query);
+    const data = await ReceptionService.getStudentVisits(requireUnitId(req), req.query);
     res.json({ success: true, data });
   } catch (error) {
     next(error);
@@ -93,10 +98,7 @@ export const createStudentVisit = async (
   next: NextFunction
 ) => {
   try {
-    if (!req.user?.unitId) {
-      throw Errors.unauthorized('User does not have a unit assigned');
-    }
-    const data = await ReceptionService.createStudentVisit(req.user.unitId, req.body);
+    const data = await ReceptionService.createStudentVisit(requireUnitId(req), req.body);
     res.status(201).json({ success: true, data });
   } catch (error) {
     next(error);
@@ -124,10 +126,7 @@ export const getPackages = async (
   next: NextFunction
 ) => {
   try {
-    if (!req.user?.unitId) {
-      throw Errors.unauthorized('User does not have a unit assigned');
-    }
-    const data = await ReceptionService.getPackages(req.user.unitId, req.query);
+    const data = await ReceptionService.getPackages(requireUnitId(req), req.query);
     res.json({ success: true, data });
   } catch (error) {
     next(error);
@@ -140,10 +139,7 @@ export const createPackage = async (
   next: NextFunction
 ) => {
   try {
-    if (!req.user?.unitId || !req.user.id) {
-      throw Errors.unauthorized('User does not have a unit assigned');
-    }
-    const data = await ReceptionService.createPackage(req.user.unitId, req.user.id, req.body);
+    const data = await ReceptionService.createPackage(requireUnitId(req), req.user!.id, req.body);
     res.status(201).json({ success: true, data });
   } catch (error) {
     next(error);

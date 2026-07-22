@@ -22,6 +22,16 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
   Table,
   TableBody,
   TableCell,
@@ -46,6 +56,7 @@ import {
   RefreshCw,
   Plus,
   ShieldAlert,
+  Upload,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -77,6 +88,8 @@ interface Invoice {
     paidAt: string;
     method: string;
     receiptNumber?: string;
+    verificationStatus?: string;
+    rejectionReason?: string | null;
   }>;
   createdAt: string;
 }
@@ -105,6 +118,180 @@ interface WalletData {
   spendingLimit?: number;
 }
 
+const verificationBadge = (status?: string) => {
+  switch (status) {
+    case "PENDING_VERIFICATION":
+      return (
+        <Badge variant="secondary" className="text-xs">
+          <Clock className="h-3 w-3 mr-1" /> Menunggu Verifikasi TU
+        </Badge>
+      );
+    case "TU_APPROVED":
+      return (
+        <Badge className="bg-blue-500 text-xs">
+          <Clock className="h-3 w-3 mr-1" /> Diverifikasi TU
+        </Badge>
+      );
+    case "REJECTED":
+      return (
+        <Badge variant="destructive" className="text-xs">
+          <AlertTriangle className="h-3 w-3 mr-1" /> Ditolak
+        </Badge>
+      );
+    default:
+      return null;
+  }
+};
+
+function UploadProofDialog({
+  invoice,
+  open,
+  onClose,
+  onSuccess,
+}: {
+  invoice: Invoice | null;
+  open: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const [file, setFile] = useState<File | null>(null);
+  const [amount, setAmount] = useState("");
+  const [method, setMethod] = useState("BANK_TRANSFER");
+  const [referenceNo, setReferenceNo] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const remaining = invoice
+    ? Number(invoice.amount) - Number(invoice.paidAmount)
+    : 0;
+
+  useEffect(() => {
+    if (invoice) {
+      setAmount(String(remaining));
+      setFile(null);
+      setReferenceNo("");
+      setMethod("BANK_TRANSFER");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [invoice?.id]);
+
+  const submit = async () => {
+    if (!invoice) return;
+    if (!file) {
+      toast.error("Pilih berkas bukti pembayaran terlebih dahulu");
+      return;
+    }
+    const value = Number(amount);
+    if (!value || value <= 0 || value > remaining) {
+      toast.error("Nominal harus di antara 1 dan sisa tagihan");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const uploadRes = await api.post("/upload", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      const proofUrl: string =
+        uploadRes.data?.data?.url ?? uploadRes.data?.data?.fileUrl;
+      if (!proofUrl) throw new Error("Upload gagal");
+
+      await api.post(`/finance/invoices/${invoice.id}/payment-proof`, {
+        amount: value,
+        method,
+        referenceNo: referenceNo || undefined,
+        proofUrl,
+      });
+
+      toast.success(
+        "Bukti pembayaran terkirim — menunggu verifikasi Tata Usaha",
+      );
+      onSuccess();
+      onClose();
+    } catch (err) {
+      console.error("Failed to submit payment proof:", err);
+      toast.error("Gagal mengirim bukti pembayaran. Coba lagi.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="sm:max-w-[480px]">
+        <DialogHeader>
+          <DialogTitle>Upload Bukti Pembayaran</DialogTitle>
+          <DialogDescription>
+            {invoice
+              ? `${invoice.paymentType.name} — ${invoice.invoiceNumber}. Setelah diverifikasi Tata Usaha, Anda akan menerima notifikasi pembayaran berhasil.`
+              : ""}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="proof-amount">Nominal (Rp)</Label>
+            <Input
+              id="proof-amount"
+              type="number"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              Sisa tagihan:{" "}
+              {new Intl.NumberFormat("id-ID", {
+                style: "currency",
+                currency: "IDR",
+                minimumFractionDigits: 0,
+              }).format(remaining)}
+            </p>
+          </div>
+          <div className="space-y-2">
+            <Label>Metode Pembayaran</Label>
+            <Select value={method} onValueChange={setMethod}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="BANK_TRANSFER">Transfer Bank</SelectItem>
+                <SelectItem value="VIRTUAL_ACCOUNT">Virtual Account</SelectItem>
+                <SelectItem value="EWALLET">E-Wallet</SelectItem>
+                <SelectItem value="OTHER">Lainnya</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="proof-ref">No. Referensi (Opsional)</Label>
+            <Input
+              id="proof-ref"
+              placeholder="cth: nomor transaksi transfer"
+              value={referenceNo}
+              onChange={(e) => setReferenceNo(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="proof-file">Berkas Bukti (JPG/PNG/PDF)</Label>
+            <Input
+              id="proof-file"
+              type="file"
+              accept="image/jpeg,image/png,image/webp,application/pdf"
+              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={submitting}>
+            Batal
+          </Button>
+          <Button onClick={submit} disabled={submitting || !file}>
+            {submitting ? "Mengirim…" : "Kirim Bukti"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function FinancePage() {
   const searchParams = useSearchParams();
   const selectedStudentId = searchParams.get("studentId");
@@ -113,6 +300,8 @@ export default function FinancePage() {
   const [children, setChildren] = useState<Child[]>([]);
   const [selectedChild, setSelectedChild] = useState<string>("");
   const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [proofInvoice, setProofInvoice] = useState<Invoice | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
   const [summary, setSummary] = useState<FinanceSummary | null>(null);
   const [wallet, setWallet] = useState<WalletData | null>(null);
   const [walletLoading, setWalletLoading] = useState(false);
@@ -181,7 +370,7 @@ export default function FinancePage() {
 
     fetchFinance();
     fetchWallet();
-  }, [selectedChild]);
+  }, [selectedChild, reloadKey]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("id-ID", {
@@ -429,6 +618,17 @@ export default function FinancePage() {
                                     )}
                                   </p>
                                 )}
+                                {invoice.status !== "PAID" &&
+                                  invoice.status !== "CANCELLED" && (
+                                    <Button
+                                      size="sm"
+                                      className="mt-2 gap-1"
+                                      onClick={() => setProofInvoice(invoice)}
+                                    >
+                                      <Upload className="h-4 w-4" /> Upload
+                                      Bukti Bayar
+                                    </Button>
+                                  )}
                               </div>
                             </div>
 
@@ -455,6 +655,18 @@ export default function FinancePage() {
                                             ({payment.receiptNumber})
                                           </span>
                                         )}
+                                        <span className="ml-2">
+                                          {verificationBadge(
+                                            payment.verificationStatus,
+                                          )}
+                                        </span>
+                                        {payment.verificationStatus ===
+                                          "REJECTED" &&
+                                          payment.rejectionReason && (
+                                            <p className="text-xs text-destructive mt-1">
+                                              Alasan: {payment.rejectionReason}
+                                            </p>
+                                          )}
                                       </div>
                                       <div className="flex items-center gap-2">
                                         <span className="font-medium text-green-600">
@@ -772,6 +984,12 @@ export default function FinancePage() {
           </Tabs>
         </>
       )}
+      <UploadProofDialog
+        invoice={proofInvoice}
+        open={!!proofInvoice}
+        onClose={() => setProofInvoice(null)}
+        onSuccess={() => setReloadKey((k) => k + 1)}
+      />
     </div>
   );
 }

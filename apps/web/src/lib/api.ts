@@ -92,6 +92,36 @@ api.interceptors.request.use(
   (error) => Promise.reject(error),
 );
 
+// Single-flight token refresh. Several requests failing with 401 at the same
+// time must share ONE /auth/refresh call: refresh tokens rotate on use, so
+// parallel refreshes race — the first wins and every loser gets a 401, which
+// used to log the user out mid-navigation.
+let refreshPromise: Promise<string | null> | null = null;
+
+async function refreshAccessToken(): Promise<string | null> {
+  if (!refreshPromise) {
+    refreshPromise = (async () => {
+      const refreshToken =
+        typeof window !== "undefined"
+          ? localStorage.getItem("refreshToken")
+          : null;
+      if (!refreshToken) return null;
+
+      const response = await axios.post(`${API_URL}/auth/refresh`, {
+        refreshToken,
+      });
+      const { accessToken, refreshToken: newRefreshToken } =
+        response.data.data;
+      localStorage.setItem("accessToken", accessToken);
+      localStorage.setItem("refreshToken", newRefreshToken);
+      return accessToken as string;
+    })().finally(() => {
+      refreshPromise = null;
+    });
+  }
+  return refreshPromise;
+}
+
 // Response interceptor for token refresh
 api.interceptors.response.use(
   (response) => response,
@@ -105,34 +135,26 @@ api.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        const refreshToken =
-          typeof window !== "undefined"
-            ? localStorage.getItem("refreshToken")
-            : null;
-        if (refreshToken) {
-          const response = await axios.post(`${API_URL}/auth/refresh`, {
-            refreshToken,
-          });
-
-          const { accessToken, refreshToken: newRefreshToken } =
-            response.data.data;
-          localStorage.setItem("accessToken", accessToken);
-          localStorage.setItem("refreshToken", newRefreshToken);
-
+        const accessToken = await refreshAccessToken();
+        if (accessToken) {
           if (originalRequest.headers) {
             originalRequest.headers.Authorization = `Bearer ${accessToken}`;
           }
           return api(originalRequest);
         }
       } catch (refreshError) {
-        // Refresh failed, clear tokens and redirect to login
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
-        if (
-          typeof window !== "undefined" &&
-          !window.location.pathname.includes("/login")
-        ) {
-          window.location.href = "/login";
+        // Only a rejected refresh TOKEN means the session is over; transient
+        // failures (network, 5xx) should not nuke the session.
+        const status = (refreshError as AxiosError).response?.status;
+        if (status === 401 || status === 403) {
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("refreshToken");
+          if (
+            typeof window !== "undefined" &&
+            !window.location.pathname.includes("/login")
+          ) {
+            window.location.href = "/login";
+          }
         }
       }
     }

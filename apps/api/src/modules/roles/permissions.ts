@@ -183,6 +183,16 @@ const SUFFIX_PERMISSIONS: Array<[RegExp, Permission[]]> = [
                     P.ADMISSION_MANAGE]],
   [/_BENDAHARA$/, [P.STUDENT_VIEW, P.FINANCE_VIEW, P.FINANCE_MANAGE]],
   [/_KOMITE$/, [P.STUDENT_VIEW, P.ACADEMIC_VIEW, P.FINANCE_VIEW]],
+  // Empty on purpose, and it is the tighter setting rather than an unfinished
+  // one. These roles are scoped by *relationship*: a wali reaches their child
+  // through the StudentParent link (parent.service.verifyParentAccess), and a
+  // santri through their own record. There is no permission that expresses
+  // "only mine" — STUDENT_VIEW guards the admin roster, so granting it here
+  // would show a wali every santri in the unit instead of their own children.
+  //
+  // The hazard runs the other way: adding a hasPermission() gate to a route
+  // these roles use locks out every wali and santri at once, silently, and
+  // only in production. relationship-scoped-roles.test.ts pins both halves.
   [/_ALUMNI$/, []],
   [/_SISWA$|_MAHASISWA$/, []],
   [/_ORANG_TUA$/, []],

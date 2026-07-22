@@ -16,6 +16,7 @@ import { Bell, Menu, Settings, User, LogOut } from "lucide-react";
 import Link from "next/link";
 import { RoleSwitcher } from "./role-switcher";
 import { LanguageSwitcher } from "./language-switcher";
+import { useI18n } from "@/providers/i18n-provider";
 
 interface HeaderProps {
   onMenuClick?: () => void;
@@ -23,6 +24,7 @@ interface HeaderProps {
 
 export function Header({ onMenuClick }: HeaderProps) {
   const { user, logout } = useAuthStore();
+  const { t } = useI18n();
 
   return (
     <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b glass px-4 lg:px-6">
@@ -37,7 +39,9 @@ export function Header({ onMenuClick }: HeaderProps) {
         </Button>
         <div className="hidden lg:block">
           <h1 className="text-lg font-semibold">
-            {user?.unit?.name || "Cipansor Management System"}
+            {/* Foundation-level accounts have no unit, so the fallback is what
+                the yayasan board actually sees every day. */}
+            {user?.unit?.name || t("common.appName", "Sistem Informasi Cipansor")}
           </h1>
         </div>
       </div>

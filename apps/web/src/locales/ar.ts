@@ -1,5 +1,6 @@
 export const ar = {
   common: {
+    appName: "نظام معلومات سيبانسور",
     save: "حفظ",
     saving: "جاري الحفظ...",
     saveSettings: "حفظ الإعدادات",
@@ -20,7 +21,7 @@ export const ar = {
   },
   login: {
     welcome: "مرحباً بكم في سيبانسور",
-    description: "نظام إدارة مؤسسة معهد سيبانسور التعليمي",
+    description: "نظام معلومات سيبانسور",
     email: "البريد الإلكتروني",
     password: "كلمة المرور",
     signIn: "تسجيل الدخول",

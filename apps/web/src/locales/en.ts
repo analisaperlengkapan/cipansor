@@ -1,5 +1,6 @@
 export const en = {
   common: {
+    appName: "Cipansor Information System",
     save: "Save",
     saving: "Saving...",
     saveSettings: "Save Settings",
@@ -20,7 +21,7 @@ export const en = {
   },
   login: {
     welcome: "Welcome to Cipansor",
-    description: "Cipansor Pesantren Foundation Management System",
+    description: "Cipansor Information System",
     email: "Email",
     password: "Password",
     signIn: "Sign In",

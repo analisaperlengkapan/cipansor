@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/card";
 import { Loader2, Eye, EyeOff } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/providers/i18n-provider";
 import {
   getDashboardForRole,
   getEffectiveRole,
@@ -109,6 +110,7 @@ function DemoAvatar({ acc, size = 10 }: { acc: DemoAccount; size?: number }) {
 }
 
 export default function LoginPage() {
+  const { t } = useI18n();
   const router = useRouter();
   const {
     login,
@@ -340,9 +342,14 @@ export default function LoginPage() {
                 className="h-full w-full object-contain rounded-full"
               />
             </div>
-            <CardTitle className="text-2xl">Selamat Datang di Cipansor</CardTitle>
+            {/* Both strings were hardcoded in Indonesian, which is why the
+                language switcher never reached the login screen even though
+                login.* has been translated in all three locales all along. */}
+            <CardTitle className="text-2xl">
+              {t("login.welcome", "Selamat Datang di Cipansor")}
+            </CardTitle>
             <CardDescription>
-              Sistem Manajemen Yayasan Pesantren Cipansor
+              {t("login.description", "Sistem Informasi Cipansor")}
             </CardDescription>
           </CardHeader>
           <CardContent>

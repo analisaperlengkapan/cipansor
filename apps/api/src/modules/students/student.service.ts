@@ -1,4 +1,5 @@
 import { randomUUID } from 'crypto';
+import { seesAllUnits } from '@/utils/resolve-unit-id';
 import { prisma } from '@/lib/prisma';
 import { hashPassword } from '@/lib/password';
 import { Errors } from '@/middleware/error';
@@ -9,7 +10,10 @@ export class StudentService {
   /**
    * Get all students with pagination
    */
-  async findAll(query: ListStudentsQuery, currentUser: { role: string; unitId: string | null }) {
+  async findAll(
+    query: ListStudentsQuery,
+    currentUser: { role: string; roleCode?: string | null; unitId: string | null }
+  ) {
     const { page, limit, search, unitId, classId, gender } = query;
     const skip = (page - 1) * limit;
 
@@ -17,8 +21,10 @@ export class StudentService {
       deletedAt: null,
     };
 
-    // Filter by unit
-    if (currentUser.role !== UserRole.SUPER_ADMIN) {
+    // Unit filter. seesAllUnits() covers both the yayasan board (no unitId at
+    // all, so this used to resolve to 'none' and return nothing) and the
+    // boarding/shared-service staff, whose santri span several academic units.
+    if (!seesAllUnits(currentUser)) {
       where.unitId = currentUser.unitId || 'none';
     } else if (unitId) {
       where.unitId = unitId;

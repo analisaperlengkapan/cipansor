@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
-import { Prisma, MurojaahType, TahfidzMistakeType } from '@prisma/client';
+import { seesAllUnits } from '@/utils/resolve-unit-id';
+import { Prisma, MurojaahType, TahfidzMistakeType, RoleCode } from '@prisma/client';
 import type {
   ListMurojaahQuery,
   CreateMurojaahInput,
@@ -11,6 +12,7 @@ import type {
 
 interface AuthContext {
   role: string;
+  roleCode?: string | null;
   unitId?: string | null;
 }
 
@@ -39,6 +41,16 @@ export const murojaahService = {
     } = query;
 
     const where: Prisma.MurojaahRecordWhereInput = {};
+
+    // Unit scoping. This method took an AuthContext and never read it, so
+    // murojaah records were the one tahfidz surface with no unit filter at
+    // all: any caller who could reach the endpoint saw every unit's records.
+    // Scoping it the same way as tahfidz.findAll closes that, while
+    // seesAllUnits keeps the yayasan board and the boarding staff — whose
+    // santri span units — seeing everything they are supposed to.
+    if (!seesAllUnits(context)) {
+      where.student = { unitId: context.unitId || 'none' };
+    }
 
     // Filter by student
     if (studentId) where.studentId = studentId;
@@ -280,7 +292,13 @@ export const murojaahService = {
   // ============================================
 
   async getStudentHistory(studentId: string, query: ListMurojaahQuery) {
-    return this.findAll({ ...query, studentId }, { role: 'ADMIN', unitId: null });
+    // One student's own history: studentId is the whole filter, so unit
+    // scoping would only ever narrow it further. The caller has already been
+    // authorised for this student, hence the deliberate bypass.
+    return this.findAll(
+      { ...query, studentId },
+      { role: RoleCode.SUPER_ADMIN, roleCode: RoleCode.SUPER_ADMIN, unitId: null }
+    );
   },
 
   async getStudentSummary(query: StudentMurojaahSummaryQuery) {

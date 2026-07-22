@@ -70,6 +70,12 @@ services:
       # 2FA wall, so the credentials published on /login actually work. Must be
       # false for a real launch — set it together with NEXT_PUBLIC_SHOW_DEMO_LOGIN.
       DEMO_MODE: ${DEMO_MODE:-false}
+    volumes:
+      # User uploads (santri photos, e-simaan recordings, attachments) are
+      # written to public/uploads and served from /uploads. Without a volume
+      # they sit on the container's writable layer and every redeploy deletes
+      # them, leaving the database holding fileUrl rows that 404 forever.
+      - api_uploads:/app/apps/api/public/uploads
     ports:
       - "127.0.0.1:${API_PORT:-3001}:3001"
     depends_on:
@@ -173,6 +179,8 @@ services:
 volumes:
   postgres_data:
   redis_data:
+  # User uploads. Must outlive the container — see the api service's volumes.
+  api_uploads:
   # Survives redeploys so the optimised landing-page images stay warm.
   web-image-cache:
 

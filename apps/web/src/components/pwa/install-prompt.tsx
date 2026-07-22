@@ -9,13 +9,27 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 }
 
-const DISMISS_KEY = "pwa-install-dismissed";
+const DISMISS_KEY = "pwa-install-dismissed-until";
+
+/** How long "X" hides the banner for. */
+const SNOOZE_DAYS = 30;
+
+declare global {
+  interface Window {
+    __installPromptEvent?: BeforeInstallPromptEvent | null;
+  }
+}
 
 /**
  * Floating "install app" prompt. Appears only when the browser fires
  * `beforeinstallprompt` (i.e. the PWA is installable and not already installed)
- * and the user hasn't dismissed it before. iOS Safari doesn't fire the event,
- * so nothing shows there — that's expected.
+ * and the user hasn't snoozed it. iOS Safari doesn't fire the event, so nothing
+ * shows there — that's expected.
+ *
+ * The event itself is captured by an inline script in the document head, not
+ * here: Chrome fires it once, often before hydration, so a listener attached in
+ * useEffect misses it outright. This component reads whatever that script
+ * stashed and also listens for late arrivals.
  */
 export function InstallPrompt() {
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(
@@ -25,19 +39,34 @@ export function InstallPrompt() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (localStorage.getItem(DISMISS_KEY) === "1") return;
 
-    const onBeforeInstall = (e: Event) => {
-      e.preventDefault();
-      setDeferred(e as BeforeInstallPromptEvent);
+    // Previously a permanent "1" flag: one tap on X and the banner never came
+    // back on that browser, with no way to undo short of clearing site data.
+    const until = Number(localStorage.getItem(DISMISS_KEY) || 0);
+    if (until && Date.now() < until) return;
+
+    const accept = (e: BeforeInstallPromptEvent) => {
+      setDeferred(e);
       setVisible(true);
     };
-    const onInstalled = () => setVisible(false);
 
-    window.addEventListener("beforeinstallprompt", onBeforeInstall);
+    // The event may already have fired before this component mounted.
+    if (window.__installPromptEvent) {
+      accept(window.__installPromptEvent);
+    }
+
+    const onReady = () => {
+      if (window.__installPromptEvent) accept(window.__installPromptEvent);
+    };
+    const onInstalled = () => {
+      window.__installPromptEvent = null;
+      setVisible(false);
+    };
+
+    window.addEventListener("installpromptready", onReady);
     window.addEventListener("appinstalled", onInstalled);
     return () => {
-      window.removeEventListener("beforeinstallprompt", onBeforeInstall);
+      window.removeEventListener("installpromptready", onReady);
       window.removeEventListener("appinstalled", onInstalled);
     };
   }, []);
@@ -46,12 +75,17 @@ export function InstallPrompt() {
     if (!deferred) return;
     await deferred.prompt();
     await deferred.userChoice;
+    // The event is single-use — Chrome will not let it be prompted twice.
+    window.__installPromptEvent = null;
     setDeferred(null);
     setVisible(false);
   };
 
   const dismiss = () => {
-    localStorage.setItem(DISMISS_KEY, "1");
+    localStorage.setItem(
+      DISMISS_KEY,
+      String(Date.now() + SNOOZE_DAYS * 24 * 60 * 60 * 1000),
+    );
     setVisible(false);
   };
 

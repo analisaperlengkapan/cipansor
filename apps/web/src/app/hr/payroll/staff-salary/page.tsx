@@ -538,7 +538,7 @@ export default function StaffSalaryPage() {
 
         {/* Components Sheet */}
         <Sheet open={isComponentsOpen} onOpenChange={setIsComponentsOpen}>
-          <SheetContent className="w-[500px] sm:max-w-[500px]">
+          <SheetContent className="w-[500px] sm:max-w-[500px] overflow-y-auto p-6">
             <SheetHeader>
               <SheetTitle>Komponen Gaji</SheetTitle>
               <SheetDescription>

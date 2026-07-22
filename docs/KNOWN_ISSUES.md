@@ -4,6 +4,43 @@ Status of production-readiness work and the remaining roadmap. Updated as part o
 the production-readiness / architecture-standardization effort. For the system
 overview see [`ARCHITECTURE.md`](./ARCHITECTURE.md).
 
+## ✅ Resolved by this effort (2026-07-22)
+
+Follow-up on top of the merged planning/nav/security work, driven by a critique
+of system sprawl, docs drift, and a full per-role visual sweep.
+
+- **Dead admissions duplicates removed.** Deleted the unmounted `modules/psb`,
+  the zero-importer `modules/finance-bridge`, and the standalone
+  `modules/ppdb-wave` (the web app reaches waves via `/admissions/waves`; nothing
+  called its `/api/ppdb-wave` mount). Deleted the five screenshot/crash-sweep e2e
+  specs that were tooling, not tests. (The web `/ppdb` pages were **kept**: an
+  early pass mistook them for a dead duplicate and removed them, but the e2e
+  onboarding test caught it — `/ppdb/registrations` is the only built
+  registrant-listing + "Eksekusi Onboarding Terpadu" UI; the canonical
+  `/admissions/registrants` is still an unbuilt dead-link. Consolidating `/ppdb`
+  into `/admissions/registrants` is a roadmap item, not a delete.)
+- **Per-role screenshot sweep made runnable + the crashes it found fixed.**
+  `screenshot-roles.ts` pointed at `qa-*` accounts no seed creates; it now drives
+  off `DEMO_ACCOUNTS` (one login per RoleCode, `DEMO_MODE` bypasses admin 2FA
+  setup). The sweep across all 75 roles found five pages that crashed for every
+  visitor, all fixed: `muhadhoroh`/`muhadatsah` (upcoming/statistics/top-performers
+  fetchers returned the `{success,data}` envelope while the page consumed the
+  payload), `violations`/`rewards` (same envelope bug in the `*Types` hooks, plus
+  a search filter hardened against a missing `name`), and `parent/finance` (child
+  wallet fetched at the wrong route — `/wallet/student/:id` instead of
+  `/wallet/:studentId`, and transactions keyed by wallet id not student id).
+- **CI gate closed.** The ~100-test web unit suite (dead-link + RBAC guards
+  included) ran in no workflow; it now runs in the Tests job. Renamed the
+  workflow "CI/CD" → "CI" (no deploy stage), and dropped the dead `develop`
+  trigger from the E2E workflow.
+- **One source of truth for agent guidance.** `.github/copilot-instructions.md`
+  was a fourth, already-stale copy of the project guide; it is now a pointer to
+  `AGENTS.md`. Added `.claude/` guardrails (a PreToolUse hook blocking a full
+  Write to `schema.prisma` and a push to `main`, a SessionStart bootstrap) and
+  three skills (`gate`, `stack`, `screenshot-roles`). Corrected AGENTS.md's stale
+  "237 models / 133 enums" (now stable phrasing) and its `UserRole`-as-example
+  contradiction; fixed the README Prisma badge (5.22 → 7).
+
 ## ✅ Resolved by the 2026-07-21 Playwright role audit
 
 Found by logging in as one demo account per role and walking every link the

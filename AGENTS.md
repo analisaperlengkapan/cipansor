@@ -18,11 +18,14 @@ monorepo**:
 
 ## Golden rules
 
-1. **Never clobber `apps/api/prisma/schema.prisma`.** It holds 237 models / 133
-   enums. It was once accidentally truncated to a stub, which broke the entire
-   backend. Edit surgically; run `pnpm --filter api db:generate` after changes.
+1. **Never clobber `apps/api/prisma/schema.prisma`.** It is very large —
+   ~9,400 lines, hundreds of models and enums. (Exact counts drift; don't
+   hard-code them here.) It was once accidentally truncated to a stub, which
+   broke the entire backend. Edit surgically; run `pnpm --filter api db:generate`
+   after changes. A committed PreToolUse hook (`.claude/hooks/guard.sh`) blocks a
+   full-file Write to this path.
 2. **Prisma is the source of truth for DB enums and models.** Import DB enums
-   (`UserRole`, `VisitStatus`, `LeaveStatus`, …) from `@prisma/client`, not from
+   (`RoleCode`, `VisitStatus`, `LeaveStatus`, …) from `@prisma/client`, not from
    `@cipansor/shared`. `@cipansor/shared` holds API/DTO contracts only.
 3. **Use `RoleCode`, not the legacy `UserRole`.** `req.user.role` is a roleCode
    string. New auth checks use `RoleCode.*` / permissions; the legacy `UserRole`

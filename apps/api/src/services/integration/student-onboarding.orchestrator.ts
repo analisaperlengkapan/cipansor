@@ -5,6 +5,7 @@ import {
   syncParentRoleAssignments,
   type ParentScopeClient,
 } from '@/utils/parent-scope';
+import { assertAdmissionFeeSettled } from '@/utils/admission-fee-gate';
 
 export class StudentOnboardingOrchestrator {
   /**
@@ -45,6 +46,17 @@ export class StudentOnboardingOrchestrator {
       if (registrant.status !== 'ACCEPTED') {
         throw Errors.badRequest('Only ACCEPTED registrants can be enrolled');
       }
+
+      // Being accepted is an academic decision; it is not daftar ulang. The
+      // fee owed lives on the period, so it has to be read alongside.
+      const period = await tx.admissionPeriod.findUnique({
+        where: { id: registrant.admissionPeriodId },
+        select: { registrationFee: true },
+      });
+      assertAdmissionFeeSettled({
+        registrationFee: period?.registrationFee ?? null,
+        registrationFeePaidAt: registrant.registrationFeePaidAt,
+      });
 
       // 2. Create User Account for Student
       const crypto = await import('crypto');

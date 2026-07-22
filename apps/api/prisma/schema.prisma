@@ -1688,6 +1688,14 @@ model Registrant {
   notes             String?         @db.Text
   acceptedAt        DateTime?       @map("accepted_at")
   enrolledAt        DateTime?       @map("enrolled_at")
+  // Daftar ulang payment. The period/wave carries the amount owed
+  // (AdmissionPeriod.registrationFee); these record that it was actually
+  // settled, which is what gates becoming an active santri. Without them a
+  // registrant marked ACCEPTED became a full student immediately, paid or not.
+  registrationFeePaidAt   DateTime? @map("registration_fee_paid_at")
+  registrationFeeAmount   Decimal?  @map("registration_fee_amount") @db.Decimal(12, 2)
+  registrationFeeVerifiedById String? @map("registration_fee_verified_by_id")
+  registrationFeeNote     String?   @map("registration_fee_note") @db.Text
   studentId         String?         @unique @map("student_id") // Link ke student jika sudah enrolled
   campaignId        String?         @map("campaign_id")
   source            String?

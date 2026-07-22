@@ -1,5 +1,6 @@
 import { prisma } from '../../lib/prisma';
 import { Prisma, AdmissionStatus, Gender } from '@prisma/client';
+import { assertAdmissionFeeSettled } from '../../utils/admission-fee-gate';
 import {
   CreateAdmissionPeriodInput,
   UpdateAdmissionPeriodInput,
@@ -304,6 +305,14 @@ export async function enrollRegistrant(
   if (registrant.status !== AdmissionStatus.ACCEPTED) {
     throw new Error('Registrant must be accepted before enrollment');
   }
+
+  // The other enrolment path (student-onboarding.orchestrator) applies the
+  // same gate. The two have drifted before, which is why the rule is shared
+  // rather than written twice.
+  assertAdmissionFeeSettled({
+    registrationFee: registrant.admissionPeriod?.registrationFee ?? null,
+    registrationFeePaidAt: registrant.registrationFeePaidAt,
+  });
 
   // Check if user already exists (Internal Track / Alumni)
   const existingUser = registrant.email

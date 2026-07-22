@@ -52,9 +52,15 @@ describe('StudentOnboardingOrchestrator', () => {
             address: 'Jl. Test 123',
             parentName: 'Ayah Budi',
             parentPhone: '08123456789',
-            parentEmail: 'ayah@test.com'
+            parentEmail: 'ayah@test.com',
+            admissionPeriodId: 'period-1',
+            // Daftar ulang settled — enrolment is gated on this now.
+            registrationFeePaidAt: new Date('2026-07-01')
           }),
           update: vi.fn().mockResolvedValue({ id: 'reg-1' })
+        },
+        admissionPeriod: {
+          findUnique: vi.fn().mockResolvedValue({ registrationFee: 500000 })
         },
         user: {
           create: vi.fn()

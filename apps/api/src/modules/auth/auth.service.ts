@@ -128,6 +128,15 @@ export class AuthService {
       throw Errors.unauthorized('Account is deactivated');
     }
 
+    // An identity row, not a login: no credential was ever issued for it (TK
+    // Qur'an pupils, and the SYSTEM placeholder). Refused here rather than
+    // passed to bcrypt, whose behaviour on a null hash is a library detail and
+    // not something authentication should depend on. The message stays generic
+    // so it cannot be used to tell identities apart from real accounts.
+    if (!user.passwordHash) {
+      throw Errors.unauthorized('Invalid email or password');
+    }
+
     const isValid = await comparePassword(input.password, user.passwordHash);
 
     if (!isValid) {
@@ -585,6 +594,13 @@ export class AuthService {
 
     if (!user) {
       throw Errors.notFound('User');
+    }
+
+    // No credential to change. Unreachable through the UI — an identity row
+    // cannot sign in, so it cannot hold a token to reach this route — but the
+    // check belongs here rather than resting on that being true forever.
+    if (!user.passwordHash) {
+      throw Errors.badRequest('This record has no login to change');
     }
 
     const isValid = await comparePassword(input.currentPassword, user.passwordHash);

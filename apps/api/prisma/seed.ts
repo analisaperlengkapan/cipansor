@@ -1342,6 +1342,77 @@ async function main() {
 
   console.log('✅ Students created and enrolled');
 
+  // ---------------------------------------------------------------------
+  // TK Qur'an pupils — recorded, but with no account
+  // ---------------------------------------------------------------------
+  //
+  // The RoleCode enum has no TKQ_SISWA on purpose: children of this age do not
+  // hold logins. Nothing then created any TK pupils, so TK Qur'an ended up with
+  // three teachers, no class and nobody enrolled — and the PAUD development
+  // assessment attached itself to a SMA Qur'an santri, because that was the
+  // only student left to point at.
+  //
+  // A pupil without a login is still a pupil. Each gets a Student row, and a
+  // User row that is an *identity*: it carries the name (Student has no name
+  // column of its own), has `passwordHash: null` so no credential exists at
+  // all, is inactive so login is refused before anything else, and holds no
+  // role assignment. See utils/student-login-policy.ts.
+  const classTkA = await prisma.class.create({
+    data: {
+      unitId: tkQuran.id,
+      academicYearId: academicYear.id,
+      name: 'TK A',
+      level: 'A',
+      capacity: 20,
+    },
+  });
+
+  const tkPupilConfigs = [
+    { name: 'Aisyah Nur Fadhilah', gender: Gender.FEMALE, birthDate: '2021-03-14' },
+    { name: 'Umar Abdul Aziz', gender: Gender.MALE, birthDate: '2021-07-02' },
+    { name: 'Khadijah Salsabila', gender: Gender.FEMALE, birthDate: '2020-11-20' },
+  ];
+
+  const tkPupils = [];
+  for (let i = 0; i < tkPupilConfigs.length; i++) {
+    const data = tkPupilConfigs[i];
+    const identity = await prisma.user.create({
+      data: {
+        name: data.name,
+        // Not a mailbox — an identifier. The column is unique and required, and
+        // these children have no address of their own.
+        email: `tkq-${String(i + 1).padStart(3, '0')}@murid.cipansor.local`,
+        passwordHash: null,
+        role: UserRole.STUDENT,
+        unitId: tkQuran.id,
+        isActive: false,
+      },
+    });
+
+    const pupil = await prisma.student.create({
+      data: {
+        userId: identity.id,
+        unitId: tkQuran.id,
+        nis: `2024TK${String(i + 1).padStart(2, '0')}`,
+        nisn: `01${String(i + 1).padStart(8, '0')}`,
+        gender: data.gender,
+        birthPlace: 'Tasikmalaya',
+        birthDate: new Date(data.birthDate),
+        address: 'Kp. Cipansor, Kec. Kadipaten, Kab. Tasikmalaya',
+        parentName: `Orang tua ${data.name.split(' ')[0]}`,
+        parentPhone: `08122200${String(i + 1).padStart(2, '0')}`,
+      },
+    });
+
+    await prisma.classEnrollment.create({
+      data: { studentId: pupil.id, classId: classTkA.id, status: 'active' },
+    });
+
+    tkPupils.push(pupil);
+  }
+
+  console.log(`✅ TK Qur'an pupils created (${tkPupils.length}, no logins)`);
+
   // Create Parent users (wali santri) with role assignments
   const parentUsers = [];
   const parentNames = [
@@ -1496,6 +1567,13 @@ async function main() {
     } else if (isParent) {
       demoParents++; // linked in the second pass, once every student exists
     }
+  }
+
+  // TK Qur'an has no demo student of its own — there is no TKQ_SISWA role to
+  // create one from — so the demo TK parent had nobody to be a parent of and
+  // opened a portal with no child in it. Point it at a real TK pupil.
+  if (tkPupils.length > 0) {
+    demoStudentByUnit.set(tkQuran.id, tkPupils[0].id);
   }
 
   // Second pass: the parent of a unit is linked to that unit's demo student.
@@ -3610,7 +3688,9 @@ async function main() {
 
   console.log('\n   === PAUD ===');
   console.log('   Admin PAUD: admin@paud.sch.id / Admin123!');
-  console.log('   Siswa PAUD: student4@paud.sch.id / Student123!');
+  // No pupil login is printed here on purpose: TK Qur'an children hold no
+  // accounts. The line used to advertise student4@paud.sch.id / Student123!,
+  // credentials for an account that no longer exists.
 
   console.log('\n   === SD IT ===');
   console.log('   Admin SD IT: admin@sdit.sch.id / Admin123!');
@@ -5860,7 +5940,13 @@ async function main() {
   console.log('   ✅ Rapor Pesantren created');
 
   // --- PAUD Development Assessment & Narrative Reports ---
-  if (students.length > 3) {
+  //
+  // Assessed against a TK pupil, not `students[3]`. That index is Abdullah
+  // Rahman of SMA Qur'an — a teenager — and the rows still claimed
+  // `unitId: tkQuran.id`, so an early-childhood development record described
+  // someone ten years too old for it. There were simply no TK pupils to point
+  // at until they were seeded above.
+  if (tkPupils.length > 0) {
     const paudIndicators = await prisma.pAUDDevelopmentIndicator.findMany({
       where: { OR: [{ unitId: tkQuran.id }, { unitId: null }] },
       take: 2,
@@ -5869,7 +5955,7 @@ async function main() {
     if (paudIndicators.length > 0) {
       const paudAssessment = await prisma.pAUDDevelopmentAssessment.create({
         data: {
-          studentId: students[3].id,
+          studentId: tkPupils[0].id,
           unitId: tkQuran.id,
           academicYearId: academicYear.id,
           semester: 'GANJIL',
@@ -5897,7 +5983,7 @@ async function main() {
 
     const narrativeReport = await prisma.pAUDNarrativeReport.create({
       data: {
-        studentId: students[3].id,
+        studentId: tkPupils[0].id,
         unitId: tkQuran.id,
         academicYearId: academicYear.id,
         semester: 'GANJIL',

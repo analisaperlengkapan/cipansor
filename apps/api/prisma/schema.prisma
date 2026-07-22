@@ -346,7 +346,19 @@ model User {
   id                     String    @id @default(uuid())
   name                   String
   email                  String    @unique
-  passwordHash           String    @map("password_hash")
+  /// Null means this row is an **identity, not a login**: it exists to carry a
+  /// person's name and to be referenced, and no credential for it exists at all.
+  ///
+  /// TK Qur'an pupils are the reason. They never hold accounts — they are four
+  /// to six years old — but they must exist as Students so attendance, PAUD
+  /// assessment, SPP and the parent portal have someone to point at. `Student`
+  /// has no name column of its own and requires a userId, which is read in
+  /// several hundred query sites, so the name lives here.
+  ///
+  /// A null hash is not the same as an unguessable one: it proves no credential
+  /// was ever issued, rather than one existing that nobody knows. authService
+  /// refuses these rows explicitly rather than letting bcrypt decide.
+  passwordHash           String?   @map("password_hash")
   resetTokenHash         String?   @map("reset_token_hash")
   resetTokenExpiresAt    DateTime? @map("reset_token_expires_at")
   phone                  String?

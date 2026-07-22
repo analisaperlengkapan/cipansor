@@ -1,5 +1,5 @@
 import { prisma } from '../../lib/prisma';
-import { Prisma, Room } from '@prisma/client';
+import { Prisma, Room, UnitType } from '@prisma/client';
 import {
   CreateDormitoryDto,
   UpdateDormitoryDto,
@@ -110,16 +110,43 @@ export async function getDormitories(query: QueryDormitoryDto) {
   const { unitId, gender, search, page, limit } = query;
   const skip = (page - 1) * limit;
 
-  const where = {
+  // Composed with AND because both the unit filter and the search need their
+  // own OR; as sibling keys in one object the second would have replaced the
+  // first, and searching within a unit would have quietly ignored the unit.
+  const where: Prisma.DormitoryWhereInput = {
     deletedAt: null,
-    ...(unitId && { unitId }),
     ...(gender && { gender }),
-    ...(search && {
-      OR: [
-        { name: { contains: search, mode: 'insensitive' as const } },
-        { code: { contains: search, mode: 'insensitive' as const } },
-      ],
-    }),
+    AND: [
+      // "Asrama untuk unit X" is not `unitId = X`. The asrama is run at
+      // foundation level and houses santri from several schools, so the useful
+      // answer is: run by that unit, or lived in by that unit's santri.
+      ...(unitId
+        ? [
+            {
+              OR: [
+                { unitId },
+                {
+                  rooms: {
+                    some: {
+                      assignments: { some: { isActive: true, student: { unitId } } },
+                    },
+                  },
+                },
+              ],
+            },
+          ]
+        : []),
+      ...(search
+        ? [
+            {
+              OR: [
+                { name: { contains: search, mode: 'insensitive' as const } },
+                { code: { contains: search, mode: 'insensitive' as const } },
+              ],
+            },
+          ]
+        : []),
+    ],
   };
 
   const [data, total] = await Promise.all([
@@ -265,8 +292,71 @@ export async function deleteRoom(id: string) {
 // ROOM ASSIGNMENT SERVICE
 // =====================================
 
+/**
+ * Whether a unit's santri board, which at Cipansor depends on the stage.
+ *
+ * - TK Qur'an: never. The pupils are far too young; they go home daily.
+ * - SD IT: some board, some do not. Both are normal.
+ * - SMP IT and SMA Qur'an: boarding is compulsory, so a santri there without
+ *   an active bed is a gap in the data rather than a santri who lives at home.
+ *
+ * Nothing encoded this, and an older seed left a TK santri holding a bed in
+ * Asrama Putri Al-Hikmah. That stayed invisible while facility counts read
+ * `dormitory.unitId`; now that they read occupancy, TK Qur'an would have
+ * reported an asrama it does not have.
+ *
+ * PERGURUAN_TINGGI and OTHER are OPTIONAL rather than NONE deliberately: the
+ * foundation has not said, and refusing something it never forbade would be the
+ * worse guess — a ma'had for mahasiswa then needs no code change.
+ */
+export type BoardingPolicy = 'NONE' | 'OPTIONAL' | 'MANDATORY';
+
+export const BOARDING_POLICY: Record<UnitType, BoardingPolicy> = {
+  [UnitType.TK_QURAN]: 'NONE',
+  [UnitType.SD_IT]: 'OPTIONAL',
+  [UnitType.SMP_IT]: 'MANDATORY',
+  [UnitType.SMA_QURAN]: 'MANDATORY',
+  [UnitType.PESANTREN]: 'MANDATORY',
+  [UnitType.PERGURUAN_TINGGI]: 'OPTIONAL',
+  // Kantin, laundry, koperasi — no santri of their own.
+  [UnitType.UNIT_USAHA]: 'NONE',
+  [UnitType.OTHER]: 'OPTIONAL',
+};
+
 export async function createRoomAssignment(data: CreateRoomAssignmentDto) {
-  // First, deactivate any existing assignment for this student
+  // Who may sleep here was never checked: any studentId and any roomId were
+  // accepted, so a TK santri could hold a bed and a santriwati could be placed
+  // in the asrama putra. Both are caught here rather than in the UI, which is
+  // not the only caller.
+  const [student, room] = await Promise.all([
+    prisma.student.findUnique({
+      where: { id: data.studentId },
+      select: { gender: true, unit: { select: { name: true, type: true } } },
+    }),
+    prisma.room.findUnique({
+      where: { id: data.roomId },
+      select: { dormitory: { select: { name: true, gender: true } } },
+    }),
+  ]);
+
+  if (!student) {
+    throw Errors.notFound('Student not found');
+  }
+  if (!room) {
+    throw Errors.notFound('Room not found');
+  }
+  if (BOARDING_POLICY[student.unit.type] === 'NONE') {
+    throw Errors.badRequest(
+      `Santri ${student.unit.name} tidak menginap di asrama`
+    );
+  }
+  if (room.dormitory.gender !== student.gender) {
+    throw Errors.badRequest(
+      `${room.dormitory.name} tidak sesuai dengan jenis kelamin santri`
+    );
+  }
+
+  // Deactivate any existing assignment for this student
   await prisma.roomAssignment.updateMany({
     where: { studentId: data.studentId, isActive: true },
     data: { isActive: false, endedAt: new Date() },

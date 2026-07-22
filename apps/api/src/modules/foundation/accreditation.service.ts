@@ -359,15 +359,30 @@ export async function getUnitAccreditationStatus(unitId: string) {
     _count: true,
   });
 
-  // Get dormitory room stats
-  const dormitories = await prisma.dormitory.findMany({
-    where: { unitId },
-    include: {
-      _count: { select: { rooms: true } },
+  // Dormitory room stats, counted by who sleeps in them.
+  //
+  // This used to be `dormitory.findMany({ where: { unitId } })`, which credited
+  // a unit with an asrama only if that asrama's unit_id named it. Since the
+  // asrama is run at foundation level and takes santri from every school, SMP
+  // IT was reported as having all the kamar and SD IT none — while SD IT santri
+  // slept in them. An asesor asking about asrama facilities means the ones this
+  // unit's santri actually occupy, so that is what is counted.
+  const occupiedByThisUnit = {
+    assignments: {
+      some: { isActive: true, student: { unitId, status: 'active' } },
     },
+  };
+
+  const totalRooms = await prisma.room.count({
+    where: { isActive: true, ...occupiedByThisUnit },
   });
 
-  const totalRooms = dormitories.reduce((sum, d) => sum + d._count.rooms, 0);
+  const dormitoryCount = await prisma.dormitory.count({
+    where: {
+      deletedAt: null,
+      rooms: { some: { isActive: true, ...occupiedByThisUnit } },
+    },
+  });
 
   // Get class count
   const classStats = await prisma.class.count({
@@ -405,7 +420,7 @@ export async function getUnitAccreditationStatus(unitId: string) {
         total: studentStats._count,
       },
       facilities: {
-        dormitories: dormitories.length,
+        dormitories: dormitoryCount,
         totalRooms,
         classes: classStats,
       },

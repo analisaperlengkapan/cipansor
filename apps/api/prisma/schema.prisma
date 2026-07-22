@@ -1307,8 +1307,20 @@ model HafidzStudent {
 
 /// Dormitory - Asrama
 model Dormitory {
-  id          String    @id @default(uuid())
-  unitId      String    @map("unit_id")
+  id String @id @default(uuid())
+  /// Unit **pengelola** — who runs the building, not who may see it.
+  ///
+  /// Null means the asrama is run at foundation level, which is the normal
+  /// case here: santri study at SD IT / SMP IT / SMA Qur'an and board in the
+  /// same asrama, so no single school owns it. This column used to be required,
+  /// so the seed had to name one, and every asrama claimed to belong to SMP IT
+  /// while housing santri from three units.
+  ///
+  /// Do not scope access on it — see assertRoomAccess() in
+  /// dormitories.service.ts, which asks who lives in a room instead. Anything
+  /// that wants "asrama for unit X" should ask the same way; the null-means-
+  /// foundation idiom matches Announcement.unitId.
+  unitId      String?   @map("unit_id")
   name        String // e.g., "Asrama Putra Al-Fatih", "Asrama Putri Khadijah"
   code        String    @unique // e.g., "AP-01"
   gender      Gender // Male or Female dormitory
@@ -1320,7 +1332,7 @@ model Dormitory {
   deletedAt   DateTime? @map("deleted_at")
 
   // Relations
-  unit               Unit                @relation(fields: [unitId], references: [id])
+  unit               Unit?               @relation(fields: [unitId], references: [id])
   rooms              Room[]
   musyrifAssignments MusyrifAssignment[]
 

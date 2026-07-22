@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { RoleCode } from '@prisma/client';
 import {
   assertRoomAccess,
+  createRoomAssignment,
   getStudentsByMusyrif,
 } from '../../../../src/modules/dormitories/dormitories.service';
 import { prisma } from '../../../../src/lib/prisma';
@@ -19,8 +20,13 @@ vi.mock('../../../../src/lib/prisma', () => ({
     room: {
       findUnique: vi.fn(),
     },
+    student: {
+      findUnique: vi.fn(),
+    },
     roomAssignment: {
       findMany: vi.fn(),
+      updateMany: vi.fn(),
+      create: vi.fn(),
     },
   },
 }));
@@ -206,6 +212,68 @@ describe('DormitoryService', () => {
           ROOM_ID
         )
       ).rejects.toThrow(/not found/i);
+    });
+  });
+
+  describe('createRoomAssignment', () => {
+    const payload = { studentId: 'student-1', roomId: 'room-1' };
+
+    const mockPair = (
+      studentUnitType: string,
+      studentGender: string,
+      dormGender: string
+    ) => {
+      vi.mocked(prisma.student.findUnique).mockResolvedValue({
+        gender: studentGender,
+        unit: { name: 'Unit Uji', type: studentUnitType },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any);
+      vi.mocked(prisma.room.findUnique).mockResolvedValue({
+        dormitory: { name: 'Asrama Putri Al-Hikmah', gender: dormGender },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any);
+    };
+
+    beforeEach(() => {
+      vi.mocked(prisma.roomAssignment.updateMany).mockResolvedValue({
+        count: 0,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      vi.mocked(prisma.roomAssignment.create).mockResolvedValue({} as any);
+    });
+
+    // The row an older seed left behind: a TK santri holding a bed. TK pupils
+    // go home daily; SD IT is mixed, SMP/SMA board without exception.
+    it('refuses a santri from a unit that does not board', async () => {
+      mockPair('TK_QURAN', 'FEMALE', 'FEMALE');
+
+      await expect(createRoomAssignment(payload as never)).rejects.toThrow(
+        /tidak menginap di asrama/i
+      );
+      expect(prisma.roomAssignment.create).not.toHaveBeenCalled();
+    });
+
+    it('refuses a santri whose gender does not match the asrama', async () => {
+      mockPair('SMP_IT', 'MALE', 'FEMALE');
+
+      await expect(createRoomAssignment(payload as never)).rejects.toThrow(
+        /jenis kelamin/i
+      );
+      expect(prisma.roomAssignment.create).not.toHaveBeenCalled();
+    });
+
+    it('accepts a boarding santri in a matching asrama', async () => {
+      mockPair('SD_IT', 'FEMALE', 'FEMALE');
+
+      await createRoomAssignment(payload as never);
+
+      // Any previous bed is released before the new one is taken.
+      expect(prisma.roomAssignment.updateMany).toHaveBeenCalledWith({
+        where: { studentId: 'student-1', isActive: true },
+        data: { isActive: false, endedAt: expect.any(Date) },
+      });
+      expect(prisma.roomAssignment.create).toHaveBeenCalled();
     });
   });
 });

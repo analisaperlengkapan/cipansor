@@ -229,11 +229,14 @@ function DormitoriesPageContent() {
                     </div>
                   </div>
 
-                  {dormitory.unit && (
-                    <p className="text-sm text-muted-foreground">
-                      Unit: {dormitory.unit.name}
-                    </p>
-                  )}
+                  {/*
+                    Rendered even without a unit. A blank line read as missing
+                    data; "Yayasan" is the actual answer for an asrama that
+                    takes santri from every school.
+                  */}
+                  <p className="text-sm text-muted-foreground">
+                    Pengelola: {dormitory.unit?.name ?? "Yayasan (lintas unit)"}
+                  </p>
 
                   {dormitory.supervisor && (
                     <p className="text-sm text-muted-foreground">

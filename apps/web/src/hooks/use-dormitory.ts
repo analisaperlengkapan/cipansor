@@ -9,7 +9,8 @@ export interface Dormitory {
   type: DormitoryType;
   capacity: number;
   currentOccupancy?: number;
-  unitId: string;
+  /** Unit pengelola; null when the yayasan runs the asrama across units. */
+  unitId: string | null;
   unit?: {
     id: string;
     name: string;
@@ -116,7 +117,8 @@ export interface CreateDormitoryData {
   code: string;
   type: DormitoryType;
   capacity: number;
-  unitId: string;
+  /** Omit or send null for an asrama the yayasan runs across units. */
+  unitId?: string | null;
   supervisorId?: string;
   description?: string;
   facilities?: string;

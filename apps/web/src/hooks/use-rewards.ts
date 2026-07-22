@@ -70,8 +70,11 @@ export function useRewardTypes(params?: {
   return useQuery({
     queryKey: ["reward-types", params],
     queryFn: async () => {
-      const response = await api.get<RewardType[]>("/rewards/categories", { params });
-      return response.data;
+      const response = await api.get<{ data: RewardType[] }>(
+        "/rewards/categories",
+        { params },
+      );
+      return response.data.data;
     },
   });
 }

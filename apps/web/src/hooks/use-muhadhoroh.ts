@@ -160,7 +160,7 @@ async function fetchUpcomingMuhadhoroh(unitId: string, limit = 10) {
   const response = await api.get(
     `/muhadhoroh/upcoming?unitId=${unitId}&limit=${limit}`,
   );
-  return response.data as MuhadhorohRecord[];
+  return response.data.data as MuhadhorohRecord[];
 }
 
 async function fetchMuhadhorohStatistics(
@@ -173,21 +173,21 @@ async function fetchMuhadhorohStatistics(
   if (endDate) params.set("endDate", endDate);
 
   const response = await api.get(`/muhadhoroh/statistics?${params.toString()}`);
-  return response.data as MuhadhorohStats;
+  return response.data.data as MuhadhorohStats;
 }
 
 async function fetchTopPerformers(unitId: string, limit = 10) {
   const response = await api.get(
     `/muhadhoroh/top-performers?unitId=${unitId}&limit=${limit}`,
   );
-  return response.data as TopPerformer[];
+  return response.data.data as TopPerformer[];
 }
 
 async function fetchStudentHistory(studentId: string, limit = 20) {
   const response = await api.get(
     `/muhadhoroh/student/${studentId}/history?limit=${limit}`,
   );
-  return response.data as MuhadhorohRecord[];
+  return response.data.data as MuhadhorohRecord[];
 }
 
 async function createMuhadhoroh(input: CreateMuhadhorohInput) {

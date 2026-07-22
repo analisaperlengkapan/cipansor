@@ -106,7 +106,7 @@ function ViolationsPageContent() {
 
   const filteredTypes = violationTypes?.filter(
     (type) =>
-      type.name.toLowerCase().includes(search.toLowerCase()) ||
+      (type.name?.toLowerCase().includes(search.toLowerCase()) ?? false) ||
       (type.description?.toLowerCase().includes(search.toLowerCase()) ?? false),
   );
 

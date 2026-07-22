@@ -1556,9 +1556,11 @@ async function main() {
   // ============================================
 
   // Create Dormitories
+  // No unitId: both asrama are run by the yayasan and take santri from SD IT,
+  // SMP IT and SMA Qur'an alike — which is exactly what the room assignments
+  // below do. Naming one school here is what made SMP IT look like the owner.
   const dormitoryPutra = await prisma.dormitory.create({
     data: {
-      unitId: smpIt.id,
       name: 'Asrama Putra Al-Hikmah',
       code: 'AP-01',
       gender: Gender.MALE,
@@ -1569,7 +1571,6 @@ async function main() {
 
   const dormitoryPutri = await prisma.dormitory.create({
     data: {
-      unitId: smpIt.id,
       name: 'Asrama Putri Al-Hikmah',
       code: 'AW-01',
       gender: Gender.FEMALE,
@@ -1644,7 +1645,44 @@ async function main() {
     });
   }
 
-  console.log('✅ Room assignments created');
+  // Boarding is compulsory at SMP IT and SMA Qur'an, so a santri there without
+  // a bed is missing data, not a santri who lives at home. The demo personas
+  // are created before the asrama exists and so were never placed — which is
+  // why production currently shows santri who must board and have no kamar.
+  // TK Qur'an is deliberately not included: those pupils go home daily.
+  const mandatoryBoarders = await prisma.student.findMany({
+    where: {
+      status: 'active',
+      unit: { type: { in: [UnitType.SMP_IT, UnitType.SMA_QURAN] } },
+      roomAssignments: { none: { isActive: true } },
+    },
+    select: { id: true, gender: true },
+  });
+
+  for (const boarder of mandatoryBoarders) {
+    let roomData;
+    if (boarder.gender === Gender.MALE) {
+      roomData = rooms[maleRoomIndex % 5];
+      maleRoomIndex++;
+    } else {
+      roomData = rooms[5 + (femaleRoomIndex % 4)];
+      femaleRoomIndex++;
+    }
+
+    await prisma.roomAssignment.create({
+      data: {
+        roomId: roomData.room.id,
+        studentId: boarder.id,
+        assignedAt: new Date('2024-07-15'),
+        isActive: true,
+        notes: 'Penempatan awal tahun ajaran 2024/2025',
+      },
+    });
+  }
+
+  console.log(
+    `✅ Room assignments created (+${mandatoryBoarders.length} santri wajib mondok)`
+  );
 
   // Create Permits
   const permitStatuses = [

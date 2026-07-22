@@ -12,7 +12,6 @@ import {
   queryRoomAssignmentSchema,
 } from './dormitories.schema';
 import { ApiError, Errors } from '../../middleware/error';
-import { prisma } from '../../lib/prisma';
 import { requireUser } from '../../middleware/auth';
 
 // =====================================
@@ -161,6 +160,7 @@ export async function getRooms(req: Request, res: Response, next: NextFunction) 
 export async function getRoomById(req: Request, res: Response, next: NextFunction) {
   try {
     const { id } = req.params;
+    await dormitoryService.assertRoomAccess(requireUser(req), id);
     const room = await dormitoryService.getRoomById(id);
     if (!room) {
       throw Errors.notFound('Room not found');
@@ -177,21 +177,7 @@ export async function getRoomById(req: Request, res: Response, next: NextFunctio
 export async function getRoomSocialAnalytics(req: Request, res: Response, next: NextFunction) {
   try {
     const { id } = req.params;
-    const user = requireUser(req);
-
-    // Unit-level authorization: verify the room belongs to the user's unit
-    if (user.role !== 'SUPER_ADMIN') {
-      const room = await prisma.room.findUnique({
-        where: { id },
-        select: { dormitory: { select: { unitId: true } } },
-      });
-      if (!room) {
-        throw Errors.notFound('Room not found');
-      }
-      if (room.dormitory.unitId !== user.unitId) {
-        throw Errors.forbidden('Access to this room is not allowed');
-      }
-    }
+    await dormitoryService.assertRoomAccess(requireUser(req), id);
 
     const analytics = await dormitoryService.getRoomSocialAnalytics(id);
     if (!analytics) {
@@ -209,6 +195,7 @@ export async function getRoomSocialAnalytics(req: Request, res: Response, next: 
 export async function getRoomOccupancy(req: Request, res: Response, next: NextFunction) {
   try {
     const { id } = req.params;
+    await dormitoryService.assertRoomAccess(requireUser(req), id);
     const occupancy = await dormitoryService.getRoomOccupancy(id);
     if (!occupancy) {
       throw Errors.notFound('Room not found');

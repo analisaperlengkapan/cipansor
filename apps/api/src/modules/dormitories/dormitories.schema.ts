@@ -6,7 +6,15 @@ import { Gender } from '@prisma/client';
 // =====================================
 
 export const createDormitorySchema = z.object({
-  unitId: z.string().uuid('Invalid unit ID'),
+  /**
+   * Unit pengelola. Omitted or null means the asrama is run by the yayasan
+   * across units, which is the normal case — see the Dormitory model.
+   * The empty string is accepted because an unselected <Select> submits one.
+   */
+  unitId: z
+    .union([z.string().uuid('Invalid unit ID'), z.literal('')])
+    .nullish()
+    .transform((v) => v || null),
   name: z.string().min(2, 'Name must be at least 2 characters'),
   code: z.string().min(2, 'Code must be at least 2 characters'),
   gender: z.nativeEnum(Gender),

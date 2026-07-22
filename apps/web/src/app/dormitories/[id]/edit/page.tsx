@@ -44,6 +44,9 @@ import {
 import { useUnits } from "@/hooks/use-units";
 import { useTeachers } from "@/hooks/use-teachers";
 
+/** Sentinel for "no single unit runs this asrama" — sent to the API as null. */
+const FOUNDATION_RUN = "__yayasan__";
+
 const formSchema = z.object({
   name: z.string().min(1, "Nama asrama wajib diisi"),
   code: z
@@ -54,7 +57,9 @@ const formSchema = z.object({
     required_error: "Tipe asrama wajib dipilih",
   }),
   capacity: z.coerce.number().min(1, "Kapasitas minimal 1"),
-  unitId: z.string().min(1, "Unit wajib dipilih"),
+  // Optional: an asrama run by the yayasan across units has no single unit.
+  // Radix rejects an empty SelectItem value, hence the sentinel rather than "".
+  unitId: z.string().optional(),
   supervisorId: z.string().optional(),
   description: z.string().optional(),
   facilities: z.string().optional(),
@@ -85,7 +90,7 @@ export default function EditDormitoryPage({
       code: "",
       type: "MALE",
       capacity: 50,
-      unitId: "",
+      unitId: FOUNDATION_RUN,
       supervisorId: "",
       description: "",
       facilities: "",
@@ -100,7 +105,7 @@ export default function EditDormitoryPage({
         code: dormitory.code,
         type: dormitory.type,
         capacity: dormitory.capacity,
-        unitId: dormitory.unitId,
+        unitId: dormitory.unitId ?? FOUNDATION_RUN,
         supervisorId: dormitory.supervisorId || "",
         description: dormitory.description || "",
         facilities: dormitory.facilities || "",
@@ -115,6 +120,10 @@ export default function EditDormitoryPage({
         id,
         data: {
           ...data,
+          unitId:
+            !data.unitId || data.unitId === FOUNDATION_RUN
+              ? null
+              : data.unitId,
           supervisorId: data.supervisorId || undefined,
           description: data.description || undefined,
           facilities: data.facilities || undefined,
@@ -272,7 +281,7 @@ export default function EditDormitoryPage({
                   name="unitId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Unit</FormLabel>
+                      <FormLabel>Unit Pengelola</FormLabel>
                       <Select
                         onValueChange={field.onChange}
                         value={field.value}
@@ -280,10 +289,13 @@ export default function EditDormitoryPage({
                       >
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Pilih unit" />
+                            <SelectValue placeholder="Pilih unit pengelola" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
+                          <SelectItem value={FOUNDATION_RUN}>
+                            Yayasan (lintas unit)
+                          </SelectItem>
                           {unitsData?.map((unit) => (
                             <SelectItem key={unit.id} value={unit.id}>
                               {unit.name}
@@ -291,6 +303,11 @@ export default function EditDormitoryPage({
                           ))}
                         </SelectContent>
                       </Select>
+                      <FormDescription>
+                        Siapa yang mengelola asrama, bukan siapa yang boleh
+                        mengaksesnya. Santri dari unit mana pun tetap dapat
+                        ditempatkan di sini.
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

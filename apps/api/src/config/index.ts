@@ -1,5 +1,6 @@
 import dotenv from 'dotenv';
 import path from 'path';
+import { findSecretIssues } from './assert-secrets';
 
 // Load apps/api/.env (works from both src/ via tsx and dist/ when compiled,
 // since each sits directly under apps/api), then the repo-root .env as a
@@ -12,20 +13,28 @@ const DEFAULT_JWT_SECRET = 'change-this-secret-in-production';
 /**
  * Resolve the JWT signing secret. In production a missing, placeholder, or
  * short secret is a fatal misconfiguration: every token in the system could
- * be forged. Refuse to boot (same policy as the ENCRYPTION_KEY guard in
- * utils/encryption.ts). Outside production, fall back to the dev default.
+ * be forged. Refuse to boot. Outside production, fall back to the dev default.
+ *
+ * The judgement of what counts as a bad secret is delegated to
+ * `findSecretIssues` rather than repeated here. The earlier version compared
+ * against `DEFAULT_JWT_SECRET` alone — an exact match on the code's own
+ * fallback — which missed the value production was actually running:
+ * "your-super-secret-key-change-this-in-production-min-32-chars", taken from
+ * .env.example. It is 60 characters and is not the code default, so it passed
+ * both tests while being published in a public repository. One rule, one
+ * place, so the next placeholder cannot slip between two definitions of "bad".
  */
 export function resolveJwtSecret(
   secret: string | undefined,
   env: string | undefined
 ): string {
   if (env === 'production') {
-    if (!secret || secret === DEFAULT_JWT_SECRET || secret.length < 32) {
-      throw new Error(
-        'JWT_SECRET must be set to a random string of at least 32 characters in production'
-      );
+    const issues = findSecretIssues({ jwtSecret: secret });
+    const jwtIssue = issues.find((i) => i.variable === 'JWT_SECRET');
+    if (jwtIssue) {
+      throw new Error(`JWT_SECRET ${jwtIssue.reason}`);
     }
-    return secret;
+    return secret as string;
   }
   return secret || DEFAULT_JWT_SECRET;
 }

@@ -4,6 +4,66 @@ Status of production-readiness work and the remaining roadmap. Updated as part o
 the production-readiness / architecture-standardization effort. For the system
 overview see [`ARCHITECTURE.md`](./ARCHITECTURE.md).
 
+## 🔴 OPEN — PWA install prompt never appears on cipansor.or.id (2026-07-23)
+
+**Symptom.** The "install app" banner never shows on the live site. Reported
+across several browsers, in a fresh Incognito window, and on an Android handset
+where the app is confirmed **not** already installed.
+
+**This is a real defect, not a configuration choice.** Two plausible
+explanations were investigated and both are ruled out — recorded here so nobody
+spends the time again:
+
+- *Snoozed dismissal in `localStorage`* — ruled out: Incognito starts with empty
+  storage and still shows nothing.
+- *Already installed, so Chrome withholds `beforeinstallprompt`* — ruled out:
+  the reporter confirms the app is not installed on the device.
+
+(Also note Chrome refuses PWA installation in Incognito **by policy**, so that
+particular test can never show the banner regardless of our code. It is not
+evidence either way.)
+
+**Everything the browser needs was verified against the live site and is
+correct**, so the fault is not in the served assets:
+
+| Requirement | Verified |
+|---|---|
+| HTTPS | ✅ |
+| `manifest.json` linked, valid `name` / `start_url` / `display: standalone` | ✅ |
+| Icons 72→512 present, incl. 512 `any maskable` | ✅ all HTTP 200 |
+| `sw.js` served as `application/javascript` | ✅ |
+| Service worker has a `fetch` handler | ✅ |
+| `skipWaiting()` + `clients.claim()` (so it controls the first load) | ✅ |
+| Service worker actually registers, scope `/` | ✅ confirmed in a browser |
+| `<ServiceWorkerRegister />` and `<InstallPrompt />` mounted in the root layout | ✅ |
+| `InstallPrompt` reads the pre-hydration stash **and** listens for late events | ✅ code reviewed |
+
+So the conclusion is narrow: **`beforeinstallprompt` is not firing**, even though
+every documented precondition for it is satisfied.
+
+**Not yet examined (start here):**
+
+1. Run Chrome DevTools → **Application → Manifest → "Installability"** on a real
+   device (`chrome://inspect`). Chrome states its own reason there, which is far
+   more direct than inferring from the outside — this is the single highest-value
+   next step.
+2. Run a **Lighthouse PWA audit** against the live URL.
+3. Suspect the manifest `"id": "/"` field. If Chrome has ever associated that app
+   id with an installed/uninstalled instance, it can decline to re-offer. Try an
+   explicit distinct `id`.
+4. Confirm the registered service worker is the *current* one on the device —
+   a stale worker from an earlier deploy can linger until every tab is closed.
+
+**Impact.** Low for correctness (the site is fully usable, and the PWA remains
+installable through the browser's own ⋮ menu), moderate for reach — the banner is
+how most wali santri would discover installing it.
+
+**Note on the guards** (neither is the cause, but they surprise people reading
+the code): `ServiceWorkerRegister` deliberately skips when `NODE_ENV !==
+"production"` and when `navigator.webdriver` is true, the latter so service
+workers do not interfere with Playwright runs. Real browsers report
+`navigator.webdriver === false`, which was confirmed against production.
+
 ## ✅ Resolved by this effort (2026-07-22)
 
 Follow-up on top of the merged planning/nav/security work, driven by a critique

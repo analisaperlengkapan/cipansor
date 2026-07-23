@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 import { id } from "../src/locales/id";
 import { en } from "../src/locales/en";
 import { ar } from "../src/locales/ar";
+import { LOCALE_LABELS, type Locale } from "../src/locales";
 import { publicContentFor } from "../src/config/content.i18n";
 
 /**
@@ -18,8 +19,10 @@ import { publicContentFor } from "../src/config/content.i18n";
  * the menu *and* the prose must have changed, without a manual reload.
  */
 
-/** Open the header's language menu and pick a language by its native name. */
-async function switchTo(page: import("@playwright/test").Page, label: string) {
+/** Open the header's language menu, pick a locale, and wait for it to land. */
+async function switchTo(page: import("@playwright/test").Page, locale: Locale) {
+  const pathname = new URL(page.url()).pathname;
+
   // Found by test id, not by accessible name: the name is translated, so a
   // test that switches language more than once would look for the trigger by
   // the label of the language it just left. Both the desktop and mobile
@@ -30,7 +33,30 @@ async function switchTo(page: import("@playwright/test").Page, label: string) {
     .filter({ visible: true })
     .first()
     .click();
-  await page.getByRole("menuitem", { name: label }).click();
+
+  // `setLocale` writes the cookie and then calls `router.refresh()`, which
+  // refetches this route's RSC payload. The client-side half — `html[lang]`,
+  // the dictionary — flips immediately, so waiting on that proves nothing
+  // about the server half having arrived.
+  //
+  // It matters because the refresh re-renders the header the menu lives in.
+  // Reopening the menu while the refresh is still in flight puts it inside a
+  // subtree that is about to be replaced, so it closes before an item can be
+  // picked. That is what made the one test that switches twice fail on CI
+  // while passing at human speed locally. Registering the wait *before* the
+  // click is deliberate: the response can arrive before the next statement.
+  const refreshed = page.waitForResponse(
+    (response) => {
+      const url = new URL(response.url());
+      return (
+        url.pathname === pathname && url.searchParams.has("_rsc") && response.ok()
+      );
+    },
+    { timeout: 15_000 },
+  );
+  await page.getByRole("menuitem", { name: LOCALE_LABELS[locale] }).click();
+  await refreshed;
+  await expect(page.locator("html")).toHaveAttribute("lang", locale);
 }
 
 test("the public header offers a language switcher at all", async ({ page }) => {
@@ -55,7 +81,7 @@ test("switching language changes the menu and the server-rendered prose", async 
     page.getByRole("heading", { name: publicContentFor("id").profilePage.title }),
   ).toBeVisible();
 
-  await switchTo(page, "English");
+  await switchTo(page, "en");
 
   // The client half: the navbar re-renders from the dictionary.
   await expect(
@@ -78,7 +104,7 @@ test("Arabic switches the document to RTL and translates the prose", async ({
   page,
 }) => {
   await page.goto("/profil");
-  await switchTo(page, "العربية");
+  await switchTo(page, "ar");
 
   await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
   await expect(page.locator("html")).toHaveAttribute("lang", "ar");
@@ -94,7 +120,7 @@ test("the choice survives a reload and follows to another page", async ({
   page,
 }) => {
   await page.goto("/profil");
-  await switchTo(page, "English");
+  await switchTo(page, "en");
   await expect(
     page.getByRole("heading", { name: publicContentFor("en").profilePage.title }),
   ).toBeVisible();
@@ -119,8 +145,16 @@ test("facts on the legal documents are not translated", async ({ page }) => {
   const NPWP = "31.512.635.9-425.000";
 
   await page.goto("/profil");
-  for (const label of ["English", "العربية"]) {
-    await switchTo(page, label);
+  for (const locale of ["en", "ar"] as const) {
+    await switchTo(page, locale);
+    // Prove the page really is in that language before claiming its untranslated
+    // parts survived — the two identifiers below read the same in every locale,
+    // so on their own they would pass even if the switch had never happened.
+    await expect(
+      page.getByRole("heading", {
+        name: publicContentFor(locale).profilePage.title,
+      }),
+    ).toBeVisible();
     await expect(page.getByText(DECREE).first()).toBeVisible();
     await expect(page.getByText(NPWP).first()).toBeVisible();
   }

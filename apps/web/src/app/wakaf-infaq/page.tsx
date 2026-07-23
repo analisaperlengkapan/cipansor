@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { LandingNavbar } from "@/components/landing/navbar";
 import { LandingFooter } from "@/components/landing/footer";
 import { siteConfig, donationConfig } from "@/config/site";
+import { getServerLocale } from "@/lib/server-locale";
+import type { Locale } from "@/locales";
 import { DonationPortal } from "./donation-portal";
 
 /**
@@ -16,23 +18,60 @@ import { DonationPortal } from "./donation-portal";
  * campaigns), so this server wrapper exists to carry the metadata and the
  * structured data that a client component cannot export.
  */
-export const metadata: Metadata = {
-  title: `Wakaf & Infaq — ${siteConfig.legalName}`,
-  description:
-    "Salurkan wakaf dan infaq untuk pembangunan sarana pendidikan, beasiswa santri penghafal Al-Qur'an 30 juz, dan operasional harian Pesantren Cipansor. Dikelola transparan dengan laporan penyaluran berkala.",
-  metadataBase: new URL(siteConfig.url),
-  alternates: { canonical: "/wakaf-infaq" },
-  openGraph: {
-    title: `Wakaf & Infaq — ${siteConfig.legalName}`,
+
+const OG_LOCALE: Record<Locale, string> = {
+  id: "id_ID",
+  en: "en_GB",
+  ar: "ar_AR",
+};
+
+/** Page chrome for /wakaf-infaq. See config/donation.i18n.ts for the body. */
+const META: Record<Locale, { title: string; description: string; og: string }> = {
+  id: {
+    title: "Wakaf & Infaq",
     description:
-      "Dukung pendidikan santri Pesantren Cipansor melalui wakaf sarana pendidikan, beasiswa takhosus, dan infaq operasional.",
-    url: `${siteConfig.url}/wakaf-infaq`,
-    siteName: siteConfig.name,
-    locale: "id_ID",
-    type: "website",
+      "Salurkan wakaf dan infaq untuk pembangunan sarana pendidikan, beasiswa santri penghafal Al-Qur'an 30 juz, dan operasional harian Pesantren Cipansor. Dikelola transparan dengan laporan penyaluran berkala.",
+    og: "Dukung pendidikan santri Pesantren Cipansor melalui wakaf sarana pendidikan, beasiswa takhosus, dan infaq operasional.",
+  },
+  en: {
+    title: "Wakaf & Infaq",
+    description:
+      "Give wakaf and infaq towards teaching facilities, scholarships for santri memorising all 30 juz of the Qur'an, and the day-to-day running of Pesantren Cipansor. Managed transparently, with disbursement reports updated regularly.",
+    og: "Support the education of santri at Pesantren Cipansor through wakaf for teaching facilities, Takhosus scholarships, and infaq for daily running.",
+  },
+  ar: {
+    title: "الوقف والإنفاق",
+    description:
+      "تبرّع بالوقف والإنفاق لبناء المرافق التعليمية، ومنح طلاب حفظ الثلاثين جزءاً، والتشغيل اليومي لمعهد سيبانسور. تُدار بشفافية مع تقارير صرف تُحدَّث دورياً.",
+    og: "ادعم تعليم طلاب معهد سيبانسور عبر وقف المرافق التعليمية ومنح التخصّص والإنفاق على التشغيل.",
   },
 };
 
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getServerLocale();
+  const meta = META[locale] ?? META.id;
+  const title = `${meta.title} — ${siteConfig.legalName}`;
+  return {
+    title,
+    description: meta.description,
+    metadataBase: new URL(siteConfig.url),
+    alternates: { canonical: "/wakaf-infaq" },
+    openGraph: {
+      title,
+      description: meta.og,
+      url: `${siteConfig.url}/wakaf-infaq`,
+      siteName: siteConfig.name,
+      locale: OG_LOCALE[locale],
+      type: "website",
+    },
+  };
+}
+
+/**
+ * Structured data stays Indonesian: it describes the organisation to search
+ * engines, which index the canonical Indonesian page, and the akad names are
+ * what the donation records store.
+ */
 const donateJsonLd = {
   "@context": "https://schema.org",
   "@type": "DonateAction",
@@ -52,6 +91,8 @@ const donateJsonLd = {
 };
 
 export default function WakafInfaqPage() {
+  // No locale read here: the portal below is a client component and takes the
+  // locale from the provider. Only the metadata above needs the cookie.
   return (
     <div className="flex min-h-screen flex-col">
       <script

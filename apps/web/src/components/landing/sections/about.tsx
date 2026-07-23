@@ -2,16 +2,19 @@ import Image from "next/image";
 import Link from "next/link";
 import { CheckCircle2, ArrowRight } from "lucide-react";
 import { siteConfig, galleryItems } from "@/config/site";
+import { homeContentFor } from "@/config/home.i18n";
+import { siteTextFor } from "@/config/site.i18n";
+import { formatNumber } from "@/lib/locale-format";
+import type { Locale } from "@/locales";
 
-const commitments = [
-  "Kurikulum terpadu: nasional, kepesantrenan, dan teknologi",
-  "Tahfidz & tahsin Al-Qur'an bersanad setiap hari",
-  "Kajian kitab kuning dan hafalan hadits pilihan",
-  "Pembiasaan bahasa Arab dan bahasa Inggris",
-];
-
-export function AboutSection() {
+export function AboutSection({ locale }: { locale: Locale }) {
+  const copy = homeContentFor(locale).about;
+  const site = siteTextFor(locale);
   const [featured, ...rest] = galleryItems;
+  // The caption belongs to the photograph, so it is looked up by slug rather
+  // than read off the item — the Indonesian title is the fallback if a
+  // translation for a newly added photo has not been written yet.
+  const caption = (slug: string, fallback: string) => site.gallery[slug] ?? fallback;
 
   return (
     <section id="about" className="py-20 bg-background">
@@ -20,17 +23,22 @@ export function AboutSection() {
           {/* Text Content */}
           <div className="flex-1 space-y-6">
             <div className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold text-primary bg-primary/10 border-primary/20">
-              Profil Pesantren
+              {copy.eyebrow}
             </div>
             <h2 className="text-3xl font-bold tracking-tight md:text-4xl text-balance">
-              Menyeimbangkan Ilmu Agama, Akademik, dan Teknologi
+              {copy.heading}
             </h2>
             <p className="text-lg text-muted-foreground leading-relaxed text-pretty">
-              {`${siteConfig.markaz} ${siteConfig.legalName} adalah lembaga pendidikan Islami yang berdiri sejak ${siteConfig.establishedYear} dengan visi “${siteConfig.visi}”. Santri dibina dalam lingkungan asrama yang menumbuhkan kemandirian, kedisiplinan, dan adab, sekaligus disiapkan untuk bersaing di era global.`}
+              {copy.body(
+                siteConfig.markaz,
+                siteConfig.legalName,
+                formatNumber(locale, siteConfig.establishedYear),
+                site.visi,
+              )}
             </p>
 
             <div className="space-y-4 pt-4">
-              {commitments.map((item) => (
+              {copy.commitments.map((item) => (
                 <div key={item} className="flex items-start gap-3">
                   <CheckCircle2 className="h-6 w-6 text-primary shrink-0" />
                   <span className="text-foreground font-medium">{item}</span>
@@ -42,7 +50,7 @@ export function AboutSection() {
               href="/profil"
               className="inline-flex items-center gap-1 pt-2 font-medium text-primary underline-offset-4 hover:underline"
             >
-              Selengkapnya tentang profil pesantren
+              {copy.moreLink}
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </Link>
           </div>
@@ -52,31 +60,31 @@ export function AboutSection() {
             <figure className="relative aspect-video rounded-xl overflow-hidden border border-border shadow-xl">
               <Image
                 src={featured.image}
-                alt={featured.title}
+                alt={caption(featured.slug, featured.title)}
                 fill
                 sizes="(max-width: 1024px) 100vw, 50vw"
                 className="object-cover"
               />
               <figcaption className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 to-transparent p-4 text-sm font-medium text-white">
-                {featured.title}
+                {caption(featured.slug, featured.title)}
               </figcaption>
             </figure>
 
             <div className="grid grid-cols-2 gap-4 mt-4">
               {rest.map((item) => (
                 <figure
-                  key={item.title}
+                  key={item.slug}
                   className="relative h-32 rounded-lg overflow-hidden border border-border"
                 >
                   <Image
                     src={item.image}
-                    alt={item.title}
+                    alt={caption(item.slug, item.title)}
                     fill
                     sizes="(max-width: 1024px) 50vw, 25vw"
                     className="object-cover"
                   />
                   <figcaption className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 to-transparent p-3 text-xs font-medium text-white">
-                    {item.title}
+                    {caption(item.slug, item.title)}
                   </figcaption>
                 </figure>
               ))}

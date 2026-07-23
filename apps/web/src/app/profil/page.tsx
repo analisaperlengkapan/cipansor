@@ -7,13 +7,15 @@ import { publicContentFor } from "@/config/content.i18n";
 import { getServerLocale } from "@/lib/server-locale";
 import { siteConfig, educationUnits } from "@/config/site";
 
-export const metadata: Metadata = {
-  title: `Profil Pesantren — ${siteConfig.legalName}`,
-  description:
-    "Sejarah, visi, dan struktur Yayasan Pesantren Cipansor: lembaga pendidikan Islam terpadu di Kabupaten Tasikmalaya yang berdiri sejak 1911 dan menaungi lima unit pendidikan.",
-  metadataBase: new URL(siteConfig.url),
-  alternates: { canonical: "/profil" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { profilePage } = publicContentFor(await getServerLocale());
+  return {
+    title: `${profilePage.title} — ${siteConfig.legalName}`,
+    description: profilePage.metaDescription,
+    metadataBase: new URL(siteConfig.url),
+    alternates: { canonical: "/profil" },
+  };
+}
 
 export default async function ProfilPage() {
   // Server component: the locale comes from the cookie, not from useI18n.

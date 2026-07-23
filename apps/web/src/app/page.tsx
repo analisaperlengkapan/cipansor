@@ -11,24 +11,37 @@ import { LegalIdentityStrip } from "@/components/landing/legal-identity";
 import { siteConfig, addressLines } from "@/config/site";
 import { legalIdentity } from "@/config/content";
 import { publicContentFor } from "@/config/content.i18n";
+import { siteTextFor } from "@/config/site.i18n";
 import { getServerLocale } from "@/lib/server-locale";
 import { Metadata } from "next";
+import type { Locale } from "@/locales";
 
-export const metadata: Metadata = {
-  title: `${siteConfig.legalName} — ${siteConfig.tagline}`,
-  description: siteConfig.description,
-  metadataBase: new URL(siteConfig.url),
-  alternates: { canonical: "/" },
-  openGraph: {
-    title: `${siteConfig.legalName} — ${siteConfig.tagline}`,
-    description: siteConfig.description,
-    url: siteConfig.url,
-    siteName: siteConfig.name,
-    locale: "id_ID",
-    type: "website",
-    images: [{ url: "/images/cipansor/hero.webp", width: 1536, height: 672 }],
-  },
+const OG_LOCALE: Record<Locale, string> = {
+  id: "id_ID",
+  en: "en_GB",
+  ar: "ar_AR",
 };
+
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getServerLocale();
+  const site = siteTextFor(locale);
+  const title = `${siteConfig.legalName} — ${site.tagline}`;
+  return {
+    title,
+    description: site.description,
+    metadataBase: new URL(siteConfig.url),
+    alternates: { canonical: "/" },
+    openGraph: {
+      title,
+      description: site.description,
+      url: siteConfig.url,
+      siteName: siteConfig.name,
+      locale: OG_LOCALE[locale],
+      type: "website",
+      images: [{ url: "/images/cipansor/hero.webp", width: 1536, height: 672 }],
+    },
+  };
+}
 
 /**
  * Schema.org markup so search engines and the Ad Grants review can identify
@@ -88,7 +101,10 @@ const organizationJsonLd = {
 
 export default async function Home() {
   // Server component: the locale comes from the cookie, not from useI18n.
-  const content = publicContentFor(await getServerLocale());
+  // Read once here and passed down, rather than each section reading it — the
+  // sections stay pure functions of the locale and the cookie is touched once.
+  const locale = await getServerLocale();
+  const content = publicContentFor(locale);
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -98,13 +114,13 @@ export default async function Home() {
       />
       <LandingNavbar />
       <main className="flex-1">
-        <HeroSection />
-        <StatsSection />
-        <AboutSection />
-        <ProgramSection />
-        <UnitsSection />
-        <NewsSection />
-        <CtaSection />
+        <HeroSection locale={locale} />
+        <StatsSection locale={locale} />
+        <AboutSection locale={locale} />
+        <ProgramSection locale={locale} />
+        <UnitsSection locale={locale} />
+        <NewsSection locale={locale} />
+        <CtaSection locale={locale} />
         <LegalIdentityStrip copy={content.legalIdentity} />
       </main>
       <LandingFooter />

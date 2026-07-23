@@ -4,6 +4,136 @@ Status of production-readiness work and the remaining roadmap. Updated as part o
 the production-readiness / architecture-standardization effort. For the system
 overview see [`ARCHITECTURE.md`](./ARCHITECTURE.md).
 
+## ✅ FIXED — public pages rendered Indonesian when EN/AR was selected (2026-07-23)
+
+**Was.** Switching the public site to English or Arabic translated the
+navigation and the breadcrumb, but the page content stayed Indonesian: 1 of 9
+public pages and 0 of 7 landing sections were localized. PR #356 had built the
+switching *mechanism* — cookie, server-side locale read, `router.refresh()`,
+RTL, the switcher — and translated `/profil` alone to prove it worked. The
+switcher then advertised a capability the content did not deliver.
+
+**Now: all 9 public pages localized end to end**, including page titles and
+meta descriptions:
+
+| Surface | State |
+|---|---|
+| Public navbar + mobile drawer, breadcrumb | ✅ |
+| `/` — all 7 landing sections + footer | ✅ |
+| `/profil`, `/profil/pimpinan` | ✅ |
+| `/unit`, `/unit/[slug]` | ✅ |
+| `/program-unggulan` | ✅ |
+| `/berita`, `/berita/[slug]` | ✅ chrome, headline and standfirst |
+| `/kontak` | ✅ |
+| `/wakaf-infaq` | ✅ including the donation form |
+
+**What is still Indonesian, deliberately.**
+
+1. **News article bodies.** Headlines and standfirsts are translated; the
+   article text is not. Each body carries direct quotations attributed to named
+   staff and lists of named children. English and Arabic readers are told so in
+   a line above the article rather than left to wonder, and the body is marked
+   `lang="id"`.
+2. **Leaders' mottos and the donation page's scripture** — see below; these are
+   deliberate and permanent.
+3. **`ANONYMOUS_DONOR_NAME` ("Hamba Allah")** on the donation form. It is
+   *recorded on the donation*, not merely displayed, so it stays one value in
+   every locale rather than three the finance team has to reconcile. Likewise
+   the bank details and the donation JSON-LD.
+
+**Where the strings live.** Public prose is a plain function of the locale, so
+the same module serves server components (`getServerLocale()`) and client ones
+(`useI18n().locale`):
+
+- `config/site.i18n.ts` — units, programmes, gallery, tagline, vision.
+- `config/home.i18n.ts` — the seven landing sections and the footer.
+- `config/pages.i18n.ts` — page chrome for everything past the homepage.
+- `config/news.i18n.ts` — article headlines and standfirsts.
+- `config/donation.i18n.ts` — the Wakaf & Infaq page and its form.
+- `config/content.i18n.ts` — `/profil` and the legal-identity copy.
+- `locales/{id,en,ar}.ts` — only the small UI atoms `t()` serves.
+
+Content is keyed by **slug**, never by the Indonesian prose. Keying by title is
+how the programme icon map silently lost four of its ten icons.
+
+**`config/i18n-coverage.test.ts` is what keeps this from regressing.** It walks
+every surface, fails when a key exists in one locale and not another, and fails
+when an English or Arabic string is byte-identical to the Indonesian — with an
+explicit allowlist naming each deliberate exception and its reason.
+
+**Deliberately NOT translated** — a future pass should leave these alone:
+
+- **Leaders' mottos, and the hadith and Qur'anic verse on the donation page.**
+  Each is an Indonesian rendering of scripture. Generating Arabic or English
+  from it would publish a reconstruction as scripture — in the mottos' case,
+  as a quotation attributed to the Prophet ﷺ under a named person's
+  photograph. Both pages say so in English and Arabic instead.
+- **Domain vocabulary** — Pesantren, SPMB, Wakaf, Infaq, Santri, Tahfidz,
+  Musyrif, and the unit names. The portal uses these words throughout;
+  translating them on the public site alone would make the two disagree.
+- **Legal identifiers** — decree number, NPWP, ministry name. Facts on a
+  document; a translated identifier is a wrong identifier.
+
+## 🔴 OPEN — PWA install prompt never appears on cipansor.or.id (2026-07-23)
+
+**Symptom.** The "install app" banner never shows on the live site. Reported
+across several browsers, in a fresh Incognito window, and on an Android handset
+where the app is confirmed **not** already installed.
+
+**This is a real defect, not a configuration choice.** Two plausible
+explanations were investigated and both are ruled out — recorded here so nobody
+spends the time again:
+
+- *Snoozed dismissal in `localStorage`* — ruled out: Incognito starts with empty
+  storage and still shows nothing.
+- *Already installed, so Chrome withholds `beforeinstallprompt`* — ruled out:
+  the reporter confirms the app is not installed on the device.
+
+(Also note Chrome refuses PWA installation in Incognito **by policy**, so that
+particular test can never show the banner regardless of our code. It is not
+evidence either way.)
+
+**Everything the browser needs was verified against the live site and is
+correct**, so the fault is not in the served assets:
+
+| Requirement | Verified |
+|---|---|
+| HTTPS | ✅ |
+| `manifest.json` linked, valid `name` / `start_url` / `display: standalone` | ✅ |
+| Icons 72→512 present, incl. 512 `any maskable` | ✅ all HTTP 200 |
+| `sw.js` served as `application/javascript` | ✅ |
+| Service worker has a `fetch` handler | ✅ |
+| `skipWaiting()` + `clients.claim()` (so it controls the first load) | ✅ |
+| Service worker actually registers, scope `/` | ✅ confirmed in a browser |
+| `<ServiceWorkerRegister />` and `<InstallPrompt />` mounted in the root layout | ✅ |
+| `InstallPrompt` reads the pre-hydration stash **and** listens for late events | ✅ code reviewed |
+
+So the conclusion is narrow: **`beforeinstallprompt` is not firing**, even though
+every documented precondition for it is satisfied.
+
+**Not yet examined (start here):**
+
+1. Run Chrome DevTools → **Application → Manifest → "Installability"** on a real
+   device (`chrome://inspect`). Chrome states its own reason there, which is far
+   more direct than inferring from the outside — this is the single highest-value
+   next step.
+2. Run a **Lighthouse PWA audit** against the live URL.
+3. Suspect the manifest `"id": "/"` field. If Chrome has ever associated that app
+   id with an installed/uninstalled instance, it can decline to re-offer. Try an
+   explicit distinct `id`.
+4. Confirm the registered service worker is the *current* one on the device —
+   a stale worker from an earlier deploy can linger until every tab is closed.
+
+**Impact.** Low for correctness (the site is fully usable, and the PWA remains
+installable through the browser's own ⋮ menu), moderate for reach — the banner is
+how most wali santri would discover installing it.
+
+**Note on the guards** (neither is the cause, but they surprise people reading
+the code): `ServiceWorkerRegister` deliberately skips when `NODE_ENV !==
+"production"` and when `navigator.webdriver` is true, the latter so service
+workers do not interfere with Playwright runs. Real browsers report
+`navigator.webdriver === false`, which was confirmed against production.
+
 ## ✅ Resolved by this effort (2026-07-22)
 
 Follow-up on top of the merged planning/nav/security work, driven by a critique

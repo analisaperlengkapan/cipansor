@@ -163,6 +163,8 @@ export const profileStats = [
 // ============================================================
 
 export interface Leader {
+  /** Stable identifier for translations — never the position, which is prose. */
+  slug: string;
   name: string;
   position: string;
   /** A saying each leader chose to be published alongside their name. */
@@ -173,6 +175,7 @@ export interface Leader {
 
 export const leadership: Leader[] = [
   {
+    slug: "ketua-yayasan",
     name: "H. Ramram Mansur Ramdani, S.Pd.I., M.Ag",
     photo: "/images/people/ketua-yayasan.webp",
     position: "Ketua Yayasan",
@@ -180,6 +183,7 @@ export const leadership: Leader[] = [
       "Tidaklah seseorang merendahkan diri karena Allah, melainkan Allah akan mengangkat derajatnya.",
   },
   {
+    slug: "pimpinan-pesantren",
     name: "K.H. Muhammad Taufik Ismail, S.Pd",
     photo: "/images/people/pimpinan-pesantren.webp",
     position: "Pimpinan Pesantren",
@@ -187,6 +191,7 @@ export const leadership: Leader[] = [
       "Didiklah anak-anakmu sesuai zamannya, karena mereka hidup bukan di zamanmu.",
   },
   {
+    slug: "bendahara-yayasan",
     name: "H. Andi Muhammad Badrudin, S.T.",
     photo: "/images/people/bendahara-yayasan.webp",
     position: "Bendahara Yayasan",
@@ -194,12 +199,14 @@ export const leadership: Leader[] = [
       "Ilmu tanpa adab bagaikan api tanpa kayu bakar. Ia tidak memberi manfaat, bahkan bisa membinasakan.",
   },
   {
+    slug: "kepala-sdit",
     name: "H. Dadan Ali Ridwan, S.Ag",
     photo: "/images/people/kepala-sdit.webp",
     position: "Kepala SD IT Cipansor",
     motto: "Sesungguhnya setiap amalan tergantung pada niatnya.",
   },
   {
+    slug: "kepala-smpit",
     name: "H. Cecep Helmi Syawali, Lc., M.Ag",
     photo: "/images/people/kepala-smpit.webp",
     position: "Kepala SMP IT Cipansor",
@@ -207,6 +214,7 @@ export const leadership: Leader[] = [
       "Didiklah anak-anakmu sesuai zamannya, karena mereka hidup bukan di zamanmu.",
   },
   {
+    slug: "kepala-smaquran",
     name: "H. M. Rizkon Hakiki, Lc., Al-Hafidz",
     photo: "/images/people/kepala-smaquran.webp",
     position: "Kepala SMA Qur'an",

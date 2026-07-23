@@ -4,57 +4,71 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PublicPage } from "@/components/landing/public-page";
 import { siteConfig, featuredPrograms } from "@/config/site";
+import { pagesContentFor } from "@/config/pages.i18n";
+import { siteTextFor } from "@/config/site.i18n";
+import { getServerLocale } from "@/lib/server-locale";
+import { formatNumber } from "@/lib/locale-format";
 
-export const metadata: Metadata = {
-  title: `Program Unggulan — ${siteConfig.legalName}`,
-  description:
-    "Sepuluh program unggulan Pesantren Cipansor: tahfidz bersanad, kajian kitab kuning, kepemimpinan, bahasa Arab dan Inggris, hafalan hadits, praktik ibadah, public speaking, kewirausahaan, dan bimbingan masuk perguruan tinggi.",
-  metadataBase: new URL(siteConfig.url),
-  alternates: { canonical: "/program-unggulan" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const copy = pagesContentFor(await getServerLocale()).programs;
+  return {
+    title: `${copy.title} — ${siteConfig.legalName}`,
+    description: copy.metaDescription,
+    metadataBase: new URL(siteConfig.url),
+    alternates: { canonical: "/program-unggulan" },
+  };
+}
 
-export default function ProgramUnggulanPage() {
+export default async function ProgramUnggulanPage() {
+  const locale = await getServerLocale();
+  const copy = pagesContentFor(locale).programs;
+  const site = siteTextFor(locale);
+
   return (
     <PublicPage
-      title="Program Unggulan"
-      lead={`Program pembinaan yang menopang visi "${siteConfig.visi}" — dijalankan berdampingan dengan kurikulum nasional di seluruh unit pendidikan.`}
-      breadcrumb={[{ label: "Program Unggulan", href: "/program-unggulan" }]}
+      title={copy.title}
+      lead={copy.lead(site.visi)}
+      breadcrumb={[{ label: copy.title, href: "/program-unggulan" }]}
     >
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        {featuredPrograms.map((program, i) => (
-          <Card key={program.title} className="h-full">
-            <CardContent className="flex h-full flex-col p-6">
-              <div className="flex items-start gap-4">
-                <span
-                  aria-hidden="true"
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary"
-                >
-                  {i + 1}
-                </span>
-                <div>
-                  <h2 className="text-lg font-semibold">{program.title}</h2>
-                  <p className="mt-2 leading-relaxed text-muted-foreground">
-                    {program.description}
-                  </p>
+        {featuredPrograms.map((program, i) => {
+          const text = site.programs[program.slug];
+          return (
+            <Card key={program.slug} className="h-full">
+              <CardContent className="flex h-full flex-col p-6">
+                <div className="flex items-start gap-4">
+                  <span
+                    aria-hidden="true"
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary"
+                  >
+                    {formatNumber(locale, i + 1)}
+                  </span>
+                  <div>
+                    <h2 className="text-lg font-semibold">
+                      {text?.title ?? program.title}
+                    </h2>
+                    <p className="mt-2 leading-relaxed text-muted-foreground">
+                      {text?.description ?? program.description}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       <div className="mt-12 rounded-lg border border-border bg-muted/30 p-8 text-center">
-        <h2 className="text-2xl font-bold">Tertarik menyekolahkan putra-putri Anda?</h2>
+        <h2 className="text-2xl font-bold">{copy.ctaHeading}</h2>
         <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">
-          Pendaftaran Sistem Penerimaan Murid Baru (SPMB) {new Date().getFullYear()} telah
-          dibuka untuk seluruh unit pendidikan.
+          {copy.ctaBody(formatNumber(locale, new Date().getFullYear()))}
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-3">
           <Button asChild size="lg">
-            <Link href="/public/spmb">Daftar SPMB</Link>
+            <Link href="/public/spmb">{copy.ctaRegister}</Link>
           </Button>
           <Button asChild size="lg" variant="outline">
-            <Link href="/unit">Lihat Unit Pendidikan</Link>
+            <Link href="/unit">{copy.ctaUnits}</Link>
           </Button>
         </div>
       </div>

@@ -26,7 +26,8 @@ monorepo**:
    full-file Write to this path.
 2. **Prisma is the source of truth for DB enums and models.** Import DB enums
    (`RoleCode`, `VisitStatus`, `LeaveStatus`, …) from `@prisma/client`, not from
-   `@cipansor/shared`. `@cipansor/shared` holds API/DTO contracts only.
+   `@cipansor/shared`. `@cipansor/shared` holds API/DTO contracts only. (Rule 3
+   applies to the specific choice of role enum.)
 3. **Use `RoleCode`, not the legacy `UserRole`.** `req.user.role` is a roleCode
    string. New auth checks use `RoleCode.*` / permissions; the legacy `UserRole`
    enum is deprecated and being removed.

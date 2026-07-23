@@ -1,4 +1,8 @@
 import { test, expect } from "@playwright/test";
+import { id } from "../src/locales/id";
+
+/** Hamburger label, from the default-locale dictionary (see landing.spec.ts). */
+const MENU_LABEL = id.public.nav.toggleMenu;
 
 /**
  * The landing header has broken twice in the same way, so it is pinned by
@@ -12,6 +16,20 @@ import { test, expect } from "@playwright/test";
  *
  * These tests therefore measure the rendered boxes: the brand must not touch
  * the nav, and the nav must not scroll inside itself.
+ *
+ * Two things were added when the language switcher reached the public header.
+ *
+ * First, the sweep runs in all three locales. The row is sized by the *words*
+ * in it, and the menu is translated now: the first English labels needed
+ * 1027px and the Arabic ones 1088px inside a 960px row, while Indonesian fit
+ * in 908px. A sweep that only speaks Indonesian measures one of three layouts.
+ *
+ * Second, it asserts the brand is not clipped. That is how the overflow
+ * actually presented — flex shrank the brand rather than pushing the nav past
+ * it, so the boxes never overlapped and the nav never scrolled. Both original
+ * assertions passed at 1024px with the brand's text visibly cut off, which is
+ * the bug. Measuring `scrollWidth > clientWidth` on the brand is what caught
+ * it.
  */
 
 /** Widths where the desktop nav must be laid out, and why each is here. */
@@ -25,31 +43,68 @@ const DESKTOP_WIDTHS = [
   { width: 1920, note: "unscaled full HD" },
 ];
 
-for (const { width, note } of DESKTOP_WIDTHS) {
-  test(`landing header fits at ${width}px (${note})`, async ({ page }) => {
-    await page.setViewportSize({ width, height: 800 });
-    await page.goto("/");
+/** The locales the public header renders in, each with its own text metrics. */
+const LOCALES = ["id", "en", "ar"] as const;
 
-    const brand = page.locator("header a[href='/']").first();
-    const nav = page.locator("header nav");
+for (const locale of LOCALES) {
+  for (const { width, note } of DESKTOP_WIDTHS) {
+    test(`landing header fits at ${width}px in ${locale} (${note})`, async ({
+      page,
+      context,
+    }) => {
+      await page.setViewportSize({ width, height: 800 });
 
-    await expect(nav).toBeVisible();
+      // Load once to learn the origin, set the cookie, then load again. The
+      // cookie has to be in place *before* the render being measured, because
+      // the root layout reads it server-side to stamp <html lang dir> — a
+      // client-side switch afterwards would measure a different paint than the
+      // one a visitor arrives on. The origin is taken from the page rather
+      // than hardcoded so this follows baseURL.
+      await page.goto("/");
+      await context.addCookies([
+        { name: "app-locale", value: locale, url: new URL(page.url()).origin },
+      ]);
+      await page.goto("/");
 
-    const brandBox = await brand.boundingBox();
-    const navBox = await nav.boundingBox();
-    if (!brandBox || !navBox) throw new Error("header not laid out");
+      const brand = page.locator("header a[href='/']").first();
+      const nav = page.locator("header nav");
 
-    // The gap may be small, but it must never be negative: a brand that
-    // reaches past the nav's left edge is the overlap this guards against.
-    expect(navBox.x).toBeGreaterThanOrEqual(brandBox.x + brandBox.width);
+      await expect(nav).toBeVisible();
 
-    // An overflowing nav scrolls internally instead of visibly colliding,
-    // which is the quieter half of the same bug.
-    const overflows = await nav.evaluate(
-      (el) => el.scrollWidth > el.clientWidth + 1,
-    );
-    expect(overflows).toBe(false);
-  });
+      const brandBox = await brand.boundingBox();
+      const navBox = await nav.boundingBox();
+      if (!brandBox || !navBox) throw new Error("header not laid out");
+
+      // Arabic lays the row out right-to-left, so "nav starts after the brand
+      // ends" is only the LTR half of the rule. Asserting the raw coordinates
+      // would fail every Arabic case for being correct.
+      const isRtl = locale === "ar";
+      const gap = isRtl
+        ? brandBox.x - (navBox.x + navBox.width)
+        : navBox.x - (brandBox.x + brandBox.width);
+      expect(gap, `brand and nav overlap in ${locale} at ${width}px`).toBeGreaterThanOrEqual(0);
+
+      // An overflowing nav scrolls internally instead of visibly colliding,
+      // which is the quieter half of the same bug.
+      const overflows = await nav.evaluate(
+        (el) => el.scrollWidth > el.clientWidth + 1,
+      );
+      expect(overflows).toBe(false);
+
+      // The half that both assertions above missed: the row runs out of space,
+      // flex shrinks the brand, and its name is cut off mid-word while every
+      // box still lines up.
+      const brandClipped = await brand.evaluate(
+        (el) => el.scrollWidth > el.clientWidth + 1,
+      );
+      expect(
+        brandClipped,
+        `the brand is clipped in ${locale} at ${width}px — the header needs ` +
+          `more room than the container gives it, usually because a nav label ` +
+          `grew. Shorten the label; the long form belongs on the page.`,
+      ).toBe(false);
+    });
+  }
 }
 
 test("hamburger replaces the nav below lg, and never doubles up", async ({
@@ -60,7 +115,7 @@ test("hamburger replaces the nav below lg, and never doubles up", async ({
 
   await expect(page.locator("header nav")).toBeHidden();
   await expect(
-    page.getByRole("button", { name: "Toggle menu" }),
+    page.getByRole("button", { name: MENU_LABEL }),
   ).toBeVisible();
 });
 
@@ -83,7 +138,7 @@ test("exactly one of nav and hamburger is shown, at every width", async ({
     await page.goto("/");
 
     const nav = page.locator("header nav");
-    const burger = page.getByRole("button", { name: "Toggle menu" });
+    const burger = page.getByRole("button", { name: MENU_LABEL });
 
     if (width < 1024) {
       await expect(burger).toBeVisible();

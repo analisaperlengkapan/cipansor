@@ -9,4 +9,4 @@ module count) — so it is now a pointer, not a copy.
 module architecture standard, and the golden rules.** Per-area guides live in
 `apps/api/AGENTS.md`, `apps/web/AGENTS.md`, `packages/shared/AGENTS.md`, and
 `apps/api/prisma/AGENTS.md`. Known issues and the remaining roadmap are in
-`docs/KNOWN_ISSUES.md` and `docs/CRITIQUE.md`.
+`docs/KNOWN_ISSUES.md`.

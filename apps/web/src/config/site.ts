@@ -104,51 +104,61 @@ export const educationUnits = [
 /** Program unggulan as published by the pesantren. */
 export const featuredPrograms = [
   {
+    slug: "tahfidz-tahsin",
     title: "Tahfidz & Tahsin Qur'an",
     description:
       "Membentuk hafidz Qur'an bersanad sekaligus memiliki kemampuan tahsin Qur'an. Setoran hafalan dan perbaikan bacaan berjalan setiap hari di bawah bimbingan musyrif.",
   },
   {
+    slug: "kitab-kuning",
     title: "Kajian Kitab Kuning",
     description:
       "Pembacaan dan pembahasan kitab turats klasik dalam bidang fiqih, akidah, nahwu, dan akhlak, sehingga santri terbiasa membaca sumber asli berbahasa Arab.",
   },
   {
+    slug: "leadership",
     title: "Leadership (Kepemimpinan)",
     description:
       "Pembinaan karakter melalui organisasi santri, pengelolaan kegiatan asrama, dan latihan kepemimpinan Islami yang menumbuhkan tanggung jawab serta kemandirian.",
   },
   {
+    slug: "bahasa",
     title: "Bahasa Arab & Bahasa Inggris",
     description:
       "Pembiasaan dua bahasa dalam percakapan harian, muhadatsah, dan muhadhoroh agar santri siap mengakses literatur keislaman maupun ilmu pengetahuan global.",
   },
   {
+    slug: "hadits",
     title: "Menghafal Hadits",
     description:
       "Program hafalan hadits pilihan lengkap dengan pemahaman makna dan penerapannya, membangun sanad keilmuan santri sejak dini.",
   },
   {
+    slug: "praktik-ibadah",
     title: "Praktik Ibadah",
     description:
       "Bimbingan praktik ibadah harian mulai dari thaharah, salat, hingga pengurusan jenazah, agar ilmu yang dipelajari langsung diamalkan.",
   },
   {
+    slug: "public-speaking",
     title: "Public Speaking",
     description:
       "Membangun kepercayaan diri santri dalam menyampaikan ide dan dakwah secara efektif, menciptakan generasi yang cerdas berkomunikasi dan mandiri dalam berekspresi.",
   },
   {
+    slug: "pembinaan-islam",
     title: "Pembinaan Islam Intensif",
     description:
       "Program pembentukan karakter dan pemahaman Islam yang mendalam untuk memastikan santri tumbuh menjadi pribadi yang teguh memegang nilai-nilai Qur'ani dalam setiap aspek kehidupan.",
   },
   {
+    slug: "entrepreneurship",
     title: "Entrepreneurship",
     description:
       "Menanamkan jiwa kewirausahaan sejak dini untuk membentuk santri yang kreatif, inovatif, dan mandiri secara ekonomi di masa depan.",
   },
   {
+    slug: "bimbel-xii",
     title: "Bimbingan Belajar Kelas XII",
     description:
       "Dukungan akademik strategis bagi santri kelas XII dalam mempersiapkan diri menempuh seleksi masuk perguruan tinggi, di dalam maupun luar negeri.",
@@ -252,14 +262,17 @@ export const donationConfig = {
 /** Documentation gallery shown on the homepage. */
 export const galleryItems = [
   {
+    slug: "fasilitas",
     title: "Kilas Balik & Dokumentasi Fasilitas Pondok",
     image: "/images/cipansor/galeri-1.webp",
   },
   {
+    slug: "disiplin",
     title: "Membangun Budaya Disiplin Sejak Dini",
     image: "/images/cipansor/galeri-2.webp",
   },
   {
+    slug: "karakter",
     title: "Pembinaan Spiritual & Karakter Rabbani",
     image: "/images/cipansor/galeri-3.webp",
   },

@@ -68,12 +68,16 @@ letter flow events, letter type/nature, e-sign, e-sign lifecycle — all
 rehearsed against a copy of the production schema. Sequence: merge → rehearse
 diff → apply migrations → build → deploy → verify.
 
-## 🟠 5. Public pages still render Indonesian in EN/AR
+## 🟠 5. Public i18n — 8 of 9 pages done, `/wakaf-infaq` remaining
 
-1 of 9 public pages and 0 of 7 landing sections are localized. Every visitor
-sees the switcher, so this is outward-facing. Full inventory, the extension
-recipe, and the list of things that must **not** be translated are in
-`KNOWN_ISSUES.md`.
+Was 1 of 9 pages and 0 of 7 landing sections. Now every public page except
+`/wakaf-infaq` is localized end to end, page titles and meta descriptions
+included, guarded by `config/i18n-coverage.test.ts`.
+
+Remaining: the donation portal (743 lines of client component around a live
+payment flow — its own pass, not a sweep), and the news article *bodies*, whose
+headlines and standfirsts are translated while the text is marked `lang="id"`
+with a line telling the reader so. Detail in `KNOWN_ISSUES.md`.
 
 ## 🟠 6. PWA install prompt never fires
 

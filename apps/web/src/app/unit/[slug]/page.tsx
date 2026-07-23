@@ -7,6 +7,9 @@ import { Button } from "@/components/ui/button";
 import { PublicPage } from "@/components/landing/public-page";
 import { siteConfig, educationUnits } from "@/config/site";
 import { unitDetails } from "@/config/content";
+import { pagesContentFor } from "@/config/pages.i18n";
+import { siteTextFor } from "@/config/site.i18n";
+import { getServerLocale } from "@/lib/server-locale";
 
 /** Pre-render all five units — the set is fixed and small. */
 export function generateStaticParams() {
@@ -21,9 +24,10 @@ export async function generateMetadata({
   const { slug } = await params;
   const unit = educationUnits.find((u) => u.slug === slug);
   if (!unit) return {};
+  const text = siteTextFor(await getServerLocale()).units[slug];
   return {
     title: `${unit.name} — ${siteConfig.legalName}`,
-    description: unit.description,
+    description: text?.description ?? unit.description,
     metadataBase: new URL(siteConfig.url),
     alternates: { canonical: `/unit/${unit.slug}` },
   };
@@ -39,12 +43,17 @@ export default async function UnitDetailPage({
   const detail = unitDetails[slug];
   if (!unit || !detail) notFound();
 
+  const locale = await getServerLocale();
+  const pages = pagesContentFor(locale);
+  const copy = pages.unitDetail;
+  const text = siteTextFor(locale).units[slug];
+
   return (
     <PublicPage
       title={unit.name}
-      lead={unit.tagline}
+      lead={text?.tagline ?? unit.tagline}
       breadcrumb={[
-        { label: "Unit Pendidikan", href: "/unit" },
+        { label: pages.units.title, href: "/unit" },
         { label: unit.shortName, href: `/unit/${unit.slug}` },
       ]}
     >
@@ -58,18 +67,22 @@ export default async function UnitDetailPage({
             className="h-16 w-16 object-contain"
           />
           <p className="text-sm font-semibold uppercase tracking-wide text-primary">
-            {detail.jenjang}
+            {text?.level ?? detail.jenjang}
           </p>
         </div>
 
-        <p className="leading-relaxed text-muted-foreground">{detail.intro}</p>
-        <p className="leading-relaxed text-muted-foreground">{unit.description}</p>
+        <p className="leading-relaxed text-muted-foreground">
+          {text?.intro ?? detail.intro}
+        </p>
+        <p className="leading-relaxed text-muted-foreground">
+          {text?.description ?? unit.description}
+        </p>
 
         <h2 className="pt-4 text-2xl font-semibold tracking-tight">
-          Yang Dipelajari di {unit.shortName}
+          {copy.highlightsHeading(unit.shortName)}
         </h2>
         <ul className="space-y-3">
-          {detail.highlights.map((item) => (
+          {(text?.highlights ?? detail.highlights).map((item) => (
             <li key={item} className="flex items-start gap-3">
               <Check
                 className="mt-1 h-4 w-4 shrink-0 text-primary"
@@ -81,24 +94,21 @@ export default async function UnitDetailPage({
         </ul>
 
         <div className="mt-10 rounded-lg border border-border bg-muted/30 p-6">
-          <h2 className="text-xl font-bold">Pendaftaran {unit.name}</h2>
-          <p className="mt-2 text-muted-foreground">
-            Pendaftaran SPMB dibuka untuk seluruh unit pendidikan. Silakan mendaftar
-            secara online atau hubungi kami untuk bertanya lebih dulu.
-          </p>
+          <h2 className="text-xl font-bold">{copy.ctaHeading(unit.name)}</h2>
+          <p className="mt-2 text-muted-foreground">{copy.ctaBody}</p>
           <div className="mt-5 flex flex-wrap gap-3">
             <Button asChild>
-              <Link href="/public/spmb">Daftar SPMB</Link>
+              <Link href="/public/spmb">{copy.ctaRegister}</Link>
             </Button>
             <Button asChild variant="outline">
-              <Link href="/kontak">Hubungi Kami</Link>
+              <Link href="/kontak">{copy.ctaContact}</Link>
             </Button>
           </div>
         </div>
 
-        <nav aria-label="Unit lainnya" className="pt-6">
+        <nav aria-label={copy.otherUnitsHeading} className="pt-6">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-            Unit lainnya
+            {copy.otherUnitsHeading}
           </h2>
           <ul className="mt-3 flex flex-wrap gap-2">
             {educationUnits

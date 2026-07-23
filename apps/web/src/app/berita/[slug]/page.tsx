@@ -6,6 +6,10 @@ import { Badge } from "@/components/ui/badge";
 import { PublicPage, ContentBlocks } from "@/components/landing/public-page";
 import { articles, getArticle } from "@/config/content";
 import { siteConfig } from "@/config/site";
+import { pagesContentFor } from "@/config/pages.i18n";
+import { newsTextFor } from "@/config/news.i18n";
+import { getServerLocale } from "@/lib/server-locale";
+import { dateFormatterFor } from "@/lib/locale-format";
 
 export function generateStaticParams() {
   return articles.map((article) => ({ slug: article.slug }));
@@ -19,27 +23,21 @@ export async function generateMetadata({
   const { slug } = await params;
   const article = getArticle(slug);
   if (!article) return {};
+  const text = newsTextFor(await getServerLocale(), slug) ?? article;
   return {
-    title: `${article.title} — ${siteConfig.name}`,
-    description: article.excerpt,
+    title: `${text.title} — ${siteConfig.name}`,
+    description: text.excerpt,
     metadataBase: new URL(siteConfig.url),
     alternates: { canonical: `/berita/${article.slug}` },
     openGraph: {
-      title: article.title,
-      description: article.excerpt,
+      title: text.title,
+      description: text.excerpt,
       type: "article",
       publishedTime: article.date,
       images: [{ url: article.image }],
     },
   };
 }
-
-const dateFormatter = new Intl.DateTimeFormat("id-ID", {
-  day: "numeric",
-  month: "long",
-  year: "numeric",
-  timeZone: "Asia/Jakarta",
-});
 
 export default async function ArticlePage({
   params,
@@ -50,15 +48,21 @@ export default async function ArticlePage({
   const article = getArticle(slug);
   if (!article) notFound();
 
+  const locale = await getServerLocale();
+  const pages = pagesContentFor(locale);
+  const copy = pages.article;
+  const text = newsTextFor(locale, article.slug) ?? article;
+  const dateFormatter = dateFormatterFor(locale);
+
   const others = articles.filter((a) => a.slug !== article.slug).slice(0, 2);
 
   /** NewsArticle markup so the article is eligible for rich results. */
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "NewsArticle",
-    headline: article.title,
+    headline: text.title,
     datePublished: article.date,
-    description: article.excerpt,
+    description: text.excerpt,
     image: `${siteConfig.url}${article.image}`,
     publisher: {
       "@type": "Organization",
@@ -73,9 +77,9 @@ export default async function ArticlePage({
 
   return (
     <PublicPage
-      title={article.title}
+      title={text.title}
       breadcrumb={[
-        { label: "Berita", href: "/berita" },
+        { label: pages.news.title, href: "/berita" },
         { label: article.unit, href: `/berita/${article.slug}` },
       ]}
     >
@@ -103,12 +107,27 @@ export default async function ArticlePage({
           />
         </div>
 
-        <ContentBlocks blocks={article.body} />
+        {copy.bodyNotTranslated && (
+          <p
+            lang="id"
+            className="mb-8 rounded-md border border-border bg-muted/40 px-4 py-3 text-sm text-muted-foreground"
+          >
+            {copy.bodyNotTranslated}
+          </p>
+        )}
+        {/* The body is Indonesian in every locale, so mark it as such for
+            screen readers and for translation tooling. */}
+        <div lang="id">
+          <ContentBlocks blocks={article.body} />
+        </div>
 
         {others.length > 0 && (
-          <nav aria-label="Berita lainnya" className="mt-14 border-t border-border pt-8">
+          <nav
+            aria-label={copy.otherNewsHeading}
+            className="mt-14 border-t border-border pt-8"
+          >
             <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-              Berita lainnya
+              {copy.otherNewsHeading}
             </h2>
             <ul className="mt-4 space-y-3">
               {others.map((other) => (
@@ -117,7 +136,7 @@ export default async function ArticlePage({
                     href={`/berita/${other.slug}`}
                     className="font-medium text-primary underline underline-offset-4"
                   >
-                    {other.title}
+                    {(newsTextFor(locale, other.slug) ?? other).title}
                   </Link>
                 </li>
               ))}

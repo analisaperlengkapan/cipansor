@@ -32,18 +32,15 @@ Before a real launch both must become `false` **and the web image rebuilt** —
 `NEXT_PUBLIC_SHOW_DEMO_LOGIN` is inlined at build time, so changing `.env`
 alone does nothing. Treat this as a launch blocker, not a setting.
 
-## 🔴 2. CORS returns a comma-joined `Access-Control-Allow-Origin`
+## ✅ 2. CORS returned a comma-joined `Access-Control-Allow-Origin` — fixed
 
-`app.ts` passes `config.cors.origin` — the raw `CORS_ORIGIN` string — straight
-to the `cors` middleware. In production that value is
-`"https://cipansor.or.id,https://www.cipansor.or.id,http://localhost:3000"`, so
-the header carries three origins at once, which the spec forbids and every
-browser rejects.
-
-Real users are unaffected today only because the web app calls the API
-same-origin. Any cross-origin client (an admin subdomain, a mobile app, a
-partner integration) is broken. Fix: parse the list into an allowlist and
-reflect the single matching origin per request.
+`app.ts` passed the raw `CORS_ORIGIN` string to the `cors` middleware, so the
+header carried all three production origins at once — which the Fetch standard
+forbids and every browser rejects. Socket.IO had the same bug independently.
+Fixed in `apps/api/src/config/cors.ts`: the list is parsed into an allowlist and
+the single matching origin is reflected, with `Vary: Origin`. A wildcard is now
+refused at boot because this API sends credentials. **Ships with the next
+deploy — not yet on production.**
 
 ## 🔴 3. Production DB has no Prisma migration history
 
@@ -134,17 +131,43 @@ must be partitioned per (user, activeRole).
 
 ---
 
-## 🟢 11. Route/naming refactor — PPDB / PSB → SPMB
+## 🟠 11. Route/naming refactor — PPDB / PSB → SPMB
 
-Approved, deliberately **not started**. Three vocabularies coexist today
-(ppdb 38 files, psb 35, spmb 32). Agreed timing: run only **after** the
-role/menu audit, so audit findings stay attributable to real bugs rather than
-rename fallout. Keep every old path alive with a permanent redirect.
+**Approved, and the database turned out not to be involved at all.**
 
-Split the decision: rename routes, files, modules and UI freely; treat the
-`PPDB`/`PSB` **enum values in the database** as a separate, later call — that
-part is a data migration, not a rename, and carries real risk. RoleCodes are
-already clean (0 affected).
+An earlier note in this file warned that renaming `PPDB`/`PSB` enum values
+would be a data migration and should be deferred. **That was wrong**, and the
+correction matters because it removes the only risky part:
+
+- `schema.prisma` contains `PPDB`/`PSB` in **comments only** (4 occurrences) —
+  no enum values, no models, no columns.
+- The live production database was checked directly: **zero** tables, columns
+  or enum values matching `ppdb`/`psb`.
+- RoleCodes are clean too (0 affected).
+
+So there is **no data migration and no data risk**. The rename is entirely
+code, filenames, routes and copy — mechanical and reversible. The user
+explicitly authorised proceeding (2026-07-23), noting the system is not yet
+production-ready.
+
+Scope, measured 2026-07-23 — three vocabularies coexist: `ppdb` in 38 files,
+`psb` in 35, `spmb` in 32.
+
+Remaining work:
+
+1. **Backend** — rename `apps/api/src/modules/admissions/ppdb-wave.*` to
+   `spmb-wave.*`, its exports in `admissions/index.ts`, and the
+   `/api/ppdb-waves` paths in the controller's docs and routes.
+2. **Frontend** — `/ppdb` and `/psb` pages already redirect to `/admissions`;
+   settle on the SPMB vocabulary in routes and copy.
+3. **Keep every old path alive with a permanent redirect.** Anything may hold
+   an old URL — a bookmark, a printed flyer's QR, an external integration. A
+   rename that 404s a family mid-registration is a real harm, not cosmetic.
+4. Sweep the comments in `schema.prisma` and elsewhere.
+
+Timing note (still worth honouring): running this *after* the role/menu audit
+keeps audit findings attributable to real bugs rather than rename fallout. If
+run before, expect to re-check any page the sweep flags.
 
 ## 🟢 12. Long-tail technical debt
 

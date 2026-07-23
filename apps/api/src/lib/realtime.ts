@@ -5,6 +5,7 @@
 
 import { Server as SocketIOServer, Socket } from 'socket.io';
 import { Server as HTTPServer } from 'http';
+import { config } from '@/config';
 import { logger } from '@/lib/logger';
 import { prisma } from '@/lib/prisma';
 import { verifyToken, JwtPayload } from '@/lib/jwt';
@@ -57,7 +58,9 @@ export type { DashboardMetrics, DashboardAlert };
 export function initializeSocketIO(httpServer: HTTPServer): SocketIOServer {
   io = new SocketIOServer(httpServer, {
     cors: {
-      origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+      // Socket.IO delegates to the same `cors` package as the HTTP app, so the
+      // comma-joined-header bug applied here too. Share the parsed allowlist.
+      origin: config.cors.origins,
       methods: ['GET', 'POST'],
       credentials: true,
     },

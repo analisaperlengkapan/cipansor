@@ -311,10 +311,16 @@ injections (`grc-live`, `integration-grc`), none of which mock product data.
   registrant listing/detail (currently unbuilt dead-links), move the onboarding
   UI there, then redirect `/ppdb`. Until then `/ppdb/registrations` stays because
   it is the only built onboarding entry point.
-- **`ViolationType` / `RewardType` have no backend model.** The violations and
-  rewards "Types" tabs assume CRUD-able type objects, but `/violations/categories`
-  and `/rewards/categories` only return the category enum. The pages were hardened
-  not to crash; either build the models/endpoints or drop the Types tabs.
+- **`ViolationType` / `RewardType` have no backend model — the "Types" tabs are
+  non-functional, not fixed.** The violations and rewards pages render a "Types"
+  tab that expects CRUD-able type objects (name, description, points), but no such
+  model exists server-side: `/violations/categories` and `/rewards/categories`
+  return only the bare category enum (strings). This effort **only hardened the
+  pages so they no longer white-screen** — the tab still shows no usable rows and
+  its create/edit/delete controls write to nothing. Resolve properly by either
+  building the `ViolationType`/`RewardType` models + endpoints, or removing the
+  Types tab and its hooks (`useViolationTypes`/`useRewardTypes` and the
+  create/update/delete mutations) entirely.
 - **Menu vs middleware (still ~25 combinations).** The per-role sweep found roles
   whose nav offers a route the middleware then bounces to `/unauthorized` — e.g.
   most non-teaching staff (`*_TATA_USAHA`, `*_BENDAHARA`, `*_KOMITE`, pustakawan,

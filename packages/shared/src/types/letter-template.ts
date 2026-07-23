@@ -91,8 +91,6 @@ const TEMPLATES: Record<LetterType, LetterTemplate> = {
       "\t  2. Akta Pendirian Yayasan Pesantren Cipansor Nomor 01 tanggal 5 April 2012;",
       "\t  3. [DASAR LAIN].",
       "",
-      "MEMUTUSKAN:",
-      "",
       "Menetapkan\t: [ISI PENETAPAN].",
       "KESATU\t: [DIKTUM PERTAMA].",
       "KEDUA\t: Keputusan ini berlaku sejak tanggal ditetapkan, dengan ketentuan apabila di kemudian hari terdapat kekeliruan akan diperbaiki sebagaimana mestinya.",
@@ -204,10 +202,16 @@ export function renderTemplateDraft(
   nature: LetterNature,
 ): string {
   const t = letterTemplateFor(type);
-  const marking = natureMarking(nature);
   const parts: string[] = [];
 
-  if (marking) parts.push(marking, "");
+  /**
+   * Penanda derajat kerahasiaan sengaja TIDAK ikut ke dalam konsep isi.
+   *
+   * Naskahnya sendiri yang mencetaknya, dari kolom `nature` surat — sumber
+   * yang tidak bisa terhapus saat isinya disunting. Ketika keduanya berjalan,
+   * surat Terbatas tercetak dengan tulisan "TERBATAS" dua kali: sekali di
+   * pojok kanan atas dan sekali lagi di badan surat.
+   */
   if (t.opening) parts.push(t.opening, "");
 
   for (const f of t.signerFields) parts.push(`${f}\t: [${f.toUpperCase()}]`);

@@ -42,18 +42,23 @@ describe('konsep awal surat', () => {
     expect(natureMarking(LetterNature.STRICTLY_CONFIDENTIAL)).toBe('SANGAT RAHASIA');
   });
 
-  it('menempatkan penandaan sifat di awal naskah', () => {
-    const draft = renderTemplateDraft(
-      LetterType.SURAT_KETERANGAN,
-      LetterNature.CONFIDENTIAL
-    );
-    expect(draft.startsWith('RAHASIA')).toBe(true);
-
-    const biasa = renderTemplateDraft(
-      LetterType.SURAT_KETERANGAN,
-      LetterNature.PUBLIC
-    );
-    expect(biasa).not.toMatch(/^RAHASIA|^BIASA/);
+  /**
+   * Penandaan sifat dicetak oleh naskahnya sendiri dari kolom `nature`, bukan
+   * disisipkan ke dalam konsep isi. Konsep yang ikut membawanya membuat surat
+   * Rahasia tercetak dengan tulisan "RAHASIA" dua kali — sekali di pojok kanan
+   * atas dan sekali di badan surat — dan penanda di badan surat itu hilang
+   * begitu penyusun menyunting isinya.
+   */
+  it('tidak menyisipkan penandaan sifat ke dalam konsep isi', () => {
+    for (const nature of [
+      LetterNature.PUBLIC,
+      LetterNature.LIMITED,
+      LetterNature.CONFIDENTIAL,
+      LetterNature.STRICTLY_CONFIDENTIAL,
+    ]) {
+      const draft = renderTemplateDraft(LetterType.SURAT_KETERANGAN, nature);
+      expect(draft).not.toMatch(/TERBATAS|RAHASIA|SANGAT RAHASIA/);
+    }
   });
 
   it('surat keputusan memuat Menimbang, Mengingat, dan Menetapkan', () => {
@@ -64,6 +69,9 @@ describe('konsep awal surat', () => {
     expect(draft).toMatch(/Menimbang/);
     expect(draft).toMatch(/Mengingat/);
     expect(draft).toMatch(/MEMUTUSKAN/);
+    // Ia pernah tercetak dua kali: sekali dari `transition`, sekali lagi dari
+    // badan naskahnya sendiri.
+    expect(draft.match(/MEMUTUSKAN/g)).toHaveLength(1);
     // Dasar hukum yayasan yang selalu berlaku, agar tidak terlupa.
     expect(draft).toMatch(/Undang-Undang Nomor 16 Tahun 2001/);
   });

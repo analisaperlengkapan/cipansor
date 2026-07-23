@@ -59,6 +59,7 @@ import {
   Briefcase,
   BookOpenCheck,
   NotebookPen,
+  ShieldCheck,
   type LucideIcon,
 } from "lucide-react";
 
@@ -1192,6 +1193,22 @@ const adminNavigation: NavGroup[] = [
         title: "Settings",
         href: "/settings",
         icon: Settings,
+      },
+      {
+        /**
+         * The approval queue for electronic-signature keys.
+         *
+         * It had no entry here at all, and `/settings/esign` appeared nowhere
+         * in the codebase but its own page file — so the only way to reach it
+         * was to type the URL. The effect was a dead end for the whole
+         * feature: a signer requests a key, nobody ever sees the request, no
+         * key is ever issued, and no letter can be signed.
+         */
+        title: "Tanda Tangan Elektronik",
+        href: "/settings/esign",
+        icon: ShieldCheck,
+        roleCodes: ["SUPER_ADMIN"],
+        roles: ["SUPER_ADMIN"],
       },
       {
         title: "Secrets",

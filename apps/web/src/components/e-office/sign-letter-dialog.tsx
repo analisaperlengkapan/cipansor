@@ -123,9 +123,16 @@ export function SignLetterDialog({
                 <p className="break-all text-xs text-muted-foreground">
                   {verifyUrl}
                 </p>
+                {/*
+                  Dulu tertulis "Bubuhkan QR ini pada naskah" — instruksi yang
+                  kini justru menyesatkan: QR sudah tercetak sendiri pada
+                  naskah, dan penandatangan yang menurutinya akan menempelkan
+                  QR kedua di atas surat yang sudah lengkap.
+                */}
                 <p className="text-xs text-muted-foreground">
-                  Bubuhkan QR ini pada naskah. Siapa pun yang memindainya dapat
-                  memeriksa keaslian surat tanpa perlu masuk ke sistem.
+                  QR ini sudah tercetak pada naskah suratnya — cukup unduh
+                  PDF-nya. Siapa pun yang memindainya dapat memeriksa keaslian
+                  surat tanpa perlu masuk ke sistem.
                 </p>
               </>
             )}

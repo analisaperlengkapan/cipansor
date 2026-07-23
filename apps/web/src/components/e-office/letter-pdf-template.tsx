@@ -3,9 +3,16 @@
 import React, { forwardRef, useEffect, useState } from "react";
 import { QRCodeCanvas } from "qrcode.react";
 import { safeFormat } from "@/lib/date";
+import { siteConfig } from "@/config/site";
 import { id } from "date-fns/locale";
 
-import { LetterDetail } from "@cipansor/shared";
+import {
+  LetterDetail,
+  LETTERHEAD,
+  LetterType,
+  letterTemplateFor,
+  natureMarking,
+} from "@cipansor/shared";
 
 interface LetterPDFTemplateProps {
   letter: LetterDetail;
@@ -67,6 +74,31 @@ export const LetterPDFTemplate = forwardRef<
     signer?.reviewer?.staff?.nip ||
     "-";
 
+  /**
+   * Naskah dinas has two shapes, and the difference is not cosmetic.
+   *
+   * A letter *addressed to someone* (surat dinas, nota dinas, undangan,
+   * edaran) carries Nomor/Lampiran/Perihal down the left and "Kepada Yth."
+   * above the body. A *declaratory* naskah (surat keterangan, surat
+   * keputusan, surat tugas, berita acara, pengumuman) carries its type as a
+   * centred title with the number beneath it, and is addressed to no one —
+   * which is exactly the shape of the Surat Keterangan the yayasan issues.
+   *
+   * This renderer printed every type in the first shape, so a Surat Keterangan
+   * came out headed "Kepada Yth. Bapak/Ibu" and signed "Hormat Kami," — a
+   * letter the yayasan would not recognise as its own. The per-type titles
+   * already existed in @cipansor/shared and were simply never read here.
+   */
+  const type = (letter.type as LetterType | undefined) ?? LetterType.SURAT_DINAS;
+  const centredTitle = letterTemplateFor(type).title;
+  const isDeclaratory = centredTitle.length > 0;
+
+  /** "TERBATAS" / "RAHASIA" / "SANGAT RAHASIA" — null for a Biasa letter. */
+  const marking = natureMarking(letter.nature);
+
+  /** Jabatan penanda tangan, mis. "Ketua". Kosong bila tidak diisi. */
+  const signerTitle = letter.senderTitle?.trim() ?? "";
+
   return (
     <div
       ref={ref}
@@ -80,75 +112,151 @@ export const LetterPDFTemplate = forwardRef<
         lineHeight: "1.5",
       }}
     >
-      {/* Kop Surat */}
-      {unit && (
-        <div className="flex items-center gap-4 mb-2 pb-4 border-b-4 border-double border-black">
-          {unit.logoUrl && (
-            <img
-              src={unit.logoUrl}
-              alt="Logo"
-              className="h-24 w-24 object-contain"
-            />
+      {/*
+        Derajat kerahasiaan dicetak dari `letter.nature`, bukan dari isi surat.
+
+        Sebelumnya penandanya hanya ikut terbawa sebagai teks ketika penyusun
+        menekan "Isi dari template" — jadi surat Rahasia yang disusun tanpa
+        template, atau yang isinya disunting, tercetak tanpa penanda apa pun.
+        Yang menentukan derajatnya adalah kolom sifat pada suratnya.
+      */}
+      {marking && (
+        <p className="mb-2 text-right text-sm font-bold uppercase tracking-widest">
+          {marking}
+        </p>
+      )}
+
+      {/* Kop surat — mengikuti kop surat resmi yayasan. */}
+      <div className="mb-2 flex items-center gap-4 border-b-4 border-double border-black pb-3">
+        {/*
+          Logo selalu ada di kiri kop. Sebelumnya hanya dicetak bila unit
+          menyimpan logoUrl, sehingga surat dari unit yang belum mengunggah
+          logonya keluar tanpa lambang sama sekali — kop surat tanpa lambang
+          tidak dikenali sebagai surat resmi. Lambang yayasan menjadi cadangan.
+        */}
+        <img
+          src={unit?.logoUrl || "/images/cipansor/logo-cipansor.webp"}
+          alt="Logo Yayasan Pesantren Cipansor"
+          className="h-24 w-24 shrink-0 object-contain"
+        />
+        <div className="flex-1 text-center">
+          <h3 className="text-lg font-bold uppercase tracking-wide">
+            {LETTERHEAD.organisation}
+          </h3>
+          {/* Unit hanya dicetak bila suratnya memang terbit dari unit. */}
+          {unit?.name && (
+            <h1 className="mb-1 text-xl font-bold uppercase">{unit.name}</h1>
           )}
-          <div className="flex-1 text-center">
-            <h3 className="text-lg font-bold uppercase tracking-wide">
-              YAYASAN PESANTREN CIPANSOR
-            </h3>
-            <h1 className="text-2xl font-bold uppercase text-black mb-1">
-              {unit.name}
-            </h1>
-            <p className="text-sm font-normal text-gray-800">{unit.address}</p>
-            <p className="text-sm font-normal text-gray-800">
-              Telp: {unit.phone || "-"} | Email: {unit.email || "-"}
+          <p className="text-[9pt] font-normal text-gray-800">
+            {LETTERHEAD.legalBasis}
+          </p>
+          {/*
+            Dua cabang utuh, bukan campuran per baris. Versi sebelumnya memakai
+            alamat unit tetapi tetap membuang baris kedua kop yayasan, sehingga
+            kop kehilangan kabupaten dan kode pos begitu alamat unit hanya
+            berisi satu baris — persis yang terjadi pada data yang ada.
+          */}
+          {unit?.address ? (
+            <>
+              <p className="text-[9pt] font-normal text-gray-800">
+                {unit.address}
+              </p>
+              <p className="text-[9pt] font-normal text-gray-800">
+                {LETTERHEAD.website} &nbsp;{" "}
+                {unit.phone ? `Tlp/HP. ${unit.phone}` : LETTERHEAD.phone}
+                {unit.email ? ` \u00b7 ${unit.email}` : ""}
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-[9pt] font-normal text-gray-800">
+                {LETTERHEAD.addressLine1}
+              </p>
+              <p className="text-[9pt] font-normal text-gray-800">
+                {LETTERHEAD.addressLine2} &nbsp; {LETTERHEAD.website} &nbsp;{" "}
+                {LETTERHEAD.phone}
+              </p>
+            </>
+          )}
+        </div>
+      </div>
+
+      {isDeclaratory ? (
+        <div className="mt-8 text-center">
+          <h2 className="text-lg font-bold uppercase underline">{centredTitle}</h2>
+          <p className="mt-1">
+            Nomor: {letter.letterNumber || letter.agendaNumber || "DRAFT"}
+          </p>
+        </div>
+      ) : (
+        <div className="mt-6 flex items-start justify-between">
+          <div className="space-y-1">
+            <table className="border-collapse">
+              <tbody>
+                <tr>
+                  <td className="w-24">Nomor</td>
+                  <td className="w-4 text-center">:</td>
+                  <td>{letter.letterNumber || letter.agendaNumber || "DRAFT"}</td>
+                </tr>
+                <tr>
+                  <td>Lampiran</td>
+                  <td className="text-center">:</td>
+                  <td>-</td>
+                </tr>
+                <tr>
+                  <td>Perihal</td>
+                  <td className="text-center">:</td>
+                  <td className="font-bold">{letter.subject}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div className="text-right">
+            {/* Tempat ikut dicetak — "Tasikmalaya, 13 Juli 2026", bukan tanggal
+                telanjang, sebagaimana lazimnya naskah dinas. */}
+            <p>
+              {LETTERHEAD.city},{" "}
+              {safeFormat(new Date(letter.date), "dd MMMM yyyy", { locale: id })}
             </p>
           </div>
         </div>
       )}
 
-      {/* Header Content */}
-      <div className="mt-6 flex justify-between items-start">
-        <div className="space-y-1">
-          <table className="border-collapse">
-            <tbody>
-              <tr>
-                <td className="w-24">Nomor</td>
-                <td className="w-4 text-center">:</td>
-                <td>{letter.letterNumber || letter.agendaNumber || "DRAFT"}</td>
-              </tr>
-              <tr>
-                <td>Lampiran</td>
-                <td className="text-center">:</td>
-                <td>-</td>
-              </tr>
-              <tr>
-                <td>Perihal</td>
-                <td className="text-center">:</td>
-                <td className="font-bold">{letter.subject}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div className="text-right">
+      {/*
+        Alamat tujuan hanya untuk naskah yang memang ditujukan kepada seseorang.
+        Surat keterangan, keputusan, tugas, berita acara dan pengumuman tidak
+        ditujukan kepada siapa pun — mencetak "Kepada Yth. Bapak/Ibu" di
+        atasnya justru membuatnya tampak seperti surat yang salah kirim.
+      */}
+      {!isDeclaratory && (
+        <div className="mt-8">
+          <p>Kepada Yth.</p>
+          <p className="font-bold">
+            {letter.recipientName || letter.recipientInstance || "Bapak/Ibu"}
+          </p>
           <p>
-            {safeFormat(new Date(letter.date), "dd MMMM yyyy", { locale: id })}
+            di <span className="capitalize">Tempat</span>
           </p>
         </div>
-      </div>
+      )}
 
-      {/* Recipient */}
-      <div className="mt-8">
-        <p>Kepada Yth.</p>
-        <p className="font-bold">
-          {letter.recipientName || letter.recipientInstance || "Bapak/Ibu"}
-        </p>
-        <p>
-          di <span className="capitalize">Tempat</span>
-        </p>
-      </div>
+      {/*
+        Isi surat dipecah per alinea, bukan satu blok teks panjang.
 
-      {/* Body */}
-      <div className="mt-8 text-justify whitespace-pre-wrap min-h-[300px]">
-        {letter.content}
+        Alasannya bukan tampilan melainkan penggalan halaman: pengunduh PDF
+        memotong naskah yang tinggi menjadi beberapa halaman, dan tanpa batas
+        blok yang bisa diukur ia memotong tepat di tengah baris. Setiap alinea
+        menjadi titik potong yang sah — lihat handleDownloadPDF.
+      */}
+      <div className="mt-8 min-h-[300px] space-y-4 text-justify">
+        {(letter.content ?? "")
+          .split(/\n\s*\n/)
+          .filter((para) => para.trim().length > 0)
+          .map((para, i) => (
+            <p key={i} data-naskah-block className="whitespace-pre-wrap">
+              {para}
+            </p>
+          ))}
       </div>
 
       {/*
@@ -166,7 +274,26 @@ export const LetterPDFTemplate = forwardRef<
       */}
       <div className="mt-12 flex justify-end">
         <div className="text-center w-72">
-          <p className={signature ? "mb-2" : "mb-20"}>Hormat Kami,</p>
+          {/*
+            Naskah pernyataan ditutup dengan tempat & tanggal lalu nama
+            lembaga dan jabatan — persis seperti surat keterangan yang selama
+            ini dikeluarkan yayasan. "Hormat Kami," adalah penutup surat yang
+            ditujukan kepada seseorang, dan janggal di bawah surat keputusan.
+          */}
+          {isDeclaratory ? (
+            <div className={signature ? "mb-2" : "mb-20"}>
+              <p>
+                {LETTERHEAD.city},{" "}
+                {safeFormat(new Date(letter.date), "dd MMMM yyyy", { locale: id })}
+              </p>
+              {/* Title case, as the yayasan writes it under a signature —
+                  the kop above is the all-caps form. */}
+              <p>{siteConfig.legalName}</p>
+              {signerTitle && <p>{signerTitle}</p>}
+            </div>
+          ) : (
+            <p className={signature ? "mb-2" : "mb-20"}>Hormat Kami,</p>
+          )}
 
           {signature ? (
             <div className="flex flex-col items-center">
@@ -191,7 +318,10 @@ export const LetterPDFTemplate = forwardRef<
           ) : null}
 
           <p className="mt-1 font-bold underline uppercase">{signerName}</p>
-          <p>NIP. {signerNip}</p>
+          {/* NIP hanya untuk penanda tangan yang memang punya — surat yayasan
+              yang ditandatangani ketua tidak mencantumkannya, dan "NIP. -"
+              hanya menambah baris kosong yang tampak seperti data hilang. */}
+          {signerNip !== "-" && <p>NIP. {signerNip}</p>}
 
           {signature && (
             /*

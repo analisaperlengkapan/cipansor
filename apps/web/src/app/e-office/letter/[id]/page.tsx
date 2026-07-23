@@ -122,38 +122,80 @@ export default function LetterDetailPage({
 
     try {
       toast.info("Sedang menyiapkan PDF...");
-      const canvas = await html2canvas(pdfRef.current, {
-        scale: 2,
-        useCORS: true,
-      });
-      const imgData = canvas.toDataURL("image/png");
-
+      const scale = 2;
+      const canvas = await html2canvas(pdfRef.current, { scale, useCORS: true });
       const pdf = new jsPDF("p", "mm", "a4");
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
 
-      const imgWidth = canvas.width;
-      const imgHeight = canvas.height;
+      const pxPerMm = canvas.width / pdfWidth;
+      const pageHeightPx = pdfHeight * pxPerMm;
 
-      const ratio = pdfWidth / imgWidth;
-      const scaledHeight = imgHeight * ratio;
+      /**
+       * Where a page may be cut.
+       *
+       * The previous version sliced every `pdfHeight` regardless of what was
+       * there, so a two-page letter opened page 2 with the bottom half of a
+       * line of text and ended it mid-sentence. Paragraphs are marked in the
+       * naskah with `data-naskah-block`; their top edges are the offsets where
+       * a cut lands between lines instead of through one. A little white space
+       * at the foot of a page is the correct trade.
+       */
+      const naskahTop = pdfRef.current.getBoundingClientRect().top;
+      const breakpoints = Array.from(
+        pdfRef.current.querySelectorAll("[data-naskah-block]"),
+      )
+        .map((el) => (el.getBoundingClientRect().top - naskahTop) * scale)
+        .filter((y) => y > 0);
 
-      let heightLeft = scaledHeight;
-      let position = 0;
-      let page = 1;
-
-      // Add first page
-      pdf.addImage(imgData, "PNG", 0, position, pdfWidth, scaledHeight);
-      heightLeft -= pdfHeight;
-
-      // Add remaining pages
-      while (heightLeft > 0) {
-        position = heightLeft - scaledHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, "PNG", 0, position, pdfWidth, scaledHeight);
-        heightLeft -= pdfHeight;
-        page++;
+      const pages: number[] = [0];
+      while (true) {
+        const top = pages[pages.length - 1];
+        if (top + pageHeightPx >= canvas.height) break;
+        // The last breakpoint that still fits on this page.
+        const next = breakpoints.filter(
+          (y) => y > top && y <= top + pageHeightPx,
+        ).pop();
+        // No breakpoint fits (a single block taller than a page) — fall back to
+        // a hard cut rather than loop forever.
+        pages.push(next ?? top + pageHeightPx);
       }
+
+      const slice = document.createElement("canvas");
+      const sctx = slice.getContext("2d")!;
+      pages.forEach((top, i) => {
+        // Ends where the next page begins, not a full page-height further on.
+        // Taking the full height re-drew the paragraphs that belong to the next
+        // page, so a page started cleanly and still ran off mid-sentence.
+        const height = (pages[i + 1] ?? canvas.height) - top;
+        slice.width = canvas.width;
+        slice.height = height;
+        sctx.fillStyle = "#ffffff";
+        sctx.fillRect(0, 0, slice.width, slice.height);
+        sctx.drawImage(canvas, 0, -top);
+        if (i > 0) pdf.addPage();
+        pdf.addImage(
+          slice.toDataURL("image/png"),
+          "PNG",
+          0,
+          0,
+          pdfWidth,
+          height / pxPerMm,
+        );
+        // Continuation pages carry no letterhead, so they need to say which
+        // page they are — a loose sheet from a five-page edaran otherwise has
+        // nothing on it identifying where it belongs.
+        if (pages.length > 1) {
+          pdf.setFontSize(9);
+          pdf.setTextColor(120);
+          pdf.text(
+            `Halaman ${i + 1} dari ${pages.length}`,
+            pdfWidth - 15,
+            pdfHeight - 8,
+            { align: "right" },
+          );
+        }
+      });
 
       pdf.save(`Surat-${letter?.letterNumber || "Draft"}.pdf`);
       toast.success("Surat berhasil diunduh");

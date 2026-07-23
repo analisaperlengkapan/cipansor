@@ -6,6 +6,7 @@ import compression from 'compression';
 import morgan from 'morgan';
 import swaggerUi from 'swagger-ui-express';
 import { config } from '@/config';
+import { buildCorsOptions } from '@/config/cors';
 import { logger } from '@/lib/logger';
 import { errorHandler, notFoundHandler } from '@/middleware/error';
 import { defaultLimiter, authLimiter } from '@/middleware/rate-limit';
@@ -130,12 +131,7 @@ app.set('trust proxy', 1);
 
 // Security middleware
 app.use(helmet());
-app.use(
-  cors({
-    origin: config.cors.origin,
-    credentials: true,
-  })
-);
+app.use(cors(buildCorsOptions(config.cors.origins)));
 
 // Request parsing
 app.use(express.json({ limit: '10mb' }));

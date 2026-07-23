@@ -14,6 +14,7 @@ import {
   CreatePaymentDto,
   QueryPaymentDto,
 } from './finance.schema';
+import { seesAllUnits } from '@/utils/resolve-unit-id';
 
 // =====================================
 // PAYMENT TYPE SERVICE
@@ -512,6 +513,13 @@ export async function createPayment(data: CreatePaymentDto, userId: string = 'SY
 interface VerifierContext {
   sub: string;
   role: string;
+  /**
+   * RoleCode granular. Wajib ada agar scoping bisa memakai seesAllUnits():
+   * `role` legacy memetakan setiap YAYASAN_* menjadi 'UNIT_ADMIN', sehingga
+   * pemeriksaan yang ditulis atas `role` menggolongkan pengurus yayasan
+   * sebagai admin unit — itulah yang menyembunyikan datanya.
+   */
+  roleCode?: string | null;
   unitId: string | null;
 }
 
@@ -607,9 +615,12 @@ export async function getPendingVerifications(
 
   const where: Prisma.PaymentWhereInput = {
     verificationStatus: status,
-    ...(currentUser.role !== UserRole.SUPER_ADMIN
-      ? { invoice: { student: { unitId: currentUser.unitId ?? 'none' } } }
-      : {}),
+    // Pengurus yayasan memegang FINANCE_VIEW (Ketua bahkan FINANCE_MANAGE)
+    // tetapi tidak punya unitId, sehingga cabang lama menyaringnya ke 'none'
+    // dan daftar verifikasi pembayaran selalu kosong bagi mereka.
+    ...(seesAllUnits(currentUser)
+      ? {}
+      : { invoice: { student: { unitId: currentUser.unitId ?? 'none' } } }),
   };
 
   const [payments, total] = await Promise.all([

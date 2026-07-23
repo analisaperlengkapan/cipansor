@@ -19,6 +19,13 @@ import { UserRole } from '@prisma/client';
 interface AuthenticatedUser {
   sub: string;
   role: string;
+  /**
+   * RoleCode granular. Wajib ada agar scoping bisa memakai seesAllUnits():
+   * `role` legacy memetakan setiap YAYASAN_* menjadi 'UNIT_ADMIN', sehingga
+   * pemeriksaan yang ditulis atas `role` menggolongkan pengurus yayasan
+   * sebagai admin unit — itulah yang menyembunyikan datanya.
+   */
+  roleCode?: string | null;
   unitId: string | null;
 }
 

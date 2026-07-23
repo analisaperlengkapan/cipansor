@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { Errors } from '@/middleware/error';
 import { UserRole, Prisma } from '@prisma/client';
+import { seesAllUnits } from '@/utils/resolve-unit-id';
 
 // Status enum
 type MuhadatsahStatus = 'SCHEDULED' | 'COMPLETED' | 'CANCELLED';
@@ -9,6 +10,13 @@ type MuhadatsahStatus = 'SCHEDULED' | 'COMPLETED' | 'CANCELLED';
 interface AuthenticatedUser {
   sub: string;
   role: string;
+  /**
+   * RoleCode granular. Wajib ada agar scoping bisa memakai seesAllUnits():
+   * `role` legacy memetakan setiap YAYASAN_* menjadi 'UNIT_ADMIN', sehingga
+   * pemeriksaan yang ditulis atas `role` menggolongkan pengurus yayasan
+   * sebagai admin unit — itulah yang menyembunyikan datanya.
+   */
+  roleCode?: string | null;
   unitId: string | null;
 }
 
@@ -75,7 +83,7 @@ export class MuhadatsahService {
     const where: Prisma.MuhadatsahWhereInput = {};
 
     // Unit-based access control
-    if (currentUser.role !== UserRole.SUPER_ADMIN) {
+    if (!seesAllUnits(currentUser)) {
       where.unitId = currentUser.unitId || 'none';
     } else if (unitId) {
       where.unitId = unitId;

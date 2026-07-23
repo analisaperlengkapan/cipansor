@@ -1,14 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-// Mock Prisma Client before importing service
-vi.mock('@prisma/client', () => {
+// Mock Prisma Client before importing service.
+//
+// `importOriginal` rather than a hand-listed enum map: the service now reaches
+// `resolve-unit-id`, which reads `RoleCode` at module load, so a mock that lists
+// only `UserRole` fails as soon as an import below it grows. Spreading the real
+// module keeps every enum; `Prisma` is still overridden with the shape the test
+// needs.
+vi.mock('@prisma/client', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@prisma/client')>();
   return {
-    UserRole: {
-      TEACHER: 'TEACHER',
-      SUPER_ADMIN: 'SUPER_ADMIN',
-      ADMIN: 'ADMIN',
-      PARENT: 'PARENT',
-      STUDENT: 'STUDENT',
-    },
+    ...actual,
     Prisma: {
       AttendanceWhereInput: vi.fn(),
     },

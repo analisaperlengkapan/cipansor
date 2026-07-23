@@ -46,6 +46,9 @@ jobs:
       # The e2e auth helper signs admin TOTPs from a known secret seeded when
       # E2E_FIXED_2FA=1; raise the 2FA limiter so the many logins don't trip it.
       TWO_FACTOR_RATE_LIMIT_MAX: '100000'
+      # Same reason for the e-sign limiter: a spec that signs several letters
+      # in one run would otherwise hit a cap meant to slow down guessing.
+      ESIGN_RATE_LIMIT_MAX: '100000'
       # Baked into the web build: API base origin only (the app appends /api).
       NEXT_PUBLIC_API_URL: http://localhost:3001
       # Used by the e2e test runner, which builds full paths — keep the /api.
@@ -192,6 +195,7 @@ jobs:
       PORT: '3001'
       LOG_LEVEL: error
       TWO_FACTOR_RATE_LIMIT_MAX: '100000'
+      ESIGN_RATE_LIMIT_MAX: '100000'
       NEXT_PUBLIC_API_URL: http://localhost:3001
       API_URL: http://localhost:3001/api
       BASE_URL: http://localhost:3000

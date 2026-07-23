@@ -4,6 +4,124 @@ Status of production-readiness work and the remaining roadmap. Updated as part o
 the production-readiness / architecture-standardization effort. For the system
 overview see [`ARCHITECTURE.md`](./ARCHITECTURE.md).
 
+## 🔴 OPEN — public pages still render Indonesian when EN/AR is selected (2026-07-23)
+
+**Symptom.** Switching the public site to English or Arabic translates the
+navigation and the breadcrumb, but most page content stays Indonesian.
+
+**Cause: scope, not a bug.** PR #356 built the switching *mechanism* — the
+cookie, the server-side locale read, `router.refresh()` so server components
+follow the switch, RTL, and the switcher itself — and translated exactly one
+page (`/profil`) end to end to prove the mechanism works. The remaining public
+content was never translated. The switcher now advertises a capability the
+content does not yet deliver, which is why this reads as broken to a visitor.
+
+**Inventory, measured 2026-07-23** (`getServerLocale` / `publicContentFor` /
+`useI18n` present = localized):
+
+| Surface | State |
+|---|---|
+| Public navbar + mobile drawer | ✅ localized |
+| Breadcrumb (`PublicPage`) | ✅ localized |
+| `/profil` | ✅ localized |
+| `/` landing sections — hero, stats, about, programs, units, news, cta | ❌ **all 7 Indonesian-only** |
+| Landing footer | ❌ Indonesian-only |
+| `/berita`, `/berita/[slug]` | ❌ Indonesian-only |
+| `/unit`, `/unit/[slug]` | ❌ Indonesian-only |
+| `/program-unggulan` | ❌ Indonesian-only |
+| `/wakaf-infaq` | ❌ Indonesian-only |
+| `/kontak` | ❌ Indonesian-only |
+| `/profil/pimpinan` | ❌ Indonesian-only |
+
+So **1 of 9 public pages** and **0 of 7 landing sections** are translated.
+
+**The mechanism to extend is already in place** — this is filling in content,
+not designing anything:
+
+1. Add the page's strings to `apps/web/src/config/content.i18n.ts` under `EN`
+   and `AR` (Indonesian keeps living in `content.ts` and is imported, so the
+   source of record does not fork).
+2. Server components: read the locale with `getServerLocale()` and select via
+   `publicContentFor(locale)`, exactly as `app/profil/page.tsx` does.
+3. Client components (landing sections, footer): use `useI18n()` and put the
+   strings in `locales/{id,en,ar}.ts` under `public.*`.
+
+**Deliberately NOT to be translated** — documented with reasons in
+`content.i18n.ts`, and a future pass should leave them alone:
+
+- **Leaders' mottos.** Each is an Indonesian rendering of a hadith. Generating
+  Arabic from the Indonesian would publish a reconstruction as a quotation
+  attributed to the Prophet ﷺ under a named person's photograph.
+- **Domain vocabulary** — Pesantren, SPMB, Wakaf, Infaq, Santri, Tahfidz,
+  Musyrif, and the unit names. The portal uses these words throughout;
+  translating them on the public site alone would make the two disagree.
+- **Legal identifiers** — decree number, NPWP, ministry name. Facts on a
+  document; a translated identifier is a wrong identifier.
+
+**Impact.** Moderate and outward-facing: the switcher is visible to every
+visitor, so a reader choosing English or Arabic gets a half-translated page,
+which reads worse than offering no switcher at all would have.
+
+## 🔴 OPEN — PWA install prompt never appears on cipansor.or.id (2026-07-23)
+
+**Symptom.** The "install app" banner never shows on the live site. Reported
+across several browsers, in a fresh Incognito window, and on an Android handset
+where the app is confirmed **not** already installed.
+
+**This is a real defect, not a configuration choice.** Two plausible
+explanations were investigated and both are ruled out — recorded here so nobody
+spends the time again:
+
+- *Snoozed dismissal in `localStorage`* — ruled out: Incognito starts with empty
+  storage and still shows nothing.
+- *Already installed, so Chrome withholds `beforeinstallprompt`* — ruled out:
+  the reporter confirms the app is not installed on the device.
+
+(Also note Chrome refuses PWA installation in Incognito **by policy**, so that
+particular test can never show the banner regardless of our code. It is not
+evidence either way.)
+
+**Everything the browser needs was verified against the live site and is
+correct**, so the fault is not in the served assets:
+
+| Requirement | Verified |
+|---|---|
+| HTTPS | ✅ |
+| `manifest.json` linked, valid `name` / `start_url` / `display: standalone` | ✅ |
+| Icons 72→512 present, incl. 512 `any maskable` | ✅ all HTTP 200 |
+| `sw.js` served as `application/javascript` | ✅ |
+| Service worker has a `fetch` handler | ✅ |
+| `skipWaiting()` + `clients.claim()` (so it controls the first load) | ✅ |
+| Service worker actually registers, scope `/` | ✅ confirmed in a browser |
+| `<ServiceWorkerRegister />` and `<InstallPrompt />` mounted in the root layout | ✅ |
+| `InstallPrompt` reads the pre-hydration stash **and** listens for late events | ✅ code reviewed |
+
+So the conclusion is narrow: **`beforeinstallprompt` is not firing**, even though
+every documented precondition for it is satisfied.
+
+**Not yet examined (start here):**
+
+1. Run Chrome DevTools → **Application → Manifest → "Installability"** on a real
+   device (`chrome://inspect`). Chrome states its own reason there, which is far
+   more direct than inferring from the outside — this is the single highest-value
+   next step.
+2. Run a **Lighthouse PWA audit** against the live URL.
+3. Suspect the manifest `"id": "/"` field. If Chrome has ever associated that app
+   id with an installed/uninstalled instance, it can decline to re-offer. Try an
+   explicit distinct `id`.
+4. Confirm the registered service worker is the *current* one on the device —
+   a stale worker from an earlier deploy can linger until every tab is closed.
+
+**Impact.** Low for correctness (the site is fully usable, and the PWA remains
+installable through the browser's own ⋮ menu), moderate for reach — the banner is
+how most wali santri would discover installing it.
+
+**Note on the guards** (neither is the cause, but they surprise people reading
+the code): `ServiceWorkerRegister` deliberately skips when `NODE_ENV !==
+"production"` and when `navigator.webdriver` is true, the latter so service
+workers do not interfere with Playwright runs. Real browsers report
+`navigator.webdriver === false`, which was confirmed against production.
+
 ## ✅ Resolved by this effort (2026-07-22)
 
 Follow-up on top of the merged planning/nav/security work, driven by a critique

@@ -12,6 +12,7 @@ import {
   AttendanceSummary,
 } from '@cipansor/shared';
 import type { ListAttendanceQuery, AttendanceSummaryQuery } from './attendance.schema';
+import { seesAllUnits } from '@/utils/resolve-unit-id';
 
 export class AttendanceService {
   /**
@@ -29,7 +30,7 @@ export class AttendanceService {
    */
   async findAll(
     query: ListAttendanceQuery,
-    currentUser: { role: string; unitId: string | null }
+    currentUser: { role: string; roleCode?: string | null; unitId: string | null }
   ) {
     const { page, limit, classId, studentId, date, startDate, endDate, status } = query;
     const skip = (page - 1) * limit;
@@ -37,7 +38,7 @@ export class AttendanceService {
     const where: Prisma.AttendanceWhereInput = {};
 
     // Filter by unit for non-super-admins
-    if (currentUser.role !== UserRole.SUPER_ADMIN) {
+    if (!seesAllUnits(currentUser)) {
       where.student = {
         unitId: currentUser.unitId || 'none',
       };
@@ -322,7 +323,7 @@ export class AttendanceService {
   async update(
     id: string,
     input: UpdateAttendanceInput,
-    currentUser: { role: string; unitId: string | null }
+    currentUser: { role: string; roleCode?: string | null; unitId: string | null }
   ): Promise<Attendance> {
     const attendance = await prisma.attendance.findUnique({
       where: { id },
@@ -336,6 +337,15 @@ export class AttendanceService {
     }
 
     // Check permission for non-super-admins
+    /*
+     * Gerbang tulis sengaja TETAP pada pemeriksaan SUPER_ADMIN.
+     *
+     * seesAllUnits() hanya boleh MELEBARKAN klausa `where` — begitu ia
+     * dipakai di sini, setiap peran lintas-unit (termasuk perawat,
+     * pustakawan, laboran) mendadak boleh mengubah absensi unit mana pun.
+     * Memperluas kewenangan menulis adalah keputusan tersendiri, bukan
+     * efek samping dari memperbaiki tampilan.
+     */
     if (currentUser.role !== UserRole.SUPER_ADMIN) {
       if (attendance.student.unitId !== currentUser.unitId) {
         throw Errors.forbidden('Access denied to update attendance for this unit');
@@ -364,7 +374,7 @@ export class AttendanceService {
   /**
    * Delete attendance record
    */
-  async delete(id: string, currentUser: { role: string; unitId: string | null }) {
+  async delete(id: string, currentUser: { role: string; roleCode?: string | null; unitId: string | null }) {
     const attendance = await prisma.attendance.findUnique({
       where: { id },
       include: {
@@ -377,6 +387,15 @@ export class AttendanceService {
     }
 
     // Check permission for non-super-admins
+    /*
+     * Gerbang tulis sengaja TETAP pada pemeriksaan SUPER_ADMIN.
+     *
+     * seesAllUnits() hanya boleh MELEBARKAN klausa `where` — begitu ia
+     * dipakai di sini, setiap peran lintas-unit (termasuk perawat,
+     * pustakawan, laboran) mendadak boleh mengubah absensi unit mana pun.
+     * Memperluas kewenangan menulis adalah keputusan tersendiri, bukan
+     * efek samping dari memperbaiki tampilan.
+     */
     if (currentUser.role !== UserRole.SUPER_ADMIN) {
       if (attendance.student.unitId !== currentUser.unitId) {
         throw Errors.forbidden('Access denied to delete attendance for this unit');
@@ -395,7 +414,7 @@ export class AttendanceService {
    */
   async getSummary(
     query: AttendanceSummaryQuery,
-    currentUser: { role: string; unitId: string | null }
+    currentUser: { role: string; roleCode?: string | null; unitId: string | null }
   ): Promise<AttendanceSummary> {
     const { classId, studentId, unitId, date, startDate, endDate } = query;
 
@@ -417,7 +436,7 @@ export class AttendanceService {
     }
 
     // Filter by unit for non-super-admins
-    if (currentUser.role !== UserRole.SUPER_ADMIN) {
+    if (!seesAllUnits(currentUser)) {
       where.student = {
         unitId: currentUser.unitId || 'none',
       };
@@ -505,7 +524,7 @@ export class AttendanceService {
     classId: string,
     year: number,
     month: number,
-    currentUser: { role: string; unitId: string | null }
+    currentUser: { role: string; roleCode?: string | null; unitId: string | null }
   ): Promise<AttendanceCalendarResponse> {
     // Get class info
     const classInfo = await prisma.class.findUnique({

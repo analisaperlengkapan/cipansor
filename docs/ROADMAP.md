@@ -178,7 +178,21 @@ run before, expect to re-check any page the sweep flags.
 
 ## 🟢 12. Long-tail technical debt
 
-- ~14 API services still scope with `unitId || 'none'`.
+- ~~~14 API services still scope with `unitId || 'none'`.~~ **Closed (PR #363).**
+  The literal `unitId || 'none'` pattern is gone: eight services (finance,
+  extracurricular, homeroom, muhadatsah, muhadhoroh, meals, attendance,
+  duty-roster) were migrated to `seesAllUnits()`, joining the four already
+  done (students, tahfidz, murojaah, units). Calendar's `role`-keyed variant
+  was fixed in the same PR. The yayasan board and cross-unit asrama staff now
+  see their data instead of an empty (or partial) list. `resolve-unit-id` got
+  its first direct test.
+  - **Still owed, for the module audit (§8.4), not a mechanical sweep:** other
+    read filters keyed on the legacy `role !== SUPER_ADMIN` that may wrongly
+    exclude the foundation board need *per-module judgment* about whether the
+    board should see across units — they are not all the same bug. `emis` is
+    deliberately per-unit (it *requires* a unitId, being a Dapodik/EMIS export);
+    `paud-report`'s check is an authorization gate, not a read filter. Decide
+    these case by case when auditing each module, never by find-and-replace.
 - ~210 racy `isVisible({ timeout })` probes in e2e specs.
 - Dependabot PRs **#333** (zod 4) and **#328** (eslint 10) still open.
 - Stray root-owned directory `apps/api/apps/api` (created by a `docker run`);

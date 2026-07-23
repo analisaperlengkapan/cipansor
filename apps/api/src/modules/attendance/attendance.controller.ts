@@ -22,6 +22,7 @@ export const list = asyncHandler(
     const query = (res.locals.validatedQuery || req.query) as ListAttendanceQuery;
     const result = await attendanceService.findAll(query, {
       role: req.user!.role,
+      roleCode: req.user!.roleCode,
       unitId: req.user!.unitId,
     });
 
@@ -90,6 +91,7 @@ export const update = asyncHandler(async (req: Request, res: Response<ApiRespons
   const input: UpdateAttendanceInput = req.body;
   const attendance = await attendanceService.update(id, input, {
     role: req.user!.role,
+    roleCode: req.user!.roleCode,
     unitId: req.user!.unitId,
   });
 
@@ -108,6 +110,7 @@ export const remove = asyncHandler(
     const { id } = req.params;
     const result = await attendanceService.delete(id, {
       role: req.user!.role,
+      roleCode: req.user!.roleCode,
       unitId: req.user!.unitId,
     });
 
@@ -127,6 +130,7 @@ export const getSummary = asyncHandler(
     const query = (res.locals.validatedQuery || req.query) as AttendanceSummaryQuery;
     const summary = await attendanceService.getSummary(query, {
       role: req.user!.role,
+      roleCode: req.user!.roleCode,
       unitId: req.user!.unitId,
     });
 
@@ -160,6 +164,7 @@ export const getCalendar = asyncHandler(
 
     const calendar = await attendanceService.getCalendar(classId, year, month, {
       role: req.user!.role,
+      roleCode: req.user!.roleCode,
       unitId: req.user!.unitId,
     });
 

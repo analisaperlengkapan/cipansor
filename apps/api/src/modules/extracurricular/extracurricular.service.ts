@@ -14,6 +14,7 @@ import type {
   ListAttendanceQuery,
   ListAchievementsQuery,
 } from './extracurricular.schema';
+import { seesAllUnits } from '@/utils/resolve-unit-id';
 
 export class ExtracurricularService {
   /**
@@ -31,7 +32,7 @@ export class ExtracurricularService {
     };
 
     // Filter by unit based on role
-    if (currentUser.role !== UserRole.SUPER_ADMIN) {
+    if (!seesAllUnits(currentUser)) {
       where.unitId = currentUser.unitId || 'none';
     } else if (unitId) {
       where.unitId = unitId;
@@ -524,7 +525,7 @@ export class ExtracurricularService {
     }
 
     // Filter by unit
-    if (currentUser.role !== UserRole.SUPER_ADMIN) {
+    if (!seesAllUnits(currentUser)) {
       where.extracurricular = { unitId: currentUser.unitId || 'none' };
     }
 
@@ -658,7 +659,7 @@ export class ExtracurricularService {
     }
 
     // Filter by unit
-    if (currentUser.role !== UserRole.SUPER_ADMIN) {
+    if (!seesAllUnits(currentUser)) {
       where.extracurricular = { unitId: currentUser.unitId || 'none' };
     }
 
@@ -766,7 +767,7 @@ export class ExtracurricularService {
     }
 
     // Filter by unit
-    if (currentUser.role !== UserRole.SUPER_ADMIN) {
+    if (!seesAllUnits(currentUser)) {
       where.extracurricular = { unitId: currentUser.unitId || 'none' };
     }
 

@@ -191,6 +191,7 @@ export async function submitPaymentProof(req: Request, res: Response, next: Next
     const currentUser = {
       sub: req.user!.sub,
       role: req.user!.role,
+      roleCode: req.user!.roleCode,
       unitId: req.user!.unitId,
     };
     const payment = await financeService.submitPaymentProof(
@@ -212,6 +213,7 @@ export async function getPendingVerifications(req: Request, res: Response, next:
     const currentUser = {
       sub: req.user!.sub,
       role: req.user!.role,
+      roleCode: req.user!.roleCode,
       unitId: req.user!.unitId,
     };
     const { page, limit, status } = req.query;
@@ -233,6 +235,7 @@ export async function verifyPayment(req: Request, res: Response, next: NextFunct
     const currentUser = {
       sub: req.user!.sub,
       role: req.user!.role,
+      roleCode: req.user!.roleCode,
       unitId: req.user!.unitId,
     };
     // Final approval is reserved for unit admins / super admins; the TU

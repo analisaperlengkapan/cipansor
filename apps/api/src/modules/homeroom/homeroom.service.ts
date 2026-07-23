@@ -1,11 +1,19 @@
 import { prisma } from '@/lib/prisma';
 import { Errors } from '@/middleware/error';
 import { UserRole, Prisma, ViolationType } from '@prisma/client';
+import { seesAllUnits } from '@/utils/resolve-unit-id';
 
 // User type from JwtPayload
 interface AuthenticatedUser {
   sub: string;
   role: string;
+  /**
+   * RoleCode granular. Wajib ada agar scoping bisa memakai seesAllUnits():
+   * `role` legacy memetakan setiap YAYASAN_* menjadi 'UNIT_ADMIN', sehingga
+   * pemeriksaan yang ditulis atas `role` menggolongkan pengurus yayasan
+   * sebagai admin unit — itulah yang menyembunyikan datanya.
+   */
+  roleCode?: string | null;
   unitId: string | null;
 }
 
@@ -645,8 +653,9 @@ export class HomeroomService {
    * behavior balance. Unit-scoped for non-super-admins.
    */
   async getPerformanceOverview(currentUser: AuthenticatedUser, unitId?: string) {
-    const effectiveUnitId =
-      currentUser.role === UserRole.SUPER_ADMIN ? unitId : (currentUser.unitId ?? 'none');
+    const effectiveUnitId = seesAllUnits(currentUser)
+      ? unitId
+      : (currentUser.unitId ?? 'none');
 
     const classes = await prisma.class.findMany({
       where: {

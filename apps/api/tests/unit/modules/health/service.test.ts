@@ -30,8 +30,15 @@ const { mockMedicalRecord, mockMedication, mockMedicationUsageLog } = vi.hoisted
 });
 
 // Mock the Prisma Client constructor
-vi.mock('@prisma/client', () => {
+// `importOriginal` rather than a hand-listed enum map: the service graph now
+// reaches `resolve-unit-id`, which reads `RoleCode` at module load. A mock that
+// lists only the exports a test happens to need breaks the moment any import
+// below it grows. Spreading the real module keeps every enum and still lets the
+// PrismaClient override below stand.
+vi.mock('@prisma/client', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@prisma/client')>();
   return {
+    ...actual,
     PrismaClient: class {
       medicalRecord = mockMedicalRecord;
       medication = mockMedication;

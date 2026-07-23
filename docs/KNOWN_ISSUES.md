@@ -4,6 +4,64 @@ Status of production-readiness work and the remaining roadmap. Updated as part o
 the production-readiness / architecture-standardization effort. For the system
 overview see [`ARCHITECTURE.md`](./ARCHITECTURE.md).
 
+## 🔴 OPEN — public pages still render Indonesian when EN/AR is selected (2026-07-23)
+
+**Symptom.** Switching the public site to English or Arabic translates the
+navigation and the breadcrumb, but most page content stays Indonesian.
+
+**Cause: scope, not a bug.** PR #356 built the switching *mechanism* — the
+cookie, the server-side locale read, `router.refresh()` so server components
+follow the switch, RTL, and the switcher itself — and translated exactly one
+page (`/profil`) end to end to prove the mechanism works. The remaining public
+content was never translated. The switcher now advertises a capability the
+content does not yet deliver, which is why this reads as broken to a visitor.
+
+**Inventory, measured 2026-07-23** (`getServerLocale` / `publicContentFor` /
+`useI18n` present = localized):
+
+| Surface | State |
+|---|---|
+| Public navbar + mobile drawer | ✅ localized |
+| Breadcrumb (`PublicPage`) | ✅ localized |
+| `/profil` | ✅ localized |
+| `/` landing sections — hero, stats, about, programs, units, news, cta | ❌ **all 7 Indonesian-only** |
+| Landing footer | ❌ Indonesian-only |
+| `/berita`, `/berita/[slug]` | ❌ Indonesian-only |
+| `/unit`, `/unit/[slug]` | ❌ Indonesian-only |
+| `/program-unggulan` | ❌ Indonesian-only |
+| `/wakaf-infaq` | ❌ Indonesian-only |
+| `/kontak` | ❌ Indonesian-only |
+| `/profil/pimpinan` | ❌ Indonesian-only |
+
+So **1 of 9 public pages** and **0 of 7 landing sections** are translated.
+
+**The mechanism to extend is already in place** — this is filling in content,
+not designing anything:
+
+1. Add the page's strings to `apps/web/src/config/content.i18n.ts` under `EN`
+   and `AR` (Indonesian keeps living in `content.ts` and is imported, so the
+   source of record does not fork).
+2. Server components: read the locale with `getServerLocale()` and select via
+   `publicContentFor(locale)`, exactly as `app/profil/page.tsx` does.
+3. Client components (landing sections, footer): use `useI18n()` and put the
+   strings in `locales/{id,en,ar}.ts` under `public.*`.
+
+**Deliberately NOT to be translated** — documented with reasons in
+`content.i18n.ts`, and a future pass should leave them alone:
+
+- **Leaders' mottos.** Each is an Indonesian rendering of a hadith. Generating
+  Arabic from the Indonesian would publish a reconstruction as a quotation
+  attributed to the Prophet ﷺ under a named person's photograph.
+- **Domain vocabulary** — Pesantren, SPMB, Wakaf, Infaq, Santri, Tahfidz,
+  Musyrif, and the unit names. The portal uses these words throughout;
+  translating them on the public site alone would make the two disagree.
+- **Legal identifiers** — decree number, NPWP, ministry name. Facts on a
+  document; a translated identifier is a wrong identifier.
+
+**Impact.** Moderate and outward-facing: the switcher is visible to every
+visitor, so a reader choosing English or Arabic gets a half-translated page,
+which reads worse than offering no switcher at all would have.
+
 ## 🔴 OPEN — PWA install prompt never appears on cipansor.or.id (2026-07-23)
 
 **Symptom.** The "install app" banner never shows on the live site. Reported

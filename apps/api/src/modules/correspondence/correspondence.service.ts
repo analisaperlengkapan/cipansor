@@ -66,6 +66,24 @@ async function recordFlow(
   });
 }
 
+/**
+ * Bentuk nomor surat bawaan, mengikuti surat asli Yayasan:
+ *
+ *     434/Sket/Y-CPS/VII/2026
+ *      │    │     │    │    └── tahun
+ *      │    │     │    └─────── bulan angka Romawi
+ *      │    │     └──────────── kode organisasi
+ *      │    └────────────────── kode jenis naskah (AGENDA_TYPE_CODE)
+ *      └─────────────────────── nomor urut dalam buku agenda jenis itu
+ *
+ * Versi pertama menghilangkan kode organisasi, sehingga nomor yang dihasilkan
+ * tidak sama bentuknya dengan surat yang selama ini dikeluarkan. Ini hanya
+ * *bawaan*: `AgendaNumber.format` disimpan per unit + jenis + tahun ajaran,
+ * jadi unit yang memakai kode sendiri tinggal menyunting barisnya tanpa
+ * mengubah kode.
+ */
+const DEFAULT_AGENDA_FORMAT = '[NO]/[TYPE]/Y-CPS/[ROMAN]/[YEAR]';
+
 export const CorrespondenceService = {
   // Helper: Generate Auto Number
   async generateNumber(unitId: string, type: string, academicYearId: string): Promise<string> {
@@ -88,7 +106,7 @@ export const CorrespondenceService = {
           academicYearId,
           type,
           lastNumber: 0,
-          format: '[NO]/[TYPE]/[ROMAN]/[YEAR]', // Default format
+          format: DEFAULT_AGENDA_FORMAT,
         },
       });
     }

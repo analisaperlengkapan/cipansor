@@ -37,6 +37,8 @@ import {
   LETTER_TYPE_LABELS,
   LETTER_NATURE_LABELS,
   naturesForType,
+  renderTemplateDraft,
+  remainingPlaceholders,
 } from "@cipansor/shared";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
@@ -105,6 +107,13 @@ export default function CreateLetterPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [letterType]);
+
+  // Recomputed from the live field so it clears as the drafter fills things in.
+  const contentValue = form.watch("content");
+  const leftoverPlaceholders = React.useMemo(
+    () => remainingPlaceholders(contentValue ?? ""),
+    [contentValue],
+  );
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -499,14 +508,55 @@ export default function CreateLetterPage() {
                 name="content"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Ringkasan / Isi</FormLabel>
+                    <div className="flex items-center justify-between gap-2">
+                      <FormLabel>Ringkasan / Isi</FormLabel>
+                      {/* Never overwrites silently: the draft is a starting
+                          point, and losing typed text to a template is worse
+                          than retyping the template. */}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const draft = renderTemplateDraft(
+                            form.getValues("type") ?? LetterType.SURAT_DINAS,
+                            form.getValues("nature") ?? LetterNature.PUBLIC,
+                          );
+                          const current = (field.value ?? "").trim();
+                          if (
+                            current &&
+                            !window.confirm(
+                              "Ganti isi yang sudah ditulis dengan konsep template?",
+                            )
+                          ) {
+                            return;
+                          }
+                          form.setValue("content", draft, {
+                            shouldDirty: true,
+                          });
+                        }}
+                      >
+                        Isi dari template
+                      </Button>
+                    </div>
                     <FormControl>
                       <Textarea
-                        placeholder="Tuliskan isi ringkasan surat disini..."
-                        className="min-h-[150px]"
+                        placeholder="Tuliskan isi ringkasan surat disini, atau klik “Isi dari template”..."
+                        className="min-h-[220px] font-mono text-sm"
                         {...field}
                       />
                     </FormControl>
+                    {/* What is still unfilled. A letter that climbs the
+                        approval ladder with "[NAMA]" in it wastes every
+                        reviewer's turn and comes straight back as a revision. */}
+                    {leftoverPlaceholders.length > 0 && (
+                      <p className="text-xs text-amber-600">
+                        Masih ada isian yang belum dilengkapi:{" "}
+                        <span className="font-medium">
+                          {leftoverPlaceholders.join(", ")}
+                        </span>
+                      </p>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}

@@ -96,6 +96,21 @@ describe('jenis dan sifat naskah', () => {
     expect(new Set(codes).size).toBe(codes.length);
   });
 
+  // Taken from a real Yayasan letter: 434/Sket/Y-CPS/VII/2026. The first
+  // version emitted the enum name ("SURAT_KETERANGAN"), producing a number
+  // shaped unlike anything the office actually issues.
+  it('memakai singkatan surat, bukan nama enum', () => {
+    expect(AGENDA_TYPE_CODE[LetterType.SURAT_KETERANGAN]).toBe('Sket');
+    expect(AGENDA_TYPE_CODE[LetterType.SURAT_KEPUTUSAN]).toBe('SK');
+    expect(AGENDA_TYPE_CODE[LetterType.SURAT_TUGAS]).toBe('ST');
+
+    // No code should look like an enum constant.
+    for (const code of Object.values(AGENDA_TYPE_CODE)) {
+      expect(code, `${code} terlihat seperti nama enum`).not.toMatch(/_/);
+      expect(code.length).toBeLessThanOrEqual(5);
+    }
+  });
+
   it('setiap sifat punya label', () => {
     for (const nature of Object.values(LetterNature)) {
       expect(LETTER_NATURE_LABELS[nature], nature).toBeTruthy();

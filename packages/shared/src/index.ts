@@ -26,6 +26,7 @@ export * from "./types/procurement";
 export * from "./types/reception";
 export * from "./types/correspondence";
 export * from "./types/letter-naskah";
+export * from "./types/letter-template";
 export * from "./schemas";
 export * from "./types/marketing";
 export * from "./types/quality";

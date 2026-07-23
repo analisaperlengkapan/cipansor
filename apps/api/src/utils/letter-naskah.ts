@@ -41,17 +41,30 @@ export function isNatureAllowed(type: LetterType, nature: LetterNature): boolean
  * hidup berdampingan, persis seperti di buku agenda kertas. Menyatukannya akan
  * membuat nomor SK melompat setiap kali ada surat biasa keluar. Server-only:
  * nomor tidak pernah dipilih di klien.
+ *
+ * Kodenya adalah singkatan yang benar-benar dipakai pada surat, bukan nama
+ * enum. Versi pertama memakai nama enum apa adanya, sehingga menghasilkan
+ * nomor seperti `001/SURAT_KETERANGAN/VII/2026` — sedangkan surat asli
+ * Yayasan berbunyi:
+ *
+ *     434/Sket/Y-CPS/VII/2026
+ *
+ * `Sket` diambil langsung dari surat tersebut. Sisanya memakai singkatan yang
+ * lazim dalam tata naskah dinas Indonesia (SK, ST, SE, BA, ND, Und); mohon
+ * dikonfirmasi Tata Usaha sebelum dipakai luas, karena hanya `Sket` yang
+ * terverifikasi dari dokumen nyata.
  */
 export const AGENDA_TYPE_CODE: Record<LetterType, string> = {
-  [LetterType.SURAT_DINAS]: 'SURAT_DINAS',
-  [LetterType.NOTA_DINAS]: 'NOTA_DINAS',
+  // Surat dinas biasa: cukup "S", agar tidak rancu dengan singkatan unit "SD".
+  [LetterType.SURAT_DINAS]: 'S',
+  [LetterType.NOTA_DINAS]: 'ND',
   [LetterType.SURAT_KEPUTUSAN]: 'SK',
-  [LetterType.SURAT_TUGAS]: 'SURAT_TUGAS',
-  [LetterType.SURAT_EDARAN]: 'SURAT_EDARAN',
-  [LetterType.SURAT_UNDANGAN]: 'UNDANGAN',
-  [LetterType.SURAT_KETERANGAN]: 'SURAT_KETERANGAN',
-  [LetterType.BERITA_ACARA]: 'BERITA_ACARA',
-  [LetterType.PENGUMUMAN]: 'PENGUMUMAN',
+  [LetterType.SURAT_TUGAS]: 'ST',
+  [LetterType.SURAT_EDARAN]: 'SE',
+  [LetterType.SURAT_UNDANGAN]: 'Und',
+  [LetterType.SURAT_KETERANGAN]: 'Sket', // terverifikasi dari surat asli
+  [LetterType.BERITA_ACARA]: 'BA',
+  [LetterType.PENGUMUMAN]: 'Peng',
 };
 
 export class NaskahError extends Error {

@@ -40,6 +40,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { EsignPanel } from "@/components/settings/esign-panel";
 
 // Types
 type Theme = "light" | "dark" | "system";
@@ -598,6 +599,9 @@ function SettingsPageContent() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Tanda tangan elektronik: pengajuan, aktivasi, dan ganti passphrase. */}
+          <EsignPanel />
         </TabsContent>
 
         <TabsContent value="about" className="space-y-4">

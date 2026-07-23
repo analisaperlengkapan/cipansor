@@ -491,6 +491,9 @@ model User {
   receivedDispositions Disposition[]     @relation("DispositionRecipient")
   letterFlowActions    LetterFlowEvent[] @relation("LetterFlowActor")
   letterFlowTargeted   LetterFlowEvent[] @relation("LetterFlowTarget")
+  signingKey           UserSigningKey?
+  letterSignatures     LetterSignature[] @relation("LetterSigner")
+  revokedSignatures    LetterSignature[] @relation("LetterSignatureRevoker")
 
   // Risk Management
   createdRisks        Risk[]             @relation("RiskCreator")
@@ -7060,6 +7063,81 @@ model LetterFlowEvent {
   @@map("letter_flow_events")
 }
 
+/// UserSigningKey - Kunci Tanda Tangan Elektronik Mandiri
+///
+/// Satu pasang kunci per pengguna. Kunci privat disimpan dalam keadaan
+/// tersegel: hanya passphrase pemiliknya yang dapat membukanya, dan passphrase
+/// itu tidak pernah disimpan di mana pun — tidak sebagai teks, tidak pula
+/// sebagai hash. Bukti passphrase benar adalah kunci privat berhasil
+/// didekripsi (lihat utils/esign.ts).
+///
+/// Konsekuensinya disengaja: passphrase yang lupa tidak dapat dipulihkan,
+/// hanya dapat diganti dengan kunci baru — dan surat lama tetap terverifikasi
+/// karena tiap tanda tangan menyimpan salinan kunci publiknya sendiri.
+model UserSigningKey {
+  id                  String    @id @default(uuid())
+  userId              String    @unique @map("user_id")
+  algorithm           String    @default("Ed25519")
+  publicKey           String    @map("public_key") @db.Text
+  encryptedPrivateKey String    @map("encrypted_private_key") @db.Text
+  kdfSalt             String    @map("kdf_salt")
+  /// Parameter scrypt saat kunci dibuat, agar dapat dinaikkan kelak tanpa
+  /// membuat kunci lama tidak terbaca.
+  kdfParams           Json      @map("kdf_params")
+  iv                  String
+  authTag             String    @map("auth_tag")
+  /// Penahan tebakan passphrase.
+  failedAttempts      Int       @default(0) @map("failed_attempts")
+  lockedUntil         DateTime? @map("locked_until")
+  lastUsedAt          DateTime? @map("last_used_at")
+  revokedAt           DateTime? @map("revoked_at")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_signing_keys")
+}
+
+/// LetterSignature - Tanda Tangan Elektronik pada Surat
+///
+/// Menyimpan tanda tangan beserta bahan untuk memeriksanya kembali: ringkasan
+/// naskah yang ditandatangani, tanda tangannya, dan salinan kunci publik yang
+/// dipakai. Dengan begitu keaslian surat dapat diperiksa tanpa perlu percaya
+/// pada baris lain di basis data ini.
+model LetterSignature {
+  id        String @id @default(uuid())
+  letterId  String @map("letter_id")
+  signerId  String @map("signer_id")
+  algorithm String
+
+  /// Salinan kunci publik saat penandatanganan — bukan rujukan ke kunci
+  /// pengguna saat ini, agar pencabutan/penggantian kunci tidak membuat surat
+  /// yang sudah sah menjadi tampak palsu.
+  publicKey String @map("public_key") @db.Text
+  /// SHA-256 bentuk kanonik naskah (utils/esign.ts).
+  digest    String
+  signature String @db.Text
+
+  /// Dimuat QR. Acak, bukan turunan id surat, supaya daftar surat tidak dapat
+  /// disisir lewat halaman verifikasi publik.
+  verificationToken String    @unique @map("verification_token")
+  signedAt          DateTime  @default(now()) @map("signed_at")
+  /// Pencabutan tidak menghapus baris: surat yang pernah beredar harus tetap
+  /// dapat dijelaskan statusnya kepada yang memindai QR-nya.
+  revokedAt         DateTime? @map("revoked_at")
+  revokedReason     String?   @map("revoked_reason") @db.Text
+  revokedById       String?   @map("revoked_by_id")
+
+  letter    Letter @relation(fields: [letterId], references: [id], onDelete: Cascade)
+  signer    User   @relation("LetterSigner", fields: [signerId], references: [id])
+  revokedBy User?  @relation("LetterSignatureRevoker", fields: [revokedById], references: [id])
+
+  @@unique([letterId, signerId])
+  @@index([letterId])
+  @@map("letter_signatures")
+}
+
 /// FilingClassification - Kode Klasifikasi Arsip (Pola Klasifikasi)
 model FilingClassification {
   id          String   @id @default(uuid())
@@ -7132,6 +7210,7 @@ model Letter {
   recipients     LetterRecipient[]
   dispositions   Disposition[]         @relation("LetterDispositions")
   flowEvents     LetterFlowEvent[]
+  signatures     LetterSignature[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")

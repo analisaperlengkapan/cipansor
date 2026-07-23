@@ -68,16 +68,17 @@ letter flow events, letter type/nature, e-sign, e-sign lifecycle — all
 rehearsed against a copy of the production schema. Sequence: merge → rehearse
 diff → apply migrations → build → deploy → verify.
 
-## 🟠 5. Public i18n — 8 of 9 pages done, `/wakaf-infaq` remaining
+## ✅ 5. Public i18n — all 9 pages done
 
-Was 1 of 9 pages and 0 of 7 landing sections. Now every public page except
-`/wakaf-infaq` is localized end to end, page titles and meta descriptions
-included, guarded by `config/i18n-coverage.test.ts`.
+Was 1 of 9 pages and 0 of 7 landing sections. Now every public page is
+localized end to end — page titles, meta descriptions and the donation form
+included — guarded by `config/i18n-coverage.test.ts`.
 
-Remaining: the donation portal (743 lines of client component around a live
-payment flow — its own pass, not a sweep), and the news article *bodies*, whose
-headlines and standfirsts are translated while the text is marked `lang="id"`
-with a line telling the reader so. Detail in `KNOWN_ISSUES.md`.
+Still Indonesian by design: the news article *bodies* (headlines and
+standfirsts are translated; the text is marked `lang="id"` under a line telling
+the reader so), the leaders' mottos and the donation page's scripture, and the
+values that are *recorded* rather than displayed — the anonymous donor name and
+the bank details. Detail in `KNOWN_ISSUES.md`. **Ships with the next deploy.**
 
 ## 🟠 6. PWA install prompt never fires
 

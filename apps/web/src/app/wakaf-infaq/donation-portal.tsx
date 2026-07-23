@@ -2,9 +2,15 @@
 import { donationConfig } from "@/config/site";
 import { LegalIdentity } from "@/components/landing/legal-identity";
 import { publicContentFor } from "@/config/content.i18n";
+import {
+  donationContentFor,
+  ANONYMOUS_DONOR_NAME,
+  type DonationContent,
+} from "@/config/donation.i18n";
+import type { Locale } from "@/locales";
+import { intlTagFor } from "@/lib/locale-format";
 import { useI18n } from "@/providers/i18n-provider";
 import { useState } from "react";
-import { safeFormat } from "@/lib/date";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -65,8 +71,6 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-import { id as idLocale } from "date-fns/locale";
-
 const paymentIcons: Record<
   PaymentMethod,
   React.ComponentType<{ className?: string }>
@@ -94,6 +98,7 @@ export function DonationPortal() {
   // Client component, so the locale comes from the hook rather than the cookie
   // read — the same content module either way.
   const { locale } = useI18n();
+  const copy = donationContentFor(locale);
   const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(
     null,
   );
@@ -126,12 +131,12 @@ export function DonationPortal() {
     e.preventDefault();
 
     if (!formData.donorName.trim() && !formData.isAnonymous) {
-      toast.error("Nama donatur harus diisi atau pilih donasi anonim");
+      toast.error(copy.form.errorNameRequired);
       return;
     }
 
     if (!formData.amount || parseInt(formData.amount) < 10000) {
-      toast.error("Minimal donasi Rp 10.000");
+      toast.error(copy.form.errorMinimum(formatCurrency(10000)));
       return;
     }
 
@@ -139,7 +144,7 @@ export function DonationPortal() {
     try {
       await createDonation.mutateAsync({
         campaignId: selectedCampaignId || undefined,
-        donorName: formData.isAnonymous ? "Hamba Allah" : formData.donorName,
+        donorName: formData.isAnonymous ? ANONYMOUS_DONOR_NAME : formData.donorName,
         donorPhone: formData.donorPhone || undefined,
         donorEmail: formData.donorEmail || undefined,
         donorAddress: formData.donorAddress || undefined,
@@ -151,7 +156,7 @@ export function DonationPortal() {
       });
 
       setSuccessData({
-        donorName: formData.isAnonymous ? "Hamba Allah" : formData.donorName,
+        donorName: formData.isAnonymous ? ANONYMOUS_DONOR_NAME : formData.donorName,
         amount: parseInt(formData.amount),
       });
 
@@ -170,7 +175,7 @@ export function DonationPortal() {
       setSelectedCampaignId(null);
       setShowForm(false);
     } catch {
-      toast.error("Gagal mengirim donasi. Silakan coba lagi.");
+      toast.error(copy.form.errorFailed);
     } finally {
       setIsSubmitting(false);
     }
@@ -187,13 +192,13 @@ export function DonationPortal() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <HandHeart className="h-16 w-16 mx-auto mb-6 opacity-90" />
           <h1 className="text-4xl md:text-5xl font-bold mb-2 text-balance">
-            {donationConfig.headline}
+            {copy.hero.headline}
           </h1>
           <p className="text-xl text-emerald-100 mb-6">
-            {donationConfig.subheadline}
+            {copy.hero.subheadline}
           </p>
           <p className="text-lg text-emerald-100 max-w-2xl mx-auto mb-8 text-pretty">
-            {donationConfig.lead}
+            {copy.hero.lead}
           </p>
           <Button
             size="lg"
@@ -204,7 +209,7 @@ export function DonationPortal() {
             }}
           >
             <Gift className="h-5 w-5 mr-2" />
-            Donasi Sekarang
+            {copy.hero.cta}
           </Button>
         </div>
       </section>
@@ -243,7 +248,7 @@ export function DonationPortal() {
         */}
         {(isLoading || activeCampaigns.length > 0) && (
           <section className="mb-12">
-            <h2 className="text-2xl font-bold mb-6">Kampanye Donasi</h2>
+            <h2 className="text-2xl font-bold mb-6">{copy.campaigns.heading}</h2>
 
             {isLoading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -257,6 +262,8 @@ export function DonationPortal() {
                   <CampaignCard
                     key={campaign.id}
                     campaign={campaign}
+                    copy={copy.campaigns}
+                    locale={locale}
                     onDonate={() => {
                       setSelectedCampaignId(campaign.id);
                       setShowForm(true);
@@ -282,28 +289,31 @@ export function DonationPortal() {
         {/* Bank Info */}
         <section className="mb-12">
           <h2 className="text-2xl font-bold text-center mb-2">
-            Pilihan Program Kebaikan
+            {copy.programs.heading}
           </h2>
           <p className="mx-auto mb-6 max-w-2xl text-center text-muted-foreground">
-            {donationConfig.programsIntro}
+            {copy.programs.intro}
           </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             {donationConfig.programs.map((program) => {
               const ProgramIcon = programIcons[program.type] ?? HandHeart;
+              const text = copy.programs.byType[program.type];
               return (
               <Card
-                key={program.title}
+                key={program.type}
                 className="flex flex-col bg-white transition-shadow hover:shadow-lg"
               >
                 <CardHeader>
                   <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center mb-2">
                     <ProgramIcon className="h-5 w-5 text-emerald-600" aria-hidden="true" />
                   </div>
-                  <CardTitle className="text-lg">{program.title}</CardTitle>
+                  <CardTitle className="text-lg">
+                    {text?.title ?? program.title}
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="flex flex-1 flex-col">
                   <CardDescription className="flex-1 text-base leading-relaxed">
-                    {program.description}
+                    {text?.description ?? program.description}
                   </CardDescription>
                   {/* "Pilih Program" is step 1 of Cara Berdonasi — so it has to
                       be clickable. These cards were inert text while a
@@ -320,7 +330,7 @@ export function DonationPortal() {
                       setShowForm(true);
                     }}
                   >
-                    Pilih Program Ini
+                    {copy.programs.chooseCta}
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </CardContent>
@@ -333,11 +343,9 @@ export function DonationPortal() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Building2 className="h-5 w-5" />
-                Informasi Rekening
+                {copy.bank.heading}
               </CardTitle>
-              <CardDescription>
-                Transfer donasi ke rekening resmi Yayasan Pesantren Cipansor
-              </CardDescription>
+              <CardDescription>{copy.bank.subheading}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               {/*
@@ -352,18 +360,19 @@ export function DonationPortal() {
                   {donationConfig.bank.accountNumber}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  a.n. {donationConfig.bank.accountHolder}
+                  {copy.bank.accountHolderPrefix}{" "}
+                  {donationConfig.bank.accountHolder}
                 </p>
               </div>
 
               <div className="p-4 bg-white rounded-lg border space-y-3">
-                <p className="font-semibold">Konfirmasi Donasi</p>
+                <p className="font-semibold">{copy.bank.confirmHeading}</p>
                 <p className="text-sm text-muted-foreground">
-                  Setelah transfer, kirim bukti melalui WhatsApp dengan format{" "}
+                  {copy.bank.confirmIntro}{" "}
                   <span className="font-mono font-medium text-foreground">
                     {donationConfig.confirmation.format}
                   </span>
-                  . Contoh:{" "}
+                  . {copy.bank.exampleLabel}{" "}
                   <span className="font-mono text-foreground">
                     {donationConfig.confirmation.example}
                   </span>
@@ -376,7 +385,7 @@ export function DonationPortal() {
                   className="inline-flex items-center gap-2 font-medium text-emerald-600 hover:underline"
                 >
                   <Phone className="h-4 w-4" />
-                  Konfirmasi via WhatsApp{" "}
+                  {copy.bank.whatsappCta}{" "}
                   {donationConfig.confirmation.whatsappNumber}
                 </a>
               </div>
@@ -390,17 +399,17 @@ export function DonationPortal() {
         <section className="mb-12 grid grid-cols-1 gap-6 lg:grid-cols-2">
           <Card>
             <CardHeader>
-              <CardTitle>Cara Berdonasi</CardTitle>
+              <CardTitle>{copy.steps.heading}</CardTitle>
             </CardHeader>
             <CardContent>
               <ol className="space-y-4">
-                {donationConfig.steps.map((step, i) => (
+                {copy.steps.items.map((step, i) => (
                   <li key={step.title} className="flex gap-3">
                     <span
                       aria-hidden="true"
                       className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-sm font-bold text-emerald-700"
                     >
-                      {i + 1}
+                      {new Intl.NumberFormat(intlTagFor(locale)).format(i + 1)}
                     </span>
                     <div>
                       <p className="font-medium">{step.title}</p>
@@ -418,14 +427,22 @@ export function DonationPortal() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <ShieldCheck className="h-5 w-5 text-emerald-600" />
-                {donationConfig.commitment.title}
+                {copy.commitment.title}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="leading-relaxed text-muted-foreground">
-                {donationConfig.commitment.text}
+                {copy.commitment.text}
               </p>
-              <blockquote className="border-l-4 border-emerald-300 pl-4 text-sm italic text-muted-foreground">
+              {copy.scriptureNotice && (
+                <p className="text-xs text-muted-foreground">
+                  {copy.scriptureNotice}
+                </p>
+              )}
+              <blockquote
+                lang="id"
+                className="border-l-4 border-emerald-300 pl-4 text-sm italic text-muted-foreground"
+              >
                 &ldquo;{donationConfig.hadith.text}&rdquo;
                 <footer className="mt-1 not-italic">
                   ({donationConfig.hadith.source})
@@ -456,7 +473,7 @@ export function DonationPortal() {
           page wrapper; this used to be a second one with a stale copyright. */}
       <section className="bg-gray-900 py-10 text-white">
         <div className="mx-auto max-w-3xl px-4 text-center sm:px-6 lg:px-8">
-          <p className="text-sm leading-relaxed text-gray-300">
+          <p lang="id" className="text-sm leading-relaxed text-gray-300">
             &ldquo;Perumpamaan orang yang menginfakkan hartanya di jalan Allah
             seperti sebutir biji yang menumbuhkan tujuh tangkai, pada setiap
             tangkai ada seratus biji.&rdquo;
@@ -471,18 +488,15 @@ export function DonationPortal() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Heart className="h-5 w-5 text-emerald-600" />
-              Form Donasi
+              {copy.form.title}
             </DialogTitle>
-            <DialogDescription>
-              Isi data donasi Anda. Donasi akan diverifikasi setelah pembayaran
-              dikonfirmasi.
-            </DialogDescription>
+            <DialogDescription>{copy.form.description}</DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-4 pt-4">
             {/* Quick Amount */}
             <div className="space-y-2">
-              <Label>Nominal Donasi</Label>
+              <Label>{copy.form.amountLabel}</Label>
               <div className="grid grid-cols-3 gap-2">
                 {quickAmounts.map((amount) => (
                   <Button
@@ -502,7 +516,7 @@ export function DonationPortal() {
               </div>
               <Input
                 type="number"
-                placeholder="Atau masukkan nominal lain"
+                placeholder={copy.form.amountPlaceholder}
                 value={formData.amount}
                 onChange={(e) =>
                   setFormData({ ...formData, amount: e.target.value })
@@ -513,7 +527,7 @@ export function DonationPortal() {
 
             {/* Donation Type */}
             <div className="space-y-2">
-              <Label>Jenis Donasi</Label>
+              <Label>{copy.form.typeLabel}</Label>
               <Select
                 value={formData.type}
                 onValueChange={(v) =>
@@ -526,7 +540,7 @@ export function DonationPortal() {
                 <SelectContent>
                   {DONATION_TYPES.map((type) => (
                     <SelectItem key={type.value} value={type.value}>
-                      {type.label}
+                      {copy.donationTypes[type.value] ?? type.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -543,7 +557,7 @@ export function DonationPortal() {
                 }
               />
               <Label htmlFor="isAnonymous" className="cursor-pointer">
-                Donasi sebagai Hamba Allah (Anonim)
+                {copy.form.anonymousLabel}
               </Label>
             </div>
 
@@ -551,31 +565,31 @@ export function DonationPortal() {
             {!formData.isAnonymous && (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="donorName">Nama Lengkap *</Label>
+                  <Label htmlFor="donorName">{copy.form.nameLabel}</Label>
                   <Input
                     id="donorName"
                     value={formData.donorName}
                     onChange={(e) =>
                       setFormData({ ...formData, donorName: e.target.value })
                     }
-                    placeholder="Masukkan nama lengkap"
+                    placeholder={copy.form.namePlaceholder}
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="donorPhone">No. HP</Label>
+                    <Label htmlFor="donorPhone">{copy.form.phoneLabel}</Label>
                     <Input
                       id="donorPhone"
                       value={formData.donorPhone}
                       onChange={(e) =>
                         setFormData({ ...formData, donorPhone: e.target.value })
                       }
-                      placeholder="08xx"
+                      placeholder={copy.form.phonePlaceholder}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="donorEmail">Email</Label>
+                    <Label htmlFor="donorEmail">{copy.form.emailLabel}</Label>
                     <Input
                       id="donorEmail"
                       type="email"
@@ -592,7 +606,7 @@ export function DonationPortal() {
 
             {/* Payment Method */}
             <div className="space-y-2">
-              <Label>Metode Pembayaran</Label>
+              <Label>{copy.form.paymentLabel}</Label>
               <div className="grid grid-cols-2 gap-2">
                 {PAYMENT_METHODS.map((method) => {
                   const Icon = paymentIcons[method.value];
@@ -614,7 +628,7 @@ export function DonationPortal() {
                       }
                     >
                       <Icon className="h-4 w-4 mr-2" />
-                      {method.label}
+                      {copy.paymentMethods[method.value] ?? method.label}
                     </Button>
                   );
                 })}
@@ -623,20 +637,20 @@ export function DonationPortal() {
 
             {/* Notes */}
             <div className="space-y-2">
-              <Label htmlFor="notes">Pesan/Doa (Opsional)</Label>
+              <Label htmlFor="notes">{copy.form.notesLabel}</Label>
               <Textarea
                 id="notes"
                 value={formData.notes}
                 onChange={(e) =>
                   setFormData({ ...formData, notes: e.target.value })
                 }
-                placeholder="Tulis pesan atau doa..."
+                placeholder={copy.form.notesPlaceholder}
                 rows={2}
               />
             </div>
 
             <Button type="submit" disabled={isSubmitting} className="w-full">
-              {isSubmitting ? "Memproses..." : "Kirim Donasi"}
+              {isSubmitting ? copy.form.submitting : copy.form.submit}
             </Button>
           </form>
         </DialogContent>
@@ -649,19 +663,22 @@ export function DonationPortal() {
             <div className="w-16 h-16 bg-emerald-100 rounded-full mx-auto mb-4 flex items-center justify-center">
               <CheckCircle2 className="h-8 w-8 text-emerald-600" />
             </div>
-            <h3 className="text-xl font-semibold mb-2">Jazakallahu Khairan!</h3>
-            <p className="text-muted-foreground mb-4">
-              Terima kasih, <strong>{successData?.donorName}</strong>
+            <h3 className="text-xl font-semibold mb-2">
+              {copy.success.heading}
+            </h3>
+            {/* One string, not a prefix glued to a <strong> — the name does
+                not sit in the same place in every language. */}
+            <p className="font-medium text-muted-foreground mb-4">
+              {copy.success.thanks(successData?.donorName ?? "")}
             </p>
             <p className="text-2xl font-bold text-emerald-600 mb-4">
               {successData && formatCurrency(successData.amount)}
             </p>
             <p className="text-sm text-muted-foreground mb-6">
-              Donasi Anda sedang menunggu verifikasi. Kami akan menghubungi Anda
-              setelah pembayaran dikonfirmasi.
+              {copy.success.body}
             </p>
             <Button onClick={() => setSuccessData(null)} className="w-full">
-              Tutup
+              {copy.success.close}
             </Button>
           </div>
         </DialogContent>
@@ -672,9 +689,13 @@ export function DonationPortal() {
 
 function CampaignCard({
   campaign,
+  copy,
+  locale,
   onDonate,
 }: {
   campaign: DonationCampaign;
+  copy: DonationContent["campaigns"];
+  locale: Locale;
   onDonate: () => void;
 }) {
   const progress = calculateProgress(
@@ -693,7 +714,7 @@ function CampaignCard({
             {campaign.title}
           </CardTitle>
           <Badge className="bg-emerald-100 text-emerald-800 shrink-0">
-            Aktif
+            {copy.activeBadge}
           </Badge>
         </div>
         {campaign.description && (
@@ -712,29 +733,37 @@ function CampaignCard({
           </div>
           <Progress value={progress} className="h-2" />
           <p className="text-xs text-muted-foreground mt-1">
-            Target: {formatCurrency(campaign.targetAmount)}
+            {copy.targetLabel}: {formatCurrency(campaign.targetAmount)}
           </p>
         </div>
 
         <div className="flex items-center justify-between text-sm text-muted-foreground">
           <span className="flex items-center gap-1">
             <Users className="h-3.5 w-3.5" />
-            {campaign.donorCount} donatur
+            {copy.donors(
+              new Intl.NumberFormat(intlTagFor(locale)).format(
+                campaign.donorCount,
+              ),
+            )}
           </span>
           {campaign.endDate && (
             <span className="flex items-center gap-1">
               <Calendar className="h-3.5 w-3.5" />
-              s/d{" "}
-              {safeFormat(new Date(campaign.endDate), "d MMM", {
-                locale: idLocale,
-              })}
+              {copy.untilPrefix}{" "}
+              {/* The campaign end date followed Indonesian month names in
+                  every locale; it now follows the reader's. */}
+              {new Intl.DateTimeFormat(intlTagFor(locale), {
+                day: "numeric",
+                month: "short",
+                timeZone: "Asia/Jakarta",
+              }).format(new Date(campaign.endDate))}
             </span>
           )}
         </div>
       </CardContent>
       <CardFooter>
         <Button onClick={onDonate} className="w-full">
-          Donasi Sekarang
+          {copy.donateCta}
           <ArrowRight className="h-4 w-4 ml-2" />
         </Button>
       </CardFooter>

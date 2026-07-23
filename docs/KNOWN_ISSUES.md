@@ -4,7 +4,7 @@ Status of production-readiness work and the remaining roadmap. Updated as part o
 the production-readiness / architecture-standardization effort. For the system
 overview see [`ARCHITECTURE.md`](./ARCHITECTURE.md).
 
-## 🟡 MOSTLY FIXED — public pages render Indonesian when EN/AR is selected (2026-07-23)
+## ✅ FIXED — public pages rendered Indonesian when EN/AR was selected (2026-07-23)
 
 **Was.** Switching the public site to English or Arabic translated the
 navigation and the breadcrumb, but the page content stayed Indonesian: 1 of 9
@@ -13,8 +13,8 @@ switching *mechanism* — cookie, server-side locale read, `router.refresh()`,
 RTL, the switcher — and translated `/profil` alone to prove it worked. The
 switcher then advertised a capability the content did not deliver.
 
-**Now: 8 of 9 pages localized end to end**, including page titles and meta
-descriptions:
+**Now: all 9 public pages localized end to end**, including page titles and
+meta descriptions:
 
 | Surface | State |
 |---|---|
@@ -25,21 +25,21 @@ descriptions:
 | `/program-unggulan` | ✅ |
 | `/berita`, `/berita/[slug]` | ✅ chrome, headline and standfirst |
 | `/kontak` | ✅ |
-| `/wakaf-infaq` | ❌ **remaining** |
+| `/wakaf-infaq` | ✅ including the donation form |
 
-**What is left, and why.**
+**What is still Indonesian, deliberately.**
 
-1. **`/wakaf-infaq`.** `donation-portal.tsx` is 743 lines of client component
-   carrying a live donation form — field labels, validation messages, transfer
-   instructions, and bank details. A mistranslated label in a payment flow is a
-   different class of risk from a mistranslated headline, so it wants its own
-   pass rather than being folded into a sweep.
-2. **News article bodies.** Headlines and standfirsts are translated; the
+1. **News article bodies.** Headlines and standfirsts are translated; the
    article text is not. Each body carries direct quotations attributed to named
    staff and lists of named children. English and Arabic readers are told so in
    a line above the article rather than left to wonder, and the body is marked
    `lang="id"`.
-3. **Leaders' mottos** — see below; these are deliberate and permanent.
+2. **Leaders' mottos and the donation page's scripture** — see below; these are
+   deliberate and permanent.
+3. **`ANONYMOUS_DONOR_NAME` ("Hamba Allah")** on the donation form. It is
+   *recorded on the donation*, not merely displayed, so it stays one value in
+   every locale rather than three the finance team has to reconcile. Likewise
+   the bank details and the donation JSON-LD.
 
 **Where the strings live.** Public prose is a plain function of the locale, so
 the same module serves server components (`getServerLocale()`) and client ones
@@ -49,6 +49,7 @@ the same module serves server components (`getServerLocale()`) and client ones
 - `config/home.i18n.ts` — the seven landing sections and the footer.
 - `config/pages.i18n.ts` — page chrome for everything past the homepage.
 - `config/news.i18n.ts` — article headlines and standfirsts.
+- `config/donation.i18n.ts` — the Wakaf & Infaq page and its form.
 - `config/content.i18n.ts` — `/profil` and the legal-identity copy.
 - `locales/{id,en,ar}.ts` — only the small UI atoms `t()` serves.
 
@@ -62,10 +63,11 @@ explicit allowlist naming each deliberate exception and its reason.
 
 **Deliberately NOT translated** — a future pass should leave these alone:
 
-- **Leaders' mottos.** Each is an Indonesian rendering of a hadith. Generating
-  Arabic from the Indonesian would publish a reconstruction as a quotation
-  attributed to the Prophet ﷺ under a named person's photograph. The page says
-  so in English and Arabic instead.
+- **Leaders' mottos, and the hadith and Qur'anic verse on the donation page.**
+  Each is an Indonesian rendering of scripture. Generating Arabic or English
+  from it would publish a reconstruction as scripture — in the mottos' case,
+  as a quotation attributed to the Prophet ﷺ under a named person's
+  photograph. Both pages say so in English and Arabic instead.
 - **Domain vocabulary** — Pesantren, SPMB, Wakaf, Infaq, Santri, Tahfidz,
   Musyrif, and the unit names. The portal uses these words throughout;
   translating them on the public site alone would make the two disagree.

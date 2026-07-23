@@ -5,6 +5,7 @@ import { homeContentFor } from "./home.i18n";
 import { siteTextFor } from "./site.i18n";
 import { newsTextFor } from "./news.i18n";
 import { pagesContentFor } from "./pages.i18n";
+import { donationContentFor } from "./donation.i18n";
 import { publicContentFor } from "./content.i18n";
 import { formatNumber } from "@/lib/locale-format";
 
@@ -36,6 +37,20 @@ const KEPT_VERBATIM: Record<string, string> = {
   "en:profileStats[1].label": "Santri is kept and glossed, not translated to 'students'",
   "en:contact.emailHeading": "'Email' is the same word in Indonesian",
   "en:contact.whatsappHeading": "A product name",
+  // The donation page. Akad names are the terms the donation record stores and
+  // the finance module displays, so they are kept and glossed, not translated.
+  "en:donationTypes.ZAKAT_MAAL": "Akad name",
+  "en:donationTypes.ZAKAT_FITRAH": "Akad name",
+  "en:donationTypes.WAKAF": "Akad name",
+  "en:donationTypes.SEDEKAH_JARIYAH": "Akad name",
+  "en:success.heading": "Jazakallahu Khairan is a supplication, not a phrase to render",
+  "en:campaigns.targetLabel": "'Target' is the same word in Indonesian",
+  "en:form.emailLabel": "'Email' is the same word in Indonesian",
+  "en:paymentMethods.QRIS": "Indonesia's national QR payment standard",
+  "ar:paymentMethods.QRIS": "Indonesia's national QR payment standard",
+  // A format hint showing the shape of an Indonesian mobile number.
+  "en:form.phonePlaceholder": "A number format, not prose",
+  "ar:form.phonePlaceholder": "A number format, not prose",
 };
 
 /**
@@ -72,6 +87,7 @@ const SURFACES: Array<{ name: string; of: (l: Locale) => unknown }> = [
   { name: "home", of: homeContentFor },
   { name: "site", of: siteTextFor },
   { name: "pages", of: pagesContentFor },
+  { name: "donation", of: donationContentFor },
   { name: "profile/legal", of: publicContentFor },
 ];
 

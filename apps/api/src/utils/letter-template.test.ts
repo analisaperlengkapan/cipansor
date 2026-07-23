@@ -61,19 +61,98 @@ describe('konsep awal surat', () => {
     }
   });
 
-  it('surat keputusan memuat Menimbang, Mengingat, dan Menetapkan', () => {
+  /**
+   * Susunan keputusan bukan selera tata letak: diktum adalah kesimpulan dari
+   * konsideran, jadi MEMUTUSKAN harus berada SESUDAH Menimbang dan Mengingat
+   * dan SEBELUM Menetapkan. Kerangka lama mencetaknya sebagai kalimat
+   * peralihan, yaitu paling atas — keputusan yang memutuskan lebih dulu baru
+   * menimbang.
+   */
+  it('surat keputusan menyusun konsideran sebelum diktum', () => {
     const draft = renderTemplateDraft(
       LetterType.SURAT_KEPUTUSAN,
       LetterNature.PUBLIC
     );
-    expect(draft).toMatch(/Menimbang/);
-    expect(draft).toMatch(/Mengingat/);
-    expect(draft).toMatch(/MEMUTUSKAN/);
+    const at = (re: RegExp) => draft.search(re);
+
+    expect(at(/Menimbang/)).toBeGreaterThanOrEqual(0);
+    expect(at(/Menimbang/)).toBeLessThan(at(/Mengingat/));
+    expect(at(/Mengingat/)).toBeLessThan(at(/MEMUTUSKAN/));
+    expect(at(/MEMUTUSKAN/)).toBeLessThan(at(/Menetapkan/));
+    expect(at(/Menetapkan/)).toBeLessThan(at(/KESATU/));
+
     // Ia pernah tercetak dua kali: sekali dari `transition`, sekali lagi dari
     // badan naskahnya sendiri.
     expect(draft.match(/MEMUTUSKAN/g)).toHaveLength(1);
     // Dasar hukum yayasan yang selalu berlaku, agar tidak terlupa.
     expect(draft).toMatch(/Undang-Undang Nomor 16 Tahun 2001/);
+  });
+
+  /**
+   * MEMUTUSKAN harus menjadi alinea tersendiri, karena naskahlah yang
+   * mencetaknya di tengah dan ia mengenalinya dari alinea yang isinya persis
+   * kata itu. Menempelkannya ke baris lain membuatnya kembali rata kiri.
+   */
+  it('menempatkan MEMUTUSKAN sebagai alinea tersendiri', () => {
+    const draft = renderTemplateDraft(
+      LetterType.SURAT_KEPUTUSAN,
+      LetterNature.PUBLIC
+    );
+    const paragraphs = draft.split(/\n\s*\n/).map((p) => p.trim());
+    expect(paragraphs).toContain('MEMUTUSKAN:');
+  });
+
+  /**
+   * Keputusan tidak memuat blok "Yang bertanda tangan di bawah ini" dengan
+   * Nama/Jabatan/Alamat: pejabat yang menetapkan sudah disebut pada kepala dan
+   * kaki naskah. Kerangka lama meminjam kerangka surat keterangan.
+   */
+  it('surat keputusan tidak memakai blok penanda tangan surat keterangan', () => {
+    const t = letterTemplateFor(LetterType.SURAT_KEPUTUSAN);
+    expect(t.signerFields).toHaveLength(0);
+    expect(t.decree).toBe(true);
+    expect(t.addressed).toBe(false);
+    expect(t.title).toMatch(/^SURAT KEPUTUSAN KETUA YAYASAN/);
+
+    const draft = renderTemplateDraft(
+      LetterType.SURAT_KEPUTUSAN,
+      LetterNature.PUBLIC
+    );
+    expect(draft).not.toMatch(/Yang bertanda tangan di bawah ini/);
+  });
+
+  /**
+   * Judul di tengah dan alamat tujuan adalah dua hal berbeda. Nota dinas,
+   * undangan dan edaran punya keduanya; naskah pernah menyimpulkan yang kedua
+   * dari yang pertama, sehingga ketiganya tercetak tanpa tujuan sama sekali.
+   */
+  it('menandai naskah mana yang ditujukan kepada seseorang', () => {
+    const addressed = [
+      LetterType.SURAT_DINAS,
+      LetterType.NOTA_DINAS,
+      LetterType.SURAT_UNDANGAN,
+      LetterType.SURAT_EDARAN,
+    ];
+    const declaratory = [
+      LetterType.SURAT_KETERANGAN,
+      LetterType.SURAT_TUGAS,
+      LetterType.SURAT_KEPUTUSAN,
+      LetterType.BERITA_ACARA,
+      LetterType.PENGUMUMAN,
+    ];
+
+    for (const type of addressed) {
+      expect(letterTemplateFor(type).addressed, type).toBe(true);
+    }
+    for (const type of declaratory) {
+      expect(letterTemplateFor(type).addressed, type).toBe(false);
+    }
+
+    // Undangan berjudul di tengah DAN ditujukan kepada seseorang — pasangan
+    // yang dulu mustahil karena keduanya diturunkan dari satu tanda.
+    const undangan = letterTemplateFor(LetterType.SURAT_UNDANGAN);
+    expect(undangan.title.length).toBeGreaterThan(0);
+    expect(undangan.addressed).toBe(true);
   });
 
   it('surat tugas meminta uraian tugas, waktu, dan tempat', () => {

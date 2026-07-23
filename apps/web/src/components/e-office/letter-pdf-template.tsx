@@ -7,12 +7,23 @@ import { siteConfig } from "@/config/site";
 import { id } from "date-fns/locale";
 
 import {
+  DECIDING_OFFICIAL,
   LetterDetail,
   LETTERHEAD,
   LetterType,
   letterTemplateFor,
   natureMarking,
 } from "@cipansor/shared";
+
+/**
+ * Jabatan penetap sebagaimana ditulis di bawah tanda tangan.
+ *
+ * Kepala naskah memakai huruf kapital seluruhnya; kakinya tidak — di sana ia
+ * dibaca sebagai jabatan orang yang menandatangani, bukan sebagai judul.
+ */
+const DECIDING_OFFICIAL_TITLE_CASE = DECIDING_OFFICIAL.split(" ")
+  .map((w) => w.charAt(0) + w.slice(1).toLowerCase())
+  .join(" ");
 
 interface LetterPDFTemplateProps {
   letter: LetterDetail;
@@ -75,23 +86,25 @@ export const LetterPDFTemplate = forwardRef<
     "-";
 
   /**
-   * Naskah dinas has two shapes, and the difference is not cosmetic.
+   * Naskah dinas differs along two axes, and they are not the same axis.
    *
-   * A letter *addressed to someone* (surat dinas, nota dinas, undangan,
-   * edaran) carries Nomor/Lampiran/Perihal down the left and "Kepada Yth."
-   * above the body. A *declaratory* naskah (surat keterangan, surat
-   * keputusan, surat tugas, berita acara, pengumuman) carries its type as a
-   * centred title with the number beneath it, and is addressed to no one —
-   * which is exactly the shape of the Surat Keterangan the yayasan issues.
+   * `title` decides whether the type is announced as a centred heading above
+   * the number (every type except surat dinas). `addressed` decides whether
+   * the naskah carries "Kepada Yth." and closes "Hormat Kami,".
    *
-   * This renderer printed every type in the first shape, so a Surat Keterangan
-   * came out headed "Kepada Yth. Bapak/Ibu" and signed "Hormat Kami," — a
-   * letter the yayasan would not recognise as its own. The per-type titles
-   * already existed in @cipansor/shared and were simply never read here.
+   * They were previously collapsed into one — "has a centred title" was taken
+   * to mean "addressed to no one" — which is true of surat keterangan, tugas,
+   * berita acara and pengumuman, and false of nota dinas, undangan and
+   * edaran. Those three came out with no addressee anywhere on the paper: an
+   * undangan that never says who is invited.
    */
   const type = (letter.type as LetterType | undefined) ?? LetterType.SURAT_DINAS;
-  const centredTitle = letterTemplateFor(type).title;
-  const isDeclaratory = centredTitle.length > 0;
+  const template = letterTemplateFor(type);
+  const centredTitle = template.title;
+  const hasTitle = centredTitle.length > 0;
+  const isAddressed = template.addressed;
+  /** Surat Keputusan: kepala "Tentang", diktum di tengah, kaki "Ditetapkan di". */
+  const isDecree = template.decree === true;
 
   /** "TERBATAS" / "RAHASIA" / "SANGAT RAHASIA" — null for a Biasa letter. */
   const marking = natureMarking(letter.nature);
@@ -181,12 +194,34 @@ export const LetterPDFTemplate = forwardRef<
         </div>
       </div>
 
-      {isDeclaratory ? (
+      {hasTitle ? (
         <div className="mt-8 text-center">
-          <h2 className="text-lg font-bold uppercase underline">{centredTitle}</h2>
+          <h2 className="text-lg font-bold uppercase">{centredTitle}</h2>
           <p className="mt-1">
             Nomor: {letter.letterNumber || letter.agendaNumber || "DRAFT"}
           </p>
+          {/*
+            "Tentang" + pokok naskah.
+
+            Untuk keputusan, edaran dan pengumuman inilah judul sebenarnya —
+            "SURAT KEPUTUSAN" saja tidak memberi tahu keputusan tentang apa.
+            Perihal yang diisi penyusun sebelumnya tidak pernah sampai ke
+            kertas pada naskah berjudul: kolomnya hanya dicetak pada surat
+            dinas, sehingga delapan dari sembilan jenis kehilangan pokoknya.
+          */}
+          {template.subjectHeading && letter.subject && (
+            <>
+              <p className="mt-3">Tentang</p>
+              <p className="font-bold uppercase">{letter.subject}</p>
+            </>
+          )}
+          {/*
+            Jabatan yang menetapkan, berdiri sendiri sebelum konsideran —
+            bagian wajib naskah penetapan.
+          */}
+          {isDecree && (
+            <p className="mt-6 font-bold uppercase">{DECIDING_OFFICIAL}</p>
+          )}
         </div>
       ) : (
         <div className="mt-6 flex items-start justify-between">
@@ -228,12 +263,24 @@ export const LetterPDFTemplate = forwardRef<
         ditujukan kepada siapa pun — mencetak "Kepada Yth. Bapak/Ibu" di
         atasnya justru membuatnya tampak seperti surat yang salah kirim.
       */}
-      {!isDeclaratory && (
+      {isAddressed && (
         <div className="mt-8">
           <p>Kepada Yth.</p>
           <p className="font-bold">
             {letter.recipientName || letter.recipientInstance || "Bapak/Ibu"}
           </p>
+          {/*
+            Instansi tujuan dicetak sebagai barisnya sendiri.
+
+            Sebelumnya nama dan instansi bersaing lewat `||`, jadi begitu
+            keduanya terisi instansinya hilang: surat untuk "Kepala Dinas
+            Pendidikan" di "Kabupaten Tasikmalaya" tercetak seolah dialamatkan
+            entah ke dinas yang mana.
+          */}
+          {letter.recipientInstance &&
+            letter.recipientInstance !== letter.recipientName && (
+              <p>{letter.recipientInstance}</p>
+            )}
           <p>
             di <span className="capitalize">Tempat</span>
           </p>
@@ -253,7 +300,22 @@ export const LetterPDFTemplate = forwardRef<
           .split(/\n\s*\n/)
           .filter((para) => para.trim().length > 0)
           .map((para, i) => (
-            <p key={i} data-naskah-block className="whitespace-pre-wrap">
+            <p
+              key={i}
+              data-naskah-block
+              className={
+                /*
+                  "MEMUTUSKAN" berdiri sendiri di tengah, memisahkan konsideran
+                  dari diktum. Dikenali dari alineanya sendiri, bukan disisipkan
+                  oleh naskah, supaya isi surat tetap satu teks utuh yang boleh
+                  disunting penyusun — termasuk bila ia menyusun keputusan tanpa
+                  memakai kerangka.
+                */
+                isDecree && /^MEMUTUSKAN:?$/i.test(para.trim())
+                  ? "whitespace-pre-wrap text-center font-bold tracking-widest"
+                  : "whitespace-pre-wrap"
+              }
+            >
               {para}
             </p>
           ))}
@@ -280,7 +342,24 @@ export const LetterPDFTemplate = forwardRef<
             ini dikeluarkan yayasan. "Hormat Kami," adalah penutup surat yang
             ditujukan kepada seseorang, dan janggal di bawah surat keputusan.
           */}
-          {isDeclaratory ? (
+          {isDecree ? (
+            /*
+              Kaki naskah penetapan: "Ditetapkan di" dan "Pada tanggal" pada
+              baris terpisah, lalu jabatan yang menetapkan. Keputusan tidak
+              ditutup "Tasikmalaya, <tanggal>" seperti surat — yang dicatat
+              bukan tempat surat dibuat melainkan tempat keputusan ditetapkan.
+            */
+            <div className={`text-left ${signature ? "mb-2" : "mb-20"}`}>
+              <p>Ditetapkan di&nbsp;: {LETTERHEAD.city}</p>
+              <p>
+                Pada tanggal&nbsp;:{" "}
+                {safeFormat(new Date(letter.date), "dd MMMM yyyy", { locale: id })}
+              </p>
+              <p className="mt-1">{DECIDING_OFFICIAL_TITLE_CASE}</p>
+            </div>
+          ) : isAddressed ? (
+            <p className={signature ? "mb-2" : "mb-20"}>Hormat Kami,</p>
+          ) : (
             <div className={signature ? "mb-2" : "mb-20"}>
               <p>
                 {LETTERHEAD.city},{" "}
@@ -291,8 +370,6 @@ export const LetterPDFTemplate = forwardRef<
               <p>{siteConfig.legalName}</p>
               {signerTitle && <p>{signerTitle}</p>}
             </div>
-          ) : (
-            <p className={signature ? "mb-2" : "mb-20"}>Hormat Kami,</p>
           )}
 
           {signature ? (

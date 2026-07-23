@@ -148,17 +148,36 @@ export default function LetterDetailPage({
         .map((el) => (el.getBoundingClientRect().top - naskahTop) * scale)
         .filter((y) => y > 0);
 
+      /**
+       * Margins for the sheets the naskah itself does not provide.
+       *
+       * The naskah's own padding only produces white space at the very top of
+       * page 1 and the very bottom of the last page. Every cut in between was
+       * laid flush against the paper edge, so page 2 of a long letter opened
+       * with a line of text touching the top edge and closed with one touching
+       * the bottom — underneath the page number, which is drawn over the image.
+       * Beyond looking wrong, most printers cannot print within about 5 mm of
+       * the edge, so those lines came out clipped on paper.
+       *
+       * Page 1 keeps its own top margin (the kop is drawn inside it); the
+       * bottom margin applies to every page and is where the page number sits.
+       */
+      const TOP_MARGIN_MM = 15;
+      const BOTTOM_MARGIN_MM = 15;
+      const usableFirstPx = (pdfHeight - BOTTOM_MARGIN_MM) * pxPerMm;
+      const usableRestPx =
+        (pdfHeight - TOP_MARGIN_MM - BOTTOM_MARGIN_MM) * pxPerMm;
+
       const pages: number[] = [0];
       while (true) {
         const top = pages[pages.length - 1];
-        if (top + pageHeightPx >= canvas.height) break;
+        const usable = pages.length === 1 ? usableFirstPx : usableRestPx;
+        if (top + usable >= canvas.height) break;
         // The last breakpoint that still fits on this page.
-        const next = breakpoints.filter(
-          (y) => y > top && y <= top + pageHeightPx,
-        ).pop();
+        const next = breakpoints.filter((y) => y > top && y <= top + usable).pop();
         // No breakpoint fits (a single block taller than a page) — fall back to
         // a hard cut rather than loop forever.
-        pages.push(next ?? top + pageHeightPx);
+        pages.push(next ?? top + usable);
       }
 
       const slice = document.createElement("canvas");
@@ -178,7 +197,9 @@ export default function LetterDetailPage({
           slice.toDataURL("image/png"),
           "PNG",
           0,
-          0,
+          // Page 1 begins at the paper edge because the kop already sits inside
+          // the naskah's own padding; continuation pages need the margin drawn.
+          i === 0 ? 0 : TOP_MARGIN_MM,
           pdfWidth,
           height / pxPerMm,
         );

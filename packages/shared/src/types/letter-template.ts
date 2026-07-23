@@ -29,9 +29,40 @@ export const LETTERHEAD = {
   city: "Tasikmalaya",
 } as const;
 
+/**
+ * Pejabat yang menetapkan keputusan.
+ *
+ * Dicetak pada kepala dan kaki Surat Keputusan, karena yang menetapkan sebuah
+ * keputusan adalah jabatannya — bukan orang yang kebetulan mendudukinya.
+ */
+export const DECIDING_OFFICIAL = "KETUA YAYASAN PESANTREN CIPANSOR";
+
 export interface LetterTemplate {
   /** Judul yang dicetak di tengah, mis. "SURAT KETERANGAN". */
   title: string;
+  /**
+   * Naskah ini ditujukan kepada pihak tertentu, sehingga alamat tujuan
+   * ("Kepada Yth. …") dicetak di atas isi surat.
+   *
+   * Sengaja terpisah dari `title`. Naskah dulu menyimpulkan hal ini dari
+   * "apakah ia punya judul di tengah", padahal keduanya soal yang berlainan:
+   * undangan, nota dinas dan edaran sama-sama berjudul di tengah DAN ditujukan
+   * kepada seseorang — dan ketiganya tercetak tanpa alamat tujuan sama sekali.
+   * Undangan yang tidak menyebut siapa yang diundang tidak bisa dipakai.
+   */
+  addressed: boolean;
+  /**
+   * Naskah penetapan (Surat Keputusan).
+   *
+   * Bentuknya bukan surat: kepalanya memuat "Tentang" beserta pokok
+   * keputusannya lalu jabatan yang menetapkan, isinya konsideran
+   * (Menimbang/Mengingat) dan diktum (MEMUTUSKAN/Menetapkan/KESATU), dan
+   * kakinya berbunyi "Ditetapkan di … / Pada tanggal …" — bukan
+   * "Tasikmalaya, <tanggal>" seperti surat biasa.
+   */
+  decree?: boolean;
+  /** Cetak "Tentang" + perihal di bawah nomor (SK, edaran, pengumuman). */
+  subjectHeading?: boolean;
   /** Kalimat pembuka sebelum blok penanda tangan. */
   opening: string;
   /** Data penanda tangan yang dicantumkan. */
@@ -55,6 +86,7 @@ const CLOSING_GENERIC =
 const TEMPLATES: Record<LetterType, LetterTemplate> = {
   [LetterType.SURAT_KETERANGAN]: {
     title: "SURAT KETERANGAN",
+    addressed: false,
     opening: "Yang bertanda tangan di bawah ini:",
     signerFields: SIGNER_FIELDS,
     transition: "Dengan ini menerangkan dengan sebenarnya bahwa:",
@@ -66,6 +98,7 @@ const TEMPLATES: Record<LetterType, LetterTemplate> = {
 
   [LetterType.SURAT_TUGAS]: {
     title: "SURAT TUGAS",
+    addressed: false,
     opening: "Yang bertanda tangan di bawah ini:",
     signerFields: SIGNER_FIELDS,
     transition: "Dengan ini menugaskan kepada:",
@@ -75,13 +108,29 @@ const TEMPLATES: Record<LetterType, LetterTemplate> = {
       "Demikian surat tugas ini dibuat untuk dilaksanakan dengan penuh tanggung jawab, dan melaporkan hasilnya setelah tugas selesai.",
   },
 
+  /**
+   * Surat Keputusan mengikuti susunan baku naskah penetapan, bukan susunan
+   * surat: kepala (judul, nomor, "Tentang", pokok keputusan, jabatan yang
+   * menetapkan) → konsideran (Menimbang, Mengingat) → diktum (MEMUTUSKAN,
+   * Menetapkan, KESATU/KEDUA) → kaki (Ditetapkan di, pada tanggal).
+   *
+   * Versi sebelumnya memakai kerangka surat keterangan: dibuka "Yang bertanda
+   * tangan di bawah ini" dengan blok Nama/Jabatan/Alamat, dan "MEMUTUSKAN:"
+   * dicetak sebagai kalimat peralihan — yaitu SEBELUM Menimbang dan Mengingat.
+   * Urutannya terbalik: diktum adalah kesimpulan dari konsideran, jadi ia
+   * tidak bisa mendahuluinya. Keputusan dengan susunan itu tidak sah menurut
+   * tata naskah dinas mana pun.
+   */
   [LetterType.SURAT_KEPUTUSAN]: {
-    title: "SURAT KEPUTUSAN",
-    opening: "Ketua Yayasan Pesantren Cipansor, setelah:",
-    // An SK is a legal instrument: its recitals are part of the document, so
-    // the skeleton names them rather than leaving the drafter to remember.
-    signerFields: SIGNER_FIELDS,
-    transition: "MEMUTUSKAN:",
+    title: `SURAT KEPUTUSAN ${DECIDING_OFFICIAL}`,
+    addressed: false,
+    decree: true,
+    subjectHeading: true,
+    opening: "",
+    // Keputusan tidak memuat blok "yang bertanda tangan": pejabat yang
+    // menetapkan sudah disebut pada kepala dan kakinya.
+    signerFields: [],
+    transition: "",
     subjectFields: [],
     body: [
       "Menimbang\t: a. bahwa [PERTIMBANGAN];",
@@ -89,17 +138,24 @@ const TEMPLATES: Record<LetterType, LetterTemplate> = {
       "",
       "Mengingat\t: 1. Undang-Undang Nomor 16 Tahun 2001 tentang Yayasan sebagaimana diubah dengan Undang-Undang Nomor 28 Tahun 2004;",
       "\t  2. Akta Pendirian Yayasan Pesantren Cipansor Nomor 01 tanggal 5 April 2012;",
-      "\t  3. [DASAR LAIN].",
+      "\t  3. Akta Notaris Nomor 01 tanggal 5 April 2012;",
+      "\t  4. [DASAR LAIN].",
+      "",
+      // Alinea tersendiri supaya naskah dapat mencetaknya di tengah, sesuai
+      // kelaziman: MEMUTUSKAN berdiri sendiri di antara konsideran dan diktum.
+      "MEMUTUSKAN:",
       "",
       "Menetapkan\t: [ISI PENETAPAN].",
       "KESATU\t: [DIKTUM PERTAMA].",
-      "KEDUA\t: Keputusan ini berlaku sejak tanggal ditetapkan, dengan ketentuan apabila di kemudian hari terdapat kekeliruan akan diperbaiki sebagaimana mestinya.",
+      "KEDUA\t: [DIKTUM KEDUA].",
+      "KETIGA\t: Keputusan ini berlaku sejak tanggal ditetapkan, dengan ketentuan apabila di kemudian hari terdapat kekeliruan akan diperbaiki sebagaimana mestinya.",
     ].join("\n"),
     closing: "",
   },
 
   [LetterType.BERITA_ACARA]: {
     title: "BERITA ACARA",
+    addressed: false,
     opening:
       "Pada hari ini [HARI], tanggal [TANGGAL], bertempat di [TEMPAT], yang bertanda tangan di bawah ini:",
     signerFields: SIGNER_FIELDS,
@@ -112,6 +168,7 @@ const TEMPLATES: Record<LetterType, LetterTemplate> = {
 
   [LetterType.SURAT_DINAS]: {
     title: "",
+    addressed: true,
     opening: "Dengan hormat,",
     signerFields: [],
     transition: "",
@@ -123,6 +180,7 @@ const TEMPLATES: Record<LetterType, LetterTemplate> = {
 
   [LetterType.NOTA_DINAS]: {
     title: "NOTA DINAS",
+    addressed: true,
     opening: "",
     signerFields: [],
     transition: "",
@@ -133,6 +191,8 @@ const TEMPLATES: Record<LetterType, LetterTemplate> = {
 
   [LetterType.SURAT_EDARAN]: {
     title: "SURAT EDARAN",
+    addressed: true,
+    subjectHeading: true,
     opening: "Dengan hormat,",
     signerFields: [],
     transition: "Sehubungan dengan [LATAR], dengan ini disampaikan hal-hal sebagai berikut:",
@@ -144,6 +204,7 @@ const TEMPLATES: Record<LetterType, LetterTemplate> = {
 
   [LetterType.SURAT_UNDANGAN]: {
     title: "UNDANGAN",
+    addressed: true,
     opening: "Dengan hormat,",
     signerFields: [],
     transition:
@@ -156,6 +217,8 @@ const TEMPLATES: Record<LetterType, LetterTemplate> = {
 
   [LetterType.PENGUMUMAN]: {
     title: "PENGUMUMAN",
+    addressed: false,
+    subjectHeading: true,
     opening: "",
     signerFields: [],
     transition: "Diberitahukan kepada [SASARAN] bahwa:",

@@ -489,6 +489,14 @@ model User {
   receivedLetters      LetterRecipient[]
   sentDispositions     Disposition[]     @relation("DispositionSender")
   receivedDispositions Disposition[]     @relation("DispositionRecipient")
+  letterFlowActions    LetterFlowEvent[] @relation("LetterFlowActor")
+  letterFlowTargeted   LetterFlowEvent[] @relation("LetterFlowTarget")
+  signingKey           UserSigningKey?
+  approvedSigningKeys  UserSigningKey[]  @relation("SigningKeyApprover")
+  signingKeyRequests   SigningKeyRequest[] @relation("SigningKeyRequester")
+  signingKeyDecisions  SigningKeyRequest[] @relation("SigningKeyDecider")
+  letterSignatures     LetterSignature[] @relation("LetterSigner")
+  revokedSignatures    LetterSignature[] @relation("LetterSignatureRevoker")
 
   // Risk Management
   createdRisks        Risk[]             @relation("RiskCreator")
@@ -6966,8 +6974,33 @@ enum LetterUrgency {
   URGENT // Amat Segera
 }
 
+/// Jenis naskah dinas. Menentukan penomoran dan sifat yang boleh dipilih.
+///
+/// Sebelumnya tidak ada: setiap naskah diperlakukan sebagai surat dinas biasa,
+/// sehingga surat keputusan dan surat tugas — yang penomoran dan kewenangan
+/// tanda tangannya berbeda — tidak bisa dibedakan dari korespondensi biasa.
+enum LetterType {
+  SURAT_DINAS // Korespondensi resmi antar-instansi
+  NOTA_DINAS // Korespondensi internal antar-pejabat
+  SURAT_KEPUTUSAN // SK — produk hukum/penetapan
+  SURAT_TUGAS // Penugasan perorangan/tim
+  SURAT_EDARAN // Pemberitahuan berlaku umum
+  SURAT_UNDANGAN
+  SURAT_KETERANGAN
+  BERITA_ACARA
+  PENGUMUMAN
+}
+
+/// Sifat naskah — derajat kerahasiaan, bukan jenisnya.
+///
+/// TERBATAS ditambahkan belakangan. Tata naskah dinas mengenal empat derajat
+/// (Biasa, Terbatas, Rahasia, Sangat Rahasia) dan model ini hanya punya tiga,
+/// sehingga naskah "Terbatas" — yang hanya boleh dibaca kalangan tertentu —
+/// terpaksa dicatat sebagai Biasa dan kehilangan pembatasannya. Nilai lama
+/// tidak diubah namanya agar baris yang sudah ada tetap sah.
 enum LetterNature {
   PUBLIC // Biasa
+  LIMITED // Terbatas
   CONFIDENTIAL // Rahasia
   STRICTLY_CONFIDENTIAL // Sangat Rahasia
 }
@@ -6981,6 +7014,190 @@ enum LetterStatus {
   SENT // Sudah Dikirim (untuk Surat Keluar)
   ARCHIVED // Diarsipkan
   DISPOSED // Sudah Didisposisikan (untuk Surat Masuk)
+}
+
+/// Setiap perbuatan yang mengubah perjalanan sebuah surat.
+enum LetterFlowAction {
+  CREATED // Surat dicatat/dibuat
+  SUBMITTED // Konsep diajukan untuk diverifikasi
+  APPROVED // Diparaf/disetujui oleh salah satu verifikator
+  SIGNED // Ditandatangani oleh penandatangan akhir
+  REVISION_REQUESTED // Dikembalikan ke pembuat untuk diperbaiki
+  RESUBMITTED // Diajukan ulang setelah revisi
+  DISPOSED // Didisposisikan ke pejabat berikutnya
+  DISPOSITION_UPDATED // Penerima disposisi memperbarui/menyelesaikan tindak lanjut
+  SENT // Surat keluar dikirim
+  ARCHIVED // Surat diarsipkan — akhir alur
+}
+
+/// LetterFlowEvent - Histori Alur Surat
+///
+/// Catatan riwayat yang hanya bertambah (append-only): siapa melakukan apa,
+/// kepada siapa, dan kapan. Sengaja terpisah dari LetterReviewer dan
+/// Disposition karena keduanya menyimpan *keadaan sekarang* — status seorang
+/// verifikator ditimpa setiap kali ia bertindak, dan catatan disposisi
+/// sebelumnya sempat ditumpuk sebagai teks di satu kolom. Keduanya tidak bisa
+/// menjawab "siapa yang mengembalikan surat ini, kapan, dengan catatan apa"
+/// setelah surat itu diajukan ulang.
+///
+/// Tidak ada operasi update maupun delete pada tabel ini. Koreksi dilakukan
+/// dengan menambah peristiwa baru, bukan dengan mengubah yang lama.
+model LetterFlowEvent {
+  id         String           @id @default(uuid())
+  letterId   String           @map("letter_id")
+  actorId    String           @map("actor_id") // Pelaku
+  action     LetterFlowAction
+  /// Pejabat tujuan, untuk perbuatan yang mengarah ke seseorang (disposisi).
+  targetId   String?          @map("target_id")
+  /// Status surat sebelum dan sesudah perbuatan ini, apa adanya.
+  fromStatus LetterStatus?    @map("from_status")
+  toStatus   LetterStatus?    @map("to_status")
+  /// Catatan/instruksi yang menyertai perbuatan, tersimpan utuh per peristiwa.
+  note       String?          @db.Text
+  createdAt  DateTime         @default(now()) @map("created_at")
+
+  // Relations
+  letter Letter @relation(fields: [letterId], references: [id], onDelete: Cascade)
+  actor  User   @relation("LetterFlowActor", fields: [actorId], references: [id])
+  target User?  @relation("LetterFlowTarget", fields: [targetId], references: [id])
+
+  @@index([letterId, createdAt])
+  @@index([actorId])
+  @@map("letter_flow_events")
+}
+
+/// UserSigningKey - Kunci Tanda Tangan Elektronik Mandiri
+///
+/// Satu pasang kunci per pengguna. Kunci privat disimpan dalam keadaan
+/// tersegel: hanya passphrase pemiliknya yang dapat membukanya, dan passphrase
+/// itu tidak pernah disimpan di mana pun — tidak sebagai teks, tidak pula
+/// sebagai hash. Bukti passphrase benar adalah kunci privat berhasil
+/// didekripsi (lihat utils/esign.ts).
+///
+/// Konsekuensinya disengaja: passphrase yang lupa tidak dapat dipulihkan,
+/// hanya dapat diganti dengan kunci baru — dan surat lama tetap terverifikasi
+/// karena tiap tanda tangan menyimpan salinan kunci publiknya sendiri.
+model UserSigningKey {
+  id                  String    @id @default(uuid())
+  userId              String    @unique @map("user_id")
+  algorithm           String    @default("Ed25519")
+  publicKey           String    @map("public_key") @db.Text
+  encryptedPrivateKey String    @map("encrypted_private_key") @db.Text
+  kdfSalt             String    @map("kdf_salt")
+  /// Parameter scrypt saat kunci dibuat, agar dapat dinaikkan kelak tanpa
+  /// membuat kunci lama tidak terbaca.
+  kdfParams           Json      @map("kdf_params")
+  iv                  String
+  authTag             String    @map("auth_tag")
+  /// Penahan tebakan passphrase.
+  failedAttempts      Int       @default(0) @map("failed_attempts")
+  lockedUntil         DateTime? @map("locked_until")
+  lastUsedAt          DateTime? @map("last_used_at")
+
+  /// Diterbitkan atas persetujuan Super Admin, dan berlaku terbatas.
+  ///
+  /// Status kedaluwarsa sengaja TIDAK disimpan sebagai kolom status: ia
+  /// dihitung dari `expiresAt` setiap kali dibaca (utils/esign-lifecycle.ts).
+  /// Menyimpannya menuntut ada penjadwal yang membalik status tepat waktu —
+  /// dan bila penjadwal itu mati semalam, kunci yang sudah lewat masa
+  /// berlakunya masih bisa dipakai menandatangani.
+  approvedById        String?   @map("approved_by_id")
+  approvedAt          DateTime? @map("approved_at")
+  expiresAt           DateTime? @map("expires_at")
+
+  revokedAt           DateTime? @map("revoked_at")
+  revokedReason       String?   @map("revoked_reason") @db.Text
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+
+  user       User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  approvedBy User? @relation("SigningKeyApprover", fields: [approvedById], references: [id])
+
+  @@map("user_signing_keys")
+}
+
+/// SigningKeyRequest - Pengajuan Penerbitan / Perpanjangan Kunci Tanda Tangan
+///
+/// Kunci tanda tangan tidak diterbitkan sendiri oleh penggunanya: ia diajukan,
+/// lalu disetujui Super Admin yang sekaligus menentukan masa berlakunya. Tabel
+/// ini menyimpan pengajuan beserta putusannya, dan tidak pernah dihapus —
+/// riwayat siapa memberi wewenang menandatangani, kapan, dan untuk berapa
+/// lama, adalah bagian dari pertanggungjawaban.
+model SigningKeyRequest {
+  id       String                @id @default(uuid())
+  userId   String                @map("user_id")
+  kind     SigningKeyRequestKind
+  status   SigningKeyRequestStatus @default(PENDING)
+  /// Alasan pengajuan dari pemohon.
+  reason   String?               @db.Text
+
+  /// Diisi Super Admin saat memutuskan.
+  decidedById   String?   @map("decided_by_id")
+  decidedAt     DateTime? @map("decided_at")
+  decisionNote  String?   @map("decision_note") @db.Text
+  /// Masa berlaku yang diberikan, dalam hari. Ditentukan saat menyetujui,
+  /// bukan konstanta global — penyetuju-lah yang menanggung keputusannya.
+  grantedDays   Int?      @map("granted_days")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user      User  @relation("SigningKeyRequester", fields: [userId], references: [id], onDelete: Cascade)
+  decidedBy User? @relation("SigningKeyDecider", fields: [decidedById], references: [id])
+
+  @@index([userId])
+  @@index([status])
+  @@map("signing_key_requests")
+}
+
+enum SigningKeyRequestKind {
+  ENROLLMENT // Penerbitan pertama, atau penerbitan ulang setelah kedaluwarsa/dicabut
+  RENEWAL    // Perpanjangan sebelum masa berlaku habis
+}
+
+enum SigningKeyRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+/// LetterSignature - Tanda Tangan Elektronik pada Surat
+///
+/// Menyimpan tanda tangan beserta bahan untuk memeriksanya kembali: ringkasan
+/// naskah yang ditandatangani, tanda tangannya, dan salinan kunci publik yang
+/// dipakai. Dengan begitu keaslian surat dapat diperiksa tanpa perlu percaya
+/// pada baris lain di basis data ini.
+model LetterSignature {
+  id        String @id @default(uuid())
+  letterId  String @map("letter_id")
+  signerId  String @map("signer_id")
+  algorithm String
+
+  /// Salinan kunci publik saat penandatanganan — bukan rujukan ke kunci
+  /// pengguna saat ini, agar pencabutan/penggantian kunci tidak membuat surat
+  /// yang sudah sah menjadi tampak palsu.
+  publicKey String @map("public_key") @db.Text
+  /// SHA-256 bentuk kanonik naskah (utils/esign.ts).
+  digest    String
+  signature String @db.Text
+
+  /// Dimuat QR. Acak, bukan turunan id surat, supaya daftar surat tidak dapat
+  /// disisir lewat halaman verifikasi publik.
+  verificationToken String    @unique @map("verification_token")
+  signedAt          DateTime  @default(now()) @map("signed_at")
+  /// Pencabutan tidak menghapus baris: surat yang pernah beredar harus tetap
+  /// dapat dijelaskan statusnya kepada yang memindai QR-nya.
+  revokedAt         DateTime? @map("revoked_at")
+  revokedReason     String?   @map("revoked_reason") @db.Text
+  revokedById       String?   @map("revoked_by_id")
+
+  letter    Letter @relation(fields: [letterId], references: [id], onDelete: Cascade)
+  signer    User   @relation("LetterSigner", fields: [signerId], references: [id])
+  revokedBy User?  @relation("LetterSignatureRevoker", fields: [revokedById], references: [id])
+
+  @@unique([letterId, signerId])
+  @@index([letterId])
+  @@map("letter_signatures")
 }
 
 /// FilingClassification - Kode Klasifikasi Arsip (Pola Klasifikasi)
@@ -7023,6 +7240,8 @@ model Letter {
   id                String          @id @default(uuid())
   unitId            String          @map("unit_id")
   direction         LetterDirection
+  /// Jenis naskah. Default SURAT_DINAS agar baris lama tetap bermakna.
+  type              LetterType      @default(SURAT_DINAS)
   classificationId  String?         @map("classification_id")
   // Metadata
   agendaNumber      String?         @map("agenda_number") // Nomor Urut Agenda (Surat Masuk)
@@ -7052,6 +7271,8 @@ model Letter {
   reviewers      LetterReviewer[]
   recipients     LetterRecipient[]
   dispositions   Disposition[]         @relation("LetterDispositions")
+  flowEvents     LetterFlowEvent[]
+  signatures     LetterSignature[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")

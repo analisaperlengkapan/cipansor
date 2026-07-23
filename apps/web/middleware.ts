@@ -35,6 +35,21 @@ const publicPrefixes = [
   "/berita",
   "/wakaf-infaq",
   "/kontak",
+  /**
+   * The page a letter's QR opens.
+   *
+   * It is scanned by people who have no account here — a dinas office, a wali
+   * santri, a prospective partner — so putting it behind the login wall makes
+   * the whole e-sign feature unreachable by exactly the people it exists for.
+   * The API side was already public (esign.routes.ts registers /verify/:token
+   * before `authenticate`); this was the half that was missed, and the effect
+   * was a QR that led to a login form.
+   *
+   * What is protected here is not access but the answer: `verifyByToken` never
+   * returns the letter body, and returns the perihal only for a letter of
+   * nature Biasa.
+   */
+  "/verifikasi",
 ];
 
 // Helper function to get auth state from cookie

@@ -47,7 +47,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useCurrentUnit } from "@/hooks";
-import html2canvas from "html2canvas";
+import html2canvas from "html2canvas-pro";
 import jsPDF from "jspdf";
 import { toast } from "sonner";
 

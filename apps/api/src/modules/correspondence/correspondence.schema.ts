@@ -1,9 +1,19 @@
 import { z } from 'zod';
-import { LetterDirection, LetterUrgency, LetterNature, LetterStatus } from '@cipansor/shared';
+import {
+  LetterDirection,
+  LetterUrgency,
+  LetterNature,
+  LetterStatus,
+  LetterType,
+} from '@cipansor/shared';
 
 export const createLetterSchema = z.object({
   unitId: z.string().uuid(),
   direction: z.nativeEnum(LetterDirection),
+  // Which natures each type may carry is decided in utils/letter-naskah.ts,
+  // not here: the rule depends on two fields at once, and a per-field schema
+  // would have to duplicate the table to express it.
+  type: z.nativeEnum(LetterType).optional(),
   classificationId: z.string().uuid().optional(),
   agendaNumber: z.string().optional(),
   letterNumber: z.string().optional(),
@@ -41,4 +51,9 @@ export const createDispositionSchema = z.object({
 export const updateDispositionStatusSchema = z.object({
   status: z.enum(['IN_PROGRESS', 'COMPLETED']),
   notes: z.string().optional(),
+});
+
+/** Both carry only an optional note; who may act is decided by the workflow. */
+export const letterNoteSchema = z.object({
+  note: z.string().max(2000).optional(),
 });

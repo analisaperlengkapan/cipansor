@@ -19,11 +19,22 @@ import {
   XCircle,
   Printer,
   ShieldCheck,
+  PenLine,
 } from "lucide-react";
 
 import { id } from "date-fns/locale";
 import { useState, useRef } from "react";
-import html2canvas from "html2canvas";
+/**
+ * `html2canvas-pro`, not `html2canvas`.
+ *
+ * Tailwind v4 compiles this app's palette to `lab()` colours, and
+ * html2canvas 1.4.1 throws "Attempting to parse an unsupported color function"
+ * on the first element whose computed colour is one — which is essentially
+ * every element. The download therefore rejected before producing anything,
+ * for every letter, and the user only saw "Gagal mengunduh". The pro fork is
+ * the same API with modern colour-function support.
+ */
+import html2canvas from "html2canvas-pro";
 import jsPDF from "jspdf";
 import {
   Dialog,
@@ -42,6 +53,14 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import {
+  LetterType,
+  LetterNature,
+  LETTER_TYPE_LABELS,
+  LETTER_NATURE_LABELS,
+} from "@cipansor/shared";
+import { LetterFlowHistory } from "@/components/e-office/letter-flow-history";
+import { SignLetterDialog } from "@/components/e-office/sign-letter-dialog";
 
 export default function LetterDetailPage({
   params,
@@ -66,6 +85,7 @@ export default function LetterDetailPage({
   const pdfRef = useRef<HTMLDivElement>(null);
   const [notes, setNotes] = useState("");
   const [dispositionOpen, setDispositionOpen] = useState(false);
+  const [signOpen, setSignOpen] = useState(false);
   const [dispositionData, setDispositionData] = useState({
     recipientId: "",
     instruction: "",
@@ -102,38 +122,101 @@ export default function LetterDetailPage({
 
     try {
       toast.info("Sedang menyiapkan PDF...");
-      const canvas = await html2canvas(pdfRef.current, {
-        scale: 2,
-        useCORS: true,
-      });
-      const imgData = canvas.toDataURL("image/png");
-
+      const scale = 2;
+      const canvas = await html2canvas(pdfRef.current, { scale, useCORS: true });
       const pdf = new jsPDF("p", "mm", "a4");
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
 
-      const imgWidth = canvas.width;
-      const imgHeight = canvas.height;
+      const pxPerMm = canvas.width / pdfWidth;
+      const pageHeightPx = pdfHeight * pxPerMm;
 
-      const ratio = pdfWidth / imgWidth;
-      const scaledHeight = imgHeight * ratio;
+      /**
+       * Where a page may be cut.
+       *
+       * The previous version sliced every `pdfHeight` regardless of what was
+       * there, so a two-page letter opened page 2 with the bottom half of a
+       * line of text and ended it mid-sentence. Paragraphs are marked in the
+       * naskah with `data-naskah-block`; their top edges are the offsets where
+       * a cut lands between lines instead of through one. A little white space
+       * at the foot of a page is the correct trade.
+       */
+      const naskahTop = pdfRef.current.getBoundingClientRect().top;
+      const breakpoints = Array.from(
+        pdfRef.current.querySelectorAll("[data-naskah-block]"),
+      )
+        .map((el) => (el.getBoundingClientRect().top - naskahTop) * scale)
+        .filter((y) => y > 0);
 
-      let heightLeft = scaledHeight;
-      let position = 0;
-      let page = 1;
+      /**
+       * Margins for the sheets the naskah itself does not provide.
+       *
+       * The naskah's own padding only produces white space at the very top of
+       * page 1 and the very bottom of the last page. Every cut in between was
+       * laid flush against the paper edge, so page 2 of a long letter opened
+       * with a line of text touching the top edge and closed with one touching
+       * the bottom — underneath the page number, which is drawn over the image.
+       * Beyond looking wrong, most printers cannot print within about 5 mm of
+       * the edge, so those lines came out clipped on paper.
+       *
+       * Page 1 keeps its own top margin (the kop is drawn inside it); the
+       * bottom margin applies to every page and is where the page number sits.
+       */
+      const TOP_MARGIN_MM = 15;
+      const BOTTOM_MARGIN_MM = 15;
+      const usableFirstPx = (pdfHeight - BOTTOM_MARGIN_MM) * pxPerMm;
+      const usableRestPx =
+        (pdfHeight - TOP_MARGIN_MM - BOTTOM_MARGIN_MM) * pxPerMm;
 
-      // Add first page
-      pdf.addImage(imgData, "PNG", 0, position, pdfWidth, scaledHeight);
-      heightLeft -= pdfHeight;
-
-      // Add remaining pages
-      while (heightLeft > 0) {
-        position = heightLeft - scaledHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, "PNG", 0, position, pdfWidth, scaledHeight);
-        heightLeft -= pdfHeight;
-        page++;
+      const pages: number[] = [0];
+      while (true) {
+        const top = pages[pages.length - 1];
+        const usable = pages.length === 1 ? usableFirstPx : usableRestPx;
+        if (top + usable >= canvas.height) break;
+        // The last breakpoint that still fits on this page.
+        const next = breakpoints.filter((y) => y > top && y <= top + usable).pop();
+        // No breakpoint fits (a single block taller than a page) — fall back to
+        // a hard cut rather than loop forever.
+        pages.push(next ?? top + usable);
       }
+
+      const slice = document.createElement("canvas");
+      const sctx = slice.getContext("2d")!;
+      pages.forEach((top, i) => {
+        // Ends where the next page begins, not a full page-height further on.
+        // Taking the full height re-drew the paragraphs that belong to the next
+        // page, so a page started cleanly and still ran off mid-sentence.
+        const height = (pages[i + 1] ?? canvas.height) - top;
+        slice.width = canvas.width;
+        slice.height = height;
+        sctx.fillStyle = "#ffffff";
+        sctx.fillRect(0, 0, slice.width, slice.height);
+        sctx.drawImage(canvas, 0, -top);
+        if (i > 0) pdf.addPage();
+        pdf.addImage(
+          slice.toDataURL("image/png"),
+          "PNG",
+          0,
+          // Page 1 begins at the paper edge because the kop already sits inside
+          // the naskah's own padding; continuation pages need the margin drawn.
+          i === 0 ? 0 : TOP_MARGIN_MM,
+          pdfWidth,
+          height / pxPerMm,
+        );
+        // Continuation pages carry no letterhead, so they need to say which
+        // page they are — a loose sheet from a five-page edaran otherwise has
+        // nothing on it identifying where it belongs.
+        if (pages.length > 1) {
+          pdf.setFontSize(9);
+          pdf.setTextColor(120);
+          pdf.text(
+            `Halaman ${i + 1} dari ${pages.length}`,
+            pdfWidth - 15,
+            pdfHeight - 8,
+            { align: "right" },
+          );
+        }
+      });
 
       pdf.save(`Surat-${letter?.letterNumber || "Draft"}.pdf`);
       toast.success("Surat berhasil diunduh");
@@ -304,6 +387,13 @@ export default function LetterDetailPage({
         </DialogContent>
       </Dialog>
 
+      <SignLetterDialog
+        letterId={letter.id}
+        letterNumber={letter.letterNumber}
+        open={signOpen}
+        onOpenChange={setSignOpen}
+      />
+
       {/* Hidden PDF Template */}
       <div className="fixed left-[-9999px] top-0">
         <LetterPDFTemplate ref={pdfRef} letter={letter} />
@@ -373,9 +463,24 @@ export default function LetterDetailPage({
                 </div>
                 <div>
                   <label className="text-xs font-medium text-muted-foreground">
+                    Jenis Naskah
+                  </label>
+                  <p>
+                    {letter.type
+                      ? LETTER_TYPE_LABELS[letter.type as LetterType]
+                      : "Surat Dinas (Korespondensi)"}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">
                     Sifat
                   </label>
-                  <p>{letter.nature}</p>
+                  {/* Was the raw enum (e.g. "STRICTLY_CONFIDENTIAL"); the
+                      label reads as Indonesian, matching the form. */}
+                  <p>
+                    {LETTER_NATURE_LABELS[letter.nature as LetterNature] ??
+                      letter.nature}
+                  </p>
                 </div>
                 <div>
                   <label className="text-xs font-medium text-muted-foreground">
@@ -454,6 +559,19 @@ export default function LetterDetailPage({
               <DispositionTimeline dispositions={letter.dispositions} />
             </CardContent>
           </Card>
+
+          {/* The full flow history: every forward, paraf, return and archive,
+              in order. Distinct from the disposition list above, which shows
+              only the routing hops; this also captures verification and
+              revision, which is what "who returned this and when" needs. */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Histori Alur Surat</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <LetterFlowHistory events={letter.flowEvents} />
+            </CardContent>
+          </Card>
         </div>
 
         <div className="space-y-6">
@@ -516,37 +634,90 @@ export default function LetterDetailPage({
                 Disposisi
               </Button>
 
-              {/* Approval Actions (Mock Logic - should check if user is current reviewer) */}
-              <div className="pt-4 border-t space-y-3">
-                <p className="text-xs font-medium text-muted-foreground mb-2">
-                  Persetujuan
-                </p>
-                <Textarea
-                  placeholder="Catatan persetujuan..."
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  className="mb-2 text-xs"
-                />
-                <div className="flex gap-2">
-                  <Button
-                    className="flex-1 bg-green-600 hover:bg-green-700"
-                    size="sm"
-                    onClick={() => handleReview("APPROVE")}
-                  >
-                    <CheckCircle className="mr-2 h-3 w-3" />
-                    Setuju
-                  </Button>
-                  <Button
-                    className="flex-1"
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => handleReview("REJECT")}
-                  >
-                    <XCircle className="mr-2 h-3 w-3" />
-                    Tolak
-                  </Button>
-                </div>
-              </div>
+              {/*
+                Verifikasi berjenjang.
+
+                Sebelumnya blok ini bertanda "Mock Logic" dan menampilkan
+                Setuju/Tolak kepada siapa pun yang membuka surat. Sejak
+                pemeriksaan giliran ditegakkan di server (utils/letter-workflow),
+                tombol itu menjanjikan sesuatu yang akan ditolak API. Panel ini
+                kini menawarkan persis apa yang akan diterima — dan menyebut
+                siapa yang sedang ditunggu bila bukan giliran kita.
+
+                Penandatangan tidak memakai "Setuju": ia menandatangani, dengan
+                passphrase. Itulah bedanya paraf dengan tanda tangan.
+              */}
+              {(() => {
+                const reviewers = letter.reviewers ?? [];
+                const mine = reviewers.find(
+                  (r: any) => r.reviewerId === user?.id,
+                );
+                const turn = [...reviewers]
+                  .filter((r: any) => r.status !== "APPROVED")
+                  .sort((a: any, b: any) => a.order - b.order)[0];
+                const openForReview =
+                  letter.status === "PENDING_REVIEW" ||
+                  letter.status === "READY_TO_SIGN";
+                const myTurn =
+                  !!mine && (turn as any)?.reviewerId === user?.id;
+
+                if (!mine || !openForReview) return null;
+
+                if (!myTurn) {
+                  return (
+                    <div className="pt-4 border-t">
+                      <p className="text-xs text-muted-foreground">
+                        Menunggu verifikator urutan {(turn as any)?.order} lebih
+                        dahulu.
+                      </p>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="pt-4 border-t space-y-3">
+                    <p className="text-xs font-medium text-muted-foreground mb-2">
+                      {mine.isSigner ? "Penandatanganan" : "Paraf / Persetujuan"}
+                    </p>
+                    <Textarea
+                      placeholder="Catatan (opsional)..."
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      className="mb-2 text-xs"
+                    />
+                    <div className="flex gap-2">
+                      {mine.isSigner ? (
+                        <Button
+                          className="flex-1 bg-green-600 hover:bg-green-700"
+                          size="sm"
+                          onClick={() => setSignOpen(true)}
+                        >
+                          <PenLine className="mr-2 h-3 w-3" />
+                          Tandatangani
+                        </Button>
+                      ) : (
+                        <Button
+                          className="flex-1 bg-green-600 hover:bg-green-700"
+                          size="sm"
+                          onClick={() => handleReview("APPROVE")}
+                        >
+                          <CheckCircle className="mr-2 h-3 w-3" />
+                          Setuju
+                        </Button>
+                      )}
+                      <Button
+                        className="flex-1"
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleReview("REJECT")}
+                      >
+                        <XCircle className="mr-2 h-3 w-3" />
+                        Kembalikan
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })()}
             </CardContent>
           </Card>
 

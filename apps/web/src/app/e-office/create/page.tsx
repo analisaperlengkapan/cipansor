@@ -33,6 +33,12 @@ import {
   LetterUrgency,
   LetterNature,
   LetterStatus,
+  LetterType,
+  LETTER_TYPE_LABELS,
+  LETTER_NATURE_LABELS,
+  naturesForType,
+  renderTemplateDraft,
+  remainingPlaceholders,
 } from "@cipansor/shared";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
@@ -41,6 +47,7 @@ import { Upload } from "lucide-react";
 
 const letterSchema = z.object({
   direction: z.nativeEnum(LetterDirection),
+  type: z.nativeEnum(LetterType),
   subject: z.string().min(1, "Perihal wajib diisi"),
   date: z.string(),
   urgency: z.nativeEnum(LetterUrgency),
@@ -76,6 +83,7 @@ export default function CreateLetterPage() {
     resolver: zodResolver(letterSchema),
     defaultValues: {
       direction: LetterDirection.OUTGOING,
+      type: LetterType.SURAT_DINAS,
       date: new Date().toISOString().split("T")[0],
       urgency: LetterUrgency.NORMAL,
       nature: LetterNature.PUBLIC,
@@ -85,6 +93,27 @@ export default function CreateLetterPage() {
   });
 
   const direction = form.watch("direction");
+  const letterType = form.watch("type");
+  // The natures a type may carry come from the shared rule the server enforces,
+  // so the form can never offer a choice the API will reject. When the type
+  // changes to one that disallows the current nature (e.g. switching to Surat
+  // Keputusan while "Rahasia" is selected), snap back to Biasa rather than
+  // submit a pair the server will refuse.
+  const allowedNatures = naturesForType(letterType ?? LetterType.SURAT_DINAS);
+  React.useEffect(() => {
+    const current = form.getValues("nature");
+    if (!allowedNatures.includes(current)) {
+      form.setValue("nature", LetterNature.PUBLIC);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [letterType]);
+
+  // Recomputed from the live field so it clears as the drafter fills things in.
+  const contentValue = form.watch("content");
+  const leftoverPlaceholders = React.useMemo(
+    () => remainingPlaceholders(contentValue ?? ""),
+    [contentValue],
+  );
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -146,34 +175,68 @@ export default function CreateLetterPage() {
               <CardTitle>Informasi Dasar</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <FormField
-                control={form.control}
-                name="direction"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Jenis Surat</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Pilih jenis surat" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value={LetterDirection.INCOMING}>
-                          Surat Masuk (Dari Luar)
-                        </SelectItem>
-                        <SelectItem value={LetterDirection.OUTGOING}>
-                          Surat Keluar (Ke Luar)
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="direction"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Arah Surat</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Pilih arah surat" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value={LetterDirection.INCOMING}>
+                            Surat Masuk (Dari Luar)
+                          </SelectItem>
+                          <SelectItem value={LetterDirection.OUTGOING}>
+                            Surat Keluar (Ke Luar)
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* The real jenis naskah — what the document is, which decides
+                    its numbering book and which sifat it may carry. Previously
+                    absent, so an SK and an ordinary letter were the same thing
+                    to the system. */}
+                <FormField
+                  control={form.control}
+                  name="type"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Jenis Naskah</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Pilih jenis naskah" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {Object.values(LetterType).map((t) => (
+                            <SelectItem key={t} value={t}>
+                              {LETTER_TYPE_LABELS[t]}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
               <FormField
                 control={form.control}
@@ -231,9 +294,13 @@ export default function CreateLetterPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Sifat</FormLabel>
+                      {/* Options come from the selected type via the shared
+                          rule, so "Terbatas" is now offered where it was
+                          missing, and "Rahasia" disappears for a Surat
+                          Keputusan — the same list the server enforces. */}
                       <Select
                         onValueChange={field.onChange}
-                        defaultValue={field.value}
+                        value={field.value}
                       >
                         <FormControl>
                           <SelectTrigger>
@@ -241,17 +308,11 @@ export default function CreateLetterPage() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value={LetterNature.PUBLIC}>
-                            Biasa
-                          </SelectItem>
-                          <SelectItem value={LetterNature.CONFIDENTIAL}>
-                            Rahasia
-                          </SelectItem>
-                          <SelectItem
-                            value={LetterNature.STRICTLY_CONFIDENTIAL}
-                          >
-                            Sangat Rahasia
-                          </SelectItem>
+                          {allowedNatures.map((n) => (
+                            <SelectItem key={n} value={n}>
+                              {LETTER_NATURE_LABELS[n]}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -447,14 +508,55 @@ export default function CreateLetterPage() {
                 name="content"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Ringkasan / Isi</FormLabel>
+                    <div className="flex items-center justify-between gap-2">
+                      <FormLabel>Ringkasan / Isi</FormLabel>
+                      {/* Never overwrites silently: the draft is a starting
+                          point, and losing typed text to a template is worse
+                          than retyping the template. */}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const draft = renderTemplateDraft(
+                            form.getValues("type") ?? LetterType.SURAT_DINAS,
+                            form.getValues("nature") ?? LetterNature.PUBLIC,
+                          );
+                          const current = (field.value ?? "").trim();
+                          if (
+                            current &&
+                            !window.confirm(
+                              "Ganti isi yang sudah ditulis dengan konsep template?",
+                            )
+                          ) {
+                            return;
+                          }
+                          form.setValue("content", draft, {
+                            shouldDirty: true,
+                          });
+                        }}
+                      >
+                        Isi dari template
+                      </Button>
+                    </div>
                     <FormControl>
                       <Textarea
-                        placeholder="Tuliskan isi ringkasan surat disini..."
-                        className="min-h-[150px]"
+                        placeholder="Tuliskan isi ringkasan surat disini, atau klik “Isi dari template”..."
+                        className="min-h-[220px] font-mono text-sm"
                         {...field}
                       />
                     </FormControl>
+                    {/* What is still unfilled. A letter that climbs the
+                        approval ladder with "[NAMA]" in it wastes every
+                        reviewer's turn and comes straight back as a revision. */}
+                    {leftoverPlaceholders.length > 0 && (
+                      <p className="text-xs text-amber-600">
+                        Masih ada isian yang belum dilengkapi:{" "}
+                        <span className="font-medium">
+                          {leftoverPlaceholders.join(", ")}
+                        </span>
+                      </p>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}

@@ -10,8 +10,30 @@ export enum LetterUrgency {
   URGENT = "URGENT",
 }
 
+/**
+ * Jenis naskah dinas — apa dokumennya, bukan seberapa rahasia.
+ *
+ * Sifat (LetterNature) yang boleh menyertai tiap jenis diatur di
+ * apps/api/src/utils/letter-naskah.ts; aturannya ditegakkan di server, dan
+ * formulir web membaca daftar yang sama agar pilihan yang ditawarkan sama
+ * dengan pilihan yang diterima.
+ */
+export enum LetterType {
+  SURAT_DINAS = "SURAT_DINAS",
+  NOTA_DINAS = "NOTA_DINAS",
+  SURAT_KEPUTUSAN = "SURAT_KEPUTUSAN",
+  SURAT_TUGAS = "SURAT_TUGAS",
+  SURAT_EDARAN = "SURAT_EDARAN",
+  SURAT_UNDANGAN = "SURAT_UNDANGAN",
+  SURAT_KETERANGAN = "SURAT_KETERANGAN",
+  BERITA_ACARA = "BERITA_ACARA",
+  PENGUMUMAN = "PENGUMUMAN",
+}
+
+/** Derajat kerahasiaan. LIMITED (Terbatas) sebelumnya tidak ada. */
 export enum LetterNature {
   PUBLIC = "PUBLIC",
+  LIMITED = "LIMITED",
   CONFIDENTIAL = "CONFIDENTIAL",
   STRICTLY_CONFIDENTIAL = "STRICTLY_CONFIDENTIAL",
 }
@@ -31,6 +53,8 @@ export enum LetterStatus {
 export interface CreateLetterInput {
   unitId: string;
   direction: LetterDirection;
+  /** Jenis naskah. Tidak diisi = SURAT_DINAS, seperti perilaku sebelumnya. */
+  type?: LetterType;
   classificationId?: string;
   agendaNumber?: string;
   letterNumber?: string;
@@ -85,9 +109,23 @@ export interface LetterDispositionDetail {
   createdAt: string;
 }
 
+/** One append-only entry from a letter's flow history (LetterFlowEvent). */
+export interface LetterFlowEventDetail {
+  id: string;
+  action: string;
+  actorId: string;
+  actor?: { name: string };
+  target?: { name: string } | null;
+  fromStatus?: string | null;
+  toStatus?: string | null;
+  note?: string | null;
+  createdAt: string;
+}
+
 export interface LetterDetail {
   id: string;
   unitId: string;
+  type?: LetterType;
   unit?: {
     name: string;
     address: string;
@@ -123,6 +161,31 @@ export interface LetterDetail {
 
   reviewers: LetterReviewerDetail[];
   dispositions: LetterDispositionDetail[];
+  flowEvents?: LetterFlowEventDetail[];
+  signatures?: LetterSignatureDetail[];
+}
+
+/**
+ * The electronic signature affixed to a signed letter.
+ *
+ * Deliberately no `signature` or `digest` field: the naskah only needs to
+ * carry the QR, and the proof itself is checked server-side by
+ * `GET /esign/verify/:token`. Shipping the raw signature to every reader of
+ * the letter would put the cryptographic material on more screens than the
+ * verification actually requires.
+ */
+export interface LetterSignatureDetail {
+  id: string;
+  signedAt: string;
+  /** Goes into the QR as `/verifikasi/{token}` — a capability, not a secret. */
+  verificationToken: string;
+  algorithm: string;
+  /** Set when the signature was revoked; the naskah must then not claim valid. */
+  revokedAt?: string | null;
+  signer: {
+    name: string;
+    nip?: string;
+  };
 }
 
 // Disposition DTOs

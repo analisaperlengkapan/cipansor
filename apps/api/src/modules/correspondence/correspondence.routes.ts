@@ -7,6 +7,7 @@ import {
   reviewLetterSchema,
   createDispositionSchema,
   updateDispositionStatusSchema,
+  letterNoteSchema,
 } from './correspondence.schema';
 
 const router = Router();
@@ -18,6 +19,18 @@ router.get('/letters', CorrespondenceController.findAll);
 router.get('/stats', CorrespondenceController.getStats);
 router.get('/letters/:id', CorrespondenceController.findOne);
 router.post('/letters/:id/review', validate(reviewLetterSchema), CorrespondenceController.review);
+// The way back from REVISION_NEEDED, which previously had none.
+router.post(
+  '/letters/:id/resubmit',
+  validate(letterNoteSchema),
+  CorrespondenceController.resubmit
+);
+// The end of the chain: the last official to hold the letter files it.
+router.post(
+  '/letters/:id/archive',
+  validate(letterNoteSchema),
+  CorrespondenceController.archive
+);
 router.post(
   '/dispositions',
   validate(createDispositionSchema),

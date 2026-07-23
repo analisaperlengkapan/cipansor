@@ -1,4 +1,4 @@
-import { RoleCode, Prisma } from '@prisma/client';
+import { RoleCode, Prisma, LetterStatus, LetterDirection } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { Errors } from '@/middleware/error';
 import { seesAllUnits } from './resolve-unit-id';
@@ -115,6 +115,11 @@ type ChainCheck = {
   id: string;
   unitId: string;
   createdById: string;
+  // Carried because every caller that checks access then needs to decide what
+  // may happen next, and the workflow rules turn on exactly these two. Cheaper
+  // to select two more columns here than to read the row twice.
+  status: LetterStatus;
+  direction: LetterDirection;
   reviewers: { reviewerId: string }[];
   recipients: { userId: string | null }[];
   dispositions: { senderId: string; recipientId: string }[];
@@ -134,6 +139,8 @@ export async function assertLetterAccess(
       id: true,
       unitId: true,
       createdById: true,
+      status: true,
+      direction: true,
       reviewers: { select: { reviewerId: true } },
       recipients: { select: { userId: true } },
       dispositions: { select: { senderId: true, recipientId: true } },

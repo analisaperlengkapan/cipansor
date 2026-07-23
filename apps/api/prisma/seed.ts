@@ -7555,7 +7555,7 @@ async function main() {
   //    (unitId null), so they surface to the yayasan board and every unit's
   //    staff via the foundation-scope read path in perencanaan.service.
   console.log('   Seeding Strategic Plans (RPJP → Renstra → RKA)...');
-  const { rpjp, renstra, rka } = await seedStrategicPlans(prisma, {
+  const { rpjp, renstra, rka, smpRka } = await seedStrategicPlans(prisma, {
     createdById: superAdminUser.id,
     approvedById: pembinaYayasanUser.id,
     ketua: ketuaYayasanUser.id,
@@ -7565,9 +7565,10 @@ async function main() {
     kepalaSmp: kepalaSmpItUser.id,
     kepalaSma: adminPesantrenUser.id,
     koordinator: teacherPesantrenUser.id,
+    unitSmpId: smpIt.id,
   });
   console.log(
-    `   ✅ Strategic Planning: RPJP(${rpjp.id.slice(0, 8)}) → Renstra(${renstra.id.slice(0, 8)}) → RKA(${rka.id.slice(0, 8)})`
+    `   ✅ Strategic Planning: RPJP(${rpjp.id.slice(0, 8)}) → Renstra(${renstra.id.slice(0, 8)}) → RKA(${rka.id.slice(0, 8)}) + unit RKA(${smpRka.id.slice(0, 8)})`
   );
 
   // 7. Supervision & Audits (internal_audits, audit_findings, audit_follow_ups)

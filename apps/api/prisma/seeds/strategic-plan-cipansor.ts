@@ -47,6 +47,8 @@ export interface StrategicPlanSeedUsers {
   kepalaSma: string;
   /** Bidang coordinator stand-in (tahfidz / keagamaan / sosial / unit usaha). */
   koordinator: string;
+  /** SMP IT unit id — owner of the unit-level RKA excerpt. */
+  unitSmpId: string;
 }
 
 const D = (rupiah: number) => new Prisma.Decimal(rupiah);
@@ -706,5 +708,95 @@ export async function seedStrategicPlans(
     },
   });
 
-  return { rpjp, renstra, rka };
+  // ───────────────────────────────────────────────────────────────────────
+  // 4. A unit-level RKA excerpt — SMP IT's own slice for 2027. The Renstra
+  //    (§5.1) is explicit that RKA is drawn up by the yayasan AND by each
+  //    satuan pendidikan, so a per-unit RKA is faithful, not incidental. It
+  //    also gives unit-scoped consumers (risk/audit linkage) a plan that lives
+  //    on a real unit, alongside the foundation-wide cascade.
+  // ───────────────────────────────────────────────────────────────────────
+  const smpBudget = (25 + 90) * JT;
+  const smpRka = await prisma.strategicPlan.create({
+    data: {
+      unit: { connect: { id: u.unitSmpId } },
+      parent: { connect: { id: renstra.id } },
+      type: PlanType.RKA,
+      status: PlanStatus.IN_PROGRESS,
+      title: 'RKA SMP IT Pesantren Cipansor 2027',
+      description:
+        'Rencana Kerja dan Anggaran SMP IT tahun 2027 — turunan unit dari RKA ' +
+        'Yayasan 2027, memuat kegiatan mutu/akreditasi dan sarpras yang dikelola ' +
+        'langsung oleh Kepala SMP IT. Nominal indikatif (mock-up demo).',
+      startDate: new Date('2027-01-01'),
+      endDate: new Date('2027-12-31'),
+      progress: 40,
+      budget: D(smpBudget),
+      createdBy: { connect: { id: u.createdById } },
+      objectives: {
+        create: [
+          {
+            order: 0,
+            perspective: BSCPerspective.CUSTOMER,
+            priority: PlanPriority.HIGH,
+            weight: 60,
+            progress: 45,
+            title: 'Mutu & akreditasi SMP IT',
+            description: 'Persiapan kenaikan status akreditasi B → A dan pembinaan karakter remaja.',
+            indicators: {
+              create: [
+                { name: 'Sesi pembinaan karakter remaja', unit: 'sesi', baseline: 0, targetValue: 3, currentValue: 1 },
+              ],
+            },
+            activities: {
+              create: [
+                {
+                  title: 'K-08: Persiapan Kenaikan Status Akreditasi & Pembinaan Remaja SMP IT',
+                  description: 'Rekomendasi visitasi terpenuhi dan berkas kenaikan status disiapkan; 3 sesi pembinaan remaja.',
+                  priority: PlanPriority.HIGH,
+                  status: PlanStatus.IN_PROGRESS,
+                  startDate: new Date('2027-01-01'),
+                  endDate: new Date('2027-12-31'),
+                  budget: D(25 * JT),
+                  notes: `Rp25 juta${IND}`,
+                  pic: { connect: { id: u.kepalaSmp } },
+                },
+              ],
+            },
+          },
+          {
+            order: 1,
+            perspective: BSCPerspective.PROCESS,
+            priority: PlanPriority.MEDIUM,
+            weight: 40,
+            progress: 35,
+            title: 'Sarpras & akses SMP IT',
+            description: 'Pengembangan laboratorium IPA & komputer dan penyaluran beasiswa dhuafa/yatim.',
+            indicators: {
+              create: [
+                { name: 'Capaian standar laboratorium', unit: '%', baseline: 0, targetValue: 70, currentValue: 40 },
+                { name: 'Penerima beasiswa SMP', unit: 'siswa', baseline: 0, targetValue: 7, currentValue: 7 },
+              ],
+            },
+            activities: {
+              create: [
+                {
+                  title: 'K-09: Pengembangan Laboratorium & Beasiswa SMP IT',
+                  description: 'Capaian standar laboratorium 70%; 7 beasiswa SMP tersalurkan.',
+                  priority: PlanPriority.MEDIUM,
+                  status: PlanStatus.IN_PROGRESS,
+                  startDate: new Date('2027-01-01'),
+                  endDate: new Date('2027-12-31'),
+                  budget: D(90 * JT),
+                  notes: `Rp90 juta${IND}`,
+                  pic: { connect: { id: u.kepalaSmp } },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  });
+
+  return { rpjp, renstra, rka, smpRka };
 }

@@ -6,34 +6,38 @@ import { Badge } from "@/components/ui/badge";
 import { PublicPage } from "@/components/landing/public-page";
 import { articles } from "@/config/content";
 import { siteConfig } from "@/config/site";
+import { pagesContentFor } from "@/config/pages.i18n";
+import { newsTextFor } from "@/config/news.i18n";
+import { getServerLocale } from "@/lib/server-locale";
+import { dateFormatterFor } from "@/lib/locale-format";
 
-export const metadata: Metadata = {
-  title: `Berita & Kegiatan — ${siteConfig.legalName}`,
-  description:
-    "Kabar terbaru dari Pesantren Cipansor: prestasi santri, kegiatan pembinaan, dan agenda unit pendidikan.",
-  metadataBase: new URL(siteConfig.url),
-  alternates: { canonical: "/berita" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const copy = pagesContentFor(await getServerLocale()).news;
+  return {
+    title: `${copy.title} — ${siteConfig.legalName}`,
+    description: copy.metaDescription,
+    metadataBase: new URL(siteConfig.url),
+    alternates: { canonical: "/berita" },
+  };
+}
 
-const dateFormatter = new Intl.DateTimeFormat("id-ID", {
-  day: "numeric",
-  month: "long",
-  year: "numeric",
-  timeZone: "Asia/Jakarta",
-});
-
-export default function BeritaPage() {
+export default async function BeritaPage() {
+  const locale = await getServerLocale();
+  const copy = pagesContentFor(locale).news;
+  const dateFormatter = dateFormatterFor(locale);
   // Newest first, so the page leads with the most recent activity.
   const sorted = [...articles].sort((a, b) => b.date.localeCompare(a.date));
 
   return (
     <PublicPage
-      title="Berita & Kegiatan"
-      lead="Catatan kegiatan dan capaian santri di berbagai unit pendidikan Pesantren Cipansor."
-      breadcrumb={[{ label: "Berita", href: "/berita" }]}
+      title={copy.title}
+      lead={copy.lead}
+      breadcrumb={[{ label: copy.title, href: "/berita" }]}
     >
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {sorted.map((article) => (
+        {sorted.map((article) => {
+          const text = newsTextFor(locale, article.slug) ?? article;
+          return (
           <Card key={article.slug} className="h-full overflow-hidden">
             <Link href={`/berita/${article.slug}`} className="block">
               <div className="relative aspect-[16/10]">
@@ -58,21 +62,22 @@ export default function BeritaPage() {
                   href={`/berita/${article.slug}`}
                   className="hover:text-primary"
                 >
-                  {article.title}
+                  {text.title}
                 </Link>
               </h2>
               <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-                {article.excerpt}
+                {text.excerpt}
               </p>
               <Link
                 href={`/berita/${article.slug}`}
                 className="mt-4 text-sm font-medium text-primary underline underline-offset-4"
               >
-                Baca selengkapnya
+                {copy.readMore}
               </Link>
             </CardContent>
           </Card>
-        ))}
+          );
+        })}
       </div>
     </PublicPage>
   );

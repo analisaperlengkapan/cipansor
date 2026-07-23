@@ -35,6 +35,8 @@ export interface PublicContent {
   /** Page chrome for /profil — heading, standfirst, and the closing link. */
   profilePage: {
     title: string;
+    /** <title> is `${title} — ${legalName}`; this is the search snippet. */
+    metaDescription: string;
     lead: (markaz: string, year: number) => string;
     leadershipPrompt: string;
     leadershipLink: string;
@@ -76,6 +78,8 @@ function toArabicDigits(value: number | string): string {
 const EN: PublicContent = {
   profilePage: {
     title: "About Pesantren Cipansor",
+    metaDescription:
+      "The history, vision, and structure of Yayasan Pesantren Cipansor: an integrated Islamic boarding school in Kabupaten Tasikmalaya, established in 1911, with five educational units.",
     lead: (markaz, year) =>
       `${markaz} — an integrated Islamic boarding school (pesantren) in Kabupaten Tasikmalaya, West Java, established in ${year}.`,
     leadershipPrompt: "Would you like to meet the teachers and unit heads?",
@@ -152,6 +156,8 @@ const EN: PublicContent = {
 const AR: PublicContent = {
   profilePage: {
     title: "نبذة عن معهد سيبانسور",
+    metaDescription:
+      "تاريخ مؤسسة معهد سيبانسور ورؤيتها وهيكلها: معهد إسلامي داخلي متكامل في منطقة تاسيكمالايا، تأسّس عام ١٩١١م، ويضمّ خمس وحدات تعليمية.",
     lead: (markaz, year) =>
       `${markaz} — معهد إسلامي داخلي متكامل (بيسانترين) في منطقة تاسيكمالايا بجاوة الغربية، تأسّس عام ${toArabicDigits(year)}م.`,
     leadershipPrompt: "أتودّ التعرّف على المشايخ ورؤساء الوحدات؟",
@@ -229,6 +235,8 @@ const AR: PublicContent = {
 const ID: PublicContent = {
   profilePage: {
     title: "Profil Pesantren Cipansor",
+    metaDescription:
+      "Sejarah, visi, dan struktur Yayasan Pesantren Cipansor: lembaga pendidikan Islam terpadu di Kabupaten Tasikmalaya yang berdiri sejak 1911 dan menaungi lima unit pendidikan.",
     lead: (markaz, year) =>
       `${markaz} — lembaga pendidikan Islam terpadu di Kabupaten Tasikmalaya, berdiri sejak ${year}.`,
     leadershipPrompt: "Ingin mengenal para pengasuh dan kepala unit?",

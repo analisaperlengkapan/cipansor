@@ -3,9 +3,15 @@ import Image from "next/image";
 import { ArrowRight, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { siteConfig } from "@/config/site";
+import { homeContentFor } from "@/config/home.i18n";
+import { siteTextFor } from "@/config/site.i18n";
+import type { Locale } from "@/locales";
 import { SpmbStatusBadge } from "@/components/landing/spmb-status-badge";
 
-export function HeroSection() {
+export function HeroSection({ locale }: { locale: Locale }) {
+  const { hero } = homeContentFor(locale);
+  const site = siteTextFor(locale);
+
   return (
     <section
       id="hero"
@@ -22,11 +28,11 @@ export function HeroSection() {
           <h1 className="text-4xl font-extrabold tracking-tight lg:text-6xl text-foreground text-balance">
             {siteConfig.legalName}
             <br className="hidden sm:inline" />{" "}
-            <span className="text-primary">{siteConfig.tagline}</span>
+            <span className="text-primary">{site.tagline}</span>
           </h1>
 
           <p className="text-xl text-muted-foreground max-w-2xl text-pretty">
-            {siteConfig.description}
+            {site.description}
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
@@ -35,7 +41,7 @@ export function HeroSection() {
                 {/* No year: the destination page states the current period,
                     and a year written here goes stale the moment the intake
                     changes. */}
-                Daftar SPMB <ArrowRight className="h-4 w-4" />
+                {hero.registerCta} <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
             <Link href="/profil" className="w-full sm:w-auto">
@@ -45,7 +51,7 @@ export function HeroSection() {
                 className="w-full gap-2 text-base h-12"
               >
                 <BookOpen className="h-4 w-4" />
-                Profil Pesantren
+                {hero.profileCta}
               </Button>
             </Link>
           </div>
@@ -55,7 +61,7 @@ export function HeroSection() {
           <div className="relative aspect-[16/7] overflow-hidden rounded-xl border border-border shadow-xl">
             <Image
               src="/images/cipansor/hero.webp"
-              alt="Lingkungan dan kegiatan santri di Pesantren Cipansor"
+              alt={hero.imageAlt}
               fill
               sizes="(max-width: 1024px) 100vw, 1024px"
               className="object-cover"

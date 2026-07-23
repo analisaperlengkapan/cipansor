@@ -4,63 +4,75 @@ Status of production-readiness work and the remaining roadmap. Updated as part o
 the production-readiness / architecture-standardization effort. For the system
 overview see [`ARCHITECTURE.md`](./ARCHITECTURE.md).
 
-## 🔴 OPEN — public pages still render Indonesian when EN/AR is selected (2026-07-23)
+## ✅ FIXED — public pages rendered Indonesian when EN/AR was selected (2026-07-23)
 
-**Symptom.** Switching the public site to English or Arabic translates the
-navigation and the breadcrumb, but most page content stays Indonesian.
+**Was.** Switching the public site to English or Arabic translated the
+navigation and the breadcrumb, but the page content stayed Indonesian: 1 of 9
+public pages and 0 of 7 landing sections were localized. PR #356 had built the
+switching *mechanism* — cookie, server-side locale read, `router.refresh()`,
+RTL, the switcher — and translated `/profil` alone to prove it worked. The
+switcher then advertised a capability the content did not deliver.
 
-**Cause: scope, not a bug.** PR #356 built the switching *mechanism* — the
-cookie, the server-side locale read, `router.refresh()` so server components
-follow the switch, RTL, and the switcher itself — and translated exactly one
-page (`/profil`) end to end to prove the mechanism works. The remaining public
-content was never translated. The switcher now advertises a capability the
-content does not yet deliver, which is why this reads as broken to a visitor.
-
-**Inventory, measured 2026-07-23** (`getServerLocale` / `publicContentFor` /
-`useI18n` present = localized):
+**Now: all 9 public pages localized end to end**, including page titles and
+meta descriptions:
 
 | Surface | State |
 |---|---|
-| Public navbar + mobile drawer | ✅ localized |
-| Breadcrumb (`PublicPage`) | ✅ localized |
-| `/profil` | ✅ localized |
-| `/` landing sections — hero, stats, about, programs, units, news, cta | ❌ **all 7 Indonesian-only** |
-| Landing footer | ❌ Indonesian-only |
-| `/berita`, `/berita/[slug]` | ❌ Indonesian-only |
-| `/unit`, `/unit/[slug]` | ❌ Indonesian-only |
-| `/program-unggulan` | ❌ Indonesian-only |
-| `/wakaf-infaq` | ❌ Indonesian-only |
-| `/kontak` | ❌ Indonesian-only |
-| `/profil/pimpinan` | ❌ Indonesian-only |
+| Public navbar + mobile drawer, breadcrumb | ✅ |
+| `/` — all 7 landing sections + footer | ✅ |
+| `/profil`, `/profil/pimpinan` | ✅ |
+| `/unit`, `/unit/[slug]` | ✅ |
+| `/program-unggulan` | ✅ |
+| `/berita`, `/berita/[slug]` | ✅ chrome, headline and standfirst |
+| `/kontak` | ✅ |
+| `/wakaf-infaq` | ✅ including the donation form |
 
-So **1 of 9 public pages** and **0 of 7 landing sections** are translated.
+**What is still Indonesian, deliberately.**
 
-**The mechanism to extend is already in place** — this is filling in content,
-not designing anything:
+1. **News article bodies.** Headlines and standfirsts are translated; the
+   article text is not. Each body carries direct quotations attributed to named
+   staff and lists of named children. English and Arabic readers are told so in
+   a line above the article rather than left to wonder, and the body is marked
+   `lang="id"`.
+2. **Leaders' mottos and the donation page's scripture** — see below; these are
+   deliberate and permanent.
+3. **`ANONYMOUS_DONOR_NAME` ("Hamba Allah")** on the donation form. It is
+   *recorded on the donation*, not merely displayed, so it stays one value in
+   every locale rather than three the finance team has to reconcile. Likewise
+   the bank details and the donation JSON-LD.
 
-1. Add the page's strings to `apps/web/src/config/content.i18n.ts` under `EN`
-   and `AR` (Indonesian keeps living in `content.ts` and is imported, so the
-   source of record does not fork).
-2. Server components: read the locale with `getServerLocale()` and select via
-   `publicContentFor(locale)`, exactly as `app/profil/page.tsx` does.
-3. Client components (landing sections, footer): use `useI18n()` and put the
-   strings in `locales/{id,en,ar}.ts` under `public.*`.
+**Where the strings live.** Public prose is a plain function of the locale, so
+the same module serves server components (`getServerLocale()`) and client ones
+(`useI18n().locale`):
 
-**Deliberately NOT to be translated** — documented with reasons in
-`content.i18n.ts`, and a future pass should leave them alone:
+- `config/site.i18n.ts` — units, programmes, gallery, tagline, vision.
+- `config/home.i18n.ts` — the seven landing sections and the footer.
+- `config/pages.i18n.ts` — page chrome for everything past the homepage.
+- `config/news.i18n.ts` — article headlines and standfirsts.
+- `config/donation.i18n.ts` — the Wakaf & Infaq page and its form.
+- `config/content.i18n.ts` — `/profil` and the legal-identity copy.
+- `locales/{id,en,ar}.ts` — only the small UI atoms `t()` serves.
 
-- **Leaders' mottos.** Each is an Indonesian rendering of a hadith. Generating
-  Arabic from the Indonesian would publish a reconstruction as a quotation
-  attributed to the Prophet ﷺ under a named person's photograph.
+Content is keyed by **slug**, never by the Indonesian prose. Keying by title is
+how the programme icon map silently lost four of its ten icons.
+
+**`config/i18n-coverage.test.ts` is what keeps this from regressing.** It walks
+every surface, fails when a key exists in one locale and not another, and fails
+when an English or Arabic string is byte-identical to the Indonesian — with an
+explicit allowlist naming each deliberate exception and its reason.
+
+**Deliberately NOT translated** — a future pass should leave these alone:
+
+- **Leaders' mottos, and the hadith and Qur'anic verse on the donation page.**
+  Each is an Indonesian rendering of scripture. Generating Arabic or English
+  from it would publish a reconstruction as scripture — in the mottos' case,
+  as a quotation attributed to the Prophet ﷺ under a named person's
+  photograph. Both pages say so in English and Arabic instead.
 - **Domain vocabulary** — Pesantren, SPMB, Wakaf, Infaq, Santri, Tahfidz,
   Musyrif, and the unit names. The portal uses these words throughout;
   translating them on the public site alone would make the two disagree.
 - **Legal identifiers** — decree number, NPWP, ministry name. Facts on a
   document; a translated identifier is a wrong identifier.
-
-**Impact.** Moderate and outward-facing: the switcher is visible to every
-visitor, so a reader choosing English or Arabic gets a half-translated page,
-which reads worse than offering no switcher at all would have.
 
 ## 🔴 OPEN — PWA install prompt never appears on cipansor.or.id (2026-07-23)
 

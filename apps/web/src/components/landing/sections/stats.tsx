@@ -1,40 +1,52 @@
 import { CalendarDays, Building2, BookMarked, Languages } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { siteConfig, educationUnits, featuredPrograms } from "@/config/site";
+import { homeContentFor } from "@/config/home.i18n";
+import { formatNumber } from "@/lib/locale-format";
+import type { Locale } from "@/locales";
 
 /**
  * Only facts that can be checked against the pesantren's own published
  * profile. Enrollment and alumni counts are deliberately absent — publishing
  * numbers we cannot substantiate is an Ad Grants misrepresentation risk.
+ *
+ * Every figure is counted from the data rather than typed in, and formatted for
+ * the locale — so an Arabic reader gets ١٩١١ beside Arabic prose instead of
+ * 1911, and adding a unit cannot leave the number here saying something else.
  */
-const stats = [
-  {
-    label: "Berdiri Sejak",
-    value: String(siteConfig.establishedYear),
-    icon: CalendarDays,
-    description: `Lebih dari ${new Date().getFullYear() - siteConfig.establishedYear} tahun mengabdi`,
-  },
-  {
-    label: "Unit Pendidikan",
-    value: String(educationUnits.length),
-    icon: Building2,
-    description: "Jenjang TKQ hingga Takhosus",
-  },
-  {
-    label: "Program Unggulan",
-    value: String(featuredPrograms.length),
-    icon: BookMarked,
-    description: "Tahfidz, kitab, hingga kepemimpinan",
-  },
-  {
-    label: "Bahasa Pembiasaan",
-    value: "2",
-    icon: Languages,
-    description: "Bahasa Arab & Bahasa Inggris",
-  },
-];
+export function StatsSection({ locale }: { locale: Locale }) {
+  const copy = homeContentFor(locale).stats;
+  const n = (value: number) => formatNumber(locale, value);
 
-export function StatsSection() {
+  const stats = [
+    {
+      label: copy.established.label,
+      value: n(siteConfig.establishedYear),
+      icon: CalendarDays,
+      description: copy.established.description(
+        n(new Date().getFullYear() - siteConfig.establishedYear),
+      ),
+    },
+    {
+      label: copy.units.label,
+      value: n(educationUnits.length),
+      icon: Building2,
+      description: copy.units.description,
+    },
+    {
+      label: copy.programs.label,
+      value: n(featuredPrograms.length),
+      icon: BookMarked,
+      description: copy.programs.description,
+    },
+    {
+      label: copy.languages.label,
+      value: n(2),
+      icon: Languages,
+      description: copy.languages.description,
+    },
+  ];
+
   return (
     <section
       id="stats"
@@ -51,7 +63,7 @@ export function StatsSection() {
           are), and this visually-hidden heading names the section.
         */}
         <h2 id="stats-heading" className="sr-only">
-          Sekilas Pesantren Cipansor
+          {copy.srHeading}
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {stats.map((stat) => (

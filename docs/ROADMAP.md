@@ -12,6 +12,8 @@ a visitor sees, then correctness work, then deliverables, then tidiness.
 ## Current deployment state
 
 - Production runs **`main @ 2bcbb57e`** (includes #355, #356, #358, #359).
+  **#360, #361 and #362 are merged but not yet deployed** — the CORS fix and
+  the public-site translations are on `main`, not on cipansor.or.id.
 - **#357** (e-office: flow history, tiered signing, letter types, templates,
   e-sign) is green and pushed but **not merged and not deployed**.
 - Production DB is managed by `db push`, **not** Prisma Migrate — there is no
@@ -65,12 +67,17 @@ letter flow events, letter type/nature, e-sign, e-sign lifecycle — all
 rehearsed against a copy of the production schema. Sequence: merge → rehearse
 diff → apply migrations → build → deploy → verify.
 
-## 🟠 5. Public pages still render Indonesian in EN/AR
+## ✅ 5. Public i18n — all 9 pages done
 
-1 of 9 public pages and 0 of 7 landing sections are localized. Every visitor
-sees the switcher, so this is outward-facing. Full inventory, the extension
-recipe, and the list of things that must **not** be translated are in
-`KNOWN_ISSUES.md`.
+Was 1 of 9 pages and 0 of 7 landing sections. Now every public page is
+localized end to end — page titles, meta descriptions and the donation form
+included — guarded by `config/i18n-coverage.test.ts`.
+
+Still Indonesian by design: the news article *bodies* (headlines and
+standfirsts are translated; the text is marked `lang="id"` under a line telling
+the reader so), the leaders' mottos and the donation page's scripture, and the
+values that are *recorded* rather than displayed — the anonymous donor name and
+the bank details. Detail in `KNOWN_ISSUES.md`. **Ships with the next deploy.**
 
 ## 🟠 6. PWA install prompt never fires
 

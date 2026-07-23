@@ -1,4 +1,7 @@
-import React, { forwardRef } from "react";
+"use client";
+
+import React, { forwardRef, useEffect, useState } from "react";
+import { QRCodeCanvas } from "qrcode.react";
 import { safeFormat } from "@/lib/date";
 import { id } from "date-fns/locale";
 
@@ -12,17 +15,62 @@ export const LetterPDFTemplate = forwardRef<
   HTMLDivElement,
   LetterPDFTemplateProps
 >(({ letter }, ref) => {
+  /**
+   * The QR is rendered offscreen to a canvas and then printed as a PNG data
+   * URL, rather than placed in the naskah as a live <canvas>.
+   *
+   * This template is not only displayed — html2canvas rasterises it into the
+   * downloaded PDF. A `<canvas>` survives that only through html2canvas's
+   * clone path for canvas elements; an `<img>` with a data URL is the one
+   * thing it copies unconditionally. Getting this wrong would produce exactly
+   * the bug being fixed: a letter that looks signed on screen and downloads
+   * with nothing to scan.
+   */
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+  const [origin, setOrigin] = useState("");
+  const qrSourceRef = React.useRef<HTMLCanvasElement | null>(null);
+
+  // Set after mount, not during render: the letter page is a client component
+  // but still server-rendered first, and `window` is not there for that pass.
+  useEffect(() => {
+    setOrigin(window.location.origin);
+  }, []);
+
+  const signatures = letter?.signatures ?? [];
+  // Revoked signatures stay in the record so a circulated letter can still be
+  // explained, but the naskah must not print one as if it were valid.
+  const signature = signatures.filter((s) => !s.revokedAt).at(-1);
+  const verifyUrl =
+    signature && origin ? `${origin}/verifikasi/${signature.verificationToken}` : "";
+
+  useEffect(() => {
+    if (!verifyUrl) {
+      setQrDataUrl(null);
+      return;
+    }
+    // The offscreen canvas is painted by QRCodeCanvas below on the same commit,
+    // so it is readable here.
+    setQrDataUrl(qrSourceRef.current?.toDataURL("image/png") ?? null);
+  }, [verifyUrl]);
+
   if (!letter) return null;
 
   const unit = letter.unit;
   const signer = letter.reviewers?.find((r) => r.isSigner);
-  const signerName = signer?.reviewer?.name || ".........................";
+  const signerName =
+    signature?.signer?.name ||
+    signer?.reviewer?.name ||
+    ".........................";
   const signerNip =
-    signer?.reviewer?.teacher?.nip || signer?.reviewer?.staff?.nip || "-";
+    signature?.signer?.nip ||
+    signer?.reviewer?.teacher?.nip ||
+    signer?.reviewer?.staff?.nip ||
+    "-";
 
   return (
     <div
       ref={ref}
+      data-letter-naskah
       className="bg-white text-black p-8 mx-auto"
       style={{
         width: "210mm", // A4 Width
@@ -103,22 +151,82 @@ export const LetterPDFTemplate = forwardRef<
         {letter.content}
       </div>
 
-      {/* Signature */}
+      {/*
+        Tanda tangan.
+
+        Ketika surat sudah ditandatangani secara elektronik, ruang kosong untuk
+        tanda tangan basah diganti QR — bukan ditambahi. Menyediakan keduanya
+        berarti mengundang tanda tangan basah di atas surat yang sudah sah
+        secara elektronik, dan pembaca tidak lagi tahu mana yang mengesahkan.
+
+        Sebelumnya QR hanya muncul sekali di dialog penandatanganan dengan
+        pesan "bubuhkan pada naskah": naskah yang diunduh sama persis dengan
+        naskah yang belum ditandatangani, sehingga surat cetak tidak bisa
+        diverifikasi sama sekali.
+      */}
       <div className="mt-12 flex justify-end">
-        <div className="text-center w-64">
-          <p className="mb-20">Hormat Kami,</p>
+        <div className="text-center w-72">
+          <p className={signature ? "mb-2" : "mb-20"}>Hormat Kami,</p>
 
-          {/* Signature Placeholder/Image */}
-          {/*
-            {letter.status === 'SIGNED' && (
-               <img src="/signature-placeholder.png" className="h-20 mx-auto" />
-            )}
-            */}
+          {signature ? (
+            <div className="flex flex-col items-center">
+              <img
+                src={qrDataUrl ?? undefined}
+                alt={`QR verifikasi surat ${letter.letterNumber ?? ""}`}
+                width={104}
+                height={104}
+                className="h-26 w-26"
+                style={{ height: "104px", width: "104px" }}
+              />
+              <p className="mt-1 text-[8pt] leading-tight text-gray-700">
+                Ditandatangani secara elektronik
+              </p>
+              <p className="text-[8pt] leading-tight text-gray-700">
+                {safeFormat(new Date(signature.signedAt), "dd MMMM yyyy HH:mm", {
+                  locale: id,
+                })}{" "}
+                WIB
+              </p>
+            </div>
+          ) : null}
 
-          <p className="font-bold underline uppercase">{signerName}</p>
+          <p className="mt-1 font-bold underline uppercase">{signerName}</p>
           <p>NIP. {signerNip}</p>
+
+          {signature && (
+            /*
+              Dicetak apa adanya di bawah QR: pemindai yang kameranya tidak
+              jalan, atau penerima yang memegang fotokopi buram, tetap punya
+              alamat yang bisa diketik. QR tanpa alamat tercetak adalah QR yang
+              gagal begitu gambarnya rusak.
+            */
+            <p className="mt-2 break-all text-[7pt] leading-tight text-gray-600">
+              Verifikasi keaslian: {verifyUrl}
+            </p>
+          )}
         </div>
       </div>
+
+      {/*
+        Sumber QR — hanya dibaca lewat toDataURL(), tidak pernah ikut tercetak.
+
+        `display: none` aman di sini: isi kanvas digambar oleh JavaScript lewat
+        context 2D, bukan oleh layout CSS, jadi kanvas yang tidak dilayout tetap
+        berisi gambar yang sama. Menyembunyikannya dengan posisi absolut di luar
+        layar justru berisiko: html2canvas menghitung area tangkapan dari kotak
+        elemen, dan anak yang menjorok jauh ke kiri bisa menggeser hasilnya.
+      */}
+      {verifyUrl && (
+        <div aria-hidden="true" style={{ display: "none" }}>
+          <QRCodeCanvas
+            ref={qrSourceRef}
+            value={verifyUrl}
+            size={104}
+            level="M"
+            marginSize={1}
+          />
+        </div>
+      )}
     </div>
   );
 });

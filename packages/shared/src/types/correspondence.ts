@@ -162,6 +162,30 @@ export interface LetterDetail {
   reviewers: LetterReviewerDetail[];
   dispositions: LetterDispositionDetail[];
   flowEvents?: LetterFlowEventDetail[];
+  signatures?: LetterSignatureDetail[];
+}
+
+/**
+ * The electronic signature affixed to a signed letter.
+ *
+ * Deliberately no `signature` or `digest` field: the naskah only needs to
+ * carry the QR, and the proof itself is checked server-side by
+ * `GET /esign/verify/:token`. Shipping the raw signature to every reader of
+ * the letter would put the cryptographic material on more screens than the
+ * verification actually requires.
+ */
+export interface LetterSignatureDetail {
+  id: string;
+  signedAt: string;
+  /** Goes into the QR as `/verifikasi/{token}` — a capability, not a secret. */
+  verificationToken: string;
+  algorithm: string;
+  /** Set when the signature was revoked; the naskah must then not claim valid. */
+  revokedAt?: string | null;
+  signer: {
+    name: string;
+    nip?: string;
+  };
 }
 
 // Disposition DTOs

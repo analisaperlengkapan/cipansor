@@ -377,6 +377,35 @@ export const CorrespondenceService = {
           },
           orderBy: { createdAt: 'asc' },
         },
+        /**
+         * The signature belongs to the letter, not to the moment it was
+         * created. Without it here the QR existed only inside the dialog shown
+         * once at signing: close it and the naskah could no longer be printed
+         * with anything to scan, which is the whole point of signing it.
+         *
+         * `signature` and `digest` are not selected — the naskah carries the
+         * token, and the proof is checked by the public verify endpoint. The
+         * caller has already passed `assertLetterAccess` above, so this adds
+         * nothing they could not already read.
+         */
+        signatures: {
+          select: {
+            id: true,
+            signedAt: true,
+            verificationToken: true,
+            algorithm: true,
+            // A revoked signature must not print as a valid one.
+            revokedAt: true,
+            signer: {
+              select: {
+                name: true,
+                teacher: { select: { nip: true } },
+                staff: { select: { nip: true } },
+              },
+            },
+          },
+          orderBy: { signedAt: 'asc' },
+        },
       },
     });
   },

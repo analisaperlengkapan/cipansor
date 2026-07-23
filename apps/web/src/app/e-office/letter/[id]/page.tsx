@@ -24,7 +24,17 @@ import {
 
 import { id } from "date-fns/locale";
 import { useState, useRef } from "react";
-import html2canvas from "html2canvas";
+/**
+ * `html2canvas-pro`, not `html2canvas`.
+ *
+ * Tailwind v4 compiles this app's palette to `lab()` colours, and
+ * html2canvas 1.4.1 throws "Attempting to parse an unsupported color function"
+ * on the first element whose computed colour is one — which is essentially
+ * every element. The download therefore rejected before producing anything,
+ * for every letter, and the user only saw "Gagal mengunduh". The pro fork is
+ * the same API with modern colour-function support.
+ */
+import html2canvas from "html2canvas-pro";
 import jsPDF from "jspdf";
 import {
   Dialog,

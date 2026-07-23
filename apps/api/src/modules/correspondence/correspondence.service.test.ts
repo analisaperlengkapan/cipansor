@@ -441,4 +441,62 @@ describe('Correspondence Service', () => {
       });
     });
   });
+
+  /**
+   * The QR on a printed letter is the whole point of signing it electronically,
+   * and the naskah can only carry one if the letter itself reports its
+   * signature. Before this, `getLetterById` did not select `signatures` at all,
+   * so the QR existed only inside the dialog shown once at signing: close it
+   * and a signed letter downloaded identical to an unsigned one.
+   */
+  describe('getLetterById — the signature travels with the letter', () => {
+    const identifyingRow = {
+      id: 'letter-1',
+      unitId: 'unit-1',
+      createdById: 'creator-1',
+      status: 'SIGNED',
+      reviewers: [],
+      recipients: [],
+      dispositions: [],
+    };
+
+    it('selects the signature so the naskah can print its QR', async () => {
+      vi.mocked(prisma.letter.findUnique).mockResolvedValue(identifyingRow as any);
+
+      await CorrespondenceService.getLetterById('letter-1', {
+        userId: 'u1',
+        roleCode: 'SUPER_ADMIN',
+        unitId: null,
+      } as any);
+
+      // The second call is the detail read; the first is assertLetterAccess.
+      const detailCall = vi.mocked(prisma.letter.findUnique).mock.calls.at(-1)![0] as any;
+      expect(detailCall.include.signatures).toBeDefined();
+      const select = detailCall.include.signatures.select;
+      expect(select.verificationToken).toBe(true);
+      expect(select.signedAt).toBe(true);
+      // A revoked signature must not be printed as a valid one, so the naskah
+      // has to be able to tell.
+      expect(select.revokedAt).toBe(true);
+    });
+
+    it('does not ship the raw signature or digest to every reader', async () => {
+      vi.mocked(prisma.letter.findUnique).mockResolvedValue(identifyingRow as any);
+
+      await CorrespondenceService.getLetterById('letter-1', {
+        userId: 'u1',
+        roleCode: 'SUPER_ADMIN',
+        unitId: null,
+      } as any);
+
+      const detailCall = vi.mocked(prisma.letter.findUnique).mock.calls.at(-1)![0] as any;
+      const select = detailCall.include.signatures.select;
+      // The proof is checked server-side by GET /esign/verify/:token. Putting
+      // the cryptographic material on every screen that opens the letter buys
+      // nothing and widens what a leaked response discloses.
+      expect(select.signature).toBeUndefined();
+      expect(select.digest).toBeUndefined();
+      expect(select.publicKey).toBeUndefined();
+    });
+  });
 });

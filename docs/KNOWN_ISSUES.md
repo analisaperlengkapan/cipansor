@@ -4,6 +4,43 @@ Status of production-readiness work and the remaining roadmap. Updated as part o
 the production-readiness / architecture-standardization effort. For the system
 overview see [`ARCHITECTURE.md`](./ARCHITECTURE.md).
 
+## ✅ Resolved by this effort (2026-07-22)
+
+Follow-up on top of the merged planning/nav/security work, driven by a critique
+of system sprawl, docs drift, and a full per-role visual sweep.
+
+- **Dead admissions duplicates removed.** Deleted the unmounted `modules/psb`,
+  the zero-importer `modules/finance-bridge`, and the standalone
+  `modules/ppdb-wave` (the web app reaches waves via `/admissions/waves`; nothing
+  called its `/api/ppdb-wave` mount). Deleted the five screenshot/crash-sweep e2e
+  specs that were tooling, not tests. (The web `/ppdb` pages were **kept**: an
+  early pass mistook them for a dead duplicate and removed them, but the e2e
+  onboarding test caught it — `/ppdb/registrations` is the only built
+  registrant-listing + "Eksekusi Onboarding Terpadu" UI; the canonical
+  `/admissions/registrants` is still an unbuilt dead-link. Consolidating `/ppdb`
+  into `/admissions/registrants` is a roadmap item, not a delete.)
+- **Per-role screenshot sweep made runnable + the crashes it found fixed.**
+  `screenshot-roles.ts` pointed at `qa-*` accounts no seed creates; it now drives
+  off `DEMO_ACCOUNTS` (one login per RoleCode, `DEMO_MODE` bypasses admin 2FA
+  setup). The sweep across all 75 roles found five pages that crashed for every
+  visitor, all fixed: `muhadhoroh`/`muhadatsah` (upcoming/statistics/top-performers
+  fetchers returned the `{success,data}` envelope while the page consumed the
+  payload), `violations`/`rewards` (same envelope bug in the `*Types` hooks, plus
+  a search filter hardened against a missing `name`), and `parent/finance` (child
+  wallet fetched at the wrong route — `/wallet/student/:id` instead of
+  `/wallet/:studentId`, and transactions keyed by wallet id not student id).
+- **CI gate closed.** The ~100-test web unit suite (dead-link + RBAC guards
+  included) ran in no workflow; it now runs in the Tests job. Renamed the
+  workflow "CI/CD" → "CI" (no deploy stage), and dropped the dead `develop`
+  trigger from the E2E workflow.
+- **One source of truth for agent guidance.** `.github/copilot-instructions.md`
+  was a fourth, already-stale copy of the project guide; it is now a pointer to
+  `AGENTS.md`. Added `.claude/` guardrails (a PreToolUse hook blocking a full
+  Write to `schema.prisma` and a push to `main`, a SessionStart bootstrap) and
+  three skills (`gate`, `stack`, `screenshot-roles`). Corrected AGENTS.md's stale
+  "237 models / 133 enums" (now stable phrasing) and its `UserRole`-as-example
+  contradiction; fixed the README Prisma badge (5.22 → 7).
+
 ## ✅ Resolved by the 2026-07-21 Playwright role audit
 
 Found by logging in as one demo account per role and walking every link the
@@ -261,6 +298,52 @@ injections (`grc-live`, `integration-grc`), none of which mock product data.
   and any cross-unit leak risk). Verified against the live DB (own-unit found,
   cross-unit blocked, null-shared excluded, explicit mapping wins). See
   `apps/api/docs/ACCOUNTING_DEPLOYMENT.md`.
+
+### New follow-ups surfaced by the 2026-07-22 critique
+
+- **Consolidate the live `-enhancement`/`litbang`/`research` modules by design,
+  not by delete.** `dashboard-enhancement`, `finance-enhancement`, `litbang`, and
+  `research` are separately mounted and in active use — merging them is a
+  contract-changing refactor (route-name collisions with `dashboard`, ~34 web
+  call sites into `/finance-enhancement`, separate nav/RBAC entries), so it was
+  deliberately *not* rushed as part of dead-code removal.
+- **`/ppdb` → `/admissions/registrants`.** Build the canonical admissions
+  registrant listing/detail (currently unbuilt dead-links), move the onboarding
+  UI there, then redirect `/ppdb`. Until then `/ppdb/registrations` stays because
+  it is the only built onboarding entry point.
+- **`ViolationType` / `RewardType` have no backend model — the "Types" tabs are
+  non-functional, not fixed.** The violations and rewards pages render a "Types"
+  tab that expects CRUD-able type objects (name, description, points), but no such
+  model exists server-side: `/violations/categories` and `/rewards/categories`
+  return only the bare category enum (strings). This effort **only hardened the
+  pages so they no longer white-screen** — the tab still shows no usable rows and
+  its create/edit/delete controls write to nothing. Resolve properly by either
+  building the `ViolationType`/`RewardType` models + endpoints, or removing the
+  Types tab and its hooks (`useViolationTypes`/`useRewardTypes` and the
+  create/update/delete mutations) entirely.
+- **Menu vs middleware (still ~25 combinations).** The per-role sweep found roles
+  whose nav offers a route the middleware then bounces to `/unauthorized` — e.g.
+  most non-teaching staff (`*_TATA_USAHA`, `*_BENDAHARA`, `*_KOMITE`, pustakawan,
+  perawat, keamanan, laboran, business-*) get `/students`; alumni get
+  `/alumni/sanad`; `PT_MAHASISWA` gets `/classes`. Decide per route: grant access
+  or hide the menu item. `screenshot-roles` reproduces the list.
+- **Prettier is not enforced and the tree isn't clean.** `prettier --check`
+  currently flags ~464 files, so it can't go into CI as-is. Do a one-time
+  `pnpm format` pass, land it as its own commit, then add the check.
+- **Consolidate the six kitab models** (`Kitab`, `KitabKuning`, `KitabAssignment`,
+  `KitabProgress`, `KitabProgressRecord`, `KitabStudentProgress`) into one design —
+  deferred because it needs a destructive migration.
+- **README/branding + LICENSE.** The system moved PSB/PPDB → SPMB; the README
+  copy and screenshots still say PSB. And it advertises an MIT badge + links a
+  `LICENSE` file that does not exist — add the file or drop the claim (an owner
+  decision).
+- **Regulation-driven additions** (from the field/regulatory review): UU PDP
+  27/2022 (student = child = specific personal data — parental-consent records,
+  a privacy policy, data-subject access/erasure, data-access audit); ISAK 35
+  non-profit financial statements + the UU Yayasan annual-report package;
+  backup/restore scripts + a DR runbook (currently none, for a DB of children's
+  and financial data); a zakat *collection* (muzakki) model to complement the
+  existing distribution side.
 
 ## ⚠️ Broken Prisma migration chain (schema-first via `db push`)
 

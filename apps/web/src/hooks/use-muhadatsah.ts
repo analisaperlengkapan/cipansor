@@ -185,7 +185,7 @@ async function fetchUpcomingMuhadatsah(unitId: string, limit = 10) {
   const response = await api.get(
     `/muhadatsah/upcoming?unitId=${unitId}&limit=${limit}`,
   );
-  return response.data as MuhadatsahRecord[];
+  return response.data.data as MuhadatsahRecord[];
 }
 
 async function fetchMuhadatsahStatistics(
@@ -198,7 +198,7 @@ async function fetchMuhadatsahStatistics(
   if (endDate) params.set("endDate", endDate);
 
   const response = await api.get(`/muhadatsah/statistics?${params.toString()}`);
-  return response.data as MuhadatsahStats;
+  return response.data.data as MuhadatsahStats;
 }
 
 async function fetchTopPerformers(
@@ -212,21 +212,21 @@ async function fetchTopPerformers(
   const response = await api.get(
     `/muhadatsah/top-performers?${params.toString()}`,
   );
-  return response.data as TopPerformer[];
+  return response.data.data as TopPerformer[];
 }
 
 async function fetchStudentHistory(studentId: string, limit = 20) {
   const response = await api.get(
     `/muhadatsah/student/${studentId}/history?limit=${limit}`,
   );
-  return response.data as MuhadatsahRecord[];
+  return response.data.data as MuhadatsahRecord[];
 }
 
 async function fetchMatchPartners(unitId: string, language: string) {
   const response = await api.get(
     `/muhadatsah/match-partners?unitId=${unitId}&language=${language}`,
   );
-  return response.data as AvailablePartner[];
+  return response.data.data as AvailablePartner[];
 }
 
 async function createMuhadatsah(input: CreateMuhadatsahInput) {

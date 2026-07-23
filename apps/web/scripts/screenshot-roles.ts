@@ -15,7 +15,7 @@ import fs from "fs";
 import path from "path";
 import { chromium, type Browser, type Page } from "@playwright/test";
 import { generate as generateTotp } from "otplib";
-import { ALL_ROLE_CODES } from "@cipansor/shared";
+import { DEMO_ACCOUNTS } from "@cipansor/shared";
 import { getNavigationForRoleCode } from "../src/config/navigation";
 import { getDashboardForRole, deriveLegacyRole } from "../src/lib/rbac";
 
@@ -41,13 +41,16 @@ interface RoleAccount {
   password: string;
 }
 
-// One QA account per RoleCode (provisioned by the QA seed SQL):
-// qa-<code>@qa.cipansor.id / Teacher123!; admin roles carry the fixed 2FA secret.
-const ACCOUNTS: RoleAccount[] = ALL_ROLE_CODES.map((code) => ({
-  label: code.toLowerCase().replace(/_/g, "-"),
-  roleCode: code,
-  email: `qa-${code.toLowerCase().replace(/_/g, "-")}@qa.cipansor.id`,
-  password: "Teacher123!",
+// Drive the sweep off the canonical DEMO_ACCOUNTS — the single list that the API
+// seed (apps/api/prisma/seed.ts) provisions and the login page advertises, one
+// login per RoleCode. Using it here guarantees every account we try to log in as
+// actually exists in a freshly seeded database. Demo logins do not carry 2FA, so
+// the TOTP branch in `login()` below stays as a harmless fallback.
+const ACCOUNTS: RoleAccount[] = DEMO_ACCOUNTS.map((acc) => ({
+  label: acc.roleCode.toLowerCase().replace(/_/g, "-"),
+  roleCode: acc.roleCode,
+  email: acc.email,
+  password: acc.password,
 }));
 
 interface Session {

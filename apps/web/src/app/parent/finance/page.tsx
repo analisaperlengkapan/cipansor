@@ -343,10 +343,10 @@ export default function FinancePage() {
     const fetchWallet = async () => {
       setWalletLoading(true);
       try {
-        const res = await api.get(`/wallet/student/${selectedChild}`);
+        const res = await api.get(`/wallet/${selectedChild}`);
         if (res.data.data) {
           const txRes = await api.get(
-            `/wallet/${res.data.data.id}/transactions?limit=10`,
+            `/wallet/${selectedChild}/transactions?limit=10`,
           );
           setWallet({
             id: res.data.data.id,

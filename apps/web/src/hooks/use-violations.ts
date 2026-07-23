@@ -56,10 +56,11 @@ export function useViolationTypes(params?: {
   return useQuery({
     queryKey: ["violation-types", params],
     queryFn: async () => {
-      const response = await api.get<ViolationType[]>("/violations/categories", {
-        params,
-      });
-      return response.data;
+      const response = await api.get<{ data: ViolationType[] }>(
+        "/violations/categories",
+        { params },
+      );
+      return response.data.data;
     },
   });
 }

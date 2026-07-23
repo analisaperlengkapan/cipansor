@@ -1,0 +1,42 @@
+---
+name: screenshot-roles
+description: Run the per-role visual QA sweep — log in as every seeded demo account (one per RoleCode), open each menu item its role should see, assert the page opens (no crash, no 404, no bounce), and screenshot it. Use when asked to "screenshot roles", "visual QA the menus", or verify no role hits a broken page.
+---
+
+# Per-role screenshot sweep
+
+`apps/web/scripts/screenshot-roles.ts` drives a real browser through every
+`DEMO_ACCOUNTS` login and every page in that role's navigation, writing
+`<outDir>/<role>/*.png` plus `<outDir>/report.json` and a failure summary. It
+exits non-zero if any page fails.
+
+## Prerequisites
+
+1. The local stack must be up and seeded, with **`DEMO_MODE=true`** on the API
+   (see the `stack` skill) — otherwise admin roles are stuck in 2FA setup and
+   cannot log in.
+2. A Chromium binary. The pinned Playwright build is often absent in sandboxes;
+   point at the preinstalled one instead of running `playwright install`.
+
+## Run
+
+```bash
+cd apps/web
+export PLAYWRIGHT_CHROMIUM=/opt/pw-browsers/chromium-1194/chrome-linux/chrome  # adjust to the present build
+../api/node_modules/.bin/tsx scripts/screenshot-roles.ts .qa-screens            # all roles
+../api/node_modules/.bin/tsx scripts/screenshot-roles.ts .qa-screens super-admin # one role (substring filter)
+```
+
+`.qa-screens/` is gitignored — screenshots are a QA artifact, never committed.
+
+## Triaging report.json
+
+- **console-crash** (`is not a function`, `Cannot read … of undefined`): a real
+  page bug — a component fed the wrong data shape. Fix it. The API wraps every
+  response as `{success, data}`; a hook must return `response.data.data`, not the
+  envelope, or the page crashes consuming it as the payload.
+- **bounced to /unauthorized**: the role's nav offers a route its middleware
+  denies (a menu-vs-RBAC mismatch). Decide per route whether to grant access or
+  hide the menu item; some denials are correct and are an accepted baseline.
+- **404 / navigation failed**: a linked page that was never built — cross-check
+  against the dead-link backlog in `apps/web/src/lib/dead-links.test.ts`.

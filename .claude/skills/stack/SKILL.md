@@ -1,0 +1,54 @@
+---
+name: stack
+description: Bring up the Cipansor local stack (PostgreSQL + seeded database + API on :3001 + web on :3000) so e2e tests and the per-role screenshot sweep can run. Use when asked to "start the stack", "run the app locally", or before running e2e / screenshot-roles.
+---
+
+# Local stack
+
+## Preferred: Docker
+
+If a Docker daemon is available, `docker-compose.yml` defines `db`, `api`, and
+`web`. Bring up the database, apply the schema, seed, then run the apps:
+
+```bash
+docker compose up -d db
+pnpm --filter api db:generate
+pnpm --filter api db:push
+pnpm --filter api db:seed
+pnpm --filter api dev &   # API on :3001
+pnpm --filter web dev &   # web on :3000
+```
+
+## Fallback: no Docker daemon (managed/remote sessions)
+
+Install and run PostgreSQL directly, then point the API at it. This is the path
+that works in the web/remote sandboxes where the Docker socket is absent.
+
+```bash
+apt-get install -y postgresql-16        # if not already present
+pg_ctlcluster 16 main start
+su postgres -c "psql -c \"ALTER USER postgres PASSWORD 'postgres';\""
+su postgres -c "createdb cipansor"
+
+# apps/api/.env (gitignored) — password must be IN the URL; Prisma ignores PGPASSWORD:
+#   DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:5432/cipansor?schema=public"
+pnpm --filter api db:generate
+pnpm --filter api db:push
+pnpm --filter api db:seed                # creates the 75 DEMO_ACCOUNTS, one per RoleCode
+
+# Build once, then run the built output (more stable than dev under a browser sweep):
+pnpm --filter @cipansor/shared build
+pnpm --filter api build && pnpm --filter web build
+DEMO_MODE=true node apps/api/dist/main.js &         # :3001
+( cd apps/web && node_modules/.bin/next start -p 3000 ) &
+```
+
+## Gotchas
+
+- **`DEMO_MODE=true`** on the API is what lets the seeded admin demo accounts log
+  in with a password only. Without it, admin roles are forced through mandatory
+  2FA *setup* and never return a session — the screenshot sweep can't log them in.
+- Demo credentials: every account is `<...>@demo.cipansor.or.id` / `Cipansor123!`
+  (see `packages/shared/src/types/demo-accounts.ts`). Do not invent `qa-*` accounts.
+- Redis is optional; the API logs a connection error and runs degraded without it.
+- Health check: `curl -sf http://localhost:3001/health` and `http://localhost:3000/login`.

@@ -1,7 +1,9 @@
-# CI/CD Workflow for Cipansor
+# CI Workflow for Cipansor
 # Lint, build, test, and security-scan on pull requests and pushes to main.
+# There is no deploy stage here (the docker-build job only proves the images
+# build), so this is CI, not CD.
 
-name: CI/CD
+name: CI
 
 on:
   push:
@@ -144,6 +146,13 @@ jobs:
         run: pnpm --filter api db:push
       - name: Run API tests
         run: pnpm --filter api test
+      # The web unit suite (~100 vitest specs, incl. the dead-link and RBAC
+      # guards) ran in no workflow at all, so a web regression could only be
+      # caught by a human running it locally. It needs the shared package's
+      # built types but not the database.
+      - run: pnpm --filter @cipansor/shared build
+      - name: Run Web tests
+        run: pnpm --filter web test
 
   # Supply-chain / dependency security.
   security:

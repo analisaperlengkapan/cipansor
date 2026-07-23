@@ -50,7 +50,6 @@ import rolesRoutes from '@/modules/roles/roles.routes';
 import { takhosusRoutes } from '@/modules/takhosus';
 import { muhasabahRoutes } from '@/modules/muhasabah';
 import { donationRoutes } from '@/modules/donation';
-import { ppdbWaveRoutes } from '@/modules/ppdb-wave';
 import { admissionsRoutes } from '@/modules/admissions';
 import { wilayahRoutes } from '@/modules/wilayah';
 import { kurikulumMerdekaRoutes } from '@/modules/kurikulum-merdeka';
@@ -271,7 +270,6 @@ apiRouter.use('/roles', rolesRoutes);
 apiRouter.use('/takhosus', takhosusRoutes);
 apiRouter.use('/muhasabah', muhasabahRoutes);
 apiRouter.use('/donation', donationRoutes);
-apiRouter.use('/ppdb-wave', ppdbWaveRoutes);
 apiRouter.use('/admissions', admissionsRoutes);
 apiRouter.use('/wilayah', wilayahRoutes);
 apiRouter.use('/kurikulum-merdeka', kurikulumMerdekaRoutes);
@@ -367,7 +365,6 @@ apiRouter.get('/', (_req, res) => {
       foundation: '/api/foundation',
       admissions: '/api/admissions',
       marketing: '/api/marketing',
-      ppdbWave: '/api/ppdb-wave',
       hr: '/api/hr',
       library: '/api/library',
       health: '/api/health',

@@ -14,6 +14,7 @@ import {
   listPlanQuerySchema,
 } from './perencanaan.validation';
 import { UserRole } from '@prisma/client';
+import { seesAllUnits } from '@/utils/resolve-unit-id';
 
 const PRIVILEGED_ROLES: string[] = [UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN];
 
@@ -21,16 +22,54 @@ function isPrivileged(role?: string): boolean {
   return role ? PRIVILEGED_ROLES.includes(role) : false;
 }
 
+type PlanUser = { role?: string; roleCode?: string | null; unitId?: string | null };
+
+/** Foundation scope: the yayasan board and super admin oversee every unit. */
+function seesAll(user?: PlanUser): boolean {
+  return user ? seesAllUnits({ roleCode: user.roleCode, role: user.role }) : false;
+}
+
+/**
+ * Read gate. Foundation-wide plans (unitId null) are the yayasan's governing
+ * documents — RPJP, Renstra and the consolidated RKA — and are readable by any
+ * caller who reaches these staff-only endpoints. Otherwise a caller reads their
+ * own unit's plans, and a foundation-scoped caller reads every unit's.
+ */
+function canReadPlan(planUnitId: string | null, user?: PlanUser): boolean {
+  if (planUnitId === null) return true;
+  if (seesAll(user)) return true;
+  return planUnitId === user?.unitId;
+}
+
+/**
+ * Write gate — deliberately narrower than the read gate (mutations must never
+ * widen). A foundation-wide plan may be written only by a foundation-scoped
+ * caller, so a single-unit admin cannot rewrite the yayasan's RPJP. A
+ * unit-owned plan stays writable by a privileged user or that unit, exactly as
+ * before.
+ */
+function canWritePlan(planUnitId: string | null, user?: PlanUser): boolean {
+  if (planUnitId === null) return seesAll(user);
+  return isPrivileged(user?.role) || planUnitId === user?.unitId;
+}
+
 // ==================== PLANS ====================
 
 export const listPlans = asyncHandler(async (req: Request, res: Response) => {
-  const unitId = req.user?.unitId;
-  const isPrivilegedUser = isPrivileged(req.user?.role);
+  const foundationScope = seesAll(req.user);
+  const unitId = req.user?.unitId ?? null;
 
-  if (!unitId && !isPrivilegedUser) throw Errors.unauthorized('Unit ID required');
+  // A caller with neither foundation scope nor a unit has nothing to scope to.
+  // (The board has no unitId but is foundation-scoped, so it passes here where
+  // the old check demanded a resolvable unit and shut the board out entirely.)
+  if (!foundationScope && !unitId) throw Errors.unauthorized('Unit ID required');
 
-  const targetUnitId = isPrivilegedUser && req.query.unitId ? String(req.query.unitId) : unitId;
-  if (!targetUnitId) throw Errors.badRequest('Unit ID required');
+  // A foundation-scoped caller may narrow to one unit with ?unitId=…; that
+  // unit's plans plus the foundation-wide ones are returned. Without it they
+  // see every unit.
+  const requestedUnit =
+    foundationScope && req.query.unitId ? String(req.query.unitId) : null;
+  const targetUnitId = requestedUnit ?? unitId;
 
   const query = listPlanQuerySchema.parse({
     type: req.query.type,
@@ -40,6 +79,7 @@ export const listPlans = asyncHandler(async (req: Request, res: Response) => {
   const plans = await perencanaanService.getPlans(targetUnitId, {
     ...query,
     collaboratorId: req.user?.sub,
+    seesAllUnits: foundationScope && !requestedUnit,
   });
   res.json({ success: true, data: plans });
 });
@@ -47,7 +87,7 @@ export const listPlans = asyncHandler(async (req: Request, res: Response) => {
 export const getPlanRealizationTrend = asyncHandler(async (req: Request, res: Response) => {
   const planAuth = await perencanaanService.getPlanForAuth(req.params.id);
   if (!planAuth) throw Errors.notFound('Plan not found');
-  if (!isPrivileged(req.user?.role) && planAuth.unitId !== req.user?.unitId) {
+  if (!canReadPlan(planAuth.unitId, req.user)) {
     throw Errors.forbidden('Access denied');
   }
 
@@ -61,7 +101,7 @@ export const getPlan = asyncHandler(async (req: Request, res: Response) => {
   const planAuth = await perencanaanService.getPlanForAuth(req.params.id);
   if (!planAuth) throw Errors.notFound('Plan not found');
 
-  if (!isPrivileged(req.user?.role) && planAuth.unitId !== req.user?.unitId) {
+  if (!canReadPlan(planAuth.unitId, req.user)) {
     throw Errors.forbidden('Access denied');
   }
 
@@ -99,7 +139,7 @@ export const updatePlan = asyncHandler(async (req: Request, res: Response) => {
   const existing = await perencanaanService.getPlanForAuth(req.params.id);
   if (!existing) throw Errors.notFound('Plan not found');
 
-  if (!isPrivileged(req.user?.role) && existing.unitId !== req.user?.unitId) {
+  if (!canWritePlan(existing.unitId, req.user)) {
     throw Errors.forbidden('Access denied');
   }
 
@@ -114,7 +154,16 @@ export const approvePlan = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user?.sub;
   if (!userId) throw Errors.unauthorized('User context missing');
 
+  const existing = await perencanaanService.getPlanForAuth(req.params.id);
+  if (!existing) throw Errors.notFound('Plan not found');
+
+  // Keep the original "admins only" floor, then add the foundation tightening:
+  // a foundation-wide plan may be approved only by a foundation-scoped caller,
+  // so a single-unit admin cannot ratify the yayasan's RPJP/Renstra.
   if (!isPrivileged(req.user?.role)) throw Errors.forbidden('Only admins can approve plans');
+  if (existing.unitId === null && !seesAll(req.user)) {
+    throw Errors.forbidden('Only foundation admins can approve a foundation-wide plan');
+  }
 
   const plan = await perencanaanService.approvePlan(req.params.id, userId);
   res.json({ success: true, data: plan });
@@ -124,7 +173,7 @@ export const deletePlan = asyncHandler(async (req: Request, res: Response) => {
   const existing = await perencanaanService.getPlanForAuth(req.params.id);
   if (!existing) throw Errors.notFound('Plan not found');
 
-  if (!isPrivileged(req.user?.role) && existing.unitId !== req.user?.unitId) {
+  if (!canWritePlan(existing.unitId, req.user)) {
     throw Errors.forbidden('Access denied');
   }
 

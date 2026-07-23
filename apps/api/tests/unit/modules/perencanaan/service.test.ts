@@ -98,7 +98,7 @@ describe('PerencanaanService', () => {
   });
 
   describe('getPlans', () => {
-    it('should return plans filtered by unit and query', async () => {
+    it('returns the unit’s own plans AND the foundation-wide plans, filtered by query', async () => {
       const mockPlans = [
         { id: 'plan-1', title: 'RENSTRA', type: 'RENSTRA', status: 'APPROVED' },
         { id: 'plan-2', title: 'RKAS', type: 'RKAS', status: 'DRAFT' },
@@ -112,7 +112,9 @@ describe('PerencanaanService', () => {
       expect(mockStrategicPlan.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({
-            unitId: 'unit-1',
+            // A unit user sees their own unit plus the foundation-wide plans
+            // (unitId null) — the yayasan's RPJP/Renstra/consolidated RKA.
+            OR: [{ unitId: null }, { unitId: 'unit-1' }],
             type: 'RENSTRA',
           }),
         })

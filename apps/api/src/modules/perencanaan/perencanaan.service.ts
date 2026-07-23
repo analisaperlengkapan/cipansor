@@ -76,17 +76,39 @@ export class PerencanaanService {
   }
 
   async getPlans(
-    unitId: string,
-    query: { type?: string; status?: string; collaboratorId?: string }
+    unitId: string | null,
+    query: {
+      type?: string;
+      status?: string;
+      collaboratorId?: string;
+      /**
+       * Foundation-scoped caller (yayasan board / super admin). They oversee
+       * every unit, so their list is not narrowed to a single unit.
+       */
+      seesAllUnits?: boolean;
+    }
   ) {
-    // A user sees their unit's plans plus any plan they collaborate on.
-    // The collaborator branch is only added when a caller id is present —
-    // `some: { userId: undefined }` would match ANY plan with collaborators.
-    const where: Prisma.StrategicPlanWhereInput = query.collaboratorId
-      ? {
-          OR: [{ unitId }, { collaborators: { some: { userId: query.collaboratorId } } }],
-        }
-      : { unitId };
+    const where: Prisma.StrategicPlanWhereInput = {};
+
+    if (!query.seesAllUnits) {
+      // A unit user sees three things: their own unit's plans, the
+      // foundation-wide plans (unitId null — the yayasan's RPJP, Renstra and
+      // consolidated RKA that govern every unit), and any plan they
+      // collaborate on. Without the `unitId: null` branch the governing
+      // documents were invisible to everyone, because by design they are filed
+      // against no unit (see the schema note on StrategicPlan.unitId).
+      const or: Prisma.StrategicPlanWhereInput[] = [{ unitId: null }];
+      if (unitId) or.push({ unitId });
+      // The collaborator branch is only added when a caller id is present —
+      // `some: { userId: undefined }` would match ANY plan with collaborators.
+      if (query.collaboratorId) {
+        or.push({ collaborators: { some: { userId: query.collaboratorId } } });
+      }
+      where.OR = or;
+    }
+    // seesAllUnits: no unit filter at all — every unit's plan plus the
+    // foundation-wide ones, subject only to the type/status filters below.
+
     if (query.type) where.type = query.type as any;
     if (query.status) where.status = query.status as any;
 

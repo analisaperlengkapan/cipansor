@@ -98,6 +98,44 @@ describe('Perencanaan Service', () => {
     });
   });
 
+  /**
+   * The list is unit-scoped, but the yayasan's RPJP/Renstra/consolidated RKA
+   * are filed against no unit (unitId null) by design. These pin the emitted
+   * `where` so the foundation documents cannot silently disappear from the
+   * list again, and so the board's all-units view is not accidentally narrowed.
+   */
+  describe('getPlans foundation scoping', () => {
+    const whereOf = () =>
+      vi.mocked(prisma.strategicPlan.findMany).mock.calls.at(-1)![0]!.where as any;
+
+    beforeEach(() => {
+      vi.mocked(prisma.strategicPlan.findMany).mockResolvedValue([] as any);
+    });
+
+    it('shows a unit user their own unit AND the foundation-wide plans', async () => {
+      await perencanaanService.getPlans('smp-it', { collaboratorId: 'user-9' });
+      expect(whereOf().OR).toEqual([
+        { unitId: null },
+        { unitId: 'smp-it' },
+        { collaborators: { some: { userId: 'user-9' } } },
+      ]);
+    });
+
+    it('still surfaces foundation-wide plans to a caller with no unit', async () => {
+      await perencanaanService.getPlans(null, {});
+      // Without a unit the only breadth is the foundation documents.
+      expect(whereOf().OR).toEqual([{ unitId: null }]);
+    });
+
+    it('does not narrow a foundation-scoped caller to any unit', async () => {
+      await perencanaanService.getPlans(null, { seesAllUnits: true, type: 'RPJP' });
+      const where = whereOf();
+      // No OR filter at all — every unit's plan plus the foundation-wide ones.
+      expect(where.OR).toBeUndefined();
+      expect(where.type).toBe('RPJP');
+    });
+  });
+
   describe('Objectives and Progress', () => {
     it('should calculate objective progress and update plan progress', async () => {
       const objData = {

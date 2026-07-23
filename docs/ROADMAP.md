@@ -102,13 +102,22 @@ Needs a real current period plus a rule that derives "active" from dates.
    SPMB → active santri only after the registration fee is settled (transfers
    excepted), and **jenjang progression TK→SD→SMP→SMA** that carries prior data
    forward with an explicit change confirmation.
-3. **Fill the ~41 empty tables**, including the **RPJP / Renstra / RKA** demo
-   data drawn from the three planning documents supplied on 2026-07-23. The
-   models already exist and are shaped for it: `StrategicPlan` has a
-   `parentId` documented as *RPJP → RENSTRA → RKA* and a nullable `unitId`
-   because RPJP/Renstra are foundation-wide. Map Sasaran → `PlanObjective`,
-   IUP/indicators → `PlanIndicator`, Program/Kegiatan → `PlanActivity`. Keep
-   the user's framing: realistic mock-ups, not official documents.
+3. **Fill the ~41 empty tables.** The **RPJP / Renstra / RKA** slice is
+   **done** — `prisma/seeds/strategic-plan-cipansor.ts` seeds the yayasan's
+   full cascade from the three planning documents (RPJP 2027–2045 → Renstra
+   2027–2029 → RKA 2027), all foundation-wide (`unitId` null): 15 objectives,
+   25 indicators, 47 activities, with the RKA's `budget` the exact sum of its
+   activity budgets. Sasaran → `PlanObjective`, IUP/IKU/IKK → `PlanIndicator`,
+   Program/Kegiatan → `PlanActivity`, faithful to the user's mock-up framing.
+   Shipping this surfaced an end-to-end gap now fixed in the same change: the
+   `perencanaan` read path filtered strictly on `unitId`, so foundation-wide
+   plans were invisible to everyone and the board (no unit) could not list at
+   all. `getPlans` + the controller now surface `unitId: null` plans to every
+   unit and give the board an all-units view via `seesAllUnits()`; foundation
+   plans stay writable only by foundation-scoped callers (mutations do not
+   widen). **Still owed:** the remaining empty tables, and — a known follow-up
+   — foundation-plan *creation* through the UI (the create flow still requires
+   a unit; only the seed writes null-unit plans today).
 4. **Module audit** — every backend module reachable from the frontend and
    vice versa, and reachable by at least one role.
 

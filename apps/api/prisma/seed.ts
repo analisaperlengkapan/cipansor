@@ -107,7 +107,6 @@ import {
   LandOwnership,
   BuildingCondition,
   OrgPositionStatus,
-  BSCPerspective,
   ComplianceStatus,
   FindingSeverity,
   FollowUpStatus,
@@ -116,8 +115,6 @@ import {
   TrainingStatus,
   ResearchStatus,
   InnovationStatus,
-  PlanStatus,
-  PlanType,
   AssetDisposalReason,
   WasteCategory,
   EnvironmentProgramStatus,
@@ -134,6 +131,7 @@ import {
   type ParentScopeClient,
 } from '../src/utils/parent-scope';
 import { seedImmunizationReference } from './seeds/immunization-reference';
+import { seedStrategicPlans } from './seeds/strategic-plan-cipansor';
 import { PERMISSIONS, permissionsForRoleCode } from '../src/modules/roles/permissions';
 // Imported from source (not the built dist) so a stale @cipansor/shared build
 // can't leave the seeded demo logins out of sync with what the web login page
@@ -7552,58 +7550,26 @@ async function main() {
   console.log('   ✅ Litbang / R&D tables created');
 
   // 6. Strategic Planning (strategic_plans, plan_objectives, plan_indicators, plan_activities)
-  console.log('   Seeding Strategic Plans & Objectives...');
-  const stratPlan = await prisma.strategicPlan.create({
-    data: {
-      unitId: smpIt.id,
-      title: 'Rencana Jangka Panjang Cipansor 2026-2030',
-      description: 'Peta jalan pengembangan fasilitas fisik dan mutu pengajaran bertaraf nasional.',
-      type: PlanType.RENSTRA,
-      status: PlanStatus.IN_PROGRESS,
-      startDate: new Date('2026-01-01'),
-      endDate: new Date('2030-12-31'),
-      budget: new Prisma.Decimal(500000000.0),
-      progress: 10.0,
-      createdById: superAdminUser.id,
-    },
+  //    The yayasan's RPJP → Renstra → RKA cascade, modelled on the three
+  //    mock-up planning documents. RPJP/Renstra/RKA are foundation-wide
+  //    (unitId null), so they surface to the yayasan board and every unit's
+  //    staff via the foundation-scope read path in perencanaan.service.
+  console.log('   Seeding Strategic Plans (RPJP → Renstra → RKA)...');
+  const { rpjp, renstra, rka, smpRka } = await seedStrategicPlans(prisma, {
+    createdById: superAdminUser.id,
+    approvedById: pembinaYayasanUser.id,
+    ketua: ketuaYayasanUser.id,
+    sekretaris: sekretarisYayasanUser.id,
+    bendahara: bendaharaYayasanUser.id,
+    kepalaSd: kepalaSdItUser.id,
+    kepalaSmp: kepalaSmpItUser.id,
+    kepalaSma: adminPesantrenUser.id,
+    koordinator: teacherPesantrenUser.id,
+    unitSmpId: smpIt.id,
   });
-
-  const planObjective = await prisma.planObjective.create({
-    data: {
-      planId: stratPlan.id,
-      title: 'Akreditasi Institusi Menjadi A',
-      description: 'Memenuhi semua indikator kelayakan BAN-S/M dengan nilai unggul.',
-      perspective: BSCPerspective.PROCESS,
-      priority: PlanPriority.HIGH,
-      weight: 40.0,
-      progress: 15.0,
-    },
-  });
-
-  const planInd = await prisma.planIndicator.create({
-    data: {
-      objectiveId: planObjective.id,
-      name: 'Persentase Guru Bersertifikasi',
-      unit: '%',
-      targetValue: 80.0,
-      currentValue: 60.0,
-    },
-  });
-
-  await prisma.planActivity.create({
-    data: {
-      objectiveId: planObjective.id,
-      title: 'Penyelenggaraan Bimbingan Teknis Kurikulum Merdeka',
-      description: 'Pelatihan internal bersertifikat bagi guru mata pelajaran.',
-      status: PlanStatus.IN_PROGRESS,
-      priority: PlanPriority.HIGH,
-      startDate: new Date('2026-08-01'),
-      endDate: new Date('2026-08-05'),
-      budget: new Prisma.Decimal(25000000.0),
-      picId: teacherPesantrenUser.id,
-    },
-  });
-  console.log('   ✅ Strategic Planning tables created');
+  console.log(
+    `   ✅ Strategic Planning: RPJP(${rpjp.id.slice(0, 8)}) → Renstra(${renstra.id.slice(0, 8)}) → RKA(${rka.id.slice(0, 8)}) + unit RKA(${smpRka.id.slice(0, 8)})`
+  );
 
   // 7. Supervision & Audits (internal_audits, audit_findings, audit_follow_ups)
   console.log('   Seeding Internal Audits & Findings...');

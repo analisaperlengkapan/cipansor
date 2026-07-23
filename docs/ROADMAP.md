@@ -12,6 +12,8 @@ a visitor sees, then correctness work, then deliverables, then tidiness.
 ## Current deployment state
 
 - Production runs **`main @ 2bcbb57e`** (includes #355, #356, #358, #359).
+  **#360, #361 and #362 are merged but not yet deployed** — the CORS fix and
+  the public-site translations are on `main`, not on cipansor.or.id.
 - **#357** (e-office: flow history, tiered signing, letter types, templates,
   e-sign) is green and pushed but **not merged and not deployed**.
 - Production DB is managed by `db push`, **not** Prisma Migrate — there is no

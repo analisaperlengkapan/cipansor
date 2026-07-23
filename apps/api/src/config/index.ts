@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 import path from 'path';
 import { findSecretIssues } from './assert-secrets';
+import { parseCorsOrigins } from './cors';
 
 // Load apps/api/.env (works from both src/ via tsx and dist/ when compiled,
 // since each sits directly under apps/api), then the repo-root .env as a
@@ -57,7 +58,9 @@ export const config = {
   },
 
   cors: {
-    origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+    // A list, not a string — see config/cors.ts for why the raw value must
+    // never reach the `cors` middleware directly.
+    origins: parseCorsOrigins(process.env.CORS_ORIGIN || 'http://localhost:3000'),
   },
 
   rateLimit: {

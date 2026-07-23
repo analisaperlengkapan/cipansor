@@ -32,18 +32,15 @@ Before a real launch both must become `false` **and the web image rebuilt** —
 `NEXT_PUBLIC_SHOW_DEMO_LOGIN` is inlined at build time, so changing `.env`
 alone does nothing. Treat this as a launch blocker, not a setting.
 
-## 🔴 2. CORS returns a comma-joined `Access-Control-Allow-Origin`
+## ✅ 2. CORS returned a comma-joined `Access-Control-Allow-Origin` — fixed
 
-`app.ts` passes `config.cors.origin` — the raw `CORS_ORIGIN` string — straight
-to the `cors` middleware. In production that value is
-`"https://cipansor.or.id,https://www.cipansor.or.id,http://localhost:3000"`, so
-the header carries three origins at once, which the spec forbids and every
-browser rejects.
-
-Real users are unaffected today only because the web app calls the API
-same-origin. Any cross-origin client (an admin subdomain, a mobile app, a
-partner integration) is broken. Fix: parse the list into an allowlist and
-reflect the single matching origin per request.
+`app.ts` passed the raw `CORS_ORIGIN` string to the `cors` middleware, so the
+header carried all three production origins at once — which the Fetch standard
+forbids and every browser rejects. Socket.IO had the same bug independently.
+Fixed in `apps/api/src/config/cors.ts`: the list is parsed into an allowlist and
+the single matching origin is reflected, with `Vary: Origin`. A wildcard is now
+refused at boot because this API sends credentials. **Ships with the next
+deploy — not yet on production.**
 
 ## 🔴 3. Production DB has no Prisma migration history
 

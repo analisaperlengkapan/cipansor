@@ -8,6 +8,7 @@ import React, {
   useState,
   type ReactNode,
 } from "react";
+import { useRouter } from "next/navigation";
 import {
   translations,
   resolvePath,
@@ -47,16 +48,30 @@ export function I18nProvider({
   const [locale, setLocaleState] = useState<Locale>(
     isLocale(initialLocale) ? initialLocale : "id",
   );
+  const router = useRouter();
 
-  const setLocale = useCallback((next: Locale) => {
-    if (!isLocale(next)) return;
-    setLocaleState(next);
-    // Persist for the server (root layout reads this cookie) — 1 year.
-    document.cookie = `${LOCALE_COOKIE}=${next}; path=/; max-age=31536000; samesite=lax`;
-    // Update the live document so the current page flips immediately.
-    document.documentElement.lang = next;
-    document.documentElement.dir = dirFor(next);
-  }, []);
+  const setLocale = useCallback(
+    (next: Locale) => {
+      if (!isLocale(next)) return;
+      setLocaleState(next);
+      // Persist for the server (root layout reads this cookie) — 1 year.
+      document.cookie = `${LOCALE_COOKIE}=${next}; path=/; max-age=31536000; samesite=lax`;
+      // Update the live document so the current page flips immediately.
+      document.documentElement.lang = next;
+      document.documentElement.dir = dirFor(next);
+      // Re-render the server components with the new cookie.
+      //
+      // This state only reaches client components. The public pages (beranda,
+      // profil, unit, ...) are server components that read the cookie through
+      // lib/server-locale.ts, and a server component does not re-run because a
+      // client one set state — so without this the chrome switched language
+      // while the article underneath it stayed Indonesian until a manual
+      // reload. `refresh()` refetches the RSC payload, now carrying the cookie
+      // just written, and keeps client state and scroll position intact.
+      router.refresh();
+    },
+    [router],
+  );
 
   const t = useCallback(
     (path: TranslationPath, fallback?: string): string => {

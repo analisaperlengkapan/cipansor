@@ -1,5 +1,13 @@
 import { test, expect } from "@playwright/test";
 import { siteConfig, addressLines } from "../src/config/site";
+import { id } from "../src/locales/id";
+
+/**
+ * The hamburger's accessible name, read from the default-locale dictionary
+ * rather than hardcoded. It used to be the literal "Toggle menu", the one
+ * untranslated string left in a header that now offers three languages.
+ */
+const MENU_LABEL = id.public.nav.toggleMenu;
 
 /**
  * These assertions read from src/config/site.ts rather than repeating the
@@ -34,26 +42,24 @@ test.describe("Landing Page", () => {
   test("should display navigation menu", async ({ page, isMobile }) => {
     if (isMobile) {
       await expect(
-        page.getByRole("button", { name: "Toggle menu" }),
+        page.getByRole("button", { name: MENU_LABEL }),
       ).toBeVisible();
       return;
     }
     const nav = page.locator("header");
-    for (const title of [
-      "Beranda",
-      "Profil",
-      "Program Unggulan",
-      "Unit Pendidikan",
-      "Berita",
-      "Wakaf & Infaq",
-    ]) {
+    // From the dictionary, for the same reason the rest of this file reads
+    // config: the menu is translated now, so a literal list here would pin the
+    // Indonesian wording and fail on any rewording rather than on a real
+    // regression.
+    const { home, profile, programs, units, news, donate } = id.public.nav;
+    for (const title of [home, profile, programs, units, news, donate]) {
       await expect(nav.getByRole("link", { name: title, exact: true })).toBeVisible();
     }
   });
 
   test("should navigate to login page", async ({ page, isMobile }) => {
     if (isMobile) {
-      await page.getByRole("button", { name: "Toggle menu" }).click();
+      await page.getByRole("button", { name: MENU_LABEL }).click();
     }
 
     await page.getByRole("link", { name: "Login Portal" }).click();

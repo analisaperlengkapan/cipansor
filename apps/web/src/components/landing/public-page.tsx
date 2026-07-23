@@ -3,6 +3,8 @@ import { ChevronRight } from "lucide-react";
 import { LandingNavbar } from "@/components/landing/navbar";
 import { LandingFooter } from "@/components/landing/footer";
 import type { ContentBlock } from "@/config/content";
+import { getServerLocale } from "@/lib/server-locale";
+import { translations } from "@/locales";
 
 /**
  * Chrome for every public page other than the homepage.
@@ -10,8 +12,13 @@ import type { ContentBlock } from "@/config/content";
  * The public site is deliberately separate from the authenticated app shell
  * (`MainLayout`): these pages must render for visitors with no session, so
  * they must not pull in `ProtectedRoute` or the sidebar.
+ *
+ * It resolves the locale itself rather than taking it as a prop. Every caller
+ * is a server component, and the breadcrumb's leading "Beranda" was the one
+ * string still in Indonesian on an English page — reading the cookie here
+ * fixes all eight public pages at once instead of asking each to remember.
  */
-export function PublicPage({
+export async function PublicPage({
   title,
   lead,
   breadcrumb,
@@ -22,6 +29,8 @@ export function PublicPage({
   breadcrumb?: { label: string; href: string }[];
   children: React.ReactNode;
 }) {
+  const dict = translations[await getServerLocale()];
+
   return (
     <div className="flex min-h-screen flex-col">
       <LandingNavbar />
@@ -29,11 +38,11 @@ export function PublicPage({
         <header className="border-b border-border bg-muted/30">
           <div className="container mx-auto px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
             {breadcrumb && breadcrumb.length > 0 && (
-              <nav aria-label="Breadcrumb" className="mb-4">
+              <nav aria-label={dict.public.breadcrumbLabel} className="mb-4">
                 <ol className="flex flex-wrap items-center gap-1 text-sm text-muted-foreground">
                   <li className="flex items-center gap-1">
                     <Link href="/" className="hover:text-foreground">
-                      Beranda
+                      {dict.public.nav.home}
                     </Link>
                     <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
                   </li>

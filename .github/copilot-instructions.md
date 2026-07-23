@@ -431,7 +431,7 @@ socket.on("dashboard:metrics", (data) => {
 
 - **Planning:** `docs/planning/` (requirements, database design, backend design)
 - **Implementation:** `docs/planning/implementation-tasks.md` (420h breakdown)
-- **Progress:** `docs/planning/SPRINT1_WEEK1_PROGRESS.md` (current sprint status)
+- **Known issues & roadmap:** `docs/KNOWN_ISSUES.md`
 - **Deployment:** `docs/DEPLOYMENT.md`
 - **API Caching:** `apps/api/docs/DASHBOARD_CACHING.md`
 
@@ -469,13 +469,3 @@ socket.on("dashboard:metrics", (data) => {
 - **Caching:** Cache expensive queries (dashboard metrics, reports)
 - **WebSocket:** Use rooms for targeted broadcasts (don't broadcast globally)
 - **Frontend:** Lazy load large components, use React Query for deduplication
-
----
-
-## Current Sprint Focus (Week 1)
-
-**Priority:** PAUD Module + Dashboard Real-time + Caching (Sprint 1)  
-**Status:** 79% complete (30h / 38h)  
-**Next:** Unit tests, additional caching, documentation
-
-**See:** `docs/planning/SPRINT1_WEEK1_PROGRESS.md` for details

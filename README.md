@@ -411,13 +411,6 @@ pnpm test:e2e:mobile
 ./run-e2e.sh --file auth.spec.ts  # Specific file
 ```
 
-**Documentation:**
-
-- 📖 [E2E Testing Guide](docs/E2E_TESTING_GUIDE.md) - Comprehensive guide
-- 🏗️ [E2E Architecture](docs/E2E_TESTING_ARCHITECTURE.md) - Architecture diagrams
-- ✅ [E2E Checklist](docs/planning/E2E_TESTING_CHECKLIST.md) - Implementation checklist
-- 📊 [E2E Summary](docs/planning/E2E_OPTIMIZATION_SUMMARY.md) - Optimization summary
-
 **Test Coverage:**
 
 - ✅ Authentication (11 tests)

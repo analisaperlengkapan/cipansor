@@ -402,7 +402,6 @@ const { data: qualityData } = useMurojaahQualityDistribution({
 - `docs/planning/backend-design.md` - API specifications
 - `docs/planning/frontend-design.md` - UI/UX specs
 - `docs/planning/implementation-tasks.md` - Task breakdown
-- `docs/planning/IMPLEMENTATION_LOG.md` - Progress log
 
 ### Code References
 

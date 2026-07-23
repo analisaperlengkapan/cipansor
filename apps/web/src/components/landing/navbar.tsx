@@ -13,6 +13,9 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import { LanguageSwitcher } from "@/components/layout/language-switcher";
+import { useI18n } from "@/providers/i18n-provider";
+import type { TranslationPath } from "@/locales";
 
 /**
  * Real pages, not on-page anchors.
@@ -21,18 +24,23 @@ import { cn } from "@/lib/utils";
  * was one document with five hash links, which left search engines (and the
  * Google Ad Grants review, which rejected the account for exactly this) with a
  * single indexable URL and no substantial content behind the menu.
+ *
+ * Labels are translation keys rather than literals: the switcher below now
+ * reaches the public site, and a hardcoded Indonesian menu above translated
+ * page content reads worse than no switcher at all.
  */
-const navItems = [
-  { title: "Beranda", href: "/" },
-  { title: "Profil", href: "/profil" },
-  { title: "Program Unggulan", href: "/program-unggulan" },
-  { title: "Unit Pendidikan", href: "/unit" },
-  { title: "Berita", href: "/berita" },
-  { title: "Wakaf & Infaq", href: "/wakaf-infaq" },
+const navItems: Array<{ key: TranslationPath; href: string }> = [
+  { key: "public.nav.home", href: "/" },
+  { key: "public.nav.profile", href: "/profil" },
+  { key: "public.nav.programs", href: "/program-unggulan" },
+  { key: "public.nav.units", href: "/unit" },
+  { key: "public.nav.news", href: "/berita" },
+  { key: "public.nav.donate", href: "/wakaf-infaq" },
 ];
 
 export function LandingNavbar() {
   const [scrolled, setScrolled] = useState(false);
+  const { t } = useI18n();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -96,26 +104,36 @@ export function LandingNavbar() {
             ("Program / Unggulan"). Verified with Playwright at 1024, 1280 and
             1920; see the sweep in nav-breakpoint.spec.ts.
           */}
-          <nav className="hidden lg:flex items-center gap-3 xl:gap-5 2xl:gap-6">
+          {/*
+            The switcher costs the row width, in the band that had 36px spare.
+
+            A compact trigger (32px) plus its gap is ~40px, so the inter-link
+            gap drops from 12px to 8px below `xl` — six gaps, 24px back — and
+            full spacing returns at `xl` where there is room. Measured, not
+            estimated: nav-breakpoint.spec.ts sweeps 1024-1920 and fails on
+            either overlap or internal scrolling.
+          */}
+          <nav className="hidden lg:flex items-center gap-2 xl:gap-5 2xl:gap-6">
             {navItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
                 className="whitespace-nowrap text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
               >
-                {item.title}
+                {t(item.key)}
               </Link>
             ))}
             <div className="flex items-center gap-2 pl-2 border-l border-border">
+              <LanguageSwitcher compact />
               <Link href="/login">
                 <Button size="sm" variant="outline" className="gap-2 whitespace-nowrap">
                   <User className="h-4 w-4" />
-                  Login Portal
+                  {t("public.nav.loginPortal")}
                 </Button>
               </Link>
               <Link href="/public/spmb">
                 <Button size="sm" className="whitespace-nowrap bg-primary hover:bg-primary/90">
-                  Daftar SPMB
+                  {t("public.nav.register")}
                 </Button>
               </Link>
             </div>
@@ -124,12 +142,15 @@ export function LandingNavbar() {
           {/* Mobile Nav — must mirror the desktop breakpoint above. If these
               two ever disagree, both render and `justify-between` silently
               eats the gap between brand and nav. */}
-          <div className="lg:hidden">
+          <div className="flex items-center gap-1 lg:hidden">
+            {/* Outside the drawer: a reader who cannot read the menu labels
+                should not have to open the menu to find the language. */}
+            <LanguageSwitcher compact />
             <Sheet>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon">
                   <Menu className="h-6 w-6" />
-                  <span className="sr-only">Toggle menu</span>
+                  <span className="sr-only">{t("public.nav.toggleMenu")}</span>
                 </Button>
               </SheetTrigger>
               <SheetContent side="right" className="p-6">
@@ -152,19 +173,19 @@ export function LandingNavbar() {
                       href={item.href}
                       className="text-sm font-medium text-foreground hover:text-primary transition-colors"
                     >
-                      {item.title}
+                      {t(item.key)}
                     </Link>
                   ))}
                   <div className="h-px bg-border my-2" />
                   <Link href="/login">
                     <Button className="w-full justify-start" variant="outline">
                       <User className="h-4 w-4 mr-2" />
-                      Login Portal
+                      {t("public.nav.loginPortal")}
                     </Button>
                   </Link>
                   <Link href="/public/spmb">
                     <Button className="w-full justify-start">
-                      Daftar SPMB
+                      {t("public.nav.register")}
                     </Button>
                   </Link>
                 </div>

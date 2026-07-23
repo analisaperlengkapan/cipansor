@@ -19,6 +19,7 @@ import {
   XCircle,
   Printer,
   ShieldCheck,
+  PenLine,
 } from "lucide-react";
 
 import { id } from "date-fns/locale";
@@ -49,6 +50,7 @@ import {
   LETTER_NATURE_LABELS,
 } from "@cipansor/shared";
 import { LetterFlowHistory } from "@/components/e-office/letter-flow-history";
+import { SignLetterDialog } from "@/components/e-office/sign-letter-dialog";
 
 export default function LetterDetailPage({
   params,
@@ -73,6 +75,7 @@ export default function LetterDetailPage({
   const pdfRef = useRef<HTMLDivElement>(null);
   const [notes, setNotes] = useState("");
   const [dispositionOpen, setDispositionOpen] = useState(false);
+  const [signOpen, setSignOpen] = useState(false);
   const [dispositionData, setDispositionData] = useState({
     recipientId: "",
     instruction: "",
@@ -310,6 +313,13 @@ export default function LetterDetailPage({
           </div>
         </DialogContent>
       </Dialog>
+
+      <SignLetterDialog
+        letterId={letter.id}
+        letterNumber={letter.letterNumber}
+        open={signOpen}
+        onOpenChange={setSignOpen}
+      />
 
       {/* Hidden PDF Template */}
       <div className="fixed left-[-9999px] top-0">
@@ -551,37 +561,90 @@ export default function LetterDetailPage({
                 Disposisi
               </Button>
 
-              {/* Approval Actions (Mock Logic - should check if user is current reviewer) */}
-              <div className="pt-4 border-t space-y-3">
-                <p className="text-xs font-medium text-muted-foreground mb-2">
-                  Persetujuan
-                </p>
-                <Textarea
-                  placeholder="Catatan persetujuan..."
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  className="mb-2 text-xs"
-                />
-                <div className="flex gap-2">
-                  <Button
-                    className="flex-1 bg-green-600 hover:bg-green-700"
-                    size="sm"
-                    onClick={() => handleReview("APPROVE")}
-                  >
-                    <CheckCircle className="mr-2 h-3 w-3" />
-                    Setuju
-                  </Button>
-                  <Button
-                    className="flex-1"
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => handleReview("REJECT")}
-                  >
-                    <XCircle className="mr-2 h-3 w-3" />
-                    Tolak
-                  </Button>
-                </div>
-              </div>
+              {/*
+                Verifikasi berjenjang.
+
+                Sebelumnya blok ini bertanda "Mock Logic" dan menampilkan
+                Setuju/Tolak kepada siapa pun yang membuka surat. Sejak
+                pemeriksaan giliran ditegakkan di server (utils/letter-workflow),
+                tombol itu menjanjikan sesuatu yang akan ditolak API. Panel ini
+                kini menawarkan persis apa yang akan diterima — dan menyebut
+                siapa yang sedang ditunggu bila bukan giliran kita.
+
+                Penandatangan tidak memakai "Setuju": ia menandatangani, dengan
+                passphrase. Itulah bedanya paraf dengan tanda tangan.
+              */}
+              {(() => {
+                const reviewers = letter.reviewers ?? [];
+                const mine = reviewers.find(
+                  (r: any) => r.reviewerId === user?.id,
+                );
+                const turn = [...reviewers]
+                  .filter((r: any) => r.status !== "APPROVED")
+                  .sort((a: any, b: any) => a.order - b.order)[0];
+                const openForReview =
+                  letter.status === "PENDING_REVIEW" ||
+                  letter.status === "READY_TO_SIGN";
+                const myTurn =
+                  !!mine && (turn as any)?.reviewerId === user?.id;
+
+                if (!mine || !openForReview) return null;
+
+                if (!myTurn) {
+                  return (
+                    <div className="pt-4 border-t">
+                      <p className="text-xs text-muted-foreground">
+                        Menunggu verifikator urutan {(turn as any)?.order} lebih
+                        dahulu.
+                      </p>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="pt-4 border-t space-y-3">
+                    <p className="text-xs font-medium text-muted-foreground mb-2">
+                      {mine.isSigner ? "Penandatanganan" : "Paraf / Persetujuan"}
+                    </p>
+                    <Textarea
+                      placeholder="Catatan (opsional)..."
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      className="mb-2 text-xs"
+                    />
+                    <div className="flex gap-2">
+                      {mine.isSigner ? (
+                        <Button
+                          className="flex-1 bg-green-600 hover:bg-green-700"
+                          size="sm"
+                          onClick={() => setSignOpen(true)}
+                        >
+                          <PenLine className="mr-2 h-3 w-3" />
+                          Tandatangani
+                        </Button>
+                      ) : (
+                        <Button
+                          className="flex-1 bg-green-600 hover:bg-green-700"
+                          size="sm"
+                          onClick={() => handleReview("APPROVE")}
+                        >
+                          <CheckCircle className="mr-2 h-3 w-3" />
+                          Setuju
+                        </Button>
+                      )}
+                      <Button
+                        className="flex-1"
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleReview("REJECT")}
+                      >
+                        <XCircle className="mr-2 h-3 w-3" />
+                        Kembalikan
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })()}
             </CardContent>
           </Card>
 

@@ -141,6 +141,37 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /*
+    Arabic typography.
+
+    Geist covers Latin only, so Arabic fell through to whatever the browser
+    picked last — which set the script with loose, uneven tracking and lost the
+    shaping that makes it readable. This names a stack of fonts that actually
+    have Arabic, in the order the major platforms ship them, and asks for the
+    contextual forms explicitly.
+
+    A system stack rather than a webfont on purpose: a Naskh face is a large
+    download, and the visitors this serves are the ones most likely to be on a
+    slow connection. Scoped by `:lang(ar)`, which the root layout stamps on
+    <html> from the cookie, so nothing changes for the other two locales.
+
+    The trade-off of a system stack is that the result depends on the device.
+    Verified here only that the rule applies and that it falls back to Geist
+    rather than to nothing — the headless browser used for checking ships no
+    Arabic faces, so the improvement itself was not seen, only reasoned. If
+    Arabic becomes a served language rather than an offered one, this is the
+    line to revisit with a self-hosted Naskh subset.
+  */
+  :lang(ar) {
+    font-family:
+      "Noto Naskh Arabic", "Geeza Pro", "Segoe UI", "Tahoma",
+      var(--font-geist-sans), sans-serif;
+    /* Arabic numerals in running text; identifiers stay as authored. */
+    font-feature-settings: "liga" 1, "calt" 1;
+    /* Naskh needs room between lines that Latin body copy does not. */
+    line-height: 1.9;
+  }
 }
 
 /* ============================================

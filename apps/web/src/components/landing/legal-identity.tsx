@@ -2,6 +2,24 @@ import Link from "next/link";
 import { BadgeCheck, Landmark, ShieldCheck } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { legalIdentity } from "@/config/content";
+import { publicContentFor, type PublicContent } from "@/config/content.i18n";
+
+/**
+ * Translated strings for this block, defaulting to Indonesian.
+ *
+ * Passed in rather than resolved here because this component is rendered from
+ * both sides of the boundary: /profil is a server component that reads the
+ * cookie via lib/server-locale.ts, while the donation portal is a client
+ * component that has the locale from `useI18n`. A prop is the one shape that
+ * works in both without making the component async or client-only.
+ *
+ * Numbers, identifiers and verifier logos still come from config/content.ts —
+ * those are facts on a document, identical in every language, and duplicating
+ * them per locale is how they drift.
+ */
+type LegalCopy = PublicContent["legalIdentity"];
+
+const DEFAULT_COPY: LegalCopy = publicContentFor("id").legalIdentity;
 
 /**
  * The wordmarks of every body that has verified the yayasan's nonprofit status.
@@ -14,7 +32,7 @@ import { legalIdentity } from "@/config/content";
  * than hotlinked, so a badge cannot break on the page Google reviews, and they
  * cost no third-party request.
  */
-function VerifierMarks() {
+function VerifierMarks({ copy = DEFAULT_COPY }: { copy?: LegalCopy }) {
   return (
     <>
       {legalIdentity.verification.verifiers.map((v) => (
@@ -29,7 +47,7 @@ function VerifierMarks() {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={v.logo}
-            alt={`Terverifikasi oleh ${v.name}`}
+            alt={copy.verifiedByAlt(v.name)}
             width={v.width}
             height={22}
             loading="lazy"
@@ -71,8 +89,12 @@ function VerifierMarks() {
  * Reads the same `legalIdentity` config as the full block, so the numbers
  * cannot drift between the two places they appear.
  */
-export function LegalIdentityStrip() {
-  const { decree, verification } = legalIdentity;
+export function LegalIdentityStrip({
+  copy = DEFAULT_COPY,
+}: {
+  copy?: LegalCopy;
+}) {
+  const { verification } = legalIdentity;
 
   return (
     <section
@@ -81,16 +103,17 @@ export function LegalIdentityStrip() {
     >
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <h2 id="legalitas-ringkas" className="sr-only">
-          Legalitas dan akuntabilitas
+          {copy.stripHeading}
         </h2>
         <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
           <dl className="grid flex-1 grid-cols-1 gap-x-10 gap-y-4 sm:grid-cols-2">
             <div>
               <dt className="text-xs uppercase tracking-wide text-muted-foreground">
-                Badan hukum &mdash; {decree.authority.replace("Republik Indonesia", "RI")}
+                {copy.incorporationLabel} &mdash;{" "}
+                {copy.decree.authority.replace("Republik Indonesia", "RI")}
               </dt>
               <dd className="mt-1 font-mono text-sm font-medium">
-                {decree.number}
+                {legalIdentity.decree.number}
               </dd>
             </div>
             <div>
@@ -105,17 +128,17 @@ export function LegalIdentityStrip() {
 
           <div className="flex flex-col items-start gap-3 md:items-end">
             <span className="inline-flex flex-wrap items-center gap-3">
-              <VerifierMarks />
+              <VerifierMarks copy={copy} />
               <span className="inline-flex items-center gap-1.5 text-sm font-medium text-primary">
                 <ShieldCheck className="h-4 w-4" aria-hidden="true" />
-                Status nirlaba terverifikasi
+                {copy.verifiedBadge}
               </span>
             </span>
             <Link
               href="/profil#legalitas"
               className="text-sm font-medium text-primary underline-offset-4 hover:underline"
             >
-              Selengkapnya tentang legalitas &amp; akuntabilitas
+              {copy.moreLink}
             </Link>
           </div>
         </div>
@@ -126,10 +149,12 @@ export function LegalIdentityStrip() {
 
 export function LegalIdentity({
   variant = "profile",
+  copy = DEFAULT_COPY,
 }: {
   variant?: "profile" | "donation";
+  copy?: LegalCopy;
 }) {
-  const { decree, verification, governance, transparency } = legalIdentity;
+  const { decree, verification } = legalIdentity;
   const compact = variant === "donation";
 
   return (
@@ -138,7 +163,7 @@ export function LegalIdentity({
         id="legalitas"
         className={compact ? "text-xl font-semibold" : "text-2xl font-semibold tracking-tight"}
       >
-        Legalitas &amp; Akuntabilitas
+        {copy.sectionTitle}
       </h2>
 
       <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -150,15 +175,20 @@ export function LegalIdentity({
                 aria-hidden="true"
               />
               <div>
-                <h3 className="font-semibold">{decree.title}</h3>
+                <h3 className="font-semibold">{copy.decree.title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                  {decree.description}
+                  {copy.decree.description}
                 </p>
                 <dl className="mt-4 space-y-1 text-sm">
-                  <dt className="text-muted-foreground">Nomor keputusan</dt>
+                  <dt className="text-muted-foreground">
+                    {copy.decreeNumberLabel}
+                  </dt>
+                  {/* The number is a fact on the document, not copy. */}
                   <dd className="font-mono font-medium">{decree.number}</dd>
-                  <dt className="pt-2 text-muted-foreground">Diterbitkan oleh</dt>
-                  <dd className="font-medium">{decree.authority}</dd>
+                  <dt className="pt-2 text-muted-foreground">
+                    {copy.issuedByLabel}
+                  </dt>
+                  <dd className="font-medium">{copy.decree.authority}</dd>
                 </dl>
               </div>
             </div>
@@ -173,9 +203,9 @@ export function LegalIdentity({
                 aria-hidden="true"
               />
               <div className="w-full">
-                <h3 className="font-semibold">{verification.title}</h3>
+                <h3 className="font-semibold">{copy.verification.title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                  {verification.description}
+                  {copy.verification.description}
                 </p>
                 {/*
                   The registered identifier, shown with the same weight as the
@@ -191,10 +221,10 @@ export function LegalIdentity({
                   </dd>
                 </dl>
                 <span className="mt-4 flex flex-wrap items-center gap-3">
-                  <VerifierMarks />
+                  <VerifierMarks copy={copy} />
                   <span className="inline-flex items-center gap-1.5 text-sm font-medium text-primary">
                     <ShieldCheck className="h-4 w-4" aria-hidden="true" />
-                    Status nirlaba terverifikasi
+                    {copy.verifiedBadge}
                   </span>
                 </span>
               </div>
@@ -204,7 +234,7 @@ export function LegalIdentity({
       </div>
 
       <p className="mt-6 max-w-3xl text-sm leading-relaxed text-muted-foreground">
-        {compact ? transparency : governance}
+        {compact ? copy.transparency : copy.governance}
       </p>
     </section>
   );

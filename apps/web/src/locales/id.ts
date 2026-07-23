@@ -20,6 +20,35 @@ export const id = {
     system: "Sistem",
     backToLogin: "Kembali ke Login",
   },
+  /**
+   * The public site's shell: navbar and footer, which are client components.
+   *
+   * The public *pages* are server components and cannot call `useI18n`, so
+   * their prose lives in config/content.i18n.ts, resolved from the same cookie
+   * via lib/server-locale.ts. Shell here, page content there — one rule, so it
+   * stays obvious which side a string belongs on.
+   *
+   * Domain terms (Pesantren, SPMB, Wakaf, Infaq, Tahfidz, Santri) are kept in
+   * every locale and glossed on first use rather than translated: they are the
+   * institution's own vocabulary and the app uses them throughout, so
+   * translating them here would make the public site and the portal disagree.
+   */
+  public: {
+    nav: {
+      home: "Beranda",
+      profile: "Profil",
+      programs: "Program Unggulan",
+      units: "Unit Pendidikan",
+      news: "Berita",
+      donate: "Wakaf & Infaq",
+      loginPortal: "Login Portal",
+      register: "Daftar SPMB",
+      toggleMenu: "Buka menu",
+    },
+    // Screen-reader label for the trail. "Remah roti" is the literal
+    // translation and means bread crumbs; the navigational sense is "jejak".
+    breadcrumbLabel: "Jejak navigasi",
+  },
   login: {
     welcome: "Selamat Datang di Cipansor",
     description: "Sistem Informasi Cipansor",

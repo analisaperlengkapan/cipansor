@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { I18nProvider, useI18n } from "./i18n-provider";
 import {
@@ -8,6 +8,20 @@ import {
   isLocale,
   LOCALES,
 } from "@/locales";
+
+// The provider calls `router.refresh()` so server components pick up the new
+// cookie. Outside a Next app-router tree `useRouter()` throws, and the point of
+// the mock is not only to prevent that — `refresh` is asserted below, because
+// dropping the call is invisible in a client-only test while it silently leaves
+// every server-rendered public page in the previous language.
+const refresh = vi.fn();
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ refresh }),
+}));
+
+beforeEach(() => {
+  refresh.mockClear();
+});
 
 function Probe() {
   const { locale, setLocale, t, dir } = useI18n();
@@ -89,6 +103,37 @@ describe("I18nProvider", () => {
 
     fireEvent.click(screen.getByText("to-en"));
     expect(document.documentElement.dir).toBe("ltr");
+  });
+
+  it("refreshes the server components so public pages follow the switch", () => {
+    render(
+      <I18nProvider>
+        <Probe />
+      </I18nProvider>,
+    );
+    expect(refresh).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByText("to-en"));
+
+    // The cookie must already be written when the refresh goes out, otherwise
+    // the server re-renders in the language the reader just left.
+    expect(document.cookie).toContain("app-locale=en");
+    expect(refresh).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not refresh for a locale it rejects", () => {
+    function BadProbe() {
+      const { setLocale } = useI18n();
+      const notALocale = "fr" as Parameters<typeof setLocale>[0];
+      return <button onClick={() => setLocale(notALocale)}>to-fr</button>;
+    }
+    render(
+      <I18nProvider>
+        <BadProbe />
+      </I18nProvider>,
+    );
+    fireEvent.click(screen.getByText("to-fr"));
+    expect(refresh).not.toHaveBeenCalled();
   });
 
   it("falls back id → explicit fallback → path for unknown keys", () => {

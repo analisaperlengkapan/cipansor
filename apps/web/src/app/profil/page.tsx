@@ -3,7 +3,8 @@ import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { PublicPage, ContentBlocks } from "@/components/landing/public-page";
 import { LegalIdentity } from "@/components/landing/legal-identity";
-import { profileSections, profileStats } from "@/config/content";
+import { publicContentFor } from "@/config/content.i18n";
+import { getServerLocale } from "@/lib/server-locale";
 import { siteConfig, educationUnits } from "@/config/site";
 
 export const metadata: Metadata = {
@@ -14,12 +15,16 @@ export const metadata: Metadata = {
   alternates: { canonical: "/profil" },
 };
 
-export default function ProfilPage() {
+export default async function ProfilPage() {
+  // Server component: the locale comes from the cookie, not from useI18n.
+  const { profilePage, profileSections, profileStats, legalIdentity } =
+    publicContentFor(await getServerLocale());
+
   return (
     <PublicPage
-      title="Profil Pesantren Cipansor"
-      lead={`${siteConfig.markaz} — lembaga pendidikan Islam terpadu di Kabupaten Tasikmalaya, berdiri sejak ${siteConfig.establishedYear}.`}
-      breadcrumb={[{ label: "Profil", href: "/profil" }]}
+      title={profilePage.title}
+      lead={profilePage.lead(siteConfig.markaz, siteConfig.establishedYear)}
+      breadcrumb={[{ label: profilePage.title, href: "/profil" }]}
     >
       <div className="mb-12 grid grid-cols-2 gap-4 md:grid-cols-4">
         {profileStats.map((stat) => (
@@ -47,12 +52,12 @@ export default function ProfilPage() {
         ))}
       </div>
 
-      <LegalIdentity />
+      <LegalIdentity copy={legalIdentity} />
 
       <p className="mt-10 max-w-3xl text-muted-foreground">
-        Ingin mengenal para pengasuh dan kepala unit?{" "}
+        {profilePage.leadershipPrompt}{" "}
         <Link href="/profil/pimpinan" className="font-medium text-primary underline">
-          Lihat jajaran pimpinan
+          {profilePage.leadershipLink}
         </Link>
         .
       </p>

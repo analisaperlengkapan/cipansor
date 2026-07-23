@@ -10,6 +10,8 @@ import { CtaSection } from "@/components/landing/sections/cta";
 import { LegalIdentityStrip } from "@/components/landing/legal-identity";
 import { siteConfig, addressLines } from "@/config/site";
 import { legalIdentity } from "@/config/content";
+import { publicContentFor } from "@/config/content.i18n";
+import { getServerLocale } from "@/lib/server-locale";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -84,7 +86,10 @@ const organizationJsonLd = {
   // a false legal claim. The decree above is the accurate identifier.
 };
 
-export default function Home() {
+export default async function Home() {
+  // Server component: the locale comes from the cookie, not from useI18n.
+  const content = publicContentFor(await getServerLocale());
+
   return (
     <div className="flex min-h-screen flex-col">
       <script
@@ -100,7 +105,7 @@ export default function Home() {
         <UnitsSection />
         <NewsSection />
         <CtaSection />
-        <LegalIdentityStrip />
+        <LegalIdentityStrip copy={content.legalIdentity} />
       </main>
       <LandingFooter />
     </div>

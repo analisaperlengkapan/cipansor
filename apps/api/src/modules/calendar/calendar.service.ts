@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { Errors } from '@/middleware/error';
 import { UserRole, Prisma, EventType, EventScope } from '@prisma/client';
+import { seesAllUnits } from '@/utils/resolve-unit-id';
 
 interface ListEventsQuery {
   unitId?: string;
@@ -60,6 +61,13 @@ interface UpdateEventInput {
 interface AuthenticatedUser {
   sub: string;
   role: string;
+  /**
+   * RoleCode granular. Needed so scoping can use seesAllUnits(): the legacy
+   * `role` maps every YAYASAN_* code onto 'UNIT_ADMIN', so a check on `role`
+   * classifies the foundation board as unit admins and hides every unit's
+   * calendar from them.
+   */
+  roleCode?: string | null;
   unitId: string | null;
 }
 
@@ -87,8 +95,13 @@ export class CalendarService {
       deletedAt: null,
     };
 
-    // Filter by unit
-    if (currentUser.role !== UserRole.SUPER_ADMIN) {
+    // Filter by unit.
+    //
+    // seesAllUnits() covers the yayasan board (no unitId, so the old check hid
+    // every unit's calendar behind the public-only branch) and boarding/shared
+    // staff whose remit spans units. A unit user still sees their own unit plus
+    // the foundation-wide public events.
+    if (!seesAllUnits(currentUser)) {
       where.OR = [{ unitId: currentUser.unitId }, { unitId: null, isPublic: true }];
     } else if (unitId) {
       where.unitId = unitId;
@@ -173,8 +186,10 @@ export class CalendarService {
       throw Errors.notFound('Calendar event not found');
     }
 
-    // Check access
-    if (currentUser.role !== UserRole.SUPER_ADMIN) {
+    // Check access. This is a read gate, so it widens with the list above: a
+    // user who can see an event in the list must be able to open it. (Unlike a
+    // mutation gate, where cross-unit breadth would be an escalation.)
+    if (!seesAllUnits(currentUser)) {
       if (event.unitId && event.unitId !== currentUser.unitId && !event.isPublic) {
         throw Errors.forbidden('Access denied');
       }

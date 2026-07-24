@@ -86,11 +86,39 @@ simply does not fire. Next step is Chrome DevTools → Application → Manifest 
 **Installability** on a real device, which states the reason directly. Leading
 suspect: the manifest's `"id": "/"`. Details in `KNOWN_ISSUES.md`.
 
-## 🟠 7. Temporal data is stale
+## 🟠 7. Temporal data is stale — code fixed (#370), production data still owed
 
-Academic year and admission period still read 2024/2025 in a system now
-running in 2026. `isActive` is being used as if it were a schedule; it is not.
-Needs a real current period plus a rule that derives "active" from dates.
+The seed wrote the calendar as literals (`2024/2025`, a PSB window of
+1 Mar – 31 May 2024), so every reseed reproduced the day the seed was *written*.
+By July 2026 the public SPMB page read "Pendaftaran Telah Ditutup — Periode PSB
+2024/2025 Gelombang 1" and rendered no form: nobody could register.
+
+**Fixed in code and seed.** `apps/api/src/lib/academic-calendar.ts` derives the
+year from `now` (mid-July → end of June, 15 July the boundary) and anchors both
+admission waves to the seed run, so wave 1 is open whenever the seed runs.
+Hardcoding 2026/2027 would only have moved the expiry date.
+
+A second defect surfaced while fixing the first, and would have been hidden by
+it: `getPublicActiveAdmissionPeriod` trusted `isActive` alone and took the
+flagged period with the latest `startDate` — which picks the wrong record as
+soon as two waves are flagged, exactly the shape the corrected seed produces.
+Proved against the reseeded database:
+
+```
+old query -> SPMB 2027/2028 Gelombang 2  [BELUM DIBUKA]
+new query -> SPMB 2027/2028 Gelombang 1  [OPEN]
+```
+
+So fixing the data alone would have produced a *different* wrong answer. It now
+prefers open → next upcoming → most recently closed, matching the three states
+`apps/web/src/lib/admission-period.ts` (`getPeriodWindow`) already renders.
+`isActive` remains administrative intent; whether registration is open is
+always derived from the dates.
+
+**Still owed: production data.** The live database still holds the 2024 rows.
+Benefiting from this needs either a full reseed (demo data — `seed.ts` opens
+with `TRUNCATE CASCADE`) or a targeted update. Real dates, fee and units for a
+live intake are a business decision — do not invent them, ask first.
 
 ---
 

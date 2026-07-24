@@ -2668,7 +2668,9 @@ async function main() {
     const registrant = await prisma.registrant.create({
       data: {
         admissionPeriodId: admissionPeriod.id,
-        registrationNo: `REG-2024-${String(regCounter++).padStart(4, '0')}`,
+        // These are the applicants of the wave that is open right now, so the
+        // number carries the intake year rather than the year the seed was written.
+        registrationNo: `REG-${intakeYear.startYear}-${String(regCounter++).padStart(4, '0')}`,
         // `fullName` is the canonical field the API reads; `name` is the
         // legacy column kept in sync (see admissions service writes).
         fullName: reg.name,

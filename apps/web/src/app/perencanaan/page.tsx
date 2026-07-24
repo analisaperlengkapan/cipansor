@@ -304,7 +304,9 @@ function PerencanaanPageContent() {
   const avgProgress = plans?.length
     ? Math.round(plans.reduce((s, p) => s + p.progress, 0) / plans.length)
     : 0;
-  const totalBudget = plans?.reduce((s, p) => s + (p.budget || 0), 0) || 0;
+  // budget is serialized as a string (Prisma Decimal); coerce so the reduce
+  // sums numerically instead of concatenating strings.
+  const totalBudget = plans?.reduce((s, p) => s + Number(p.budget || 0), 0) || 0;
 
   const handleEdit = (plan: any) => {
     setEditItem(plan);

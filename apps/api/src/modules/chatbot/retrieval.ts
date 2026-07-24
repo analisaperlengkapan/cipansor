@@ -91,6 +91,25 @@ const STOPWORDS = new Set([
   'untuk',
   'yaitu',
   'yang',
+  // Colloquial particles and vocatives. They carry no meaning but are very
+  // common in typed Indonesian, and leaving them in splits "biaya pendaftaran
+  // berapa ya" from "berapa biaya pendaftaran" — two spellings of one question.
+  // That matters for the answer cache as much as it does for ranking.
+  'ya',
+  'yah',
+  'sih',
+  'deh',
+  'nih',
+  'kah',
+  'kok',
+  'loh',
+  'lho',
+  'aja',
+  'mah',
+  'toh',
+  'pak',
+  'bu',
+  'min',
 ]);
 
 /**

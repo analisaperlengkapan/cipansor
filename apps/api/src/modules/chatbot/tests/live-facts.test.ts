@@ -30,10 +30,10 @@ function period(overrides: Record<string, unknown> = {}) {
 beforeEach(() => vi.clearAllMocks());
 
 describe('collectLiveFacts gating', () => {
-  it('does not touch the database for an unrelated question', () => {
+  it('does not touch the database for an unrelated question', async () => {
     // Most questions are about programmes or location; there is no reason to
     // put a query on that path.
-    expect(collectLiveFacts('di mana alamat pesantren', NOW)).resolves.toEqual([]);
+    await expect(collectLiveFacts('di mana alamat pesantren', NOW)).resolves.toEqual([]);
     expect(mockFind).not.toHaveBeenCalled();
   });
 

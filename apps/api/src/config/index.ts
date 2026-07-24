@@ -100,13 +100,38 @@ export const config = {
     baseUrl: process.env.CHATBOT_API_BASE_URL,
     apiKey: process.env.CHATBOT_API_KEY,
     model: process.env.CHATBOT_MODEL,
-    timeoutMs: parseInt(process.env.CHATBOT_TIMEOUT_MS || '20000', 10),
-    maxTokens: parseInt(process.env.CHATBOT_MAX_TOKENS || '400', 10),
+    // 60s, not the 20s this started at. Measured against DeepSeek-V4-Flash on
+    // Azure AI Foundry, a 341-token prompt answered in 16 tokens took 7.8s,
+    // 13.4s and 32.7s on three consecutive calls — the variance is the
+    // endpoint's, not a cold start. 20s aborted often enough that the first
+    // real eval run could not complete a single case.
+    timeoutMs: parseInt(process.env.CHATBOT_TIMEOUT_MS || '60000', 10),
+    // Raised from 400 when the persona landed: salam, the answer, a closing
+    // offer and emoji do not fit where a bare answer did, and a reply truncated
+    // mid-sentence is worse than a plain one.
+    maxTokens: parseInt(process.env.CHATBOT_MAX_TOKENS || '700', 10),
     // Facts, not prose. Kept low so the same question yields the same answer,
     // which is also what makes the eval harness meaningful.
     temperature: parseFloat(process.env.CHATBOT_TEMPERATURE || '0.2'),
     /** Turns of prior conversation replayed to the model, oldest dropped first. */
     maxHistoryTurns: parseInt(process.env.CHATBOT_MAX_HISTORY_TURNS || '6', 10),
+    /**
+     * House style (greeting, tone, emoji, closing). Additive persona only — it
+     * is appended below the safety scaffold and can never revoke a rule, so it
+     * is safe to expose for editing. Falls back to `DEFAULT_PERSONA`; the
+     * database-backed super-admin field replaces this env var later.
+     */
+    persona: process.env.CHATBOT_PERSONA,
+    /**
+     * Answer cache lifetime. 0 disables the cache entirely.
+     *
+     * 24h is safe because the cache KEY, not the TTL, is what protects
+     * freshness: it embeds a fingerprint of the live admission facts and a hash
+     * of the knowledge base, so a changed fee, a changed deadline or a content
+     * deploy orphans the old entry immediately. The TTL is just garbage
+     * collection.
+     */
+    cacheTtlSeconds: parseInt(process.env.CHATBOT_CACHE_TTL_SECONDS || '86400', 10),
     /**
      * An open LLM endpoint on a public page is a cost-amplification target, so
      * this is far stricter than the general API limiter.

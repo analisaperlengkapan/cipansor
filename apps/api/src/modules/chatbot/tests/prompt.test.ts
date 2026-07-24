@@ -68,6 +68,46 @@ describe('buildMessages', () => {
     expect(messages[messages.length - 1]).toEqual({ role: 'user', content: 'pertanyaan terakhir' });
   });
 
+  describe('the house persona', () => {
+    it('is applied by default, so answers sound like the pesantren', () => {
+      const system = systemOf(buildMessages({ question: 'halo', chunks: [chunk], liveFacts: [] }));
+      expect(system).toContain('GAYA KOMUNIKASI');
+      expect(system).toContain("Assalamu'alaikum");
+      expect(system).toMatch(/emoji/i);
+      expect(system).toContain('Ada lagi yang ingin');
+    });
+
+    it('is replaced wholesale by an explicit persona', () => {
+      // The configured persona REPLACES the default rather than stacking with
+      // it — otherwise an admin who removes the emoji instruction would still
+      // get emoji, and the field would appear not to work.
+      const system = systemOf(
+        buildMessages({
+          question: 'halo',
+          chunks: [chunk],
+          liveFacts: [],
+          persona: 'Jawab singkat dan formal.',
+        }),
+      );
+      expect(system).toContain('Jawab singkat dan formal.');
+      expect(system).not.toContain('Ada lagi yang ingin');
+    });
+
+    it('appears after the safety rules, never before them', () => {
+      const system = systemOf(buildMessages({ question: 'halo', chunks: [chunk], liveFacts: [] }));
+      expect(system.indexOf('ATURAN YANG TIDAK BOLEH DILANGGAR')).toBeLessThan(
+        system.indexOf('GAYA KOMUNIKASI'),
+      );
+    });
+
+    it('leaves the context block as the last thing the model reads', () => {
+      // Persona text between the rules and the facts would push the facts
+      // further from the question; the context must stay adjacent to it.
+      const system = systemOf(buildMessages({ question: 'halo', chunks: [chunk], liveFacts: [] }));
+      expect(system.indexOf('GAYA KOMUNIKASI')).toBeLessThan(system.indexOf(CONTEXT_HEADING));
+    });
+  });
+
   it('renders the context under its heading', () => {
     const system = systemOf(buildMessages({ question: 'q', chunks: [chunk], liveFacts: [] }));
     expect(system).toContain(CONTEXT_HEADING);

@@ -2,12 +2,19 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ask, ChatbotUnavailableError, resolveProvider } from '../chatbot.service';
 import { StubProvider } from '../providers/stub';
 import { collectLiveFacts } from '../live-facts';
+import { isCacheable, readCached, writeCached } from '../cache';
 import { config } from '@/config';
 import type { LlmProvider } from '../providers/types';
 
 vi.mock('../live-facts', () => ({ collectLiveFacts: vi.fn() }));
+vi.mock('../cache', () => ({
+  cacheKeyFor: vi.fn(() => 'test-key'),
+  isCacheable: vi.fn(() => true),
+  readCached: vi.fn(async () => null),
+  writeCached: vi.fn(async () => undefined),
+}));
 vi.mock('@/lib/logger', () => ({
-  logger: { warn: vi.fn(), error: vi.fn(), info: vi.fn() },
+  logger: { warn: vi.fn(), error: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
 
 const mockLiveFacts = vi.mocked(collectLiveFacts);
@@ -46,6 +53,22 @@ describe('ask', () => {
     expect(result.refused).toBe(true);
     expect(result.sources).toEqual([]);
     expect(provider.lastRequest).toBeUndefined();
+  });
+
+  it('writes that refusal in the house style, though no model produced it', async () => {
+    // A visitor should not be able to tell that this particular reply never
+    // reached a model. Salam, warmth, a route to a human, and an offer to
+    // continue — the same shape every other answer has.
+    const result = await ask({
+      question: 'siapa presiden amerika',
+      provider: new StubProvider(),
+      retriever: { search: () => [] },
+    });
+
+    expect(result.answer).toMatch(/assalamu/i);
+    expect(result.answer).toMatch(/\p{Extended_Pictographic}/u);
+    expect(result.answer).toContain('0811-110-400');
+    expect(result.answer).toMatch(/ada lagi yang ingin/i);
   });
 
   it('answers from the corpus and attributes its sources', async () => {
@@ -100,6 +123,39 @@ describe('ask', () => {
     // history turns + the current question
     expect(sent).toHaveLength(config.chatbot.maxHistoryTurns + 1);
     expect(sent[0].content).toBe('turn 14');
+  });
+
+  it('serves a cache hit without calling the model at all', async () => {
+    // The whole point: the measured cost of a call was between 1 and 33
+    // seconds of the visitor's time. A hit spends none of it.
+    const cached = { answer: 'dari cache', sources: [], refused: false };
+    vi.mocked(readCached).mockResolvedValueOnce(cached);
+    const provider = recordingProvider();
+
+    const result = await ask({ question: 'apa visi pesantren', provider });
+
+    expect(result).toEqual(cached);
+    expect(provider.lastRequest).toBeUndefined();
+  });
+
+  it('stores a fresh answer for the next visitor', async () => {
+    await ask({ question: 'apa visi pesantren', provider: new StubProvider() });
+    expect(writeCached).toHaveBeenCalledWith('test-key', expect.objectContaining({ refused: false }));
+  });
+
+  it('does not consult the cache once a conversation has history', async () => {
+    vi.mocked(isCacheable).mockReturnValueOnce(false);
+    const provider = recordingProvider();
+
+    await ask({
+      question: 'apa visi pesantren',
+      provider,
+      history: [{ role: 'user', content: 'sebelumnya' }],
+    });
+
+    expect(readCached).not.toHaveBeenCalled();
+    expect(writeCached).not.toHaveBeenCalled();
+    expect(provider.lastRequest).toBeDefined();
   });
 
   it('surfaces a provider failure as unavailable rather than an invented answer', async () => {

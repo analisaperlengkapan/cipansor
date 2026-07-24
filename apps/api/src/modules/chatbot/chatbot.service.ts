@@ -10,12 +10,14 @@
  * waits, and §2 for the rule it must follow when it arrives.
  */
 
+import { siteConfig } from '@cipansor/shared';
 import type { ChatMessage, ChatSource, PublicChatResponse } from '@cipansor/shared';
 import { config } from '@/config';
 import { logger } from '@/lib/logger';
 import { defaultRetriever, type Retriever } from './retrieval';
 import { collectLiveFacts } from './live-facts';
-import { buildMessages } from './prompt';
+import { buildMessages, DEFAULT_PERSONA } from './prompt';
+import { cacheKeyFor, isCacheable, readCached, writeCached } from './cache';
 import type { LlmProvider } from './providers/types';
 import { OpenAiCompatibleProvider } from './providers/openai-compatible';
 import { StubProvider } from './providers/stub';
@@ -84,10 +86,16 @@ export interface AskOptions {
  * decline to honour; not calling it at all is not.
  */
 function groundedRefusal(): PublicChatResponse {
+  // Written out rather than generated so it matches the house style even though
+  // no model is involved: a visitor should not be able to tell that this
+  // particular reply never reached one.
   return {
     answer:
-      'Maaf, saya belum memiliki informasi untuk menjawab pertanyaan itu. ' +
-      'Silakan hubungi kami di 0811-110-400 atau melalui WhatsApp agar dapat dibantu lebih lanjut.',
+      "Assalamu'alaikum warahmatullahi wabarakatuh 🙏\n\n" +
+      'Mohon maaf, untuk pertanyaan tersebut saya belum memiliki informasinya 🙏 ' +
+      `Agar Bapak/Ibu mendapat jawaban yang tepat, silakan hubungi kami di ${siteConfig.contact.phone} 📞 ` +
+      `atau melalui WhatsApp ${siteConfig.contact.whatsapp} 💬\n\n` +
+      'Ada lagi yang ingin Bapak/Ibu tanyakan? 😊',
     sources: [],
     refused: true,
   };
@@ -99,7 +107,7 @@ export async function ask(options: AskOptions): Promise<PublicChatResponse> {
     history = [],
     provider = resolveProvider(),
     retriever = defaultRetriever,
-    persona,
+    persona = config.chatbot.persona || DEFAULT_PERSONA,
     now = new Date(),
   } = options;
 
@@ -112,6 +120,20 @@ export async function ask(options: AskOptions): Promise<PublicChatResponse> {
 
   if (chunks.length === 0 && liveFacts.length === 0) {
     return groundedRefusal();
+  }
+
+  // The cache is consulted AFTER the live lookup, not before it: the live facts
+  // are part of the key, which is what stops a cached answer from quoting a fee
+  // or a deadline that has since changed. The lookup is one indexed query
+  // against a database we already run; the model call it may save takes between
+  // one and thirty-three seconds.
+  const cacheKey = isCacheable(history.length) ? cacheKeyFor(question, liveFacts) : null;
+  if (cacheKey) {
+    const hit = await readCached(cacheKey);
+    if (hit) {
+      logger.debug('Chatbot cache hit');
+      return hit;
+    }
   }
 
   // Trim history server-side. The client sends what it likes; the cost and the
@@ -128,7 +150,15 @@ export async function ask(options: AskOptions): Promise<PublicChatResponse> {
       temperature: config.chatbot.temperature,
     });
   } catch (error) {
-    logger.error('Chatbot provider call failed', { error, provider: provider.name });
+    // Log the message and name explicitly. A bare `{ error }` serialises an
+    // Error to `{}`, which is what the first real provider run produced — an
+    // outage report with nothing in it to act on.
+    logger.error('Chatbot provider call failed', {
+      provider: provider.name,
+      name: error instanceof Error ? error.name : typeof error,
+      message: error instanceof Error ? error.message : String(error),
+      cause: error instanceof Error && error.cause ? String(error.cause) : undefined,
+    });
     throw new ChatbotUnavailableError('Chatbot provider is unavailable');
   }
 
@@ -142,5 +172,17 @@ export async function ask(options: AskOptions): Promise<PublicChatResponse> {
     })),
   ];
 
-  return { answer: result.text, sources, refused: false, model: result.model };
+  const response: PublicChatResponse = {
+    answer: result.text,
+    sources,
+    refused: false,
+    model: result.model,
+  };
+
+  // Written after the answer is built, and awaited so a test can observe it.
+  // A failed write is logged and swallowed inside `writeCached` — a cache that
+  // is down must never become a chatbot that is down.
+  if (cacheKey) await writeCached(cacheKey, response);
+
+  return response;
 }

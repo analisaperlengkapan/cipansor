@@ -132,6 +132,11 @@ import {
 } from '../src/utils/parent-scope';
 import { seedImmunizationReference } from './seeds/immunization-reference';
 import { seedStrategicPlans } from './seeds/strategic-plan-cipansor';
+import {
+  admissionWindows,
+  currentAcademicYear,
+  nextAcademicYear,
+} from '../src/lib/academic-calendar';
 import { PERMISSIONS, permissionsForRoleCode } from '../src/modules/roles/permissions';
 // Imported from source (not the built dist) so a stale @cipansor/shared build
 // can't leave the seeded demo logins out of sync with what the web login page
@@ -1241,17 +1246,36 @@ async function main() {
 
   console.log('✅ Users and Teachers created');
 
-  // Create Academic Years (global, not per unit)
+  // Create Academic Years (global, not per unit).
+  //
+  // Derived from the clock, never hardcoded: the literal '2024/2025' that used
+  // to live here was still being reseeded in 2026, which is how the public SPMB
+  // page ended up announcing that admissions closed on 31 May 2024.
+  const currentYear = currentAcademicYear();
+  const intakeYear = nextAcademicYear();
+
   const academicYear = await prisma.academicYear.create({
     data: {
-      name: '2024/2025',
+      name: currentYear.name,
       isActive: true,
-      startDate: new Date('2024-07-15'),
-      endDate: new Date('2025-06-30'),
+      startDate: currentYear.startDate,
+      endDate: currentYear.endDate,
     },
   });
 
-  console.log('✅ Academic year created');
+  // The intake the open admission waves below recruit for. Not active — the
+  // school is still teaching `currentYear`; exactly one year may be active and
+  // `academic-year.service` enforces that on every write.
+  const nextYear = await prisma.academicYear.create({
+    data: {
+      name: intakeYear.name,
+      isActive: false,
+      startDate: intakeYear.startDate,
+      endDate: intakeYear.endDate,
+    },
+  });
+
+  console.log(`✅ Academic years created (${currentYear.name} active, ${intakeYear.name} upcoming)`);
 
   // Create Classes
   const class7A = await prisma.class.create({
@@ -2065,9 +2089,9 @@ async function main() {
       data: {
         roomId: roomData.room.id,
         studentId: student.id,
-        assignedAt: new Date('2024-07-15'),
+        assignedAt: currentYear.startDate,
         isActive: true,
-        notes: 'Penempatan awal tahun ajaran 2024/2025',
+        notes: `Penempatan awal tahun ajaran ${currentYear.name}`,
       },
     });
   }
@@ -2100,9 +2124,9 @@ async function main() {
       data: {
         roomId: roomData.room.id,
         studentId: boarder.id,
-        assignedAt: new Date('2024-07-15'),
+        assignedAt: currentYear.startDate,
         isActive: true,
-        notes: 'Penempatan awal tahun ajaran 2024/2025',
+        notes: `Penempatan awal tahun ajaran ${currentYear.name}`,
       },
     });
   }
@@ -2536,14 +2560,23 @@ async function main() {
   // PHASE 3: PSB (Penerimaan Santri Baru)
   // ============================================
 
-  // Create Admission Period
+  // Create Admission Period.
+  //
+  // Windows are anchored to the seed run, not written as literals: wave 1 is
+  // open today and wave 2 is still ahead of it, so a freshly seeded system
+  // always has a registration a visitor can actually complete. Both stay
+  // `isActive` — that flag records administrative intent, while whether the
+  // form opens is derived from the dates by `getPublicActiveAdmissionPeriod`
+  // and by `getPeriodWindow` on the web side.
+  const [wave1, wave2] = admissionWindows();
+
   const admissionPeriod = await prisma.admissionPeriod.create({
     data: {
       unitId: smpIt.id,
-      academicYearId: academicYear.id,
-      name: 'PSB 2024/2025 Gelombang 1',
-      startDate: new Date('2024-03-01'),
-      endDate: new Date('2024-05-31'),
+      academicYearId: nextYear.id,
+      name: wave1.name,
+      startDate: wave1.startDate,
+      endDate: wave1.endDate,
       quota: 50,
       registrationFee: new Prisma.Decimal(350000),
       isActive: true,
@@ -2560,13 +2593,13 @@ async function main() {
   const admissionPeriod2 = await prisma.admissionPeriod.create({
     data: {
       unitId: smpIt.id,
-      academicYearId: academicYear.id,
-      name: 'PSB 2024/2025 Gelombang 2',
-      startDate: new Date('2024-06-01'),
-      endDate: new Date('2024-06-30'),
+      academicYearId: nextYear.id,
+      name: wave2.name,
+      startDate: wave2.startDate,
+      endDate: wave2.endDate,
       quota: 20,
       registrationFee: new Prisma.Decimal(350000),
-      isActive: false,
+      isActive: true,
       requirements: JSON.stringify([
         'Fotokopi Akta Kelahiran',
         'Fotokopi Kartu Keluarga',
@@ -5972,7 +6005,7 @@ async function main() {
         data: {
           assetId: allAssets[1].id,
           userId: adminPesantrenUser.id,
-          assignedAt: new Date('2024-07-15'),
+          assignedAt: currentYear.startDate,
           conditionBefore: AssetCondition.GOOD,
           notes: 'Inventaris kantor Tata Usaha.',
           status: 'ACTIVE',

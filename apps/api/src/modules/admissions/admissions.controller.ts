@@ -262,25 +262,52 @@ export async function getPublicActiveAdmissionPeriod(
 ) {
   try {
     const { prisma } = await import('../../lib/prisma');
-    const period = await prisma.admissionPeriod.findFirst({
-      where: { isActive: true },
-      orderBy: { startDate: 'desc' },
-      // Keep this projection in lockstep with the JSDoc whitelist above:
-      // id, name, startDate, endDate, registrationFee, requirements, unit
-      // name and academic year name — never `quota`, registrant counts,
-      // internal notes, or any PII. Anything added here is exposed to
-      // anonymous callers of the public PPDB form.
-      select: {
-        id: true,
-        name: true,
-        startDate: true,
-        endDate: true,
-        registrationFee: true,
-        requirements: true,
-        unit: { select: { id: true, name: true, type: true } },
-        academicYear: { select: { id: true, name: true } },
-      },
-    });
+
+    // Keep this projection in lockstep with the JSDoc whitelist above:
+    // id, name, startDate, endDate, registrationFee, requirements, unit
+    // name and academic year name — never `quota`, registrant counts,
+    // internal notes, or any PII. Anything added here is exposed to
+    // anonymous callers of the public SPMB form.
+    const select = {
+      id: true,
+      name: true,
+      startDate: true,
+      endDate: true,
+      registrationFee: true,
+      requirements: true,
+      unit: { select: { id: true, name: true, type: true } },
+      academicYear: { select: { id: true, name: true } },
+    } as const;
+
+    // `isActive` is administrative intent, not a schedule, so it cannot decide
+    // this on its own. The old query took the flagged period with the latest
+    // `startDate`, which picks the wrong record as soon as more than one wave
+    // is flagged: with wave 1 open now and wave 2 scheduled after it, the
+    // latest start is the wave that has NOT begun, so the site would announce
+    // "dibuka <future date>" and withhold the form while registration was in
+    // fact open — and `createPublicRegistrant` would have accepted it.
+    //
+    // Prefer what is genuinely open, then what opens next, and only then fall
+    // back to the most recently closed period so the page can say honestly
+    // when it ended. These are the three states `getPeriodWindow` renders.
+    const now = new Date();
+    const period =
+      (await prisma.admissionPeriod.findFirst({
+        where: { isActive: true, startDate: { lte: now }, endDate: { gte: now } },
+        orderBy: { endDate: 'asc' },
+        select,
+      })) ??
+      (await prisma.admissionPeriod.findFirst({
+        where: { isActive: true, startDate: { gt: now } },
+        orderBy: { startDate: 'asc' },
+        select,
+      })) ??
+      (await prisma.admissionPeriod.findFirst({
+        where: { isActive: true, endDate: { lt: now } },
+        orderBy: { endDate: 'desc' },
+        select,
+      }));
+
     res.json({ success: true, data: period });
   } catch (error) {
     next(error);

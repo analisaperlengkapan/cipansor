@@ -11,11 +11,14 @@ a visitor sees, then correctness work, then deliverables, then tidiness.
 
 ## Current deployment state
 
-- Production runs **`main @ 2bcbb57e`** (includes #355, #356, #358, #359).
-  **#360, #361 and #362 are merged but not yet deployed** — the CORS fix and
-  the public-site translations are on `main`, not on cipansor.or.id.
-- **#357** (e-office: flow history, tiered signing, letter types, templates,
-  e-sign) is green and pushed but **not merged and not deployed**.
+- As of **2026-07-24** the web container runs `main @ 460cb678` (through #368)
+  and the API container an image built earlier the same day (through #365, so
+  it includes #357 and the CORS fix). Both were deployed from this host.
+- The two containers can therefore hold *different* commits. Before assuming
+  production runs what `main` says, check the running image itself — e.g.
+  `docker exec cipansor-api grep -o "<snippet>" /app/apps/api/dist/…/<file>.js`.
+  This is not hypothetical: reseeding for §7 while the API image predated the
+  matching controller fix would have left the site *differently* broken.
 - Production DB is managed by `db push`, **not** Prisma Migrate — there is no
   `_prisma_migrations` table. Verify every deploy with a non-destructive
   `prisma migrate diff` before building (see §3).
@@ -60,12 +63,10 @@ deploys are checked automatically.
 
 ---
 
-## 🟠 4. Merge and deploy #357
+## ✅ 4. Merge and deploy #357 — done
 
-Green (1011 API + 104 web tests, E2E 313). Carries **four migrations** —
-letter flow events, letter type/nature, e-sign, e-sign lifecycle — all
-rehearsed against a copy of the production schema. Sequence: merge → rehearse
-diff → apply migrations → build → deploy → verify.
+Merged 2026-07-23 and carried to production by the 2026-07-24 full deploy
+(e-office: flow history, tiered signing, letter types, templates, e-sign).
 
 ## ✅ 5. Public i18n — all 9 pages done
 
@@ -232,10 +233,15 @@ run before, expect to re-check any page the sweep flags.
     these case by case when auditing each module, never by find-and-replace.
 - ~210 racy `isVisible({ timeout })` probes in e2e specs.
 - Dependabot PRs **#333** (zod 4) and **#328** (eslint 10) still open.
-- Stray root-owned directory `apps/api/apps/api` (created by a `docker run`);
-  harmless because git does not track empty directories, but it makes
-  `git stash -u` and `git checkout` emit permission warnings that break `&&`
-  chains.
+- ~~Stray root-owned directory `apps/api/apps/api`.~~ **Gone** (verified
+  2026-07-24). A bind-mounted `docker run` can recreate it; if `git stash -u`
+  or `git checkout` starts emitting permission warnings that break `&&` chains,
+  that is what happened.
+- E2E selectors must not use Playwright's unquoted `text=` engine for short
+  strings: it matches a case-insensitive **substring**, and the sidebar precedes
+  the content in the DOM, so `.first()` returns a menu button. `text=UA` matched
+  "Konsolidasi Keuangan". Guarded by a test in `apps/web/src/lib/rbac.test.ts`
+  that cross-checks every unquoted `text=` against all 81 roles' sidebar labels.
 
 ---
 

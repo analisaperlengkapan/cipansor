@@ -314,7 +314,7 @@ export async function createRegistrant(data: CreateRegistrantExtendedInput) {
         err instanceof Prisma.PrismaClientKnownRequestError &&
         err.code === 'P2002' &&
         Array.isArray((err.meta as { target?: string[] } | undefined)?.target) &&
-        ((err.meta as { target: string[] }).target).includes('registrationNo')
+        (err.meta as { target: string[] }).target.includes('registrationNo')
       ) {
         // Collision on registrationNo — retry with a fresh count.
         continue;
@@ -339,8 +339,7 @@ async function createRegistrantOnce(data: CreateRegistrantExtendedInput) {
     // to reject unknown args at runtime.
     const parentName = data.fatherName || data.motherName;
     const parentPhone = data.fatherPhone || data.motherPhone || '';
-    const parentEmail =
-      data.fatherEmail && data.fatherEmail !== '' ? data.fatherEmail : undefined;
+    const parentEmail = data.fatherEmail && data.fatherEmail !== '' ? data.fatherEmail : undefined;
     const parentOccupation = data.fatherOccupation || data.motherOccupation;
 
     const registrant = await tx.registrant.create({
@@ -417,24 +416,12 @@ export async function updateRegistrant(id: string, data: UpdateRegistrantInput) 
   // `motherPhone` for UX parity with create, but the persisted model uses
   // consolidated `parentName` / `parentPhone` columns. Spreading the raw
   // input would cause Prisma to reject unknown args at runtime.
-  const {
-    fatherName,
-    fatherPhone,
-    motherName,
-    motherPhone,
-    fullName,
-    email,
-    ...rest
-  } = data;
+  const { fatherName, fatherPhone, motherName, motherPhone, fullName, email, ...rest } = data;
 
   const parentName =
-    fatherName !== undefined || motherName !== undefined
-      ? fatherName || motherName
-      : undefined;
+    fatherName !== undefined || motherName !== undefined ? fatherName || motherName : undefined;
   const parentPhone =
-    fatherPhone !== undefined || motherPhone !== undefined
-      ? fatherPhone || motherPhone
-      : undefined;
+    fatherPhone !== undefined || motherPhone !== undefined ? fatherPhone || motherPhone : undefined;
 
   // Normalise empty-string email to `null` to mirror `createRegistrantOnce`,
   // which maps `''` -> `undefined` (persisted as NULL). Without this, a PUT
@@ -442,8 +429,7 @@ export async function updateRegistrant(id: string, data: UpdateRegistrantInput) 
   // on create stores NULL — breaking downstream `if (registrant.email)`
   // checks and risking duplicate-empty-string collisions if `email` ever
   // becomes @unique.
-  const normalisedEmail =
-    email === undefined ? undefined : email === '' ? null : email;
+  const normalisedEmail = email === undefined ? undefined : email === '' ? null : email;
 
   return prisma.registrant.update({
     where: { id },
@@ -487,14 +473,12 @@ export async function updateRegistrantScore(id: string, data: UpdateRegistrantSc
 
     if (!current) throw new Error('Registrant not found');
 
-    const shouldAdvanceStatus =
-      hasScore && preTestStatuses.includes(current.status);
+    const shouldAdvanceStatus = hasScore && preTestStatuses.includes(current.status);
 
     return tx.registrant.update({
       where: { id },
       data: {
-        testScore:
-          data.testScore !== undefined ? new Prisma.Decimal(data.testScore) : undefined,
+        testScore: data.testScore !== undefined ? new Prisma.Decimal(data.testScore) : undefined,
         interviewScore:
           data.interviewScore !== undefined ? new Prisma.Decimal(data.interviewScore) : undefined,
         tahfidzScore:
@@ -551,9 +535,7 @@ export async function updateRegistrantStatus(id: string, data: UpdateRegistrantS
   // The schema accepts `z.nativeEnum(AdmissionStatus)` so this check has to
   // live here at the service layer.
   if (data.status === AdmissionStatus.ENROLLED) {
-    throw new Error(
-      'Cannot set status to ENROLLED directly; use the enrollment endpoint instead'
-    );
+    throw new Error('Cannot set status to ENROLLED directly; use the enrollment endpoint instead');
   }
 
   return prisma.$transaction(async (tx) => {
@@ -602,12 +584,12 @@ export async function updateRegistrantStatus(id: string, data: UpdateRegistrantS
     const regWithParent = await tx.registrant.findUnique({
       where: { id },
       include: {
-        admissionPeriod: { select: { name: true } }
-      }
+        admissionPeriod: { select: { name: true } },
+      },
     });
 
     if (regWithParent && regWithParent.parentPhone) {
-        // Notification could be sent here via WhatsApp/Push
+      // Notification could be sent here via WhatsApp/Push
     }
 
     // Best Practice: Update wave statistics if wave is linked.
@@ -855,7 +837,7 @@ export async function enrollRegistrant(
             amount: Number(period.registrationFee),
             dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
             notes: `Biaya Pendaftaran ${registrant.fullName}`,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
           } as any,
           tx as Prisma.TransactionClient
         );
@@ -936,4 +918,70 @@ export async function verifyDocument(id: string, isVerified: boolean, notes?: st
 
 export async function deleteRegistrantDocument(id: string) {
   return prisma.registrantDocument.delete({ where: { id } });
+}
+
+/**
+ * Projection for anonymous callers.
+ *
+ * Keep this whitelist tight: id, name, startDate, endDate, registrationFee,
+ * requirements, unit name and academic year name — never `quota`, registrant
+ * counts, internal notes, or any PII. Anything added here is exposed to every
+ * anonymous caller of the public SPMB form AND to the public chatbot.
+ */
+const PUBLIC_PERIOD_SELECT = {
+  id: true,
+  name: true,
+  startDate: true,
+  endDate: true,
+  registrationFee: true,
+  requirements: true,
+  unit: { select: { id: true, name: true, type: true } },
+  academicYear: { select: { id: true, name: true } },
+} as const;
+
+export type PublicAdmissionPeriod = Prisma.AdmissionPeriodGetPayload<{
+  select: typeof PUBLIC_PERIOD_SELECT;
+}>;
+
+/**
+ * The admission period the public should be told about.
+ *
+ * `isActive` is administrative intent, not a schedule, so it cannot decide this
+ * on its own. The original query took the flagged period with the latest
+ * `startDate`, which picks the wrong record as soon as more than one wave is
+ * flagged: with wave 1 open now and wave 2 scheduled after it, the latest start
+ * is the wave that has NOT begun — so the site announced "dibuka <future date>"
+ * and withheld the form while registration was in fact open, and
+ * `createPublicRegistrant` would have accepted a submission anyway.
+ *
+ * Prefer what is genuinely open, then what opens next, and only then the most
+ * recently closed period so the page can say honestly when it ended. These are
+ * the three states `getPeriodWindow` renders.
+ *
+ * Lives in the service rather than the controller because it now has a second
+ * caller: the public chatbot reads admission facts live instead of from its
+ * static knowledge base (a bot quoting last year's fee is a real harm). Two
+ * copies of this three-tier fallback would drift, and the drift reintroduces
+ * exactly the bug described above.
+ */
+export async function findPublicActivePeriod(
+  now: Date = new Date()
+): Promise<PublicAdmissionPeriod | null> {
+  return (
+    (await prisma.admissionPeriod.findFirst({
+      where: { isActive: true, startDate: { lte: now }, endDate: { gte: now } },
+      orderBy: { endDate: 'asc' },
+      select: PUBLIC_PERIOD_SELECT,
+    })) ??
+    (await prisma.admissionPeriod.findFirst({
+      where: { isActive: true, startDate: { gt: now } },
+      orderBy: { startDate: 'asc' },
+      select: PUBLIC_PERIOD_SELECT,
+    })) ??
+    (await prisma.admissionPeriod.findFirst({
+      where: { isActive: true, endDate: { lt: now } },
+      orderBy: { endDate: 'desc' },
+      select: PUBLIC_PERIOD_SELECT,
+    }))
+  );
 }

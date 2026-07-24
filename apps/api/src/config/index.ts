@@ -25,10 +25,7 @@ const DEFAULT_JWT_SECRET = 'change-this-secret-in-production';
  * both tests while being published in a public repository. One rule, one
  * place, so the next placeholder cannot slip between two definitions of "bad".
  */
-export function resolveJwtSecret(
-  secret: string | undefined,
-  env: string | undefined
-): string {
+export function resolveJwtSecret(secret: string | undefined, env: string | undefined): string {
   if (env === 'production') {
     const issues = findSecretIssues({ jwtSecret: secret });
     const jwtIssue = issues.find((i) => i.variable === 'JWT_SECRET');
@@ -86,6 +83,39 @@ export const config = {
     phoneNumber: process.env.TWILIO_PHONE_NUMBER,
   },
 
+  /**
+   * Public customer-service chatbot.
+   *
+   * Disabled by default and inert without credentials: with no provider
+   * configured the endpoint answers 503 and the web widget does not render.
+   * That is deliberate — a half-configured assistant that improvises answers
+   * about fees and admission dates is worse than no assistant.
+   *
+   * `provider` accepts `openai-compatible` (Azure AI Foundry, Azure OpenAI, or
+   * any gateway speaking POST {base}/chat/completions), `stub` (deterministic,
+   * development only), or `disabled`.
+   */
+  chatbot: {
+    provider: process.env.CHATBOT_PROVIDER || 'disabled',
+    baseUrl: process.env.CHATBOT_API_BASE_URL,
+    apiKey: process.env.CHATBOT_API_KEY,
+    model: process.env.CHATBOT_MODEL,
+    timeoutMs: parseInt(process.env.CHATBOT_TIMEOUT_MS || '20000', 10),
+    maxTokens: parseInt(process.env.CHATBOT_MAX_TOKENS || '400', 10),
+    // Facts, not prose. Kept low so the same question yields the same answer,
+    // which is also what makes the eval harness meaningful.
+    temperature: parseFloat(process.env.CHATBOT_TEMPERATURE || '0.2'),
+    /** Turns of prior conversation replayed to the model, oldest dropped first. */
+    maxHistoryTurns: parseInt(process.env.CHATBOT_MAX_HISTORY_TURNS || '6', 10),
+    /**
+     * An open LLM endpoint on a public page is a cost-amplification target, so
+     * this is far stricter than the general API limiter.
+     */
+    rateLimit: {
+      windowMs: parseInt(process.env.CHATBOT_RATE_LIMIT_WINDOW_MS || '60000', 10),
+      maxRequests: parseInt(process.env.CHATBOT_RATE_LIMIT_MAX_REQUESTS || '10', 10),
+    },
+  },
 } as const;
 
 export type Config = typeof config;

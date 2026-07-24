@@ -261,52 +261,11 @@ export async function getPublicActiveAdmissionPeriod(
   next: NextFunction
 ) {
   try {
-    const { prisma } = await import('../../lib/prisma');
-
-    // Keep this projection in lockstep with the JSDoc whitelist above:
-    // id, name, startDate, endDate, registrationFee, requirements, unit
-    // name and academic year name — never `quota`, registrant counts,
-    // internal notes, or any PII. Anything added here is exposed to
-    // anonymous callers of the public SPMB form.
-    const select = {
-      id: true,
-      name: true,
-      startDate: true,
-      endDate: true,
-      registrationFee: true,
-      requirements: true,
-      unit: { select: { id: true, name: true, type: true } },
-      academicYear: { select: { id: true, name: true } },
-    } as const;
-
-    // `isActive` is administrative intent, not a schedule, so it cannot decide
-    // this on its own. The old query took the flagged period with the latest
-    // `startDate`, which picks the wrong record as soon as more than one wave
-    // is flagged: with wave 1 open now and wave 2 scheduled after it, the
-    // latest start is the wave that has NOT begun, so the site would announce
-    // "dibuka <future date>" and withhold the form while registration was in
-    // fact open — and `createPublicRegistrant` would have accepted it.
-    //
-    // Prefer what is genuinely open, then what opens next, and only then fall
-    // back to the most recently closed period so the page can say honestly
-    // when it ended. These are the three states `getPeriodWindow` renders.
-    const now = new Date();
-    const period =
-      (await prisma.admissionPeriod.findFirst({
-        where: { isActive: true, startDate: { lte: now }, endDate: { gte: now } },
-        orderBy: { endDate: 'asc' },
-        select,
-      })) ??
-      (await prisma.admissionPeriod.findFirst({
-        where: { isActive: true, startDate: { gt: now } },
-        orderBy: { startDate: 'asc' },
-        select,
-      })) ??
-      (await prisma.admissionPeriod.findFirst({
-        where: { isActive: true, endDate: { lt: now } },
-        orderBy: { endDate: 'desc' },
-        select,
-      }));
+    // The projection whitelist and the three-tier "open, then next, then most
+    // recently closed" fallback both live in the service now, because the
+    // public chatbot needs the same answer and a second copy of that fallback
+    // is how the wrong-wave bug comes back. See `findPublicActivePeriod`.
+    const period = await service.findPublicActivePeriod();
 
     res.json({ success: true, data: period });
   } catch (error) {
@@ -325,11 +284,7 @@ export async function getPublicActiveAdmissionPeriod(
  * exposed to anonymous callers, so do not widen it to include contact details,
  * counts, or the foundation relation.
  */
-export async function getPublicUnits(
-  _req: Request,
-  res: Response,
-  next: NextFunction
-) {
+export async function getPublicUnits(_req: Request, res: Response, next: NextFunction) {
   try {
     const { prisma } = await import('../../lib/prisma');
     const units = await prisma.unit.findMany({
@@ -350,11 +305,7 @@ export async function getPublicUnits(
  * enumerate internal columns (status history, test scores, etc.) by varying
  * payload shape.
  */
-export async function createPublicRegistrant(
-  req: Request,
-  res: Response,
-  next: NextFunction
-) {
+export async function createPublicRegistrant(req: Request, res: Response, next: NextFunction) {
   try {
     const data = createRegistrantSchema.parse(req.body);
 
@@ -408,11 +359,7 @@ export async function createPublicRegistrant(
  * state. Never expose parent contact data, addresses, or internal notes here:
  * this endpoint is reachable without a session (rate-limited per IP).
  */
-export async function trackPublicRegistrantStatus(
-  req: Request,
-  res: Response,
-  next: NextFunction
-) {
+export async function trackPublicRegistrantStatus(req: Request, res: Response, next: NextFunction) {
   try {
     const { registrationNo, birthDate } = trackRegistrantQuerySchema.parse(req.query);
 

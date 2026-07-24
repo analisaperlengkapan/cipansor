@@ -5,10 +5,17 @@ later a role-aware assistant inside the information system. Advisory first given
 2026-07-23, expanded and recorded here 2026-07-24 after the conclusions alone
 proved too thin to act on.
 
-Companion to [`../ROADMAP.md`](../ROADMAP.md) §10, which tracks *what* to build
-and in which order. This file records *why*.
+Companion to [`../ROADMAP.md`](../ROADMAP.md) §10, which tracks _what_ to build
+and in which order. This file records _why_.
 
-**Status: design only. No implementation has started.**
+**Status: Phase 1 implemented (2026-07-24), inert until a provider is
+configured.** Code in `apps/api/src/modules/chatbot/` and
+`apps/web/src/components/chatbot/`. Three decisions changed during
+implementation and are marked **REVISED** below — the reasoning that survived
+is kept, because knowing why an option was dropped is the point of this file.
+
+Not yet done: the super-admin persona UI (§4 — the plumbing exists, the field
+does not), and everything in Phase 2.
 
 ## The requirement, as stated
 
@@ -61,6 +68,23 @@ retrieved through a weak multilingual embedding produces confident answers from
 the wrong page. Measure retrieval on its own — does the right chunk come back
 for a real question — before blaming the chat model for a bad answer.
 
+**REVISED — there is no embedding model yet.** Phase 1 retrieves with BM25
+(`retrieval.ts`), not vectors. The corpus is a few dozen short factual entries
+about one institution, and questions arrive using the same words the entries
+use. Lexical retrieval handles that, costs nothing, needs no key, and is
+*deterministic* — so a retrieval regression fails a unit test instead of showing
+up as a vague drop in answer quality.
+
+What it needs to work in Indonesian is affix handling, not embeddings:
+"pendaftaran", "mendaftar" and "daftar" must be one term, or the most likely
+question this bot will ever receive misses. `stem()` does that, conservatively,
+refusing to reduce below four characters because over-stemming destroys
+precision silently.
+
+`Retriever` is an interface. Add vectors when the eval set shows paraphrase
+matching is the bottleneck — measure, then swap. The advice above applies at
+that moment, unchanged.
+
 ## 2. The central decision: RAG for public content, tools for private data
 
 The requirement says the logged-in assistant should reach "data sesuai
@@ -73,7 +97,7 @@ architecture and it will leak.**
   app (`seesAllUnits()`, letter nature levels, `letterScopeWhere`) must be
   mirrored into the index. They will drift, and the drift is silent.
 - Our authorisation is **relational and per-row**, not per-label: a parent sees
-  *their* child, a homeroom teacher *their* class. Expressing that as chunk
+  _their_ child, a homeroom teacher _their_ class. Expressing that as chunk
   metadata means encoding the whole permission graph as tags, then re-indexing
   whenever a student changes class or a teacher's assignment changes.
 - **Revoking access does not empty the index.** Rights are withdrawn today; the
@@ -81,12 +105,12 @@ architecture and it will leak.**
 
 The split that avoids all of it:
 
-| Content | Mechanism | Why |
-| --- | --- | --- |
-| Public pages, FAQ, policies | **RAG** (vector retrieval) | no per-user authorisation exists at all |
-| Anything user-specific | **Tool calls to the existing authorised endpoints** | authorisation stays in exactly one place: the API |
+| Content                     | Mechanism                                           | Why                                               |
+| --------------------------- | --------------------------------------------------- | ------------------------------------------------- |
+| Public pages, FAQ, policies | **RAG** (vector retrieval)                          | no per-user authorisation exists at all           |
+| Anything user-specific      | **Tool calls to the existing authorised endpoints** | authorisation stays in exactly one place: the API |
 
-The agent is given *tools* that wrap endpoints we already ship, invoked carrying
+The agent is given _tools_ that wrap endpoints we already ship, invoked carrying
 the user's session and their **active role**. `authorize()`, `seesAllUnits()`
 and unit scoping then apply unchanged, with zero duplication. No access means
 the tool returns 403 and the agent says it cannot help. There is no parallel
@@ -142,16 +166,26 @@ per conversation.
 Measured 2026-07-24: the public corpus is **19 static pages**, content held in
 code — `berita` included, which is not database-backed.
 
-- **Use pgvector in the Postgres we already run**, not a separate vector
-  service. A few hundred chunks does not justify the cost or the operations of
-  Azure AI Search. Note the current image is `postgres:16-alpine`, which does
-  **not** ship pgvector — this means moving to `pgvector/pgvector:pg16`. See
-  [`../DEPLOYMENT.md`](../DEPLOYMENT.md).
+- **REVISED — no pgvector, and no database change at all.** The plan was
+  pgvector in the Postgres we already run, rather than a separate vector
+  service, on the grounds that a few hundred chunks does not justify Azure AI
+  Search. The same argument goes one step further than it first appeared: at
+  this size it does not justify pgvector either. BM25 over an in-memory corpus
+  built at module load needs no extension, no migration, and no move off
+  `postgres:16-alpine` — which pgvector would have required. Revisit together
+  with the embedding decision above, not before.
 - **Redis is already deployed** — use it for conversation state and rate
-  limiting.
-- Because the public content is static in code, **build the index at build
-  time**. Do not crawl our own rendered site: slower, more fragile, and the
-  source is right there.
+  limiting when Phase 2 needs shared state. Phase 1 keeps conversation state in
+  the browser and rate-limits per IP in `chatbot.routes.ts`.
+- **REVISED, and better than planned — the knowledge base is DERIVED, not
+  written.** The plan assumed indexing 19 static pages. The content turned out
+  not to live in those pages at all: it is structured configuration
+  (`siteConfig`, `educationUnits`, `featuredPrograms`, `donationConfig`). So
+  `knowledge-base.ts` builds its entries from those constants, which moved to
+  `@cipansor/shared` to be reachable from the API. Nothing is transcribed, so
+  the bot and the website are incapable of stating different facts, and a
+  hand-written corpus going quietly stale — the failure this section originally
+  budgeted for — cannot happen. Do not crawl our own rendered site.
 - **Some "public RAG" answers must actually be live tool calls.** SPMB dates and
   fees must come from `GET /api/admissions/public/active-period`, never from a
   vector chunk that may be stale. This is not hypothetical: stale temporal data

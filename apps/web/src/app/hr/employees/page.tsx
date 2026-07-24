@@ -53,8 +53,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useRouter } from "next/navigation";
 import { useUnits } from "@/hooks/use-units";
+import { MainLayout } from "@/components/layout";
 
-export default function EmployeesPage() {
+function EmployeesPageContent() {
   const router = useRouter();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
@@ -337,5 +338,13 @@ export default function EmployeesPage() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+  );
+}
+
+export default function EmployeesPage() {
+  return (
+    <MainLayout>
+      <EmployeesPageContent />
+    </MainLayout>
   );
 }

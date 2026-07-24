@@ -295,3 +295,65 @@ describe("navigation — every menu link points at a page that exists", () => {
     expect(duplicated).toEqual([]);
   });
 });
+
+describe("navigation — every app page is reachable from some menu", () => {
+  // The contract above only enforces menu -> page (no dead links). Nothing
+  // enforced the reverse, so 34 top-level pages — the entire TK/PAUD module,
+  // the payroll screens, Perencanaan (RPJP/Renstra/RKA), the GRC dashboard,
+  // the accounting reports — shipped with no menu entry for ANY of the 81
+  // roles and were reachable only by typing the URL. This closes that
+  // direction: a new page must either appear in a menu or say why it doesn't.
+  const APP_DIR = path.join(process.cwd(), "src", "app");
+
+  /** Pages that intentionally have no sidebar entry, with the reason. */
+  const NO_MENU_BY_DESIGN: Record<string, string> = {
+    "/profile": "opened from the header profile menu, not the sidebar",
+    "/ppdb": "legacy duplicate of /admissions, pending the SPMB route rename",
+    "/ppdb/registrations":
+      "legacy duplicate of /admissions, pending the SPMB route rename",
+  };
+
+  /** Reached from a list page's action button, never from a menu. */
+  const ACTION_PAGE = /\/(new|create|edit|generate|bulk|check-in)$/;
+
+  function appPages(): Array<{ route: string; file: string }> {
+    const found: Array<{ route: string; file: string }> = [];
+    const walk = (dir: string, segments: string[]) => {
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        if (!entry.isDirectory()) continue;
+        const child = path.join(dir, entry.name);
+        // Route groups — (auth), (dashboard) — do not appear in the URL.
+        const isGroup = entry.name.startsWith("(") && entry.name.endsWith(")");
+        const next = isGroup ? segments : [...segments, entry.name];
+        const page = path.join(child, "page.tsx");
+        if (fs.existsSync(page)) found.push({ route: `/${next.join("/")}`, file: page });
+        walk(child, next);
+      }
+    };
+    walk(APP_DIR, []);
+    return found;
+  }
+
+  const menuHrefs = new Set(
+    ALL_ROLE_CODES.flatMap((roleCode) =>
+      getNavigationForRoleCode(roleCode).flatMap((group) =>
+        group.items.map((item) => item.href),
+      ),
+    ),
+  );
+
+  it("no authenticated page is orphaned from every role's menu", () => {
+    const orphans = appPages()
+      .filter(({ route }) => !route.includes("[")) // dynamic detail page
+      .filter(({ route }) => !ACTION_PAGE.test(route))
+      .filter(({ route }) => !(route in NO_MENU_BY_DESIGN))
+      .filter(({ route }) => !menuHrefs.has(route))
+      // a sub-page is reachable as a tab/section of the hub above it
+      .filter(({ route }) => !menuHrefs.has(route.slice(0, route.lastIndexOf("/")) || "/"))
+      // only pages that render the authenticated shell are menu candidates
+      .filter(({ file }) => fs.readFileSync(file, "utf8").includes("MainLayout"))
+      .map(({ route }) => route);
+
+    expect(orphans).toEqual([]);
+  });
+});

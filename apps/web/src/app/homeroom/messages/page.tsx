@@ -54,6 +54,7 @@ import {
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
+import { MainLayout } from "@/components/layout";
 import {
   useMyHomeroomClass,
   useParentMessages,
@@ -134,7 +135,7 @@ const MESSAGE_TEMPLATES = [
   },
 ];
 
-export default function ParentMessagesPage() {
+function ParentMessagesPageContent() {
   // Fetch homeroom class data
   const { data: homeroomClass, isLoading: isLoadingClass } =
     useMyHomeroomClass();
@@ -772,5 +773,13 @@ export default function ParentMessagesPage() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+export default function ParentMessagesPage() {
+  return (
+    <MainLayout>
+      <ParentMessagesPageContent />
+    </MainLayout>
   );
 }

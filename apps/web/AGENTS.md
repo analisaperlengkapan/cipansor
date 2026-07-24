@@ -24,6 +24,37 @@ Next.js 16 (App Router) + React 19 client. Read the root `AGENTS.md` first.
 - **UI:** Tailwind + Radix primitives in `src/components/ui/*`; compose, don't
   fork. Charts via the shared chart components.
 
+## App shell & navigation
+
+Three defect classes came from this area in one week; each now has a guard test
+in `src/lib/rbac.test.ts`. Run `pnpm --filter web test` after touching a page,
+a route or `src/config/navigation.ts`.
+
+- **Every authenticated page renders its own shell.** Wrap the return in
+  `<MainLayout>` (from `@/components/layout`) — sidebar, header, and
+  `ProtectedRoute`. Pages self-wrap **except** under `/parent`, `/marketing`,
+  `/e-office` and `/reception`, which own a `layout.tsx` supplying it for the
+  whole subtree. When auditing, check for an ancestor `layout.tsx` before
+  concluding a page is shell-less; grepping only `page.tsx` for `MainLayout`
+  wrongly flags all 14 `/parent/*` pages. 50 pages once rendered as a bare
+  `<div>` with no nav and no logout.
+- **NEVER wrap a page listed in `middleware.ts`'s `publicPrefixes`**
+  (`/profil`, `/program-unggulan`, `/unit`, `/berita`, `/wakaf-infaq`,
+  `/kontak`, `/verifikasi`). `MainLayout` implies `ProtectedRoute`, so this
+  bounces anonymous visitors to the staff login — the regression that got the
+  Google Ad Grants application rejected once already. The guard test parses
+  `publicPrefixes` out of `middleware.ts` rather than duplicating the list.
+- **The nav contract runs both ways.** `src/config/navigation.ts` decides what a
+  role is *shown*; `src/lib/rbac.ts` (`roleRouteAccess`, consumed by
+  `middleware.ts`) decides what it may *open*. Add a nav item → add its prefix
+  to `roleRouteAccess`. And a new page must appear in some role's menu, be a
+  sub-page of a hub that does, be an action page (`new|create|edit|generate|
+  bulk|check-in`), or be listed in `NO_MENU_BY_DESIGN` **with a reason** — 34
+  top-level pages once shipped reachable only by typing the URL.
+- **Sidebar scrolling:** the nav `ScrollArea` needs `min-h-0`. A flex child
+  defaults to `min-height: auto` and refuses to shrink below its content, so the
+  area grew to the full menu height and nothing could scroll.
+
 ## State & providers
 
 - React Query provider: `src/components/providers/query-provider.tsx`.

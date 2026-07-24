@@ -105,8 +105,16 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
         )}
       </div>
 
-      {/* Navigation */}
-      <ScrollArea className="flex-1 px-3 py-4">
+      {/* Navigation.
+          `min-h-0` is load-bearing, not cosmetic. A flex child defaults to
+          `min-height: auto`, which refuses to shrink below its content height,
+          so this ScrollArea grew to the full height of the menu (~4800px) and
+          the Radix viewport inside it — `overflow-y: scroll` — had nothing left
+          to scroll. The aside is `h-screen` with `overflow: visible`, so every
+          item past the fold simply spilled off-screen and was unreachable:
+          no scrollbar, no wheel, no keyboard. Constraining the flex child is
+          what lets the viewport actually scroll. */}
+      <ScrollArea className="min-h-0 flex-1 px-3 py-4">
         {navigation.map((group, index) => (
           <NavGroupComponent
             key={group.title}

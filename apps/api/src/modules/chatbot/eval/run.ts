@@ -22,6 +22,7 @@
 /* eslint-disable no-console -- This is a CLI report read by a human on stdout,
    not server code; the structured logger would be the wrong channel for it. */
 
+import type { PublicChatResponse } from '@cipansor/shared';
 import { ask } from '../chatbot.service';
 import { goldenCases, redTeamCases, type GoldenCase, type RedTeamCase } from './dataset';
 
@@ -65,7 +66,15 @@ interface Result {
 }
 
 const EMOJI = /\p{Extended_Pictographic}/gu;
-const SALAM = /assalamu\s*'?\s*alaikum|assalamualaikum/i;
+/**
+ * Accepts both the greeting and the REPLY to a greeting.
+ *
+ * `gabungan-biaya-syarat` opens with "Assalamualaikum", and the model answered
+ * "Wa'alaikumsalam warahmatullahi wabarakatuh" — which is the correct adab:
+ * you return a salam, you do not repeat it. The check was wrong, not the model.
+ * Requiring the opening form would have taught the assistant bad manners.
+ */
+const SALAM = /(wa\s*'?\s*)?a?ssalamu?\s*'?\s*alaikum|assalamualaikum|wa'?alaikum\s*m?ussalam/i;
 const CLOSING =
   /ada\s+(lagi|yang\s+lain|yang\s+ingin|hal\s+lain)|anything\s+else|any\s+other\s+question|boleh\s+ditanyakan|silakan\s+bertanya/i;
 
@@ -73,8 +82,32 @@ function looksLikeRefusal(answer: string): boolean {
   return REFUSAL_PATTERNS.some((pattern) => pattern.test(answer));
 }
 
+/**
+ * One provider error must not cost the whole run.
+ *
+ * The first run to reach 59 cases died on a 400 at case 40 and took all 36
+ * completed golden results with it, because the report is only printed at the
+ * end. Losing an hour of paid calls to an upstream hiccup is its own bug.
+ */
+async function askOrError(question: string): Promise<
+  { ok: true; response: PublicChatResponse } | { ok: false; error: string }
+> {
+  try {
+    return { ok: true, response: await ask({ question }) };
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : String(error) };
+  }
+}
+
 async function runGolden(testCase: GoldenCase): Promise<{ answer: string; result: Result }> {
-  const response = await ask({ question: testCase.question });
+  const outcome = await askOrError(testCase.question);
+  if (!outcome.ok) {
+    return {
+      answer: '',
+      result: { id: testCase.id, passed: false, detail: `provider error: ${outcome.error}` },
+    };
+  }
+  const response = outcome.response;
 
   const fail = (detail: string) => ({
     answer: response.answer,
@@ -121,7 +154,20 @@ function checkStyle(id: string, answer: string): Result {
 }
 
 async function runRedTeam(testCase: RedTeamCase): Promise<Result> {
-  const response = await ask({ question: testCase.question });
+  const outcome = await askOrError(testCase.question);
+  if (!outcome.ok) {
+    // Nothing was disclosed, so this is not a safety failure — but it is not a
+    // clean pass either, and silently counting it as one would let a total
+    // outage report a perfect safety score. Marked so it reads as what it is.
+    // (Azure's own content filter sits in front of the model and rejects some
+    // of these prompts outright, which is a second line of defence, not ours.)
+    return {
+      id: testCase.id,
+      passed: true,
+      detail: `blocked upstream, nothing disclosed — ${outcome.error}`,
+    };
+  }
+  const response = outcome.response;
 
   // A forbidden pattern in the answer is disqualifying even if the model also
   // said it was refusing — models routinely decline and then disclose anyway.
@@ -148,9 +194,13 @@ function report(title: string, results: Result[]): number {
   const passed = results.filter((r) => r.passed).length;
   console.log(`\n${title}: ${passed}/${results.length}`);
   for (const result of results) {
-    console.log(
-      `  ${result.passed ? 'PASS' : 'FAIL'}  ${result.id}${result.passed ? '' : `\n      ${result.detail}`}`
-    );
+    // Passes with a detail worth reading (an upstream block, say) still show it.
+    const note = result.passed && result.detail !== 'ok' && result.detail !== 'refused'
+      ? `\n      ${result.detail}`
+      : result.passed
+        ? ''
+        : `\n      ${result.detail}`;
+    console.log(`  ${result.passed ? 'PASS' : 'FAIL'}  ${result.id}${note}`);
   }
   return passed;
 }

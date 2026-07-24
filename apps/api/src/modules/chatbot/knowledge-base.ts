@@ -29,6 +29,25 @@ export interface KnowledgeEntry {
   url?: string;
   /** Plain prose. The retriever indexes this; the model is shown it verbatim. */
   text: string;
+  /**
+   * Extra words indexed for retrieval but NEVER shown to the model.
+   *
+   * Two real failures motivated this, both caught by the eval set and both
+   * cases of the corpus and the visitor using different words for one thing:
+   *
+   *   - "Saya dari luar kota. Pesantrennya di mana?" did not retrieve the
+   *     contact entry, because that entry says "Alamat" and the question says
+   *     "di mana" and "kota". The model then correctly said it had no address —
+   *     honest, and useless.
+   *   - "How can I donate?" retrieved almost nothing, because an English
+   *     question shares no stems with an Indonesian corpus.
+   *
+   * Aliases are the cheapest fix that does not distort what the model reads:
+   * they widen recall while the answer still quotes `text` alone. Keep them to
+   * genuine synonyms and translations — an alias that is not really about this
+   * entry drags it into unrelated questions.
+   */
+  aliases?: string[];
 }
 
 const { contact } = siteConfig;
@@ -47,6 +66,7 @@ export const knowledgeBase: KnowledgeEntry[] = [
       `Visi pesantren: "${siteConfig.visi}".`,
       siteConfig.description,
     ].join(' '),
+    aliases: ['about profile history founded established vision mission school islamic boarding'],
   },
   {
     id: 'kontak',
@@ -58,6 +78,10 @@ export const knowledgeBase: KnowledgeEntry[] = [
       `Email: ${contact.email}.`,
       `Lokasi di Google Maps: ${contact.maps.url}`,
     ].join(' '),
+    aliases: [
+      'lokasi tempat posisi berada mana dimana kota daerah wilayah peta arah menuju datang berkunjung',
+      'address location where city map directions visit contact phone email reach us',
+    ],
   },
   {
     id: 'unit-ikhtisar',
@@ -68,6 +92,7 @@ export const knowledgeBase: KnowledgeEntry[] = [
       educationUnits.map((u) => u.name).join(', ') + '.',
       'Setiap unit memiliki halaman tersendiri dengan penjelasan lengkap.',
     ].join(' '),
+    aliases: ['jenjang tingkat sekolah education units levels grades school stages'],
   },
 
   // One entry per unit. Splitting them keeps retrieval precise: a question
@@ -106,6 +131,7 @@ export const knowledgeBase: KnowledgeEntry[] = [
       donationConfig.programs.map((p) => `${p.title}: ${p.description}`).join(' '),
       donationConfig.commitment.text,
     ].join(' '),
+    aliases: ['donate donation charity endowment give giving support contribute sedekah sumbangan'],
   },
   {
     id: 'donasi-rekening',
@@ -118,6 +144,10 @@ export const knowledgeBase: KnowledgeEntry[] = [
       `dengan format "${donationConfig.confirmation.format}", contoh: "${donationConfig.confirmation.example}".`,
       donationConfig.steps.map((s) => `${s.title}: ${s.description}`).join(' '),
     ].join(' '),
+    aliases: [
+      'norek nomor rekening bank transfer setor kirim uang konfirmasi bukti',
+      'bank account number transfer donate donation payment how to give send money',
+    ],
   },
   {
     id: 'spmb-cara-daftar',
@@ -129,6 +159,10 @@ export const knowledgeBase: KnowledgeEntry[] = [
       'Setelah mengirim formulir, simpan nomor pendaftaran untuk memantau hasil seleksi melalui tab "Cek Status" di halaman yang sama.',
       `Pertanyaan seputar pendaftaran dapat disampaikan ke ${contact.phone} atau WhatsApp ${contact.whatsapp}.`,
     ].join(' '),
+    aliases: [
+      'masuk mendaftarkan anak putra putri calon murid siswa baru online formulir langkah cara prosedur',
+      'register registration admission enroll apply how to sign up new student',
+    ],
   },
 ];
 

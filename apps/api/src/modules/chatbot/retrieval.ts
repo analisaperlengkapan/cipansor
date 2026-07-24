@@ -193,6 +193,112 @@ const B = 0.75;
  */
 const MIN_RELATIVE_SCORE = 0.35;
 
+/**
+ * Damerau-Levenshtein distance (optimal string alignment), bounded.
+ *
+ * Counts an adjacent transposition as ONE edit, not two. That matters here more
+ * than it looks: swapped letters are the most common typing error there is
+ * ("tahfdiz" for "tahfidz"), and plain Levenshtein scores them the same as two
+ * unrelated substitutions — which the credibility rule below then rejects.
+ *
+ * Returns `max + 1` as soon as every cell in a row exceeds `max`, so comparing
+ * against an obviously unrelated word stops early instead of filling the matrix.
+ */
+function editDistance(a: string, b: string, max: number): number {
+  if (Math.abs(a.length - b.length) > max) return max + 1;
+
+  let beforePrevious: number[] = [];
+  let previous = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    const current = [i];
+    let rowMin = i;
+    for (let j = 1; j <= b.length; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      let value = Math.min(current[j - 1] + 1, previous[j] + 1, previous[j - 1] + cost);
+      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) {
+        value = Math.min(value, beforePrevious[j - 2] + 1);
+      }
+      current.push(value);
+      if (value < rowMin) rowMin = value;
+    }
+    if (rowMin > max) return max + 1;
+    beforePrevious = previous;
+    previous = current;
+  }
+  return previous[b.length];
+}
+
+/**
+ * How far a term may be corrected, by length.
+ *
+ * Short words are left alone: at four characters an edit distance of one
+ * already reaches a different word ("baru" → "buku"), and a wrong correction is
+ * worse than no correction because it silently answers a question nobody asked.
+ */
+function maxEditsFor(term: string): number {
+  if (term.length >= 7) return 2;
+  if (term.length >= 5) return 1;
+  return 0;
+}
+
+/** True when `sub` can be produced by deleting characters from `term`. */
+function isSubsequence(sub: string, term: string): boolean {
+  let i = 0;
+  for (const char of term) {
+    if (char === sub[i]) i++;
+    if (i === sub.length) return true;
+  }
+  return i === sub.length;
+}
+
+/**
+ * Whether a candidate correction is credible at the distance found.
+ *
+ * Distance 1 is accepted outright — one wrong, extra or missing letter is the
+ * ordinary typo.
+ *
+ * Distance 2 is accepted ONLY for pure deletions: the candidate must be the
+ * term with two letters removed. That is the dominant error when Indonesian is
+ * typed fast on a phone (dropped vowels — "pndaftaran" for "pendaftaran"), and
+ * it is strict enough to reject the over-reach this rule was added for:
+ * "kuantum" was being corrected to "cantum", also distance 2, but that needs a
+ * SUBSTITUTION (k→c) and so is not a dropped-letter typo. Correcting nonsense
+ * onto a real word is not merely wasteful — it replaces an honest refusal with
+ * a confident answer to a question nobody asked.
+ */
+function isCredibleCorrection(term: string, candidate: string, distance: number): boolean {
+  if (distance <= 1) return true;
+  return term.length - candidate.length === 2 && isSubsequence(candidate, term);
+}
+
+/**
+ * Closest credible member of `vocabulary`, or the term unchanged.
+ *
+ * Shared so that everything deciding "is this question about X" tolerates the
+ * same typos. It was written for the BM25 index, and `live-facts.ts` needs it
+ * for the identical reason: "brp biyaya pndaftaran nya" retrieved the right
+ * page after fuzzy matching landed, but the admission LOOKUP still did not
+ * fire — its trigger list was matched exactly — so the answer came back correct
+ * and without the fee, which is the one number the visitor asked for.
+ */
+export function closestTerm(term: string, vocabulary: Iterable<string>): string {
+  const maxEdits = maxEditsFor(term);
+  if (maxEdits === 0) return term;
+
+  let best = term;
+  let bestDistance = maxEdits + 1;
+  for (const candidate of vocabulary) {
+    if (candidate === term) return term;
+    const distance = editDistance(term, candidate, maxEdits);
+    if (distance > maxEdits || !isCredibleCorrection(term, candidate, distance)) continue;
+    if (distance < bestDistance) {
+      best = candidate;
+      bestDistance = distance;
+    }
+  }
+  return bestDistance <= maxEdits ? best : term;
+}
+
 export class Bm25Retriever implements Retriever {
   private readonly docs: { entry: KnowledgeEntry; tf: Map<string, number>; length: number }[];
   private readonly df = new Map<string, number>();
@@ -203,7 +309,15 @@ export class Bm25Retriever implements Retriever {
       // The title carries the most signal per word, so it is indexed twice.
       // This is a weight, not a trick: an entry titled "SMP IT Cipansor" should
       // beat one that merely mentions it in passing.
-      const tokens = [...tokenize(entry.title), ...tokenize(entry.title), ...tokenize(entry.text)];
+      // Aliases are indexed exactly like body text, and never rendered into the
+      // prompt — `prompt.ts` shows `entry.text` alone. They widen what a
+      // question can match without changing what the model is allowed to say.
+      const tokens = [
+        ...tokenize(entry.title),
+        ...tokenize(entry.title),
+        ...tokenize(entry.text),
+        ...(entry.aliases ?? []).flatMap(tokenize),
+      ];
       const tf = new Map<string, number>();
       for (const token of tokens) tf.set(token, (tf.get(token) ?? 0) + 1);
       for (const token of new Set(tokens)) this.df.set(token, (this.df.get(token) ?? 0) + 1);
@@ -215,8 +329,48 @@ export class Bm25Retriever implements Retriever {
         : this.docs.reduce((sum, d) => sum + d.length, 0) / this.docs.length;
   }
 
+  /**
+   * Map an unknown query term onto the closest term the corpus actually uses.
+   *
+   * Real traffic is typed on phones: "brp biyaya pndaftaran nya" is a question
+   * this bot must answer, and before this it retrieved nothing at all and was
+   * refused — the worst outcome, because the visitor concludes the pesantren
+   * has no answer rather than that they mistyped.
+   *
+   * Fuzzy matching here is far safer than fuzzy matching in the answer cache
+   * (see `cache.ts`): a wrong correction retrieves the wrong entry, and the
+   * model — bound to answer only from context — then answers a different
+   * question or declines. A wrong cache key would hand one visitor another
+   * visitor's answer with no such backstop.
+   *
+   * Corrections are drawn only from the corpus vocabulary, so a term can never
+   * be "corrected" onto a word this pesantren does not use.
+   */
+  private correct(term: string): string {
+    if (this.df.has(term)) return term;
+
+    const maxEdits = maxEditsFor(term);
+    if (maxEdits === 0) return term;
+
+    let best = term;
+    let bestDistance = maxEdits + 1;
+    let bestDf = 0;
+    for (const [candidate, df] of this.df) {
+      const distance = editDistance(term, candidate, maxEdits);
+      if (distance > maxEdits || !isCredibleCorrection(term, candidate, distance)) continue;
+      // Ties break towards the more common term: with nothing else to go on,
+      // the word the corpus uses more often is the likelier intent.
+      if (distance < bestDistance || (distance === bestDistance && df > bestDf)) {
+        best = candidate;
+        bestDistance = distance;
+        bestDf = df;
+      }
+    }
+    return bestDistance <= maxEdits ? best : term;
+  }
+
   search(query: string, limit = 4): RetrievedChunk[] {
-    const terms = tokenize(query);
+    const terms = tokenize(query).map((term) => this.correct(term));
     if (terms.length === 0) return [];
 
     const n = this.docs.length;

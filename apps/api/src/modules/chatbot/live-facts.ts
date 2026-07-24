@@ -19,7 +19,7 @@
 
 import { findPublicActivePeriod } from '../admissions/admissions.service';
 import { logger } from '@/lib/logger';
-import { tokenize } from './retrieval';
+import { closestTerm, tokenize } from './retrieval';
 
 export interface LiveFact {
   id: string;
@@ -152,8 +152,11 @@ export async function collectLiveFacts(
   question: string,
   now: Date = new Date()
 ): Promise<LiveFact[]> {
-  const asked = new Set(tokenize(question));
-  const aboutAdmissions = [...asked].some((token) => ADMISSION_TRIGGERS.has(token));
+  // Corrected against the trigger list before matching, so a misspelled fee
+  // question still fetches the fee. Without this, "brp biyaya pndaftaran nya"
+  // retrieved the right page and answered without the one number it asked for.
+  const asked = tokenize(question).map((token) => closestTerm(token, ADMISSION_TRIGGERS));
+  const aboutAdmissions = asked.some((token) => ADMISSION_TRIGGERS.has(token));
   if (!aboutAdmissions) return [];
 
   try {

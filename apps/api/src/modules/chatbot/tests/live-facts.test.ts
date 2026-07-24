@@ -43,6 +43,14 @@ describe('collectLiveFacts gating', () => {
     expect(mockFind).toHaveBeenCalled();
   });
 
+  it('triggers on a MISSPELLED cost question', async () => {
+    // "brp biyaya pndaftaran nya" used to retrieve the right page and answer
+    // without the fee — the one number the visitor actually asked for.
+    mockFind.mockResolvedValue(period());
+    await collectLiveFacts('brp biyaya pndaftaran nya', NOW);
+    expect(mockFind).toHaveBeenCalled();
+  });
+
   it('triggers on a question about cost', async () => {
     mockFind.mockResolvedValue(period());
     await collectLiveFacts('berapa biaya masuk', NOW);

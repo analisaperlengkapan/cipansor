@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { Bm25Retriever, defaultRetriever, stem, tokenize } from '../retrieval';
+import { knowledgeById } from '../knowledge-base';
 
 describe('tokenize', () => {
   it('drops Indonesian stopwords so ranking is about subject matter', () => {
@@ -72,6 +73,64 @@ describe('Bm25Retriever', () => {
     // The cutoff must not be so aggressive that it strands real answers.
     const ids = defaultRetriever.search('donasi wakaf rekening').map((r) => r.entry.id);
     expect(ids).toContain('donasi-rekening');
+  });
+
+  describe('misspelling tolerance', () => {
+    it('answers the heavily misspelled fee question that used to be refused', () => {
+      // Observed in the eval as `salah-ketik`. Before fuzzy correction this
+      // retrieved nothing and the service refused — the worst outcome, because
+      // the visitor concludes the pesantren has no answer rather than that they
+      // mistyped.
+      const ids = defaultRetriever.search('brp biyaya pndaftaran nya').map((r) => r.entry.id);
+      expect(ids).toContain('spmb-cara-daftar');
+    });
+
+    it('corrects a single transposed letter', () => {
+      expect(defaultRetriever.search('tahfdiz').length).toBeGreaterThan(0);
+    });
+
+    it('leaves short words alone rather than risk a wrong correction', () => {
+      // At four characters an edit of one already reaches a different word, and
+      // answering a question nobody asked is worse than not answering.
+      const ids = defaultRetriever.search('baru').map((r) => r.entry.id);
+      const buku = defaultRetriever.search('buku').map((r) => r.entry.id);
+      expect(ids).not.toEqual(buku);
+    });
+
+    it('does not invent a match for a word the corpus has no neighbour for', () => {
+      expect(defaultRetriever.search('helikopter kuantum')).toEqual([]);
+    });
+  });
+
+  describe('aliases', () => {
+    it('finds the contact entry from "di mana", not just from "alamat"', () => {
+      // The entry says "Alamat"; the visitor says "di mana" and "luar kota".
+      // Before aliases this retrieved units and programmes, and the model
+      // honestly reported having no address — which is the worst kind of bug,
+      // because it looks like the pesantren simply has no answer.
+      const ids = defaultRetriever
+        .search('Saya dari luar kota. Pesantrennya di mana?')
+        .map((r) => r.entry.id);
+      expect(ids).toContain('kontak');
+    });
+
+    it('answers an English donation question', () => {
+      const ids = defaultRetriever.search('How can I donate to the pesantren?').map((r) => r.entry.id);
+      expect(ids).toContain('donasi-rekening');
+    });
+
+    it('answers an English registration question', () => {
+      const ids = defaultRetriever.search('How do I register my child?').map((r) => r.entry.id);
+      expect(ids).toContain('spmb-cara-daftar');
+    });
+
+    it('never leaks alias words into what the model is shown', () => {
+      // Aliases are a retrieval device. If they reached the prompt the model
+      // could quote them back as if they were published facts.
+      const entry = knowledgeById.get('kontak')!;
+      expect(entry.text).not.toContain('reach us');
+      expect(entry.text).not.toContain('dimana');
+    });
   });
 
   it('handles an empty corpus without dividing by zero', () => {

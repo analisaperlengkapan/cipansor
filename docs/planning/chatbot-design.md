@@ -177,6 +177,31 @@ code — `berita` included, which is not database-backed.
 - **Redis is already deployed** — use it for conversation state and rate
   limiting when Phase 2 needs shared state. Phase 1 keeps conversation state in
   the browser and rate-limits per IP in `chatbot.routes.ts`.
+- **The answer cache lives there too** (`cache.ts`), and it is the main answer
+  to the latency in §7. A repeated question returns in 0.01–0.05s instead of
+  3.5–42s. The interesting part is the KEY, not the TTL — freshness is a
+  correctness property, so it is enforced structurally:
+
+  | Key segment | Invalidates when |
+  | --- | --- |
+  | hash of the knowledge base | any public content changes (i.e. on deploy) |
+  | fingerprint of the live admission facts | fee, dates or status change; also daily, because the answer states days remaining |
+  | stemmed, sorted question tokens | — collapses "Berapa biaya pendaftaran?" and "biaya pendaftaran berapa ya" onto one entry |
+
+  A changed fact therefore produces a different key and the stale entry is
+  never read again — no flush step for anyone to forget, and no window in
+  which the TTL is still serving the old answer. Verified end to end against
+  real Redis, not assumed. The TTL (24h) is only garbage collection.
+
+  Known limit: misspellings do not collapse onto the correct spelling, so they
+  miss. Fixing that needs fuzzy matching, which risks merging two DIFFERENT
+  questions onto one key — a miss costs one model call, a wrong merge costs a
+  visitor the truth.
+
+  Caching is skipped once a conversation has history, since the answer then
+  depends on turns the key knows nothing about. If the authenticated agent ever
+  gets a cache, it must additionally be partitioned per (user, activeRole) —
+  see §3.
 - **REVISED, and better than planned — the knowledge base is DERIVED, not
   written.** The plan assumed indexing 19 static pages. The content turned out
   not to live in those pages at all: it is structured configuration
@@ -199,6 +224,32 @@ names, counselling notes) can carry instructions. Treat retrieved material as
 data, never as instructions, with explicit delimiters — and remember §2's
 read-only tool set is what limits the blast radius when injection succeeds
 anyway.
+
+**Latency — measured, and worse than expected.** Against `DeepSeek-V4-Flash` on
+Azure AI Foundry, 2026-07-24: identical requests answered in 0.9s, 7.5s, 9.5s,
+14.7s, 46.9s and 48.7s. Streaming separates the cause — the gap between the
+first token and the last was **0.3–1.9s**, while time to the FIRST token ranged
+**1.1s to 32.8s**. The model is not slow; each request queues for shared
+capacity. It is not throttling (quota was untouched: 124/125 requests,
+124,974/125,000 tokens) and not a cold start (the pattern never warms up).
+
+Consequences worth holding on to:
+
+- **Streaming helps, but does not fix it.** It converts a 5s wait into text
+  appearing at 1s; when the queue is 32s the visitor still waits 32s.
+- **The cache is the real remedy**, because it removes the call entirely. See
+  §6.
+- **Price is not the binding constraint at this volume.** Measured prompts run
+  730–1,270 tokens with ~200-token answers; at 100 questions/day that is ~3.3M
+  input and ~0.6M output tokens a month. The gap between a cheap and a
+  mid-tier model is tens of thousands of rupiah per month — far less than the
+  cost of prospective families abandoning a 32-second wait. Choose on latency,
+  not on price.
+- Before changing model, try the **same model in another region or deployment
+  type**: queueing is a property of the deployment, so this costs nothing in
+  price or quality. Only `DeepSeek-V4-Flash` is deployed in the current
+  resource, so any comparison needs a second deployment first — then
+  `pnpm --filter api chatbot:eval` scores both on our own questions.
 
 **Cost amplification.** An open LLM endpoint on a public page is a target.
 Required before launch: per-IP rate limiting, token caps, a conversation-length

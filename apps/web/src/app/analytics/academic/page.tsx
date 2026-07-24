@@ -19,8 +19,9 @@ import { api } from "@/lib/api";
 import Link from "next/link";
 import { useActiveAcademicYear } from "@/hooks/use-academic-years";
 import { useAuth } from "@/hooks/use-auth";
+import { MainLayout } from "@/components/layout";
 
-export default function AcademicInterventionDashboard() {
+function AcademicInterventionDashboardContent() {
   const { user } = useAuth();
   const unitId = user?.unitId;
   const { data: activeYear } = useActiveAcademicYear();
@@ -150,5 +151,13 @@ export default function AcademicInterventionDashboard() {
          </div>
       </div>
     </div>
+  );
+}
+
+export default function AcademicInterventionDashboard() {
+  return (
+    <MainLayout>
+      <AcademicInterventionDashboardContent />
+    </MainLayout>
   );
 }

@@ -65,6 +65,7 @@ import {
 } from "@/hooks/use-finance";
 import { useUnits } from "@/hooks/use-units";
 import { useClasses } from "@/hooks/use-classes";
+import { MainLayout } from "@/components/layout";
 
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat("id-ID", {
@@ -180,7 +181,7 @@ function StatusCell({
   );
 }
 
-export default function SppMatrixPage() {
+function SppMatrixPageContent() {
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [selectedUnitId, setSelectedUnitId] = useState<string>("");
@@ -598,5 +599,13 @@ export default function SppMatrixPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function SppMatrixPage() {
+  return (
+    <MainLayout>
+      <SppMatrixPageContent />
+    </MainLayout>
   );
 }

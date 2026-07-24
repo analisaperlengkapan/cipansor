@@ -39,8 +39,9 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { MainLayout } from "@/components/layout";
 
-export default function PayrollPage() {
+function PayrollPageContent() {
   const router = useRouter();
   const [page, setPage] = useState(1);
 
@@ -272,5 +273,13 @@ function GeneratePayrollDialog() {
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+export default function PayrollPage() {
+  return (
+    <MainLayout>
+      <PayrollPageContent />
+    </MainLayout>
   );
 }

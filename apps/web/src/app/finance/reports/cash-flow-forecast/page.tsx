@@ -20,8 +20,9 @@ import {
 import { formatCurrency } from "@/lib/utils";
 import { AlertCircle, TrendingUp, TrendingDown, Wallet } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { MainLayout } from "@/components/layout";
 
-export default function CashFlowForecastPage() {
+function CashFlowForecastPageContent() {
   const { user } = useAuth();
   const unitId = user?.unitId;
   const { data, isLoading, error } = useCashFlowForecast(unitId);
@@ -196,5 +197,13 @@ export default function CashFlowForecastPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function CashFlowForecastPage() {
+  return (
+    <MainLayout>
+      <CashFlowForecastPageContent />
+    </MainLayout>
   );
 }

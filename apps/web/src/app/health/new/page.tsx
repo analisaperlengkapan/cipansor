@@ -44,6 +44,7 @@ import {
   HealthStatus,
 } from "@/hooks/use-health";
 import { useStudents } from "@/hooks/use-students";
+import { MainLayout } from "@/components/layout";
 
 const formSchema = z.object({
   studentId: z.string().min(1, "Santri wajib dipilih"),
@@ -62,7 +63,7 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
-export default function NewHealthRecordPage() {
+function NewHealthRecordPageContent() {
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [selectedStudent, setSelectedStudent] = useState<{
@@ -478,5 +479,13 @@ export default function NewHealthRecordPage() {
         </form>
       </Form>
     </div>
+  );
+}
+
+export default function NewHealthRecordPage() {
+  return (
+    <MainLayout>
+      <NewHealthRecordPageContent />
+    </MainLayout>
   );
 }

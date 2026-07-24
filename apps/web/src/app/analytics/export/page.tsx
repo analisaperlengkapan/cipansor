@@ -41,6 +41,7 @@ import {
 import { api } from "@/lib/api";
 import Link from "next/link";
 import { toast } from "sonner";
+import { MainLayout } from "@/components/layout";
 
 interface ExportType {
   id: string;
@@ -81,7 +82,7 @@ const EXPORT_TYPES: ExportType[] = [
   },
 ];
 
-export default function ExportPage() {
+function ExportPageContent() {
   const [selectedType, setSelectedType] = useState<string>("students");
   const [unitId, setUnitId] = useState<string>("all");
   const [startDate, setStartDate] = useState<string>("");
@@ -370,5 +371,13 @@ export default function ExportPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function ExportPage() {
+  return (
+    <MainLayout>
+      <ExportPageContent />
+    </MainLayout>
   );
 }

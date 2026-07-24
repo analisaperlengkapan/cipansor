@@ -28,6 +28,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Pagination } from "@/components/shared";
+import { MainLayout } from "@/components/layout";
 import {
   usePayments,
   PAYMENT_METHODS,
@@ -44,7 +45,7 @@ function formatCurrency(amount: number) {
   }).format(amount);
 }
 
-export default function PaymentsPage() {
+function PaymentsPageContent() {
   const [page, setPage] = useState(1);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | "">("");
   const [startDate, setStartDate] = useState("");
@@ -244,5 +245,13 @@ export default function PaymentsPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function PaymentsPage() {
+  return (
+    <MainLayout>
+      <PaymentsPageContent />
+    </MainLayout>
   );
 }

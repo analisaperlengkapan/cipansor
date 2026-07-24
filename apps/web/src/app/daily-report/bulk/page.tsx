@@ -48,6 +48,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { useClasses } from "@/hooks/use-classes";
 import { useAuthStore } from "@/stores/auth";
+import { MainLayout } from "@/components/layout";
 
 // Types for the form state
 interface StudentReportState {
@@ -173,7 +174,7 @@ const StudentReportRow = memo(
 
 StudentReportRow.displayName = "StudentReportRow";
 
-export default function BulkDailyReportPage() {
+function BulkDailyReportPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useAuthStore();
@@ -477,5 +478,13 @@ export default function BulkDailyReportPage() {
         </Button>
       </div>
     </div>
+  );
+}
+
+export default function BulkDailyReportPage() {
+  return (
+    <MainLayout>
+      <BulkDailyReportPageContent />
+    </MainLayout>
   );
 }

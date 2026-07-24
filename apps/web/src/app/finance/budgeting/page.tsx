@@ -46,6 +46,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
+import { MainLayout } from "@/components/layout";
 
 // Helper Hooks
 const useBudgets = (unitId: string, academicYearId: string) => {
@@ -139,7 +140,7 @@ const useRecalculateBudget = () => {
   });
 };
 
-export default function BudgetingPage() {
+function BudgetingPageContent() {
   const { data: units } = useUnits();
   const { data: years } = useAcademicYears();
   const { data: accounts } = useExpenseAccounts();
@@ -453,5 +454,13 @@ export default function BudgetingPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function BudgetingPage() {
+  return (
+    <MainLayout>
+      <BudgetingPageContent />
+    </MainLayout>
   );
 }

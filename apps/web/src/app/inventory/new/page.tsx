@@ -40,6 +40,7 @@ import {
   AssetStatus,
 } from "@/hooks/use-inventory";
 import { useUnits } from "@/hooks/use-units";
+import { MainLayout } from "@/components/layout";
 
 const formSchema = z.object({
   name: z.string().min(1, "Nama wajib diisi"),
@@ -61,7 +62,7 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
-export default function NewInventoryPage() {
+function NewInventoryPageContent() {
   const router = useRouter();
   const createMutation = useCreateInventoryItem();
   const { data: units } = useUnits();
@@ -454,5 +455,13 @@ export default function NewInventoryPage() {
         </form>
       </Form>
     </div>
+  );
+}
+
+export default function NewInventoryPage() {
+  return (
+    <MainLayout>
+      <NewInventoryPageContent />
+    </MainLayout>
   );
 }

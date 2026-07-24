@@ -50,6 +50,7 @@ import {
 import { useClasses } from "@/hooks/use-classes";
 import { useUnits } from "@/hooks/use-units";
 import { useState } from "react";
+import { MainLayout } from "@/components/layout";
 
 const priorities: NotificationPriority[] = ["LOW", "NORMAL", "HIGH", "URGENT"];
 
@@ -66,7 +67,7 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
-export default function NewNotificationPage() {
+function NewNotificationPageContent() {
   const router = useRouter();
   const [selectedClasses, setSelectedClasses] = useState<string[]>([]);
   const [selectedUnits, setSelectedUnits] = useState<string[]>([]);
@@ -421,5 +422,13 @@ export default function NewNotificationPage() {
         </form>
       </Form>
     </div>
+  );
+}
+
+export default function NewNotificationPage() {
+  return (
+    <MainLayout>
+      <NewNotificationPageContent />
+    </MainLayout>
   );
 }

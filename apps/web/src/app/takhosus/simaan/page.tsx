@@ -29,8 +29,9 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { SkeletonTable } from "@/components/shared/skeleton-table";
 import { Search } from "lucide-react";
 import { Plus, Eye, Award } from "lucide-react";
+import { MainLayout } from "@/components/layout";
 
-export default function SimaanListPage() {
+function SimaanListPageContent() {
   const router = useRouter();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
@@ -189,5 +190,13 @@ export default function SimaanListPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function SimaanListPage() {
+  return (
+    <MainLayout>
+      <SimaanListPageContent />
+    </MainLayout>
   );
 }

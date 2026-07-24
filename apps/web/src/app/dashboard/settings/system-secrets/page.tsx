@@ -1,7 +1,8 @@
 import { SecretList } from "@/components/system-secrets/secret-list";
 import { Separator } from "@/components/ui/separator";
+import { MainLayout } from "@/components/layout";
 
-export default function SecretsPage() {
+function SecretsPageContent() {
   return (
     <div className="space-y-6 p-6">
       <div>
@@ -13,5 +14,13 @@ export default function SecretsPage() {
       <Separator />
       <SecretList />
     </div>
+  );
+}
+
+export default function SecretsPage() {
+  return (
+    <MainLayout>
+      <SecretsPageContent />
+    </MainLayout>
   );
 }

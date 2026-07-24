@@ -48,6 +48,7 @@ import { useStudents } from "@/hooks/use-students";
 import { useTeachers } from "@/hooks/use-teachers";
 import { useClasses } from "@/hooks/use-classes";
 import { useAuthStore } from "@/stores/auth";
+import { MainLayout } from "@/components/layout";
 
 const LOCATIONS: Record<DutyType, string[]> = {
   CLEANING_CLASSROOM: [
@@ -76,7 +77,7 @@ const LOCATIONS: Record<DutyType, string[]> = {
   KITCHEN: ["Dapur Asrama Putra", "Dapur Asrama Putri"],
 };
 
-export default function NewDutyRosterPage() {
+function NewDutyRosterPageContent() {
   const router = useRouter();
   const { user } = useAuthStore();
   const unitId = user?.unitId || user?.unit?.id;
@@ -603,5 +604,13 @@ export default function NewDutyRosterPage() {
         </div>
       </form>
     </div>
+  );
+}
+
+export default function NewDutyRosterPage() {
+  return (
+    <MainLayout>
+      <NewDutyRosterPageContent />
+    </MainLayout>
   );
 }

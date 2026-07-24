@@ -22,8 +22,9 @@ import {
 } from "@/components/ui/table";
 
 import { id } from "date-fns/locale";
+import { MainLayout } from "@/components/layout";
 
-export default function AdmissionWavesPage() {
+function AdmissionWavesPageContent() {
   const { data: wavesResponse, isLoading } = useAdmissionWaves();
   const waves = wavesResponse?.data || [];
 
@@ -105,5 +106,13 @@ export default function AdmissionWavesPage() {
         </Table>
       </Card>
     </div>
+  );
+}
+
+export default function AdmissionWavesPage() {
+  return (
+    <MainLayout>
+      <AdmissionWavesPageContent />
+    </MainLayout>
   );
 }

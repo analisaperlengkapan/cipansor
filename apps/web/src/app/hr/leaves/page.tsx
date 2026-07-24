@@ -26,6 +26,7 @@ import { Loader2, Plus, X, Check, Filter } from "lucide-react";
 import { LeaveRequestDialog } from "@/components/hr/LeaveRequestDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
+import { MainLayout } from "@/components/layout";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,7 +34,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-export default function LeavesPage() {
+function LeavesPageContent() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("my-leaves");
   const [page, setPage] = useState(1);
@@ -260,5 +261,13 @@ export default function LeavesPage() {
         </Card>
       )}
     </div>
+  );
+}
+
+export default function LeavesPage() {
+  return (
+    <MainLayout>
+      <LeavesPageContent />
+    </MainLayout>
   );
 }

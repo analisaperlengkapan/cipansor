@@ -15,8 +15,9 @@ import {
 } from "@/components/ui/table";
 import { formatCurrency } from "@/lib/utils";
 import { DatePicker } from "@/components/ui/date-picker";
+import { MainLayout } from "@/components/layout";
 
-export default function BalanceSheetPage() {
+function BalanceSheetPageContent() {
   const [endDate, setEndDate] = useState<Date>(new Date());
 
   const { data: report, isLoading } = useBalanceSheet({
@@ -196,5 +197,13 @@ export default function BalanceSheetPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function BalanceSheetPage() {
+  return (
+    <MainLayout>
+      <BalanceSheetPageContent />
+    </MainLayout>
   );
 }

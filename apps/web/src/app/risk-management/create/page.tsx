@@ -31,6 +31,7 @@ import { useCreateRisk } from "@/hooks/use-risk";
 import { InfoIcon } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { getEffectiveRole } from "@/lib/rbac";
+import { MainLayout } from "@/components/layout";
 
 const RiskCategory = [
   "STRATEGIC",
@@ -70,7 +71,7 @@ const formSchema = z.object({
 
 const PRIVILEGED_ROLES = ["SUPER_ADMIN", "YAYASAN_KETUA"];
 
-export default function CreateRiskPage() {
+function CreateRiskPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const strategicPlanId = searchParams?.get("strategicPlanId") || undefined;
@@ -342,5 +343,13 @@ export default function CreateRiskPage() {
         </form>
       </Form>
     </div>
+  );
+}
+
+export default function CreateRiskPage() {
+  return (
+    <MainLayout>
+      <CreateRiskPageContent />
+    </MainLayout>
   );
 }

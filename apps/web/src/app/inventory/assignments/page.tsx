@@ -16,8 +16,9 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Pagination } from "@/components/shared/pagination";
 import { useAssetAssignments } from "@/hooks/use-inventory";
+import { MainLayout } from "@/components/layout";
 
-export default function InventoryAssignmentsPage() {
+function InventoryAssignmentsPageContent() {
   const [page, setPage] = useState(1);
   const { data: assignments, isLoading } = useAssetAssignments({
     page,
@@ -128,5 +129,13 @@ export default function InventoryAssignmentsPage() {
         />
       )}
     </div>
+  );
+}
+
+export default function InventoryAssignmentsPage() {
+  return (
+    <MainLayout>
+      <InventoryAssignmentsPageContent />
+    </MainLayout>
   );
 }

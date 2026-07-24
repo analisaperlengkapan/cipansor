@@ -5,6 +5,7 @@ import { usePriorityLeads } from "@/hooks/use-admissions";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { MainLayout } from "@/components/layout";
 import {
   TrendingUp,
   Users,
@@ -29,7 +30,7 @@ import {
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
-export default function AdmissionsAnalyticsPage() {
+function AdmissionsAnalyticsPageContent() {
   const { data: roiResponse, isLoading: loadingROI } = useMarketingROI();
   const { data: priorityResponse, isLoading: loadingPriority } = usePriorityLeads();
 
@@ -163,5 +164,13 @@ export default function AdmissionsAnalyticsPage() {
          </Card>
       </div>
     </div>
+  );
+}
+
+export default function AdmissionsAnalyticsPage() {
+  return (
+    <MainLayout>
+      <AdmissionsAnalyticsPageContent />
+    </MainLayout>
   );
 }

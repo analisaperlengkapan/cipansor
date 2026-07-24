@@ -26,6 +26,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { MainLayout } from "@/components/layout";
 import {
   Select,
   SelectContent,
@@ -34,7 +35,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-export default function InventoryAuditsPage() {
+function InventoryAuditsPageContent() {
   const [page, setPage] = useState(1);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [selectedUnitId, setSelectedUnitId] = useState<string>("");
@@ -196,5 +197,13 @@ export default function InventoryAuditsPage() {
         />
       )}
     </div>
+  );
+}
+
+export default function InventoryAuditsPage() {
+  return (
+    <MainLayout>
+      <InventoryAuditsPageContent />
+    </MainLayout>
   );
 }

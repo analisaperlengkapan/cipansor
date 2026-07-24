@@ -68,8 +68,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useClasses } from "@/hooks/use-classes";
+import { MainLayout } from "@/components/layout";
 
-export default function GrowthTrackingPage() {
+function GrowthTrackingPageContent() {
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
@@ -445,5 +446,13 @@ export default function GrowthTrackingPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function GrowthTrackingPage() {
+  return (
+    <MainLayout>
+      <GrowthTrackingPageContent />
+    </MainLayout>
   );
 }

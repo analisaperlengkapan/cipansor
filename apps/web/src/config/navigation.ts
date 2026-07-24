@@ -567,6 +567,11 @@ const parentNavigation: NavGroup[] = [
         href: "/parent/messages",
         icon: MessageSquare,
       },
+      {
+        title: "Pengaturan Notifikasi",
+        href: "/parent/notifications/preferences",
+        icon: Bell,
+      },
     ],
   },
   {
@@ -764,6 +769,12 @@ const adminNavigation: NavGroup[] = [
         href: "/marketing/leads",
         icon: Users,
       },
+      {
+        title: "Analitik Marketing",
+        href: "/admin/marketing",
+        icon: BarChart3,
+        roleCodes: ["SUPER_ADMIN"],
+      },
     ],
   },
   {
@@ -791,6 +802,28 @@ const adminNavigation: NavGroup[] = [
         href: "/settings/roles",
         icon: Shield,
         roleCodes: ["SUPER_ADMIN"],
+      },
+      {
+        title: "Kesiapan Akreditasi",
+        href: "/foundation/accreditation/readiness",
+        icon: Award,
+        roleCodes: ["SUPER_ADMIN"],
+      },
+      {
+        title: "Konsolidasi Keuangan",
+        href: "/foundation/finance/consolidation",
+        icon: FileSpreadsheet,
+        roleCodes: ["SUPER_ADMIN"],
+      },
+      {
+        title: "Unit Usaha",
+        href: "/unit-usaha",
+        icon: Briefcase,
+      },
+      {
+        title: "Projects",
+        href: "/project",
+        icon: FolderOpen,
       },
     ],
   },
@@ -897,6 +930,63 @@ const adminNavigation: NavGroup[] = [
         title: "Peta Al-Quran",
         href: "/tahfidz/quran-map",
         icon: BookCheck,
+      },
+      {
+        title: "Analitik Murojaah",
+        href: "/tahfidz/murojaah/analytics",
+        icon: BarChart3,
+      },
+      {
+        title: "Jadwal Simaan",
+        href: "/tahfidz/simaan/schedule",
+        icon: CalendarDays,
+      },
+      {
+        title: "Jadwal Ujian (CBT)",
+        href: "/cbt/exams",
+        icon: BookOpenCheck,
+      },
+    ],
+  },
+  {
+    // The whole TK/PAUD module (assessment, daily reports, raport) shipped
+    // without a single menu entry, so no role could reach any of its pages.
+    title: "TK / PAUD",
+    items: [
+      {
+        title: "Dashboard TK",
+        href: "/tk",
+        icon: Baby,
+      },
+      {
+        title: "Penilaian TK",
+        href: "/tk/assessment",
+        icon: ClipboardPenLine,
+      },
+      {
+        title: "Progres Penilaian",
+        href: "/tk/assessment/progress",
+        icon: BarChart3,
+      },
+      {
+        title: "Laporan Harian",
+        href: "/tk/daily-reports",
+        icon: NotebookPen,
+      },
+      {
+        title: "Laporan Harian (Kelas)",
+        href: "/tk/daily-reports/class",
+        icon: School,
+      },
+      {
+        title: "Laporan Harian (Orang Tua)",
+        href: "/tk/daily-reports/parent",
+        icon: Heart,
+      },
+      {
+        title: "Raport TK",
+        href: "/tk/reports",
+        icon: FileBarChart,
       },
     ],
   },
@@ -1044,6 +1134,38 @@ const adminNavigation: NavGroup[] = [
         icon: ClipboardCheck,
       },
       {
+        title: "Penggajian",
+        href: "/payroll",
+        icon: Wallet,
+      },
+      {
+        title: "Komponen Gaji",
+        href: "/hr/payroll/components",
+        icon: CreditCard,
+      },
+      {
+        title: "Periode Penggajian",
+        href: "/hr/payroll/periods",
+        icon: CalendarDays,
+      },
+      {
+        title: "Gaji Pegawai",
+        href: "/hr/payroll/staff-salary",
+        icon: Wallet,
+      },
+      {
+        title: "Manajemen Talenta",
+        href: "/talenta",
+        icon: Sparkles,
+      },
+      {
+        // Hub for neraca / laba rugi / arus kas / buku besar / neraca saldo.
+        // Those six report pages had no menu path of their own.
+        title: "Laporan Akuntansi",
+        href: "/finance/reports",
+        icon: FileBarChart,
+      },
+      {
         title: "PKG Guru",
         href: "/pkg",
         icon: ClipboardPenLine,
@@ -1162,12 +1284,51 @@ const adminNavigation: NavGroup[] = [
     ],
   },
   {
-    title: "Risk Management",
+    // The governance cluster used to hold Manajemen Risiko alone, so the pages
+    // it integrates with — Perencanaan (RPJP/Renstra/RKA), the GRC dashboard,
+    // Pengawasan, Kepatuhan Syariah and Tata Laksana — shipped with no menu
+    // entry at all and were reachable only by typing the URL.
+    title: "Perencanaan & Tata Kelola",
     items: [
+      {
+        title: "Perencanaan Strategis",
+        href: "/perencanaan",
+        icon: ClipboardList,
+      },
+      {
+        title: "Peta Strategi",
+        href: "/perencanaan/strategy-map",
+        icon: Globe,
+      },
       {
         title: "Manajemen Risiko",
         href: "/risk-management",
         icon: Shield,
+      },
+      {
+        title: "Dashboard GRC",
+        href: "/grc-dashboard",
+        icon: ShieldCheck,
+      },
+      {
+        title: "Pengawasan Internal",
+        href: "/pengawasan",
+        icon: ClipboardCheck,
+      },
+      {
+        title: "Kepatuhan Syariah",
+        href: "/syariah",
+        icon: BookCheck,
+      },
+      {
+        title: "Tata Laksana (SOP)",
+        href: "/tata-laksana",
+        icon: ScrollText,
+      },
+      {
+        title: "Struktur Organisasi",
+        href: "/organisasi",
+        icon: UserCog,
       },
     ],
   },

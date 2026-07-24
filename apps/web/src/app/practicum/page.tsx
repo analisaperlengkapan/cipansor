@@ -5,8 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import Link from 'next/link';
+import { MainLayout } from "@/components/layout";
 
-export default function PracticumPage() {
+function PracticumPageContent() {
   const { data: lessonPlans, isLoading } = useLessonPlans();
 
   return (
@@ -58,5 +59,13 @@ export default function PracticumPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function PracticumPage() {
+  return (
+    <MainLayout>
+      <PracticumPageContent />
+    </MainLayout>
   );
 }

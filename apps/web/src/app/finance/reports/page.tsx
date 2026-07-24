@@ -12,6 +12,7 @@ import { formatCurrency } from "@/lib/utils";
 import { Loader2, Download, ArrowRight, Save } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
+import { MainLayout } from "@/components/layout";
 import {
   Select,
   SelectContent,
@@ -151,7 +152,7 @@ const AccountNode = ({ node, level = 0 }: { node: any; level?: number }) => (
   </>
 );
 
-export default function FinanceReportsPage() {
+function FinanceReportsPageContent() {
   const { data: units } = useUnits();
   const { data: years } = useAcademicYears();
 
@@ -806,5 +807,13 @@ export default function FinanceReportsPage() {
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+export default function FinanceReportsPage() {
+  return (
+    <MainLayout>
+      <FinanceReportsPageContent />
+    </MainLayout>
   );
 }

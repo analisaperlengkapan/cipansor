@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { AttendanceStatus } from "@cipansor/shared";
+import { MainLayout } from "@/components/layout";
 import {
   useMyHomeroomClass,
   useHomeroomClassAttendance,
@@ -90,7 +91,7 @@ const STATUS_CONFIG: Record<
   },
 };
 
-export default function QuickAttendancePage() {
+function QuickAttendancePageContent() {
   const router = useRouter();
   const today = new Date().toISOString().split("T")[0];
   const [selectedDate, setSelectedDate] = useState(today);
@@ -474,5 +475,13 @@ export default function QuickAttendancePage() {
         </Button>
       </div>
     </div>
+  );
+}
+
+export default function QuickAttendancePage() {
+  return (
+    <MainLayout>
+      <QuickAttendancePageContent />
+    </MainLayout>
   );
 }

@@ -75,6 +75,7 @@ import {
 } from "@/hooks/use-behavior";
 import { useMyHomeroomClass } from "@/hooks/use-homeroom";
 import { useQueryClient } from "@tanstack/react-query";
+import { MainLayout } from "@/components/layout";
 
 // Types
 type NoteType =
@@ -319,7 +320,7 @@ function BehaviorAnalytics({ notes }: { notes: any[] }) {
   );
 }
 
-export default function BehaviorNotesPage() {
+function BehaviorNotesPageContent() {
   const { data: notesData, isLoading } = useBehaviorRecords();
   const { data: homeroomClass, isLoading: isLoadingClass } =
     useMyHomeroomClass();
@@ -766,5 +767,13 @@ export default function BehaviorNotesPage() {
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+export default function BehaviorNotesPage() {
+  return (
+    <MainLayout>
+      <BehaviorNotesPageContent />
+    </MainLayout>
   );
 }

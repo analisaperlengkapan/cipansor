@@ -57,6 +57,7 @@ import {
   ShieldAlert,
 } from "lucide-react";
 import { toast } from "sonner";
+import { MainLayout } from "@/components/layout";
 
 // Types
 interface WalletData {
@@ -201,7 +202,7 @@ const formatDate = (date: string) => {
   });
 };
 
-export default function WalletPage() {
+function WalletPageContent() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState("wallets");
@@ -791,5 +792,13 @@ export default function WalletPage() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+export default function WalletPage() {
+  return (
+    <MainLayout>
+      <WalletPageContent />
+    </MainLayout>
   );
 }

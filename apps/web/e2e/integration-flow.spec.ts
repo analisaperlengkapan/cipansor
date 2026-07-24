@@ -60,11 +60,22 @@ test.describe("Integrated School Management Flow", () => {
 
     await expect(page.locator("text=Matriks Talenta")).toBeVisible();
 
+    // Scope to the content landmark and match the initials exactly. `text=UA`
+    // is Playwright's unquoted engine — a case-insensitive *substring* — so it
+    // also matched every sidebar item containing "ua" ("Konsolidasi Keuangan",
+    // "Aduan & Aspirasi", "Pesan Orang Tua", …). Those come first in the DOM,
+    // so once this page gained the app shell `.first()` resolved to a menu
+    // button and the hover below never touched the avatar.
+    const main = page.getByRole("main");
+
     // The seeded HIGH_POTENTIAL profile (Ustadz Ahmad) renders as initials "UA"
-    await expect(page.locator("text=UA").first()).toBeVisible();
+    const avatar = main.getByText("UA", { exact: true }).first();
+    await expect(avatar).toBeVisible();
 
     // Hover to see the full name from the real analytics payload
-    await page.locator("text=UA").first().hover();
-    await expect(page.locator("text=Ustadz Ahmad").first()).toBeVisible();
+    await avatar.hover();
+    await expect(
+      page.getByRole("tooltip").filter({ hasText: "Ustadz Ahmad" }).first(),
+    ).toBeVisible();
   });
 });

@@ -457,3 +457,49 @@ describe("navigation — every menu-reachable page renders the app shell", () =>
     expect(shellless).toEqual([]);
   });
 });
+
+describe("e2e selectors — no loose text= selector can collide with the sidebar", () => {
+  // `page.locator("text=UA")` is Playwright's *unquoted* text engine: a
+  // case-insensitive SUBSTRING match, not an exact one. It also matched
+  // "Konsolidasi Keuangan", "Aduan & Aspirasi", "Pesan Orang Tua" — and the
+  // sidebar precedes the content in the DOM, so `.first()` returned a menu
+  // button. The assertion only passed while /hr/talenta rendered without the
+  // app shell; giving that page its shell (#368) broke the test on every
+  // browser. The bug is in the selector, not the layout, so guard the selector.
+  const E2E_DIR = path.join(process.cwd(), "e2e");
+
+  const navTitles = ALL_ROLE_CODES.flatMap((rc) =>
+    getNavigationForRoleCode(rc).flatMap((g) => [
+      g.title,
+      ...g.items.map((i) => i.title),
+    ]),
+  ).map((t) => t.toLowerCase());
+
+  function specFiles(dir: string): string[] {
+    if (!fs.existsSync(dir)) return [];
+    return fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
+      const child = path.join(dir, e.name);
+      if (e.isDirectory()) return specFiles(child);
+      return e.name.endsWith(".spec.ts") ? [child] : [];
+    });
+  }
+
+  it("no unquoted text= selector is a substring of any sidebar label", () => {
+    const collisions: string[] = [];
+    for (const file of specFiles(E2E_DIR)) {
+      const src = fs.readFileSync(file, "utf8");
+      for (const m of src.matchAll(/locator\(\s*"text=([^"]+)"/g)) {
+        const needle = m[1].toLowerCase().trim();
+        // Quoted forms (text="UA") are exact matches and cannot collide.
+        if (needle.startsWith("'") || needle.startsWith('"')) continue;
+        const hits = navTitles.filter((t) => t.includes(needle));
+        if (hits.length) {
+          collisions.push(
+            `${path.relative(process.cwd(), file)}: text=${m[1]} also matches sidebar ${[...new Set(hits)].join(", ")}`,
+          );
+        }
+      }
+    }
+    expect(collisions).toEqual([]);
+  });
+});

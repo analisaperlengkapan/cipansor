@@ -4,9 +4,11 @@ import { toast } from "sonner";
 
 export interface StrategicPlan {
   id: string;
-  unitId: string;
+  unitId: string | null;
   title: string;
   description?: string;
+  vision?: string | null;
+  mission?: string | null;
   type: string;
   status: string;
   startDate: string;
@@ -19,6 +21,7 @@ export interface StrategicPlan {
   createdBy: { id: string; name: string };
   approvedBy?: { id: string; name: string };
   objectives: PlanObjective[];
+  fundingSources?: PlanFundingSource[];
 }
 
 export interface PlanObjective {
@@ -36,22 +39,60 @@ export interface PlanObjective {
   activities: PlanActivity[];
 }
 
+export interface PlanIndicatorTarget {
+  id: string;
+  period: string;
+  order: number;
+  targetValue: number;
+  actualValue?: number | null;
+}
+
 export interface PlanIndicator {
   id: string;
   name: string;
   unit: string;
+  level?: string | null;
+  baseline?: number | null;
   targetValue: number;
   currentValue: number;
+  definition?: string | null;
+  formula?: string | null;
+  dataSource?: string | null;
+  frequency?: string | null;
+  picRole?: string | null;
+  targets?: PlanIndicatorTarget[];
+}
+
+export interface PlanActivityBudgetItem {
+  id: string;
+  order: number;
+  description: string;
+  volume: number;
+  unit: string;
+  unitPrice?: number | null;
+  amount?: number | null;
+}
+
+export interface PlanFundingSource {
+  id: string;
+  order: number;
+  name: string;
+  basis?: string | null;
+  amount?: number | null;
 }
 
 export interface PlanActivity {
   id: string;
+  kind?: string;
+  code?: string | null;
+  parentId?: string | null;
   title: string;
   description?: string;
   status: string;
   priority: string;
   startDate?: string;
   endDate?: string;
+  scheduleMonths?: number[];
   budget?: number;
   budgetId?: string;
   realization?: number;
@@ -61,6 +102,9 @@ export interface PlanActivity {
     account: { code: string; name: string };
   };
   pic?: { id: string; name: string };
+  indicators?: PlanIndicator[];
+  budgetItems?: PlanActivityBudgetItem[];
+  children?: PlanActivity[];
 }
 
 export const usePlans = (params?: { type?: string; status?: string }) => {

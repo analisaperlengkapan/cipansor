@@ -16,7 +16,6 @@ import { id as localeId } from "date-fns/locale";
 import {
   usePlan,
   useApprovePlan,
-  useDeleteActivity,
   usePlanRealizationTrend,
 } from "@/hooks/use-perencanaan";
 import { PageHeader } from "@/components/shared/page-header";
@@ -43,8 +42,6 @@ import {
   ShieldAlert,
   ClipboardCheck,
   ArrowRight,
-  Pencil,
-  Trash2,
   Wallet,
   PieChart,
   LayoutDashboard,
@@ -52,7 +49,11 @@ import {
 import { RiskLevelBadge } from "@/components/risk/risk-badges";
 import Link from "next/link";
 import { ActivityDialog } from "./activity-dialog";
-import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import {
+  IndicatorRow,
+  ActivityCard,
+  FundingSection,
+} from "./plan-sections";
 
 export default function PerencanaanDetailPage() {
   const params = useParams();
@@ -62,12 +63,10 @@ export default function PerencanaanDetailPage() {
   const { data: plan, isLoading } = usePlan(planId);
   const { data: realizationTrend } = usePlanRealizationTrend(planId);
   const approvePlan = useApprovePlan();
-  const deleteActivity = useDeleteActivity();
 
   const [activityDialogOpen, setActivityDialogOpen] = useState(false);
   const [selectedObjectiveId, setSelectedObjectiveId] = useState<string>("");
   const [editActivityData, setEditActivityData] = useState<any>(null);
-  const [deleteActivityId, setDeleteActivityId] = useState<string | null>(null);
 
   if (isLoading) {
     return (
@@ -152,6 +151,33 @@ export default function PerencanaanDetailPage() {
             <p className="text-sm rounded-md leading-relaxed">
               {plan.description || "Belum ada deskripsi."}
             </p>
+
+            {(plan as any).vision && (
+              <div className="rounded-md border-l-4 border-primary/60 bg-primary/5 px-4 py-3">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-primary/80">
+                  Visi
+                </p>
+                <p className="text-sm italic mt-1 leading-relaxed">
+                  “{(plan as any).vision}”
+                </p>
+              </div>
+            )}
+
+            {(plan as any).mission && (
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                  Misi
+                </p>
+                <ol className="list-decimal ml-5 space-y-1 text-sm leading-relaxed">
+                  {String((plan as any).mission)
+                    .split("\n")
+                    .filter(Boolean)
+                    .map((m: string, i: number) => (
+                      <li key={i}>{m}</li>
+                    ))}
+                </ol>
+              </div>
+            )}
 
             <div className="pt-4 border-t space-y-4">
               <div>
@@ -277,6 +303,12 @@ export default function PerencanaanDetailPage() {
               <Activity className="w-4 h-4" /> Program & Kegiatan
             </TabsTrigger>
             <TabsTrigger
+              value="funding"
+              className="flex items-center gap-2 text-emerald-700 data-[state=active]:text-emerald-800"
+            >
+              <Wallet className="w-4 h-4" /> Anggaran & Pendanaan
+            </TabsTrigger>
+            <TabsTrigger
               value="risks"
               className="flex items-center gap-2 text-rose-600 data-[state=active]:text-rose-700"
             >
@@ -339,27 +371,11 @@ export default function PerencanaanDetailPage() {
                         <div className="mt-3 bg-slate-50 border rounded-md p-3">
                           <h5 className="text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wider flex items-center gap-1">
                             <BarChart className="w-3 h-3" /> Indikator Kinerja
-                            Utama
+                            (IKU/IUP)
                           </h5>
-                          <div className="space-y-2">
+                          <div className="space-y-3 divide-y divide-slate-100 [&>*+*]:pt-3">
                             {obj.indicators.map((ind: any) => (
-                              <div
-                                key={ind.id}
-                                className="flex justify-between text-sm items-center"
-                              >
-                                <span className="text-slate-700">
-                                  • {ind.name}
-                                </span>
-                                <div className="text-right">
-                                  <span className="font-medium">
-                                    {ind.currentValue}
-                                  </span>
-                                  <span className="text-slate-400 mx-1">/</span>
-                                  <span className="text-slate-500">
-                                    {ind.targetValue} {ind.unit}
-                                  </span>
-                                </div>
-                              </div>
+                              <IndicatorRow key={ind.id} indicator={ind} />
                             ))}
                           </div>
                         </div>
@@ -409,90 +425,9 @@ export default function PerencanaanDetailPage() {
                       </div>
 
                       {obj.activities && obj.activities.length > 0 ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 ml-4">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 ml-4">
                           {obj.activities.map((act: any) => (
-                            <Card
-                              key={act.id}
-                              className="shadow-none border-dashed bg-slate-50/30"
-                            >
-                              <CardContent className="p-4">
-                                <div className="flex justify-between items-start mb-2">
-                                  <h5 className="font-medium text-sm">
-                                    {act.title}
-                                  </h5>
-                                  <div className="flex gap-1">
-                                    <Button
-                                      size="icon"
-                                      variant="ghost"
-                                      className="h-7 w-7"
-                                      onClick={() => {
-                                        setSelectedObjectiveId(obj.id);
-                                        setEditActivityData(act);
-                                        setActivityDialogOpen(true);
-                                      }}
-                                    >
-                                      <Pencil className="h-3 w-3" />
-                                    </Button>
-                                    <Button
-                                      size="icon"
-                                      variant="ghost"
-                                      className="h-7 w-7 text-destructive"
-                                      onClick={() =>
-                                        setDeleteActivityId(act.id)
-                                      }
-                                    >
-                                      <Trash2 className="h-3 w-3" />
-                                    </Button>
-                                  </div>
-                                </div>
-                                <div className="flex flex-wrap gap-2 text-xs text-muted-foreground mt-2">
-                                  <Badge
-                                    variant="outline"
-                                    className="text-[10px]"
-                                  >
-                                    {act.status}
-                                  </Badge>
-                                  <Badge
-                                    variant="outline"
-                                    className="text-[10px]"
-                                  >
-                                    {act.priority}
-                                  </Badge>
-                                  {Number(act.budget) > 0 && (
-                                    <Badge
-                                      variant="secondary"
-                                      className="text-[10px] bg-emerald-50 text-emerald-700 border-emerald-100"
-                                    >
-                                      Realisasi:{" "}
-                                      {Math.min(
-                                        100,
-                                        Math.round(
-                                          ((act.realization || 0) /
-                                            Number(act.budget)) *
-                                            100,
-                                        ),
-                                      )}
-                                      %
-                                    </Badge>
-                                  )}
-                                  {act.pic && (
-                                    <span className="flex items-center gap-1">
-                                      <CheckCircle2 className="w-3 h-3" />{" "}
-                                      {act.pic.name}
-                                    </span>
-                                  )}
-                                </div>
-                                {act.budgetRel && (
-                                  <div className="mt-3 pt-3 border-t flex items-center gap-2 text-xs text-emerald-700">
-                                    <Wallet className="w-3 h-3" />
-                                    <span className="font-semibold">
-                                      {act.budgetRel.account?.code}
-                                    </span>
-                                    <span>{act.budgetRel.account?.name}</span>
-                                  </div>
-                                )}
-                              </CardContent>
-                            </Card>
+                            <ActivityCard key={act.id} act={act} />
                           ))}
                         </div>
                       ) : (
@@ -509,6 +444,40 @@ export default function PerencanaanDetailPage() {
                   <p>
                     Tambahkan sasaran strategis terlebih dahulu sebelum
                     memetakan kegiatan.
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="funding">
+          <Card>
+            <CardHeader className="border-b">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Wallet className="w-5 h-5" /> Anggaran & Proyeksi Pendanaan
+              </CardTitle>
+              <CardDescription>
+                Rekap belanja dan proyeksi pendapatan per sumber dana (RKA).
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-6">
+              {(plan as any).fundingSources &&
+              (plan as any).fundingSources.length > 0 ? (
+                <FundingSection
+                  sources={(plan as any).fundingSources}
+                  totalBelanja={Number(plan.budget || 0)}
+                />
+              ) : (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Wallet className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                  <p>
+                    Proyeksi pendanaan per sumber dana disajikan pada dokumen
+                    RKA tahunan.
+                  </p>
+                  <p className="text-sm mt-1">
+                    Total belanja terencana: Rp{" "}
+                    {Number(plan.budget || 0).toLocaleString("id-ID")}
                   </p>
                 </div>
               )}
@@ -731,20 +700,6 @@ export default function PerencanaanDetailPage() {
           editData={editActivityData}
         />
       )}
-
-      <ConfirmDialog
-        open={!!deleteActivityId}
-        onOpenChange={(open) => !open && setDeleteActivityId(null)}
-        title="Hapus Kegiatan?"
-        description="Apakah Anda yakin ingin menghapus kegiatan ini? Tindakan ini tidak dapat dibatalkan."
-        onConfirm={async () => {
-          if (deleteActivityId) {
-            await deleteActivity.mutateAsync(deleteActivityId);
-            setDeleteActivityId(null);
-          }
-        }}
-        isLoading={deleteActivity.isPending}
-      />
     </div>
   );
 }

@@ -60,3 +60,31 @@ docs
 scripts
 tests
 .github
+
+# Runtime data — never build-context material, and dangerous if it ever is.
+# These are empty in a fresh checkout, so they cost nothing today; the point is
+# that a production host where uploads/ has grown, or where someone left a
+# database dump next to the compose file, must not silently ship either into
+# the builder stage.
+apps/api/public/uploads
+apps/api/logs
+apps/api/storage
+
+# Database dumps, ROOT LEVEL ONLY.
+#
+# Deliberately not `**/*.sql`: every Prisma migration is a file named
+# migration.sql, the runner stage copies apps/api/prisma wholesale, and a
+# recursive rule would ship migration directories that are empty. That breaks
+# `prisma migrate deploy` in a way nothing warns about — the directory is
+# present, the history table disagrees, and the failure surfaces later as drift.
+#
+# Docker matches with Go filepath.Match, where `*` does not cross `/`, so these
+# already only bind at the context root. Keeping them un-starred documents the
+# intent so a future edit does not "helpfully" make them recursive.
+/*.sql
+/*.sql.gz
+/*.dump
+/*.bak
+
+# Agent/editor scratch
+.claude

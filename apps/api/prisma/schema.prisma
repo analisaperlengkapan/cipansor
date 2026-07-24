@@ -8045,6 +8045,24 @@ enum PlanType {
 }
 
 /// StrategicPlan - Rencana strategis yayasan/unit
+/// The level of an activity in the Indonesian planning cascade. A Renstra
+/// Program contains Kegiatan; an RKA Kegiatan may contain Aksi/sub-kegiatan.
+enum PlanActivityKind {
+  PROGRAM
+  KEGIATAN
+  SUBKEGIATAN
+}
+
+/// Classifies an indicator by the document level it measures, mirroring the
+/// government cascade: IUP (RPJP Sasaran Visi), IKU (Renstra Tujuan/Sasaran),
+/// IKP (Program outcome), IKK (Kegiatan output).
+enum PlanIndicatorLevel {
+  IUP
+  IKU
+  IKP
+  IKK
+}
+
 model StrategicPlan {
   id String @id @default(uuid())
   /// Null for foundation-wide plans. RPJP and Renstra are yayasan-level
@@ -8055,6 +8073,10 @@ model StrategicPlan {
   parentId     String?    @map("parent_id") // Hierarchy: RPJP -> RENSTRA -> RKA
   title        String
   description  String?    @db.Text
+  /// Visi statement (RPJP Visi 2045 / Renstra Visi periode).
+  vision       String?    @db.Text
+  /// Misi — one statement per line (RPJP Misi Pembangunan / Renstra Misi).
+  mission      String?    @db.Text
   type         PlanType
   status       PlanStatus @default(DRAFT)
   startDate    DateTime   @map("start_date")
@@ -8074,6 +8096,7 @@ model StrategicPlan {
   createdBy      User             @relation("PlanCreator", fields: [createdById], references: [id])
   approvedBy     User?            @relation("PlanApprover", fields: [approvedById], references: [id])
   objectives     PlanObjective[]
+  fundingSources PlanFundingSource[]
   risks          Risk[]
   internalAudits InternalAudit[]
   collaborators  PlanCollaborator[]
@@ -8124,51 +8147,142 @@ model PlanObjective {
   @@map("plan_objectives")
 }
 
-/// PlanIndicator - Indikator Kinerja Utama (IKU)
+/// PlanIndicator - an indicator (IUP / IKU / IKP / IKK). It hangs off EITHER a
+/// PlanObjective (Sasaran-level: IUP, IKU) OR a PlanActivity (Program IKP /
+/// Kegiatan IKK) — exactly one parent is set (enforced in the service layer).
 model PlanIndicator {
   id           String   @id @default(uuid())
-  objectiveId  String   @map("objective_id")
+  objectiveId  String?  @map("objective_id")
+  activityId   String?  @map("activity_id")
+  level        PlanIndicatorLevel?
   name         String
   unit         String // Satuan (%, orang, skor, dll)
   baseline     Float? // Nilai awal
   targetValue  Float    @map("target_value")
   currentValue Float    @default(0) @map("current_value")
+  // Kamus Indikator — audit-grade metadata (definisi, formula, sumber data,
+  // frekuensi pengukuran, penanggung jawab). PIC is a role/jabatan, not a
+  // system user, matching how the source documents fill the column.
+  definition   String?  @db.Text
+  formula      String?  @db.Text
+  dataSource   String?  @map("data_source")
+  frequency    String? // Frekuensi pengukuran (tahunan, semesteran, triwulanan)
+  picRole      String?  @map("pic_role")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   // Relations
-  objective    PlanObjective @relation(fields: [objectiveId], references: [id], onDelete: Cascade)
+  objective    PlanObjective? @relation(fields: [objectiveId], references: [id], onDelete: Cascade)
+  activity     PlanActivity?  @relation("ActivityIndicator", fields: [activityId], references: [id], onDelete: Cascade)
+  targets      PlanIndicatorTarget[]
   pkIndicators PKIndicator[]
 
   @@index([objectiveId])
+  @@index([activityId])
   @@map("plan_indicators")
 }
 
-/// PlanActivity - Kegiatan implementasi
+/// PlanIndicatorTarget - a target for one period, so an indicator can carry a
+/// staged progression (RPJP: Tahap I-IV; Renstra: per tahun; RKA: per triwulan)
+/// instead of a single final target. `actualValue` records realisasi per period.
+model PlanIndicatorTarget {
+  id          String   @id @default(uuid())
+  indicatorId String   @map("indicator_id")
+  period      String // "Tahap I", "2027", "TW II"
+  order       Int      @default(0)
+  targetValue Float    @map("target_value")
+  actualValue Float?   @map("actual_value")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  indicator PlanIndicator @relation(fields: [indicatorId], references: [id], onDelete: Cascade)
+
+  @@index([indicatorId])
+  @@map("plan_indicator_targets")
+}
+
+/// PlanActivity - a Program, Kegiatan, or Aksi in the cascade. Every activity
+/// rolls up to a PlanObjective (its Sasaran/Bidang); a Kegiatan additionally
+/// points to its parent Program via `parentId`, giving the Program→Kegiatan
+/// depth the flat single-level model could not express.
 model PlanActivity {
-  id          String       @id @default(uuid())
-  objectiveId String       @map("objective_id")
+  id          String           @id @default(uuid())
+  /// Null for a sub-activity (a Kegiatan nested under a Program): it belongs to
+  /// its parent Program, which in turn belongs to the objective. Top-level
+  /// activities (a Renstra Program, an RKA Kegiatan under a Bidang) set it.
+  objectiveId String?          @map("objective_id")
+  parentId    String?          @map("parent_id")
+  kind        PlanActivityKind @default(KEGIATAN)
+  /// Renstra Program code / RKA kegiatan code (e.g. "1.A.1", "K-01").
+  code        String?
   title       String
-  description String?      @db.Text
-  picId       String?      @map("pic_id") // Person In Charge
-  startDate   DateTime?    @map("start_date")
-  endDate     DateTime?    @map("end_date")
-  budget      Decimal?     @db.Decimal(15, 2)
-  status      PlanStatus   @default(DRAFT)
-  priority    PlanPriority @default(MEDIUM)
-  notes       String?      @db.Text
-  budgetId    String?      @map("budget_id")
-  createdAt   DateTime     @default(now()) @map("created_at")
-  updatedAt   DateTime     @updatedAt @map("updated_at")
+  description String?          @db.Text
+  picId       String?          @map("pic_id") // Person In Charge
+  startDate   DateTime?        @map("start_date")
+  endDate     DateTime?        @map("end_date")
+  /// Active months as 1–12 (the ● jadwal bulanan matrix).
+  scheduleMonths Int[]         @default([]) @map("schedule_months")
+  budget      Decimal?         @db.Decimal(15, 2)
+  status      PlanStatus       @default(DRAFT)
+  priority    PlanPriority     @default(MEDIUM)
+  notes       String?          @db.Text
+  budgetId    String?          @map("budget_id")
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
 
   // Relations
-  objective PlanObjective @relation(fields: [objectiveId], references: [id], onDelete: Cascade)
-  pic       User?         @relation("ActivityPIC", fields: [picId], references: [id])
-  budgetRel Budget?       @relation(fields: [budgetId], references: [id])
+  objective   PlanObjective?           @relation(fields: [objectiveId], references: [id], onDelete: Cascade)
+  parent      PlanActivity?            @relation("ActivityHierarchy", fields: [parentId], references: [id])
+  children    PlanActivity[]           @relation("ActivityHierarchy")
+  pic         User?                    @relation("ActivityPIC", fields: [picId], references: [id])
+  budgetRel   Budget?                  @relation(fields: [budgetId], references: [id])
+  indicators  PlanIndicator[]          @relation("ActivityIndicator")
+  budgetItems PlanActivityBudgetItem[]
 
   @@index([objectiveId])
+  @@index([parentId])
   @@index([status])
   @@map("plan_activities")
+}
+
+/// PlanActivityBudgetItem - a single RAB line (uraian × volume × harga satuan).
+/// unitPrice/amount are nullable so the source documents' "[Rp ...]" placeholders
+/// can be represented honestly instead of being invented.
+model PlanActivityBudgetItem {
+  id          String   @id @default(uuid())
+  activityId  String   @map("activity_id")
+  order       Int      @default(0)
+  description String // Uraian
+  volume      Float    @default(1)
+  unit        String // Satuan (paket, kali, bulan, orang, …)
+  unitPrice   Decimal? @db.Decimal(15, 2) @map("unit_price")
+  amount      Decimal? @db.Decimal(15, 2) // Jumlah = volume × unitPrice
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  activity PlanActivity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  @@index([activityId])
+  @@map("plan_activity_budget_items")
+}
+
+/// PlanFundingSource - a projected income source for a plan (RKA Bab V.3:
+/// SPP/BOSP/donasi/ZISWAF/unit usaha). Lets the demo show pendapatan vs belanja
+/// balance. `amount` nullable = placeholder to be filled by the Bendahara.
+model PlanFundingSource {
+  id        String   @id @default(uuid())
+  planId    String   @map("plan_id")
+  order     Int      @default(0)
+  name      String
+  basis     String?  @db.Text // Dasar perhitungan
+  amount    Decimal? @db.Decimal(15, 2)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  plan StrategicPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@index([planId])
+  @@map("plan_funding_sources")
 }
 
 // =====================================

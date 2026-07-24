@@ -145,7 +145,10 @@ export class PerencanaanService {
         collaborators: { include: { user: { select: { id: true, name: true } } } },
         objectives: {
           include: {
-            indicators: true,
+            indicators: {
+              include: { targets: { orderBy: { order: 'asc' } } },
+              orderBy: { createdAt: 'asc' },
+            },
             activities: {
               include: {
                 pic: { select: { id: true, name: true } },
@@ -154,12 +157,34 @@ export class PerencanaanService {
                     account: { select: { id: true, code: true, name: true, normalBalance: true } },
                   },
                 },
+                // Program IKP / Kegiatan IKK, each with their staged targets.
+                indicators: {
+                  include: { targets: { orderBy: { order: 'asc' } } },
+                  orderBy: { createdAt: 'asc' },
+                },
+                budgetItems: { orderBy: { order: 'asc' } },
+                // A Renstra Program's Kegiatan (its own IKK + per-year targets).
+                children: {
+                  include: {
+                    pic: { select: { id: true, name: true } },
+                    indicators: {
+                      include: { targets: { orderBy: { order: 'asc' } } },
+                      orderBy: { createdAt: 'asc' },
+                    },
+                    budgetItems: { orderBy: { order: 'asc' } },
+                  },
+                  orderBy: { createdAt: 'asc' },
+                },
               },
+              // Only top-level activities here; Kegiatan nested under a Program
+              // arrive via `children` above, not duplicated at this level.
+              where: { parentId: null },
               orderBy: { createdAt: 'asc' },
             },
           },
           orderBy: { order: 'asc' },
         },
+        fundingSources: { orderBy: { order: 'asc' } },
         risks: true,
         internalAudits: true,
       },
@@ -544,7 +569,11 @@ export class PerencanaanService {
       include: { objective: { select: { id: true } } },
     });
 
-    await this.recalculateObjectiveProgress(indicator.objective.id);
+    // Only objective-level indicators drive objective progress; an
+    // activity-level indicator (IKP/IKK) has no objective to roll up to.
+    if (indicator.objective) {
+      await this.recalculateObjectiveProgress(indicator.objective.id);
+    }
     return indicator;
   }
 
@@ -554,7 +583,7 @@ export class PerencanaanService {
       select: { objectiveId: true },
     });
     const result = await prisma.planIndicator.delete({ where: { id } });
-    if (indicator) await this.recalculateObjectiveProgress(indicator.objectiveId);
+    if (indicator?.objectiveId) await this.recalculateObjectiveProgress(indicator.objectiveId);
     return result;
   }
 

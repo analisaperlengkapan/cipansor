@@ -7,8 +7,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 import { Users, TrendingUp, Target, Award } from "lucide-react";
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Cell, Pie, PieChart } from "recharts";
+import { MainLayout } from "@/components/layout";
 
-export default function TalentAnalyticsPage() {
+function TalentAnalyticsPageContent() {
   const { data: analytics, isLoading } = useQuery({
     queryKey: ["talent-analytics"],
     queryFn: async () => {
@@ -141,5 +142,13 @@ export default function TalentAnalyticsPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function TalentAnalyticsPage() {
+  return (
+    <MainLayout>
+      <TalentAnalyticsPageContent />
+    </MainLayout>
   );
 }

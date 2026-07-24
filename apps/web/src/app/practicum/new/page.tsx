@@ -14,8 +14,9 @@ import { toast } from 'sonner';
 import { useAuthStore } from '@/stores/auth';
 import { useAcademicYears } from '@/hooks/use-academic-years';
 import { Plus, Trash } from 'lucide-react';
+import { MainLayout } from "@/components/layout";
 
-export default function NewLessonPlanPage() {
+function NewLessonPlanPageContent() {
   const router = useRouter();
   const { user } = useAuthStore();
   const { data: academicYears } = useAcademicYears();
@@ -169,5 +170,13 @@ export default function NewLessonPlanPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function NewLessonPlanPage() {
+  return (
+    <MainLayout>
+      <NewLessonPlanPageContent />
+    </MainLayout>
   );
 }

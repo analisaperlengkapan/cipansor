@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { useRouter } from "next/navigation";
+import { MainLayout } from "@/components/layout";
 
 function OrgChartNode({ node }: { node: any }) {
   const router = useRouter();
@@ -52,7 +53,7 @@ function OrgChartNode({ node }: { node: any }) {
   );
 }
 
-export default function OrgTreeVisualizationPage() {
+function OrgTreeVisualizationPageContent() {
   const { data: orgTree, isLoading } = useOrgTree();
 
   return (
@@ -84,5 +85,13 @@ export default function OrgTreeVisualizationPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function OrgTreeVisualizationPage() {
+  return (
+    <MainLayout>
+      <OrgTreeVisualizationPageContent />
+    </MainLayout>
   );
 }

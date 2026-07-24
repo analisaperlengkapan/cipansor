@@ -11,8 +11,9 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Users, Award, TrendingUp, GitMerge, UserCheck, ShieldCheck, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { MainLayout } from "@/components/layout";
 
-export default function TalentPage() {
+function TalentPageContent() {
   const [positionQuery, setPositionQuery] = useState("");
   const [searchTrigger, setSearchTrigger] = useState("");
 
@@ -169,5 +170,13 @@ export default function TalentPage() {
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+export default function TalentPage() {
+  return (
+    <MainLayout>
+      <TalentPageContent />
+    </MainLayout>
   );
 }

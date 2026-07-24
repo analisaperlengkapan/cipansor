@@ -12,6 +12,7 @@ import { useAcademicYears } from "@/hooks/use-academic-years";
 import { useClasses } from "@/hooks/use-classes";
 import { useStudentsByClass } from "@/hooks/use-students";
 import api from "@/lib/api";
+import { MainLayout } from "@/components/layout";
 
 // Fetch the unified raport through the shared axios client so the request
 // carries auth and hits the real API origin (a bare relative fetch would go to
@@ -28,7 +29,7 @@ const fetchUnifiedRaport = async (
   return res.data;
 };
 
-export default function UnifiedRaportPage() {
+function UnifiedRaportPageContent() {
   const [classId, setClassId] = useState("");
   const [studentId, setStudentId] = useState("");
   const [academicYearId, setAcademicYearId] = useState("");
@@ -339,5 +340,13 @@ export default function UnifiedRaportPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function UnifiedRaportPage() {
+  return (
+    <MainLayout>
+      <UnifiedRaportPageContent />
+    </MainLayout>
   );
 }

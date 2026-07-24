@@ -57,8 +57,9 @@ import {
   Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { MainLayout } from "@/components/layout";
 
-export default function TemplatesPage() {
+function TemplatesPageContent() {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<NotificationType | "ALL">("ALL");
 
@@ -265,5 +266,13 @@ export default function TemplatesPage() {
         </Table>
       </Card>
     </div>
+  );
+}
+
+export default function TemplatesPage() {
+  return (
+    <MainLayout>
+      <TemplatesPageContent />
+    </MainLayout>
   );
 }

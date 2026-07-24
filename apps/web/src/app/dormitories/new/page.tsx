@@ -37,6 +37,7 @@ import { toast } from "sonner";
 import { useCreateDormitory, DORMITORY_TYPES } from "@/hooks/use-dormitory";
 import { useUnits } from "@/hooks/use-units";
 import { useTeachers } from "@/hooks/use-teachers";
+import { MainLayout } from "@/components/layout";
 
 /** Sentinel for "no single unit runs this asrama" — sent to the API as null. */
 const FOUNDATION_RUN = "__yayasan__";
@@ -62,7 +63,7 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
-export default function NewDormitoryPage() {
+function NewDormitoryPageContent() {
   const router = useRouter();
   const createMutation = useCreateDormitory();
 
@@ -342,5 +343,13 @@ export default function NewDormitoryPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function NewDormitoryPage() {
+  return (
+    <MainLayout>
+      <NewDormitoryPageContent />
+    </MainLayout>
   );
 }

@@ -41,6 +41,7 @@ import {
   VIOLATION_CATEGORIES,
 } from "@/hooks/use-violations";
 import { useStudents } from "@/hooks/use-students";
+import { MainLayout } from "@/components/layout";
 
 const formSchema = z.object({
   studentId: z.string().min(1, "Santri wajib dipilih"),
@@ -53,7 +54,7 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
-export default function NewViolationPage() {
+function NewViolationPageContent() {
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [selectedStudent, setSelectedStudent] = useState<{
@@ -384,5 +385,13 @@ export default function NewViolationPage() {
         </form>
       </Form>
     </div>
+  );
+}
+
+export default function NewViolationPage() {
+  return (
+    <MainLayout>
+      <NewViolationPageContent />
+    </MainLayout>
   );
 }

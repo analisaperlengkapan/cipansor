@@ -44,6 +44,7 @@ import {
 } from "lucide-react";
 import { api } from "@/lib/api";
 import Link from "next/link";
+import { MainLayout } from "@/components/layout";
 
 interface ForecastResult {
   currentValue: number;
@@ -117,7 +118,7 @@ const TrendBadge = ({
   );
 };
 
-export default function ForecastPage() {
+function ForecastPageContent() {
   const [unitId, setUnitId] = useState<string>("all");
 
   const {
@@ -495,5 +496,13 @@ export default function ForecastPage() {
         </>
       )}
     </div>
+  );
+}
+
+export default function ForecastPage() {
+  return (
+    <MainLayout>
+      <ForecastPageContent />
+    </MainLayout>
   );
 }

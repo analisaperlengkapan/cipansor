@@ -62,6 +62,7 @@ import {
 } from "@/hooks/use-library";
 import { useStudents, Student } from "@/hooks/use-students";
 import { cn } from "@/lib/utils";
+import { MainLayout } from "@/components/layout";
 
 const borrowSchema = z.object({
   bookId: z.string().min(1, "Pilih buku yang akan dipinjam"),
@@ -599,7 +600,7 @@ function BorrowBookContent() {
   );
 }
 
-export default function BorrowBookPage() {
+function BorrowBookPageContent() {
   return (
     <Suspense
       fallback={
@@ -610,5 +611,13 @@ export default function BorrowBookPage() {
     >
       <BorrowBookContent />
     </Suspense>
+  );
+}
+
+export default function BorrowBookPage() {
+  return (
+    <MainLayout>
+      <BorrowBookPageContent />
+    </MainLayout>
   );
 }

@@ -17,8 +17,9 @@ import {
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { Progress } from "@/components/ui/progress";
+import { MainLayout } from "@/components/layout";
 
-export default function BoardingCommandCenter() {
+function BoardingCommandCenterContent() {
   const { data: dormitoriesResponse, isLoading } = useQuery({
     queryKey: ["boarding-overview"],
     queryFn: async () => {
@@ -218,5 +219,13 @@ export default function BoardingCommandCenter() {
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+export default function BoardingCommandCenter() {
+  return (
+    <MainLayout>
+      <BoardingCommandCenterContent />
+    </MainLayout>
   );
 }

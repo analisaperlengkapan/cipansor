@@ -23,8 +23,9 @@ import {
 } from "@/components/ui/select";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { MainLayout } from "@/components/layout";
 
-export default function TargetPage() {
+function TargetPageContent() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [selectedStudentId, setSelectedStudentId] = useState<string>("");
@@ -206,5 +207,13 @@ export default function TargetPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function TargetPage() {
+  return (
+    <MainLayout>
+      <TargetPageContent />
+    </MainLayout>
   );
 }

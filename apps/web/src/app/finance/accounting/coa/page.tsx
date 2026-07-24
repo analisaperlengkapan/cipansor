@@ -49,6 +49,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { MainLayout } from "@/components/layout";
 
 const accountFormSchema = z.object({
   code: z.string().min(1, "Code is required"),
@@ -62,7 +63,7 @@ const accountFormSchema = z.object({
 
 type AccountFormValues = z.infer<typeof accountFormSchema>;
 
-export default function ChartOfAccountsPage() {
+function ChartOfAccountsPageContent() {
   const [search, setSearch] = useState("");
   const { data: accounts, isLoading } = useAccounts({ search });
   const createAccount = useCreateAccount();
@@ -406,5 +407,13 @@ export default function ChartOfAccountsPage() {
         </Table>
       </div>
     </div>
+  );
+}
+
+export default function ChartOfAccountsPage() {
+  return (
+    <MainLayout>
+      <ChartOfAccountsPageContent />
+    </MainLayout>
   );
 }

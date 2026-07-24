@@ -357,3 +357,103 @@ describe("navigation — every app page is reachable from some menu", () => {
     expect(orphans).toEqual([]);
   });
 });
+
+describe("navigation — every menu-reachable page renders the app shell", () => {
+  // `MainLayout` supplies the sidebar, the header (profile menu + logout) and
+  // `ProtectedRoute`. 50 pages a user could actually reach rendered none of it:
+  // they opened as a bare div with no way back out except the browser's back
+  // button. Seven were linked straight from a menu; the rest were sub-pages of
+  // a hub that is. Pages self-wrap, EXCEPT under a route segment whose
+  // layout.tsx supplies the shell for its whole subtree — check that first, or
+  // all 14 /parent/* pages look broken when they are fine.
+  const APP_DIR = path.join(process.cwd(), "src", "app");
+  const MIDDLEWARE = path.join(process.cwd(), "middleware.ts");
+
+  /**
+   * Public marketing pages, read out of middleware.ts so the two cannot drift.
+   * These must NOT be wrapped: MainLayout implies ProtectedRoute, so wrapping
+   * one bounces an anonymous visitor to the staff login — the exact regression
+   * that got the Google Ad Grants application rejected once already.
+   */
+  const publicPrefixes: string[] = (() => {
+    const src = fs.readFileSync(MIDDLEWARE, "utf8");
+    const block = src.match(/const publicPrefixes\s*=\s*\[([\s\S]*?)\n\];/);
+    if (!block) throw new Error("publicPrefixes not found in middleware.ts");
+    return [...block[1].matchAll(/"([^"]+)"/g)].map((m) => m[1]);
+  })();
+
+  const isPublic = (route: string) =>
+    publicPrefixes.some((p) => route === p || route.startsWith(`${p}/`));
+
+  /** Route segments whose layout.tsx renders MainLayout for the whole subtree. */
+  const shellLayouts: string[] = (() => {
+    const found: string[] = [];
+    const walk = (dir: string, segments: string[]) => {
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        if (!entry.isDirectory()) continue;
+        const child = path.join(dir, entry.name);
+        const isGroup = entry.name.startsWith("(") && entry.name.endsWith(")");
+        const next = isGroup ? segments : [...segments, entry.name];
+        const layout = path.join(child, "layout.tsx");
+        if (
+          fs.existsSync(layout) &&
+          fs.readFileSync(layout, "utf8").includes("MainLayout")
+        ) {
+          found.push(`/${next.join("/")}`);
+        }
+        walk(child, next);
+      }
+    };
+    walk(APP_DIR, []);
+    return found;
+  })();
+
+  const hasLayoutShell = (route: string) =>
+    shellLayouts.some((l) => route === l || route.startsWith(`${l}/`));
+
+  /**
+   * A redirect-only stub renders nothing, so there is no shell to put around
+   * it — /finance/billing just forwards its old bookmarks to /finance.
+   */
+  const isRedirectStub = (src: string) =>
+    /from\s+"next\/navigation"/.test(src) && /\bredirect\(/.test(src);
+
+  const menuHrefs = new Set(
+    ALL_ROLE_CODES.flatMap((roleCode) =>
+      getNavigationForRoleCode(roleCode).flatMap((group) =>
+        group.items.map((item) => item.href),
+      ),
+    ),
+  );
+
+  it("no reachable page renders without the sidebar/header shell", () => {
+    const shellless: string[] = [];
+    const walk = (dir: string, segments: string[]) => {
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        if (!entry.isDirectory()) continue;
+        const child = path.join(dir, entry.name);
+        const isGroup = entry.name.startsWith("(") && entry.name.endsWith(")");
+        const next = isGroup ? segments : [...segments, entry.name];
+        const page = path.join(child, "page.tsx");
+        if (fs.existsSync(page) && !next.some((s) => s.startsWith("["))) {
+          const route = `/${next.join("/")}`;
+          const parent = route.slice(0, route.lastIndexOf("/")) || "/";
+          const reachable = menuHrefs.has(route) || menuHrefs.has(parent);
+          const src = reachable ? fs.readFileSync(page, "utf8") : "";
+          if (
+            reachable &&
+            !isPublic(route) &&
+            !hasLayoutShell(route) &&
+            !isRedirectStub(src) &&
+            !src.includes("MainLayout")
+          ) {
+            shellless.push(route);
+          }
+        }
+        walk(child, next);
+      }
+    };
+    walk(APP_DIR, []);
+    expect(shellless).toEqual([]);
+  });
+});

@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { UserCheck, Star, Search, Loader2 } from "lucide-react";
+import { MainLayout } from "@/components/layout";
 
 interface SuccessionPlanItem {
   id: string;
@@ -33,7 +34,7 @@ interface SuccessorSuggestion {
   shariaMatch: boolean;
 }
 
-export default function SuccessionDashboardPage() {
+function SuccessionDashboardPageContent() {
   const { data: successions, isLoading } = useSuccessions();
   const [search, setSearch] = useState("");
   const { data: suggestions, isLoading: suggestionsLoading } =
@@ -200,5 +201,13 @@ export default function SuccessionDashboardPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SuccessionDashboardPage() {
+  return (
+    <MainLayout>
+      <SuccessionDashboardPageContent />
+    </MainLayout>
   );
 }

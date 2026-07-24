@@ -36,8 +36,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useRouter } from "next/navigation";
+import { MainLayout } from "@/components/layout";
 
-export default function HalaqohPage() {
+function HalaqohPageContent() {
   const router = useRouter();
   const [selectedHalaqohId, setSelectedHalaqohId] = useState<string>("all");
 
@@ -227,5 +228,13 @@ export default function HalaqohPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function HalaqohPage() {
+  return (
+    <MainLayout>
+      <HalaqohPageContent />
+    </MainLayout>
   );
 }

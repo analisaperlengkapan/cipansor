@@ -15,8 +15,9 @@ import {
 } from "@/components/ui/table";
 import { formatCurrency } from "@/lib/utils";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
+import { MainLayout } from "@/components/layout";
 
-export default function IncomeStatementPage() {
+function IncomeStatementPageContent() {
   const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({
     from: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
     to: new Date(),
@@ -150,5 +151,13 @@ export default function IncomeStatementPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function IncomeStatementPage() {
+  return (
+    <MainLayout>
+      <IncomeStatementPageContent />
+    </MainLayout>
   );
 }

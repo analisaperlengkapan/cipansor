@@ -41,6 +41,7 @@ import {
   REWARD_CATEGORIES,
 } from "@/hooks/use-rewards";
 import { useStudents } from "@/hooks/use-students";
+import { MainLayout } from "@/components/layout";
 
 const formSchema = z.object({
   studentId: z.string().min(1, "Santri wajib dipilih"),
@@ -51,7 +52,7 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
-export default function NewRewardPage() {
+function NewRewardPageContent() {
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [selectedStudent, setSelectedStudent] = useState<{
@@ -341,5 +342,13 @@ export default function NewRewardPage() {
         </form>
       </Form>
     </div>
+  );
+}
+
+export default function NewRewardPage() {
+  return (
+    <MainLayout>
+      <NewRewardPageContent />
+    </MainLayout>
   );
 }

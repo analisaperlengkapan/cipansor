@@ -6,8 +6,9 @@ import { TalentMatrix } from "@/components/hr/talent-matrix";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Info } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { MainLayout } from "@/components/layout";
 
-export default function TalentMatrixPage() {
+function TalentMatrixPageContent() {
   const { data: analytics, isLoading, error } = useTalentAnalytics();
 
   if (isLoading) {
@@ -87,5 +88,13 @@ export default function TalentMatrixPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function TalentMatrixPage() {
+  return (
+    <MainLayout>
+      <TalentMatrixPageContent />
+    </MainLayout>
   );
 }

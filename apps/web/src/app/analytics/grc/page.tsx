@@ -7,8 +7,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 import { ShieldAlert, ClipboardCheck, Award, TrendingUp, AlertTriangle, CheckCircle, Info } from "lucide-react";
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Cell, Pie, PieChart } from "recharts";
+import { MainLayout } from "@/components/layout";
 
-export default function GRCDashboardPage() {
+function GRCDashboardPageContent() {
   // In a real application, these would be separate API calls or a combined analytics endpoint
   const { data: risks, isLoading: loadingRisks } = useQuery({
     queryKey: ["risks"],
@@ -222,5 +223,13 @@ export default function GRCDashboardPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function GRCDashboardPage() {
+  return (
+    <MainLayout>
+      <GRCDashboardPageContent />
+    </MainLayout>
   );
 }

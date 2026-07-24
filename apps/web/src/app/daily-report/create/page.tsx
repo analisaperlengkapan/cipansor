@@ -52,6 +52,7 @@ import { useAcademicYears } from "@/hooks/use-academic-years";
 import { useCreateDailyReport } from "@/hooks/use-daily-report";
 import { cn } from "@/lib/utils";
 import type { DailyMood } from "@cipansor/shared";
+import { MainLayout } from "@/components/layout";
 
 const MOOD_OPTIONS: { value: DailyMood; label: string; emoji: string }[] = [
   { value: "HAPPY", label: "Senang", emoji: "😊" },
@@ -69,7 +70,7 @@ const MEAL_OPTIONS = [
   { value: "NONE", label: "Tidak Mau" },
 ];
 
-export default function CreateDailyReportPage() {
+function CreateDailyReportPageContent() {
   const router = useRouter();
   const createReport = useCreateDailyReport();
 
@@ -575,5 +576,13 @@ export default function CreateDailyReportPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function CreateDailyReportPage() {
+  return (
+    <MainLayout>
+      <CreateDailyReportPageContent />
+    </MainLayout>
   );
 }

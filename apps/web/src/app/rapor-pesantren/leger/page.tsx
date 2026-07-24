@@ -28,8 +28,9 @@ import { useClasses } from "@/hooks/use-classes";
 import { useAcademicYears } from "@/hooks/use-academic-years";
 import { useLeger, LegerItem } from "@/hooks/use-rapor-pesantren";
 import { toast } from "sonner";
+import { MainLayout } from "@/components/layout";
 
-export default function LegerPesantrenPage() {
+function LegerPesantrenPageContent() {
   const router = useRouter();
 
   // Filters
@@ -460,5 +461,13 @@ export default function LegerPesantrenPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function LegerPesantrenPage() {
+  return (
+    <MainLayout>
+      <LegerPesantrenPageContent />
+    </MainLayout>
   );
 }

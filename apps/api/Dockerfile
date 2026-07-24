@@ -68,6 +68,35 @@ RUN set -e; \
     rm -rf "$STORE/.prisma"; cp -RL /tmp/dot-prisma "$STORE/.prisma"; \
     rm -rf /tmp/prisma-client /tmp/dot-prisma
 
+# Strip build-time-only weight from the runtime dependency closure. This was 302
+# of the 501MB of node_modules — none of it reachable from `node dist/main.js`,
+# and it took the image from 910MB to 581MB:
+#
+#   *.d.ts (79MB)  TypeScript declarations. Node never loads them; only tsc
+#                  does, and tsc already ran back in the `builder` stage.
+#   *.map  (66MB)  Source maps belonging to third-party packages. Nothing turns
+#                  on --enable-source-maps, and the api's own dist maps are
+#                  copied separately from `builder`, so they are untouched.
+#   the prisma CLI cluster (158MB): prisma, @prisma/studio-core, effect,
+#                  @electric-sql/pglite, typescript. @prisma/client declares
+#                  `prisma` as an OPTIONAL peer, yet the lockfile pins the
+#                  peer-resolved variant `@prisma/client@7.8.0_prisma@7.8.0_…`,
+#                  so `pnpm install --prod` materialises the peer regardless.
+#                  Nothing in dist/ imports any of the five. Schema work
+#                  (db:push / db:generate / seed) never runs from this image —
+#                  it runs against a full dev install elsewhere.
+#
+# Verify after changing this: run the image against a real database and hit an
+# endpoint that queries. A dangling peer symlink only fails when something
+# actually requires it, so a green build proves nothing by itself.
+RUN set -e; \
+    find /app/node_modules -type f \( -name '*.d.ts' -o -name '*.map' \) -delete; \
+    rm -rf /app/node_modules/.pnpm/prisma@* \
+           /app/node_modules/.pnpm/@prisma+studio-core@* \
+           /app/node_modules/.pnpm/effect@* \
+           /app/node_modules/.pnpm/@electric-sql+pglite@* \
+           /app/node_modules/.pnpm/typescript@*
+
 # ---- runner: minimal production image ----
 FROM base AS runner
 ENV NODE_ENV=production

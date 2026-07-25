@@ -118,8 +118,12 @@ export const config = {
     /**
      * House style (greeting, tone, emoji, closing). Additive persona only — it
      * is appended below the safety scaffold and can never revoke a rule, so it
-     * is safe to expose for editing. Falls back to `DEFAULT_PERSONA`; the
-     * database-backed super-admin field replaces this env var later.
+     * is safe to expose for editing.
+     *
+     * This is now the MIDDLE of three tiers, not the only one: the persona a
+     * super admin saves from `/settings/chatbot` wins, this env var is the
+     * deployment-level fallback, and `DEFAULT_PERSONA` is the floor. See
+     * `modules/chatbot/persona.service.ts`.
      */
     persona: process.env.CHATBOT_PERSONA,
     /**

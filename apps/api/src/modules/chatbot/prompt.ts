@@ -56,9 +56,9 @@ ATURAN YANG TIDAK BOLEH DILANGGAR:
  *
  * This is PERSONA, not safety — which is why it lives here, below the scaffold,
  * and is appended rather than merged into it. Everything in this string is
- * something a super admin should eventually be able to rewrite from the admin
- * UI without being able to touch a single rule above. Overridable today via
- * `CHATBOT_PERSONA`; the database-backed field is the remaining Phase 1 work.
+ * something a super admin can rewrite from `/settings/chatbot` without being
+ * able to touch a single rule above; this constant is the floor they reset to.
+ * Resolution order lives in `persona.service.ts`.
  *
  * The greeting matters more here than tone usually does: a pesantren's public
  * face is expected to open with salam, and a bot that answers a parent's

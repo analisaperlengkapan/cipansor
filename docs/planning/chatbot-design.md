@@ -14,8 +14,10 @@ configured.** Code in `apps/api/src/modules/chatbot/` and
 implementation and are marked **REVISED** below — the reasoning that survived
 is kept, because knowing why an option was dropped is the point of this file.
 
-Not yet done: the super-admin persona UI (§4 — the plumbing exists, the field
-does not), and everything in Phase 2.
+**Phase 1 is complete as of 2026-07-25**, when the super-admin persona UI
+landed (§4): the `chatbot_personas` table, `GET/PUT/DELETE
+/chatbot/admin/persona`, and `/settings/chatbot`. Not yet done: everything in
+Phase 2.
 
 ## The requirement, as stated
 
@@ -144,6 +146,33 @@ audit who changed what and when, and **require the eval suite to pass before a
 prompt reaches production**. Without that gate a single prompt edit can regress
 answer quality with nothing to catch it.
 
+**IMPLEMENTED (2026-07-25).** `chatbot_personas`, keyed by scope so Phase 2's
+per-role personas need no second table; `GET/PUT/DELETE /chatbot/admin/persona`
+behind `authorize(SUPER_ADMIN)`; the editor at `/settings/chatbot`. Resolution
+is DB → `CHATBOT_PERSONA` → `DEFAULT_PERSONA`, and a database failure degrades
+to the default voice rather than to no answer. The additive-only guarantee is
+structural, not procedural: the saved text is concatenated *below* the scaffold
+in `buildMessages`, and `prompt.test.ts` pins that a persona instructing the
+model to ignore its rules cannot remove one. The persona hash is part of the
+answer-cache key, so an edit re-keys the cache instead of leaving visitors
+reading the old voice out of Redis.
+
+Two things from the paragraph above did **not** ship, and should be understood
+as open rather than done:
+
+- **No version history.** Only the current text, plus `updated_by`/`updated_at`
+  — enough to answer "who last changed this and when", not "what did it say
+  last Tuesday" and not "restore that". Reverting means retyping, or the reset
+  to default. A `chatbot_persona_revisions` table is the obvious fix if the
+  persona is ever edited by more than one person.
+- **No eval gate on save.** `pnpm --filter api chatbot:eval` costs real money
+  and takes minutes against a queueing endpoint, so it cannot sit in a request
+  handler. The consequence is real and worth stating plainly: a careless
+  persona edit can degrade answer *quality* (not safety) with nothing to catch
+  it until someone runs the suite. The honest mitigation for now is to run the
+  eval after editing the persona; a background job that evaluates a saved
+  persona and warns is the better answer.
+
 ## 5. Evaluation: the red-team set matters more than the golden set
 
 The golden set — 50 to 100 real questions: SPMB cost, requirements, location,
@@ -185,6 +214,7 @@ code — `berita` included, which is not database-backed.
   | Key segment | Invalidates when |
   | --- | --- |
   | hash of the knowledge base | any public content changes (i.e. on deploy) |
+  | hash of the persona | a super admin saves or resets the persona (§4) — the voice changes, so every cached answer in the old voice is orphaned at once |
   | fingerprint of the live admission facts | fee, dates or status change; also daily, because the answer states days remaining |
   | stemmed, sorted question tokens | — collapses "Berapa biaya pendaftaran?" and "biaya pendaftaran berapa ya" onto one entry |
 

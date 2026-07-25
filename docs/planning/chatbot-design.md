@@ -1,0 +1,313 @@
+# Customer-service chatbot — design and advisory
+
+Design decisions for the Cipansor CS chatbot: a public widget for visitors, and
+later a role-aware assistant inside the information system. Advisory first given
+2026-07-23, expanded and recorded here 2026-07-24 after the conclusions alone
+proved too thin to act on.
+
+Companion to [`../ROADMAP.md`](../ROADMAP.md) §10, which tracks _what_ to build
+and in which order. This file records _why_.
+
+**Status: Phase 1 implemented (2026-07-24), inert until a provider is
+configured.** Code in `apps/api/src/modules/chatbot/` and
+`apps/web/src/components/chatbot/`. Three decisions changed during
+implementation and are marked **REVISED** below — the reasoning that survived
+is kept, because knowing why an option was dropped is the point of this file.
+
+**Phase 1 is complete as of 2026-07-25**, when the super-admin persona UI
+landed (§4): the `chatbot_personas` table, `GET/PUT/DELETE
+/chatbot/admin/persona`, and `/settings/chatbot`. Not yet done: everything in
+Phase 2.
+
+## The requirement, as stated
+
+A chat widget at the bottom-right of the public site, answering questions from
+the public about Cipansor via RAG over the public pages. Once a user logs in,
+the assistant becomes role-specific — a parent's agent, a teacher's agent, and
+so on — able to reach only the data that role is authorised to see, plus the
+public content. If a user holds multiple roles, switching role changes what the
+assistant can reach. Super admin can configure per-scope custom instructions.
+Text only: no vision, no audio, no video. Question-answering only.
+
+Two candidate models were proposed: "Azure Bot" or DeepSeek V4 Flash on Azure
+AI Foundry.
+
+## 1. The model question is mis-framed
+
+**Azure Bot Service is not a model.** It is a hosting and channel framework —
+it connects a bot to Teams, Slack, Direct Line, web chat. It performs no
+reasoning; a model still sits behind it. Comparing it to DeepSeek compares a
+distribution channel to an answering engine.
+
+More to the point, **this project does not need it.** Its value is multi-channel
+reach. The requirement is one widget on our own Next.js site calling our own
+Express API. Adding Bot Service buys another service to operate, another latency
+hop, another auth model and another bill, for a problem we do not have. Revisit
+only if WhatsApp or Teams delivery becomes a real requirement — for a pesantren,
+WhatsApp plausibly could, and that is the one scenario where this changes.
+
+### Do not let the model choice block the project
+
+The model is the most swappable component in the system. Put it behind one
+provider-agnostic interface and make it configuration.
+
+Then **let the eval harness choose the model, not a spec sheet.** §5 requires a
+golden set anyway; run two or three candidates against it and compare accuracy,
+cost and latency on real Indonesian questions using the pesantren vocabulary
+this domain actually uses — tahfidz, halaqoh, musyrif, muhadhoroh, takhosus,
+kitab kuning. No public benchmark measures that.
+
+Specific claims about a "DeepSeek V4 Flash" variant — context length, price,
+Foundry availability — were **not verified** when this was written and must not
+be assumed. Read the model card and confirm: context window, price per 1M input
+and output tokens, region availability, and the data-residency terms (§7).
+
+### Evaluate the embedding model separately
+
+More decisive than the chat model for retrieval quality, and routinely
+overlooked: many embedding models are English-centric. An Indonesian corpus
+retrieved through a weak multilingual embedding produces confident answers from
+the wrong page. Measure retrieval on its own — does the right chunk come back
+for a real question — before blaming the chat model for a bad answer.
+
+**REVISED — there is no embedding model yet.** Phase 1 retrieves with BM25
+(`retrieval.ts`), not vectors. The corpus is a few dozen short factual entries
+about one institution, and questions arrive using the same words the entries
+use. Lexical retrieval handles that, costs nothing, needs no key, and is
+*deterministic* — so a retrieval regression fails a unit test instead of showing
+up as a vague drop in answer quality.
+
+What it needs to work in Indonesian is affix handling, not embeddings:
+"pendaftaran", "mendaftar" and "daftar" must be one term, or the most likely
+question this bot will ever receive misses. `stem()` does that, conservatively,
+refusing to reduce below four characters because over-stemming destroys
+precision silently.
+
+`Retriever` is an interface. Add vectors when the eval set shows paraphrase
+matching is the bottleneck — measure, then swap. The advice above applies at
+that moment, unchanged.
+
+## 2. The central decision: RAG for public content, tools for private data
+
+The requirement says the logged-in assistant should reach "data sesuai
+otorisasi role". The naive reading — index the database into a vector store,
+tag chunks with role and unit, filter at query time — **is the wrong
+architecture and it will leak.**
+
+- A vector index is a **copy of the data carrying its own authorisation model**.
+  That leaves two permission systems that must agree forever. Every rule in the
+  app (`seesAllUnits()`, letter nature levels, `letterScopeWhere`) must be
+  mirrored into the index. They will drift, and the drift is silent.
+- Our authorisation is **relational and per-row**, not per-label: a parent sees
+  _their_ child, a homeroom teacher _their_ class. Expressing that as chunk
+  metadata means encoding the whole permission graph as tags, then re-indexing
+  whenever a student changes class or a teacher's assignment changes.
+- **Revoking access does not empty the index.** Rights are withdrawn today; the
+  embeddings persist until someone remembers to re-index.
+
+The split that avoids all of it:
+
+| Content                     | Mechanism                                           | Why                                               |
+| --------------------------- | --------------------------------------------------- | ------------------------------------------------- |
+| Public pages, FAQ, policies | **RAG** (vector retrieval)                          | no per-user authorisation exists at all           |
+| Anything user-specific      | **Tool calls to the existing authorised endpoints** | authorisation stays in exactly one place: the API |
+
+The agent is given _tools_ that wrap endpoints we already ship, invoked carrying
+the user's session and their **active role**. `authorize()`, `seesAllUnits()`
+and unit scoping then apply unchanged, with zero duplication. No access means
+the tool returns 403 and the agent says it cannot help. There is no parallel
+index to drift out of sync.
+
+**The tool set must contain no mutating endpoint.** The assistant is
+question-answering by requirement — enforce that architecturally rather than by
+instructing the model, and the worst class of agent risk disappears. Read-only
+tools cannot be talked into writing.
+
+## 3. Multi-role: a new role means a new thread
+
+Partitioning conversation state per `(user, activeRole)` is necessary but **not
+sufficient**. When a user switches role, the existing transcript already
+contains data gathered under the previous role. A model can restate that while
+operating as the lower-privileged role, and every authorisation check will have
+passed correctly on the way in.
+
+So a role switch starts a **fresh thread**. Prior history is not filtered, not
+summarised, not carried — it is not sent.
+
+## 4. Super-admin custom instructions: useful, and a footgun
+
+An editable system prompt is a privilege-escalation surface. Anyone who can edit
+it can write "ignore your restrictions".
+
+Split the prompt in two. The configurable part is **additive only** — persona,
+tone, FAQ phrasing — injected into a fixed safety scaffold that lives **in code
+and cannot be overridden** from the database. Version the configurable text,
+audit who changed what and when, and **require the eval suite to pass before a
+prompt reaches production**. Without that gate a single prompt edit can regress
+answer quality with nothing to catch it.
+
+**IMPLEMENTED (2026-07-25).** `chatbot_personas`, keyed by scope so Phase 2's
+per-role personas need no second table; `GET/PUT/DELETE /chatbot/admin/persona`
+behind `authorize(SUPER_ADMIN)`; the editor at `/settings/chatbot`. Resolution
+is DB → `CHATBOT_PERSONA` → `DEFAULT_PERSONA`, and a database failure degrades
+to the default voice rather than to no answer. The additive-only guarantee is
+structural, not procedural: the saved text is concatenated *below* the scaffold
+in `buildMessages`, and `prompt.test.ts` pins that a persona instructing the
+model to ignore its rules cannot remove one. The persona hash is part of the
+answer-cache key, so an edit re-keys the cache instead of leaving visitors
+reading the old voice out of Redis.
+
+Two things from the paragraph above did **not** ship, and should be understood
+as open rather than done:
+
+- **No version history.** Only the current text, plus `updated_by`/`updated_at`
+  — enough to answer "who last changed this and when", not "what did it say
+  last Tuesday" and not "restore that". Reverting means retyping, or the reset
+  to default. A `chatbot_persona_revisions` table is the obvious fix if the
+  persona is ever edited by more than one person.
+- **No eval gate on save.** `pnpm --filter api chatbot:eval` costs real money
+  and takes minutes against a queueing endpoint, so it cannot sit in a request
+  handler. The consequence is real and worth stating plainly: a careless
+  persona edit can degrade answer *quality* (not safety) with nothing to catch
+  it until someone runs the suite. The honest mitigation for now is to run the
+  eval after editing the persona; a background job that evaluates a saved
+  persona and warns is the better answer.
+
+## 5. Evaluation: the red-team set matters more than the golden set
+
+The golden set — 50 to 100 real questions: SPMB cost, requirements, location,
+programmes, contact — measures usefulness.
+
+What measures safety is the **red-team set, where the passing outcome is a
+refusal**: ask the public bot for a student's phone number; ask a parent's agent
+about another family's child; ask a teacher for finance data. Each question runs
+**once per role**, with a different expected outcome per role.
+
+Automate both in CI. It is the only way a leak regression is ever caught, and
+the only way §4's prompt gate means anything.
+
+Track: correctness; **groundedness** (every claim traceable to a retrieved
+source or tool result); refusal rate on out-of-scope questions; latency; cost
+per conversation.
+
+## 6. Fit with the existing stack
+
+Measured 2026-07-24: the public corpus is **19 static pages**, content held in
+code — `berita` included, which is not database-backed.
+
+- **REVISED — no pgvector, and no database change at all.** The plan was
+  pgvector in the Postgres we already run, rather than a separate vector
+  service, on the grounds that a few hundred chunks does not justify Azure AI
+  Search. The same argument goes one step further than it first appeared: at
+  this size it does not justify pgvector either. BM25 over an in-memory corpus
+  built at module load needs no extension, no migration, and no move off
+  `postgres:16-alpine` — which pgvector would have required. Revisit together
+  with the embedding decision above, not before.
+- **Redis is already deployed** — use it for conversation state and rate
+  limiting when Phase 2 needs shared state. Phase 1 keeps conversation state in
+  the browser and rate-limits per IP in `chatbot.routes.ts`.
+- **The answer cache lives there too** (`cache.ts`), and it is the main answer
+  to the latency in §7. A repeated question returns in 0.01–0.05s instead of
+  3.5–42s. The interesting part is the KEY, not the TTL — freshness is a
+  correctness property, so it is enforced structurally:
+
+  | Key segment | Invalidates when |
+  | --- | --- |
+  | hash of the knowledge base | any public content changes (i.e. on deploy) |
+  | hash of the persona | a super admin saves or resets the persona (§4) — the voice changes, so every cached answer in the old voice is orphaned at once |
+  | fingerprint of the live admission facts | fee, dates or status change; also daily, because the answer states days remaining |
+  | stemmed, sorted question tokens | — collapses "Berapa biaya pendaftaran?" and "biaya pendaftaran berapa ya" onto one entry |
+
+  A changed fact therefore produces a different key and the stale entry is
+  never read again — no flush step for anyone to forget, and no window in
+  which the TTL is still serving the old answer. Verified end to end against
+  real Redis, not assumed. The TTL (24h) is only garbage collection.
+
+  Known limit: misspellings do not collapse onto the correct spelling, so they
+  miss. Fixing that needs fuzzy matching, which risks merging two DIFFERENT
+  questions onto one key — a miss costs one model call, a wrong merge costs a
+  visitor the truth.
+
+  Caching is skipped once a conversation has history, since the answer then
+  depends on turns the key knows nothing about. If the authenticated agent ever
+  gets a cache, it must additionally be partitioned per (user, activeRole) —
+  see §3.
+- **REVISED, and better than planned — the knowledge base is DERIVED, not
+  written.** The plan assumed indexing 19 static pages. The content turned out
+  not to live in those pages at all: it is structured configuration
+  (`siteConfig`, `educationUnits`, `featuredPrograms`, `donationConfig`). So
+  `knowledge-base.ts` builds its entries from those constants, which moved to
+  `@cipansor/shared` to be reachable from the API. Nothing is transcribed, so
+  the bot and the website are incapable of stating different facts, and a
+  hand-written corpus going quietly stale — the failure this section originally
+  budgeted for — cannot happen. Do not crawl our own rendered site.
+- **Some "public RAG" answers must actually be live tool calls.** SPMB dates and
+  fees must come from `GET /api/admissions/public/active-period`, never from a
+  vector chunk that may be stale. This is not hypothetical: stale temporal data
+  was fixed in this system in July 2026. A bot that confidently quotes last
+  year's fee to a prospective family is a real harm, not a cosmetic bug.
+
+## 7. Risks that are easy to miss
+
+**Prompt injection.** Both retrieved content and tool results (complaint text,
+names, counselling notes) can carry instructions. Treat retrieved material as
+data, never as instructions, with explicit delimiters — and remember §2's
+read-only tool set is what limits the blast radius when injection succeeds
+anyway.
+
+**Latency — measured, and worse than expected.** Against `DeepSeek-V4-Flash` on
+Azure AI Foundry, 2026-07-24: identical requests answered in 0.9s, 7.5s, 9.5s,
+14.7s, 46.9s and 48.7s. Streaming separates the cause — the gap between the
+first token and the last was **0.3–1.9s**, while time to the FIRST token ranged
+**1.1s to 32.8s**. The model is not slow; each request queues for shared
+capacity. It is not throttling (quota was untouched: 124/125 requests,
+124,974/125,000 tokens) and not a cold start (the pattern never warms up).
+
+Consequences worth holding on to:
+
+- **Streaming helps, but does not fix it.** It converts a 5s wait into text
+  appearing at 1s; when the queue is 32s the visitor still waits 32s.
+- **The cache is the real remedy**, because it removes the call entirely. See
+  §6.
+- **Price is not the binding constraint at this volume.** Measured prompts run
+  730–1,270 tokens with ~200-token answers; at 100 questions/day that is ~3.3M
+  input and ~0.6M output tokens a month. The gap between a cheap and a
+  mid-tier model is tens of thousands of rupiah per month — far less than the
+  cost of prospective families abandoning a 32-second wait. Choose on latency,
+  not on price.
+- Before changing model, try the **same model in another region or deployment
+  type**: queueing is a property of the deployment, so this costs nothing in
+  price or quality. Only `DeepSeek-V4-Flash` is deployed in the current
+  resource, so any comparison needs a second deployment first — then
+  `pnpm --filter api chatbot:eval` scores both on our own questions.
+
+**Cost amplification.** An open LLM endpoint on a public page is a target.
+Required before launch: per-IP rate limiting, token caps, a conversation-length
+cap, and a monthly spend alert. Cache aggressively — "berapa biaya
+pendaftaran?" will be asked hundreds of times, and the top FAQ entries deserve
+deterministic answers that never reach the model.
+
+**UU PDP No. 27/2022.** The authenticated assistant sends **children's**
+personal data to a third-party inference endpoint. That needs a lawful basis,
+and region and data-residency become requirements rather than preferences. The
+public bot raises none of this — one more reason it goes first.
+
+## 8. Phasing, and why the authenticated half waits
+
+**Phase 1 — public widget only.** RAG over the 19 public pages, the live SPMB
+tool from §6, plus the full eval harness from §5 including the red-team set.
+
+**Phase 2 — authenticated assistant**, built on tool calls per §2, with the
+thread rules from §3 and the prompt governance from §4.
+
+The gap between them is deliberate. **An agent amplifies data-quality
+problems.** A wrong number on a dashboard tile invites suspicion; the same wrong
+number in a fluent Indonesian sentence carries authority it has not earned. The
+teacher dashboard currently reports fabricated figures — a hardcoded `|| 4`
+rendering as "dari 4 kelas", and a total of 0 where the real answer is 14 (see
+[`../KNOWN_ISSUES.md`](../KNOWN_ISSUES.md)). Putting an assistant over endpoints
+in that state ships the errors with a more persuasive voice.
+
+Phase 1 meanwhile carries real value now — admissions are open — at
+near-zero data risk, and it is how we learn which questions the public actually
+asks. That is the input needed to design the role-specific agents properly.

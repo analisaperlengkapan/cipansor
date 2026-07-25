@@ -6192,6 +6192,26 @@ model SystemSecret {
   @@map("system_secrets")
 }
 
+/// ChatbotPersona - the editable tone/style layer for the AI assistant, keyed
+/// by scope ("public" today; role codes when the authenticated agent lands).
+///
+/// This is PERSONA ONLY: greeting, warmth, emoji, closing offer. It is appended
+/// BELOW the safety scaffold and can never revoke a rule — the rules that keep
+/// the bot from inventing fees or leaking private data live in code
+/// (apps/api/src/modules/chatbot/prompt.ts), not here. That split is why this
+/// field is safe to expose to a super admin for editing. Absent row → the code
+/// default (DEFAULT_PERSONA) applies.
+model ChatbotPersona {
+  id        String   @id @default(uuid())
+  scope     String   @unique
+  persona   String   @db.Text
+  updatedBy String?  @map("updated_by")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("chatbot_personas")
+}
+
 /// RaporPesantren - Rapor Pesantren Terintegrasi
 model RaporPesantren {
   id             String @id @default(uuid())

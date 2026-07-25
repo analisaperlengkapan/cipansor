@@ -108,6 +108,7 @@ import dashboardRoutes from '@/modules/dashboard/dashboard.routes';
 import receptionRoutes from '@/modules/reception/reception.routes';
 import marketingRoutes from '@/modules/marketing/marketing.routes';
 import { announcementRoutes } from '@/modules/announcements';
+import { chatbotRoutes } from '@/modules/chatbot';
 import projectRoutes from '@/modules/project/project.routes';
 
 // New modules
@@ -323,6 +324,7 @@ apiRouter.use('/sanad', sanadCertificateRouter);
 apiRouter.use('/dashboard', dashboardRoutes);
 apiRouter.use('/reception', receptionRoutes);
 apiRouter.use('/announcements', announcementRoutes);
+apiRouter.use('/chatbot', chatbotRoutes);
 apiRouter.use('/projects', projectRoutes);
 
 // New modules

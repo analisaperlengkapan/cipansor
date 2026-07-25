@@ -120,7 +120,23 @@ NEXT_PUBLIC_API_URL=https://api.cipansor.or.id
 
 # Redis
 REDIS_PORT=6379
+
+# Asisten AI publik (opsional — biarkan kosong jika belum dipakai)
+CHATBOT_PROVIDER=openai-compatible
+CHATBOT_API_BASE_URL=https://<resource>.services.ai.azure.com/openai/v1
+CHATBOT_API_KEY=...
+CHATBOT_MODEL=DeepSeek-V4-Flash
 ```
+
+> **Penting:** service `api` di `docker-compose.yml` menyebut variabel
+> lingkungannya satu per satu. Variabel yang ada di `.env` tetapi **tidak**
+> terdaftar di blok `environment:` service itu tidak akan sampai ke dalam
+> container. Saat menambah variabel baru, ubah kedua berkas tersebut.
+>
+> Khusus chatbot, kelalaian ini tidak menimbulkan error: tanpa provider,
+> `GET /chatbot/public/status` menjawab `available: false`, endpoint chat
+> membalas 503, dan widget tidak dirender — persis seperti deployment yang
+> memang sengaja tidak memakai asisten.
 
 ### Database Migration dengan Docker
 

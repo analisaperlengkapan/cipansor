@@ -70,6 +70,29 @@ services:
       # 2FA wall, so the credentials published on /login actually work. Must be
       # false for a real launch — set it together with NEXT_PUBLIC_SHOW_DEMO_LOGIN.
       DEMO_MODE: ${DEMO_MODE:-false}
+      # Public customer-service chatbot. This service enumerates its environment
+      # explicitly, so a variable absent from this block does not reach the API
+      # no matter what .env holds — which is how the assistant shipped inert.
+      #
+      # The default keeps that failure safe rather than silent: with no provider
+      # the endpoint answers 503 and the widget does not render, instead of an
+      # unconfigured model improvising about fees and admission dates.
+      #
+      # Only genuinely per-deployment values live here. The measured tuning
+      # constants (timeout, max tokens, temperature, history depth, cache TTL)
+      # keep their documented defaults in config/index.ts, where the reasoning
+      # that produced the numbers sits next to them.
+      CHATBOT_PROVIDER: ${CHATBOT_PROVIDER:-disabled}
+      CHATBOT_API_BASE_URL: ${CHATBOT_API_BASE_URL:-}
+      CHATBOT_API_KEY: ${CHATBOT_API_KEY:-}
+      CHATBOT_MODEL: ${CHATBOT_MODEL:-}
+      # Deployment-level house style. A persona saved by a super admin from
+      # /settings/chatbot outranks this; see modules/chatbot/persona.service.ts.
+      CHATBOT_PERSONA: ${CHATBOT_PERSONA:-}
+      # An LLM behind a public page is a cost-amplification target, so the rate
+      # limit is tunable without a rebuild.
+      CHATBOT_RATE_LIMIT_WINDOW_MS: ${CHATBOT_RATE_LIMIT_WINDOW_MS:-60000}
+      CHATBOT_RATE_LIMIT_MAX_REQUESTS: ${CHATBOT_RATE_LIMIT_MAX_REQUESTS:-10}
     volumes:
       # User uploads (santri photos, e-simaan recordings, attachments) are
       # written to public/uploads and served from /uploads. Without a volume

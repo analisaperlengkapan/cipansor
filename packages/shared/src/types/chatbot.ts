@@ -61,3 +61,27 @@ export interface PublicChatResponse {
   /** Which provider answered — useful when comparing candidate models. */
   model?: string;
 }
+
+/**
+ * The editable persona (tone/style) for the public assistant, as seen by a
+ * super admin.
+ *
+ * This is the ADDITIVE layer only: it shapes greeting, warmth, emoji and the
+ * closing offer. It can never revoke a safety rule — those live in code and are
+ * appended above this text, unreachable from here. See prompt.ts.
+ */
+export interface ChatbotPersonaResponse {
+  /** The effective persona in use: the custom text if set, else the default. */
+  persona: string;
+  /** The code-resident default, so the UI can preview it and offer a reset. */
+  defaultPersona: string;
+  /** True when a super admin has saved a custom persona overriding the default. */
+  isCustom: boolean;
+  /** When the custom persona was last saved; null when none is set. */
+  updatedAt: string | null;
+}
+
+export interface UpdateChatbotPersonaRequest {
+  /** The new additive persona text. Bounded server-side. */
+  persona: string;
+}

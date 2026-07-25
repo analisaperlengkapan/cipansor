@@ -1,10 +1,12 @@
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
+import { RoleCode } from '@prisma/client';
 import { validate } from '@/middleware/error';
+import { authenticate, authorize } from '@/middleware/auth';
 import { config } from '@/config';
 import { logger } from '@/lib/logger';
 import * as controller from './chatbot.controller';
-import { publicChatSchema } from './chatbot.schema';
+import { publicChatSchema, updatePersonaSchema } from './chatbot.schema';
 
 /**
  * Dedicated limiter, much stricter than `defaultLimiter`.
@@ -40,5 +42,24 @@ const router = Router();
 // never by widening what this router can see.
 router.get('/public/status', controller.status);
 router.post('/public/ask', chatbotLimiter, validate(publicChatSchema), controller.ask);
+
+// Admin surface: configure the assistant's persona. Authenticated and locked to
+// SUPER_ADMIN — the persona is additive style only (it can never revoke a
+// safety rule, see prompt.ts), but who may edit the public voice of the
+// pesantren is still a privilege, not a public one.
+router.get('/admin/persona', authenticate, authorize(RoleCode.SUPER_ADMIN), controller.getPersona);
+router.put(
+  '/admin/persona',
+  authenticate,
+  authorize(RoleCode.SUPER_ADMIN),
+  validate(updatePersonaSchema),
+  controller.updatePersona
+);
+router.delete(
+  '/admin/persona',
+  authenticate,
+  authorize(RoleCode.SUPER_ADMIN),
+  controller.resetPersona
+);
 
 export default router;

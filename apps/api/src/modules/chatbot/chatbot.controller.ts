@@ -2,8 +2,10 @@ import { Request, Response } from 'express';
 import { asyncHandler } from '@/middleware/error';
 import { ApiResponse } from '@/utils/response';
 import { logger } from '@/lib/logger';
+import type { ChatbotPersonaResponse } from '@cipansor/shared';
 import * as chatbotService from './chatbot.service';
-import type { PublicChatBody } from './chatbot.schema';
+import * as personaService from './persona.service';
+import type { PublicChatBody, UpdatePersonaBody } from './chatbot.schema';
 
 /**
  * Ask the public assistant.
@@ -61,4 +63,43 @@ export const ask = asyncHandler(async (req: Request, res: Response) => {
  */
 export const status = asyncHandler(async (_req: Request, res: Response) => {
   res.json(ApiResponse.success({ available: chatbotService.resolveProvider() !== null }));
+});
+
+/**
+ * Read the assistant's editable persona (super admin).
+ * GET /api/chatbot/admin/persona
+ *
+ * Returns the persona in force, the code default (so the UI can preview it and
+ * offer a reset), and whether a custom value is saved.
+ */
+export const getPersona = asyncHandler(async (_req: Request, res: Response) => {
+  const state = await personaService.getPublicPersonaState();
+  res.json(ApiResponse.success(state satisfies ChatbotPersonaResponse));
+});
+
+/**
+ * Save a custom persona (super admin).
+ * PUT /api/chatbot/admin/persona
+ *
+ * Only the additive style text is accepted; it can never revoke a safety rule
+ * (see prompt.ts). Saving re-keys the answer cache, so the next visitor is
+ * answered in the new voice with no stale cached copy in the old one.
+ */
+export const updatePersona = asyncHandler(async (req: Request, res: Response) => {
+  const body = req.body as UpdatePersonaBody;
+  const state = await personaService.setPublicPersona(body.persona, req.user?.id);
+  // The persona text itself is house style, not a secret, but logging its
+  // length rather than its body keeps the log terse and the audit useful.
+  logger.info('Chatbot persona updated', { by: req.user?.id, length: body.persona.length });
+  res.json(ApiResponse.success(state satisfies ChatbotPersonaResponse));
+});
+
+/**
+ * Drop the custom persona and fall back to the default (super admin).
+ * DELETE /api/chatbot/admin/persona
+ */
+export const resetPersona = asyncHandler(async (req: Request, res: Response) => {
+  const state = await personaService.resetPublicPersona();
+  logger.info('Chatbot persona reset to default', { by: req.user?.id });
+  res.json(ApiResponse.success(state satisfies ChatbotPersonaResponse));
 });

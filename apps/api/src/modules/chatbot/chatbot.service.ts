@@ -16,7 +16,8 @@ import { config } from '@/config';
 import { logger } from '@/lib/logger';
 import { defaultRetriever, type Retriever } from './retrieval';
 import { collectLiveFacts } from './live-facts';
-import { buildMessages, DEFAULT_PERSONA } from './prompt';
+import { buildMessages } from './prompt';
+import { resolvePublicPersona } from './persona.service';
 import { cacheKeyFor, isCacheable, readCached, writeCached } from './cache';
 import type { LlmProvider } from './providers/types';
 import { OpenAiCompatibleProvider } from './providers/openai-compatible';
@@ -107,7 +108,7 @@ export async function ask(options: AskOptions): Promise<PublicChatResponse> {
     history = [],
     provider = resolveProvider(),
     retriever = defaultRetriever,
-    persona = config.chatbot.persona || DEFAULT_PERSONA,
+    persona: personaOverride,
     now = new Date(),
   } = options;
 
@@ -122,12 +123,19 @@ export async function ask(options: AskOptions): Promise<PublicChatResponse> {
     return groundedRefusal();
   }
 
+  // Resolve the persona the super admin has configured (or the default) before
+  // consulting the cache: the persona is part of the cache key, so an edit
+  // re-keys every answer. Tests and the eval harness may inject one directly.
+  const persona = personaOverride ?? (await resolvePublicPersona());
+
   // The cache is consulted AFTER the live lookup, not before it: the live facts
   // are part of the key, which is what stops a cached answer from quoting a fee
   // or a deadline that has since changed. The lookup is one indexed query
   // against a database we already run; the model call it may save takes between
   // one and thirty-three seconds.
-  const cacheKey = isCacheable(history.length) ? cacheKeyFor(question, liveFacts) : null;
+  const cacheKey = isCacheable(history.length)
+    ? cacheKeyFor(question, liveFacts, persona)
+    : null;
   if (cacheKey) {
     const hit = await readCached(cacheKey);
     if (hit) {

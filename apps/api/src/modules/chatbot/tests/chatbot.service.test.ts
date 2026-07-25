@@ -7,6 +7,9 @@ import { config } from '@/config';
 import type { LlmProvider } from '../providers/types';
 
 vi.mock('../live-facts', () => ({ collectLiveFacts: vi.fn() }));
+// The persona is resolved from the database in production; here we pin it so the
+// service never reaches Prisma and the tests stay about orchestration, not I/O.
+vi.mock('../persona.service', () => ({ resolvePublicPersona: vi.fn(async () => 'test-persona') }));
 vi.mock('../cache', () => ({
   cacheKeyFor: vi.fn(() => 'test-key'),
   isCacheable: vi.fn(() => true),

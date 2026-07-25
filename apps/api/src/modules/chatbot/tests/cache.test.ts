@@ -82,8 +82,24 @@ describe('cacheKeyFor', () => {
     // so every cached answer built from the old text is orphaned on deploy —
     // no flush step, nothing for anyone to remember. Without this, a corrected
     // phone number would keep being read out of Redis for up to a day.
-    expect(cacheKeyFor('di mana alamat pesantren', [], 'corpus-lama')).not.toBe(
-      cacheKeyFor('di mana alamat pesantren', [], 'corpus-baru'),
+    expect(cacheKeyFor('di mana alamat pesantren', [], '', 'corpus-lama')).not.toBe(
+      cacheKeyFor('di mana alamat pesantren', [], '', 'corpus-baru'),
+    );
+  });
+
+  it('CHANGES when the persona changes', () => {
+    // The persona shapes every answer, and a super admin can edit it from the
+    // admin UI at any moment. A changed persona must move the key so the cache
+    // re-fills in the new voice rather than serving a stale answer in the old —
+    // the same staleness guarantee the corpus hash gives for public content.
+    expect(cacheKeyFor('di mana alamat pesantren', [], 'persona lama')).not.toBe(
+      cacheKeyFor('di mana alamat pesantren', [], 'persona baru'),
+    );
+  });
+
+  it('is stable while the persona is unchanged', () => {
+    expect(cacheKeyFor('di mana alamat pesantren', [], 'persona X')).toBe(
+      cacheKeyFor('di mana alamat pesantren', [], 'persona X'),
     );
   });
 

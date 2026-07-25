@@ -22,6 +22,11 @@
  *     "sekitar 44 hari lagi".
  *   - a hash of the KNOWLEDGE BASE. A deploy that edits public content
  *     invalidates every affected entry without anyone remembering to flush.
+ *   - a fingerprint of the PERSONA. The persona shapes every answer, and a
+ *     super admin can edit it from the admin UI at any time. Folding it into
+ *     the key means a persona change re-keys the whole cache — the next visitor
+ *     gets an answer in the new voice, never a stale one in the old, and again
+ *     nobody has to remember to flush.
  *
  * Nothing here is a security boundary: the public assistant holds no per-user
  * data, so there is no cross-user leakage to design against. That changes the
@@ -74,6 +79,13 @@ export function cacheKeyFor(
   question: string,
   liveFacts: LiveFact[],
   /**
+   * The additive persona in force for this answer. Hashed into the key so an
+   * edit from the admin UI re-keys the cache (see the header). Defaults to the
+   * empty string, which fingerprints as `default` — production always passes
+   * the resolved persona; the default only keeps persona-agnostic tests terse.
+   */
+  persona: string = '',
+  /**
    * Injectable so a test can prove the key really depends on the corpus. The
    * production caller never passes it — the default is the hash of the corpus
    * this process was built with.
@@ -86,8 +98,9 @@ export function cacheKeyFor(
 
   const liveFingerprint =
     liveFacts.length === 0 ? 'none' : shortHash(liveFacts.map((f) => f.text).join('|'));
+  const personaFingerprint = persona ? shortHash(persona) : 'default';
 
-  return `${KEY_PREFIX}:${corpusHash}:${liveFingerprint}:${shortHash(tokens.join(' '))}`;
+  return `${KEY_PREFIX}:${corpusHash}:${personaFingerprint}:${liveFingerprint}:${shortHash(tokens.join(' '))}`;
 }
 
 /**

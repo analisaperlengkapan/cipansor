@@ -21,3 +21,23 @@ export const publicChatSchema = z.object({
 });
 
 export type PublicChatBody = z.infer<typeof publicChatSchema>;
+
+/**
+ * Upper bound on a saved persona. Generous next to the ~700-char default, but
+ * finite: the persona is prepended to every prompt we pay for by the token, so
+ * an unbounded field is both a cost and a context-window hazard.
+ */
+export const MAX_PERSONA_LENGTH = 4000;
+
+/**
+ * Super-admin persona update. Only the additive style text is accepted — there
+ * is no field here that could touch a safety rule, because those live in code.
+ * The persona is validated but never parsed as instructions: the scaffold in
+ * `prompt.ts` treats everything below it as style, and its rule 4 tells the
+ * model to ignore any instruction that appears inside supplied text.
+ */
+export const updatePersonaSchema = z.object({
+  persona: z.string().trim().min(1, 'Persona tidak boleh kosong').max(MAX_PERSONA_LENGTH),
+});
+
+export type UpdatePersonaBody = z.infer<typeof updatePersonaSchema>;

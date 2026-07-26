@@ -7,6 +7,7 @@ import { useChatbotAvailability, usePublicChat } from "@/hooks/use-chatbot";
 import type { ChatMessage, PublicChatResponse } from "@/hooks/use-chatbot";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { AnswerText } from "./answer-text";
 
 /**
  * Public customer-service assistant, bottom-right of the public site.
@@ -134,7 +135,14 @@ export function ChatWidget() {
 
             {turns.map((turn, index) => (
               <Bubble key={index} role={turn.role} failed={turn.failed}>
-                {turn.content}
+                {/* Only the assistant's text is formatted. What the visitor
+                    typed is echoed exactly as typed — a question containing an
+                    asterisk should not come back italicised. */}
+                {turn.role === "assistant" && !turn.failed ? (
+                  <AnswerText>{turn.content}</AnswerText>
+                ) : (
+                  turn.content
+                )}
                 {turn.sources && turn.sources.length > 0 && (
                   // Sources are shown, not just collected. A visitor deciding
                   // where to send their child should be able to open the page

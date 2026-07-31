@@ -296,6 +296,39 @@ describe("navigation — every menu link points at a page that exists", () => {
   });
 });
 
+describe("navigation — every menu link is one its own role may open", () => {
+  // The guard above enforces menu -> page: the link resolves to a file. It
+  // says nothing about menu -> permission, and middleware.ts gates on
+  // canAccessRoute. A link can therefore exist, render, and bounce the user
+  // straight back to their dashboard — which is the exact complaint
+  // ("missing permission / route not found") this whole contract exists to
+  // prevent, arriving through the other door.
+  //
+  // This bites: before /tk, /payroll, /perencanaan, /grc-dashboard,
+  // /pengawasan, /syariah, /tata-laksana, /organisasi, /unit-usaha, /project
+  // and /cbt/exams were added to UNIT_ADMIN, the four unit-admin RoleCodes
+  // each had 18 dead links here — the whole TK/PAUD module among them, shown
+  // to TKQ_ADMIN, the role that runs the TK unit.
+  //
+  // Note this iterates ALL RoleCodes, not a sample. The sampled guards above
+  // never covered a unit admin, so the admin navigation was only ever
+  // exercised as SUPER_ADMIN, whose allowlist is ["*"] and cannot fail.
+  it.each(ALL_ROLE_CODES)("%s can open every link in its own menu", (roleCode) => {
+    const legacy = deriveLegacyRole(roleCode);
+    if (!legacy) return; // komite/alumni reach the app via user.role, not a bucket
+
+    const unopenable = [
+      ...new Set(
+        getNavigationForRoleCode(roleCode)
+          .flatMap((group) => group.items.map((item) => item.href))
+          .filter((href) => !canAccessRoute(legacy, href)),
+      ),
+    ];
+
+    expect(unopenable).toEqual([]);
+  });
+});
+
 describe("navigation — every app page is reachable from some menu", () => {
   // The contract above only enforces menu -> page (no dead links). Nothing
   // enforced the reverse, so 34 top-level pages — the entire TK/PAUD module,

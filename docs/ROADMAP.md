@@ -173,21 +173,17 @@ requests for private data. Design and rationale: [`planning/chatbot-design.md`](
 
 What the design asked for and we have not built, in the order it matters:
 
-1. **The rate limit does not limit anyone.** Not a chatbot defect — see the
-   trust-proxy entry in [`KNOWN_ISSUES.md`](./KNOWN_ISSUES.md). §7 of the design
-   lists per-IP limiting as *required before launch*; it is present in code and
-   inert in production, which is worse than absent because it reads as done.
-2. **No monthly spend alert** — the other unmet item on that same pre-launch
+1. **No monthly spend alert** — the one remaining unmet item on the pre-launch
    list. An open LLM endpoint on a public page is a cost-amplification target,
    and nothing currently notices a bill climbing.
-3. **The eval suite is not in CI** (§5). It exists — 36 golden and 23 red-team
+2. **The eval suite is not in CI** (§5). It exists — 36 golden and 23 red-team
    cases, `pnpm --filter api chatbot:eval` — and runs only when someone
    remembers. A leak regression is caught by nothing else. Real money per run,
    so a nightly or pre-release schedule fits better than per-PR.
-4. **No persona version history and no eval gate on save** (§4). A super admin
+3. **No persona version history and no eval gate on save** (§4). A super admin
    can change the public voice of the pesantren with no revision trail and no
    quality check; reverting means retyping.
-5. **The golden set is 36 cases against the 50–100 the design asked for.** Grow
+4. **The golden set is 36 cases against the 50–100 the design asked for.** Grow
    it from questions visitors actually ask, which is the point of shipping
    Phase 1 first.
 

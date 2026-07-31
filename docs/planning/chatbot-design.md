@@ -287,16 +287,20 @@ cap, and a monthly spend alert. Cache aggressively — "berapa biaya
 pendaftaran?" will be asked hundreds of times, and the top FAQ entries deserve
 deterministic answers that never reach the model.
 
-> **Status 2026-07-25, and the reason to check rather than tick.** Token cap
-> (700), history cap (6 turns) and the cache all shipped and work. The spend
-> alert does not exist. And the per-IP limiter — 10/minute, the one item on this
-> list aimed squarely at cost amplification — **is present in code and inert in
-> production**: `trust proxy = 1` behind Cloudflare *and* nginx makes `req.ip`
-> the rotating edge address, so 40+ requests from one visitor never hit the
-> limit. Full evidence in [`../KNOWN_ISSUES.md`](../KNOWN_ISSUES.md). The
-> instructive part is that the code passed review, the config passed review, and
-> only the deployed topology made them wrong together — a limiter is not verified
-> until something has actually been made to 429 on the live site.
+> **Status 2026-07-25, updated 2026-07-31 — and the reason to check rather than
+> tick.** Token cap (700), history cap (6 turns) and the cache all shipped and
+> work. The spend alert still does not exist. The per-IP limiter — 10/minute,
+> the one item on this list aimed squarely at cost amplification — was **present
+> in code and inert in production** for six days: `trust proxy = 1` behind
+> Cloudflare *and* nginx made `req.ip` the rotating edge address, so 40+
+> requests from one visitor never hit the limit. Fixed 2026-07-31 by trusting
+> `CF-Connecting-IP` from Cloudflare's ranges only, at the nginx layer; the live
+> site now 429s and the API logs the visitor's address. Full evidence in
+> [`../KNOWN_ISSUES.md`](../KNOWN_ISSUES.md).
+>
+> The instructive part is that the code passed review, the config passed review,
+> and only the deployed topology made them wrong together — a limiter is not
+> verified until something has actually been made to 429 on the live site.
 
 **UU PDP No. 27/2022.** The authenticated assistant sends **children's**
 personal data to a third-party inference endpoint. That needs a lawful basis,

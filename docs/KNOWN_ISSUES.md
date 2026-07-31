@@ -74,7 +74,7 @@ explicit allowlist naming each deliberate exception and its reason.
 - **Legal identifiers** — decree number, NPWP, ministry name. Facts on a
   document; a translated identifier is a wrong identifier.
 
-## 🔴 OPEN — every rate limiter counts the Cloudflare edge, not the visitor (2026-07-25)
+## ✅ FIXED — every rate limiter counted the Cloudflare edge, not the visitor (2026-07-25, fixed 2026-07-31)
 
 **Symptom.** Rate limits do not limit anyone on the live site. 40+ consecutive
 `POST /api/chatbot/public/ask` from a single address never returned 429 against
@@ -107,16 +107,38 @@ on the e-signature passphrase is multiplied by however many edges an attacker's
 traffic spreads across. Secondary effect: `/var/log/nginx/access.log` records
 Cloudflare addresses, so it cannot be used to investigate abuse either.
 
-**Fix (prepared, needs root — not applied).** Rewrite the address at the edge of
-our own stack rather than raising the Express hop count:
+**Fix applied 2026-07-31.** The address is rewritten at the edge of our own
+stack rather than by raising the Express hop count.
 `/home/cipansoradm/cipansor-deploy/cloudflare-realip.conf` holds
 `set_real_ip_from` for Cloudflare's published ranges plus
-`real_ip_header CF-Connecting-IP`, to be included from the `http{}` block in
-`/etc/nginx/nginx.conf`. That makes `$remote_addr` the visitor everywhere — the
-access log included — and keeps `trust proxy = 1` correct. `trust proxy = 2`
-also repairs `req.ip`, but trusts a hop count blindly and leaves the log wrong.
+`real_ip_header CF-Connecting-IP` and `real_ip_recursive on`; it is copied to
+`/etc/nginx/` and included from the `http{}` block of `/etc/nginx/nginx.conf`,
+on the line after `proxy_set_header X-Forwarded-Host`. That makes
+`$remote_addr` the visitor everywhere — the access log included — and keeps
+`trust proxy = 1` correct. `trust proxy = 2` also repairs `req.ip`, but trusts
+a hop count blindly and leaves the log wrong.
+
 `CF-Connecting-IP` must **never** be trusted without `set_real_ip_from` scoped
-to Cloudflare, or anyone can choose their own IP.
+to Cloudflare, or anyone can choose their own IP. That scoping was verified,
+not assumed — see the third check below.
+
+Verified against the live site after the reload:
+
+1. A request to `https://cipansor.or.id/...` that demonstrably travelled
+   through Cloudflare (`remote_ip=172.67.222.200`) was logged by nginx as
+   `70.153.137.180`, the true client address, not the edge.
+2. Six `POST /api/auth/login` against a nonexistent account returned
+   `401 401 401 401 401 429` — the 5/min ceiling now trips — and the API's own
+   warning recorded `{"ip":"70.153.137.180"}`, proving `req.ip` reaches Express
+   as the visitor rather than the edge.
+3. A forged `CF-Connecting-IP: 1.2.3.4` sent from `127.0.0.1`, which is **not**
+   in the trust list, was ignored: nginx logged `127.0.0.1`. Spoofing one's own
+   address past the limiter does not work.
+
+The trust list is a snapshot of Cloudflare's published ranges. If Cloudflare
+adds a range that is missing from the file, traffic via that edge silently goes
+back to being counted as edge traffic — re-fetch `/ips-v4` and `/ips-v6` when
+Cloudflare announces a change.
 
 ## 🔴 OPEN — PWA install prompt never appears on cipansor.or.id (2026-07-23)
 

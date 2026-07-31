@@ -11,9 +11,10 @@ a visitor sees, then correctness work, then deliverables, then tidiness.
 
 ## Current deployment state
 
-- As of **2026-07-24** the web container runs `main @ 460cb678` (through #368)
-  and the API container an image built earlier the same day (through #365, so
-  it includes #357 and the CORS fix). Both were deployed from this host.
+- As of **2026-07-31** both containers were rebuilt and rolled together from
+  `main @ 41ee99e2` (through #381/#382) via `deploy-images.sh`. That deploy
+  carried the CORS fix (§2), the public i18n work (§5) and the chatbot markdown
+  fix to production, all verified live after the roll.
 - The two containers can therefore hold *different* commits. Before assuming
   production runs what `main` says, check the running image itself — e.g.
   `docker exec cipansor-api grep -o "<snippet>" /app/apps/api/dist/…/<file>.js`.
@@ -44,8 +45,10 @@ header carried all three production origins at once — which the Fetch standard
 forbids and every browser rejects. Socket.IO had the same bug independently.
 Fixed in `apps/api/src/config/cors.ts`: the list is parsed into an allowlist and
 the single matching origin is reflected, with `Vary: Origin`. A wildcard is now
-refused at boot because this API sends credentials. **Ships with the next
-deploy — not yet on production.**
+refused at boot because this API sends credentials. **Live since the 2026-07-31
+deploy**, verified against production: `https://cipansor.or.id` is reflected
+singly with `Vary: Origin`, and a foreign origin gets no
+`Access-Control-Allow-Origin` header at all.
 
 ## 🔴 3. Production DB has no Prisma migration history
 
@@ -78,7 +81,8 @@ Still Indonesian by design: the news article *bodies* (headlines and
 standfirsts are translated; the text is marked `lang="id"` under a line telling
 the reader so), the leaders' mottos and the donation page's scripture, and the
 values that are *recorded* rather than displayed — the anonymous donor name and
-the bank details. Detail in `KNOWN_ISSUES.md`. **Ships with the next deploy.**
+the bank details. Detail in `KNOWN_ISSUES.md`. **Live since the 2026-07-31
+deploy.**
 
 ## 🟠 6. PWA install prompt never fires
 
@@ -87,7 +91,7 @@ simply does not fire. Next step is Chrome DevTools → Application → Manifest 
 **Installability** on a real device, which states the reason directly. Leading
 suspect: the manifest's `"id": "/"`. Details in `KNOWN_ISSUES.md`.
 
-## 🟠 7. Temporal data is stale — code fixed (#370), production data still owed
+## ✅ 7. Temporal data was stale — code fixed (#370), production data now current
 
 The seed wrote the calendar as literals (`2024/2025`, a PSB window of
 1 Mar – 31 May 2024), so every reseed reproduced the day the seed was *written*.
@@ -116,10 +120,18 @@ prefers open → next upcoming → most recently closed, matching the three stat
 `isActive` remains administrative intent; whether registration is open is
 always derived from the dates.
 
-**Still owed: production data.** The live database still holds the 2024 rows.
-Benefiting from this needs either a full reseed (demo data — `seed.ts` opens
-with `TRUNCATE CASCADE`) or a targeted update. Real dates, fee and units for a
-live intake are a business decision — do not invent them, ask first.
+**Production data is now current** (verified 2026-07-31). The live database
+holds `SPMB 2027/2028 Gelombang 1` (2026-06-09 → 2026-09-07) and
+`Gelombang 2`, with academic year `2026/2027` active — so wave 1 is open today
+and `/public/spmb` renders it with the registration button live.
+
+One verification trap worth keeping: `curl` on `/public/spmb` returns
+"Pendaftaran Belum Dibuka" because that is the pre-hydration server state; the
+period arrives on the client. Check this page in a real browser, never with
+`curl`, or you will chase a defect that is not there.
+
+Still a business decision, not ours to invent: the real dates, fee and units
+for an actual intake. The values above are demo data from the seed.
 
 ---
 
@@ -164,7 +176,7 @@ Remaining: regenerate all screenshots into `docs/images` (checking each page
 and fixing what is broken — this doubles as the role/menu audit), write the
 guide with a clickable table of contents, then rewrite the README.
 
-## 🟡 10. Customer-service chatbot — Phase 1 shipped, five gaps left
+## 🟡 10. Customer-service chatbot — Phase 1 shipped, four gaps left
 
 **Live on cipansor.or.id since 2026-07-25** (#373, credentials reaching the
 container via #374). The public widget answers from RAG over the public pages

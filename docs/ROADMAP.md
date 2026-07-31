@@ -161,25 +161,50 @@ for an actual intake. The values above are demo data from the seed.
    a unit; only the seed writes null-unit plans today).
 4. **Module audit** — every backend module reachable from the frontend and
    vice versa, and reachable by at least one role.
-   **First confirmed instance, found 2026-07-31: PAUD has a complete backend
-   and no frontend at all.** `apps/api/src/modules/paud-assessment` and
-   `paud-report` are fully built (controller/service/schema/routes) and mounted
-   at `/api/paud-assessment` and `/api/paud-report`, but `apps/web/src/app` has
-   no `paud` directory — so `/paud/assessment`, `/paud/assessment/new`,
-   `/paud/assessment/indicators`, `/paud/assessment/class/[id]`,
-   `/paud/assessment/student/[id]/progress`, `/paud/assessment/report/generate`
-   and `/paud/settings` do not exist. `docs/planning/frontend-paud-design.md`
-   specifies them in full. Two more routes are missing outside PAUD:
-   `/dashboard/performance` and `/dashboard/unit/[id]`.
+   **First confirmed instance, found 2026-07-31 — and it is a permission gap,
+   not a missing frontend.** The four unit-admin RoleCodes (TKQ_ADMIN,
+   SDIT_ADMIN, SMPIT_ADMIN, SMAQ_ADMIN) each rendered **18 sidebar links that
+   bounced them back to their dashboard**: `/tk` and its five sub-pages,
+   `/payroll`, `/perencanaan` (+ strategy-map), `/grc-dashboard`,
+   `/pengawasan`, `/syariah`, `/tata-laksana`, `/organisasi`, `/unit-usaha`,
+   `/project`, `/cbt/exams`. They are in `ADMIN_ROLES` so they get
+   `adminNavigation`, but their legacy bucket `UNIT_ADMIN` granted none of
+   those prefixes in `roleRouteAccess`. Fixed, with a guard that iterates all
+   81 RoleCodes asserting every menu link is one `canAccessRoute` allows.
+
+   The sharpest case: TKQ_ADMIN runs the TK unit and could not open a single
+   page of the TK/PAUD module. Only SUPER_ADMIN could, via `["*"]`.
+
+   **Correction to an earlier draft of this entry.** It claimed PAUD had "a
+   complete backend and no frontend at all". That was wrong. The module has
+   **twenty pages under `/tk`** — assessment list/create/edit/detail, progress,
+   per-student view, daily reports (class, parent, check-in), and raport
+   generate — all calling the real `paud-assessment` and `paud-report`
+   endpoints including `/indicators`, `/summary/class` and `/assessments/bulk`.
+   The error came from taking route paths out of
+   `docs/planning/implementation-tasks.md` and testing them literally against
+   the tree: the module shipped under `/tk`, the plan wrote `/paud`. Checking
+   a path exists is not checking a feature exists — resolve the module by its
+   API calls, not by a name in a planning document.
+
+   Genuinely absent, and referenced by nothing in nav, rbac or any link:
+   `/tk/settings`, `/dashboard/performance`, `/dashboard/unit/[id]`. All three
+   come from that same planning doc, so confirm they are wanted before
+   building them.
 
 > **The two task lists in `docs/planning/` are not trackers — do not read a
 > checkbox there as status.** `implementation-tasks.md` shows 204 unchecked
 > against 11 done, and `tasks.md` 82 against 153, but both were last touched
 > 2026-07-20, before most of the work. Measured 2026-07-31 against the actual
-> tree: of the 17 routes carrying unchecked tasks, **7 are built** and the
-> boxes were simply never ticked. The other 10 are genuinely missing, and 8 of
-> them are the whole PAUD frontend (see §8.4). Verify against the code, then
-> record the result here — this file is the tracker.
+> tree: of the 17 routes carrying unchecked tasks, only **3** are genuinely
+> absent. The rest are built — 7 at the path the plan names, and 7 more under
+> `/tk` where the plan wrote `/paud`.
+>
+> That last group is the trap, and it cost a wrong entry in §8.4 before it was
+> caught: matching plan paths against the tree makes a renamed module look
+> deleted. Resolve a module by the API endpoints its pages call, not by the
+> route name in a document nobody has updated since July. Verify against the
+> code, then record the result here — this file is the tracker.
 
 ## 🟡 9. Documentation deliverable (in flight)
 

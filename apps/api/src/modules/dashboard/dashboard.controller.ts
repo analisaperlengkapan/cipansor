@@ -1,4 +1,4 @@
-import { requireUser } from '@/middleware/auth';
+import { requireUser, findTeacherIdForUser } from '@/middleware/auth';
 /**
  * Dashboard Controller (Refactored)
  * Uses Dashboard Service for business logic
@@ -223,6 +223,40 @@ export async function getViolationRewardStats(
     const result = await dashboardService.getViolationRewardStats(context, {
       period: query.period,
     });
+
+    res.json({
+      success: true,
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Get the signed-in teacher's own dashboard figures
+ * @route GET /api/dashboard/teacher
+ *
+ * Scoped to the caller by design — there is no teacherId parameter, so one
+ * teacher cannot read another's numbers by guessing an id.
+ */
+export async function getTeacherStats(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const user = requireUser(req);
+    const teacherId = await findTeacherIdForUser(user.id);
+
+    if (!teacherId) {
+      throw new ApiError(
+        ErrorCode.FORBIDDEN,
+        'This account is not linked to a teacher record'
+      );
+    }
+
+    const result = await dashboardService.getTeacherStats(teacherId, user.id);
 
     res.json({
       success: true,

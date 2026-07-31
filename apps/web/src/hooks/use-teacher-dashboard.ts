@@ -9,7 +9,13 @@ export interface TeacherStats {
   totalClasses: number;
   setoranToday: number;
   setoranYesterday: number;
-  targetAchievement: number;
+  /**
+   * null when none of the teacher's students has a tahfidz target for the
+   * active academic year — there is nothing to measure against. Render the
+   * absence; do not coalesce it to 0, which would read as "0% achieved".
+   */
+  targetAchievement: number | null;
+  studentsWithTarget: number;
   todayScheduleCount: number;
   weeklySetoranCount: number;
   monthlySetoranCount: number;
@@ -28,17 +34,24 @@ export interface TeachingScheduleItem {
   type: "ACADEMIC" | "RELIGIOUS" | "TAHFIDZ" | "EXTRACURRICULAR";
 }
 
+/**
+ * A recorded setoran.
+ *
+ * `score` is the only quality figure TahfidzRecord stores, and it is optional.
+ * The previous shape carried `grade` and `status`, neither of which exists on
+ * the record: `grade` defaulted to the literal "MAQBUL" and `status` was then
+ * derived from that invented grade, so every entry rendered "Perlu Muraja'ah"
+ * regardless of how the student actually recited.
+ */
 export interface RecentSetoran {
   id: string;
   studentName: string;
-  studentPhoto?: string;
   surahName: string;
   juz: number;
   ayahStart: number;
   ayahEnd: number;
   type: "ZIYADAH" | "MUROJAAH" | "TASMI" | "ASSESSMENT";
-  grade: string;
-  status: "LANCAR" | "TIDAK_LANCAR" | "PERLU_MUROJAAH";
+  score: number | null;
   createdAt: string;
   className?: string;
 }
@@ -46,10 +59,9 @@ export interface RecentSetoran {
 export interface ClassSummary {
   id: string;
   name: string;
-  gradeLevel: number;
+  level: string;
   studentCount: number;
-  averageProgress: number;
-  recentActivity?: string;
+  isHomeroom: boolean;
 }
 
 export interface TeacherDashboardData {
@@ -59,215 +71,191 @@ export interface TeacherDashboardData {
   classes: ClassSummary[];
 }
 
-// Fetch teacher statistics
+/** Exactly what `GET /dashboard/teacher` returns. */
+interface TeacherScheduleResponseItem {
+  id: string;
+  startTime: string;
+  endTime: string;
+  subjectName: string | null;
+  className: string | null;
+  room: string | null;
+  studentCount: number;
+}
+
+interface TeacherSetoranResponseItem {
+  id: string;
+  studentName: string;
+  className: string | null;
+  surahName: string;
+  juz: number;
+  ayahStart: number;
+  ayahEnd: number;
+  activityType: string;
+  score: number | null;
+  recordedAt: string;
+}
+
+interface TeacherClassResponseItem {
+  id: string;
+  name: string;
+  level: string;
+  studentCount: number;
+  isHomeroom: boolean;
+}
+
+interface TeacherDashboardResponse {
+  totalStudents: number;
+  totalClasses: number;
+  setoranToday: number;
+  setoranYesterday: number;
+  weeklySetoranCount: number;
+  monthlySetoranCount: number;
+  targetAchievement: number | null;
+  studentsWithTarget: number;
+  todaySchedule: TeacherScheduleResponseItem[];
+  recentSetoran: TeacherSetoranResponseItem[];
+  classes: TeacherClassResponseItem[];
+}
+
+/**
+ * The single query behind both the stat row and the timetable.
+ *
+ * They share a cache entry deliberately — one request, one source of truth —
+ * so each caller derives its own shape with `select` rather than fetching
+ * again. Giving them separate queryFns under the same key would let whichever
+ * mounted first decide what the cached value looks like.
+ */
+function useTeacherDashboardQuery<T>(
+  select: (data: TeacherDashboardResponse) => T
+) {
+  const { user } = useAuthStore();
+
+  return useQuery({
+    queryKey: ["teacher", "dashboard", user?.id],
+    queryFn: async (): Promise<TeacherDashboardResponse> => {
+      const { data } = await api.get("/dashboard/teacher");
+      return data.data;
+    },
+    select,
+    enabled: !!user?.id,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+/**
+ * Fetch the signed-in teacher's own statistics.
+ *
+ * One call to an endpoint that scopes to the caller. The previous version
+ * stitched three general-purpose endpoints together client-side and got every
+ * number wrong: it read `meta.total` where /students returns
+ * `meta.pagination.total`, defaulted the class count to a literal 4 that no
+ * response could ever override, asked /tahfidz/stats for five keys it does not
+ * return, and passed a teacherId that neither /students nor /classes filters
+ * on — so even the figures that did arrive described every student the user
+ * could see rather than the teacher's own.
+ *
+ * Errors are no longer swallowed into a row of zeros. A zero is a claim that
+ * the teacher recorded nothing today; a failed request means we do not know,
+ * and the caller must be able to tell those apart.
+ */
 export function useTeacherStats() {
-  const { user } = useAuthStore();
-  const teacherId = (user as any)?.teacherId || user?.id;
-
-  return useQuery({
-    queryKey: ["teacher", "stats", teacherId],
-    queryFn: async (): Promise<TeacherStats> => {
-      try {
-        // Fetch multiple endpoints in parallel
-        const [studentsRes, tahfidzRes, scheduleRes] = await Promise.allSettled(
-          [
-            api.get("/students", { params: { teacherId, limit: 1 } }),
-            api.get("/tahfidz/stats"),
-            api.get("/curriculum/schedules", { params: { teacherId } }),
-          ],
-        );
-
-        const studentsData =
-          studentsRes.status === "fulfilled" ? studentsRes.value.data : null;
-        const tahfidzData =
-          tahfidzRes.status === "fulfilled" ? tahfidzRes.value.data.data : null;
-        const scheduleData =
-          scheduleRes.status === "fulfilled" ? scheduleRes.value.data : null;
-
-        // Get today's schedules
-        const today = new Date();
-        const todaySchedules = (scheduleData?.data || []).filter((s: any) => {
-          const scheduleDate = new Date(s.date || s.createdAt);
-          return scheduleDate.toDateString() === today.toDateString();
-        });
-
-        return {
-          totalStudents: studentsData?.meta?.total || studentsData?.total || 0,
-          totalClasses: tahfidzData?.classCount || 4,
-          setoranToday: tahfidzData?.setoranToday || 0,
-          setoranYesterday: tahfidzData?.setoranYesterday || 0,
-          targetAchievement: tahfidzData?.targetAchievement || 0,
-          todayScheduleCount:
-            todaySchedules.length || scheduleData?.data?.length || 0,
-          weeklySetoranCount: tahfidzData?.weeklySetoranCount || 0,
-          monthlySetoranCount: tahfidzData?.monthlySetoranCount || 0,
-        };
-      } catch (error) {
-        return {
-          totalStudents: 0,
-          totalClasses: 0,
-          setoranToday: 0,
-          setoranYesterday: 0,
-          targetAchievement: 0,
-          todayScheduleCount: 0,
-          weeklySetoranCount: 0,
-          monthlySetoranCount: 0,
-        };
-      }
-    },
-    enabled: !!teacherId,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
+  return useTeacherDashboardQuery<TeacherStats>((stats) => ({
+    totalStudents: stats.totalStudents,
+    totalClasses: stats.totalClasses,
+    setoranToday: stats.setoranToday,
+    setoranYesterday: stats.setoranYesterday,
+    targetAchievement: stats.targetAchievement,
+    studentsWithTarget: stats.studentsWithTarget,
+    todayScheduleCount: stats.todaySchedule.length,
+    weeklySetoranCount: stats.weeklySetoranCount,
+    monthlySetoranCount: stats.monthlySetoranCount,
+  }));
 }
 
-// Fetch today's teaching schedule
+/**
+ * Today's teaching schedule for the signed-in teacher.
+ *
+ * The server resolves which teacher that is. The client used to send its own
+ * `user.id` as `teacherId`, but Schedule.teacherId references Teacher.id and
+ * the JWT carries no teacherId — so the filter matched nothing and the widget
+ * fell back to a hardcoded timetable ("Tahfidz Pagi - Kelas 7A" and four more)
+ * that belonged to no one. That fallback is gone: an empty day now renders as
+ * an empty day.
+ */
 export function useTeacherTodaySchedule() {
-  const { user } = useAuthStore();
-  const teacherId = (user as any)?.teacherId || user?.id;
+  return useTeacherDashboardQuery<TeachingScheduleItem[]>((stats) =>
+    stats.todaySchedule.map((schedule) => {
+      const toMinutes = (t: string) => {
+        const [h, m] = t.split(":").map(Number);
+        return (h || 0) * 60 + (m || 0);
+      };
 
-  return useQuery({
-    queryKey: ["teacher", "today-schedule", teacherId],
-    queryFn: async (): Promise<TeachingScheduleItem[]> => {
-      try {
-        const today = new Date();
-        // The API filters on the DayOfWeek enum, not the numeric index.
-        const dayOfWeek = DAY_OF_WEEK_BY_INDEX[today.getDay()];
+      const now = new Date();
+      const currentTime = now.getHours() * 60 + now.getMinutes();
 
-        const response = await api.get("/curriculum/schedules", {
-          params: {
-            teacherId,
-            dayOfWeek,
-          },
-        });
-
-        const schedules = response.data.data || [];
-        const currentTime = today.getHours() * 60 + today.getMinutes();
-
-        return schedules
-          .map((schedule: any) => {
-            const [startHour, startMin] = (schedule.startTime || "00:00")
-              .split(":")
-              .map(Number);
-            const [endHour, endMin] = (schedule.endTime || "00:00")
-              .split(":")
-              .map(Number);
-            const scheduleStart = startHour * 60 + startMin;
-            const scheduleEnd = endHour * 60 + endMin;
-
-            let status: "completed" | "ongoing" | "upcoming" = "upcoming";
-            if (currentTime > scheduleEnd) {
-              status = "completed";
-            } else if (
-              currentTime >= scheduleStart &&
-              currentTime <= scheduleEnd
-            ) {
-              status = "ongoing";
-            }
-
-            return {
-              id: schedule.id,
-              time: schedule.startTime || "00:00",
-              endTime: schedule.endTime,
-              activity: schedule.subject?.name
-                ? `${schedule.subject.name} - ${schedule.class?.name || "Kelas"}`
-                : schedule.activityName || "Kegiatan",
-              className: schedule.class?.name,
-              subject: schedule.subject?.name,
-              room: schedule.room,
-              studentCount: schedule.class?.studentCount,
-              status,
-              type: schedule.subject?.type || schedule.type || "TAHFIDZ",
-            };
-          })
-          .sort((a: TeachingScheduleItem, b: TeachingScheduleItem) =>
-            a.time.localeCompare(b.time),
-          );
-      } catch (error) {
-        // Return default schedule
-        return getDefaultTeacherSchedule();
+      let status: "completed" | "ongoing" | "upcoming" = "upcoming";
+      if (currentTime > toMinutes(schedule.endTime)) {
+        status = "completed";
+      } else if (currentTime >= toMinutes(schedule.startTime)) {
+        status = "ongoing";
       }
-    },
-    enabled: !!teacherId,
-    staleTime: 5 * 60 * 1000,
-    refetchInterval: 5 * 60 * 1000,
-  });
+
+      return {
+        id: schedule.id,
+        time: schedule.startTime,
+        endTime: schedule.endTime,
+        activity: schedule.subjectName
+          ? `${schedule.subjectName} - ${schedule.className ?? "Kelas"}`
+          : (schedule.className ?? "Kegiatan"),
+        className: schedule.className ?? undefined,
+        subject: schedule.subjectName ?? undefined,
+        room: schedule.room ?? undefined,
+        studentCount: schedule.studentCount,
+        status,
+        type: "TAHFIDZ" as const,
+      };
+    })
+  );
 }
 
-// Fetch recent setoran from students
+/**
+ * The setoran this teacher recorded most recently.
+ *
+ * Previously called the general /tahfidz list with a `teacherId` param that
+ * endpoint does not accept, so it listed whatever records the caller could
+ * see — other teachers' work included.
+ */
 export function useTeacherRecentSetoran(limit: number = 5) {
-  const { user } = useAuthStore();
-  const teacherId = (user as any)?.teacherId || user?.id;
-
-  return useQuery({
-    queryKey: ["teacher", "recent-setoran", teacherId, limit],
-    queryFn: async (): Promise<RecentSetoran[]> => {
-      try {
-        const response = await api.get("/tahfidz", {
-          params: {
-            teacherId,
-            limit,
-            sortBy: "createdAt",
-            sortOrder: "desc",
-          },
-        });
-
-        const records = response.data.data || [];
-        return records.map((record: any) => ({
-          id: record.id,
-          studentName: record.student?.name || "Unknown Student",
-          studentPhoto: record.student?.photo,
-          surahName: record.surahName,
-          juz: record.juz,
-          ayahStart: record.ayahStart,
-          ayahEnd: record.ayahEnd,
-          type: record.type,
-          grade: record.grade || "MAQBUL",
-          status:
-            record.status ||
-            (record.grade === "MUMTAZ" || record.grade === "JAYYID_JIDDAN"
-              ? "LANCAR"
-              : "PERLU_MUROJAAH"),
-          createdAt: record.createdAt,
-          className: record.student?.class?.name,
-        }));
-      } catch (error) {
-        return [];
-      }
-    },
-    enabled: !!teacherId,
-    staleTime: 2 * 60 * 1000, // 2 minutes
-  });
+  return useTeacherDashboardQuery<RecentSetoran[]>((stats) =>
+    stats.recentSetoran.slice(0, limit).map((record) => ({
+      id: record.id,
+      studentName: record.studentName,
+      surahName: record.surahName,
+      juz: record.juz,
+      ayahStart: record.ayahStart,
+      ayahEnd: record.ayahEnd,
+      type: record.activityType as RecentSetoran["type"],
+      score: record.score,
+      createdAt: record.recordedAt,
+      className: record.className ?? undefined,
+    }))
+  );
 }
 
-// Fetch teacher's classes
+/**
+ * The teacher's own classes. `/classes` has no teacherId filter, which is why
+ * this used to render every class the caller could see.
+ */
 export function useTeacherClasses() {
-  const { user } = useAuthStore();
-  const teacherId = (user as any)?.teacherId || user?.id;
-
-  return useQuery({
-    queryKey: ["teacher", "classes", teacherId],
-    queryFn: async (): Promise<ClassSummary[]> => {
-      try {
-        const response = await api.get("/classes", {
-          params: { teacherId },
-        });
-
-        const classes = response.data.data || [];
-        return classes.map((cls: any) => ({
-          id: cls.id,
-          name: cls.name,
-          gradeLevel: cls.gradeLevel || 0,
-          studentCount: cls._count?.enrollments || cls.studentCount || 0,
-          averageProgress: cls.averageProgress || 0,
-          recentActivity: cls.recentActivity,
-        }));
-      } catch (error) {
-        return [];
-      }
-    },
-    enabled: !!teacherId,
-    staleTime: 5 * 60 * 1000,
-  });
+  return useTeacherDashboardQuery<ClassSummary[]>((stats) =>
+    stats.classes.map((cls) => ({
+      id: cls.id,
+      name: cls.name,
+      level: cls.level,
+      studentCount: cls.studentCount,
+      isHomeroom: cls.isHomeroom,
+    }))
+  );
 }
 
 // Fetch announcements for teacher
@@ -315,85 +303,24 @@ export function useTeacherDashboard() {
   };
 }
 
-// Helper function for default schedule
-function getDefaultTeacherSchedule(): TeachingScheduleItem[] {
-  const now = new Date();
-  const currentHour = now.getHours();
-
-  const defaultSchedule = [
-    {
-      time: "07:00",
-      activity: "Tahfidz Pagi - Kelas 7A",
-      type: "TAHFIDZ" as const,
-    },
-    { time: "09:00", activity: "Tahfidz - Kelas 8B", type: "TAHFIDZ" as const },
-    {
-      time: "10:30",
-      activity: "Setoran Hafalan - Kelas 9A",
-      type: "TAHFIDZ" as const,
-    },
-    {
-      time: "13:00",
-      activity: "Muraja'ah - Kelas 7B",
-      type: "TAHFIDZ" as const,
-    },
-    { time: "15:00", activity: "Tahsin - Kelas 8A", type: "TAHFIDZ" as const },
-  ];
-
-  return defaultSchedule.map((item, index) => {
-    const [hour] = item.time.split(":").map(Number);
-    let status: "completed" | "ongoing" | "upcoming" = "upcoming";
-
-    if (currentHour > hour + 1) {
-      status = "completed";
-    } else if (currentHour >= hour && currentHour <= hour + 1) {
-      status = "ongoing";
-    }
-
-    return {
-      id: `default-${index}`,
-      ...item,
-      status,
-    };
-  });
-}
-
-// Grade display helper
-export function getGradeDisplay(grade: string): {
+/**
+ * Render a setoran score.
+ *
+ * TahfidzRecord stores an optional numeric `score` and nothing else about
+ * quality — there is no grade enum and no lancar/tidak-lancar status. The
+ * helpers that used to map those did so over values the frontend invented.
+ */
+export function getScoreDisplay(score: number | null): {
   label: string;
   color: string;
 } {
-  const grades: Record<string, { label: string; color: string }> = {
-    MUMTAZ: { label: "Mumtaz", color: "bg-green-100 text-green-800" },
-    JAYYID_JIDDAN: {
-      label: "Jayyid Jiddan",
-      color: "bg-blue-100 text-blue-800",
-    },
-    JAYYID: { label: "Jayyid", color: "bg-cyan-100 text-cyan-800" },
-    MAQBUL: { label: "Maqbul", color: "bg-yellow-100 text-yellow-800" },
-    RASIB: { label: "Rasib", color: "bg-red-100 text-red-800" },
-  };
-
-  return grades[grade] || { label: grade, color: "bg-gray-100 text-gray-800" };
-}
-
-// Status display helper
-export function getStatusDisplay(status: string): {
-  label: string;
-  color: string;
-} {
-  const statuses: Record<string, { label: string; color: string }> = {
-    LANCAR: { label: "Lancar", color: "bg-green-100 text-green-700" },
-    TIDAK_LANCAR: { label: "Tidak Lancar", color: "bg-red-100 text-red-700" },
-    PERLU_MUROJAAH: {
-      label: "Perlu Muraja'ah",
-      color: "bg-yellow-100 text-yellow-700",
-    },
-  };
-
-  return (
-    statuses[status] || { label: status, color: "bg-gray-100 text-gray-700" }
-  );
+  if (score === null) {
+    return { label: "Belum dinilai", color: "bg-gray-100 text-gray-700" };
+  }
+  if (score >= 90) return { label: String(score), color: "bg-green-100 text-green-800" };
+  if (score >= 75) return { label: String(score), color: "bg-blue-100 text-blue-800" };
+  if (score >= 60) return { label: String(score), color: "bg-yellow-100 text-yellow-800" };
+  return { label: String(score), color: "bg-red-100 text-red-800" };
 }
 
 // Schedule status helper

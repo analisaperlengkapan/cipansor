@@ -30,8 +30,7 @@ import {
 import Link from "next/link";
 import {
   useTeacherDashboard,
-  getGradeDisplay,
-  getStatusDisplay,
+  getScoreDisplay,
   getScheduleStatusDisplay,
 } from "@/hooks/use-teacher-dashboard";
 import { formatDistanceToNow } from "date-fns";
@@ -168,10 +167,21 @@ function TeacherDashboardContent() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
+            {/* null means no student has a tahfidz target for the active
+                year — nothing to measure against. Showing 0% there would
+                read as "none of the target reached", which is a claim about
+                the teacher's work that no record supports. */}
             <div className="text-2xl font-bold">
-              {stats?.targetAchievement || 0}%
+              {stats?.targetAchievement === null ||
+              stats?.targetAchievement === undefined
+                ? "—"
+                : `${stats.targetAchievement}%`}
             </div>
-            <p className="text-xs text-muted-foreground">semester ini</p>
+            <p className="text-xs text-muted-foreground">
+              {stats?.targetAchievement === null
+                ? "belum ada target hafalan"
+                : `${stats?.studentsWithTarget ?? 0} siswa bertarget`}
+            </p>
           </CardContent>
         </Card>
         <Card>
@@ -268,8 +278,7 @@ function TeacherDashboardContent() {
             {recentSetoran && recentSetoran.length > 0 ? (
               <div className="space-y-4">
                 {recentSetoran.map((record) => {
-                  const statusInfo = getStatusDisplay(record.status);
-                  const gradeInfo = getGradeDisplay(record.grade);
+                  const scoreInfo = getScoreDisplay(record.score);
 
                   return (
                     <div
@@ -278,10 +287,6 @@ function TeacherDashboardContent() {
                     >
                       <div className="flex items-center gap-3">
                         <Avatar className="h-8 w-8">
-                          <AvatarImage
-                            src={record.studentPhoto}
-                            alt={record.studentName}
-                          />
                           <AvatarFallback>
                             {record.studentName
                               .split(" ")
@@ -301,14 +306,9 @@ function TeacherDashboardContent() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="flex items-center gap-1">
-                          <Badge variant="outline" className={statusInfo.color}>
-                            {statusInfo.label}
-                          </Badge>
-                          <Badge className={gradeInfo.color}>
-                            {gradeInfo.label}
-                          </Badge>
-                        </div>
+                        <Badge className={scoreInfo.color}>
+                          {scoreInfo.label}
+                        </Badge>
                         <p className="text-xs text-muted-foreground mt-1">
                           {formatDistanceToNow(new Date(record.createdAt), {
                             addSuffix: true,
@@ -355,17 +355,12 @@ function TeacherDashboardContent() {
                             {cls.studentCount} siswa
                           </p>
                         </div>
-                        <Badge variant="outline">Kelas {cls.gradeLevel}</Badge>
+                        <Badge variant="outline">Kelas {cls.level}</Badge>
                       </div>
-                      {cls.averageProgress > 0 && (
-                        <div className="mt-2">
-                          <p className="text-xs text-muted-foreground">
-                            Progress rata-rata
-                          </p>
-                          <p className="text-lg font-bold text-green-600">
-                            {cls.averageProgress}%
-                          </p>
-                        </div>
+                      {cls.isHomeroom && (
+                        <p className="mt-2 text-xs text-muted-foreground">
+                          Wali kelas
+                        </p>
                       )}
                     </CardContent>
                   </Card>

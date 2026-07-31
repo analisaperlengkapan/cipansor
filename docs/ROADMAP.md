@@ -164,15 +164,37 @@ Remaining: regenerate all screenshots into `docs/images` (checking each page
 and fixing what is broken — this doubles as the role/menu audit), write the
 guide with a clickable table of contents, then rewrite the README.
 
-## 🟡 10. Customer-service chatbot — Phase 1 only
+## 🟡 10. Customer-service chatbot — Phase 1 shipped, five gaps left
 
-Advisory already given (2026-07-23). Build **only** the public widget with RAG
-over public pages, plus the eval harness (golden questions **and** a red-team
-set asserting non-disclosure). Do **not** build the authenticated agent as a
-vector index over the database: it must call the existing authorized endpoints
-as the logged-in user with their **active** role, so `letterScopeWhere`,
-`assertLetterAccess` and the nature levels apply unchanged. Conversation state
-must be partitioned per (user, activeRole).
+**Live on cipansor.or.id since 2026-07-25** (#373, credentials reaching the
+container via #374). The public widget answers from RAG over the public pages
+with the live SPMB facts, cites its sources, caches structurally, and refuses
+requests for private data. Design and rationale: [`planning/chatbot-design.md`](./planning/chatbot-design.md).
+
+What the design asked for and we have not built, in the order it matters:
+
+1. **No monthly spend alert** — the one remaining unmet item on the pre-launch
+   list. An open LLM endpoint on a public page is a cost-amplification target,
+   and nothing currently notices a bill climbing.
+2. **The eval suite is not in CI** (§5). It exists — 36 golden and 23 red-team
+   cases, `pnpm --filter api chatbot:eval` — and runs only when someone
+   remembers. A leak regression is caught by nothing else. Real money per run,
+   so a nightly or pre-release schedule fits better than per-PR.
+3. **No persona version history and no eval gate on save** (§4). A super admin
+   can change the public voice of the pesantren with no revision trail and no
+   quality check; reverting means retyping.
+4. **The golden set is 36 cases against the 50–100 the design asked for.** Grow
+   it from questions visitors actually ask, which is the point of shipping
+   Phase 1 first.
+
+Phase 2 (the authenticated agent) stays deliberately parked. It must call the
+existing authorized endpoints as the logged-in user with their **active** role —
+never a vector index over the database — so `letterScopeWhere`,
+`assertLetterAccess` and the nature levels apply unchanged, with conversation
+state partitioned per (user, activeRole) and a fresh thread on every role
+switch. It also waits on §8's data quality: the teacher dashboard still reports
+fabricated figures, and an agent states them in fluent Indonesian with authority
+they have not earned.
 
 ---
 

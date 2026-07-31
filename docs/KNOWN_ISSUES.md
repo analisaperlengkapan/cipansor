@@ -74,6 +74,72 @@ explicit allowlist naming each deliberate exception and its reason.
 - **Legal identifiers** — decree number, NPWP, ministry name. Facts on a
   document; a translated identifier is a wrong identifier.
 
+## ✅ FIXED — every rate limiter counted the Cloudflare edge, not the visitor (2026-07-25, fixed 2026-07-31)
+
+**Symptom.** Rate limits do not limit anyone on the live site. 40+ consecutive
+`POST /api/chatbot/public/ask` from a single address never returned 429 against
+a 10-per-minute limit, and `ratelimit-remaining` moved non-monotonically —
+9, 6, 9, 9, 8 — which is the signature of several counters, not one.
+
+**Cause.** The request path is **client → Cloudflare → nginx → container**, two
+reverse proxies, but `apps/api/src/app.ts` sets `app.set('trust proxy', 1)`.
+Express therefore takes `req.ip` from the last `X-Forwarded-For` entry, which
+nginx appended as `$remote_addr` — the Cloudflare **edge** address. Cloudflare
+spreads one visitor across many edges (12+ distinct ones appeared in the nginx
+access log for ~40 requests from one client), so each burst keeps landing in a
+fresh bucket.
+
+Proven in three steps rather than inferred:
+
+1. The same burst sent straight to `127.0.0.1:3001` with a single-entry XFF
+   decremented 9→0 cleanly and returned **429 on request 11**.
+2. `https://cipansor.or.id/cdn-cgi/trace` reported the client IP as perfectly
+   stable across 8 samples, so the client was not the thing changing.
+3. Replaying nginx's exact two-entry header (`<client>, <rotating edge>`)
+   reproduced `remaining: 9` **every time**.
+
+**This is not a chatbot problem.** All nine `rateLimit()` instances key on
+`req.ip` with no `keyGenerator`: `defaultLimiter`, `authLimiter` (login, 5/min),
+`twoFactorLimiter` (10/15min), `passwordResetLimiter`, `passphraseLimiter`
+(e-sign, 20/15min), `sensitiveOperationLimiter`, `uploadLimiter`,
+`publicRegistrantLimiter`, `chatbotLimiter`. The brute-force ceiling on 2FA and
+on the e-signature passphrase is multiplied by however many edges an attacker's
+traffic spreads across. Secondary effect: `/var/log/nginx/access.log` records
+Cloudflare addresses, so it cannot be used to investigate abuse either.
+
+**Fix applied 2026-07-31.** The address is rewritten at the edge of our own
+stack rather than by raising the Express hop count.
+`/home/cipansoradm/cipansor-deploy/cloudflare-realip.conf` holds
+`set_real_ip_from` for Cloudflare's published ranges plus
+`real_ip_header CF-Connecting-IP` and `real_ip_recursive on`; it is copied to
+`/etc/nginx/` and included from the `http{}` block of `/etc/nginx/nginx.conf`,
+on the line after `proxy_set_header X-Forwarded-Host`. That makes
+`$remote_addr` the visitor everywhere — the access log included — and keeps
+`trust proxy = 1` correct. `trust proxy = 2` also repairs `req.ip`, but trusts
+a hop count blindly and leaves the log wrong.
+
+`CF-Connecting-IP` must **never** be trusted without `set_real_ip_from` scoped
+to Cloudflare, or anyone can choose their own IP. That scoping was verified,
+not assumed — see the third check below.
+
+Verified against the live site after the reload:
+
+1. A request to `https://cipansor.or.id/...` that demonstrably travelled
+   through Cloudflare (`remote_ip=172.67.222.200`) was logged by nginx as
+   `70.153.137.180`, the true client address, not the edge.
+2. Six `POST /api/auth/login` against a nonexistent account returned
+   `401 401 401 401 401 429` — the 5/min ceiling now trips — and the API's own
+   warning recorded `{"ip":"70.153.137.180"}`, proving `req.ip` reaches Express
+   as the visitor rather than the edge.
+3. A forged `CF-Connecting-IP: 1.2.3.4` sent from `127.0.0.1`, which is **not**
+   in the trust list, was ignored: nginx logged `127.0.0.1`. Spoofing one's own
+   address past the limiter does not work.
+
+The trust list is a snapshot of Cloudflare's published ranges. If Cloudflare
+adds a range that is missing from the file, traffic via that edge silently goes
+back to being counted as edge traffic — re-fetch `/ips-v4` and `/ips-v6` when
+Cloudflare announces a change.
+
 ## 🔴 OPEN — PWA install prompt never appears on cipansor.or.id (2026-07-23)
 
 **Symptom.** The "install app" banner never shows on the live site. Reported

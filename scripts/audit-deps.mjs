@@ -24,6 +24,34 @@ import semver from "semver";
 const REGISTRY = process.env.NPM_REGISTRY_URL || "https://registry.npmjs.org";
 const SEVERITY_RANK = { low: 0, moderate: 1, high: 2, critical: 3 };
 
+/**
+ * Versions that carry a backported fix an advisory's own range still matches.
+ *
+ * npm publishes one `vulnerable_versions` range per advisory. When a fix lands
+ * on several release lines at once, that range is often written as a bare
+ * upper bound on the newest line ("<=5.0.7") — which `semver.satisfies` then
+ * also matches against every 1.x, 2.x and 3.x, including the ones that were
+ * patched. Without this list such an advisory can never be cleared: no 1.x
+ * version exists that fails "<=5.0.7".
+ *
+ * Each entry pins one exact version against one exact range, so a regression,
+ * a new advisory for the same package, or a widened range all still fail.
+ * Verify the fix is really present in the tarball before adding an entry.
+ */
+const BACKPORTED_FIXES = [
+  {
+    name: "brace-expansion",
+    version: "1.1.18",
+    range: "<=5.0.7",
+    note: "Unbounded expansion (CVE-2026-14257) is fixed on the 1.x line in 1.1.18, which adds the EXPANSION_MAX_LENGTH cap. 1.x cannot move to 5.x: brace-expansion 5's CommonJS build exports a named `expand`, while minimatch@3 calls the module itself.",
+  },
+];
+
+const isBackported = (name, version, range) =>
+  BACKPORTED_FIXES.some(
+    (f) => f.name === name && f.version === version && f.range === range,
+  );
+
 const levelArgIdx = process.argv.indexOf("--audit-level");
 const threshold =
   levelArgIdx !== -1 ? process.argv[levelArgIdx + 1] : "high";
@@ -59,6 +87,7 @@ if (installed.size === 0) {
 const entries = [...installed.entries()].map(([n, v]) => [n, [...v]]);
 const CHUNK = 400;
 const findings = [];
+const waived = [];
 
 for (let i = 0; i < entries.length; i += CHUNK) {
   const body = Object.fromEntries(entries.slice(i, i + CHUNK));
@@ -75,9 +104,14 @@ for (let i = 0; i < entries.length; i += CHUNK) {
   for (const [name, advs] of Object.entries(advisories)) {
     for (const adv of advs) {
       const range = adv.vulnerable_versions ?? "*";
-      const hit = [...(installed.get(name) ?? [])].filter((v) =>
+      const matched = [...(installed.get(name) ?? [])].filter((v) =>
         semver.satisfies(v, range, { includePrerelease: true }),
       );
+      const hit = [];
+      for (const v of matched) {
+        if (isBackported(name, v, range)) waived.push({ name, version: v, range });
+        else hit.push(v);
+      }
       if (hit.length > 0) {
         findings.push({
           name,
@@ -108,6 +142,15 @@ for (const f of findings) {
     (SEVERITY_RANK[f.severity] ?? -1) >= SEVERITY_RANK[threshold] ? "✖" : "•";
   console.log(
     `${marker} [${f.severity}] ${f.name}@${f.versions.join(",")} (vulnerable: ${f.range})\n   ${f.title}\n   ${f.url}`,
+  );
+}
+
+for (const w of waived) {
+  const entry = BACKPORTED_FIXES.find(
+    (f) => f.name === w.name && f.version === w.version && f.range === w.range,
+  );
+  console.log(
+    `~ [waived] ${w.name}@${w.version} matches "${w.range}" but carries a backported fix\n   ${entry.note}`,
   );
 }
 

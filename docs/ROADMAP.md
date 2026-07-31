@@ -161,6 +161,25 @@ for an actual intake. The values above are demo data from the seed.
    a unit; only the seed writes null-unit plans today).
 4. **Module audit** — every backend module reachable from the frontend and
    vice versa, and reachable by at least one role.
+   **First confirmed instance, found 2026-07-31: PAUD has a complete backend
+   and no frontend at all.** `apps/api/src/modules/paud-assessment` and
+   `paud-report` are fully built (controller/service/schema/routes) and mounted
+   at `/api/paud-assessment` and `/api/paud-report`, but `apps/web/src/app` has
+   no `paud` directory — so `/paud/assessment`, `/paud/assessment/new`,
+   `/paud/assessment/indicators`, `/paud/assessment/class/[id]`,
+   `/paud/assessment/student/[id]/progress`, `/paud/assessment/report/generate`
+   and `/paud/settings` do not exist. `docs/planning/frontend-paud-design.md`
+   specifies them in full. Two more routes are missing outside PAUD:
+   `/dashboard/performance` and `/dashboard/unit/[id]`.
+
+> **The two task lists in `docs/planning/` are not trackers — do not read a
+> checkbox there as status.** `implementation-tasks.md` shows 204 unchecked
+> against 11 done, and `tasks.md` 82 against 153, but both were last touched
+> 2026-07-20, before most of the work. Measured 2026-07-31 against the actual
+> tree: of the 17 routes carrying unchecked tasks, **7 are built** and the
+> boxes were simply never ticked. The other 10 are genuinely missing, and 8 of
+> them are the whole PAUD frontend (see §8.4). Verify against the code, then
+> record the result here — this file is the tracker.
 
 ## 🟡 9. Documentation deliverable (in flight)
 
@@ -266,7 +285,13 @@ run before, expect to re-check any page the sweep flags.
     `paud-report`'s check is an authorization gate, not a read filter. Decide
     these case by case when auditing each module, never by find-and-replace.
 - ~210 racy `isVisible({ timeout })` probes in e2e specs.
-- Dependabot PRs **#333** (zod 4) and **#328** (eslint 10) still open.
+- Dependabot PRs still open (checked 2026-07-31): **#333** (zod 3→4),
+  **#377** (eslint 8→10), **#379** (typescript 5→7). All three are major
+  bumps across several workspaces — `zod` is declared in api, shared and web,
+  and `packages/shared` is the Zod DTO boundary the whole monorepo imports, so
+  none of these is a one-line merge. The root `package.json` pins
+  `"typescript": "latest"` while api/shared/web ask for `^5`, which is its own
+  inconsistency worth settling when #379 is taken.
 - ~~Stray root-owned directory `apps/api/apps/api`.~~ **Gone** (verified
   2026-07-24). A bind-mounted `docker run` can recreate it; if `git stash -u`
   or `git checkout` starts emitting permission warnings that break `&&` chains,

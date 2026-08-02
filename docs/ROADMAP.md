@@ -1,6 +1,6 @@
 # Roadmap — outstanding work, most urgent first
 
-Ordered backlog as of **2026-07-23**. Companion to
+Ordered backlog as of **2026-08-02**. Companion to
 [`KNOWN_ISSUES.md`](./KNOWN_ISSUES.md) (which records *defects* in detail); this
 file records *what to do next and in what order*.
 
@@ -15,6 +15,10 @@ a visitor sees, then correctness work, then deliverables, then tidiness.
   `main @ 41ee99e2` (through #381/#382) via `deploy-images.sh`. That deploy
   carried the CORS fix (§2), the public i18n work (§5) and the chatbot markdown
   fix to production, all verified live after the roll.
+- **`main` has since moved ahead of production.** `#383` (teacher dashboard
+  figures + the unit-admin route grants, `main @ d09bb67b`) is merged but **not
+  deployed** — production still runs `41ee99e2`, so a guru signing in today
+  still sees the fabricated stat row described in §8.4.
 - The two containers can therefore hold *different* commits. Before assuming
   production runs what `main` says, check the running image itself — e.g.
   `docker exec cipansor-api grep -o "<snippet>" /app/apps/api/dist/…/<file>.js`.
@@ -169,8 +173,15 @@ for an actual intake. The values above are demo data from the seed.
    `/pengawasan`, `/syariah`, `/tata-laksana`, `/organisasi`, `/unit-usaha`,
    `/project`, `/cbt/exams`. They are in `ADMIN_ROLES` so they get
    `adminNavigation`, but their legacy bucket `UNIT_ADMIN` granted none of
-   those prefixes in `roleRouteAccess`. Fixed, with a guard that iterates all
-   81 RoleCodes asserting every menu link is one `canAccessRoute` allows.
+   those prefixes in `roleRouteAccess`. **Fixed in #383** (`d09bb67b`), with a
+   guard that iterates all 81 RoleCodes asserting every menu link is one
+   `canAccessRoute` allows — proven to bite by reverting the allowlist, which
+   fails on exactly those four roles with 18 links each.
+
+   Two guard holes let this survive a suite that already tested `rbac.ts`: the
+   existing tests sampled roles by hand and no unit admin was among them, and
+   nothing anywhere asserted the menu→permission relationship at all. The
+   contract was enforced in neither direction.
 
    The sharpest case: TKQ_ADMIN runs the TK unit and could not open a single
    page of the TK/PAUD module. Only SUPER_ADMIN could, via `["*"]`.
@@ -248,9 +259,11 @@ existing authorized endpoints as the logged-in user with their **active** role �
 never a vector index over the database — so `letterScopeWhere`,
 `assertLetterAccess` and the nature levels apply unchanged, with conversation
 state partitioned per (user, activeRole) and a fresh thread on every role
-switch. It also waits on §8's data quality: the teacher dashboard still reports
-fabricated figures, and an agent states them in fluent Indonesian with authority
-they have not earned.
+switch. It also waits on §8's data quality. The teacher dashboard was the
+worked example — it reported fabricated figures until #383 — and the lesson
+generalises: an agent restates whatever the API hands it, in fluent Indonesian,
+with an authority the number has not earned. Every surface Phase 2 can read
+needs the §8.4 treatment first.
 
 ---
 

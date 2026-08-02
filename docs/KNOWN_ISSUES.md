@@ -140,6 +140,57 @@ adds a range that is missing from the file, traffic via that edge silently goes
 back to being counted as edge traffic — re-fetch `/ips-v4` and `/ips-v6` when
 Cloudflare announces a change.
 
+## ✅ FIXED — the teacher dashboard reported figures no query had produced (2026-08-01, fixed 2026-08-02)
+
+**Was.** Every number on `/teacher` was wrong, and wrong in a way that looked
+plausible. Six independent defects, found by reading the hooks against the
+endpoints they called:
+
+1. `useTeacherStats` read `meta.total`; `GET /students` returns
+   `meta.pagination.total`. Total Siswa was therefore **always 0**.
+2. The class count fell back to a literal `|| 4`, and since the response never
+   carried the key it read, "dari 4 kelas" was **unconditional**.
+3. It asked `GET /tahfidz/stats` for five keys that endpoint does not return
+   (`setoranToday`, `setoranYesterday`, `targetAchievement`, `weeklyCount`,
+   `monthlyCount`), so setoran and target were **always 0**.
+4. It passed `teacherId` to `/students`, `/classes` and `/tahfidz`, **none of
+   which filter on it**. The figures that did arrive described every record the
+   caller could see — other teachers' students included.
+5. It sent `user.id` as that `teacherId`. `Schedule.teacherId` references
+   `Teacher.id` and the JWT carries no teacherId, so the timetable matched
+   nothing and fell through to a **hardcoded five-period day** belonging to no
+   one.
+6. It read `student.name`; the name lives on `student.user.name`. Every recent
+   setoran rendered **"Unknown Student"**.
+
+Defects 5 and 6 were found during verification, after the first four.
+
+**Now.** One session-scoped endpoint, `GET /api/dashboard/teacher`. It takes no
+`teacherId` parameter by design — the server resolves the teacher from the
+session via `findTeacherIdForUser`, so one teacher cannot read another's numbers
+by guessing an id, and an account with no `Teacher` row gets 403 rather than a
+row of zeros. Class membership is the union of three routes to a class:
+homeroom (`Class.homeroomTeacherId`), timetable (`Schedule.teacherId`) and
+subject assignment (`TeacherSubject`).
+
+**The design decision worth keeping.** `targetAchievement` is `number | null`,
+and null renders as **"—"** with "belum ada target hafalan" — not `0%`. When no
+student has a `TahfidzTarget` for the active year there is nothing to measure
+against, and `0%` is not a neutral placeholder: it is a claim that the teacher
+achieved none of their target. Per-student progress is also capped with
+`Math.min(completed / targetJuz, 1)` so one student far ahead cannot push a
+class over 100%.
+
+Errors are no longer swallowed into zeros either. A zero says the teacher
+recorded nothing today; a failed request says we do not know. The old code
+could not tell those apart, and neither could the guru reading it.
+
+Covered by 11 tests in `apps/api/src/modules/dashboard/teacher-stats.test.ts`
+(scoping, the 100% cap, null-vs-zero, and the three-way class union). Fixed in
+#383. **Note:** those tests queue `mockResolvedValueOnce` in call order, so the
+suite uses `vi.resetAllMocks()` — `clearAllMocks` leaves the queued values in
+place and the failures it produces point at the wrong test.
+
 ## 🔴 OPEN — PWA install prompt never appears on cipansor.or.id (2026-07-23)
 
 **Symptom.** The "install app" banner never shows on the live site. Reported

@@ -1677,8 +1677,22 @@ async function main() {
 
     const isStudent = roleCode.endsWith('_SISWA') || roleCode === 'PT_MAHASISWA';
     const isParent = roleCode.endsWith('_ORANG_TUA');
+    // A kepala sekolah is an office, not a teaching record, so they get no
+    // Teacher row — except where SECONDARY_ROLES also hands them a teaching
+    // role. That pairing exists to model "a kepala sekolah who still teaches"
+    // and to give the role switcher something to switch between; without the
+    // Teacher row the teaching half of it is broken, because
+    // GET /dashboard/teacher resolves the caller through `findTeacherIdForUser`
+    // and 403s an account that has none.
+    const teachesViaSecondaryRole = SECONDARY_ROLES.some(
+      (pair) =>
+        pair.primary === roleCode &&
+        demoLegacyRoleFor(pair.secondary) === UserRole.TEACHER &&
+        !pair.secondary.endsWith('_KEPALA_SEKOLAH')
+    );
     const isTeacher =
-      demoLegacyRoleFor(roleCode) === UserRole.TEACHER && !roleCode.endsWith('_KEPALA_SEKOLAH');
+      demoLegacyRoleFor(roleCode) === UserRole.TEACHER &&
+      (!roleCode.endsWith('_KEPALA_SEKOLAH') || teachesViaSecondaryRole);
 
     if (isStudent) {
       const student = await prisma.student.create({

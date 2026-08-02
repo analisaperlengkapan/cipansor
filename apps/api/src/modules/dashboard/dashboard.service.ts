@@ -21,6 +21,7 @@ import type {
   AdmissionsStats,
   CBTStats,
 } from '@cipansor/shared';
+import { DAY_OF_WEEK_BY_INDEX } from '@cipansor/shared';
 
 export interface DashboardServiceContext {
   userId?: string;
@@ -31,6 +32,70 @@ export interface DashboardServiceContext {
 export interface DateRangeParams {
   startDate?: Date;
   endDate?: Date;
+}
+
+/**
+ * Everything the teacher dashboard shows, scoped to one teacher.
+ *
+ * `targetAchievement` is deliberately nullable. It can only be computed for
+ * students who actually have a TahfidzTarget for the active academic year;
+ * when none do, the honest answer is "not measurable", and a 0 would render
+ * as "0% of target reached" — a claim about the teacher's work that nothing
+ * in the database supports. The UI must handle null, not coalesce it.
+ */
+export interface TeacherDashboardStats {
+  totalStudents: number;
+  totalClasses: number;
+  setoranToday: number;
+  setoranYesterday: number;
+  weeklySetoranCount: number;
+  monthlySetoranCount: number;
+  targetAchievement: number | null;
+  studentsWithTarget: number;
+}
+
+/**
+ * One timetabled lesson for the teacher, today.
+ *
+ * Resolved server-side because the JWT does not carry a teacherId: the web
+ * client used to send `user.id` as `teacherId`, which is a User id and matches
+ * no Schedule row, so the teacher's timetable silently came back empty.
+ */
+export interface TeacherScheduleItem {
+  id: string;
+  startTime: string;
+  endTime: string;
+  subjectName: string | null;
+  className: string | null;
+  room: string | null;
+  studentCount: number;
+}
+
+export interface TeacherSetoranItem {
+  id: string;
+  studentName: string;
+  className: string | null;
+  surahName: string;
+  juz: number;
+  ayahStart: number;
+  ayahEnd: number;
+  activityType: string;
+  score: number | null;
+  recordedAt: Date;
+}
+
+export interface TeacherClassSummary {
+  id: string;
+  name: string;
+  level: string;
+  studentCount: number;
+  isHomeroom: boolean;
+}
+
+export interface TeacherDashboard extends TeacherDashboardStats {
+  todaySchedule: TeacherScheduleItem[];
+  recentSetoran: TeacherSetoranItem[];
+  classes: TeacherClassSummary[];
 }
 
 export interface PeriodParams {
@@ -728,6 +793,284 @@ export class DashboardService {
       upcomingExams,
       totalAttempts,
       avgScore: Number(avgScoreResult._avg.score ?? 0),
+    };
+  }
+
+  /**
+   * Class IDs a teacher is responsible for.
+   *
+   * Three independent links exist and a teacher can hold any combination, so
+   * this is a union rather than a single lookup: homeroom (Class), timetabled
+   * lessons (Schedule) and subject assignments (TeacherSubject). A
+   * TeacherSubject with a null classId means "every class" for that subject
+   * and carries no class of its own, so it contributes nothing here.
+   */
+  private async getTeacherClassIds(teacherId: string): Promise<string[]> {
+    const [homeroom, scheduled, assigned] = await Promise.all([
+      prisma.class.findMany({
+        where: { homeroomTeacherId: teacherId, deletedAt: null },
+        select: { id: true },
+      }),
+      prisma.schedule.findMany({
+        where: { teacherId, isActive: true },
+        select: { classId: true },
+        distinct: ['classId'],
+      }),
+      prisma.teacherSubject.findMany({
+        where: { teacherId, isActive: true, classId: { not: null } },
+        select: { classId: true },
+        distinct: ['classId'],
+      }),
+    ]);
+
+    return [
+      ...new Set([
+        ...homeroom.map((c) => c.id),
+        ...scheduled.map((s) => s.classId),
+        ...assigned.map((t) => t.classId as string),
+      ]),
+    ];
+  }
+
+  /**
+   * Teacher dashboard figures, all scoped to the teacher.
+   *
+   * Student and class counts come from the teacher's own classes; the setoran
+   * counts are what this teacher recorded, which is what "Setoran Hari Ini"
+   * on their own dashboard means. A teacher with no classes gets zeros and a
+   * null achievement — an empty state, not an error.
+   */
+  async getTeacherStats(teacherId: string, userId: string): Promise<TeacherDashboard> {
+    const classIds = await this.getTeacherClassIds(teacherId);
+
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    const startOfYesterday = new Date(startOfToday);
+    startOfYesterday.setDate(startOfYesterday.getDate() - 1);
+    const startOfWeek = new Date(startOfToday);
+    startOfWeek.setDate(startOfWeek.getDate() - 6);
+    const startOfMonth = new Date(startOfToday.getFullYear(), startOfToday.getMonth(), 1);
+
+    const recordedByMe = { recordedById: userId };
+
+    const [enrollments, setoranToday, setoranYesterday, weeklySetoranCount, monthlySetoranCount] =
+      await Promise.all([
+        classIds.length
+          ? prisma.classEnrollment.findMany({
+              where: { classId: { in: classIds }, status: 'active' },
+              select: { studentId: true },
+              distinct: ['studentId'],
+            })
+          : Promise.resolve([]),
+        prisma.tahfidzRecord.count({
+          where: { ...recordedByMe, recordedAt: { gte: startOfToday } },
+        }),
+        prisma.tahfidzRecord.count({
+          where: { ...recordedByMe, recordedAt: { gte: startOfYesterday, lt: startOfToday } },
+        }),
+        prisma.tahfidzRecord.count({
+          where: { ...recordedByMe, recordedAt: { gte: startOfWeek } },
+        }),
+        prisma.tahfidzRecord.count({
+          where: { ...recordedByMe, recordedAt: { gte: startOfMonth } },
+        }),
+      ]);
+
+    const studentIds = enrollments.map((e) => e.studentId);
+    const [{ targetAchievement, studentsWithTarget }, todaySchedule, recentSetoran, classes] =
+      await Promise.all([
+        this.getTargetAchievement(studentIds),
+        this.getTeacherTodaySchedule(teacherId),
+        this.getTeacherRecentSetoran(userId),
+        this.getTeacherClasses(teacherId, classIds),
+      ]);
+
+    return {
+      totalStudents: studentIds.length,
+      totalClasses: classIds.length,
+      setoranToday,
+      setoranYesterday,
+      weeklySetoranCount,
+      monthlySetoranCount,
+      targetAchievement,
+      studentsWithTarget,
+      todaySchedule,
+      recentSetoran,
+      classes,
+    };
+  }
+
+  /**
+   * The setoran this teacher recorded most recently.
+   *
+   * Keyed on recordedById, which is a User id — TahfidzRecord links to the
+   * recording User, not to Teacher. The web client used to call the general
+   * /tahfidz list with a `teacherId` param that endpoint does not accept, so
+   * it showed whatever records the caller could see.
+   */
+  private async getTeacherRecentSetoran(
+    userId: string,
+    limit = 5
+  ): Promise<TeacherSetoranItem[]> {
+    const records = await prisma.tahfidzRecord.findMany({
+      where: { recordedById: userId },
+      orderBy: { recordedAt: 'desc' },
+      take: limit,
+      select: {
+        id: true,
+        surahName: true,
+        juz: true,
+        ayahStart: true,
+        ayahEnd: true,
+        activityType: true,
+        score: true,
+        recordedAt: true,
+        student: {
+          select: {
+            user: { select: { name: true } },
+            enrollments: {
+              where: { status: 'active' },
+              orderBy: { enrolledAt: 'desc' },
+              take: 1,
+              select: { class: { select: { name: true } } },
+            },
+          },
+        },
+      },
+    });
+
+    return records.map((r) => ({
+      id: r.id,
+      studentName: r.student?.user?.name ?? '-',
+      className: r.student?.enrollments[0]?.class?.name ?? null,
+      surahName: r.surahName,
+      juz: r.juz,
+      ayahStart: r.ayahStart,
+      ayahEnd: r.ayahEnd,
+      activityType: r.activityType,
+      score: r.score,
+      recordedAt: r.recordedAt,
+    }));
+  }
+
+  /**
+   * The teacher's own classes, with a real head count per class.
+   */
+  private async getTeacherClasses(
+    teacherId: string,
+    classIds: string[]
+  ): Promise<TeacherClassSummary[]> {
+    if (classIds.length === 0) return [];
+
+    const classes = await prisma.class.findMany({
+      where: { id: { in: classIds }, deletedAt: null },
+      orderBy: [{ level: 'asc' }, { name: 'asc' }],
+      select: {
+        id: true,
+        name: true,
+        level: true,
+        homeroomTeacherId: true,
+        _count: { select: { enrollments: true } },
+      },
+    });
+
+    return classes.map((c) => ({
+      id: c.id,
+      name: c.name,
+      level: c.level,
+      studentCount: c._count.enrollments,
+      isHomeroom: c.homeroomTeacherId === teacherId,
+    }));
+  }
+
+  /**
+   * The teacher's timetabled lessons for today, ordered by start time.
+   */
+  private async getTeacherTodaySchedule(teacherId: string): Promise<TeacherScheduleItem[]> {
+    const dayOfWeek = DAY_OF_WEEK_BY_INDEX[new Date().getDay()];
+
+    const schedules = await prisma.schedule.findMany({
+      where: { teacherId, isActive: true, dayOfWeek },
+      orderBy: { startTime: 'asc' },
+      select: {
+        id: true,
+        startTime: true,
+        endTime: true,
+        room: true,
+        subject: { select: { name: true } },
+        class: {
+          select: {
+            name: true,
+            _count: { select: { enrollments: true } },
+          },
+        },
+      },
+    });
+
+    return schedules.map((s) => ({
+      id: s.id,
+      startTime: s.startTime,
+      endTime: s.endTime,
+      subjectName: s.subject?.name ?? null,
+      className: s.class?.name ?? null,
+      room: s.room,
+      studentCount: s.class?._count.enrollments ?? 0,
+    }));
+  }
+
+  /**
+   * Mean progress against each student's own tahfidz target, as a percentage.
+   *
+   * "Juz achieved" is the count of distinct juz the student has records in —
+   * the same definition getStats already uses for topStudents.completedJuz, so
+   * the two screens cannot disagree. Per-student progress is capped at 100%
+   * so one student far past their target cannot mask a class that is behind.
+   *
+   * Returns null when no student has a target for the active year: there is
+   * nothing to measure against, and reporting 0 would be a claim, not a gap.
+   */
+  private async getTargetAchievement(
+    studentIds: string[]
+  ): Promise<{ targetAchievement: number | null; studentsWithTarget: number }> {
+    if (studentIds.length === 0) {
+      return { targetAchievement: null, studentsWithTarget: 0 };
+    }
+
+    const activeYear = await prisma.academicYear.findFirst({
+      where: { isActive: true },
+      select: { id: true },
+    });
+    if (!activeYear) {
+      return { targetAchievement: null, studentsWithTarget: 0 };
+    }
+
+    const targets = await prisma.tahfidzTarget.findMany({
+      where: { studentId: { in: studentIds }, academicYearId: activeYear.id, targetJuz: { gt: 0 } },
+      select: { studentId: true, targetJuz: true },
+    });
+    if (targets.length === 0) {
+      return { targetAchievement: null, studentsWithTarget: 0 };
+    }
+
+    const juzRecords = await prisma.tahfidzRecord.findMany({
+      where: { studentId: { in: targets.map((t) => t.studentId) } },
+      select: { studentId: true, juz: true },
+      distinct: ['studentId', 'juz'],
+    });
+
+    const completedByStudent = new Map<string, number>();
+    for (const r of juzRecords) {
+      completedByStudent.set(r.studentId, (completedByStudent.get(r.studentId) ?? 0) + 1);
+    }
+
+    const ratioSum = targets.reduce((sum, t) => {
+      const completed = completedByStudent.get(t.studentId) ?? 0;
+      return sum + Math.min(completed / t.targetJuz, 1);
+    }, 0);
+
+    return {
+      targetAchievement: Math.round((ratioSum / targets.length) * 100),
+      studentsWithTarget: targets.length,
     };
   }
 

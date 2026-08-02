@@ -13,6 +13,7 @@ import {
   getFinanceStats,
   getTahfidzStats,
   getViolationRewardStats,
+  getTeacherStats,
 } from './dashboard.controller';
 
 const router = Router();
@@ -171,5 +172,26 @@ router.get('/tahfidz', authenticate, getTahfidzStats);
  *         description: Violation and reward stats retrieved successfully
  */
 router.get('/violation-reward', authenticate, getViolationRewardStats);
+
+/**
+ * @openapi
+ * /api/dashboard/teacher:
+ *   get:
+ *     tags:
+ *       - Dashboard
+ *     summary: Get the signed-in teacher's own dashboard figures
+ *     description: >
+ *       Scoped to the caller. Takes no teacherId, so one teacher cannot read
+ *       another's numbers. `targetAchievement` is null when none of the
+ *       teacher's students has a tahfidz target for the active academic year.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Teacher stats retrieved successfully
+ *       403:
+ *         description: The account is not linked to a teacher record
+ */
+router.get('/teacher', authenticate, getTeacherStats);
 
 export default router;

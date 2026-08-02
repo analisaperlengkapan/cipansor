@@ -15,6 +15,7 @@ export {
   getFinanceStats,
   getTahfidzStats,
   getViolationRewardStats,
+  getTeacherStats,
 } from './dashboard.controller';
 
 // Schemas

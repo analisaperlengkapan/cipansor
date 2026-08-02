@@ -1,6 +1,6 @@
 # Roadmap — outstanding work, most urgent first
 
-Ordered backlog as of **2026-07-23**. Companion to
+Ordered backlog as of **2026-08-02**. Companion to
 [`KNOWN_ISSUES.md`](./KNOWN_ISSUES.md) (which records *defects* in detail); this
 file records *what to do next and in what order*.
 
@@ -11,9 +11,14 @@ a visitor sees, then correctness work, then deliverables, then tidiness.
 
 ## Current deployment state
 
-- As of **2026-07-24** the web container runs `main @ 460cb678` (through #368)
-  and the API container an image built earlier the same day (through #365, so
-  it includes #357 and the CORS fix). Both were deployed from this host.
+- As of **2026-07-31** both containers were rebuilt and rolled together from
+  `main @ 41ee99e2` (through #381/#382) via `deploy-images.sh`. That deploy
+  carried the CORS fix (§2), the public i18n work (§5) and the chatbot markdown
+  fix to production, all verified live after the roll.
+- **`main` has since moved ahead of production.** `#383` (teacher dashboard
+  figures + the unit-admin route grants, `main @ d09bb67b`) is merged but **not
+  deployed** — production still runs `41ee99e2`, so a guru signing in today
+  still sees the fabricated stat row described in §8.4.
 - The two containers can therefore hold *different* commits. Before assuming
   production runs what `main` says, check the running image itself — e.g.
   `docker exec cipansor-api grep -o "<snippet>" /app/apps/api/dist/…/<file>.js`.
@@ -44,8 +49,10 @@ header carried all three production origins at once — which the Fetch standard
 forbids and every browser rejects. Socket.IO had the same bug independently.
 Fixed in `apps/api/src/config/cors.ts`: the list is parsed into an allowlist and
 the single matching origin is reflected, with `Vary: Origin`. A wildcard is now
-refused at boot because this API sends credentials. **Ships with the next
-deploy — not yet on production.**
+refused at boot because this API sends credentials. **Live since the 2026-07-31
+deploy**, verified against production: `https://cipansor.or.id` is reflected
+singly with `Vary: Origin`, and a foreign origin gets no
+`Access-Control-Allow-Origin` header at all.
 
 ## 🔴 3. Production DB has no Prisma migration history
 
@@ -78,7 +85,8 @@ Still Indonesian by design: the news article *bodies* (headlines and
 standfirsts are translated; the text is marked `lang="id"` under a line telling
 the reader so), the leaders' mottos and the donation page's scripture, and the
 values that are *recorded* rather than displayed — the anonymous donor name and
-the bank details. Detail in `KNOWN_ISSUES.md`. **Ships with the next deploy.**
+the bank details. Detail in `KNOWN_ISSUES.md`. **Live since the 2026-07-31
+deploy.**
 
 ## 🟠 6. PWA install prompt never fires
 
@@ -87,7 +95,7 @@ simply does not fire. Next step is Chrome DevTools → Application → Manifest 
 **Installability** on a real device, which states the reason directly. Leading
 suspect: the manifest's `"id": "/"`. Details in `KNOWN_ISSUES.md`.
 
-## 🟠 7. Temporal data is stale — code fixed (#370), production data still owed
+## ✅ 7. Temporal data was stale — code fixed (#370), production data now current
 
 The seed wrote the calendar as literals (`2024/2025`, a PSB window of
 1 Mar – 31 May 2024), so every reseed reproduced the day the seed was *written*.
@@ -116,10 +124,18 @@ prefers open → next upcoming → most recently closed, matching the three stat
 `isActive` remains administrative intent; whether registration is open is
 always derived from the dates.
 
-**Still owed: production data.** The live database still holds the 2024 rows.
-Benefiting from this needs either a full reseed (demo data — `seed.ts` opens
-with `TRUNCATE CASCADE`) or a targeted update. Real dates, fee and units for a
-live intake are a business decision — do not invent them, ask first.
+**Production data is now current** (verified 2026-07-31). The live database
+holds `SPMB 2027/2028 Gelombang 1` (2026-06-09 → 2026-09-07) and
+`Gelombang 2`, with academic year `2026/2027` active — so wave 1 is open today
+and `/public/spmb` renders it with the registration button live.
+
+One verification trap worth keeping: `curl` on `/public/spmb` returns
+"Pendaftaran Belum Dibuka" because that is the pre-hydration server state; the
+period arrives on the client. Check this page in a real browser, never with
+`curl`, or you will chase a defect that is not there.
+
+Still a business decision, not ours to invent: the real dates, fee and units
+for an actual intake. The values above are demo data from the seed.
 
 ---
 
@@ -149,6 +165,57 @@ live intake are a business decision — do not invent them, ask first.
    a unit; only the seed writes null-unit plans today).
 4. **Module audit** — every backend module reachable from the frontend and
    vice versa, and reachable by at least one role.
+   **First confirmed instance, found 2026-07-31 — and it is a permission gap,
+   not a missing frontend.** The four unit-admin RoleCodes (TKQ_ADMIN,
+   SDIT_ADMIN, SMPIT_ADMIN, SMAQ_ADMIN) each rendered **18 sidebar links that
+   bounced them back to their dashboard**: `/tk` and its five sub-pages,
+   `/payroll`, `/perencanaan` (+ strategy-map), `/grc-dashboard`,
+   `/pengawasan`, `/syariah`, `/tata-laksana`, `/organisasi`, `/unit-usaha`,
+   `/project`, `/cbt/exams`. They are in `ADMIN_ROLES` so they get
+   `adminNavigation`, but their legacy bucket `UNIT_ADMIN` granted none of
+   those prefixes in `roleRouteAccess`. **Fixed in #383** (`d09bb67b`), with a
+   guard that iterates all 81 RoleCodes asserting every menu link is one
+   `canAccessRoute` allows — proven to bite by reverting the allowlist, which
+   fails on exactly those four roles with 18 links each.
+
+   Two guard holes let this survive a suite that already tested `rbac.ts`: the
+   existing tests sampled roles by hand and no unit admin was among them, and
+   nothing anywhere asserted the menu→permission relationship at all. The
+   contract was enforced in neither direction.
+
+   The sharpest case: TKQ_ADMIN runs the TK unit and could not open a single
+   page of the TK/PAUD module. Only SUPER_ADMIN could, via `["*"]`.
+
+   **Correction to an earlier draft of this entry.** It claimed PAUD had "a
+   complete backend and no frontend at all". That was wrong. The module has
+   **twenty pages under `/tk`** — assessment list/create/edit/detail, progress,
+   per-student view, daily reports (class, parent, check-in), and raport
+   generate — all calling the real `paud-assessment` and `paud-report`
+   endpoints including `/indicators`, `/summary/class` and `/assessments/bulk`.
+   The error came from taking route paths out of
+   `docs/planning/implementation-tasks.md` and testing them literally against
+   the tree: the module shipped under `/tk`, the plan wrote `/paud`. Checking
+   a path exists is not checking a feature exists — resolve the module by its
+   API calls, not by a name in a planning document.
+
+   Genuinely absent, and referenced by nothing in nav, rbac or any link:
+   `/tk/settings`, `/dashboard/performance`, `/dashboard/unit/[id]`. All three
+   come from that same planning doc, so confirm they are wanted before
+   building them.
+
+> **The two task lists in `docs/planning/` are not trackers — do not read a
+> checkbox there as status.** `implementation-tasks.md` shows 204 unchecked
+> against 11 done, and `tasks.md` 82 against 153, but both were last touched
+> 2026-07-20, before most of the work. Measured 2026-07-31 against the actual
+> tree: of the 17 routes carrying unchecked tasks, only **3** are genuinely
+> absent. The rest are built — 7 at the path the plan names, and 7 more under
+> `/tk` where the plan wrote `/paud`.
+>
+> That last group is the trap, and it cost a wrong entry in §8.4 before it was
+> caught: matching plan paths against the tree makes a renamed module look
+> deleted. Resolve a module by the API endpoints its pages call, not by the
+> route name in a document nobody has updated since July. Verify against the
+> code, then record the result here — this file is the tracker.
 
 ## 🟡 9. Documentation deliverable (in flight)
 
@@ -164,7 +231,7 @@ Remaining: regenerate all screenshots into `docs/images` (checking each page
 and fixing what is broken — this doubles as the role/menu audit), write the
 guide with a clickable table of contents, then rewrite the README.
 
-## 🟡 10. Customer-service chatbot — Phase 1 shipped, five gaps left
+## 🟡 10. Customer-service chatbot — Phase 1 shipped, four gaps left
 
 **Live on cipansor.or.id since 2026-07-25** (#373, credentials reaching the
 container via #374). The public widget answers from RAG over the public pages
@@ -192,9 +259,11 @@ existing authorized endpoints as the logged-in user with their **active** role �
 never a vector index over the database — so `letterScopeWhere`,
 `assertLetterAccess` and the nature levels apply unchanged, with conversation
 state partitioned per (user, activeRole) and a fresh thread on every role
-switch. It also waits on §8's data quality: the teacher dashboard still reports
-fabricated figures, and an agent states them in fluent Indonesian with authority
-they have not earned.
+switch. It also waits on §8's data quality. The teacher dashboard was the
+worked example — it reported fabricated figures until #383 — and the lesson
+generalises: an agent restates whatever the API hands it, in fluent Indonesian,
+with an authority the number has not earned. Every surface Phase 2 can read
+needs the §8.4 treatment first.
 
 ---
 
@@ -254,7 +323,13 @@ run before, expect to re-check any page the sweep flags.
     `paud-report`'s check is an authorization gate, not a read filter. Decide
     these case by case when auditing each module, never by find-and-replace.
 - ~210 racy `isVisible({ timeout })` probes in e2e specs.
-- Dependabot PRs **#333** (zod 4) and **#328** (eslint 10) still open.
+- Dependabot PRs still open (checked 2026-07-31): **#333** (zod 3→4),
+  **#377** (eslint 8→10), **#379** (typescript 5→7). All three are major
+  bumps across several workspaces — `zod` is declared in api, shared and web,
+  and `packages/shared` is the Zod DTO boundary the whole monorepo imports, so
+  none of these is a one-line merge. The root `package.json` pins
+  `"typescript": "latest"` while api/shared/web ask for `^5`, which is its own
+  inconsistency worth settling when #379 is taken.
 - ~~Stray root-owned directory `apps/api/apps/api`.~~ **Gone** (verified
   2026-07-24). A bind-mounted `docker run` can recreate it; if `git stash -u`
   or `git checkout` starts emitting permission warnings that break `&&` chains,

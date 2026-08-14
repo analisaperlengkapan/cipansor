@@ -1,10 +1,44 @@
 import { describe, it, expect } from "vitest";
+import fs from "fs";
+import path from "path";
 import {
   hostSplitTargetFor,
   PUBLIC_HOST,
   PORTAL_HOST,
   PUBLIC_PATH_PREFIXES,
 } from "./host-split";
+
+/**
+ * Two lists describe the same set of public pages, in two files:
+ *
+ *   middleware.ts  `publicPrefixes`      — what may be READ without a session
+ *   host-split.ts  `PUBLIC_PATH_PREFIXES` — which HOST serves it
+ *
+ * Adding a page to one and not the other fails quietly and in opposite
+ * directions: miss host-split and the page is served only from
+ * portal.cipansor.or.id behind a login; miss middleware and the apex serves it
+ * and then bounces the visitor to a login screen that host cannot satisfy.
+ * Either way an anonymous visitor — a prospective parent, or the Ad Grants
+ * reviewer — meets a sign-in form on a marketing page.
+ *
+ * Parsed out of middleware.ts rather than imported, matching rbac.test.ts:
+ * the list is a module-private const, and duplicating it here to compare
+ * against would defeat the entire point of comparing.
+ */
+describe("the two public-path lists agree", () => {
+  it("host-split.ts matches middleware.ts", () => {
+    const src = fs.readFileSync(
+      path.join(process.cwd(), "middleware.ts"),
+      "utf8",
+    );
+    const block = src.match(/const publicPrefixes\s*=\s*\[([\s\S]*?)\n\];/);
+    if (!block) throw new Error("publicPrefixes not found in middleware.ts");
+    const fromMiddleware = [...block[1].matchAll(/"([^"]+)"/g)].map((m) => m[1]);
+
+    expect(fromMiddleware.length).toBeGreaterThan(0);
+    expect([...PUBLIC_PATH_PREFIXES].sort()).toEqual([...fromMiddleware].sort());
+  });
+});
 
 /**
  * The split is a redirect rule applied to every request, so its failure modes

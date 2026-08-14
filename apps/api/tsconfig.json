@@ -20,13 +20,18 @@
     "resolveJsonModule": true,
     "declaration": false,
     "sourceMap": true,
-    "baseUrl": "./src",
+    // No `baseUrl`: TypeScript 7 removed it (TS5102), and every `paths` value
+    // must now be relative (TS5090). Resolving these against the location of
+    // this file instead of against a baseUrl is equivalent here — nothing in
+    // the project imported a bare specifier that relied on `baseUrl: "./src"`
+    // to resolve, so the aliases below are the whole of what it was doing.
+    // Supported by TypeScript 5 as well, so this stays buildable on both.
     "paths": {
-      "@/*": ["./*"],
-      "@config/*": ["config/*"],
-      "@lib/*": ["lib/*"],
-      "@middleware/*": ["middleware/*"],
-      "@modules/*": ["modules/*"]
+      "@/*": ["./src/*"],
+      "@config/*": ["./src/config/*"],
+      "@lib/*": ["./src/lib/*"],
+      "@middleware/*": ["./src/middleware/*"],
+      "@modules/*": ["./src/modules/*"]
     },
     "typeRoots": ["./src/types", "./node_modules/@types"]
   },

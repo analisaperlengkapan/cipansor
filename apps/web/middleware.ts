@@ -12,6 +12,7 @@ import {
   getEffectiveRole,
   type LegacyRole,
 } from "@/lib/rbac";
+import { hostSplitTargetFor, isPortalHost } from "@/lib/host-split";
 
 // Public routes that don't require authentication.
 // "/unauthorized" is the access-denied page ProtectedRoute redirects to; it
@@ -96,6 +97,31 @@ function getAuthState(request: NextRequest): {
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Host split, before anything else.
+  //
+  // The public site and the application are served from separate hosts (see
+  // lib/host-split.ts). This has to run ahead of the auth checks below: an
+  // anonymous visitor opening a bookmarked cipansor.or.id/dashboard should be
+  // handed to the portal and meet the login screen *there*, with ?redirect=
+  // intact — not be bounced to a login screen on the apex, which holds no
+  // session and cannot create one.
+  //
+  // Returns null for any host that is not one of the two production names, so
+  // `pnpm dev` on localhost is untouched.
+  const targetHost = hostSplitTargetFor(
+    request.headers.get("host"),
+    pathname,
+  );
+  if (targetHost) {
+    const url = request.nextUrl.clone();
+    url.host = targetHost;
+    url.port = "";
+    url.protocol = "https:";
+    // 308, not 307: this is a permanent move, and unlike 301 it is guaranteed
+    // not to rewrite a POST into a GET on the way.
+    return NextResponse.redirect(url, 308);
+  }
+
   // Check if the route is public
   const isPublicRoute =
     publicRoutes.some(
@@ -127,6 +153,15 @@ export function middleware(request: NextRequest) {
     if (isAuthenticated) {
       const dashboard = getDashboardForRole(role, roleCode);
       return NextResponse.redirect(new URL(dashboard, request.url));
+    }
+    // On the portal the root is the front door of the application, not a
+    // marketing page — the landing page lives on the public host, and the host
+    // split above already sent every marketing path there. Rendering it here
+    // would give the pesantren's front page a second address that answers on a
+    // noindex host, and leave someone who typed the portal's name looking at a
+    // brochure instead of the sign-in form they came for.
+    if (isPortalHost(request.headers.get("host"))) {
+      return NextResponse.redirect(new URL("/login", request.url));
     }
     // Allow unauthenticated users to see landing page
     return NextResponse.next();

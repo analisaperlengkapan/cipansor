@@ -44,6 +44,14 @@ a route or `src/config/navigation.ts`.
   bounces anonymous visitors to the staff login — the regression that got the
   Google Ad Grants application rejected once already. The guard test parses
   `publicPrefixes` out of `middleware.ts` rather than duplicating the list.
+- **A public page belongs to TWO lists.** `publicPrefixes` in `middleware.ts`
+  decides what may be *read* without a session; `PUBLIC_PATH_PREFIXES` in
+  `src/lib/host-split.ts` decides which *host* serves it —
+  `cipansor.or.id` or `portal.cipansor.or.id`. Miss the second and the page is
+  reachable only from the portal, behind a login; miss the first and the apex
+  serves it and then bounces the visitor. `host-split.test.ts` compares the two
+  and fails if they diverge, so adding to one is enough to be told about the
+  other. Background in [`docs/ARCHITECTURE.md`](../../docs/ARCHITECTURE.md).
 - **The nav contract runs both ways.** `src/config/navigation.ts` decides what a
   role is *shown*; `src/lib/rbac.ts` (`roleRouteAccess`, consumed by
   `middleware.ts`) decides what it may *open*. Add a nav item → add its prefix

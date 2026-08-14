@@ -57,13 +57,19 @@ test.describe("Landing Page", () => {
     }
   });
 
-  test("should navigate to login page", async ({ page, isMobile }) => {
+  test("offers no way in to the portal", async ({ page, isMobile }) => {
+    // This replaces a test that clicked a "Login Portal" button. The button is
+    // gone on purpose: this site is for prospective families, and everyone who
+    // can actually sign in is told portal.cipansor.or.id directly — a shorter
+    // instruction, with fewer steps to get wrong, that has to be given either
+    // way. The assertion is inverted rather than deleted so that putting the
+    // link back is a decision someone has to make on purpose.
     if (isMobile) {
       await page.getByRole("button", { name: MENU_LABEL }).click();
     }
 
-    await page.getByRole("link", { name: "Login Portal" }).click();
-    await expect(page).toHaveURL(/.*login/);
+    await expect(page.getByRole("link", { name: /login|masuk/i })).toHaveCount(0);
+    await expect(page.locator('a[href="/login"]')).toHaveCount(0);
   });
 
   test("should navigate to the SPMB page", async ({ page }) => {

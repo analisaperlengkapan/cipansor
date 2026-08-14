@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from "react";
-import { Menu, User } from "lucide-react";
+import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -123,14 +123,21 @@ export function LandingNavbar() {
                 {t(item.key)}
               </Link>
             ))}
+            {/*
+              No portal link here, on purpose.
+
+              This site's visitors are prospective families: its job is SPMB and
+              legitimacy. Everyone who can actually sign in — santri, wali santri,
+              guru — is told the address directly ("buka portal.cipansor.or.id"),
+              which is a shorter instruction with fewer steps to get wrong than
+              "open cipansor.or.id, find the button, then follow a redirect".
+
+              Nothing is lost by leaving it out: `/login` still 308s to the portal
+              (see lib/host-split.ts), so anyone who types it out of habit lands
+              in the right place. That safety net costs no pixels here.
+            */}
             <div className="flex items-center gap-2 pl-2 border-l border-border">
               <LanguageSwitcher compact />
-              <Link href="/login">
-                <Button size="sm" variant="outline" className="gap-2 whitespace-nowrap">
-                  <User className="h-4 w-4" />
-                  {t("public.nav.loginPortal")}
-                </Button>
-              </Link>
               <Link href="/public/spmb">
                 <Button size="sm" className="whitespace-nowrap bg-primary hover:bg-primary/90">
                   {t("public.nav.register")}
@@ -177,12 +184,7 @@ export function LandingNavbar() {
                     </Link>
                   ))}
                   <div className="h-px bg-border my-2" />
-                  <Link href="/login">
-                    <Button className="w-full justify-start" variant="outline">
-                      <User className="h-4 w-4 mr-2" />
-                      {t("public.nav.loginPortal")}
-                    </Button>
-                  </Link>
+                  {/* No portal link — see the note in the desktop nav above. */}
                   <Link href="/public/spmb">
                     <Button className="w-full justify-start">
                       {t("public.nav.register")}

@@ -12,7 +12,7 @@ import {
   getEffectiveRole,
   type LegacyRole,
 } from "@/lib/rbac";
-import { hostSplitTargetFor, isPortalHost } from "@/lib/host-split";
+import { hostSplitActionFor, isPortalHost } from "@/lib/host-split";
 
 // Public routes that don't require authentication.
 // "/unauthorized" is the access-denied page ProtectedRoute redirects to; it
@@ -100,21 +100,26 @@ export function middleware(request: NextRequest) {
   // Host split, before anything else.
   //
   // The public site and the application are served from separate hosts (see
-  // lib/host-split.ts). This has to run ahead of the auth checks below: an
-  // anonymous visitor opening a bookmarked cipansor.or.id/dashboard should be
-  // handed to the portal and meet the login screen *there*, with ?redirect=
-  // intact — not be bounced to a login screen on the apex, which holds no
-  // session and cannot create one.
+  // lib/host-split.ts). This MUST run ahead of the auth checks below: those
+  // send an anonymous visitor to `/login`, and `/login` is in `publicRoutes`,
+  // so reaching them at all would put the login form back on the apex — the one
+  // thing the split exists to prevent.
   //
   // Returns null for any host that is not one of the two production names, so
   // `pnpm dev` on localhost is untouched.
-  const targetHost = hostSplitTargetFor(
-    request.headers.get("host"),
-    pathname,
-  );
-  if (targetHost) {
+  const action = hostSplitActionFor(request.headers.get("host"), pathname);
+
+  if (action?.kind === "notFound") {
+    // An application path asked for on the public host. The apex has no
+    // application on it, so it says so — rewrite, not redirect, so the address
+    // the visitor typed stays in the bar and they can see what was wrong with
+    // it. There is one way in to the system and it is portal.cipansor.or.id.
+    return NextResponse.rewrite(new URL("/404", request.url), { status: 404 });
+  }
+
+  if (action?.kind === "redirect") {
     const url = request.nextUrl.clone();
-    url.host = targetHost;
+    url.host = action.host;
     url.port = "";
     url.protocol = "https:";
     // 308, not 307: this is a permanent move, and unlike 301 it is guaranteed

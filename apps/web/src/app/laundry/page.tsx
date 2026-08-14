@@ -139,7 +139,8 @@ interface Student {
 }
 
 // API functions
-const API_BASE = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api`;
+// `??` so an empty value stays empty and the base is relative — see lib/api.ts.
+const API_BASE = `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001"}/api`;
 
 async function fetchPricing(params?: Record<string, string>) {
   const query = new URLSearchParams(params).toString();

@@ -46,7 +46,23 @@ interface VerifyResult {
 }
 
 async function fetchVerification(token: string): Promise<VerifyResult | null> {
-  const base = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+  // This is the one fetch in the app that runs on the *server* — it is a server
+  // component, rendered inside the web container before any browser sees it.
+  //
+  // So it cannot use NEXT_PUBLIC_API_URL: that value is deliberately empty in
+  // production to make the browser's base relative, and a relative URL has no
+  // origin to resolve against here. It also should not use the public origin,
+  // which is what it did before: the request left the container, crossed
+  // Cloudflare and came back to the same machine, so a QR scan depended on
+  // public DNS and the CDN being healthy to read a row from our own database.
+  //
+  // API_INTERNAL_URL points straight at the API over the compose network
+  // (http://api:3001). Not a NEXT_PUBLIC_ name on purpose: those are inlined at
+  // build time, and this one has to be read at runtime.
+  const base =
+    process.env.API_INTERNAL_URL ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    "http://localhost:3001";
   try {
     const res = await fetch(`${base}/api/esign/verify/${encodeURIComponent(token)}`, {
       // Keaslian harus dijawab dari keadaan sekarang, bukan dari cache: surat

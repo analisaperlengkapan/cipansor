@@ -41,7 +41,6 @@ export const id = {
       units: "Unit Pendidikan",
       news: "Berita",
       donate: "Wakaf & Infaq",
-      loginPortal: "Login Portal",
       register: "Daftar SPMB",
       toggleMenu: "Buka menu",
     },

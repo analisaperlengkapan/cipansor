@@ -35,7 +35,6 @@ export const en = {
       // instruments with no single English equivalent; the donation page
       // explains both.
       donate: "Wakaf & Infaq",
-      loginPortal: "Login",
       // SPMB is the admission process by the name every family, notice board
       // and letter uses. Translating it would leave a visitor unable to match
       // this button to the form they were told to look for.

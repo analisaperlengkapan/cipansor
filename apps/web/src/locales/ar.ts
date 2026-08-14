@@ -28,7 +28,6 @@ export const ar = {
       units: "الوحدات",
       news: "الأخبار",
       donate: "الوقف والإنفاق",
-      loginPortal: "الدخول",
       // SPMB: قبول الطلاب الجدد — الاسم المستخدم في كل مراسلات المعهد.
       register: "SPMB",
       toggleMenu: "فتح القائمة",

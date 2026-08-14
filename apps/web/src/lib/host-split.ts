@@ -56,6 +56,17 @@ export function isPortalHost(host: string | null | undefined): boolean {
   return (host ?? "").split(":")[0].toLowerCase() === PORTAL_HOST;
 }
 
+/**
+ * True when the request arrived on the public site (apex or www).
+ *
+ * Deliberately false for localhost and previews, so anything gated on this
+ * keeps its single-host behaviour in development.
+ */
+export function isPublicSiteHost(host: string | null | undefined): boolean {
+  const name = (host ?? "").split(":")[0].toLowerCase();
+  return name === PUBLIC_HOST || name === `www.${PUBLIC_HOST}`;
+}
+
 /** Matches on segment boundaries, so "/unit" never also grants "/units". */
 function underPublicPrefix(pathname: string): boolean {
   return PUBLIC_PATH_PREFIXES.some(
@@ -64,16 +75,24 @@ function underPublicPrefix(pathname: string): boolean {
 }
 
 /**
- * The host a request should be answered from, or `null` to answer it here.
+ * What to do with a request, decided by the host it arrived on.
  *
- * Returns `null` for any host that is not one of the two production names —
- * localhost, preview deployments and the container's own healthcheck all keep
- * today's single-host behaviour, so `pnpm dev` is unaffected.
+ *   { kind: "redirect", host }  send it to the other host
+ *   { kind: "notFound" }        answer 404 here
+ *   null                        answer it here, normally
+ *
+ * `null` for any host that is not one of the two production names — localhost,
+ * preview deployments and the container's own healthcheck all keep today's
+ * single-host behaviour, so `pnpm dev` is unaffected.
  */
-export function hostSplitTargetFor(
+export type HostSplitAction =
+  | { kind: "redirect"; host: string }
+  | { kind: "notFound" };
+
+export function hostSplitActionFor(
   host: string | null | undefined,
   pathname: string,
-): string | null {
+): HostSplitAction | null {
   // Strip the port: `localhost:3000` and a Host header carrying one must still
   // compare cleanly against the bare names above.
   const name = (host ?? "").split(":")[0].toLowerCase();
@@ -84,11 +103,22 @@ export function hostSplitTargetFor(
 
   const isPublicPath = pathname === "/" || underPublicPrefix(pathname);
 
-  // The application asked for on the public host — send it to the portal. The
-  // portal's own auth check then takes over, so an anonymous visitor following
-  // a bookmarked /dashboard link lands on the portal's login screen with the
-  // original path preserved as ?redirect=, not on a dead end.
-  if (isPublic && !isPublicPath) return PORTAL_HOST;
+  // The application asked for on the public host: 404. The apex has no
+  // application on it, and saying so is the honest answer.
+  //
+  // It used to redirect to the portal. Two reasons that was wrong. It implied
+  // the application also lives at cipansor.or.id — the exact assumption the
+  // split exists to remove — and it protected nothing, because nothing has ever
+  // linked here: the site has never been in production, so there is no bookmark
+  // and no habit to catch.
+  //
+  // NOTE for anyone tempted to just delete this branch: deleting it does not
+  // produce a 404. Control falls through to the auth check below in
+  // middleware.ts, which redirects an anonymous visitor to `/login` — and
+  // `/login` is in `publicRoutes`, so the apex would serve the login form
+  // again. The 404 has to be explicit or the form comes back through the side
+  // door.
+  if (isPublic && !isPublicPath) return { kind: "notFound" };
 
   // Marketing pages asked for on the portal — send them to the canonical host,
   // so there is one indexable address per page rather than two.
@@ -97,7 +127,13 @@ export function hostSplitTargetFor(
   // application, and middleware.ts turns it into the dashboard or the login
   // screen. Redirecting it to the apex would strand anyone who typed the portal
   // name on the marketing site instead.
-  if (isPortal && pathname !== "/" && isPublicPath) return PUBLIC_HOST;
+  //
+  // This direction stays a redirect rather than a 404: the page genuinely
+  // exists, it just belongs to the other host, and there is exactly one address
+  // that should be indexed for it.
+  if (isPortal && pathname !== "/" && isPublicPath) {
+    return { kind: "redirect", host: PUBLIC_HOST };
+  }
 
   return null;
 }

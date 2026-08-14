@@ -64,10 +64,21 @@ PORT=3001
 NODE_ENV=production
 
 # Frontend
-NEXT_PUBLIC_API_URL="https://api.cipansor.or.id"
+# EMPTY on purpose in production. An empty value makes the API base relative
+# ("/api"), so the bundle talks to whichever origin served the page and one
+# image serves both hosts, each reaching the API same-origin. This line used to
+# read https://api.cipansor.or.id — a host that has never existed, so anyone
+# following this guide built a web image that could not reach the API at all.
+NEXT_PUBLIC_API_URL=""
+# Where the SERVER reaches the API. The verifikasi page is a server component
+# rendered inside the web container, where a relative URL resolves against
+# nothing. Under compose this is the service name.
+API_INTERNAL_URL="http://api:3001"
 
 # CORS
-CORS_ORIGIN="https://cipansor.or.id,https://www.cipansor.or.id"
+# Both public hosts plus the portal. Same-origin requests do not need these, but
+# the apex's public pages call the API on whichever origin the bundle names.
+CORS_ORIGIN="https://cipansor.or.id,https://www.cipansor.or.id,https://portal.cipansor.or.id"
 
 # Logging
 LOG_LEVEL=info
@@ -112,11 +123,13 @@ JWT_SECRET=your-super-secret-production-key-min-32-chars
 # API
 API_PORT=3001
 LOG_LEVEL=info
-CORS_ORIGIN=https://cipansor.or.id
+CORS_ORIGIN=https://cipansor.or.id,https://www.cipansor.or.id,https://portal.cipansor.or.id
 
 # Web
 WEB_PORT=3000
-NEXT_PUBLIC_API_URL=https://api.cipansor.or.id
+# Empty = relative base; see the note in the Environment Setup section above.
+NEXT_PUBLIC_API_URL=
+API_INTERNAL_URL=http://api:3001
 
 # Redis
 REDIS_PORT=6379

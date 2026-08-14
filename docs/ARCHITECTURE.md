@@ -72,8 +72,11 @@ Next.js 16 App Router (RSC + client components). Conventions in
 
 - **Data layer** — a single Axios client in `src/lib/api.ts` whose `baseURL`
   already includes `/api` (`NEXT_PUBLIC_API_URL`, e.g.
-  `http://localhost:3001/api`). Hooks therefore call paths **without** an `/api`
-  prefix (`api.get('/risk/123')`). Wrap calls in React Query hooks under
+  `http://localhost:3001/api` in dev). Hooks therefore call paths **without** an
+  `/api` prefix (`api.get('/risk/123')`). In production the variable is **empty**,
+  which makes the base relative (`/api`) so one image serves both hosts with the
+  API same-origin on each — hence `??` rather than `||` at every read of it, since
+  `||` would fold the empty string into the localhost fallback. Wrap calls in React Query hooks under
   `src/hooks/*`; surface errors via `src/lib/api-error.ts`.
 - **Auth** — `accessToken` cookie read by `middleware.ts` before page JS; the
   Axios response interceptor refreshes on 401 then redirects to `/login`.
@@ -121,6 +124,41 @@ pnpm --filter web test:e2e     # Playwright; needs the seeded stack
   store is hydrated before first paint (avoids logout-redirect races).
 
 ## Deployment
+
+### Two hosts, one build
+
+| host | serves |
+|---|---|
+| `cipansor.or.id` | landing, `/profil`, `/unit`, `/berita`, `/wakaf-infaq`, `/kontak`, `/verifikasi` |
+| `portal.cipansor.or.id` | `/login` and everything behind it |
+
+The split is enforced in `apps/web/src/lib/host-split.ts`, called from
+`middleware.ts` **before** the auth checks — so an anonymous visitor opening a
+bookmarked `cipansor.or.id/dashboard` meets the login screen *on the portal*, with
+`?redirect=` intact, rather than one on the apex that holds no session.
+
+It lives in the codebase rather than in nginx because the route table is here; a
+copy of it in a config file is the copy that drifts. Unknown hosts are left alone,
+so `pnpm dev` on localhost keeps single-host behaviour.
+
+**Why it exists:** whether a page is public is decided by `publicPrefixes`, a
+hand-maintained list. A page added under a prefix nobody remembers to list bounces
+a prospective parent to the staff login screen. A marketing host with no
+application on it makes "public" the default there.
+
+**Why there are no per-unit subdomains:** sessions do not cross hosts — the token
+is in `localStorage` (per-origin) and `auth-storage` is a host-only cookie with no
+`domain=`. `SECONDARY_ROLES` deliberately gives one person roles in two units, so
+per-unit hosts would have forced them to sign in twice. Public unit pages are
+paths: `/unit/[slug]`.
+
+nginx serves both from one `server` block each, proxying to the **same** web and
+api containers. Both need `location ^~ /socket.io/` → api: socket.io lives outside
+`/api`, so without it the handshake is answered by the web container.
+
+`/verifikasi` stays on the apex permanently — those URLs are printed on paper.
+
+### Images
 
 Each app has a multi-stage `Dockerfile` (`apps/api`, `apps/web`):
 

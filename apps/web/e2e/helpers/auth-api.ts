@@ -29,10 +29,10 @@ export interface SeedUser {
 /** Seed credentials, keyed by a friendly role name. */
 export const SEED_USERS = {
   superAdmin: { email: "superadmin@cipansor.or.id", password: "SuperAdmin123!" },
-  adminSdit: { email: "admin@sdit.sch.id", password: "Admin123!" },
-  teacher: { email: "fatimah@sdit.sch.id", password: "Teacher123!" },
-  parent: { email: "parent3@sdit.sch.id", password: "Parent123!" },
-  student: { email: "student3@sdit.sch.id", password: "Student123!" },
+  adminSdit: { email: "admin.sdit@cipansor.or.id", password: "Admin123!" },
+  teacher: { email: "fatimah@cipansor.or.id", password: "Teacher123!" },
+  parent: { email: "parent3@cipansor.or.id", password: "Parent123!" },
+  student: { email: "student3@cipansor.or.id", password: "Student123!" },
 } satisfies Record<string, SeedUser>;
 
 export type SeedRole = keyof typeof SEED_USERS;

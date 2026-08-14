@@ -22,12 +22,12 @@ export const testUsers: Record<string, AuthUser> = {
     role: "SUPER_ADMIN",
   },
   unitAdmin: {
-    email: "admin@sdit.sch.id",
+    email: "admin.sdit@cipansor.or.id",
     password: "Admin123!",
     role: "UNIT_ADMIN",
   },
   teacher: {
-    email: "fatimah@sdit.sch.id",
+    email: "fatimah@cipansor.or.id",
     password: "Teacher123!",
     role: "TEACHER",
   },

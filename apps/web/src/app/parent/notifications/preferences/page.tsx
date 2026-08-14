@@ -119,8 +119,8 @@ export default function NotificationPreferencesPage() {
         {/* WhatsApp Status Card */}
         <Card className="border-green-200 bg-green-50/50">
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-wrap items-center gap-3">
                 <div className="p-2 bg-green-100 rounded-lg">
                   <MessageSquare className="h-5 w-5 text-green-600" />
                 </div>
@@ -129,7 +129,7 @@ export default function NotificationPreferencesPage() {
                   <CardDescription>Status integrasi WhatsApp</CardDescription>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 {loadingStatus ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : waStatus?.configured ? (

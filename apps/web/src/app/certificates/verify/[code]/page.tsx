@@ -148,8 +148,8 @@ export default function VerifyCertificatePage({
         {/* Certificate Details Card */}
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-wrap items-center gap-3">
                 <Award className="h-8 w-8 text-primary" />
                 <div>
                   <CardTitle>{certificate.title}</CardTitle>

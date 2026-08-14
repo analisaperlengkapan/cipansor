@@ -126,7 +126,7 @@ export function AlertCard({
   return (
     <Card className={className}>
       <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <CardTitle className="text-base font-medium flex items-center gap-2">
             <Bell className="h-4 w-4" />
             {title}
@@ -136,7 +136,7 @@ export function AlertCard({
               </Badge>
             )}
           </CardTitle>
-          <div className="flex items-center gap-1">
+          <div className="flex flex-wrap items-center gap-1">
             {criticalCount > 0 && (
               <Badge variant="destructive" className="text-xs">
                 {criticalCount} kritis

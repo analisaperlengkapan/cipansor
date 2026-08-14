@@ -256,8 +256,14 @@ function InventoryPageContent() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+      {/*
+        Header. Stacked on a phone: this page carries up to five actions —
+        Hitung Depresiasi, Peminjaman, Stock Opname, Tambah Aset and the
+        depreciation settings dialog — which come to 391px of buttons on a
+        390px screen. In one unwrapped row the primary action, Tambah Aset,
+        ended up off the right edge.
+      */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
             Inventaris (Aset)
@@ -266,7 +272,7 @@ function InventoryPageContent() {
             Kelola data aset dan inventaris pesantren
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {unitId && <DepreciationSettingsDialog unitId={unitId} />}
           {unitId && (
             <Button

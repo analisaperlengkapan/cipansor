@@ -123,8 +123,8 @@ function OrgTreeNode({ node, depth = 0 }: { node: any; depth?: number }) {
     <div style={{ marginLeft: depth * 20 }}>
       <Card className="mb-2 hover:shadow-md transition-shadow">
         <CardHeader className="py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap items-center gap-2">
               {depth > 0 && <GitBranch className="h-3 w-3 text-muted-foreground" />}
               <CardTitle className="text-sm">{node.name}</CardTitle>
               <Badge variant="outline" className="text-xs">{node.code}</Badge>

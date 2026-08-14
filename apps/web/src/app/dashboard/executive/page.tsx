@@ -330,8 +330,8 @@ export default function ExecutiveDashboardPage() {
         {displayAlerts.length > 0 && (
           <Card className="border-orange-200 bg-orange-50/50 glass-card">
             <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-wrap items-center gap-2">
                   <div className="p-2 bg-orange-100 rounded-lg">
                     <Bell className="h-4 w-4 text-orange-600" />
                   </div>
@@ -694,8 +694,8 @@ export default function ExecutiveDashboardPage() {
         {financeSummary && (
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-wrap items-center gap-2">
                   <Banknote className="h-5 w-5 text-green-600" />
                   <CardTitle>Ringkasan Keuangan</CardTitle>
                 </div>
@@ -740,8 +740,8 @@ export default function ExecutiveDashboardPage() {
         {/* Real-time Activity Feed */}
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-wrap items-center gap-2">
                 <Activity className="h-4 w-4" />
                 <CardTitle>Aktivitas Real-time</CardTitle>
               </div>

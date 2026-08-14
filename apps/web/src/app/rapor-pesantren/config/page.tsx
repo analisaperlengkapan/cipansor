@@ -147,7 +147,7 @@ export default function RaporConfigPage() {
   return (
     <MainLayout allowedRoles={["SUPER_ADMIN", "UNIT_ADMIN"]}>
       <div className="container mx-auto p-6 space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-2">
               <Settings className="w-6 h-6" />

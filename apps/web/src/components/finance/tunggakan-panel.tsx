@@ -119,7 +119,7 @@ export function TunggakanPanel() {
         <div className="grid gap-6 md:grid-cols-3">
           <Card className="md:col-span-2">
             <CardHeader className="pb-3 border-b">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <CardTitle>Filter Data Tunggakan</CardTitle>
                   <CardDescription>Pilih unit untuk melihat daftar tunggakan santri</CardDescription>
@@ -185,12 +185,12 @@ export function TunggakanPanel() {
 
         <Card>
           <CardHeader className="border-b">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <CardTitle>Daftar Tunggakan Santri</CardTitle>
                 <CardDescription>Menampilkan tagihan yang belum dibayar</CardDescription>
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <Button variant="outline" size="sm" disabled={students.length === 0}>
                   <Download className="h-4 w-4 mr-2" />
                   Export Excel

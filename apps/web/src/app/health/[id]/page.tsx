@@ -290,7 +290,7 @@ export default function HealthDetailPage({ params }: PageProps) {
           {/* Health Record Info */}
           <Card className="md:col-span-2">
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <CardTitle className="flex items-center gap-2">
                     <Heart className="h-5 w-5" />

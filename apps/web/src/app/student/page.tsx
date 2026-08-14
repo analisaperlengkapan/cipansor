@@ -87,7 +87,7 @@ function StudentDashboardContent() {
   return (
     <div className="space-y-6">
       {/* Welcome Section */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
             Assalamu&apos;alaikum, {user?.name?.split(" ")[0] || "Santri"}! 👋
@@ -96,7 +96,7 @@ function StudentDashboardContent() {
             Dashboard Santri - Pantau progress belajar dan hafalanmu
           </p>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-4">
           <Button variant="outline" size="sm" onClick={refetch}>
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh

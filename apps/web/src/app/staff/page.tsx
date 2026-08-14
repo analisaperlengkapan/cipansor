@@ -195,7 +195,7 @@ function StaffDashboardContent() {
             Dashboard Staff - Kelola administrasi dan layanan siswa
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <p className="text-sm text-muted-foreground">
             {safeFormat(new Date(), "EEEE, d MMMM yyyy", { locale: localeId })}
           </p>

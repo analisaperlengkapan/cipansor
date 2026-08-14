@@ -377,7 +377,7 @@ export default function EOfficeMainPage() {
         {/* Recent Inbox */}
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <CardTitle className="flex items-center gap-2">
                   <Inbox className="h-5 w-5 text-blue-600" />
@@ -442,7 +442,7 @@ export default function EOfficeMainPage() {
         {/* Recent Outbox */}
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <CardTitle className="flex items-center gap-2">
                   <Send className="h-5 w-5 text-green-600" />

@@ -127,12 +127,12 @@ export function RecentPaymentsWidget({
   return (
     <Card className="h-full">
       <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <CardTitle className="text-lg flex items-center gap-2">
             <Banknote className="h-5 w-5" />
             Pembayaran Terbaru
           </CardTitle>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {isConnected ? (
               <Badge
                 variant="outline"

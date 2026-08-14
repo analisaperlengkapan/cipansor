@@ -116,7 +116,7 @@ export default function ParentCounselingPage() {
           {sessions.map((session) => (
             <Card key={session.id}>
               <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <CardTitle className="text-base flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
                     {new Date(session.scheduledAt).toLocaleDateString("id-ID", {

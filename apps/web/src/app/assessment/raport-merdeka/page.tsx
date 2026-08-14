@@ -182,7 +182,7 @@ export default function RaportMerdekaPage() {
     <MainLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">
               Raport Kurikulum Merdeka
@@ -191,7 +191,7 @@ export default function RaportMerdekaPage() {
               Penilaian berbasis Capaian Pembelajaran (CP) dan Projek P5
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button variant="outline">
               <Download className="h-4 w-4 mr-2" />
               Template CP/TP

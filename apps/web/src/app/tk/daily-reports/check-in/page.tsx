@@ -307,14 +307,14 @@ export default function BulkCheckInPage() {
         {students.length > 0 && (
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <CardTitle>Daftar Siswa</CardTitle>
                   <CardDescription>
                     {selectedCount} dari {students.length} siswa dipilih
                   </CardDescription>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <Checkbox
                     id="select-all"
                     checked={selectAll}

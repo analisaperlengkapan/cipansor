@@ -765,7 +765,7 @@ function StatisticsView({
       {/* Top Kitab */}
       <Card className="md:col-span-2">
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <CardTitle className="text-lg">Kitab Populer</CardTitle>
             <Button variant="outline" size="sm">
               <Download className="h-4 w-4 mr-2" />
@@ -830,9 +830,9 @@ function ProgressTrackingView({ unitId }: { unitId?: string }) {
     <div className="space-y-4">
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <CardTitle className="text-lg">Tracking Progress Santri</CardTitle>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Select value={classFilter} onValueChange={setClassFilter}>
                 <SelectTrigger className="w-40">
                   <SelectValue placeholder="Filter Kelas" />

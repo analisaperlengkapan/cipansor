@@ -36,8 +36,8 @@ function InventoryAssignmentsPageContent() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap items-center gap-4">
           <Button variant="ghost" size="icon" asChild>
             <Link href="/inventory">
               <ArrowLeft className="h-4 w-4" />

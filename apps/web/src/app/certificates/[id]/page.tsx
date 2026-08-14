@@ -206,7 +206,7 @@ export default function CertificateDetailPage({
             {/* Certificate Info Card */}
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <CardTitle>{certificate.title}</CardTitle>
                     <CardDescription>

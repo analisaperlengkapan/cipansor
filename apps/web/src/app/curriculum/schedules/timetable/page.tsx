@@ -369,7 +369,7 @@ export default function TimetablePage() {
           /* Grid View */
           <Card className="print:shadow-none">
             <CardHeader className="print:pb-2">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <CardTitle className="flex items-center gap-2">
                     <BookOpen className="h-5 w-5" />

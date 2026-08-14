@@ -64,6 +64,10 @@ export const knowledgeBase: KnowledgeEntry[] = [
     text: [
       `${siteConfig.legalName} (${siteConfig.markaz}) adalah ${siteConfig.tagline} yang berdiri sejak tahun ${siteConfig.establishedYear}.`,
       `Visi pesantren: "${siteConfig.visi}".`,
+      // The aliases below have always listed "mission", so a visitor asking
+      // about the misi was routed here — to an entry that only carried the
+      // visi. The bot could either answer the wrong question or invent one.
+      `Misi pesantren: ${siteConfig.misi.map((m, i) => `(${i + 1}) ${m}`).join(' ')}`,
       siteConfig.description,
     ].join(' '),
     aliases: ['about profile history founded established vision mission school islamic boarding'],

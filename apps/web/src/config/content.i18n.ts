@@ -104,6 +104,16 @@ const EN: PublicContent = {
       type: "p",
       text: "To raise a Qur'anic generation that is both capable and self-reliant.",
     },
+    { type: "h2", text: "Mission" },
+    {
+      type: "ul",
+      items: [
+        "To provide high-quality formal and non-formal education grounded in Islamic values.",
+        "To train santri (boarding students) to memorise and understand the Qur'an well.",
+        "To build teaching facilities that are comfortable and safe, and that support children's growth.",
+        "To work together with parents and the wider community in creating a positive learning environment.",
+      ],
+    },
     { type: "h2", text: "How That Vision Is Put Into Practice" },
     {
       type: "ul",
@@ -181,6 +191,16 @@ const AR: PublicContent = {
     {
       type: "p",
       text: "إعداد جيل قرآني ذكيّ ومعتمد على نفسه.",
+    },
+    { type: "h2", text: "الرسالة" },
+    {
+      type: "ul",
+      items: [
+        "تقديم تعليم نظامي وغير نظامي عالي الجودة قائم على القيم الإسلامية.",
+        "تربية الطلاب (السانتري) على حفظ القرآن الكريم وفهمه فهماً جيداً.",
+        "بناء مرافق تعليمية مريحة وآمنة تدعم نموّ الأطفال.",
+        "التعاون مع أولياء الأمور والمجتمع في تهيئة بيئة تعليمية إيجابية.",
+      ],
     },
     { type: "h2", text: "كيف تُترجَم هذه الرؤية عملياً" },
     {

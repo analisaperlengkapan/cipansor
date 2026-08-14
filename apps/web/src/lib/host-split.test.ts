@@ -3,6 +3,8 @@ import fs from "fs";
 import path from "path";
 import {
   hostSplitActionFor,
+  pwaEnabledForHost,
+  indexableHost,
   PUBLIC_HOST,
   PORTAL_HOST,
   PUBLIC_PATH_PREFIXES,
@@ -139,6 +141,19 @@ describe("hostSplitActionFor", () => {
     expect(target("CIPANSOR.OR.ID", "/dashboard")).toBe("404");
   });
 
+  it("is exhaustive: every request gets exactly one of three answers", () => {
+    // Guards against a fourth branch being added without a decision about what
+    // it means — the shape is the contract middleware.ts switches on.
+    for (const host of [PUBLIC_HOST, PORTAL_HOST, "localhost:3000"]) {
+      for (const path of ["/", "/profil", "/dashboard"]) {
+        const a = hostSplitActionFor(host, path);
+        expect(a === null || a.kind === "redirect" || a.kind === "notFound").toBe(
+          true,
+        );
+      }
+    }
+  });
+
   it("never returns the host the request already arrived on", () => {
     // A rule that returns its own host is an infinite redirect loop, and it
     // would take the whole site down rather than one page.
@@ -146,6 +161,61 @@ describe("hostSplitActionFor", () => {
     for (const path of paths) {
       expect(target(PUBLIC_HOST, path)).not.toBe(PUBLIC_HOST);
       expect(target(PORTAL_HOST, path)).not.toBe(PORTAL_HOST);
+    }
+  });
+});
+
+/**
+ * The PWA belongs to the application, and the application lives on one host.
+ *
+ * What these pin down is the *polarity*: off on the public site, on everywhere
+ * else. Written as "on for the portal" instead, localhost would lose the PWA
+ * and nobody could test the install flow in `pnpm dev` — a regression that
+ * would not show up in production and so would survive for months.
+ */
+describe("pwaEnabledForHost", () => {
+  it("is off on the public site", () => {
+    // The apex would otherwise offer to install an app whose start_url is the
+    // brochure and whose three manifest shortcuts all 404 there.
+    expect(pwaEnabledForHost(PUBLIC_HOST)).toBe(false);
+    expect(pwaEnabledForHost(`www.${PUBLIC_HOST}`)).toBe(false);
+    expect(pwaEnabledForHost("CIPANSOR.OR.ID:443")).toBe(false);
+  });
+
+  it("is on for the portal", () => {
+    expect(pwaEnabledForHost(PORTAL_HOST)).toBe(true);
+    expect(pwaEnabledForHost("Portal.Cipansor.Or.Id:443")).toBe(true);
+  });
+
+  it.each(["localhost", "localhost:3000", "127.0.0.1:3000", "", null])(
+    "stays on for %s, so dev keeps the install flow",
+    (host) => {
+      expect(pwaEnabledForHost(host)).toBe(true);
+    },
+  );
+});
+
+/**
+ * Indexing is the mirror image: the public site is the reason to be indexed,
+ * the portal is a staff login form that has no business in search results.
+ */
+describe("indexableHost", () => {
+  it("indexes the public site", () => {
+    expect(indexableHost(PUBLIC_HOST)).toBe(true);
+    expect(indexableHost(`www.${PUBLIC_HOST}`)).toBe(true);
+  });
+
+  it("does not index the portal", () => {
+    expect(indexableHost(PORTAL_HOST)).toBe(false);
+    expect(indexableHost("PORTAL.cipansor.or.id:443")).toBe(false);
+  });
+
+  it("never turns both off for the same host", () => {
+    // A host that is neither indexable nor running the app serves nothing
+    // anyone can reach or find. Not possible today; asserted so it stays that
+    // way if either predicate is rewritten.
+    for (const host of [PUBLIC_HOST, PORTAL_HOST, "localhost:3000"]) {
+      expect(indexableHost(host) || pwaEnabledForHost(host)).toBe(true);
     }
   });
 });

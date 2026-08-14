@@ -48,7 +48,9 @@ DEMO_MODE=true node apps/api/dist/main.js &         # :3001
 - **`DEMO_MODE=true`** on the API is what lets the seeded admin demo accounts log
   in with a password only. Without it, admin roles are forced through mandatory
   2FA *setup* and never return a session — the screenshot sweep can't log them in.
-- Demo credentials: every account is `<...>@demo.cipansor.or.id` / `Cipansor123!`
-  (see `packages/shared/src/types/demo-accounts.ts`). Do not invent `qa-*` accounts.
+- Demo credentials: every account is `<...>@cipansor.or.id` / `Cipansor123!`
+  (see `packages/shared/src/types/demo-accounts.ts`). The local part carries the
+  realm — `yayasan.ketua@`, `smpit.guru@` — since the old `@demo.` domain is gone.
+  Do not invent `qa-*` accounts.
 - Redis is optional; the API logs a connection error and runs degraded without it.
 - Health check: `curl -sf http://localhost:3001/health` and `http://localhost:3000/login`.

@@ -790,8 +790,13 @@ async function main() {
   // DEMO ACCOUNTS — one working login per RoleCode (81 total).
   // Source of truth: packages/shared/src/types/demo-accounts.ts, which the web
   // login page also renders — so every advertised credential actually logs in.
-  // All share DEMO_PASSWORD. Emails use @demo.cipansor.or.id and never collide
-  // with the hand-authored users below (different domains).
+  // All share DEMO_PASSWORD. Emails are on @cipansor.or.id like every other
+  // account — the old @demo.cipansor.or.id domain is gone. It had become a
+  // security marker (auth.service.ts exempted that suffix from 2FA), which is
+  // no way to decide whether a deployment is a demo, and it put the word "demo"
+  // in front of anyone signing in to the real portal. Collisions with the
+  // hand-authored users below are prevented by the local parts, which are
+  // realm-prefixed (`smpit.guru`, `yayasan.ketua`), not by the domain.
   // ============================================
   /**
    * Boarding-side and shared-service roles, whose codes carry no unit prefix.
@@ -1040,7 +1045,7 @@ async function main() {
   const adminPesantrenUser = await prisma.user.create({
     data: {
       name: 'Admin SMP IT',
-      email: 'admin@smpit.sch.id',
+      email: 'admin.smpit@cipansor.or.id',
       passwordHash: await bcrypt.hash('Admin123!', 10),
       role: UserRole.UNIT_ADMIN,
       unitId: smpIt.id,
@@ -1061,7 +1066,7 @@ async function main() {
   const adminSdItUser = await prisma.user.create({
     data: {
       name: 'Admin SD IT',
-      email: 'admin@sdit.sch.id',
+      email: 'admin.sdit@cipansor.or.id',
       passwordHash: await bcrypt.hash('Admin123!', 10),
       role: UserRole.UNIT_ADMIN,
       unitId: sdIt.id,
@@ -1083,7 +1088,7 @@ async function main() {
   const kepalaSmpItUser = await prisma.user.create({
     data: {
       name: 'Drs. H. Sulaiman, M.Pd',
-      email: 'kepala@smpit.sch.id',
+      email: 'kepala.smpit@cipansor.or.id',
       passwordHash: await bcrypt.hash('Kepala123!', 10),
       role: UserRole.TEACHER,
       unitId: smpIt.id,
@@ -1114,7 +1119,7 @@ async function main() {
   const kepalaSdItUser = await prisma.user.create({
     data: {
       name: 'Hj. Aminah, S.Pd',
-      email: 'kepala@sdit.sch.id',
+      email: 'kepala.sdit@cipansor.or.id',
       passwordHash: await bcrypt.hash('Kepala123!', 10),
       role: UserRole.TEACHER,
       unitId: sdIt.id,
@@ -1145,7 +1150,7 @@ async function main() {
   const teacherPesantrenUser = await prisma.user.create({
     data: {
       name: 'Ustadz Ahmad',
-      email: 'ahmad@smpit.sch.id',
+      email: 'ahmad@cipansor.or.id',
       passwordHash: await bcrypt.hash('Teacher123!', 10),
       role: UserRole.TEACHER,
       unitId: smpIt.id,
@@ -1174,7 +1179,7 @@ async function main() {
   const teacherSdItUser = await prisma.user.create({
     data: {
       name: 'Ibu Fatimah',
-      email: 'fatimah@sdit.sch.id',
+      email: 'fatimah@cipansor.or.id',
       passwordHash: await bcrypt.hash('Teacher123!', 10),
       role: UserRole.TEACHER,
       unitId: sdIt.id,
@@ -1204,7 +1209,7 @@ async function main() {
   const tuSmpItUser = await prisma.user.create({
     data: {
       name: 'Bpk. Bambang',
-      email: 'tu@smpit.sch.id',
+      email: 'tu.smpit@cipansor.or.id',
       passwordHash: await bcrypt.hash('TataUsaha123!', 10),
       role: UserRole.STAFF,
       unitId: smpIt.id,
@@ -1226,7 +1231,7 @@ async function main() {
   const tuSdItUser = await prisma.user.create({
     data: {
       name: 'Ibu Sari',
-      email: 'tu@sdit.sch.id',
+      email: 'tu.sdit@cipansor.or.id',
       passwordHash: await bcrypt.hash('TataUsaha123!', 10),
       role: UserRole.STAFF,
       unitId: sdIt.id,
@@ -1310,28 +1315,28 @@ async function main() {
     {
       name: 'Muhammad Rizky',
       gender: Gender.MALE,
-      email: 'student1@smpit.sch.id',
+      email: 'student1@cipansor.or.id',
       unitId: smpIt.id,
       roleCode: RoleCode.SMPIT_SISWA,
     },
     {
       name: 'Ahmad Fauzan',
       gender: Gender.MALE,
-      email: 'student2@smpit.sch.id',
+      email: 'student2@cipansor.or.id',
       unitId: smpIt.id,
       roleCode: RoleCode.SMPIT_SISWA,
     },
     {
       name: 'Siti Aisyah',
       gender: Gender.FEMALE,
-      email: 'student3@sdit.sch.id',
+      email: 'student3@cipansor.or.id',
       unitId: sdIt.id,
       roleCode: RoleCode.SDIT_SISWA,
     },
     {
       name: 'Abdullah Rahman',
       gender: Gender.MALE,
-      email: 'student5@smaq.sch.id',
+      email: 'student5@cipansor.or.id',
       unitId: smaQuran.id,
       roleCode: RoleCode.SMAQ_SISWA,
     },
@@ -1531,7 +1536,7 @@ async function main() {
         name: data.name,
         // Not a mailbox — an identifier. The column is unique and required, and
         // these children have no address of their own.
-        email: `tkq-${String(i + 1).padStart(3, '0')}@murid.cipansor.local`,
+        email: `tkq-${String(i + 1).padStart(3, '0')}@cipansor.or.id`,
         passwordHash: null,
         role: UserRole.STUDENT,
         unitId: tkQuran.id,
@@ -1568,21 +1573,21 @@ async function main() {
   const parentNames = [
     {
       name: 'Bapak Rizky (Wali)',
-      email: 'parent1@smpit.sch.id',
+      email: 'parent1@cipansor.or.id',
       studentIdx: 0,
       unitId: smpIt.id,
       roleCode: RoleCode.SMPIT_ORANG_TUA,
     },
     {
       name: 'Ibu Fauzan (Wali)',
-      email: 'parent2@smpit.sch.id',
+      email: 'parent2@cipansor.or.id',
       studentIdx: 1,
       unitId: smpIt.id,
       roleCode: RoleCode.SMPIT_ORANG_TUA,
     },
     {
       name: 'Bapak Aisyah (Wali)',
-      email: 'parent3@sdit.sch.id',
+      email: 'parent3@cipansor.or.id',
       studentIdx: 2,
       unitId: sdIt.id,
       roleCode: RoleCode.SDIT_ORANG_TUA,
@@ -1783,7 +1788,7 @@ async function main() {
   const bahtiarTk = await prisma.user.create({
     data: {
       name: 'Zahra Bahtiar',
-      email: 'tkq-b01@murid.cipansor.local',
+      email: 'tkq-b01@cipansor.or.id',
       passwordHash: null,
       role: UserRole.STUDENT,
       unitId: tkQuran.id,
@@ -1810,7 +1815,7 @@ async function main() {
   for (const sibling of [
     {
       name: 'Yusuf Bahtiar',
-      email: 'yusuf.bahtiar@sdit.sch.id',
+      email: 'yusuf.bahtiar@cipansor.or.id',
       unit: sdIt,
       classId: class1A.id,
       nis: '2024SDB1',
@@ -1820,7 +1825,7 @@ async function main() {
     },
     {
       name: 'Hafshah Bahtiar',
-      email: 'hafshah.bahtiar@smpit.sch.id',
+      email: 'hafshah.bahtiar@cipansor.or.id',
       unit: smpIt,
       classId: class7A.id,
       nis: '2024SMB1',
@@ -1875,7 +1880,7 @@ async function main() {
   const waliBahtiar = await prisma.user.create({
     data: {
       name: 'Bapak Hendra Bahtiar',
-      email: 'hendra.bahtiar@wali.cipansor.or.id',
+      email: 'hendra.bahtiar@cipansor.or.id',
       passwordHash: await bcrypt.hash('Parent123!', 10),
       role: UserRole.PARENT,
       // No single unit: the reconciliation below gives this account one parent
@@ -4084,29 +4089,29 @@ async function main() {
   console.log('   Pembina Yayasan: pembina@cipansor.or.id / Pembina123!');
   console.log('   Pengawas Yayasan: pengawas@cipansor.or.id / Pengawas123!');
 
-  console.log('\n   === PAUD ===');
-  console.log('   Admin PAUD: admin@paud.sch.id / Admin123!');
-  // No pupil login is printed here on purpose: TK Qur'an children hold no
-  // accounts. The line used to advertise student4@paud.sch.id / Student123!,
-  // credentials for an account that no longer exists.
+  // No PAUD block is printed here on purpose. It used to advertise
+  // admin@paud.sch.id / Admin123! and student4@paud.sch.id / Student123! —
+  // credentials for accounts this seed does not create. Printing a login that
+  // does not exist sends whoever trusts the output hunting for a fault in the
+  // login page. TK Qur'an children hold no accounts at all.
 
   console.log('\n   === SD IT ===');
-  console.log('   Admin SD IT: admin@sdit.sch.id / Admin123!');
-  console.log('   Kepala Sekolah SD IT: kepala@sdit.sch.id / Kepala123!');
-  console.log('   Guru SD IT: fatimah@sdit.sch.id / Teacher123!');
-  console.log('   Orang Tua SD IT: parent3@sdit.sch.id / Parent123!');
-  console.log('   Siswa SD IT: student3@sdit.sch.id / Student123!');
+  console.log('   Admin SD IT: admin.sdit@cipansor.or.id / Admin123!');
+  console.log('   Kepala Sekolah SD IT: kepala.sdit@cipansor.or.id / Kepala123!');
+  console.log('   Guru SD IT: fatimah@cipansor.or.id / Teacher123!');
+  console.log('   Orang Tua SD IT: parent3@cipansor.or.id / Parent123!');
+  console.log('   Siswa SD IT: student3@cipansor.or.id / Student123!');
 
   console.log('\n   === SMP IT ===');
-  console.log('   Admin SMP IT: admin@smpit.sch.id / Admin123!');
-  console.log('   Kepala Sekolah SMP IT: kepala@smpit.sch.id / Kepala123!');
-  console.log('   Guru SMP IT: ahmad@smpit.sch.id / Teacher123!');
-  console.log('   Orang Tua SMP IT: parent1@smpit.sch.id / Parent123!');
-  console.log('   Siswa SMP IT: student1@smpit.sch.id / Student123!');
+  console.log('   Admin SMP IT: admin.smpit@cipansor.or.id / Admin123!');
+  console.log('   Kepala Sekolah SMP IT: kepala.smpit@cipansor.or.id / Kepala123!');
+  console.log('   Guru SMP IT: ahmad@cipansor.or.id / Teacher123!');
+  console.log('   Orang Tua SMP IT: parent1@cipansor.or.id / Parent123!');
+  console.log('   Siswa SMP IT: student1@cipansor.or.id / Student123!');
 
   console.log("\n   === SMA AL-QUR'AN ===");
-  console.log("   Admin SMA Al-Qur'an: admin@smaq.sch.id / Admin123!");
-  console.log("   Siswa SMA Al-Qur'an: student5@smaq.sch.id / Student123!");
+  console.log("   Admin SMA Al-Qur'an: admin@cipansor.or.id / Admin123!");
+  console.log("   Siswa SMA Al-Qur'an: student5@cipansor.or.id / Student123!");
 
   // ============================================
   // PHASE 9: PAUD Enhancement Seeds

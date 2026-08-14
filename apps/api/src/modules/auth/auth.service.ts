@@ -170,14 +170,23 @@ export class AuthService {
       role: deriveLegacyRole(roleCode),
     };
 
-    // Public demo accounts are exempt from 2FA. Their credentials are printed
-    // on the login page on purpose, so a mandatory authenticator step makes the
-    // privileged demo roles impossible for a visitor to open. Gated behind an
-    // explicit env flag AND the seeded demo email domain, so real accounts —
-    // including real admins — are never affected.
-    const isDemoAccount =
-      process.env.DEMO_MODE === 'true' &&
-      user.email.endsWith('@demo.cipansor.or.id');
+    // A demo deployment is exempt from 2FA: without it the privileged roles
+    // cannot be opened at all, since no seeded account has an authenticator
+    // enrolled. DEMO_MODE is the whole condition.
+    //
+    // It used to also require the address to end in `@demo.cipansor.or.id`.
+    // That made an email address load-bearing for security, which is why the
+    // accounts could not be renamed onto the institution's own domain without
+    // silently locking every privileged login out behind a 2FA wall it has no
+    // authenticator for. A deployment is a demo or it is not; the address of
+    // the person signing in does not decide that.
+    //
+    // This is a LOOSENING while DEMO_MODE=true: accounts that were outside the
+    // old suffix — the seeded staff and student logins — are now exempt too.
+    // Acceptable only because the flag marks the entire deployment as demo, and
+    // production has no real accounts yet. `DEMO_MODE=false` restores the wall
+    // for everyone, and that is the switch to throw at launch.
+    const isDemoAccount = process.env.DEMO_MODE === 'true';
 
     // Check for 2FA
     if (user.isTwoFactorEnabled && !isDemoAccount) {

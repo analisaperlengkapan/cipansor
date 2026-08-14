@@ -66,9 +66,11 @@ services:
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
       LOG_LEVEL: ${LOG_LEVEL:-info}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
-      # Exempts ONLY the seeded *@demo.cipansor.or.id accounts from the mandatory
-      # 2FA wall, so the credentials published on /login actually work. Must be
-      # false for a real launch — set it together with NEXT_PUBLIC_SHOW_DEMO_LOGIN.
+      # Marks the whole deployment as a demo, lifting the mandatory 2FA wall so
+      # the seeded accounts can be opened at all — none has an authenticator
+      # enrolled. It no longer keys off an email suffix; the accounts now live on
+      # @cipansor.or.id like everything else. Must be false for a real launch —
+      # set it together with NEXT_PUBLIC_SHOW_DEMO_LOGIN.
       DEMO_MODE: ${DEMO_MODE:-false}
       # Public customer-service chatbot. This service enumerates its environment
       # explicitly, so a variable absent from this block does not reach the API

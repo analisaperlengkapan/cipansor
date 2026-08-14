@@ -13,6 +13,8 @@
  * misrepresents the nonprofit.
  */
 
+import { siteConfig } from "@/config/site";
+
 /** A paragraph-level block. Rendered as elements, never as raw HTML. */
 export type ContentBlock =
   | { type: "p"; text: string }
@@ -41,7 +43,22 @@ export const profileSections: ContentBlock[] = [
   { type: "h2", text: "Visi" },
   {
     type: "p",
-    text: "Mencetak Generasi Qur'ani yang Cerdas dan Mandiri.",
+    // Derived, not retyped. This page and siteConfig.visi held the same
+    // sentence in two places, differing already by a trailing full stop — which
+    // is how two copies of a statement start drifting apart. siteConfig is the
+    // canonical one; the API also builds the public chatbot's knowledge base
+    // from it, so a second hand-written copy here could put a different visi in
+    // the bot's mouth than the one on the page.
+    text: `${siteConfig.visi}.`,
+  },
+  { type: "h2", text: "Misi" },
+  {
+    type: "ul",
+    // The yayasan's own four points, from siteConfig so the page, the chatbot
+    // and any future consumer quote one text. Google Workspace for Nonprofits
+    // asked for "a clear mission statement describing your programs or
+    // services"; the site had a visi but no misi anywhere.
+    items: [...siteConfig.misi],
   },
   { type: "h2", text: "Bagaimana Visi Itu Diterjemahkan" },
   {

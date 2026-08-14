@@ -22,6 +22,23 @@ export const siteConfig = {
   markaz: "Markaz Annur",
   tagline: "Sekolah Islam Terpadu (IT)",
   visi: "Mencetak Generasi Qur'ani yang Cerdas dan Mandiri",
+  /**
+   * The four points as published by the yayasan on pesantrencipansor.com
+   * (Profil → "Misi Kami"). Kept verbatim rather than reworded: this is the
+   * organisation's own statement of what it does, and Google Workspace for
+   * Nonprofits rejected the first application partly because this site carried
+   * a visi but no mission statement describing the programmes or services.
+   *
+   * Note for whoever syncs these next: the source page's "Visi Kami" tab reads
+   * "Mencetak *Genarasi* Qur'ani" — a typo. Its own footer, and every copy
+   * here, spell it "Generasi". Do not propagate the typo.
+   */
+  misi: [
+    "Menyelenggarakan pendidikan formal dan non-formal yang berkualitas berbasis nilai-nilai Islami.",
+    "Membina santri agar memiliki kemampuan menghafal dan memahami Al-Qur'an dengan baik.",
+    "Membangun sarana dan prasarana pendidikan yang nyaman, aman, dan mendukung tumbuh kembang anak.",
+    "Menjalin kolaborasi dengan orang tua dan masyarakat dalam mewujudkan lingkungan pendidikan yang positif.",
+  ],
   establishedYear: 1911,
   description:
     "Pesantren Cipansor adalah lembaga pendidikan Islam terpadu yang menyeimbangkan ilmu agama, akademik, dan teknologi. Kami berdedikasi mencetak generasi yang berakhlak mulia, berilmu, serta siap bersaing di era global.",

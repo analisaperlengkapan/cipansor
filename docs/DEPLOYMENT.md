@@ -38,7 +38,7 @@ Panduan deployment sistem Cipansor untuk production.
 ### 1. Clone Repository
 
 ```bash
-git clone https://github.com/analisaperlengkapan/cipansor.git
+git clone https://github.com/ypcipansor/cipansor.git
 cd cipansor
 ```
 
@@ -348,4 +348,4 @@ kill -9 <PID>
 
 - Documentation: https://docs.cipansor.or.id
 - Email: support@cipansor.or.id
-- Issues: https://github.com/analisaperlengkapan/cipansor/issues
+- Issues: https://github.com/ypcipansor/cipansor/issues

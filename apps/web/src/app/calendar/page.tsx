@@ -168,7 +168,15 @@ export default function AcademicCalendarPage() {
         <Card>
           <CardContent className="pt-6">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-              <div className="flex items-center gap-4">
+              {/*
+                This row already stacked at md:, and still ran 15px past a
+                390px screen — the cause is the fixed w-48 month label, not the
+                direction. Two arrows, a 192px label, "Hari Ini" and the card's
+                own padding come to about 422px. Narrower below sm:, and allowed
+                to wrap, so a long month name ("September 2026") drops instead of
+                pushing the arrows off.
+              */}
+              <div className="flex flex-wrap items-center gap-4">
                 {/* Month Navigation */}
                 <div className="flex items-center gap-2">
                   <Button
@@ -178,7 +186,7 @@ export default function AcademicCalendarPage() {
                   >
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
-                  <div className="w-48 text-center">
+                  <div className="w-36 text-center sm:w-48">
                     <h2 className="text-lg font-semibold">
                       {format(currentDate, "MMMM yyyy", { locale: idLocale })}
                     </h2>

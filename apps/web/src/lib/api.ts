@@ -79,7 +79,17 @@ export interface UpdateRoleInput {
 // NEXT_PUBLIC_API_URL is the API *base* origin (no /api suffix); the `/api`
 // prefix is appended here so every consumer of this env var uses one
 // convention. Callers of this axios instance use bare paths (e.g. "/students").
-const API_URL = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api`;
+//
+// `??`, not `||`, on purpose. An empty value is a meaningful setting: it makes
+// the base relative ("/api"), so the bundle talks to whichever origin served
+// the page. That is what lets one image serve both cipansor.or.id and
+// portal.cipansor.or.id with the API same-origin on each — the value is inlined
+// at build time, so an absolute origin baked here would make one of the two
+// hosts cross-origin and put CORS on the critical path. `||` would have folded
+// that empty string into the localhost fallback and silently broken it.
+// Unset still falls back to localhost:3001 for `pnpm dev`, where the web dev
+// server (:3000) and the API (:3001) really are different origins.
+const API_URL = `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001"}/api`;
 
 export const api = axios.create({
   baseURL: API_URL,

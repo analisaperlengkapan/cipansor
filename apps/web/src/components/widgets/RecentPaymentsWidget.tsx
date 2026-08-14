@@ -90,7 +90,8 @@ export function RecentPaymentsWidget({
       try {
         const token = localStorage.getItem("token");
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api/analytics/finance`,
+          // `??` keeps an empty value empty, making the base relative — see lib/api.ts.
+          `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001"}/api/analytics/finance`,
           { headers: { Authorization: `Bearer ${token}` } },
         );
 

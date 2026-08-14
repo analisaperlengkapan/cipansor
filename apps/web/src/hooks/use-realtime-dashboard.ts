@@ -75,8 +75,19 @@ export function useRealtimeDashboard(
       return;
     }
 
-    // Connect to WebSocket server
-    const wsUrl = process.env.NEXT_PUBLIC_WS_URL || "http://localhost:3001";
+    // Connect to WebSocket server.
+    //
+    // NEXT_PUBLIC_WS_URL has never been set — not in .env, .env.example,
+    // docker-compose.yml or the deploy scripts — so in production this fell
+    // through to the localhost default and every visitor's browser tried to
+    // open a socket to port 3001 *on their own machine*. Realtime on the
+    // executive dashboard has therefore never worked outside local dev.
+    //
+    // Passing `undefined` makes socket.io connect to the origin that served the
+    // page, which is right for both cipansor.or.id and portal.cipansor.or.id
+    // and needs no per-host build. The env var stays as an override for `pnpm
+    // dev`, where the web server (:3000) and the API (:3001) differ.
+    const wsUrl = process.env.NEXT_PUBLIC_WS_URL || undefined;
 
     // Create socket instance
     const newSocket = io(wsUrl, {

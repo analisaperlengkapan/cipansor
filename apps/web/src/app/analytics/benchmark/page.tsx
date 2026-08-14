@@ -59,7 +59,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+// `??` so an empty value stays empty and the base is relative — see lib/api.ts.
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 
 interface UnitMetrics {
   unitId: string;

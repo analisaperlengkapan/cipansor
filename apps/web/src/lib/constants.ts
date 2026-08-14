@@ -7,8 +7,11 @@
 // API Constants
 // ============================================
 
-export const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+// `API_BASE_URL` used to live here. Nothing imported it — every caller goes
+// through the axios instance in lib/api.ts, which owns the base URL. Leaving a
+// second, unused definition of it around is how the two drift apart: it still
+// read `process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"`, which is
+// exactly the `||` that would defeat a deliberately empty (relative) base.
 
 export const API_ENDPOINTS = {
   // Auth

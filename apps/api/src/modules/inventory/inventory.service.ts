@@ -8,6 +8,7 @@ import {
 } from '@prisma/client';
 import { JournalReferenceType } from '@cipansor/shared';
 import { prisma } from '../../lib/prisma';
+import { config } from '../../config';
 import { createNotification } from '../notifications/notifications.service';
 import { createPurchaseJournal } from './asset-accounting.service';
 import type {
@@ -39,8 +40,12 @@ export async function getQrCode(id: string) {
 
   if (!asset) throw new Error('Asset not found');
 
-  const appUrl = process.env.APP_URL || 'http://localhost:3000';
-  const url = `${appUrl}/inventory/${id}`;
+  // The portal, not the public site: /inventory/<id> is a staff page behind the
+  // session wall, and this label is scanned by someone already signed in during
+  // stock opname. It used to fall back to `http://localhost:3000` — APP_URL was
+  // set neither in `.env` nor in the compose environment block — so every label
+  // ever printed pointed at the scanner's own device.
+  const url = `${config.portalUrl}/inventory/${id}`;
 
   return QRCode.toDataURL(url);
 }

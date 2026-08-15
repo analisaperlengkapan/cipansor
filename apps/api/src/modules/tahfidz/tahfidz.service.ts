@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { seesAllUnits } from '@/utils/resolve-unit-id';
+import { certificateVerificationUrl } from '@/utils/verification-url';
 import { logger } from '@/lib/logger';
 import { Errors } from '@/middleware/error';
 import { UserRole, TahfidzActivityType, Prisma } from '@prisma/client';
@@ -783,7 +784,13 @@ export class TahfidzService {
             grade: input.grade,
             issueDate: date,
             qrCode: crypto.randomUUID(), // Placeholder unique QR code
-            verificationUrl: `https://cipansor.com/verify/${crypto.randomUUID()}`, // Placeholder
+            // Was `https://cipansor.com/verify/${crypto.randomUUID()}`, marked
+            // "// Placeholder" — a domain the yayasan does not own, a path this
+            // app has never had, and a fresh random UUID that identified
+            // nothing, so the link could not have verified the certificate it
+            // was printed on even if the page had existed. Now the real page,
+            // keyed by the number actually stored on this row.
+            verificationUrl: certificateVerificationUrl(certificateNumber),
             signatoryName: input.musyrifName || 'Administrator',
             signatoryTitle: 'Musyrif Tahfidz',
             description: input.notes,

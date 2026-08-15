@@ -288,7 +288,24 @@ export class StudentIdCardService {
         // QR Code
         qrCode: {
           data: qrCodeData,
-          verificationUrl: `${process.env.APP_URL ?? 'https://cipansor.app'}/verify?q=${encodeURIComponent(qrCodeData)}`,
+          /**
+           * Deliberately null: there is no student-card verification page.
+           *
+           * This used to be `https://cipansor.app/verify?q=<payload>` — a
+           * domain the yayasan does not own, and a path this app has never
+           * routed. Pointing it at a real host would only have moved the 404,
+           * so rather than dress up a dead link the field now says plainly
+           * that the destination does not exist. Nothing consumes it today.
+           *
+           * Building that page is a decision, not a repair, and it needs one
+           * thing settled first: `generateQRCodeData` signs the payload with a
+           * bare `sha256(payload)` truncated to 8 hex characters and no secret,
+           * so anyone who reads one card can mint a payload that verifies.
+           * A verification page over an unkeyed hash would attest nothing —
+           * that wants an HMAC keyed on a server-side secret before it is worth
+           * publishing.
+           */
+          verificationUrl: null,
         },
       },
     };

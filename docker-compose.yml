@@ -64,6 +64,13 @@ services:
       # Falls back to a public hardcoded key inside the API if unset.
       ENCRYPTION_KEY: ${ENCRYPTION_KEY:-}
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
+      # Enumerated here on purpose. A var present only in .env never reaches the
+      # container, and the failure is silent — which is exactly how the old
+      # APP_URL ended up unset in production while four call sites quietly used
+      # their hardcoded fallbacks. The defaults below are the real hosts, so a
+      # missing .env degrades to correct rather than to localhost.
+      PUBLIC_SITE_URL: ${PUBLIC_SITE_URL:-https://cipansor.or.id}
+      PORTAL_URL: ${PORTAL_URL:-https://portal.cipansor.or.id}
       LOG_LEVEL: ${LOG_LEVEL:-info}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
       # Marks the whole deployment as a demo, lifting the mandatory 2FA wall so

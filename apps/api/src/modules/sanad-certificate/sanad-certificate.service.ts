@@ -11,6 +11,7 @@ import type {
   SanadGrade,
 } from './sanad-certificate.schema';
 import { GRADE_LABELS } from './sanad-certificate.schema';
+import { certificateVerificationUrl } from '@/utils/verification-url';
 
 // ============================================
 // CONSTANTS
@@ -370,15 +371,20 @@ export async function generateCertificate(
   });
 
   if (!certificate) {
+    // Minted before the create so the stored verificationUrl can carry it. The
+    // URL used to be the bare page with no `?code=`, which made every
+    // certificate's "verify" link identical and left the scanner to retype the
+    // number by hand off the paper.
+    const newCertificateNumber = generateCertificateNumber();
     certificate = await prisma.digitalCertificate.create({
       data: {
         studentId: sanad.enrollment.student.id,
         certificateType: 'SANAD',
         title,
         description: `Pengesahan hafalan Juz ${sanad.juz} oleh ${sanad.teacher.name}`,
-        certificateNumber: generateCertificateNumber(),
+        certificateNumber: newCertificateNumber,
         qrCode: generateVerificationCode(),
-        verificationUrl: `${process.env.APP_URL || 'https://cipansor.app'}/public/verify-sanad`,
+        verificationUrl: certificateVerificationUrl(newCertificateNumber),
         grade: GRADE_LABELS[sanad.grade as SanadGrade] || sanad.grade || undefined,
         issueDate: sanad.certifiedAt,
         signatoryName: input.signedBy || sanad.teacher.name,
@@ -651,7 +657,7 @@ export function generateCertificateHtml(
       <div class="footer">
         <p>No. Sertifikat: <span class="cert-number">${certificateData.certificateNumber}</span></p>
         <p>Kode Verifikasi: ${certificateData.verificationCode}</p>
-        <p>Sertifikat ini dapat diverifikasi di: ${process.env.APP_URL || 'https://cipansor.app'}/public/verify-sanad</p>
+        <p>Sertifikat ini dapat diverifikasi di: ${certificateVerificationUrl(certificateData.certificateNumber)}</p>
       </div>
     </div>
   </div>

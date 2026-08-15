@@ -31,12 +31,19 @@ function UnifiedAdmissionsDashboardContent() {
 
   return (
     <div className="container mx-auto py-8 space-y-8">
-      <div className="flex justify-between items-start">
+      {/*
+        Written `flex justify-between items-start` rather than the
+        `flex items-center justify-between` every other page header uses, which is
+        why the sweep that fixed the other 116 headers passed straight over this
+        one — same layout, different word order. It overflowed a 390px screen by
+        58px, with "Registrasi Baru" hanging off the edge.
+      */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <PageHeader
           title="Unified Admissions Management"
           description="Pusat kendali pendaftaran santri baru (PPDB & PSB) lintas unit"
         />
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
            <Button variant="outline" asChild>
               <Link href="/admissions/analytics"><BarChart3 className="mr-2 h-4 w-4" /> ROI & Analytics</Link>
            </Button>

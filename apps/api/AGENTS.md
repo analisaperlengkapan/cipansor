@@ -34,6 +34,20 @@ Mount new modules in `src/app.ts`.
 - Auth/RBAC: `src/middleware/auth.ts` — `authorize(RoleCode.X, ...)`,
   `hasPermission('perm')`, `isAdmin`, `isSuperAdmin`, `isTeacherOrAbove`.
 - Infra: `src/lib/{prisma,redis,jwt,logger,event-bus,realtime}.ts`.
+- **Outbound URLs: `config.publicSiteUrl` / `config.portalUrl`**, and for
+  certificates `utils/verification-url.ts`. Never build one from
+  `process.env.SOMETHING || 'https://…'` inline. There used to be an `APP_URL`
+  doing that job; because the name says nothing about *which* of the two hosts
+  it means, four call sites each guessed differently and all four shipped —
+  `cipansor.app` (×2), `cipansor.com`, `localhost:3000`. Two of those are domains
+  the yayasan does not own, and one was printed onto physical asset labels.
+  Pick by audience: `publicSiteUrl` for anything an outsider scans or clicks,
+  `portalUrl` only for links whose reader is already signed in.
+- **A new env var must be added to the `environment:` block in
+  `docker-compose.yml`, not just `.env`.** Compose enumerates by name; a value
+  present only in `.env` never reaches the container, and the feature stays
+  silently inert. Give it a default that degrades to *correct* rather than to
+  localhost. Verify with `docker exec cipansor-api sh -c 'env | grep ^NAME='`.
 - Cross-module side effects: emit via `eventBus` (typed `AppEvents`), don't reach
   into other modules' services.
 - **Contracts: `@cipansor/shared`.** A user-facing endpoint's request/response

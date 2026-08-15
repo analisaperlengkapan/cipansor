@@ -191,65 +191,101 @@ Covered by 11 tests in `apps/api/src/modules/dashboard/teacher-stats.test.ts`
 suite uses `vi.resetAllMocks()` — `clearAllMocks` leaves the queued values in
 place and the failures it produces point at the wrong test.
 
-## 🔴 OPEN — PWA install prompt never appears on cipansor.or.id (2026-07-23)
+## ✅ SUPERSEDED — PWA install prompt never appears on cipansor.or.id (2026-07-23, closed 2026-08-15)
 
-**Symptom.** The "install app" banner never shows on the live site. Reported
-across several browsers, in a fresh Incognito window, and on an Android handset
-where the app is confirmed **not** already installed.
+**This is no longer a defect: the apex deliberately ships no PWA.** Since #401,
+`pwaEnabledForHost` (`apps/web/src/lib/host-split.ts`) withholds the manifest,
+the Apple web-app tags, the `beforeinstallprompt` capture script and the install
+banner on `cipansor.or.id` and `www.`. So the banner not appearing there is now
+the intended behaviour, and the long investigation recorded below was chasing a
+symptom of the right thing happening for the wrong reason.
 
-**This is a real defect, not a configuration choice.** Two plausible
-explanations were investigated and both are ruled out — recorded here so nobody
-spends the time again:
+**Why the apex should never have offered it.** `start_url` is `/`, which on the
+public host is the landing page, and all three manifest `shortcuts` —
+`/dashboard`, `/attendance`, `/students` — answer **404** there. Sessions do not
+cross hosts either (the token is per-origin `localStorage`; `auth-storage` is a
+host-only cookie), so an app installed from the apex could never sign anyone in
+even if those routes existed. What installed was the brochure.
 
-- *Snoozed dismissal in `localStorage`* — ruled out: Incognito starts with empty
-  storage and still shows nothing.
-- *Already installed, so Chrome withholds `beforeinstallprompt`* — ruled out:
-  the reporter confirms the app is not installed on the device.
+**Where the question actually lives now: `portal.cipansor.or.id`.** Verified
+live after the #401 deploy — the portal serves `<link rel="manifest">`, the
+`beforeinstallprompt` capture script, and `mobile-web-app-capable`; the apex
+serves none of the three. Whether Chrome then *fires* the event on the portal is
+the open half, and the diagnostic steps below still apply — run them against the
+portal, not the apex:
 
-(Also note Chrome refuses PWA installation in Incognito **by policy**, so that
-particular test can never show the banner regardless of our code. It is not
-evidence either way.)
+1. Chrome DevTools → **Application → Manifest → "Installability"** on a real
+   device (`chrome://inspect`). Chrome states its own reason, which beats
+   inferring from outside. Still the highest-value step.
+2. Lighthouse PWA audit against `https://portal.cipansor.or.id/login`.
+3. The manifest `"id": "/"` field — if Chrome ever associated that app id with an
+   installed/uninstalled instance it can decline to re-offer.
+4. **Chrome's user-engagement heuristic**, which the original investigation did
+   not list: Chrome withholds `beforeinstallprompt` until the user has interacted
+   with the origin for a threshold of engagement. A fresh Incognito window — the
+   test used to rule out a stale dismissal — has *zero* engagement by
+   construction, so it can never satisfy this. Worth ruling in or out before
+   suspecting the code.
 
-**Everything the browser needs was verified against the live site and is
-correct**, so the fault is not in the served assets:
+**One thing #401 changed that is easy to miss.** `ServiceWorkerRegister` still
+mounts on the public site, where its job is inverted: it calls
+`getRegistrations().unregister()` and drops the `cipansor-*` caches. A service
+worker outlives the page that registered it, so every earlier apex visitor would
+otherwise have kept a navigation-intercepting worker that no code registers any
+more and no deploy would ever dislodge. `/sw.js` is still *served* on the apex —
+it is a static file in `public/` — and that is not the defect; nothing registers
+it there.
 
-| Requirement | Verified |
-|---|---|
-| HTTPS | ✅ |
-| `manifest.json` linked, valid `name` / `start_url` / `display: standalone` | ✅ |
-| Icons 72→512 present, incl. 512 `any maskable` | ✅ all HTTP 200 |
-| `sw.js` served as `application/javascript` | ✅ |
-| Service worker has a `fetch` handler | ✅ |
-| `skipWaiting()` + `clients.claim()` (so it controls the first load) | ✅ |
-| Service worker actually registers, scope `/` | ✅ confirmed in a browser |
-| `<ServiceWorkerRegister />` and `<InstallPrompt />` mounted in the root layout | ✅ |
-| `InstallPrompt` reads the pre-hydration stash **and** listens for late events | ✅ code reviewed |
+## 🔴 OPEN — decisions, not repairs (2026-08-15)
 
-So the conclusion is narrow: **`beforeinstallprompt` is not firing**, even though
-every documented precondition for it is satisfied.
+Found while closing #401/#402. Each is a real defect or a real risk, and each
+needs a judgement the codebase cannot supply, so none was fixed unilaterally.
 
-**Not yet examined (start here):**
+**1. There is no student ID-card verification page, and the card's signature is
+forgeable.** `StudentIdCardService.generateQRCodeData` signs its payload with a
+bare `sha256(payload)` truncated to 8 hex characters and **no secret**. Anyone
+who reads one card can mint a payload that verifies. `verificationUrl` is now
+`null` rather than pointing at a fabricated address (it used to read
+`https://cipansor.app/verify?q=…` — a domain the yayasan does not own, and a
+path that has never routed). Building the page is worthwhile only *after* the
+hash becomes an HMAC keyed on a server-side secret; a verification page over an
+unkeyed hash attests nothing.
 
-1. Run Chrome DevTools → **Application → Manifest → "Installability"** on a real
-   device (`chrome://inspect`). Chrome states its own reason there, which is far
-   more direct than inferring from the outside — this is the single highest-value
-   next step.
-2. Run a **Lighthouse PWA audit** against the live URL.
-3. Suspect the manifest `"id": "/"` field. If Chrome has ever associated that app
-   id with an installed/uninstalled instance, it can decline to re-offer. Try an
-   explicit distinct `id`.
-4. Confirm the registered service worker is the *current* one on the device —
-   a stale worker from an earlier deploy can linger until every tab is closed.
+**2. `/certificates/verify/[code]` is behind the session wall.** Measured:
+**404** on the apex, **307 → /login** on the portal. A verification link is for
+people with no account — a dinas office, a prospective employer — so this one
+cannot serve its purpose. Sanad certificates now point at
+`/public/verify-sanad?code=…` instead, which answers 200 on the apex with no
+session, because `middleware.ts` excludes `/public` from its matcher outright
+rather than relying on the hand-maintained `publicPrefixes` list. Whether
+`/certificates/verify` should join it depends on what that page discloses —
+compare `/verifikasi/[token]`, which is public precisely because it never
+returns the letter body.
 
-**Impact.** Low for correctness (the site is fully usable, and the PWA remains
-installable through the browser's own ⋮ menu), moderate for reach — the banner is
-how most wali santri would discover installing it.
+**3. The dashboard metrics job writes 6 rows a minute, forever.**
+`aggregateDashboardMetrics` runs on `* * * * *`: 8,640 rows/day, ~3.2M/year, for
+an institution whose figures move on the timescale of a class period. The
+retention *schedule* was fixed in #401 (the 24-hour window was being pruned
+monthly, leaving 131,190 rows across 16 days). The **cadence** was left alone
+because it is a product decision about how "real-time" the dashboards need to be.
 
-**Note on the guards** (neither is the cause, but they surprise people reading
-the code): `ServiceWorkerRegister` deliberately skips when `NODE_ENV !==
-"production"` and when `navigator.webdriver` is true, the latter so service
-workers do not interfere with Playwright runs. Real browsers report
-`navigator.webdriver === false`, which was confirmed against production.
+**4. The pager speaks English.** `components/shared/pagination.tsx`, used by
+every `DataTable`, renders "Showing 1 to 10 of 14 results", "Rows per page" and
+"Page 1 of 1" in an otherwise Indonesian system. A copy/i18n decision, not a
+layout one, so it was left out of the mobile work.
+
+**5. Two people hold `*_KEPALA_SEKOLAH` in the same unit.** The 2026-08-14 email
+rename put two seed families side by side that had been hidden behind different
+domains, producing six transposed pairs. Some are one persona twice; others are
+genuinely two different people holding the same approval rights in one unit.
+That is an authority question for the yayasan, not a data-cleanup task. Prefer
+`is_active = false` over deletion so the audit trail survives.
+
+**6. `DEMO_MODE=true` is still set on production.** Every account skips the
+mandatory-2FA wall, including both active `SUPER_ADMIN`s, neither of which has
+2FA enrolled. Flipping it is part of launch, and it locks out testing until
+someone enrols — see the launch checklist rather than treating it as a bug.
+
 
 ## ✅ Resolved by this effort (2026-07-22)
 

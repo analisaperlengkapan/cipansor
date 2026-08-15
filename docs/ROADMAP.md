@@ -88,12 +88,20 @@ values that are *recorded* rather than displayed — the anonymous donor name an
 the bank details. Detail in `KNOWN_ISSUES.md`. **Live since the 2026-07-31
 deploy.**
 
-## 🟠 6. PWA install prompt never fires
+## 🟠 6. PWA install prompt — question moved hosts (#401, 2026-08-15)
 
-Every documented precondition verified correct on the live site; the event
-simply does not fire. Next step is Chrome DevTools → Application → Manifest →
-**Installability** on a real device, which states the reason directly. Leading
-suspect: the manifest's `"id": "/"`. Details in `KNOWN_ISSUES.md`.
+**No longer a defect on `cipansor.or.id`.** The apex deliberately ships no PWA
+now: `pwaEnabledForHost` withholds the manifest, the Apple web-app tags, the
+install script and the banner there, because `start_url` is the landing page and
+all three manifest shortcuts 404 on that host. Verified live after deploy — the
+apex serves none of the three, the portal serves all of them.
+
+**Still open on `portal.cipansor.or.id`**, where the app actually lives. Next
+step unchanged: Chrome DevTools → Application → Manifest → **Installability** on
+a real device, pointed at the portal. Two suspects, in order — Chrome's
+user-engagement threshold (a fresh Incognito window has zero engagement, so the
+test used to rule out a stale dismissal proved nothing), then the manifest's
+`"id": "/"`. Details in `KNOWN_ISSUES.md`.
 
 ## ✅ 7. Temporal data was stale — code fixed (#370), production data now current
 

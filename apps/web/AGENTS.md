@@ -99,6 +99,44 @@ e2e deterministic across engines (real users are unaffected); keep the manifest
 icons in sync if you regenerate them. See `docs/MOBILE_API.md` for the
 parent-app API contract.
 
+**The PWA belongs to the portal only.** `pwaEnabledForHost` in
+`lib/host-split.ts` gates the manifest, the Apple web-app tags, the
+`beforeinstallprompt` script and the install banner; `indexableHost` gates the
+robots meta the same way. Two rules that are easy to get wrong:
+
+- **Polarity.** Write it as "off on the public site", never "on for the portal".
+  `isPublicSiteHost` is false for localhost, so the inverted form silently
+  removes the PWA from `pnpm dev` and nobody can test the install flow.
+- **`ServiceWorkerRegister` still mounts where the PWA is off**, and there it
+  *unregisters*. A worker outlives the page that registered it, so merely not
+  registering leaves every earlier visitor behind a stale one forever.
+
+**One build serves two hosts, so everything in the root layout's `<head>` ships
+on both.** Anything host-specific must be built in an async `generateMetadata()`
+reading `headers()`, not declared as a static `metadata` export.
+
+## Responsive layout
+
+**`document.scrollWidth` does not reveal overflow in this app.** The app shell's
+`main.flex-1.overflow-auto` is a scroll container, so an over-wide toolbar
+scrolls *inside* `<main>` and the document width stays correct while content
+slides sideways under a stationary header. To find real breakage, walk each
+overflowing element's ancestors: a **local** scroller (the
+`div.relative.w-full.overflow-x-auto` around a table) is the correct pattern; a
+scroller that is `<main>`/`<body>` means the whole content area drags.
+
+- **Page headers** use
+  `flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between` with a
+  `flex flex-wrap gap-2` action row. This is a no-op at ≥640px by construction —
+  the `sm:` variants restore exactly the properties they replace.
+- **`truncate` needs `min-w-0` on _every_ flex ancestor**, not just the first. A
+  flex item defaults to `min-width: auto`, which resolves to its content's
+  min-content width, so one nested row without it keeps a card 227px too wide
+  while the `<span>` wears a `truncate` class that never fires.
+- **Never `justify-center` a flex row that can overflow.** It spills past both
+  edges and browsers cannot scroll to a negative offset, so the *first* item
+  becomes unreachable. `TabsList` uses `justify-start` for this reason.
+
 ## Build
 
 - `pnpm build` runs `next build`. `next.config.ts` does NOT ignore type/lint

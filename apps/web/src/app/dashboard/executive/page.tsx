@@ -15,11 +15,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRealtimeDashboard } from "@/hooks/use-realtime-dashboard";
+// AttendanceByUnit / EnrollmentTrend were imported only to type the hardcoded
+// fallback arrays that used to live below. With those gone the hook's own
+// return types carry the shape, so importing them again would be dead weight.
 import {
   useExecutiveDashboard,
   type ExecutiveAlert,
-  type AttendanceByUnit,
-  type EnrollmentTrend,
 } from "@/hooks/use-executive-dashboard";
 import {
   LineChart,
@@ -54,127 +55,31 @@ import { id as idLocale } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
-// Fallback mock data when API returns empty
-const fallbackEnrollmentTrend: EnrollmentTrend[] = [
-  {
-    month: "Jul",
-    year: 2025,
-    TK: 120,
-    SDIT: 250,
-    SMPIT: 180,
-    SMAQ: 95,
-    Pesantren: 65,
-    total: 710,
-  },
-  {
-    month: "Agt",
-    year: 2025,
-    TK: 125,
-    SDIT: 255,
-    SMPIT: 185,
-    SMAQ: 98,
-    Pesantren: 68,
-    total: 731,
-  },
-  {
-    month: "Sep",
-    year: 2025,
-    TK: 130,
-    SDIT: 260,
-    SMPIT: 188,
-    SMAQ: 100,
-    Pesantren: 70,
-    total: 748,
-  },
-  {
-    month: "Okt",
-    year: 2025,
-    TK: 135,
-    SDIT: 265,
-    SMPIT: 192,
-    SMAQ: 102,
-    Pesantren: 72,
-    total: 766,
-  },
-  {
-    month: "Nov",
-    year: 2025,
-    TK: 138,
-    SDIT: 268,
-    SMPIT: 195,
-    SMAQ: 105,
-    Pesantren: 75,
-    total: 781,
-  },
-  {
-    month: "Des",
-    year: 2025,
-    TK: 142,
-    SDIT: 272,
-    SMPIT: 198,
-    SMAQ: 108,
-    Pesantren: 78,
-    total: 798,
-  },
-];
-
-const fallbackAttendanceByUnit: AttendanceByUnit[] = [
-  {
-    unit: "TK",
-    unitId: "tk-1",
-    rate: 92,
-    present: 131,
-    absent: 8,
-    sick: 2,
-    excused: 1,
-    total: 142,
-    color: "#22c55e",
-  },
-  {
-    unit: "SDIT",
-    unitId: "sdit-1",
-    rate: 88,
-    present: 239,
-    absent: 20,
-    sick: 8,
-    excused: 5,
-    total: 272,
-    color: "#3b82f6",
-  },
-  {
-    unit: "SMPIT",
-    unitId: "smpit-1",
-    rate: 85,
-    present: 168,
-    absent: 18,
-    sick: 7,
-    excused: 5,
-    total: 198,
-    color: "#f59e0b",
-  },
-  {
-    unit: "SMAQ",
-    unitId: "smaq-1",
-    rate: 90,
-    present: 97,
-    absent: 6,
-    sick: 3,
-    excused: 2,
-    total: 108,
-    color: "#8b5cf6",
-  },
-  {
-    unit: "Pesantren",
-    unitId: "pesantren-1",
-    rate: 94,
-    present: 73,
-    absent: 3,
-    sick: 1,
-    excused: 1,
-    total: 78,
-    color: "#ec4899",
-  },
-];
+/**
+ * There is deliberately no fallback data here any more.
+ *
+ * Two hardcoded arrays used to stand in whenever the API returned nothing: an
+ * enrolment trend rising 710 -> 798 santri across TK/SDIT/SMPIT/SMAQ/Pesantren,
+ * and per-unit attendance of 88-95%. The database holds 14 students. So the page
+ * titled "Dashboard Eksekutif Yayasan" showed the board roughly fifty times the
+ * santri the yayasan has, and it looked entirely plausible — which is what made
+ * it dangerous rather than merely wrong.
+ *
+ * An empty dataset is information: it means nothing has been recorded yet. Say
+ * that. Inventing a plausible curve to fill the space converts "we do not know"
+ * into "here is the answer", on the one screen where that costs the most.
+ * Same defect as the teacher dashboard fixed in #383.
+ */
+function NoDataYet({ hint }: { hint: string }) {
+  return (
+    <div className="flex h-full flex-col items-center justify-center gap-1 text-center">
+      <p className="text-sm font-medium text-muted-foreground">
+        Belum ada data
+      </p>
+      <p className="max-w-xs text-xs text-muted-foreground/80">{hint}</p>
+    </div>
+  );
+}
 
 interface KPICardProps {
   title: string;
@@ -277,13 +182,9 @@ export default function ExecutiveDashboardPage() {
     },
   });
 
-  // Use real data or fallback
-  const displayEnrollmentTrend = enrollmentTrends?.length
-    ? enrollmentTrends
-    : fallbackEnrollmentTrend;
-  const displayAttendanceByUnit = attendanceByUnit?.length
-    ? attendanceByUnit
-    : fallbackAttendanceByUnit;
+  // Real data only. Empty stays empty — see NoDataYet above.
+  const displayEnrollmentTrend = enrollmentTrends ?? [];
+  const displayAttendanceByUnit = attendanceByUnit ?? [];
   const displayAlerts = alerts || [];
 
   return (
@@ -467,6 +368,9 @@ export default function ExecutiveDashboardPage() {
             </CardHeader>
             <CardContent className="pt-4">
               <div className="h-[350px]">
+                {displayEnrollmentTrend.length === 0 ? (
+                  <NoDataYet hint="Tren pendaftaran muncul setelah ada data penerimaan santri yang tercatat." />
+                ) : (
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart
                     data={displayEnrollmentTrend}
@@ -583,6 +487,7 @@ export default function ExecutiveDashboardPage() {
                     />
                   </AreaChart>
                 </ResponsiveContainer>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -597,6 +502,9 @@ export default function ExecutiveDashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="h-[300px]">
+                {displayAttendanceByUnit.length === 0 ? (
+                  <NoDataYet hint="Kehadiran per unit muncul setelah presensi hari ini dicatat." />
+                ) : (
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
                     data={displayAttendanceByUnit}
@@ -640,6 +548,7 @@ export default function ExecutiveDashboardPage() {
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
+                )}
               </div>
             </CardContent>
           </Card>

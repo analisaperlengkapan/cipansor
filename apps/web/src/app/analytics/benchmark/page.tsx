@@ -374,7 +374,7 @@ export default function BenchmarkPage() {
           <TabsContent value="rankings">
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <CardTitle>Peringkat Unit</CardTitle>
                   <Select
                     value={selectedMetric}

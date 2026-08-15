@@ -101,7 +101,7 @@ function AnalyticsPageContent() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           {/* Was "Analitik & Laporan", which claimed a job /reports already
               does. The three Overview pages now have one role each: Dashboard
@@ -112,7 +112,7 @@ function AnalyticsPageContent() {
             Tren dan perbandingan lintas periode
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Select
             value={timeRange}
             onValueChange={(v) => setTimeRange(v as TimeRange)}

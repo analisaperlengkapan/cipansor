@@ -60,6 +60,41 @@ export const config = {
     origins: parseCorsOrigins(process.env.CORS_ORIGIN || 'http://localhost:3000'),
   },
 
+  /**
+   * Where the *public* site lives — the host that answers without a session.
+   *
+   * Anything printed on paper or handed to an outsider belongs here: the QR on
+   * a sanad certificate is scanned by a dinas office or a prospective employer,
+   * neither of whom has an account.
+   *
+   * NAMED FOR THE HOST, not the app. The variable this replaces was `APP_URL`,
+   * which since the two-host split names nothing in particular — and the code
+   * showed it: four call sites, four different guesses, none of them right.
+   * `https://cipansor.app` (twice), `https://cipansor.com`, and
+   * `http://localhost:3000` all shipped to production as fallbacks, because
+   * APP_URL was never set in `.env` or in the compose `environment:` block, so
+   * every default was live. Two of those domains are not ours.
+   *
+   * A trailing slash is stripped so callers can append an absolute path
+   * without producing a double slash.
+   */
+  publicSiteUrl: (process.env.PUBLIC_SITE_URL || 'https://cipansor.or.id').replace(/\/+$/, ''),
+
+  /**
+   * Where the application lives — the host that requires a session.
+   *
+   * Separate from `publicSiteUrl` because since the two-host split they are
+   * genuinely different machines' worth of routing, and picking the wrong one
+   * is silent: a link to the portal handed to an outsider becomes a login
+   * screen, and a link to the apex handed to staff becomes a 404.
+   *
+   * The one legitimate use is a QR meant to be scanned by someone who is
+   * already signed in — an asset label read by staff during stock opname. That
+   * QR previously resolved to `http://localhost:3000/inventory/<id>`, which is
+   * every printed label pointing at the scanner's own phone.
+   */
+  portalUrl: (process.env.PORTAL_URL || 'https://portal.cipansor.or.id').replace(/\/+$/, ''),
+
   rateLimit: {
     windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '60000', 10),
     maxRequests: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100', 10),

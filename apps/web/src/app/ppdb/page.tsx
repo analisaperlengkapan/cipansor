@@ -158,7 +158,7 @@ export default function PPDBPage() {
                             <Icon className={`h-6 w-6 ${item.color}`} />
                           </div>
                           <div className="flex-1">
-                            <div className="flex items-center justify-between">
+                            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                               <CardTitle className="text-lg">
                                 {item.title}
                               </CardTitle>

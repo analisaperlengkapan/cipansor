@@ -1,0 +1,47 @@
+import { describe, it, expect } from 'vitest';
+import { certificateVerificationUrl } from './verification-url';
+import { config } from '../config';
+
+/**
+ * This helper exists because four call sites each invented their own answer and
+ * every one of them shipped to production wrong — two of them on domains the
+ * yayasan does not own. So the tests worth having are not "does it concatenate
+ * strings", they are the four properties that were actually violated.
+ */
+describe('certificateVerificationUrl', () => {
+  it('points at a host we own', () => {
+    const url = certificateVerificationUrl('CERT-TFZ-30-2024001');
+    const { hostname } = new URL(url);
+    expect(hostname.endsWith('cipansor.or.id')).toBe(true);
+    // The two that actually shipped.
+    expect(url).not.toContain('cipansor.app');
+    expect(url).not.toContain('cipansor.com');
+  });
+
+  it('points at the page that exists, not the one behind the login wall', () => {
+    const url = certificateVerificationUrl('X');
+    expect(new URL(url).pathname).toBe('/public/verify-sanad');
+    // `/verify` has never been a route here; `/certificates/verify/<code>`
+    // exists but answers 307 to /login, which is useless to a dinas office.
+    expect(new URL(url).pathname).not.toMatch(/^\/verify\b/);
+    expect(new URL(url).pathname).not.toContain('/certificates/');
+  });
+
+  it('identifies the certificate, so the scanner does not retype it', () => {
+    // The sanad URL used to be the bare page for every certificate ever issued.
+    const url = certificateVerificationUrl('CERT-TFZ-30-2024001');
+    expect(new URL(url).searchParams.get('code')).toBe('CERT-TFZ-30-2024001');
+  });
+
+  it('encodes a number that would otherwise break the query string', () => {
+    const url = certificateVerificationUrl('CERT/2026 #7&x');
+    expect(new URL(url).searchParams.get('code')).toBe('CERT/2026 #7&x');
+  });
+
+  it('does not double the slash when the configured base has a trailing one', () => {
+    // config strips it; asserted here because the bug only shows up in the
+    // joined string, which is what gets printed on paper.
+    expect(config.publicSiteUrl.endsWith('/')).toBe(false);
+    expect(certificateVerificationUrl('X')).not.toContain('.id//');
+  });
+});

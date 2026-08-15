@@ -37,9 +37,24 @@ export function Pagination({
   const startItem = (page - 1) * pageSize + 1;
   const endItem = Math.min(page * pageSize, total);
 
+  /**
+   * Stacked on a phone, side by side from `sm:` up.
+   *
+   * The two halves together need roughly 440px — the summary text and the page
+   * size selector on one side, five controls and "Page n of m" on the other —
+   * and a phone gives 390. Laid out in a single row they did not wrap or clip:
+   * they pushed sideways into the app shell's scrollable `<main>`, leaving the
+   * next/last buttons off-screen while the page itself looked perfectly normal.
+   * A pager whose "next" button is not on screen is a table that ends at row 10.
+   *
+   * `flex-wrap` on the inner groups rather than a fixed second breakpoint, so
+   * this also survives the long form ("Showing 91 to 100 of 1.204 results") and
+   * a 320px screen, neither of which a hand-picked breakpoint would have
+   * covered.
+   */
   return (
-    <div className="flex items-center justify-between px-2 py-4">
-      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+    <div className="flex flex-col items-center justify-between gap-3 px-2 py-4 sm:flex-row sm:gap-4">
+      <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
         <span>
           Showing {startItem} to {endItem} of {total} results
         </span>
@@ -65,7 +80,7 @@ export function Pagination({
         )}
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex shrink-0 items-center gap-2">
         <Button
           variant="outline"
           size="icon"

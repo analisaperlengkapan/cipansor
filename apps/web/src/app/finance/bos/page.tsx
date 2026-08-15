@@ -349,14 +349,14 @@ export default function BosPage() {
         {/* Filters */}
         <Card>
           <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <CardTitle className="text-lg">Filter Data</CardTitle>
                 <CardDescription>
                   Pilih unit dan periode untuk melihat data BOS
                 </CardDescription>
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <Button variant="outline" size="sm" onClick={handleRefresh}>
                   <RefreshCw className="h-4 w-4 mr-2" />
                   Refresh
@@ -788,8 +788,8 @@ export default function BosPage() {
             <TabsContent value="compliance" className="space-y-4">
               <Card>
                 <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex flex-wrap items-center gap-2">
                       {validation?.isCompliant ? (
                         <CheckCircle2 className="h-5 w-5 text-green-600" />
                       ) : (

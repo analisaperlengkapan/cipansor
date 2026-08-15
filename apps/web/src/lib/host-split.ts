@@ -67,6 +67,57 @@ export function isPublicSiteHost(host: string | null | undefined): boolean {
   return name === PUBLIC_HOST || name === `www.${PUBLIC_HOST}`;
 }
 
+/**
+ * Whether this host should ship the PWA — manifest, service worker, install
+ * banner.
+ *
+ * One build serves both hosts, so anything in the root layout's `<head>` is
+ * emitted on the marketing site too unless it is asked to stop. Before this,
+ * the apex advertised itself as an installable app: `<link rel="manifest">` on
+ * every page, `/sw.js` registered on first visit, and a floating "Pasang
+ * aplikasi Cipansor" banner shown to prospective parents reading /profil.
+ *
+ * Three reasons that is wrong, in order of how much they cost:
+ *
+ *  1. What gets installed is the brochure. `start_url` is "/", which on the
+ *     apex is the landing page, and all three manifest `shortcuts` — /dashboard,
+ *     /attendance, /students — answer 404 there. The visitor installs an icon
+ *     that opens a website and a menu of three dead links.
+ *  2. Sessions do not cross hosts (see the note at the top of this file), so an
+ *     app installed from the apex could never sign anyone in even if the routes
+ *     existed. The application is at portal.cipansor.or.id; that is the only
+ *     origin where an installed app means anything.
+ *  3. sw.js intercepts navigations and serves static assets cache-first. On the
+ *     marketing site — the one Google's reviewers actually visit — that puts a
+ *     cache in front of the pages whose freshness we are being judged on.
+ *
+ * NOTE THE POLARITY. This is "off on the public site", not "on for the portal".
+ * `isPublicSiteHost` is deliberately false for localhost and previews, so the
+ * PWA keeps working in `pnpm dev` and anywhere else; only the two marketing
+ * names turn it off. Written the other way round, every developer would lose
+ * the ability to test the install flow locally.
+ */
+export function pwaEnabledForHost(host: string | null | undefined): boolean {
+  return !isPublicSiteHost(host);
+}
+
+/**
+ * Whether search engines should index this host.
+ *
+ * The public site is the whole point of being indexed. The portal is a sign-in
+ * screen guarding an internal system: indexing it duplicates nothing useful and
+ * puts the staff login form in search results next to the pesantren's own
+ * pages. middleware.ts already calls the portal "a noindex host" in a comment
+ * explaining why "/" is not rendered there — this is the code that makes the
+ * comment true.
+ *
+ * Same polarity argument as above: unknown hosts (localhost, previews) are
+ * indexable here, which costs nothing because nothing crawls them.
+ */
+export function indexableHost(host: string | null | undefined): boolean {
+  return !isPortalHost(host);
+}
+
 /** Matches on segment boundaries, so "/unit" never also grants "/units". */
 function underPublicPrefix(pathname: string): boolean {
   return PUBLIC_PATH_PREFIXES.some(

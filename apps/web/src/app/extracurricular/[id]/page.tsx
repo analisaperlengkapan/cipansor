@@ -475,7 +475,7 @@ export default function ExtracurricularDetailPage() {
           {/* Approved Members */}
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <CardTitle>
                   Daftar Anggota ({approvedEnrollments.length})
                 </CardTitle>
@@ -558,7 +558,7 @@ export default function ExtracurricularDetailPage() {
         <TabsContent value="attendance" className="space-y-6">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <CardTitle>Absensi Kegiatan</CardTitle>
                 <Button>
                   <ClipboardCheck className="h-4 w-4 mr-2" />
@@ -581,7 +581,7 @@ export default function ExtracurricularDetailPage() {
         <TabsContent value="achievements" className="space-y-6">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <CardTitle>Prestasi ({achievements.length})</CardTitle>
                 <Button>
                   <Plus className="h-4 w-4 mr-2" />

@@ -91,8 +91,8 @@ function MealCard({ menu, mealType }: { menu?: MealMenu; mealType: MealType }) {
   return (
     <Card className={`${menu ? MEAL_COLORS[mealType] : "bg-gray-50"} border`}>
       <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-wrap items-center gap-2">
             {MEAL_ICONS[mealType]}
             <CardTitle className="text-base">
               {MEAL_TYPE_LABELS[mealType]}

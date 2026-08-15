@@ -215,7 +215,7 @@ export default function EmisPage() {
         {/* Unit Selector */}
         <Card>
           <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <CardTitle className="text-lg">Pilih Unit</CardTitle>
                 <CardDescription>
@@ -396,7 +396,7 @@ export default function EmisPage() {
             <TabsContent value="validation" className="space-y-4">
               <Card>
                 <CardHeader>
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <CardTitle className="flex items-center gap-2">
                         {validation?.isReady ? (

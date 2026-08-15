@@ -152,7 +152,7 @@ export default function AccreditationPage() {
     <MainLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">
               Evaluasi Diri Akreditasi
@@ -323,8 +323,8 @@ export default function AccreditationPage() {
               {standards?.map((std) => (
                 <Card key={std.code}>
                   <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="flex flex-wrap items-center gap-3">
                         <div className="p-2 bg-primary/10 rounded-lg">
                           {SNP_ICONS[std.code]}
                         </div>

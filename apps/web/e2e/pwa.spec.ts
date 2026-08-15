@@ -3,6 +3,14 @@ import { test, expect } from "@playwright/test";
 // Verifies the app is a functioning installable PWA: the manifest, its icons,
 // the service worker, and the offline fallback are all served and well-formed,
 // and the manifest is linked from the document head.
+//
+// These run against localhost, where the PWA is deliberately ON — see
+// `pwaEnabledForHost` in src/lib/host-split.ts. Only the two public-site names
+// switch it off, so the *absence* of the manifest on cipansor.or.id cannot be
+// asserted from a single-origin e2e run; that half is covered by the unit tests
+// in src/lib/host-split.test.ts and re-checked against the live hosts after
+// deploy. If this file ever starts failing with a missing manifest, check
+// whether the polarity of that predicate was inverted.
 test.describe("PWA assets", () => {
   test("serves a valid web app manifest with resolvable icons", async ({
     request,

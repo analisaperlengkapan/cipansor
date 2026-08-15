@@ -386,8 +386,8 @@ export default function MarketingDashboard() {
           {highPriorityLeads && highPriorityLeads.length > 0 && (
             <Card className="border-l-4 border-l-orange-500">
               <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex flex-wrap items-center gap-2">
                     <Target className="w-5 h-5 text-orange-500" />
                     <CardTitle>Prioritas Tindak Lanjut</CardTitle>
                   </div>
@@ -771,14 +771,14 @@ export default function MarketingDashboard() {
         <TabsContent value="campaigns" className="space-y-4">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <CardTitle>Daftar Kampanye</CardTitle>
                   <CardDescription>
                     Kelola semua kampanye marketing
                   </CardDescription>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <div className="relative">
                     <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input

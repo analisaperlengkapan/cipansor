@@ -241,7 +241,7 @@ function ReportsPageContent() {
   return (
     <div className="container mx-auto py-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Laporan</h1>
           <p className="text-muted-foreground">
@@ -313,8 +313,8 @@ function ReportsPageContent() {
               {/* Selected Report Info */}
               <Card>
                 <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex flex-wrap items-center gap-3">
                       {(() => {
                         const report = EXPORT_REPORT_TYPES.find(
                           (r) => r.type === selectedReport,
@@ -537,7 +537,7 @@ function ReportsPageContent() {
               {currentReportData && (
                 <Card>
                   <CardHeader>
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                       <div>
                         <CardTitle>Hasil Laporan</CardTitle>
                         <CardDescription>

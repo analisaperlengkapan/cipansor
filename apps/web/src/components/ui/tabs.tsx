@@ -18,6 +18,23 @@ function Tabs({
   );
 }
 
+/**
+ * `max-w-full overflow-x-auto` because a tab bar is sized by its labels, and on
+ * a phone the labels routinely add up to more than the screen. Settings has
+ * five — Tampilan, Notifikasi, Profil, Akun, Tentang — measuring 442px inside a
+ * 390px viewport. Without a scroller of its own the row pushed sideways against
+ * the app shell's `main.overflow-auto`, so "Tentang" was only reachable by
+ * dragging the entire page horizontally. The page had no visible overflow, which
+ * is why this survived: the document width stayed correct while a tab quietly
+ * sat off-screen.
+ *
+ * `justify-start`, not `justify-center`, and that is the load-bearing half. A
+ * centred flex row that overflows spills past BOTH edges, and browsers cannot
+ * scroll to negative offsets — so the first tab becomes permanently
+ * unreachable, which is worse than the problem being fixed. With `w-fit` the box
+ * already hugs its content, so nothing moves in the common case where the tabs
+ * do fit.
+ */
 function TabsList({
   className,
   ...props
@@ -26,7 +43,7 @@ function TabsList({
     <TabsPrimitive.List
       data-slot="tabs-list"
       className={cn(
-        "bg-muted text-muted-foreground inline-flex h-9 w-fit items-center justify-center rounded-lg p-[3px]",
+        "bg-muted text-muted-foreground inline-flex h-9 w-fit max-w-full items-center justify-start overflow-x-auto rounded-lg p-[3px]",
         className,
       )}
       {...props}

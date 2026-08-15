@@ -6176,8 +6176,12 @@ async function main() {
         title: 'Sertifikat Tahfidz Juz 30',
         description: 'Diberikan atas keberhasilan menyelesaikan hafalan Al-Qur\'an Juz 30.',
         certificateNumber: 'CERT-TFZ-30-2024001',
-        qrCode: 'https://cipansor.or.id/verify/CERT-TFZ-30-2024001',
-        verificationUrl: 'https://cipansor.or.id/verify/CERT-TFZ-30-2024001',
+        // Right domain, wrong path: `/verify/<number>` has never been a route
+        // here. Seed rows are what the certificates screen renders on a fresh
+        // database, so a dead link seeded in is a dead link demonstrated.
+        qrCode: 'CERT-TFZ-30-2024001',
+        verificationUrl:
+          'https://cipansor.or.id/public/verify-sanad?code=CERT-TFZ-30-2024001',
         grade: 'MUMTAZ',
         issueDate: new Date('2024-10-15'),
         signatoryName: 'KH. Abdullah Syukur',

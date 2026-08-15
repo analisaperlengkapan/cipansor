@@ -189,7 +189,7 @@ export default function EnrollmentDetailPage({
           </Link>
         </Button>
 
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-bold">
               {enrollment.student?.user.name || "Santri Takhosus"}
@@ -198,7 +198,7 @@ export default function EnrollmentDetailPage({
               {enrollment.halaqoh?.name} • {enrollment.halaqoh?.code}
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button variant="outline" asChild>
               <Link href={`/takhosus/enrollment/${id}/edit`}>
                 <Pencil className="h-4 w-4 mr-2" />

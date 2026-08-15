@@ -15,7 +15,7 @@ export function TahfidzProgressChart({ data }: TahfidzProgressChartProps) {
   return (
     <Card className="shadow-sm border-emerald-100 overflow-hidden">
       <CardHeader className="bg-emerald-50/50 border-b pb-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <CardTitle className="text-lg flex items-center gap-2 text-emerald-800">
               <Medal className="h-5 w-5" />

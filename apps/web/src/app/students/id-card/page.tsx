@@ -47,58 +47,40 @@ import {
   Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { QRCodeSVG } from "qrcode.react";
 
-// Simple QR Code component using SVG
-function SimpleQRCode({ value, size = 48 }: { value: string; size?: number }) {
-  // Create a simple pattern based on the value hash
-  const hashCode = (str: string) => {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-      const char = str.charCodeAt(i);
-      hash = (hash << 5) - hash + char;
-      hash = hash & hash;
-    }
-    return Math.abs(hash);
-  };
-
-  const hash = hashCode(value);
-  const pattern: boolean[][] = [];
-  const gridSize = 7;
-
-  for (let i = 0; i < gridSize; i++) {
-    pattern[i] = [];
-    for (let j = 0; j < gridSize; j++) {
-      // Create a pseudo-random pattern
-      const bit = ((hash >> ((i * gridSize + j) % 32)) & 1) === 1;
-      pattern[i][j] = bit;
-    }
-  }
-
-  // Always fill corners for QR-like appearance
-  pattern[0][0] = pattern[0][1] = pattern[1][0] = pattern[1][1] = true;
-  pattern[0][5] = pattern[0][6] = pattern[1][5] = pattern[1][6] = true;
-  pattern[5][0] = pattern[5][1] = pattern[6][0] = pattern[6][1] = true;
-
-  const cellSize = size / gridSize;
-
+/**
+ * The QR printed on a student card.
+ *
+ * What stood here was not a QR code. It hashed the value with a 32-bit string
+ * hash, laid 49 pseudo-random cells into a 7×7 grid, and then — in its own
+ * words — filled the corners "for QR-like appearance". No scanner could read
+ * it, because there was nothing encoded to read. Cards were being printed with
+ * a decorative checkerboard where the machine-readable part belongs.
+ *
+ * `qrcode.react` was already a dependency of this app and simply unused here.
+ *
+ * It encodes the NIS alone, deliberately. The old payload was a JSON object
+ * carrying nis, name, unit and year — around 90 characters, which forces a
+ * version-6 symbol of 41×41 modules. At the 48px this card allots (roughly
+ * 12mm on an ID-1 card) that is about 0.3mm per module: below what a phone
+ * camera resolves, so a "real" QR at that size would still have been
+ * unscannable, just honestly so. The NIS fits in a version-1 symbol at 21×21,
+ * and it is the identifier staff can act on — the name and unit are already
+ * printed in plain text beside it.
+ */
+function StudentQRCode({ value, size = 48 }: { value: string; size?: number }) {
   return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-      <rect width={size} height={size} fill="white" />
-      {pattern.map((row, i) =>
-        row.map((cell, j) =>
-          cell ? (
-            <rect
-              key={`${i}-${j}`}
-              x={j * cellSize}
-              y={i * cellSize}
-              width={cellSize}
-              height={cellSize}
-              fill="black"
-            />
-          ) : null,
-        ),
-      )}
-    </svg>
+    <QRCodeSVG
+      value={value}
+      size={size}
+      // Cards get handled, folded into wallets and photocopied; M recovers ~15%
+      // of a damaged symbol and still fits the NIS in the smallest version.
+      level="M"
+      // The quiet zone is part of the spec, not decoration — without it a
+      // scanner cannot find the symbol against the card's white patch.
+      marginSize={2}
+    />
   );
 }
 
@@ -119,13 +101,6 @@ function StudentIDCard({
     .join("")
     .substring(0, 2)
     .toUpperCase();
-
-  const cardData = JSON.stringify({
-    nis: student.nis,
-    name: student.name,
-    unit: unitName || student.unit?.name,
-    valid: new Date().getFullYear(),
-  });
 
   return (
     <div
@@ -195,7 +170,7 @@ function StudentIDCard({
 
         {/* QR Code */}
         <div className="shrink-0 bg-white p-1 rounded">
-          <SimpleQRCode value={cardData} size={48} />
+          <StudentQRCode value={student.nis} size={48} />
         </div>
       </div>
 
@@ -450,7 +425,7 @@ export default function StudentIDCardPage() {
             {/* Student List */}
             <Card>
               <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <CardTitle className="text-lg flex items-center gap-2">
                     <Users className="h-5 w-5" />
                     Daftar Siswa

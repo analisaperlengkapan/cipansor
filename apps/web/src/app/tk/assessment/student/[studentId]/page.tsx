@@ -220,7 +220,7 @@ export default function StudentProgressDashboardPage() {
                 return (
                   <Card key={aspect} className="overflow-hidden">
                     <CardHeader className="pb-2">
-                      <div className="flex items-center justify-between">
+                      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                         <CardTitle className="text-sm font-medium">
                           {aspect}
                         </CardTitle>

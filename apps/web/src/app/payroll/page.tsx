@@ -419,14 +419,14 @@ function PayrollPageContent() {
         <TabsContent value="periods" className="space-y-4">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <CardTitle>Periode Penggajian</CardTitle>
                   <CardDescription>
                     Kelola periode penggajian bulanan
                   </CardDescription>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <Select
                     value={periodFilters.year}
                     onValueChange={(v) =>
@@ -570,7 +570,7 @@ function PayrollPageContent() {
         <TabsContent value="slips" className="space-y-4">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <CardTitle>Slip Gaji</CardTitle>
                   <CardDescription>
@@ -735,7 +735,7 @@ function PayrollPageContent() {
         <TabsContent value="employees" className="space-y-4">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <CardTitle>Pengaturan Gaji Karyawan</CardTitle>
                   <CardDescription>
@@ -827,14 +827,14 @@ function PayrollPageContent() {
         <TabsContent value="components" className="space-y-4">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <CardTitle>Komponen Gaji</CardTitle>
                   <CardDescription>
                     Kelola tunjangan dan potongan gaji
                   </CardDescription>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <Button variant="outline" onClick={handleSeedComponents}>
                     <RefreshCw className="mr-2 h-4 w-4" />
                     Seed Default

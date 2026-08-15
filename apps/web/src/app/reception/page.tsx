@@ -657,7 +657,7 @@ export default function ReceptionDashboardPage() {
         <TabsContent value="guests" className="space-y-4">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <CardTitle>Buku Tamu</CardTitle>
                   <CardDescription>
@@ -748,7 +748,7 @@ export default function ReceptionDashboardPage() {
         <TabsContent value="visits" className="space-y-4">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <CardTitle>Kunjungan Wali Santri</CardTitle>
                   <CardDescription>
@@ -835,7 +835,7 @@ export default function ReceptionDashboardPage() {
         <TabsContent value="packages" className="space-y-4">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <CardTitle>Penerimaan Paket</CardTitle>
                   <CardDescription>Daftar paket santri</CardDescription>

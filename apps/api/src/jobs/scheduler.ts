@@ -78,9 +78,24 @@ export function initializeScheduler(): void {
   scheduledTasks.push(weeklySummaryTask);
   logger.info('[Scheduler] Weekly summary job scheduled at 02:00 WIB on Sundays');
 
-  // Cleanup old snapshots - Run at 3:00 AM on the 1st of each month
+  // Cleanup - daily at 3:00 AM.
+  //
+  // Was monthly ('0 3 1 * *'), which contradicted the policy it enforces:
+  // cleanupOldSnapshots prunes dashboard_history to the **last 24 hours**, and a
+  // table written every minute cannot be held to a 24-hour window by a job that
+  // runs once every 30 days. Production showed exactly that — 131,190 rows
+  // spanning 16 days where the retention rule allows about 8,600.
+  //
+  // Daily is the smallest change that makes the two agree. It is safe for the
+  // other half of the job: snapshots keep 365 days, and pruning a 365-day window
+  // more often simply deletes fewer rows each time.
+  //
+  // The write rate itself is a separate question, deliberately left alone here:
+  // aggregateDashboardMetrics runs every minute and writes 6 rows per run —
+  // 8,640 a day, ~3.2M a year — for an institution whose figures move on the
+  // timescale of a class period. That is a product decision, not a bug fix.
   const cleanupTask = cron.schedule(
-    '0 3 1 * *',
+    '0 3 * * *',
     async () => {
       logger.info('[Scheduler] Running cleanup job');
       try {
@@ -94,7 +109,7 @@ export function initializeScheduler(): void {
     }
   );
   scheduledTasks.push(cleanupTask);
-  logger.info('[Scheduler] Cleanup job scheduled at 03:00 WIB on the 1st of each month');
+  logger.info('[Scheduler] Cleanup job scheduled daily at 03:00 WIB');
 
   // Auto-Billing - Run at 4:00 AM on the 1st of each month
   const autoBillingTask = cron.schedule(

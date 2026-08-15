@@ -44,6 +44,7 @@ import {
 } from "@/hooks/use-permits";
 import { useStudents } from "@/hooks/use-students";
 
+import { MainLayout } from "@/components/layout";
 const formSchema = z.object({
   studentId: z.string().min(1, "Santri wajib dipilih"),
   permitType: z.string().min(1, "Jenis izin wajib dipilih"),
@@ -56,7 +57,7 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
-export default function EditPermitPage() {
+function EditPermitPageContent() {
   const params = useParams();
   const router = useRouter();
   const permitId = params.id as string;
@@ -419,5 +420,13 @@ export default function EditPermitPage() {
         </form>
       </Form>
     </div>
+  );
+}
+
+export default function EditPermitPage() {
+  return (
+    <MainLayout>
+      <EditPermitPageContent />
+    </MainLayout>
   );
 }

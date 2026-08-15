@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
+import { MainLayout } from "@/components/layout";
 import {
   useRewardType,
   useUpdateRewardType,
@@ -52,7 +53,7 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
-export default function EditRewardTypePage() {
+function EditRewardTypePageContent() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
@@ -261,5 +262,13 @@ export default function EditRewardTypePage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function EditRewardTypePage() {
+  return (
+    <MainLayout>
+      <EditRewardTypePageContent />
+    </MainLayout>
   );
 }

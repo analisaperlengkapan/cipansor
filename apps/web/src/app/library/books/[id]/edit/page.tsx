@@ -34,6 +34,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { MainLayout } from "@/components/layout";
 import {
   useBook,
   useUpdateBook,
@@ -72,7 +73,7 @@ const bookSchema = z.object({
 
 type BookFormData = z.infer<typeof bookSchema>;
 
-export default function EditBookPage({
+function EditBookPageContent({
   params,
 }: {
   params: Promise<{ id: string }>;
@@ -415,5 +416,13 @@ export default function EditBookPage({
         </form>
       </Form>
     </div>
+  );
+}
+
+export default function EditBookPage(props: Parameters<typeof EditBookPageContent>[0]) {
+  return (
+    <MainLayout>
+      <EditBookPageContent {...props} />
+    </MainLayout>
   );
 }

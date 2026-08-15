@@ -49,13 +49,14 @@ import {
 import { RiskLevelBadge } from "@/components/risk/risk-badges";
 import Link from "next/link";
 import { ActivityDialog } from "./activity-dialog";
+import { MainLayout } from "@/components/layout";
 import {
   IndicatorRow,
   ActivityCard,
   FundingSection,
 } from "./plan-sections";
 
-export default function PerencanaanDetailPage() {
+function PerencanaanDetailPageContent() {
   const params = useParams();
   const router = useRouter();
   const planId = params.id as string;
@@ -701,5 +702,13 @@ export default function PerencanaanDetailPage() {
         />
       )}
     </div>
+  );
+}
+
+export default function PerencanaanDetailPage() {
+  return (
+    <MainLayout>
+      <PerencanaanDetailPageContent />
+    </MainLayout>
   );
 }

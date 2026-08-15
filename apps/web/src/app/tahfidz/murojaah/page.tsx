@@ -45,6 +45,7 @@ import {
   XCircle,
   Clock,
   AlertTriangle,
+  CalendarDays,
 } from "lucide-react";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
@@ -280,13 +281,27 @@ export default function MurojaahListPage() {
           title="Murojaah Al-Qur'an"
           description="Kelola catatan murojaah (pengulangan) hafalan santri"
           actions={
-            <Button
-              onClick={() => router.push("/tahfidz/murojaah/new")}
-              className="transition-all hover:shadow-md hover:-translate-y-0.5"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Tambah Murojaah
-            </Button>
+            <>
+              {/*
+                "Jadwal Murojaah" is a built, working page that no menu listed
+                and nothing linked to — it could only be opened by typing the
+                URL. This hub is where someone managing murojaah already is.
+              */}
+              <Button
+                variant="outline"
+                onClick={() => router.push("/tahfidz/murojaah/schedule")}
+              >
+                <CalendarDays className="mr-2 h-4 w-4" />
+                Jadwal Murojaah
+              </Button>
+              <Button
+                onClick={() => router.push("/tahfidz/murojaah/new")}
+                className="transition-all hover:shadow-md hover:-translate-y-0.5"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Tambah Murojaah
+              </Button>
+            </>
           }
         />
 

@@ -35,6 +35,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { MainLayout } from "@/components/layout";
 import {
   useFoundationDocument,
   useUpdateFoundationDocument,
@@ -63,7 +64,7 @@ interface PageProps {
   params: Promise<{ id: string }>;
 }
 
-export default function EditDocumentPage({ params }: PageProps) {
+function EditDocumentPageContent({ params }: PageProps) {
   const { id: documentId } = use(params);
   const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
@@ -372,5 +373,13 @@ export default function EditDocumentPage({ params }: PageProps) {
         </form>
       </Form>
     </div>
+  );
+}
+
+export default function EditDocumentPage(props: Parameters<typeof EditDocumentPageContent>[0]) {
+  return (
+    <MainLayout>
+      <EditDocumentPageContent {...props} />
+    </MainLayout>
   );
 }

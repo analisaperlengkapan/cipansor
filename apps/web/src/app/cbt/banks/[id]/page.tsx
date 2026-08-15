@@ -50,6 +50,7 @@ import {
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { MainLayout } from "@/components/layout";
 import {
   ArrowLeft,
   BookOpen,
@@ -77,7 +78,7 @@ const questionSchema = z.object({
   explanation: z.string().optional(),
 });
 
-export default function ExamBankDetailPage() {
+function ExamBankDetailPageContent() {
   const params = useParams();
   const router = useRouter();
   const bankId = params.id as string;
@@ -642,5 +643,13 @@ export default function ExamBankDetailPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function ExamBankDetailPage() {
+  return (
+    <MainLayout>
+      <ExamBankDetailPageContent />
+    </MainLayout>
   );
 }

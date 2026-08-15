@@ -31,6 +31,7 @@ import { format, startOfWeek, addDays, isSameDay } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 import Link from "next/link";
 
+import { MainLayout } from "@/components/layout";
 // Types
 interface MurojaahScheduleItem {
   id: string;
@@ -161,7 +162,7 @@ function DayColumn({ daySchedule }: { daySchedule: DaySchedule }) {
   );
 }
 
-export default function MurojaahSchedulePage() {
+function MurojaahSchedulePageContent() {
   const [currentWeekStart, setCurrentWeekStart] = useState(() =>
     startOfWeek(new Date(), { weekStartsOn: 1 }),
   );
@@ -371,5 +372,13 @@ export default function MurojaahSchedulePage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function MurojaahSchedulePage() {
+  return (
+    <MainLayout>
+      <MurojaahSchedulePageContent />
+    </MainLayout>
   );
 }

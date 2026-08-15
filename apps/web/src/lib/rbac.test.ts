@@ -311,10 +311,31 @@ describe("navigation — every app page is reachable from some menu", () => {
     "/ppdb": "legacy duplicate of /admissions, pending the SPMB route rename",
     "/ppdb/registrations":
       "legacy duplicate of /admissions, pending the SPMB route rename",
+    "/hr/talenta/succession":
+      "standalone copy of the Succession Planning tab already on /hr/talenta; " +
+      "kept only for links already sent out, and a deletion candidate",
   };
 
   /** Reached from a list page's action button, never from a menu. */
   const ACTION_PAGE = /\/(new|create|edit|generate|bulk|check-in)$/;
+
+  /**
+   * Routes some page links to directly, via `href="/x"` or `router.push("/x")`.
+   *
+   * Without this the test equates "reachable" with "close to a menu entry" —
+   * a menu href, or the child of one. That misses a page whose hub links to it
+   * from two levels down, which is how /tahfidz/murojaah/schedule was reported
+   * as orphaned after its hub grew a button pointing at it.
+   */
+  const linkedFrom = (route: string): boolean =>
+    appPages().some(({ route: from, file }) => {
+      if (from === route) return false; // a page linking to itself proves nothing
+      const src = fs.readFileSync(file, "utf8");
+      const target = route.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      return new RegExp(
+        `(?:href=|router\\.(?:push|replace)\\()\\s*\\{?["'\`]${target}["'\`]`,
+      ).test(src);
+    });
 
   function appPages(): Array<{ route: string; file: string }> {
     const found: Array<{ route: string; file: string }> = [];
@@ -352,13 +373,15 @@ describe("navigation — every app page is reachable from some menu", () => {
       .filter(({ route }) => !menuHrefs.has(route.slice(0, route.lastIndexOf("/")) || "/"))
       // only pages that render the authenticated shell are menu candidates
       .filter(({ file }) => fs.readFileSync(file, "utf8").includes("MainLayout"))
+      // ...or a page links straight to it, menu or no menu
+      .filter(({ route }) => !linkedFrom(route))
       .map(({ route }) => route);
 
     expect(orphans).toEqual([]);
   });
 });
 
-describe("navigation — every menu-reachable page renders the app shell", () => {
+describe("navigation — every page renders the app shell", () => {
   // `MainLayout` supplies the sidebar, the header (profile menu + logout) and
   // `ProtectedRoute`. 50 pages a user could actually reach rendered none of it:
   // they opened as a bare div with no way back out except the browser's back
@@ -382,7 +405,12 @@ describe("navigation — every menu-reachable page renders the app shell", () =>
     return [...block[1].matchAll(/"([^"]+)"/g)].map((m) => m[1]);
   })();
 
+  // `/public/*` never reaches the list above: middleware's own matcher excludes
+  // it, so it is public without being named in publicPrefixes. Reading only
+  // publicPrefixes therefore under-counts what may be seen without a session.
   const isPublic = (route: string) =>
+    route === "/public" ||
+    route.startsWith("/public/") ||
     publicPrefixes.some((p) => route === p || route.startsWith(`${p}/`));
 
   /** Route segments whose layout.tsx renders MainLayout for the whole subtree. */
@@ -414,19 +442,45 @@ describe("navigation — every menu-reachable page renders the app shell", () =>
   /**
    * A redirect-only stub renders nothing, so there is no shell to put around
    * it — /finance/billing just forwards its old bookmarks to /finance.
+   *
+   * Both forms count. /psb does the same job with `router.replace()` in an
+   * effect rather than the server `redirect()`, and matching only the latter
+   * made a stub look like a page that had lost its shell.
    */
   const isRedirectStub = (src: string) =>
-    /from\s+"next\/navigation"/.test(src) && /\bredirect\(/.test(src);
+    /from\s+"next\/navigation"/.test(src) &&
+    (/\bredirect\(/.test(src) || /\brouter\.(replace|push)\(/.test(src)) &&
+    src.length < 2000;
 
-  const menuHrefs = new Set(
-    ALL_ROLE_CODES.flatMap((roleCode) =>
-      getNavigationForRoleCode(roleCode).flatMap((group) =>
-        group.items.map((item) => item.href),
-      ),
-    ),
-  );
+  /**
+   * Pages that correctly render no shell, each with the reason. Anything not
+   * listed here must wrap itself — including `[id]` routes and grandchildren,
+   * which the first version of this test skipped.
+   */
+  const NO_SHELL_BY_DESIGN: Record<string, string> = {
+    "/login": "the page you reach when you have no session to build a shell for",
+    "/unauthorized": "an error page; its own link back is the way out",
+    "/public/spmb": "read by applicants who have no account",
+    "/public/verify-sanad": "scanned from a certificate by an outsider",
+    "/assessment/raport-merdeka/[studentId]/[academicYearId]/[semester]":
+      "print view — sidebar and header must not reach the paper",
+    "/assessment/report-cards/[id]/print-merdeka": "print view",
+    "/assessment/skhun/[studentId]/[academicYearId]": "print view",
+    "/assessment/transcript/[studentId]": "print view",
+    "/assessment/unified-raport/[studentId]": "print view",
+    "/rapor-pesantren/[id]": "print view",
+    "/rapor-pesantren/print/[id]": "print view",
+    "/rapor-pesantren/unified/[id]": "print view",
+  };
 
-  it("no reachable page renders without the sidebar/header shell", () => {
+  it("no page renders without the sidebar/header shell", () => {
+    // The predecessor of this test passed while 63 pages were broken. It
+    // skipped every route with a `[param]` segment — which is most detail
+    // pages, the ones you reach by clicking a row — and only looked at pages
+    // whose route or immediate parent was a menu href, so a grandchild like
+    // /library/books/new fell straight through. Both exclusions are gone: a
+    // page is reachable if a user can click to it, and the only way to say
+    // otherwise is to name it in NO_SHELL_BY_DESIGN with a reason.
     const shellless: string[] = [];
     const walk = (dir: string, segments: string[]) => {
       for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -435,16 +489,14 @@ describe("navigation — every menu-reachable page renders the app shell", () =>
         const isGroup = entry.name.startsWith("(") && entry.name.endsWith(")");
         const next = isGroup ? segments : [...segments, entry.name];
         const page = path.join(child, "page.tsx");
-        if (fs.existsSync(page) && !next.some((s) => s.startsWith("["))) {
+        if (fs.existsSync(page)) {
           const route = `/${next.join("/")}`;
-          const parent = route.slice(0, route.lastIndexOf("/")) || "/";
-          const reachable = menuHrefs.has(route) || menuHrefs.has(parent);
-          const src = reachable ? fs.readFileSync(page, "utf8") : "";
+          const src = fs.readFileSync(page, "utf8");
           if (
-            reachable &&
             !isPublic(route) &&
             !hasLayoutShell(route) &&
             !isRedirectStub(src) &&
+            !(route in NO_SHELL_BY_DESIGN) &&
             !src.includes("MainLayout")
           ) {
             shellless.push(route);
@@ -455,5 +507,12 @@ describe("navigation — every menu-reachable page renders the app shell", () =>
     };
     walk(APP_DIR, []);
     expect(shellless).toEqual([]);
+  });
+
+  it("every NO_SHELL_BY_DESIGN entry still points at a real page", () => {
+    const missing = Object.keys(NO_SHELL_BY_DESIGN).filter(
+      (route) => !fs.existsSync(path.join(APP_DIR, route, "page.tsx")),
+    );
+    expect(missing).toEqual([]);
   });
 });

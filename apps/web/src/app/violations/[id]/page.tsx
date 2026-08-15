@@ -28,13 +28,14 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { toast } from "sonner";
+import { MainLayout } from "@/components/layout";
 import {
   useViolation,
   useDeleteViolation,
   VIOLATION_CATEGORIES,
 } from "@/hooks/use-violations";
 
-export default function ViolationDetailPage() {
+function ViolationDetailPageContent() {
   const params = useParams();
   const router = useRouter();
   const violationId = params.id as string;
@@ -325,5 +326,13 @@ export default function ViolationDetailPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function ViolationDetailPage() {
+  return (
+    <MainLayout>
+      <ViolationDetailPageContent />
+    </MainLayout>
   );
 }

@@ -44,6 +44,7 @@ import {
 import { useUnits } from "@/hooks/use-units";
 import { useTeachers } from "@/hooks/use-teachers";
 
+import { MainLayout } from "@/components/layout";
 /** Sentinel for "no single unit runs this asrama" — sent to the API as null. */
 const FOUNDATION_RUN = "__yayasan__";
 
@@ -68,7 +69,7 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
-export default function EditDormitoryPage({
+function EditDormitoryPageContent({
   params,
 }: {
   params: Promise<{ id: string }>;
@@ -419,5 +420,13 @@ export default function EditDormitoryPage({
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function EditDormitoryPage(props: Parameters<typeof EditDormitoryPageContent>[0]) {
+  return (
+    <MainLayout>
+      <EditDormitoryPageContent {...props} />
+    </MainLayout>
   );
 }

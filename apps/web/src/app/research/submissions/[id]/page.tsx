@@ -12,7 +12,8 @@ import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { useParams } from 'next/navigation';
 
-export default function SubmissionDetailPage() {
+import { MainLayout } from '@/components/layout';
+function SubmissionDetailPageContent() {
   const { id } = useParams();
   const { data: submission, isLoading } = useResearchSubmission(id as string);
   const { mutate: addReference, isPending: isAddingRef } = useAddReference();
@@ -170,5 +171,13 @@ export default function SubmissionDetailPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function SubmissionDetailPage() {
+  return (
+    <MainLayout>
+      <SubmissionDetailPageContent />
+    </MainLayout>
   );
 }

@@ -12,7 +12,8 @@ import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { useParams } from 'next/navigation';
 
-export default function MemberDetailPage() {
+import { MainLayout } from '@/components/layout';
+function MemberDetailPageContent() {
   const { id } = useParams();
   const { data: member, isLoading } = useOrgMember(id as string);
   const { mutate: createLogbook, isPending } = useCreateLogbook();
@@ -97,5 +98,13 @@ export default function MemberDetailPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function MemberDetailPage() {
+  return (
+    <MainLayout>
+      <MemberDetailPageContent />
+    </MainLayout>
   );
 }

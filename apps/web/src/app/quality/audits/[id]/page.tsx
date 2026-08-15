@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
+import { MainLayout } from "@/components/layout";
 import {
   Accordion,
   AccordionContent,
@@ -36,7 +37,7 @@ import {
   PenLine,
 } from "lucide-react";
 
-export default function QualityAuditDetailPage() {
+function QualityAuditDetailPageContent() {
   const params = useParams();
   const router = useRouter();
   const auditId = params.id as string;
@@ -369,5 +370,13 @@ export default function QualityAuditDetailPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function QualityAuditDetailPage() {
+  return (
+    <MainLayout>
+      <QualityAuditDetailPageContent />
+    </MainLayout>
   );
 }

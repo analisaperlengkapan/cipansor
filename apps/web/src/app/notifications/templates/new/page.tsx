@@ -47,6 +47,7 @@ import { ArrowLeft, Loader2, Plus, X, Info } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
 
+import { MainLayout } from "@/components/layout";
 const formSchema = z.object({
   name: z.string().min(1, "Nama template wajib diisi"),
   type: z.string().min(1, "Tipe notifikasi wajib dipilih"),
@@ -101,7 +102,7 @@ const COMMON_VARIABLES: Record<string, string[]> = {
   OTHER: ["{{nama_santri}}", "{{pesan}}"],
 };
 
-export default function NewTemplatePage() {
+function NewTemplatePageContent() {
   const router = useRouter();
   const createTemplate = useCreateNotificationTemplate();
   const [customVariable, setCustomVariable] = useState("");
@@ -470,5 +471,13 @@ export default function NewTemplatePage() {
         </form>
       </Form>
     </div>
+  );
+}
+
+export default function NewTemplatePage() {
+  return (
+    <MainLayout>
+      <NewTemplatePageContent />
+    </MainLayout>
   );
 }

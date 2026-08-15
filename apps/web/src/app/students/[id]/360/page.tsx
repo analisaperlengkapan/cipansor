@@ -30,6 +30,7 @@ import { useStudentFinancialSummary } from "@/hooks/use-finance";
 import { useStudentTahfidzProgress } from "@/hooks/use-tahfidz";
 import { useStudentIbadahStats } from "@/hooks/use-ibadah";
 import { useStudentRoomAssignment, useRoomSocialAnalytics } from "@/hooks/use-dormitory";
+import { MainLayout } from "@/components/layout";
 import {
   BarChart,
   Bar,
@@ -45,7 +46,7 @@ import {
   PolarRadiusAxis,
 } from "recharts";
 
-export default function Student360Page() {
+function Student360PageContent() {
   const params = useParams();
   const router = useRouter();
   const studentId = params.id as string;
@@ -719,5 +720,13 @@ export default function Student360Page() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function Student360Page() {
+  return (
+    <MainLayout>
+      <Student360PageContent />
+    </MainLayout>
   );
 }

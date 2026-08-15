@@ -49,6 +49,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { MainLayout } from "@/components/layout";
 import {
   ArrowLeft,
   UserSquare2,
@@ -66,7 +67,7 @@ const assessmentSchema = z.object({
   recommendation: z.string().optional(),
 });
 
-export default function TalentProfileDetailPage() {
+function TalentProfileDetailPageContent() {
   const params = useParams();
   const router = useRouter();
   const profileId = params.id as string;
@@ -500,5 +501,13 @@ export default function TalentProfileDetailPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function TalentProfileDetailPage() {
+  return (
+    <MainLayout>
+      <TalentProfileDetailPageContent />
+    </MainLayout>
   );
 }

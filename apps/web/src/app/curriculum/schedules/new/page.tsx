@@ -53,6 +53,7 @@ import { useClasses } from "@/hooks/use-classes";
 import { useUsers } from "@/hooks/use-users";
 import { useAcademicYears } from "@/hooks/use-academic-years";
 
+import { MainLayout } from "@/components/layout";
 const scheduleSchema = z.object({
   classId: z.string().min(1, "Kelas wajib dipilih"),
   subjectId: z.string().min(1, "Mata pelajaran wajib dipilih"),
@@ -473,7 +474,7 @@ function NewScheduleContent() {
   );
 }
 
-export default function NewSchedulePage() {
+function NewSchedulePageContent() {
   return (
     <Suspense
       fallback={
@@ -484,5 +485,13 @@ export default function NewSchedulePage() {
     >
       <NewScheduleContent />
     </Suspense>
+  );
+}
+
+export default function NewSchedulePage() {
+  return (
+    <MainLayout>
+      <NewSchedulePageContent />
+    </MainLayout>
   );
 }

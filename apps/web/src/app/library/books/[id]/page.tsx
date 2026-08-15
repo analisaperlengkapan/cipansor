@@ -41,6 +41,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { toast } from "sonner";
+import { MainLayout } from "@/components/layout";
 import {
   useBook,
   useBorrows,
@@ -69,7 +70,7 @@ function getStatusBadge(status: BorrowStatus) {
   );
 }
 
-export default function BookDetailPage({
+function BookDetailPageContent({
   params,
 }: {
   params: Promise<{ id: string }>;
@@ -472,5 +473,13 @@ export default function BookDetailPage({
         </div>
       </div>
     </div>
+  );
+}
+
+export default function BookDetailPage(props: Parameters<typeof BookDetailPageContent>[0]) {
+  return (
+    <MainLayout>
+      <BookDetailPageContent {...props} />
+    </MainLayout>
   );
 }

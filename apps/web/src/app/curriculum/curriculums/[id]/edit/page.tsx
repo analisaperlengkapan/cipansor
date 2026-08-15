@@ -39,6 +39,7 @@ import { useCurriculum, useUpdateCurriculum } from "@/hooks/use-curriculum";
 import { useUnits } from "@/hooks/use-units";
 import { useAcademicYears } from "@/hooks/use-academic-years";
 
+import { MainLayout } from "@/components/layout";
 const curriculumSchema = z.object({
   code: z.string().min(1, "Kode kurikulum wajib diisi"),
   name: z.string().min(1, "Nama kurikulum wajib diisi"),
@@ -54,7 +55,7 @@ const curriculumSchema = z.object({
 
 type CurriculumFormData = z.infer<typeof curriculumSchema>;
 
-export default function EditCurriculumPage({
+function EditCurriculumPageContent({
   params,
 }: {
   params: Promise<{ id: string }>;
@@ -381,5 +382,13 @@ export default function EditCurriculumPage({
         </form>
       </Form>
     </div>
+  );
+}
+
+export default function EditCurriculumPage(props: Parameters<typeof EditCurriculumPageContent>[0]) {
+  return (
+    <MainLayout>
+      <EditCurriculumPageContent {...props} />
+    </MainLayout>
   );
 }

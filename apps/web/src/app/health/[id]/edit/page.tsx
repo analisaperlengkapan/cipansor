@@ -34,6 +34,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { MainLayout } from "@/components/layout";
 import {
   useHealthRecord,
   useUpdateHealthRecord,
@@ -67,7 +68,7 @@ interface PageProps {
   params: Promise<{ id: string }>;
 }
 
-export default function EditHealthRecordPage({ params }: PageProps) {
+function EditHealthRecordPageContent({ params }: PageProps) {
   const { id: recordId } = use(params);
   const router = useRouter();
 
@@ -512,5 +513,13 @@ export default function EditHealthRecordPage({ params }: PageProps) {
         </form>
       </Form>
     </div>
+  );
+}
+
+export default function EditHealthRecordPage(props: Parameters<typeof EditHealthRecordPageContent>[0]) {
+  return (
+    <MainLayout>
+      <EditHealthRecordPageContent {...props} />
+    </MainLayout>
   );
 }

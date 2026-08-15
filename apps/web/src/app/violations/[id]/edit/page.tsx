@@ -43,6 +43,7 @@ import {
 } from "@/hooks/use-violations";
 import { useStudents } from "@/hooks/use-students";
 
+import { MainLayout } from "@/components/layout";
 const formSchema = z.object({
   studentId: z.string().min(1, "Santri wajib dipilih"),
   violationTypeId: z.string().min(1, "Jenis pelanggaran wajib dipilih"),
@@ -54,7 +55,7 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
-export default function EditViolationPage() {
+function EditViolationPageContent() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
@@ -434,5 +435,13 @@ export default function EditViolationPage() {
         </form>
       </Form>
     </div>
+  );
+}
+
+export default function EditViolationPage() {
+  return (
+    <MainLayout>
+      <EditViolationPageContent />
+    </MainLayout>
   );
 }

@@ -43,6 +43,7 @@ import {
 } from "@/hooks/use-inventory";
 import { useUnits } from "@/hooks/use-units";
 
+import { MainLayout } from "@/components/layout";
 const formSchema = z.object({
   name: z.string().min(1, "Nama wajib diisi"),
   code: z.string().min(1, "Kode wajib diisi"),
@@ -63,7 +64,7 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
-export default function EditInventoryPage({
+function EditInventoryPageContent({
   params,
 }: {
   params: { id: string };
@@ -510,5 +511,13 @@ export default function EditInventoryPage({
         </form>
       </Form>
     </div>
+  );
+}
+
+export default function EditInventoryPage(props: Parameters<typeof EditInventoryPageContent>[0]) {
+  return (
+    <MainLayout>
+      <EditInventoryPageContent {...props} />
+    </MainLayout>
   );
 }

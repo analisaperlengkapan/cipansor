@@ -56,6 +56,7 @@ import {
 import { useStudents } from "@/hooks/use-students";
 import { useClasses } from "@/hooks/use-classes";
 
+import { MainLayout } from "@/components/layout";
 const formSchema = z.object({
   billType: z.string().min(1, "Jenis tagihan wajib dipilih"),
   amount: z.coerce.number().min(1, "Jumlah minimal Rp 1"),
@@ -66,7 +67,7 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
-export default function NewBillPage() {
+function NewBillPageContent() {
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [classId, setClassId] = useState<string>("");
@@ -417,5 +418,13 @@ export default function NewBillPage() {
         </Button>
       </div>
     </div>
+  );
+}
+
+export default function NewBillPage() {
+  return (
+    <MainLayout>
+      <NewBillPageContent />
+    </MainLayout>
   );
 }

@@ -44,6 +44,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { MainLayout } from "@/components/layout";
 import {
   ArrowLeft,
   FileText,
@@ -58,7 +59,7 @@ const revisionSchema = z.object({
   documentUrl: z.string().min(5, "URL Dokumen wajib diisi"),
 });
 
-export default function SOPDetailPage() {
+function SOPDetailPageContent() {
   const params = useParams();
   const router = useRouter();
   const sopId = params.id as string;
@@ -367,5 +368,13 @@ export default function SOPDetailPage() {
         </Card>
       )}
     </div>
+  );
+}
+
+export default function SOPDetailPage() {
+  return (
+    <MainLayout>
+      <SOPDetailPageContent />
+    </MainLayout>
   );
 }

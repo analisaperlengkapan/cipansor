@@ -41,6 +41,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { toast } from "sonner";
+import { MainLayout } from "@/components/layout";
 import {
   useBill,
   useBillPayments,
@@ -61,7 +62,7 @@ function formatCurrency(amount: number) {
   }).format(amount);
 }
 
-export default function BillDetailPage({
+function BillDetailPageContent({
   params,
 }: {
   params: Promise<{ id: string }>;
@@ -482,5 +483,13 @@ export default function BillDetailPage({
         variant="destructive"
       />
     </div>
+  );
+}
+
+export default function BillDetailPage(props: Parameters<typeof BillDetailPageContent>[0]) {
+  return (
+    <MainLayout>
+      <BillDetailPageContent {...props} />
+    </MainLayout>
   );
 }

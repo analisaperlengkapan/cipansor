@@ -22,6 +22,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { toast } from "sonner";
+import { MainLayout } from "@/components/layout";
 import {
   useReward,
   useDeleteReward,
@@ -38,7 +39,7 @@ function getCategoryBadge(category: RewardCategory) {
   );
 }
 
-export default function RewardDetailPage() {
+function RewardDetailPageContent() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
@@ -286,5 +287,13 @@ export default function RewardDetailPage() {
         isLoading={deleteMutation.isPending}
       />
     </div>
+  );
+}
+
+export default function RewardDetailPage() {
+  return (
+    <MainLayout>
+      <RewardDetailPageContent />
+    </MainLayout>
   );
 }

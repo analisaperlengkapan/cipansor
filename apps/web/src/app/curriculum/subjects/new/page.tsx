@@ -42,6 +42,7 @@ import {
 } from "@/hooks/use-curriculum";
 import { useUnits } from "@/hooks/use-units";
 
+import { MainLayout } from "@/components/layout";
 const subjectSchema = z.object({
   code: z.string().min(1, "Kode mata pelajaran wajib diisi"),
   name: z.string().min(1, "Nama mata pelajaran wajib diisi"),
@@ -58,7 +59,7 @@ const subjectSchema = z.object({
 
 type SubjectFormData = z.infer<typeof subjectSchema>;
 
-export default function NewSubjectPage() {
+function NewSubjectPageContent() {
   const router = useRouter();
   const createMutation = useCreateSubject();
   const { data: units } = useUnits();
@@ -379,5 +380,13 @@ export default function NewSubjectPage() {
         </form>
       </Form>
     </div>
+  );
+}
+
+export default function NewSubjectPage() {
+  return (
+    <MainLayout>
+      <NewSubjectPageContent />
+    </MainLayout>
   );
 }

@@ -48,6 +48,7 @@ import {
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import { toast } from "sonner";
+import { MainLayout } from "@/components/layout";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -64,7 +65,7 @@ interface PageProps {
   params: Promise<{ id: string }>;
 }
 
-export default function NotificationDetailPage({ params }: PageProps) {
+function NotificationDetailPageContent({ params }: PageProps) {
   const { id: notificationId } = use(params);
   const router = useRouter();
 
@@ -417,5 +418,13 @@ export default function NotificationDetailPage({ params }: PageProps) {
         </Card>
       )}
     </div>
+  );
+}
+
+export default function NotificationDetailPage(props: Parameters<typeof NotificationDetailPageContent>[0]) {
+  return (
+    <MainLayout>
+      <NotificationDetailPageContent {...props} />
+    </MainLayout>
   );
 }

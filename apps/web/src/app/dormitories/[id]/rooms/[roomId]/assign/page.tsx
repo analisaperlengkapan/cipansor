@@ -28,7 +28,8 @@ import { toast } from "sonner";
 import { useDormitory, useRoom, useAssignRoom } from "@/hooks/use-dormitory";
 import { useStudents } from "@/hooks/use-students";
 
-export default function AssignRoomPage({
+import { MainLayout } from "@/components/layout";
+function AssignRoomPageContent({
   params,
 }: {
   params: Promise<{ id: string; roomId: string }>;
@@ -285,5 +286,13 @@ export default function AssignRoomPage({
         </>
       )}
     </div>
+  );
+}
+
+export default function AssignRoomPage(props: Parameters<typeof AssignRoomPageContent>[0]) {
+  return (
+    <MainLayout>
+      <AssignRoomPageContent {...props} />
+    </MainLayout>
   );
 }

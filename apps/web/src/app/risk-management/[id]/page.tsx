@@ -20,6 +20,7 @@ import { Separator } from "@/components/ui/separator";
 import { useRisk, useDeleteRisk, useCreateMitigation, useDeleteMitigation } from "@/hooks/use-risk";
 import Link from "next/link";
 
+import { MainLayout } from "@/components/layout";
 const MitigationStrategy = ["AVOID", "REDUCE", "SHARE", "ACCEPT"] as const;
 
 const mitigationSchema = z.object({
@@ -29,7 +30,7 @@ const mitigationSchema = z.object({
   notes: z.string().optional(),
 });
 
-export default function RiskDetailPage() {
+function RiskDetailPageContent() {
   const params = useParams();
   const id = params?.id as string;
   const [open, setOpen] = useState(false);
@@ -271,5 +272,13 @@ export default function RiskDetailPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function RiskDetailPage() {
+  return (
+    <MainLayout>
+      <RiskDetailPageContent />
+    </MainLayout>
   );
 }

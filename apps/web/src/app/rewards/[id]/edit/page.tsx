@@ -43,6 +43,7 @@ import {
 } from "@/hooks/use-rewards";
 import { useStudents } from "@/hooks/use-students";
 
+import { MainLayout } from "@/components/layout";
 const formSchema = z.object({
   studentId: z.string().min(1, "Santri wajib dipilih"),
   rewardTypeId: z.string().min(1, "Jenis penghargaan wajib dipilih"),
@@ -52,7 +53,7 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
-export default function EditRewardPage() {
+function EditRewardPageContent() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
@@ -387,5 +388,13 @@ export default function EditRewardPage() {
         </form>
       </Form>
     </div>
+  );
+}
+
+export default function EditRewardPage() {
+  return (
+    <MainLayout>
+      <EditRewardPageContent />
+    </MainLayout>
   );
 }

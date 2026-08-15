@@ -49,6 +49,7 @@ import {
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { MainLayout } from "@/components/layout";
 import {
   ArrowLeft,
   BookOpen,
@@ -67,7 +68,7 @@ const auditSchema = z.object({
   status: z.string().min(1, "Status hasil audit wajib dipilih"),
 });
 
-export default function SyariahComplianceDetailPage() {
+function SyariahComplianceDetailPageContent() {
   const params = useParams();
   const router = useRouter();
   const complianceId = params.id as string;
@@ -449,5 +450,13 @@ export default function SyariahComplianceDetailPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function SyariahComplianceDetailPage() {
+  return (
+    <MainLayout>
+      <SyariahComplianceDetailPageContent />
+    </MainLayout>
   );
 }

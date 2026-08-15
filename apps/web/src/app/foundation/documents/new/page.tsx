@@ -40,6 +40,7 @@ import {
 } from "@/hooks";
 import { useState } from "react";
 
+import { MainLayout } from "@/components/layout";
 const documentTypes = Object.entries(DOCUMENT_TYPE_LABELS).map(
   ([value, label]) => ({
     value,
@@ -58,7 +59,7 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
-export default function NewDocumentPage() {
+function NewDocumentPageContent() {
   const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
   const createDocument = useCreateFoundationDocument();
@@ -309,5 +310,13 @@ export default function NewDocumentPage() {
         </form>
       </Form>
     </div>
+  );
+}
+
+export default function NewDocumentPage() {
+  return (
+    <MainLayout>
+      <NewDocumentPageContent />
+    </MainLayout>
   );
 }

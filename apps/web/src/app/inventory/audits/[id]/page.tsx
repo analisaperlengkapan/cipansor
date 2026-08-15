@@ -44,7 +44,8 @@ import {
 // Need to import types or define them if not exported from hook
 import { AssetAuditItem } from "@cipansor/shared";
 
-export default function AuditDetailPage({
+import { MainLayout } from "@/components/layout";
+function AuditDetailPageContent({
   params,
 }: {
   params: { id: string };
@@ -366,5 +367,13 @@ export default function AuditDetailPage({
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+export default function AuditDetailPage(props: Parameters<typeof AuditDetailPageContent>[0]) {
+  return (
+    <MainLayout>
+      <AuditDetailPageContent {...props} />
+    </MainLayout>
   );
 }

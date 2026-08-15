@@ -8,7 +8,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useParams } from 'next/navigation';
 import { toast } from 'sonner';
 
-export default function LessonPlanDetailPage() {
+import { MainLayout } from '@/components/layout';
+function LessonPlanDetailPageContent() {
   const { id } = useParams();
   const { data: lp, isLoading } = useLessonPlan(id as string);
   const { mutate: reviewLp, isPending } = useReviewLessonPlan();
@@ -127,5 +128,13 @@ export default function LessonPlanDetailPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function LessonPlanDetailPage() {
+  return (
+    <MainLayout>
+      <LessonPlanDetailPageContent />
+    </MainLayout>
   );
 }

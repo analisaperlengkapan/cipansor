@@ -24,8 +24,9 @@ import { Loader2, ArrowLeft, Download, CheckCircle, Ban } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
+import { MainLayout } from "@/components/layout";
 // Use standard Next.js 15 'use' pattern for dynamic params
-export default function PayrollDetailPage({
+function PayrollDetailPageContent({
   params,
 }: {
   params: Promise<{ id: string }>;
@@ -203,5 +204,13 @@ export default function PayrollDetailPage({
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function PayrollDetailPage(props: Parameters<typeof PayrollDetailPageContent>[0]) {
+  return (
+    <MainLayout>
+      <PayrollDetailPageContent {...props} />
+    </MainLayout>
   );
 }

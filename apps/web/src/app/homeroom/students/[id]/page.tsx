@@ -34,6 +34,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
+import { MainLayout } from "@/components/layout";
 import {
   useHomeroomStudentDetail,
   useHomeroomStudentNotes,
@@ -101,7 +102,7 @@ const FALLBACK_EXTRACURRICULAR = [
   { name: "Pramuka", status: "Aktif", achievement: null },
 ];
 
-export default function StudentDetailPage() {
+function StudentDetailPageContent() {
   const params = useParams();
   const studentId = params.id as string;
   const [activeTab, setActiveTab] = useState("overview");
@@ -841,5 +842,13 @@ export default function StudentDetailPage() {
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+export default function StudentDetailPage() {
+  return (
+    <MainLayout>
+      <StudentDetailPageContent />
+    </MainLayout>
   );
 }

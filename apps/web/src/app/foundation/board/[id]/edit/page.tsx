@@ -28,6 +28,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
+import { MainLayout } from "@/components/layout";
 import {
   useFoundationBoardMember,
   useUpdateFoundationBoardMember,
@@ -51,7 +52,7 @@ interface PageProps {
   params: Promise<{ id: string }>;
 }
 
-export default function EditBoardMemberPage({ params }: PageProps) {
+function EditBoardMemberPageContent({ params }: PageProps) {
   const { id: memberId } = use(params);
   const router = useRouter();
 
@@ -328,5 +329,13 @@ export default function EditBoardMemberPage({ params }: PageProps) {
         </form>
       </Form>
     </div>
+  );
+}
+
+export default function EditBoardMemberPage(props: Parameters<typeof EditBoardMemberPageContent>[0]) {
+  return (
+    <MainLayout>
+      <EditBoardMemberPageContent {...props} />
+    </MainLayout>
   );
 }

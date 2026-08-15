@@ -29,7 +29,8 @@ import { Separator } from "@/components/ui/separator";
 
 import { useDailyReport } from "@/hooks/use-daily-report";
 
-export default function DailyReportDetailPage({
+import { MainLayout } from "@/components/layout";
+function DailyReportDetailPageContent({
   params,
 }: {
   params: { id: string };
@@ -394,5 +395,13 @@ export default function DailyReportDetailPage({
         </div>
       </div>
     </div>
+  );
+}
+
+export default function DailyReportDetailPage(props: Parameters<typeof DailyReportDetailPageContent>[0]) {
+  return (
+    <MainLayout>
+      <DailyReportDetailPageContent {...props} />
+    </MainLayout>
   );
 }

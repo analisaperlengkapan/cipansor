@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/table";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { toast } from "sonner";
+import { MainLayout } from "@/components/layout";
 import {
   useCurriculum,
   useDeleteCurriculum,
@@ -48,7 +49,7 @@ function getTypeBadgeColor(type: SubjectType) {
   return colors[type];
 }
 
-export default function CurriculumDetailPage({
+function CurriculumDetailPageContent({
   params,
 }: {
   params: Promise<{ id: string }>;
@@ -338,5 +339,13 @@ export default function CurriculumDetailPage({
         </div>
       </div>
     </div>
+  );
+}
+
+export default function CurriculumDetailPage(props: Parameters<typeof CurriculumDetailPageContent>[0]) {
+  return (
+    <MainLayout>
+      <CurriculumDetailPageContent {...props} />
+    </MainLayout>
   );
 }

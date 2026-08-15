@@ -29,6 +29,7 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { toast } from "sonner";
+import { MainLayout } from "@/components/layout";
 import {
   usePermit,
   useDeletePermit,
@@ -61,7 +62,7 @@ function getTypeLabel(type: string): string {
   return PERMIT_TYPES.find((t) => t.value === type)?.label || type;
 }
 
-export default function PermitDetailPage() {
+function PermitDetailPageContent() {
   const params = useParams();
   const router = useRouter();
   const permitId = params.id as string;
@@ -415,5 +416,13 @@ export default function PermitDetailPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function PermitDetailPage() {
+  return (
+    <MainLayout>
+      <PermitDetailPageContent />
+    </MainLayout>
   );
 }

@@ -414,7 +414,16 @@ export default function EOfficeMainPage() {
                       <Mail className="h-4 w-4 text-blue-600" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
+                      {/*
+                        min-w-0 here as well as on the flex-1 parent. `truncate`
+                        only shortens text when every flex ancestor is allowed to
+                        shrink below its content: a flex item defaults to
+                        min-width:auto, which resolves to the min-content width of
+                        the subject line. Without it this row measured 457px inside
+                        a 310px grid column and pushed the whole card 227px off a
+                        390px screen, while the span dutifully reported "truncate".
+                      */}
+                      <div className="flex min-w-0 items-center gap-2">
                         <span className="font-medium truncate">
                           {letter.subject}
                         </span>
@@ -479,7 +488,16 @@ export default function EOfficeMainPage() {
                       <Send className="h-4 w-4 text-green-600" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
+                      {/*
+                        min-w-0 here as well as on the flex-1 parent. `truncate`
+                        only shortens text when every flex ancestor is allowed to
+                        shrink below its content: a flex item defaults to
+                        min-width:auto, which resolves to the min-content width of
+                        the subject line. Without it this row measured 457px inside
+                        a 310px grid column and pushed the whole card 227px off a
+                        390px screen, while the span dutifully reported "truncate".
+                      */}
+                      <div className="flex min-w-0 items-center gap-2">
                         <span className="font-medium truncate">
                           {letter.subject}
                         </span>

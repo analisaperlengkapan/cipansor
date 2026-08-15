@@ -204,7 +204,13 @@ export default function AcademicCalendarPage() {
                 </Button>
               </div>
 
-              <div className="flex items-center gap-2">
+              {/*
+                The other half of the toolbar: a 160px unit filter beside the
+                calendar/list view switcher. Together they still ran 15px past a
+                390px screen after the month label was narrowed, so this row wraps
+                too — the switcher drops under the filter rather than off the edge.
+              */}
+              <div className="flex flex-wrap items-center gap-2">
                 {/* Unit Filter */}
                 <Select
                   value={selectedUnitId || "all"}

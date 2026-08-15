@@ -372,8 +372,27 @@ export default function EOfficeMainPage() {
         </Card>
       </div>
 
-      {/* Recent Letters */}
-      <div className="grid gap-6 md:grid-cols-2">
+      {/*
+        Recent Letters.
+
+        `grid-cols-[minmax(0,1fr)]` on the mobile column, and it is load-bearing.
+        With no explicit columns Tailwind leaves the implicit column at `auto`,
+        which is floored by its item's min-content — and `1fr` alone would not
+        help either, since `1fr` means `minmax(auto, 1fr)`. Measured here: the
+        container was 310px while `grid-template-columns` computed to
+        **577.172px**, so each card hung 227px off a 390px screen.
+
+        The subject line is what inflates min-content: `truncate` sets
+        `white-space: nowrap`, whose min-content is the whole untruncated string.
+        `min-w-0` further down the chain (see the letter rows) lets the text
+        ellipsize once the column is capped, but it cannot cap the column itself
+        — that has to happen here, on the container. Only `minmax(0,1fr)` brought
+        the card back to exactly 310px.
+
+        Tailwind's own `md:grid-cols-2` already expands to
+        `repeat(2, minmax(0, 1fr))`, so the desktop half was never affected.
+      */}
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-6 md:grid-cols-2">
         {/* Recent Inbox */}
         <Card>
           <CardHeader>

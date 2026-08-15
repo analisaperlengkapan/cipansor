@@ -136,6 +136,21 @@ scroller that is `<main>`/`<body>` means the whole content area drags.
 - **Never `justify-center` a flex row that can overflow.** It spills past both
   edges and browsers cannot scroll to a negative offset, so the *first* item
   becomes unreachable. `TabsList` uses `justify-start` for this reason.
+- **A grid with no explicit mobile column can be widened by its own content.**
+  `grid gap-6 md:grid-cols-2` leaves the implicit column at `auto`, which is
+  floored by the item's min-content — and `1fr` is no fix, because `1fr` means
+  `minmax(auto, 1fr)`. On `/e-office` the container measured 310px while
+  `grid-template-columns` computed to 577px, hanging each card 227px off a 390px
+  screen. Write `grid-cols-[minmax(0,1fr)]` for the mobile column when the
+  content contains anything `nowrap` (which every `truncate` does). Tailwind's
+  `grid-cols-N` utilities already expand to `repeat(N, minmax(0, 1fr))`, so only
+  the *implicit* column needs saying. ~588 grids in this app share the shape;
+  it only bites where content cannot shrink, so fix the measured ones rather
+  than sweeping.
+- **`min-w-0` and `minmax(0,1fr)` solve different halves.** `min-w-0` down the
+  flex chain lets text ellipsize once the column is capped; it cannot cap the
+  column. Applying it to the card alone took `/e-office` from 577px to 510px —
+  better, still broken. Measure after each, do not assume one implies the other.
 
 ## Build
 

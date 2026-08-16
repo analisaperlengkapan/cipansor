@@ -113,7 +113,7 @@ export default async function Home() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
       />
       <LandingNavbar />
-      <main className="flex-1">
+      <main id="main-content" className="flex-1">
         <HeroSection locale={locale} />
         <StatsSection locale={locale} />
         <AboutSection locale={locale} />

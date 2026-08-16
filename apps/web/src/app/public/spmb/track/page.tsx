@@ -24,7 +24,7 @@ export default function TrackSpmbPage() {
   return (
     <div className="flex min-h-screen flex-col bg-gray-50">
       <LandingNavbar />
-      <main className="flex-1">
+      <main id="main-content" className="flex-1">
         <div className="container mx-auto max-w-3xl px-4 py-12 pt-28">
           <div className="mb-10 text-center">
             <h1 className="mb-2 text-4xl font-black tracking-tight">

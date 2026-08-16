@@ -138,7 +138,10 @@ export default async function VerifikasiPage({
   const valid = !notFound && result!.valid === true;
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-2xl flex-col justify-center px-4 py-12">
+    <main
+      id="main-content"
+      className="mx-auto flex min-h-screen max-w-2xl flex-col justify-center px-4 py-12"
+    >
       <div className="rounded-xl border border-border bg-card p-6 shadow-sm sm:p-8">
         <p className="text-xs uppercase tracking-wide text-muted-foreground">
           {siteConfig.legalName}

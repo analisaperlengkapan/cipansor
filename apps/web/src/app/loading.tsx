@@ -39,7 +39,7 @@ export default function Loading() {
         </aside>
 
         {/* Main Content Skeleton */}
-        <main className="flex-1 p-6">
+        <main id="main-content" className="flex-1 p-6">
           <div className="space-y-6">
             {/* Page Header */}
             <div className="space-y-2">

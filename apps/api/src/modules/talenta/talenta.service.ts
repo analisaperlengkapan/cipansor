@@ -449,15 +449,90 @@ export class TalentaService {
         baseScore + keywordBonus + trainingBonus + shariaBonus + (competencyScore || 0)
       );
 
+      // Show the working. Every component except the base was silently zero in
+      // production — no completed trainings, no position requirements on
+      // record — so the total was just the category base and came back
+      // identical for "Kepala Sekolah", "Tukang Kebun" and a nonsense string
+      // alike, under a badge reading "AI Powered Recommendations". A number
+      // that cannot vary with the question is not an answer to it, and a
+      // succession decision is not a place to imply precision that isn't
+      // there. The caller now gets the parts and what was missing, so the UI
+      // can say "belum bisa dinilai" instead of drawing a confident bar.
+      const components = [
+        {
+          key: 'base',
+          label: 'Kategori talenta',
+          points: baseScore,
+          max: 80,
+          basis: t.category.replace(/_/g, ' '),
+          available: true,
+        },
+        {
+          key: 'roleRelevance',
+          label: 'Relevansi peran saat ini',
+          points: keywordBonus,
+          max: 10,
+          basis: t.currentRole || 'peran saat ini belum dicatat',
+          available: Boolean(t.currentRole),
+        },
+        {
+          key: 'training',
+          label: 'Pelatihan diselesaikan',
+          points: trainingBonus,
+          max: 15,
+          basis: `${completedTrainings} pelatihan selesai`,
+          available: completedTrainings > 0,
+        },
+        {
+          key: 'sharia',
+          label: 'Pelatihan syariah',
+          points: shariaBonus,
+          max: 10,
+          basis: hasShariaTraining ? 'terdeteksi' : 'tidak terdeteksi',
+          available: completedTrainings > 0,
+        },
+        {
+          key: 'competency',
+          label: 'Kesesuaian kompetensi',
+          points: Math.round(competencyScore),
+          max: 25,
+          basis:
+            targetRequirements.length > 0
+              ? `${targetRequirements.length} syarat jabatan dinilai`
+              : 'syarat jabatan belum dicatat',
+          available: targetRequirements.length > 0,
+        },
+      ];
+
+      const missingInputs = components
+        .filter((c) => !c.available && c.key !== 'base')
+        .map((c) => c.label);
+
+      // True when nothing but the category moved the number, so the total is
+      // the base score wearing a percent sign. Deliberately not called
+      // "meaningful": this states a fact about the arithmetic rather than
+      // passing judgement. The role-keyword part CAN vary with the position —
+      // searching "Guru Tetap" would match this candidate — it simply scored
+      // zero for every title tried against the current data.
+      const scoreReflectsOnlyCategory = !components.some(
+        (c) => c.key !== 'base' && c.points > 0
+      );
+
       return {
         talentProfileId: t.id,
         name: t.user.name,
         currentRole: t.currentRole,
         category: t.category,
+        // Derived from the category alone — not an independent judgement.
         readiness: t.category === 'HIGH_POTENTIAL' ? 'READY_NOW' : 'READY_IN_1_YEAR',
+        readinessBasis: 'kategori talenta',
         matchScore: Math.round(totalMatchScore),
+        scoreReflectsOnlyCategory,
+        components,
+        missingInputs,
         shariaMatch: hasShariaTraining,
-        competencyMatch: targetRequirements.length > 0 ? Math.round((competencyScore / 25) * 100) : null,
+        competencyMatch:
+          targetRequirements.length > 0 ? Math.round((competencyScore / 25) * 100) : null,
       };
     }).sort((a, b) => b.matchScore - a.matchScore).slice(0, 10);
   }

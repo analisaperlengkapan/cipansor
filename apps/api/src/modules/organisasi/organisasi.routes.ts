@@ -13,6 +13,7 @@ router.put("/units/:id", authenticate, authorize("UNIT_ADMIN", "SUPER_ADMIN"), c
 router.delete("/units/:id", authenticate, authorize("UNIT_ADMIN", "SUPER_ADMIN"), controller.deleteOrgUnit);
 
 // Positions
+router.get("/positions", authenticate, controller.getAllPositions);
 router.get("/units/:orgUnitId/positions", authenticate, controller.getPositions);
 router.post("/positions", authenticate, authorize("UNIT_ADMIN", "SUPER_ADMIN"), controller.createPosition);
 router.put("/positions/:id", authenticate, authorize("UNIT_ADMIN", "SUPER_ADMIN"), controller.updatePosition);

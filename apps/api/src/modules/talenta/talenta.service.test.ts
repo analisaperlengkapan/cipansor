@@ -103,6 +103,58 @@ describe('Talenta Service', () => {
       expect(result[1].name).toBe('High Potential Untrained');
       expect(result[1].matchScore).toBe(90);
     });
+
+    it('flags the score as category-only when nothing else contributed', async () => {
+      // Production state: one talent profile, no completed trainings, no
+      // position requirements on record. Every component except the category
+      // base scored zero, so "Kepala Sekolah", "Tukang Kebun" and a nonsense
+      // string all returned the same 80 under an "AI Powered Recommendations"
+      // badge. A number that cannot vary with the question is not an answer to
+      // it, and the caller has to be able to tell.
+      vi.mocked(prisma.talentProfile.findMany).mockResolvedValue([
+        {
+          id: 'prof-1',
+          currentRole: 'Guru Tetap SMP IT / Wali Kelas 7A',
+          category: 'HIGH_POTENTIAL',
+          user: { id: 'user-1', name: 'Ustadz Ahmad', trainingEnrollments: [] },
+          assessments: [],
+        },
+      ] as any);
+
+      const result = await talentaService.suggestSuccessors('Tukang Kebun', 'unit-1');
+
+      expect(result[0].scoreReflectsOnlyCategory).toBe(true);
+      expect(result[0].missingInputs).toContain('Pelatihan diselesaikan');
+      expect(result[0].missingInputs).toContain('Kesesuaian kompetensi');
+      // competencyMatch must stay null, never 0 — "0%" reads as measured.
+      expect(result[0].competencyMatch).toBeNull();
+      // The breakdown has to show the base was the only contributor.
+      const contributing = result[0].components.filter(
+        (c: { key: string; points: number }) => c.key !== 'base' && c.points > 0
+      );
+      expect(contributing).toEqual([]);
+    });
+
+    it('stops being category-only once a real input contributes', async () => {
+      vi.mocked(prisma.talentProfile.findMany).mockResolvedValue([
+        {
+          id: 'prof-1',
+          currentRole: 'Guru Tetap SMP IT',
+          category: 'HIGH_POTENTIAL',
+          user: {
+            id: 'user-1',
+            name: 'Ustadz Ahmad',
+            trainingEnrollments: [{ id: 'e1', program: { title: 'Manajemen Sekolah', category: 'LEADERSHIP' } }],
+          },
+          assessments: [],
+        },
+      ] as any);
+
+      const result = await talentaService.suggestSuccessors('Kepala Sekolah', 'unit-1');
+
+      expect(result[0].scoreReflectsOnlyCategory).toBe(false);
+      expect(result[0].missingInputs).not.toContain('Pelatihan diselesaikan');
+    });
   });
 
   describe('Assessments', () => {

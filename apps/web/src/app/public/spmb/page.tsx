@@ -32,6 +32,14 @@ export const metadata: Metadata = {
   },
 };
 
-export default function PublicSpmbPage() {
+function PublicSpmbPageContent() {
   return <SpmbForm />;
+}
+
+export default function PublicSpmbPage() {
+  return (
+    <main id="main-content">
+      <PublicSpmbPageContent />
+    </main>
+  );
 }

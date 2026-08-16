@@ -247,10 +247,18 @@ function VerifySanadContent() {
   );
 }
 
-export default function PublicVerifySanadPage() {
+function PublicVerifySanadPageContent() {
   return (
     <Suspense fallback={null}>
       <VerifySanadContent />
     </Suspense>
+  );
+}
+
+export default function PublicVerifySanadPage() {
+  return (
+    <main id="main-content">
+      <PublicVerifySanadPageContent />
+    </main>
   );
 }

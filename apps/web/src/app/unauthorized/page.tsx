@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/card";
 import { ShieldX, Home } from "lucide-react";
 
-export default function UnauthorizedPage() {
+function UnauthorizedPageContent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
       <Card className="max-w-md w-full">
@@ -42,5 +42,13 @@ export default function UnauthorizedPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function UnauthorizedPage() {
+  return (
+    <main id="main-content">
+      <UnauthorizedPageContent />
+    </main>
   );
 }

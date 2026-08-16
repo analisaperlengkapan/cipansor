@@ -69,7 +69,7 @@ interface TranscriptData {
   issuedDate: string;
 }
 
-export default function TranscriptPrintPage() {
+function TranscriptPrintPageContent() {
   const params = useParams();
   const router = useRouter();
   const studentId = params.studentId as string;
@@ -523,5 +523,13 @@ export default function TranscriptPrintPage() {
         </div>
       </div>
     </>
+  );
+}
+
+export default function TranscriptPrintPage() {
+  return (
+    <main id="main-content">
+      <TranscriptPrintPageContent />
+    </main>
   );
 }

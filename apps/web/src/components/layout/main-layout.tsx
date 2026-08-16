@@ -24,10 +24,10 @@ export function MainLayout({
 
   return (
     <ProtectedRoute allowedRoles={allowedRoles}>
-      {/* Skip Link for Keyboard Accessibility */}
-      <a href="#main-content" className="skip-link">
-        Langsung ke konten
-      </a>
+      {/* The skip link lives in the root layout, where it is genuinely the
+          first focusable thing on the page and covers the public site too.
+          This one was a second link with a different label ("Langsung ke
+          konten" vs "Loncat ke konten utama") pointing at the same target. */}
       <div className="flex h-screen overflow-hidden">
         {/* Desktop Sidebar */}
         {showSidebar && (
@@ -51,10 +51,11 @@ export function MainLayout({
           <Header
             onMenuClick={showSidebar ? () => setMobileOpen(true) : undefined}
           />
+          {/* role="main" is what <main> already means; stating it again is
+              the kind of redundancy screen readers announce twice. */}
           <main
             id="main-content"
             className="flex-1 overflow-auto bg-muted/30 p-4 lg:p-6 premium-gradient"
-            role="main"
           >
             <PageTransition>
               <div className="mx-auto max-w-7xl">{children}</div>

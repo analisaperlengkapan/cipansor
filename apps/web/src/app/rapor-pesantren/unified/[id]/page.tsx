@@ -58,7 +58,7 @@ interface UnifiedRapor {
   notes?: string | null;
 }
 
-export default function UnifiedRaporPage() {
+function UnifiedRaporPageContent() {
   const params = useParams();
   const raporId = params.id as string;
 
@@ -285,5 +285,13 @@ export default function UnifiedRaporPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function UnifiedRaporPage() {
+  return (
+    <main id="main-content">
+      <UnifiedRaporPageContent />
+    </main>
   );
 }

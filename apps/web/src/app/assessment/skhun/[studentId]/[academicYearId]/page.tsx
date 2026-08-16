@@ -53,7 +53,7 @@ interface SkhunData {
   examPeriod: string;
 }
 
-export default function SkhunPrintPage() {
+function SkhunPrintPageContent() {
   const params = useParams();
   const router = useRouter();
   const studentId = params.studentId as string;
@@ -374,5 +374,13 @@ export default function SkhunPrintPage() {
         </div>
       </div>
     </>
+  );
+}
+
+export default function SkhunPrintPage() {
+  return (
+    <main id="main-content">
+      <SkhunPrintPageContent />
+    </main>
   );
 }

@@ -113,7 +113,7 @@ const LITERASI_NUMERASI_LEVELS = [
   { code: "Perlu Intervensi", color: "text-red-700" },
 ];
 
-export default function PrintReportCardMerdekaPage() {
+function PrintReportCardMerdekaPageContent() {
   const params = useParams();
   const router = useRouter();
   const reportCardId = params.id as string;
@@ -805,5 +805,13 @@ export default function PrintReportCardMerdekaPage() {
         </div>
       </div>
     </>
+  );
+}
+
+export default function PrintReportCardMerdekaPage() {
+  return (
+    <main id="main-content">
+      <PrintReportCardMerdekaPageContent />
+    </main>
   );
 }

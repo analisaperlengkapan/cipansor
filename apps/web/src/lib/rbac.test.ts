@@ -547,6 +547,47 @@ describe("navigation — every page renders the app shell", () => {
   });
 });
 
+describe("a11y — the app shell leaves the <h1> to the page", () => {
+  // The header used to render the unit name as an <h1>. Every shell page
+  // therefore had two: the site's, first in the DOM, and the page's own from
+  // PageHeader. That reads as "this page is titled Sistem Informasi Cipansor"
+  // to a screen reader, and it broke `page.locator("h1")` in e2e the moment
+  // #406 gave 63 more pages the shell (two matches = strict mode violation).
+  // Site identity belongs to the banner landmark, not to a heading.
+  const LAYOUT_DIR = path.join(process.cwd(), "src", "components", "layout");
+
+  function tsxFiles(dir: string): string[] {
+    return fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
+      const child = path.join(dir, e.name);
+      if (e.isDirectory()) return tsxFiles(child);
+      return e.name.endsWith(".tsx") ? [child] : [];
+    });
+  }
+
+  // Comments explaining why a file has no <h1> would otherwise trip the check.
+  const stripComments = (src: string) =>
+    src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+
+  it("no app-shell component renders an <h1>", () => {
+    const offenders = tsxFiles(LAYOUT_DIR)
+      .filter((file) =>
+        /<h1[\s>]/.test(stripComments(fs.readFileSync(file, "utf8"))),
+      )
+      .map((file) => path.relative(process.cwd(), file));
+    expect(offenders).toEqual([]);
+  });
+
+  it("PageHeader is still the thing that renders the <h1>", () => {
+    // Guards the other direction: demoting the header's heading only helps if
+    // the page still has one, otherwise the pages have no <h1> at all.
+    const src = fs.readFileSync(
+      path.join(process.cwd(), "src", "components", "shared", "page-header.tsx"),
+      "utf8",
+    );
+    expect(src).toMatch(/<h1[\s>]/);
+  });
+});
+
 describe("e2e selectors — no loose text= selector can collide with the sidebar", () => {
   // `page.locator("text=UA")` is Playwright's *unquoted* text engine: a
   // case-insensitive SUBSTRING match, not an exact one. It also matched

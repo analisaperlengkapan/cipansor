@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import React from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
-export default function UnifiedRaportPage({ params: paramsPromise }: { params: Promise<{ studentId: string }> }) {
+function UnifiedRaportPageContent({ params: paramsPromise }: { params: Promise<{ studentId: string }> }) {
   const params = React.use(paramsPromise);
   const searchParams = useSearchParams();
   const academicYearId = searchParams.get("academicYearId") || "";
@@ -230,5 +230,13 @@ export default function UnifiedRaportPage({ params: paramsPromise }: { params: P
         </div>
       </div>
     </div>
+  );
+}
+
+export default function UnifiedRaportPage(props: Parameters<typeof UnifiedRaportPageContent>[0]) {
+  return (
+    <main id="main-content">
+      <UnifiedRaportPageContent {...props} />
+    </main>
   );
 }

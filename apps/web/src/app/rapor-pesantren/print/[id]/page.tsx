@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 
 import { id as localeId } from "date-fns/locale";
 
-export default function RaporPrintPage() {
+function RaporPrintPageContent() {
   const params = useParams();
   const id = params?.id as string;
   const { data: rapor, isLoading } = useRaporDetail(id);
@@ -381,4 +381,12 @@ function getPredicate(score: number) {
   if (score >= 70) return "Jayyid";
   if (score >= 60) return "Maqbul";
   return "Rasib";
+}
+
+export default function RaporPrintPage() {
+  return (
+    <main id="main-content">
+      <RaporPrintPageContent />
+    </main>
+  );
 }

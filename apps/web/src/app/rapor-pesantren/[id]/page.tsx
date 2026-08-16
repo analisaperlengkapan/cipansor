@@ -43,7 +43,7 @@ import {
   COMPONENT_LABELS,
 } from "@/hooks/use-rapor-pesantren";
 
-export default function RaporDetailPage() {
+function RaporDetailPageContent() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
@@ -826,5 +826,13 @@ export default function RaporDetailPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function RaporDetailPage() {
+  return (
+    <main id="main-content">
+      <RaporDetailPageContent />
+    </main>
   );
 }

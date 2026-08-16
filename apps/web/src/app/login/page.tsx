@@ -109,7 +109,7 @@ function DemoAvatar({ acc, size = 10 }: { acc: DemoAccount; size?: number }) {
   );
 }
 
-export default function LoginPage() {
+function LoginPageContent() {
   const { t } = useI18n();
   const router = useRouter();
   const {
@@ -472,5 +472,13 @@ export default function LoginPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <main id="main-content">
+      <LoginPageContent />
+    </main>
   );
 }

@@ -142,7 +142,18 @@ export default async function RootLayout({
           <QueryProvider>
             <SkipLink />
             <OfflineBanner />
-            <main id="main-content">{children}</main>
+            {/*
+              Deliberately a div, not <main>. It wraps everything the page
+              renders — including the sidebar — so as a landmark it was both
+              wrong and duplicated: MainLayout renders its own
+              <main id="main-content"> inside this one. Two elements shared the
+              id, getElementById returned this one, and "Loncat ke konten
+              utama" therefore landed *above* the navigation and skipped
+              nothing. The single landmark now belongs to whatever renders the
+              page's chrome; rbac.test.ts checks every page has exactly one
+              source for it.
+            */}
+            <div id="app-root">{children}</div>
             <Toaster />
             {/*
               Always mounted, even where the PWA is off: on the public site its

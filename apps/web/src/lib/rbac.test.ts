@@ -547,6 +547,112 @@ describe("navigation — every page renders the app shell", () => {
   });
 });
 
+describe("a11y — exactly one <main> landmark, and the skip link reaches it", () => {
+  // The root layout used to render <main id="main-content">{children}</main>,
+  // which wrapped the sidebar as well. MainLayout renders its own
+  // <main id="main-content"> inside that, so two elements shared one id;
+  // document.getElementById returned the outer one, and "Loncat ke konten
+  // utama" landed above the navigation and skipped nothing. Measured live in
+  // production: 2 <main>, 2 skip links with different labels.
+  //
+  // A landmark can now arrive three ways, and all three have to be counted or
+  // this test lies: the page renders <main> itself, it renders a component
+  // that does, or an ancestor layout.tsx does either.
+  const APP_DIR = path.join(process.cwd(), "src", "app");
+  const ROOT_LAYOUT = path.join(APP_DIR, "layout.tsx");
+  const PROVIDERS = ["MainLayout", "PublicPage"];
+
+  const uncomment = (src: string) =>
+    src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+
+  const providesLandmark = (file: string): boolean => {
+    if (!fs.existsSync(file)) return false;
+    const src = uncomment(fs.readFileSync(file, "utf8"));
+    return (
+      /<main[\s>]/.test(src) ||
+      PROVIDERS.some((c) => new RegExp(`<${c}[\\s>/]`).test(src))
+    );
+  };
+
+  // Pages that redirect on mount render nothing to land on.
+  const isRedirectStub = (src: string) =>
+    /from\s+"next\/navigation"/.test(src) &&
+    (/\bredirect\(/.test(src) || /\brouter\.(replace|push)\(/.test(src)) &&
+    src.length < 2000;
+
+  function pageFiles(dir: string): string[] {
+    return fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
+      if (!e.isDirectory()) return [];
+      const child = path.join(dir, e.name);
+      const page = path.join(child, "page.tsx");
+      return [
+        ...(fs.existsSync(page) ? [page] : []),
+        ...pageFiles(child),
+      ];
+    });
+  }
+
+  it("the root layout does not render a <main>", () => {
+    // Putting it back would reintroduce the duplicate id on every shell page.
+    expect(uncomment(fs.readFileSync(ROOT_LAYOUT, "utf8"))).not.toMatch(
+      /<main[\s>]/,
+    );
+  });
+
+  it("every page has a <main> landmark from somewhere", () => {
+    const bare = pageFiles(APP_DIR)
+      .filter((page) => {
+        if (providesLandmark(page)) return false;
+        let dir = path.dirname(page);
+        for (;;) {
+          const layout = path.join(dir, "layout.tsx");
+          if (layout !== ROOT_LAYOUT && providesLandmark(layout)) return false;
+          if (dir === APP_DIR) break;
+          dir = path.dirname(dir);
+        }
+        return !isRedirectStub(fs.readFileSync(page, "utf8"));
+      })
+      .map((f) => path.relative(APP_DIR, f));
+    expect(bare).toEqual([]);
+  });
+
+  it("nobody hand-rolls a second skip link", () => {
+    // Two links to #main-content with different labels ("Loncat ke konten
+    // utama" from the root layout's <SkipLink />, "Langsung ke konten"
+    // hand-written in MainLayout) is one more than a keyboard user should
+    // have to tab past. SkipLink itself builds its href from a template
+    // literal, so a literal "#main-content" href means a second one.
+    const srcDir = path.join(process.cwd(), "src");
+    const walk = (dir: string): string[] =>
+      fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
+        const child = path.join(dir, e.name);
+        if (e.isDirectory()) return walk(child);
+        return /\.tsx$/.test(e.name) ? [child] : [];
+      });
+    const handRolled = walk(srcDir)
+      .filter((f) =>
+        /href=\{?["'`]#main-content/.test(uncomment(fs.readFileSync(f, "utf8"))),
+      )
+      .map((f) => path.relative(srcDir, f));
+    expect(handRolled).toEqual([]);
+  });
+
+  it("SkipLink still aims at the landmark the pages render", () => {
+    // The guard above only proves there is one skip link. This proves it
+    // points somewhere: its default target and the id MainLayout renders.
+    const skip = fs.readFileSync(
+      path.join(process.cwd(), "src", "components", "shared", "accessibility.tsx"),
+      "utf8",
+    );
+    expect(skip).toMatch(/targetId\s*=\s*"main-content"/);
+    const shell = fs.readFileSync(
+      path.join(process.cwd(), "src", "components", "layout", "main-layout.tsx"),
+      "utf8",
+    );
+    expect(shell).toMatch(/<main\b[\s\S]{0,120}?id="main-content"/);
+  });
+});
+
 describe("a11y — the app shell leaves the <h1> to the page", () => {
   // The header used to render the unit name as an <h1>. Every shell page
   // therefore had two: the site's, first in the DOM, and the page's own from

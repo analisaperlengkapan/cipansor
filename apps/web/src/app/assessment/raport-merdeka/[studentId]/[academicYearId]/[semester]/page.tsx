@@ -13,7 +13,7 @@ interface RaportMerdekaPageProps {
   };
 }
 
-export default function RaportMerdekaPrintPage({
+function RaportMerdekaPrintPageContent({
   params,
 }: RaportMerdekaPageProps) {
   const { studentId, academicYearId, semester } = params;
@@ -470,5 +470,13 @@ export default function RaportMerdekaPrintPage({
         </button>
       </div>
     </div>
+  );
+}
+
+export default function RaportMerdekaPrintPage(props: Parameters<typeof RaportMerdekaPrintPageContent>[0]) {
+  return (
+    <main id="main-content">
+      <RaportMerdekaPrintPageContent {...props} />
+    </main>
   );
 }

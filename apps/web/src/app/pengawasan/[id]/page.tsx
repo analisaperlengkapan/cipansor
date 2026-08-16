@@ -50,6 +50,7 @@ import {
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { MainLayout } from "@/components/layout";
 import {
   ArrowLeft,
   Target,
@@ -69,7 +70,7 @@ const findingSchema = z.object({
   recommendation: z.string().optional(),
 });
 
-export default function PengawasanAuditDetailPage() {
+function PengawasanAuditDetailPageContent() {
   const params = useParams();
   const router = useRouter();
   const auditId = params.id as string;
@@ -518,5 +519,13 @@ export default function PengawasanAuditDetailPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function PengawasanAuditDetailPage() {
+  return (
+    <MainLayout>
+      <PengawasanAuditDetailPageContent />
+    </MainLayout>
   );
 }

@@ -38,11 +38,16 @@ export function Header({ onMenuClick }: HeaderProps) {
           <Menu className="h-5 w-5" />
         </Button>
         <div className="hidden lg:block">
-          <h1 className="text-lg font-semibold">
+          {/* Deliberately not an <h1>. This names the site (or the signed-in
+              user's unit), not the page. As a heading it sat above every
+              page's own <h1>, so each of the 400-odd pages announced itself
+              twice and led with the wrong title. The banner landmark already
+              carries this text; see the guard in rbac.test.ts. */}
+          <div className="text-lg font-semibold">
             {/* Foundation-level accounts have no unit, so the fallback is what
                 the yayasan board actually sees every day. */}
             {user?.unit?.name || t("common.appName", "Sistem Informasi Cipansor")}
-          </h1>
+          </div>
         </div>
       </div>
 

@@ -34,6 +34,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { MainLayout } from "@/components/layout";
 import {
   useCreateBook,
   BOOK_CATEGORIES,
@@ -71,7 +72,7 @@ const bookSchema = z.object({
 
 type BookFormData = z.infer<typeof bookSchema>;
 
-export default function NewBookPage() {
+function NewBookPageContent() {
   const router = useRouter();
   const createMutation = useCreateBook();
 
@@ -367,5 +368,13 @@ export default function NewBookPage() {
         </form>
       </Form>
     </div>
+  );
+}
+
+export default function NewBookPage() {
+  return (
+    <MainLayout>
+      <NewBookPageContent />
+    </MainLayout>
   );
 }

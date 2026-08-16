@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
+import { MainLayout } from "@/components/layout";
 import {
   useViolationType,
   useUpdateViolationType,
@@ -52,7 +53,7 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
-export default function EditViolationTypePage() {
+function EditViolationTypePageContent() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
@@ -266,5 +267,13 @@ export default function EditViolationTypePage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function EditViolationTypePage() {
+  return (
+    <MainLayout>
+      <EditViolationTypePageContent />
+    </MainLayout>
   );
 }

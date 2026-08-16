@@ -49,6 +49,7 @@ import { useClasses } from "@/hooks/use-classes";
 import { useUsers } from "@/hooks/use-users";
 import { useAcademicYears } from "@/hooks/use-academic-years";
 
+import { MainLayout } from "@/components/layout";
 const scheduleSchema = z.object({
   classId: z.string().min(1, "Kelas wajib dipilih"),
   subjectId: z.string().min(1, "Mata pelajaran wajib dipilih"),
@@ -77,7 +78,7 @@ const scheduleSchema = z.object({
 
 type ScheduleFormData = z.infer<typeof scheduleSchema>;
 
-export default function EditSchedulePage({
+function EditSchedulePageContent({
   params,
 }: {
   params: Promise<{ id: string }>;
@@ -513,5 +514,13 @@ export default function EditSchedulePage({
         </form>
       </Form>
     </div>
+  );
+}
+
+export default function EditSchedulePage(props: Parameters<typeof EditSchedulePageContent>[0]) {
+  return (
+    <MainLayout>
+      <EditSchedulePageContent {...props} />
+    </MainLayout>
   );
 }

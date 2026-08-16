@@ -29,6 +29,7 @@ import { useTeachers } from "@/hooks/use-teachers";
 import { useCreateSimaan, SIMAAN_TYPES } from "@/hooks/use-simaan";
 import { toast } from "sonner";
 
+import { MainLayout } from "@/components/layout";
 const formSchema = z.object({
   studentId: z.string().min(1, "Santri harus dipilih"),
   simaanType: z.string().min(1, "Jenis simaan harus dipilih"),
@@ -39,7 +40,7 @@ const formSchema = z.object({
   notes: z.string().optional(),
 });
 
-export default function CreateSimaanPage() {
+function CreateSimaanPageContent() {
   const router = useRouter();
   const { mutate: createSimaan, isPending } = useCreateSimaan();
 
@@ -247,5 +248,13 @@ export default function CreateSimaanPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function CreateSimaanPage() {
+  return (
+    <MainLayout>
+      <CreateSimaanPageContent />
+    </MainLayout>
   );
 }

@@ -36,6 +36,7 @@ import { toast } from "sonner";
 import { DetailItem } from "@/components/shared/detail-item";
 import { Separator } from "@/components/ui/separator";
 
+import { MainLayout } from "@/components/layout";
 const formSchema = z.object({
   tajwidScore: z.coerce.number().min(0).max(100),
   fashohaScore: z.coerce.number().min(0).max(100),
@@ -47,7 +48,7 @@ const formSchema = z.object({
   recommendations: z.string().optional(),
 });
 
-export default function GradeSimaanPage({
+function GradeSimaanPageContent({
   params,
 }: {
   params: { id: string };
@@ -349,5 +350,13 @@ export default function GradeSimaanPage({
         </div>
       </div>
     </div>
+  );
+}
+
+export default function GradeSimaanPage(props: Parameters<typeof GradeSimaanPageContent>[0]) {
+  return (
+    <MainLayout>
+      <GradeSimaanPageContent {...props} />
+    </MainLayout>
   );
 }

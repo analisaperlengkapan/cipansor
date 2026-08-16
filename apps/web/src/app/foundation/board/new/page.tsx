@@ -29,6 +29,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { useCreateFoundationBoardMember } from "@/hooks";
 
+import { MainLayout } from "@/components/layout";
 const formSchema = z.object({
   name: z.string().min(1, "Nama wajib diisi"),
   position: z.string().min(1, "Jabatan wajib diisi"),
@@ -43,7 +44,7 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
-export default function NewBoardMemberPage() {
+function NewBoardMemberPageContent() {
   const router = useRouter();
   const createMember = useCreateFoundationBoardMember();
 
@@ -279,5 +280,13 @@ export default function NewBoardMemberPage() {
         </form>
       </Form>
     </div>
+  );
+}
+
+export default function NewBoardMemberPage() {
+  return (
+    <MainLayout>
+      <NewBoardMemberPageContent />
+    </MainLayout>
   );
 }

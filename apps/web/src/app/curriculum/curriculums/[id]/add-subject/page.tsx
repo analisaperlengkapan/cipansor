@@ -35,6 +35,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { MainLayout } from "@/components/layout";
 import {
   useCurriculum,
   useSubjects,
@@ -64,7 +65,7 @@ const addSubjectSchema = z.object({
 
 type AddSubjectFormData = z.infer<typeof addSubjectSchema>;
 
-export default function AddSubjectToCurriculumPage({
+function AddSubjectToCurriculumPageContent({
   params,
 }: {
   params: Promise<{ id: string }>;
@@ -373,5 +374,13 @@ export default function AddSubjectToCurriculumPage({
         </form>
       </Form>
     </div>
+  );
+}
+
+export default function AddSubjectToCurriculumPage(props: Parameters<typeof AddSubjectToCurriculumPageContent>[0]) {
+  return (
+    <MainLayout>
+      <AddSubjectToCurriculumPageContent {...props} />
+    </MainLayout>
   );
 }

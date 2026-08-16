@@ -18,7 +18,8 @@ function useResearchTheme(id: string) {
 
 import { useResearchThemes } from '@/hooks/research/use-research';
 
-export default function ThemeDetailPage() {
+import { MainLayout } from '@/components/layout';
+function ThemeDetailPageContent() {
   const { id } = useParams();
   const router = useRouter();
   const { data: theme } = useResearchTheme(id as string);
@@ -68,5 +69,13 @@ export default function ThemeDetailPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function ThemeDetailPage() {
+  return (
+    <MainLayout>
+      <ThemeDetailPageContent />
+    </MainLayout>
   );
 }

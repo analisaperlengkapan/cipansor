@@ -44,6 +44,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { MainLayout } from "@/components/layout";
 import {
   ArrowLeft,
   Target,
@@ -60,7 +61,7 @@ const milestoneSchema = z.object({
   dueDate: z.string().min(1, "Batas waktu wajib diisi"),
 });
 
-export default function LitbangProjectDetailPage() {
+function LitbangProjectDetailPageContent() {
   const params = useParams();
   const router = useRouter();
   const projectId = params.id as string;
@@ -444,5 +445,13 @@ export default function LitbangProjectDetailPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function LitbangProjectDetailPage() {
+  return (
+    <MainLayout>
+      <LitbangProjectDetailPageContent />
+    </MainLayout>
   );
 }

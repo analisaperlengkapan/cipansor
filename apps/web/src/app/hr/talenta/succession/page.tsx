@@ -19,7 +19,8 @@ import {
 import { api } from "@/lib/api";
 import { SuccessionPlanningList } from "@/components/hr/succession-planning-list";
 
-export default function SuccessionPlanningPage() {
+import { MainLayout } from "@/components/layout";
+function SuccessionPlanningPageContent() {
   const [positionSearch, setPositionSearch] = useState("Kepala Sekolah");
 
   const { data: suggestions, isLoading, refetch } = useQuery({
@@ -113,5 +114,13 @@ export default function SuccessionPlanningPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SuccessionPlanningPage() {
+  return (
+    <MainLayout>
+      <SuccessionPlanningPageContent />
+    </MainLayout>
   );
 }

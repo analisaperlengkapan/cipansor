@@ -55,6 +55,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
+import { MainLayout } from "@/components/layout";
 import {
   useWallet,
   useStudentWalletTransactions,
@@ -78,7 +79,7 @@ interface PageProps {
   params: Promise<{ studentId: string }>;
 }
 
-export default function WalletDetailPage({ params }: PageProps) {
+function WalletDetailPageContent({ params }: PageProps) {
   const { studentId } = use(params);
   const [page, setPage] = useState(1);
   const [transactionType, setTransactionType] = useState<string>("");
@@ -831,5 +832,13 @@ export default function WalletDetailPage({ params }: PageProps) {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+export default function WalletDetailPage(props: Parameters<typeof WalletDetailPageContent>[0]) {
+  return (
+    <MainLayout>
+      <WalletDetailPageContent {...props} />
+    </MainLayout>
   );
 }

@@ -39,6 +39,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { MainLayout } from "@/components/layout";
 import {
   DUTY_TYPE_LABELS,
   DutyType,
@@ -129,7 +130,7 @@ const SHIFT_CONFIG: Record<DutyShift, { label: string; color: string }> = {
   EVENING: { label: "Sore/Malam", color: "bg-purple-100 text-purple-800" },
 };
 
-export default function DutyRosterDetailPage() {
+function DutyRosterDetailPageContent() {
   const params = useParams();
   const router = useRouter();
   const rosterId = params.id as string;
@@ -625,5 +626,13 @@ export default function DutyRosterDetailPage() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+export default function DutyRosterDetailPage() {
+  return (
+    <MainLayout>
+      <DutyRosterDetailPageContent />
+    </MainLayout>
   );
 }

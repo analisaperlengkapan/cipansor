@@ -48,6 +48,7 @@ import {
 import { ArrowLeft, Loader2, Plus, X, Info } from "lucide-react";
 import { toast } from "sonner";
 
+import { MainLayout } from "@/components/layout";
 const formSchema = z.object({
   name: z.string().min(1, "Nama template wajib diisi"),
   type: z.string().min(1, "Tipe notifikasi wajib dipilih"),
@@ -102,7 +103,7 @@ const COMMON_VARIABLES: Record<string, string[]> = {
   OTHER: ["{{nama_santri}}", "{{pesan}}"],
 };
 
-export default function EditTemplatePage() {
+function EditTemplatePageContent() {
   const router = useRouter();
   const params = useParams();
   const templateId = params.id as string;
@@ -507,5 +508,13 @@ export default function EditTemplatePage() {
         </form>
       </Form>
     </div>
+  );
+}
+
+export default function EditTemplatePage() {
+  return (
+    <MainLayout>
+      <EditTemplatePageContent />
+    </MainLayout>
   );
 }

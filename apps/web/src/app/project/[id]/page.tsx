@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
-export default function ProjectDetailPage() {
+import { MainLayout } from "@/components/layout";
+function ProjectDetailPageContent() {
   const params = useParams();
   const projectId = params.id as string;
 
@@ -49,5 +50,13 @@ export default function ProjectDetailPage() {
         <KanbanBoard project={project} />
       </div>
     </div>
+  );
+}
+
+export default function ProjectDetailPage() {
+  return (
+    <MainLayout>
+      <ProjectDetailPageContent />
+    </MainLayout>
   );
 }

@@ -44,6 +44,7 @@ import {
 } from "@/hooks/use-curriculum";
 import { useUnits } from "@/hooks/use-units";
 
+import { MainLayout } from "@/components/layout";
 const subjectSchema = z.object({
   code: z.string().min(1, "Kode mata pelajaran wajib diisi"),
   name: z.string().min(1, "Nama mata pelajaran wajib diisi"),
@@ -60,7 +61,7 @@ const subjectSchema = z.object({
 
 type SubjectFormData = z.infer<typeof subjectSchema>;
 
-export default function EditSubjectPage({
+function EditSubjectPageContent({
   params,
 }: {
   params: Promise<{ id: string }>;
@@ -426,5 +427,13 @@ export default function EditSubjectPage({
         </form>
       </Form>
     </div>
+  );
+}
+
+export default function EditSubjectPage(props: Parameters<typeof EditSubjectPageContent>[0]) {
+  return (
+    <MainLayout>
+      <EditSubjectPageContent {...props} />
+    </MainLayout>
   );
 }

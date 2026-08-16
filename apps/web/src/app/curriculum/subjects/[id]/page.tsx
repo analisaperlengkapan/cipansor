@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/table";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { toast } from "sonner";
+import { MainLayout } from "@/components/layout";
 import {
   useSubject,
   useDeleteSubject,
@@ -50,7 +51,7 @@ function getTypeBadgeColor(type: SubjectType) {
   return colors[type];
 }
 
-export default function SubjectDetailPage({
+function SubjectDetailPageContent({
   params,
 }: {
   params: Promise<{ id: string }>;
@@ -312,5 +313,13 @@ export default function SubjectDetailPage({
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SubjectDetailPage(props: Parameters<typeof SubjectDetailPageContent>[0]) {
+  return (
+    <MainLayout>
+      <SubjectDetailPageContent {...props} />
+    </MainLayout>
   );
 }

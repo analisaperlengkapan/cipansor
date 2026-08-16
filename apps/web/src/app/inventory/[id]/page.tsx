@@ -51,6 +51,7 @@ import {
 import { useUnits } from "@/hooks/use-units";
 import { useTeachers } from "@/hooks/use-teachers";
 
+import { MainLayout } from "@/components/layout";
 function getConditionBadge(condition: AssetCondition) {
   const colorMap: Record<AssetCondition, string> = {
     [AssetCondition.EXCELLENT]: "bg-green-100 text-green-800",
@@ -82,7 +83,7 @@ function getStatusBadge(status: AssetStatus) {
   );
 }
 
-export default function InventoryDetailPage({
+function InventoryDetailPageContent({
   params,
 }: {
   params: { id: string };
@@ -804,5 +805,13 @@ export default function InventoryDetailPage({
         }
       `}</style>
     </div>
+  );
+}
+
+export default function InventoryDetailPage(props: Parameters<typeof InventoryDetailPageContent>[0]) {
+  return (
+    <MainLayout>
+      <InventoryDetailPageContent {...props} />
+    </MainLayout>
   );
 }

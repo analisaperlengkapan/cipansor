@@ -45,6 +45,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { toast } from "sonner";
+import { MainLayout } from "@/components/layout";
 import {
   useDormitory,
   useDormitoryRooms,
@@ -55,7 +56,7 @@ import {
   Room,
 } from "@/hooks/use-dormitory";
 
-export default function DormitoryDetailPage({
+function DormitoryDetailPageContent({
   params,
 }: {
   params: Promise<{ id: string }>;
@@ -546,5 +547,13 @@ export default function DormitoryDetailPage({
         variant="destructive"
       />
     </div>
+  );
+}
+
+export default function DormitoryDetailPage(props: Parameters<typeof DormitoryDetailPageContent>[0]) {
+  return (
+    <MainLayout>
+      <DormitoryDetailPageContent {...props} />
+    </MainLayout>
   );
 }

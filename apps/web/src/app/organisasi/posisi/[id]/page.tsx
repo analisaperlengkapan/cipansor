@@ -11,7 +11,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import api from "@/lib/api";
 import { ArrowLeft, User, FileText, CheckCircle2 } from "lucide-react";
 
-export default function PositionDetailPage() {
+import { MainLayout } from "@/components/layout";
+function PositionDetailPageContent() {
   const params = useParams();
   const router = useRouter();
   const positionId = params.id as string;
@@ -134,5 +135,13 @@ export default function PositionDetailPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function PositionDetailPage() {
+  return (
+    <MainLayout>
+      <PositionDetailPageContent />
+    </MainLayout>
   );
 }

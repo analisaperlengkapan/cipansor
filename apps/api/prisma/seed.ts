@@ -1084,66 +1084,42 @@ async function main() {
     },
   });
 
-  // Kepala Sekolah SMP IT (also has Guru role)
-  const kepalaSmpItUser = await prisma.user.create({
-    data: {
-      name: 'Drs. H. Sulaiman, M.Pd',
-      email: 'kepala.smpit@cipansor.or.id',
-      passwordHash: await bcrypt.hash('Kepala123!', 10),
-      role: UserRole.TEACHER,
-      unitId: smpIt.id,
-      isActive: true,
-    },
-  });
+  // Kepala Sekolah SD IT and SMP IT.
+  //
+  // These used to be created here as a SECOND set of accounts — "Hj. Aminah,
+  // S.Pd" on kepala.sdit@ and "Drs. H. Sulaiman, M.Pd" on kepala.smpit@ —
+  // beside the ones DEMO_ACCOUNTS already creates. Every unit therefore had
+  // two active kepala sekolah with different logins and different passwords,
+  // and the invented pair was the one most screens found first.
+  //
+  // DEMO_ACCOUNTS carries the names on record with Dapodik: Dadan Ali Ridwan
+  // for SD IT, Cecep Helmi Syawali for SMP IT. There is one kepala sekolah per
+  // unit, so look the real one up rather than inventing a rival.
+  //
+  // The SMPIT_GURU pairing the old block added by hand is already covered by
+  // SECONDARY_ROLES above.
+  const demoUserOrThrow = (roleCode: RoleCode) => {
+    const found = demoUsers.get(roleCode);
+    if (!found) {
+      throw new Error(
+        `No demo account for ${roleCode} — DEMO_ACCOUNTS and seed.ts have drifted`
+      );
+    }
+    return found;
+  };
 
-  await prisma.userRoleAssignment.createMany({
-    data: [
-      {
-        userId: kepalaSmpItUser.id,
-        roleId: roles[RoleCode.SMPIT_KEPALA_SEKOLAH].id,
-        unitId: smpIt.id,
-        isPrimary: true,
-        isActive: true,
-      },
-      {
-        userId: kepalaSmpItUser.id,
-        roleId: roles[RoleCode.SMPIT_GURU].id,
-        unitId: smpIt.id,
-        isPrimary: false,
-        isActive: true,
-      },
-    ],
-  });
+  const kepalaSmpItUser = demoUserOrThrow(RoleCode.SMPIT_KEPALA_SEKOLAH);
+  const kepalaSdItUser = demoUserOrThrow(RoleCode.SDIT_KEPALA_SEKOLAH);
 
-  // Kepala Sekolah SD IT
-  const kepalaSdItUser = await prisma.user.create({
+  // The SD IT head also teaches, mirroring the SMP IT pairing.
+  await prisma.userRoleAssignment.create({
     data: {
-      name: 'Hj. Aminah, S.Pd',
-      email: 'kepala.sdit@cipansor.or.id',
-      passwordHash: await bcrypt.hash('Kepala123!', 10),
-      role: UserRole.TEACHER,
+      userId: kepalaSdItUser.id,
+      roleId: roles[RoleCode.SDIT_GURU].id,
       unitId: sdIt.id,
+      isPrimary: false,
       isActive: true,
     },
-  });
-
-  await prisma.userRoleAssignment.createMany({
-    data: [
-      {
-        userId: kepalaSdItUser.id,
-        roleId: roles[RoleCode.SDIT_KEPALA_SEKOLAH].id,
-        unitId: sdIt.id,
-        isPrimary: true,
-        isActive: true,
-      },
-      {
-        userId: kepalaSdItUser.id,
-        roleId: roles[RoleCode.SDIT_GURU].id,
-        unitId: sdIt.id,
-        isPrimary: false,
-        isActive: true,
-      },
-    ],
   });
 
   // Create Teachers (User + Teacher profile) with role assignments
@@ -1227,27 +1203,9 @@ async function main() {
     },
   });
 
-  // Create Tata Usaha for SD IT
-  const tuSdItUser = await prisma.user.create({
-    data: {
-      name: 'Ibu Sari',
-      email: 'tu.sdit@cipansor.or.id',
-      passwordHash: await bcrypt.hash('TataUsaha123!', 10),
-      role: UserRole.STAFF,
-      unitId: sdIt.id,
-      isActive: true,
-    },
-  });
-
-  await prisma.userRoleAssignment.create({
-    data: {
-      userId: tuSdItUser.id,
-      roleId: roles[RoleCode.SDIT_TATA_USAHA].id,
-      unitId: sdIt.id,
-      isPrimary: true,
-      isActive: true,
-    },
-  });
+  // Tata Usaha SD IT comes from DEMO_ACCOUNTS (Iwan Setiadi, sdit.tu@), for
+  // the same reason as the kepala sekolah above: this block used to add a
+  // second holder of SDIT_TATA_USAHA, "Ibu Sari" on tu.sdit@.
 
   console.log('✅ Users and Teachers created');
 
@@ -8039,6 +7997,49 @@ async function main() {
     throw new Error(
       `Seed produced ${orphanAccounts.length} active account(s) with no active role ` +
         `assignment, which cannot log in: ${orphanAccounts.map((u) => u.email).join(', ')}`
+    );
+  }
+
+  // Invariant check. A school has one head. This seed used to create a second
+  // one per unit — "Hj. Aminah, S.Pd" beside Dadan Ali Ridwan for SD IT,
+  // "Drs. H. Sulaiman, M.Pd" beside Cecep Helmi Syawali for SMP IT — on a
+  // different email pattern and a different password, so both answered and the
+  // invented one usually answered first. Nothing noticed for months because no
+  // check ever counted them. Names on record with Dapodik live in
+  // DEMO_ACCOUNTS; anything that adds a rival holder should fail here loudly.
+  const kepalaHolders = await prisma.userRoleAssignment.findMany({
+    where: {
+      isActive: true,
+      user: { isActive: true },
+      role: { code: { endsWith: '_KEPALA_SEKOLAH' } },
+    },
+    select: {
+      unitId: true,
+      role: { select: { code: true } },
+      user: { select: { name: true, email: true } },
+    },
+  });
+
+  const byRoleAndUnit = new Map<string, typeof kepalaHolders>();
+  for (const holder of kepalaHolders) {
+    const key = `${holder.role.code}@${holder.unitId ?? 'global'}`;
+    byRoleAndUnit.set(key, [...(byRoleAndUnit.get(key) ?? []), holder]);
+  }
+
+  const contested = [...byRoleAndUnit.entries()].filter(
+    ([, holders]) => holders.length > 1
+  );
+
+  if (contested.length > 0) {
+    throw new Error(
+      `Seed produced more than one active kepala sekolah for ${contested.length} ` +
+        `unit(s): ` +
+        contested
+          .map(
+            ([key, holders]) =>
+              `${key} -> ${holders.map((h) => `${h.user.name} <${h.user.email}>`).join(' AND ')}`
+          )
+          .join('; ')
     );
   }
 

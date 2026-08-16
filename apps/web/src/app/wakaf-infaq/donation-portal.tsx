@@ -222,7 +222,10 @@ export function DonationPortal() {
         on what the first child happens to be, and on whether the data that
         renders it exists at all. A normal margin cannot break that way.
       */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12">
+      {/* A section, not a <main>: wakaf-infaq/page.tsx already wraps this
+          component in the page's <main id="main-content">, and nesting two
+          landmarks is invalid. */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12">
         {/*
           Aggregate fundraising figures ("Total Donatur 25+", "Total Terkumpul
           Rp 125.000.000") used to sit here. They were read from the seeded demo
@@ -467,7 +470,7 @@ export function DonationPortal() {
           plus WhatsApp and the address. Two copies of the same contact details
           one scroll apart is noise, and the footer's version is more complete.
         */}
-      </main>
+      </section>
 
       {/* Closing verse. Not a footer — the site footer is supplied by the
           page wrapper; this used to be a second one with a stale copyright. */}

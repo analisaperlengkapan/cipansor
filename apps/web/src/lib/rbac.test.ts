@@ -558,20 +558,54 @@ describe("a11y — exactly one <main> landmark, and the skip link reaches it", (
   // A landmark can now arrive three ways, and all three have to be counted or
   // this test lies: the page renders <main> itself, it renders a component
   // that does, or an ancestor layout.tsx does either.
-  const APP_DIR = path.join(process.cwd(), "src", "app");
+  const SRC_DIR = path.join(process.cwd(), "src");
+  const APP_DIR = path.join(SRC_DIR, "app");
   const ROOT_LAYOUT = path.join(APP_DIR, "layout.tsx");
-  const PROVIDERS = ["MainLayout", "PublicPage"];
 
   const uncomment = (src: string) =>
     src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
 
-  const providesLandmark = (file: string): boolean => {
-    if (!fs.existsSync(file)) return false;
-    const src = uncomment(fs.readFileSync(file, "utf8"));
-    return (
-      /<main[\s>]/.test(src) ||
-      PROVIDERS.some((c) => new RegExp(`<${c}[\\s>/]`).test(src))
-    );
+  const read = (f: string) => uncomment(fs.readFileSync(f, "utf8"));
+
+  // Counting "<main>" is not enough: the landing page rendered one *without*
+  // the id, so removing the root layout's left document.getElementById
+  // returning null and the skip link doing nothing at all. The landmark and
+  // the skip target have to be the same element, so count the id.
+  const landmarksIn = (file: string): number =>
+    fs.existsSync(file)
+      ? (read(file).match(/<main\b[^>]*\bid="main-content"/g) || []).length
+      : 0;
+
+  /** Resolve a relative or @/-aliased import to a file under src/. */
+  const resolveImport = (from: string, spec: string): string | null => {
+    const base = spec.startsWith("@/")
+      ? path.join(SRC_DIR, spec.slice(2))
+      : spec.startsWith(".")
+        ? path.resolve(path.dirname(from), spec)
+        : null;
+    if (!base) return null;
+    for (const cand of [
+      `${base}.tsx`,
+      `${base}.ts`,
+      path.join(base, "index.tsx"),
+      path.join(base, "index.ts"),
+    ]) {
+      if (fs.existsSync(cand)) return cand;
+    }
+    return null;
+  };
+
+  /** Landmarks a file contributes, following its local imports. */
+  const landmarkCount = (file: string, seen = new Set<string>()): number => {
+    if (!fs.existsSync(file) || seen.has(file)) return 0;
+    seen.add(file);
+    const src = read(file);
+    let total = landmarksIn(file);
+    for (const m of src.matchAll(/from\s+["']([^"']+)["']/g)) {
+      const dep = resolveImport(file, m[1]);
+      if (dep) total += landmarkCount(dep, seen);
+    }
+    return total;
   };
 
   // Pages that redirect on mount render nothing to land on.
@@ -581,15 +615,17 @@ describe("a11y — exactly one <main> landmark, and the skip link reaches it", (
     src.length < 2000;
 
   function pageFiles(dir: string): string[] {
-    return fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
-      if (!e.isDirectory()) return [];
-      const child = path.join(dir, e.name);
-      const page = path.join(child, "page.tsx");
-      return [
-        ...(fs.existsSync(page) ? [page] : []),
-        ...pageFiles(child),
-      ];
-    });
+    // The page.tsx in `dir` itself counts. Only walking subdirectories misses
+    // src/app/page.tsx — the landing page, which is exactly the one that
+    // shipped with a <main> carrying no id and a skip link pointing nowhere.
+    const here = path.join(dir, "page.tsx");
+    return [
+      ...(fs.existsSync(here) ? [here] : []),
+      ...fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
+        if (!e.isDirectory()) return [];
+        return pageFiles(path.join(dir, e.name));
+      }),
+    ];
   }
 
   it("the root layout does not render a <main>", () => {
@@ -599,20 +635,45 @@ describe("a11y — exactly one <main> landmark, and the skip link reaches it", (
     );
   });
 
-  it("every page has a <main> landmark from somewhere", () => {
-    const bare = pageFiles(APP_DIR)
-      .filter((page) => {
-        if (providesLandmark(page)) return false;
+  it("every page renders exactly one <main id=\"main-content\">", () => {
+    // Zero means the skip link has no target and silently does nothing.
+    // Two means nested or duplicated landmarks and a duplicate id, so
+    // getElementById picks whichever comes first in the document.
+    const wrong = pageFiles(APP_DIR)
+      .filter((page) => !isRedirectStub(fs.readFileSync(page, "utf8")))
+      .map((page) => {
+        let count = landmarkCount(page);
         let dir = path.dirname(page);
         for (;;) {
           const layout = path.join(dir, "layout.tsx");
-          if (layout !== ROOT_LAYOUT && providesLandmark(layout)) return false;
+          if (layout !== ROOT_LAYOUT) count += landmarkCount(layout);
           if (dir === APP_DIR) break;
           dir = path.dirname(dir);
         }
-        return !isRedirectStub(fs.readFileSync(page, "utf8"));
+        return { page: path.relative(APP_DIR, page), count };
       })
-      .map((f) => path.relative(APP_DIR, f));
+      .filter(({ count }) => count !== 1);
+    expect(wrong).toEqual([]);
+  });
+
+  it("every <main> carries id=\"main-content\"", () => {
+    // The count above only sees landmarks that have the id, so a bare <main>
+    // nested inside an id'd one would slip past it — which is what
+    // spmb-form.tsx and donation-portal.tsx were doing. A <main> without the
+    // id is either an invalid second landmark or a skip target that isn't one.
+    const walkTsx = (dir: string): string[] =>
+      fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
+        const child = path.join(dir, e.name);
+        if (e.isDirectory()) return walkTsx(child);
+        return /\.tsx$/.test(e.name) ? [child] : [];
+      });
+    const bare = walkTsx(SRC_DIR)
+      .flatMap((f) =>
+        (read(f).match(/<main\b[^>]*>/g) || [])
+          .filter((tag) => !/\bid="main-content"/.test(tag))
+          .map(() => path.relative(SRC_DIR, f)),
+      )
+      .filter((f) => !f.startsWith("lib/"));
     expect(bare).toEqual([]);
   });
 

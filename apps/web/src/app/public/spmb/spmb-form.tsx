@@ -401,7 +401,10 @@ export function SpmbForm() {
         </div>
       </section>
 
-      <main className="flex-1 max-w-3xl mx-auto px-4 py-8 w-full">
+      <main
+        id="main-content"
+        className="flex-1 max-w-3xl mx-auto px-4 py-8 w-full"
+      >
         <Tabs
           value={activeTab}
           onValueChange={setActiveTab}

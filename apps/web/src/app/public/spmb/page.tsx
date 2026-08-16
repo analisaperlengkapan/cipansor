@@ -32,14 +32,8 @@ export const metadata: Metadata = {
   },
 };
 
-function PublicSpmbPageContent() {
-  return <SpmbForm />;
-}
-
 export default function PublicSpmbPage() {
-  return (
-    <main id="main-content">
-      <PublicSpmbPageContent />
-    </main>
-  );
+  // The landmark lives inside SpmbForm, which renders the page's own <main>
+  // after its hero <section>. Wrapping it in a second one here would nest two.
+  return <SpmbForm />;
 }

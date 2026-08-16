@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { MainLayout } from "@/components/layout";
 import { PageHeader } from "@/components/shared";
 import {
   Card,
@@ -108,8 +107,13 @@ export default function NotificationPreferencesPage() {
     );
   };
 
+  // No MainLayout here: parent/layout.tsx already wraps every /parent page in
+  // it, so this page was rendering the whole shell twice — two sidebars, two
+  // headers, two <main id="main-content">. The layout's own role check already
+  // sends anyone who is not PARENT or SUPER_ADMIN to /dashboard, so the
+  // allowedRoles that used to sit here never widened access either.
   return (
-    <MainLayout allowedRoles={["PARENT", "SUPER_ADMIN", "UNIT_ADMIN"]}>
+    <>
       <div className="space-y-6">
         <PageHeader
           title="Pengaturan Notifikasi"
@@ -248,6 +252,6 @@ export default function NotificationPreferencesPage() {
           ))}
         </Tabs>
       </div>
-    </MainLayout>
+    </>
   );
 }

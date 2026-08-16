@@ -12,8 +12,10 @@ import { Loader2, Users, Award, TrendingUp, GitMerge, UserCheck, ShieldCheck, Se
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MainLayout } from "@/components/layout";
+import { useRouter } from "next/navigation";
 
 function TalentPageContent() {
+  const router = useRouter();
   const [positionQuery, setPositionQuery] = useState("");
   const [searchTrigger, setSearchTrigger] = useState("");
 
@@ -51,6 +53,18 @@ function TalentPageContent() {
       <PageHeader
         title="Manajemen Talenta"
         description="Analisis Kategori Talenta dan Perencanaan Suksesi"
+        actions={
+          /*
+            /hr/talenta/succession is a built page no menu listed and nothing
+            linked to — reachable only by typing the URL. It does more than the
+            tab below: it lets you score against a real jabatan from the org
+            chart, which is what makes the competency component computable.
+          */
+          <Button variant="outline" onClick={() => router.push("/hr/talenta/succession")}>
+            <GitMerge className="mr-2 h-4 w-4" />
+            Perencanaan Suksesi
+          </Button>
+        }
       />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -108,7 +122,10 @@ function TalentPageContent() {
         <TabsContent value="succession">
           <Card className="shadow-md">
             <CardHeader>
-              <CardTitle>AI-Driven Succession Recommendations</CardTitle>
+              {/* Not "AI-Driven": the score is a weighted sum. See the page at
+                  /hr/talenta/succession, which shows the weights and marks the
+                  components that have no data yet. */}
+              <CardTitle>Rekomendasi Suksesi</CardTitle>
               <CardDescription>Cari posisi jabatan untuk mendapatkan rekomendasi suksesi berdasarkan data talenta.</CardDescription>
             </CardHeader>
             <CardContent>

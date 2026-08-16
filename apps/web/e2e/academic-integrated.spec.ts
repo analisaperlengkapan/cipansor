@@ -34,8 +34,11 @@ test.describe("Academic Integrated Flow", () => {
     await page.locator("text=Succession Planning").first().waitFor({ state: "visible" });
     await page.locator("text=Succession Planning").first().click({ force: true });
 
-    // Verify the search UI is visible
-    await expect(page.locator("text=AI-Driven Succession Recommendations")).toBeVisible();
+    // Verify the search UI is visible. This used to assert the card title
+    // "AI-Driven Succession Recommendations" — a string #410 deliberately
+    // removed, because a weighted sum is not AI. Assert the control the test
+    // is actually about instead, so honest copy edits don't fail the suite.
+    await expect(page.locator('input[placeholder*="Masukkan nama jabatan"]')).toBeVisible();
 
     // Search for a position against the real suggestion engine
     await page.fill('input[placeholder*="Masukkan nama jabatan"]', "Kepala Sekolah");

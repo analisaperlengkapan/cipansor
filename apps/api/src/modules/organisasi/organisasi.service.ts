@@ -83,6 +83,24 @@ export class OrganisasiService {
     });
   }
 
+  /**
+   * Every position across the org chart.
+   *
+   * Succession planning needs to offer a jabatan to score against without
+   * first making the user pick an org unit — the competency component reads
+   * `requirements` off the chosen position, and until something could supply
+   * a position id it scored zero for everyone.
+   */
+  async getAllPositions() {
+    return prisma.orgPosition.findMany({
+      include: {
+        holder: { select: { id: true, name: true } },
+        orgUnit: { select: { id: true, name: true } },
+      },
+      orderBy: [{ level: "asc" }, { title: "asc" }],
+    });
+  }
+
   async createPosition(data: {
     orgUnitId: string;
     title: string;

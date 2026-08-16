@@ -54,6 +54,13 @@ export const getPositions = async (req: Request, res: Response, next: NextFuncti
   } catch (error) { next(error); }
 };
 
+export const getAllPositions = async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const data = await organisasiService.getAllPositions();
+    res.json({ data });
+  } catch (error) { next(error); }
+};
+
 export const createPosition = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const data = await organisasiService.createPosition(req.body);

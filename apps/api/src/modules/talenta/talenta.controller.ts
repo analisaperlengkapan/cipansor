@@ -202,7 +202,16 @@ export const suggestSuccessors = asyncHandler(async (req: Request, res: Response
   const unitId = resolveListUnitId(req, req.query.unitId as string);
   const positionTitle = req.query.positionTitle as string;
   if (!positionTitle) throw Errors.badRequest('positionTitle query parameter is required');
-  const suggestions = await talentaService.suggestSuccessors(positionTitle, unitId);
+  // The competency component — the only part of the score grounded in recorded
+  // assessments — needs a real position to read requirements from. It was
+  // never plumbed through, so it scored 0 for every candidate and the UI drew
+  // a "Competency Match 0%" bar that had measured nothing.
+  const targetPositionId = req.query.targetPositionId as string | undefined;
+  const suggestions = await talentaService.suggestSuccessors(
+    positionTitle,
+    unitId,
+    targetPositionId
+  );
   res.json({ success: true, data: suggestions });
 });
 

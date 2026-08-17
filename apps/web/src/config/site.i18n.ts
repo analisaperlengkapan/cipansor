@@ -45,6 +45,16 @@ export interface SiteText {
   }>;
   programs: BySlug<{ title: string; description: string }>;
   gallery: BySlug<string>;
+  /**
+   * Alt text for each photograph, positionally keyed to `galleryItems[].photos`.
+   *
+   * Kept separate from `gallery` (which holds album titles) so the album
+   * heading and the description of one picture inside it cannot be confused
+   * for each other. A guard in gallery.test.ts fails the build if any locale's
+   * array drifts out of length with the photographs it describes — a short
+   * array would silently leave later images with no alt at all.
+   */
+  galleryAlts: BySlug<string[]>;
 }
 
 const EN: SiteText = {
@@ -180,6 +190,32 @@ const EN: SiteText = {
     fasilitas: "A look back, and a record of the pesantren's facilities",
     disiplin: "Building a culture of discipline from the start",
     karakter: "Spiritual formation and rabbani character",
+  },
+  galleryAlts: {
+    fasilitas: [
+      "Aerial view of a two-storey building with a red roof, a paved forecourt and terraced stone retaining walls behind it",
+      "A row of tile-roofed classrooms with an open walkway facing the assembly yard",
+      "Aerial view of a single-storey building with a wide entrance staircase",
+      "A two-storey building with rows of windows, seen from the bare earth yard",
+      "The facade of the KH. Ali boys' dormitory, with its geometric ornamented gateway",
+      "A single-storey building with a row of roller shutters and a walkway alongside",
+    ],
+    disiplin: [
+      "Primary-school santri in red-and-white uniform lined up for assembly in the pesantren yard",
+      "Hundreds of primary-school santri standing in formation for the flag ceremony",
+      "Primary-school santri dressing their ranks on the command to align",
+      "Junior-secondary santri in white and navy uniform wearing black songkok",
+      "A secondary-level assembly, with teachers standing along the edge of the yard",
+      "Four teachers standing at attention in front of a stone wall during the ceremony",
+      "Teachers saluting as the flag is raised",
+    ],
+    karakter: [
+      "Santri praying together inside the pesantren mosque",
+      "A Qur'an study circle in the open wooden pavilion, led by an ustadz",
+      "Santri seated in a circle reading kitab under a teacher's guidance",
+      "A kitab study circle in the dormitory, bunk beds visible behind",
+      "Santri lined up along a corridor carrying their kitab",
+    ],
   },
 };
 
@@ -317,6 +353,32 @@ const AR: SiteText = {
     disiplin: "بناء ثقافة الانضباط منذ الصغر",
     karakter: "التربية الروحية والخُلق الربّاني",
   },
+  galleryAlts: {
+    fasilitas: [
+      "منظر جوي لمبنى من طابقين بسقف أحمر، أمامه ساحة مرصوفة وخلفه جدران استنادية حجرية مدرَّجة",
+      "صفّ من الفصول الدراسية بسقف قرميدي وممرّ مفتوح يطلّ على ساحة الطابور",
+      "منظر جوي لمبنى من طابق واحد بدرج مدخل عريض",
+      "مبنى من طابقين بصفوف من النوافذ، مُصوَّر من الساحة الترابية",
+      "واجهة مبنى سكن الطلاب «كي هاجي علي» ببوابته المزخرفة بزخارف هندسية",
+      "مبنى من طابق واحد بصفّ من الأبواب المتدحرجة وممرّ إلى جانبه",
+    ],
+    disiplin: [
+      "طلاب المرحلة الابتدائية بالزيّ الأحمر والأبيض مصطفّون للطابور في ساحة المعهد",
+      "مئات من طلاب المرحلة الابتدائية يقفون في صفوف لمراسم رفع العلم",
+      "طلاب المرحلة الابتدائية يعدّلون صفوفهم عند أمر الاصطفاف",
+      "طلاب المرحلة المتوسطة بالزيّ الأبيض والكحلي يرتدون الطاقية السوداء",
+      "طابور المرحلة المتوسطة، والأساتذة يقفون على حافة الساحة",
+      "أربعة من الأساتذة يقفون منتصبين أمام جدار حجري أثناء المراسم",
+      "الأساتذة يؤدّون التحية عند رفع العلم",
+    ],
+    karakter: [
+      "الطلاب يؤدّون الصلاة جماعةً داخل مسجد المعهد",
+      "حلقة قرآنية في الجناح الخشبي المفتوح بإشراف أحد الأساتذة",
+      "طلاب يجلسون في حلقة يقرؤون الكتاب بتوجيه من معلّم",
+      "حلقة لقراءة الكتاب في السكن الداخلي، وتبدو الأسرّة الطابقية خلفهم",
+      "طلاب مصطفّون في الممرّ يحملون كتبهم",
+    ],
+  },
 };
 
 /** Indonesian is the source of record, read straight back out of site.ts. */
@@ -340,6 +402,9 @@ const ID: SiteText = {
     featuredPrograms.map((p) => [p.slug, { title: p.title, description: p.description }]),
   ),
   gallery: Object.fromEntries(galleryItems.map((g) => [g.slug, g.title])),
+  galleryAlts: Object.fromEntries(
+    galleryItems.map((g) => [g.slug, g.photos.map((p) => p.alt)]),
+  ),
 };
 
 const BY_LOCALE: Record<Locale, SiteText> = { id: ID, en: EN, ar: AR };

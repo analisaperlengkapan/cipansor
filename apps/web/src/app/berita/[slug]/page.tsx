@@ -15,6 +15,14 @@ export function generateStaticParams() {
   return articles.map((article) => ({ slug: article.slug }));
 }
 
+/**
+ * Articles are a closed set in `content.ts`. As in `unit/[slug]/page.tsx`,
+ * this documents the intent rather than enforcing it — the route renders on
+ * demand, so what actually decides the status is described in
+ * `app/not-found.tsx`.
+ */
+export const dynamicParams = false;
+
 export async function generateMetadata({
   params,
 }: {

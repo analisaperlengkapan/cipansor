@@ -27,6 +27,7 @@ const STATIC_PAGES = [
   { url: `${SITE_URL}/program-unggulan`, changeFrequency: "monthly", priority: 0.8 },
   { url: `${SITE_URL}/unit`, changeFrequency: "monthly", priority: 0.8 },
   { url: `${SITE_URL}/berita`, changeFrequency: "weekly", priority: 0.9 },
+  { url: `${SITE_URL}/galeri`, changeFrequency: "monthly", priority: 0.7 },
   { url: `${SITE_URL}/wakaf-infaq`, changeFrequency: "weekly", priority: 0.9 },
   { url: `${SITE_URL}/kontak`, changeFrequency: "yearly", priority: 0.6 },
   { url: `${SITE_URL}/public/spmb`, changeFrequency: "weekly", priority: 0.9 },

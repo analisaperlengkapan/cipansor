@@ -18,4 +18,6 @@ export {
   featuredPrograms,
   donationConfig,
   galleryItems,
+  galleryThumb,
 } from "@cipansor/shared";
+export type { GalleryPhoto } from "@cipansor/shared";

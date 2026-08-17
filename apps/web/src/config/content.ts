@@ -392,6 +392,105 @@ export const articles: Article[] = [
       },
     ],
   },
+  {
+    /*
+     * Migrated from pesantrencipansor.com in August 2026, where it ran under a
+     * licensed night photograph of the Sultan Ahmed Mosque in Istanbul. That
+     * is precisely the kind of image Google for Nonprofits declined the domain
+     * over, so the cover here is the pesantren's own congregation instead —
+     * the same subject, photographed in the building this article is about.
+     *
+     * Two further articles on that site were deliberately not migrated. Both
+     * are generic admissions filler that defines SPMB as "Seleksi Penerimaan
+     * Mahasiswa Baru" and advises readers on passing grades, SAINTEK/SOSHUM
+     * streams and private-campus early-bird schemes. Cipansor's SPMB admits
+     * murid to TK through SMA; publishing university-entrance advice under a
+     * primary school's masthead would be wrong on the facts before it was
+     * anything else.
+     */
+    slug: "marhaban-ya-ramadhan-1447",
+    title:
+      "Marhaban Yaa Ramadhan: Momentum Membersihkan Hati, Menguatkan Iman, dan Mempererat Kepedulian",
+    excerpt:
+      "Menyambut Ramadhan 1447 H, Ketua Yayasan menyampaikan pesan kepada santri, asatidz, orang tua, dan masyarakat: jadikan Ramadhan bulan pendidikan ruhani, bukan rutinitas tahunan.",
+    date: "2026-02-14",
+    unit: "Yayasan",
+    image: "/images/galeri/karakter-1.webp",
+    body: [
+      {
+        type: "p",
+        text: "Tasikmalaya, 14 Februari 2026 — Menyambut datangnya bulan suci Ramadhan 1447 H, Pimpinan Yayasan Pondok Pesantren Cipansor menyampaikan pesan dan ajakan kepada seluruh santri, asatidz, orang tua, serta masyarakat umum untuk menjadikan Ramadhan sebagai momentum peningkatan iman, pembinaan akhlak, dan penguatan kepedulian sosial.",
+      },
+      {
+        type: "p",
+        text: "Dalam pesannya, H. Ramram Mansur Ramdani, S.Pd.I., M.Ag menegaskan bahwa Ramadhan bukan sekadar rutinitas tahunan, melainkan bulan pendidikan ruhani yang penuh keberkahan dan kesempatan untuk memperbaiki diri.",
+      },
+      { type: "h2", text: "Ramadhan dan Cahaya Al-Qur'an" },
+      {
+        type: "p",
+        text: "Ramadhan memiliki kemuliaan yang agung karena pada bulan inilah Al-Qur'an diturunkan sebagai petunjuk hidup bagi umat manusia, pembeda antara yang hak dan yang batil. Oleh karena itu, Ramadhan seharusnya menjadi momentum untuk semakin mendekatkan diri kepada Al-Qur'an — membacanya dengan tartil, memahami maknanya, serta mengamalkannya dalam kehidupan sehari-hari.",
+      },
+      {
+        type: "p",
+        text: "Di lingkungan pesantren, semangat tilawah dan tadabbur Al-Qur'an menjadi bagian yang tidak terpisahkan dari aktivitas Ramadhan. Namun nilai ini juga hendaknya terus hidup di tengah keluarga dan masyarakat, agar Al-Qur'an benar-benar menjadi cahaya dalam setiap langkah kehidupan.",
+      },
+      { type: "h2", text: "Puasa: Latihan Kesabaran dan Pengendalian Diri" },
+      {
+        type: "p",
+        text: "Puasa bukan hanya menahan lapar dan dahaga dari terbit fajar hingga terbenam matahari. Lebih dalam dari itu, puasa adalah latihan pengendalian diri. Ia mendidik kesabaran, membentuk kedisiplinan, dan menumbuhkan empati terhadap sesama.",
+      },
+      {
+        type: "p",
+        text: "Menahan diri dari amarah, menjaga lisan dari perkataan yang tidak baik, serta menghindari perbuatan yang sia-sia adalah bagian dari esensi puasa yang sering kali lebih berat daripada sekadar menahan rasa lapar.",
+      },
+      {
+        type: "quote",
+        text: "Ramadhan bukan sekadar kewajiban menjalankan puasa, tetapi kesempatan besar untuk memperbaiki kualitas iman dan akhlak kita. Inilah bulan pendidikan ruhani, bulan pembentukan karakter, dan bulan penguatan kepedulian sosial.",
+        attribution: "H. Ramram Mansur Ramdani, S.Pd.I., M.Ag",
+      },
+      {
+        type: "quote",
+        text: "Mari kita jadikan Ramadhan sebagai titik awal perubahan. Tidak hanya menjadi lebih rajin beribadah, tetapi juga menjadi pribadi yang lebih sabar, lebih peduli, dan lebih bertanggung jawab.",
+        attribution: "H. Ramram Mansur Ramdani, S.Pd.I., M.Ag",
+      },
+      { type: "h2", text: "Bulan Penuh Peluang dan Ampunan" },
+      {
+        type: "p",
+        text: "Ramadhan adalah bulan yang penuh peluang. Setiap amal kebaikan dilipatgandakan pahalanya. Shalat sunnah terasa lebih ringan, tilawah menjadi lebih menenangkan, sedekah terasa lebih bermakna.",
+      },
+      {
+        type: "p",
+        text: "Ramadhan ibarat madrasah kehidupan selama satu bulan penuh. Jika setelah Ramadhan kita menjadi pribadi yang lebih sabar, lebih disiplin, dan lebih baik dalam bersikap, maka itulah tanda keberhasilan kita menjalani bulan suci ini.",
+      },
+      { type: "h2", text: "Menguatkan Ukhuwah dan Kepedulian Sosial" },
+      {
+        type: "p",
+        text: "Ramadhan juga mengajarkan nilai sosial yang mendalam. Melalui zakat, infak, dan sedekah, umat Islam diajak untuk berbagi kebahagiaan dengan fakir miskin dan kaum dhuafa. Kepedulian ini menjadi wujud nyata ukhuwah Islamiyah yang mempererat persaudaraan di tengah masyarakat.",
+      },
+      {
+        type: "p",
+        text: "Iman yang kuat tidak hanya tercermin dalam ibadah pribadi, tetapi juga dalam kepedulian terhadap sesama.",
+      },
+      { type: "h2", text: "Menyambut dengan Hati Bersih dan Tekad yang Kuat" },
+      {
+        type: "p",
+        text: "Akhirnya, mari kita sambut Ramadhan dengan hati yang bersih dan niat yang tulus. Jadikan bulan ini sebagai titik awal perubahan menuju pribadi yang lebih baik. Semoga Allah SWT menerima seluruh amal ibadah kita, mengampuni dosa-dosa kita, serta menjadikan Ramadhan tahun ini sebagai jalan menuju peningkatan iman dan takwa.",
+      },
+      {
+        type: "quote",
+        text: "Allahumma bārik lanā fī Ramadhān, waj'alnā min 'ibādikas shālihīn.",
+        attribution: "Doa menyambut Ramadhan",
+      },
+      {
+        type: "p",
+        text: "Ya Allah, berkahilah kami di bulan Ramadhan ini. Jadikanlah kami termasuk hamba-hamba-Mu yang mampu menjalankan ibadah dengan ikhlas, memperbaiki diri dengan sungguh-sungguh, serta menjaga nilai-nilai kebaikan setelah Ramadhan berlalu. Ampunilah dosa-dosa kami, terimalah amal ibadah kami, dan tetapkanlah hati kami dalam iman dan ketakwaan. Āmīn yā Rabbal 'ālamīn.",
+      },
+      {
+        type: "p",
+        text: "Semoga Ramadhan ini benar-benar menjadi jalan perubahan menuju pribadi yang lebih baik, keluarga yang lebih harmonis, dan masyarakat yang lebih peduli. Marhaban Yaa Ramadhan. Selamat menunaikan ibadah puasa.",
+      },
+    ],
+  },
 ];
 
 export function getArticle(slug: string): Article | undefined {

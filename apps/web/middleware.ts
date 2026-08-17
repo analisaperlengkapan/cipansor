@@ -34,6 +34,7 @@ const publicPrefixes = [
   "/program-unggulan",
   "/unit",
   "/berita",
+  "/galeri",
   "/wakaf-infaq",
   "/kontak",
   /**

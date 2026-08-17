@@ -38,6 +38,12 @@ const EN: Record<string, NewsText> = {
     excerpt:
       "Placing in event after event, our santri showed their strength in religious study and in the forming of Islamic character.",
   },
+  "marhaban-ya-ramadhan-1447": {
+    title:
+      "Marhaban Yaa Ramadhan: A Time to Clear the Heart, Strengthen Faith, and Draw Closer to One Another",
+    excerpt:
+      "Ahead of Ramadan 1447 AH, the Chair of the Foundation writes to santri, teachers, parents and neighbours: let this be a month of spiritual schooling, not an annual routine.",
+  },
 };
 
 const AR: Record<string, NewsText> = {
@@ -58,6 +64,12 @@ const AR: Record<string, NewsText> = {
       "ابتدائية معهد سيبانسور تسجّل حضوراً مشرّفاً في مسابقة «بنتاس PAI» بمنطقة كاديفاتين",
     excerpt:
       "بفوزهم في فروع متعدّدة، أظهر الطلاب تميّزاً في العلوم الشرعية وفي بناء الشخصية الإسلامية.",
+  },
+  "marhaban-ya-ramadhan-1447": {
+    title:
+      "مرحباً يا رمضان: موسمٌ لتطهير القلب وتقوية الإيمان وتوثيق أواصر التكافل",
+    excerpt:
+      "مع إطلالة رمضان ١٤٤٧هـ، يوجّه رئيس المؤسسة رسالته إلى الطلاب والأساتذة وأولياء الأمور والمجتمع: اجعلوه شهر تربيةٍ روحية لا عادةً سنوية.",
   },
 };
 

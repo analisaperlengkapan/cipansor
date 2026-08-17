@@ -5,6 +5,7 @@ import { PublicPage, ContentBlocks } from "@/components/landing/public-page";
 import { LegalIdentity } from "@/components/landing/legal-identity";
 import { publicContentFor } from "@/config/content.i18n";
 import { getServerLocale } from "@/lib/server-locale";
+import { galleryPhoto } from "@/config/page-photo";
 import { siteConfig, educationUnits } from "@/config/site";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -19,14 +20,16 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function ProfilPage() {
   // Server component: the locale comes from the cookie, not from useI18n.
+  const locale = await getServerLocale();
   const { profilePage, profileSections, profileStats, legalIdentity } =
-    publicContentFor(await getServerLocale());
+    publicContentFor(locale);
 
   return (
     <PublicPage
       title={profilePage.title}
       lead={profilePage.lead(siteConfig.markaz, siteConfig.establishedYear)}
       breadcrumb={[{ label: profilePage.title, href: "/profil" }]}
+      heroImage={galleryPhoto("fasilitas", 0, locale)}
     >
       <div className="mb-12 grid grid-cols-2 gap-4 md:grid-cols-4">
         {profileStats.map((stat) => (

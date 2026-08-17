@@ -40,6 +40,12 @@ export interface PagesContent {
     readMore: string;
     emptyState: string;
   };
+  gallery: {
+    title: string;
+    metaDescription: string;
+    lead: string;
+    photoCount: (n: number) => string;
+  };
   leadership: {
     title: string;
     metaDescription: string;
@@ -117,6 +123,13 @@ const ID: PagesContent = {
     readMore: "Baca selengkapnya",
     emptyState: "Belum ada berita yang dipublikasikan.",
   },
+  gallery: {
+    title: "Galeri",
+    metaDescription:
+      "Dokumentasi Pesantren Cipansor: bangunan pondok, upacara dan pembiasaan disiplin santri, serta halaqah Al-Qur'an dan kegiatan keseharian.",
+    lead: "Foto-foto berikut diambil di lingkungan Pesantren Cipansor — bangunan, santri, dan kegiatan kesehariannya.",
+    photoCount: (n) => `${n} foto`,
+  },
   leadership: {
     title: "Pimpinan Pesantren",
     metaDescription:
@@ -190,6 +203,13 @@ const EN: PagesContent = {
     lead: "A record of activities, achievements, and the formation of santri across every educational unit.",
     readMore: "Read the article",
     emptyState: "No news has been published yet.",
+  },
+  gallery: {
+    title: "Gallery",
+    metaDescription:
+      "A photographic record of Pesantren Cipansor: its buildings, the assemblies that build discipline, and the Qur'an study circles of an ordinary day.",
+    lead: "Every photograph below was taken at Pesantren Cipansor — its buildings, its santri, and the ordinary business of its days.",
+    photoCount: (n) => (n === 1 ? "1 photograph" : `${n} photographs`),
   },
   leadership: {
     title: "Pesantren Leadership",
@@ -265,6 +285,17 @@ const AR: PagesContent = {
     lead: "تسجيلٌ للأنشطة والإنجازات وتكوين الطلاب في جميع الوحدات التعليمية.",
     readMore: "قراءة الخبر",
     emptyState: "لم يُنشر أي خبر بعد.",
+  },
+  gallery: {
+    title: "معرض الصور",
+    metaDescription:
+      "توثيق مصوَّر لمعهد سيبانسور: مبانيه، وطوابير الانضباط اليومية، وحلقات القرآن في يومٍ عادي.",
+    lead: "كل صورة أدناه التُقطت في معهد سيبانسور — مبانيه وطلابه وتفاصيل يومه.",
+    // Arabic marks 1, 2, 3–10 and 11+ differently; the dual and the plural of
+    // paucity are not optional politeness. Anything past ten takes the
+    // accusative singular, which is why 11+ reads صورة and not صور.
+    photoCount: (n) =>
+      n === 1 ? "صورة واحدة" : n === 2 ? "صورتان" : n <= 10 ? `${n} صور` : `${n} صورة`,
   },
   leadership: {
     title: "الهيئة القيادية للمعهد",

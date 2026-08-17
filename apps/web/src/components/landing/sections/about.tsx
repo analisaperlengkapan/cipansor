@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { CheckCircle2, ArrowRight } from "lucide-react";
-import { siteConfig, galleryItems } from "@/config/site";
+import { siteConfig, galleryItems, galleryThumb } from "@/config/site";
 import { homeContentFor } from "@/config/home.i18n";
 import { siteTextFor } from "@/config/site.i18n";
 import { formatNumber } from "@/lib/locale-format";
@@ -76,8 +76,10 @@ export function AboutSection({ locale }: { locale: Locale }) {
                   key={item.slug}
                   className="relative h-32 rounded-lg overflow-hidden border border-border"
                 >
+                  {/* The 560px derivative: these render 128px tall, and the
+                      production optimiser does not resize (see galleryThumb). */}
                   <Image
-                    src={item.image}
+                    src={galleryThumb(item.image)}
                     alt={caption(item.slug, item.title)}
                     fill
                     sizes="(max-width: 1024px) 50vw, 25vw"
@@ -89,6 +91,14 @@ export function AboutSection({ locale }: { locale: Locale }) {
                 </figure>
               ))}
             </div>
+
+            <Link
+              href="/galeri"
+              className="mt-4 inline-flex items-center gap-1 font-medium text-primary underline-offset-4 hover:underline"
+            >
+              {copy.galleryLink}
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </Link>
           </div>
         </div>
       </div>

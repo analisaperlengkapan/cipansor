@@ -10,11 +10,42 @@ import { unitDetails } from "@/config/content";
 import { pagesContentFor } from "@/config/pages.i18n";
 import { siteTextFor } from "@/config/site.i18n";
 import { getServerLocale } from "@/lib/server-locale";
+import { galleryPhoto } from "@/config/page-photo";
 
 /** Pre-render all five units — the set is fixed and small. */
 export function generateStaticParams() {
   return educationUnits.map((unit) => ({ slug: unit.slug }));
 }
+
+/**
+ * The five slugs above are the whole set; anything else is a 404.
+ *
+ * Stated for the reader and for the day this page stops reading cookies and
+ * becomes prerenderable. It is **not** what makes the status correct today:
+ * the route renders on demand, so Next never consults this. What was actually
+ * returning 200 for /unit/anything is the root `app/loading.tsx` — see the
+ * note in `app/not-found.tsx`.
+ */
+export const dynamicParams = false;
+
+/**
+ * Which photograph leads each unit's page, as `[album, index]`.
+ *
+ * Only claims what a photograph actually shows. Indonesian school uniform is
+ * unambiguous about the stage — red and white is primary, navy and white is
+ * junior secondary — so SDIT and SMPIT get their own assemblies. Nothing in
+ * the archive identifies a TK Qur'an, SMA Qur'an or Takhosus room as such, so
+ * those three lead with pesantren-wide scenes: a building, a study circle.
+ * Captioning a photograph with a unit it may not belong to would put a small
+ * lie under every one of these headings.
+ */
+const UNIT_PHOTO: Record<string, [album: string, index: number]> = {
+  tkq: ["fasilitas", 1],
+  sdit: ["disiplin", 1],
+  smpit: ["disiplin", 3],
+  "sma-quran": ["karakter", 2],
+  takhosus: ["karakter", 1],
+};
 
 export async function generateMetadata({
   params,
@@ -56,6 +87,7 @@ export default async function UnitDetailPage({
         { label: pages.units.title, href: "/unit" },
         { label: unit.shortName, href: `/unit/${unit.slug}` },
       ]}
+      heroImage={galleryPhoto(...UNIT_PHOTO[slug], locale)}
     >
       <div className="max-w-3xl space-y-6">
         <div className="flex items-center gap-4">

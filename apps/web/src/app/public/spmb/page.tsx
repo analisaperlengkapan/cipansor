@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { siteConfig, educationUnits } from "@/config/site";
+import { getServerLocale } from "@/lib/server-locale";
+import { galleryPhoto } from "@/config/page-photo";
 import { SpmbForm } from "./spmb-form";
 
 /**
@@ -32,8 +34,12 @@ export const metadata: Metadata = {
   },
 };
 
-export default function PublicSpmbPage() {
+export default async function PublicSpmbPage() {
   // The landmark lives inside SpmbForm, which renders the page's own <main>
   // after its hero <section>. Wrapping it in a second one here would nest two.
-  return <SpmbForm />;
+  //
+  // The locale is read here only to resolve the hero photograph's alt text
+  // server-side; the form takes the rest of its copy from the provider.
+  const locale = await getServerLocale();
+  return <SpmbForm photo={galleryPhoto("disiplin", 4, locale)} />;
 }

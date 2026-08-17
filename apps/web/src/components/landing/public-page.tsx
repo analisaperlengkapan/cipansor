@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { ChevronRight } from "lucide-react";
 import { LandingNavbar } from "@/components/landing/navbar";
 import { LandingFooter } from "@/components/landing/footer";
@@ -22,11 +23,24 @@ export async function PublicPage({
   title,
   lead,
   breadcrumb,
+  heroImage,
   children,
 }: {
   title: string;
   lead?: string;
   breadcrumb?: { label: string; href: string }[];
+  /**
+   * A photograph of the pesantren, shown as a band under the page heading.
+   *
+   * Every one of these is an original photograph of this place. Before August
+   * 2026 the public pages carried none at all — a heading, a paragraph, and a
+   * row of icons — and Google for Nonprofits declined the domain on the
+   * grounds that the site "relies on generic stock images". Whatever the
+   * reviewer saw, a school website that never shows the school is the
+   * underlying problem, and this prop is where it gets fixed for all of them
+   * at once. Do not fill it with an illustration.
+   */
+  heroImage?: { src: string; alt: string };
   children: React.ReactNode;
 }) {
   const dict = translations[await getServerLocale()];
@@ -73,6 +87,22 @@ export async function PublicPage({
             )}
           </div>
         </header>
+        {heroImage && (
+          <div className="border-b border-border bg-muted/30">
+            <div className="container mx-auto px-4 pb-12 sm:px-6 lg:px-8">
+              <div className="relative aspect-[16/7] overflow-hidden rounded-xl border border-border shadow-lg sm:aspect-[21/8]">
+                <Image
+                  src={heroImage.src}
+                  alt={heroImage.alt}
+                  fill
+                  sizes="(max-width: 1280px) 100vw, 1280px"
+                  className="object-cover"
+                  priority
+                />
+              </div>
+            </div>
+          </div>
+        )}
         <div className="container mx-auto px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
           {children}
         </div>

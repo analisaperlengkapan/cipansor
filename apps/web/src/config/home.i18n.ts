@@ -37,6 +37,8 @@ export interface HomeContent {
     body: (markaz: string, legalName: string, year: string, visi: string) => string;
     commitments: string[];
     moreLink: string;
+    /** Under the documentation photographs, to the full album. */
+    galleryLink: string;
   };
   units: {
     eyebrow: string;
@@ -75,6 +77,7 @@ export interface HomeContent {
       programs: string;
       units: string;
       news: string;
+      gallery: string;
       spmb: string;
       donate: string;
       contact: string;
@@ -116,6 +119,7 @@ const ID: HomeContent = {
       "Pembiasaan bahasa Arab dan bahasa Inggris",
     ],
     moreLink: "Selengkapnya tentang profil pesantren",
+    galleryLink: "Lihat semua foto dokumentasi",
   },
   units: {
     eyebrow: "Unit Pendidikan",
@@ -164,6 +168,7 @@ const ID: HomeContent = {
       programs: "Program Unggulan",
       units: "Unit Pendidikan",
       news: "Berita & Kegiatan",
+      gallery: "Galeri",
       spmb: "Pendaftaran (SPMB)",
       donate: "Wakaf & Infaq",
       contact: "Kontak",
@@ -208,6 +213,7 @@ const EN: HomeContent = {
       "Arabic and English in everyday use",
     ],
     moreLink: "More about the pesantren",
+    galleryLink: "See every documentation photograph",
   },
   units: {
     eyebrow: "Educational Units",
@@ -256,6 +262,7 @@ const EN: HomeContent = {
       programs: "Flagship Programmes",
       units: "Educational Units",
       news: "News & Activities",
+      gallery: "Gallery",
       spmb: "Admissions (SPMB)",
       donate: "Wakaf & Infaq",
       contact: "Contact",
@@ -300,6 +307,7 @@ const AR: HomeContent = {
       "التخاطب اليومي بالعربية والإنجليزية",
     ],
     moreLink: "المزيد عن المعهد",
+    galleryLink: "مشاهدة جميع صور التوثيق",
   },
   units: {
     eyebrow: "الوحدات التعليمية",
@@ -348,6 +356,7 @@ const AR: HomeContent = {
       programs: "البرامج المتميّزة",
       units: "الوحدات التعليمية",
       news: "الأخبار والأنشطة",
+      gallery: "معرض الصور",
       spmb: "التسجيل (SPMB)",
       donate: "الوقف والإنفاق",
       contact: "اتصل بنا",

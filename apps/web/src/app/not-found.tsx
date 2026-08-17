@@ -1,6 +1,34 @@
 /**
  * 404 Not Found Page
  * Displays when a route doesn't exist
+ *
+ * WHY THERE IS NO `app/loading.tsx`
+ *
+ * There used to be one: a single global skeleton, shaped like the dashboard —
+ * sidebar, four stat cards, a table — rendered as the loading state of every
+ * route in the app, the public marketing site included. It also stopped this
+ * page from ever setting a status.
+ *
+ * A `loading.tsx` is a Suspense boundary, and Next flushes the shell through
+ * it before the page resolves. By the time a page called `notFound()`, the
+ * response was already committed as 200. Measured on the built app, before
+ * and after removing the file:
+ *
+ *   /unit/zzz-bogus    200, 48 KB of skeleton   ->  404, this page
+ *   /berita/tidak-ada  200, 48 KB of skeleton   ->  404, this page
+ *   /unit/sdit         200, 81 KB               ->  200, 60 KB
+ *   /profil            200, 88 KB               ->  200, 71 KB
+ *
+ * So every wrong URL under /unit or /berita answered 200 with an admin-shaped
+ * skeleton titled "Sistem Informasi Cipansor" — a soft 404 to Googlebot on
+ * the one site that must survive a nonprofit review, and a page that never
+ * arrives for a visitor following a stale link. The skeleton markup was also
+ * inlined into every HTML response, landing page included, at ~20 KB a time.
+ *
+ * Restoring a root `loading.tsx` restores all of that silently. A guard in
+ * `src/config/gallery.test.ts` fails if the file comes back. If the app shell
+ * wants a skeleton again, it belongs in the authenticated segments, not above
+ * the public site.
  */
 
 import Link from "next/link";

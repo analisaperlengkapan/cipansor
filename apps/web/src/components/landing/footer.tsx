@@ -26,6 +26,10 @@ export function LandingFooter() {
     { label: copy.links.programs, href: "/program-unggulan" },
     { label: copy.links.units, href: "/unit" },
     { label: copy.links.news, href: "/berita" },
+    // Not in the header nav: the 1024-1279 band has ~36px of slack (see
+    // navbar.tsx) and a seventh link overflows it. The footer carries it
+    // instead, alongside the link from the homepage gallery block.
+    { label: copy.links.gallery, href: "/galeri" },
     { label: copy.links.spmb, href: "/public/spmb" },
     { label: copy.links.donate, href: "/wakaf-infaq" },
     { label: copy.links.contact, href: "/kontak" },

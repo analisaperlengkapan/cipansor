@@ -6,6 +6,7 @@ import { PublicPage } from "@/components/landing/public-page";
 import { siteConfig, addressLines } from "@/config/site";
 import { pagesContentFor } from "@/config/pages.i18n";
 import { getServerLocale } from "@/lib/server-locale";
+import { galleryPhoto } from "@/config/page-photo";
 
 export async function generateMetadata(): Promise<Metadata> {
   const copy = pagesContentFor(await getServerLocale()).contact;
@@ -18,7 +19,8 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function KontakPage() {
-  const copy = pagesContentFor(await getServerLocale()).contact;
+  const locale = await getServerLocale();
+  const copy = pagesContentFor(locale).contact;
   // Prefilled so the visitor does not have to open with a blank message.
   const waHref = `${siteConfig.contact.whatsapp}?text=${encodeURIComponent(
     copy.whatsappMessage,
@@ -29,6 +31,7 @@ export default async function KontakPage() {
       title={copy.title}
       lead={copy.lead}
       breadcrumb={[{ label: copy.title, href: "/kontak" }]}
+      heroImage={galleryPhoto("fasilitas", 4, locale)}
     >
       <div className="grid max-w-4xl grid-cols-1 gap-6 md:grid-cols-2">
         <Card>

@@ -9,6 +9,7 @@ import { siteConfig } from "@/config/site";
 import { pagesContentFor } from "@/config/pages.i18n";
 import { newsTextFor } from "@/config/news.i18n";
 import { getServerLocale } from "@/lib/server-locale";
+import { galleryPhoto } from "@/config/page-photo";
 import { dateFormatterFor } from "@/lib/locale-format";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -33,6 +34,7 @@ export default async function BeritaPage() {
       title={copy.title}
       lead={copy.lead}
       breadcrumb={[{ label: copy.title, href: "/berita" }]}
+      heroImage={galleryPhoto("disiplin", 1, locale)}
     >
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {sorted.map((article) => {

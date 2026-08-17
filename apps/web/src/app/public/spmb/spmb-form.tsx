@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { siteConfig } from "@/config/site";
 import { LandingNavbar } from "@/components/landing/navbar";
 import { LandingFooter } from "@/components/landing/footer";
@@ -147,7 +148,18 @@ const QURAN_ABILITIES = [
  * "Admission period is not open for registration". The window has to be
  * checked before the form is offered, not after it is completed.
  */
-export function SpmbForm() {
+export function SpmbForm({
+  photo,
+}: {
+  /**
+   * A photograph of the santri a prospective parent is being asked to join.
+   *
+   * This is the page every advertisement points at, and it showed nothing of
+   * the pesantren at all. Resolved on the server so the alt text follows the
+   * visitor's locale.
+   */
+  photo: { src: string; alt: string };
+}) {
   const { data: activePeriod } = useActivePeriod();
   const { data: units = [] } = usePublicUnits();
   const createRegistration = useCreateRegistration();
@@ -398,6 +410,22 @@ export function SpmbForm() {
             </a>
             .
           </p>
+
+          <figure className="mt-8">
+            <div className="relative aspect-[16/7] overflow-hidden rounded-xl border border-border shadow-lg">
+              <Image
+                src={photo.src}
+                alt={photo.alt}
+                fill
+                sizes="(max-width: 768px) 100vw, 768px"
+                className="object-cover"
+                priority
+              />
+            </div>
+            <figcaption className="mt-2 text-sm text-muted-foreground">
+              {photo.alt}
+            </figcaption>
+          </figure>
         </div>
       </section>
 

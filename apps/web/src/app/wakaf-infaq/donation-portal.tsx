@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 import { donationConfig } from "@/config/site";
 import { LegalIdentity } from "@/components/landing/legal-identity";
 import { publicContentFor } from "@/config/content.i18n";
@@ -94,7 +95,20 @@ const programIcons: Record<string, React.ComponentType<{ className?: string }>> 
     INFAK: HandHeart,
   };
 
-export function DonationPortal() {
+export function DonationPortal({
+  photo,
+}: {
+  /**
+   * A photograph of what the wakaf is actually paying for.
+   *
+   * The hero opened with a HandHeart icon, which is a drawing of generosity
+   * rather than evidence of it. A donor deciding whether to send money — and
+   * a nonprofit programme deciding whether this organisation is real — are
+   * both better served by the half-finished building itself. Resolved on the
+   * server so the alt text follows the visitor's locale.
+   */
+  photo: { src: string; alt: string };
+}) {
   // Client component, so the locale comes from the hook rather than the cookie
   // read — the same content module either way.
   const { locale } = useI18n();
@@ -211,6 +225,21 @@ export function DonationPortal() {
             <Gift className="h-5 w-5 mr-2" />
             {copy.hero.cta}
           </Button>
+
+          <figure className="mx-auto mt-10 max-w-4xl">
+            <div className="relative aspect-[16/7] overflow-hidden rounded-xl border border-white/25 shadow-xl">
+              <Image
+                src={photo.src}
+                alt={photo.alt}
+                fill
+                sizes="(max-width: 1024px) 100vw, 896px"
+                className="object-cover"
+              />
+            </div>
+            <figcaption className="mt-3 text-sm text-emerald-100">
+              {photo.alt}
+            </figcaption>
+          </figure>
         </div>
       </section>
 

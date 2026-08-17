@@ -3,6 +3,7 @@ import { LandingNavbar } from "@/components/landing/navbar";
 import { LandingFooter } from "@/components/landing/footer";
 import { siteConfig, donationConfig } from "@/config/site";
 import { getServerLocale } from "@/lib/server-locale";
+import { galleryPhoto } from "@/config/page-photo";
 import type { Locale } from "@/locales";
 import { DonationPortal } from "./donation-portal";
 
@@ -90,9 +91,12 @@ const donateJsonLd = {
   })),
 };
 
-export default function WakafInfaqPage() {
-  // No locale read here: the portal below is a client component and takes the
-  // locale from the provider. Only the metadata above needs the cookie.
+export default async function WakafInfaqPage() {
+  // The portal takes its *copy* from the provider, being a client component.
+  // The locale is still read here for the one thing the provider cannot give
+  // it: the alt text of the hero photograph, which is resolved server-side so
+  // the description ships in the HTML rather than appearing after hydration.
+  const locale = await getServerLocale();
   return (
     <div className="flex min-h-screen flex-col">
       <script
@@ -101,7 +105,7 @@ export default function WakafInfaqPage() {
       />
       <LandingNavbar />
       <main id="main-content" className="flex-1 pt-16">
-        <DonationPortal />
+        <DonationPortal photo={galleryPhoto("fasilitas", 2, locale)} />
       </main>
       <LandingFooter />
     </div>

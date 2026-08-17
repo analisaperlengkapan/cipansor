@@ -7,6 +7,7 @@ import { siteConfig, featuredPrograms } from "@/config/site";
 import { pagesContentFor } from "@/config/pages.i18n";
 import { siteTextFor } from "@/config/site.i18n";
 import { getServerLocale } from "@/lib/server-locale";
+import { galleryPhoto } from "@/config/page-photo";
 import { formatNumber } from "@/lib/locale-format";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -29,6 +30,7 @@ export default async function ProgramUnggulanPage() {
       title={copy.title}
       lead={copy.lead(site.visi)}
       breadcrumb={[{ label: copy.title, href: "/program-unggulan" }]}
+      heroImage={galleryPhoto("karakter", 3, locale)}
     >
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {featuredPrograms.map((program, i) => {

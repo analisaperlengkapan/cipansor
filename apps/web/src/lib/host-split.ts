@@ -3,7 +3,7 @@
  *
  * The public site and the information system now live on separate hosts:
  *
- *   cipansor.or.id         — landing, profil, unit, berita, wakaf, kontak, verifikasi
+ *   cipansor.or.id         — landing, profil, unit, berita, galeri, wakaf, kontak, verifikasi
  *   portal.cipansor.or.id  — login and everything behind it
  *
  * The split is enforced here rather than in nginx because the route table lives
@@ -38,6 +38,7 @@ export const PUBLIC_PATH_PREFIXES = [
   "/program-unggulan",
   "/unit",
   "/berita",
+  "/galeri",
   "/wakaf-infaq",
   "/kontak",
   /**

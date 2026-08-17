@@ -7,6 +7,7 @@ import { siteConfig, educationUnits } from "@/config/site";
 import { pagesContentFor } from "@/config/pages.i18n";
 import { siteTextFor } from "@/config/site.i18n";
 import { getServerLocale } from "@/lib/server-locale";
+import { galleryPhoto } from "@/config/page-photo";
 
 export async function generateMetadata(): Promise<Metadata> {
   // The tab title and the search snippet follow the reader's locale too — they
@@ -30,6 +31,7 @@ export default async function UnitIndexPage() {
       title={copy.title}
       lead={copy.lead}
       breadcrumb={[{ label: copy.title, href: "/unit" }]}
+      heroImage={galleryPhoto("fasilitas", 3, locale)}
     >
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {educationUnits.map((unit) => {

@@ -236,6 +236,48 @@ more and no deploy would ever dislodge. `/sw.js` is still *served* on the apex �
 it is a static file in `public/` — and that is not the defect; nothing registers
 it there.
 
+## 🔴 OPEN — `next/image` optimisation has never run in production (2026-08-17)
+
+Found while adding the public-site photography. Every `/_next/image` request
+returns the **source file unchanged**, at every requested width, in the
+original format:
+
+```
+original /images/cipansor/galeri-1.webp = 156,656 bytes
+  ?w=256  → 200 image/webp 156656      ?w=1080 → 200 image/webp 156656
+  ?w=640  → 200 image/webp 156656      ?w=1920 → 200 image/webp 156656
+/logo.png ?w=128, Accept: image/avif → 200 image/png 34998
+```
+
+It is not Cloudflare — the same responses come straight from the container —
+and it is not a cache miss: `X-Nextjs-Cache: HIT`. The optimiser runs and
+produces nothing. Two causes, in the runner image:
+
+1. `sharp` is **not resolvable**. `require.resolve("sharp")` fails from both
+   `/app` and `/app/apps/web`; only `semver` is at the top level of
+   `/app/node_modules`. Next's standalone trace does not pick sharp up, because
+   it is loaded at runtime rather than imported.
+2. Even the copy in the pnpm store **cannot load**:
+   `Could not load the "sharp" module using the linuxmusl-x64 runtime`. The
+   binary installed during the build is the glibc one; the runner is Alpine.
+
+The Dockerfile comment about "next/image writes optimised variants here" and
+the named volume that seeds `/app/apps/web/.next/cache/images` both describe
+something that has never happened.
+
+**Not fixed here.** The repair is a Dockerfile change to the runtime image
+(install `sharp` for musl in the runner stage, or move the runner to a glibc
+base), which is a deploy-risk change and does not belong in a content PR.
+Everything shipped in the meantime carries explicit derivatives instead —
+`galleryThumb()` in `packages/shared/src/public-site.ts` — so the gallery page
+costs 484 KB rather than 2.3 MB whether or not this is ever repaired. Anything
+added later that assumes `next/image` will resize for it will be wrong.
+
+Related: `robots.txt` is served by **Cloudflare**, not this repo (the
+content-signals preamble is Cloudflare's). It allows `User-agent: * / Allow: /`
+but carries no `Sitemap:` directive, so `/sitemap.xml` is only found if it was
+submitted in Search Console.
+
 ## 🔴 OPEN — decisions, not repairs (2026-08-15)
 
 Found while closing #401/#402. Each is a real defect or a real risk, and each

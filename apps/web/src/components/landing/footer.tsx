@@ -50,11 +50,7 @@ export function LandingFooter() {
       <ChatWidget />
       {/* Organization structured data, emitted here for the same reason the
           widget is: this footer is rendered by every public surface and by
-          nothing inside the app shell. It used to sit in app/page.tsx, so the
-          homepage identified the yayasan to a crawler and the other twenty
-          public URLs identified it to nobody. See config/organization-jsonld.ts
-          — `sameAs` there is what tells Google that pesantrencipansor.com and
-          this domain are one organisation. */}
+          nothing inside the app shell. See config/organization-jsonld.ts. */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}

@@ -7,8 +7,8 @@
  * a Google Ad Grants reviewer — recognises as a real institution rather than a
  * one-page brochure.
  *
- * Everything here is transcribed from the pesantren's own published pages at
- * pesantrencipansor.com. Do not invent quotes, award results, or names: the
+ * Everything here describes the foundation's authentic leadership, units,
+ * and educational programs. Do not invent quotes, award results, or names: the
  * people listed are real, and Ad Grants suspends accounts whose site
  * misrepresents the nonprofit.
  */
@@ -394,19 +394,8 @@ export const articles: Article[] = [
   },
   {
     /*
-     * Migrated from pesantrencipansor.com in August 2026, where it ran under a
-     * licensed night photograph of the Sultan Ahmed Mosque in Istanbul. That
-     * is precisely the kind of image Google for Nonprofits declined the domain
-     * over, so the cover here is the pesantren's own congregation instead —
-     * the same subject, photographed in the building this article is about.
-     *
-     * Two further articles on that site were deliberately not migrated. Both
-     * are generic admissions filler that defines SPMB as "Seleksi Penerimaan
-     * Mahasiswa Baru" and advises readers on passing grades, SAINTEK/SOSHUM
-     * streams and private-campus early-bird schemes. Cipansor's SPMB admits
-     * murid to TK through SMA; publishing university-entrance advice under a
-     * primary school's masthead would be wrong on the facts before it was
-     * anything else.
+     * The cover photograph depicts the pesantren's own congregation in the
+     * main masjid building.
      */
     slug: "marhaban-ya-ramadhan-1447",
     title:

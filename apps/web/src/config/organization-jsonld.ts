@@ -58,10 +58,7 @@ export const organizationJsonLd = {
     },
   ],
   taxID: legalIdentity.verification.registeredId,
-  sameAs: [
-    ...siteConfig.domains.previous.map((d) => d.url),
-    siteConfig.contact.maps.url,
-  ],
+  sameAs: [siteConfig.contact.maps.url],
   // Deliberately no `nonprofitStatus`: schema.org's NonprofitType values are
   // US/NL specific (Nonprofit501c3 and friends). This is an Indonesian
   // yayasan, and asserting a US tax classification it does not hold would be

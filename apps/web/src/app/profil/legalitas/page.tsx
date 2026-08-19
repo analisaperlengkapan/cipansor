@@ -15,21 +15,10 @@ import { galleryPhoto } from "@/config/page-photo";
  * /profil/legalitas — one URL that answers "is this organisation real, and does
  * it operate this domain?".
  *
- * WHY IT EXISTS. Google for Nonprofits declined cipansor.or.id twice. The
- * second refusal was not about content quality: *"we couldn't confirm its
- * relationship with your registered nonprofit organization... we need
- * confirmation that Yayasan Pesantren Cipansor truly owns and operates this
- * domain."* Every fact needed to confirm it was already published, but spread
- * across four pages — the decree number in a strip on the homepage, the
- * address in the footer, the governance sentence at the foot of /profil, the
- * officers on /profil/pimpinan — and the one fact that mattered most, that the
- * yayasan also runs pesantrencipansor.com, appeared nowhere at all. Two sites
- * carrying the same leadership, address, articles and photographs, with neither
- * acknowledging the other, is what a copied site looks like.
- *
- * So this page is deliberately a single scrollable answer rather than a hub of
- * links: it is the URL to hand a reviewer.
- *
+ * This page is deliberately a single scrollable answer presenting the complete
+ * legal standing, SK Kemenkumham, NPWP, registered address, governance, and
+ * official domain ownership of Yayasan Pesantren Cipansor.
+ */
  * IT SITS UNDER /profil ON PURPOSE. `/profil` is already in
  * `PUBLIC_PATH_PREFIXES` (lib/host-split.ts) and `publicPrefixes`
  * (middleware.ts), and both match on segment boundaries, so a child route is
@@ -62,28 +51,6 @@ export default async function LegalitasPage() {
   const content = publicContentFor(locale);
   const copy = content.transparencyPage;
   const contactCopy = pagesContentFor(locale).contact;
-
-  /**
-   * Both hosts in one list, the official domain first, so the page states the
-   * whole picture rather than describing "the other one" relative to wherever
-   * the reader happens to be. Roles are copy; hostnames come from
-   * `siteConfig.domains`, which also feeds `sameAs` in the structured data and
-   * the line in the footer — one edit moves all three.
-   */
-  const domains = [
-    {
-      host: siteConfig.domains.canonical,
-      url: siteConfig.url,
-      role: copy.domains.canonicalRole,
-      isCanonical: true,
-    },
-    ...siteConfig.domains.previous.map((d) => ({
-      host: d.host,
-      url: d.url,
-      role: copy.domains.previousRole,
-      isCanonical: false,
-    })),
-  ];
 
   return (
     <PublicPage
@@ -139,7 +106,7 @@ export default async function LegalitasPage() {
       </section>
 
       {/* ---------------------------------------------------------------
-          The section this page was built for.
+          The official domain section.
          --------------------------------------------------------------- */}
       <section aria-labelledby="domain" className="mt-14 max-w-4xl">
         <h2 id="domain" className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
@@ -150,33 +117,24 @@ export default async function LegalitasPage() {
           {copy.domains.intro}
         </p>
 
-        <ul className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {domains.map((domain) => (
-            <li key={domain.host}>
-              <Card className="h-full">
-                <CardContent className="p-6">
-                  {/* An external link even for the canonical host: this list is
-                      read as evidence, and a reader checking it should be able
-                      to open either address from here. The former site is
-                      marked as such rather than left to be inferred from the
-                      order the cards happen to render in. */}
-                  <a
-                    href={domain.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="group inline-flex items-center gap-1.5 font-mono text-base font-semibold text-primary underline-offset-4 group-hover:underline"
-                  >
-                    {domain.host}
-                    <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
-                  </a>
-                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                    {domain.role}
-                  </p>
-                </CardContent>
-              </Card>
-            </li>
-          ))}
-        </ul>
+        <div className="mt-6 max-w-xl">
+          <Card>
+            <CardContent className="p-6">
+              <a
+                href={siteConfig.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group inline-flex items-center gap-1.5 font-mono text-base font-semibold text-primary underline-offset-4 group-hover:underline"
+              >
+                {siteConfig.domains.canonical}
+                <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+              </a>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                {copy.domains.canonicalRole}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
 
         {/*
           The strongest sentence on the page, and the reason it is set apart
@@ -188,9 +146,6 @@ export default async function LegalitasPage() {
         */}
         <p className="mt-6 rounded-lg border border-border bg-muted/30 p-5 text-sm leading-relaxed">
           {copy.domains.registryNote}
-        </p>
-        <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-          {copy.domains.migrationNote}
         </p>
         <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
           {copy.domains.emailNote(siteConfig.contact.email)}

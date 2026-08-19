@@ -78,9 +78,6 @@ export interface PublicContent {
       heading: string;
       intro: string;
       canonicalRole: string;
-      previousRole: string;
-      /** States the direction of travel: the old site is being retired. */
-      migrationNote: string;
       /**
        * Why the registration itself is evidence.
        *
@@ -209,15 +206,11 @@ const EN: PublicContent = {
       markazLabel: "Part of",
     },
     domains: {
-      heading: "Domains Operated by the Foundation",
+      heading: "Official Foundation Domain",
       intro:
-        "cipansor.or.id is the official domain of Yayasan Pesantren Cipansor. The pesantren previously used pesantrencipansor.com, and its contents are being migrated here. Both are run by the same legal entity — the foundation identified above.",
+        "cipansor.or.id is the sole official website and domain owned and operated by Yayasan Pesantren Cipansor for all public communications, academic admissions, and institutional operations.",
       canonicalRole:
-        "The foundation's official domain, and the entrance to the pesantren's information system.",
-      previousRole:
-        "The pesantren's former website, now being migrated to the official domain above.",
-      migrationNote:
-        "The foundation chose .or.id as its permanent domain precisely because of what registration demands: the address is tied to the foundation's incorporation documents, so the institution's identity is attached to the domain itself.",
+        "The foundation's official domain and the main portal for the pesantren's information system.",
       registryNote:
         "A .or.id domain may only be registered by a legally incorporated organisation in Indonesia. The national registry (PANDI) requires incorporation documents in the applicant organisation's own name — a deed of establishment or a ministerial decree of incorporation — before the domain is granted. The foundation's ownership of this domain was therefore checked against documents at registration, rather than being merely asserted on this page.",
       emailNote: (email) =>
@@ -340,15 +333,11 @@ const AR: PublicContent = {
       markazLabel: "تندرج تحت",
     },
     domains: {
-      heading: "النطاقات التي تديرها المؤسسة",
+      heading: "النطاق الرسمي للمؤسسة",
       intro:
-        "‏cipansor.or.id هو النطاق الرسمي لمؤسسة معهد سيبانسور. وكان المعهد يستخدم من قبلُ نطاق pesantrencipansor.com، ويجري نقل محتواه إلى هذا النطاق. وكلاهما يُدار من الكيان القانوني نفسه المذكور أعلاه.",
+        "‏cipansor.or.id هو النطاق والموقع الرسمي الوحيد المملوك والمدار من قِبَل مؤسسة معهد سيبانسور لكافة الخدمات المعلوماتية والتسجيل والعمليات المؤسسية.",
       canonicalRole:
-        "النطاق الرسمي للمؤسسة، وهو كذلك مدخل نظام المعلومات الخاص بالمعهد.",
-      previousRole:
-        "موقع المعهد السابق، ويجري نقله إلى النطاق الرسمي المذكور أعلاه.",
-      migrationNote:
-        "اختارت المؤسسة نطاق ‎.or.id‎ ليكون نطاقها الدائم لِما يشترطه تسجيله تحديدًا: فالعنوان مرتبط بوثائق إشهار المؤسسة، فتغدو هوية المؤسسة ملتصقةً بالنطاق نفسه.",
+        "النطاق الرسمي للمؤسسة والبوابة الرئيسية لنظام المعلومات الخاص بالمعهد.",
       registryNote:
         "لا يُسمح بتسجيل نطاق ‎.or.id‎ إلا للمنظمات المشهرة قانونًا في إندونيسيا، إذ يشترط السجلّ الوطني (PANDI) تقديم وثائق التأسيس باسم المنظمة الطالبة نفسها — عقد التأسيس أو قرار الإشهار الوزاري — قبل منح النطاق. وعليه فإنّ ملكية المؤسسة لهذا النطاق قد خضعت لفحص المستندات منذ التسجيل، لا مجرّد دعوى تُذكر في هذه الصفحة.",
       emailNote: (email) =>
@@ -426,13 +415,9 @@ const ID: PublicContent = {
     domains: {
       heading: "Domain Resmi Yayasan",
       intro:
-        "cipansor.or.id adalah domain resmi Yayasan Pesantren Cipansor. Sebelumnya pesantren menggunakan pesantrencipansor.com, dan seluruh isinya sedang dipindahkan ke domain ini. Keduanya dijalankan oleh badan hukum yang sama, yaitu yayasan yang identitasnya tercantum di atas.",
+        "cipansor.or.id adalah satu-satunya situs web dan domain resmi yang dimiliki serta dioperasikan oleh Yayasan Pesantren Cipansor untuk seluruh layanan informasi publik, pendaftaran santri baru, dan operasional kelembagaan.",
       canonicalRole:
-        "Domain resmi yayasan sekaligus pintu masuk sistem informasi pesantren.",
-      previousRole:
-        "Situs lama pesantren, yang sedang dipindahkan ke domain resmi di atas.",
-      migrationNote:
-        "Yayasan memilih .or.id sebagai domain tetapnya justru karena syarat pendaftarannya: alamat ini terikat pada dokumen badan hukum yayasan, sehingga identitas lembaga melekat pada domainnya.",
+        "Domain resmi yayasan sekaligus pintu masuk utama sistem informasi pesantren.",
       registryNote:
         "Domain .or.id hanya dapat didaftarkan oleh organisasi berbadan hukum di Indonesia. Registri nasional (PANDI) mensyaratkan dokumen legalitas atas nama organisasi pendaftar — akta pendirian atau surat keputusan pengesahan badan hukum — sebelum domain diberikan. Karena itu kepemilikan domain ini oleh yayasan telah melalui pemeriksaan dokumen sejak pendaftarannya, bukan sekadar pernyataan pada halaman ini.",
       emailNote: (email) =>

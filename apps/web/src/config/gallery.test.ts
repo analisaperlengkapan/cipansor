@@ -82,9 +82,8 @@ describe("gallery photographs — alt text describes the picture", () => {
   });
 
   it("no alt text is the placeholder the photographs arrived with", () => {
-    // Every one of these came off pesantrencipansor.com with
-    // alt="Pesantren Cipansor" — the album title repeated eighteen times,
-    // which tells a screen-reader user nothing at all.
+    // Alt text must describe each specific photograph rather than generic
+    // repetitions of "Pesantren Cipansor".
     for (const locale of LOCALES) {
       const alts = siteTextFor(locale).galleryAlts;
       for (const album of galleryItems) {
@@ -125,6 +124,7 @@ describe("public pages — each one shows the pesantren", () => {
   const PUBLIC_PAGES = [
     "profil/page.tsx",
     "profil/pimpinan/page.tsx",
+    "profil/legalitas/page.tsx",
     "program-unggulan/page.tsx",
     "unit/page.tsx",
     "unit/[slug]/page.tsx",

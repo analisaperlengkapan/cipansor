@@ -7,8 +7,8 @@
  * Keeping them in one place is what guarantees every advertised credential
  * actually logs in — edit accounts here, never in the two consumers.
  *
- * Real names + photos are used for the six leaders published on
- * pesantrencipansor.com. All other names are representative demo data.
+ * Real names + photos are used for the six leaders of Yayasan Pesantren
+ * Cipansor. All other names are representative demo data.
  */
 
 export interface DemoAccount {

@@ -21,7 +21,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function ProfilPage() {
   // Server component: the locale comes from the cookie, not from useI18n.
   const locale = await getServerLocale();
-  const { profilePage, profileSections, profileStats, legalIdentity } =
+  const { profilePage, profileSections, profileStats, legalIdentity, transparencyPage } =
     publicContentFor(locale);
 
   return (
@@ -58,6 +58,19 @@ export default async function ProfilPage() {
       </div>
 
       <LegalIdentity copy={legalIdentity} />
+
+      {/* The two cards above give the decree and the verification. The page
+          they now link to adds what a reviewer asks for next: the registered
+          name and legal form, the address of record, and — the reason it was
+          written — which web domains this yayasan operates. */}
+      <p className="mt-6 max-w-3xl">
+        <Link
+          href="/profil/legalitas"
+          className="font-medium text-primary underline underline-offset-4"
+        >
+          {transparencyPage.title}
+        </Link>
+      </p>
 
       <p className="mt-10 max-w-3xl text-muted-foreground">
         {profilePage.leadershipPrompt}{" "}

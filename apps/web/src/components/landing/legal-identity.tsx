@@ -134,8 +134,12 @@ export function LegalIdentityStrip({
                 {copy.verifiedBadge}
               </span>
             </span>
+            {/* Was `/profil#legalitas`, which scrolled to the same two cards
+                the reader had just seen condensed. It now opens the page that
+                adds what those cards do not carry: the registered name, the
+                legal form, the address, and the domains the yayasan operates. */}
             <Link
-              href="/profil#legalitas"
+              href="/profil/legalitas"
               className="text-sm font-medium text-primary underline-offset-4 hover:underline"
             >
               {copy.moreLink}

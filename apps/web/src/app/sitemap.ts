@@ -24,6 +24,7 @@ const STATIC_PAGES = [
   { url: SITE_URL, changeFrequency: "weekly", priority: 1 },
   { url: `${SITE_URL}/profil`, changeFrequency: "monthly", priority: 0.8 },
   { url: `${SITE_URL}/profil/pimpinan`, changeFrequency: "monthly", priority: 0.6 },
+  { url: `${SITE_URL}/profil/legalitas`, changeFrequency: "yearly", priority: 0.6 },
   { url: `${SITE_URL}/program-unggulan`, changeFrequency: "monthly", priority: 0.8 },
   { url: `${SITE_URL}/unit`, changeFrequency: "monthly", priority: 0.8 },
   { url: `${SITE_URL}/berita`, changeFrequency: "weekly", priority: 0.9 },

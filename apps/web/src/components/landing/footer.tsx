@@ -8,6 +8,7 @@ import { siteTextFor } from "@/config/site.i18n";
 import { formatNumber } from "@/lib/locale-format";
 import { useI18n } from "@/providers/i18n-provider";
 import { ChatWidget } from "@/components/chatbot/chat-widget";
+import { organizationJsonLd } from "@/config/organization-jsonld";
 
 /**
  * A client component, unlike the landing sections above it. The footer renders
@@ -23,6 +24,7 @@ export function LandingFooter() {
   const quickLinks = [
     { label: copy.links.profile, href: "/profil" },
     { label: copy.links.leadership, href: "/profil/pimpinan" },
+    { label: copy.links.legal, href: "/profil/legalitas" },
     { label: copy.links.programs, href: "/program-unggulan" },
     { label: copy.links.units, href: "/unit" },
     { label: copy.links.news, href: "/berita" },
@@ -46,6 +48,17 @@ export function LandingFooter() {
           it there. It renders nothing at all unless the API reports the
           assistant as configured. */}
       <ChatWidget />
+      {/* Organization structured data, emitted here for the same reason the
+          widget is: this footer is rendered by every public surface and by
+          nothing inside the app shell. It used to sit in app/page.tsx, so the
+          homepage identified the yayasan to a crawler and the other twenty
+          public URLs identified it to nobody. See config/organization-jsonld.ts
+          — `sameAs` there is what tells Google that pesantrencipansor.com and
+          this domain are one organisation. */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+      />
       <footer className="bg-muted/30 border-t border-border mt-auto">
         <div className="container mx-auto px-4 py-12 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -65,6 +78,21 @@ export function LandingFooter() {
                   formatNumber(locale, siteConfig.establishedYear),
                   site.visi,
                 )}
+              </p>
+              {/*
+                Who runs this website, said out loud, on every public page.
+
+                Google for Nonprofits declined the domain a second time because
+                they "couldn't confirm its relationship with your registered
+                nonprofit organization". Everything needed to confirm it was on
+                the site, but the plain sentence asserting it was not: the
+                footer named the pesantren without ever saying that this domain
+                is the pesantren's own. The structured data in
+                config/organization-jsonld.ts makes the same statement for a
+                machine; this is the half a person reads.
+              */}
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                {copy.operatedBy(siteConfig.legalName)}
               </p>
             </div>
 

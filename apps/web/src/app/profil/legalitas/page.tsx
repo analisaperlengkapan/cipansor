@@ -18,13 +18,11 @@ import { galleryPhoto } from "@/config/page-photo";
  * This page is deliberately a single scrollable answer presenting the complete
  * legal standing, SK Kemenkumham, NPWP, registered address, governance, and
  * official domain ownership of Yayasan Pesantren Cipansor.
- */
+ *
  * IT SITS UNDER /profil ON PURPOSE. `/profil` is already in
  * `PUBLIC_PATH_PREFIXES` (lib/host-split.ts) and `publicPrefixes`
  * (middleware.ts), and both match on segment boundaries, so a child route is
- * public on the apex without editing either list. A top-level `/legalitas`
- * would have needed adding in two places — and the page that gets missed in one
- * of them is the page that redirects a reviewer to a staff login screen.
+ * public on the apex without editing either list.
  */
 export async function generateMetadata(): Promise<Metadata> {
   const copy = publicContentFor(await getServerLocale()).transparencyPage;

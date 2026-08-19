@@ -70,6 +70,15 @@ export const siteConfig = {
       longitude: 108.1362663,
     },
   },
+  domains: {
+    canonical: "cipansor.or.id",
+    previous: [
+      {
+        host: "pesantrencipansor.com",
+        url: "https://pesantrencipansor.com",
+      },
+    ],
+  },
 } as const;
 
 export const addressLines = [

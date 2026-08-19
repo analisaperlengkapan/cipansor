@@ -43,6 +43,62 @@ export interface PublicContent {
   };
   profileSections: ContentBlock[];
   profileStats: Array<{ label: string; value: string }>;
+  /**
+   * /profil/legalitas — the page that answers "does this organisation really
+   * operate this domain?".
+   *
+   * Google for Nonprofits declined the application a second time on identity
+   * rather than content: they could not confirm the relationship between
+   * Yayasan Pesantren Cipansor and cipansor.or.id. The facts needed to confirm
+   * it were already on the site but scattered — the decree number in a strip on
+   * the homepage, the address in the footer, the governance sentence at the
+   * bottom of /profil — and the domain relationship was stated nowhere at all.
+   *
+   * This block gathers them onto one URL that can be sent to a reviewer.
+   * Labels and prose live here; every number, hostname and address is read from
+   * `siteConfig` and `legalIdentity` at render time, because those are facts on
+   * a document and copying them per locale is how they drift.
+   */
+  transparencyPage: {
+    title: string;
+    metaDescription: string;
+    lead: string;
+    identity: {
+      heading: string;
+      legalNameLabel: string;
+      legalFormLabel: string;
+      legalFormValue: string;
+      decreeLabel: string;
+      issuedByLabel: string;
+      establishedLabel: string;
+      addressLabel: string;
+      markazLabel: string;
+    };
+    domains: {
+      heading: string;
+      intro: string;
+      canonicalRole: string;
+      previousRole: string;
+      /** States the direction of travel: the old site is being retired. */
+      migrationNote: string;
+      /**
+       * Why the registration itself is evidence.
+       *
+       * `.or.id` is not an open TLD: PANDI requires incorporation documents in
+       * the applicant organisation's name. That makes the domain's existence a
+       * document-checked fact rather than a claim this site makes about itself,
+       * which is the strongest thing on the page.
+       */
+      registryNote: string;
+      emailNote: (email: string) => string;
+    };
+    governance: {
+      heading: string;
+      officersIntro: string;
+      leadershipLink: string;
+    };
+    contact: { heading: string; body: string };
+  };
   legalIdentity: {
     decree: { title: string; authority: string; description: string };
     verification: { title: string; description: string };
@@ -135,6 +191,49 @@ const EN: PublicContent = {
     { label: "Teaching staff", value: "60" },
     { label: "Educational units", value: "5" },
   ],
+  transparencyPage: {
+    title: "Legal Status & Transparency",
+    metaDescription:
+      "The legal identity of Yayasan Pesantren Cipansor: its Ministry of Law and Human Rights incorporation number, Registered ID (NPWP), registered address, foundation organs, and the domains the foundation operates.",
+    lead: "This page sets out the legal identity of Yayasan Pesantren Cipansor together with the web addresses it operates, so that anyone — a parent, a donor, or a reviewing body — can verify the institution from a single place.",
+    identity: {
+      heading: "Legal Identity",
+      legalNameLabel: "Registered name",
+      legalFormLabel: "Legal form",
+      legalFormValue:
+        "Yayasan (Indonesian foundation), under Law No. 16 of 2001 as amended by Law No. 28 of 2004",
+      decreeLabel: "Incorporation decree",
+      issuedByLabel: "Issued by",
+      establishedLabel: "Established",
+      addressLabel: "Registered address",
+      markazLabel: "Part of",
+    },
+    domains: {
+      heading: "Domains Operated by the Foundation",
+      intro:
+        "cipansor.or.id is the official domain of Yayasan Pesantren Cipansor. The pesantren previously used pesantrencipansor.com, and its contents are being migrated here. Both are run by the same legal entity — the foundation identified above.",
+      canonicalRole:
+        "The foundation's official domain, and the entrance to the pesantren's information system.",
+      previousRole:
+        "The pesantren's former website, now being migrated to the official domain above.",
+      migrationNote:
+        "The foundation chose .or.id as its permanent domain precisely because of what registration demands: the address is tied to the foundation's incorporation documents, so the institution's identity is attached to the domain itself.",
+      registryNote:
+        "A .or.id domain may only be registered by a legally incorporated organisation in Indonesia. The national registry (PANDI) requires incorporation documents in the applicant organisation's own name — a deed of establishment or a ministerial decree of incorporation — before the domain is granted. The foundation's ownership of this domain was therefore checked against documents at registration, rather than being merely asserted on this page.",
+      emailNote: (email) =>
+        `All of the foundation's official correspondence uses an address on this domain: ${email}.`,
+    },
+    governance: {
+      heading: "Foundation Organs and Governance",
+      officersIntro:
+        "The officers and unit heads who run the pesantren day to day are listed by name and position.",
+      leadershipLink: "See the leadership",
+    },
+    contact: {
+      heading: "Registered Address and Official Contact",
+      body: "The address below is both the foundation's registered seat and the place where its teaching takes place, so it can be visited and checked on the map.",
+    },
+  },
   legalIdentity: {
     decree: {
       title: "Legal Incorporation",
@@ -223,6 +322,49 @@ const AR: PublicContent = {
     { label: "الهيئة التدريسية", value: "٦٠" },
     { label: "الوحدات التعليمية", value: "٥" },
   ],
+  transparencyPage: {
+    title: "الوضع القانوني والشفافية",
+    metaDescription:
+      "الهوية القانونية لمؤسسة معهد سيبانسور: رقم قرار الإشهار الصادر عن وزارة القانون وحقوق الإنسان، ورقم التعريف المسجَّل (NPWP)، والعنوان الرسمي، وأجهزة المؤسسة، والنطاقات التي تديرها.",
+    lead: "تعرض هذه الصفحة الهوية القانونية لمؤسسة معهد سيبانسور مع العناوين الإلكترونية التي تديرها، ليتمكّن كلّ مهتمّ — وليّ أمر أو متبرّع أو جهة مراجِعة — من التحقّق من المؤسسة في مكان واحد.",
+    identity: {
+      heading: "الهوية القانونية",
+      legalNameLabel: "الاسم المسجَّل",
+      legalFormLabel: "الشكل القانوني",
+      legalFormValue:
+        "مؤسسة (Yayasan) وفق القانون رقم ١٦ لسنة ٢٠٠١ المعدَّل بالقانون رقم ٢٨ لسنة ٢٠٠٤",
+      decreeLabel: "رقم قرار الإشهار",
+      issuedByLabel: "الجهة المُصدِرة",
+      establishedLabel: "سنة التأسيس",
+      addressLabel: "العنوان الرسمي",
+      markazLabel: "تندرج تحت",
+    },
+    domains: {
+      heading: "النطاقات التي تديرها المؤسسة",
+      intro:
+        "‏cipansor.or.id هو النطاق الرسمي لمؤسسة معهد سيبانسور. وكان المعهد يستخدم من قبلُ نطاق pesantrencipansor.com، ويجري نقل محتواه إلى هذا النطاق. وكلاهما يُدار من الكيان القانوني نفسه المذكور أعلاه.",
+      canonicalRole:
+        "النطاق الرسمي للمؤسسة، وهو كذلك مدخل نظام المعلومات الخاص بالمعهد.",
+      previousRole:
+        "موقع المعهد السابق، ويجري نقله إلى النطاق الرسمي المذكور أعلاه.",
+      migrationNote:
+        "اختارت المؤسسة نطاق ‎.or.id‎ ليكون نطاقها الدائم لِما يشترطه تسجيله تحديدًا: فالعنوان مرتبط بوثائق إشهار المؤسسة، فتغدو هوية المؤسسة ملتصقةً بالنطاق نفسه.",
+      registryNote:
+        "لا يُسمح بتسجيل نطاق ‎.or.id‎ إلا للمنظمات المشهرة قانونًا في إندونيسيا، إذ يشترط السجلّ الوطني (PANDI) تقديم وثائق التأسيس باسم المنظمة الطالبة نفسها — عقد التأسيس أو قرار الإشهار الوزاري — قبل منح النطاق. وعليه فإنّ ملكية المؤسسة لهذا النطاق قد خضعت لفحص المستندات منذ التسجيل، لا مجرّد دعوى تُذكر في هذه الصفحة.",
+      emailNote: (email) =>
+        `وتستخدم المؤسسة في جميع مراسلاتها الرسمية عنوان بريد على هذا النطاق، وهو ${email}.`,
+    },
+    governance: {
+      heading: "أجهزة المؤسسة وحوكمتها",
+      officersIntro:
+        "أمّا المسؤولون ورؤساء الوحدات الذين يديرون المعهد يوميًّا فتُذكر أسماؤهم ومناصبهم كاملةً.",
+      leadershipLink: "عرض الهيئة القيادية",
+    },
+    contact: {
+      heading: "العنوان الرسمي وبيانات التواصل",
+      body: "العنوان أدناه هو المقرّ الرسمي للمؤسسة وموضع نشاطها التعليمي في آنٍ واحد، فيمكن زيارته والتحقّق منه على الخريطة.",
+    },
+  },
   legalIdentity: {
     decree: {
       title: "الاعتماد القانوني",
@@ -264,6 +406,49 @@ const ID: PublicContent = {
   },
   profileSections,
   profileStats,
+  transparencyPage: {
+    title: "Legalitas & Transparansi",
+    metaDescription:
+      "Identitas badan hukum Yayasan Pesantren Cipansor: nomor pengesahan Kementerian Hukum dan HAM, Registered ID (NPWP), alamat kedudukan, organ yayasan, dan domain resmi yang dioperasikan yayasan.",
+    lead: "Halaman ini memuat identitas hukum Yayasan Pesantren Cipansor beserta alamat web yang dioperasikannya, agar siapa pun — wali santri, donatur, maupun lembaga yang meninjau — dapat memeriksa keabsahan lembaga ini dari satu tempat.",
+    identity: {
+      heading: "Identitas Badan Hukum",
+      legalNameLabel: "Nama badan hukum",
+      legalFormLabel: "Bentuk badan hukum",
+      legalFormValue:
+        "Yayasan, sesuai UU No. 16 Tahun 2001 jo. UU No. 28 Tahun 2004 tentang Yayasan",
+      decreeLabel: "Nomor pengesahan",
+      issuedByLabel: "Diterbitkan oleh",
+      establishedLabel: "Berdiri sejak",
+      addressLabel: "Alamat kedudukan",
+      markazLabel: "Bernaung di bawah",
+    },
+    domains: {
+      heading: "Domain Resmi Yayasan",
+      intro:
+        "cipansor.or.id adalah domain resmi Yayasan Pesantren Cipansor. Sebelumnya pesantren menggunakan pesantrencipansor.com, dan seluruh isinya sedang dipindahkan ke domain ini. Keduanya dijalankan oleh badan hukum yang sama, yaitu yayasan yang identitasnya tercantum di atas.",
+      canonicalRole:
+        "Domain resmi yayasan sekaligus pintu masuk sistem informasi pesantren.",
+      previousRole:
+        "Situs lama pesantren, yang sedang dipindahkan ke domain resmi di atas.",
+      migrationNote:
+        "Yayasan memilih .or.id sebagai domain tetapnya justru karena syarat pendaftarannya: alamat ini terikat pada dokumen badan hukum yayasan, sehingga identitas lembaga melekat pada domainnya.",
+      registryNote:
+        "Domain .or.id hanya dapat didaftarkan oleh organisasi berbadan hukum di Indonesia. Registri nasional (PANDI) mensyaratkan dokumen legalitas atas nama organisasi pendaftar — akta pendirian atau surat keputusan pengesahan badan hukum — sebelum domain diberikan. Karena itu kepemilikan domain ini oleh yayasan telah melalui pemeriksaan dokumen sejak pendaftarannya, bukan sekadar pernyataan pada halaman ini.",
+      emailNote: (email) =>
+        `Seluruh korespondensi resmi yayasan menggunakan alamat surel pada domain ini, yaitu ${email}.`,
+    },
+    governance: {
+      heading: "Organ dan Tata Kelola Yayasan",
+      officersIntro:
+        "Pengurus dan para kepala unit yang menjalankan kegiatan pesantren sehari-hari dicantumkan lengkap dengan nama dan jabatannya.",
+      leadershipLink: "Lihat jajaran pimpinan",
+    },
+    contact: {
+      heading: "Alamat dan Kontak Resmi",
+      body: "Alamat berikut adalah kedudukan yayasan sekaligus lokasi kegiatan pendidikannya, sehingga dapat dikunjungi maupun diperiksa pada peta.",
+    },
+  },
   legalIdentity: {
     decree: {
       title: legalIdentity.decree.title,

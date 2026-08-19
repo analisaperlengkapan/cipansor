@@ -71,9 +71,20 @@ export interface HomeContent {
     contactHeading: string;
     viewOnMaps: string;
     rights: string;
+    /**
+     * The line that says, in plain words, who runs this website.
+     *
+     * Google for Nonprofits declined the domain a second time because they
+     * "couldn't confirm its relationship with your registered nonprofit
+     * organization". The structured data in config/organization-jsonld.ts
+     * answers that for a machine; this is the half a person reads, and it sits
+     * in the footer so it is on every public page rather than one.
+     */
+    operatedBy: (legalName: string) => string;
     links: {
       profile: string;
       leadership: string;
+      legal: string;
       programs: string;
       units: string;
       news: string;
@@ -162,9 +173,12 @@ const ID: HomeContent = {
     contactHeading: "Hubungi Kami",
     viewOnMaps: "Lihat di Google Maps",
     rights: "Hak cipta dilindungi.",
+    operatedBy: (legalName) =>
+      `Situs resmi ${legalName}, dikelola langsung oleh yayasan.`,
     links: {
       profile: "Profil Pesantren",
       leadership: "Pimpinan",
+      legal: "Legalitas & Transparansi",
       programs: "Program Unggulan",
       units: "Unit Pendidikan",
       news: "Berita & Kegiatan",
@@ -256,9 +270,12 @@ const EN: HomeContent = {
     contactHeading: "Contact Us",
     viewOnMaps: "View on Google Maps",
     rights: "All rights reserved.",
+    operatedBy: (legalName) =>
+      `The official website of ${legalName}, operated by the foundation itself.`,
     links: {
       profile: "About the Pesantren",
       leadership: "Leadership",
+      legal: "Legal Status & Transparency",
       programs: "Flagship Programmes",
       units: "Educational Units",
       news: "News & Activities",
@@ -350,9 +367,12 @@ const AR: HomeContent = {
     contactHeading: "تواصل معنا",
     viewOnMaps: "عرض على خرائط جوجل",
     rights: "جميع الحقوق محفوظة.",
+    operatedBy: (legalName) =>
+      `الموقع الرسمي لـ${legalName}، تديره المؤسسة بنفسها.`,
     links: {
       profile: "نبذة عن المعهد",
       leadership: "الهيئة القيادية",
+      legal: "الوضع القانوني والشفافية",
       programs: "البرامج المتميّزة",
       units: "الوحدات التعليمية",
       news: "الأخبار والأنشطة",

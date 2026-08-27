@@ -102,6 +102,17 @@ services:
       # limit is tunable without a rebuild.
       CHATBOT_RATE_LIMIT_WINDOW_MS: ${CHATBOT_RATE_LIMIT_WINDOW_MS:-60000}
       CHATBOT_RATE_LIMIT_MAX_REQUESTS: ${CHATBOT_RATE_LIMIT_MAX_REQUESTS:-10}
+      # SMTP Email Configuration
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_USER: ${SMTP_USER:-noreply@cipansor.or.id}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-"Yayasan Pesantren Cipansor" <noreply@cipansor.or.id>}
+      SMTP_REPLY_TO: ${SMTP_REPLY_TO:-halo@cipansor.or.id}
+      SMTP_OAUTH_CLIENT_ID: ${SMTP_OAUTH_CLIENT_ID:-}
+      SMTP_OAUTH_CLIENT_SECRET: ${SMTP_OAUTH_CLIENT_SECRET:-}
+      SMTP_OAUTH_REFRESH_TOKEN: ${SMTP_OAUTH_REFRESH_TOKEN:-}
     volumes:
       # User uploads (santri photos, e-simaan recordings, attachments) are
       # written to public/uploads and served from /uploads. Without a volume

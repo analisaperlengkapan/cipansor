@@ -119,7 +119,7 @@ export const config = {
   },
 
   smtp: {
-    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    host: process.env.SMTP_HOST || '',
     port: parseInt(process.env.SMTP_PORT || '587', 10),
     secure: process.env.SMTP_SECURE === 'true', // true for 465, false for 587
     user: process.env.SMTP_USER || 'noreply@cipansor.or.id',

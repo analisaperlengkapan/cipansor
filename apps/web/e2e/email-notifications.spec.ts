@@ -1,8 +1,10 @@
 import { test, expect } from '@playwright/test';
+import { loginAs } from './helpers/auth-api';
 
 test.describe('Email Notifications & SMTP Configuration', () => {
   test.beforeEach(async ({ page }) => {
-    // Navigate to notification settings page
+    // Authenticate first before navigating to protected page
+    await loginAs(page, 'superAdmin');
     await page.goto('/notifications/settings');
   });
 

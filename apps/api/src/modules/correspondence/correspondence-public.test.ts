@@ -55,9 +55,9 @@ describe('CorrespondenceService - Public Verification', () => {
 
     expect(result.isValid).toBe(true);
     expect(result.isRevoked).toBe(false);
-    expect(result.signer.name).toBe('Dr. H. Ahmad');
-    expect(result.signer.nip).toBe('19800101');
-    expect(result.letter.letterNumber).toBe('001/SK/Y-CPS/VIII/2026');
+    expect(result.signer?.name).toBe('Dr. H. Ahmad');
+    expect(result.signer?.nip).toBe('19800101');
+    expect(result.letter?.letterNumber).toBe('001/SK/Y-CPS/VIII/2026');
   });
 
   it('returns isRevoked: true and revokedAt date when signature is revoked', async () => {

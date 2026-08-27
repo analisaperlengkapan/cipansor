@@ -10,7 +10,13 @@ import {
   letterNoteSchema,
 } from './correspondence.schema';
 
+import { sensitiveOperationLimiter } from '@/middleware/rate-limit';
+
 const router = Router();
+
+// Public route for letter verification (protected by rate limiting)
+router.get('/public/verify', sensitiveOperationLimiter, CorrespondenceController.verifyPublic);
+router.get('/public/verify/:token', sensitiveOperationLimiter, CorrespondenceController.verifyPublic);
 
 router.use(authenticate);
 

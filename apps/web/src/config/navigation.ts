@@ -301,6 +301,11 @@ const teacherNavigation: NavGroup[] = [
     title: "Informasi",
     items: [
       {
+        title: "E-Office (Persuratan)",
+        href: "/e-office",
+        icon: Mail,
+      },
+      {
         title: "Pengumuman",
         href: "/announcements",
         icon: Bell,
@@ -364,6 +369,11 @@ const staffNavigation: NavGroup[] = [
   {
     title: "Administrasi",
     items: [
+      {
+        title: "E-Office (Persuratan)",
+        href: "/e-office",
+        icon: Mail,
+      },
       {
         title: "Keuangan",
         href: "/finance",
@@ -620,6 +630,11 @@ const yayasanNavigation: NavGroup[] = [
         title: "Foundation",
         href: "/foundation",
         icon: Building2,
+      },
+      {
+        title: "E-Office (Persuratan)",
+        href: "/e-office",
+        icon: Mail,
       },
       {
         title: "Units",
@@ -1512,6 +1527,11 @@ const kepalaSekolahNavigation: NavGroup[] = [
     title: "Operations",
     items: [
       {
+        title: "E-Office (Persuratan)",
+        href: "/e-office",
+        icon: Mail,
+      },
+      {
         title: "Notifications",
         href: "/notifications",
         icon: Bell,
@@ -1598,6 +1618,7 @@ const pesantrenPimpinanNavigation: NavGroup[] = [
   {
     title: "Informasi",
     items: [
+      { title: "E-Office (Persuratan)", href: "/e-office", icon: Mail },
       { title: "Pengumuman", href: "/announcements", icon: Bell },
       {
         title: "Aduan & Aspirasi",
@@ -1672,6 +1693,7 @@ const pesantrenPengasuhanNavigation: NavGroup[] = [
   {
     title: "Informasi",
     items: [
+      { title: "E-Office (Persuratan)", href: "/e-office", icon: Mail },
       { title: "Pengumuman", href: "/announcements", icon: Bell },
       {
         title: "Aduan & Aspirasi",
@@ -1741,7 +1763,10 @@ const ptPimpinanNavigation: NavGroup[] = [
   },
   {
     title: "Informasi",
-    items: [{ title: "Pengumuman", href: "/announcements", icon: Bell }],
+    items: [
+      { title: "E-Office (Persuratan)", href: "/e-office", icon: Mail },
+      { title: "Pengumuman", href: "/announcements", icon: Bell },
+    ],
   },
 ];
 
@@ -1786,6 +1811,7 @@ const ptDosenNavigation: NavGroup[] = [
   {
     title: "Informasi",
     items: [
+      { title: "E-Office (Persuratan)", href: "/e-office", icon: Mail },
       { title: "Pengumuman", href: "/announcements", icon: Bell },
       {
         title: "Aduan & Aspirasi",

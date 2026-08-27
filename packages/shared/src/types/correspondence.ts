@@ -192,7 +192,8 @@ export interface LetterSignatureDetail {
 export interface CreateDispositionInput {
   letterId: string;
   senderId: string;
-  recipientId: string;
+  recipientId?: string;
+  recipientIds?: string[];
   instruction: string;
   deadline?: string;
   parentDispositionId?: string;

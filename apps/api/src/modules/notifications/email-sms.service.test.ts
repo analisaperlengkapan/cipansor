@@ -36,7 +36,7 @@ describe('NotificationService Email Integration', () => {
       sendMail: sendMailMock,
     } as any);
 
-    config.smtp.host = 'smtp.gmail.com';
+    (config.smtp as { host: string }).host = 'smtp.gmail.com';
 
     // Reset singleton transporter
     (notificationService as any).transporter = null;

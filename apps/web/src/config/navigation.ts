@@ -288,11 +288,11 @@ const teacherNavigation: NavGroup[] = [
     ],
   },
   {
-    title: "PKG",
+    title: "Kinerja",
     items: [
       {
-        title: "Penilaian Kinerja",
-        href: "/pkg",
+        title: "Manajemen Kinerja",
+        href: "/kinerja",
         icon: ClipboardPenLine,
       },
     ],
@@ -1166,8 +1166,8 @@ const adminNavigation: NavGroup[] = [
         icon: FileBarChart,
       },
       {
-        title: "PKG Guru",
-        href: "/pkg",
+        title: "Manajemen Kinerja",
+        href: "/kinerja",
         icon: ClipboardPenLine,
       },
       {
@@ -1780,7 +1780,7 @@ const ptDosenNavigation: NavGroup[] = [
   {
     title: "Kinerja",
     items: [
-      { title: "Penilaian Kinerja", href: "/pkg", icon: ClipboardPenLine },
+      { title: "Manajemen Kinerja", href: "/kinerja", icon: ClipboardPenLine },
     ],
   },
   {

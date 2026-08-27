@@ -254,7 +254,8 @@ export default function LetterDetailPage({
   };
 
   const handleForwardReview = async () => {
-    if (!forwardData.nextReviewerId && !forwardData.isFinalSigner) {
+    const hasExistingSigner = letter.reviewers?.some((r) => r.isSigner);
+    if (!forwardData.nextReviewerId && !forwardData.isFinalSigner && !hasExistingSigner) {
       toast.error("Pilih pejabat penerus atau tandai sebagai penandatangan akhir.");
       return;
     }
@@ -269,7 +270,7 @@ export default function LetterDetailPage({
       toast.success(
         forwardData.nextReviewerId
           ? "Surat berhasil disetujui dan diteruskan"
-          : "Surat berhasil disetujui dan siap ditandatangani"
+          : "Surat berhasil disetujui"
       );
       setForwardModalOpen(false);
     } catch (error) {

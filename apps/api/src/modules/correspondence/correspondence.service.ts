@@ -438,6 +438,10 @@ export const CorrespondenceService = {
       let updatedLadder: ReviewerRung[] = [...ladder];
 
       if (action === 'APPROVE') {
+        if (nextReviewerId === reviewerId) {
+          throw new Error('Tidak dapat meneruskan surat kepada diri sendiri.');
+        }
+
         // Validate that an approval specifies either a nextReviewerId, isFinalSigner, or an existing signer
         const hasExistingSigner = updatedLadder.some((r) => r.isSigner);
         if (!nextReviewerId && !isFinalSigner && !hasExistingSigner) {
@@ -499,7 +503,7 @@ export const CorrespondenceService = {
           ? statusAfterApproval(updatedLadder, reviewerId)
           : DbLetterStatus.REVISION_NEEDED;
 
-      // If approving and reviewer is not marked as signer, or if status reaches SIGNED via review approval alone,
+      // If approving and reviewer is not marked as signer, or if status reaches SIGNED via review APPROVE alone,
       // downgrade SIGNED to READY_TO_SIGN (since actual SIGNED status requires E-Sign passphrase via esign.service).
       // However, if the existing ladder already had a designated signer who approved as last rung, statusAfterApproval returns SIGNED,
       // except when passphrase signing is required. If no passphrase, status becomes SIGNED or READY_TO_SIGN.
@@ -793,7 +797,7 @@ export const CorrespondenceService = {
       });
     }
 
-    return createdDispositions.length === 1 ? createdDispositions[0] : createdDispositions;
+    return createdDispositions;
   },
 
   async updateDispositionStatus(id: string, status: string, notes?: string, userId?: string) {

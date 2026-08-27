@@ -203,7 +203,7 @@ export const CorrespondenceService = {
             reviewerId: reviewerId,
             order: index + 1,
             status: 'PENDING',
-            isSigner: index === data.reviewerIds!.length - 1, // Last one is signer
+            isSigner: false, // Default to false so dynamic review-and-forward can take place
           })),
         });
       }
@@ -437,52 +437,61 @@ export const CorrespondenceService = {
 
       let updatedLadder: ReviewerRung[] = [...ladder];
 
-      // If approving and nextReviewerId is provided, add or update the next reviewer dynamically
-      if (action === 'APPROVE' && nextReviewerId) {
-        const existingNext = letter.reviewers.find((r) => r.reviewerId === nextReviewerId);
-        if (existingNext) {
-          // If already in ladder, reset status to PENDING and update isSigner if needed
-          await tx.letterReviewer.update({
-            where: { id: existingNext.id },
-            data: {
-              status: 'PENDING',
-              isSigner: !!isFinalSigner,
-            },
-          });
-          updatedLadder = updatedLadder.map((r) =>
-            r.id === existingNext.id
-              ? { ...r, status: 'PENDING', isSigner: !!isFinalSigner }
-              : r
-          );
-        } else {
-          const currentMaxOrder = Math.max(...letter.reviewers.map((r) => r.order), mine.order, 0);
-          const newOrder = currentMaxOrder + 1;
-          const newRung = await tx.letterReviewer.create({
-            data: {
-              letterId,
+      if (action === 'APPROVE') {
+        // Validate that an approval specifies either a nextReviewerId, isFinalSigner, or an existing signer
+        const hasExistingSigner = updatedLadder.some((r) => r.isSigner);
+        if (!nextReviewerId && !isFinalSigner && !hasExistingSigner) {
+          throw new Error('Harus memilih pejabat penerus atau menandai sebagai penandatangan akhir.');
+        }
+
+        // If approving and nextReviewerId is provided, add or update the next reviewer dynamically
+        if (nextReviewerId) {
+          const existingNext = letter.reviewers.find((r) => r.reviewerId === nextReviewerId);
+          if (existingNext) {
+            // If already in ladder, reset status to PENDING, clear reviewedAt, and update isSigner
+            await tx.letterReviewer.update({
+              where: { id: existingNext.id },
+              data: {
+                status: 'PENDING',
+                reviewedAt: null,
+                isSigner: !!isFinalSigner,
+              },
+            });
+            updatedLadder = updatedLadder.map((r) =>
+              r.id === existingNext.id
+                ? { ...r, status: 'PENDING', isSigner: !!isFinalSigner }
+                : r
+            );
+          } else {
+            const currentMaxOrder = Math.max(...letter.reviewers.map((r) => r.order), mine.order, 0);
+            const newOrder = currentMaxOrder + 1;
+            const newRung = await tx.letterReviewer.create({
+              data: {
+                letterId,
+                reviewerId: nextReviewerId,
+                order: newOrder,
+                status: 'PENDING',
+                isSigner: !!isFinalSigner,
+              },
+            });
+            updatedLadder.push({
+              id: newRung.id,
               reviewerId: nextReviewerId,
               order: newOrder,
               status: 'PENDING',
               isSigner: !!isFinalSigner,
-            },
-          });
-          updatedLadder.push({
-            id: newRung.id,
-            reviewerId: nextReviewerId,
-            order: newOrder,
-            status: 'PENDING',
-            isSigner: !!isFinalSigner,
+            });
+          }
+        } else if (isFinalSigner && !mine.isSigner) {
+          // Mark current reviewer as signer if specified
+          updatedLadder = updatedLadder.map((r) =>
+            r.reviewerId === reviewerId ? { ...r, isSigner: true } : r
+          );
+          await tx.letterReviewer.update({
+            where: { id: mine.id },
+            data: { isSigner: true },
           });
         }
-      } else if (action === 'APPROVE' && isFinalSigner && !mine.isSigner) {
-        // Mark current reviewer as signer if specified
-        updatedLadder = updatedLadder.map((r) =>
-          r.reviewerId === reviewerId ? { ...r, isSigner: true } : r
-        );
-        await tx.letterReviewer.update({
-          where: { id: mine.id },
-          data: { isSigner: true },
-        });
       }
 
       let nextStatus =
@@ -490,10 +499,15 @@ export const CorrespondenceService = {
           ? statusAfterApproval(updatedLadder, reviewerId)
           : DbLetterStatus.REVISION_NEEDED;
 
-      // Self-marking as final signer or adding next reviewer advances to READY_TO_SIGN / PENDING_REVIEW,
-      // never jumping straight to SIGNED without Passphrase/E-Sign.
-      if (action === 'APPROVE' && nextStatus === DbLetterStatus.SIGNED && !mine.isSigner) {
-        nextStatus = DbLetterStatus.READY_TO_SIGN;
+      // If approving and reviewer is not marked as signer, or if status reaches SIGNED via review approval alone,
+      // downgrade SIGNED to READY_TO_SIGN (since actual SIGNED status requires E-Sign passphrase via esign.service).
+      // However, if the existing ladder already had a designated signer who approved as last rung, statusAfterApproval returns SIGNED,
+      // except when passphrase signing is required. If no passphrase, status becomes SIGNED or READY_TO_SIGN.
+      if (action === 'APPROVE' && nextStatus === DbLetterStatus.SIGNED) {
+        const currentIsSigner = mine.isSigner || isFinalSigner;
+        if (!currentIsSigner) {
+          nextStatus = DbLetterStatus.READY_TO_SIGN;
+        }
       }
 
       await tx.letterReviewer.update({
@@ -553,6 +567,22 @@ export const CorrespondenceService = {
       });
     }
 
+    // Post-commit: when a letter is forwarded to a next reviewer, notify that official.
+    if (action === 'APPROVE' && nextReviewerId) {
+      const letter = await prisma.letter.findUnique({
+        where: { id: letterId },
+        select: { subject: true, unitId: true },
+      });
+      eventBus.emit('notification:send', {
+        userId: nextReviewerId,
+        unitId: letter?.unitId,
+        type: 'REMINDER',
+        title: 'Konsep Surat Perlu Ditinjau',
+        message: `Konsep surat "${letter?.subject ?? ''}" diteruskan kepada Anda untuk ditinjau.`,
+        data: { letterId, link: `/e-office/letter/${letterId}` },
+      });
+    }
+
     // Post-commit: when a letter has been signed, notify its creator so they can
     // proceed (dispatch/archive). Done outside the transaction so the listener
     // sees the committed SIGNED status.
@@ -562,7 +592,6 @@ export const CorrespondenceService = {
         select: { createdById: true, unitId: true, subject: true, letterNumber: true },
       });
       if (letter) {
-        const { eventBus } = await import('@/lib/event-bus');
         eventBus.emit('notification:send', {
           userId: letter.createdById,
           unitId: letter.unitId,

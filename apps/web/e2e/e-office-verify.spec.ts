@@ -1,8 +1,9 @@
 import { test, expect } from "@playwright/test";
+import { loginAs } from "./helpers/auth-api";
 
 test.describe("E-Office & Public Letter Verification E2E", () => {
   test("Public Letter Verification page loads and displays form and CAPTCHA", async ({ page }) => {
-    await page.goto("http://localhost:3000/public/verify-letter");
+    await page.goto("/public/verify-letter");
 
     await expect(page.locator("h1")).toContainText("Verifikasi Tanda Tangan Elektronik");
     await expect(page.getByPlaceholder(/masukkan token/i)).toBeVisible();
@@ -10,8 +11,10 @@ test.describe("E-Office & Public Letter Verification E2E", () => {
   });
 
   test("E-Office main page renders and displays stats for authenticated users", async ({ page }) => {
+    await loginAs(page, "superAdmin");
+
     // Navigate to e-office page
-    await page.goto("http://localhost:3000/e-office");
+    await page.goto("/e-office");
 
     // Expect E-Office header
     await expect(page.locator("h1")).toContainText("E-Office");

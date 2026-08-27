@@ -1,4 +1,5 @@
 "use client";
+import { MainLayout } from "@/components/layout";
 
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -6,12 +7,10 @@ import Link from "next/link";
 import { useAuthStore } from "@/stores/auth";
 import {
   usePKDetail,
-  useUpdatePK,
   useProposePK,
   useApprovePK,
   useRejectPK,
   useCreatePKIndicator,
-  useUpdatePKIndicator,
   useDeletePKIndicator,
 } from "@/hooks/use-performance";
 import { usePlan } from "@/hooks/use-perencanaan";
@@ -58,14 +57,11 @@ import {
   CheckCircle2,
   Send,
   AlertCircle,
-  Clock,
   Building2,
-  TrendingUp,
-  FileCheck,
   RotateCcw,
 } from "lucide-react";
 
-export default function PerformanceAgreementDetailPage() {
+function PerformanceAgreementDetailPageContent() {
   const params = useParams();
   const router = useRouter();
   const pkId = params.id as string;
@@ -75,7 +71,6 @@ export default function PerformanceAgreementDetailPage() {
   const { data: strategicPlan } = usePlan(pk?.strategicPlanId || "");
 
   const createIndicator = useCreatePKIndicator();
-  const updateIndicator = useUpdatePKIndicator();
   const deleteIndicator = useDeletePKIndicator();
 
   const proposePK = useProposePK();
@@ -492,5 +487,13 @@ export default function PerformanceAgreementDetailPage() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+export default function PerformanceAgreementDetailPage() {
+  return (
+    <MainLayout>
+      <PerformanceAgreementDetailPageContent />
+    </MainLayout>
   );
 }

@@ -1,4 +1,5 @@
 "use client";
+import { MainLayout } from "@/components/layout";
 
 import { useState } from "react";
 import Link from "next/link";
@@ -38,13 +39,11 @@ import {
   TrendingUp,
   ShieldCheck,
   FileText,
-  Users,
-  Award,
   ArrowLeft,
   Layers,
 } from "lucide-react";
 
-export default function PerformanceAnalyticsPage() {
+function PerformanceAnalyticsPageContent() {
   const { data: dashboard, isLoading: loadingDash } = usePerformanceDashboard();
   const { data: consolidated, isLoading: loadingConsolidated } = usePerformanceConsolidatedReport();
   const { data: units } = useUnits();
@@ -255,5 +254,13 @@ export default function PerformanceAnalyticsPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function PerformanceAnalyticsPage() {
+  return (
+    <MainLayout>
+      <PerformanceAnalyticsPageContent />
+    </MainLayout>
   );
 }

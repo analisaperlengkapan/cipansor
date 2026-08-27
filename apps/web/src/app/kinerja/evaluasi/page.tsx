@@ -1,4 +1,5 @@
 "use client";
+import { MainLayout } from "@/components/layout";
 
 import { useState } from "react";
 import Link from "next/link";
@@ -7,8 +8,6 @@ import {
   usePKList,
   useCreateEvaluation,
   useBehavioralValues,
-  PerformanceAgreement,
-  PKEvaluation,
 } from "@/hooks/use-performance";
 import {
   Card,
@@ -52,11 +51,9 @@ import {
   Eye,
   Calendar,
   ShieldCheck,
-  TrendingUp,
-  Award,
 } from "lucide-react";
 
-export default function PeriodicEvaluationListPage() {
+function PeriodicEvaluationListPageContent() {
   const { user } = useAuthStore();
   const { data: pks, isLoading } = usePKList({ status: "APPROVED" });
   const { data: saftiValues } = useBehavioralValues();
@@ -71,7 +68,7 @@ export default function PeriodicEvaluationListPage() {
   const handleCreateEval = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedPkId) return;
-    const res = await createEvaluation.mutateAsync({
+    await createEvaluation.mutateAsync({
       pkId: selectedPkId,
       month: Number(month),
       year: Number(year),
@@ -262,5 +259,13 @@ export default function PeriodicEvaluationListPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function PeriodicEvaluationListPage() {
+  return (
+    <MainLayout>
+      <PeriodicEvaluationListPageContent />
+    </MainLayout>
   );
 }

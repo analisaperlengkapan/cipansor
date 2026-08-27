@@ -1427,8 +1427,8 @@ const kepalaSekolahNavigation: NavGroup[] = [
         icon: Users,
       },
       {
-        title: "PKG Guru",
-        href: "/pkg",
+        title: "Manajemen Kinerja",
+        href: "/kinerja",
         icon: ClipboardPenLine,
       },
     ],

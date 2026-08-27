@@ -1,4 +1,5 @@
 "use client";
+import { MainLayout } from "@/components/layout";
 
 import Link from "next/link";
 import { useAuthStore } from "@/stores/auth";
@@ -30,7 +31,7 @@ import {
   Users,
 } from "lucide-react";
 
-export default function KinerjaHubPage() {
+function KinerjaHubPageContent() {
   const { user } = useAuthStore();
   const effectiveRole = user ? getEffectiveRole(user) || user.role : "GURU";
 
@@ -294,5 +295,13 @@ export default function KinerjaHubPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function KinerjaHubPage() {
+  return (
+    <MainLayout>
+      <KinerjaHubPageContent />
+    </MainLayout>
   );
 }

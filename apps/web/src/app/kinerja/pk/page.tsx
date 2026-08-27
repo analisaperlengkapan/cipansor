@@ -1,4 +1,5 @@
 "use client";
+import { MainLayout } from "@/components/layout";
 
 import { useState } from "react";
 import Link from "next/link";
@@ -7,9 +8,6 @@ import {
   usePKList,
   useCreatePK,
   useProposePK,
-  useApprovePK,
-  useRejectPK,
-  PerformanceAgreement,
 } from "@/hooks/use-performance";
 import { usePlans } from "@/hooks/use-perencanaan";
 import { useUsers } from "@/hooks/use-users";
@@ -53,7 +51,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   FileText,
   Plus,
-  Search,
   CheckCircle2,
   Clock,
   AlertCircle,
@@ -61,10 +58,9 @@ import {
   Send,
   UserCheck,
   Building2,
-  ArrowRight,
 } from "lucide-react";
 
-export default function PerformanceAgreementListPage() {
+function PerformanceAgreementListPageContent() {
   const { user } = useAuthStore();
   const { data: pks, isLoading } = usePKList();
   const { data: plans } = usePlans();
@@ -145,7 +141,7 @@ export default function PerformanceAgreementListPage() {
                       <SelectValue placeholder="Pilih atasan langsung..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {usersData?.users
+                      {usersData?.data
                         ?.filter((u) => u.id !== user?.id)
                         .map((u) => (
                           <SelectItem key={u.id} value={u.id}>
@@ -360,5 +356,13 @@ export default function PerformanceAgreementListPage() {
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+export default function PerformanceAgreementListPage() {
+  return (
+    <MainLayout>
+      <PerformanceAgreementListPageContent />
+    </MainLayout>
   );
 }

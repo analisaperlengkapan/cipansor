@@ -1,4 +1,5 @@
 "use client";
+import { MainLayout } from "@/components/layout";
 
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -39,10 +40,9 @@ import {
   TrendingUp,
   Save,
   MessageSquare,
-  Award,
 } from "lucide-react";
 
-export default function PeriodicEvaluationDetailPage() {
+function PeriodicEvaluationDetailPageContent() {
   const params = useParams();
   const router = useRouter();
   const evalId = params.id as string;
@@ -398,5 +398,13 @@ export default function PeriodicEvaluationDetailPage() {
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+export default function PeriodicEvaluationDetailPage() {
+  return (
+    <MainLayout>
+      <PeriodicEvaluationDetailPageContent />
+    </MainLayout>
   );
 }

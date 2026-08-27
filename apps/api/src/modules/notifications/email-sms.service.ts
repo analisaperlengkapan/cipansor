@@ -18,6 +18,19 @@ import nodemailer from 'nodemailer';
 import { whatsAppService } from './whatsapp.service';
 
 /**
+ * Escapes unsafe characters for HTML interpolation.
+ */
+function escapeHtml(str: string): string {
+  if (!str) return '';
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+/**
  * Layout HTML Wrapper standard for Yayasan Pesantren Cipansor
  */
 const renderEmailLayout = (title: string, contentHtml: string) => `
@@ -407,23 +420,32 @@ class NotificationService {
       return null;
     }
 
-    const authConfig: Record<string, string | undefined> = {};
-    if (config.smtp.oauth2?.clientId && config.smtp.oauth2?.refreshToken) {
-      authConfig.type = 'OAuth2';
-      authConfig.user = config.smtp.user;
-      authConfig.clientId = config.smtp.oauth2.clientId;
-      authConfig.clientSecret = config.smtp.oauth2.clientSecret;
-      authConfig.refreshToken = config.smtp.oauth2.refreshToken;
+    let authConfig: Record<string, string | undefined> | undefined = undefined;
+
+    if (
+      config.smtp.oauth2?.clientId &&
+      config.smtp.oauth2?.clientSecret &&
+      config.smtp.oauth2?.refreshToken
+    ) {
+      authConfig = {
+        type: 'OAuth2',
+        user: config.smtp.user || 'noreply@cipansor.or.id',
+        clientId: config.smtp.oauth2.clientId,
+        clientSecret: config.smtp.oauth2.clientSecret,
+        refreshToken: config.smtp.oauth2.refreshToken,
+      };
     } else if (config.smtp.user) {
-      authConfig.user = config.smtp.user;
-      authConfig.pass = config.smtp.pass;
+      authConfig = {
+        user: config.smtp.user,
+        pass: config.smtp.pass,
+      };
     }
 
     this.transporter = nodemailer.createTransport({
       host: smtpHost,
       port: config.smtp.port,
       secure: config.smtp.secure,
-      auth: authConfig as any,
+      ...(authConfig ? { auth: authConfig as any } : {}),
     });
 
     return this.transporter;

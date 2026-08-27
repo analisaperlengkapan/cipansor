@@ -122,7 +122,7 @@ export const config = {
     host: process.env.SMTP_HOST || '',
     port: parseInt(process.env.SMTP_PORT || '587', 10),
     secure: process.env.SMTP_SECURE === 'true', // true for 465, false for 587
-    user: process.env.SMTP_USER || 'noreply@cipansor.or.id',
+    user: process.env.SMTP_USER || '',
     pass: process.env.SMTP_PASS || '',
     from: process.env.SMTP_FROM || '"Yayasan Pesantren Cipansor" <noreply@cipansor.or.id>',
     replyTo: process.env.SMTP_REPLY_TO || 'halo@cipansor.or.id',

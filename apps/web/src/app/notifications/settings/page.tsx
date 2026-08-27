@@ -299,6 +299,39 @@ export default function NotificationSettingsPage() {
           </Card>
         </div>
 
+        {/* Email Integration Status & Configuration Banner */}
+        <Card className="border-primary/20 bg-primary/5">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-primary">
+              <Mail className="h-5 w-5" />
+              Integrasi Server Email Google Workspace (Cipansor SMTP)
+            </CardTitle>
+            <CardDescription>
+              Informasi konfigurasi server email resmi Yayasan Pesantren Cipansor
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-3 sm:grid-cols-2 text-sm">
+              <div className="rounded-md border bg-background p-3">
+                <span className="text-xs text-muted-foreground block">Email Server (From):</span>
+                <strong className="font-medium text-foreground">noreply@cipansor.or.id</strong>
+                <span className="text-xs text-muted-foreground block mt-1">Pengirim Otomatis Sistem</span>
+              </div>
+              <div className="rounded-md border bg-background p-3">
+                <span className="text-xs text-muted-foreground block">Helpesk / Kanal Tanya Jawab (Reply-To):</span>
+                <strong className="font-medium text-foreground">halo@cipansor.or.id</strong>
+                <span className="text-xs text-muted-foreground block mt-1">Tujuan Balasan Email Otomatis</span>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground pt-2 border-t">
+              <span>Server Host: <code>smtp.gmail.com:587 (TLS/STARTTLS)</code></span>
+              <Badge variant="outline" className="border-emerald-500 text-emerald-700 bg-emerald-50">
+                Terintegrasi &amp; Terverifikasi
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Channel Preferences */}
         <Card>
           <CardHeader>

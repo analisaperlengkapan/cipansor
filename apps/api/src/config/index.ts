@@ -118,6 +118,21 @@ export const config = {
     phoneNumber: process.env.TWILIO_PHONE_NUMBER,
   },
 
+  smtp: {
+    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    port: parseInt(process.env.SMTP_PORT || '587', 10),
+    secure: process.env.SMTP_SECURE === 'true', // true for 465, false for 587
+    user: process.env.SMTP_USER || 'noreply@cipansor.or.id',
+    pass: process.env.SMTP_PASS || '',
+    from: process.env.SMTP_FROM || '"Yayasan Pesantren Cipansor" <noreply@cipansor.or.id>',
+    replyTo: process.env.SMTP_REPLY_TO || 'halo@cipansor.or.id',
+    oauth2: {
+      clientId: process.env.SMTP_OAUTH_CLIENT_ID,
+      clientSecret: process.env.SMTP_OAUTH_CLIENT_SECRET,
+      refreshToken: process.env.SMTP_OAUTH_REFRESH_TOKEN,
+    },
+  },
+
   /**
    * Public customer-service chatbot.
    *

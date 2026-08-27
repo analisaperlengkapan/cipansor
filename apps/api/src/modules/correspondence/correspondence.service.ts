@@ -437,26 +437,43 @@ export const CorrespondenceService = {
 
       let updatedLadder: ReviewerRung[] = [...ladder];
 
-      // If approving and nextReviewerId is provided, add the next reviewer dynamically
+      // If approving and nextReviewerId is provided, add or update the next reviewer dynamically
       if (action === 'APPROVE' && nextReviewerId) {
-        const currentMaxOrder = Math.max(...letter.reviewers.map((r) => r.order), mine.order, 0);
-        const newOrder = currentMaxOrder + 1;
-        const newRung = await tx.letterReviewer.create({
-          data: {
-            letterId,
+        const existingNext = letter.reviewers.find((r) => r.reviewerId === nextReviewerId);
+        if (existingNext) {
+          // If already in ladder, reset status to PENDING and update isSigner if needed
+          await tx.letterReviewer.update({
+            where: { id: existingNext.id },
+            data: {
+              status: 'PENDING',
+              isSigner: !!isFinalSigner,
+            },
+          });
+          updatedLadder = updatedLadder.map((r) =>
+            r.id === existingNext.id
+              ? { ...r, status: 'PENDING', isSigner: !!isFinalSigner }
+              : r
+          );
+        } else {
+          const currentMaxOrder = Math.max(...letter.reviewers.map((r) => r.order), mine.order, 0);
+          const newOrder = currentMaxOrder + 1;
+          const newRung = await tx.letterReviewer.create({
+            data: {
+              letterId,
+              reviewerId: nextReviewerId,
+              order: newOrder,
+              status: 'PENDING',
+              isSigner: !!isFinalSigner,
+            },
+          });
+          updatedLadder.push({
+            id: newRung.id,
             reviewerId: nextReviewerId,
             order: newOrder,
             status: 'PENDING',
             isSigner: !!isFinalSigner,
-          },
-        });
-        updatedLadder.push({
-          id: newRung.id,
-          reviewerId: nextReviewerId,
-          order: newOrder,
-          status: 'PENDING',
-          isSigner: !!isFinalSigner,
-        });
+          });
+        }
       } else if (action === 'APPROVE' && isFinalSigner && !mine.isSigner) {
         // Mark current reviewer as signer if specified
         updatedLadder = updatedLadder.map((r) =>
@@ -468,10 +485,16 @@ export const CorrespondenceService = {
         });
       }
 
-      const nextStatus =
+      let nextStatus =
         action === 'APPROVE'
           ? statusAfterApproval(updatedLadder, reviewerId)
           : DbLetterStatus.REVISION_NEEDED;
+
+      // Self-marking as final signer or adding next reviewer advances to READY_TO_SIGN / PENDING_REVIEW,
+      // never jumping straight to SIGNED without Passphrase/E-Sign.
+      if (action === 'APPROVE' && nextStatus === DbLetterStatus.SIGNED && !mine.isSigner) {
+        nextStatus = DbLetterStatus.READY_TO_SIGN;
+      }
 
       await tx.letterReviewer.update({
         where: { id: mine.id },

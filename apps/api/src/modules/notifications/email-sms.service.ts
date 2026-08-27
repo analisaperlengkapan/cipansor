@@ -76,13 +76,13 @@ const templates = {
         'Selamat Datang di Cipansor',
         `
         <h2 style="color: #1e3a8a; margin-top: 0;">Selamat Datang di Cipansor!</h2>
-        <p>Halo <strong>${data.name}</strong>,</p>
+        <p>Halo <strong>${escapeHtml(data.name)}</strong>,</p>
         <p>Akun Anda telah berhasil dibuat di sistem Cipansor - Pesantren Management System.</p>
         <div style="background-color: #f1f5f9; border-left: 4px solid #1e3a8a; padding: 12px 16px; margin: 16px 0; border-radius: 4px;">
           <p style="margin: 0 0 8px 0;"><strong>Detail Akun Anda:</strong></p>
           <ul style="margin: 0; padding-left: 20px;">
-            <li><strong>Email:</strong> ${data.email}</li>
-            ${data.password ? `<li><strong>Password sementara:</strong> <code>${data.password}</code></li>` : ''}
+            <li><strong>Email:</strong> ${escapeHtml(data.email)}</li>
+            ${data.password ? `<li><strong>Password sementara:</strong> <code>${escapeHtml(data.password)}</code></li>` : ''}
           </ul>
         </div>
         ${data.password ? '<p style="color: #dc2626; font-size: 13px;"><em>Demi keamanan, silakan segera ubah password Anda setelah login pertama kali.</em></p>' : ''}
@@ -99,10 +99,10 @@ const templates = {
         'Reset Password - Cipansor',
         `
         <h2 style="color: #1e3a8a; margin-top: 0;">Reset Password</h2>
-        <p>Halo <strong>${data.name}</strong>,</p>
+        <p>Halo <strong>${escapeHtml(data.name)}</strong>,</p>
         <p>Kami menerima permintaan untuk mereset password akun Anda di Sistem Cipansor.</p>
         <div style="text-align: center; margin: 24px 0;">
-          <a href="${data.resetLink}" style="display: inline-block; background-color: #1e3a8a; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Reset Password Saya</a>
+          <a href="${escapeHtml(data.resetLink)}" style="display: inline-block; background-color: #1e3a8a; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Reset Password Saya</a>
         </div>
         <p style="font-size: 13px; color: #64748b;">Link ini akan kadaluarsa dalam 1 jam.</p>
         <p style="font-size: 13px; color: #64748b;">Jika Anda tidak meminta reset password, abaikan saja email ini.</p>
@@ -125,13 +125,13 @@ const templates = {
         'Pengingat Pembayaran - Cipansor',
         `
         <h2 style="color: #1e3a8a; margin-top: 0;">Pengingat Tagihan Pembayaran</h2>
-        <p>Yth. Bapak/Ibu <strong>${data.parentName}</strong>,</p>
+        <p>Yth. Bapak/Ibu <strong>${escapeHtml(data.parentName)}</strong>,</p>
         <p>Kami menyampaikan pengingat mengenai tagihan pendidikan/pesantren untuk putra/putri Anda:</p>
         <table style="width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px;">
-          <tr style="background-color: #f8fafc;"><td style="padding: 10px; border: 1px solid #e2e8f0; width: 35%;"><strong>Nama Santri/Siswa:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0;">${data.studentName}</td></tr>
-          <tr><td style="padding: 10px; border: 1px solid #e2e8f0;"><strong>No. Invoice:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0;"><code>${data.invoiceNumber}</code></td></tr>
-          <tr style="background-color: #f8fafc;"><td style="padding: 10px; border: 1px solid #e2e8f0;"><strong>Jumlah Tagihan:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0; color: #047857; font-weight: bold;">${data.amount}</td></tr>
-          <tr><td style="padding: 10px; border: 1px solid #e2e8f0;"><strong>Jatuh Tempo:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0; color: #b91c1c; font-weight: bold;">${data.dueDate}</td></tr>
+          <tr style="background-color: #f8fafc;"><td style="padding: 10px; border: 1px solid #e2e8f0; width: 35%;"><strong>Nama Santri/Siswa:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0;">${escapeHtml(data.studentName)}</td></tr>
+          <tr><td style="padding: 10px; border: 1px solid #e2e8f0;"><strong>No. Invoice:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0;"><code>${escapeHtml(data.invoiceNumber)}</code></td></tr>
+          <tr style="background-color: #f8fafc;"><td style="padding: 10px; border: 1px solid #e2e8f0;"><strong>Jumlah Tagihan:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0; color: #047857; font-weight: bold;">${escapeHtml(data.amount)}</td></tr>
+          <tr><td style="padding: 10px; border: 1px solid #e2e8f0;"><strong>Jatuh Tempo:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0; color: #b91c1c; font-weight: bold;">${escapeHtml(data.dueDate)}</td></tr>
         </table>
         <p>Mohon segera melakukan pembayaran sebelum tanggal jatuh tempo melalui Portal Wali / Rekening Resmi Yayasan.</p>
         <p style="margin-top: 24px;">Salam hangat,<br/><strong>Bendahara & Keuangan Cipansor</strong></p>
@@ -155,16 +155,16 @@ const templates = {
         'Bukti Pembayaran Resmi',
         `
         <h2 style="color: #047857; margin-top: 0;">Kwitansi & Bukti Pembayaran Resmi</h2>
-        <p>Yth. Bapak/Ibu <strong>${data.parentName}</strong>,</p>
+        <p>Yth. Bapak/Ibu <strong>${escapeHtml(data.parentName)}</strong>,</p>
         <p>Pembayaran Anda telah kami terima dan diverifikasi oleh Tim Keuangan Yayasan Pesantren Cipansor.</p>
         <div style="background-color: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 6px; padding: 16px; margin: 16px 0;">
           <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-            <tr><td style="padding: 6px 0; color: #065f46;"><strong>No. Bukti / Transaksi:</strong></td><td style="padding: 6px 0; text-align: right; color: #065f46;"><code>${data.receiptNumber}</code></td></tr>
-            <tr><td style="padding: 6px 0; color: #065f46;"><strong>Nama Santri:</strong></td><td style="padding: 6px 0; text-align: right; color: #065f46;">${data.studentName}</td></tr>
-            <tr><td style="padding: 6px 0; color: #065f46;"><strong>Keterangan:</strong></td><td style="padding: 6px 0; text-align: right; color: #065f46;">${data.description}</td></tr>
-            <tr><td style="padding: 6px 0; color: #065f46;"><strong>Metode Pembayaran:</strong></td><td style="padding: 6px 0; text-align: right; color: #065f46;">${data.paymentMethod}</td></tr>
-            <tr><td style="padding: 6px 0; color: #065f46;"><strong>Tanggal Pembayaran:</strong></td><td style="padding: 6px 0; text-align: right; color: #065f46;">${data.paymentDate}</td></tr>
-            <tr style="border-top: 1px solid #a7f3d0;"><td style="padding: 10px 0 0 0; color: #047857; font-size: 16px;"><strong>Total Dibayar:</strong></td><td style="padding: 10px 0 0 0; text-align: right; color: #047857; font-size: 18px; font-weight: bold;">${data.amount}</td></tr>
+            <tr><td style="padding: 6px 0; color: #065f46;"><strong>No. Bukti / Transaksi:</strong></td><td style="padding: 6px 0; text-align: right; color: #065f46;"><code>${escapeHtml(data.receiptNumber)}</code></td></tr>
+            <tr><td style="padding: 6px 0; color: #065f46;"><strong>Nama Santri:</strong></td><td style="padding: 6px 0; text-align: right; color: #065f46;">${escapeHtml(data.studentName)}</td></tr>
+            <tr><td style="padding: 6px 0; color: #065f46;"><strong>Keterangan:</strong></td><td style="padding: 6px 0; text-align: right; color: #065f46;">${escapeHtml(data.description)}</td></tr>
+            <tr><td style="padding: 6px 0; color: #065f46;"><strong>Metode Pembayaran:</strong></td><td style="padding: 6px 0; text-align: right; color: #065f46;">${escapeHtml(data.paymentMethod)}</td></tr>
+            <tr><td style="padding: 6px 0; color: #065f46;"><strong>Tanggal Pembayaran:</strong></td><td style="padding: 6px 0; text-align: right; color: #065f46;">${escapeHtml(data.paymentDate)}</td></tr>
+            <tr style="border-top: 1px solid #a7f3d0;"><td style="padding: 10px 0 0 0; color: #047857; font-size: 16px;"><strong>Total Dibayar:</strong></td><td style="padding: 10px 0 0 0; text-align: right; color: #047857; font-size: 18px; font-weight: bold;">${escapeHtml(data.amount)}</td></tr>
           </table>
         </div>
         <p>Terima kasih atas kepercayaannya mendampingi pendidikan santri di Cipansor.</p>
@@ -188,14 +188,14 @@ const templates = {
         'Pemberitahuan Kedisiplinan',
         `
         <h2 style="color: #b91c1c; margin-top: 0;">Pemberitahuan Pelanggaran Kedisiplinan</h2>
-        <p>Yth. Bapak/Ibu <strong>${data.parentName}</strong>,</p>
+        <p>Yth. Bapak/Ibu <strong>${escapeHtml(data.parentName)}</strong>,</p>
         <p>Dengan ini kami menyampaikan laporan catatan kedisiplinan putra/putri Bapak/Ibu:</p>
         <table style="width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px;">
-          <tr style="background-color: #f8fafc;"><td style="padding: 10px; border: 1px solid #e2e8f0; width: 35%;"><strong>Nama Santri:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0;">${data.studentName}</td></tr>
-          <tr><td style="padding: 10px; border: 1px solid #e2e8f0;"><strong>Kategori Pelanggaran:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0;">${data.violationType}</td></tr>
-          <tr style="background-color: #f8fafc;"><td style="padding: 10px; border: 1px solid #e2e8f0;"><strong>Deskripsi:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0;">${data.description}</td></tr>
+          <tr style="background-color: #f8fafc;"><td style="padding: 10px; border: 1px solid #e2e8f0; width: 35%;"><strong>Nama Santri:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0;">${escapeHtml(data.studentName)}</td></tr>
+          <tr><td style="padding: 10px; border: 1px solid #e2e8f0;"><strong>Kategori Pelanggaran:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0;">${escapeHtml(data.violationType)}</td></tr>
+          <tr style="background-color: #f8fafc;"><td style="padding: 10px; border: 1px solid #e2e8f0;"><strong>Deskripsi:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0;">${escapeHtml(data.description)}</td></tr>
           <tr><td style="padding: 10px; border: 1px solid #e2e8f0;"><strong>Poin Pelanggaran:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0; color: #b91c1c; font-weight: bold;">+${data.points} Poin</td></tr>
-          <tr style="background-color: #f8fafc;"><td style="padding: 10px; border: 1px solid #e2e8f0;"><strong>Tanggal Kejadian:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0;">${data.date}</td></tr>
+          <tr style="background-color: #f8fafc;"><td style="padding: 10px; border: 1px solid #e2e8f0;"><strong>Tanggal Kejadian:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0;">${escapeHtml(data.date)}</td></tr>
         </table>
         <p>Mohon kerjasamanya untuk senantiasa membimbing dan memberikan pengarahan kepada ananda.</p>
         <p style="margin-top: 24px;">Salam,<br/><strong>Tim Pengasuhan & Kedisiplinan Cipansor</strong></p>
@@ -217,13 +217,13 @@ const templates = {
         'Pemberitahuan Kehadiran',
         `
         <h2 style="color: #1e3a8a; margin-top: 0;">Laporan Kehadiran Santri</h2>
-        <p>Yth. Bapak/Ibu <strong>${data.parentName}</strong>,</p>
+        <p>Yth. Bapak/Ibu <strong>${escapeHtml(data.parentName)}</strong>,</p>
         <p>Informasi status presensi putra/putri Bapak/Ibu hari ini:</p>
         <table style="width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px;">
-          <tr style="background-color: #f8fafc;"><td style="padding: 10px; border: 1px solid #e2e8f0; width: 35%;"><strong>Nama Santri:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0;">${data.studentName}</td></tr>
-          <tr><td style="padding: 10px; border: 1px solid #e2e8f0;"><strong>Tanggal:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0;">${data.date}</td></tr>
-          <tr style="background-color: #f8fafc;"><td style="padding: 10px; border: 1px solid #e2e8f0;"><strong>Status Kehadiran:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0; font-weight: bold;">${data.status}</td></tr>
-          ${data.notes ? `<tr><td style="padding: 10px; border: 1px solid #e2e8f0;"><strong>Keterangan:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0;">${data.notes}</td></tr>` : ''}
+          <tr style="background-color: #f8fafc;"><td style="padding: 10px; border: 1px solid #e2e8f0; width: 35%;"><strong>Nama Santri:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0;">${escapeHtml(data.studentName)}</td></tr>
+          <tr><td style="padding: 10px; border: 1px solid #e2e8f0;"><strong>Tanggal:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0;">${escapeHtml(data.date)}</td></tr>
+          <tr style="background-color: #f8fafc;"><td style="padding: 10px; border: 1px solid #e2e8f0;"><strong>Status Kehadiran:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0; font-weight: bold;">${escapeHtml(data.status)}</td></tr>
+          ${data.notes ? `<tr><td style="padding: 10px; border: 1px solid #e2e8f0;"><strong>Keterangan:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0;">${escapeHtml(data.notes)}</td></tr>` : ''}
         </table>
         <p style="margin-top: 24px;">Salam,<br/><strong>Tim Kesiswaan Cipansor</strong></p>
         `
@@ -246,13 +246,13 @@ const templates = {
         'Update Status Perizinan',
         `
         <h2 style="color: #1e3a8a; margin-top: 0;">Status Pengajuan Izin Santri</h2>
-        <p>Yth. Bapak/Ibu <strong>${data.parentName}</strong>,</p>
-        <p>Permohonan izin pengasuhan/keluar kompleks santri telah diverifikasi dengan status: <span style="background-color: #dbeafe; color: #1e40af; padding: 4px 8px; border-radius: 4px; font-weight: bold;">${data.status}</span></p>
+        <p>Yth. Bapak/Ibu <strong>${escapeHtml(data.parentName)}</strong>,</p>
+        <p>Permohonan izin pengasuhan/keluar kompleks santri telah diverifikasi dengan status: <span style="background-color: #dbeafe; color: #1e40af; padding: 4px 8px; border-radius: 4px; font-weight: bold;">${escapeHtml(data.status)}</span></p>
         <table style="width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px;">
-          <tr style="background-color: #f8fafc;"><td style="padding: 10px; border: 1px solid #e2e8f0; width: 35%;"><strong>Nama Santri:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0;">${data.studentName}</td></tr>
-          <tr><td style="padding: 10px; border: 1px solid #e2e8f0;"><strong>Jenis Izin:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0;">${data.permitType}</td></tr>
-          <tr style="background-color: #f8fafc;"><td style="padding: 10px; border: 1px solid #e2e8f0;"><strong>Periode Izin:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0;">${data.startDate} - ${data.endDate}</td></tr>
-          ${data.notes ? `<tr><td style="padding: 10px; border: 1px solid #e2e8f0;"><strong>Catatan Pengasuh:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0;">${data.notes}</td></tr>` : ''}
+          <tr style="background-color: #f8fafc;"><td style="padding: 10px; border: 1px solid #e2e8f0; width: 35%;"><strong>Nama Santri:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0;">${escapeHtml(data.studentName)}</td></tr>
+          <tr><td style="padding: 10px; border: 1px solid #e2e8f0;"><strong>Jenis Izin:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0;">${escapeHtml(data.permitType)}</td></tr>
+          <tr style="background-color: #f8fafc;"><td style="padding: 10px; border: 1px solid #e2e8f0;"><strong>Periode Izin:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0;">${escapeHtml(data.startDate)} - ${escapeHtml(data.endDate)}</td></tr>
+          ${data.notes ? `<tr><td style="padding: 10px; border: 1px solid #e2e8f0;"><strong>Catatan Pengasuh:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0;">${escapeHtml(data.notes)}</td></tr>` : ''}
         </table>
         <p style="margin-top: 24px;">Salam,<br/><strong>Tim Musyrif & Kesantrian Cipansor</strong></p>
         `
@@ -276,16 +276,16 @@ const templates = {
         'Laporan Tahfidz Al-Qur\'an',
         `
         <h2 style="color: #047857; margin-top: 0;">Laporan Setoran & Capaian Tahfidz</h2>
-        <p>Yth. Bapak/Ibu <strong>${data.parentName}</strong>,</p>
+        <p>Yth. Bapak/Ibu <strong>${escapeHtml(data.parentName)}</strong>,</p>
         <p>Alhamdulillah, berikut perkembangan hafalan Al-Qur'an putra/putri Anda:</p>
         <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 16px; margin: 16px 0;">
           <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-            <tr><td style="padding: 6px 0; color: #166534;"><strong>Nama Santri:</strong></td><td style="padding: 6px 0; text-align: right; color: #166534;">${data.studentName}</td></tr>
-            <tr><td style="padding: 6px 0; color: #166534;"><strong>Surah / Ayat:</strong></td><td style="padding: 6px 0; text-align: right; color: #166534;">${data.surah} (${data.verses})</td></tr>
+            <tr><td style="padding: 6px 0; color: #166534;"><strong>Nama Santri:</strong></td><td style="padding: 6px 0; text-align: right; color: #166534;">${escapeHtml(data.studentName)}</td></tr>
+            <tr><td style="padding: 6px 0; color: #166534;"><strong>Surah / Ayat:</strong></td><td style="padding: 6px 0; text-align: right; color: #166534;">${escapeHtml(data.surah)} (${escapeHtml(data.verses)})</td></tr>
             <tr><td style="padding: 6px 0; color: #166534;"><strong>Juz:</strong></td><td style="padding: 6px 0; text-align: right; color: #166534;">Juz ${data.juz}</td></tr>
-            <tr><td style="padding: 6px 0; color: #166534;"><strong>Nilai Kelancaran:</strong></td><td style="padding: 6px 0; text-align: right; color: #166534; font-weight: bold;">${data.grade}</td></tr>
-            <tr><td style="padding: 6px 0; color: #166534;"><strong>Pengampu / Ustadz:</strong></td><td style="padding: 6px 0; text-align: right; color: #166534;">${data.teacherName}</td></tr>
-            <tr><td style="padding: 6px 0; color: #166534;"><strong>Tanggal Setoran:</strong></td><td style="padding: 6px 0; text-align: right; color: #166534;">${data.date}</td></tr>
+            <tr><td style="padding: 6px 0; color: #166534;"><strong>Nilai Kelancaran:</strong></td><td style="padding: 6px 0; text-align: right; color: #166534; font-weight: bold;">${escapeHtml(data.grade)}</td></tr>
+            <tr><td style="padding: 6px 0; color: #166534;"><strong>Pengampu / Ustadz:</strong></td><td style="padding: 6px 0; text-align: right; color: #166534;">${escapeHtml(data.teacherName)}</td></tr>
+            <tr><td style="padding: 6px 0; color: #166534;"><strong>Tanggal Setoran:</strong></td><td style="padding: 6px 0; text-align: right; color: #166534;">${escapeHtml(data.date)}</td></tr>
           </table>
         </div>
         <p>Semoga ananda istiqomah dan senantiasa diberkahi Al-Qur'an.</p>
@@ -310,18 +310,18 @@ const templates = {
         'E-Office Persuratan Resmi',
         `
         <h2 style="color: #1e3a8a; margin-top: 0;">Pemberitahuan Persuratan E-Office</h2>
-        <p>Kepada Yth. <strong>${data.recipientName}</strong>,</p>
+        <p>Kepada Yth. <strong>${escapeHtml(data.recipientName)}</strong>,</p>
         <p>Terdapat naskah dinas / surat resmi baru yang diterbitkan melalui E-Office Yayasan Pesantren Cipansor:</p>
         <table style="width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px;">
-          <tr style="background-color: #f8fafc;"><td style="padding: 10px; border: 1px solid #e2e8f0; width: 35%;"><strong>No. Surat:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0;"><code>${data.letterNumber}</code></td></tr>
-          <tr><td style="padding: 10px; border: 1px solid #e2e8f0;"><strong>Perihal:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0; font-weight: bold;">${data.title}</td></tr>
-          <tr style="background-color: #f8fafc;"><td style="padding: 10px; border: 1px solid #e2e8f0;"><strong>Ringkasan / Isi:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0;">${data.summary}</td></tr>
-          <tr><td style="padding: 10px; border: 1px solid #e2e8f0;"><strong>Penandatangan:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0;">${data.signatoryName}</td></tr>
-          <tr style="background-color: #f8fafc;"><td style="padding: 10px; border: 1px solid #e2e8f0;"><strong>Tanggal Terbit:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0;">${data.date}</td></tr>
+          <tr style="background-color: #f8fafc;"><td style="padding: 10px; border: 1px solid #e2e8f0; width: 35%;"><strong>No. Surat:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0;"><code>${escapeHtml(data.letterNumber)}</code></td></tr>
+          <tr><td style="padding: 10px; border: 1px solid #e2e8f0;"><strong>Perihal:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0; font-weight: bold;">${escapeHtml(data.title)}</td></tr>
+          <tr style="background-color: #f8fafc;"><td style="padding: 10px; border: 1px solid #e2e8f0;"><strong>Ringkasan / Isi:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0;">${escapeHtml(data.summary)}</td></tr>
+          <tr><td style="padding: 10px; border: 1px solid #e2e8f0;"><strong>Penandatangan:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0;">${escapeHtml(data.signatoryName)}</td></tr>
+          <tr style="background-color: #f8fafc;"><td style="padding: 10px; border: 1px solid #e2e8f0;"><strong>Tanggal Terbit:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0;">${escapeHtml(data.date)}</td></tr>
         </table>
         ${
           data.actionUrl
-            ? `<div style="text-align: center; margin: 24px 0;"><a href="${data.actionUrl}" style="display: inline-block; background-color: #1e3a8a; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px;">Buka Dokumen di E-Office</a></div>`
+            ? `<div style="text-align: center; margin: 24px 0;"><a href="${escapeHtml(data.actionUrl)}" style="display: inline-block; background-color: #1e3a8a; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px;">Buka Dokumen di E-Office</a></div>`
             : ''
         }
         <p style="margin-top: 24px;">Hormat kami,<br/><strong>Sekretariat & E-Office Cipansor</strong></p>
@@ -334,10 +334,10 @@ const templates = {
     subject: '[Pengumuman Resmi] {title} - Cipansor',
     html: (data: { title: string; content: string; priority: string }) =>
       renderEmailLayout(
-        data.title,
+        escapeHtml(data.title),
         `
         ${data.priority === 'HIGH' ? '<div style="background-color: #dc2626; color: white; padding: 8px 12px; text-align: center; font-weight: bold; border-radius: 4px; margin-bottom: 16px;">PENGUMUMAN PENTING</div>' : ''}
-        <h2 style="color: #1e3a8a; margin-top: 0;">${data.title}</h2>
+        <h2 style="color: #1e3a8a; margin-top: 0;">${escapeHtml(data.title)}</h2>
         <div style="line-height: 1.6; margin: 16px 0;">${data.content}</div>
         <p style="margin-top: 24px;">Salam,<br/><strong>Pengurus Yayasan Pesantren Cipansor</strong></p>
         `
@@ -585,12 +585,9 @@ class NotificationService {
     }
 
     try {
-      const fromAddress = config.smtp.from || process.env.SMTP_FROM || '"Yayasan Pesantren Cipansor" <noreply@cipansor.or.id>';
-      const replyToAddress = config.smtp.replyTo || process.env.SMTP_REPLY_TO || 'halo@cipansor.or.id';
-
       const info = await transporter.sendMail({
-        from: fromAddress,
-        replyTo: replyToAddress,
+        from: config.smtp.from,
+        replyTo: config.smtp.replyTo,
         to: recipientEmail,
         subject: subject,
         html: htmlContent,

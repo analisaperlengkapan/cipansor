@@ -108,7 +108,7 @@ services:
       SMTP_SECURE: ${SMTP_SECURE:-false}
       SMTP_USER: ${SMTP_USER:-noreply@cipansor.or.id}
       SMTP_PASS: ${SMTP_PASS:-}
-      SMTP_FROM: ${SMTP_FROM:-"Yayasan Pesantren Cipansor" <noreply@cipansor.or.id>}
+      SMTP_FROM: ${SMTP_FROM:-'"Yayasan Pesantren Cipansor" <noreply@cipansor.or.id>'}
       SMTP_REPLY_TO: ${SMTP_REPLY_TO:-halo@cipansor.or.id}
       SMTP_OAUTH_CLIENT_ID: ${SMTP_OAUTH_CLIENT_ID:-}
       SMTP_OAUTH_CLIENT_SECRET: ${SMTP_OAUTH_CLIENT_SECRET:-}

@@ -503,15 +503,9 @@ export const CorrespondenceService = {
           ? statusAfterApproval(updatedLadder, reviewerId)
           : DbLetterStatus.REVISION_NEEDED;
 
-      // If approving and reviewer is not marked as signer, or if status reaches SIGNED via review APPROVE alone,
-      // downgrade SIGNED to READY_TO_SIGN (since actual SIGNED status requires E-Sign passphrase via esign.service).
-      // However, if the existing ladder already had a designated signer who approved as last rung, statusAfterApproval returns SIGNED,
-      // except when passphrase signing is required. If no passphrase, status becomes SIGNED or READY_TO_SIGN.
+      // Review approval alone must NEVER set status directly to SIGNED — signing requires E-Sign passphrase via esign.service.
       if (action === 'APPROVE' && nextStatus === DbLetterStatus.SIGNED) {
-        const currentIsSigner = mine.isSigner || isFinalSigner;
-        if (!currentIsSigner) {
-          nextStatus = DbLetterStatus.READY_TO_SIGN;
-        }
+        nextStatus = DbLetterStatus.READY_TO_SIGN;
       }
 
       await tx.letterReviewer.update({

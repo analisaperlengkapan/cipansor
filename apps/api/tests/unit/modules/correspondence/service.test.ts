@@ -117,7 +117,7 @@ describe('CorrespondenceService', () => {
       );
     });
 
-    it('signs the letter when the signer approves last', async () => {
+    it('advances status to READY_TO_SIGN when the signer approves last in processReview', async () => {
       vi.mocked(prisma.letter.findUnique).mockResolvedValue({
         id: 'letter-1',
         status: 'READY_TO_SIGN',
@@ -137,7 +137,7 @@ describe('CorrespondenceService', () => {
       expect(prisma.letter.update).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { id: 'letter-1' },
-          data: { status: 'SIGNED' },
+          data: { status: 'READY_TO_SIGN' },
         })
       );
     });

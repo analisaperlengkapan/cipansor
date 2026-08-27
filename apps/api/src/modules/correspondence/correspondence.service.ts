@@ -909,7 +909,7 @@ export const CorrespondenceService = {
           select: {
             name: true,
             email: true,
-            teacher: { select: { nip: true, position: true } },
+            teacher: { select: { nip: true } },
             staff: { select: { nip: true, position: true } },
           },
         },
@@ -921,7 +921,7 @@ export const CorrespondenceService = {
             subject: true,
             date: true,
             status: true,
-            unit: { select: { name: true, code: true } },
+            unit: { select: { name: true } },
           },
         },
       },
@@ -946,7 +946,7 @@ export const CorrespondenceService = {
       signer: {
         name: signature.signer.name,
         nip: signature.signer.teacher?.nip || signature.signer.staff?.nip || '-',
-        position: signature.signer.teacher?.position || signature.signer.staff?.position || 'Pejabat Yayasan',
+        position: signature.signer.staff?.position || 'Pejabat / Guru Yayasan',
       },
       letter: {
         letterNumber: signature.letter.letterNumber || signature.letter.agendaNumber || '-',

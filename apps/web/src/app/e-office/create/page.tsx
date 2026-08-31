@@ -341,40 +341,9 @@ export default function CreateLetterPage() {
                   name="reviewerIds"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Pemeriksa / Peninjau Pertama</FormLabel>
-                      <Select
-                        onValueChange={(val) => field.onChange([val])}
-                        value={field.value?.[0] || ""}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Pilih pemeriksa/atasan pertama..." />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {staffOptions.map((option: any) => (
-                            <SelectItem key={option.value} value={option.value}>
-                              {option.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormDescription>
-                        Pilih pejabat/atasan pertama yang akan mengulas konsep surat ini. Pemeriksa pertama dapat meneruskan secara fleksibel ke pejabat berikutnya.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
-              {direction === LetterDirection.INCOMING && (
-                <FormField
-                  control={form.control}
-                  name="recipientIds"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Teruskan Surat Masuk Kepada (Dapat memilih lebih dari 1)</FormLabel>
+                      <FormLabel>Pemeriksa & Penandatangan (Urut)</FormLabel>
                       <FormControl>
+                        {/* Simple multiple select using standard Select for now as MultiSelect component is missing */}
                         <div className="space-y-2 border rounded-md p-4 max-h-48 overflow-y-auto">
                           {staffOptions.map((option: any) => (
                             <div
@@ -402,13 +371,14 @@ export default function CreateLetterPage() {
                                 }}
                                 className="h-4 w-4 rounded border-gray-300"
                               />
-                              <label className="text-sm cursor-pointer">{option.label}</label>
+                              <label className="text-sm">{option.label}</label>
                             </div>
                           ))}
                         </div>
                       </FormControl>
                       <FormDescription>
-                        Pilih pejabat/staf yang akan menerima terusan awal surat masuk ini.
+                        Pilih urutan pemeriksa (Paraf) hingga Penandatangan
+                        terakhir.
                       </FormDescription>
                       <FormMessage />
                     </FormItem>

@@ -70,14 +70,12 @@ export const CorrespondenceController = {
 
   async review(req: Request, res: Response, next: NextFunction) {
     try {
-      const { action, notes, nextReviewerId, isFinalSigner } = req.body;
+      const { action, notes } = req.body;
       const result = await CorrespondenceService.processReview(
         req.params.id,
         req.user!.id,
         action,
-        notes,
-        nextReviewerId,
-        isFinalSigner
+        notes
       );
       res.json({ success: true, data: result });
     } catch (error) {
@@ -155,19 +153,6 @@ export const CorrespondenceController = {
         : (actor.unitId ?? undefined);
 
       const result = await CorrespondenceService.getDashboardStats(unitId);
-      res.json({ success: true, data: result });
-    } catch (error) {
-      next(error);
-    }
-  },
-
-  async verifyPublic(req: Request, res: Response, next: NextFunction) {
-    try {
-      const token = (req.query.token as string) || (req.params.token as string);
-      if (!token) {
-        throw Errors.badRequest('Token verifikasi wajib diisi');
-      }
-      const result = await CorrespondenceService.verifyPublicLetter(token);
       res.json({ success: true, data: result });
     } catch (error) {
       next(error);

@@ -87,15 +87,9 @@ export default function LetterDetailPage({
   const [dispositionOpen, setDispositionOpen] = useState(false);
   const [signOpen, setSignOpen] = useState(false);
   const [dispositionData, setDispositionData] = useState({
-    recipientIds: [] as string[],
+    recipientId: "",
     instruction: "",
     deadline: "",
-    notes: "",
-  });
-  const [forwardModalOpen, setForwardModalOpen] = useState(false);
-  const [forwardData, setForwardData] = useState({
-    nextReviewerId: "",
-    isFinalSigner: false,
     notes: "",
   });
   const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
@@ -253,33 +247,8 @@ export default function LetterDetailPage({
     }
   };
 
-  const handleForwardReview = async () => {
-    const hasExistingSigner = letter.reviewers?.some((r) => r.isSigner);
-    if (!forwardData.nextReviewerId && !forwardData.isFinalSigner && !hasExistingSigner) {
-      toast.error("Pilih pejabat penerus atau tandai sebagai penandatangan akhir.");
-      return;
-    }
-    try {
-      await reviewLetter.mutateAsync({
-        id: letter.id,
-        action: "APPROVE",
-        notes: forwardData.notes || notes,
-        nextReviewerId: forwardData.nextReviewerId || undefined,
-        isFinalSigner: forwardData.isFinalSigner,
-      });
-      toast.success(
-        forwardData.nextReviewerId
-          ? "Surat berhasil disetujui dan diteruskan"
-          : "Surat berhasil disetujui"
-      );
-      setForwardModalOpen(false);
-    } catch (error) {
-      toast.error("Gagal meneruskan surat");
-    }
-  };
-
   const handleCreateDisposition = async () => {
-    if ((!dispositionData.recipientIds || dispositionData.recipientIds.length === 0) || !dispositionData.instruction) {
+    if (!dispositionData.recipientId || !dispositionData.instruction) {
       toast.error("Penerima dan Instruksi wajib diisi");
       return;
     }
@@ -288,7 +257,7 @@ export default function LetterDetailPage({
       await createDisposition.mutateAsync({
         letterId: letter.id,
         senderId: user?.id || "",
-        recipientIds: dispositionData.recipientIds,
+        recipientId: dispositionData.recipientId,
         instruction: dispositionData.instruction,
         deadline: dispositionData.deadline,
         notes: dispositionData.notes,
@@ -296,7 +265,7 @@ export default function LetterDetailPage({
       toast.success("Disposisi berhasil dibuat");
       setDispositionOpen(false);
       setDispositionData({
-        recipientIds: [],
+        recipientId: "",
         instruction: "",
         deadline: "",
         notes: "",
@@ -308,113 +277,31 @@ export default function LetterDetailPage({
 
   return (
     <div className="max-w-5xl mx-auto p-6 space-y-6">
-      {/* Dialog Forward Concept Letter */}
-      <Dialog open={forwardModalOpen} onOpenChange={setForwardModalOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Setujui & Teruskan Konsep Surat</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label>Diteruskan Kepada Pejabat/Atasan Berikutnya</Label>
-              <Select
-                onValueChange={(val) =>
-                  setForwardData({ ...forwardData, nextReviewerId: val, isFinalSigner: false })
-                }
-                value={forwardData.nextReviewerId}
-                disabled={forwardData.isFinalSigner}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Pilih pejabat penerus..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {teachers?.data
-                    .filter((t: any) => t.userId !== user?.id)
-                    .map((t: any) => (
-                      <SelectItem key={t.userId} value={t.userId}>
-                        {t.user?.name || t.nip}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center space-x-2 pt-2">
-              <input
-                type="checkbox"
-                id="isFinalSigner"
-                checked={forwardData.isFinalSigner}
-                onChange={(e) =>
-                  setForwardData({
-                    ...forwardData,
-                    isFinalSigner: e.target.checked,
-                    nextReviewerId: e.target.checked ? "" : forwardData.nextReviewerId,
-                  })
-                }
-                className="h-4 w-4 rounded border-gray-300"
-              />
-              <Label htmlFor="isFinalSigner" className="text-sm font-medium cursor-pointer">
-                Atau tandai untuk langsung diajukan ke Penandatanganan Akhir
-              </Label>
-            </div>
-            <div className="grid gap-2">
-              <Label>Catatan / Instruksi Pengulas</Label>
-              <Textarea
-                placeholder="Catatan pengulasan atau catatan persetujuan..."
-                value={forwardData.notes}
-                onChange={(e) =>
-                  setForwardData({ ...forwardData, notes: e.target.value })
-                }
-              />
-            </div>
-          </div>
-          <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={() => setForwardModalOpen(false)}>
-              Batal
-            </Button>
-            <Button onClick={handleForwardReview}>Proses & Teruskan</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
       <Dialog open={dispositionOpen} onOpenChange={setDispositionOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Buat Disposisi / Teruskan Surat Masuk</DialogTitle>
+            <DialogTitle>Buat Disposisi</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label>Diteruskan Kepada (Dapat Memilih Beberapa Penerima)</Label>
-              <div className="space-y-2 border rounded-md p-3 max-h-40 overflow-y-auto">
-                {teachers?.data.map((t: any) => (
-                  <div key={t.userId} className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id={`disp-rec-${t.userId}`}
-                      value={t.userId}
-                      checked={dispositionData.recipientIds.includes(t.userId)}
-                      onChange={(e) => {
-                        const checked = e.target.checked;
-                        const current = dispositionData.recipientIds;
-                        if (checked) {
-                          setDispositionData({
-                            ...dispositionData,
-                            recipientIds: [...current, t.userId],
-                          });
-                        } else {
-                          setDispositionData({
-                            ...dispositionData,
-                            recipientIds: current.filter((id) => id !== t.userId),
-                          });
-                        }
-                      }}
-                      className="h-4 w-4 rounded border-gray-300"
-                    />
-                    <label htmlFor={`disp-rec-${t.userId}`} className="text-sm cursor-pointer">
+              <Label>Diteruskan Kepada</Label>
+              <Select
+                onValueChange={(val) =>
+                  setDispositionData({ ...dispositionData, recipientId: val })
+                }
+                value={dispositionData.recipientId}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Pilih penerima..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {teachers?.data.map((t: any) => (
+                    <SelectItem key={t.userId} value={t.userId}>
                       {t.user?.name || t.nip}
-                    </label>
-                  </div>
-                ))}
-              </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="grid gap-2">
               <Label>Instruksi</Label>
@@ -771,31 +658,10 @@ export default function LetterDetailPage({
                 const openForReview =
                   letter.status === "PENDING_REVIEW" ||
                   letter.status === "READY_TO_SIGN";
-
-                if (!mine || !openForReview) return null;
-
-                // When the letter is READY_TO_SIGN and current user is a designated signer,
-                // offer the sign action regardless of whether their review row was already marked APPROVED.
-                if (letter.status === "READY_TO_SIGN" && mine.isSigner) {
-                  return (
-                    <div className="pt-4 border-t space-y-3">
-                      <p className="text-xs font-medium text-muted-foreground mb-2">
-                        Penandatanganan
-                      </p>
-                      <Button
-                        className="w-full bg-green-600 hover:bg-green-700"
-                        size="sm"
-                        onClick={() => setSignOpen(true)}
-                      >
-                        <PenLine className="mr-2 h-4 w-4" />
-                        Tandatangani Dokumen
-                      </Button>
-                    </div>
-                  );
-                }
-
                 const myTurn =
                   !!mine && (turn as any)?.reviewerId === user?.id;
+
+                if (!mine || !openForReview) return null;
 
                 if (!myTurn) {
                   return (
@@ -833,17 +699,10 @@ export default function LetterDetailPage({
                         <Button
                           className="flex-1 bg-green-600 hover:bg-green-700"
                           size="sm"
-                          onClick={() => {
-                            setForwardData({
-                              nextReviewerId: "",
-                              isFinalSigner: false,
-                              notes: notes,
-                            });
-                            setForwardModalOpen(true);
-                          }}
+                          onClick={() => handleReview("APPROVE")}
                         >
                           <CheckCircle className="mr-2 h-3 w-3" />
-                          Setuju & Teruskan
+                          Setuju
                         </Button>
                       )}
                       <Button

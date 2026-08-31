@@ -59,13 +59,28 @@ export const deletePeriod = asyncHandler(async (req: Request, res: Response) => 
 /** GET /api/pkg/evaluations */
 export const listEvaluations = asyncHandler(async (req: Request, res: Response) => {
   const { periodId, teacherId, unitId, status, page, limit } = req.query;
+
+  const isGlobalRole = [
+    'SUPER_ADMIN',
+    'YAYASAN_KETUA',
+    'YAYASAN_PEMBINA',
+    'YAYASAN_PENGAWAS',
+    'YAYASAN_SEKRETARIS',
+    'YAYASAN_BENDAHARA',
+    'YAYASAN_ANGGOTA',
+  ].includes(req.user?.roleCode || '');
+
+  const effectiveUnitId = isGlobalRole
+    ? (unitId as string | undefined)
+    : (req.user?.unitId || (unitId as string | undefined));
+
   const result = await pkgService.listEvaluations({
     periodId: periodId as string,
     teacherId: teacherId as string,
-    unitId: unitId as string,
+    unitId: effectiveUnitId,
     status: status as string,
-    page: page ? parseInt(page as string) : 1,
-    limit: limit ? parseInt(limit as string) : 20,
+    page: page ? parseInt(page as string, 10) : 1,
+    limit: limit ? parseInt(limit as string, 10) : 20,
   });
   res.json(ApiResponse.success(result.data, undefined, result.pagination));
 });

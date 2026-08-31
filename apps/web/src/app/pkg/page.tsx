@@ -25,7 +25,7 @@ function PKGHistoricalPageContent() {
     unitId: user?.unitId || undefined,
   });
 
-  const formatScore = (val: any) => {
+  const formatScore = (val: number | string | null | undefined) => {
     if (val === null || val === undefined) return "-";
     const num = typeof val === "number" ? val : Number(val);
     return isNaN(num) ? "-" : num.toFixed(1);

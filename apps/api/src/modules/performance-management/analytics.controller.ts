@@ -86,18 +86,26 @@ export const getConsolidatedReport = asyncHandler(async (req: Request, res: Resp
 
   const isGlobal = isFoundationGlobalLeadership(req);
   let month: number | undefined = undefined;
-  if (req.query.month) {
-    const parsedMonth = parseInt(req.query.month as string, 10);
-    if (isNaN(parsedMonth) || parsedMonth < 1 || parsedMonth > 12) {
-      throw Errors.badRequest('Invalid month parameter. Month must be between 1 and 12');
+  if (req.query.month !== undefined) {
+    const monthStr = String(req.query.month).trim();
+    if (!/^\d+$/.test(monthStr)) {
+      throw Errors.badRequest('Invalid month parameter. Must be an integer between 1 and 12');
+    }
+    const parsedMonth = parseInt(monthStr, 10);
+    if (parsedMonth < 1 || parsedMonth > 12) {
+      throw Errors.badRequest('Invalid month parameter. Must be between 1 and 12');
     }
     month = parsedMonth;
   }
 
   let year = new Date().getFullYear();
-  if (req.query.year) {
-    const parsedYear = parseInt(req.query.year as string, 10);
-    if (isNaN(parsedYear) || parsedYear < 2000 || parsedYear > 2100) {
+  if (req.query.year !== undefined) {
+    const yearStr = String(req.query.year).trim();
+    if (!/^\d+$/.test(yearStr)) {
+      throw Errors.badRequest('Invalid year parameter. Must be a valid integer year');
+    }
+    const parsedYear = parseInt(yearStr, 10);
+    if (parsedYear < 2000 || parsedYear > 2100) {
       throw Errors.badRequest('Invalid year parameter');
     }
     year = parsedYear;

@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuthStore } from "@/stores/auth";
+import { getPrimaryRoleCode } from "@/lib/rbac";
 import {
   useEvaluationDetail,
   useUpdateIndicatorRealization,
@@ -48,7 +49,13 @@ function PeriodicEvaluationDetailPageContent() {
   const evalId = params.id as string;
 
   const { user } = useAuthStore();
+  const primaryRoleCode = user ? getPrimaryRoleCode(user) || "" : "";
   const { data: evaluation, isLoading } = useEvaluationDetail(evalId);
+
+  const canApprove =
+    user?.id === evaluation?.pk?.supervisorId ||
+    user?.role === "SUPER_ADMIN" ||
+    ["SUPER_ADMIN", "TKQ_ADMIN", "SDIT_ADMIN", "SMPIT_ADMIN", "SMAQ_ADMIN"].includes(primaryRoleCode);
   const { data: saftiMaster } = useBehavioralValues();
 
   const updateRealization = useUpdateIndicatorRealization();
@@ -164,11 +171,7 @@ function PeriodicEvaluationDetailPageContent() {
           </div>
         </div>
 
-        {evaluation.status !== "APPROVED" && (
-          user?.id === evaluation.pk?.supervisorId ||
-          user?.role === "SUPER_ADMIN" ||
-          ["SUPER_ADMIN", "UNIT_ADMIN", "TKQ_ADMIN", "SDIT_ADMIN", "SMPIT_ADMIN", "SMAQ_ADMIN"].includes(user?.role || "")
-        ) && (
+        {evaluation.status !== "APPROVED" && canApprove && (
           <Button
             className="bg-emerald-600 hover:bg-emerald-700"
             disabled={approveEvaluation.isPending}
@@ -418,11 +421,7 @@ function PeriodicEvaluationDetailPageContent() {
                 disabled={evaluation.status === "APPROVED"}
                 onChange={(e) => setFeedback(e.target.value)}
               />
-              {evaluation.status !== "APPROVED" && (
-                user?.id === evaluation.pk?.supervisorId ||
-                user?.role === "SUPER_ADMIN" ||
-                ["SUPER_ADMIN", "UNIT_ADMIN", "TKQ_ADMIN", "SDIT_ADMIN", "SMPIT_ADMIN", "SMAQ_ADMIN"].includes(user?.role || "")
-              ) && (
+              {evaluation.status !== "APPROVED" && canApprove && (
                 <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={handleApprove}>
                   Simpan Catatan & Approve Evaluasi
                 </Button>

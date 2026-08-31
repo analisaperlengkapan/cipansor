@@ -46,7 +46,7 @@ import {
 function PerformanceAnalyticsPageContent() {
   const { data: dashboard, isLoading: loadingDash } = usePerformanceDashboard();
   const { data: consolidated, isLoading: loadingConsolidated } = usePerformanceConsolidatedReport();
-  const { data: units } = useUnits();
+  const { data: units } = useUnits({ limit: 100 });
 
   const [selectedUnitId, setSelectedUnitId] = useState<string>("");
   const { data: drilldown, isLoading: loadingDrill } = usePerformanceDrilldown(selectedUnitId);

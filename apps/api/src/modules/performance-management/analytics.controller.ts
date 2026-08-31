@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { asyncHandler, Errors } from '@/middleware/error';
+import { ApiResponse } from '@/utils/response';
 import { pkAnalyticsService } from './analytics.service';
 import { RoleCode } from '@prisma/client';
 
@@ -55,7 +56,7 @@ export const getDashboard = asyncHandler(async (req: Request, res: Response) => 
   }
 
   const data = await pkAnalyticsService.getUnitPerformanceDashboard(unitId);
-  res.json({ success: true, data });
+  res.json(ApiResponse.success(data));
 });
 
 export const getDrilldown = asyncHandler(async (req: Request, res: Response) => {
@@ -71,7 +72,7 @@ export const getDrilldown = asyncHandler(async (req: Request, res: Response) => 
   }
 
   const data = await pkAnalyticsService.getUnitDrilldown(targetUnitId);
-  res.json({ success: true, data });
+  res.json(ApiResponse.success(data));
 });
 
 export const getConsolidatedReport = asyncHandler(async (req: Request, res: Response) => {
@@ -89,5 +90,5 @@ export const getConsolidatedReport = asyncHandler(async (req: Request, res: Resp
   }
 
   const data = await pkAnalyticsService.getConsolidatedReport({ month, year, unitId: scopedUnitId });
-  res.json({ success: true, data });
+  res.json(ApiResponse.success(data));
 });

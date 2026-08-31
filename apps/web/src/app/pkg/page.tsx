@@ -2,6 +2,8 @@
 
 import { MainLayout } from "@/components/layout";
 import Link from "next/link";
+import { useState } from "react";
+import { useAuthStore } from "@/stores/auth";
 import { usePKGEvaluations, usePKGStatistics } from "@/hooks/use-pkg";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,10 +12,22 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { History, ArrowRight, Award, FileText, CheckCircle2 } from "lucide-react";
 
 function PKGHistoricalPageContent() {
-  const { data: evaluationsData, isLoading } = usePKGEvaluations();
-  const { data: stats } = usePKGStatistics();
+  const { user } = useAuthStore();
+  const [page, setPage] = useState(1);
+  const limit = 10;
+
+  const { data: evaluationsData, isLoading } = usePKGEvaluations({
+    page,
+    limit,
+    unitId: user?.unitId || undefined,
+  });
+  const { data: stats } = usePKGStatistics({
+    unitId: user?.unitId || undefined,
+  });
 
   const evaluations = evaluationsData?.data || [];
+  const pagination = evaluationsData?.pagination;
+  const totalRecords = pagination?.total ?? evaluations.length;
 
   return (
     <div className="container mx-auto space-y-6 p-6">
@@ -46,7 +60,7 @@ function PKGHistoricalPageContent() {
             <CardTitle className="text-sm font-medium">Total Evaluasi PKG Historis</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{evaluations.length}</div>
+            <div className="text-2xl font-bold text-blue-600">{totalRecords}</div>
             <p className="text-xs text-muted-foreground mt-1">Dokumen penilaian guru tersimpan</p>
           </CardContent>
         </Card>
@@ -111,11 +125,11 @@ function PKGHistoricalPageContent() {
                   <TableRow key={item.id}>
                     <TableCell className="font-semibold">{item.teacher?.user?.name || "Guru"}</TableCell>
                     <TableCell>{item.period?.name || "-"}</TableCell>
-                    <TableCell>{item.pedagogicScore ? item.pedagogicScore.toFixed(1) : "-"}</TableCell>
-                    <TableCell className="font-bold text-emerald-700">{item.finalScore ? item.finalScore.toFixed(1) : "-"}</TableCell>
+                    <TableCell>{item.pedagogikScore !== undefined ? item.pedagogikScore.toFixed(1) : "-"}</TableCell>
+                    <TableCell className="font-bold text-emerald-700">{item.totalScore !== undefined ? item.totalScore.toFixed(1) : "-"}</TableCell>
                     <TableCell>
                       <Badge variant="outline" className="border-purple-300 text-purple-700">
-                        {item.predicate || "BAIK"}
+                        {item.grade || "-"}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -127,6 +141,32 @@ function PKGHistoricalPageContent() {
                 ))}
               </TableBody>
             </Table>
+          )}
+
+          {pagination && pagination.totalPages > 1 && (
+            <div className="flex items-center justify-between pt-4 border-t mt-4">
+              <span className="text-xs text-muted-foreground">
+                Halaman {pagination.page} dari {pagination.totalPages} ({pagination.total} total data)
+              </span>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={page <= 1}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                >
+                  Sebelumnya
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={page >= pagination.totalPages}
+                  onClick={() => setPage((p) => p + 1)}
+                >
+                  Selanjutnya
+                </Button>
+              </div>
+            </div>
           )}
         </CardContent>
       </Card>

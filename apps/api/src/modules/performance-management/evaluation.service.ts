@@ -238,20 +238,37 @@ export class EvaluationService {
       });
       if (!evaluation) throw Errors.notFound('Evaluation');
       pkService.assertAccess(evaluation.pk, callerId, isAdmin, { supervisorOnly: true });
-      if (evaluation.status === PlanStatus.APPROVED) {
-        throw Errors.conflict('Evaluation already approved');
-      }
 
-      const updated = await tx.pKEvaluation.update({
-        where: { id },
+      // Atomic conditional update ensuring status is not already APPROVED
+      const updateResult = await tx.pKEvaluation.updateMany({
+        where: {
+          id,
+          status: { not: PlanStatus.APPROVED },
+        },
         data: {
           status: PlanStatus.APPROVED,
           feedback: feedback !== undefined ? feedback : evaluation.feedback,
         },
       });
 
+      if (updateResult.count === 0) {
+        throw Errors.conflict('Evaluation already approved');
+      }
+
       await this.syncToPKAndTalentInTx(tx, evaluation.pkId);
-      return updated;
+      return tx.pKEvaluation.findUnique({
+        where: { id },
+        include: {
+          pk: {
+            include: {
+              user: { select: { id: true, name: true } },
+              supervisor: { select: { id: true, name: true } },
+            },
+          },
+          indicatorDetails: { include: { indicator: true } },
+          behaviorDetails: { include: { behaviorValue: true } },
+        },
+      });
     });
   }
 

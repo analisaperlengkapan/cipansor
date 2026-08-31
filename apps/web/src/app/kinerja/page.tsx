@@ -36,7 +36,7 @@ function KinerjaHubPageContent() {
   const effectiveRole = user ? getEffectiveRole(user) || user.role : "GURU";
   const primaryRoleCode = user ? getPrimaryRoleCode(user) || "" : "";
 
-  const isExecutive = [
+  const leadershipRoles = [
     "SUPER_ADMIN",
     "YAYASAN_KETUA",
     "YAYASAN_PEMBINA",
@@ -49,22 +49,19 @@ function KinerjaHubPageContent() {
     "SDIT_KEPALA_SEKOLAH",
     "SMPIT_KEPALA_SEKOLAH",
     "SMAQ_KEPALA_SEKOLAH",
+    "PESANTREN_PENGASUH",
+    "PESANTREN_DIREKTUR",
+    "PT_REKTOR",
+    "PT_WAKIL_REKTOR",
+    "PT_DEKAN",
+    "PT_KAPRODI",
     "UNIT_ADMIN",
-  ].includes(effectiveRole) || [
-    "SUPER_ADMIN",
-    "YAYASAN_KETUA",
-    "YAYASAN_PEMBINA",
-    "YAYASAN_PENGAWAS",
-    "TKQ_ADMIN",
-    "SDIT_ADMIN",
-    "SMPIT_ADMIN",
-    "SMAQ_ADMIN",
-    "TKQ_KEPALA_SEKOLAH",
-    "SDIT_KEPALA_SEKOLAH",
-    "SMPIT_KEPALA_SEKOLAH",
-    "SMAQ_KEPALA_SEKOLAH",
-    "UNIT_ADMIN",
-  ].includes(primaryRoleCode) || user?.role === "SUPER_ADMIN";
+  ];
+
+  const isExecutive =
+    leadershipRoles.includes(effectiveRole) ||
+    leadershipRoles.includes(primaryRoleCode) ||
+    user?.role === "SUPER_ADMIN";
 
   const { data: pks, isLoading: loadingPK } = usePKList();
   const { data: dashboard, isLoading: loadingDashboard } = usePerformanceDashboard(isExecutive);

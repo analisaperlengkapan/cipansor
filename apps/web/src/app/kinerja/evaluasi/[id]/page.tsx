@@ -55,7 +55,7 @@ function PeriodicEvaluationDetailPageContent() {
   const updateBehavior = useUpdateBehaviorScore();
   const approveEvaluation = useApproveEvaluation();
 
-  const [feedback, setFeedback] = useState("");
+  const [feedback, setFeedback] = useState<string | null>(null);
   const [realizationInputs, setRealizationInputs] = useState<Record<string, { realization: number; activities: string }>>({});
   const [behaviorInputs, setBehaviorInputs] = useState<Record<string, { score: number; notes: string }>>({});
 
@@ -121,18 +121,12 @@ function PeriodicEvaluationDetailPageContent() {
       }
     }
 
-    const activeIds = new Set(saftiMaster?.map((m) => m.id) || []);
-    const extraBehaviors = evaluation.behaviorDetails
-      ?.filter((b) => b.behaviorValue && !activeIds.has(b.behaviorValueId))
-      .map((b) => b.behaviorValue!) || [];
-    const combinedBehaviors = [...(saftiMaster || []), ...extraBehaviors];
-
-    for (const val of combinedBehaviors) {
-      const input = behaviorInputs[val.id];
+    for (const item of evaluation.behaviorDetails || []) {
+      const input = behaviorInputs[item.behaviorValueId];
       if (input) {
         await updateBehavior.mutateAsync({
           evaluationId: evaluation.id,
-          behaviorValueId: val.id,
+          behaviorValueId: item.behaviorValueId,
           score: Number(input.score),
           notes: input.notes,
         });
@@ -141,7 +135,7 @@ function PeriodicEvaluationDetailPageContent() {
 
     await approveEvaluation.mutateAsync({
       evaluationId: evaluation.id,
-      feedback: feedback || undefined,
+      feedback: feedback !== null ? feedback : (evaluation.feedback || ""),
     });
   };
 
@@ -170,7 +164,11 @@ function PeriodicEvaluationDetailPageContent() {
           </div>
         </div>
 
-        {evaluation.status !== "APPROVED" && (user?.id === evaluation.pk?.supervisorId || user?.role === "SUPER_ADMIN" || user?.role === "UNIT_ADMIN") && (
+        {evaluation.status !== "APPROVED" && (
+          user?.id === evaluation.pk?.supervisorId ||
+          user?.role === "SUPER_ADMIN" ||
+          ["SUPER_ADMIN", "UNIT_ADMIN", "TKQ_ADMIN", "SDIT_ADMIN", "SMPIT_ADMIN", "SMAQ_ADMIN"].includes(user?.role || "")
+        ) && (
           <Button
             className="bg-emerald-600 hover:bg-emerald-700"
             disabled={approveEvaluation.isPending}
@@ -328,18 +326,11 @@ function PeriodicEvaluationDetailPageContent() {
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
-                {/* Render active SAFTI master values plus any inactive values present in evaluation behaviorDetails */}
-                {(() => {
-                  const activeIds = new Set(saftiMaster?.map((m) => m.id) || []);
-                  const extraBehaviors = evaluation.behaviorDetails
-                    ?.filter((b) => b.behaviorValue && !activeIds.has(b.behaviorValueId))
-                    .map((b) => b.behaviorValue!) || [];
-                  const combinedBehaviors = [...(saftiMaster || []), ...extraBehaviors];
-
-                  return combinedBehaviors.map((val) => {
-                    const existingEval = evaluation.behaviorDetails?.find((b) => b.behaviorValueId === val.id);
-                    const currentScore = behaviorInputs[val.id]?.score ?? (existingEval ? existingEval.score : 85);
-                    const currentNotes = behaviorInputs[val.id]?.notes ?? (existingEval?.notes || "");
+                {evaluation.behaviorDetails?.map((item) => {
+                  const val = item.behaviorValue;
+                  if (!val) return null;
+                  const currentScore = behaviorInputs[val.id]?.score ?? item.score;
+                  const currentNotes = behaviorInputs[val.id]?.notes ?? (item.notes || "");
 
                   return (
                     <div key={val.id} className="p-4 rounded-lg border bg-card space-y-3">
@@ -404,8 +395,7 @@ function PeriodicEvaluationDetailPageContent() {
                       </div>
                     </div>
                   );
-                });
-                })()}
+                })}
               </div>
             </CardContent>
           </Card>
@@ -424,11 +414,15 @@ function PeriodicEvaluationDetailPageContent() {
               <Textarea
                 rows={4}
                 placeholder="Berikan masukan, apresiasi, atau area pengembangan..."
-                value={feedback !== "" ? feedback : (evaluation.feedback || "")}
+                value={feedback !== null ? feedback : (evaluation.feedback || "")}
                 disabled={evaluation.status === "APPROVED"}
                 onChange={(e) => setFeedback(e.target.value)}
               />
-              {evaluation.status !== "APPROVED" && (user?.id === evaluation.pk?.supervisorId || user?.role === "SUPER_ADMIN" || user?.role === "UNIT_ADMIN") && (
+              {evaluation.status !== "APPROVED" && (
+                user?.id === evaluation.pk?.supervisorId ||
+                user?.role === "SUPER_ADMIN" ||
+                ["SUPER_ADMIN", "UNIT_ADMIN", "TKQ_ADMIN", "SDIT_ADMIN", "SMPIT_ADMIN", "SMAQ_ADMIN"].includes(user?.role || "")
+              ) && (
                 <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={handleApprove}>
                   Simpan Catatan & Approve Evaluasi
                 </Button>

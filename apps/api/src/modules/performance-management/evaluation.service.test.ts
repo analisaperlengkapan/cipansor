@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 vi.mock('@/lib/prisma', () => ({
   prisma: {
     performanceAgreement: { findUnique: vi.fn(), update: vi.fn() },
-    pKEvaluation: { findUnique: vi.fn(), update: vi.fn() },
+    pKEvaluation: { findUnique: vi.fn(), update: vi.fn(), updateMany: vi.fn() },
     pKIndicator: { update: vi.fn() },
     pKIndicatorEvaluation: { findUnique: vi.fn(), update: vi.fn() },
     pKBehaviorEvaluation: { findUnique: vi.fn(), update: vi.fn() },
@@ -111,6 +111,7 @@ describe('EvaluationService', () => {
         status: 'APPROVED',
         pk: { userId: 'u-1', supervisorId: 'u-boss' },
       });
+      mocked.pKEvaluation.updateMany.mockResolvedValue({ count: 0 });
       await expect(
         evaluationService.approveEvaluation('ev-1', 'u-boss', false)
       ).rejects.toThrow(/already approved/i);
@@ -123,7 +124,7 @@ describe('EvaluationService', () => {
         status: 'DRAFT',
         pk: { userId: 'u-1', supervisorId: 'u-boss' },
       });
-      mocked.pKEvaluation.update.mockResolvedValue({ id: 'ev-1', status: 'APPROVED' });
+      mocked.pKEvaluation.updateMany.mockResolvedValue({ count: 1 });
       mocked.performanceAgreement.findUnique.mockResolvedValue({
         id: 'pk-1',
         userId: 'u-1',
@@ -160,7 +161,7 @@ describe('EvaluationService', () => {
         status: 'DRAFT',
         pk: { userId: 'u-1', supervisorId: 'u-boss' },
       });
-      mocked.pKEvaluation.update.mockResolvedValue({ id: 'ev-1', status: 'APPROVED' });
+      mocked.pKEvaluation.updateMany.mockResolvedValue({ count: 1 });
       mocked.performanceAgreement.findUnique.mockResolvedValue({
         id: 'pk-1',
         userId: 'u-1',

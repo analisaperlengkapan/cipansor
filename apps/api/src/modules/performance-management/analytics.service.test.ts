@@ -10,6 +10,7 @@ vi.mock('@/lib/prisma', () => ({
     pKEvaluation: {
       findUnique: vi.fn(),
       update: vi.fn(),
+      updateMany: vi.fn(),
       create: vi.fn(),
       count: vi.fn(),
       findMany: vi.fn(),
@@ -82,6 +83,7 @@ describe('Performance Management Analytics & Atomic Rollback Tests', () => {
     };
 
     vi.mocked(prisma.pKEvaluation.findUnique).mockResolvedValue(mockEval as any);
+    vi.mocked(prisma.pKEvaluation.updateMany).mockResolvedValue({ count: 1 } as any);
     vi.mocked(prisma.pKEvaluation.update).mockResolvedValueOnce({
       ...mockEval,
       status: PlanStatus.APPROVED,
@@ -100,8 +102,8 @@ describe('Performance Management Analytics & Atomic Rollback Tests', () => {
     await evaluationService.approveEvaluation('eval-1', 'sup-1', false, 'New Supervisor Feedback');
 
     expect(prisma.$transaction).toHaveBeenCalled();
-    expect(prisma.pKEvaluation.update).toHaveBeenCalledWith({
-      where: { id: 'eval-1' },
+    expect(prisma.pKEvaluation.updateMany).toHaveBeenCalledWith({
+      where: { id: 'eval-1', status: { not: PlanStatus.APPROVED } },
       data: {
         status: PlanStatus.APPROVED,
         feedback: 'New Supervisor Feedback',

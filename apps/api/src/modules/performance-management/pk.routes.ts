@@ -15,6 +15,7 @@ const leadership = () =>
   authorize(
     RoleCode.SUPER_ADMIN,
     RoleCode.YAYASAN_KETUA,
+    RoleCode.YAYASAN_PEMBINA,
     RoleCode.YAYASAN_PENGAWAS,
     RoleCode.TKQ_ADMIN,
     RoleCode.SDIT_ADMIN,

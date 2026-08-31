@@ -240,7 +240,16 @@ export class EvaluationService {
       },
     });
 
-    await this.syncToPKAndTalent(evaluation.pkId);
+    try {
+      await this.syncToPKAndTalent(evaluation.pkId);
+    } catch (err) {
+      // Rollback approval if sync fails to prevent stale/conflicting state
+      await prisma.pKEvaluation.update({
+        where: { id },
+        data: { status: evaluation.status },
+      });
+      throw err;
+    }
     return updated;
   }
 

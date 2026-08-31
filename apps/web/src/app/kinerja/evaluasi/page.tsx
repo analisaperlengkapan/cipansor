@@ -68,6 +68,18 @@ function PeriodicEvaluationListPageContent() {
   const handleCreateEval = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedPkId) return;
+
+    const pk = pks?.find((p) => p.id === selectedPkId);
+    if (pk) {
+      const evalDate = new Date(Number(year), Number(month) - 1, 1);
+      const start = new Date(pk.periodStart);
+      const end = new Date(pk.periodEnd);
+      if (evalDate < new Date(start.getFullYear(), start.getMonth(), 1) || evalDate > new Date(end.getFullYear(), end.getMonth(), 1)) {
+        alert("Bulan/Tahun evaluasi di luar periode Perjanjian Kinerja!");
+        return;
+      }
+    }
+
     await createEvaluation.mutateAsync({
       pkId: selectedPkId,
       month: Number(month),

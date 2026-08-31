@@ -145,7 +145,7 @@ function PerformanceAgreementListPageContent() {
                         ?.filter((u) => u.id !== user?.id)
                         .map((u) => (
                           <SelectItem key={u.id} value={u.id}>
-                            {u.name}
+                            {u.name} {u.unit ? `(${u.unit.name})` : "(Yayasan)"} - #{u.id.slice(0, 6)}
                           </SelectItem>
                         ))}
                     </SelectContent>

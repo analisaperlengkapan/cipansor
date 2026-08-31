@@ -40,10 +40,18 @@ function KinerjaHubPageContent() {
     "YAYASAN_KETUA",
     "YAYASAN_PEMBINA",
     "YAYASAN_PENGAWAS",
+    "TKQ_ADMIN",
+    "SDIT_ADMIN",
+    "SMPIT_ADMIN",
+    "SMAQ_ADMIN",
     "TKQ_KEPALA_SEKOLAH",
     "SDIT_KEPALA_SEKOLAH",
     "SMPIT_KEPALA_SEKOLAH",
     "SMAQ_KEPALA_SEKOLAH",
+    "UNIT_ADMIN",
+    "KEPALA_SEKOLAH",
+    "PIMPINAN_PESANTREN",
+    "PIMPINAN_PT",
   ].includes(effectiveRole);
 
   const { data: pks, isLoading: loadingPK } = usePKList();

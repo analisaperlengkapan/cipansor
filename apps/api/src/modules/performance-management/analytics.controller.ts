@@ -6,6 +6,7 @@ import { RoleCode } from '@prisma/client';
 /** Roles that have cross-cutting or unit-level leadership access to analytics. */
 function isLeadershipUser(req: Request): boolean {
   const roleCode = req.user?.roleCode ?? '';
+  const userRole = req.user?.role ?? '';
   const leadershipRoles = [
     RoleCode.SUPER_ADMIN,
     RoleCode.YAYASAN_KETUA,
@@ -21,7 +22,7 @@ function isLeadershipUser(req: Request): boolean {
     RoleCode.SMAQ_KEPALA_SEKOLAH,
     'UNIT_ADMIN',
   ];
-  return leadershipRoles.includes(roleCode as RoleCode);
+  return leadershipRoles.includes(roleCode as RoleCode) || userRole === 'SUPER_ADMIN';
 }
 
 export const getDashboard = asyncHandler(async (req: Request, res: Response) => {

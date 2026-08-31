@@ -108,6 +108,33 @@ function PeriodicEvaluationDetailPageContent() {
   };
 
   const handleApprove = async () => {
+    // Save any pending unsaved realization or behavior inputs before approving
+    for (const item of evaluation.indicatorDetails || []) {
+      const input = realizationInputs[item.indicatorId];
+      if (input) {
+        await updateRealization.mutateAsync({
+          evaluationId: evaluation.id,
+          indicatorId: item.indicatorId,
+          realization: Number(input.realization),
+          activities: input.activities,
+        });
+      }
+    }
+
+    if (saftiMaster) {
+      for (const val of saftiMaster) {
+        const input = behaviorInputs[val.id];
+        if (input) {
+          await updateBehavior.mutateAsync({
+            evaluationId: evaluation.id,
+            behaviorValueId: val.id,
+            score: Number(input.score),
+            notes: input.notes,
+          });
+        }
+      }
+    }
+
     await approveEvaluation.mutateAsync({
       evaluationId: evaluation.id,
       feedback: feedback || undefined,
@@ -297,10 +324,18 @@ function PeriodicEvaluationDetailPageContent() {
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
-                {saftiMaster?.map((val) => {
-                  const existingEval = evaluation.behaviorDetails?.find((b) => b.behaviorValueId === val.id);
-                  const currentScore = behaviorInputs[val.id]?.score ?? (existingEval ? existingEval.score : 85);
-                  const currentNotes = behaviorInputs[val.id]?.notes ?? (existingEval?.notes || "");
+                {/* Render active SAFTI master values plus any inactive values present in evaluation behaviorDetails */}
+                {(() => {
+                  const activeIds = new Set(saftiMaster?.map((m) => m.id) || []);
+                  const extraBehaviors = evaluation.behaviorDetails
+                    ?.filter((b) => b.behaviorValue && !activeIds.has(b.behaviorValueId))
+                    .map((b) => b.behaviorValue!) || [];
+                  const combinedBehaviors = [...(saftiMaster || []), ...extraBehaviors];
+
+                  return combinedBehaviors.map((val) => {
+                    const existingEval = evaluation.behaviorDetails?.find((b) => b.behaviorValueId === val.id);
+                    const currentScore = behaviorInputs[val.id]?.score ?? (existingEval ? existingEval.score : 85);
+                    const currentNotes = behaviorInputs[val.id]?.notes ?? (existingEval?.notes || "");
 
                   return (
                     <div key={val.id} className="p-4 rounded-lg border bg-card space-y-3">
@@ -365,7 +400,8 @@ function PeriodicEvaluationDetailPageContent() {
                       </div>
                     </div>
                   );
-                })}
+                });
+                })()}
               </div>
             </CardContent>
           </Card>

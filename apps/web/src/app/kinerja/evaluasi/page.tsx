@@ -121,7 +121,18 @@ function PeriodicEvaluationListPageContent() {
               <div className="grid gap-4 py-4">
                 <div className="grid gap-2">
                   <Label>Perjanjian Kinerja (PK)</Label>
-                  <Select value={selectedPkId} onValueChange={setSelectedPkId}>
+                  <Select
+                    value={selectedPkId}
+                    onValueChange={(pkId) => {
+                      setSelectedPkId(pkId);
+                      const pk = pks?.find((p) => p.id === pkId);
+                      if (pk) {
+                        const start = new Date(pk.periodStart);
+                        setYear(start.getFullYear());
+                        setMonth(start.getMonth() + 1);
+                      }
+                    }}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Pilih dokumen PK..." />
                     </SelectTrigger>

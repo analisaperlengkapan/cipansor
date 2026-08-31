@@ -295,6 +295,11 @@ const teacherNavigation: NavGroup[] = [
         href: "/kinerja",
         icon: ClipboardPenLine,
       },
+      {
+        title: "Arsip PKG",
+        href: "/pkg",
+        icon: ScrollText,
+      },
     ],
   },
   {
@@ -1179,6 +1184,11 @@ const adminNavigation: NavGroup[] = [
         title: "Manajemen Kinerja",
         href: "/kinerja",
         icon: ClipboardPenLine,
+      },
+      {
+        title: "Arsip PKG",
+        href: "/pkg",
+        icon: ScrollText,
       },
       {
         title: "Penjaminan Mutu",

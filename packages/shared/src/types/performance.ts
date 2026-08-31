@@ -125,3 +125,31 @@ export interface ConsolidatedUnitReportDTO {
 export interface PerformanceConsolidatedReportDTO {
   units: ConsolidatedUnitReportDTO[];
 }
+
+export interface CreatePKRequestDTO {
+  userId: string;
+  supervisorId?: string;
+  supervisorPkId?: string;
+  strategicPlanId?: string;
+  periodStart: string;
+  periodEnd: string;
+  notes?: string;
+}
+
+export interface CreateEvaluationRequestDTO {
+  pkId: string;
+  month: number;
+  year: number;
+  feedback?: string;
+  notes?: string;
+}
+
+export interface UpdateRealizationRequestDTO {
+  realization: number;
+  activities?: string;
+}
+
+export interface UpdateBehaviorScoreRequestDTO {
+  score: number;
+  notes?: string;
+}

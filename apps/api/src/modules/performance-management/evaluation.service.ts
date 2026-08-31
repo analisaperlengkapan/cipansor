@@ -49,6 +49,15 @@ export class EvaluationService {
       throw Errors.badRequest('Cannot evaluate a PK that is not APPROVED');
     }
 
+    // Validate that month and year fall within the PK agreement period
+    const evalDate = new Date(data.year, data.month - 1, 1);
+    const startMonthDate = new Date(pk.periodStart.getFullYear(), pk.periodStart.getMonth(), 1);
+    const endMonthDate = new Date(pk.periodEnd.getFullYear(), pk.periodEnd.getMonth(), 1);
+
+    if (evalDate < startMonthDate || evalDate > endMonthDate) {
+      throw Errors.badRequest('Evaluation month and year must fall within the PK agreement period');
+    }
+
     const behaviorValues = await this.getBehavioralValues();
     const period = new Date(data.year, data.month - 1, 1);
 
@@ -222,47 +231,38 @@ export class EvaluationService {
   }
 
   async approveEvaluation(id: string, callerId: string, isAdmin: boolean, feedback?: string) {
-    const evaluation = await prisma.pKEvaluation.findUnique({
-      where: { id },
-      include: { pk: true },
-    });
-    if (!evaluation) throw Errors.notFound('Evaluation');
-    pkService.assertAccess(evaluation.pk, callerId, isAdmin, { supervisorOnly: true });
-    if (evaluation.status === PlanStatus.APPROVED) {
-      throw Errors.conflict('Evaluation already approved');
-    }
+    return prisma.$transaction(async (tx) => {
+      const evaluation = await tx.pKEvaluation.findUnique({
+        where: { id },
+        include: { pk: true },
+      });
+      if (!evaluation) throw Errors.notFound('Evaluation');
+      pkService.assertAccess(evaluation.pk, callerId, isAdmin, { supervisorOnly: true });
+      if (evaluation.status === PlanStatus.APPROVED) {
+        throw Errors.conflict('Evaluation already approved');
+      }
 
-    const updated = await prisma.pKEvaluation.update({
-      where: { id },
-      data: {
-        status: PlanStatus.APPROVED,
-        feedback: feedback !== undefined ? feedback : evaluation.feedback,
-      },
-    });
-
-    try {
-      await this.syncToPKAndTalent(evaluation.pkId);
-    } catch (err) {
-      // Rollback approval AND feedback if sync fails to prevent inconsistent state
-      await prisma.pKEvaluation.update({
+      const updated = await tx.pKEvaluation.update({
         where: { id },
         data: {
-          status: evaluation.status,
-          feedback: evaluation.feedback,
+          status: PlanStatus.APPROVED,
+          feedback: feedback !== undefined ? feedback : evaluation.feedback,
         },
       });
-      throw err;
-    }
-    return updated;
+
+      await this.syncToPKAndTalentInTx(tx, evaluation.pkId);
+      return updated;
+    });
   }
 
   /**
    * After an evaluation is approved: roll YTD realizations up into the
    * PK indicators, refresh the PK's aggregate scores, and mirror the
-   * result into the talent matrix when a talent profile exists.
+   * result into the talent matrix when a talent profile exists. Executed
+   * within the approval Prisma transaction client for full atomicity.
    */
-  private async syncToPKAndTalent(pkId: string) {
-    const pk = await prisma.performanceAgreement.findUnique({
+  private async syncToPKAndTalentInTx(tx: any, pkId: string) {
+    const pk = await tx.performanceAgreement.findUnique({
       where: { id: pkId },
       include: {
         indicators: {
@@ -283,10 +283,10 @@ export class EvaluationService {
     // 1. YTD realization per indicator (sum of approved monthly entries).
     for (const indicator of pk.indicators) {
       const totalRealization = indicator.evaluations.reduce(
-        (sum, ev) => sum + ev.realization,
+        (sum: number, ev: any) => sum + ev.realization,
         0
       );
-      await prisma.pKIndicator.update({
+      await tx.pKIndicator.update({
         where: { id: indicator.id },
         data: { realization: totalRealization },
       });
@@ -297,13 +297,13 @@ export class EvaluationService {
     if (approvedCount === 0) return;
 
     const avgPerformance =
-      pk.evaluations.reduce((sum, ev) => sum + ev.performanceScore, 0) / approvedCount;
+      pk.evaluations.reduce((sum: number, ev: any) => sum + ev.performanceScore, 0) / approvedCount;
     const avgBehavior =
-      pk.evaluations.reduce((sum, ev) => sum + ev.behaviorScore, 0) / approvedCount;
+      pk.evaluations.reduce((sum: number, ev: any) => sum + ev.behaviorScore, 0) / approvedCount;
     const avgOverall =
-      pk.evaluations.reduce((sum, ev) => sum + ev.overallScore, 0) / approvedCount;
+      pk.evaluations.reduce((sum: number, ev: any) => sum + ev.overallScore, 0) / approvedCount;
 
-    await prisma.performanceAgreement.update({
+    await tx.performanceAgreement.update({
       where: { id: pkId },
       data: {
         totalScore: avgPerformance,
@@ -316,7 +316,7 @@ export class EvaluationService {
     //    when the PK has no supervisor rather than inventing one.
     if (!pk.supervisorId) return;
 
-    const talentProfile = await prisma.talentProfile.findUnique({
+    const talentProfile = await tx.talentProfile.findUnique({
       where: { userId: pk.userId },
       include: { assessments: { orderBy: { assessedAt: 'desc' }, take: 1 } },
     });
@@ -332,8 +332,6 @@ export class EvaluationService {
     const period = `PK Sync ${pk.periodStart.getFullYear()} (${pkId.slice(0, 8)})`;
     const assessmentData = {
       performanceRating: rating,
-      // Potential is a human judgement: carry the latest assessed value
-      // forward instead of fabricating one (same convention as PKG sync).
       potentialRating: talentProfile.assessments[0]?.potentialRating ?? PerformanceRating.MEETS,
       overallScore: avgOverall,
       feedback:
@@ -342,15 +340,13 @@ export class EvaluationService {
       assessedAt: new Date(),
     };
 
-    // One assessment per PK: update the previous sync instead of stacking
-    // a new row on every monthly approval.
-    const existing = await prisma.talentAssessment.findFirst({
+    const existing = await tx.talentAssessment.findFirst({
       where: { talentId: talentProfile.id, period },
     });
     if (existing) {
-      await prisma.talentAssessment.update({ where: { id: existing.id }, data: assessmentData });
+      await tx.talentAssessment.update({ where: { id: existing.id }, data: assessmentData });
     } else {
-      await prisma.talentAssessment.create({
+      await tx.talentAssessment.create({
         data: {
           talentId: talentProfile.id,
           assessorId: pk.supervisorId,

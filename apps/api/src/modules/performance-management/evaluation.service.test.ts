@@ -78,6 +78,8 @@ describe('EvaluationService', () => {
         userId: 'u-1',
         supervisorId: null,
         status: 'DRAFT',
+        periodStart: new Date('2026-01-01'),
+        periodEnd: new Date('2026-12-31'),
         indicators: [],
       });
 
@@ -89,6 +91,10 @@ describe('EvaluationService', () => {
   });
 
   describe('approveEvaluation', () => {
+    beforeEach(() => {
+      mocked.$transaction.mockImplementation(async (cb: any) => cb(prisma));
+    });
+
     it('only the supervisor may approve and double approval conflicts', async () => {
       mocked.pKEvaluation.findUnique.mockResolvedValue({
         id: 'ev-1',

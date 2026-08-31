@@ -30,6 +30,7 @@ import {
   type ReviewerRung,
 } from '@/utils/letter-workflow';
 import { AGENDA_TYPE_CODE, assertNatureAllowed } from '@/utils/letter-naskah';
+import { Errors } from '@/middleware/error';
 
 /** Anything that can run a query — the live client or a transaction handle. */
 type Db = Prisma.TransactionClient | PrismaClient;
@@ -135,12 +136,30 @@ export const CorrespondenceService = {
     return formatted;
   },
 
-  async createLetter(data: CreateLetterInput, userId: string) {
+  async createLetter(data: CreateLetterInput, userId: string, actor?: LetterActor) {
+    // Validate unit authorization
+    const targetUnitId = actor?.unitId ? actor.unitId : data.unitId;
+    if (!targetUnitId) {
+      throw Errors.badRequest('Unit ID wajib diisi');
+    }
+    if (actor?.unitId && data.unitId && data.unitId !== actor.unitId) {
+      throw Errors.forbidden('Anda tidak berwenang membuat surat untuk unit lain');
+    }
+
     // Jenis naskah menentukan sifat mana yang sah dan buku nomor mana yang
     // dipakai. Divalidasi sebelum apa pun ditulis: menolak setelah nomor
     // agenda terlanjur naik akan meninggalkan lubang di buku agenda.
     const type = (data.type as DbLetterType | undefined) ?? DbLetterType.SURAT_DINAS;
     assertNatureAllowed(type, data.nature as unknown as DbLetterNature);
+
+    // Incoming letters do not enter review unless reviewerIds are provided.
+    // If an incoming letter is submitted without reviewers, set status based on recipient assignment.
+    let initialStatus = data.status as DbLetterStatus;
+    if (data.direction === 'INCOMING' && initialStatus === DbLetterStatus.PENDING_REVIEW && (!data.reviewerIds || data.reviewerIds.length === 0)) {
+      initialStatus = data.recipientIds && data.recipientIds.length > 0
+        ? DbLetterStatus.DISPOSED
+        : DbLetterStatus.SENT;
+    }
 
     // Get active academic year
     const activeYear = await prisma.academicYear.findFirst({
@@ -153,16 +172,16 @@ export const CorrespondenceService = {
     let letterNumber = data.letterNumber;
 
     if (data.direction === 'INCOMING' && !agendaNumber) {
-      agendaNumber = await this.generateNumber(data.unitId, 'INCOMING', academicYearId);
+      agendaNumber = await this.generateNumber(targetUnitId, 'INCOMING', academicYearId);
     } else if (data.direction === 'OUTGOING' && !letterNumber) {
       // Typically only generated when status is READY or SIGNED, but we'll allow draft numbering if needed
       // Or just leave it empty for DRAFT
-      if (data.status !== 'DRAFT') {
+      if (initialStatus !== 'DRAFT') {
         // Per jenis, not one shared counter: on paper an SK has its own agenda
         // book, and sharing a counter would make SK numbers skip every time an
         // ordinary letter went out.
         letterNumber = await this.generateNumber(
-          data.unitId,
+          targetUnitId,
           AGENDA_TYPE_CODE[type],
           academicYearId
         );
@@ -173,7 +192,7 @@ export const CorrespondenceService = {
       // Create Letter
       const letter = await tx.letter.create({
         data: {
-          unitId: data.unitId,
+          unitId: targetUnitId,
           direction: data.direction as any, // Enum mapping might need care
           type,
           classificationId: data.classificationId,
@@ -186,7 +205,7 @@ export const CorrespondenceService = {
           fileUrl: data.fileUrl,
           urgency: data.urgency as any,
           nature: data.nature as any,
-          status: data.status as any,
+          status: initialStatus,
           senderName: data.senderName,
           senderTitle: data.senderTitle,
           senderInstance: data.senderInstance,
@@ -866,6 +885,69 @@ export const CorrespondenceService = {
     }
 
     return updatedDisposition;
+  },
+
+  /**
+   * Search / list eligible correspondence participants (teachers, staff, foundation officers)
+   * accessible to all authenticated E-Office users.
+   */
+  async getParticipants(params: { search?: string; unitId?: string; limit?: number }) {
+    const limit = Math.min(params.limit || 100, 200);
+
+    const where: Prisma.UserWhereInput = {
+      isActive: true,
+    };
+
+    const and: Prisma.UserWhereInput[] = [];
+
+    if (params.unitId) {
+      and.push({
+        OR: [{ unitId: params.unitId }, { unitId: null }],
+      });
+    }
+
+    if (params.search) {
+      and.push({
+        OR: [
+          { name: { contains: params.search, mode: 'insensitive' } },
+          { email: { contains: params.search, mode: 'insensitive' } },
+        ],
+      });
+    }
+
+    if (and.length > 0) {
+      where.AND = and;
+    }
+
+    const users = await prisma.user.findMany({
+      where,
+      take: limit,
+      orderBy: { name: 'asc' },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        unitId: true,
+        unit: { select: { name: true } },
+        teacher: { select: { nip: true } },
+        staff: { select: { nip: true, position: true } },
+        userRoles: {
+          select: { role: { select: { code: true } } },
+          take: 1,
+        },
+      },
+    });
+
+    return users.map((u) => ({
+      id: u.id,
+      name: u.name,
+      email: u.email,
+      unitId: u.unitId,
+      unitName: u.unit?.name ?? null,
+      roleCode: u.userRoles[0]?.role?.code ?? null,
+      nip: u.teacher?.nip || u.staff?.nip || null,
+      position: u.staff?.position || null,
+    }));
   },
 
   /** `unitId` undefined = foundation-wide totals (see getLetters). */

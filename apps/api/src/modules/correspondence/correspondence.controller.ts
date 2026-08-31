@@ -28,22 +28,11 @@ function actorOf(req: Request): LetterActor {
 export const CorrespondenceController = {
   async create(req: Request, res: Response, next: NextFunction) {
     try {
-      const actor = actorOf(req);
-      // derive or validate unitId: if caller is scoped to a unit, enforce actor.unitId
-      const targetUnitId = actor.unitId ? actor.unitId : req.body.unitId;
-      if (!targetUnitId) {
-        throw Errors.badRequest('Unit ID wajib diisi');
-      }
-      if (actor.unitId && req.body.unitId && req.body.unitId !== actor.unitId) {
-        throw Errors.forbidden('Anda tidak berwenang membuat surat untuk unit lain');
-      }
-
-      const inputData = {
-        ...req.body,
-        unitId: targetUnitId,
-      };
-
-      const result = await CorrespondenceService.createLetter(inputData, req.user!.id);
+      const result = await CorrespondenceService.createLetter(
+        req.body,
+        req.user!.id,
+        actorOf(req)
+      );
       res.status(201).json({ success: true, data: result });
     } catch (error) {
       next(error);
@@ -173,6 +162,19 @@ export const CorrespondenceController = {
         : (actor.unitId ?? undefined);
 
       const result = await CorrespondenceService.getDashboardStats(unitId);
+      res.json({ success: true, data: result });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async getParticipants(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await CorrespondenceService.getParticipants({
+        search: req.query.search as string | undefined,
+        unitId: req.query.unitId as string | undefined,
+        limit: req.query.limit ? Number(req.query.limit) : undefined,
+      });
       res.json({ success: true, data: result });
     } catch (error) {
       next(error);

@@ -20,6 +20,7 @@ router.get('/public/verify/:token', CorrespondenceController.verifyPublic);
 
 router.use(authenticate);
 
+router.get('/participants', CorrespondenceController.getParticipants);
 router.post('/letters', validate(createLetterSchema), CorrespondenceController.create);
 router.get('/letters', CorrespondenceController.findAll);
 router.get('/stats', CorrespondenceController.getStats);

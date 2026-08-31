@@ -7,7 +7,25 @@ import {
   LetterDetail,
   CreateDispositionInput,
   PublicLetterVerificationResult,
+  CorrespondenceParticipant,
 } from "@cipansor/shared";
+
+export function useCorrespondenceParticipants(params?: {
+  search?: string;
+  unitId?: string;
+  limit?: number;
+}) {
+  return useQuery({
+    queryKey: ["correspondenceParticipants", params],
+    queryFn: async () => {
+      const response = await api.get<{
+        success: boolean;
+        data: CorrespondenceParticipant[];
+      }>("/correspondence/participants", { params });
+      return response.data;
+    },
+  });
+}
 
 export function usePublicVerifyLetter(token?: string) {
   return useQuery({
@@ -21,6 +39,7 @@ export function usePublicVerifyLetter(token?: string) {
       return response.data.data;
     },
     enabled: !!token && token.trim().length > 0,
+    staleTime: 0,
     retry: false,
   });
 }

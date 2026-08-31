@@ -4,7 +4,7 @@ import { authFileUrl } from "@/lib/files";
 import { safeFormat } from "@/lib/date";
 import { useCorrespondence } from "@/hooks/use-correspondence";
 import { useAuth } from "@/hooks/use-auth";
-import { useUsers } from "@/hooks/use-users";
+import { useCorrespondenceParticipants } from "@/hooks/use-correspondence";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -75,7 +75,9 @@ export default function LetterDetailPage({
     createDisposition,
     updateDispositionStatus,
   } = useCorrespondence(user?.unitId);
-  const { data: usersData } = useUsers({
+  const [participantSearch, setParticipantSearch] = useState("");
+  const { data: participantsData } = useCorrespondenceParticipants({
+    search: participantSearch || undefined,
     limit: 100,
   });
   const { data: letter, isLoading } = useLetter(params.id);
@@ -326,11 +328,11 @@ export default function LetterDetailPage({
                   <SelectValue placeholder="Pilih pejabat penerus..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {usersData?.data
-                    .filter((u: any) => u.id !== user?.id)
-                    .map((u: any) => (
+                  {participantsData?.data
+                    .filter((u) => u.id !== user?.id)
+                    .map((u) => (
                       <SelectItem key={u.id} value={u.id}>
-                        {u.name || u.email}
+                        {u.nip ? `${u.name} (${u.nip})` : u.name}
                       </SelectItem>
                     ))}
                 </SelectContent>
@@ -383,7 +385,7 @@ export default function LetterDetailPage({
             <div className="grid gap-2">
               <Label>Diteruskan Kepada (Dapat Memilih Beberapa Penerima)</Label>
               <div className="space-y-2 border rounded-md p-3 max-h-40 overflow-y-auto">
-                {usersData?.data.map((u: any) => (
+                {participantsData?.data.map((u) => (
                   <div key={u.id} className="flex items-center space-x-2">
                     <input
                       type="checkbox"
@@ -408,7 +410,7 @@ export default function LetterDetailPage({
                       className="h-4 w-4 rounded border-gray-300"
                     />
                     <label htmlFor={`disp-rec-${u.id}`} className="text-sm cursor-pointer">
-                      {u.name || u.email}
+                      {u.nip ? `${u.name} (${u.nip})` : u.name}
                     </label>
                   </div>
                 ))}

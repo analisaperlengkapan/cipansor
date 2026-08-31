@@ -238,3 +238,14 @@ export interface PublicLetterVerificationResult {
   };
   reason?: string;
 }
+
+export interface CorrespondenceParticipant {
+  id: string;
+  name: string;
+  email: string;
+  unitId?: string | null;
+  unitName?: string | null;
+  roleCode?: string | null;
+  nip?: string | null;
+  position?: string | null;
+}

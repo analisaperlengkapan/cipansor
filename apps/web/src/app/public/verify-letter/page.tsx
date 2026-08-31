@@ -50,6 +50,14 @@ function PublicVerifyContent() {
     generateCaptcha();
   }, []);
 
+  useEffect(() => {
+    if (tokenFromUrl && tokenFromUrl.trim()) {
+      setTokenInput(tokenFromUrl.trim());
+      setActiveToken(tokenFromUrl.trim());
+      setCaptchaPassed(true);
+    }
+  }, [tokenFromUrl]);
+
   const { data: result, isLoading: loading, isError, error: queryError } = usePublicVerifyLetter(
     captchaPassed ? activeToken : undefined
   );
@@ -143,10 +151,15 @@ function PublicVerifyContent() {
               )}
             </Button>
 
-            {error && (
+            {(error || isError) && (
               <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-md flex items-center gap-2">
                 <AlertTriangle className="h-5 w-5 shrink-0" />
-                <span>{error}</span>
+                <span>
+                  {error ||
+                    ((queryError as any)?.response?.status === 429
+                      ? "Terlalu banyak permintaan verifikasi. Silakan tunggu beberapa saat."
+                      : "Terjadi kesalahan atau dokumen tidak dapat diverifikasi.")}
+                </span>
               </div>
             )}
           </CardContent>

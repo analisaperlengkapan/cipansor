@@ -6,7 +6,7 @@ import { z } from "zod";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { useCorrespondence } from "@/hooks/use-correspondence";
-import { useUsers } from "@/hooks/use-users";
+import { useCorrespondenceParticipants } from "@/hooks/use-correspondence";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -66,15 +66,18 @@ export default function CreateLetterPage() {
   const router = useRouter();
   const { user } = useAuth();
   const { createLetter } = useCorrespondence(user?.unitId);
-  const { data: usersData } = useUsers({
+  const [searchQuery, setSearchQuery] = React.useState("");
+  const { data: participantsData } = useCorrespondenceParticipants({
+    search: searchQuery || undefined,
+    unitId: user?.unitId,
     limit: 100,
   });
   const [uploading, setUploading] = React.useState(false);
   const [submitMode, setSubmitMode] = React.useState<"DRAFT" | "SUBMIT">("DRAFT");
 
   const staffOptions =
-    usersData?.data.map((u: any) => ({
-      label: u.name || u.email,
+    participantsData?.data.map((u) => ({
+      label: u.nip ? `${u.name} (${u.nip})` : u.name,
       value: u.id,
     })) || [];
 

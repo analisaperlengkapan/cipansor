@@ -6,7 +6,7 @@ import { z } from "zod";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { useCorrespondence } from "@/hooks/use-correspondence";
-import { useTeachers } from "@/hooks/use-teachers";
+import { useUsers } from "@/hooks/use-users";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -66,17 +66,16 @@ export default function CreateLetterPage() {
   const router = useRouter();
   const { user } = useAuth();
   const { createLetter } = useCorrespondence(user?.unitId);
-  const { data: teachers } = useTeachers({
-    page: 1,
+  const { data: usersData } = useUsers({
     limit: 100,
-    unitId: user?.unitId,
   });
   const [uploading, setUploading] = React.useState(false);
+  const [submitMode, setSubmitMode] = React.useState<"DRAFT" | "SUBMIT">("DRAFT");
 
   const staffOptions =
-    teachers?.data.map((t: any) => ({
-      label: t.user?.name || t.nip,
-      value: t.userId,
+    usersData?.data.map((u: any) => ({
+      label: u.name || u.email,
+      value: u.id,
     })) || [];
 
   const form = useForm<z.infer<typeof letterSchema>>({
@@ -145,16 +144,28 @@ export default function CreateLetterPage() {
       return;
     }
 
+    const targetStatus =
+      submitMode === "SUBMIT" ? LetterStatus.PENDING_REVIEW : LetterStatus.DRAFT;
+
+    if (submitMode === "SUBMIT" && values.direction === LetterDirection.OUTGOING && (!values.reviewerIds || values.reviewerIds.length === 0)) {
+      toast.error("Pemeriksa pertama wajib dipilih saat mengajukan review.");
+      return;
+    }
+
     try {
       await createLetter.mutateAsync({
         ...values,
         unitId: user.unitId,
-        status: LetterStatus.DRAFT,
+        status: targetStatus,
       });
-      toast.success("Surat berhasil dibuat");
+      toast.success(
+        targetStatus === LetterStatus.PENDING_REVIEW
+          ? "Surat berhasil diajukan untuk ditinjau"
+          : "Draft surat berhasil disimpan"
+      );
       router.push("/e-office/inbox");
     } catch (error) {
-      toast.error("Gagal membuat surat");
+      toast.error("Gagal memproses surat");
       console.error(error);
     }
   }
@@ -594,13 +605,25 @@ export default function CreateLetterPage() {
             </CardContent>
           </Card>
 
-          <Button
-            type="submit"
-            className="w-full"
-            disabled={createLetter.isPending}
-          >
-            {createLetter.isPending ? "Menyimpan..." : "Simpan Draft"}
-          </Button>
+          <div className="flex gap-4">
+            <Button
+              type="submit"
+              variant="outline"
+              className="flex-1"
+              disabled={createLetter.isPending}
+              onClick={() => setSubmitMode("DRAFT")}
+            >
+              Simpan Draft
+            </Button>
+            <Button
+              type="submit"
+              className="flex-1 bg-blue-600 hover:bg-blue-700"
+              disabled={createLetter.isPending}
+              onClick={() => setSubmitMode("SUBMIT")}
+            >
+              Ajukan Review
+            </Button>
+          </div>
         </form>
       </Form>
     </div>

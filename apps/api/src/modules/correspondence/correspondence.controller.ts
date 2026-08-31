@@ -28,7 +28,22 @@ function actorOf(req: Request): LetterActor {
 export const CorrespondenceController = {
   async create(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await CorrespondenceService.createLetter(req.body, req.user!.id);
+      const actor = actorOf(req);
+      // derive or validate unitId: if caller is scoped to a unit, enforce actor.unitId
+      const targetUnitId = actor.unitId ? actor.unitId : req.body.unitId;
+      if (!targetUnitId) {
+        throw Errors.badRequest('Unit ID wajib diisi');
+      }
+      if (actor.unitId && req.body.unitId && req.body.unitId !== actor.unitId) {
+        throw Errors.forbidden('Anda tidak berwenang membuat surat untuk unit lain');
+      }
+
+      const inputData = {
+        ...req.body,
+        unitId: targetUnitId,
+      };
+
+      const result = await CorrespondenceService.createLetter(inputData, req.user!.id);
       res.status(201).json({ success: true, data: result });
     } catch (error) {
       next(error);
@@ -117,7 +132,10 @@ export const CorrespondenceController = {
         { ...req.body, senderId: req.user!.id },
         actorOf(req)
       );
-      res.status(201).json({ success: true, data: result });
+      // Preserve single-object response for single recipient input for backward compatibility
+      const isSingleInput = req.body.recipientId && (!req.body.recipientIds || req.body.recipientIds.length === 0);
+      const responseData = isSingleInput ? (result[0] ?? null) : result;
+      res.status(201).json({ success: true, data: responseData });
     } catch (error) {
       next(error);
     }

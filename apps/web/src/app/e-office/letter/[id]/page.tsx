@@ -4,7 +4,7 @@ import { authFileUrl } from "@/lib/files";
 import { safeFormat } from "@/lib/date";
 import { useCorrespondence } from "@/hooks/use-correspondence";
 import { useAuth } from "@/hooks/use-auth";
-import { useTeachers } from "@/hooks/use-teachers";
+import { useUsers } from "@/hooks/use-users";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -75,10 +75,8 @@ export default function LetterDetailPage({
     createDisposition,
     updateDispositionStatus,
   } = useCorrespondence(user?.unitId);
-  const { data: teachers } = useTeachers({
-    page: 1,
+  const { data: usersData } = useUsers({
     limit: 100,
-    unitId: user?.unitId,
   });
   const { data: letter, isLoading } = useLetter(params.id);
 
@@ -328,11 +326,11 @@ export default function LetterDetailPage({
                   <SelectValue placeholder="Pilih pejabat penerus..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {teachers?.data
-                    .filter((t: any) => t.userId !== user?.id)
-                    .map((t: any) => (
-                      <SelectItem key={t.userId} value={t.userId}>
-                        {t.user?.name || t.nip}
+                  {usersData?.data
+                    .filter((u: any) => u.id !== user?.id)
+                    .map((u: any) => (
+                      <SelectItem key={u.id} value={u.id}>
+                        {u.name || u.email}
                       </SelectItem>
                     ))}
                 </SelectContent>
@@ -385,32 +383,32 @@ export default function LetterDetailPage({
             <div className="grid gap-2">
               <Label>Diteruskan Kepada (Dapat Memilih Beberapa Penerima)</Label>
               <div className="space-y-2 border rounded-md p-3 max-h-40 overflow-y-auto">
-                {teachers?.data.map((t: any) => (
-                  <div key={t.userId} className="flex items-center space-x-2">
+                {usersData?.data.map((u: any) => (
+                  <div key={u.id} className="flex items-center space-x-2">
                     <input
                       type="checkbox"
-                      id={`disp-rec-${t.userId}`}
-                      value={t.userId}
-                      checked={dispositionData.recipientIds.includes(t.userId)}
+                      id={`disp-rec-${u.id}`}
+                      value={u.id}
+                      checked={dispositionData.recipientIds.includes(u.id)}
                       onChange={(e) => {
                         const checked = e.target.checked;
                         const current = dispositionData.recipientIds;
                         if (checked) {
                           setDispositionData({
                             ...dispositionData,
-                            recipientIds: [...current, t.userId],
+                            recipientIds: [...current, u.id],
                           });
                         } else {
                           setDispositionData({
                             ...dispositionData,
-                            recipientIds: current.filter((id) => id !== t.userId),
+                            recipientIds: current.filter((id) => id !== u.id),
                           });
                         }
                       }}
                       className="h-4 w-4 rounded border-gray-300"
                     />
-                    <label htmlFor={`disp-rec-${t.userId}`} className="text-sm cursor-pointer">
-                      {t.user?.name || t.nip}
+                    <label htmlFor={`disp-rec-${u.id}`} className="text-sm cursor-pointer">
+                      {u.name || u.email}
                     </label>
                   </div>
                 ))}

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { api } from "@/lib/api";
+import { usePublicVerifyLetter } from "@/hooks/use-correspondence";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,15 +28,14 @@ function PublicVerifyContent() {
   const tokenFromUrl = searchParams.get("code") || searchParams.get("token") || "";
 
   const [tokenInput, setTokenInput] = useState(tokenFromUrl);
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<PublicLetterVerificationResult | null>(null);
+  const [activeToken, setActiveToken] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
 
   // Simple Captcha Anti-Spam
   const [captchaNum1, setCaptchaNum1] = useState(0);
   const [captchaNum2, setCaptchaNum2] = useState(0);
   const [captchaAnswer, setCaptchaAnswer] = useState("");
-  const [captchaPassed, setCaptchaAnswerPassed] = useState(false);
+  const [captchaPassed, setCaptchaPassed] = useState(false);
 
   const generateCaptcha = () => {
     const num1 = Math.floor(Math.random() * 9) + 1;
@@ -44,14 +43,18 @@ function PublicVerifyContent() {
     setCaptchaNum1(num1);
     setCaptchaNum2(num2);
     setCaptchaAnswer("");
-    setCaptchaAnswerPassed(false);
+    setCaptchaPassed(false);
   };
 
   useEffect(() => {
     generateCaptcha();
   }, []);
 
-  const verifyToken = async (tokenToVerify: string) => {
+  const { data: result, isLoading: loading, isError, error: queryError } = usePublicVerifyLetter(
+    captchaPassed ? activeToken : undefined
+  );
+
+  const verifyToken = (tokenToVerify: string) => {
     if (!tokenToVerify.trim()) return;
 
     if (!captchaPassed && Number(captchaAnswer) !== captchaNum1 + captchaNum2) {
@@ -59,45 +62,10 @@ function PublicVerifyContent() {
       return;
     }
 
-    setCaptchaAnswerPassed(true);
-    setLoading(true);
+    setCaptchaPassed(true);
     setError(null);
-    setResult(null);
-
-    try {
-      const response = await api.get(`/correspondence/public/verify/${encodeURIComponent(tokenToVerify.trim())}`);
-      if (response.data.success) {
-        setResult(response.data.data);
-      } else {
-        setError(response.data.message || "Gagal memverifikasi dokumen");
-      }
-    } catch (err: any) {
-      if (err.response?.status === 429) {
-        setError("Terlalu banyak permintaan verifikasi. Silakan tunggu beberapa saat.");
-      } else {
-        setError("Terjadi kesalahan atau dokumen tidak dapat diverifikasi.");
-      }
-    } finally {
-      setLoading(false);
-    }
+    setActiveToken(tokenToVerify.trim());
   };
-
-  useEffect(() => {
-    if (tokenFromUrl) {
-      setCaptchaAnswerPassed(true);
-      setLoading(true);
-      api.get(`/correspondence/public/verify/${encodeURIComponent(tokenFromUrl)}`)
-        .then((res) => {
-          if (res.data.success) {
-            setResult(res.data.data);
-          }
-        })
-        .catch(() => {
-          setError("Dokumen tidak ditemukan atau token tidak valid.");
-        })
-        .finally(() => setLoading(false));
-    }
-  }, [tokenFromUrl]);
 
   return (
     <main id="main-content" className="min-h-screen bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">

@@ -391,7 +391,7 @@ export const EsignService = {
   async signLetter(letterId: string, userId: string, passphrase: string) {
     const letter = await prisma.letter.findUnique({
       where: { id: letterId },
-      include: { reviewers: true },
+      include: { reviewers: { orderBy: { order: 'asc' } } },
     });
     if (!letter) throw Errors.notFound('Surat tidak ditemukan');
 
@@ -402,6 +402,15 @@ export const EsignService = {
     if (letter.status !== LetterStatus.READY_TO_SIGN) {
       throw Errors.badRequest(
         `Surat belum siap ditandatangani (status: ${letter.status}).`
+      );
+    }
+
+    // Verify that caller is the current pending signer (whose turn it is)
+    const pendingReviewers = letter.reviewers.filter((r) => r.status !== 'APPROVED');
+    const currentTurn = pendingReviewers[0];
+    if (currentTurn && currentTurn.reviewerId !== userId) {
+      throw Errors.forbidden(
+        `Belum giliran Anda. Menunggu verifikator urutan ${currentTurn.order} terlebih dahulu.`
       );
     }
 
@@ -499,16 +508,24 @@ export const EsignService = {
     const signature = await prisma.letterSignature.findUnique({
       where: { verificationToken: token },
       include: {
-        signer: { select: { name: true } },
+        signer: {
+          select: {
+            name: true,
+            teacher: { select: { nip: true } },
+            staff: { select: { nip: true, position: true } },
+          },
+        },
         letter: {
           select: {
             id: true,
             letterNumber: true,
+            agendaNumber: true,
             date: true,
             type: true,
             nature: true,
             subject: true,
             content: true,
+            status: true,
             unitId: true,
             unit: { select: { name: true } },
           },
@@ -535,14 +552,25 @@ export const EsignService = {
     });
 
     const isPublicNature = l.nature === 'PUBLIC';
+    const isValid = intact && !signature.revokedAt;
+
+    let reason: string | undefined;
+    if (!intact) {
+      reason = 'Isi naskah telah diubah setelah ditandatangani.';
+    } else if (signature.revokedAt) {
+      reason = signature.revokedReason ? `Surat telah dicabut: ${signature.revokedReason}` : 'Surat telah dicabut.';
+    }
 
     return {
       found: true as const,
-      valid: intact && !signature.revokedAt,
+      valid: isValid,
+      isValid,
       intact,
       revoked: !!signature.revokedAt,
+      isRevoked: !!signature.revokedAt,
+      revokedAt: signature.revokedAt,
       revokedReason: signature.revokedReason,
-      letterNumber: l.letterNumber,
+      letterNumber: l.letterNumber || l.agendaNumber || '-',
       letterType: l.type,
       nature: l.nature,
       // Hanya untuk surat biasa; selebihnya cukup dibuktikan keasliannya.
@@ -550,7 +578,22 @@ export const EsignService = {
       date: l.date,
       unitName: l.unit?.name ?? null,
       signerName: signature.signer.name,
+      signer: {
+        name: signature.signer.name,
+        nip: signature.signer.teacher?.nip || signature.signer.staff?.nip || '-',
+        position: signature.signer.staff?.position || 'Pejabat / Guru Yayasan',
+      },
+      letter: {
+        letterNumber: l.letterNumber || l.agendaNumber || '-',
+        subject: isPublicNature ? l.subject : null,
+        date: l.date,
+        status: l.status,
+        unitName: l.unit?.name ?? '-',
+      },
       signedAt: signature.signedAt,
+      algorithm: signature.algorithm,
+      digest: signature.digest,
+      reason,
     };
   },
 };

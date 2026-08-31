@@ -6,7 +6,24 @@ import {
   LetterStatus,
   LetterDetail,
   CreateDispositionInput,
+  PublicLetterVerificationResult,
 } from "@cipansor/shared";
+
+export function usePublicVerifyLetter(token?: string) {
+  return useQuery({
+    queryKey: ["publicVerifyLetter", token],
+    queryFn: async () => {
+      const response = await api.get<{
+        success: boolean;
+        data: PublicLetterVerificationResult;
+        message?: string;
+      }>(`/correspondence/public/verify/${encodeURIComponent(token!.trim())}`);
+      return response.data.data;
+    },
+    enabled: !!token && token.trim().length > 0,
+    retry: false,
+  });
+}
 
 interface GetLettersParams {
   unitId: string;

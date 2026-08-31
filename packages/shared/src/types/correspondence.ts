@@ -231,7 +231,7 @@ export interface PublicLetterVerificationResult {
   };
   letter?: {
     letterNumber: string;
-    subject: string;
+    subject: string | null;
     date: string | Date;
     status: string;
     unitName: string;

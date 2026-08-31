@@ -8,6 +8,11 @@ test.describe("E-Office & Public Letter Verification E2E", () => {
     await expect(page.locator("h1")).toContainText("Verifikasi Tanda Tangan Elektronik");
     await expect(page.getByPlaceholder(/masukkan token/i)).toBeVisible();
     await expect(page.getByRole("button", { name: /verifikasi dokumen/i })).toBeVisible();
+
+    // Fill invalid token and fail CAPTCHA check first
+    await page.getByPlaceholder(/masukkan token/i).fill("invalid-token-123");
+    await page.getByRole("button", { name: /verifikasi dokumen/i }).click();
+    await expect(page.getByText(/jawaban verifikasi keamanan/i)).toBeVisible();
   });
 
   test("E-Office main page renders and displays stats for authenticated users", async ({ page }) => {

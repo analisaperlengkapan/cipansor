@@ -15,6 +15,7 @@ import {
   UpdateLetterInput,
 } from '@cipansor/shared';
 import { eventBus } from '@/lib/event-bus';
+import { EsignService } from '@/modules/esign/esign.service';
 import {
   assertLetterAccess,
   letterScopeWhere,
@@ -448,6 +449,15 @@ export const CorrespondenceService = {
           throw new Error('Harus memilih pejabat penerus atau menandai sebagai penandatangan akhir.');
         }
 
+        if (isFinalSigner) {
+          // Transactionally ensure exactly one active final signer
+          await tx.letterReviewer.updateMany({
+            where: { letterId },
+            data: { isSigner: false },
+          });
+          updatedLadder = updatedLadder.map((r) => ({ ...r, isSigner: false }));
+        }
+
         // If approving and nextReviewerId is provided, add or update the next reviewer dynamically
         if (nextReviewerId) {
           const currentMaxOrder = Math.max(...letter.reviewers.map((r) => r.order), mine.order, 0);
@@ -455,7 +465,7 @@ export const CorrespondenceService = {
           const existingNext = letter.reviewers.find((r) => r.reviewerId === nextReviewerId);
 
           if (existingNext) {
-            const updatedIsSigner = existingNext.isSigner || !!isFinalSigner;
+            const updatedIsSigner = isFinalSigner ? true : existingNext.isSigner;
             // If already in ladder, reset status to PENDING, clear reviewedAt, move order to end of sequence, and preserve/update isSigner
             await tx.letterReviewer.update({
               where: { id: existingNext.id },
@@ -725,11 +735,14 @@ export const CorrespondenceService = {
       );
     }
 
-    const recipients = data.recipientIds && data.recipientIds.length > 0
+    const rawRecipients = data.recipientIds && data.recipientIds.length > 0
       ? data.recipientIds
       : data.recipientId
         ? [data.recipientId]
         : [];
+
+    // Deduplicate recipient IDs to prevent duplicate dispositions for the same person
+    const recipients = Array.from(new Set(rawRecipients));
 
     if (recipients.length === 0) {
       throw new Error('Minimal satu penerima disposisi harus ditentukan.');
@@ -955,59 +968,24 @@ export const CorrespondenceService = {
    * Public verification for signed letters via token
    */
   async verifyPublicLetter(token: string) {
-    const signature = await prisma.letterSignature.findUnique({
-      where: { verificationToken: token },
-      include: {
-        signer: {
-          select: {
-            name: true,
-            email: true,
-            teacher: { select: { nip: true } },
-            staff: { select: { nip: true, position: true } },
-          },
-        },
-        letter: {
-          select: {
-            id: true,
-            letterNumber: true,
-            agendaNumber: true,
-            subject: true,
-            date: true,
-            status: true,
-            unit: { select: { name: true } },
-          },
-        },
-      },
-    });
-
-    if (!signature) {
+    const res = await EsignService.verifyByToken(token);
+    if (!res.found) {
       return {
         isValid: false,
         reason: 'Token verifikasi surat tidak ditemukan atau tidak valid.',
       };
     }
 
-    const isRevoked = !!signature.revokedAt;
-
     return {
-      isValid: !isRevoked,
-      isRevoked,
-      revokedAt: signature.revokedAt,
-      signedAt: signature.signedAt,
-      algorithm: signature.algorithm,
-      digest: signature.digest,
-      signer: {
-        name: signature.signer.name,
-        nip: signature.signer.teacher?.nip || signature.signer.staff?.nip || '-',
-        position: signature.signer.staff?.position || 'Pejabat / Guru Yayasan',
-      },
-      letter: {
-        letterNumber: signature.letter.letterNumber || signature.letter.agendaNumber || '-',
-        subject: signature.letter.subject,
-        date: signature.letter.date,
-        status: signature.letter.status,
-        unitName: signature.letter.unit.name,
-      },
+      isValid: res.isValid,
+      isRevoked: res.isRevoked,
+      revokedAt: res.revokedAt,
+      signedAt: res.signedAt,
+      algorithm: res.algorithm,
+      digest: res.digest,
+      signer: res.signer,
+      letter: res.letter,
+      reason: res.reason,
     };
   },
 };

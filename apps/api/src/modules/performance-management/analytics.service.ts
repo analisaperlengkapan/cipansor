@@ -8,15 +8,19 @@ export class PKAnalyticsService {
       ? await prisma.unit.findMany({ where: { id: unitId } })
       : await prisma.unit.findMany();
 
-    // Include foundation agreements (where user.unitId is null)
-    const foundationPks = await prisma.performanceAgreement.findMany({
-      where: { user: { unitId: null } },
-      select: { status: true, overallScore: true, totalScore: true, behaviorScore: true },
-    });
+    // Include foundation agreements (where user.unitId is null) ONLY when viewing global dashboard
+    const foundationPks = unitId
+      ? []
+      : await prisma.performanceAgreement.findMany({
+          where: { user: { unitId: null } },
+          select: { status: true, overallScore: true, totalScore: true, behaviorScore: true },
+        });
 
-    const foundationEvCount = await prisma.pKEvaluation.count({
-      where: { pk: { user: { unitId: null } }, status: PlanStatus.APPROVED },
-    });
+    const foundationEvCount = unitId
+      ? 0
+      : await prisma.pKEvaluation.count({
+          where: { pk: { user: { unitId: null } }, status: PlanStatus.APPROVED },
+        });
 
     let totalAgreements = foundationPks.length;
     let approvedAgreements = foundationPks.filter((p) => p.status === PlanStatus.APPROVED).length;
@@ -123,9 +127,11 @@ export class PKAnalyticsService {
       ? await prisma.unit.findMany({ where: { id: period.unitId } })
       : await prisma.unit.findMany();
 
+    const rangeStart = new Date(period.year, (period.month || 1) - 1, 1);
+    const rangeEnd = new Date(period.year, period.month || 12, 0, 23, 59, 59, 999);
+
     const unitReports = await Promise.all(
       units.map(async (unit) => {
-        // Filter by evaluation period if month/year supplied
         const evalWhere: any = { year: period.year, status: PlanStatus.APPROVED };
         if (period.month) {
           evalWhere.month = period.month;
@@ -142,8 +148,8 @@ export class PKAnalyticsService {
         const pks = await prisma.performanceAgreement.findMany({
           where: {
             user: { unitId: unit.id },
-            periodStart: { lte: new Date(period.year, (period.month || 12) - 1, 31) },
-            periodEnd: { gte: new Date(period.year, (period.month || 1) - 1, 1) },
+            periodStart: { lte: rangeEnd },
+            periodEnd: { gte: rangeStart },
           },
           select: { status: true },
         });
@@ -178,6 +184,62 @@ export class PKAnalyticsService {
         };
       })
     );
+
+    // If global report (no unitId filter), include Foundation agreements (unitId = null)
+    if (!period.unitId) {
+      const evalWhere: any = { year: period.year, status: PlanStatus.APPROVED };
+      if (period.month) {
+        evalWhere.month = period.month;
+      }
+
+      const foundationEvaluations = await prisma.pKEvaluation.findMany({
+        where: {
+          pk: { user: { unitId: null } },
+          ...evalWhere,
+        },
+        select: { overallScore: true, performanceScore: true, behaviorScore: true },
+      });
+
+      const foundationPks = await prisma.performanceAgreement.findMany({
+        where: {
+          user: { unitId: null },
+          periodStart: { lte: rangeEnd },
+          periodEnd: { gte: rangeStart },
+        },
+        select: { status: true },
+      });
+
+      const totalAgreements = foundationPks.length;
+      const approvedAgreements = foundationPks.filter((p) => p.status === PlanStatus.APPROVED).length;
+      const evalCount = foundationEvaluations.length;
+
+      const avgScore =
+        evalCount > 0
+          ? foundationEvaluations.reduce((sum, ev) => sum + ev.overallScore, 0) / evalCount
+          : 0;
+
+      const avgPerf =
+        evalCount > 0
+          ? foundationEvaluations.reduce((sum, ev) => sum + ev.performanceScore, 0) / evalCount
+          : 0;
+
+      const avgBehav =
+        evalCount > 0
+          ? foundationEvaluations.reduce((sum, ev) => sum + ev.behaviorScore, 0) / evalCount
+          : 0;
+
+      if (totalAgreements > 0 || evalCount > 0) {
+        unitReports.unshift({
+          id: 'yayasan',
+          name: 'Yayasan (Kantor Pusat)',
+          totalAgreements,
+          approvedAgreements,
+          avgOverallScore: avgScore,
+          avgPerformanceScore: avgPerf,
+          avgBehaviorScore: avgBehav,
+        });
+      }
+    }
 
     return { units: unitReports };
   }

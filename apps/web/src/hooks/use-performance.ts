@@ -290,7 +290,7 @@ export const useSupervisors = () => {
     queryKey: ["performance-agreements", "supervisors"],
     queryFn: async () => {
       const res = await api.get("/performance-agreements/supervisors");
-      return res.data.data as Array<{ id: string; name: string; email: string }>;
+      return res.data.data as Array<{ id: string; name: string }>;
     },
   });
 };

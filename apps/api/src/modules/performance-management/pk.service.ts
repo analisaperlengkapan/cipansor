@@ -90,7 +90,7 @@ export class PerformanceAgreementService {
   async getSupervisors() {
     return prisma.user.findMany({
       where: { isActive: true },
-      select: { id: true, name: true, email: true },
+      select: { id: true, name: true },
       orderBy: { name: 'asc' },
     });
   }

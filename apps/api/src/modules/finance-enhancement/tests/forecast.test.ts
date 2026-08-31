@@ -42,6 +42,7 @@ describe('Finance Forecasting Logic', () => {
 
     // 2. Pending Invoices (Inflow): 5M next month
     const nextMonth = new Date();
+    nextMonth.setDate(15);
     nextMonth.setMonth(nextMonth.getMonth() + 1);
 
     (prisma.invoice.findMany as any).mockResolvedValue([

@@ -77,7 +77,6 @@ function PublicVerifyContent() {
     setError(null);
 
     if (activeToken === trimmed) {
-      setTriggerNonce((prev) => prev + 1);
       refetch();
     } else {
       setActiveToken(trimmed);

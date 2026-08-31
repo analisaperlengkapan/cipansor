@@ -165,6 +165,36 @@ describe('CorrespondenceService', () => {
       ).rejects.toThrow(/Belum giliran/);
       expect(prisma.letter.update).not.toHaveBeenCalled();
     });
+
+    it('preserves signer flag when an existing signer approves with isFinalSigner=true without nextReviewerId', async () => {
+      vi.mocked(prisma.letter.findUnique).mockResolvedValue({
+        id: 'letter-1',
+        status: 'PENDING_REVIEW',
+        createdById: 'creator-1',
+        reviewers: [
+          { id: 'review-1', reviewerId: 'signer-1', order: 1, status: 'PENDING', isSigner: true },
+        ],
+      } as any);
+
+      await CorrespondenceService.processReview('letter-1', 'signer-1', 'APPROVE', undefined, undefined, true);
+
+      expect(prisma.letterReviewer.updateMany).toHaveBeenCalledWith({
+        where: { letterId: 'letter-1' },
+        data: { isSigner: false },
+      });
+      expect(prisma.letterReviewer.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'review-1' },
+          data: expect.objectContaining({ isSigner: true }),
+        })
+      );
+      expect(prisma.letter.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'letter-1' },
+          data: { status: 'READY_TO_SIGN' },
+        })
+      );
+    });
   });
 
   describe('submitForReview', () => {
@@ -372,7 +402,7 @@ describe('CorrespondenceService', () => {
       ).rejects.toThrow(/Peran Anda tidak berwenang/);
     });
 
-    it('allows letter creation across units for foundation governance roles (YAYASAN_KETUA)', async () => {
+    it('allows letter creation across units for executive foundation roles (YAYASAN_KETUA, YAYASAN_SEKRETARIS)', async () => {
       vi.mocked(prisma.letter.create).mockResolvedValue({ id: 'let-yayasan', status: 'DRAFT', unitId: 'unit-2' } as any);
 
       const result = await CorrespondenceService.createLetter(
@@ -390,6 +420,26 @@ describe('CorrespondenceService', () => {
       );
 
       expect(result.id).toBe('let-yayasan');
+    });
+
+    it('rejects letter creation for oversight-only foundation roles (YAYASAN_PEMBINA, YAYASAN_PENGAWAS, YAYASAN_ANGGOTA)', async () => {
+      for (const roleCode of ['YAYASAN_PEMBINA', 'YAYASAN_PENGAWAS', 'YAYASAN_ANGGOTA']) {
+        await expect(
+          CorrespondenceService.createLetter(
+            {
+              unitId: 'unit-1',
+              direction: 'OUTGOING' as any,
+              subject: 'Testing Oversight',
+              date: '2026-08-01',
+              urgency: 'NORMAL' as any,
+              nature: 'PUBLIC' as any,
+              status: 'DRAFT' as any,
+            },
+            'user-oversight',
+            { id: 'user-oversight', roleCode, unitId: null } as any
+          )
+        ).rejects.toThrow(/Peran Anda tidak berwenang/);
+      }
     });
 
     it('sets incoming letter without reviewers to DISPOSED when recipientIds present', async () => {
@@ -441,6 +491,51 @@ describe('CorrespondenceService', () => {
       expect(result).toHaveLength(1);
       expect(result[0].name).toBe('Ust. Ahmad');
       expect(result[0].nip).toBe('12345');
+    });
+
+    it('allows cross-unit roles with nominal unitId (e.g. PERAWAT) to search participants across units', async () => {
+      vi.mocked(prisma.user.findMany).mockResolvedValue([
+        {
+          id: 'u-2',
+          name: 'Pustakawan',
+          email: 'pustaka@cipansor.or.id',
+          unitId: 'unit-2',
+          unit: { name: 'SMPIT' },
+          teacher: null,
+          staff: { nip: '54321', position: 'Pustakawan' },
+          userRoles: [{ role: { code: 'PUSTAKAWAN' } }],
+        },
+      ] as any);
+
+      await CorrespondenceService.getParticipants(
+        { search: 'Pustakawan', unitId: 'unit-2' },
+        { id: 'perawat-1', roleCode: 'PERAWAT', unitId: 'unit-1' } as any
+      );
+
+      const findCall = vi.mocked(prisma.user.findMany).mock.calls.at(-1)![0] as any;
+      // Effective unitId should be 'unit-2' (honored from query) rather than being pinned to 'unit-1'
+      expect(findCall.where.AND).toEqual(
+        expect.arrayContaining([
+          { OR: [{ unitId: 'unit-2' }, { unitId: null }] },
+        ])
+      );
+    });
+
+    it('pins ordinary unit roles to their assigned unitId even if query specifies another unit', async () => {
+      vi.mocked(prisma.user.findMany).mockResolvedValue([]);
+
+      await CorrespondenceService.getParticipants(
+        { search: 'Guru', unitId: 'unit-2' },
+        { id: 'guru-1', roleCode: 'SDIT_GURU', unitId: 'unit-1' } as any
+      );
+
+      const findCall = vi.mocked(prisma.user.findMany).mock.calls.at(-1)![0] as any;
+      // Effective unitId must remain 'unit-1' (caller's assigned unitId)
+      expect(findCall.where.AND).toEqual(
+        expect.arrayContaining([
+          { OR: [{ unitId: 'unit-1' }, { unitId: null }] },
+        ])
+      );
     });
   });
 

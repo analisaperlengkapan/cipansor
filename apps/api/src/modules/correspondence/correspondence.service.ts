@@ -22,7 +22,7 @@ import {
   letterScopeWhere,
   type LetterActor,
 } from '@/utils/letter-access';
-import { isFoundationScopedRole } from '@/utils/resolve-unit-id';
+import { isFoundationScopedRole, seesAllUnits } from '@/utils/resolve-unit-id';
 import {
   assertMayArchive,
   assertMayResubmit,
@@ -143,12 +143,15 @@ export const CorrespondenceService = {
       throw Errors.forbidden('Peran Anda tidak berwenang untuk membuat surat dinas');
     }
 
-    const isFoundationGovernance = isFoundationScopedRole(actor.roleCode);
+    // Executive foundation roles authorized to issue correspondence
+    const isFoundationExecutive =
+      actor.roleCode === 'YAYASAN_KETUA' || actor.roleCode === 'YAYASAN_SEKRETARIS';
     const isCorrespondenceRole = handlesUnitCorrespondence(actor);
     const isSuperAdmin = actor.roleCode === 'SUPER_ADMIN';
 
-    // Allowlist: ONLY unit correspondence roles (tata usaha, kepsek, admin unit), foundation governance, and SUPER_ADMIN
-    const isAuthorizedCreator = isCorrespondenceRole || isFoundationGovernance || isSuperAdmin;
+    // Allowlist: ONLY unit correspondence roles (tata usaha, kepsek, admin unit), executive foundation roles (Ketua/Sekretaris), and SUPER_ADMIN.
+    // Oversight-only roles (YAYASAN_PEMBINA, YAYASAN_PENGAWAS, YAYASAN_ANGGOTA) do NOT have creation authority.
+    const isAuthorizedCreator = isCorrespondenceRole || isFoundationExecutive || isSuperAdmin;
 
     if (!isAuthorizedCreator) {
       throw Errors.forbidden('Peran Anda tidak berwenang untuk membuat surat dinas');
@@ -159,9 +162,8 @@ export const CorrespondenceService = {
       throw Errors.badRequest('Status awal surat hanya dapat berupa DRAFT atau PENDING_REVIEW');
     }
 
-    // Single-unit bypass is strictly reserved for Foundation Governance (YAYASAN_*) and SUPER_ADMIN.
-    // Cross-unit staff roles (PERAWAT, PUSTAKAWAN, USTADZ, etc.) do NOT have single-unit bypass.
-    const isFoundationBypass = isFoundationGovernance || isSuperAdmin;
+    // Single-unit bypass is strictly reserved for Executive Foundation Roles and SUPER_ADMIN.
+    const isFoundationBypass = isFoundationExecutive || isSuperAdmin;
     const targetUnitId = (isFoundationBypass ? data.unitId : actor.unitId) || data.unitId;
 
     if (!targetUnitId) {
@@ -543,8 +545,8 @@ export const CorrespondenceService = {
               isSigner: !!isFinalSigner,
             });
           }
-        } else if (isFinalSigner && !mine.isSigner) {
-          // Mark current reviewer as signer if specified
+        } else if (isFinalSigner) {
+          // Mark current reviewer as signer if specified (restoring flag after bulk reset even if previously a signer)
           updatedLadder = updatedLadder.map((r) =>
             r.reviewerId === reviewerId ? { ...r, isSigner: true } : r
           );
@@ -970,8 +972,11 @@ export const CorrespondenceService = {
   ) {
     const limit = Math.min(params.limit || 100, 200);
 
-    // Enforce caller unit scope if caller is unit-restricted
-    const effectiveUnitId = actor?.unitId ? actor.unitId : params.unitId;
+    // Derive unit scope according to seesAllUnits policy:
+    // Cross-unit personnel and foundation roles can see participants across units or specify query.unitId.
+    // Unit-pinned roles are restricted to their assigned unitId regardless of query.unitId.
+    const actorSeesAll = actor ? seesAllUnits(actor) : true;
+    const effectiveUnitId = actorSeesAll ? params.unitId : (actor?.unitId ?? params.unitId);
 
     const where: Prisma.UserWhereInput = {
       isActive: true,

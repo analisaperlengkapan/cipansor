@@ -24,15 +24,27 @@ function isLeadershipUser(req: Request): boolean {
   return leadershipRoles.includes(roleCode as RoleCode);
 }
 
+/** Roles that have foundation-level (global) access to all units. */
+function isFoundationGlobalLeadership(req: Request): boolean {
+  const roleCode = req.user?.roleCode ?? '';
+  const globalRoles: RoleCode[] = [
+    RoleCode.SUPER_ADMIN,
+    RoleCode.YAYASAN_KETUA,
+    RoleCode.YAYASAN_PEMBINA,
+    RoleCode.YAYASAN_PENGAWAS,
+  ];
+  return globalRoles.includes(roleCode as RoleCode);
+}
+
 export const getDashboard = asyncHandler(async (req: Request, res: Response) => {
   if (!isLeadershipUser(req)) throw Errors.forbidden('Only leadership roles may access analytics');
 
-  const isSuper = req.user?.roleCode === RoleCode.SUPER_ADMIN || req.user?.roleCode === RoleCode.YAYASAN_KETUA;
-  const unitId = isSuper
+  const isGlobal = isFoundationGlobalLeadership(req);
+  const unitId = isGlobal
     ? (req.query.unitId as string | undefined)
     : (req.user?.unitId ?? undefined);
 
-  if (!isSuper && !unitId) {
+  if (!isGlobal && !unitId) {
     throw Errors.forbidden('User does not belong to a specific unit and lacks global analytics access');
   }
 
@@ -43,10 +55,13 @@ export const getDashboard = asyncHandler(async (req: Request, res: Response) => 
 export const getDrilldown = asyncHandler(async (req: Request, res: Response) => {
   if (!isLeadershipUser(req)) throw Errors.forbidden('Only leadership roles may access analytics');
 
-  const isSuper = req.user?.roleCode === RoleCode.SUPER_ADMIN || req.user?.roleCode === RoleCode.YAYASAN_KETUA;
+  const isGlobal = isFoundationGlobalLeadership(req);
   const targetUnitId = req.params.unitId;
-  if (!isSuper && req.user?.unitId && req.user.unitId !== targetUnitId) {
-    throw Errors.forbidden('Cannot view drilldown scores of another unit');
+
+  if (!isGlobal) {
+    if (!req.user?.unitId || req.user.unitId !== targetUnitId) {
+      throw Errors.forbidden('Cannot view drilldown scores of another unit');
+    }
   }
 
   const data = await pkAnalyticsService.getUnitDrilldown(targetUnitId);
@@ -56,14 +71,14 @@ export const getDrilldown = asyncHandler(async (req: Request, res: Response) => 
 export const getConsolidatedReport = asyncHandler(async (req: Request, res: Response) => {
   if (!isLeadershipUser(req)) throw Errors.forbidden('Only leadership roles may access analytics');
 
-  const isSuper = req.user?.roleCode === RoleCode.SUPER_ADMIN || req.user?.roleCode === RoleCode.YAYASAN_KETUA;
+  const isGlobal = isFoundationGlobalLeadership(req);
   const month = req.query.month ? parseInt(req.query.month as string, 10) : undefined;
   const year = req.query.year
     ? parseInt(req.query.year as string, 10)
     : new Date().getFullYear();
 
-  const scopedUnitId = isSuper ? undefined : (req.user?.unitId ?? undefined);
-  if (!isSuper && !scopedUnitId) {
+  const scopedUnitId = isGlobal ? undefined : (req.user?.unitId ?? undefined);
+  if (!isGlobal && !scopedUnitId) {
     throw Errors.forbidden('User does not belong to a specific unit and lacks global analytics access');
   }
 

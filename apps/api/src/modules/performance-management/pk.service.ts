@@ -89,7 +89,27 @@ export class PerformanceAgreementService {
 
   async getSupervisors() {
     return prisma.user.findMany({
-      where: { isActive: true },
+      where: {
+        isActive: true,
+        userRoles: {
+          some: {
+            role: {
+              code: {
+                notIn: [
+                  'SDIT_SISWA',
+                  'SMPIT_SISWA',
+                  'SMAQ_SISWA',
+                  'PT_MAHASISWA',
+                  'TKQ_ORANG_TUA',
+                  'SDIT_ORANG_TUA',
+                  'SMPIT_ORANG_TUA',
+                  'SMAQ_ORANG_TUA',
+                ],
+              },
+            },
+          },
+        },
+      },
       select: {
         id: true,
         name: true,

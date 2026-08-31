@@ -424,11 +424,11 @@ function PeriodicEvaluationDetailPageContent() {
               <Textarea
                 rows={4}
                 placeholder="Berikan masukan, apresiasi, atau area pengembangan..."
-                value={feedback || evaluation.feedback || ""}
+                value={feedback !== "" ? feedback : (evaluation.feedback || "")}
                 disabled={evaluation.status === "APPROVED"}
                 onChange={(e) => setFeedback(e.target.value)}
               />
-              {evaluation.status !== "APPROVED" && (
+              {evaluation.status !== "APPROVED" && (user?.id === evaluation.pk?.supervisorId || user?.role === "SUPER_ADMIN") && (
                 <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={handleApprove}>
                   Simpan Catatan & Approve Evaluasi
                 </Button>

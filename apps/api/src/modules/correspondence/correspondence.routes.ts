@@ -10,13 +10,13 @@ import {
   letterNoteSchema,
 } from './correspondence.schema';
 
-import { defaultLimiter } from '@/middleware/rate-limit';
-
 const router = Router();
 
-// Public route for letter verification (uses defaultLimiter to prevent NAT gateway lockouts)
-router.get('/public/verify', defaultLimiter, CorrespondenceController.verifyPublic);
-router.get('/public/verify/:token', defaultLimiter, CorrespondenceController.verifyPublic);
+// Public route for letter verification
+// Note: defaultLimiter is already applied globally in app.ts for non-dev/test environments.
+// Omitting local defaultLimiter prevents double-counting against rate limit counters in production.
+router.get('/public/verify', CorrespondenceController.verifyPublic);
+router.get('/public/verify/:token', CorrespondenceController.verifyPublic);
 
 router.use(authenticate);
 

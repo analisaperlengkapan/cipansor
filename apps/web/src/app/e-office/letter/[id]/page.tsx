@@ -71,6 +71,7 @@ export default function LetterDetailPage({
   const { user } = useAuth();
   const {
     useLetter,
+    submitForReview,
     reviewLetter,
     createDisposition,
     updateDispositionStatus,
@@ -260,14 +261,13 @@ export default function LetterDetailPage({
       return;
     }
     try {
-      await reviewLetter.mutateAsync({
+      await submitForReview.mutateAsync({
         id: letter.id,
-        action: "APPROVE",
-        notes: notes || "Mengajukan draft untuk ditinjau",
+        note: notes || "Mengajukan draft untuk ditinjau",
       });
       toast.success("Draft surat berhasil diajukan untuk ditinjau");
-    } catch (error) {
-      toast.error("Gagal mengajukan draft untuk ditinjau");
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || "Gagal mengajukan draft untuk ditinjau");
     }
   };
 

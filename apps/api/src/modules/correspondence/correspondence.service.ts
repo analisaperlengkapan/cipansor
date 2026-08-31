@@ -15,14 +15,14 @@ import {
   UpdateLetterInput,
 } from '@cipansor/shared';
 import { eventBus } from '@/lib/event-bus';
-import { EsignService } from '@/modules/esign/esign.service';
+import { verifyLetterByToken } from '@/utils/letter-verification';
 import {
   assertLetterAccess,
-  choosesUnit,
   handlesUnitCorrespondence,
   letterScopeWhere,
   type LetterActor,
 } from '@/utils/letter-access';
+import { isFoundationScopedRole } from '@/utils/resolve-unit-id';
 import {
   assertMayArchive,
   assertMayResubmit,
@@ -143,11 +143,12 @@ export const CorrespondenceService = {
       throw Errors.forbidden('Peran Anda tidak berwenang untuk membuat surat dinas');
     }
 
-    // Allowlist: only authorized correspondence, unit admin, and foundation governance roles
-    const isAuthorizedCreator =
-      handlesUnitCorrespondence(actor) ||
-      choosesUnit(actor) ||
-      actor.roleCode === 'SUPER_ADMIN';
+    const isFoundationGovernance = isFoundationScopedRole(actor.roleCode);
+    const isCorrespondenceRole = handlesUnitCorrespondence(actor);
+    const isSuperAdmin = actor.roleCode === 'SUPER_ADMIN';
+
+    // Allowlist: ONLY unit correspondence roles (tata usaha, kepsek, admin unit), foundation governance, and SUPER_ADMIN
+    const isAuthorizedCreator = isCorrespondenceRole || isFoundationGovernance || isSuperAdmin;
 
     if (!isAuthorizedCreator) {
       throw Errors.forbidden('Peran Anda tidak berwenang untuk membuat surat dinas');
@@ -158,12 +159,15 @@ export const CorrespondenceService = {
       throw Errors.badRequest('Status awal surat hanya dapat berupa DRAFT atau PENDING_REVIEW');
     }
 
-    // Validate unit authorization; foundation-wide actors (choosesUnit) are exempt from single-unit restriction
-    const targetUnitId = (choosesUnit(actor) ? data.unitId : actor.unitId) || data.unitId;
+    // Single-unit bypass is strictly reserved for Foundation Governance (YAYASAN_*) and SUPER_ADMIN.
+    // Cross-unit staff roles (PERAWAT, PUSTAKAWAN, USTADZ, etc.) do NOT have single-unit bypass.
+    const isFoundationBypass = isFoundationGovernance || isSuperAdmin;
+    const targetUnitId = (isFoundationBypass ? data.unitId : actor.unitId) || data.unitId;
+
     if (!targetUnitId) {
       throw Errors.badRequest('Unit ID wajib diisi');
     }
-    if (!choosesUnit(actor) && actor.unitId && data.unitId && data.unitId !== actor.unitId) {
+    if (!isFoundationBypass && actor.unitId && data.unitId && data.unitId !== actor.unitId) {
       throw Errors.forbidden('Anda tidak berwenang membuat surat untuk unit lain');
     }
 
@@ -660,6 +664,54 @@ export const CorrespondenceService = {
   },
 
   /**
+   * Submit an existing DRAFT letter into review (PENDING_REVIEW).
+   *
+   * Only the creator can submit their draft, and only when at least one
+   * reviewer is assigned.
+   */
+  async submitForReview(letterId: string, actor: LetterActor, note?: string) {
+    await assertLetterAccess(actor, letterId);
+
+    return await prisma.$transaction(async (tx) => {
+      const letter = await tx.letter.findUnique({
+        where: { id: letterId },
+        select: { id: true, status: true, createdById: true, reviewers: true, subject: true },
+      });
+      if (!letter) throw Errors.notFound('Letter not found');
+
+      if (letter.createdById !== actor.id) {
+        throw Errors.forbidden('Hanya pembuat surat yang dapat mengajukan konsep untuk ditinjau');
+      }
+
+      if (letter.status !== DbLetterStatus.DRAFT) {
+        throw Errors.badRequest('Hanya surat berstatus DRAFT yang dapat diajukan untuk ditinjau');
+      }
+
+      if (!letter.reviewers || letter.reviewers.length === 0) {
+        throw Errors.badRequest('Konsep surat harus memiliki minimal satu pemeriksa sebelum diajukan');
+      }
+
+      const nextStatus = DbLetterStatus.PENDING_REVIEW;
+
+      await tx.letter.update({
+        where: { id: letterId },
+        data: { status: nextStatus },
+      });
+
+      await recordFlow(tx, {
+        letterId,
+        actorId: actor.id,
+        action: LetterFlowAction.SUBMITTED,
+        fromStatus: DbLetterStatus.DRAFT,
+        toStatus: nextStatus,
+        note: note || 'Mengajukan konsep surat untuk ditinjau',
+      });
+
+      return { id: letterId, status: nextStatus };
+    });
+  },
+
+  /**
    * Send a returned draft back up the ladder.
    *
    * This route did not exist. Rejecting a draft set it to REVISION_NEEDED and
@@ -1105,7 +1157,7 @@ export const CorrespondenceService = {
    * Public verification for signed letters via token
    */
   async verifyPublicLetter(token: string) {
-    const res = await EsignService.verifyByToken(token);
+    const res = await verifyLetterByToken(token);
     if (!res.found) {
       return {
         isValid: false,

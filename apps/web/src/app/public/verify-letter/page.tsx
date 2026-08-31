@@ -30,6 +30,7 @@ function PublicVerifyContent() {
   const [tokenInput, setTokenInput] = useState(tokenFromUrl);
   const [activeToken, setActiveToken] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
+  const [triggerNonce, setTriggerNonce] = useState(0);
 
   // Simple Captcha Anti-Spam
   const [captchaNum1, setCaptchaNum1] = useState(0);
@@ -58,12 +59,14 @@ function PublicVerifyContent() {
     }
   }, [tokenFromUrl]);
 
-  const { data: result, isLoading: loading, isError, error: queryError } = usePublicVerifyLetter(
-    captchaPassed ? activeToken : undefined
+  const { data: result, isLoading: loading, isError, error: queryError, refetch } = usePublicVerifyLetter(
+    captchaPassed ? activeToken : undefined,
+    triggerNonce
   );
 
   const verifyToken = (tokenToVerify: string) => {
-    if (!tokenToVerify.trim()) return;
+    const trimmed = tokenToVerify.trim();
+    if (!trimmed) return;
 
     if (!captchaPassed && Number(captchaAnswer) !== captchaNum1 + captchaNum2) {
       setError("Jawaban verifikasi keamanan (CAPTCHA) belum tepat.");
@@ -72,7 +75,14 @@ function PublicVerifyContent() {
 
     setCaptchaPassed(true);
     setError(null);
-    setActiveToken(tokenToVerify.trim());
+
+    if (activeToken === trimmed) {
+      setTriggerNonce((prev) => prev + 1);
+      refetch();
+    } else {
+      setActiveToken(trimmed);
+      setTriggerNonce((prev) => prev + 1);
+    }
   };
 
   return (

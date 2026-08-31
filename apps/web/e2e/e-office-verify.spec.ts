@@ -25,4 +25,12 @@ test.describe("E-Office & Public Letter Verification E2E", () => {
     await expect(page.locator("h1")).toContainText("E-Office");
     await expect(page.getByRole("button", { name: /buat surat baru/i })).toBeVisible();
   });
+
+  test("Automatic public verification works when code URL parameter is present", async ({ page }) => {
+    // Open verification page with code parameter
+    await page.goto("/public/verify-letter?code=invalid-test-token");
+
+    // Page should auto-populate input and execute verification attempt
+    await expect(page.getByPlaceholder(/masukkan token/i)).toHaveValue("invalid-test-token");
+  });
 });

@@ -89,6 +89,19 @@ export const CorrespondenceController = {
     }
   },
 
+  async submitForReview(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await CorrespondenceService.submitForReview(
+        req.params.id,
+        actorOf(req),
+        req.body?.note
+      );
+      res.json({ success: true, data: result });
+    } catch (error) {
+      next(error);
+    }
+  },
+
   async resubmit(req: Request, res: Response, next: NextFunction) {
     try {
       const result = await CorrespondenceService.resubmitLetter(
@@ -171,9 +184,18 @@ export const CorrespondenceController = {
   async getParticipants(req: Request, res: Response, next: NextFunction) {
     try {
       const actor = actorOf(req);
-      if (!choosesUnit(actor) && !handlesUnitCorrespondence(actor)) {
-        throw Errors.forbidden('Anda tidak memiliki akses ke direktori persuratan');
+      // Deny external roles (students, parents, alumni) from reading the internal participant directory
+      if (actor.roleCode) {
+        const isExternalRole =
+          actor.roleCode.endsWith('_SISWA') ||
+          actor.roleCode.endsWith('_MAHASISWA') ||
+          actor.roleCode.endsWith('_ORANG_TUA') ||
+          actor.roleCode.endsWith('_ALUMNI');
+        if (isExternalRole) {
+          throw Errors.forbidden('Anda tidak memiliki akses ke direktori persuratan');
+        }
       }
+
       const query = (res.locals.validatedQuery || req.query) as {
         search?: string;
         unitId?: string;

@@ -167,6 +167,83 @@ describe('CorrespondenceService', () => {
     });
   });
 
+  describe('submitForReview', () => {
+    it('submits a DRAFT letter into review when reviewers exist', async () => {
+      vi.mocked(prisma.letter.findUnique).mockResolvedValue({
+        id: 'let-draft',
+        status: 'DRAFT',
+        createdById: 'creator-1',
+        reviewers: [{ id: 'rev-1', reviewerId: 'rev-user-1', order: 1, status: 'PENDING' }],
+        subject: 'Draft Test',
+      } as any);
+      vi.mocked(prisma.letter.update).mockResolvedValue({ id: 'let-draft', status: 'PENDING_REVIEW' } as any);
+
+      const result = await CorrespondenceService.submitForReview(
+        'let-draft',
+        { id: 'creator-1', roleCode: 'SDIT_TATA_USAHA', unitId: 'unit-1' } as any,
+        'Mengajukan review'
+      );
+
+      expect(result.status).toBe('PENDING_REVIEW');
+      expect(prisma.letter.update).toHaveBeenCalledWith({
+        where: { id: 'let-draft' },
+        data: { status: 'PENDING_REVIEW' },
+      });
+    });
+
+    it('rejects submission if actor is not the letter creator', async () => {
+      vi.mocked(prisma.letter.findUnique).mockResolvedValue({
+        id: 'let-draft',
+        unitId: 'unit-1',
+        createdById: 'creator-1',
+        status: 'DRAFT',
+        direction: 'OUTGOING',
+        reviewers: [{ id: 'rev-1', reviewerId: 'rev-user-1', order: 1, status: 'PENDING' }],
+        recipients: [],
+        dispositions: [],
+      } as any);
+
+      await expect(
+        CorrespondenceService.submitForReview(
+          'let-draft',
+          { id: 'other-user', roleCode: 'SDIT_TATA_USAHA', unitId: 'unit-1' } as any
+        )
+      ).rejects.toThrow(/Hanya pembuat surat/);
+    });
+
+    it('rejects submission if letter is not in DRAFT status', async () => {
+      vi.mocked(prisma.letter.findUnique).mockResolvedValue({
+        id: 'let-submitted',
+        status: 'PENDING_REVIEW',
+        createdById: 'creator-1',
+        reviewers: [{ id: 'rev-1', reviewerId: 'rev-user-1', order: 1, status: 'PENDING' }],
+      } as any);
+
+      await expect(
+        CorrespondenceService.submitForReview(
+          'let-submitted',
+          { id: 'creator-1', roleCode: 'SDIT_TATA_USAHA', unitId: 'unit-1' } as any
+        )
+      ).rejects.toThrow(/Hanya surat berstatus DRAFT/);
+    });
+
+    it('rejects submission if no reviewers are assigned', async () => {
+      vi.mocked(prisma.letter.findUnique).mockResolvedValue({
+        id: 'let-no-rev',
+        status: 'DRAFT',
+        createdById: 'creator-1',
+        reviewers: [],
+      } as any);
+
+      await expect(
+        CorrespondenceService.submitForReview(
+          'let-no-rev',
+          { id: 'creator-1', roleCode: 'SDIT_TATA_USAHA', unitId: 'unit-1' } as any
+        )
+      ).rejects.toThrow(/minimal satu pemeriksa/);
+    });
+  });
+
   describe('Resubmit and archive', () => {
     const accessRow = (over: Record<string, unknown>) => ({
       id: 'letter-1',
@@ -277,6 +354,44 @@ describe('CorrespondenceService', () => {
       ).rejects.toThrow(/Peran Anda tidak berwenang/);
     });
 
+    it('rejects letter creation for cross-unit non-correspondence roles (e.g. PERAWAT, PUSTAKAWAN)', async () => {
+      await expect(
+        CorrespondenceService.createLetter(
+          {
+            unitId: 'unit-1',
+            direction: 'OUTGOING' as any,
+            subject: 'Testing Perawat',
+            date: '2026-08-01',
+            urgency: 'NORMAL' as any,
+            nature: 'PUBLIC' as any,
+            status: 'DRAFT' as any,
+          },
+          'user-perawat',
+          { id: 'user-perawat', roleCode: 'PERAWAT', unitId: 'unit-1' } as any
+        )
+      ).rejects.toThrow(/Peran Anda tidak berwenang/);
+    });
+
+    it('allows letter creation across units for foundation governance roles (YAYASAN_KETUA)', async () => {
+      vi.mocked(prisma.letter.create).mockResolvedValue({ id: 'let-yayasan', status: 'DRAFT', unitId: 'unit-2' } as any);
+
+      const result = await CorrespondenceService.createLetter(
+        {
+          unitId: 'unit-2',
+          direction: 'OUTGOING' as any,
+          subject: 'Testing Yayasan',
+          date: '2026-08-01',
+          urgency: 'NORMAL' as any,
+          nature: 'PUBLIC' as any,
+          status: 'DRAFT' as any,
+        },
+        'user-ketua',
+        { id: 'user-ketua', roleCode: 'YAYASAN_KETUA', unitId: null } as any
+      );
+
+      expect(result.id).toBe('let-yayasan');
+    });
+
     it('sets incoming letter without reviewers to DISPOSED when recipientIds present', async () => {
       vi.mocked(prisma.letter.create).mockResolvedValue({ id: 'let-2', status: 'DISPOSED', unitId: 'unit-1' } as any);
 
@@ -304,7 +419,7 @@ describe('CorrespondenceService', () => {
   });
 
   describe('getParticipants', () => {
-    it('returns filtered correspondence participants', async () => {
+    it('returns filtered correspondence participants for ordinary teacher reviewers', async () => {
       vi.mocked(prisma.user.findMany).mockResolvedValue([
         {
           id: 'u-1',
@@ -320,7 +435,7 @@ describe('CorrespondenceService', () => {
 
       const result = await CorrespondenceService.getParticipants(
         { search: 'Ahmad' },
-        { id: 'admin-1', roleCode: 'SUPER_ADMIN', unitId: null } as any
+        { id: 'guru-1', roleCode: 'SDIT_GURU', unitId: 'unit-1' } as any
       );
 
       expect(result).toHaveLength(1);

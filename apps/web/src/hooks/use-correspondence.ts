@@ -27,9 +27,9 @@ export function useCorrespondenceParticipants(params?: {
   });
 }
 
-export function usePublicVerifyLetter(token?: string) {
+export function usePublicVerifyLetter(token?: string, nonce: number = 0) {
   return useQuery({
-    queryKey: ["publicVerifyLetter", token],
+    queryKey: ["publicVerifyLetter", token, nonce],
     queryFn: async () => {
       const response = await api.get<{
         success: boolean;
@@ -102,6 +102,20 @@ export function useCorrespondence(unitId?: string) {
       return response.data;
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["letters"] });
+    },
+  });
+
+  // Submit DRAFT for Review
+  const submitForReview = useMutation({
+    mutationFn: async ({ id, note }: { id: string; note?: string }) => {
+      const response = await api.post(`/correspondence/letters/${id}/submit`, {
+        note,
+      });
+      return response.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["letter", variables.id] });
       queryClient.invalidateQueries({ queryKey: ["letters"] });
     },
   });
@@ -189,6 +203,7 @@ export function useCorrespondence(unitId?: string) {
     useLetters,
     useLetter,
     createLetter,
+    submitForReview,
     reviewLetter,
     createDisposition,
     updateDispositionStatus,

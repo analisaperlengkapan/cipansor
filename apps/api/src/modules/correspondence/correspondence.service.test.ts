@@ -208,6 +208,45 @@ describe('Correspondence Service', () => {
     });
 
 
+    it('reorders existing reviewer to end of ladder and preserves isSigner when forwarding', async () => {
+      // Ladder has 3 reviewers: sekretaris (order 1, APPROVED), reviewer2 (order 2, PENDING, isSigner=true), reviewer3 (order 3, PENDING)
+      const customLadder = [
+        { id: 'rev-sekretaris', reviewerId: 'sekretaris', order: 1, status: 'APPROVED', isSigner: false },
+        { id: 'rev-existing', reviewerId: 'existing-reviewer', order: 2, status: 'APPROVED', isSigner: true },
+        { id: 'rev-current', reviewerId: 'current-reviewer', order: 3, status: 'PENDING', isSigner: false },
+      ];
+
+      vi.mocked(prisma.letter.findUnique).mockResolvedValue({
+        id: 'letter-1',
+        status: 'PENDING_REVIEW',
+        createdById: 'creator-1',
+        reviewers: customLadder,
+        unitId: 'unit-1',
+        subject: 'Forward Test',
+      } as any);
+      vi.mocked(prisma.letterReviewer.update).mockResolvedValue({} as any);
+      vi.mocked(prisma.letter.update).mockResolvedValue({} as any);
+
+      await CorrespondenceService.processReview(
+        'letter-1',
+        'current-reviewer',
+        'APPROVE',
+        'Teruskan kembali',
+        'existing-reviewer'
+      );
+
+      // maxOrder was 3, so existing-reviewer order should be updated to 4 (maxOrder + 1)
+      expect(prisma.letterReviewer.update).toHaveBeenCalledWith({
+        where: { id: 'rev-existing' },
+        data: expect.objectContaining({
+          order: 4,
+          status: 'PENDING',
+          reviewedAt: null,
+          isSigner: true, // preserved existing isSigner=true
+        }),
+      });
+    });
+
     it('returns a rejected draft to REVISION_NEEDED and notifies its author', async () => {
       vi.mocked(prisma.letter.findUnique).mockResolvedValue({
         id: 'letter-1',

@@ -70,10 +70,6 @@ function seesGlobalPKGEvaluations(req: Request): boolean {
     'YAYASAN_ANGGOTA',
     'PESANTREN_PENGASUH',
     'PESANTREN_DIREKTUR',
-    'PT_REKTOR',
-    'PT_WAKIL_REKTOR',
-    'PT_DEKAN',
-    'PT_KAPRODI',
   ];
   return globalOversightRoles.includes(roleCode);
 }

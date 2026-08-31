@@ -36,7 +36,7 @@ function KinerjaHubPageContent() {
   const effectiveRole = user ? getEffectiveRole(user) || user.role : "GURU";
 
   const { data: pks, isLoading: loadingPK } = usePKList();
-  const { data: dashboard, isLoading: loadingDashboard } = usePerformanceDashboard();
+  const { data: dashboard, isLoading: loadingDashboard } = usePerformanceDashboard(isExecutive);
   const { data: plans } = usePlans();
 
   const isExecutive = [

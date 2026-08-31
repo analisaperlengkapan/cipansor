@@ -285,6 +285,7 @@ export const roleRouteAccess: Record<LegacyRole, string[]> = {
     "/donation",
     "/finance",
     "/health",
+    "/kinerja",
     "/lingkungan",
     "/notifications",
     "/permits",

@@ -327,6 +327,16 @@ const staffNavigation: NavGroup[] = [
     ],
   },
   {
+    title: "Kinerja",
+    items: [
+      {
+        title: "Manajemen Kinerja",
+        href: "/kinerja",
+        icon: ClipboardPenLine,
+      },
+    ],
+  },
+  {
     title: "Layanan Siswa",
     items: [
       {

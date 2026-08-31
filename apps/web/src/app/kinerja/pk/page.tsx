@@ -285,14 +285,14 @@ function PerformanceAgreementListPageContent() {
                             </Button>
                           </Link>
                           {pk.status === "DRAFT" && (
-                            <Button
-                              size="sm"
-                              className="bg-emerald-600 hover:bg-emerald-700 text-white"
-                              onClick={() => proposePK.mutate(pk.id)}
-                              disabled={proposePK.isPending}
-                            >
-                              <Send className="w-3.5 h-3.5 mr-1" /> Ajukan
-                            </Button>
+                            <Link href={`/kinerja/pk/${pk.id}`}>
+                              <Button
+                                size="sm"
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                              >
+                                <Send className="w-3.5 h-3.5 mr-1" /> Ajukan
+                              </Button>
+                            </Link>
                           )}
                         </TableCell>
                       </TableRow>

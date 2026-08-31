@@ -139,7 +139,7 @@ function PeriodicEvaluationDetailPageContent() {
           </div>
         </div>
 
-        {evaluation.status !== "APPROVED" && (
+        {evaluation.status !== "APPROVED" && (user?.id === evaluation.pk?.supervisorId || user?.role === "SUPER_ADMIN") && (
           <Button
             className="bg-emerald-600 hover:bg-emerald-700"
             disabled={approveEvaluation.isPending}

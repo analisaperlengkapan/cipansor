@@ -1,87 +1,31 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
+import type {
+  BehavioralValueDTO as BehavioralValue,
+  SupervisorDTO,
+  PKIndicatorDTO as PKIndicator,
+  PKIndicatorEvaluationDTO as PKIndicatorEvaluation,
+  PKBehaviorEvaluationDTO as PKBehaviorEvaluation,
+  PKEvaluationDTO as PKEvaluation,
+  PerformanceAgreementDTO as PerformanceAgreement,
+  PerformanceDashboardDTO,
+  PerformanceDrilldownDTO,
+  PerformanceConsolidatedReportDTO,
+} from "@cipansor/shared";
 
-export interface BehavioralValue {
-  id: string;
-  name: string;
-  description?: string | null;
-  weight: number;
-  isActive: boolean;
-}
-
-export interface PKIndicator {
-  id: string;
-  pkId: string;
-  title: string;
-  target: number;
-  unit: string;
-  weight: number;
-  category: "DIRECT" | "INDIRECT" | "NON_CASCADING";
-  refIndicatorId?: string | null;
-  refStrategicIndicatorId?: string | null;
-  notes?: string | null;
-  realization: number;
-  refIndicator?: { id: string; title: string } | null;
-  refStrategicIndicator?: { id: string; name: string } | null;
-}
-
-export interface PKIndicatorEvaluation {
-  id: string;
-  evaluationId: string;
-  indicatorId: string;
-  realization: number;
-  activities?: string | null;
-  score: number;
-  indicator?: PKIndicator;
-}
-
-export interface PKBehaviorEvaluation {
-  id: string;
-  evaluationId: string;
-  behaviorValueId: string;
-  score: number;
-  notes?: string | null;
-  behaviorValue?: BehavioralValue;
-}
-
-export interface PKEvaluation {
-  id: string;
-  pkId: string;
-  period: string;
-  month: number;
-  year: number;
-  performanceScore: number;
-  behaviorScore: number;
-  overallScore: number;
-  feedback?: string | null;
-  notes?: string | null;
-  status: "DRAFT" | "PROPOSED" | "APPROVED";
-  indicatorDetails?: PKIndicatorEvaluation[];
-  behaviorDetails?: PKBehaviorEvaluation[];
-}
-
-export interface PerformanceAgreement {
-  id: string;
-  userId: string;
-  supervisorId?: string | null;
-  supervisorPkId?: string | null;
-  strategicPlanId?: string | null;
-  periodStart: string;
-  periodEnd: string;
-  status: "DRAFT" | "PROPOSED" | "APPROVED";
-  totalScore: number;
-  behaviorScore: number;
-  overallScore: number;
-  notes?: string | null;
-  revisionNotes?: string | null;
-  approvedAt?: string | null;
-  user: { id: string; name: string };
-  supervisor?: { id: string; name: string } | null;
-  strategicPlan?: { id: string; title: string } | null;
-  indicators?: PKIndicator[];
-  evaluations?: PKEvaluation[];
-}
+export type {
+  BehavioralValue,
+  SupervisorDTO as Supervisor,
+  PKIndicator,
+  PKIndicatorEvaluation,
+  PKBehaviorEvaluation,
+  PKEvaluation,
+  PerformanceAgreement,
+  PerformanceDashboardDTO,
+  PerformanceDrilldownDTO,
+  PerformanceConsolidatedReportDTO,
+};
 
 // ==========================================
 // PERFORMANCE AGREEMENTS (PK)
@@ -290,7 +234,7 @@ export const useSupervisors = () => {
     queryKey: ["performance-agreements", "supervisors"],
     queryFn: async () => {
       const res = await api.get("/performance-agreements/supervisors");
-      return res.data.data as Array<{ id: string; name: string }>;
+      return res.data.data as SupervisorDTO[];
     },
   });
 };
@@ -422,13 +366,14 @@ export const useApproveEvaluation = () => {
 // ANALYTICS & EXECUTIVE DASHBOARD
 // ==========================================
 
-export const usePerformanceDashboard = () => {
+export const usePerformanceDashboard = (enabled: boolean = true) => {
   return useQuery({
     queryKey: ["performance-agreements", "dashboard"],
     queryFn: async () => {
       const res = await api.get("/performance-agreements/dashboard");
-      return res.data.data;
+      return res.data.data as PerformanceDashboardDTO;
     },
+    enabled,
   });
 };
 
@@ -437,7 +382,7 @@ export const usePerformanceDrilldown = (unitId: string) => {
     queryKey: ["performance-agreements", "drilldown", unitId],
     queryFn: async () => {
       const res = await api.get(`/performance-agreements/dashboard/drilldown/${unitId}`);
-      return res.data.data;
+      return res.data.data as PerformanceDrilldownDTO;
     },
     enabled: !!unitId,
   });
@@ -448,7 +393,7 @@ export const usePerformanceConsolidatedReport = () => {
     queryKey: ["performance-agreements", "consolidated-report"],
     queryFn: async () => {
       const res = await api.get("/performance-agreements/reports/consolidated");
-      return res.data.data;
+      return res.data.data as PerformanceConsolidatedReportDTO;
     },
   });
 };

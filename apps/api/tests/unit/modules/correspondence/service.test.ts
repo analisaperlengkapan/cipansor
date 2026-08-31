@@ -30,6 +30,9 @@ vi.mock('../../../../src/lib/prisma', () => ({
       create: vi.fn(),
       updateMany: vi.fn(),
     },
+    user: {
+      findMany: vi.fn(),
+    },
     academicYear: {
       findFirst: vi.fn(),
     },
@@ -256,6 +259,24 @@ describe('CorrespondenceService', () => {
       ).rejects.toThrow(/tidak berwenang/);
     });
 
+    it('rejects letter creation for student and parent roles', async () => {
+      await expect(
+        CorrespondenceService.createLetter(
+          {
+            unitId: 'unit-1',
+            direction: 'OUTGOING' as any,
+            subject: 'Testing',
+            date: '2026-08-01',
+            urgency: 'NORMAL' as any,
+            nature: 'PUBLIC' as any,
+            status: 'DRAFT' as any,
+          },
+          'user-student',
+          { id: 'user-student', roleCode: 'SDIT_SISWA', unitId: 'unit-1' } as any
+        )
+      ).rejects.toThrow(/Peran Anda tidak berwenang/);
+    });
+
     it('sets incoming letter without reviewers to DISPOSED when recipientIds present', async () => {
       vi.mocked(prisma.letter.create).mockResolvedValue({ id: 'let-2', status: 'DISPOSED', unitId: 'unit-1' } as any);
 
@@ -279,6 +300,32 @@ describe('CorrespondenceService', () => {
           data: expect.objectContaining({ status: 'DISPOSED' }),
         })
       );
+    });
+  });
+
+  describe('getParticipants', () => {
+    it('returns filtered correspondence participants', async () => {
+      vi.mocked(prisma.user.findMany).mockResolvedValue([
+        {
+          id: 'u-1',
+          name: 'Ust. Ahmad',
+          email: 'ahmad@cipansor.or.id',
+          unitId: 'unit-1',
+          unit: { name: 'SDIT' },
+          teacher: { nip: '12345' },
+          staff: null,
+          userRoles: [{ role: { code: 'SDIT_GURU' } }],
+        },
+      ] as any);
+
+      const result = await CorrespondenceService.getParticipants(
+        { search: 'Ahmad' },
+        { id: 'admin-1', roleCode: 'SUPER_ADMIN', unitId: null } as any
+      );
+
+      expect(result).toHaveLength(1);
+      expect(result[0].name).toBe('Ust. Ahmad');
+      expect(result[0].nip).toBe('12345');
     });
   });
 

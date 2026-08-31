@@ -63,3 +63,9 @@ export const updateDispositionStatusSchema = z.object({
 export const letterNoteSchema = z.object({
   note: z.string().max(2000).optional(),
 });
+
+export const listParticipantsQuerySchema = z.object({
+  search: z.string().optional(),
+  unitId: z.string().uuid().optional(),
+  limit: z.coerce.number().int().min(1).max(200).optional().default(100),
+});

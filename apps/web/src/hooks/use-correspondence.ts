@@ -40,6 +40,8 @@ export function usePublicVerifyLetter(token?: string) {
     },
     enabled: !!token && token.trim().length > 0,
     staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: "always",
     retry: false,
   });
 }

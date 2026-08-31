@@ -170,11 +170,14 @@ export const CorrespondenceController = {
 
   async getParticipants(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await CorrespondenceService.getParticipants({
-        search: req.query.search as string | undefined,
-        unitId: req.query.unitId as string | undefined,
-        limit: req.query.limit ? Number(req.query.limit) : undefined,
-      });
+      const result = await CorrespondenceService.getParticipants(
+        {
+          search: req.query.search as string | undefined,
+          unitId: req.query.unitId as string | undefined,
+          limit: req.query.limit ? Number(req.query.limit) : undefined,
+        },
+        actorOf(req)
+      );
       res.json({ success: true, data: result });
     } catch (error) {
       next(error);

@@ -317,6 +317,12 @@ export default function LetterDetailPage({
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label>Diteruskan Kepada Pejabat/Atasan Berikutnya</Label>
+              <Input
+                placeholder="Cari pejabat..."
+                value={participantSearch}
+                onChange={(e) => setParticipantSearch(e.target.value)}
+                className="text-xs mb-1"
+              />
               <Select
                 onValueChange={(val) =>
                   setForwardData({ ...forwardData, nextReviewerId: val, isFinalSigner: false })
@@ -384,36 +390,44 @@ export default function LetterDetailPage({
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label>Diteruskan Kepada (Dapat Memilih Beberapa Penerima)</Label>
-              <div className="space-y-2 border rounded-md p-3 max-h-40 overflow-y-auto">
-                {participantsData?.data.map((u) => (
-                  <div key={u.id} className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id={`disp-rec-${u.id}`}
-                      value={u.id}
-                      checked={dispositionData.recipientIds.includes(u.id)}
-                      onChange={(e) => {
-                        const checked = e.target.checked;
-                        const current = dispositionData.recipientIds;
-                        if (checked) {
-                          setDispositionData({
-                            ...dispositionData,
-                            recipientIds: [...current, u.id],
-                          });
-                        } else {
-                          setDispositionData({
-                            ...dispositionData,
-                            recipientIds: current.filter((id) => id !== u.id),
-                          });
-                        }
-                      }}
-                      className="h-4 w-4 rounded border-gray-300"
-                    />
-                    <label htmlFor={`disp-rec-${u.id}`} className="text-sm cursor-pointer">
-                      {u.nip ? `${u.name} (${u.nip})` : u.name}
-                    </label>
-                  </div>
-                ))}
+              <div className="space-y-2 border rounded-md p-3">
+                <Input
+                  placeholder="Cari penerima disposisi..."
+                  value={participantSearch}
+                  onChange={(e) => setParticipantSearch(e.target.value)}
+                  className="text-xs mb-2 bg-white"
+                />
+                <div className="space-y-2 max-h-40 overflow-y-auto">
+                  {participantsData?.data.map((u) => (
+                    <div key={u.id} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id={`disp-rec-${u.id}`}
+                        value={u.id}
+                        checked={dispositionData.recipientIds.includes(u.id)}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          const current = dispositionData.recipientIds;
+                          if (checked) {
+                            setDispositionData({
+                              ...dispositionData,
+                              recipientIds: [...current, u.id],
+                            });
+                          } else {
+                            setDispositionData({
+                              ...dispositionData,
+                              recipientIds: current.filter((id) => id !== u.id),
+                            });
+                          }
+                        }}
+                        className="h-4 w-4 rounded border-gray-300"
+                      />
+                      <label htmlFor={`disp-rec-${u.id}`} className="text-sm cursor-pointer">
+                        {u.nip ? `${u.name} (${u.nip})` : u.name}
+                      </label>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
             <div className="grid gap-2">

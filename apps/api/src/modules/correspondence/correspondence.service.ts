@@ -137,6 +137,19 @@ export const CorrespondenceService = {
   },
 
   async createLetter(data: CreateLetterInput, userId: string, actor?: LetterActor) {
+    // Enforce role authorization: external roles (STUDENT, PARENT) cannot create letters
+    if (actor?.roleCode) {
+      const isExternalRole =
+        actor.roleCode.endsWith('_SISWA') ||
+        actor.roleCode.endsWith('_MAHASISWA') ||
+        actor.roleCode.endsWith('_ORANG_TUA') ||
+        actor.roleCode.endsWith('_ALUMNI') ||
+        actor.roleCode.endsWith('_KOMITE');
+      if (isExternalRole) {
+        throw Errors.forbidden('Peran Anda tidak berwenang untuk membuat surat dinas');
+      }
+    }
+
     // Validate unit authorization
     const targetUnitId = actor?.unitId ? actor.unitId : data.unitId;
     if (!targetUnitId) {
@@ -158,7 +171,7 @@ export const CorrespondenceService = {
     if (data.direction === 'INCOMING' && initialStatus === DbLetterStatus.PENDING_REVIEW && (!data.reviewerIds || data.reviewerIds.length === 0)) {
       initialStatus = data.recipientIds && data.recipientIds.length > 0
         ? DbLetterStatus.DISPOSED
-        : DbLetterStatus.SENT;
+        : DbLetterStatus.DRAFT;
     }
 
     // Get active academic year
@@ -889,20 +902,54 @@ export const CorrespondenceService = {
 
   /**
    * Search / list eligible correspondence participants (teachers, staff, foundation officers)
-   * accessible to all authenticated E-Office users.
+   * accessible to authenticated E-Office participants.
    */
-  async getParticipants(params: { search?: string; unitId?: string; limit?: number }) {
+  async getParticipants(
+    params: { search?: string; unitId?: string; limit?: number },
+    actor?: LetterActor
+  ) {
     const limit = Math.min(params.limit || 100, 200);
+
+    // Enforce caller unit scope if caller is unit-restricted
+    const effectiveUnitId = actor?.unitId ? actor.unitId : params.unitId;
 
     const where: Prisma.UserWhereInput = {
       isActive: true,
+      // Candidates must have a teacher or staff record, or a non-external role assignment
+      OR: [
+        { teacher: { isNot: null } },
+        { staff: { isNot: null } },
+        {
+          userRoles: {
+            some: {
+              role: {
+                code: {
+                  notIn: [
+                    'SDIT_SISWA',
+                    'SMPIT_SISWA',
+                    'SMAQ_SISWA',
+                    'PT_MAHASISWA',
+                    'TKQ_ORANG_TUA',
+                    'SDIT_ORANG_TUA',
+                    'SMPIT_ORANG_TUA',
+                    'SMAQ_ORANG_TUA',
+                    'SMPIT_ALUMNI',
+                    'SMAQ_ALUMNI',
+                    'PT_ALUMNI',
+                  ],
+                },
+              },
+            },
+          },
+        },
+      ],
     };
 
     const and: Prisma.UserWhereInput[] = [];
 
-    if (params.unitId) {
+    if (effectiveUnitId) {
       and.push({
-        OR: [{ unitId: params.unitId }, { unitId: null }],
+        OR: [{ unitId: effectiveUnitId }, { unitId: null }],
       });
     }
 

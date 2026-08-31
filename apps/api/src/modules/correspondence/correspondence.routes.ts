@@ -1,13 +1,14 @@
 import { Router } from 'express';
 import { CorrespondenceController } from './correspondence.controller';
 import { authenticate } from '@/middleware/auth';
-import { validate } from '@/middleware/validate';
+import { validate, validateQuery } from '@/middleware/error';
 import {
   createLetterSchema,
   reviewLetterSchema,
   createDispositionSchema,
   updateDispositionStatusSchema,
   letterNoteSchema,
+  listParticipantsQuerySchema,
 } from './correspondence.schema';
 
 const router = Router();
@@ -20,7 +21,11 @@ router.get('/public/verify/:token', CorrespondenceController.verifyPublic);
 
 router.use(authenticate);
 
-router.get('/participants', CorrespondenceController.getParticipants);
+router.get(
+  '/participants',
+  validateQuery(listParticipantsQuerySchema),
+  CorrespondenceController.getParticipants
+);
 router.post('/letters', validate(createLetterSchema), CorrespondenceController.create);
 router.get('/letters', CorrespondenceController.findAll);
 router.get('/stats', CorrespondenceController.getStats);

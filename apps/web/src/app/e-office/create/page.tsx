@@ -356,23 +356,31 @@ export default function CreateLetterPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Pemeriksa / Peninjau Pertama</FormLabel>
-                      <Select
-                        onValueChange={(val) => field.onChange([val])}
-                        value={field.value?.[0] || ""}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Pilih pemeriksa/atasan pertama..." />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {staffOptions.map((option: any) => (
-                            <SelectItem key={option.value} value={option.value}>
-                              {option.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <div className="space-y-2">
+                        <Input
+                          placeholder="Cari pejabat/staf..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          className="text-xs mb-1"
+                        />
+                        <Select
+                          onValueChange={(val) => field.onChange([val])}
+                          value={field.value?.[0] || ""}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Pilih pemeriksa/atasan pertama..." />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {staffOptions.map((option: any) => (
+                              <SelectItem key={option.value} value={option.value}>
+                                {option.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                       <FormDescription>
                         Pilih pejabat/atasan pertama yang akan mengulas konsep surat ini. Pemeriksa pertama dapat meneruskan secara fleksibel ke pejabat berikutnya.
                       </FormDescription>
@@ -389,36 +397,44 @@ export default function CreateLetterPage() {
                     <FormItem>
                       <FormLabel>Teruskan Surat Masuk Kepada (Dapat memilih lebih dari 1)</FormLabel>
                       <FormControl>
-                        <div className="space-y-2 border rounded-md p-4 max-h-48 overflow-y-auto">
-                          {staffOptions.map((option: any) => (
-                            <div
-                              key={option.value}
-                              className="flex items-center space-x-2"
-                            >
-                              <input
-                                type="checkbox"
-                                value={option.value}
-                                checked={(field.value || []).includes(
-                                  option.value,
-                                )}
-                                onChange={(e) => {
-                                  const checked = e.target.checked;
-                                  const current = field.value || [];
-                                  if (checked) {
-                                    field.onChange([...current, option.value]);
-                                  } else {
-                                    field.onChange(
-                                      current.filter(
-                                        (val: string) => val !== option.value,
-                                      ),
-                                    );
-                                  }
-                                }}
-                                className="h-4 w-4 rounded border-gray-300"
-                              />
-                              <label className="text-sm cursor-pointer">{option.label}</label>
-                            </div>
-                          ))}
+                        <div className="space-y-2 border rounded-md p-3">
+                          <Input
+                            placeholder="Cari penerima disposisi/terusan..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="text-xs mb-2 bg-white"
+                          />
+                          <div className="space-y-2 max-h-40 overflow-y-auto">
+                            {staffOptions.map((option: any) => (
+                              <div
+                                key={option.value}
+                                className="flex items-center space-x-2"
+                              >
+                                <input
+                                  type="checkbox"
+                                  value={option.value}
+                                  checked={(field.value || []).includes(
+                                    option.value,
+                                  )}
+                                  onChange={(e) => {
+                                    const checked = e.target.checked;
+                                    const current = field.value || [];
+                                    if (checked) {
+                                      field.onChange([...current, option.value]);
+                                    } else {
+                                      field.onChange(
+                                        current.filter(
+                                          (val: string) => val !== option.value,
+                                        ),
+                                      );
+                                    }
+                                  }}
+                                  className="h-4 w-4 rounded border-gray-300"
+                                />
+                                <label className="text-sm cursor-pointer">{option.label}</label>
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       </FormControl>
                       <FormDescription>

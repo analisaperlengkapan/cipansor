@@ -325,9 +325,15 @@ export default function NotificationSettingsPage() {
             </div>
             <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground pt-2 border-t">
               <span>Server Host: <code>smtp.gmail.com:587 (TLS/STARTTLS)</code></span>
-              <Badge variant="outline" className="border-emerald-500 text-emerald-700 bg-emerald-50">
-                Terintegrasi &amp; Terverifikasi
-              </Badge>
+              {preferences.emailEnabled ? (
+                <Badge variant="outline" className="border-emerald-500 text-emerald-700 bg-emerald-50">
+                  Channel Email Aktif
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="border-amber-500 text-amber-700 bg-amber-50">
+                  Channel Email Nonaktif
+                </Badge>
+              )}
             </div>
           </CardContent>
         </Card>

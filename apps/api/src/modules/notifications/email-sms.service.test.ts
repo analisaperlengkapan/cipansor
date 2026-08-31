@@ -116,4 +116,45 @@ describe('NotificationService Email Integration', () => {
     expect(html).toContain('Surat Tugas Panitia Penerimaan Santri Baru');
     expect(html).toContain('https://portal.cipansor.or.id/e-office');
   });
+
+  it('should trigger helper methods for payment receipt, tahfidz progress, and e-office letters', async () => {
+    const receiptRes = await notificationService.sendPaymentReceipt({
+      userId: 'u1',
+      recipientEmail: 'ortu@cipansor.or.id',
+      parentName: 'Hendra',
+      studentName: 'Fauzan',
+      receiptNumber: 'KW-001',
+      amount: 'Rp 500.000',
+      paymentDate: '27 Agustus 2025',
+      paymentMethod: 'Transfer',
+      description: 'SPP',
+    });
+    expect(receiptRes.success).toBe(true);
+
+    const tahfidzRes = await notificationService.sendTahfidzProgress({
+      userId: 'u2',
+      recipientEmail: 'ortu@cipansor.or.id',
+      parentName: 'Hendra',
+      studentName: 'Fauzan',
+      surah: 'Al-Baqarah',
+      verses: '1-10',
+      juz: 1,
+      grade: 'Mumtaz',
+      teacherName: 'Ustadz Ahmad',
+      date: '27 Agustus 2025',
+    });
+    expect(tahfidzRes.success).toBe(true);
+
+    const letterRes = await notificationService.sendEOfficeLetter({
+      userId: 'u3',
+      recipientEmail: 'staf@cipansor.or.id',
+      recipientName: 'Ustadz Ahmad',
+      letterNumber: '002/YPC/VIII/2025',
+      title: 'Surat Undangan',
+      summary: 'Rapat Rencana Kerja',
+      signatoryName: 'Ketua',
+      date: '27 Agustus 2025',
+    });
+    expect(letterRes.success).toBe(true);
+  });
 });

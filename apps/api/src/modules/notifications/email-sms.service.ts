@@ -434,7 +434,7 @@ class NotificationService {
         clientSecret: config.smtp.oauth2.clientSecret,
         refreshToken: config.smtp.oauth2.refreshToken,
       };
-    } else if (config.smtp.user) {
+    } else if (config.smtp.user && config.smtp.pass) {
       authConfig = {
         user: config.smtp.user,
         pass: config.smtp.pass,
@@ -449,6 +449,13 @@ class NotificationService {
     });
 
     return this.transporter;
+  }
+
+  /**
+   * Reset cached transporter instance (useful for runtime/config updates)
+   */
+  resetTransporter(): void {
+    this.transporter = null;
   }
 
   /**
@@ -729,6 +736,88 @@ class NotificationService {
     }
 
     return results;
+  }
+
+  /**
+   * Send payment receipt email
+   */
+  async sendPaymentReceipt(receipt: {
+    userId: string;
+    recipientEmail: string;
+    parentName: string;
+    studentName: string;
+    receiptNumber: string;
+    amount: string;
+    paymentDate: string;
+    paymentMethod: string;
+    description: string;
+  }): Promise<NotificationResult> {
+    return this.send({
+      userId: receipt.userId,
+      recipientEmail: receipt.recipientEmail,
+      channel: 'EMAIL',
+      type: 'PAYMENT_REMINDER',
+      title: 'Bukti Pembayaran Resmi - Cipansor',
+      message: '',
+      templateKey: 'paymentReceipt',
+      templateData: receipt,
+      priority: 'HIGH',
+    });
+  }
+
+  /**
+   * Send tahfidz progress update
+   */
+  async sendTahfidzProgress(progress: {
+    userId: string;
+    recipientEmail: string;
+    parentName: string;
+    studentName: string;
+    surah: string;
+    verses: string;
+    juz: number;
+    grade: string;
+    teacherName: string;
+    date: string;
+  }): Promise<NotificationResult> {
+    return this.send({
+      userId: progress.userId,
+      recipientEmail: progress.recipientEmail,
+      channel: 'EMAIL',
+      type: 'ATTENDANCE',
+      title: 'Laporan Perkembangan Tahfidz Santri - Cipansor',
+      message: '',
+      templateKey: 'tahfidzProgress',
+      templateData: progress,
+      priority: 'MEDIUM',
+    });
+  }
+
+  /**
+   * Send e-office official letter notification
+   */
+  async sendEOfficeLetter(letter: {
+    userId: string;
+    recipientEmail: string;
+    recipientName: string;
+    letterNumber: string;
+    title: string;
+    summary: string;
+    signatoryName: string;
+    date: string;
+    actionUrl?: string;
+  }): Promise<NotificationResult> {
+    return this.send({
+      userId: letter.userId,
+      recipientEmail: letter.recipientEmail,
+      channel: 'EMAIL',
+      type: 'ANNOUNCEMENT',
+      title: 'Surat Resmi & Kedinasan - Cipansor',
+      message: '',
+      templateKey: 'eofficeLetter',
+      templateData: letter,
+      priority: 'HIGH',
+    });
   }
 
   /**

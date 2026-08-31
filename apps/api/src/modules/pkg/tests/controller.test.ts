@@ -94,15 +94,27 @@ describe('pkg controller', () => {
     );
   });
 
-  it('listEvaluations: constrains unit-bound users to req.user.unitId', async () => {
+  it('listEvaluations: constrains unit-bound users and general service staff to req.user.unitId', async () => {
     (pkgService.listEvaluations as any).mockResolvedValue({ data: [], pagination: {} });
-    const { req, res } = mockReqRes({
+
+    // Unit teacher
+    const { req: reqTeacher, res: resTeacher } = mockReqRes({
       query: { unitId: 'unit-other' } as any,
       user: { sub: 'u3', roleCode: 'SDIT_GURU', unitId: 'unit-bound-sd' } as any,
     });
-    await run(controller.listEvaluations, req, res);
+    await run(controller.listEvaluations, reqTeacher, resTeacher);
     expect(pkgService.listEvaluations).toHaveBeenCalledWith(
       expect.objectContaining({ unitId: 'unit-bound-sd' })
+    );
+
+    // Campus service staff (Perawat)
+    const { req: reqPerawat, res: resPerawat } = mockReqRes({
+      query: { unitId: 'unit-other' } as any,
+      user: { sub: 'u4', roleCode: 'PERAWAT', unitId: 'unit-bound-smp' } as any,
+    });
+    await run(controller.listEvaluations, reqPerawat, resPerawat);
+    expect(pkgService.listEvaluations).toHaveBeenCalledWith(
+      expect.objectContaining({ unitId: 'unit-bound-smp' })
     );
   });
 });

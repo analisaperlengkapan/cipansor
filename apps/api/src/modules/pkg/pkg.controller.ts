@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
 import { asyncHandler } from '@/middleware/error';
 import { ApiResponse } from '@/utils/response';
-import { seesAllUnits } from '@/utils/resolve-unit-id';
 import * as pkgService from './pkg.service';
 
 // =====================================
@@ -57,11 +56,33 @@ export const deletePeriod = asyncHandler(async (req: Request, res: Response) => 
 // EVALUATION
 // =====================================
 
+/** Roles explicitly authorized to view PKG teacher performance evaluations across all units. */
+function seesGlobalPKGEvaluations(req: Request): boolean {
+  if (req.user?.role === 'SUPER_ADMIN') return true;
+  const roleCode = req.user?.roleCode || '';
+  const globalOversightRoles = [
+    'SUPER_ADMIN',
+    'YAYASAN_KETUA',
+    'YAYASAN_PEMBINA',
+    'YAYASAN_PENGAWAS',
+    'YAYASAN_SEKRETARIS',
+    'YAYASAN_BENDAHARA',
+    'YAYASAN_ANGGOTA',
+    'PESANTREN_PENGASUH',
+    'PESANTREN_DIREKTUR',
+    'PT_REKTOR',
+    'PT_WAKIL_REKTOR',
+    'PT_DEKAN',
+    'PT_KAPRODI',
+  ];
+  return globalOversightRoles.includes(roleCode);
+}
+
 /** GET /api/pkg/evaluations */
 export const listEvaluations = asyncHandler(async (req: Request, res: Response) => {
   const { periodId, teacherId, unitId, status, page, limit } = req.query;
 
-  const isGlobalRole = req.user ? seesAllUnits(req.user) : false;
+  const isGlobalRole = seesGlobalPKGEvaluations(req);
 
   const effectiveUnitId = isGlobalRole
     ? (unitId as string | undefined)

@@ -26,6 +26,7 @@ import {
 } from '@/lib/realtime';
 import { prisma } from '@/lib/prisma';
 import { notificationService } from '@/modules/notifications/email-sms.service';
+import { config } from '@/config';
 
 // Event Types
 export interface AppEvents {
@@ -366,7 +367,11 @@ export function initializeEventBus(): void {
       });
 
       if (studentWithParent) {
-        const primaryParent = studentWithParent.parents.find((p) => p.isPrimary)?.parent || studentWithParent.user;
+        const primaryParent =
+          studentWithParent.parents.find((p) => p.isPrimary)?.parent ||
+          studentWithParent.parents[0]?.parent ||
+          studentWithParent.user;
+
         if (primaryParent?.email) {
           await notificationService.sendTahfidzProgress({
             userId: primaryParent.id,
@@ -376,7 +381,7 @@ export function initializeEventBus(): void {
             surah: event.surahName,
             verses: `${event.ayahStart}-${event.ayahEnd}`,
             juz: event.juz || 1,
-            grade: event.score ? `${event.score} / 100` : 'Mumtaz',
+            grade: event.score !== undefined && event.score !== null ? `${event.score} / 100` : '-',
             teacherName: 'Pengampu Tahfidz',
             date: event.recordedAt ? new Date(event.recordedAt).toLocaleDateString('id-ID') : new Date().toLocaleDateString('id-ID'),
           });
@@ -471,7 +476,11 @@ export function initializeEventBus(): void {
       });
 
       if (studentWithParent) {
-        const primaryParent = studentWithParent.parents.find((p) => p.isPrimary)?.parent || studentWithParent.user;
+        const primaryParent =
+          studentWithParent.parents.find((p) => p.isPrimary)?.parent ||
+          studentWithParent.parents[0]?.parent ||
+          studentWithParent.user;
+
         if (primaryParent?.email) {
           await notificationService.sendPaymentReceipt({
             userId: primaryParent.id,
@@ -579,7 +588,7 @@ export function initializeEventBus(): void {
     });
 
     try {
-      await notificationService.send({
+      const result = await notificationService.send({
         userId: event.userId,
         recipientEmail: event.email,
         channel: 'EMAIL',
@@ -589,14 +598,18 @@ export function initializeEventBus(): void {
         templateKey: 'passwordReset',
         templateData: {
           name: event.title || 'Pengguna',
-          resetLink: event.data?.resetLink || `https://portal.cipansor.or.id/reset-password?token=${event.token}`,
+          resetLink: event.data?.resetLink || `${config.portalUrl}/reset-password?token=${event.token}`,
         },
       });
+
+      if (!result.success) {
+        logger.error(`Failed to send password reset email to ${event.email}: ${result.error}`);
+      } else {
+        logger.info(`Password reset email sent to ${event.email}`);
+      }
     } catch (err) {
       logger.error('Failed to send password reset email', { err });
     }
-
-    logger.info(`[MOCK EMAIL] Sent password reset link to ${event.email}`);
   });
 
   eventBus.on('notification:send', async (event) => {

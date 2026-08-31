@@ -170,7 +170,7 @@ function PeriodicEvaluationDetailPageContent() {
           </div>
         </div>
 
-        {evaluation.status !== "APPROVED" && (user?.id === evaluation.pk?.supervisorId || user?.role === "SUPER_ADMIN") && (
+        {evaluation.status !== "APPROVED" && (user?.id === evaluation.pk?.supervisorId || user?.role === "SUPER_ADMIN" || user?.role === "UNIT_ADMIN") && (
           <Button
             className="bg-emerald-600 hover:bg-emerald-700"
             disabled={approveEvaluation.isPending}
@@ -428,7 +428,7 @@ function PeriodicEvaluationDetailPageContent() {
                 disabled={evaluation.status === "APPROVED"}
                 onChange={(e) => setFeedback(e.target.value)}
               />
-              {evaluation.status !== "APPROVED" && (user?.id === evaluation.pk?.supervisorId || user?.role === "SUPER_ADMIN") && (
+              {evaluation.status !== "APPROVED" && (user?.id === evaluation.pk?.supervisorId || user?.role === "SUPER_ADMIN" || user?.role === "UNIT_ADMIN") && (
                 <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={handleApprove}>
                   Simpan Catatan & Approve Evaluasi
                 </Button>

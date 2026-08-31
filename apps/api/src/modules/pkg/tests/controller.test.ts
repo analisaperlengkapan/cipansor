@@ -107,6 +107,16 @@ describe('pkg controller', () => {
       expect.objectContaining({ unitId: 'unit-bound-sd' })
     );
 
+    // Unassigned non-global user attempting query parameter injection
+    const { req: reqUnassigned, res: resUnassigned } = mockReqRes({
+      query: { unitId: 'unit-other' } as any,
+      user: { sub: 'u5', roleCode: 'SDIT_GURU', unitId: undefined } as any,
+    });
+    await run(controller.listEvaluations, reqUnassigned, resUnassigned);
+    expect(pkgService.listEvaluations).toHaveBeenCalledWith(
+      expect.objectContaining({ unitId: 'none' })
+    );
+
     // Campus service staff (Perawat)
     const { req: reqPerawat, res: resPerawat } = mockReqRes({
       query: { unitId: 'unit-other' } as any,

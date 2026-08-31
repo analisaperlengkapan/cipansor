@@ -11,18 +11,37 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { History, ArrowRight, Award, FileText, CheckCircle2 } from "lucide-react";
 
+function isGlobalRoleCode(roleCode?: string | null): boolean {
+  if (!roleCode) return false;
+  const globalRoles = [
+    "SUPER_ADMIN",
+    "YAYASAN_KETUA",
+    "YAYASAN_PEMBINA",
+    "YAYASAN_PENGAWAS",
+    "YAYASAN_SEKRETARIS",
+    "YAYASAN_BENDAHARA",
+    "YAYASAN_ANGGOTA",
+    "PESANTREN_PENGASUH",
+    "PESANTREN_DIREKTUR",
+  ];
+  return globalRoles.includes(roleCode);
+}
+
 function PKGHistoricalPageContent() {
   const { user } = useAuthStore();
   const [page, setPage] = useState(1);
   const limit = 10;
 
+  const isGlobal = isGlobalRoleCode(user?.primaryRoleCode || user?.role);
+  const effectiveUnitId = isGlobal ? undefined : (user?.unitId || undefined);
+
   const { data: evaluationsData, isLoading } = usePKGEvaluations({
     page,
     limit,
-    unitId: user?.unitId || undefined,
+    unitId: effectiveUnitId,
   });
   const { data: stats } = usePKGStatistics({
-    unitId: user?.unitId || undefined,
+    unitId: effectiveUnitId,
   });
 
   const formatScore = (val: number | string | null | undefined) => {

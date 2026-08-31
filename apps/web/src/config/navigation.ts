@@ -642,6 +642,11 @@ const yayasanNavigation: NavGroup[] = [
         icon: School,
       },
       {
+        title: "Manajemen Kinerja",
+        href: "/kinerja",
+        icon: ClipboardPenLine,
+      },
+      {
         title: "Penjaminan Mutu",
         href: "/quality",
         icon: Award,

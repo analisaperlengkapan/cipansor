@@ -239,6 +239,11 @@ export class EvaluationService {
       if (!evaluation) throw Errors.notFound('Evaluation');
       pkService.assertAccess(evaluation.pk, callerId, isAdmin, { supervisorOnly: true });
 
+      // Acquire an explicit row lock on the PerformanceAgreement row to serialize concurrent approvals for the same PK
+      if (typeof tx.$queryRaw === 'function') {
+        await tx.$queryRaw`SELECT id FROM "PerformanceAgreement" WHERE id = ${evaluation.pkId} FOR UPDATE`;
+      }
+
       // Atomic conditional update ensuring status is not already APPROVED
       const updateResult = await tx.pKEvaluation.updateMany({
         where: {

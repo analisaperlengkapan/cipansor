@@ -74,9 +74,10 @@ export const listEvaluations = asyncHandler(async (req: Request, res: Response) 
 
   const isGlobalRole = seesGlobalPKGEvaluations(req);
 
+  // Non-global users MUST use their assigned unitId from JWT. If an unassigned non-global user calls this endpoint, force an unmatchable unitId ('none') to prevent query parameter injection across units.
   const effectiveUnitId = isGlobalRole
     ? (unitId as string | undefined)
-    : (req.user?.unitId || (unitId as string | undefined));
+    : (req.user?.unitId || 'none');
 
   const result = await pkgService.listEvaluations({
     periodId: periodId as string,

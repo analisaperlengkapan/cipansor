@@ -10,6 +10,7 @@ import {
   updateBehaviorScoreSchema,
   createBehavioralValueSchema,
   updateBehavioralValueSchema,
+  approveEvaluationSchema,
 } from './evaluation.validation';
 
 function caller(req: Request): { id: string; isAdmin: boolean } {
@@ -63,8 +64,8 @@ export const updateBehaviorScore = asyncHandler(async (req: Request, res: Respon
 
 export const approveEvaluation = asyncHandler(async (req: Request, res: Response) => {
   const { id, isAdmin } = caller(req);
-  const feedback = typeof req.body?.feedback === 'string' ? req.body.feedback : undefined;
-  const evaluation = await evaluationService.approveEvaluation(req.params.id, id, isAdmin, feedback);
+  const body = approveEvaluationSchema.parse(req.body || {});
+  const evaluation = await evaluationService.approveEvaluation(req.params.id, id, isAdmin, body.feedback);
   res.json(ApiResponse.success(evaluation));
 });
 

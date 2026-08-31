@@ -3,7 +3,7 @@ import { MainLayout } from "@/components/layout";
 
 import Link from "next/link";
 import { useAuthStore } from "@/stores/auth";
-import { getEffectiveRole } from "@/lib/rbac";
+import { getEffectiveRole, getPrimaryRoleCode } from "@/lib/rbac";
 import { usePKList, usePerformanceDashboard } from "@/hooks/use-performance";
 import { usePlans } from "@/hooks/use-perencanaan";
 import {
@@ -34,6 +34,7 @@ import {
 function KinerjaHubPageContent() {
   const { user } = useAuthStore();
   const effectiveRole = user ? getEffectiveRole(user) || user.role : "GURU";
+  const primaryRoleCode = user ? getPrimaryRoleCode(user) || "" : "";
 
   const isExecutive = [
     "SUPER_ADMIN",
@@ -49,7 +50,21 @@ function KinerjaHubPageContent() {
     "SMPIT_KEPALA_SEKOLAH",
     "SMAQ_KEPALA_SEKOLAH",
     "UNIT_ADMIN",
-  ].includes(effectiveRole) || user?.role === "SUPER_ADMIN";
+  ].includes(effectiveRole) || [
+    "SUPER_ADMIN",
+    "YAYASAN_KETUA",
+    "YAYASAN_PEMBINA",
+    "YAYASAN_PENGAWAS",
+    "TKQ_ADMIN",
+    "SDIT_ADMIN",
+    "SMPIT_ADMIN",
+    "SMAQ_ADMIN",
+    "TKQ_KEPALA_SEKOLAH",
+    "SDIT_KEPALA_SEKOLAH",
+    "SMPIT_KEPALA_SEKOLAH",
+    "SMAQ_KEPALA_SEKOLAH",
+    "UNIT_ADMIN",
+  ].includes(primaryRoleCode) || user?.role === "SUPER_ADMIN";
 
   const { data: pks, isLoading: loadingPK } = usePKList();
   const { data: dashboard, isLoading: loadingDashboard } = usePerformanceDashboard(isExecutive);

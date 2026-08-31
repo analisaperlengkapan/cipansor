@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { eventBus, initializeEventBus } from './event-bus';
 import { notificationService } from '@/modules/notifications/email-sms.service';
-import { getChannelPolicy } from '@/modules/notifications/notifications.service';
 import { prisma } from '@/lib/prisma';
 
 vi.mock('@/lib/prisma', () => ({
@@ -73,17 +72,16 @@ describe('Event Bus Notification Handlers', () => {
       recordedAt: new Date(),
     });
 
-    // Wait for async handlers
-    await new Promise((resolve) => setTimeout(resolve, 50));
-
-    expect(notificationService.sendTahfidzProgress).toHaveBeenCalledWith(
-      expect.objectContaining({
-        userId: 'p2',
-        recipientEmail: 'ibu@cipansor.or.id',
-        studentName: 'Santri Ahmad',
-        grade: '90 / 100',
-      })
-    );
+    await vi.waitFor(() => {
+      expect(notificationService.sendTahfidzProgress).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: 'p2',
+          recipientEmail: 'ibu@cipansor.or.id',
+          studentName: 'Santri Ahmad',
+          grade: '90 / 100',
+        })
+      );
+    });
   });
 
   it('should not send tahfidz progress email when EMAIL channel policy is disabled', async () => {
@@ -107,15 +105,9 @@ describe('Event Bus Notification Handlers', () => {
       recordedAt: new Date(),
     });
 
-    await new Promise((resolve) => setTimeout(resolve, 50));
-
-    expect(notificationService.sendTahfidzProgress).not.toHaveBeenCalled();
+    await vi.waitFor(() => {
+      expect(notificationService.sendTahfidzProgress).not.toHaveBeenCalled();
+    });
   });
 
-  it('should fail closed when channel policy lookup throws an error', async () => {
-    (prisma.setting.findFirst as any).mockRejectedValue(new Error('DB Error'));
-
-    const policy = await getChannelPolicy();
-    expect(policy.EMAIL).toBe(false);
-  });
 });

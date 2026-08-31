@@ -189,19 +189,14 @@ export interface ChannelPolicy {
 const DEFAULT_CHANNEL_POLICY: ChannelPolicy = { EMAIL: true, SMS: true, WHATSAPP: true };
 
 export async function getChannelPolicy(): Promise<ChannelPolicy> {
-  try {
-    const setting = await prisma.setting.findFirst({
-      where: { key: 'NOTIFICATION_CHANNELS' },
-    });
-    if (!setting) {
-      return DEFAULT_CHANNEL_POLICY;
-    }
-    const value = setting.value as Partial<ChannelPolicy> | null;
-    return { ...DEFAULT_CHANNEL_POLICY, ...(value ?? {}) };
-  } catch {
-    // Fail closed on lookup errors to prevent unexpected external email dispatch
-    return { EMAIL: false, SMS: false, WHATSAPP: false };
+  const setting = await prisma.setting.findFirst({
+    where: { key: 'NOTIFICATION_CHANNELS' },
+  });
+  if (!setting) {
+    return DEFAULT_CHANNEL_POLICY;
   }
+  const value = setting.value as Partial<ChannelPolicy> | null;
+  return { ...DEFAULT_CHANNEL_POLICY, ...(value ?? {}) };
 }
 
 export async function updateChannelPolicy(policy: ChannelPolicy) {

@@ -26,7 +26,15 @@ import {
 } from '@/lib/realtime';
 import { prisma } from '@/lib/prisma';
 import { notificationService } from '@/modules/notifications/email-sms.service';
-import { getChannelPolicy } from '@/modules/notifications/notifications.service';
+import { getChannelPolicy, type ChannelPolicy } from '@/modules/notifications/notifications.service';
+
+async function getSafeChannelPolicy(): Promise<ChannelPolicy> {
+  try {
+    return await getChannelPolicy();
+  } catch {
+    return { EMAIL: false, SMS: false, WHATSAPP: false };
+  }
+}
 import { config } from '@/config';
 
 // Event Types
@@ -357,7 +365,7 @@ export function initializeEventBus(): void {
 
     // Send email progress report to parent if available and EMAIL channel is enabled
     try {
-      const policy = await getChannelPolicy();
+      const policy = await getSafeChannelPolicy();
       if (policy.EMAIL) {
         const studentWithParent = await prisma.student.findUnique({
           where: { id: event.studentId },
@@ -473,7 +481,7 @@ export function initializeEventBus(): void {
 
     // Send email receipt to parent if available and EMAIL channel is enabled
     try {
-      const policy = await getChannelPolicy();
+      const policy = await getSafeChannelPolicy();
       if (policy.EMAIL) {
         const studentWithParent = await prisma.student.findUnique({
           where: { id: event.studentId },

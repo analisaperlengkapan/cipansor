@@ -8,9 +8,9 @@ import {
   usePKList,
   useCreatePK,
   useProposePK,
+  useSupervisors,
 } from "@/hooks/use-performance";
 import { usePlans } from "@/hooks/use-perencanaan";
-import { useUsers } from "@/hooks/use-users";
 import {
   Card,
   CardContent,
@@ -64,7 +64,7 @@ function PerformanceAgreementListPageContent() {
   const { user } = useAuthStore();
   const { data: pks, isLoading } = usePKList();
   const { data: plans } = usePlans();
-  const { data: usersData } = useUsers();
+  const { data: supervisors } = useSupervisors();
 
   const createPK = useCreatePK();
   const proposePK = useProposePK();
@@ -141,7 +141,7 @@ function PerformanceAgreementListPageContent() {
                       <SelectValue placeholder="Pilih atasan langsung..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {usersData?.data
+                      {supervisors
                         ?.filter((u) => u.id !== user?.id)
                         .map((u) => (
                           <SelectItem key={u.id} value={u.id}>

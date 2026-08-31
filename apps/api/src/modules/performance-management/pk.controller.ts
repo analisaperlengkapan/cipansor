@@ -16,6 +16,11 @@ function caller(req: Request): { id: string; isAdmin: boolean } {
   return { id, isAdmin: isAdminRoleCode(req.user?.roleCode ?? '') };
 }
 
+export const listSupervisors = asyncHandler(async (req: Request, res: Response) => {
+  const supervisors = await pkService.getSupervisors();
+  res.json({ success: true, data: supervisors });
+});
+
 export const listPKs = asyncHandler(async (req: Request, res: Response) => {
   const { id } = caller(req);
   const pks = await pkService.getPKs(id, { status: req.query.status as string });

@@ -227,25 +227,27 @@ function KinerjaHubPageContent() {
           </CardContent>
         </Card>
 
-        <Card className="hover:border-blue-500 transition-all flex flex-col justify-between">
-          <CardHeader>
-            <div className="p-3 w-fit rounded-lg bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 mb-2">
-              <BarChart3 className="h-6 w-6" />
-            </div>
-            <CardTitle>Analytics & Strategy Map</CardTitle>
-            <CardDescription>
-              Visualisasi matriks korelasi alur RPJP &rarr; Renstra &rarr; RKA &rarr; PK & Laporan Konsolidasi.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <Link href="/kinerja/analytics">
-              <Button variant="outline" className="w-full border-blue-200 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-950">
-                Dashboard & Report
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
+        {isExecutive && (
+          <Card className="hover:border-blue-500 transition-all flex flex-col justify-between">
+            <CardHeader>
+              <div className="p-3 w-fit rounded-lg bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 mb-2">
+                <BarChart3 className="h-6 w-6" />
+              </div>
+              <CardTitle>Analytics & Strategy Map</CardTitle>
+              <CardDescription>
+                Visualisasi matriks korelasi alur RPJP &rarr; Renstra &rarr; RKA &rarr; PK & Laporan Konsolidasi.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <Link href="/kinerja/analytics">
+                <Button variant="outline" className="w-full border-blue-200 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-950">
+                  Dashboard & Report
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Strategic Cascading Shortcut Section */}

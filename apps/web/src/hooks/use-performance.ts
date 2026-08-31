@@ -285,6 +285,16 @@ export const useDeletePKIndicator = () => {
 // EVALUATIONS & SAFTI BEHAVIOR
 // ==========================================
 
+export const useSupervisors = () => {
+  return useQuery({
+    queryKey: ["performance-agreements", "supervisors"],
+    queryFn: async () => {
+      const res = await api.get("/performance-agreements/supervisors");
+      return res.data.data as Array<{ id: string; name: string; email: string }>;
+    },
+  });
+};
+
 export const useBehavioralValues = () => {
   return useQuery({
     queryKey: ["performance-agreements", "behavioral-values"],

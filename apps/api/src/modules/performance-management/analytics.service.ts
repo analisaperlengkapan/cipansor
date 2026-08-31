@@ -8,9 +8,19 @@ export class PKAnalyticsService {
       ? await prisma.unit.findMany({ where: { id: unitId } })
       : await prisma.unit.findMany();
 
-    let totalAgreements = 0;
-    let approvedAgreements = 0;
-    let totalEvaluations = 0;
+    // Include foundation agreements (where user.unitId is null)
+    const foundationPks = await prisma.performanceAgreement.findMany({
+      where: { user: { unitId: null } },
+      select: { status: true, overallScore: true, totalScore: true, behaviorScore: true },
+    });
+
+    const foundationEvCount = await prisma.pKEvaluation.count({
+      where: { pk: { user: { unitId: null } }, status: PlanStatus.APPROVED },
+    });
+
+    let totalAgreements = foundationPks.length;
+    let approvedAgreements = foundationPks.filter((p) => p.status === PlanStatus.APPROVED).length;
+    let totalEvaluations = foundationEvCount;
 
     const unitMetrics = await Promise.all(
       units.map(async (unit) => {
@@ -93,7 +103,7 @@ export class PKAnalyticsService {
     });
 
     const agreements = await prisma.performanceAgreement.findMany({
-      where: { user: { unitId } },
+      where: { user: { unitId }, status: PlanStatus.APPROVED },
       include: {
         user: { select: { id: true, name: true } },
         supervisor: { select: { id: true, name: true } },
@@ -115,28 +125,46 @@ export class PKAnalyticsService {
 
     const unitReports = await Promise.all(
       units.map(async (unit) => {
+        // Filter by evaluation period if month/year supplied
+        const evalWhere: any = { year: period.year, status: PlanStatus.APPROVED };
+        if (period.month) {
+          evalWhere.month = period.month;
+        }
+
+        const approvedEvaluations = await prisma.pKEvaluation.findMany({
+          where: {
+            pk: { user: { unitId: unit.id } },
+            ...evalWhere,
+          },
+          select: { overallScore: true, performanceScore: true, behaviorScore: true },
+        });
+
         const pks = await prisma.performanceAgreement.findMany({
-          where: { user: { unitId: unit.id } },
-          select: { status: true, overallScore: true, totalScore: true, behaviorScore: true },
+          where: {
+            user: { unitId: unit.id },
+            periodStart: { lte: new Date(period.year, (period.month || 12) - 1, 31) },
+            periodEnd: { gte: new Date(period.year, (period.month || 1) - 1, 1) },
+          },
+          select: { status: true },
         });
 
         const totalAgreements = pks.length;
-        const approvedPks = pks.filter((p) => p.status === PlanStatus.APPROVED);
-        const approvedAgreements = approvedPks.length;
+        const approvedAgreements = pks.filter((p) => p.status === PlanStatus.APPROVED).length;
+        const evalCount = approvedEvaluations.length;
 
         const avgScore =
-          approvedPks.length > 0
-            ? approvedPks.reduce((sum, pk) => sum + pk.overallScore, 0) / approvedPks.length
+          evalCount > 0
+            ? approvedEvaluations.reduce((sum, ev) => sum + ev.overallScore, 0) / evalCount
             : 0;
 
         const avgPerf =
-          approvedPks.length > 0
-            ? approvedPks.reduce((sum, pk) => sum + pk.totalScore, 0) / approvedPks.length
+          evalCount > 0
+            ? approvedEvaluations.reduce((sum, ev) => sum + ev.performanceScore, 0) / evalCount
             : 0;
 
         const avgBehav =
-          approvedPks.length > 0
-            ? approvedPks.reduce((sum, pk) => sum + pk.behaviorScore, 0) / approvedPks.length
+          evalCount > 0
+            ? approvedEvaluations.reduce((sum, ev) => sum + ev.behaviorScore, 0) / evalCount
             : 0;
 
         return {

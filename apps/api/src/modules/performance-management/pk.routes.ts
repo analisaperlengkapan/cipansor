@@ -32,6 +32,9 @@ router.get('/dashboard', leadership(), analyticsController.getDashboard);
 router.get('/dashboard/drilldown/:unitId', leadership(), analyticsController.getDrilldown);
 router.get('/reports/consolidated', leadership(), analyticsController.getConsolidatedReport);
 
+// Supervisors list for creating PK (authenticated users can fetch candidate supervisors)
+router.get('/supervisors', pkController.listSupervisors);
+
 // Master data: behavioral values (SAFTI)
 router.get('/settings/behavioral-values', evalController.listBehavioralValues);
 router.post(

@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { asyncHandler } from '@/middleware/error';
 import { ApiResponse } from '@/utils/response';
+import { seesAllUnits } from '@/utils/resolve-unit-id';
 import * as pkgService from './pkg.service';
 
 // =====================================
@@ -60,15 +61,7 @@ export const deletePeriod = asyncHandler(async (req: Request, res: Response) => 
 export const listEvaluations = asyncHandler(async (req: Request, res: Response) => {
   const { periodId, teacherId, unitId, status, page, limit } = req.query;
 
-  const isGlobalRole = [
-    'SUPER_ADMIN',
-    'YAYASAN_KETUA',
-    'YAYASAN_PEMBINA',
-    'YAYASAN_PENGAWAS',
-    'YAYASAN_SEKRETARIS',
-    'YAYASAN_BENDAHARA',
-    'YAYASAN_ANGGOTA',
-  ].includes(req.user?.roleCode || '');
+  const isGlobalRole = req.user ? seesAllUnits(req.user) : false;
 
   const effectiveUnitId = isGlobalRole
     ? (unitId as string | undefined)

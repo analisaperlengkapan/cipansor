@@ -69,4 +69,40 @@ describe('pkg controller', () => {
     await run(controller.updateEvaluationStatus, req, res);
     expect(pkgService.updateEvaluationStatus).toHaveBeenCalledWith('e1', 'DONE', 'user-1');
   });
+
+  it('listEvaluations: allows custom query unitId for foundation and cross-unit roles', async () => {
+    (pkgService.listEvaluations as any).mockResolvedValue({ data: [], pagination: {} });
+
+    // Foundation role
+    const { req: reqFoundation, res: resFoundation } = mockReqRes({
+      query: { unitId: 'unit-custom' } as any,
+      user: { sub: 'u1', roleCode: 'YAYASAN_KETUA' } as any,
+    });
+    await run(controller.listEvaluations, reqFoundation, resFoundation);
+    expect(pkgService.listEvaluations).toHaveBeenCalledWith(
+      expect.objectContaining({ unitId: 'unit-custom' })
+    );
+
+    // Cross-unit role
+    const { req: reqCross, res: resCross } = mockReqRes({
+      query: { unitId: 'unit-custom-2' } as any,
+      user: { sub: 'u2', roleCode: 'PESANTREN_PENGASUH' } as any,
+    });
+    await run(controller.listEvaluations, reqCross, resCross);
+    expect(pkgService.listEvaluations).toHaveBeenCalledWith(
+      expect.objectContaining({ unitId: 'unit-custom-2' })
+    );
+  });
+
+  it('listEvaluations: constrains unit-bound users to req.user.unitId', async () => {
+    (pkgService.listEvaluations as any).mockResolvedValue({ data: [], pagination: {} });
+    const { req, res } = mockReqRes({
+      query: { unitId: 'unit-other' } as any,
+      user: { sub: 'u3', roleCode: 'SDIT_GURU', unitId: 'unit-bound-sd' } as any,
+    });
+    await run(controller.listEvaluations, req, res);
+    expect(pkgService.listEvaluations).toHaveBeenCalledWith(
+      expect.objectContaining({ unitId: 'unit-bound-sd' })
+    );
+  });
 });

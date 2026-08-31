@@ -203,7 +203,7 @@ export const CorrespondenceService = {
             reviewerId: reviewerId,
             order: index + 1,
             status: 'PENDING',
-            isSigner: index === data.reviewerIds!.length - 1, // Last one is signer
+            isSigner: false, // Default to false so dynamic review-and-forward can take place
           })),
         });
       }
@@ -414,13 +414,11 @@ export const CorrespondenceService = {
     letterId: string,
     reviewerId: string,
     action: 'APPROVE' | 'REJECT',
-    notes?: string
+    notes?: string,
+    nextReviewerId?: string,
+    isFinalSigner?: boolean
   ) {
     const result = await prisma.$transaction(async (tx) => {
-      // The whole ladder is read, not just the caller's own rung: whether this
-      // reviewer may act at all depends on the rungs below them. The previous
-      // version fetched only the caller's row, which is why the signer could
-      // sign a draft the sekretaris had never opened.
       const letter = await tx.letter.findUnique({
         where: { id: letterId },
         select: { id: true, status: true, createdById: true, reviewers: true },
@@ -437,10 +435,81 @@ export const CorrespondenceService = {
 
       const mine = assertMayReview(letter.status, ladder, reviewerId);
 
-      const nextStatus =
+      let updatedLadder: ReviewerRung[] = [...ladder];
+
+      if (action === 'APPROVE') {
+        if (nextReviewerId === reviewerId) {
+          throw new Error('Tidak dapat meneruskan surat kepada diri sendiri.');
+        }
+
+        // Validate that an approval specifies either a nextReviewerId, isFinalSigner, or an existing signer
+        const hasExistingSigner = updatedLadder.some((r) => r.isSigner);
+        if (!nextReviewerId && !isFinalSigner && !hasExistingSigner) {
+          throw new Error('Harus memilih pejabat penerus atau menandai sebagai penandatangan akhir.');
+        }
+
+        // If approving and nextReviewerId is provided, add or update the next reviewer dynamically
+        if (nextReviewerId) {
+          const currentMaxOrder = Math.max(...letter.reviewers.map((r) => r.order), mine.order, 0);
+          const newOrder = currentMaxOrder + 1;
+          const existingNext = letter.reviewers.find((r) => r.reviewerId === nextReviewerId);
+
+          if (existingNext) {
+            const updatedIsSigner = existingNext.isSigner || !!isFinalSigner;
+            // If already in ladder, reset status to PENDING, clear reviewedAt, move order to end of sequence, and preserve/update isSigner
+            await tx.letterReviewer.update({
+              where: { id: existingNext.id },
+              data: {
+                order: newOrder,
+                status: 'PENDING',
+                reviewedAt: null,
+                isSigner: updatedIsSigner,
+              },
+            });
+            updatedLadder = updatedLadder.map((r) =>
+              r.id === existingNext.id
+                ? { ...r, order: newOrder, status: 'PENDING', isSigner: updatedIsSigner }
+                : r
+            );
+          } else {
+            const newRung = await tx.letterReviewer.create({
+              data: {
+                letterId,
+                reviewerId: nextReviewerId,
+                order: newOrder,
+                status: 'PENDING',
+                isSigner: !!isFinalSigner,
+              },
+            });
+            updatedLadder.push({
+              id: newRung.id,
+              reviewerId: nextReviewerId,
+              order: newOrder,
+              status: 'PENDING',
+              isSigner: !!isFinalSigner,
+            });
+          }
+        } else if (isFinalSigner && !mine.isSigner) {
+          // Mark current reviewer as signer if specified
+          updatedLadder = updatedLadder.map((r) =>
+            r.reviewerId === reviewerId ? { ...r, isSigner: true } : r
+          );
+          await tx.letterReviewer.update({
+            where: { id: mine.id },
+            data: { isSigner: true },
+          });
+        }
+      }
+
+      let nextStatus =
         action === 'APPROVE'
-          ? statusAfterApproval(ladder, reviewerId)
+          ? statusAfterApproval(updatedLadder, reviewerId)
           : DbLetterStatus.REVISION_NEEDED;
+
+      // Review approval alone must NEVER set status directly to SIGNED — signing requires E-Sign passphrase via esign.service.
+      if (action === 'APPROVE' && nextStatus === DbLetterStatus.SIGNED) {
+        nextStatus = DbLetterStatus.READY_TO_SIGN;
+      }
 
       await tx.letterReviewer.update({
         where: { id: mine.id },
@@ -465,12 +534,10 @@ export const CorrespondenceService = {
             : nextStatus === DbLetterStatus.SIGNED
               ? LetterFlowAction.SIGNED
               : LetterFlowAction.APPROVED,
-        // Returning a draft is addressed to its author; the history should say
-        // who it went back to, not only who sent it back.
-        targetId: action === 'REJECT' ? letter.createdById : null,
+        targetId: action === 'REJECT' ? letter.createdById : nextReviewerId || null,
         fromStatus: letter.status,
         toStatus: nextStatus,
-        note: notes,
+        note: notes ? (nextReviewerId ? `${notes} [Diteruskan]` : notes) : (nextReviewerId ? 'Diteruskan ke peninjau berikutnya' : null),
       });
 
       return {
@@ -501,6 +568,22 @@ export const CorrespondenceService = {
       });
     }
 
+    // Post-commit: when a letter is forwarded to a next reviewer, notify that official.
+    if (action === 'APPROVE' && nextReviewerId) {
+      const letter = await prisma.letter.findUnique({
+        where: { id: letterId },
+        select: { subject: true, unitId: true },
+      });
+      eventBus.emit('notification:send', {
+        userId: nextReviewerId,
+        unitId: letter?.unitId,
+        type: 'REMINDER',
+        title: 'Konsep Surat Perlu Ditinjau',
+        message: `Konsep surat "${letter?.subject ?? ''}" diteruskan kepada Anda untuk ditinjau.`,
+        data: { letterId, link: `/e-office/letter/${letterId}` },
+      });
+    }
+
     // Post-commit: when a letter has been signed, notify its creator so they can
     // proceed (dispatch/archive). Done outside the transaction so the listener
     // sees the committed SIGNED status.
@@ -510,7 +593,6 @@ export const CorrespondenceService = {
         select: { createdById: true, unitId: true, subject: true, letterNumber: true },
       });
       if (letter) {
-        const { eventBus } = await import('@/lib/event-bus');
         eventBus.emit('notification:send', {
           userId: letter.createdById,
           unitId: letter.unitId,
@@ -643,24 +725,46 @@ export const CorrespondenceService = {
       );
     }
 
-    const disposition = await prisma.$transaction(async (tx) => {
-      const created = await tx.disposition.create({
-        data: {
-          letterId: data.letterId,
-          senderId: data.senderId,
-          recipientId: data.recipientId,
-          instruction: data.instruction,
-          deadline: data.deadline ? new Date(data.deadline) : null,
-          parentDispositionId: data.parentDispositionId,
-          status: 'PENDING',
-          notes: data.notes,
-        },
-      });
+    const recipients = data.recipientIds && data.recipientIds.length > 0
+      ? data.recipientIds
+      : data.recipientId
+        ? [data.recipientId]
+        : [];
 
-      // The transition an empty `if (status === 'SENT' || 'ARCHIVED') {}` stub
-      // used to stand in for, so no letter ever left the status it was created
-      // with. Only incoming letters are disposed; an outgoing letter's chain
-      // is its reviewers.
+    if (recipients.length === 0) {
+      throw new Error('Minimal satu penerima disposisi harus ditentukan.');
+    }
+
+    const createdDispositions = await prisma.$transaction(async (tx) => {
+      const results = [];
+      for (const targetRecipientId of recipients) {
+        const created = await tx.disposition.create({
+          data: {
+            letterId: data.letterId,
+            senderId: data.senderId,
+            recipientId: targetRecipientId,
+            instruction: data.instruction,
+            deadline: data.deadline ? new Date(data.deadline) : null,
+            parentDispositionId: data.parentDispositionId,
+            status: 'PENDING',
+            notes: data.notes,
+          },
+        });
+
+        await recordFlow(tx, {
+          letterId: letter.id,
+          actorId: data.senderId,
+          action: LetterFlowAction.DISPOSED,
+          targetId: targetRecipientId,
+          fromStatus: letter.status,
+          toStatus:
+            letter.direction === 'INCOMING' ? DbLetterStatus.DISPOSED : letter.status,
+          note: data.instruction,
+        });
+
+        results.push(created);
+      }
+
       if (
         letter.direction === 'INCOMING' &&
         letter.status !== DbLetterStatus.DISPOSED
@@ -671,35 +775,26 @@ export const CorrespondenceService = {
         });
       }
 
-      await recordFlow(tx, {
-        letterId: letter.id,
-        actorId: data.senderId,
-        action: LetterFlowAction.DISPOSED,
-        targetId: data.recipientId,
-        fromStatus: letter.status,
-        toStatus:
-          letter.direction === 'INCOMING' ? DbLetterStatus.DISPOSED : letter.status,
-        note: data.instruction,
+      return results;
+    });
+
+    // Notify All Recipients
+    for (const disp of createdDispositions) {
+      eventBus.emit('notification:send', {
+        userId: disp.recipientId,
+        type: 'REMINDER',
+        title: 'Disposisi Baru',
+        message: `Anda menerima disposisi baru: "${data.instruction}"`,
+        data: {
+          entityId: disp.id,
+          entityType: 'DISPOSITION',
+          letterId: letter.id,
+          link: `/e-office/letter/${letter.id}`,
+        },
       });
+    }
 
-      return created;
-    });
-
-    // Notify Recipient
-    eventBus.emit('notification:send', {
-      userId: data.recipientId,
-      type: 'REMINDER',
-      title: 'Disposisi Baru',
-      message: `Anda menerima disposisi baru: "${data.instruction}"`,
-      data: {
-        entityId: disposition.id,
-        entityType: 'DISPOSITION',
-        letterId: letter.id,
-        link: `/e-office/letter/${letter.id}`,
-      },
-    });
-
-    return disposition;
+    return createdDispositions;
   },
 
   async updateDispositionStatus(id: string, status: string, notes?: string, userId?: string) {
@@ -853,6 +948,66 @@ export const CorrespondenceService = {
         urgentLetters,
       },
       chart: Array.from(chartMap.values()),
+    };
+  },
+
+  /**
+   * Public verification for signed letters via token
+   */
+  async verifyPublicLetter(token: string) {
+    const signature = await prisma.letterSignature.findUnique({
+      where: { verificationToken: token },
+      include: {
+        signer: {
+          select: {
+            name: true,
+            email: true,
+            teacher: { select: { nip: true } },
+            staff: { select: { nip: true, position: true } },
+          },
+        },
+        letter: {
+          select: {
+            id: true,
+            letterNumber: true,
+            agendaNumber: true,
+            subject: true,
+            date: true,
+            status: true,
+            unit: { select: { name: true } },
+          },
+        },
+      },
+    });
+
+    if (!signature) {
+      return {
+        isValid: false,
+        reason: 'Token verifikasi surat tidak ditemukan atau tidak valid.',
+      };
+    }
+
+    const isRevoked = !!signature.revokedAt;
+
+    return {
+      isValid: !isRevoked,
+      isRevoked,
+      revokedAt: signature.revokedAt,
+      signedAt: signature.signedAt,
+      algorithm: signature.algorithm,
+      digest: signature.digest,
+      signer: {
+        name: signature.signer.name,
+        nip: signature.signer.teacher?.nip || signature.signer.staff?.nip || '-',
+        position: signature.signer.staff?.position || 'Pejabat / Guru Yayasan',
+      },
+      letter: {
+        letterNumber: signature.letter.letterNumber || signature.letter.agendaNumber || '-',
+        subject: signature.letter.subject,
+        date: signature.letter.date,
+        status: signature.letter.status,
+        unitName: signature.letter.unit.name,
+      },
     };
   },
 };

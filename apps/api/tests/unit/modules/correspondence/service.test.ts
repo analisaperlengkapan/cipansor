@@ -118,7 +118,7 @@ describe('CorrespondenceService', () => {
       );
     });
 
-    it('signs the letter when the signer approves last', async () => {
+    it('advances status to READY_TO_SIGN when the signer approves last in processReview', async () => {
       vi.mocked(prisma.letter.findUnique).mockResolvedValue({
         id: 'letter-1',
         status: 'READY_TO_SIGN',
@@ -138,7 +138,7 @@ describe('CorrespondenceService', () => {
       expect(prisma.letter.update).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { id: 'letter-1' },
-          data: { status: 'SIGNED' },
+          data: { status: 'READY_TO_SIGN' },
         })
       );
     });
@@ -239,7 +239,8 @@ describe('CorrespondenceService', () => {
         { id: 'user-1', roleCode: 'SUPER_ADMIN', unitId: null } as any
       );
 
-      expect(result).toHaveProperty('id', 'disp-1');
+      expect(result).toHaveLength(1);
+      expect(result[0]).toHaveProperty('id', 'disp-1');
       expect(prisma.letter.update).toHaveBeenCalledWith({
         where: { id: 'letter-1' },
         data: { status: 'DISPOSED' },

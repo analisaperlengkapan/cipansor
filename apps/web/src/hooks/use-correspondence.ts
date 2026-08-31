@@ -73,14 +73,20 @@ export function useCorrespondence(unitId?: string) {
       id,
       action,
       notes,
+      nextReviewerId,
+      isFinalSigner,
     }: {
       id: string;
       action: "APPROVE" | "REJECT";
       notes?: string;
+      nextReviewerId?: string;
+      isFinalSigner?: boolean;
     }) => {
       const response = await api.post(`/correspondence/letters/${id}/review`, {
         action,
         notes,
+        nextReviewerId,
+        isFinalSigner,
       });
       return response.data;
     },

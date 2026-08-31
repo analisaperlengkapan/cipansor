@@ -37,15 +37,21 @@ export const createLetterSchema = z.object({
 export const reviewLetterSchema = z.object({
   action: z.enum(['APPROVE', 'REJECT']),
   notes: z.string().optional(),
+  nextReviewerId: z.string().uuid().optional(),
+  isFinalSigner: z.boolean().optional(),
 });
 
 export const createDispositionSchema = z.object({
   letterId: z.string().uuid(),
-  recipientId: z.string().uuid(),
+  recipientId: z.string().uuid().optional(),
+  recipientIds: z.array(z.string().uuid()).optional(),
   instruction: z.string().min(1),
   deadline: z.string().datetime().optional(),
   parentDispositionId: z.string().uuid().optional(),
   notes: z.string().optional(),
+}).refine((data) => data.recipientId || (data.recipientIds && data.recipientIds.length > 0), {
+  message: 'Harus memilih minimal satu penerima disposisi',
+  path: ['recipientIds'],
 });
 
 export const updateDispositionStatusSchema = z.object({

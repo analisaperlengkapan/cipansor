@@ -12,6 +12,12 @@ import {
 
 const router = Router();
 
+// Public route for letter verification
+// Note: defaultLimiter is already applied globally in app.ts for non-dev/test environments.
+// Omitting local defaultLimiter prevents double-counting against rate limit counters in production.
+router.get('/public/verify', CorrespondenceController.verifyPublic);
+router.get('/public/verify/:token', CorrespondenceController.verifyPublic);
+
 router.use(authenticate);
 
 router.post('/letters', validate(createLetterSchema), CorrespondenceController.create);

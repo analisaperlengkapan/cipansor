@@ -771,10 +771,31 @@ export default function LetterDetailPage({
                 const openForReview =
                   letter.status === "PENDING_REVIEW" ||
                   letter.status === "READY_TO_SIGN";
-                const myTurn =
-                  !!mine && (turn as any)?.reviewerId === user?.id;
 
                 if (!mine || !openForReview) return null;
+
+                // When the letter is READY_TO_SIGN and current user is a designated signer,
+                // offer the sign action regardless of whether their review row was already marked APPROVED.
+                if (letter.status === "READY_TO_SIGN" && mine.isSigner) {
+                  return (
+                    <div className="pt-4 border-t space-y-3">
+                      <p className="text-xs font-medium text-muted-foreground mb-2">
+                        Penandatanganan
+                      </p>
+                      <Button
+                        className="w-full bg-green-600 hover:bg-green-700"
+                        size="sm"
+                        onClick={() => setSignOpen(true)}
+                      >
+                        <PenLine className="mr-2 h-4 w-4" />
+                        Tandatangani Dokumen
+                      </Button>
+                    </div>
+                  );
+                }
+
+                const myTurn =
+                  !!mine && (turn as any)?.reviewerId === user?.id;
 
                 if (!myTurn) {
                   return (

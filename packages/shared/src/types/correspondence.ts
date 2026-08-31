@@ -215,3 +215,26 @@ export interface AgendaNumberConfig {
   format: string;
   resetPeriod: string;
 }
+
+// Public Verification DTO
+export interface PublicLetterVerificationResult {
+  isValid: boolean;
+  isRevoked?: boolean;
+  revokedAt?: string | Date | null;
+  signedAt?: string | Date;
+  algorithm?: string;
+  digest?: string;
+  signer?: {
+    name: string;
+    nip: string;
+    position: string;
+  };
+  letter?: {
+    letterNumber: string;
+    subject: string;
+    date: string | Date;
+    status: string;
+    unitName: string;
+  };
+  reason?: string;
+}

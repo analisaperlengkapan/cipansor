@@ -21,28 +21,7 @@ import {
 } from "lucide-react";
 import { safeFormat } from "@/lib/date";
 import { id as localeId } from "date-fns/locale";
-
-interface VerificationResult {
-  isValid: boolean;
-  isRevoked?: boolean;
-  revokedAt?: string | null;
-  signedAt?: string;
-  algorithm?: string;
-  digest?: string;
-  signer?: {
-    name: string;
-    nip: string;
-    position: string;
-  };
-  letter?: {
-    letterNumber: string;
-    subject: string;
-    date: string;
-    status: string;
-    unitName: string;
-  };
-  reason?: string;
-}
+import type { PublicLetterVerificationResult } from "@cipansor/shared";
 
 function PublicVerifyContent() {
   const searchParams = useSearchParams();
@@ -50,7 +29,7 @@ function PublicVerifyContent() {
 
   const [tokenInput, setTokenInput] = useState(tokenFromUrl);
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<VerificationResult | null>(null);
+  const [result, setResult] = useState<PublicLetterVerificationResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Simple Captcha Anti-Spam

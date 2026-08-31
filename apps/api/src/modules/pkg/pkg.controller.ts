@@ -58,10 +58,11 @@ export const deletePeriod = asyncHandler(async (req: Request, res: Response) => 
 
 /** GET /api/pkg/evaluations */
 export const listEvaluations = asyncHandler(async (req: Request, res: Response) => {
-  const { periodId, teacherId, status, page, limit } = req.query;
+  const { periodId, teacherId, unitId, status, page, limit } = req.query;
   const result = await pkgService.listEvaluations({
     periodId: periodId as string,
     teacherId: teacherId as string,
+    unitId: unitId as string,
     status: status as string,
     page: page ? parseInt(page as string) : 1,
     limit: limit ? parseInt(limit as string) : 20,

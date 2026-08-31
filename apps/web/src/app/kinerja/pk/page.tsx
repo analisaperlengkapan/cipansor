@@ -84,6 +84,12 @@ function PerformanceAgreementListPageContent() {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
+
+    if (new Date(formData.periodEnd) < new Date(formData.periodStart)) {
+      alert("Tanggal akhir periode tidak boleh lebih awal dari tanggal mulai!");
+      return;
+    }
+
     await createPK.mutateAsync({
       userId: user.id,
       supervisorId: formData.supervisorId || undefined,

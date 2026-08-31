@@ -25,6 +25,12 @@ function PKGHistoricalPageContent() {
     unitId: user?.unitId || undefined,
   });
 
+  const formatScore = (val: any) => {
+    if (val === null || val === undefined) return "-";
+    const num = typeof val === "number" ? val : Number(val);
+    return isNaN(num) ? "-" : num.toFixed(1);
+  };
+
   const evaluations = evaluationsData?.data || [];
   const pagination = evaluationsData?.pagination;
   const totalRecords = pagination?.total ?? evaluations.length;
@@ -125,8 +131,8 @@ function PKGHistoricalPageContent() {
                   <TableRow key={item.id}>
                     <TableCell className="font-semibold">{item.teacher?.user?.name || "Guru"}</TableCell>
                     <TableCell>{item.period?.name || "-"}</TableCell>
-                    <TableCell>{item.pedagogikScore !== undefined ? item.pedagogikScore.toFixed(1) : "-"}</TableCell>
-                    <TableCell className="font-bold text-emerald-700">{item.totalScore !== undefined ? item.totalScore.toFixed(1) : "-"}</TableCell>
+                    <TableCell>{formatScore(item.pedagogikScore)}</TableCell>
+                    <TableCell className="font-bold text-emerald-700">{formatScore(item.totalScore)}</TableCell>
                     <TableCell>
                       <Badge variant="outline" className="border-purple-300 text-purple-700">
                         {item.grade || "-"}

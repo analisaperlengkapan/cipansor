@@ -63,7 +63,7 @@ export const updateBehaviorScore = asyncHandler(async (req: Request, res: Respon
 
 export const approveEvaluation = asyncHandler(async (req: Request, res: Response) => {
   const { id, isAdmin } = caller(req);
-  const feedback = typeof req.body.feedback === 'string' ? req.body.feedback : undefined;
+  const feedback = typeof req.body?.feedback === 'string' ? req.body.feedback : undefined;
   const evaluation = await evaluationService.approveEvaluation(req.params.id, id, isAdmin, feedback);
   res.json(ApiResponse.success(evaluation));
 });

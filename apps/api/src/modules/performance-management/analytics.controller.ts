@@ -1,52 +1,17 @@
 import { Request, Response } from 'express';
 import { asyncHandler, Errors } from '@/middleware/error';
 import { ApiResponse } from '@/utils/response';
+import { isFoundationScopedRole, isLeadershipRole } from '@/utils/resolve-unit-id';
 import { pkAnalyticsService } from './analytics.service';
-import { RoleCode } from '@prisma/client';
 
 /** Roles that have cross-cutting or unit-level leadership access to analytics. */
 function isLeadershipUser(req: Request): boolean {
-  const roleCode = req.user?.roleCode ?? '';
-  const leadershipRoles = [
-    RoleCode.SUPER_ADMIN,
-    RoleCode.YAYASAN_KETUA,
-    RoleCode.YAYASAN_PEMBINA,
-    RoleCode.YAYASAN_PENGAWAS,
-    RoleCode.YAYASAN_SEKRETARIS,
-    RoleCode.YAYASAN_BENDAHARA,
-    RoleCode.YAYASAN_ANGGOTA,
-    RoleCode.TKQ_ADMIN,
-    RoleCode.SDIT_ADMIN,
-    RoleCode.SMPIT_ADMIN,
-    RoleCode.SMAQ_ADMIN,
-    RoleCode.TKQ_KEPALA_SEKOLAH,
-    RoleCode.SDIT_KEPALA_SEKOLAH,
-    RoleCode.SMPIT_KEPALA_SEKOLAH,
-    RoleCode.SMAQ_KEPALA_SEKOLAH,
-    RoleCode.PESANTREN_PENGASUH,
-    RoleCode.PESANTREN_DIREKTUR,
-    RoleCode.PT_REKTOR,
-    RoleCode.PT_WAKIL_REKTOR,
-    RoleCode.PT_DEKAN,
-    RoleCode.PT_KAPRODI,
-    'UNIT_ADMIN',
-  ];
-  return leadershipRoles.includes(roleCode as RoleCode);
+  return isLeadershipRole(req.user?.roleCode);
 }
 
 /** Roles that have foundation-level (global) access to all units. */
 function isFoundationGlobalLeadership(req: Request): boolean {
-  const roleCode = req.user?.roleCode ?? '';
-  const globalRoles: RoleCode[] = [
-    RoleCode.SUPER_ADMIN,
-    RoleCode.YAYASAN_KETUA,
-    RoleCode.YAYASAN_PEMBINA,
-    RoleCode.YAYASAN_PENGAWAS,
-    RoleCode.YAYASAN_SEKRETARIS,
-    RoleCode.YAYASAN_BENDAHARA,
-    RoleCode.YAYASAN_ANGGOTA,
-  ];
-  return globalRoles.includes(roleCode as RoleCode);
+  return isFoundationScopedRole(req.user?.roleCode);
 }
 
 export const getDashboard = asyncHandler(async (req: Request, res: Response) => {

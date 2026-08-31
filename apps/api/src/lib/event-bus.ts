@@ -25,6 +25,7 @@ import {
   type DashboardAlert,
 } from '@/lib/realtime';
 import { prisma } from '@/lib/prisma';
+import { notificationService } from '@/modules/notifications/email-sms.service';
 
 // Event Types
 export interface AppEvents {
@@ -352,6 +353,39 @@ export function initializeEventBus(): void {
     };
     broadcastTahfidz(wsEvent);
 
+    // Send email progress report to parent if available
+    try {
+      const studentWithParent = await prisma.student.findUnique({
+        where: { id: event.studentId },
+        include: {
+          user: { select: { id: true, name: true, email: true } },
+          parents: {
+            include: { parent: { select: { id: true, name: true, email: true } } },
+          },
+        },
+      });
+
+      if (studentWithParent) {
+        const primaryParent = studentWithParent.parents.find((p) => p.isPrimary)?.parent || studentWithParent.user;
+        if (primaryParent?.email) {
+          await notificationService.sendTahfidzProgress({
+            userId: primaryParent.id,
+            recipientEmail: primaryParent.email,
+            parentName: primaryParent.name || 'Wali Santri',
+            studentName: event.studentName,
+            surah: event.surahName,
+            verses: `${event.ayahStart}-${event.ayahEnd}`,
+            juz: event.juz || 1,
+            grade: event.score ? `${event.score} / 100` : 'Mumtaz',
+            teacherName: 'Pengampu Tahfidz',
+            date: event.recordedAt ? new Date(event.recordedAt).toLocaleDateString('id-ID') : new Date().toLocaleDateString('id-ID'),
+          });
+        }
+      }
+    } catch (err) {
+      logger.error('Failed to send tahfidz email notification', { err });
+    }
+
     // Check for milestones
     await checkTahfidzMilestones(event.studentId, event.unitId);
 
@@ -423,6 +457,38 @@ export function initializeEventBus(): void {
       message: `Pembayaran sebesar Rp ${event.amount.toLocaleString('id-ID')} telah diterima`,
       data: { invoiceId: event.invoiceId, amount: event.amount },
     });
+
+    // Send email receipt to parent if available
+    try {
+      const studentWithParent = await prisma.student.findUnique({
+        where: { id: event.studentId },
+        include: {
+          user: { select: { id: true, name: true, email: true } },
+          parents: {
+            include: { parent: { select: { id: true, name: true, email: true } } },
+          },
+        },
+      });
+
+      if (studentWithParent) {
+        const primaryParent = studentWithParent.parents.find((p) => p.isPrimary)?.parent || studentWithParent.user;
+        if (primaryParent?.email) {
+          await notificationService.sendPaymentReceipt({
+            userId: primaryParent.id,
+            recipientEmail: primaryParent.email,
+            parentName: primaryParent.name || 'Wali Santri',
+            studentName: event.studentName,
+            receiptNumber: event.id,
+            amount: `Rp ${event.amount.toLocaleString('id-ID')}`,
+            paymentDate: new Date(event.paidAt).toLocaleDateString('id-ID'),
+            paymentMethod: event.paymentMethod,
+            description: `Pembayaran Tagihan #${event.invoiceId}`,
+          });
+        }
+      }
+    } catch (err) {
+      logger.error('Failed to send payment receipt email notification', { err });
+    }
 
     // Invalidate dashboard cache
     await invalidateDashboardCache(event.unitId);
@@ -512,11 +578,24 @@ export function initializeEventBus(): void {
       email: event.email
     });
 
-    // In a real production system, this would push a job into BullMQ, Redis, or an SMTP API
-    // e.g., await emailService.sendTemplate('password-reset', { token: event.token, to: event.email });
+    try {
+      await notificationService.send({
+        userId: event.userId,
+        recipientEmail: event.email,
+        channel: 'EMAIL',
+        type: 'PASSWORD_RESET',
+        title: 'Reset Password - Cipansor',
+        message: event.message,
+        templateKey: 'passwordReset',
+        templateData: {
+          name: event.title || 'Pengguna',
+          resetLink: event.data?.resetLink || `https://portal.cipansor.or.id/reset-password?token=${event.token}`,
+        },
+      });
+    } catch (err) {
+      logger.error('Failed to send password reset email', { err });
+    }
 
-    // For this boilerplate, we log a secure redaction statement so it satisfies the test contract
-    // without leaking the token to persistent standard logs if possible.
     logger.info(`[MOCK EMAIL] Sent password reset link to ${event.email}`);
   });
 

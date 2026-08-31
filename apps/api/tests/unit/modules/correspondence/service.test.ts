@@ -28,6 +28,7 @@ vi.mock('../../../../src/lib/prisma', () => ({
     },
     disposition: {
       create: vi.fn(),
+      updateMany: vi.fn(),
     },
     // Append-only history; the transaction handle is this same mocked client.
     letterFlowEvent: {
@@ -157,6 +158,116 @@ describe('CorrespondenceService', () => {
         CorrespondenceService.processReview('letter-1', 'signer', 'APPROVE')
       ).rejects.toThrow(/Belum giliran/);
       expect(prisma.letter.update).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Resubmit and archive', () => {
+    const accessRow = (over: Record<string, unknown>) => ({
+      id: 'letter-1',
+      unitId: 'unit-1',
+      createdById: 'creator-1',
+      status: 'DRAFT',
+      direction: 'OUTGOING',
+      reviewers: [],
+      recipients: [],
+      dispositions: [],
+      ...over,
+    });
+    const admin = { id: 'creator-1', roleCode: 'SUPER_ADMIN', unitId: null };
+
+    it('clears every paraf when a returned draft is resubmitted', async () => {
+      vi.mocked(prisma.letter.findUnique).mockResolvedValue(
+        accessRow({
+          status: 'REVISION_NEEDED',
+          reviewers: [
+            { id: 'r1', reviewerId: 'sekretaris', order: 1, status: 'APPROVED', isSigner: false },
+            { id: 'r2', reviewerId: 'ketua', order: 2, status: 'PENDING', isSigner: true },
+          ],
+        }) as any
+      );
+      vi.mocked(prisma.letterReviewer.updateMany).mockResolvedValue({ count: 2 } as any);
+      vi.mocked(prisma.letter.update).mockResolvedValue({} as any);
+
+      const result = await CorrespondenceService.resubmitLetter('letter-1', admin as any);
+
+      expect(prisma.letterReviewer.updateMany).toHaveBeenCalledWith({
+        where: { letterId: 'letter-1' },
+        data: { status: 'PENDING', reviewedAt: null },
+      });
+      expect(result.status).toBe('PENDING_REVIEW');
+    });
+
+    it('archives a disposed letter and closes open dispositions', async () => {
+      vi.mocked(prisma.letter.findUnique).mockResolvedValue(
+        accessRow({ status: 'DISPOSED', direction: 'INCOMING' }) as any
+      );
+      vi.mocked(prisma.disposition.updateMany).mockResolvedValue({ count: 1 } as any);
+      vi.mocked(prisma.letter.update).mockResolvedValue({} as any);
+
+      const result = await CorrespondenceService.archiveLetter('letter-1', admin as any);
+
+      expect(prisma.disposition.updateMany).toHaveBeenCalledWith({
+        where: { letterId: 'letter-1', status: { not: 'COMPLETED' } },
+        data: expect.objectContaining({ status: 'COMPLETED' }),
+      });
+      expect(result.status).toBe('ARCHIVED');
+    });
+  });
+
+  describe('Dispositions', () => {
+    it('creates a disposition and advances incoming letter status to DISPOSED', async () => {
+      vi.mocked(prisma.letter.findUnique).mockResolvedValue({
+        id: 'letter-1',
+        unitId: 'unit-1',
+        createdById: 'creator-1',
+        status: 'SIGNED',
+        direction: 'INCOMING',
+        reviewers: [],
+        recipients: [],
+        dispositions: [],
+      } as any);
+      vi.mocked(prisma.disposition.create).mockResolvedValue({ id: 'disp-1', recipientId: 'user-2' } as any);
+      vi.mocked(prisma.letter.update).mockResolvedValue({} as any);
+
+      const result = await CorrespondenceService.createDisposition(
+        {
+          letterId: 'letter-1',
+          senderId: 'user-1',
+          recipientId: 'user-2',
+          instruction: 'Tolong tindak lanjuti',
+        },
+        { id: 'user-1', roleCode: 'SUPER_ADMIN', unitId: null } as any
+      );
+
+      expect(result).toHaveProperty('id', 'disp-1');
+      expect(prisma.letter.update).toHaveBeenCalledWith({
+        where: { id: 'letter-1' },
+        data: { status: 'DISPOSED' },
+      });
+    });
+  });
+
+  describe('getLetterById', () => {
+    it('selects signatures and verifies access', async () => {
+      const row = {
+        id: 'letter-1',
+        unitId: 'unit-1',
+        createdById: 'creator-1',
+        status: 'SIGNED',
+        reviewers: [],
+        recipients: [],
+        dispositions: [],
+      };
+      vi.mocked(prisma.letter.findUnique).mockResolvedValue(row as any);
+
+      await CorrespondenceService.getLetterById('letter-1', {
+        userId: 'u1',
+        roleCode: 'SUPER_ADMIN',
+        unitId: null,
+      } as any);
+
+      const detailCall = vi.mocked(prisma.letter.findUnique).mock.calls.at(-1)![0] as any;
+      expect(detailCall.include.signatures).toBeDefined();
     });
   });
 });

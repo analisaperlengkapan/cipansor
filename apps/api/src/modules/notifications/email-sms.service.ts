@@ -338,7 +338,7 @@ const templates = {
         `
         ${data.priority === 'HIGH' ? '<div style="background-color: #dc2626; color: white; padding: 8px 12px; text-align: center; font-weight: bold; border-radius: 4px; margin-bottom: 16px;">PENGUMUMAN PENTING</div>' : ''}
         <h2 style="color: #1e3a8a; margin-top: 0;">${escapeHtml(data.title)}</h2>
-        <div style="line-height: 1.6; margin: 16px 0;">${data.content}</div>
+        <div style="line-height: 1.6; margin: 16px 0;">${escapeHtml(data.content)}</div>
         <p style="margin-top: 24px;">Salam,<br/><strong>Pengurus Yayasan Pesantren Cipansor</strong></p>
         `
       ),

@@ -26,6 +26,7 @@ import {
 } from '@/lib/realtime';
 import { prisma } from '@/lib/prisma';
 import { notificationService } from '@/modules/notifications/email-sms.service';
+import { getChannelPolicy } from '@/modules/notifications/notifications.service';
 import { config } from '@/config';
 
 // Event Types
@@ -354,37 +355,44 @@ export function initializeEventBus(): void {
     };
     broadcastTahfidz(wsEvent);
 
-    // Send email progress report to parent if available
+    // Send email progress report to parent if available and EMAIL channel is enabled
     try {
-      const studentWithParent = await prisma.student.findUnique({
-        where: { id: event.studentId },
-        include: {
-          user: { select: { id: true, name: true, email: true } },
-          parents: {
-            include: { parent: { select: { id: true, name: true, email: true } } },
+      const policy = await getChannelPolicy();
+      if (policy.EMAIL) {
+        const studentWithParent = await prisma.student.findUnique({
+          where: { id: event.studentId },
+          include: {
+            user: { select: { id: true, name: true, email: true } },
+            parents: {
+              include: { parent: { select: { id: true, name: true, email: true } } },
+            },
           },
-        },
-      });
+        });
 
-      if (studentWithParent) {
-        const primaryParent =
-          studentWithParent.parents.find((p) => p.isPrimary)?.parent ||
-          studentWithParent.parents[0]?.parent ||
-          studentWithParent.user;
+        if (studentWithParent) {
+          const usableParents = studentWithParent.parents
+            .map((p) => p.parent)
+            .filter((p) => p.email);
 
-        if (primaryParent?.email) {
-          await notificationService.sendTahfidzProgress({
-            userId: primaryParent.id,
-            recipientEmail: primaryParent.email,
-            parentName: primaryParent.name || 'Wali Santri',
-            studentName: event.studentName,
-            surah: event.surahName,
-            verses: `${event.ayahStart}-${event.ayahEnd}`,
-            juz: event.juz || 1,
-            grade: event.score !== undefined && event.score !== null ? `${event.score} / 100` : '-',
-            teacherName: 'Pengampu Tahfidz',
-            date: event.recordedAt ? new Date(event.recordedAt).toLocaleDateString('id-ID') : new Date().toLocaleDateString('id-ID'),
-          });
+          const primaryParent =
+            studentWithParent.parents.find((p) => p.isPrimary && p.parent.email)?.parent ||
+            usableParents[0] ||
+            studentWithParent.user;
+
+          if (primaryParent?.email) {
+            await notificationService.sendTahfidzProgress({
+              userId: primaryParent.id,
+              recipientEmail: primaryParent.email,
+              parentName: primaryParent.name || 'Wali Santri',
+              studentName: event.studentName,
+              surah: event.surahName,
+              verses: `${event.ayahStart}-${event.ayahEnd}`,
+              juz: event.juz || 1,
+              grade: event.score !== undefined && event.score !== null ? `${event.score} / 100` : '-',
+              teacherName: 'Pengampu Tahfidz',
+              date: event.recordedAt ? new Date(event.recordedAt).toLocaleDateString('id-ID') : new Date().toLocaleDateString('id-ID'),
+            });
+          }
         }
       }
     } catch (err) {
@@ -463,36 +471,43 @@ export function initializeEventBus(): void {
       data: { invoiceId: event.invoiceId, amount: event.amount },
     });
 
-    // Send email receipt to parent if available
+    // Send email receipt to parent if available and EMAIL channel is enabled
     try {
-      const studentWithParent = await prisma.student.findUnique({
-        where: { id: event.studentId },
-        include: {
-          user: { select: { id: true, name: true, email: true } },
-          parents: {
-            include: { parent: { select: { id: true, name: true, email: true } } },
+      const policy = await getChannelPolicy();
+      if (policy.EMAIL) {
+        const studentWithParent = await prisma.student.findUnique({
+          where: { id: event.studentId },
+          include: {
+            user: { select: { id: true, name: true, email: true } },
+            parents: {
+              include: { parent: { select: { id: true, name: true, email: true } } },
+            },
           },
-        },
-      });
+        });
 
-      if (studentWithParent) {
-        const primaryParent =
-          studentWithParent.parents.find((p) => p.isPrimary)?.parent ||
-          studentWithParent.parents[0]?.parent ||
-          studentWithParent.user;
+        if (studentWithParent) {
+          const usableParents = studentWithParent.parents
+            .map((p) => p.parent)
+            .filter((p) => p.email);
 
-        if (primaryParent?.email) {
-          await notificationService.sendPaymentReceipt({
-            userId: primaryParent.id,
-            recipientEmail: primaryParent.email,
-            parentName: primaryParent.name || 'Wali Santri',
-            studentName: event.studentName,
-            receiptNumber: event.id,
-            amount: `Rp ${event.amount.toLocaleString('id-ID')}`,
-            paymentDate: new Date(event.paidAt).toLocaleDateString('id-ID'),
-            paymentMethod: event.paymentMethod,
-            description: `Pembayaran Tagihan #${event.invoiceId}`,
-          });
+          const primaryParent =
+            studentWithParent.parents.find((p) => p.isPrimary && p.parent.email)?.parent ||
+            usableParents[0] ||
+            studentWithParent.user;
+
+          if (primaryParent?.email) {
+            await notificationService.sendPaymentReceipt({
+              userId: primaryParent.id,
+              recipientEmail: primaryParent.email,
+              parentName: primaryParent.name || 'Wali Santri',
+              studentName: event.studentName,
+              receiptNumber: event.id,
+              amount: `Rp ${event.amount.toLocaleString('id-ID')}`,
+              paymentDate: new Date(event.paidAt).toLocaleDateString('id-ID'),
+              paymentMethod: event.paymentMethod,
+              description: `Pembayaran Tagihan #${event.invoiceId}`,
+            });
+          }
         }
       }
     } catch (err) {

@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { asyncHandler } from '@/middleware/error';
+import { asyncHandler, Errors } from '@/middleware/error';
 import { pkAnalyticsService } from './analytics.service';
 import { RoleCode } from '@prisma/client';
 

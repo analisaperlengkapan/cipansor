@@ -450,25 +450,28 @@ export const CorrespondenceService = {
 
         // If approving and nextReviewerId is provided, add or update the next reviewer dynamically
         if (nextReviewerId) {
+          const currentMaxOrder = Math.max(...letter.reviewers.map((r) => r.order), mine.order, 0);
+          const newOrder = currentMaxOrder + 1;
           const existingNext = letter.reviewers.find((r) => r.reviewerId === nextReviewerId);
+
           if (existingNext) {
-            // If already in ladder, reset status to PENDING, clear reviewedAt, and update isSigner
+            const updatedIsSigner = existingNext.isSigner || !!isFinalSigner;
+            // If already in ladder, reset status to PENDING, clear reviewedAt, move order to end of sequence, and preserve/update isSigner
             await tx.letterReviewer.update({
               where: { id: existingNext.id },
               data: {
+                order: newOrder,
                 status: 'PENDING',
                 reviewedAt: null,
-                isSigner: !!isFinalSigner,
+                isSigner: updatedIsSigner,
               },
             });
             updatedLadder = updatedLadder.map((r) =>
               r.id === existingNext.id
-                ? { ...r, status: 'PENDING', isSigner: !!isFinalSigner }
+                ? { ...r, order: newOrder, status: 'PENDING', isSigner: updatedIsSigner }
                 : r
             );
           } else {
-            const currentMaxOrder = Math.max(...letter.reviewers.map((r) => r.order), mine.order, 0);
-            const newOrder = currentMaxOrder + 1;
             const newRung = await tx.letterReviewer.create({
               data: {
                 letterId,

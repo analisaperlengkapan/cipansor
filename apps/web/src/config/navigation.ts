@@ -288,17 +288,12 @@ const teacherNavigation: NavGroup[] = [
     ],
   },
   {
-    title: "Kinerja",
+    title: "PKG",
     items: [
       {
-        title: "Manajemen Kinerja",
-        href: "/kinerja",
-        icon: ClipboardPenLine,
-      },
-      {
-        title: "Arsip PKG",
+        title: "Penilaian Kinerja",
         href: "/pkg",
-        icon: ScrollText,
+        icon: ClipboardPenLine,
       },
     ],
   },
@@ -328,16 +323,6 @@ const staffNavigation: NavGroup[] = [
         title: "Dashboard",
         href: "/staff",
         icon: LayoutDashboard,
-      },
-    ],
-  },
-  {
-    title: "Kinerja",
-    items: [
-      {
-        title: "Manajemen Kinerja",
-        href: "/kinerja",
-        icon: ClipboardPenLine,
       },
     ],
   },
@@ -640,11 +625,6 @@ const yayasanNavigation: NavGroup[] = [
         title: "Units",
         href: "/units",
         icon: School,
-      },
-      {
-        title: "Manajemen Kinerja",
-        href: "/kinerja",
-        icon: ClipboardPenLine,
       },
       {
         title: "Penjaminan Mutu",
@@ -1186,14 +1166,9 @@ const adminNavigation: NavGroup[] = [
         icon: FileBarChart,
       },
       {
-        title: "Manajemen Kinerja",
-        href: "/kinerja",
-        icon: ClipboardPenLine,
-      },
-      {
-        title: "Arsip PKG",
+        title: "PKG Guru",
         href: "/pkg",
-        icon: ScrollText,
+        icon: ClipboardPenLine,
       },
       {
         title: "Penjaminan Mutu",
@@ -1452,8 +1427,8 @@ const kepalaSekolahNavigation: NavGroup[] = [
         icon: Users,
       },
       {
-        title: "Manajemen Kinerja",
-        href: "/kinerja",
+        title: "PKG Guru",
+        href: "/pkg",
         icon: ClipboardPenLine,
       },
     ],
@@ -1805,7 +1780,7 @@ const ptDosenNavigation: NavGroup[] = [
   {
     title: "Kinerja",
     items: [
-      { title: "Manajemen Kinerja", href: "/kinerja", icon: ClipboardPenLine },
+      { title: "Penilaian Kinerja", href: "/pkg", icon: ClipboardPenLine },
     ],
   },
   {

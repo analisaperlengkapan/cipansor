@@ -1,21 +1,13 @@
 import { z } from 'zod';
 
-export const createPKSchema = z
-  .object({
-    strategicPlanId: z.string().uuid().optional(),
-    supervisorId: z.string().uuid().optional(),
-    supervisorPkId: z.string().uuid().optional(),
-    periodStart: z.string().datetime(),
-    periodEnd: z.string().datetime(),
-    notes: z.string().optional(),
-  })
-  .refine(
-    (data) => new Date(data.periodEnd) >= new Date(data.periodStart),
-    {
-      message: 'periodEnd must be on or after periodStart',
-      path: ['periodEnd'],
-    }
-  );
+export const createPKSchema = z.object({
+  strategicPlanId: z.string().uuid().optional(),
+  supervisorId: z.string().uuid().optional(),
+  supervisorPkId: z.string().uuid().optional(),
+  periodStart: z.string().datetime(),
+  periodEnd: z.string().datetime(),
+  notes: z.string().optional(),
+});
 
 // Status is deliberately NOT updatable here — it only changes through the
 // propose/approve/reject workflow endpoints.

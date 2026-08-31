@@ -1,6 +1,5 @@
 import { Request, Response } from 'express';
 import { asyncHandler, Errors } from '@/middleware/error';
-import { ApiResponse } from '@/utils/response';
 import { isAdminRoleCode } from '@/middleware/auth';
 import { pkService } from './pk.service';
 import { evaluationService } from './evaluation.service';
@@ -10,7 +9,6 @@ import {
   updateBehaviorScoreSchema,
   createBehavioralValueSchema,
   updateBehavioralValueSchema,
-  approveEvaluationSchema,
 } from './evaluation.validation';
 
 function caller(req: Request): { id: string; isAdmin: boolean } {
@@ -25,7 +23,7 @@ export const createEvaluation = asyncHandler(async (req: Request, res: Response)
   const { id, isAdmin } = caller(req);
   const body = createEvaluationSchema.parse(req.body);
   const evaluation = await evaluationService.createEvaluation(id, isAdmin, body);
-  res.status(201).json(ApiResponse.success(evaluation));
+  res.status(201).json({ success: true, data: evaluation });
 });
 
 export const getEvaluation = asyncHandler(async (req: Request, res: Response) => {
@@ -33,7 +31,7 @@ export const getEvaluation = asyncHandler(async (req: Request, res: Response) =>
   const evaluation = await evaluationService.getEvaluationById(req.params.id);
   if (!evaluation) throw Errors.notFound('Evaluation');
   pkService.assertAccess(evaluation.pk, id, isAdmin);
-  res.json(ApiResponse.success(evaluation));
+  res.json({ success: true, data: evaluation });
 });
 
 export const updateIndicatorRealization = asyncHandler(async (req: Request, res: Response) => {
@@ -46,7 +44,7 @@ export const updateIndicatorRealization = asyncHandler(async (req: Request, res:
     isAdmin,
     { realization: body.realization, activities: body.activities }
   );
-  res.json(ApiResponse.success(detail));
+  res.json({ success: true, data: detail });
 });
 
 export const updateBehaviorScore = asyncHandler(async (req: Request, res: Response) => {
@@ -59,36 +57,35 @@ export const updateBehaviorScore = asyncHandler(async (req: Request, res: Respon
     isAdmin,
     { score: body.score, notes: body.notes }
   );
-  res.json(ApiResponse.success(detail));
+  res.json({ success: true, data: detail });
 });
 
 export const approveEvaluation = asyncHandler(async (req: Request, res: Response) => {
   const { id, isAdmin } = caller(req);
-  const body = approveEvaluationSchema.parse(req.body || {});
-  const evaluation = await evaluationService.approveEvaluation(req.params.id, id, isAdmin, body.feedback);
-  res.json(ApiResponse.success(evaluation));
+  const evaluation = await evaluationService.approveEvaluation(req.params.id, id, isAdmin);
+  res.json({ success: true, data: evaluation });
 });
 
 // ==================== BEHAVIORAL VALUES (ADMIN) ====================
 
 export const listBehavioralValues = asyncHandler(async (_req: Request, res: Response) => {
   const values = await evaluationService.getBehavioralValues();
-  res.json(ApiResponse.success(values));
+  res.json({ success: true, data: values });
 });
 
 export const createBehavioralValue = asyncHandler(async (req: Request, res: Response) => {
   const body = createBehavioralValueSchema.parse(req.body);
   const value = await evaluationService.createBehavioralValue(body);
-  res.status(201).json(ApiResponse.success(value));
+  res.status(201).json({ success: true, data: value });
 });
 
 export const updateBehavioralValue = asyncHandler(async (req: Request, res: Response) => {
   const body = updateBehavioralValueSchema.parse(req.body);
   const value = await evaluationService.updateBehavioralValue(req.params.id, body);
-  res.json(ApiResponse.success(value));
+  res.json({ success: true, data: value });
 });
 
 export const deleteBehavioralValue = asyncHandler(async (req: Request, res: Response) => {
   await evaluationService.deleteBehavioralValue(req.params.id);
-  res.json(ApiResponse.success(null, 'Value deactivated'));
+  res.json({ success: true, message: 'Value deactivated' });
 });

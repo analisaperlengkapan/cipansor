@@ -52,7 +52,10 @@ function KinerjaHubPageContent() {
     "KEPALA_SEKOLAH",
     "PIMPINAN_PESANTREN",
     "PIMPINAN_PT",
-  ].includes(effectiveRole);
+    "GURU",
+    "DOSEN",
+    "STAF",
+  ].includes(effectiveRole) || user?.role === "SUPER_ADMIN" || Boolean(user?.unitId);
 
   const { data: pks, isLoading: loadingPK } = usePKList();
   const { data: dashboard, isLoading: loadingDashboard } = usePerformanceDashboard(isExecutive);

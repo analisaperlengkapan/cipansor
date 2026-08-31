@@ -243,10 +243,13 @@ export class EvaluationService {
     try {
       await this.syncToPKAndTalent(evaluation.pkId);
     } catch (err) {
-      // Rollback approval if sync fails to prevent stale/conflicting state
+      // Rollback approval AND feedback if sync fails to prevent inconsistent state
       await prisma.pKEvaluation.update({
         where: { id },
-        data: { status: evaluation.status },
+        data: {
+          status: evaluation.status,
+          feedback: evaluation.feedback,
+        },
       });
       throw err;
     }

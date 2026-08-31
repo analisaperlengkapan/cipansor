@@ -7,6 +7,9 @@ import { RoleCode } from '@prisma/client';
 function isLeadershipUser(req: Request): boolean {
   const roleCode = req.user?.roleCode ?? '';
   const userRole = req.user?.role ?? '';
+  if (userRole === 'SUPER_ADMIN') return true;
+  if (req.user?.unitId) return true;
+
   const leadershipRoles = [
     RoleCode.SUPER_ADMIN,
     RoleCode.YAYASAN_KETUA,
@@ -22,7 +25,7 @@ function isLeadershipUser(req: Request): boolean {
     RoleCode.SMAQ_KEPALA_SEKOLAH,
     'UNIT_ADMIN',
   ];
-  return leadershipRoles.includes(roleCode as RoleCode) || userRole === 'SUPER_ADMIN';
+  return leadershipRoles.includes(roleCode as RoleCode);
 }
 
 export const getDashboard = asyncHandler(async (req: Request, res: Response) => {

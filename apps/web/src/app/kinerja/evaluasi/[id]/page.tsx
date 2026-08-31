@@ -121,17 +121,21 @@ function PeriodicEvaluationDetailPageContent() {
       }
     }
 
-    if (saftiMaster) {
-      for (const val of saftiMaster) {
-        const input = behaviorInputs[val.id];
-        if (input) {
-          await updateBehavior.mutateAsync({
-            evaluationId: evaluation.id,
-            behaviorValueId: val.id,
-            score: Number(input.score),
-            notes: input.notes,
-          });
-        }
+    const activeIds = new Set(saftiMaster?.map((m) => m.id) || []);
+    const extraBehaviors = evaluation.behaviorDetails
+      ?.filter((b) => b.behaviorValue && !activeIds.has(b.behaviorValueId))
+      .map((b) => b.behaviorValue!) || [];
+    const combinedBehaviors = [...(saftiMaster || []), ...extraBehaviors];
+
+    for (const val of combinedBehaviors) {
+      const input = behaviorInputs[val.id];
+      if (input) {
+        await updateBehavior.mutateAsync({
+          evaluationId: evaluation.id,
+          behaviorValueId: val.id,
+          score: Number(input.score),
+          notes: input.notes,
+        });
       }
     }
 

@@ -35,10 +35,6 @@ function KinerjaHubPageContent() {
   const { user } = useAuthStore();
   const effectiveRole = user ? getEffectiveRole(user) || user.role : "GURU";
 
-  const { data: pks, isLoading: loadingPK } = usePKList();
-  const { data: dashboard, isLoading: loadingDashboard } = usePerformanceDashboard(isExecutive);
-  const { data: plans } = usePlans();
-
   const isExecutive = [
     "SUPER_ADMIN",
     "YAYASAN_KETUA",
@@ -49,6 +45,10 @@ function KinerjaHubPageContent() {
     "SMPIT_KEPALA_SEKOLAH",
     "SMAQ_KEPALA_SEKOLAH",
   ].includes(effectiveRole);
+
+  const { data: pks, isLoading: loadingPK } = usePKList();
+  const { data: dashboard, isLoading: loadingDashboard } = usePerformanceDashboard(isExecutive);
+  const { data: plans } = usePlans();
 
   const myPk = pks?.find((p) => p.user?.id === user?.id);
   const subordinatesPk = pks?.filter((p) => p.supervisor?.id === user?.id) || [];

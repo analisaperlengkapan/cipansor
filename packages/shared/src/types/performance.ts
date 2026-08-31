@@ -59,6 +59,7 @@ export interface PKEvaluationDTO {
   feedback?: string | null;
   notes?: string | null;
   status: "DRAFT" | "PROPOSED" | "APPROVED";
+  pk?: PerformanceAgreementDTO;
   indicatorDetails?: PKIndicatorEvaluationDTO[];
   behaviorDetails?: PKBehaviorEvaluationDTO[];
 }

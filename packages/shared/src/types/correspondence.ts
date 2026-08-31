@@ -239,6 +239,12 @@ export interface PublicLetterVerificationResult {
   reason?: string;
 }
 
+export interface ListParticipantsQuery {
+  search?: string;
+  unitId?: string;
+  limit?: number;
+}
+
 export interface CorrespondenceParticipant {
   id: string;
   name: string;
@@ -249,3 +255,7 @@ export interface CorrespondenceParticipant {
   nip?: string | null;
   position?: string | null;
 }
+
+export type CreateDispositionResponse =
+  | LetterDispositionDetail
+  | LetterDispositionDetail[];

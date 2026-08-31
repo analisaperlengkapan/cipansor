@@ -91,6 +91,7 @@ export function useCorrespondence(unitId?: string) {
         return response.data.data;
       },
       enabled: !!id,
+      staleTime: 0,
     });
   };
 

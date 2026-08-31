@@ -405,8 +405,15 @@ export const EsignService = {
       );
     }
 
-    // Verify that caller is the current pending signer (whose turn it is)
+    // Verify that caller is the current pending reviewer in turn order and no non-signer reviewers remain pending
     const pendingReviewers = letter.reviewers.filter((r) => r.status !== 'APPROVED');
+    const pendingNonSigners = pendingReviewers.filter((r) => !r.isSigner);
+    if (pendingNonSigners.length > 0) {
+      throw Errors.forbidden(
+        `Surat belum selesai ditinjau oleh seluruh pemeriksa/paraf sebelum ditandatangani.`
+      );
+    }
+
     const currentTurn = pendingReviewers[0];
     if (currentTurn && currentTurn.reviewerId !== userId) {
       throw Errors.forbidden(

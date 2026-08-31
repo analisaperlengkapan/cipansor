@@ -253,6 +253,24 @@ export default function LetterDetailPage({
     }
   };
 
+  const handleSubmitDraftForReview = async () => {
+    const firstReviewerId = letter.reviewers?.[0]?.reviewerId;
+    if (!firstReviewerId) {
+      toast.error("Tidak ada pemeriksa terdaftar pada konsep surat ini");
+      return;
+    }
+    try {
+      await reviewLetter.mutateAsync({
+        id: letter.id,
+        action: "APPROVE",
+        notes: notes || "Mengajukan draft untuk ditinjau",
+      });
+      toast.success("Draft surat berhasil diajukan untuk ditinjau");
+    } catch (error) {
+      toast.error("Gagal mengajukan draft untuk ditinjau");
+    }
+  };
+
   const handleForwardReview = async () => {
     const hasExistingSigner = letter.reviewers?.some((r) => r.isSigner);
     if (!forwardData.nextReviewerId && !forwardData.isFinalSigner && !hasExistingSigner) {
@@ -760,6 +778,16 @@ export default function LetterDetailPage({
                 <Send className="mr-2 h-4 w-4" />
                 Disposisi
               </Button>
+
+              {letter.status === "DRAFT" && letter.createdById === user?.id && (
+                <Button
+                  className="w-full bg-blue-600 hover:bg-blue-700"
+                  onClick={handleSubmitDraftForReview}
+                >
+                  <Send className="mr-2 h-4 w-4" />
+                  Ajukan Review
+                </Button>
+              )}
 
               {/*
                 Verifikasi berjenjang.

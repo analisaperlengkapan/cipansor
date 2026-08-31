@@ -18,6 +18,8 @@ import { eventBus } from '@/lib/event-bus';
 import { EsignService } from '@/modules/esign/esign.service';
 import {
   assertLetterAccess,
+  choosesUnit,
+  handlesUnitCorrespondence,
   letterScopeWhere,
   type LetterActor,
 } from '@/utils/letter-access';
@@ -137,25 +139,31 @@ export const CorrespondenceService = {
   },
 
   async createLetter(data: CreateLetterInput, userId: string, actor?: LetterActor) {
-    // Enforce role authorization: external roles (STUDENT, PARENT) cannot create letters
-    if (actor?.roleCode) {
-      const isExternalRole =
-        actor.roleCode.endsWith('_SISWA') ||
-        actor.roleCode.endsWith('_MAHASISWA') ||
-        actor.roleCode.endsWith('_ORANG_TUA') ||
-        actor.roleCode.endsWith('_ALUMNI') ||
-        actor.roleCode.endsWith('_KOMITE');
-      if (isExternalRole) {
-        throw Errors.forbidden('Peran Anda tidak berwenang untuk membuat surat dinas');
-      }
+    if (!actor || !actor.roleCode) {
+      throw Errors.forbidden('Peran Anda tidak berwenang untuk membuat surat dinas');
     }
 
-    // Validate unit authorization
-    const targetUnitId = actor?.unitId ? actor.unitId : data.unitId;
+    // Allowlist: only authorized correspondence, unit admin, and foundation governance roles
+    const isAuthorizedCreator =
+      handlesUnitCorrespondence(actor) ||
+      choosesUnit(actor) ||
+      actor.roleCode === 'SUPER_ADMIN';
+
+    if (!isAuthorizedCreator) {
+      throw Errors.forbidden('Peran Anda tidak berwenang untuk membuat surat dinas');
+    }
+
+    // Client is only allowed to request initial status DRAFT or PENDING_REVIEW
+    if (data.status !== LetterStatus.DRAFT && data.status !== LetterStatus.PENDING_REVIEW) {
+      throw Errors.badRequest('Status awal surat hanya dapat berupa DRAFT atau PENDING_REVIEW');
+    }
+
+    // Validate unit authorization; foundation-wide actors (choosesUnit) are exempt from single-unit restriction
+    const targetUnitId = (choosesUnit(actor) ? data.unitId : actor.unitId) || data.unitId;
     if (!targetUnitId) {
       throw Errors.badRequest('Unit ID wajib diisi');
     }
-    if (actor?.unitId && data.unitId && data.unitId !== actor.unitId) {
+    if (!choosesUnit(actor) && actor.unitId && data.unitId && data.unitId !== actor.unitId) {
       throw Errors.forbidden('Anda tidak berwenang membuat surat untuk unit lain');
     }
 

@@ -170,13 +170,22 @@ export const CorrespondenceController = {
 
   async getParticipants(req: Request, res: Response, next: NextFunction) {
     try {
+      const actor = actorOf(req);
+      if (!choosesUnit(actor) && !handlesUnitCorrespondence(actor)) {
+        throw Errors.forbidden('Anda tidak memiliki akses ke direktori persuratan');
+      }
+      const query = (res.locals.validatedQuery || req.query) as {
+        search?: string;
+        unitId?: string;
+        limit?: number;
+      };
       const result = await CorrespondenceService.getParticipants(
         {
-          search: req.query.search as string | undefined,
-          unitId: req.query.unitId as string | undefined,
-          limit: req.query.limit ? Number(req.query.limit) : undefined,
+          search: query.search,
+          unitId: query.unitId,
+          limit: query.limit,
         },
-        actorOf(req)
+        actor
       );
       res.json({ success: true, data: result });
     } catch (error) {

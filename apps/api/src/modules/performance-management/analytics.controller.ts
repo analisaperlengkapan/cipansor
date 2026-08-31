@@ -6,10 +6,6 @@ import { RoleCode } from '@prisma/client';
 /** Roles that have cross-cutting or unit-level leadership access to analytics. */
 function isLeadershipUser(req: Request): boolean {
   const roleCode = req.user?.roleCode ?? '';
-  const userRole = req.user?.role ?? '';
-  if (userRole === 'SUPER_ADMIN') return true;
-  if (req.user?.unitId) return true;
-
   const leadershipRoles = [
     RoleCode.SUPER_ADMIN,
     RoleCode.YAYASAN_KETUA,

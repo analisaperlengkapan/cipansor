@@ -49,13 +49,7 @@ function KinerjaHubPageContent() {
     "SMPIT_KEPALA_SEKOLAH",
     "SMAQ_KEPALA_SEKOLAH",
     "UNIT_ADMIN",
-    "KEPALA_SEKOLAH",
-    "PIMPINAN_PESANTREN",
-    "PIMPINAN_PT",
-    "GURU",
-    "DOSEN",
-    "STAF",
-  ].includes(effectiveRole) || user?.role === "SUPER_ADMIN" || Boolean(user?.unitId);
+  ].includes(effectiveRole) || user?.role === "SUPER_ADMIN";
 
   const { data: pks, isLoading: loadingPK } = usePKList();
   const { data: dashboard, isLoading: loadingDashboard } = usePerformanceDashboard(isExecutive);

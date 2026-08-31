@@ -40,17 +40,17 @@ router.get('/supervisors', pkController.listSupervisors);
 router.get('/settings/behavioral-values', evalController.listBehavioralValues);
 router.post(
   '/settings/behavioral-values',
-  authorize(UserRole.SUPER_ADMIN),
+  authorize(RoleCode.SUPER_ADMIN),
   evalController.createBehavioralValue
 );
 router.put(
   '/settings/behavioral-values/:id',
-  authorize(UserRole.SUPER_ADMIN),
+  authorize(RoleCode.SUPER_ADMIN),
   evalController.updateBehavioralValue
 );
 router.delete(
   '/settings/behavioral-values/:id',
-  authorize(UserRole.SUPER_ADMIN),
+  authorize(RoleCode.SUPER_ADMIN),
   evalController.deleteBehavioralValue
 );
 

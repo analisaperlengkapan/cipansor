@@ -22,10 +22,6 @@ export class PKAnalyticsService {
           where: { pk: { user: { unitId: null } }, status: PlanStatus.APPROVED },
         });
 
-    let totalAgreements = foundationPks.length;
-    let approvedAgreements = foundationPks.filter((p) => p.status === PlanStatus.APPROVED).length;
-    let totalEvaluations = foundationEvCount;
-
     const unitMetrics = await Promise.all(
       units.map(async (unit) => {
         const allPks = await prisma.performanceAgreement.findMany({
@@ -37,11 +33,7 @@ export class PKAnalyticsService {
           where: { pk: { user: { unitId: unit.id } }, status: PlanStatus.APPROVED },
         });
 
-        totalAgreements += allPks.length;
-        totalEvaluations += evCount;
-
         const approvedPks = allPks.filter((p) => p.status === PlanStatus.APPROVED);
-        approvedAgreements += approvedPks.length;
 
         const avgScore =
           approvedPks.length > 0
@@ -65,9 +57,19 @@ export class PKAnalyticsService {
           avgPerformanceScore: avgPerf,
           avgBehaviorScore: avgBehav,
           pkCount: approvedPks.length,
+          totalPksCount: allPks.length,
+          evCount,
         };
       })
     );
+
+    const totalAgreements =
+      foundationPks.length + unitMetrics.reduce((sum, u) => sum + u.totalPksCount, 0);
+    const approvedAgreements =
+      foundationPks.filter((p) => p.status === PlanStatus.APPROVED).length +
+      unitMetrics.reduce((sum, u) => sum + u.pkCount, 0);
+    const totalEvaluations =
+      foundationEvCount + unitMetrics.reduce((sum, u) => sum + u.evCount, 0);
 
     const approvedPksAll = await prisma.performanceAgreement.findMany({
       where: unitId ? { user: { unitId }, status: PlanStatus.APPROVED } : { status: PlanStatus.APPROVED },

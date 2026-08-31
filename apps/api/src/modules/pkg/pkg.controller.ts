@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { asyncHandler } from '@/middleware/error';
 import { ApiResponse } from '@/utils/response';
+import { isFoundationScopedRole } from '@/utils/resolve-unit-id';
 import * as pkgService from './pkg.service';
 
 // =====================================
@@ -58,20 +59,13 @@ export const deletePeriod = asyncHandler(async (req: Request, res: Response) => 
 
 /** Roles explicitly authorized to view PKG teacher performance evaluations across all units. */
 function seesGlobalPKGEvaluations(req: Request): boolean {
-  if (req.user?.role === 'SUPER_ADMIN') return true;
-  const roleCode = req.user?.roleCode || '';
-  const globalOversightRoles = [
-    'SUPER_ADMIN',
-    'YAYASAN_KETUA',
-    'YAYASAN_PEMBINA',
-    'YAYASAN_PENGAWAS',
-    'YAYASAN_SEKRETARIS',
-    'YAYASAN_BENDAHARA',
-    'YAYASAN_ANGGOTA',
-    'PESANTREN_PENGASUH',
-    'PESANTREN_DIREKTUR',
-  ];
-  return globalOversightRoles.includes(roleCode);
+  if (!req.user) return false;
+  const roleCode = req.user.roleCode;
+  return (
+    isFoundationScopedRole(roleCode) ||
+    roleCode === 'PESANTREN_PENGASUH' ||
+    roleCode === 'PESANTREN_DIREKTUR'
+  );
 }
 
 /** GET /api/pkg/evaluations */

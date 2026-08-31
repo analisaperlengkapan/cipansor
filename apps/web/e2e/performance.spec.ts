@@ -1,6 +1,11 @@
 import { test, expect } from "@playwright/test";
+import { setupAuthenticatedPage } from "./helpers/auth";
 
 test.describe("Integrated Performance Management (/kinerja) E2E Flows", () => {
+  test.beforeEach(async ({ page }) => {
+    await setupAuthenticatedPage(page, "SUPER_ADMIN");
+  });
+
   test("main performance hub renders key navigation sections", async ({ page }) => {
     await page.goto("/kinerja");
     await expect(page).toHaveURL(/\/kinerja/);

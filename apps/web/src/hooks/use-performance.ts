@@ -89,9 +89,9 @@ export interface PerformanceAgreement {
 
 export const usePKList = (params?: { status?: string }) => {
   return useQuery({
-    queryKey: ["performance-management", "pks", params],
+    queryKey: ["performance-agreements", "pks", params],
     queryFn: async () => {
-      const res = await api.get("/performance-management", { params });
+      const res = await api.get("/performance-agreements", { params });
       return res.data.data as PerformanceAgreement[];
     },
   });
@@ -99,9 +99,9 @@ export const usePKList = (params?: { status?: string }) => {
 
 export const usePKDetail = (id: string) => {
   return useQuery({
-    queryKey: ["performance-management", "pk", id],
+    queryKey: ["performance-agreements", "pk", id],
     queryFn: async () => {
-      const res = await api.get(`/performance-management/${id}`);
+      const res = await api.get(`/performance-agreements/${id}`);
       return res.data.data as PerformanceAgreement;
     },
     enabled: !!id,
@@ -120,12 +120,12 @@ export const useCreatePK = () => {
       periodEnd: string;
       notes?: string;
     }) => {
-      const res = await api.post("/performance-management", data);
+      const res = await api.post("/performance-agreements", data);
       return res.data;
     },
     onSuccess: () => {
       toast.success("Perjanjian Kinerja berhasil dibuat");
-      queryClient.invalidateQueries({ queryKey: ["performance-management"] });
+      queryClient.invalidateQueries({ queryKey: ["performance-agreements"] });
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || "Gagal membuat Perjanjian Kinerja");
@@ -145,13 +145,13 @@ export const useUpdatePK = () => {
       supervisorId?: string;
       strategicPlanId?: string;
     }) => {
-      const res = await api.put(`/performance-management/${id}`, data);
+      const res = await api.put(`/performance-agreements/${id}`, data);
       return res.data;
     },
     onSuccess: (_, variables) => {
       toast.success("Perjanjian Kinerja berhasil diperbarui");
-      queryClient.invalidateQueries({ queryKey: ["performance-management"] });
-      queryClient.invalidateQueries({ queryKey: ["performance-management", "pk", variables.id] });
+      queryClient.invalidateQueries({ queryKey: ["performance-agreements"] });
+      queryClient.invalidateQueries({ queryKey: ["performance-agreements", "pk", variables.id] });
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || "Gagal memperbarui Perjanjian Kinerja");
@@ -163,13 +163,13 @@ export const useProposePK = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const res = await api.post(`/performance-management/${id}/propose`);
+      const res = await api.post(`/performance-agreements/${id}/propose`);
       return res.data;
     },
     onSuccess: (_, id) => {
       toast.success("Perjanjian Kinerja berhasil diajukan");
-      queryClient.invalidateQueries({ queryKey: ["performance-management"] });
-      queryClient.invalidateQueries({ queryKey: ["performance-management", "pk", id] });
+      queryClient.invalidateQueries({ queryKey: ["performance-agreements"] });
+      queryClient.invalidateQueries({ queryKey: ["performance-agreements", "pk", id] });
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || "Gagal mengajukan Perjanjian Kinerja");
@@ -181,13 +181,13 @@ export const useApprovePK = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const res = await api.post(`/performance-management/${id}/approve`);
+      const res = await api.post(`/performance-agreements/${id}/approve`);
       return res.data;
     },
     onSuccess: (_, id) => {
       toast.success("Perjanjian Kinerja berhasil disetujui");
-      queryClient.invalidateQueries({ queryKey: ["performance-management"] });
-      queryClient.invalidateQueries({ queryKey: ["performance-management", "pk", id] });
+      queryClient.invalidateQueries({ queryKey: ["performance-agreements"] });
+      queryClient.invalidateQueries({ queryKey: ["performance-agreements", "pk", id] });
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || "Gagal menyetujui Perjanjian Kinerja");
@@ -199,13 +199,13 @@ export const useRejectPK = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, revisionNotes }: { id: string; revisionNotes: string }) => {
-      const res = await api.post(`/performance-management/${id}/reject`, { revisionNotes });
+      const res = await api.post(`/performance-agreements/${id}/reject`, { revisionNotes });
       return res.data;
     },
     onSuccess: (_, variables) => {
       toast.success("Perjanjian Kinerja dikembalikan untuk revisi");
-      queryClient.invalidateQueries({ queryKey: ["performance-management"] });
-      queryClient.invalidateQueries({ queryKey: ["performance-management", "pk", variables.id] });
+      queryClient.invalidateQueries({ queryKey: ["performance-agreements"] });
+      queryClient.invalidateQueries({ queryKey: ["performance-agreements", "pk", variables.id] });
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || "Gagal menolak Perjanjian Kinerja");
@@ -231,13 +231,13 @@ export const useCreatePKIndicator = () => {
       refStrategicIndicatorId?: string;
       notes?: string;
     }) => {
-      const res = await api.post("/performance-management/indicators", data);
+      const res = await api.post("/performance-agreements/indicators", data);
       return res.data;
     },
     onSuccess: (_, variables) => {
       toast.success("Indikator PK berhasil ditambahkan");
-      queryClient.invalidateQueries({ queryKey: ["performance-management"] });
-      queryClient.invalidateQueries({ queryKey: ["performance-management", "pk", variables.pkId] });
+      queryClient.invalidateQueries({ queryKey: ["performance-agreements"] });
+      queryClient.invalidateQueries({ queryKey: ["performance-agreements", "pk", variables.pkId] });
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || "Gagal menambahkan Indikator PK");
@@ -249,13 +249,13 @@ export const useUpdatePKIndicator = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, pkId, ...data }: { id: string; pkId: string } & Record<string, any>) => {
-      const res = await api.put(`/performance-management/indicators/${id}`, data);
+      const res = await api.put(`/performance-agreements/indicators/${id}`, data);
       return res.data;
     },
     onSuccess: (_, variables) => {
       toast.success("Indikator PK berhasil diperbarui");
-      queryClient.invalidateQueries({ queryKey: ["performance-management"] });
-      queryClient.invalidateQueries({ queryKey: ["performance-management", "pk", variables.pkId] });
+      queryClient.invalidateQueries({ queryKey: ["performance-agreements"] });
+      queryClient.invalidateQueries({ queryKey: ["performance-agreements", "pk", variables.pkId] });
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || "Gagal memperbarui Indikator PK");
@@ -267,13 +267,13 @@ export const useDeletePKIndicator = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, pkId }: { id: string; pkId: string }) => {
-      const res = await api.delete(`/performance-management/indicators/${id}`);
+      const res = await api.delete(`/performance-agreements/indicators/${id}`);
       return res.data;
     },
     onSuccess: (_, variables) => {
       toast.success("Indikator PK berhasil dihapus");
-      queryClient.invalidateQueries({ queryKey: ["performance-management"] });
-      queryClient.invalidateQueries({ queryKey: ["performance-management", "pk", variables.pkId] });
+      queryClient.invalidateQueries({ queryKey: ["performance-agreements"] });
+      queryClient.invalidateQueries({ queryKey: ["performance-agreements", "pk", variables.pkId] });
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || "Gagal menghapus Indikator PK");
@@ -287,9 +287,9 @@ export const useDeletePKIndicator = () => {
 
 export const useBehavioralValues = () => {
   return useQuery({
-    queryKey: ["performance-management", "behavioral-values"],
+    queryKey: ["performance-agreements", "behavioral-values"],
     queryFn: async () => {
-      const res = await api.get("/performance-management/settings/behavioral-values");
+      const res = await api.get("/performance-agreements/settings/behavioral-values");
       return res.data.data as BehavioralValue[];
     },
   });
@@ -297,9 +297,9 @@ export const useBehavioralValues = () => {
 
 export const useEvaluationDetail = (id: string) => {
   return useQuery({
-    queryKey: ["performance-management", "evaluations", id],
+    queryKey: ["performance-agreements", "evaluations", id],
     queryFn: async () => {
-      const res = await api.get(`/performance-management/evaluations/${id}`);
+      const res = await api.get(`/performance-agreements/evaluations/${id}`);
       return res.data.data as PKEvaluation;
     },
     enabled: !!id,
@@ -310,13 +310,13 @@ export const useCreateEvaluation = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: { pkId: string; month: number; year: number }) => {
-      const res = await api.post("/performance-management/evaluations", data);
+      const res = await api.post("/performance-agreements/evaluations", data);
       return res.data;
     },
     onSuccess: (_, variables) => {
       toast.success("Evaluasi bulanan berhasil dibuat");
-      queryClient.invalidateQueries({ queryKey: ["performance-management"] });
-      queryClient.invalidateQueries({ queryKey: ["performance-management", "pk", variables.pkId] });
+      queryClient.invalidateQueries({ queryKey: ["performance-agreements"] });
+      queryClient.invalidateQueries({ queryKey: ["performance-agreements", "pk", variables.pkId] });
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || "Gagal membuat evaluasi bulanan");
@@ -338,7 +338,7 @@ export const useUpdateIndicatorRealization = () => {
       realization: number;
       activities?: string;
     }) => {
-      const res = await api.post(`/performance-management/evaluations/${evaluationId}/indicators`, {
+      const res = await api.post(`/performance-agreements/evaluations/${evaluationId}/indicators`, {
         indicatorId,
         realization,
         activities,
@@ -347,8 +347,8 @@ export const useUpdateIndicatorRealization = () => {
     },
     onSuccess: (_, variables) => {
       toast.success("Realisasi indikator berhasil disimpan");
-      queryClient.invalidateQueries({ queryKey: ["performance-management"] });
-      queryClient.invalidateQueries({ queryKey: ["performance-management", "evaluations", variables.evaluationId] });
+      queryClient.invalidateQueries({ queryKey: ["performance-agreements"] });
+      queryClient.invalidateQueries({ queryKey: ["performance-agreements", "evaluations", variables.evaluationId] });
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || "Gagal menyimpan realisasi indikator");
@@ -370,7 +370,7 @@ export const useUpdateBehaviorScore = () => {
       score: number;
       notes?: string;
     }) => {
-      const res = await api.post(`/performance-management/evaluations/${evaluationId}/behavior`, {
+      const res = await api.post(`/performance-agreements/evaluations/${evaluationId}/behavior`, {
         behaviorValueId,
         score,
         notes,
@@ -379,8 +379,8 @@ export const useUpdateBehaviorScore = () => {
     },
     onSuccess: (_, variables) => {
       toast.success("Nilai perilaku berhasil disimpan");
-      queryClient.invalidateQueries({ queryKey: ["performance-management"] });
-      queryClient.invalidateQueries({ queryKey: ["performance-management", "evaluations", variables.evaluationId] });
+      queryClient.invalidateQueries({ queryKey: ["performance-agreements"] });
+      queryClient.invalidateQueries({ queryKey: ["performance-agreements", "evaluations", variables.evaluationId] });
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || "Gagal menyimpan nilai perilaku");
@@ -392,15 +392,15 @@ export const useApproveEvaluation = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ evaluationId, feedback }: { evaluationId: string; feedback?: string }) => {
-      const res = await api.post(`/performance-management/evaluations/${evaluationId}/approve`, {
+      const res = await api.post(`/performance-agreements/evaluations/${evaluationId}/approve`, {
         feedback,
       });
       return res.data;
     },
     onSuccess: (_, variables) => {
       toast.success("Evaluasi bulanan berhasil disetujui");
-      queryClient.invalidateQueries({ queryKey: ["performance-management"] });
-      queryClient.invalidateQueries({ queryKey: ["performance-management", "evaluations", variables.evaluationId] });
+      queryClient.invalidateQueries({ queryKey: ["performance-agreements"] });
+      queryClient.invalidateQueries({ queryKey: ["performance-agreements", "evaluations", variables.evaluationId] });
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || "Gagal menyetujui evaluasi bulanan");
@@ -414,9 +414,9 @@ export const useApproveEvaluation = () => {
 
 export const usePerformanceDashboard = () => {
   return useQuery({
-    queryKey: ["performance-management", "dashboard"],
+    queryKey: ["performance-agreements", "dashboard"],
     queryFn: async () => {
-      const res = await api.get("/performance-management/dashboard");
+      const res = await api.get("/performance-agreements/dashboard");
       return res.data.data;
     },
   });
@@ -424,9 +424,9 @@ export const usePerformanceDashboard = () => {
 
 export const usePerformanceDrilldown = (unitId: string) => {
   return useQuery({
-    queryKey: ["performance-management", "drilldown", unitId],
+    queryKey: ["performance-agreements", "drilldown", unitId],
     queryFn: async () => {
-      const res = await api.get(`/performance-management/dashboard/drilldown/${unitId}`);
+      const res = await api.get(`/performance-agreements/dashboard/drilldown/${unitId}`);
       return res.data.data;
     },
     enabled: !!unitId,
@@ -435,9 +435,9 @@ export const usePerformanceDrilldown = (unitId: string) => {
 
 export const usePerformanceConsolidatedReport = () => {
   return useQuery({
-    queryKey: ["performance-management", "consolidated-report"],
+    queryKey: ["performance-agreements", "consolidated-report"],
     queryFn: async () => {
-      const res = await api.get("/performance-management/reports/consolidated");
+      const res = await api.get("/performance-agreements/reports/consolidated");
       return res.data.data;
     },
   });

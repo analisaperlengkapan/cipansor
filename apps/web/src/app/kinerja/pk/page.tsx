@@ -88,8 +88,8 @@ function PerformanceAgreementListPageContent() {
       userId: user.id,
       supervisorId: formData.supervisorId || undefined,
       strategicPlanId: formData.strategicPlanId || undefined,
-      periodStart: formData.periodStart,
-      periodEnd: formData.periodEnd,
+      periodStart: new Date(formData.periodStart).toISOString(),
+      periodEnd: new Date(formData.periodEnd).toISOString(),
       notes: formData.notes || undefined,
     });
     setOpenCreate(false);

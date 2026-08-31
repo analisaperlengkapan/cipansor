@@ -45,6 +45,7 @@ describe('EvaluationService', () => {
 
       const args = mocked.pKEvaluation.update.mock.calls[0][0];
       // performance = 100*0.6 + 50*0.4 = 80; behavior = (90+70)/2 = 80
+      // overall = 80 * 0.6 + 80 * 0.4 = 80
       expect(args.data.performanceScore).toBe(80);
       expect(args.data.behaviorScore).toBe(80);
       expect(args.data.overallScore).toBeCloseTo(80);

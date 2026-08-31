@@ -212,8 +212,8 @@ export class EvaluationService {
           ) / totalBehaviorWeight
         : 0;
 
-    // Overall: 70% performance, 30% behavior.
-    const overallScore = performanceScore * 0.7 + behaviorScore * 0.3;
+    // Overall: 60% performance, 40% behavior (as per Cipansor SAFTI standard).
+    const overallScore = performanceScore * 0.6 + behaviorScore * 0.4;
 
     await prisma.pKEvaluation.update({
       where: { id: evaluationId },
@@ -221,7 +221,7 @@ export class EvaluationService {
     });
   }
 
-  async approveEvaluation(id: string, callerId: string, isAdmin: boolean) {
+  async approveEvaluation(id: string, callerId: string, isAdmin: boolean, feedback?: string) {
     const evaluation = await prisma.pKEvaluation.findUnique({
       where: { id },
       include: { pk: true },
@@ -234,7 +234,10 @@ export class EvaluationService {
 
     const updated = await prisma.pKEvaluation.update({
       where: { id },
-      data: { status: PlanStatus.APPROVED },
+      data: {
+        status: PlanStatus.APPROVED,
+        feedback: feedback !== undefined ? feedback : evaluation.feedback,
+      },
     });
 
     await this.syncToPKAndTalent(evaluation.pkId);

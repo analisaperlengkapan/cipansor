@@ -103,6 +103,9 @@ export class PerformanceAgreementService {
         supervisor: { select: { id: true, name: true } },
         strategicPlan: { select: { id: true, title: true } },
         indicators: true,
+        evaluations: {
+          orderBy: [{ year: 'desc' }, { month: 'desc' }],
+        },
       },
       orderBy: { createdAt: 'desc' },
     });

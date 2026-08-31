@@ -299,7 +299,7 @@ function PeriodicEvaluationDetailPageContent() {
               <div className="space-y-6">
                 {saftiMaster?.map((val) => {
                   const existingEval = evaluation.behaviorDetails?.find((b) => b.behaviorValueId === val.id);
-                  const currentScore = behaviorInputs[val.id]?.score ?? (existingEval?.score || 85);
+                  const currentScore = behaviorInputs[val.id]?.score ?? (existingEval ? existingEval.score : 85);
                   const currentNotes = behaviorInputs[val.id]?.notes ?? (existingEval?.notes || "");
 
                   return (

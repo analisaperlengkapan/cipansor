@@ -19,7 +19,7 @@ test.describe('Email Notifications & SMTP Configuration', () => {
     await expect(page.getByText('halo@cipansor.or.id')).toBeVisible();
 
     // Verify status badge
-    await expect(page.getByText('Terintegrasi & Terverifikasi')).toBeVisible();
+    await expect(page.getByText('Channel Email Aktif')).toBeVisible();
   });
 
   test('should allow toggling email notifications channel', async ({ page }) => {

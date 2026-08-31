@@ -193,10 +193,14 @@ export async function getChannelPolicy(): Promise<ChannelPolicy> {
     const setting = await prisma.setting.findFirst({
       where: { key: 'NOTIFICATION_CHANNELS' },
     });
-    const value = setting?.value as Partial<ChannelPolicy> | null;
+    if (!setting) {
+      return DEFAULT_CHANNEL_POLICY;
+    }
+    const value = setting.value as Partial<ChannelPolicy> | null;
     return { ...DEFAULT_CHANNEL_POLICY, ...(value ?? {}) };
   } catch {
-    return DEFAULT_CHANNEL_POLICY;
+    // Fail closed on lookup errors to prevent unexpected external email dispatch
+    return { EMAIL: false, SMS: false, WHATSAPP: false };
   }
 }
 

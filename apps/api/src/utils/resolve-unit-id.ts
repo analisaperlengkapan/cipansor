@@ -1,5 +1,6 @@
 import { Request } from 'express';
 import { RoleCode } from '@prisma/client';
+import { isGlobalPKGRoleCode } from '@cipansor/shared';
 
 /**
  * Resolve the effective unitId for the current request.
@@ -84,15 +85,10 @@ export function isFoundationScopedRole(roleCode?: string | null): boolean {
 
 /**
  * Single source of truth for global PKG evaluation and statistics viewing access.
- * Foundation-scoped roles + Pesantren leadership (PENGASUH, DIREKTUR).
+ * Delegates directly to @cipansor/shared role helper to ensure API and Web remain synchronized.
  */
 export function seesGlobalPKGEvaluations(roleCode?: string | null): boolean {
-  if (!roleCode) return false;
-  return (
-    isFoundationScopedRole(roleCode) ||
-    roleCode === RoleCode.PESANTREN_PENGASUH ||
-    roleCode === RoleCode.PESANTREN_DIREKTUR
-  );
+  return isGlobalPKGRoleCode(roleCode);
 }
 
 /**

@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import type { CreatePKRequestDTO } from '@cipansor/shared';
 
-export const createPKSchema: z.ZodType<Omit<CreatePKRequestDTO, 'userId'>> = z
+export const createPKSchema: z.ZodType<CreatePKRequestDTO> = z
   .object({
     strategicPlanId: z.string().uuid().optional(),
     supervisorId: z.string().uuid().optional(),

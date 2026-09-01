@@ -2,26 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('@/lib/prisma', () => ({
   prisma: {
-    performanceAgreement: {
-      findFirst: vi.fn(),
-      findUnique: vi.fn(),
-      create: vi.fn(),
-      update: vi.fn(),
-    },
-    pKIndicator: {
-      findUnique: vi.fn(),
-      create: vi.fn(),
-      update: vi.fn(),
-      delete: vi.fn(),
-    },
-  },
-}));
-
-import { prisma } from '@/lib/prisma';
-import { pkService } from './pk.service';
-
-vi.mock('@/lib/prisma', () => ({
-  prisma: {
     user: {
       findMany: vi.fn(),
     },
@@ -40,6 +20,9 @@ vi.mock('@/lib/prisma', () => ({
   },
 }));
 
+import { prisma } from '@/lib/prisma';
+import { pkService } from './pk.service';
+
 const mocked = prisma as unknown as {
   user: Record<string, ReturnType<typeof vi.fn>>;
   performanceAgreement: Record<string, ReturnType<typeof vi.fn>>;
@@ -57,6 +40,15 @@ describe('PerformanceAgreementService', () => {
       expect(mocked.user.findMany).toHaveBeenCalledTimes(1);
       const queryWhere = mocked.user.findMany.mock.calls[0][0].where;
       expect(queryWhere.unitId).toBe('unit-sdit');
+    });
+
+    it('forces unitId to "none" for unassigned non-global callers', async () => {
+      mocked.user.findMany.mockResolvedValue([]);
+      await pkService.getSupervisors({ roleCode: 'SDIT_GURU', unitId: undefined });
+
+      expect(mocked.user.findMany).toHaveBeenCalledTimes(1);
+      const queryWhere = mocked.user.findMany.mock.calls[0][0].where;
+      expect(queryWhere.unitId).toBe('none');
     });
 
     it('allows cross-unit / foundation roles to query supervisors across units', async () => {

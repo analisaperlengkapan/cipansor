@@ -127,7 +127,6 @@ export interface PerformanceConsolidatedReportDTO {
 }
 
 export interface CreatePKRequestDTO {
-  userId: string;
   supervisorId?: string;
   supervisorPkId?: string;
   strategicPlanId?: string;

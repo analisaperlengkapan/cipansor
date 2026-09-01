@@ -91,7 +91,6 @@ function PerformanceAgreementListPageContent() {
     }
 
     await createPK.mutateAsync({
-      userId: user.id,
       supervisorId: formData.supervisorId || undefined,
       strategicPlanId: formData.strategicPlanId || undefined,
       periodStart: new Date(formData.periodStart).toISOString(),

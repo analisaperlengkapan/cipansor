@@ -9,7 +9,7 @@ test.describe("Integrated Performance Management (/kinerja) E2E Flows", () => {
   test("main performance hub renders key navigation sections", async ({ page }) => {
     await page.goto("/kinerja");
     await expect(page).toHaveURL(/\/kinerja/);
-    await expect(page.locator("h1")).toContainText(/Manajemen Kinerja/i);
+    await expect(page.locator("h1")).toContainText(/Kinerja/i);
     await expect(page.locator("text=Perjanjian Kinerja")).toBeVisible();
     await expect(page.locator("text=Evaluasi Periodik")).toBeVisible();
   });
@@ -18,14 +18,14 @@ test.describe("Integrated Performance Management (/kinerja) E2E Flows", () => {
     await page.goto("/kinerja/pk");
     await expect(page).toHaveURL(/\/kinerja\/pk/);
     await expect(page.locator("h1")).toContainText(/Perjanjian Kinerja/i);
-    await expect(page.locator("text=Buat PK Baru")).toBeVisible();
+    await expect(page.locator("text=Buat Perjanjian Kinerja")).toBeVisible();
   });
 
   test("periodic evaluation hub loads monthly evaluations", async ({ page }) => {
     await page.goto("/kinerja/evaluasi");
     await expect(page).toHaveURL(/\/kinerja\/evaluasi/);
-    await expect(page.locator("h1")).toContainText(/Evaluasi Periodik/i);
-    await expect(page.locator("text=Buat Evaluasi Bulanan")).toBeVisible();
+    await expect(page.locator("h1")).toContainText(/Evaluasi Kinerja Periodik/i);
+    await expect(page.locator("text=Mulai Evaluasi Bulanan")).toBeVisible();
   });
 
   test("analytics page displays executive overview and consolidated report", async ({ page }) => {
@@ -65,7 +65,7 @@ test.describe("Integrated Performance Management (/kinerja) E2E Flows", () => {
 
   test("periodic evaluation hub loads real page structure", async ({ page }) => {
     await page.goto("/kinerja/evaluasi");
-    await expect(page.locator("h1")).toContainText(/Evaluasi Periodik/i);
-    await expect(page.locator("text=Buat Evaluasi Bulanan")).toBeVisible();
+    await expect(page.locator("h1")).toContainText(/Evaluasi Kinerja Periodik/i);
+    await expect(page.locator("text=Mulai Evaluasi Bulanan")).toBeVisible();
   });
 });

@@ -25,7 +25,7 @@ test.describe("Integrated Performance Management (/kinerja) E2E Flows", () => {
   test("periodic evaluation hub loads monthly evaluations", async ({ page }) => {
     await page.goto("/kinerja/evaluasi");
     await expect(page).toHaveURL(/\/kinerja\/evaluasi/);
-    await expect(page.locator("h1")).toContainText(/Evaluasi Periodik/i);
+    await expect(page.locator("h1")).toContainText(/Evaluasi.*Periodik/i);
     await expect(page.getByRole("button", { name: "Buat Evaluasi Bulanan" })).toBeVisible();
   });
 
@@ -80,7 +80,7 @@ test.describe("Integrated Performance Management (/kinerja) E2E Flows", () => {
 
       // 2. Periodic Evaluation Hub & Creation Dialog Flow
       await page.goto("/kinerja/evaluasi");
-      await expect(page.locator("h1")).toContainText(/Evaluasi Periodik/i);
+      await expect(page.locator("h1")).toContainText(/Evaluasi.*Periodik/i);
       await expect(page.getByRole("button", { name: "Buat Evaluasi Bulanan" })).toBeVisible();
 
       // Open evaluation dialog

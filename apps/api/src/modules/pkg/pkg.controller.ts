@@ -146,19 +146,10 @@ export const getTeacherHistory = asyncHandler(async (req: Request, res: Response
 export const getStatistics = asyncHandler(async (req: Request, res: Response) => {
   const { unitId, periodId } = req.query;
 
-  const isGlobalRole = req.user ? seesGlobalPKGEvaluations(req.user.roleCode) : false;
-
-  if (!isGlobalRole && !req.user?.unitId) {
-    throw Errors.forbidden('User does not belong to a specific unit and lacks global statistics access');
-  }
-
-  const effectiveUnitId = isGlobalRole
-    ? (unitId as string | undefined)
-    : req.user!.unitId;
-
   const stats = await pkgService.getPKGStatistics({
-    unitId: effectiveUnitId,
-    periodId: periodId as string,
+    caller: req.user,
+    unitId: unitId as string | undefined,
+    periodId: periodId as string | undefined,
   });
   res.json(ApiResponse.success(stats));
 });

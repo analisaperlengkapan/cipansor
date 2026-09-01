@@ -12,6 +12,8 @@
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/client';
+import { seesGlobalPKGEvaluations } from '@/utils/resolve-unit-id';
+import { Errors } from '@/middleware/error';
 
 // PKG Indicators per Competency
 export const PKG_INDICATORS = {
@@ -451,13 +453,27 @@ export async function getTeacherPKGHistory(teacherId: string) {
 // STATISTICS
 // =====================================
 
-export async function getPKGStatistics(params: { unitId?: string; periodId?: string }) {
-  const { unitId, periodId } = params;
+export async function getPKGStatistics(params: {
+  caller?: { roleCode?: string | null; role?: string | null; unitId?: string | null };
+  unitId?: string;
+  periodId?: string;
+}) {
+  const { caller, periodId } = params;
+
+  let effectiveUnitId: string | undefined = params.unitId;
+
+  if (caller) {
+    const isGlobalRole = seesGlobalPKGEvaluations(caller.roleCode);
+    if (!isGlobalRole && !caller.unitId) {
+      throw Errors.forbidden('User does not belong to a specific unit and lacks global statistics access');
+    }
+    effectiveUnitId = isGlobalRole ? params.unitId : (caller.unitId ?? 'none');
+  }
 
   const where: Prisma.PKGEvaluationWhereInput = {};
   if (periodId) where.periodId = periodId;
-  if (unitId) {
-    where.period = { unitId };
+  if (effectiveUnitId) {
+    where.period = { unitId: effectiveUnitId };
   }
 
   const evaluations = await prisma.pKGEvaluation.findMany({

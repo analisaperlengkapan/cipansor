@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Request, Response } from 'express';
 
-vi.mock('./roles.service', () => ({
+vi.mock('../roles.service', () => ({
   rolesService: {
     switchRole: vi.fn(),
   },
@@ -20,8 +20,8 @@ vi.mock('@/lib/prisma', () => ({
   },
 }));
 
-import { rolesController } from './roles.controller';
-import { rolesService } from './roles.service';
+import { rolesController } from '../roles.controller';
+import { rolesService } from '../roles.service';
 import { generateTokenPair } from '@/lib/jwt';
 
 function mockReqRes(overrides: Partial<Request> = {}) {

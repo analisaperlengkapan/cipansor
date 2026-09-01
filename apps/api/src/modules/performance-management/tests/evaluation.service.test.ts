@@ -15,7 +15,7 @@ vi.mock('@/lib/prisma', () => ({
 }));
 
 import { prisma } from '@/lib/prisma';
-import { evaluationService } from './evaluation.service';
+import { evaluationService } from '../evaluation.service';
 
 const mocked = prisma as unknown as Record<string, Record<string, ReturnType<typeof vi.fn>>> & {
   $transaction: ReturnType<typeof vi.fn>;

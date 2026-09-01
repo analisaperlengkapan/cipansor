@@ -21,7 +21,7 @@ vi.mock('@/lib/prisma', () => ({
 }));
 
 import { prisma } from '@/lib/prisma';
-import { pkService } from './pk.service';
+import { pkService } from '../pk.service';
 
 const mocked = prisma as unknown as {
   user: Record<string, ReturnType<typeof vi.fn>>;

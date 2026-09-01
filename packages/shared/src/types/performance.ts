@@ -126,29 +126,15 @@ export interface PerformanceConsolidatedReportDTO {
   units: ConsolidatedUnitReportDTO[];
 }
 
-export interface CreatePKRequestDTO {
-  supervisorId?: string;
-  supervisorPkId?: string;
-  strategicPlanId?: string;
-  periodStart: string;
-  periodEnd: string;
-  notes?: string;
-}
+import { z } from 'zod';
+import {
+  createPKSchema,
+  createEvaluationSchema,
+  updateIndicatorRealizationSchema,
+  updateBehaviorScoreSchema,
+} from '../schemas/performance';
 
-export interface CreateEvaluationRequestDTO {
-  pkId: string;
-  month: number;
-  year: number;
-  feedback?: string;
-  notes?: string;
-}
-
-export interface UpdateRealizationRequestDTO {
-  realization: number;
-  activities?: string;
-}
-
-export interface UpdateBehaviorScoreRequestDTO {
-  score: number;
-  notes?: string;
-}
+export type CreatePKRequestDTO = z.infer<typeof createPKSchema>;
+export type CreateEvaluationRequestDTO = z.infer<typeof createEvaluationSchema>;
+export type UpdateRealizationRequestDTO = Omit<z.infer<typeof updateIndicatorRealizationSchema>, 'indicatorId'>;
+export type UpdateBehaviorScoreRequestDTO = Omit<z.infer<typeof updateBehaviorScoreSchema>, 'behaviorValueId'>;

@@ -132,24 +132,21 @@ describe('pkg controller', () => {
     );
   });
 
-  it('getStatistics: throws 403 Forbidden for unassigned non-global users', async () => {
+  it('getStatistics: delegates caller context and params to pkgService.getPKGStatistics', async () => {
     (pkgService.getPKGStatistics as any).mockResolvedValue({ total: 0 });
 
-    const { req: reqUnassigned, res: resUnassigned } = mockReqRes({
-      query: {},
-      user: { sub: 'u5', roleCode: 'SDIT_GURU', unitId: undefined } as any,
+    const userObj = { sub: 'u5', roleCode: 'SDIT_GURU', unitId: 'unit-sdit' };
+    const { req, res } = mockReqRes({
+      query: { periodId: 'p-1' },
+      user: userObj as any,
     });
-    await expect(run(controller.getStatistics, reqUnassigned, resUnassigned)).rejects.toThrow(
-      'User does not belong to a specific unit and lacks global statistics access'
-    );
 
-    const { req: reqGlobal, res: resGlobal } = mockReqRes({
-      query: { unitId: 'unit-1' },
-      user: { sub: 'u6', roleCode: 'YAYASAN_KETUA', unitId: undefined } as any,
+    await run(controller.getStatistics, req, res);
+
+    expect(pkgService.getPKGStatistics).toHaveBeenCalledWith({
+      caller: userObj,
+      unitId: undefined,
+      periodId: 'p-1',
     });
-    await run(controller.getStatistics, reqGlobal, resGlobal);
-    expect(pkgService.getPKGStatistics).toHaveBeenCalledWith(
-      expect.objectContaining({ unitId: 'unit-1' })
-    );
   });
 });

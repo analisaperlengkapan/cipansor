@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import fs from 'fs';
 import { CorrespondenceService } from './correspondence.service';
 import { asyncHandler, Errors } from '@/middleware/error';
+import { ApiResponse } from '@/utils/response';
 import {
   choosesUnit,
   handlesUnitCorrespondence,
@@ -33,7 +34,7 @@ export const CorrespondenceController = {
       req.user!.id,
       actorOf(req)
     );
-    res.status(201).json({ success: true, data: result });
+    res.status(201).json(ApiResponse.success(result));
   }),
 
   findAll: asyncHandler(async (req: Request, res: Response) => {
@@ -50,12 +51,12 @@ export const CorrespondenceController = {
       scope: req.query.scope as any,
       userId: req.user!.id,
     });
-    res.json({ success: true, ...result });
+    res.json(ApiResponse.success(result.data, undefined, result.meta));
   }),
 
   findOne: asyncHandler(async (req: Request, res: Response) => {
     const result = await CorrespondenceService.getLetterById(req.params.id, actorOf(req));
-    res.json({ success: true, data: result });
+    res.json(ApiResponse.success(result));
   }),
 
   review: asyncHandler(async (req: Request, res: Response) => {
@@ -69,16 +70,17 @@ export const CorrespondenceController = {
       isFinalSigner,
       actorOf(req)
     );
-    res.json({ success: true, data: result });
+    res.json(ApiResponse.success(result));
   }),
 
   submitForReview: asyncHandler(async (req: Request, res: Response) => {
     const result = await CorrespondenceService.submitForReview(
       req.params.id,
       actorOf(req),
-      req.body?.note
+      req.body?.note,
+      req.body?.reviewerIds
     );
-    res.json({ success: true, data: result });
+    res.json(ApiResponse.success(result));
   }),
 
   resubmit: asyncHandler(async (req: Request, res: Response) => {
@@ -87,7 +89,7 @@ export const CorrespondenceController = {
       actorOf(req),
       req.body?.note
     );
-    res.json({ success: true, data: result });
+    res.json(ApiResponse.success(result));
   }),
 
   archive: asyncHandler(async (req: Request, res: Response) => {
@@ -96,7 +98,7 @@ export const CorrespondenceController = {
       actorOf(req),
       req.body?.note
     );
-    res.json({ success: true, data: result });
+    res.json(ApiResponse.success(result));
   }),
 
   createDisposition: asyncHandler(async (req: Request, res: Response) => {
@@ -104,7 +106,7 @@ export const CorrespondenceController = {
       { ...req.body, senderId: req.user!.id },
       actorOf(req)
     );
-    res.status(201).json({ success: true, data: result });
+    res.status(201).json(ApiResponse.success(result));
   }),
 
   updateDispositionStatus: asyncHandler(async (req: Request, res: Response) => {
@@ -115,7 +117,7 @@ export const CorrespondenceController = {
       notes,
       req.user!.id
     );
-    res.json({ success: true, data: result });
+    res.json(ApiResponse.success(result));
   }),
 
   getStats: asyncHandler(async (req: Request, res: Response) => {
@@ -130,7 +132,7 @@ export const CorrespondenceController = {
       : (actor.unitId ?? undefined);
 
     const result = await CorrespondenceService.getDashboardStats(unitId);
-    res.json({ success: true, data: result });
+    res.json(ApiResponse.success(result));
   }),
 
   getParticipants: asyncHandler(async (req: Request, res: Response) => {
@@ -147,7 +149,7 @@ export const CorrespondenceController = {
       },
       actorOf(req)
     );
-    res.json({ success: true, data: result });
+    res.json(ApiResponse.success(result));
   }),
 
   verifyPublic: asyncHandler(async (req: Request, res: Response) => {
@@ -169,6 +171,6 @@ export const CorrespondenceController = {
     }
 
     const result = await CorrespondenceService.verifyPublicLetter(token, pdfBuffer);
-    res.json({ success: true, data: result });
+    res.json(ApiResponse.success(result));
   }),
 };

@@ -132,4 +132,20 @@ test.describe("E-Office & Public Letter Verification E2E", () => {
 
     await expect(page.getByText(/VALIDASI DOKUMEN PDF: FILE ASLI & UTUH/i)).toBeVisible();
   });
+
+  test("Authenticated user can navigate to Create Letter and search participants in real flow", async ({ page }) => {
+    await loginAs(page, "superAdmin");
+
+    await page.goto("/e-office/create");
+    await expect(page.locator("h1")).toContainText("Buat Surat Baru");
+
+    // Check basic form fields exist
+    await expect(page.getByLabel(/Perihal/i)).toBeVisible();
+    await page.getByLabel(/Perihal/i).fill("Undangan Rapat Evaluasi E2E");
+
+    // Search input for participant selection exists
+    const searchInput = page.getByPlaceholder(/Cari pejabat\/staf/i);
+    await expect(searchInput).toBeVisible();
+    await searchInput.fill("Ahmad");
+  });
 });

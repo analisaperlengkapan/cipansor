@@ -16,9 +16,11 @@ vi.mock('@/lib/prisma', () => ({
       count: vi.fn(),
       findUnique: vi.fn(),
       update: vi.fn(),
+      updateMany: vi.fn(),
     },
     letterReviewer: {
       createMany: vi.fn(),
+      deleteMany: vi.fn(),
       findUnique: vi.fn(),
       update: vi.fn(),
       updateMany: vi.fn(),
@@ -27,6 +29,7 @@ vi.mock('@/lib/prisma', () => ({
       createMany: vi.fn(),
     },
     disposition: {
+      findFirst: vi.fn(),
       create: vi.fn(),
       updateMany: vi.fn(),
     },
@@ -239,6 +242,7 @@ describe('CorrespondenceService', () => {
         reviewers: [{ id: 'rev-1', reviewerId: 'rev-user-1', order: 1, status: 'PENDING' }],
         subject: 'Draft Test',
       } as any);
+      vi.mocked(prisma.letter.updateMany).mockResolvedValue({ count: 1 });
       vi.mocked(prisma.letter.update).mockResolvedValue({ id: 'let-draft', status: 'PENDING_REVIEW' } as any);
 
       const result = await CorrespondenceService.submitForReview(
@@ -248,10 +252,77 @@ describe('CorrespondenceService', () => {
       );
 
       expect(result.status).toBe('PENDING_REVIEW');
-      expect(prisma.letter.update).toHaveBeenCalledWith({
-        where: { id: 'let-draft' },
+      expect(prisma.letter.updateMany).toHaveBeenCalledWith({
+        where: { id: 'let-draft', status: 'DRAFT' },
         data: { status: 'PENDING_REVIEW' },
       });
+    });
+
+    it('allows assigning reviewerIds during submitForReview for a draft without reviewers', async () => {
+      vi.mocked(prisma.letter.findUnique).mockResolvedValue({
+        id: 'let-no-rev-yet',
+        status: 'DRAFT',
+        createdById: 'creator-1',
+        direction: 'OUTGOING',
+        type: 'SURAT_DINAS',
+        unitId: 'unit-1',
+        letterNumber: null,
+        reviewers: [],
+        subject: 'Draft No Rev Test',
+      } as any);
+      vi.mocked(prisma.user.findMany).mockResolvedValue([
+        {
+          id: 'rev-assigned-1',
+          unitId: 'unit-1',
+          teacher: { nip: '123' },
+          staff: null,
+          userRoles: [{ role: { code: 'SDIT_GURU' } }],
+        },
+      ] as any);
+      vi.mocked(prisma.letter.updateMany).mockResolvedValue({ count: 1 });
+      vi.mocked(prisma.letter.update).mockResolvedValue({ id: 'let-no-rev-yet', status: 'PENDING_REVIEW' } as any);
+
+      const result = await CorrespondenceService.submitForReview(
+        'let-no-rev-yet',
+        { id: 'creator-1', roleCode: 'SDIT_TATA_USAHA', unitId: 'unit-1' } as any,
+        'Submitting with new reviewers',
+        ['rev-assigned-1']
+      );
+
+      expect(result.status).toBe('PENDING_REVIEW');
+      expect(prisma.letterReviewer.createMany).toHaveBeenCalledWith({
+        data: [
+          expect.objectContaining({
+            letterId: 'let-no-rev-yet',
+            reviewerId: 'rev-assigned-1',
+            order: 1,
+          }),
+        ],
+      });
+    });
+
+    it('prevents repeated submitForReview calls from processing or allocating numbers twice', async () => {
+      vi.mocked(prisma.letter.findUnique).mockResolvedValue({
+        id: 'let-already-sub',
+        status: 'DRAFT',
+        createdById: 'creator-1',
+        direction: 'OUTGOING',
+        type: 'SURAT_DINAS',
+        unitId: 'unit-1',
+        letterNumber: null,
+        reviewers: [{ id: 'r1', reviewerId: 'rev-1', order: 1, status: 'PENDING' }],
+        subject: 'Draft Concurrent Test',
+      } as any);
+      vi.mocked(prisma.letter.updateMany).mockResolvedValue({ count: 0 });
+
+      await expect(
+        CorrespondenceService.submitForReview(
+          'let-already-sub',
+          { id: 'creator-1', roleCode: 'SDIT_TATA_USAHA', unitId: 'unit-1' } as any
+        )
+      ).rejects.toThrow(/Surat sudah diajukan/);
+
+      expect(prisma.agendaNumber.update).not.toHaveBeenCalled();
     });
 
     it('rejects submission if actor is not the letter creator', async () => {
@@ -321,6 +392,7 @@ describe('CorrespondenceService', () => {
         ],
         subject: 'Outgoing Draft Test',
       } as any);
+      vi.mocked(prisma.letter.updateMany).mockResolvedValue({ count: 1 });
       vi.mocked(prisma.academicYear.findFirst).mockResolvedValue({ id: 'year-1', isActive: true } as any);
       vi.mocked(prisma.agendaNumber.findUnique).mockResolvedValue({
         id: 'agenda-1',
@@ -344,7 +416,6 @@ describe('CorrespondenceService', () => {
         expect.objectContaining({
           where: { id: 'let-draft-out' },
           data: expect.objectContaining({
-            status: 'PENDING_REVIEW',
             letterNumber: expect.stringMatching(/006\/Sket\/Y-CPS/),
           }),
         })
@@ -558,7 +629,7 @@ describe('CorrespondenceService', () => {
       }
     });
 
-    it('creates dispositions when review completes for an incoming letter with recipientIds', async () => {
+    it('creates dispositions when review completes for an incoming letter with recipientIds idempotently', async () => {
       vi.mocked(prisma.letter.findUnique).mockResolvedValue({
         id: 'inc-letter-1',
         status: 'PENDING_REVIEW',
@@ -571,18 +642,15 @@ describe('CorrespondenceService', () => {
         recipients: [{ userId: 'rec-1' }, { userId: 'rec-2' }],
       } as any);
 
+      // Mock findFirst for rec-1 returning an existing pending disposition, and null for rec-2
+      vi.mocked(prisma.disposition.findFirst)
+        .mockResolvedValueOnce({ id: 'disp-existing', status: 'PENDING' } as any)
+        .mockResolvedValueOnce(null as any);
+
       await CorrespondenceService.processReview('inc-letter-1', 'user-1', 'APPROVE');
 
-      expect(prisma.disposition.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: expect.objectContaining({
-            letterId: 'inc-letter-1',
-            senderId: 'user-1',
-            recipientId: 'rec-1',
-            instruction: 'Surat Masuk Diteruskan',
-          }),
-        })
-      );
+      // rec-1 skipped because existing pending disposition found
+      expect(prisma.disposition.create).toHaveBeenCalledTimes(1);
       expect(prisma.disposition.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
@@ -591,12 +659,6 @@ describe('CorrespondenceService', () => {
             recipientId: 'rec-2',
             instruction: 'Surat Masuk Diteruskan',
           }),
-        })
-      );
-      expect(prisma.letter.update).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: { id: 'inc-letter-1' },
-          data: { status: 'DISPOSED' },
         })
       );
     });
@@ -644,6 +706,37 @@ describe('CorrespondenceService', () => {
           }),
         })
       );
+    });
+  });
+
+  describe('validateParticipantEligibility & getParticipants active role enforcement', () => {
+    it('rejects former staff without active internal userRoles in eligibility check', async () => {
+      vi.mocked(prisma.user.findMany).mockResolvedValue([
+        {
+          id: 'former-staff-1',
+          unitId: 'unit-1',
+          teacher: null,
+          staff: { nip: '9999' },
+          userRoles: [], // No active roles
+        },
+      ] as any);
+
+      await expect(
+        CorrespondenceService.validateParticipantEligibility(['former-staff-1'])
+      ).rejects.toThrow(/tidak memiliki peran internal yang sah/);
+    });
+
+    it('excludes former staff without active userRoles from participant search candidates', async () => {
+      vi.mocked(prisma.user.findMany).mockResolvedValue([]);
+
+      await CorrespondenceService.getParticipants(
+        { search: 'Former' },
+        { id: 'admin-1', roleCode: 'SUPER_ADMIN', unitId: null } as any
+      );
+
+      const findCall = vi.mocked(prisma.user.findMany).mock.calls.at(-1)![0] as any;
+      expect(findCall.where.userRoles).toBeDefined();
+      expect(findCall.where.OR).toBeUndefined();
     });
   });
 

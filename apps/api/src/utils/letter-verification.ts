@@ -57,9 +57,7 @@ export async function verifyLetterByToken(token: string, pdfBuffer?: Buffer | nu
   if (pdfBuffer && pdfBuffer.length > 0) {
     pdfVerified = true;
     const uploadedPdfHash = crypto.createHash('sha256').update(pdfBuffer).digest('hex');
-    const bufferString = pdfBuffer.toString('utf8');
-    const tokenInPdf = bufferString.includes(token) || bufferString.includes(signature.verificationToken);
-    pdfMatch = (uploadedPdfHash === signature.digest) || tokenInPdf;
+    pdfMatch = uploadedPdfHash === signature.digest;
   }
 
   let isValid = intact && !signature.revokedAt;

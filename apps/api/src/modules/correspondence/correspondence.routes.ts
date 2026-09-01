@@ -9,6 +9,7 @@ import {
   createDispositionSchema,
   updateDispositionStatusSchema,
   letterNoteSchema,
+  submitLetterSchema,
   listParticipantsQuerySchema,
 } from './correspondence.schema';
 
@@ -35,7 +36,7 @@ router.get('/letters/:id', CorrespondenceController.findOne);
 router.post('/letters/:id/review', validate(reviewLetterSchema), CorrespondenceController.review);
 router.post(
   '/letters/:id/submit',
-  validate(letterNoteSchema),
+  validate(submitLetterSchema),
   CorrespondenceController.submitForReview
 );
 // The way back from REVISION_NEEDED, which previously had none.

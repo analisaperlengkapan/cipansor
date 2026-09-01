@@ -181,7 +181,7 @@ export const CorrespondenceService = {
     const actorSeesAll = actor ? seesAllUnits(actor) : true;
 
     for (const u of users) {
-      const isInternal = u.teacher || u.staff || u.userRoles.length > 0;
+      const isInternal = u.userRoles && u.userRoles.length > 0;
       if (!isInternal) {
         throw Errors.badRequest(`Pengguna ${u.id} tidak memiliki peran internal yang sah`);
       }
@@ -358,27 +358,33 @@ export const CorrespondenceService = {
       if (data.direction === 'INCOMING' && initialStatus === DbLetterStatus.DISPOSED && data.recipientIds?.length) {
         const uniqueRecipients = Array.from(new Set(data.recipientIds));
         for (const recipientId of uniqueRecipients) {
-          const createdDisp = await tx.disposition.create({
-            data: {
+          const existingDisp = await tx.disposition.findFirst({
+            where: { letterId: letter.id, recipientId, status: 'PENDING' },
+          });
+
+          if (!existingDisp) {
+            const createdDisp = await tx.disposition.create({
+              data: {
+                letterId: letter.id,
+                senderId: userId,
+                recipientId,
+                instruction: 'Surat Masuk Diteruskan',
+                status: 'PENDING',
+              },
+            });
+
+            await recordFlow(tx, {
               letterId: letter.id,
-              senderId: userId,
-              recipientId,
-              instruction: 'Surat Masuk Diteruskan',
-              status: 'PENDING',
-            },
-          });
+              actorId: userId,
+              action: LetterFlowAction.DISPOSED,
+              targetId: recipientId,
+              fromStatus: letter.status,
+              toStatus: DbLetterStatus.DISPOSED,
+              note: 'Surat Masuk Diteruskan',
+            });
 
-          await recordFlow(tx, {
-            letterId: letter.id,
-            actorId: userId,
-            action: LetterFlowAction.DISPOSED,
-            targetId: recipientId,
-            fromStatus: letter.status,
-            toStatus: DbLetterStatus.DISPOSED,
-            note: 'Surat Masuk Diteruskan',
-          });
-
-          createdDispositionsToNotify.push({ id: createdDisp.id, recipientId });
+            createdDispositionsToNotify.push({ id: createdDisp.id, recipientId });
+          }
         }
       }
 
@@ -730,27 +736,33 @@ export const CorrespondenceService = {
             ) as string[];
 
             for (const recipientId of uniqueRecipientIds) {
-              await tx.disposition.create({
-                data: {
+              const existingDisp = await tx.disposition.findFirst({
+                where: { letterId: letter.id, recipientId, status: 'PENDING' },
+              });
+
+              if (!existingDisp) {
+                await tx.disposition.create({
+                  data: {
+                    letterId: letter.id,
+                    senderId: reviewerId,
+                    recipientId,
+                    instruction: 'Surat Masuk Diteruskan',
+                    status: 'PENDING',
+                  },
+                });
+
+                await recordFlow(tx, {
                   letterId: letter.id,
-                  senderId: reviewerId,
-                  recipientId,
-                  instruction: 'Surat Masuk Diteruskan',
-                  status: 'PENDING',
-                },
-              });
+                  actorId: reviewerId,
+                  action: LetterFlowAction.DISPOSED,
+                  targetId: recipientId,
+                  fromStatus: letter.status,
+                  toStatus: DbLetterStatus.DISPOSED,
+                  note: 'Surat Masuk Diteruskan',
+                });
 
-              await recordFlow(tx, {
-                letterId: letter.id,
-                actorId: reviewerId,
-                action: LetterFlowAction.DISPOSED,
-                targetId: recipientId,
-                fromStatus: letter.status,
-                toStatus: DbLetterStatus.DISPOSED,
-                note: 'Surat Masuk Diteruskan',
-              });
-
-              disposedRecipients.push(recipientId);
+                disposedRecipients.push(recipientId);
+              }
             }
           }
         } else if (nextStatus === DbLetterStatus.SIGNED) {
@@ -882,8 +894,17 @@ export const CorrespondenceService = {
    * Only the creator can submit their draft, and only when at least one
    * reviewer is assigned.
    */
-  async submitForReview(letterId: string, actor: LetterActor, note?: string) {
+  async submitForReview(
+    letterId: string,
+    actor: LetterActor,
+    note?: string,
+    reviewerIds?: string[]
+  ) {
     await assertLetterAccess(actor, letterId);
+
+    if (reviewerIds && reviewerIds.length > 0) {
+      await this.validateParticipantEligibility(reviewerIds, actor);
+    }
 
     const result = await prisma.$transaction(async (tx) => {
       const letter = await tx.letter.findUnique({
@@ -912,12 +933,47 @@ export const CorrespondenceService = {
         throw Errors.badRequest('Hanya surat berstatus DRAFT yang dapat diajukan untuk ditinjau');
       }
 
-      if (!letter.reviewers || letter.reviewers.length === 0) {
+      let currentReviewers = letter.reviewers;
+
+      // If new reviewerIds are provided, assign them to the draft
+      if (reviewerIds && reviewerIds.length > 0) {
+        const uniqueReviewerIds = Array.from(new Set(reviewerIds));
+        await tx.letterReviewer.deleteMany({ where: { letterId } });
+        await tx.letterReviewer.createMany({
+          data: uniqueReviewerIds.map((reviewerId, index) => ({
+            letterId,
+            reviewerId,
+            order: index + 1,
+            status: 'PENDING',
+            isSigner: false,
+          })),
+        });
+        currentReviewers = uniqueReviewerIds.map((rId, index) => ({
+          id: `rev-${rId}`,
+          reviewerId: rId,
+          order: index + 1,
+          status: 'PENDING',
+          isSigner: false,
+        })) as any;
+      }
+
+      if (!currentReviewers || currentReviewers.length === 0) {
         throw Errors.badRequest('Konsep surat harus memiliki minimal satu pemeriksa sebelum diajukan');
+      }
+
+      // Guard: atomic state transition from DRAFT -> PENDING_REVIEW
+      const updated = await tx.letter.updateMany({
+        where: { id: letterId, status: DbLetterStatus.DRAFT },
+        data: { status: DbLetterStatus.PENDING_REVIEW },
+      });
+
+      if (updated.count === 0) {
+        throw Errors.badRequest('Surat sudah diajukan atau tidak lagi berstatus DRAFT');
       }
 
       const nextStatus = DbLetterStatus.PENDING_REVIEW;
 
+      // Allocate letterNumber only AFTER atomic update succeeded
       let letterNumber = letter.letterNumber;
       if (letter.direction === 'OUTGOING' && !letterNumber) {
         const activeYear = await tx.academicYear.findFirst({
@@ -926,15 +982,12 @@ export const CorrespondenceService = {
         const academicYearId = activeYear?.id || 'DEFAULT';
         const typeKey = AGENDA_TYPE_CODE[letter.type as DbLetterType] || 'SKET';
         letterNumber = await this.generateNumber(letter.unitId, typeKey, academicYearId);
-      }
 
-      await tx.letter.update({
-        where: { id: letterId },
-        data: {
-          status: nextStatus,
-          ...(letterNumber ? { letterNumber } : {}),
-        },
-      });
+        await tx.letter.update({
+          where: { id: letterId },
+          data: { letterNumber },
+        });
+      }
 
       await recordFlow(tx, {
         letterId,
@@ -945,7 +998,7 @@ export const CorrespondenceService = {
         note: note || 'Mengajukan konsep surat untuk ditinjau',
       });
 
-      const sortedReviewers = [...letter.reviewers].sort((a, b) => a.order - b.order);
+      const sortedReviewers = [...currentReviewers].sort((a, b) => a.order - b.order);
       const firstReviewerId = sortedReviewers[0]?.reviewerId;
 
       return { id: letterId, status: nextStatus, firstReviewerId, subject: letter.subject };
@@ -1244,23 +1297,17 @@ export const CorrespondenceService = {
 
     const where: Prisma.UserWhereInput = {
       isActive: true,
-      // Candidates must have a teacher or staff record, or an active non-external role assignment
-      OR: [
-        { teacher: { isNot: null } },
-        { staff: { isNot: null } },
-        {
-          userRoles: {
-            some: {
-              role: {
-                code: {
-                  notIn: EXCLUDED_CORRESPONDENCE_ROLES as unknown as RoleCode[],
-                },
-              },
-              OR: [{ expiresAt: null }, { expiresAt: { gte: now } }],
+      // Candidates must have an active non-external role assignment
+      userRoles: {
+        some: {
+          role: {
+            code: {
+              notIn: EXCLUDED_CORRESPONDENCE_ROLES as unknown as RoleCode[],
             },
           },
+          OR: [{ expiresAt: null }, { expiresAt: { gte: now } }],
         },
-      ],
+      },
     };
 
     const and: Prisma.UserWhereInput[] = [];

@@ -81,11 +81,19 @@ describe('PerformanceAgreementService', () => {
       );
     });
 
-    it('successfully deletes a DRAFT PK by its owner', async () => {
-      mocked.performanceAgreement.findUnique.mockResolvedValue({
-        id: 'pk-1',
-        userId: 'u-owner',
-        status: 'DRAFT',
+    it('successfully deletes a DRAFT PK by its owner after acquiring row lock', async () => {
+      const callOrder: string[] = [];
+      mockQueryRaw.mockImplementation(async () => {
+        callOrder.push('$queryRaw');
+        return [];
+      });
+      mocked.performanceAgreement.findUnique.mockImplementation(async () => {
+        callOrder.push('findUnique');
+        return {
+          id: 'pk-1',
+          userId: 'u-owner',
+          status: 'DRAFT',
+        };
       });
       mocked.performanceAgreement.delete.mockResolvedValue({ id: 'pk-1' });
 
@@ -95,6 +103,7 @@ describe('PerformanceAgreementService', () => {
       const sqlStrings = mockQueryRaw.mock.calls[0][0];
       expect(sqlStrings.join('')).toContain('SELECT id FROM "performance_agreements" WHERE id =');
       expect(sqlStrings.join('')).toContain('FOR UPDATE');
+      expect(callOrder).toEqual(['$queryRaw', 'findUnique']);
       expect(mocked.performanceAgreement.delete).toHaveBeenCalledWith({ where: { id: 'pk-1' } });
     });
 
@@ -116,9 +125,7 @@ describe('PerformanceAgreementService', () => {
       expect(mocked.performanceAgreement.delete).not.toHaveBeenCalled();
     });
 
-    it('rejects deletion with 409 Conflict if status becomes APPROVED before lock is acquired', async () => {
-      // In deletePK, $queryRaw FOR UPDATE locks the row first, then findUnique reads the latest status under lock.
-      // If a concurrent approval finishes before lock acquisition, findUnique under lock reads status = APPROVED.
+    it('rejects deletion with 409 Conflict when PK is already APPROVED', async () => {
       mocked.performanceAgreement.findUnique.mockResolvedValueOnce({
         id: 'pk-1',
         userId: 'u-owner',

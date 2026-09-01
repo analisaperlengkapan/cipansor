@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { PlanStatus, PerformanceRating } from '@prisma/client';
+import { PlanStatus, PerformanceRating, Prisma } from '@prisma/client';
 import { Errors } from '@/middleware/error';
 import { pkService } from './pk.service';
 
@@ -120,7 +120,7 @@ export class EvaluationService {
     evaluationId: string,
     callerId: string,
     isAdmin: boolean,
-    tx: any
+    tx: Prisma.TransactionClient
   ) {
     const initialEval = await tx.pKEvaluation.findUnique({
       where: { id: evaluationId },
@@ -209,7 +209,10 @@ export class EvaluationService {
     });
   }
 
-  async recalculateEvaluationScores(evaluationId: string, txClient?: any) {
+  async recalculateEvaluationScores(
+    evaluationId: string,
+    txClient?: Prisma.TransactionClient | typeof prisma
+  ) {
     const client = txClient || prisma;
     const evaluation = await client.pKEvaluation.findUnique({
       where: { id: evaluationId },
@@ -223,20 +226,20 @@ export class EvaluationService {
 
     // Performance: weighted by indicator weight (weights total 100).
     const performanceScore = evaluation.indicatorDetails.reduce(
-      (sum: number, det: any) => sum + (det.score * det.indicator.weight) / 100,
+      (sum, det) => sum + (det.score * det.indicator.weight) / 100,
       0
     );
 
     // Behavior: weighted by BehavioralValue.weight (simple average when
     // all weights are equal, which is the SAFTI default).
     const totalBehaviorWeight = evaluation.behaviorDetails.reduce(
-      (sum: number, det: any) => sum + det.behaviorValue.weight,
+      (sum, det) => sum + det.behaviorValue.weight,
       0
     );
     const behaviorScore =
       totalBehaviorWeight > 0
         ? evaluation.behaviorDetails.reduce(
-            (sum: number, det: any) => sum + det.score * det.behaviorValue.weight,
+            (sum, det) => sum + det.score * det.behaviorValue.weight,
             0
           ) / totalBehaviorWeight
         : 0;
@@ -303,7 +306,7 @@ export class EvaluationService {
    * result into the talent matrix when a talent profile exists. Executed
    * within the approval Prisma transaction client for full atomicity.
    */
-  private async syncToPKAndTalentInTx(tx: any, pkId: string) {
+  private async syncToPKAndTalentInTx(tx: Prisma.TransactionClient, pkId: string) {
     const pk = await tx.performanceAgreement.findUnique({
       where: { id: pkId },
       include: {

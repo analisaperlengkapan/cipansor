@@ -57,27 +57,28 @@ test.describe("Integrated Performance Management (/kinerja) E2E Flows", () => {
     expect(dialogMessage).toContain("tidak boleh lebih awal");
   });
 
-  test("end-to-end flow: PK creation modal, evaluation dialog, and analytics unit drilldown", async ({ page }) => {
-    // 1. PK Creation Modal Verification
+  test("end-to-end flow: submit PK, submit evaluation creation, and verify analytics drilldown", async ({ page }) => {
+    // 1. PK Creation Flow - Fill and Submit
     await page.goto("/kinerja/pk");
     await page.click("button:has-text('Buat Perjanjian Kinerja')");
     await expect(page.locator("text=Buat Perjanjian Kinerja Baru")).toBeVisible();
 
-    // Fill valid period dates
+    // Fill valid period dates and notes
     await page.fill("input[type='date'] >> nth=0", "2026-01-01");
     await page.fill("input[type='date'] >> nth=1", "2026-12-31");
-    await page.fill("textarea", "Perjanjian Kinerja Tahun 2026 E2E Test");
+    await page.fill("textarea", "Perjanjian Kinerja Tahun 2026 E2E Test Submission");
 
-    // Close modal
-    await page.click("button:has-text('Batal')");
+    // Submit form
+    await page.click("button:has-text('Buat PK')");
     await expect(page.locator("text=Buat Perjanjian Kinerja Baru")).not.toBeVisible();
+    await expect(page.locator("text=Perjanjian Kinerja Tahun 2026 E2E Test Submission").or(page.locator("text=PK Saya"))).toBeVisible();
 
-    // 2. Periodic Evaluation Hub & Creation Dialog Check
+    // 2. Periodic Evaluation Hub & Creation Dialog Flow
     await page.goto("/kinerja/evaluasi");
     await expect(page.locator("h1")).toContainText(/Evaluasi Periodik/i);
     await expect(page.locator("text=Buat Evaluasi Bulanan")).toBeVisible();
 
-    // Open creation dialog
+    // Open evaluation dialog
     await page.click("button:has-text('Buat Evaluasi Bulanan')");
     await expect(page.locator("text=Buat Evaluasi Bulanan Baru")).toBeVisible();
     await page.click("button:has-text('Batal')");

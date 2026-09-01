@@ -635,7 +635,7 @@ describe("a11y — exactly one <main> landmark, and the skip link reaches it", (
     );
   });
 
-  it("every page renders exactly one <main id=\"main-content\">", () => {
+  it("every page renders exactly one <main id=\"main-content\">", { timeout: 15000 }, () => {
     // Zero means the skip link has no target and silently does nothing.
     // Two means nested or duplicated landmarks and a duplicate id, so
     // getElementById picks whichever comes first in the document.

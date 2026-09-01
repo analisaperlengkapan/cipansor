@@ -549,6 +549,34 @@ export const EsignService = {
   async verifyByToken(token: string) {
     return verifyLetterByToken(token);
   },
+
+  /**
+   * Verifikasi publik lewat buffer file PDF yang diunggah.
+   *
+   * Mencari token verifikasi atau mencocokkan rekaman tanda tangan di DB,
+   * lalu memanggil verifyLetterByToken agar tetap menjaga aturan kerahasiaan.
+   */
+  async verifyByPdfBuffer(pdfBuffer: Buffer) {
+    // Coba cari token verifikasi yang tertanam di dalam teks/metadata PDF
+    const text = pdfBuffer.toString('latin1');
+    const signatures = await prisma.letterSignature.findMany({
+      select: { verificationToken: true },
+    });
+
+    let matchedToken: string | null = null;
+    for (const sig of signatures) {
+      if (sig.verificationToken && text.includes(sig.verificationToken)) {
+        matchedToken = sig.verificationToken;
+        break;
+      }
+    }
+
+    if (matchedToken) {
+      return verifyLetterByToken(matchedToken);
+    }
+
+    return { found: false as const };
+  },
 };
 
 export type { SigningKeyState };

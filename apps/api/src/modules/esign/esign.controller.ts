@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { SigningKeyRequestStatus } from '@prisma/client';
 import { EsignService } from './esign.service';
+import { Errors } from '@/middleware/error';
 
 export const EsignController = {
   async myStatus(req: Request, res: Response, next: NextFunction) {
@@ -71,5 +72,30 @@ export const EsignController = {
     try {
       res.json({ success: true, data: await EsignService.verifyByToken(req.params.token) });
     } catch (e) { next(e); }
+  },
+
+  /** Publik: dipanggil halaman verifikasi publik via upload PDF. */
+  async verifyPdf(req: Request, res: Response, next: NextFunction) {
+    try {
+      const captchaAnswer = req.body?.captchaAnswer ?? req.body?.captcha;
+      const expectedCaptcha = req.body?.expectedCaptcha ?? req.body?.captchaExpected;
+
+      if (!captchaAnswer || !expectedCaptcha) {
+        throw Errors.badRequest('Verifikasi CAPTCHA wajib diisi.');
+      }
+
+      if (String(captchaAnswer).trim() !== String(expectedCaptcha).trim()) {
+        throw Errors.badRequest('Jawaban CAPTCHA tidak sesuai.');
+      }
+
+      if (!req.file || !req.file.buffer) {
+        throw Errors.badRequest('File PDF wajib diunggah.');
+      }
+
+      const result = await EsignService.verifyByPdfBuffer(req.file.buffer);
+      res.json({ success: true, data: result });
+    } catch (e) {
+      next(e);
+    }
   },
 };

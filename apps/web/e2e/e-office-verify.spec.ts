@@ -24,6 +24,31 @@ test.describe("E-Office & Public Letter Verification E2E", () => {
     await expect(page.getByRole("button", { name: /buat surat baru/i })).toBeVisible();
   });
 
+  test("Integration test against real backend /api/esign/verify-pdf endpoint", async ({ page }) => {
+    await page.goto("/public/verify-letter");
+
+    const buffer = Buffer.from("%PDF-1.7\n1 0 obj\n<< /Type /Catalog >>\nendobj\ntrailer\n<< /Root 1 0 R >>\n%%EOF");
+    await page.setInputFiles("input[type='file']", {
+      name: "sample-document.pdf",
+      mimeType: "application/pdf",
+      buffer,
+    });
+
+    const captchaText = await page.textContent("text=/Keamanan Anti-Spam: Berapakah/");
+    if (captchaText) {
+      const match = captchaText.match(/(\d+)\s*\+\s*(\d+)/);
+      if (match) {
+        const sum = parseInt(match[1]) + parseInt(match[2]);
+        await page.getByPlaceholder("Hasil...").fill(sum.toString());
+      }
+    }
+
+    await page.getByRole("button", { name: /verifikasi dokumen/i }).click();
+
+    // With real backend, uploading random PDF buffer should return DOKUMEN TIDAK VALID or result
+    await expect(page.locator("text=/DOKUMEN TIDAK VALID|DOKUMEN SAH & TERVERIFIKASI/")).toBeVisible();
+  });
+
   test("Valid public PDF verification displays success status and TTE signer details", async ({ page }) => {
     await page.route("**/api/esign/verify-pdf", async (route) => {
       await route.fulfill({
@@ -51,7 +76,6 @@ test.describe("E-Office & Public Letter Verification E2E", () => {
 
     await page.goto("/public/verify-letter");
 
-    // Create a mock PDF file upload
     const buffer = Buffer.from("%PDF-1.7\n1 0 obj\n<< /Type /Catalog >>\nendobj\ntrailer\n<< /Root 1 0 R >>\n%%EOF");
     await page.setInputFiles("input[type='file']", {
       name: "surat-resmi.pdf",
@@ -59,7 +83,6 @@ test.describe("E-Office & Public Letter Verification E2E", () => {
       buffer,
     });
 
-    // Solve CAPTCHA challenge
     const captchaText = await page.textContent("text=/Keamanan Anti-Spam: Berapakah/");
     if (captchaText) {
       const match = captchaText.match(/(\d+)\s*\+\s*(\d+)/);
@@ -74,7 +97,7 @@ test.describe("E-Office & Public Letter Verification E2E", () => {
     await expect(page.getByText(/DOKUMEN SAH & TERVERIFIKASI/i)).toBeVisible();
     await expect(page.getByText("Dr. H. Ahmad")).toBeVisible();
     await expect(page.getByText("001/SK/Y-CPS/VIII/2026")).toBeVisible();
-    await expect(page.getByText(/16:40:31 WIB/i)).toBeVisible();
+    await expect(page.getByText(/23:40:31 WIB/i)).toBeVisible();
   });
 
   test("Revoked PDF verification displays revoked notice", async ({ page }) => {
@@ -173,11 +196,9 @@ test.describe("E-Office & Public Letter Verification E2E", () => {
     await page.goto("/e-office/create");
     await expect(page.locator("h1")).toContainText("Buat Surat Baru");
 
-    // Check basic form fields exist
     await expect(page.getByLabel(/Perihal/i)).toBeVisible();
     await page.getByLabel(/Perihal/i).fill("Undangan Rapat Evaluasi E2E");
 
-    // Search input for participant selection exists
     const searchInput = page.getByPlaceholder(/Cari pejabat\/staf/i);
     await expect(searchInput).toBeVisible();
     await searchInput.fill("Ahmad");

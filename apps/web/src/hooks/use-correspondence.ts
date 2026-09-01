@@ -44,9 +44,19 @@ export function usePublicVerifyLetter(token?: string, nonce: number = 0) {
 
 export function useVerifyPdfLetter() {
   return useMutation({
-    mutationFn: async (file: File) => {
+    mutationFn: async ({
+      file,
+      captchaAnswer,
+      expectedCaptcha,
+    }: {
+      file: File;
+      captchaAnswer: string;
+      expectedCaptcha: string;
+    }) => {
       const formData = new FormData();
       formData.append("file", file);
+      formData.append("captchaAnswer", captchaAnswer);
+      formData.append("expectedCaptcha", expectedCaptcha);
       const response = await api.post<{
         success: boolean;
         data: PublicLetterVerificationResult;

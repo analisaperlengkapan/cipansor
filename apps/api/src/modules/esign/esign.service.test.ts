@@ -26,7 +26,7 @@ vi.mock('../../lib/prisma', () => ({
     },
     letter: { findUnique: vi.fn(), update: vi.fn() },
     letterReviewer: { update: vi.fn() },
-    letterSignature: { create: vi.fn(), findUnique: vi.fn() },
+    letterSignature: { create: vi.fn(), findUnique: vi.fn(), findMany: vi.fn(), findFirst: vi.fn() },
     letterFlowEvent: { create: vi.fn() },
     user: { findUnique: vi.fn() },
     $transaction: vi.fn((cb: any) => cb(prisma)),
@@ -60,8 +60,6 @@ function activeKey(over: Record<string, unknown> = {}) {
 beforeEach(() => vi.clearAllMocks());
 
 describe('pengajuan kunci', () => {
-  // Jenis pengajuan ditentukan server. Bila klien boleh memilih, kunci yang
-  // sudah kedaluwarsa bisa "diperpanjang" dan lolos dari pemeriksaan ulang.
   it('memilih ENROLLMENT bila belum punya kunci', async () => {
     vi.mocked(prisma.signingKeyRequest.findFirst).mockResolvedValue(null as any);
     vi.mocked(prisma.userSigningKey.findUnique).mockResolvedValue(null as any);
@@ -122,7 +120,6 @@ describe('putusan Super Admin', () => {
 
     await EsignService.decideRequest('r1', 'admin', true, 365);
 
-    // Kuncinya tidak dihapus — surat lama harus tetap terverifikasi.
     expect(prisma.userSigningKey.deleteMany).not.toHaveBeenCalled();
     expect(prisma.userSigningKey.update).toHaveBeenCalledWith({
       where: { id: key.id },
@@ -149,11 +146,9 @@ describe('ganti passphrase', () => {
       EsignService.changePassphrase('ketua', PASS, 'password-salah', 'passphrase-baru-2026')
     ).rejects.toThrow(/Password akun salah/i);
 
-    // Tidak menyentuh kunci sama sekali.
     expect(prisma.userSigningKey.update).not.toHaveBeenCalled();
   });
 
-  // Menebak passphrase harus mahal, termasuk lewat jalur ini.
   it('mencatat percobaan gagal bila passphrase lama salah', async () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValue({ passwordHash: 'h' } as any);
     compareMock.mockResolvedValue(true);
@@ -223,7 +218,6 @@ describe('menandatangani surat', () => {
 
     expect(prisma.letterSignature.create).not.toHaveBeenCalled();
     expect(prisma.letter.update).not.toHaveBeenCalled();
-    // Hitungan gagal tetap naik walau operasi utama batal.
     expect(prisma.userSigningKey.update).toHaveBeenCalledWith({
       where: { id: 'key-1' },
       data: expect.objectContaining({ failedAttempts: 1 }),
@@ -305,8 +299,20 @@ describe('verifikasi publik', () => {
     expect(r.signerName).toBe('H. Ramram Mansur Ramdani');
   });
 
-  // Inti keamanan fitur ini: QR menempel pada lembar yang bisa bertanda
-  // "SANGAT RAHASIA". Halaman publik tidak boleh menayangkan isinya.
+  it('verifikasi via upload buffer PDF berhasil menemukan token yang cocok', async () => {
+    const fixture = signedFixture('PUBLIC');
+    vi.mocked(prisma.letterSignature.findMany).mockResolvedValue([
+      { verificationToken: 'tok-embedded-123' },
+    ] as any);
+    vi.mocked(prisma.letterSignature.findUnique).mockResolvedValue(fixture as any);
+
+    const pdfBuffer = Buffer.from('PDF Content containing token tok-embedded-123 inside');
+    const r: any = await EsignService.verifyByPdfBuffer(pdfBuffer);
+
+    expect(r.found).toBe(true);
+    expect(r.valid).toBe(true);
+  });
+
   it.each(['PUBLIC', 'LIMITED', 'CONFIDENTIAL', 'STRICTLY_CONFIDENTIAL'])(
     'tidak pernah mengembalikan isi surat (sifat %s)',
     async (nature) => {

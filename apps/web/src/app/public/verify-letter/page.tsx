@@ -23,6 +23,25 @@ import { safeFormat } from "@/lib/date";
 import { id as localeId } from "date-fns/locale";
 import type { PublicLetterVerificationResult } from "@cipansor/shared";
 
+function formatWibTimestamp(dateInput?: Date | string | null, includeSeconds = false) {
+  if (!dateInput) return "-";
+  try {
+    const d = new Date(dateInput);
+    return new Intl.DateTimeFormat("id-ID", {
+      timeZone: "Asia/Jakarta",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      ...(includeSeconds ? { second: "2-digit" } : {}),
+      hour12: false,
+    }).format(d);
+  } catch {
+    return "-";
+  }
+}
+
 function PublicVerifyContent() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [result, setResult] = useState<PublicLetterVerificationResult | null>(null);
@@ -75,7 +94,11 @@ function PublicVerifyContent() {
     setResult(null);
 
     try {
-      const data = await verifyPdfMutation.mutateAsync(selectedFile);
+      const data = await verifyPdfMutation.mutateAsync({
+        file: selectedFile,
+        captchaAnswer,
+        expectedCaptcha: String(captchaNum1 + captchaNum2),
+      });
       setResult(data);
       generateCaptcha();
     } catch (err: any) {
@@ -84,7 +107,9 @@ function PublicVerifyContent() {
         setError("Terlalu banyak permintaan verifikasi. Silakan tunggu beberapa saat.");
       } else {
         setError(
-          err?.response?.data?.message || "Terjadi kesalahan saat memverifikasi dokumen PDF."
+          err?.response?.data?.error?.message ||
+            err?.response?.data?.message ||
+            "Terjadi kesalahan saat memverifikasi dokumen PDF."
         );
       }
     }
@@ -241,9 +266,7 @@ function PublicVerifyContent() {
                     Surat ini telah resmi dicabut oleh penerbit/penandatangan pada{" "}
                     <strong>
                       {result.revokedAt
-                        ? safeFormat(new Date(result.revokedAt), "dd MMMM yyyy HH:mm:ss", {
-                            locale: localeId,
-                          })
+                        ? `${formatWibTimestamp(result.revokedAt, true)} WIB`
                         : "tanggal yang ditentukan"}
                     </strong>
                     . Dokumen ini tidak lagi berlaku untuk keperluan administratif.
@@ -318,9 +341,7 @@ function PublicVerifyContent() {
                       <div className="sm:col-span-2">
                         <span className="text-xs text-slate-500 block">Waktu Penandatanganan</span>
                         <span className="font-medium text-slate-900">
-                          {safeFormat(new Date(result.signedAt), "dd MMMM yyyy HH:mm:ss", {
-                            locale: localeId,
-                          })} WIB
+                          {formatWibTimestamp(result.signedAt, true)} WIB
                         </span>
                       </div>
                     )}

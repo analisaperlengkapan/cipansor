@@ -31,7 +31,7 @@ export function usePublicVerifyLetter(token?: string, nonce: number = 0) {
       const response = await api.get<{
         success: boolean;
         data: PublicLetterVerificationResult;
-      }>(`/correspondence/public/verify/${encodeURIComponent(token!.trim())}`);
+      }>(`/esign/verify/${encodeURIComponent(token!.trim())}`);
       return response.data.data;
     },
     enabled: !!token && token.trim().length > 0,
@@ -39,6 +39,22 @@ export function usePublicVerifyLetter(token?: string, nonce: number = 0) {
     gcTime: 0,
     refetchOnMount: "always",
     retry: false,
+  });
+}
+
+export function useVerifyPdfLetter() {
+  return useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      const response = await api.post<{
+        success: boolean;
+        data: PublicLetterVerificationResult;
+      }>("/esign/verify-pdf", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return response.data.data;
+    },
   });
 }
 

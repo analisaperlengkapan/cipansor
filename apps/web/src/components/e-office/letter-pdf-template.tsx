@@ -58,18 +58,20 @@ export const LetterPDFTemplate = forwardRef<
   // Revoked signatures stay in the record so a circulated letter can still be
   // explained, but the naskah must not print one as if it were valid.
   const signature = signatures.filter((s) => !s.revokedAt).at(-1);
-  const verifyUrl =
-    signature && origin ? `${origin}/verifikasi/${signature.verificationToken}` : "";
+  const qrCodeValue = signature ? signature.verificationToken : "";
+  const publicVerifyUrl = origin
+    ? `${origin}/public/verify-letter`
+    : "https://cipansor.or.id/public/verify-letter";
 
   useEffect(() => {
-    if (!verifyUrl) {
+    if (!qrCodeValue) {
       setQrDataUrl(null);
       return;
     }
     // The offscreen canvas is painted by QRCodeCanvas below on the same commit,
     // so it is readable here.
     setQrDataUrl(qrSourceRef.current?.toDataURL("image/png") ?? null);
-  }, [verifyUrl]);
+  }, [qrCodeValue]);
 
   if (!letter) return null;
 
@@ -401,14 +403,8 @@ export const LetterPDFTemplate = forwardRef<
           {signerNip !== "-" && <p>NIP. {signerNip}</p>}
 
           {signature && (
-            /*
-              Dicetak apa adanya di bawah QR: pemindai yang kameranya tidak
-              jalan, atau penerima yang memegang fotokopi buram, tetap punya
-              alamat yang bisa diketik. QR tanpa alamat tercetak adalah QR yang
-              gagal begitu gambarnya rusak.
-            */
             <p className="mt-2 break-all text-[7pt] leading-tight text-gray-600">
-              Verifikasi keaslian: {verifyUrl}
+              Verifikasi keaslian: {publicVerifyUrl}
             </p>
           )}
         </div>
@@ -423,11 +419,11 @@ export const LetterPDFTemplate = forwardRef<
         layar justru berisiko: html2canvas menghitung area tangkapan dari kotak
         elemen, dan anak yang menjorok jauh ke kiri bisa menggeser hasilnya.
       */}
-      {verifyUrl && (
+      {qrCodeValue && (
         <div aria-hidden="true" style={{ display: "none" }}>
           <QRCodeCanvas
             ref={qrSourceRef}
-            value={verifyUrl}
+            value={qrCodeValue}
             size={104}
             level="M"
             marginSize={1}

@@ -1,5 +1,4 @@
 import { Request, Response } from 'express';
-import fs from 'fs';
 import { CorrespondenceService } from './correspondence.service';
 import { asyncHandler, Errors } from '@/middleware/error';
 import { ApiResponse } from '@/utils/response';
@@ -161,16 +160,7 @@ export const CorrespondenceController = {
       throw Errors.badRequest('Token verifikasi wajib diisi');
     }
 
-    let pdfBuffer: Buffer | undefined;
-    if (req.file) {
-      try {
-        pdfBuffer = await fs.promises.readFile(req.file.path);
-      } finally {
-        await fs.promises.unlink(req.file.path).catch(() => undefined);
-      }
-    }
-
-    const result = await CorrespondenceService.verifyPublicLetter(token, pdfBuffer);
+    const result = await CorrespondenceService.verifyPublicLetter(token);
     res.json(ApiResponse.success(result));
   }),
 };

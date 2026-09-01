@@ -1,8 +1,7 @@
-import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { verifySignature } from '@/utils/esign';
 
-export async function verifyLetterByToken(token: string, pdfBuffer?: Buffer | null) {
+export async function verifyLetterByToken(token: string) {
   const signature = await prisma.letterSignature.findUnique({
     where: { verificationToken: token },
     include: {
@@ -50,25 +49,10 @@ export async function verifyLetterByToken(token: string, pdfBuffer?: Buffer | nu
   });
 
   const isPublicNature = l.nature === 'PUBLIC';
-
-  let pdfVerified = false;
-  let pdfMatch = false;
-
-  if (pdfBuffer && pdfBuffer.length > 0) {
-    pdfVerified = true;
-    const uploadedPdfHash = crypto.createHash('sha256').update(pdfBuffer).digest('hex');
-    pdfMatch = uploadedPdfHash === signature.digest;
-  }
-
-  let isValid = intact && !signature.revokedAt;
-  if (pdfVerified && !pdfMatch) {
-    isValid = false;
-  }
+  const isValid = intact && !signature.revokedAt;
 
   let reason: string | undefined;
-  if (pdfVerified && !pdfMatch) {
-    reason = 'File PDF yang diunggah tidak cocok dengan naskah asli atau telah diubah setelah ditandatangani.';
-  } else if (!intact) {
+  if (!intact) {
     reason = 'Isi naskah telah diubah setelah ditandatangani.';
   } else if (signature.revokedAt) {
     reason = signature.revokedReason ? `Surat telah dicabut: ${signature.revokedReason}` : 'Surat telah dicabut.';
@@ -79,8 +63,6 @@ export async function verifyLetterByToken(token: string, pdfBuffer?: Buffer | nu
     valid: isValid,
     isValid,
     intact,
-    pdfVerified,
-    pdfMatch,
     revoked: !!signature.revokedAt,
     isRevoked: !!signature.revokedAt,
     revokedAt: signature.revokedAt,

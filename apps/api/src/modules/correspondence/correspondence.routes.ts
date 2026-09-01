@@ -2,7 +2,6 @@ import { Router } from 'express';
 import { CorrespondenceController } from './correspondence.controller';
 import { authenticate } from '@/middleware/auth';
 import { validate, validateQuery } from '@/middleware/error';
-import { upload } from '@/middleware/upload';
 import {
   createLetterSchema,
   reviewLetterSchema,
@@ -20,7 +19,7 @@ const router = Router();
 // Omitting local defaultLimiter prevents double-counting against rate limit counters in production.
 router.get('/public/verify', CorrespondenceController.verifyPublic);
 router.get('/public/verify/:token', CorrespondenceController.verifyPublic);
-router.post('/public/verify', upload.single('file'), CorrespondenceController.verifyPublic);
+router.post('/public/verify', CorrespondenceController.verifyPublic);
 
 router.use(authenticate);
 

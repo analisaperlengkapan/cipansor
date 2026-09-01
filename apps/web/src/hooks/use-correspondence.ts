@@ -27,31 +27,16 @@ export function useCorrespondenceParticipants(params?: {
   });
 }
 
-export async function verifyPublicLetterApi(token: string, file?: File | null) {
-  if (file) {
-    const formData = new FormData();
-    formData.append("token", token.trim());
-    formData.append("file", file);
-    const response = await api.post<{
-      success: boolean;
-      data: PublicLetterVerificationResult;
-    }>("/correspondence/public/verify", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-    return response.data.data;
-  } else {
-    const response = await api.get<{
-      success: boolean;
-      data: PublicLetterVerificationResult;
-    }>(`/correspondence/public/verify/${encodeURIComponent(token.trim())}`);
-    return response.data.data;
-  }
-}
-
-export function usePublicVerifyLetter(token?: string, nonce: number = 0, file?: File | null) {
+export function usePublicVerifyLetter(token?: string, nonce: number = 0) {
   return useQuery({
-    queryKey: ["publicVerifyLetter", token, nonce, file?.name],
-    queryFn: () => verifyPublicLetterApi(token!, file),
+    queryKey: ["publicVerifyLetter", token, nonce],
+    queryFn: async () => {
+      const response = await api.get<{
+        success: boolean;
+        data: PublicLetterVerificationResult;
+      }>(`/correspondence/public/verify/${encodeURIComponent(token!.trim())}`);
+      return response.data.data;
+    },
     enabled: !!token && token.trim().length > 0,
     staleTime: 0,
     gcTime: 0,
@@ -122,9 +107,10 @@ export function useCorrespondence(unitId?: string) {
 
   // Submit DRAFT for Review
   const submitForReview = useMutation({
-    mutationFn: async ({ id, note }: { id: string; note?: string }) => {
+    mutationFn: async ({ id, note, reviewerIds }: { id: string; note?: string; reviewerIds?: string[] }) => {
       const response = await api.post(`/correspondence/letters/${id}/submit`, {
         note,
+        reviewerIds,
       });
       return response.data;
     },

@@ -122,33 +122,4 @@ describe('CorrespondenceService - Public Verification', () => {
     expect(result.revokedAt).toEqual(revokedDate);
   });
 
-  it('validates uploaded PDF buffer matching signature digest', async () => {
-    const fixture = signedFixture('PUBLIC') as any;
-    vi.mocked(prisma.letterSignature.findUnique).mockResolvedValue(fixture);
-
-    // Create buffer whose SHA-256 matches fixture.digest
-    const pdfBuffer = Buffer.from('Matching PDF content');
-    const crypto = await import('crypto');
-    fixture.digest = crypto.createHash('sha256').update(pdfBuffer).digest('hex');
-
-    const result = await CorrespondenceService.verifyPublicLetter('valid-token', pdfBuffer);
-
-    expect(result.isValid).toBe(true);
-    expect(result.pdfVerified).toBe(true);
-    expect(result.pdfMatch).toBe(true);
-  });
-
-  it('returns pdfMatch=false and isValid=false when PDF contains token string but content/digest differs', async () => {
-    const fixture = signedFixture('PUBLIC') as any;
-    vi.mocked(prisma.letterSignature.findUnique).mockResolvedValue(fixture);
-
-    // PDF contains verificationToken string but SHA-256 digest differs from fixture.digest
-    const tamperedPdfBuffer = Buffer.from(`%PDF-1.4 Token: ${fixture.verificationToken} Tampered Content`);
-    const result = await CorrespondenceService.verifyPublicLetter('valid-token', tamperedPdfBuffer);
-
-    expect(result.isValid).toBe(false);
-    expect(result.pdfVerified).toBe(true);
-    expect(result.pdfMatch).toBe(false);
-    expect(result.reason).toContain('PDF yang diunggah tidak cocok');
-  });
 });

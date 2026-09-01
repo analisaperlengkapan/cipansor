@@ -535,6 +535,24 @@ describe('CorrespondenceService', () => {
       });
     });
 
+    it('rejects letter creation for non-bypass roles when actor.unitId is null', async () => {
+      await expect(
+        CorrespondenceService.createLetter(
+          {
+            unitId: 'unit-1',
+            direction: 'OUTGOING' as any,
+            subject: 'Testing Null Unit Actor',
+            date: '2026-08-01',
+            urgency: 'NORMAL' as any,
+            nature: 'PUBLIC' as any,
+            status: 'DRAFT' as any,
+          },
+          'user-no-unit',
+          { id: 'user-no-unit', roleCode: 'SDIT_TATA_USAHA', unitId: null } as any
+        )
+      ).rejects.toThrow(/tidak terhubung dengan unit kerja yang valid/);
+    });
+
     it('rejects creation for unauthorized unit', async () => {
       await expect(
         CorrespondenceService.createLetter(

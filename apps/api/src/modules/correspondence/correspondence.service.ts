@@ -93,9 +93,14 @@ const DEFAULT_AGENDA_FORMAT = '[NO]/[TYPE]/Y-CPS/[ROMAN]/[YEAR]';
 
 export const CorrespondenceService = {
   // Helper: Generate Auto Number
-  async generateNumber(unitId: string, type: string, academicYearId: string): Promise<string> {
+  async generateNumber(
+    unitId: string,
+    type: string,
+    academicYearId: string,
+    db: Db = prisma
+  ): Promise<string> {
     // 1. Find Agenda Config
-    let agenda = await prisma.agendaNumber.findUnique({
+    let agenda = await db.agendaNumber.findUnique({
       where: {
         unitId_academicYearId_type: {
           unitId,
@@ -107,7 +112,7 @@ export const CorrespondenceService = {
 
     // 2. Create if not exists
     if (!agenda) {
-      agenda = await prisma.agendaNumber.create({
+      agenda = await db.agendaNumber.create({
         data: {
           unitId,
           academicYearId,
@@ -119,7 +124,7 @@ export const CorrespondenceService = {
     }
 
     // 3. Increment (Atomic)
-    const updatedAgenda = await prisma.agendaNumber.update({
+    const updatedAgenda = await db.agendaNumber.update({
       where: { id: agenda.id },
       data: { lastNumber: { increment: 1 } },
     });
@@ -162,6 +167,7 @@ export const CorrespondenceService = {
         staff: { select: { nip: true } },
         userRoles: {
           where: {
+            isActive: true,
             role: {
               code: {
                 notIn: EXCLUDED_CORRESPONDENCE_ROLES as unknown as RoleCode[],
@@ -228,13 +234,20 @@ export const CorrespondenceService = {
 
     // Single-unit bypass is strictly reserved for Executive Foundation Roles and SUPER_ADMIN.
     const isFoundationBypass = isFoundationExecutive || isSuperAdmin;
-    const targetUnitId = (isFoundationBypass ? data.unitId : actor.unitId) || data.unitId;
+
+    if (!isFoundationBypass) {
+      if (!actor.unitId) {
+        throw Errors.forbidden('Akun Anda tidak terhubung dengan unit kerja yang valid.');
+      }
+      if (data.unitId && data.unitId !== actor.unitId) {
+        throw Errors.forbidden('Anda tidak berwenang membuat surat untuk unit lain');
+      }
+    }
+
+    const targetUnitId = isFoundationBypass ? (data.unitId || actor.unitId) : actor.unitId;
 
     if (!targetUnitId) {
       throw Errors.badRequest('Unit ID wajib diisi');
-    }
-    if (!isFoundationBypass && actor.unitId && data.unitId && data.unitId !== actor.unitId) {
-      throw Errors.forbidden('Anda tidak berwenang membuat surat untuk unit lain');
     }
 
     // Jenis naskah menentukan sifat mana yang sah dan buku nomor mana yang
@@ -359,7 +372,7 @@ export const CorrespondenceService = {
         const uniqueRecipients = Array.from(new Set(data.recipientIds));
         for (const recipientId of uniqueRecipients) {
           const existingDisp = await tx.disposition.findFirst({
-            where: { letterId: letter.id, recipientId, status: 'PENDING' },
+            where: { letterId: letter.id, recipientId, status: { not: 'COMPLETED' } },
           });
 
           if (!existingDisp) {
@@ -737,7 +750,7 @@ export const CorrespondenceService = {
 
             for (const recipientId of uniqueRecipientIds) {
               const existingDisp = await tx.disposition.findFirst({
-                where: { letterId: letter.id, recipientId, status: 'PENDING' },
+                where: { letterId: letter.id, recipientId, status: { not: 'COMPLETED' } },
               });
 
               if (!existingDisp) {
@@ -981,7 +994,7 @@ export const CorrespondenceService = {
         });
         const academicYearId = activeYear?.id || 'DEFAULT';
         const typeKey = AGENDA_TYPE_CODE[letter.type as DbLetterType] || 'SKET';
-        letterNumber = await this.generateNumber(letter.unitId, typeKey, academicYearId);
+        letterNumber = await this.generateNumber(letter.unitId, typeKey, academicYearId, tx);
 
         await tx.letter.update({
           where: { id: letterId },
@@ -1152,6 +1165,14 @@ export const CorrespondenceService = {
     const createdDispositions = await prisma.$transaction(async (tx) => {
       const results = [];
       for (const targetRecipientId of recipients) {
+        const existingDisp = await tx.disposition.findFirst({
+          where: { letterId: letter.id, recipientId: targetRecipientId, status: { not: 'COMPLETED' } },
+        });
+        if (existingDisp) {
+          results.push(existingDisp);
+          continue;
+        }
+
         const created = await tx.disposition.create({
           data: {
             letterId: data.letterId,
@@ -1300,6 +1321,7 @@ export const CorrespondenceService = {
       // Candidates must have an active non-external role assignment
       userRoles: {
         some: {
+          isActive: true,
           role: {
             code: {
               notIn: EXCLUDED_CORRESPONDENCE_ROLES as unknown as RoleCode[],
@@ -1344,6 +1366,15 @@ export const CorrespondenceService = {
         teacher: { select: { nip: true } },
         staff: { select: { nip: true, position: true } },
         userRoles: {
+          where: {
+            isActive: true,
+            role: {
+              code: {
+                notIn: EXCLUDED_CORRESPONDENCE_ROLES as unknown as RoleCode[],
+              },
+            },
+            OR: [{ expiresAt: null }, { expiresAt: { gte: now } }],
+          },
           select: { role: { select: { code: true } } },
           orderBy: [{ isPrimary: 'desc' }],
           take: 1,
@@ -1462,8 +1493,8 @@ export const CorrespondenceService = {
   /**
    * Public verification for signed letters via token and optional uploaded PDF buffer
    */
-  async verifyPublicLetter(token: string, pdfBuffer?: Buffer | null) {
-    const res = await verifyLetterByToken(token, pdfBuffer);
+  async verifyPublicLetter(token: string) {
+    const res = await verifyLetterByToken(token);
     if (!res.found) {
       return {
         isValid: false,
@@ -1473,8 +1504,6 @@ export const CorrespondenceService = {
 
     return {
       isValid: res.isValid,
-      pdfVerified: res.pdfVerified,
-      pdfMatch: res.pdfMatch,
       isRevoked: res.isRevoked,
       revokedAt: res.revokedAt,
       signedAt: res.signedAt,

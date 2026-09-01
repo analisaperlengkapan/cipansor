@@ -221,8 +221,6 @@ export interface AgendaNumberConfig {
 // Public Verification DTO
 export interface PublicLetterVerificationResult {
   isValid: boolean;
-  pdfVerified?: boolean;
-  pdfMatch?: boolean;
   isRevoked?: boolean;
   revokedAt?: string | Date | null;
   signedAt?: string | Date;

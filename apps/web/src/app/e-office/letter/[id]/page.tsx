@@ -101,6 +101,7 @@ export default function LetterDetailPage({
   });
   const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
   const [completeNotes, setCompleteNotes] = useState("");
+  const [selectedReviewerId, setSelectedReviewerId] = useState<string>("");
 
   // Find active disposition for current user
   const activeDisposition = letter?.dispositions?.find(
@@ -255,15 +256,16 @@ export default function LetterDetailPage({
   };
 
   const handleSubmitDraftForReview = async () => {
-    const firstReviewerId = letter.reviewers?.[0]?.reviewerId;
+    const firstReviewerId = letter.reviewers?.[0]?.reviewerId || selectedReviewerId;
     if (!firstReviewerId) {
-      toast.error("Tidak ada pemeriksa terdaftar pada konsep surat ini");
+      toast.error("Pemeriksa pertama wajib dipilih saat mengajukan review");
       return;
     }
     try {
       await submitForReview.mutateAsync({
         id: letter.id,
         note: notes || "Mengajukan draft untuk ditinjau",
+        reviewerIds: letter.reviewers?.length ? undefined : [selectedReviewerId],
       });
       toast.success("Draft surat berhasil diajukan untuk ditinjau");
     } catch (error: any) {
@@ -779,14 +781,42 @@ export default function LetterDetailPage({
                 Disposisi
               </Button>
 
-              {letter.status === "DRAFT" && letter.createdBy?.name && (
-                <Button
-                  className="w-full bg-blue-600 hover:bg-blue-700"
-                  onClick={handleSubmitDraftForReview}
-                >
-                  <Send className="mr-2 h-4 w-4" />
-                  Ajukan Review
-                </Button>
+              {letter.status === "DRAFT" && letter.createdById === user?.id && (
+                <div className="space-y-3 pt-2 border-t">
+                  {(!letter.reviewers || letter.reviewers.length === 0) && (
+                    <div className="space-y-2">
+                      <Label className="text-xs font-medium text-slate-700">Pilih Pemeriksa Pertama</Label>
+                      <Input
+                        placeholder="Cari pejabat..."
+                        value={participantSearch}
+                        onChange={(e) => setParticipantSearch(e.target.value)}
+                        className="text-xs mb-1"
+                      />
+                      <Select
+                        value={selectedReviewerId}
+                        onValueChange={setSelectedReviewerId}
+                      >
+                        <SelectTrigger className="text-xs bg-white">
+                          <SelectValue placeholder="Pilih pemeriksa/atasan..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {participantsData?.data.map((u) => (
+                            <SelectItem key={u.id} value={u.id}>
+                              {u.nip ? `${u.name} (${u.nip})` : u.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                  <Button
+                    className="w-full bg-blue-600 hover:bg-blue-700"
+                    onClick={handleSubmitDraftForReview}
+                  >
+                    <Send className="mr-2 h-4 w-4" />
+                    Ajukan Review
+                  </Button>
+                </div>
               )}
 
               {/*

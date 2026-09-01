@@ -442,6 +442,49 @@ describe('CorrespondenceService', () => {
       }
     });
 
+    it('creates dispositions when review completes for an incoming letter with recipientIds', async () => {
+      vi.mocked(prisma.letter.findUnique).mockResolvedValue({
+        id: 'inc-letter-1',
+        status: 'PENDING_REVIEW',
+        direction: 'INCOMING',
+        unitId: 'unit-1',
+        createdById: 'creator-1',
+        reviewers: [
+          { id: 'rev-1', reviewerId: 'user-1', order: 1, status: 'PENDING', isSigner: true },
+        ],
+        recipients: [{ userId: 'rec-1' }, { userId: 'rec-2' }],
+      } as any);
+
+      await CorrespondenceService.processReview('inc-letter-1', 'user-1', 'APPROVE');
+
+      expect(prisma.disposition.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            letterId: 'inc-letter-1',
+            senderId: 'user-1',
+            recipientId: 'rec-1',
+            instruction: 'Surat Masuk Diteruskan',
+          }),
+        })
+      );
+      expect(prisma.disposition.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            letterId: 'inc-letter-1',
+            senderId: 'user-1',
+            recipientId: 'rec-2',
+            instruction: 'Surat Masuk Diteruskan',
+          }),
+        })
+      );
+      expect(prisma.letter.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'inc-letter-1' },
+          data: { status: 'DISPOSED' },
+        })
+      );
+    });
+
     it('sets incoming letter without reviewers to DISPOSED when recipientIds present and creates real disposition records', async () => {
       vi.mocked(prisma.letter.create).mockResolvedValue({ id: 'let-2', status: 'DISPOSED', unitId: 'unit-1' } as any);
 

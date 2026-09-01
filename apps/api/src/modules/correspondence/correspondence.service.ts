@@ -27,6 +27,7 @@ import {
   assertMayArchive,
   assertMayResubmit,
   assertMayReview,
+  nextRung,
   statusAfterApproval,
   statusAfterResubmit,
   type ReviewerRung,
@@ -494,7 +495,15 @@ export const CorrespondenceService = {
     const result = await prisma.$transaction(async (tx) => {
       const letter = await tx.letter.findUnique({
         where: { id: letterId },
-        select: { id: true, status: true, createdById: true, reviewers: true },
+        select: {
+          id: true,
+          status: true,
+          createdById: true,
+          direction: true,
+          unitId: true,
+          reviewers: true,
+          recipients: { select: { userId: true } },
+        },
       });
       if (!letter) throw new Error('Letter not found');
 
@@ -588,9 +597,47 @@ export const CorrespondenceService = {
           ? statusAfterApproval(updatedLadder, reviewerId)
           : DbLetterStatus.REVISION_NEEDED;
 
-      // Review approval alone must NEVER set status directly to SIGNED — signing requires E-Sign passphrase via esign.service.
-      if (action === 'APPROVE' && nextStatus === DbLetterStatus.SIGNED) {
-        nextStatus = DbLetterStatus.READY_TO_SIGN;
+      const reviewFinished = action === 'APPROVE' && !nextRung(updatedLadder.map((r) => r.reviewerId === reviewerId ? { ...r, status: 'APPROVED' } : r));
+      const disposedRecipients: string[] = [];
+
+      if (action === 'APPROVE') {
+        if (letter.direction === 'INCOMING' && reviewFinished) {
+          nextStatus = DbLetterStatus.DISPOSED;
+
+          // When review finishes for an INCOMING letter with recipients, create live Disposition tasks
+          if (letter.recipients && letter.recipients.length > 0) {
+            const uniqueRecipientIds = Array.from(
+              new Set(letter.recipients.map((r) => r.userId).filter(Boolean))
+            ) as string[];
+
+            for (const recipientId of uniqueRecipientIds) {
+              await tx.disposition.create({
+                data: {
+                  letterId: letter.id,
+                  senderId: reviewerId,
+                  recipientId,
+                  instruction: 'Surat Masuk Diteruskan',
+                  status: 'PENDING',
+                },
+              });
+
+              await recordFlow(tx, {
+                letterId: letter.id,
+                actorId: reviewerId,
+                action: LetterFlowAction.DISPOSED,
+                targetId: recipientId,
+                fromStatus: letter.status,
+                toStatus: DbLetterStatus.DISPOSED,
+                note: 'Surat Masuk Diteruskan',
+              });
+
+              disposedRecipients.push(recipientId);
+            }
+          }
+        } else if (nextStatus === DbLetterStatus.SIGNED) {
+          // Review approval alone must NEVER set status directly to SIGNED for outgoing letters — signing requires E-Sign passphrase via esign.service.
+          nextStatus = DbLetterStatus.READY_TO_SIGN;
+        }
       }
 
       await tx.letterReviewer.update({
@@ -628,6 +675,7 @@ export const CorrespondenceService = {
         rejected: action === 'REJECT',
         authorId: letter.createdById,
         status: nextStatus,
+        disposedRecipients,
       };
     });
 

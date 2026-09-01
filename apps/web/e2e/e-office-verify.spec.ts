@@ -33,4 +33,63 @@ test.describe("E-Office & Public Letter Verification E2E", () => {
     // Page should auto-populate input and execute verification attempt
     await expect(page.getByPlaceholder(/masukkan token/i)).toHaveValue("invalid-test-token");
   });
+
+  test("Valid public verification displays success status and signer details", async ({ page }) => {
+    await page.route("**/api/correspondence/public/verify/valid-token-123", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          success: true,
+          data: {
+            isValid: true,
+            isRevoked: false,
+            signer: { name: "Dr. H. Ahmad", nip: "19800101", position: "Kepala Sekolah" },
+            letter: {
+              letterNumber: "001/SK/Y-CPS/VIII/2026",
+              subject: "Pengumuman Resmi",
+              date: "2026-08-01",
+              status: "SIGNED",
+              unitName: "SMA Al-Qur'an",
+            },
+            signedAt: "2026-08-01T00:00:00Z",
+          },
+        }),
+      });
+    });
+
+    await page.goto("/public/verify-letter?code=valid-token-123");
+    await expect(page.getByText(/DOKUMEN SAH & TERVERIFIKASI/i)).toBeVisible();
+    await expect(page.getByText("Dr. H. Ahmad")).toBeVisible();
+    await expect(page.getByText("001/SK/Y-CPS/VIII/2026")).toBeVisible();
+  });
+
+  test("Confidential letter hides subject field on public verification page", async ({ page }) => {
+    await page.route("**/api/correspondence/public/verify/confidential-token-123", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          success: true,
+          data: {
+            isValid: true,
+            isRevoked: false,
+            signer: { name: "H. Ustadz Abdullah", nip: "19750202", position: "Sekretaris" },
+            letter: {
+              letterNumber: "002/RAHASIA/Y-CPS/VIII/2026",
+              subject: null,
+              date: "2026-08-01",
+              status: "SIGNED",
+              unitName: "Yayasan Pesantren Cipansor",
+            },
+            signedAt: "2026-08-01T00:00:00Z",
+          },
+        }),
+      });
+    });
+
+    await page.goto("/public/verify-letter?code=confidential-token-123");
+    await expect(page.getByText(/DOKUMEN SAH & TERVERIFIKASI/i)).toBeVisible();
+    await expect(page.getByText(/Perihal dan isi surat tidak ditampilkan/i)).toBeVisible();
+  });
 });

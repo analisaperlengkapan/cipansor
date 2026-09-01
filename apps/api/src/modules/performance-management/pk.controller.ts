@@ -51,6 +51,12 @@ export const updatePK = asyncHandler(async (req: Request, res: Response) => {
   res.json(ApiResponse.success(pk));
 });
 
+export const deletePK = asyncHandler(async (req: Request, res: Response) => {
+  const { id, isAdmin } = caller(req);
+  await pkService.deletePK(req.params.id, id, isAdmin);
+  res.json(ApiResponse.success(null, 'Performance agreement deleted'));
+});
+
 export const proposePK = asyncHandler(async (req: Request, res: Response) => {
   const { id, isAdmin } = caller(req);
   const pk = await pkService.proposePK(req.params.id, id, isAdmin);

@@ -80,6 +80,7 @@ router.get('/', pkController.listPKs);
 router.post('/', pkController.createPK);
 router.get('/:id', pkController.getPK);
 router.put('/:id', pkController.updatePK);
+router.delete('/:id', pkController.deletePK);
 router.post('/:id/propose', pkController.proposePK);
 router.post('/:id/approve', pkController.approvePK);
 router.post('/:id/reject', pkController.rejectPK);

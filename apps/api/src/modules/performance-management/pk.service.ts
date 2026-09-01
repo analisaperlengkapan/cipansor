@@ -222,13 +222,20 @@ export class PerformanceAgreementService {
   }
 
   async deletePK(id: string, callerId: string, isAdmin: boolean) {
-    const pk = await prisma.performanceAgreement.findUnique({ where: { id } });
-    if (!pk) throw Errors.notFound('PK');
-    this.assertAccess(pk, callerId, isAdmin, { ownerOnly: true });
-    if (pk.status === PlanStatus.APPROVED) {
-      throw Errors.badRequest('An approved PK can no longer be deleted');
-    }
-    return prisma.performanceAgreement.delete({ where: { id } });
+    return prisma.$transaction(async (tx) => {
+      if (typeof tx.$queryRaw === 'function') {
+        await tx.$queryRaw`SELECT id FROM "performance_agreements" WHERE id = ${id} FOR UPDATE`;
+      }
+
+      const pk = await tx.performanceAgreement.findUnique({ where: { id } });
+      if (!pk) throw Errors.notFound('PK');
+      this.assertAccess(pk, callerId, isAdmin, { ownerOnly: true });
+      if (pk.status === PlanStatus.APPROVED) {
+        throw Errors.conflict('An approved PK can no longer be deleted');
+      }
+
+      return tx.performanceAgreement.delete({ where: { id } });
+    });
   }
 
   async updatePK(

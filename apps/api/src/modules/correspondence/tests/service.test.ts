@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { CorrespondenceService } from '../../../../src/modules/correspondence/correspondence.service';
-import { prisma } from '../../../../src/lib/prisma';
+import { CorrespondenceService } from '../correspondence.service';
+import { prisma } from '@/lib/prisma';
 
 // Mock dependencies
-vi.mock('../../../../src/lib/prisma', () => ({
+vi.mock('@/lib/prisma', () => ({
   prisma: {
     agendaNumber: {
       findUnique: vi.fn(),

@@ -257,41 +257,18 @@ export const CorrespondenceService = {
 
       // Add Recipients
       if (data.recipientIds && data.recipientIds.length > 0) {
+        const uniqueRecipients = Array.from(new Set(data.recipientIds));
         await tx.letterRecipient.createMany({
-          data: data.recipientIds.map((recipientId) => ({
+          data: uniqueRecipients.map((recipientId) => ({
             letterId: letter.id,
             userId: recipientId,
             unitId: targetUnitId,
             isCC: false,
           })),
         });
-
-        // If incoming letter is created with recipientIds, create real Disposition tasks
-        if (data.direction === 'INCOMING') {
-          for (const recipientId of data.recipientIds) {
-            await tx.disposition.create({
-              data: {
-                letterId: letter.id,
-                senderId: userId,
-                recipientId,
-                instruction: 'Surat Masuk Diteruskan',
-                status: 'PENDING',
-              },
-            });
-
-            await recordFlow(tx, {
-              letterId: letter.id,
-              actorId: userId,
-              action: LetterFlowAction.DISPOSED,
-              targetId: recipientId,
-              fromStatus: letter.status,
-              toStatus: DbLetterStatus.DISPOSED,
-              note: 'Surat Masuk Diteruskan',
-            });
-          }
-        }
       }
 
+      // Record CREATED flow event first
       await recordFlow(tx, {
         letterId: letter.id,
         actorId: userId,
@@ -300,9 +277,7 @@ export const CorrespondenceService = {
         note: letter.subject,
       });
 
-      // A draft that is created straight into review has been submitted, and
-      // saying so keeps the history readable: otherwise the first approval
-      // appears with nothing before it explaining why anyone was reviewing.
+      // Record SUBMITTED if created straight into review
       if (letter.status !== DbLetterStatus.DRAFT && data.reviewerIds?.length) {
         await recordFlow(tx, {
           letterId: letter.id,
@@ -310,6 +285,32 @@ export const CorrespondenceService = {
           action: LetterFlowAction.SUBMITTED,
           toStatus: letter.status,
         });
+      }
+
+      // Create live Dispositions ONLY when initial status is DISPOSED
+      if (data.direction === 'INCOMING' && initialStatus === DbLetterStatus.DISPOSED && data.recipientIds?.length) {
+        const uniqueRecipients = Array.from(new Set(data.recipientIds));
+        for (const recipientId of uniqueRecipients) {
+          await tx.disposition.create({
+            data: {
+              letterId: letter.id,
+              senderId: userId,
+              recipientId,
+              instruction: 'Surat Masuk Diteruskan',
+              status: 'PENDING',
+            },
+          });
+
+          await recordFlow(tx, {
+            letterId: letter.id,
+            actorId: userId,
+            action: LetterFlowAction.DISPOSED,
+            targetId: recipientId,
+            fromStatus: letter.status,
+            toStatus: DbLetterStatus.DISPOSED,
+            note: 'Surat Masuk Diteruskan',
+          });
+        }
       }
 
       return letter;

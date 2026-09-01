@@ -156,6 +156,8 @@ export interface LetterDetail {
   senderInstance?: string;
   recipientName?: string;
   recipientInstance?: string;
+  createdById?: string;
+  createdBy?: { name: string };
   createdByName: string;
   createdAt: string;
 

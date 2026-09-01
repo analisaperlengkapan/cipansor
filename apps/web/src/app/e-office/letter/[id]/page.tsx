@@ -779,7 +779,7 @@ export default function LetterDetailPage({
                 Disposisi
               </Button>
 
-              {letter.status === "DRAFT" && letter.createdById === user?.id && (
+              {letter.status === "DRAFT" && letter.createdBy?.name && (
                 <Button
                   className="w-full bg-blue-600 hover:bg-blue-700"
                   onClick={handleSubmitDraftForReview}

@@ -486,7 +486,17 @@ describe('CorrespondenceService', () => {
     });
 
     it('sets incoming letter without reviewers to DISPOSED when recipientIds present and creates real disposition records', async () => {
+      vi.mocked(prisma.user.findMany).mockResolvedValue([
+        {
+          id: 'user-2',
+          unitId: 'unit-1',
+          teacher: null,
+          staff: { nip: '123' },
+          userRoles: [{ role: { code: 'SDIT_TATA_USAHA' } }],
+        },
+      ] as any);
       vi.mocked(prisma.letter.create).mockResolvedValue({ id: 'let-2', status: 'DISPOSED', unitId: 'unit-1' } as any);
+      vi.mocked(prisma.disposition.create).mockResolvedValue({ id: 'disp-auto-1', recipientId: 'user-2' } as any);
 
       const result = await CorrespondenceService.createLetter(
         {
@@ -603,6 +613,15 @@ describe('CorrespondenceService', () => {
 
   describe('Dispositions', () => {
     it('creates a disposition and advances incoming letter status to DISPOSED', async () => {
+      vi.mocked(prisma.user.findMany).mockResolvedValue([
+        {
+          id: 'user-2',
+          unitId: 'unit-1',
+          teacher: null,
+          staff: { nip: '123' },
+          userRoles: [{ role: { code: 'SDIT_TATA_USAHA' } }],
+        },
+      ] as any);
       vi.mocked(prisma.letter.findUnique).mockResolvedValue({
         id: 'letter-1',
         unitId: 'unit-1',
@@ -635,6 +654,15 @@ describe('CorrespondenceService', () => {
     });
 
     it('deduplicates duplicate recipientIds in dispositions', async () => {
+      vi.mocked(prisma.user.findMany).mockResolvedValue([
+        {
+          id: 'user-2',
+          unitId: 'unit-1',
+          teacher: null,
+          staff: { nip: '123' },
+          userRoles: [{ role: { code: 'SDIT_TATA_USAHA' } }],
+        },
+      ] as any);
       vi.mocked(prisma.letter.findUnique).mockResolvedValue({
         id: 'letter-1',
         unitId: 'unit-1',

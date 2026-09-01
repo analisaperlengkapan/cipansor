@@ -134,10 +134,7 @@ export const CorrespondenceController = {
         { ...req.body, senderId: req.user!.id },
         actorOf(req)
       );
-      // Preserve single-object response for single recipient input for backward compatibility
-      const isSingleInput = req.body.recipientId && (!req.body.recipientIds || req.body.recipientIds.length === 0);
-      const responseData = isSingleInput ? (result[0] ?? null) : result;
-      res.status(201).json({ success: true, data: responseData });
+      res.status(201).json({ success: true, data: result });
     } catch (error) {
       next(error);
     }

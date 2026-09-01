@@ -5,6 +5,7 @@ import {
   LetterStatus as DbLetterStatus,
   LetterType as DbLetterType,
   LetterNature as DbLetterNature,
+  RoleCode,
 } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import {
@@ -139,6 +140,74 @@ export const CorrespondenceService = {
     return formatted;
   },
 
+  /**
+   * Validate that all supplied user IDs exist, are active, have active internal roles, and fall within permitted unit scope.
+   */
+  async validateParticipantEligibility(userIds: string[], actor?: LetterActor) {
+    if (!userIds || userIds.length === 0) return;
+
+    const uniqueIds = Array.from(new Set(userIds));
+    const now = new Date();
+
+    const users = await prisma.user.findMany({
+      where: {
+        id: { in: uniqueIds },
+        isActive: true,
+      },
+      select: {
+        id: true,
+        unitId: true,
+        teacher: { select: { nip: true } },
+        staff: { select: { nip: true } },
+        userRoles: {
+          where: {
+            role: {
+              code: {
+                notIn: [
+                  RoleCode.SDIT_SISWA,
+                  RoleCode.SMPIT_SISWA,
+                  RoleCode.SMAQ_SISWA,
+                  RoleCode.PT_MAHASISWA,
+                  RoleCode.TKQ_ORANG_TUA,
+                  RoleCode.SDIT_ORANG_TUA,
+                  RoleCode.SMPIT_ORANG_TUA,
+                  RoleCode.SMAQ_ORANG_TUA,
+                  RoleCode.SMPIT_ALUMNI,
+                  RoleCode.SMAQ_ALUMNI,
+                  RoleCode.PT_ALUMNI,
+                  RoleCode.TKQ_KOMITE,
+                  RoleCode.SDIT_KOMITE,
+                  RoleCode.SMPIT_KOMITE,
+                  RoleCode.SMAQ_KOMITE,
+                ],
+              },
+            },
+            OR: [{ expiresAt: null }, { expiresAt: { gte: now } }],
+          },
+          select: { role: { select: { code: true } } },
+        },
+      },
+    });
+
+    if (users.length !== uniqueIds.length) {
+      throw Errors.badRequest('Satu atau lebih penerima/pemeriksa tidak ditemukan atau tidak aktif');
+    }
+
+    const actorSeesAll = actor ? seesAllUnits(actor) : true;
+
+    for (const u of users) {
+      const isInternal = u.teacher || u.staff || u.userRoles.length > 0;
+      if (!isInternal) {
+        throw Errors.badRequest(`Pengguna ${u.id} tidak memiliki peran internal yang sah`);
+      }
+
+      // Enforce unit scope if caller is unit-restricted
+      if (!actorSeesAll && actor?.unitId && u.unitId && u.unitId !== actor.unitId) {
+        throw Errors.forbidden(`Pengguna ${u.id} berada di luar unit Anda`);
+      }
+    }
+  },
+
   async createLetter(data: CreateLetterInput, userId: string, actor?: LetterActor) {
     if (!actor || !actor.roleCode) {
       throw Errors.forbidden('Peran Anda tidak berwenang untuk membuat surat dinas');
@@ -146,9 +215,9 @@ export const CorrespondenceService = {
 
     // Executive foundation roles authorized to issue correspondence
     const isFoundationExecutive =
-      actor.roleCode === 'YAYASAN_KETUA' || actor.roleCode === 'YAYASAN_SEKRETARIS';
+      actor.roleCode === RoleCode.YAYASAN_KETUA || actor.roleCode === RoleCode.YAYASAN_SEKRETARIS;
     const isCorrespondenceRole = handlesUnitCorrespondence(actor);
-    const isSuperAdmin = actor.roleCode === 'SUPER_ADMIN';
+    const isSuperAdmin = actor.roleCode === RoleCode.SUPER_ADMIN;
 
     // Allowlist: ONLY unit correspondence roles (tata usaha, kepsek, admin unit), executive foundation roles (Ketua/Sekretaris), and SUPER_ADMIN.
     // Oversight-only roles (YAYASAN_PEMBINA, YAYASAN_PENGAWAS, YAYASAN_ANGGOTA) do NOT have creation authority.
@@ -156,6 +225,15 @@ export const CorrespondenceService = {
 
     if (!isAuthorizedCreator) {
       throw Errors.forbidden('Peran Anda tidak berwenang untuk membuat surat dinas');
+    }
+
+    // Validate reviewer and recipient eligibility
+    const participantsToValidate = [
+      ...(data.reviewerIds || []),
+      ...(data.recipientIds || []),
+    ];
+    if (participantsToValidate.length > 0) {
+      await this.validateParticipantEligibility(participantsToValidate, actor);
     }
 
     // Client is only allowed to request initial status DRAFT or PENDING_REVIEW
@@ -216,7 +294,7 @@ export const CorrespondenceService = {
       }
     }
 
-    return await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx) => {
       // Create Letter
       const letter = await tx.letter.create({
         data: {
@@ -288,11 +366,13 @@ export const CorrespondenceService = {
         });
       }
 
+      const createdDispositionsToNotify: Array<{ id: string; recipientId: string }> = [];
+
       // Create live Dispositions ONLY when initial status is DISPOSED
       if (data.direction === 'INCOMING' && initialStatus === DbLetterStatus.DISPOSED && data.recipientIds?.length) {
         const uniqueRecipients = Array.from(new Set(data.recipientIds));
         for (const recipientId of uniqueRecipients) {
-          await tx.disposition.create({
+          const createdDisp = await tx.disposition.create({
             data: {
               letterId: letter.id,
               senderId: userId,
@@ -311,11 +391,44 @@ export const CorrespondenceService = {
             toStatus: DbLetterStatus.DISPOSED,
             note: 'Surat Masuk Diteruskan',
           });
+
+          createdDispositionsToNotify.push({ id: createdDisp.id, recipientId });
         }
       }
 
-      return letter;
+      return { letter, createdDispositionsToNotify };
     });
+
+    // Post-commit: Notify first reviewer if letter created directly in PENDING_REVIEW
+    if (result.letter.status === DbLetterStatus.PENDING_REVIEW && data.reviewerIds?.length) {
+      const firstReviewerId = data.reviewerIds[0];
+      eventBus.emit('notification:send', {
+        userId: firstReviewerId,
+        unitId: result.letter.unitId,
+        type: 'REMINDER',
+        title: 'Konsep Surat Perlu Ditinjau',
+        message: `Konsep surat "${result.letter.subject}" diajukan kepada Anda untuk ditinjau.`,
+        data: { letterId: result.letter.id, link: `/e-office/letter/${result.letter.id}` },
+      });
+    }
+
+    // Post-commit: Notify recipients for automatic dispositions
+    for (const disp of result.createdDispositionsToNotify) {
+      eventBus.emit('notification:send', {
+        userId: disp.recipientId,
+        type: 'REMINDER',
+        title: 'Disposisi Baru',
+        message: 'Anda menerima terusan surat masuk baru.',
+        data: {
+          entityId: disp.id,
+          entityType: 'DISPOSITION',
+          letterId: result.letter.id,
+          link: `/e-office/letter/${result.letter.id}`,
+        },
+      });
+    }
+
+    return result.letter;
   },
 
   /**
@@ -492,6 +605,9 @@ export const CorrespondenceService = {
     nextReviewerId?: string,
     isFinalSigner?: boolean
   ) {
+    if (nextReviewerId) {
+      await this.validateParticipantEligibility([nextReviewerId]);
+    }
     const result = await prisma.$transaction(async (tx) => {
       const letter = await tx.letter.findUnique({
         where: { id: letterId },
@@ -541,17 +657,17 @@ export const CorrespondenceService = {
 
         // If approving and nextReviewerId is provided, add or update the next reviewer dynamically
         if (nextReviewerId) {
-          const currentMaxOrder = Math.max(...letter.reviewers.map((r) => r.order), mine.order, 0);
-          const newOrder = currentMaxOrder + 1;
           const existingNext = letter.reviewers.find((r) => r.reviewerId === nextReviewerId);
+          const nonSigners = letter.reviewers.filter((r) => !r.isSigner && r.id !== existingNext?.id);
+          const maxNonSignerOrder = Math.max(...nonSigners.map((r) => r.order), mine.order, 0);
+          const newNextOrder = maxNonSignerOrder + 1;
 
           if (existingNext) {
             const updatedIsSigner = isFinalSigner ? true : existingNext.isSigner;
-            // If already in ladder, reset status to PENDING, clear reviewedAt, move order to end of sequence, and preserve/update isSigner
             await tx.letterReviewer.update({
               where: { id: existingNext.id },
               data: {
-                order: newOrder,
+                order: newNextOrder,
                 status: 'PENDING',
                 reviewedAt: null,
                 isSigner: updatedIsSigner,
@@ -559,7 +675,7 @@ export const CorrespondenceService = {
             });
             updatedLadder = updatedLadder.map((r) =>
               r.id === existingNext.id
-                ? { ...r, order: newOrder, status: 'PENDING', isSigner: updatedIsSigner }
+                ? { ...r, order: newNextOrder, status: 'PENDING', isSigner: updatedIsSigner }
                 : r
             );
           } else {
@@ -567,7 +683,7 @@ export const CorrespondenceService = {
               data: {
                 letterId,
                 reviewerId: nextReviewerId,
-                order: newOrder,
+                order: newNextOrder,
                 status: 'PENDING',
                 isSigner: !!isFinalSigner,
               },
@@ -575,10 +691,25 @@ export const CorrespondenceService = {
             updatedLadder.push({
               id: newRung.id,
               reviewerId: nextReviewerId,
-              order: newOrder,
+              order: newNextOrder,
               status: 'PENDING',
               isSigner: !!isFinalSigner,
             });
+          }
+
+          // If nextReviewerId is NOT marked as final signer, move any existing signer to sit AFTER nextReviewerId
+          if (!isFinalSigner) {
+            const existingSigners = letter.reviewers.filter((r) => r.isSigner && r.id !== existingNext?.id);
+            for (const signer of existingSigners) {
+              const shiftedOrder = newNextOrder + 1;
+              await tx.letterReviewer.update({
+                where: { id: signer.id },
+                data: { order: shiftedOrder },
+              });
+              updatedLadder = updatedLadder.map((r) =>
+                r.id === signer.id ? { ...r, order: shiftedOrder } : r
+              );
+            }
           }
         } else if (isFinalSigner) {
           // Mark current reviewer as signer if specified (restoring flag after bulk reset even if previously a signer)
@@ -698,6 +829,24 @@ export const CorrespondenceService = {
       });
     }
 
+    // Post-commit: notify recipients for automatic dispositions created upon incoming review completion
+    if (result.disposedRecipients && result.disposedRecipients.length > 0) {
+      const letter = await prisma.letter.findUnique({
+        where: { id: letterId },
+        select: { subject: true, unitId: true },
+      });
+      for (const recipientId of result.disposedRecipients) {
+        eventBus.emit('notification:send', {
+          userId: recipientId,
+          unitId: letter?.unitId,
+          type: 'REMINDER',
+          title: 'Disposisi Baru',
+          message: `Anda menerima disposisi baru untuk surat "${letter?.subject ?? ''}".`,
+          data: { letterId, link: `/e-office/letter/${letterId}` },
+        });
+      }
+    }
+
     // Post-commit: when a letter is forwarded to a next reviewer, notify that official.
     if (action === 'APPROVE' && nextReviewerId) {
       const letter = await prisma.letter.findUnique({
@@ -748,7 +897,7 @@ export const CorrespondenceService = {
   async submitForReview(letterId: string, actor: LetterActor, note?: string) {
     await assertLetterAccess(actor, letterId);
 
-    return await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx) => {
       const letter = await tx.letter.findUnique({
         where: { id: letterId },
         select: { id: true, status: true, createdById: true, reviewers: true, subject: true },
@@ -783,8 +932,23 @@ export const CorrespondenceService = {
         note: note || 'Mengajukan konsep surat untuk ditinjau',
       });
 
-      return { id: letterId, status: nextStatus };
+      const firstReviewerId = letter.reviewers[0]?.reviewerId;
+
+      return { id: letterId, status: nextStatus, firstReviewerId, subject: letter.subject };
     });
+
+    // Post-commit: Notify first reviewer when draft is submitted for review
+    if (result.firstReviewerId) {
+      eventBus.emit('notification:send', {
+        userId: result.firstReviewerId,
+        type: 'REMINDER',
+        title: 'Konsep Surat Perlu Ditinjau',
+        message: `Konsep surat "${result.subject}" diajukan kepada Anda untuk ditinjau.`,
+        data: { letterId, link: `/e-office/letter/${letterId}` },
+      });
+    }
+
+    return { id: result.id, status: result.status };
   },
 
   /**
@@ -915,6 +1079,8 @@ export const CorrespondenceService = {
     if (recipients.length === 0) {
       throw new Error('Minimal satu penerima disposisi harus ditentukan.');
     }
+
+    await this.validateParticipantEligibility(recipients, actor);
 
     const createdDispositions = await prisma.$transaction(async (tx) => {
       const results = [];

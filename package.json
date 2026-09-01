@@ -21,6 +21,7 @@
   "packageManager": "pnpm@9.15.9",
   "pnpm": {
     "overrides": {
+      "mysql2": ">=3.22.0",
       "qs": "^6.15.2",
       "@types/express-serve-static-core": "5.1.0",
       "@babel/core": ">=7.29.1",

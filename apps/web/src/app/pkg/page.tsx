@@ -4,6 +4,8 @@ import { MainLayout } from "@/components/layout";
 import Link from "next/link";
 import { useState } from "react";
 import { useAuthStore } from "@/stores/auth";
+import { getPrimaryRoleCode } from "@/lib/rbac";
+import { isGlobalPKGRoleCode } from "@cipansor/shared";
 import { usePKGEvaluations, usePKGStatistics } from "@/hooks/use-pkg";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,29 +13,14 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { History, ArrowRight, Award, FileText, CheckCircle2 } from "lucide-react";
 
-function isGlobalRoleCode(roleCode?: string | null): boolean {
-  if (!roleCode) return false;
-  const globalRoles = [
-    "SUPER_ADMIN",
-    "YAYASAN_KETUA",
-    "YAYASAN_PEMBINA",
-    "YAYASAN_PENGAWAS",
-    "YAYASAN_SEKRETARIS",
-    "YAYASAN_BENDAHARA",
-    "YAYASAN_ANGGOTA",
-    "PESANTREN_PENGASUH",
-    "PESANTREN_DIREKTUR",
-  ];
-  return globalRoles.includes(roleCode);
-}
-
 function PKGHistoricalPageContent() {
   const { user } = useAuthStore();
   const [page, setPage] = useState(1);
   const limit = 10;
 
-  const isGlobal = isGlobalRoleCode(user?.primaryRoleCode || user?.role);
-  const effectiveUnitId = isGlobal ? undefined : (user?.unitId || undefined);
+  const primaryRoleCode = getPrimaryRoleCode(user) || user?.role;
+  const isGlobal = isGlobalPKGRoleCode(primaryRoleCode);
+  const effectiveUnitId = isGlobal ? undefined : (user?.unitId || "none");
 
   const { data: evaluationsData, isLoading } = usePKGEvaluations({
     page,
@@ -57,18 +44,25 @@ function PKGHistoricalPageContent() {
   return (
     <div className="container mx-auto space-y-6 p-6">
       {/* Migration Info Banner */}
+      {/*
+        DOKUMENTASI PENGGANTIAN MANAJEMEN PKG LEGASI:
+        Seluruh workflow aktif pembuatan periode PKG, pembuatan/penilaian evaluasi guru,
+        edit indikator, dan aktivasi telah secara resmi dipindahkan ke suite Manajemen Kinerja
+        Terintegrasi di /kinerja (RPJP -> Renstra -> RKA -> Perjanjian Kinerja -> Evaluasi Periodik & SAFTI).
+        Halaman /pkg ini berfungsi sebagai repositori read-only & arsip historis hasil evaluasi PKG terdahulu.
+      */}
       <div className="rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-sm">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300">
-              Arsip Historis
+              Arsip Historis PKG
             </Badge>
             <h2 className="text-lg font-bold text-amber-900 dark:text-amber-200">
-              Penilaian Kinerja Guru (PKG) Legasi
+              Penilaian Kinerja Guru (PKG) Legasi & Arsip
             </h2>
           </div>
           <p className="text-xs text-amber-800 dark:text-amber-300">
-            Halaman ini menyimpan arsip historis hasil evaluasi PKG guru. Untuk pengelolaan kinerja aktif terintegrasi (RPJP &rarr; Renstra &rarr; RKA &rarr; PK & SAFTI), silakan gunakan suite Kinerja.
+            Halaman ini menyimpan arsip historis hasil evaluasi PKG guru legasi. Pengelolaan kinerja aktif (pembuatan PK, penilaian periodik KPI & SAFTI, serta persetujuan) sepenuhnya dilakukan di suite Kinerja Terintegrasi.
           </p>
         </div>
         <Link href="/kinerja">

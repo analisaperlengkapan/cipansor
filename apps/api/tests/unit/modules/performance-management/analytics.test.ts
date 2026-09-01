@@ -126,4 +126,42 @@ describe('Performance Management Analytics & Supervisor Allowlist Tests', () => 
     expect(drilldown.strategicPlan?.title).toBe('RKA SD IT');
     expect(drilldown.agreements).toHaveLength(1);
   });
+
+  it('should generate consolidated report including foundation evaluations when global', async () => {
+    vi.mocked(prisma.unit.findMany).mockResolvedValue([{ id: 'unit-1', name: 'SD IT' }] as any);
+    vi.mocked(prisma.pKEvaluation.findMany)
+      .mockResolvedValueOnce([
+        { overallScore: 90, performanceScore: 92, behaviorScore: 87 },
+      ] as any)
+      .mockResolvedValueOnce([
+        { overallScore: 80, performanceScore: 85, behaviorScore: 72 },
+      ] as any);
+    vi.mocked(prisma.performanceAgreement.findMany)
+      .mockResolvedValueOnce([{ status: PlanStatus.APPROVED }] as any)
+      .mockResolvedValueOnce([{ status: PlanStatus.APPROVED }] as any);
+
+    const report = await pkAnalyticsService.getConsolidatedReport({ year: 2026, month: 5 });
+
+    expect(report.units).toHaveLength(2); // Yayasan (Pusat) + unit-1
+    expect(report.units[0].name).toContain('Yayasan');
+    expect(report.units[0].avgOverallScore).toBe(80);
+    expect(report.units[1].name).toBe('SD IT');
+    expect(report.units[1].avgOverallScore).toBe(90);
+  });
+
+  it('should filter consolidated report by unitId when requested', async () => {
+    vi.mocked(prisma.unit.findMany).mockResolvedValue([{ id: 'unit-1', name: 'SD IT' }] as any);
+    vi.mocked(prisma.pKEvaluation.findMany).mockResolvedValue([
+      { overallScore: 95, performanceScore: 96, behaviorScore: 93.5 },
+    ] as any);
+    vi.mocked(prisma.performanceAgreement.findMany).mockResolvedValue([
+      { status: PlanStatus.APPROVED },
+    ] as any);
+
+    const report = await pkAnalyticsService.getConsolidatedReport({ year: 2026, unitId: 'unit-1' });
+
+    expect(report.units).toHaveLength(1);
+    expect(report.units[0].id).toBe('unit-1');
+    expect(report.units[0].avgOverallScore).toBe(95);
+  });
 });

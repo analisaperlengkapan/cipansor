@@ -52,18 +52,12 @@ export const usePKDetail = (id: string) => {
   });
 };
 
+import type { CreatePKRequestDTO, CreateEvaluationRequestDTO, UpdateRealizationRequestDTO, UpdateBehaviorScoreRequestDTO } from "@cipansor/shared";
+
 export const useCreatePK = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (data: {
-      userId: string;
-      supervisorId?: string;
-      supervisorPkId?: string;
-      strategicPlanId?: string;
-      periodStart: string;
-      periodEnd: string;
-      notes?: string;
-    }) => {
+    mutationFn: async (data: CreatePKRequestDTO) => {
       const res = await api.post("/performance-agreements", data);
       return res.data;
     },
@@ -71,7 +65,7 @@ export const useCreatePK = () => {
       toast.success("Perjanjian Kinerja berhasil dibuat");
       queryClient.invalidateQueries({ queryKey: ["performance-agreements"] });
     },
-    onError: (error: any) => {
+    onError: (error: { response?: { data?: { message?: string } } }) => {
       toast.error(error.response?.data?.message || "Gagal membuat Perjanjian Kinerja");
     },
   });
@@ -263,7 +257,7 @@ export const useEvaluationDetail = (id: string) => {
 export const useCreateEvaluation = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (data: { pkId: string; month: number; year: number }) => {
+    mutationFn: async (data: CreateEvaluationRequestDTO) => {
       const res = await api.post("/performance-agreements/evaluations", data);
       return res.data;
     },
@@ -272,7 +266,7 @@ export const useCreateEvaluation = () => {
       queryClient.invalidateQueries({ queryKey: ["performance-agreements"] });
       queryClient.invalidateQueries({ queryKey: ["performance-agreements", "pk", variables.pkId] });
     },
-    onError: (error: any) => {
+    onError: (error: { response?: { data?: { message?: string } } }) => {
       toast.error(error.response?.data?.message || "Gagal membuat evaluasi bulanan");
     },
   });
@@ -284,18 +278,14 @@ export const useUpdateIndicatorRealization = () => {
     mutationFn: async ({
       evaluationId,
       indicatorId,
-      realization,
-      activities,
+      ...data
     }: {
       evaluationId: string;
       indicatorId: string;
-      realization: number;
-      activities?: string;
-    }) => {
+    } & UpdateRealizationRequestDTO) => {
       const res = await api.post(`/performance-agreements/evaluations/${evaluationId}/indicators`, {
         indicatorId,
-        realization,
-        activities,
+        ...data,
       });
       return res.data;
     },
@@ -304,7 +294,7 @@ export const useUpdateIndicatorRealization = () => {
       queryClient.invalidateQueries({ queryKey: ["performance-agreements"] });
       queryClient.invalidateQueries({ queryKey: ["performance-agreements", "evaluations", variables.evaluationId] });
     },
-    onError: (error: any) => {
+    onError: (error: { response?: { data?: { message?: string } } }) => {
       toast.error(error.response?.data?.message || "Gagal menyimpan realisasi indikator");
     },
   });
@@ -316,18 +306,14 @@ export const useUpdateBehaviorScore = () => {
     mutationFn: async ({
       evaluationId,
       behaviorValueId,
-      score,
-      notes,
+      ...data
     }: {
       evaluationId: string;
       behaviorValueId: string;
-      score: number;
-      notes?: string;
-    }) => {
+    } & UpdateBehaviorScoreRequestDTO) => {
       const res = await api.post(`/performance-agreements/evaluations/${evaluationId}/behavior`, {
         behaviorValueId,
-        score,
-        notes,
+        ...data,
       });
       return res.data;
     },
@@ -336,7 +322,7 @@ export const useUpdateBehaviorScore = () => {
       queryClient.invalidateQueries({ queryKey: ["performance-agreements"] });
       queryClient.invalidateQueries({ queryKey: ["performance-agreements", "evaluations", variables.evaluationId] });
     },
-    onError: (error: any) => {
+    onError: (error: { response?: { data?: { message?: string } } }) => {
       toast.error(error.response?.data?.message || "Gagal menyimpan nilai perilaku");
     },
   });

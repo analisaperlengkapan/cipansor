@@ -1,6 +1,11 @@
 import { z } from 'zod';
+import type {
+  CreateEvaluationRequestDTO,
+  UpdateRealizationRequestDTO,
+  UpdateBehaviorScoreRequestDTO,
+} from '@cipansor/shared';
 
-export const createEvaluationSchema = z.object({
+export const createEvaluationSchema: z.ZodType<CreateEvaluationRequestDTO> = z.object({
   pkId: z.string().uuid(),
   month: z.number().int().min(1).max(12),
   year: z.number().int().min(2000).max(2100),
@@ -8,13 +13,13 @@ export const createEvaluationSchema = z.object({
   notes: z.string().optional(),
 });
 
-export const updateIndicatorRealizationSchema = z.object({
+export const updateIndicatorRealizationSchema: z.ZodType<{ indicatorId: string } & UpdateRealizationRequestDTO> = z.object({
   indicatorId: z.string().uuid(),
   realization: z.number(),
   activities: z.string().optional(),
 });
 
-export const updateBehaviorScoreSchema = z.object({
+export const updateBehaviorScoreSchema: z.ZodType<{ behaviorValueId: string } & UpdateBehaviorScoreRequestDTO> = z.object({
   behaviorValueId: z.string().uuid(),
   score: z.number().min(0).max(100),
   notes: z.string().optional(),

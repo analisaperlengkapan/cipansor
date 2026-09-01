@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { asyncHandler } from '@/middleware/error';
 import { ApiResponse } from '@/utils/response';
-import { isFoundationScopedRole } from '@/utils/resolve-unit-id';
+import { seesGlobalPKGEvaluations } from '@/utils/resolve-unit-id';
 import * as pkgService from './pkg.service';
 
 // =====================================
@@ -57,22 +57,11 @@ export const deletePeriod = asyncHandler(async (req: Request, res: Response) => 
 // EVALUATION
 // =====================================
 
-/** Roles explicitly authorized to view PKG teacher performance evaluations across all units. */
-function seesGlobalPKGEvaluations(req: Request): boolean {
-  if (!req.user) return false;
-  const roleCode = req.user.roleCode;
-  return (
-    isFoundationScopedRole(roleCode) ||
-    roleCode === 'PESANTREN_PENGASUH' ||
-    roleCode === 'PESANTREN_DIREKTUR'
-  );
-}
-
 /** GET /api/pkg/evaluations */
 export const listEvaluations = asyncHandler(async (req: Request, res: Response) => {
   const { periodId, teacherId, unitId, status, page, limit } = req.query;
 
-  const isGlobalRole = seesGlobalPKGEvaluations(req);
+  const isGlobalRole = req.user ? seesGlobalPKGEvaluations(req.user.roleCode) : false;
 
   // Non-global users MUST use their assigned unitId from JWT. If an unassigned non-global user calls this endpoint, force an unmatchable unitId ('none') to prevent query parameter injection across units.
   const effectiveUnitId = isGlobalRole
@@ -156,8 +145,16 @@ export const getTeacherHistory = asyncHandler(async (req: Request, res: Response
 /** GET /api/pkg/statistics */
 export const getStatistics = asyncHandler(async (req: Request, res: Response) => {
   const { unitId, periodId } = req.query;
+
+  const isGlobalRole = req.user ? seesGlobalPKGEvaluations(req.user.roleCode) : false;
+
+  // Non-global users MUST use their assigned unitId from JWT. If an unassigned non-global user calls this endpoint, force an unmatchable unitId ('none') to prevent query parameter injection across units.
+  const effectiveUnitId = isGlobalRole
+    ? (unitId as string | undefined)
+    : (req.user?.unitId || 'none');
+
   const stats = await pkgService.getPKGStatistics({
-    unitId: unitId as string,
+    unitId: effectiveUnitId,
     periodId: periodId as string,
   });
   res.json(ApiResponse.success(stats));

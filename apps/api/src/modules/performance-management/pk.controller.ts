@@ -18,7 +18,7 @@ function caller(req: Request): { id: string; isAdmin: boolean } {
 }
 
 export const listSupervisors = asyncHandler(async (req: Request, res: Response) => {
-  const supervisors = await pkService.getSupervisors();
+  const supervisors = await pkService.getSupervisors(req.user);
   res.json(ApiResponse.success(supervisors));
 });
 

@@ -83,6 +83,19 @@ export function isFoundationScopedRole(roleCode?: string | null): boolean {
 }
 
 /**
+ * Single source of truth for global PKG evaluation and statistics viewing access.
+ * Foundation-scoped roles + Pesantren leadership (PENGASUH, DIREKTUR).
+ */
+export function seesGlobalPKGEvaluations(roleCode?: string | null): boolean {
+  if (!roleCode) return false;
+  return (
+    isFoundationScopedRole(roleCode) ||
+    roleCode === RoleCode.PESANTREN_PENGASUH ||
+    roleCode === RoleCode.PESANTREN_DIREKTUR
+  );
+}
+
+/**
  * Leadership roles across Foundation, Schools/Units, Pesantren, and Higher Education.
  */
 export const LEADERSHIP_ROLES: readonly string[] = [

@@ -20,13 +20,54 @@ vi.mock('@/lib/prisma', () => ({
 import { prisma } from '@/lib/prisma';
 import { pkService } from './pk.service';
 
+vi.mock('@/lib/prisma', () => ({
+  prisma: {
+    user: {
+      findMany: vi.fn(),
+    },
+    performanceAgreement: {
+      findFirst: vi.fn(),
+      findUnique: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+    },
+    pKIndicator: {
+      findUnique: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+    },
+  },
+}));
+
 const mocked = prisma as unknown as {
+  user: Record<string, ReturnType<typeof vi.fn>>;
   performanceAgreement: Record<string, ReturnType<typeof vi.fn>>;
   pKIndicator: Record<string, ReturnType<typeof vi.fn>>;
 };
 
 describe('PerformanceAgreementService', () => {
   beforeEach(() => vi.clearAllMocks());
+
+  describe('getSupervisors unit scoping', () => {
+    it('restricts results to caller unitId for unit-pinned roles', async () => {
+      mocked.user.findMany.mockResolvedValue([]);
+      await pkService.getSupervisors({ roleCode: 'SDIT_GURU', unitId: 'unit-sdit' });
+
+      expect(mocked.user.findMany).toHaveBeenCalledTimes(1);
+      const queryWhere = mocked.user.findMany.mock.calls[0][0].where;
+      expect(queryWhere.unitId).toBe('unit-sdit');
+    });
+
+    it('allows cross-unit / foundation roles to query supervisors across units', async () => {
+      mocked.user.findMany.mockResolvedValue([]);
+      await pkService.getSupervisors({ roleCode: 'YAYASAN_KETUA', unitId: 'unit-sdit' });
+
+      expect(mocked.user.findMany).toHaveBeenCalledTimes(1);
+      const queryWhere = mocked.user.findMany.mock.calls[0][0].where;
+      expect(queryWhere.unitId).toBeUndefined();
+    });
+  });
 
   describe('createPK cascading rule', () => {
     it('rejects a subordinate PK when the supervisor has no approved PK for the period', async () => {

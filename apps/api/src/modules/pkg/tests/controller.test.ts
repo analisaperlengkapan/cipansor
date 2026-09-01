@@ -127,4 +127,26 @@ describe('pkg controller', () => {
       expect.objectContaining({ unitId: 'unit-bound-smp' })
     );
   });
+
+  it('getStatistics: forces unitId to "none" for unassigned non-global users', async () => {
+    (pkgService.getPKGStatistics as any).mockResolvedValue({ total: 0 });
+
+    const { req: reqUnassigned, res: resUnassigned } = mockReqRes({
+      query: {},
+      user: { sub: 'u5', roleCode: 'SDIT_GURU', unitId: undefined } as any,
+    });
+    await run(controller.getStatistics, reqUnassigned, resUnassigned);
+    expect(pkgService.getPKGStatistics).toHaveBeenCalledWith(
+      expect.objectContaining({ unitId: 'none' })
+    );
+
+    const { req: reqGlobal, res: resGlobal } = mockReqRes({
+      query: { unitId: 'unit-1' },
+      user: { sub: 'u6', roleCode: 'YAYASAN_KETUA', unitId: undefined } as any,
+    });
+    await run(controller.getStatistics, reqGlobal, resGlobal);
+    expect(pkgService.getPKGStatistics).toHaveBeenCalledWith(
+      expect.objectContaining({ unitId: 'unit-1' })
+    );
+  });
 });

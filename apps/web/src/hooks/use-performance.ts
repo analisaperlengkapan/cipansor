@@ -41,6 +41,23 @@ export const usePKList = (params?: { status?: string }) => {
   });
 };
 
+export const useDeletePK = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const res = await api.delete(`/performance-agreements/${id}`);
+      return res.data;
+    },
+    onSuccess: () => {
+      toast.success("Perjanjian Kinerja berhasil dihapus");
+      queryClient.invalidateQueries({ queryKey: ["performance-agreements"] });
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Gagal menghapus Perjanjian Kinerja");
+    },
+  });
+};
+
 export const usePKDetail = (id: string) => {
   return useQuery({
     queryKey: ["performance-agreements", "pk", id],

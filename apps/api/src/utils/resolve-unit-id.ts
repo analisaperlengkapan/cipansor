@@ -1,6 +1,5 @@
 import { Request } from 'express';
 import { RoleCode } from '@prisma/client';
-import { isGlobalPKGRoleCode } from '@cipansor/shared';
 
 /**
  * Resolve the effective unitId for the current request.
@@ -81,14 +80,6 @@ export const FOUNDATION_SCOPE_ROLES: readonly string[] = [
  */
 export function isFoundationScopedRole(roleCode?: string | null): boolean {
   return !!roleCode && FOUNDATION_SCOPE_ROLES.includes(roleCode);
-}
-
-/**
- * Single source of truth for global PKG evaluation and statistics viewing access.
- * Delegates directly to @cipansor/shared role helper to ensure API and Web remain synchronized.
- */
-export function seesGlobalPKGEvaluations(roleCode?: string | null): boolean {
-  return isGlobalPKGRoleCode(roleCode);
 }
 
 /**

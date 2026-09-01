@@ -221,6 +221,23 @@ export class PerformanceAgreementService {
     });
   }
 
+  async deletePK(id: string, callerId: string, isAdmin: boolean) {
+    return prisma.$transaction(async (tx) => {
+      if (typeof tx.$queryRaw === 'function') {
+        await tx.$queryRaw`SELECT id FROM "performance_agreements" WHERE id = ${id} FOR UPDATE`;
+      }
+
+      const pk = await tx.performanceAgreement.findUnique({ where: { id } });
+      if (!pk) throw Errors.notFound('PK');
+      this.assertAccess(pk, callerId, isAdmin, { ownerOnly: true });
+      if (pk.status === PlanStatus.APPROVED) {
+        throw Errors.conflict('An approved PK can no longer be deleted');
+      }
+
+      return tx.performanceAgreement.delete({ where: { id } });
+    });
+  }
+
   async updatePK(
     id: string,
     callerId: string,

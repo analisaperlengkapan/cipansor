@@ -18,7 +18,7 @@ export const complaintsController = {
       if (!validation.success) {
         return res.status(httpStatus.BAD_REQUEST).json({
           message: 'Validation error',
-          errors: validation.error.issues,
+          errors: validation.error.errors,
         });
       }
 
@@ -99,7 +99,7 @@ export const complaintsController = {
       if (!validation.success) {
         return res.status(httpStatus.BAD_REQUEST).json({
           message: 'Validation error',
-          errors: validation.error.issues,
+          errors: validation.error.errors,
         });
       }
 
@@ -140,7 +140,7 @@ export const complaintsController = {
       if (!validation.success) {
         return res.status(httpStatus.BAD_REQUEST).json({
           message: 'Validation error',
-          errors: validation.error.issues,
+          errors: validation.error.errors,
         });
       }
 
@@ -179,7 +179,7 @@ export const complaintsController = {
       if (!validation.success) {
         return res.status(httpStatus.BAD_REQUEST).json({
           message: 'Validation error',
-          errors: validation.error.issues,
+          errors: validation.error.errors,
         });
       }
 

@@ -8,6 +8,10 @@ import {
   usePerformanceConsolidatedReport,
   usePerformanceDrilldown,
 } from "@/hooks/use-performance";
+import type {
+  PerformanceAgreementDTO,
+  ConsolidatedUnitReportDTO,
+} from "@cipansor/shared";
 import { useUnits } from "@/hooks/use-units";
 import {
   Card,
@@ -191,7 +195,7 @@ function PerformanceAnalyticsPageContent() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {drilldown?.agreements?.map((pk: any) => (
+                  {drilldown?.agreements?.map((pk: PerformanceAgreementDTO) => (
                     <TableRow key={pk.id}>
                       <TableCell className="font-semibold">{pk.user?.name}</TableCell>
                       <TableCell>{pk.supervisor?.name || "-"}</TableCell>
@@ -233,7 +237,7 @@ function PerformanceAnalyticsPageContent() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {consolidated?.units?.map((u: any) => (
+                {consolidated?.units?.map((u: ConsolidatedUnitReportDTO) => (
                   <TableRow key={u.id}>
                     <TableCell className="font-semibold">{u.name}</TableCell>
                     <TableCell>{u.totalAgreements || 0} Pegawai</TableCell>

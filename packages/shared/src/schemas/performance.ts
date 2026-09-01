@@ -33,3 +33,34 @@ export const updateBehaviorScoreSchema = z.object({
   score: z.number().min(0).max(100),
   notes: z.string().optional(),
 });
+
+export const getConsolidatedReportQuerySchema = z.object({
+  month: z
+    .preprocess(
+      (val) => (typeof val === 'number' ? String(val) : val),
+      z
+        .string()
+        .optional()
+        .refine((val) => val === undefined || /^\d+$/.test(val.trim()), {
+          message: 'Invalid month parameter. Must be an integer between 1 and 12',
+        })
+        .transform((val) => (val !== undefined ? parseInt(val.trim(), 10) : undefined))
+        .refine((val) => val === undefined || (val >= 1 && val <= 12), {
+          message: 'Invalid month parameter. Must be between 1 and 12',
+        })
+    ),
+  year: z
+    .preprocess(
+      (val) => (typeof val === 'number' ? String(val) : val),
+      z
+        .string()
+        .optional()
+        .refine((val) => val === undefined || /^\d+$/.test(val.trim()), {
+          message: 'Invalid year parameter. Must be a valid integer year',
+        })
+        .transform((val) => (val !== undefined ? parseInt(val.trim(), 10) : new Date().getFullYear()))
+        .refine((val) => val >= 2000 && val <= 2100, {
+          message: 'Invalid year parameter',
+        })
+    ),
+});

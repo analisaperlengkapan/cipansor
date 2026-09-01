@@ -10,6 +10,7 @@ vi.mock('@/lib/prisma', () => ({
       findUnique: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
+      delete: vi.fn(),
     },
     pKIndicator: {
       findUnique: vi.fn(),
@@ -17,6 +18,7 @@ vi.mock('@/lib/prisma', () => ({
       update: vi.fn(),
       delete: vi.fn(),
     },
+    $transaction: vi.fn(),
   },
 }));
 
@@ -27,6 +29,7 @@ const mocked = prisma as unknown as {
   user: Record<string, ReturnType<typeof vi.fn>>;
   performanceAgreement: Record<string, ReturnType<typeof vi.fn>>;
   pKIndicator: Record<string, ReturnType<typeof vi.fn>>;
+  $transaction: ReturnType<typeof vi.fn>;
 };
 
 describe('PerformanceAgreementService', () => {
@@ -62,6 +65,94 @@ describe('PerformanceAgreementService', () => {
       const queryWhere = mocked.user.findMany.mock.calls[0][0].where;
       expect(queryWhere.unitId).toBeUndefined();
       expect(queryWhere.userRoles.some.unitId).toBeUndefined();
+    });
+  });
+
+  describe('deletePK', () => {
+    let mockQueryRaw: ReturnType<typeof vi.fn>;
+
+    beforeEach(() => {
+      mockQueryRaw = vi.fn().mockResolvedValue([]);
+      mocked.$transaction.mockImplementation(async (cb: any) =>
+        cb({
+          ...prisma,
+          $queryRaw: mockQueryRaw,
+        })
+      );
+    });
+
+    it('successfully deletes a DRAFT PK by its owner after acquiring row lock', async () => {
+      const callOrder: string[] = [];
+      mockQueryRaw.mockImplementation(async () => {
+        callOrder.push('$queryRaw');
+        return [];
+      });
+      mocked.performanceAgreement.findUnique.mockImplementation(async () => {
+        callOrder.push('findUnique');
+        return {
+          id: 'pk-1',
+          userId: 'u-owner',
+          status: 'DRAFT',
+        };
+      });
+      mocked.performanceAgreement.delete.mockResolvedValue({ id: 'pk-1' });
+
+      await pkService.deletePK('pk-1', 'u-owner', false);
+
+      expect(mockQueryRaw).toHaveBeenCalledTimes(1);
+      const sqlStrings = mockQueryRaw.mock.calls[0][0];
+      expect(sqlStrings.join('')).toContain('SELECT id FROM "performance_agreements" WHERE id =');
+      expect(sqlStrings.join('')).toContain('FOR UPDATE');
+      expect(callOrder).toEqual(['$queryRaw', 'findUnique']);
+      expect(mocked.performanceAgreement.delete).toHaveBeenCalledWith({ where: { id: 'pk-1' } });
+    });
+
+    it('rejects deletion if PK is not found', async () => {
+      mocked.performanceAgreement.findUnique.mockResolvedValue(null);
+
+      await expect(pkService.deletePK('pk-nonexistent', 'u-owner', false)).rejects.toThrow(/not found/i);
+      expect(mocked.performanceAgreement.delete).not.toHaveBeenCalled();
+    });
+
+    it('rejects deletion if caller is neither owner nor admin', async () => {
+      mocked.performanceAgreement.findUnique.mockResolvedValue({
+        id: 'pk-1',
+        userId: 'u-owner',
+        status: 'DRAFT',
+      });
+
+      await expect(pkService.deletePK('pk-1', 'u-stranger', false)).rejects.toThrow();
+      expect(mocked.performanceAgreement.delete).not.toHaveBeenCalled();
+    });
+
+    it('rejects deletion with 409 Conflict when PK is already APPROVED', async () => {
+      mocked.performanceAgreement.findUnique.mockResolvedValueOnce({
+        id: 'pk-1',
+        userId: 'u-owner',
+        status: 'APPROVED',
+      });
+
+      await expect(pkService.deletePK('pk-1', 'u-owner', false)).rejects.toThrow(/approved/i);
+      expect(mockQueryRaw).toHaveBeenCalledTimes(1);
+      expect(mocked.performanceAgreement.delete).not.toHaveBeenCalled();
+    });
+
+    it('rejects deletion when PK becomes APPROVED after acquiring row lock (concurrent approval race)', async () => {
+      // In deletePK, $queryRaw FOR UPDATE locks the row first, then findUnique reads the latest status under lock.
+      // If a concurrent approval completes before or during lock acquisition, findUnique reads status: APPROVED.
+      mocked.performanceAgreement.findUnique.mockResolvedValueOnce({
+        id: 'pk-1',
+        userId: 'u-owner',
+        status: 'APPROVED',
+      });
+
+      await expect(pkService.deletePK('pk-1', 'u-owner', false)).rejects.toThrow(/approved/i);
+
+      expect(mockQueryRaw).toHaveBeenCalledTimes(1);
+      const sqlStrings = mockQueryRaw.mock.calls[0][0];
+      expect(sqlStrings.join('')).toContain('SELECT id FROM "performance_agreements" WHERE id =');
+      expect(sqlStrings.join('')).toContain('FOR UPDATE');
+      expect(mocked.performanceAgreement.delete).not.toHaveBeenCalled();
     });
   });
 

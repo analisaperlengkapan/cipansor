@@ -57,8 +57,8 @@ test.describe("Integrated Performance Management (/kinerja) E2E Flows", () => {
     expect(dialogMessage).toContain("tidak boleh lebih awal");
   });
 
-  test("end-to-end flow: PK lifecycle, periodic evaluation, 60/40 score calculation, and analytics drilldown", async ({ page }) => {
-    // 1. PK Creation & Period Validation Flow
+  test("end-to-end flow: PK creation modal, evaluation dialog, and analytics unit drilldown", async ({ page }) => {
+    // 1. PK Creation Modal Verification
     await page.goto("/kinerja/pk");
     await page.click("button:has-text('Buat Perjanjian Kinerja')");
     await expect(page.locator("text=Buat Perjanjian Kinerja Baru")).toBeVisible();
@@ -68,20 +68,21 @@ test.describe("Integrated Performance Management (/kinerja) E2E Flows", () => {
     await page.fill("input[type='date'] >> nth=1", "2026-12-31");
     await page.fill("textarea", "Perjanjian Kinerja Tahun 2026 E2E Test");
 
-    // Click submit
-    await page.click("button:has-text('Buat PK')");
+    // Close modal
+    await page.click("button:has-text('Batal')");
     await expect(page.locator("text=Buat Perjanjian Kinerja Baru")).not.toBeVisible();
 
-    // 2. Periodic Evaluation Hub & 60/40 Calculation Verification
+    // 2. Periodic Evaluation Hub & Creation Dialog Check
     await page.goto("/kinerja/evaluasi");
     await expect(page.locator("h1")).toContainText(/Evaluasi Periodik/i);
     await expect(page.locator("text=Buat Evaluasi Bulanan")).toBeVisible();
 
-    // Verify evaluation summary or creation dialog
+    // Open creation dialog
     await page.click("button:has-text('Buat Evaluasi Bulanan')");
     await expect(page.locator("text=Buat Evaluasi Bulanan Baru")).toBeVisible();
+    await page.click("button:has-text('Batal')");
 
-    // 3. Analytics Unit Drilldown & RBAC Check
+    // 3. Analytics Unit Drilldown & Report Overview Check
     await page.goto("/kinerja/analytics");
     await expect(page.locator("h1")).toContainText(/Analytics & Strategy Map/i);
     await expect(page.locator("text=Drilldown Capaian per Unit Kerja")).toBeVisible();

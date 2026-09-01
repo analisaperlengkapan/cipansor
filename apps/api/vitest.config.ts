@@ -16,12 +16,7 @@ export default defineConfig({
     },
     testTimeout: 10000,
     hookTimeout: 10000,
-    pool: 'threads',
-    poolOptions: {
-      threads: {
-        singleThread: true, // For database tests
-      },
-    },
+    fileParallelism: false,
   },
   resolve: {
     alias: {

@@ -20,7 +20,7 @@ overrides:
   multer: '>=2.2.0'
   nanoid@3: 3.3.18
   next: '>=16.2.11'
-  nodemailer: '>=9.0.1'
+  nodemailer: 9.0.6
   postcss: '>=8.5.23'
   rollup: '>=4.22.4'
   sharp: '>=0.35.0'
@@ -106,8 +106,8 @@ importers:
         specifier: ^4.6.0
         version: 4.6.0
       nodemailer:
-        specifier: '>=9.0.1'
-        version: 9.0.3
+        specifier: 9.0.6
+        version: 9.0.6
       otplib:
         specifier: 13.5.0
         version: 13.5.0
@@ -5292,8 +5292,8 @@ packages:
     resolution: {integrity: sha512-YHs7BmmcsdAI5Ozuf8JZo6PT0mv2GIWC9vMfvUC3dp65M8hn7Ux8CPL+2oBI7juNuj9d0ndhTcznq2ODBps9cQ==}
     engines: {node: '>=18'}
 
-  nodemailer@9.0.3:
-    resolution: {integrity: sha512-n+YP+NKwR5zRWa60k3GiQ6Q3B4KXCoAw40dAKeCtYn020iNN74aWK2liXIC3ZEATeGql7we3tE3t8QwhY0eskw==}
+  nodemailer@9.0.6:
+    resolution: {integrity: sha512-IQUGFdhdGwI9+AWX+FpUt4DLmvFaOjTMEoneTIWX/RXxuy1TdenPwWrvFMSfLkPKl+HQEXWuSAxEMMbPYXtBmg==}
     engines: {node: '>=6.0.0'}
 
   normalize-path@3.0.0:
@@ -11681,7 +11681,7 @@ snapshots:
 
   node-releases@2.0.54: {}
 
-  nodemailer@9.0.3: {}
+  nodemailer@9.0.6: {}
 
   normalize-path@3.0.0: {}
 

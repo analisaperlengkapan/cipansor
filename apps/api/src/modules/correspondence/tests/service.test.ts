@@ -478,6 +478,35 @@ describe('CorrespondenceService', () => {
   });
 
   describe('createLetter Unit Authorization & Incoming Lifecycle', () => {
+    it('executes number generation within transaction scope so failure rolls back counter increment', async () => {
+      vi.mocked(prisma.academicYear.findFirst).mockResolvedValue({ id: 'year-1', isActive: true } as any);
+      vi.mocked(prisma.agendaNumber.findUnique).mockResolvedValue({
+        id: 'ag-1',
+        lastNumber: 1,
+        format: '[NO]/INC/[YEAR]',
+      } as any);
+      vi.mocked(prisma.agendaNumber.update).mockResolvedValue({ lastNumber: 2 } as any);
+      vi.mocked(prisma.letter.create).mockRejectedValue(new Error('DB write error'));
+
+      await expect(
+        CorrespondenceService.createLetter(
+          {
+            unitId: 'unit-1',
+            direction: 'INCOMING' as any,
+            subject: 'Rollback test',
+            date: '2026-08-01',
+            urgency: 'NORMAL' as any,
+            nature: 'PUBLIC' as any,
+            status: 'PENDING_REVIEW' as any,
+          },
+          'user-1',
+          { id: 'user-1', roleCode: 'SDIT_ADMIN', unitId: 'unit-1' } as any
+        )
+      ).rejects.toThrow('DB write error');
+
+      expect(prisma.agendaNumber.update).toHaveBeenCalled();
+    });
+
     it('creates letter for authorized unit', async () => {
       vi.mocked(prisma.letter.create).mockResolvedValue({ id: 'let-1', status: 'DRAFT', unitId: 'unit-1' } as any);
 
@@ -901,6 +930,48 @@ describe('CorrespondenceService', () => {
         where: { id: 'letter-1' },
         data: { status: 'DISPOSED' },
       });
+    });
+
+    it('rejects disposition creation if letter status becomes ARCHIVED when re-read under row lock', async () => {
+      vi.mocked(prisma.user.findMany).mockResolvedValue([
+        {
+          id: 'user-2',
+          unitId: 'unit-1',
+          teacher: null,
+          staff: { nip: '123' },
+          userRoles: [{ role: { code: 'SDIT_TATA_USAHA' } }],
+        },
+      ] as any);
+
+      vi.mocked(prisma.letter.findUnique)
+        .mockResolvedValueOnce({
+          id: 'letter-archived-race',
+          unitId: 'unit-1',
+          createdById: 'creator-1',
+          status: 'SIGNED',
+          direction: 'INCOMING',
+          reviewers: [],
+          recipients: [],
+          dispositions: [],
+        } as any)
+        .mockResolvedValueOnce({
+          id: 'letter-archived-race',
+          unitId: 'unit-1',
+          status: 'ARCHIVED',
+          direction: 'INCOMING',
+        } as any);
+
+      await expect(
+        CorrespondenceService.createDisposition(
+          {
+            letterId: 'letter-archived-race',
+            senderId: 'user-1',
+            recipientId: 'user-2',
+            instruction: 'Tolong tindak lanjuti',
+          },
+          { id: 'user-1', roleCode: 'SUPER_ADMIN', unitId: null } as any
+        )
+      ).rejects.toThrow(/Surat sudah diarsipkan/);
     });
 
     it('returns existing disposition without re-emitting notifications when retried on existing active disposition', async () => {

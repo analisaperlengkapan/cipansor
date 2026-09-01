@@ -8,13 +8,10 @@ import {
   CreateDispositionInput,
   PublicLetterVerificationResult,
   CorrespondenceParticipant,
+  ListParticipantsQueryInput,
 } from "@cipansor/shared";
 
-export function useCorrespondenceParticipants(params?: {
-  search?: string;
-  unitId?: string;
-  limit?: number;
-}) {
+export function useCorrespondenceParticipants(params?: ListParticipantsQueryInput) {
   return useQuery({
     queryKey: ["correspondenceParticipants", params],
     queryFn: async () => {

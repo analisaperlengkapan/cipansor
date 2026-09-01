@@ -276,28 +276,24 @@ export const CorrespondenceService = {
     });
     const academicYearId = activeYear?.id || 'DEFAULT';
 
-    // Generate number if missing
-    let agendaNumber = data.agendaNumber;
-    let letterNumber = data.letterNumber;
-
-    if (data.direction === 'INCOMING' && !agendaNumber) {
-      agendaNumber = await this.generateNumber(targetUnitId, 'INCOMING', academicYearId);
-    } else if (data.direction === 'OUTGOING' && !letterNumber) {
-      // Typically only generated when status is READY or SIGNED, but we'll allow draft numbering if needed
-      // Or just leave it empty for DRAFT
-      if (initialStatus !== 'DRAFT') {
-        // Per jenis, not one shared counter: on paper an SK has its own agenda
-        // book, and sharing a counter would make SK numbers skip every time an
-        // ordinary letter went out.
-        letterNumber = await this.generateNumber(
-          targetUnitId,
-          AGENDA_TYPE_CODE[type],
-          academicYearId
-        );
-      }
-    }
-
     const result = await prisma.$transaction(async (tx) => {
+      // Generate number inside transaction so rollback cancels increment on failure
+      let agendaNumber = data.agendaNumber;
+      let letterNumber = data.letterNumber;
+
+      if (data.direction === 'INCOMING' && !agendaNumber) {
+        agendaNumber = await this.generateNumber(targetUnitId, 'INCOMING', academicYearId, tx);
+      } else if (data.direction === 'OUTGOING' && !letterNumber) {
+        if (initialStatus !== 'DRAFT') {
+          letterNumber = await this.generateNumber(
+            targetUnitId,
+            AGENDA_TYPE_CODE[type],
+            academicYearId,
+            tx
+          );
+        }
+      }
+
       // Create Letter
       const letter = await tx.letter.create({
         data: {
@@ -1174,12 +1170,26 @@ export const CorrespondenceService = {
       // Row lock letter for concurrent disposition protection
       await tx.$executeRaw`SELECT id FROM letters WHERE id = ${letter.id} FOR UPDATE`;
 
+      // Re-read letter status under row lock to prevent race conditions with concurrent archive operations
+      const txLetter = await tx.letter.findUnique({
+        where: { id: letter.id },
+        select: { id: true, status: true, direction: true, unitId: true },
+      });
+
+      if (!txLetter) throw Errors.notFound('Surat tidak ditemukan');
+
+      if (txLetter.status === DbLetterStatus.ARCHIVED) {
+        throw new Error(
+          'Surat sudah diarsipkan; buka kembali arsipnya sebelum mendisposisikan.'
+        );
+      }
+
       const allDispositions = [];
       const newlyCreatedDispositions = [];
 
       for (const targetRecipientId of recipients) {
         const existingDisp = await tx.disposition.findFirst({
-          where: { letterId: letter.id, recipientId: targetRecipientId, status: { not: 'COMPLETED' } },
+          where: { letterId: txLetter.id, recipientId: targetRecipientId, status: { not: 'COMPLETED' } },
         });
         if (existingDisp) {
           allDispositions.push(existingDisp);
@@ -1200,13 +1210,13 @@ export const CorrespondenceService = {
         });
 
         await recordFlow(tx, {
-          letterId: letter.id,
+          letterId: txLetter.id,
           actorId: data.senderId,
           action: LetterFlowAction.DISPOSED,
           targetId: targetRecipientId,
-          fromStatus: letter.status,
+          fromStatus: txLetter.status,
           toStatus:
-            letter.direction === 'INCOMING' ? DbLetterStatus.DISPOSED : letter.status,
+            txLetter.direction === 'INCOMING' ? DbLetterStatus.DISPOSED : txLetter.status,
           note: data.instruction,
         });
 
@@ -1215,11 +1225,11 @@ export const CorrespondenceService = {
       }
 
       if (
-        letter.direction === 'INCOMING' &&
-        letter.status !== DbLetterStatus.DISPOSED
+        txLetter.direction === 'INCOMING' &&
+        txLetter.status !== DbLetterStatus.DISPOSED
       ) {
         await tx.letter.update({
-          where: { id: letter.id },
+          where: { id: txLetter.id },
           data: { status: DbLetterStatus.DISPOSED },
         });
       }

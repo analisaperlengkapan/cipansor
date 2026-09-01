@@ -10,6 +10,7 @@ const { emitMock, compareMock } = vi.hoisted(() => ({
 
 vi.mock('../../lib/prisma', () => ({
   prisma: {
+    $executeRaw: vi.fn(),
     userSigningKey: {
       findUnique: vi.fn(),
       create: vi.fn(),

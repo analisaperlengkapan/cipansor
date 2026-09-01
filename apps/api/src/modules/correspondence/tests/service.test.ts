@@ -43,6 +43,7 @@ vi.mock('@/lib/prisma', () => ({
     letterFlowEvent: {
       create: vi.fn(),
     },
+    $executeRaw: vi.fn().mockResolvedValue(1),
     $transaction: vi.fn((callback) => callback(prisma)),
   },
 }));
@@ -553,6 +554,25 @@ describe('CorrespondenceService', () => {
       ).rejects.toThrow(/tidak terhubung dengan unit kerja yang valid/);
     });
 
+    it('rejects creation of OUTGOING letter in PENDING_REVIEW status without reviewerIds', async () => {
+      await expect(
+        CorrespondenceService.createLetter(
+          {
+            unitId: 'unit-1',
+            direction: 'OUTGOING' as any,
+            subject: 'Outgoing No Reviewers Test',
+            date: '2026-08-01',
+            urgency: 'NORMAL' as any,
+            nature: 'PUBLIC' as any,
+            status: 'PENDING_REVIEW' as any,
+            reviewerIds: [],
+          },
+          'user-1',
+          { id: 'user-1', roleCode: 'SDIT_ADMIN', unitId: 'unit-1' } as any
+        )
+      ).rejects.toThrow(/wajib memilih minimal satu pemeriksa/);
+    });
+
     it('rejects creation for unauthorized unit', async () => {
       await expect(
         CorrespondenceService.createLetter(
@@ -861,6 +881,7 @@ describe('CorrespondenceService', () => {
         recipients: [],
         dispositions: [],
       } as any);
+      vi.mocked(prisma.disposition.findFirst).mockResolvedValue(null as any);
       vi.mocked(prisma.disposition.create).mockResolvedValue({ id: 'disp-1', recipientId: 'user-2' } as any);
       vi.mocked(prisma.letter.update).mockResolvedValue({} as any);
 
@@ -880,6 +901,47 @@ describe('CorrespondenceService', () => {
         where: { id: 'letter-1' },
         data: { status: 'DISPOSED' },
       });
+    });
+
+    it('returns existing disposition without re-emitting notifications when retried on existing active disposition', async () => {
+      vi.mocked(prisma.user.findMany).mockResolvedValue([
+        {
+          id: 'user-2',
+          unitId: 'unit-1',
+          teacher: null,
+          staff: { nip: '123' },
+          userRoles: [{ role: { code: 'SDIT_TATA_USAHA' } }],
+        },
+      ] as any);
+      vi.mocked(prisma.letter.findUnique).mockResolvedValue({
+        id: 'letter-1',
+        unitId: 'unit-1',
+        createdById: 'creator-1',
+        status: 'SIGNED',
+        direction: 'INCOMING',
+        reviewers: [],
+        recipients: [],
+        dispositions: [],
+      } as any);
+
+      vi.mocked(prisma.disposition.findFirst).mockResolvedValue({
+        id: 'disp-existing-1',
+        recipientId: 'user-2',
+        status: 'PENDING',
+      } as any);
+
+      const result = await CorrespondenceService.createDisposition(
+        {
+          letterId: 'letter-1',
+          senderId: 'user-1',
+          recipientId: 'user-2',
+          instruction: 'Tolong tindak lanjuti',
+        },
+        { id: 'user-1', roleCode: 'SUPER_ADMIN', unitId: null } as any
+      );
+
+      expect(result).toHaveLength(1);
+      expect(result[0]).toHaveProperty('id', 'disp-existing-1');
     });
 
     it('deduplicates duplicate recipientIds in dispositions', async () => {

@@ -24,7 +24,7 @@ import {
   letterScopeWhere,
   type LetterActor,
 } from '@/utils/letter-access';
-import { isFoundationScopedRole, seesAllUnits } from '@/utils/resolve-unit-id';
+import { seesAllUnits } from '@/utils/resolve-unit-id';
 import {
   assertMayArchive,
   assertMayResubmit,
@@ -230,6 +230,11 @@ export const CorrespondenceService = {
     // Client is only allowed to request initial status DRAFT or PENDING_REVIEW
     if (data.status !== LetterStatus.DRAFT && data.status !== LetterStatus.PENDING_REVIEW) {
       throw Errors.badRequest('Status awal surat hanya dapat berupa DRAFT atau PENDING_REVIEW');
+    }
+
+    // Outgoing letters submitted in PENDING_REVIEW must have at least one reviewer assigned
+    if (data.direction === 'OUTGOING' && data.status === LetterStatus.PENDING_REVIEW && (!data.reviewerIds || data.reviewerIds.length === 0)) {
+      throw Errors.badRequest('Surat keluar berstatus PENDING_REVIEW wajib memilih minimal satu pemeriksa');
     }
 
     // Single-unit bypass is strictly reserved for Executive Foundation Roles and SUPER_ADMIN.
@@ -616,6 +621,9 @@ export const CorrespondenceService = {
       await this.validateParticipantEligibility([nextReviewerId], actor);
     }
     const result = await prisma.$transaction(async (tx) => {
+      // Row locking to serialize concurrent review requests on the same letter
+      await tx.$executeRaw`SELECT id FROM letters WHERE id = ${letterId} FOR UPDATE`;
+
       const letter = await tx.letter.findUnique({
         where: { id: letterId },
         select: {
@@ -1162,14 +1170,19 @@ export const CorrespondenceService = {
 
     await this.validateParticipantEligibility(recipients, actor);
 
-    const createdDispositions = await prisma.$transaction(async (tx) => {
-      const results = [];
+    const { allDispositions, newlyCreatedDispositions } = await prisma.$transaction(async (tx) => {
+      // Row lock letter for concurrent disposition protection
+      await tx.$executeRaw`SELECT id FROM letters WHERE id = ${letter.id} FOR UPDATE`;
+
+      const allDispositions = [];
+      const newlyCreatedDispositions = [];
+
       for (const targetRecipientId of recipients) {
         const existingDisp = await tx.disposition.findFirst({
           where: { letterId: letter.id, recipientId: targetRecipientId, status: { not: 'COMPLETED' } },
         });
         if (existingDisp) {
-          results.push(existingDisp);
+          allDispositions.push(existingDisp);
           continue;
         }
 
@@ -1197,7 +1210,8 @@ export const CorrespondenceService = {
           note: data.instruction,
         });
 
-        results.push(created);
+        allDispositions.push(created);
+        newlyCreatedDispositions.push(created);
       }
 
       if (
@@ -1210,11 +1224,11 @@ export const CorrespondenceService = {
         });
       }
 
-      return results;
+      return { allDispositions, newlyCreatedDispositions };
     });
 
-    // Notify All Recipients
-    for (const disp of createdDispositions) {
+    // Notify ONLY Newly Created Dispositions
+    for (const disp of newlyCreatedDispositions) {
       eventBus.emit('notification:send', {
         userId: disp.recipientId,
         type: 'REMINDER',
@@ -1229,7 +1243,7 @@ export const CorrespondenceService = {
       });
     }
 
-    return createdDispositions;
+    return allDispositions;
   },
 
   async updateDispositionStatus(id: string, status: string, notes?: string, userId?: string) {

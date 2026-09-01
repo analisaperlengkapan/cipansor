@@ -456,9 +456,43 @@ export const EsignService = {
     }
 
     const result = await prisma.$transaction(async (tx) => {
+      // Lock letter row and re-verify reviewer state under concurrency
+      await tx.$executeRaw`SELECT id FROM letters WHERE id = ${letterId} FOR UPDATE`;
+
+      const txLetter = await tx.letter.findUnique({
+        where: { id: letterId },
+        include: { reviewers: { orderBy: { order: 'asc' } } },
+      });
+      if (!txLetter) throw Errors.notFound('Surat tidak ditemukan');
+
+      const txMine = txLetter.reviewers.find((r) => r.reviewerId === userId);
+      if (!txMine?.isSigner) {
+        throw Errors.forbidden('Anda bukan penandatangan surat ini.');
+      }
+      if (txLetter.status !== LetterStatus.READY_TO_SIGN) {
+        throw Errors.badRequest(
+          `Surat belum siap ditandatangani (status: ${txLetter.status}).`
+        );
+      }
+
+      const pendingReviewers = txLetter.reviewers.filter((r) => r.status !== 'APPROVED');
+      const pendingNonSigners = pendingReviewers.filter((r) => !r.isSigner);
+      if (pendingNonSigners.length > 0) {
+        throw Errors.forbidden(
+          'Surat belum selesai ditinjau oleh seluruh pemeriksa/paraf sebelum ditandatangani.'
+        );
+      }
+
+      const currentTurn = pendingReviewers[0];
+      if (currentTurn && currentTurn.reviewerId !== userId) {
+        throw Errors.forbidden(
+          `Belum giliran Anda. Menunggu verifikator urutan ${currentTurn.order} terlebih dahulu.`
+        );
+      }
+
       const signature = await tx.letterSignature.create({
         data: {
-          letterId: letter.id,
+          letterId: txLetter.id,
           signerId: userId,
           algorithm: signed.algorithm,
           publicKey: signed.publicKey,
@@ -470,19 +504,19 @@ export const EsignService = {
       });
 
       await tx.letterReviewer.update({
-        where: { id: mine.id },
+        where: { id: txMine.id },
         data: { status: 'APPROVED', reviewedAt: signedAt },
       });
       await tx.letter.update({
-        where: { id: letter.id },
+        where: { id: txLetter.id },
         data: { status: LetterStatus.SIGNED },
       });
       await tx.letterFlowEvent.create({
         data: {
-          letterId: letter.id,
+          letterId: txLetter.id,
           actorId: userId,
           action: LetterFlowAction.SIGNED,
-          fromStatus: letter.status,
+          fromStatus: txLetter.status,
           toStatus: LetterStatus.SIGNED,
           note: 'Ditandatangani secara elektronik.',
         },

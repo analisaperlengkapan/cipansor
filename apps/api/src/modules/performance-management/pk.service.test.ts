@@ -33,31 +33,35 @@ describe('PerformanceAgreementService', () => {
   beforeEach(() => vi.clearAllMocks());
 
   describe('getSupervisors unit scoping', () => {
-    it('restricts results to caller unitId for unit-pinned roles', async () => {
+    it('filters userRoles by caller unitId for unit-pinned roles regardless of User.unitId', async () => {
       mocked.user.findMany.mockResolvedValue([]);
       await pkService.getSupervisors({ roleCode: 'SDIT_GURU', unitId: 'unit-sdit' });
 
       expect(mocked.user.findMany).toHaveBeenCalledTimes(1);
       const queryWhere = mocked.user.findMany.mock.calls[0][0].where;
-      expect(queryWhere.unitId).toBe('unit-sdit');
+      // Top-level User.unitId is NOT filtered; filtering is on userRoles.some.unitId
+      expect(queryWhere.unitId).toBeUndefined();
+      expect(queryWhere.userRoles.some.unitId).toBe('unit-sdit');
     });
 
-    it('forces unitId to "none" for unassigned non-global callers', async () => {
+    it('forces userRoles.some.unitId to "none" for unassigned non-global callers', async () => {
       mocked.user.findMany.mockResolvedValue([]);
       await pkService.getSupervisors({ roleCode: 'SDIT_GURU', unitId: undefined });
 
       expect(mocked.user.findMany).toHaveBeenCalledTimes(1);
       const queryWhere = mocked.user.findMany.mock.calls[0][0].where;
-      expect(queryWhere.unitId).toBe('none');
+      expect(queryWhere.unitId).toBeUndefined();
+      expect(queryWhere.userRoles.some.unitId).toBe('none');
     });
 
-    it('allows cross-unit / foundation roles to query supervisors across units', async () => {
+    it('allows cross-unit / foundation roles to query supervisors across all role unit assignments', async () => {
       mocked.user.findMany.mockResolvedValue([]);
       await pkService.getSupervisors({ roleCode: 'YAYASAN_KETUA', unitId: 'unit-sdit' });
 
       expect(mocked.user.findMany).toHaveBeenCalledTimes(1);
       const queryWhere = mocked.user.findMany.mock.calls[0][0].where;
       expect(queryWhere.unitId).toBeUndefined();
+      expect(queryWhere.userRoles.some.unitId).toBeUndefined();
     });
   });
 

@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { asyncHandler } from '@/middleware/error';
+import { asyncHandler, Errors } from '@/middleware/error';
 import { ApiResponse } from '@/utils/response';
 import { seesGlobalPKGEvaluations } from '@/utils/resolve-unit-id';
 import * as pkgService from './pkg.service';
@@ -148,10 +148,13 @@ export const getStatistics = asyncHandler(async (req: Request, res: Response) =>
 
   const isGlobalRole = req.user ? seesGlobalPKGEvaluations(req.user.roleCode) : false;
 
-  // Non-global users MUST use their assigned unitId from JWT. If an unassigned non-global user calls this endpoint, force an unmatchable unitId ('none') to prevent query parameter injection across units.
+  if (!isGlobalRole && !req.user?.unitId) {
+    throw Errors.forbidden('User does not belong to a specific unit and lacks global statistics access');
+  }
+
   const effectiveUnitId = isGlobalRole
     ? (unitId as string | undefined)
-    : (req.user?.unitId || 'none');
+    : req.user!.unitId;
 
   const stats = await pkgService.getPKGStatistics({
     unitId: effectiveUnitId,

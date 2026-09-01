@@ -35,7 +35,11 @@ function mockReqRes(overrides: Partial<Request> = {}) {
 }
 
 async function run(handler: any, req: Request, res: Response) {
-  await handler(req, res, vi.fn());
+  let nextError: any = null;
+  await handler(req, res, (err?: any) => {
+    nextError = err;
+  });
+  if (nextError) throw nextError;
 }
 
 describe('pkg controller', () => {
@@ -128,16 +132,15 @@ describe('pkg controller', () => {
     );
   });
 
-  it('getStatistics: forces unitId to "none" for unassigned non-global users', async () => {
+  it('getStatistics: throws 403 Forbidden for unassigned non-global users', async () => {
     (pkgService.getPKGStatistics as any).mockResolvedValue({ total: 0 });
 
     const { req: reqUnassigned, res: resUnassigned } = mockReqRes({
       query: {},
       user: { sub: 'u5', roleCode: 'SDIT_GURU', unitId: undefined } as any,
     });
-    await run(controller.getStatistics, reqUnassigned, resUnassigned);
-    expect(pkgService.getPKGStatistics).toHaveBeenCalledWith(
-      expect.objectContaining({ unitId: 'none' })
+    await expect(run(controller.getStatistics, reqUnassigned, resUnassigned)).rejects.toThrow(
+      'User does not belong to a specific unit and lacks global statistics access'
     );
 
     const { req: reqGlobal, res: resGlobal } = mockReqRes({

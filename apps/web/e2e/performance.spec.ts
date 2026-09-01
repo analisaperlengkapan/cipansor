@@ -47,7 +47,20 @@ test.describe("Integrated Performance Management (/kinerja) E2E Flows", () => {
     await page.goto("/kinerja/pk");
     await page.click("button:has-text('Buat Perjanjian Kinerja')");
     await expect(page.locator("text=Buat Perjanjian Kinerja Baru")).toBeVisible();
-    await expect(page.locator("button:has-text('Buat PK')")).toBeVisible();
+
+    // Fill invalid inverted period dates
+    await page.fill("input[type='date'] >> nth=0", "2026-12-31");
+    await page.fill("input[type='date'] >> nth=1", "2026-01-01");
+
+    // Listen for dialog alert
+    let dialogMessage = "";
+    page.once("dialog", (dialog) => {
+      dialogMessage = dialog.message();
+      dialog.dismiss();
+    });
+
+    await page.click("button:has-text('Buat PK')");
+    expect(dialogMessage).toContain("tidak boleh lebih awal");
   });
 
   test("periodic evaluation hub loads real page structure", async ({ page }) => {

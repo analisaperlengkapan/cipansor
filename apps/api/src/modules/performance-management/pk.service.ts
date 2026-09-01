@@ -91,15 +91,15 @@ export class PerformanceAgreementService {
   async getSupervisors(caller?: { roleCode?: string | null; role?: string | null; unitId?: string | null }) {
     const now = new Date();
     const canSeeAll = caller ? seesAllUnits(caller) : true;
-    const unitFilter = !canSeeAll ? { unitId: caller?.unitId ?? 'none' } : {};
+    const targetUnitId = !canSeeAll ? (caller?.unitId ?? 'none') : undefined;
 
     return prisma.user.findMany({
       where: {
         isActive: true,
-        ...unitFilter,
         userRoles: {
           some: {
             isActive: true,
+            ...(targetUnitId ? { unitId: targetUnitId } : {}),
             OR: [
               { expiresAt: null },
               { expiresAt: { gt: now } },

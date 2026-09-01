@@ -1,6 +1,5 @@
 import { Request } from 'express';
 import { RoleCode } from '@prisma/client';
-import { isGlobalPKGRoleCode } from '@cipansor/shared';
 
 /**
  * Resolve the effective unitId for the current request.
@@ -81,48 +80,6 @@ export const FOUNDATION_SCOPE_ROLES: readonly string[] = [
  */
 export function isFoundationScopedRole(roleCode?: string | null): boolean {
   return !!roleCode && FOUNDATION_SCOPE_ROLES.includes(roleCode);
-}
-
-/**
- * Single source of truth for global PKG evaluation and statistics viewing access.
- * Delegates directly to @cipansor/shared role helper to ensure API and Web remain synchronized.
- */
-export function seesGlobalPKGEvaluations(roleCode?: string | null): boolean {
-  return isGlobalPKGRoleCode(roleCode);
-}
-
-/**
- * Leadership roles across Foundation, Schools/Units, Pesantren, and Higher Education.
- */
-export const LEADERSHIP_ROLES: readonly string[] = [
-  RoleCode.SUPER_ADMIN,
-  RoleCode.YAYASAN_KETUA,
-  RoleCode.YAYASAN_PEMBINA,
-  RoleCode.YAYASAN_PENGAWAS,
-  RoleCode.YAYASAN_SEKRETARIS,
-  RoleCode.YAYASAN_BENDAHARA,
-  RoleCode.YAYASAN_ANGGOTA,
-  RoleCode.TKQ_ADMIN,
-  RoleCode.SDIT_ADMIN,
-  RoleCode.SMPIT_ADMIN,
-  RoleCode.SMAQ_ADMIN,
-  RoleCode.TKQ_KEPALA_SEKOLAH,
-  RoleCode.SDIT_KEPALA_SEKOLAH,
-  RoleCode.SMPIT_KEPALA_SEKOLAH,
-  RoleCode.SMAQ_KEPALA_SEKOLAH,
-  RoleCode.PESANTREN_PENGASUH,
-  RoleCode.PESANTREN_DIREKTUR,
-  RoleCode.PT_REKTOR,
-  RoleCode.PT_WAKIL_REKTOR,
-  RoleCode.PT_DEKAN,
-  RoleCode.PT_KAPRODI,
-];
-
-/**
- * Helper to check if a user role belongs to unit or foundation leadership.
- */
-export function isLeadershipRole(roleCode?: string | null): boolean {
-  return !!roleCode && LEADERSHIP_ROLES.includes(roleCode as RoleCode);
 }
 
 /**

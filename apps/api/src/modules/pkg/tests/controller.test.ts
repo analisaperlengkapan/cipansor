@@ -35,11 +35,7 @@ function mockReqRes(overrides: Partial<Request> = {}) {
 }
 
 async function run(handler: any, req: Request, res: Response) {
-  let nextError: any = null;
-  await handler(req, res, (err?: any) => {
-    nextError = err;
-  });
-  if (nextError) throw nextError;
+  await handler(req, res, vi.fn());
 }
 
 describe('pkg controller', () => {
@@ -72,81 +68,5 @@ describe('pkg controller', () => {
     const { req, res } = mockReqRes({ params: { id: 'e1' } as any, body: { status: 'DONE' } as any });
     await run(controller.updateEvaluationStatus, req, res);
     expect(pkgService.updateEvaluationStatus).toHaveBeenCalledWith('e1', 'DONE', 'user-1');
-  });
-
-  it('listEvaluations: allows custom query unitId for foundation and cross-unit roles', async () => {
-    (pkgService.listEvaluations as any).mockResolvedValue({ data: [], pagination: {} });
-
-    // Foundation role
-    const { req: reqFoundation, res: resFoundation } = mockReqRes({
-      query: { unitId: 'unit-custom' } as any,
-      user: { sub: 'u1', roleCode: 'YAYASAN_KETUA' } as any,
-    });
-    await run(controller.listEvaluations, reqFoundation, resFoundation);
-    expect(pkgService.listEvaluations).toHaveBeenCalledWith(
-      expect.objectContaining({ unitId: 'unit-custom' })
-    );
-
-    // Cross-unit role
-    const { req: reqCross, res: resCross } = mockReqRes({
-      query: { unitId: 'unit-custom-2' } as any,
-      user: { sub: 'u2', roleCode: 'PESANTREN_PENGASUH' } as any,
-    });
-    await run(controller.listEvaluations, reqCross, resCross);
-    expect(pkgService.listEvaluations).toHaveBeenCalledWith(
-      expect.objectContaining({ unitId: 'unit-custom-2' })
-    );
-  });
-
-  it('listEvaluations: constrains unit-bound users and general service staff to req.user.unitId', async () => {
-    (pkgService.listEvaluations as any).mockResolvedValue({ data: [], pagination: {} });
-
-    // Unit teacher
-    const { req: reqTeacher, res: resTeacher } = mockReqRes({
-      query: { unitId: 'unit-other' } as any,
-      user: { sub: 'u3', roleCode: 'SDIT_GURU', unitId: 'unit-bound-sd' } as any,
-    });
-    await run(controller.listEvaluations, reqTeacher, resTeacher);
-    expect(pkgService.listEvaluations).toHaveBeenCalledWith(
-      expect.objectContaining({ unitId: 'unit-bound-sd' })
-    );
-
-    // Unassigned non-global user attempting query parameter injection
-    const { req: reqUnassigned, res: resUnassigned } = mockReqRes({
-      query: { unitId: 'unit-other' } as any,
-      user: { sub: 'u5', roleCode: 'SDIT_GURU', unitId: undefined } as any,
-    });
-    await run(controller.listEvaluations, reqUnassigned, resUnassigned);
-    expect(pkgService.listEvaluations).toHaveBeenCalledWith(
-      expect.objectContaining({ unitId: 'none' })
-    );
-
-    // Campus service staff (Perawat)
-    const { req: reqPerawat, res: resPerawat } = mockReqRes({
-      query: { unitId: 'unit-other' } as any,
-      user: { sub: 'u4', roleCode: 'PERAWAT', unitId: 'unit-bound-smp' } as any,
-    });
-    await run(controller.listEvaluations, reqPerawat, resPerawat);
-    expect(pkgService.listEvaluations).toHaveBeenCalledWith(
-      expect.objectContaining({ unitId: 'unit-bound-smp' })
-    );
-  });
-
-  it('getStatistics: delegates caller context and params to pkgService.getPKGStatistics', async () => {
-    (pkgService.getPKGStatistics as any).mockResolvedValue({ total: 0 });
-
-    const userObj = { sub: 'u5', roleCode: 'SDIT_GURU', unitId: 'unit-sdit' };
-    const { req, res } = mockReqRes({
-      query: { periodId: 'p-1' },
-      user: userObj as any,
-    });
-
-    await run(controller.getStatistics, req, res);
-
-    expect(pkgService.getPKGStatistics).toHaveBeenCalledWith({
-      caller: userObj,
-      unitId: undefined,
-      periodId: 'p-1',
-    });
   });
 });

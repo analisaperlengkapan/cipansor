@@ -12,8 +12,6 @@
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/client';
-import { seesGlobalPKGEvaluations } from '@/utils/resolve-unit-id';
-import { Errors } from '@/middleware/error';
 
 // PKG Indicators per Competency
 export const PKG_INDICATORS = {
@@ -227,18 +225,16 @@ export async function getEvaluation(id: string) {
 export async function listEvaluations(params: {
   periodId?: string;
   teacherId?: string;
-  unitId?: string;
   status?: string;
   page?: number;
   limit?: number;
 }) {
-  const { periodId, teacherId, unitId, status, page = 1, limit = 20 } = params;
+  const { periodId, teacherId, status, page = 1, limit = 20 } = params;
   const skip = (page - 1) * limit;
 
   const where: Prisma.PKGEvaluationWhereInput = {};
   if (periodId) where.periodId = periodId;
   if (teacherId) where.teacherId = teacherId;
-  if (unitId) where.period = { unitId };
   if (status) where.status = status;
 
   const [data, total] = await Promise.all([
@@ -453,27 +449,13 @@ export async function getTeacherPKGHistory(teacherId: string) {
 // STATISTICS
 // =====================================
 
-export async function getPKGStatistics(params: {
-  caller?: { roleCode?: string | null; role?: string | null; unitId?: string | null };
-  unitId?: string;
-  periodId?: string;
-}) {
-  const { caller, periodId } = params;
-
-  let effectiveUnitId: string | undefined = params.unitId;
-
-  if (caller) {
-    const isGlobalRole = seesGlobalPKGEvaluations(caller.roleCode);
-    if (!isGlobalRole && !caller.unitId) {
-      throw Errors.forbidden('User does not belong to a specific unit and lacks global statistics access');
-    }
-    effectiveUnitId = isGlobalRole ? params.unitId : (caller.unitId ?? 'none');
-  }
+export async function getPKGStatistics(params: { unitId?: string; periodId?: string }) {
+  const { unitId, periodId } = params;
 
   const where: Prisma.PKGEvaluationWhereInput = {};
   if (periodId) where.periodId = periodId;
-  if (effectiveUnitId) {
-    where.period = { unitId: effectiveUnitId };
+  if (unitId) {
+    where.period = { unitId };
   }
 
   const evaluations = await prisma.pKGEvaluation.findMany({

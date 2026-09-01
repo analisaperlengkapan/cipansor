@@ -13,9 +13,9 @@
   },
   "devDependencies": {
     "semver": "^7.7.3",
-    "turbo": "latest",
+    "turbo": "2.10.12",
     "prettier": "latest",
-    "typescript": "latest",
+    "typescript": "^5.9.3",
     "yaml": "^2.8.2"
   },
   "packageManager": "pnpm@9.15.9",

@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { useCorrespondence } from "@/hooks/use-correspondence";
 import { useCorrespondenceParticipants } from "@/hooks/use-correspondence";
+import { useUnits } from "@/hooks/use-units";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -46,6 +47,7 @@ import React from "react";
 import { Upload } from "lucide-react";
 
 const letterSchema = z.object({
+  unitId: z.string().optional(),
   direction: z.nativeEnum(LetterDirection),
   type: z.nativeEnum(LetterType),
   subject: z.string().min(1, "Perihal wajib diisi"),
@@ -65,25 +67,15 @@ const letterSchema = z.object({
 export default function CreateLetterPage() {
   const router = useRouter();
   const { user } = useAuth();
-  const { createLetter } = useCorrespondence(user?.unitId);
+  const { data: units = [] } = useUnits();
   const [searchQuery, setSearchQuery] = React.useState("");
-  const { data: participantsData } = useCorrespondenceParticipants({
-    search: searchQuery || undefined,
-    unitId: user?.unitId,
-    limit: 100,
-  });
   const [uploading, setUploading] = React.useState(false);
   const [submitMode, setSubmitMode] = React.useState<"DRAFT" | "SUBMIT">("DRAFT");
-
-  const staffOptions =
-    participantsData?.data.map((u) => ({
-      label: u.nip ? `${u.name} (${u.nip})` : u.name,
-      value: u.id,
-    })) || [];
 
   const form = useForm<z.infer<typeof letterSchema>>({
     resolver: zodResolver(letterSchema),
     defaultValues: {
+      unitId: user?.unitId || "",
       direction: LetterDirection.OUTGOING,
       type: LetterType.SURAT_DINAS,
       date: new Date().toISOString().split("T")[0],
@@ -93,6 +85,20 @@ export default function CreateLetterPage() {
       recipientIds: [],
     },
   });
+
+  const selectedUnitId = form.watch("unitId") || user?.unitId;
+  const { createLetter } = useCorrespondence(selectedUnitId);
+  const { data: participantsData } = useCorrespondenceParticipants({
+    search: searchQuery || undefined,
+    unitId: selectedUnitId,
+    limit: 100,
+  });
+
+  const staffOptions =
+    participantsData?.data.map((u) => ({
+      label: u.nip ? `${u.name} (${u.nip})` : u.name,
+      value: u.id,
+    })) || [];
 
   const direction = form.watch("direction");
   const letterType = form.watch("type");
@@ -142,8 +148,9 @@ export default function CreateLetterPage() {
   };
 
   async function onSubmit(values: z.infer<typeof letterSchema>) {
-    if (!user?.unitId) {
-      toast.error("Unit ID tidak ditemukan");
+    const effectiveUnitId = values.unitId || user?.unitId;
+    if (!effectiveUnitId) {
+      toast.error("Unit ID wajib dipilih");
       return;
     }
 
@@ -158,7 +165,7 @@ export default function CreateLetterPage() {
     try {
       await createLetter.mutateAsync({
         ...values,
-        unitId: user.unitId,
+        unitId: effectiveUnitId,
         status: targetStatus,
       });
       toast.success(
@@ -189,6 +196,36 @@ export default function CreateLetterPage() {
               <CardTitle>Informasi Dasar</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              {(!user?.unitId || units.length > 0) && (
+                <FormField
+                  control={form.control}
+                  name="unitId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Unit Penerbit / Pembuat Surat</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value || user?.unitId || ""}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Pilih unit penerbit..." />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {units.map((u) => (
+                            <SelectItem key={u.id} value={u.id}>
+                              {u.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}

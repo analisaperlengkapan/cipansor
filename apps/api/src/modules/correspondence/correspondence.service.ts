@@ -14,6 +14,7 @@ import {
   LetterDirection,
   LetterStatus,
   UpdateLetterInput,
+  EXCLUDED_CORRESPONDENCE_ROLES,
 } from '@cipansor/shared';
 import { eventBus } from '@/lib/event-bus';
 import { verifyLetterByToken } from '@/utils/letter-verification';
@@ -163,23 +164,7 @@ export const CorrespondenceService = {
           where: {
             role: {
               code: {
-                notIn: [
-                  RoleCode.SDIT_SISWA,
-                  RoleCode.SMPIT_SISWA,
-                  RoleCode.SMAQ_SISWA,
-                  RoleCode.PT_MAHASISWA,
-                  RoleCode.TKQ_ORANG_TUA,
-                  RoleCode.SDIT_ORANG_TUA,
-                  RoleCode.SMPIT_ORANG_TUA,
-                  RoleCode.SMAQ_ORANG_TUA,
-                  RoleCode.SMPIT_ALUMNI,
-                  RoleCode.SMAQ_ALUMNI,
-                  RoleCode.PT_ALUMNI,
-                  RoleCode.TKQ_KOMITE,
-                  RoleCode.SDIT_KOMITE,
-                  RoleCode.SMPIT_KOMITE,
-                  RoleCode.SMAQ_KOMITE,
-                ],
+                notIn: EXCLUDED_CORRESPONDENCE_ROLES as unknown as RoleCode[],
               },
             },
             OR: [{ expiresAt: null }, { expiresAt: { gte: now } }],
@@ -321,10 +306,11 @@ export const CorrespondenceService = {
         },
       });
 
-      // Add Reviewers
+      // Add Reviewers (deduplicated)
       if (data.reviewerIds && data.reviewerIds.length > 0) {
+        const uniqueReviewerIds = Array.from(new Set(data.reviewerIds));
         await tx.letterReviewer.createMany({
-          data: data.reviewerIds.map((reviewerId, index) => ({
+          data: uniqueReviewerIds.map((reviewerId, index) => ({
             letterId: letter.id,
             reviewerId: reviewerId,
             order: index + 1,
@@ -400,8 +386,9 @@ export const CorrespondenceService = {
     });
 
     // Post-commit: Notify first reviewer if letter created directly in PENDING_REVIEW
-    if (result.letter.status === DbLetterStatus.PENDING_REVIEW && data.reviewerIds?.length) {
-      const firstReviewerId = data.reviewerIds[0];
+    const uniqueReviewers = data.reviewerIds ? Array.from(new Set(data.reviewerIds)) : [];
+    if (result.letter.status === DbLetterStatus.PENDING_REVIEW && uniqueReviewers.length) {
+      const firstReviewerId = uniqueReviewers[0];
       eventBus.emit('notification:send', {
         userId: firstReviewerId,
         unitId: result.letter.unitId,
@@ -603,10 +590,11 @@ export const CorrespondenceService = {
     action: 'APPROVE' | 'REJECT',
     notes?: string,
     nextReviewerId?: string,
-    isFinalSigner?: boolean
+    isFinalSigner?: boolean,
+    actor?: LetterActor
   ) {
     if (nextReviewerId) {
-      await this.validateParticipantEligibility([nextReviewerId]);
+      await this.validateParticipantEligibility([nextReviewerId], actor);
     }
     const result = await prisma.$transaction(async (tx) => {
       const letter = await tx.letter.findUnique({
@@ -900,7 +888,19 @@ export const CorrespondenceService = {
     const result = await prisma.$transaction(async (tx) => {
       const letter = await tx.letter.findUnique({
         where: { id: letterId },
-        select: { id: true, status: true, createdById: true, reviewers: true, subject: true },
+        select: {
+          id: true,
+          status: true,
+          createdById: true,
+          direction: true,
+          type: true,
+          unitId: true,
+          letterNumber: true,
+          subject: true,
+          reviewers: {
+            orderBy: { order: 'asc' },
+          },
+        },
       });
       if (!letter) throw Errors.notFound('Letter not found');
 
@@ -918,9 +918,22 @@ export const CorrespondenceService = {
 
       const nextStatus = DbLetterStatus.PENDING_REVIEW;
 
+      let letterNumber = letter.letterNumber;
+      if (letter.direction === 'OUTGOING' && !letterNumber) {
+        const activeYear = await tx.academicYear.findFirst({
+          where: { isActive: true },
+        });
+        const academicYearId = activeYear?.id || 'DEFAULT';
+        const typeKey = AGENDA_TYPE_CODE[letter.type as DbLetterType] || 'SKET';
+        letterNumber = await this.generateNumber(letter.unitId, typeKey, academicYearId);
+      }
+
       await tx.letter.update({
         where: { id: letterId },
-        data: { status: nextStatus },
+        data: {
+          status: nextStatus,
+          ...(letterNumber ? { letterNumber } : {}),
+        },
       });
 
       await recordFlow(tx, {
@@ -932,7 +945,8 @@ export const CorrespondenceService = {
         note: note || 'Mengajukan konsep surat untuk ditinjau',
       });
 
-      const firstReviewerId = letter.reviewers[0]?.reviewerId;
+      const sortedReviewers = [...letter.reviewers].sort((a, b) => a.order - b.order);
+      const firstReviewerId = sortedReviewers[0]?.reviewerId;
 
       return { id: letterId, status: nextStatus, firstReviewerId, subject: letter.subject };
     });
@@ -1214,17 +1228,13 @@ export const CorrespondenceService = {
       throw Errors.forbidden('Anda tidak memiliki akses ke direktori persuratan');
     }
 
-    // Deny external roles (students, parents, alumni)
-    const isExternalRole =
-      actor.roleCode.endsWith('_SISWA') ||
-      actor.roleCode.endsWith('_MAHASISWA') ||
-      actor.roleCode.endsWith('_ORANG_TUA') ||
-      actor.roleCode.endsWith('_ALUMNI');
-    if (isExternalRole) {
+    // Deny external roles (students, parents, alumni, komite)
+    if ((EXCLUDED_CORRESPONDENCE_ROLES as readonly string[]).includes(actor.roleCode)) {
       throw Errors.forbidden('Anda tidak memiliki akses ke direktori persuratan');
     }
 
     const limit = Math.min(params.limit || 100, 200);
+    const now = new Date();
 
     // Derive unit scope according to seesAllUnits policy:
     // Cross-unit personnel and foundation roles can see participants across units or specify query.unitId.
@@ -1234,7 +1244,7 @@ export const CorrespondenceService = {
 
     const where: Prisma.UserWhereInput = {
       isActive: true,
-      // Candidates must have a teacher or staff record, or a non-external role assignment
+      // Candidates must have a teacher or staff record, or an active non-external role assignment
       OR: [
         { teacher: { isNot: null } },
         { staff: { isNot: null } },
@@ -1243,21 +1253,10 @@ export const CorrespondenceService = {
             some: {
               role: {
                 code: {
-                  notIn: [
-                    'SDIT_SISWA',
-                    'SMPIT_SISWA',
-                    'SMAQ_SISWA',
-                    'PT_MAHASISWA',
-                    'TKQ_ORANG_TUA',
-                    'SDIT_ORANG_TUA',
-                    'SMPIT_ORANG_TUA',
-                    'SMAQ_ORANG_TUA',
-                    'SMPIT_ALUMNI',
-                    'SMAQ_ALUMNI',
-                    'PT_ALUMNI',
-                  ],
+                  notIn: EXCLUDED_CORRESPONDENCE_ROLES as unknown as RoleCode[],
                 },
               },
+              OR: [{ expiresAt: null }, { expiresAt: { gte: now } }],
             },
           },
         },
@@ -1414,10 +1413,10 @@ export const CorrespondenceService = {
   },
 
   /**
-   * Public verification for signed letters via token
+   * Public verification for signed letters via token and optional uploaded PDF buffer
    */
-  async verifyPublicLetter(token: string) {
-    const res = await verifyLetterByToken(token);
+  async verifyPublicLetter(token: string, pdfBuffer?: Buffer | null) {
+    const res = await verifyLetterByToken(token, pdfBuffer);
     if (!res.found) {
       return {
         isValid: false,
@@ -1427,6 +1426,8 @@ export const CorrespondenceService = {
 
     return {
       isValid: res.isValid,
+      pdfVerified: res.pdfVerified,
+      pdfMatch: res.pdfMatch,
       isRevoked: res.isRevoked,
       revokedAt: res.revokedAt,
       signedAt: res.signedAt,

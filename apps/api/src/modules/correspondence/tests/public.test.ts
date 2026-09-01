@@ -121,4 +121,29 @@ describe('CorrespondenceService - Public Verification', () => {
     expect(result.isRevoked).toBe(true);
     expect(result.revokedAt).toEqual(revokedDate);
   });
+
+  it('validates uploaded PDF buffer matching token signature', async () => {
+    const fixture = signedFixture('PUBLIC') as any;
+    vi.mocked(prisma.letterSignature.findUnique).mockResolvedValue(fixture);
+
+    const pdfBuffer = Buffer.from(`%PDF-1.4 Token: ${fixture.verificationToken} Content: Surat Resmi`);
+    const result = await CorrespondenceService.verifyPublicLetter('valid-token', pdfBuffer);
+
+    expect(result.isValid).toBe(true);
+    expect(result.pdfVerified).toBe(true);
+    expect(result.pdfMatch).toBe(true);
+  });
+
+  it('returns isValid: false when uploaded PDF buffer does not match signature', async () => {
+    const fixture = signedFixture('PUBLIC') as any;
+    vi.mocked(prisma.letterSignature.findUnique).mockResolvedValue(fixture);
+
+    const wrongPdfBuffer = Buffer.from('%PDF-1.4 Content: Tampered document without token or matching digest');
+    const result = await CorrespondenceService.verifyPublicLetter('valid-token', wrongPdfBuffer);
+
+    expect(result.isValid).toBe(false);
+    expect(result.pdfVerified).toBe(true);
+    expect(result.pdfMatch).toBe(false);
+    expect(result.reason).toContain('PDF yang diunggah tidak cocok');
+  });
 });

@@ -29,6 +29,7 @@ function PublicVerifyContent() {
 
   const [tokenInput, setTokenInput] = useState(tokenFromUrl);
   const [activeToken, setActiveToken] = useState<string>("");
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [triggerNonce, setTriggerNonce] = useState(0);
 
@@ -61,7 +62,8 @@ function PublicVerifyContent() {
 
   const { data: result, isLoading: loading, isError, error: queryError, refetch } = usePublicVerifyLetter(
     captchaPassed ? activeToken : undefined,
-    triggerNonce
+    triggerNonce,
+    pdfFile
   );
 
   const verifyToken = (tokenToVerify: string) => {
@@ -121,6 +123,23 @@ function PublicVerifyContent() {
                 onChange={(e) => setTokenInput(e.target.value)}
                 className="font-mono"
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="pdfFile" className="flex items-center gap-1.5 text-slate-700 font-medium">
+                <FileText className="h-4 w-4 text-blue-600" />
+                Unggah Dokumen PDF untuk Validasi Fisik File (Opsional)
+              </Label>
+              <Input
+                id="pdfFile"
+                type="file"
+                accept=".pdf"
+                onChange={(e) => setPdfFile(e.target.files?.[0] || null)}
+                className="bg-white text-sm"
+              />
+              <p className="text-xs text-slate-500">
+                Sistem akan memvalidasi keutuhan file PDF terhadap tanda tangan TTE. File yang diunggah hanya diproses secara instan di memori dan tidak disimpan permanen.
+              </p>
             </div>
 
             {/* Anti Spam CAPTCHA */}
@@ -224,6 +243,34 @@ function PublicVerifyContent() {
             </CardHeader>
 
             <CardContent className="pt-6 space-y-6">
+              {result.pdfVerified && (
+                <div
+                  className={`p-3.5 rounded-md border text-sm flex items-center gap-3 ${
+                    result.pdfMatch
+                      ? "bg-emerald-50 border-emerald-300 text-emerald-900"
+                      : "bg-rose-50 border-rose-300 text-rose-900"
+                  }`}
+                >
+                  <ShieldCheck
+                    className={`h-6 w-6 shrink-0 ${
+                      result.pdfMatch ? "text-emerald-600" : "text-rose-600"
+                    }`}
+                  />
+                  <div>
+                    <span className="font-bold block">
+                      {result.pdfMatch
+                        ? "VALIDASI DOKUMEN PDF: FILE ASLI & UTUH"
+                        : "VALIDASI DOKUMEN PDF: FILE TIDAK COCOK / TELAH DIUBAH"}
+                    </span>
+                    <span className="text-xs block mt-0.5">
+                      {result.pdfMatch
+                        ? "File PDF yang Anda unggah terbukti identik dengan naskah resmi saat ditandatangani."
+                        : "File PDF yang Anda unggah memiliki perbedaan atau modifikasi dibanding naskah asli yang ditandatangani."}
+                    </span>
+                  </div>
+                </div>
+              )}
+
               {result.isRevoked && (
                 <div className="p-4 bg-orange-100 border border-orange-300 rounded-md text-orange-900 text-sm">
                   <p className="font-semibold flex items-center gap-2">
@@ -263,7 +310,14 @@ function PublicVerifyContent() {
                     </div>
                     <div className="sm:col-span-2">
                       <span className="text-xs text-slate-500 block">Perihal</span>
-                      <span className="font-medium text-slate-900">{result.letter.subject}</span>
+                      {result.letter.subject ? (
+                        <span className="font-medium text-slate-900">{result.letter.subject}</span>
+                      ) : (
+                        <span className="font-medium text-slate-500 italic flex items-center gap-1">
+                          <Lock className="h-3.5 w-3.5" />
+                          Perihal dan isi surat tidak ditampilkan (Sifat Surat Rahasia/Terbatas)
+                        </span>
+                      )}
                     </div>
                     <div>
                       <span className="text-xs text-slate-500 block">Tanggal Surat</span>

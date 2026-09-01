@@ -195,6 +195,39 @@ describe('CorrespondenceService', () => {
         })
       );
     });
+
+    it('rejects forwarding to nextReviewerId outside caller unit scope', async () => {
+      vi.mocked(prisma.letter.findUnique).mockResolvedValue({
+        id: 'letter-1',
+        status: 'PENDING_REVIEW',
+        createdById: 'creator-1',
+        reviewers: [
+          { id: 'review-1', reviewerId: 'user-1', order: 1, status: 'PENDING', isSigner: false },
+        ],
+      } as any);
+
+      vi.mocked(prisma.user.findMany).mockResolvedValue([
+        {
+          id: 'other-unit-user',
+          unitId: 'unit-2',
+          teacher: { nip: '999' },
+          staff: null,
+          userRoles: [{ role: { code: 'SMPIT_GURU' } }],
+        },
+      ] as any);
+
+      await expect(
+        CorrespondenceService.processReview(
+          'letter-1',
+          'user-1',
+          'APPROVE',
+          'Teruskan',
+          'other-unit-user',
+          false,
+          { id: 'user-1', roleCode: 'SDIT_GURU', unitId: 'unit-1' } as any
+        )
+      ).rejects.toThrow(/berada di luar unit Anda/);
+    });
   });
 
   describe('submitForReview', () => {
@@ -272,6 +305,51 @@ describe('CorrespondenceService', () => {
         )
       ).rejects.toThrow(/minimal satu pemeriksa/);
     });
+
+    it('generates letterNumber for outgoing letters upon submitForReview if missing', async () => {
+      vi.mocked(prisma.letter.findUnique).mockResolvedValue({
+        id: 'let-draft-out',
+        status: 'DRAFT',
+        createdById: 'creator-1',
+        direction: 'OUTGOING',
+        type: 'SURAT_DINAS',
+        unitId: 'unit-1',
+        letterNumber: null,
+        reviewers: [
+          { id: 'rev-2', reviewerId: 'rev-user-2', order: 2, status: 'PENDING' },
+          { id: 'rev-1', reviewerId: 'rev-user-1', order: 1, status: 'PENDING' },
+        ],
+        subject: 'Outgoing Draft Test',
+      } as any);
+      vi.mocked(prisma.academicYear.findFirst).mockResolvedValue({ id: 'year-1', isActive: true } as any);
+      vi.mocked(prisma.agendaNumber.findUnique).mockResolvedValue({
+        id: 'agenda-1',
+        unitId: 'unit-1',
+        academicYearId: 'year-1',
+        type: 'SKET',
+        lastNumber: 5,
+        format: '[NO]/Sket/Y-CPS/[ROMAN]/[YEAR]',
+      } as any);
+      vi.mocked(prisma.agendaNumber.update).mockResolvedValue({ lastNumber: 6 } as any);
+      vi.mocked(prisma.letter.update).mockResolvedValue({ id: 'let-draft-out', status: 'PENDING_REVIEW' } as any);
+
+      const result = await CorrespondenceService.submitForReview(
+        'let-draft-out',
+        { id: 'creator-1', roleCode: 'SDIT_TATA_USAHA', unitId: 'unit-1' } as any,
+        'Submit for review'
+      );
+
+      expect(result.status).toBe('PENDING_REVIEW');
+      expect(prisma.letter.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'let-draft-out' },
+          data: expect.objectContaining({
+            status: 'PENDING_REVIEW',
+            letterNumber: expect.stringMatching(/006\/Sket\/Y-CPS/),
+          }),
+        })
+      );
+    });
   });
 
   describe('Resubmit and archive', () => {
@@ -346,6 +424,44 @@ describe('CorrespondenceService', () => {
       );
 
       expect(result.id).toBe('let-1');
+    });
+
+    it('deduplicates reviewerIds when creating a letter', async () => {
+      vi.mocked(prisma.user.findMany).mockResolvedValue([
+        {
+          id: 'user-rev-1',
+          unitId: 'unit-1',
+          teacher: { nip: '111' },
+          staff: null,
+          userRoles: [{ role: { code: 'SDIT_GURU' } }],
+        },
+      ] as any);
+      vi.mocked(prisma.letter.create).mockResolvedValue({ id: 'let-dup-rev', status: 'DRAFT', unitId: 'unit-1' } as any);
+
+      await CorrespondenceService.createLetter(
+        {
+          unitId: 'unit-1',
+          direction: 'OUTGOING' as any,
+          subject: 'Testing Dup Reviewers',
+          date: '2026-08-01',
+          urgency: 'NORMAL' as any,
+          nature: 'PUBLIC' as any,
+          status: 'DRAFT' as any,
+          reviewerIds: ['user-rev-1', 'user-rev-1'],
+        },
+        'user-1',
+        { id: 'user-1', roleCode: 'SDIT_ADMIN', unitId: 'unit-1' } as any
+      );
+
+      expect(prisma.letterReviewer.createMany).toHaveBeenCalledWith({
+        data: [
+          expect.objectContaining({
+            letterId: 'let-dup-rev',
+            reviewerId: 'user-rev-1',
+            order: 1,
+          }),
+        ],
+      });
     });
 
     it('rejects creation for unauthorized unit', async () => {
@@ -556,13 +672,15 @@ describe('CorrespondenceService', () => {
       expect(result[0].nip).toBe('12345');
     });
 
-    it('rejects external roles (STUDENT, PARENT, ALUMNI) from participant search', async () => {
-      await expect(
-        CorrespondenceService.getParticipants(
-          { search: 'Ahmad' },
-          { id: 'siswa-1', roleCode: 'SDIT_SISWA', unitId: 'unit-1' } as any
-        )
-      ).rejects.toThrow(/tidak memiliki akses/);
+    it('rejects external roles (STUDENT, PARENT, ALUMNI, KOMITE) from participant search', async () => {
+      for (const roleCode of ['SDIT_SISWA', 'TKQ_ORANG_TUA', 'SMPIT_ALUMNI', 'SDIT_KOMITE']) {
+        await expect(
+          CorrespondenceService.getParticipants(
+            { search: 'Ahmad' },
+            { id: 'ext-1', roleCode, unitId: 'unit-1' } as any
+          )
+        ).rejects.toThrow(/tidak memiliki akses/);
+      }
     });
 
     it('allows cross-unit roles with nominal unitId (e.g. PERAWAT) to search participants across units', async () => {

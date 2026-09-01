@@ -90,6 +90,46 @@ test.describe("E-Office & Public Letter Verification E2E", () => {
 
     await page.goto("/public/verify-letter?code=confidential-token-123");
     await expect(page.getByText(/DOKUMEN SAH & TERVERIFIKASI/i)).toBeVisible();
-    await expect(page.getByText(/Perihal dan isi surat tidak ditampilkan/i)).toBeVisible();
+    await expect(page.getByText(/Perihal dan isi surat tidak ditampilkan \(Sifat Surat Rahasia\/Terbatas\)/i)).toBeVisible();
+  });
+
+  test("PDF upload verification renders match validation badge", async ({ page }) => {
+    await page.route("**/api/correspondence/public/verify", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          success: true,
+          data: {
+            isValid: true,
+            pdfVerified: true,
+            pdfMatch: true,
+            signer: { name: "Dr. H. Ahmad", nip: "19800101", position: "Kepala Sekolah" },
+            letter: {
+              letterNumber: "001/SK/Y-CPS/VIII/2026",
+              subject: "Pengumuman Resmi",
+              date: "2026-08-01",
+              status: "SIGNED",
+              unitName: "SMA Al-Qur'an",
+            },
+            signedAt: "2026-08-01T00:00:00Z",
+          },
+        }),
+      });
+    });
+
+    await page.goto("/public/verify-letter");
+    await page.getByPlaceholder(/masukkan token/i).fill("valid-token-123");
+
+    // Attach PDF file
+    await page.setInputFiles("input[type='file']", {
+      name: "surat-resmi.pdf",
+      mimeType: "application/pdf",
+      buffer: Buffer.from("%PDF-1.4 Test PDF content"),
+    });
+
+    await page.getByRole("button", { name: /verifikasi dokumen/i }).click();
+
+    await expect(page.getByText(/VALIDASI DOKUMEN PDF: FILE ASLI & UTUH/i)).toBeVisible();
   });
 });

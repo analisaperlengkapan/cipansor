@@ -27,17 +27,31 @@ export function useCorrespondenceParticipants(params?: {
   });
 }
 
-export function usePublicVerifyLetter(token?: string, nonce: number = 0) {
+export async function verifyPublicLetterApi(token: string, file?: File | null) {
+  if (file) {
+    const formData = new FormData();
+    formData.append("token", token.trim());
+    formData.append("file", file);
+    const response = await api.post<{
+      success: boolean;
+      data: PublicLetterVerificationResult;
+    }>("/correspondence/public/verify", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return response.data.data;
+  } else {
+    const response = await api.get<{
+      success: boolean;
+      data: PublicLetterVerificationResult;
+    }>(`/correspondence/public/verify/${encodeURIComponent(token.trim())}`);
+    return response.data.data;
+  }
+}
+
+export function usePublicVerifyLetter(token?: string, nonce: number = 0, file?: File | null) {
   return useQuery({
-    queryKey: ["publicVerifyLetter", token, nonce],
-    queryFn: async () => {
-      const response = await api.get<{
-        success: boolean;
-        data: PublicLetterVerificationResult;
-        message?: string;
-      }>(`/correspondence/public/verify/${encodeURIComponent(token!.trim())}`);
-      return response.data.data;
-    },
+    queryKey: ["publicVerifyLetter", token, nonce, file?.name],
+    queryFn: () => verifyPublicLetterApi(token!, file),
     enabled: !!token && token.trim().length > 0,
     staleTime: 0,
     gcTime: 0,

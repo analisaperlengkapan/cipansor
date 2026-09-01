@@ -29,7 +29,3 @@ export const createBehavioralValueSchema = z.object({
 export const updateBehavioralValueSchema = createBehavioralValueSchema
   .partial()
   .extend({ isActive: z.boolean().optional() });
-
-export const approveEvaluationSchema = z.object({
-  feedback: z.string().optional(),
-});

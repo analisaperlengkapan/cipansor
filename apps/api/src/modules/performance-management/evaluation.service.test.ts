@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 vi.mock('@/lib/prisma', () => ({
   prisma: {
     performanceAgreement: { findUnique: vi.fn(), update: vi.fn() },
-    pKEvaluation: { findUnique: vi.fn(), update: vi.fn(), updateMany: vi.fn() },
+    pKEvaluation: { findUnique: vi.fn(), update: vi.fn() },
     pKIndicator: { update: vi.fn() },
     pKIndicatorEvaluation: { findUnique: vi.fn(), update: vi.fn() },
     pKBehaviorEvaluation: { findUnique: vi.fn(), update: vi.fn() },
@@ -45,7 +45,6 @@ describe('EvaluationService', () => {
 
       const args = mocked.pKEvaluation.update.mock.calls[0][0];
       // performance = 100*0.6 + 50*0.4 = 80; behavior = (90+70)/2 = 80
-      // overall = 80 * 0.6 + 80 * 0.4 = 80
       expect(args.data.performanceScore).toBe(80);
       expect(args.data.behaviorScore).toBe(80);
       expect(args.data.overallScore).toBeCloseTo(80);
@@ -78,8 +77,6 @@ describe('EvaluationService', () => {
         userId: 'u-1',
         supervisorId: null,
         status: 'DRAFT',
-        periodStart: new Date('2026-01-01'),
-        periodEnd: new Date('2026-12-31'),
         indicators: [],
       });
 
@@ -91,10 +88,6 @@ describe('EvaluationService', () => {
   });
 
   describe('approveEvaluation', () => {
-    beforeEach(() => {
-      mocked.$transaction.mockImplementation(async (cb: any) => cb(prisma));
-    });
-
     it('only the supervisor may approve and double approval conflicts', async () => {
       mocked.pKEvaluation.findUnique.mockResolvedValue({
         id: 'ev-1',
@@ -111,7 +104,6 @@ describe('EvaluationService', () => {
         status: 'APPROVED',
         pk: { userId: 'u-1', supervisorId: 'u-boss' },
       });
-      mocked.pKEvaluation.updateMany.mockResolvedValue({ count: 0 });
       await expect(
         evaluationService.approveEvaluation('ev-1', 'u-boss', false)
       ).rejects.toThrow(/already approved/i);
@@ -124,7 +116,7 @@ describe('EvaluationService', () => {
         status: 'DRAFT',
         pk: { userId: 'u-1', supervisorId: 'u-boss' },
       });
-      mocked.pKEvaluation.updateMany.mockResolvedValue({ count: 1 });
+      mocked.pKEvaluation.update.mockResolvedValue({ id: 'ev-1', status: 'APPROVED' });
       mocked.performanceAgreement.findUnique.mockResolvedValue({
         id: 'pk-1',
         userId: 'u-1',
@@ -161,7 +153,7 @@ describe('EvaluationService', () => {
         status: 'DRAFT',
         pk: { userId: 'u-1', supervisorId: 'u-boss' },
       });
-      mocked.pKEvaluation.updateMany.mockResolvedValue({ count: 1 });
+      mocked.pKEvaluation.update.mockResolvedValue({ id: 'ev-1', status: 'APPROVED' });
       mocked.performanceAgreement.findUnique.mockResolvedValue({
         id: 'pk-1',
         userId: 'u-1',

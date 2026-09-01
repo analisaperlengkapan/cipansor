@@ -442,7 +442,7 @@ describe('CorrespondenceService', () => {
       }
     });
 
-    it('sets incoming letter without reviewers to DISPOSED when recipientIds present', async () => {
+    it('sets incoming letter without reviewers to DISPOSED when recipientIds present and creates real disposition records', async () => {
       vi.mocked(prisma.letter.create).mockResolvedValue({ id: 'let-2', status: 'DISPOSED', unitId: 'unit-1' } as any);
 
       const result = await CorrespondenceService.createLetter(
@@ -463,6 +463,16 @@ describe('CorrespondenceService', () => {
       expect(prisma.letter.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({ status: 'DISPOSED' }),
+        })
+      );
+      expect(prisma.disposition.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            letterId: 'let-2',
+            senderId: 'user-1',
+            recipientId: 'user-2',
+            instruction: 'Surat Masuk Diteruskan',
+          }),
         })
       );
     });
@@ -491,6 +501,15 @@ describe('CorrespondenceService', () => {
       expect(result).toHaveLength(1);
       expect(result[0].name).toBe('Ust. Ahmad');
       expect(result[0].nip).toBe('12345');
+    });
+
+    it('rejects external roles (STUDENT, PARENT, ALUMNI) from participant search', async () => {
+      await expect(
+        CorrespondenceService.getParticipants(
+          { search: 'Ahmad' },
+          { id: 'siswa-1', roleCode: 'SDIT_SISWA', unitId: 'unit-1' } as any
+        )
+      ).rejects.toThrow(/tidak memiliki akses/);
     });
 
     it('allows cross-unit roles with nominal unitId (e.g. PERAWAT) to search participants across units', async () => {

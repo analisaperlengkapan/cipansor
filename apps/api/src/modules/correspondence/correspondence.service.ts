@@ -261,10 +261,35 @@ export const CorrespondenceService = {
           data: data.recipientIds.map((recipientId) => ({
             letterId: letter.id,
             userId: recipientId,
-            unitId: data.unitId,
+            unitId: targetUnitId,
             isCC: false,
           })),
         });
+
+        // If incoming letter is created with recipientIds, create real Disposition tasks
+        if (data.direction === 'INCOMING') {
+          for (const recipientId of data.recipientIds) {
+            await tx.disposition.create({
+              data: {
+                letterId: letter.id,
+                senderId: userId,
+                recipientId,
+                instruction: 'Surat Masuk Diteruskan',
+                status: 'PENDING',
+              },
+            });
+
+            await recordFlow(tx, {
+              letterId: letter.id,
+              actorId: userId,
+              action: LetterFlowAction.DISPOSED,
+              targetId: recipientId,
+              fromStatus: letter.status,
+              toStatus: DbLetterStatus.DISPOSED,
+              note: 'Surat Masuk Diteruskan',
+            });
+          }
+        }
       }
 
       await recordFlow(tx, {
@@ -970,6 +995,20 @@ export const CorrespondenceService = {
     params: { search?: string; unitId?: string; limit?: number },
     actor?: LetterActor
   ) {
+    if (!actor || !actor.roleCode) {
+      throw Errors.forbidden('Anda tidak memiliki akses ke direktori persuratan');
+    }
+
+    // Deny external roles (students, parents, alumni)
+    const isExternalRole =
+      actor.roleCode.endsWith('_SISWA') ||
+      actor.roleCode.endsWith('_MAHASISWA') ||
+      actor.roleCode.endsWith('_ORANG_TUA') ||
+      actor.roleCode.endsWith('_ALUMNI');
+    if (isExternalRole) {
+      throw Errors.forbidden('Anda tidak memiliki akses ke direktori persuratan');
+    }
+
     const limit = Math.min(params.limit || 100, 200);
 
     // Derive unit scope according to seesAllUnits policy:
@@ -1045,6 +1084,7 @@ export const CorrespondenceService = {
         staff: { select: { nip: true, position: true } },
         userRoles: {
           select: { role: { select: { code: true } } },
+          orderBy: [{ isPrimary: 'desc' }],
           take: 1,
         },
       },

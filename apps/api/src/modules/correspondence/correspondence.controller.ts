@@ -183,19 +183,6 @@ export const CorrespondenceController = {
 
   async getParticipants(req: Request, res: Response, next: NextFunction) {
     try {
-      const actor = actorOf(req);
-      // Deny external roles (students, parents, alumni) from reading the internal participant directory
-      if (actor.roleCode) {
-        const isExternalRole =
-          actor.roleCode.endsWith('_SISWA') ||
-          actor.roleCode.endsWith('_MAHASISWA') ||
-          actor.roleCode.endsWith('_ORANG_TUA') ||
-          actor.roleCode.endsWith('_ALUMNI');
-        if (isExternalRole) {
-          throw Errors.forbidden('Anda tidak memiliki akses ke direktori persuratan');
-        }
-      }
-
       const query = (res.locals.validatedQuery || req.query) as {
         search?: string;
         unitId?: string;
@@ -207,7 +194,7 @@ export const CorrespondenceController = {
           unitId: query.unitId,
           limit: query.limit,
         },
-        actor
+        actorOf(req)
       );
       res.json({ success: true, data: result });
     } catch (error) {

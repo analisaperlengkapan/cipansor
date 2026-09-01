@@ -225,16 +225,18 @@ export async function getEvaluation(id: string) {
 export async function listEvaluations(params: {
   periodId?: string;
   teacherId?: string;
+  unitId?: string;
   status?: string;
   page?: number;
   limit?: number;
 }) {
-  const { periodId, teacherId, status, page = 1, limit = 20 } = params;
+  const { periodId, teacherId, unitId, status, page = 1, limit = 20 } = params;
   const skip = (page - 1) * limit;
 
   const where: Prisma.PKGEvaluationWhereInput = {};
   if (periodId) where.periodId = periodId;
   if (teacherId) where.teacherId = teacherId;
+  if (unitId) where.period = { unitId };
   if (status) where.status = status;
 
   const [data, total] = await Promise.all([

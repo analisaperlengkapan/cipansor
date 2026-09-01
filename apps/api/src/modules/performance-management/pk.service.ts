@@ -87,6 +87,91 @@ export class PerformanceAgreementService {
     });
   }
 
+  async getSupervisors() {
+    const now = new Date();
+    return prisma.user.findMany({
+      where: {
+        isActive: true,
+        userRoles: {
+          some: {
+            isActive: true,
+            OR: [
+              { expiresAt: null },
+              { expiresAt: { gt: now } },
+            ],
+            role: {
+              code: {
+                in: [
+                  'SUPER_ADMIN',
+                  'YAYASAN_PEMBINA',
+                  'YAYASAN_KETUA',
+                  'YAYASAN_SEKRETARIS',
+                  'YAYASAN_BENDAHARA',
+                  'YAYASAN_ANGGOTA',
+                  'YAYASAN_PENGAWAS',
+                  'TKQ_ADMIN',
+                  'SDIT_ADMIN',
+                  'SMPIT_ADMIN',
+                  'SMAQ_ADMIN',
+                  'TKQ_GURU',
+                  'SDIT_GURU',
+                  'SMPIT_GURU',
+                  'SMAQ_GURU',
+                  'TKQ_KEPALA_SEKOLAH',
+                  'SDIT_KEPALA_SEKOLAH',
+                  'SMPIT_KEPALA_SEKOLAH',
+                  'SMAQ_KEPALA_SEKOLAH',
+                  'TKQ_WAKASEK',
+                  'SDIT_WAKASEK',
+                  'SMPIT_WAKASEK',
+                  'SMAQ_WAKASEK',
+                  'TKQ_WALI_KELAS',
+                  'SDIT_WALI_KELAS',
+                  'SMPIT_WALI_KELAS',
+                  'SMAQ_WALI_KELAS',
+                  'SMPIT_GURU_BK',
+                  'SMAQ_GURU_BK',
+                  'PESANTREN_PENGASUH',
+                  'PESANTREN_DIREKTUR',
+                  'USTADZ',
+                  'MUSYRIF',
+                  'MUSYRIFAH',
+                  'MUHAFIDZ',
+                  'MUHAFIDZAH',
+                  'MURABBI',
+                  'WALI_KAMAR',
+                  'PT_REKTOR',
+                  'PT_WAKIL_REKTOR',
+                  'PT_DEKAN',
+                  'PT_KAPRODI',
+                  'PT_DOSEN',
+                  'TKQ_TATA_USAHA',
+                  'SDIT_TATA_USAHA',
+                  'SMPIT_TATA_USAHA',
+                  'SMAQ_TATA_USAHA',
+                  'TKQ_BENDAHARA',
+                  'SDIT_BENDAHARA',
+                  'SMPIT_BENDAHARA',
+                  'SMAQ_BENDAHARA',
+                  'PESANTREN_TATA_USAHA',
+                  'PT_TATA_USAHA',
+                  'PT_STAF_AKADEMIK',
+                  'BUSINESS_MANAGER',
+                ],
+              },
+            },
+          },
+        },
+      },
+      select: {
+        id: true,
+        name: true,
+        unit: { select: { id: true, name: true } },
+      },
+      orderBy: { name: 'asc' },
+    });
+  }
+
   async getPKs(userId: string, query: { status?: string }) {
     const status =
       query.status && Object.values(PlanStatus).includes(query.status as PlanStatus)
@@ -103,6 +188,9 @@ export class PerformanceAgreementService {
         supervisor: { select: { id: true, name: true } },
         strategicPlan: { select: { id: true, title: true } },
         indicators: true,
+        evaluations: {
+          orderBy: [{ year: 'desc' }, { month: 'desc' }],
+        },
       },
       orderBy: { createdAt: 'desc' },
     });

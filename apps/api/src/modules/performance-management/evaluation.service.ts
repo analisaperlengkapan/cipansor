@@ -241,7 +241,7 @@ export class EvaluationService {
 
       // Acquire an explicit row lock on the PerformanceAgreement row to serialize concurrent approvals for the same PK
       if (typeof tx.$queryRaw === 'function') {
-        await tx.$queryRaw`SELECT id FROM "PerformanceAgreement" WHERE id = ${evaluation.pkId} FOR UPDATE`;
+        await tx.$queryRaw`SELECT id FROM "performance_agreements" WHERE id = ${evaluation.pkId} FOR UPDATE`;
       }
 
       // Atomic conditional update ensuring status is not already APPROVED

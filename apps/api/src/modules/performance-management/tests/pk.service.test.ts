@@ -2,6 +2,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('@/lib/prisma', () => ({
   prisma: {
+    user: {
+      findMany: vi.fn(),
+    },
     performanceAgreement: {
       findFirst: vi.fn(),
       findUnique: vi.fn(),
@@ -18,15 +21,49 @@ vi.mock('@/lib/prisma', () => ({
 }));
 
 import { prisma } from '@/lib/prisma';
-import { pkService } from './pk.service';
+import { pkService } from '../pk.service';
 
 const mocked = prisma as unknown as {
+  user: Record<string, ReturnType<typeof vi.fn>>;
   performanceAgreement: Record<string, ReturnType<typeof vi.fn>>;
   pKIndicator: Record<string, ReturnType<typeof vi.fn>>;
 };
 
 describe('PerformanceAgreementService', () => {
   beforeEach(() => vi.clearAllMocks());
+
+  describe('getSupervisors unit scoping', () => {
+    it('filters userRoles by caller unitId for unit-pinned roles regardless of User.unitId', async () => {
+      mocked.user.findMany.mockResolvedValue([]);
+      await pkService.getSupervisors({ roleCode: 'SDIT_GURU', unitId: 'unit-sdit' });
+
+      expect(mocked.user.findMany).toHaveBeenCalledTimes(1);
+      const queryWhere = mocked.user.findMany.mock.calls[0][0].where;
+      // Top-level User.unitId is NOT filtered; filtering is on userRoles.some.unitId
+      expect(queryWhere.unitId).toBeUndefined();
+      expect(queryWhere.userRoles.some.unitId).toBe('unit-sdit');
+    });
+
+    it('forces userRoles.some.unitId to "none" for unassigned non-global callers', async () => {
+      mocked.user.findMany.mockResolvedValue([]);
+      await pkService.getSupervisors({ roleCode: 'SDIT_GURU', unitId: undefined });
+
+      expect(mocked.user.findMany).toHaveBeenCalledTimes(1);
+      const queryWhere = mocked.user.findMany.mock.calls[0][0].where;
+      expect(queryWhere.unitId).toBeUndefined();
+      expect(queryWhere.userRoles.some.unitId).toBe('none');
+    });
+
+    it('allows cross-unit / foundation roles to query supervisors across all role unit assignments', async () => {
+      mocked.user.findMany.mockResolvedValue([]);
+      await pkService.getSupervisors({ roleCode: 'YAYASAN_KETUA', unitId: 'unit-sdit' });
+
+      expect(mocked.user.findMany).toHaveBeenCalledTimes(1);
+      const queryWhere = mocked.user.findMany.mock.calls[0][0].where;
+      expect(queryWhere.unitId).toBeUndefined();
+      expect(queryWhere.userRoles.some.unitId).toBeUndefined();
+    });
+  });
 
   describe('createPK cascading rule', () => {
     it('rejects a subordinate PK when the supervisor has no approved PK for the period', async () => {

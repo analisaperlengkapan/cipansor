@@ -15,7 +15,7 @@ vi.mock('@/lib/prisma', () => ({
 }));
 
 import { prisma } from '@/lib/prisma';
-import { evaluationService } from './evaluation.service';
+import { evaluationService } from '../evaluation.service';
 
 const mocked = prisma as unknown as Record<string, Record<string, ReturnType<typeof vi.fn>>> & {
   $transaction: ReturnType<typeof vi.fn>;
@@ -91,8 +91,36 @@ describe('EvaluationService', () => {
   });
 
   describe('approveEvaluation', () => {
+    let mockQueryRaw: ReturnType<typeof vi.fn>;
+
     beforeEach(() => {
-      mocked.$transaction.mockImplementation(async (cb: any) => cb(prisma));
+      mockQueryRaw = vi.fn().mockResolvedValue([]);
+      mocked.$transaction.mockImplementation(async (cb: any) =>
+        cb({
+          ...prisma,
+          $queryRaw: mockQueryRaw,
+        })
+      );
+    });
+
+    it('executes row lock query with correct performance_agreements table name', async () => {
+      mocked.pKEvaluation.findUnique.mockResolvedValue({
+        id: 'ev-1',
+        pkId: 'pk-1',
+        status: 'DRAFT',
+        pk: { userId: 'u-1', supervisorId: 'u-boss' },
+      });
+      mocked.pKEvaluation.updateMany.mockResolvedValue({ count: 1 });
+      mocked.performanceAgreement.findUnique.mockResolvedValue(null);
+
+      await evaluationService.approveEvaluation('ev-1', 'u-boss', false);
+
+      expect(mockQueryRaw).toHaveBeenCalledTimes(1);
+      const rawCall = mockQueryRaw.mock.calls[0];
+      // Assert SQL string contains correct table name "performance_agreements"
+      const sqlStrings = rawCall[0];
+      expect(sqlStrings.join('')).toContain('SELECT id FROM "performance_agreements" WHERE id =');
+      expect(sqlStrings.join('')).toContain('FOR UPDATE');
     });
 
     it('only the supervisor may approve and double approval conflicts', async () => {

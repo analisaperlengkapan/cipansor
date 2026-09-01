@@ -42,4 +42,30 @@ test.describe("Integrated Performance Management (/kinerja) E2E Flows", () => {
     await expect(page.locator("text=Penilaian Kinerja Guru (PKG) Legasi")).toBeVisible();
     await expect(page.locator("text=Buka Kinerja Terintegrasi")).toBeVisible();
   });
+
+  test("interactive PK creation modal opens and validates form inputs", async ({ page }) => {
+    await page.goto("/kinerja/pk");
+    await page.click("button:has-text('Buat Perjanjian Kinerja')");
+    await expect(page.locator("text=Buat Perjanjian Kinerja Baru")).toBeVisible();
+
+    // Fill invalid inverted period dates
+    await page.fill("input[type='date'] >> nth=0", "2026-12-31");
+    await page.fill("input[type='date'] >> nth=1", "2026-01-01");
+
+    // Listen for dialog alert
+    let dialogMessage = "";
+    page.once("dialog", (dialog) => {
+      dialogMessage = dialog.message();
+      dialog.dismiss();
+    });
+
+    await page.click("button:has-text('Buat PK')");
+    expect(dialogMessage).toContain("tidak boleh lebih awal");
+  });
+
+  test("periodic evaluation hub loads real page structure", async ({ page }) => {
+    await page.goto("/kinerja/evaluasi");
+    await expect(page.locator("h1")).toContainText(/Evaluasi Periodik/i);
+    await expect(page.locator("text=Buat Evaluasi Bulanan")).toBeVisible();
+  });
 });

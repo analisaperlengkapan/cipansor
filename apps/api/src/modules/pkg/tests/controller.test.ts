@@ -35,7 +35,11 @@ function mockReqRes(overrides: Partial<Request> = {}) {
 }
 
 async function run(handler: any, req: Request, res: Response) {
-  await handler(req, res, vi.fn());
+  let nextError: any = null;
+  await handler(req, res, (err?: any) => {
+    nextError = err;
+  });
+  if (nextError) throw nextError;
 }
 
 describe('pkg controller', () => {
@@ -126,5 +130,23 @@ describe('pkg controller', () => {
     expect(pkgService.listEvaluations).toHaveBeenCalledWith(
       expect.objectContaining({ unitId: 'unit-bound-smp' })
     );
+  });
+
+  it('getStatistics: delegates caller context and params to pkgService.getPKGStatistics', async () => {
+    (pkgService.getPKGStatistics as any).mockResolvedValue({ total: 0 });
+
+    const userObj = { sub: 'u5', roleCode: 'SDIT_GURU', unitId: 'unit-sdit' };
+    const { req, res } = mockReqRes({
+      query: { periodId: 'p-1' },
+      user: userObj as any,
+    });
+
+    await run(controller.getStatistics, req, res);
+
+    expect(pkgService.getPKGStatistics).toHaveBeenCalledWith({
+      caller: userObj,
+      unitId: undefined,
+      periodId: 'p-1',
+    });
   });
 });

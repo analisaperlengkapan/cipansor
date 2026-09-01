@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { PlanStatus, CascadingCategory, PerformanceAgreement } from '@prisma/client';
 import { Errors } from '@/middleware/error';
+import { seesAllUnits } from '@/utils/resolve-unit-id';
 
 /**
  * Perjanjian Kinerja (PK) — performance agreements with cascading
@@ -87,14 +88,18 @@ export class PerformanceAgreementService {
     });
   }
 
-  async getSupervisors() {
+  async getSupervisors(caller?: { roleCode?: string | null; role?: string | null; unitId?: string | null }) {
     const now = new Date();
+    const canSeeAll = caller ? seesAllUnits(caller) : true;
+    const targetUnitId = !canSeeAll ? (caller?.unitId ?? 'none') : undefined;
+
     return prisma.user.findMany({
       where: {
         isActive: true,
         userRoles: {
           some: {
             isActive: true,
+            ...(targetUnitId ? { unitId: targetUnitId } : {}),
             OR: [
               { expiresAt: null },
               { expiresAt: { gt: now } },

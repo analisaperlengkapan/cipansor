@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 vi.mock('@/lib/prisma', () => ({
   prisma: {
     performanceAgreement: { findUnique: vi.fn(), update: vi.fn() },
-    pKEvaluation: { findUnique: vi.fn(), update: vi.fn() },
+    pKEvaluation: { findUnique: vi.fn(), update: vi.fn(), updateMany: vi.fn() },
     pKIndicator: { update: vi.fn() },
     pKIndicatorEvaluation: { findUnique: vi.fn(), update: vi.fn() },
     pKBehaviorEvaluation: { findUnique: vi.fn(), update: vi.fn() },
@@ -15,7 +15,7 @@ vi.mock('@/lib/prisma', () => ({
 }));
 
 import { prisma } from '@/lib/prisma';
-import { evaluationService } from './evaluation.service';
+import { evaluationService } from '../evaluation.service';
 
 const mocked = prisma as unknown as Record<string, Record<string, ReturnType<typeof vi.fn>>> & {
   $transaction: ReturnType<typeof vi.fn>;
@@ -45,6 +45,7 @@ describe('EvaluationService', () => {
 
       const args = mocked.pKEvaluation.update.mock.calls[0][0];
       // performance = 100*0.6 + 50*0.4 = 80; behavior = (90+70)/2 = 80
+      // overall = 80 * 0.6 + 80 * 0.4 = 80
       expect(args.data.performanceScore).toBe(80);
       expect(args.data.behaviorScore).toBe(80);
       expect(args.data.overallScore).toBeCloseTo(80);
@@ -77,6 +78,8 @@ describe('EvaluationService', () => {
         userId: 'u-1',
         supervisorId: null,
         status: 'DRAFT',
+        periodStart: new Date('2026-01-01'),
+        periodEnd: new Date('2026-12-31'),
         indicators: [],
       });
 
@@ -88,6 +91,38 @@ describe('EvaluationService', () => {
   });
 
   describe('approveEvaluation', () => {
+    let mockQueryRaw: ReturnType<typeof vi.fn>;
+
+    beforeEach(() => {
+      mockQueryRaw = vi.fn().mockResolvedValue([]);
+      mocked.$transaction.mockImplementation(async (cb: any) =>
+        cb({
+          ...prisma,
+          $queryRaw: mockQueryRaw,
+        })
+      );
+    });
+
+    it('executes row lock query with correct performance_agreements table name', async () => {
+      mocked.pKEvaluation.findUnique.mockResolvedValue({
+        id: 'ev-1',
+        pkId: 'pk-1',
+        status: 'DRAFT',
+        pk: { userId: 'u-1', supervisorId: 'u-boss' },
+      });
+      mocked.pKEvaluation.updateMany.mockResolvedValue({ count: 1 });
+      mocked.performanceAgreement.findUnique.mockResolvedValue(null);
+
+      await evaluationService.approveEvaluation('ev-1', 'u-boss', false);
+
+      expect(mockQueryRaw).toHaveBeenCalledTimes(1);
+      const rawCall = mockQueryRaw.mock.calls[0];
+      // Assert SQL string contains correct table name "performance_agreements"
+      const sqlStrings = rawCall[0];
+      expect(sqlStrings.join('')).toContain('SELECT id FROM "performance_agreements" WHERE id =');
+      expect(sqlStrings.join('')).toContain('FOR UPDATE');
+    });
+
     it('only the supervisor may approve and double approval conflicts', async () => {
       mocked.pKEvaluation.findUnique.mockResolvedValue({
         id: 'ev-1',
@@ -104,6 +139,7 @@ describe('EvaluationService', () => {
         status: 'APPROVED',
         pk: { userId: 'u-1', supervisorId: 'u-boss' },
       });
+      mocked.pKEvaluation.updateMany.mockResolvedValue({ count: 0 });
       await expect(
         evaluationService.approveEvaluation('ev-1', 'u-boss', false)
       ).rejects.toThrow(/already approved/i);
@@ -116,7 +152,7 @@ describe('EvaluationService', () => {
         status: 'DRAFT',
         pk: { userId: 'u-1', supervisorId: 'u-boss' },
       });
-      mocked.pKEvaluation.update.mockResolvedValue({ id: 'ev-1', status: 'APPROVED' });
+      mocked.pKEvaluation.updateMany.mockResolvedValue({ count: 1 });
       mocked.performanceAgreement.findUnique.mockResolvedValue({
         id: 'pk-1',
         userId: 'u-1',
@@ -153,7 +189,7 @@ describe('EvaluationService', () => {
         status: 'DRAFT',
         pk: { userId: 'u-1', supervisorId: 'u-boss' },
       });
-      mocked.pKEvaluation.update.mockResolvedValue({ id: 'ev-1', status: 'APPROVED' });
+      mocked.pKEvaluation.updateMany.mockResolvedValue({ count: 1 });
       mocked.performanceAgreement.findUnique.mockResolvedValue({
         id: 'pk-1',
         userId: 'u-1',

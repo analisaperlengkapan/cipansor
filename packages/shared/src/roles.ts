@@ -233,3 +233,16 @@ export function legacyRoleFor(roleCode: string): LegacyRole | undefined {
   if (isLegacyRole(roleCode)) return roleCode;
   return ROLE_CODE_TO_LEGACY[roleCode];
 }
+
+/**
+ * Roles authorized to view PKG performance evaluations and statistics globally across all units.
+ * Foundation governance board + Pesantren leaders + Super Admin.
+ */
+export function isGlobalPKGRoleCode(roleCode?: string | null): boolean {
+  if (!roleCode) return false;
+  return (
+    roleCode === "SUPER_ADMIN" ||
+    GOVERNANCE_ROLE_CODES.includes(roleCode) ||
+    PESANTREN_LEADER_ROLE_CODES.includes(roleCode)
+  );
+}

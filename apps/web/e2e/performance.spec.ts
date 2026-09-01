@@ -10,8 +10,8 @@ test.describe("Integrated Performance Management (/kinerja) E2E Flows", () => {
     await page.goto("/kinerja");
     await expect(page).toHaveURL(/\/kinerja/);
     await expect(page.locator("h1")).toContainText(/Perencanaan Strategis hingga Perjanjian & Evaluasi Kinerja/i);
-    await expect(page.locator("text=Perjanjian Kinerja")).toBeVisible();
-    await expect(page.locator("text=Evaluasi Periodik")).toBeVisible();
+    await expect(page.getByText("Perjanjian Kinerja (PK)", { exact: true })).toBeVisible();
+    await expect(page.getByText("Evaluasi & Perilaku SAFTI")).toBeVisible();
   });
 
   test("performance agreement page displays PK agreement table and actions", async ({ page }) => {

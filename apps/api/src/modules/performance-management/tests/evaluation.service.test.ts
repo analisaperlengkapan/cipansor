@@ -71,6 +71,59 @@ describe('EvaluationService', () => {
     });
   });
 
+  describe('concurrent edit after approval regression tests', () => {
+    let mockQueryRaw: ReturnType<typeof vi.fn>;
+
+    beforeEach(() => {
+      mockQueryRaw = vi.fn().mockResolvedValue([]);
+      mocked.$transaction.mockImplementation(async (cb: any) =>
+        cb({
+          ...prisma,
+          $queryRaw: mockQueryRaw,
+        })
+      );
+    });
+
+    it('rejects updateIndicatorRealization when evaluation status becomes APPROVED after lock', async () => {
+      mocked.pKEvaluation.findUnique
+        .mockResolvedValueOnce({ id: 'ev-1', pkId: 'pk-1' }) // initial check in loadEditableEvaluationInTx
+        .mockResolvedValueOnce({
+          id: 'ev-1',
+          pkId: 'pk-1',
+          status: 'APPROVED', // status re-checked after locking row
+          pk: { userId: 'u-1', supervisorId: 'u-boss' },
+        });
+
+      await expect(
+        evaluationService.updateIndicatorRealization('ev-1', 'ind-1', 'u-1', false, { realization: 100 })
+      ).rejects.toThrow(/approved/i);
+
+      expect(mockQueryRaw).toHaveBeenCalledTimes(1);
+      const sqlStrings = mockQueryRaw.mock.calls[0][0];
+      expect(sqlStrings.join('')).toContain('SELECT id FROM "performance_agreements" WHERE id =');
+      expect(sqlStrings.join('')).toContain('FOR UPDATE');
+      expect(mocked.pKIndicatorEvaluation.update).not.toHaveBeenCalled();
+    });
+
+    it('rejects updateBehaviorScore when evaluation status becomes APPROVED after lock', async () => {
+      mocked.pKEvaluation.findUnique
+        .mockResolvedValueOnce({ id: 'ev-1', pkId: 'pk-1' })
+        .mockResolvedValueOnce({
+          id: 'ev-1',
+          pkId: 'pk-1',
+          status: 'APPROVED',
+          pk: { userId: 'u-1', supervisorId: 'u-boss' },
+        });
+
+      await expect(
+        evaluationService.updateBehaviorScore('ev-1', 'bv-1', 'u-1', false, { score: 95 })
+      ).rejects.toThrow(/approved/i);
+
+      expect(mockQueryRaw).toHaveBeenCalledTimes(1);
+      expect(mocked.pKBehaviorEvaluation.update).not.toHaveBeenCalled();
+    });
+  });
+
   describe('createEvaluation', () => {
     it('refuses to evaluate a PK that is not APPROVED', async () => {
       mocked.performanceAgreement.findUnique.mockResolvedValue({

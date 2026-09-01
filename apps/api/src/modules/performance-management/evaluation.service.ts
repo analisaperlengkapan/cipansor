@@ -115,16 +115,31 @@ export class EvaluationService {
     });
   }
 
-  /** Loads an evaluation and checks it is still editable by the caller. */
-  private async loadEditableEvaluation(evaluationId: string, callerId: string, isAdmin: boolean) {
-    const evaluation = await prisma.pKEvaluation.findUnique({
+  /** Loads an evaluation inside a transaction and locks the parent PerformanceAgreement row. */
+  private async loadEditableEvaluationInTx(
+    evaluationId: string,
+    callerId: string,
+    isAdmin: boolean,
+    tx: any
+  ) {
+    const initialEval = await tx.pKEvaluation.findUnique({
+      where: { id: evaluationId },
+      select: { pkId: true },
+    });
+    if (!initialEval) throw Errors.notFound('Evaluation');
+
+    if (typeof tx.$queryRaw === 'function') {
+      await tx.$queryRaw`SELECT id FROM "performance_agreements" WHERE id = ${initialEval.pkId} FOR UPDATE`;
+    }
+
+    const evaluation = await tx.pKEvaluation.findUnique({
       where: { id: evaluationId },
       include: { pk: true },
     });
     if (!evaluation) throw Errors.notFound('Evaluation');
     pkService.assertAccess(evaluation.pk, callerId, isAdmin);
     if (evaluation.status === PlanStatus.APPROVED) {
-      throw Errors.badRequest('An approved evaluation can no longer be edited');
+      throw Errors.conflict('An approved evaluation can no longer be edited');
     }
     return evaluation;
   }
@@ -136,35 +151,37 @@ export class EvaluationService {
     isAdmin: boolean,
     data: { realization: number; activities?: string }
   ) {
-    await this.loadEditableEvaluation(evaluationId, callerId, isAdmin);
+    return prisma.$transaction(async (tx) => {
+      await this.loadEditableEvaluationInTx(evaluationId, callerId, isAdmin, tx);
 
-    const detail = await prisma.pKIndicatorEvaluation.findUnique({
-      where: { evaluationId_indicatorId: { evaluationId, indicatorId } },
-      include: { indicator: true },
+      const detail = await tx.pKIndicatorEvaluation.findUnique({
+        where: { evaluationId_indicatorId: { evaluationId, indicatorId } },
+        include: { indicator: true },
+      });
+      if (!detail) throw Errors.notFound('Indicator detail for this evaluation');
+
+      // Score the month: realization vs target, capped at 100.
+      const target = detail.indicator.target;
+      let score = 0;
+      if (target > 0) {
+        score = Math.min(100, (data.realization / target) * 100);
+      } else if (target === 0 && data.realization === 0) {
+        score = 100;
+      }
+
+      const updated = await tx.pKIndicatorEvaluation.update({
+        where: { id: detail.id },
+        data: {
+          realization: data.realization,
+          activities: data.activities,
+          score,
+        },
+        include: { indicator: true },
+      });
+
+      await this.recalculateEvaluationScores(evaluationId, tx);
+      return updated;
     });
-    if (!detail) throw Errors.notFound('Indicator detail for this evaluation');
-
-    // Score the month: realization vs target, capped at 100.
-    const target = detail.indicator.target;
-    let score = 0;
-    if (target > 0) {
-      score = Math.min(100, (data.realization / target) * 100);
-    } else if (target === 0 && data.realization === 0) {
-      score = 100;
-    }
-
-    const updated = await prisma.pKIndicatorEvaluation.update({
-      where: { id: detail.id },
-      data: {
-        realization: data.realization,
-        activities: data.activities,
-        score,
-      },
-      include: { indicator: true },
-    });
-
-    await this.recalculateEvaluationScores(evaluationId);
-    return updated;
   }
 
   async updateBehaviorScore(
@@ -174,24 +191,27 @@ export class EvaluationService {
     isAdmin: boolean,
     data: { score: number; notes?: string }
   ) {
-    await this.loadEditableEvaluation(evaluationId, callerId, isAdmin);
+    return prisma.$transaction(async (tx) => {
+      await this.loadEditableEvaluationInTx(evaluationId, callerId, isAdmin, tx);
 
-    const detail = await prisma.pKBehaviorEvaluation.findUnique({
-      where: { evaluationId_behaviorValueId: { evaluationId, behaviorValueId } },
+      const detail = await tx.pKBehaviorEvaluation.findUnique({
+        where: { evaluationId_behaviorValueId: { evaluationId, behaviorValueId } },
+      });
+      if (!detail) throw Errors.notFound('Behavior detail for this evaluation');
+
+      const updated = await tx.pKBehaviorEvaluation.update({
+        where: { id: detail.id },
+        data: { score: data.score, notes: data.notes },
+      });
+
+      await this.recalculateEvaluationScores(evaluationId, tx);
+      return updated;
     });
-    if (!detail) throw Errors.notFound('Behavior detail for this evaluation');
-
-    const updated = await prisma.pKBehaviorEvaluation.update({
-      where: { id: detail.id },
-      data: { score: data.score, notes: data.notes },
-    });
-
-    await this.recalculateEvaluationScores(evaluationId);
-    return updated;
   }
 
-  async recalculateEvaluationScores(evaluationId: string) {
-    const evaluation = await prisma.pKEvaluation.findUnique({
+  async recalculateEvaluationScores(evaluationId: string, txClient?: any) {
+    const client = txClient || prisma;
+    const evaluation = await client.pKEvaluation.findUnique({
       where: { id: evaluationId },
       include: {
         indicatorDetails: { include: { indicator: true } },
@@ -203,20 +223,20 @@ export class EvaluationService {
 
     // Performance: weighted by indicator weight (weights total 100).
     const performanceScore = evaluation.indicatorDetails.reduce(
-      (sum, det) => sum + (det.score * det.indicator.weight) / 100,
+      (sum: number, det: any) => sum + (det.score * det.indicator.weight) / 100,
       0
     );
 
     // Behavior: weighted by BehavioralValue.weight (simple average when
     // all weights are equal, which is the SAFTI default).
     const totalBehaviorWeight = evaluation.behaviorDetails.reduce(
-      (sum, det) => sum + det.behaviorValue.weight,
+      (sum: number, det: any) => sum + det.behaviorValue.weight,
       0
     );
     const behaviorScore =
       totalBehaviorWeight > 0
         ? evaluation.behaviorDetails.reduce(
-            (sum, det) => sum + det.score * det.behaviorValue.weight,
+            (sum: number, det: any) => sum + det.score * det.behaviorValue.weight,
             0
           ) / totalBehaviorWeight
         : 0;
@@ -224,7 +244,7 @@ export class EvaluationService {
     // Overall: 60% performance, 40% behavior (as per Cipansor SAFTI standard).
     const overallScore = performanceScore * 0.6 + behaviorScore * 0.4;
 
-    await prisma.pKEvaluation.update({
+    await client.pKEvaluation.update({
       where: { id: evaluationId },
       data: { performanceScore, behaviorScore, overallScore },
     });

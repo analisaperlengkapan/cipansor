@@ -770,7 +770,9 @@ describe("e2e selectors — no loose text= selector can collide with the sidebar
       g.title,
       ...g.items.map((i) => i.title),
     ]),
-  ).map((t) => t.toLowerCase());
+  )
+    .filter((t): t is string => Boolean(t))
+    .map((t) => t.toLowerCase());
 
   function specFiles(dir: string): string[] {
     if (!fs.existsSync(dir)) return [];

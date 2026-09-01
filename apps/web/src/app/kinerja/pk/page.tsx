@@ -7,6 +7,7 @@ import { useAuthStore } from "@/stores/auth";
 import {
   usePKList,
   useCreatePK,
+  useDeletePK,
   useProposePK,
   useSupervisors,
 } from "@/hooks/use-performance";
@@ -56,6 +57,7 @@ import {
   AlertCircle,
   Eye,
   Send,
+  Trash2,
   UserCheck,
   Building2,
 } from "lucide-react";
@@ -67,6 +69,7 @@ function PerformanceAgreementListPageContent() {
   const { data: supervisors } = useSupervisors();
 
   const createPK = useCreatePK();
+  const deletePK = useDeletePK();
   const proposePK = useProposePK();
 
   const [openCreate, setOpenCreate] = useState(false);
@@ -290,14 +293,28 @@ function PerformanceAgreementListPageContent() {
                             </Button>
                           </Link>
                           {pk.status === "DRAFT" && (
-                            <Link href={`/kinerja/pk/${pk.id}`}>
+                            <>
+                              <Link href={`/kinerja/pk/${pk.id}`}>
+                                <Button
+                                  size="sm"
+                                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                                >
+                                  <Send className="w-3.5 h-3.5 mr-1" /> Ajukan
+                                </Button>
+                              </Link>
                               <Button
                                 size="sm"
-                                className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                                variant="destructive"
+                                disabled={deletePK.isPending}
+                                onClick={() => {
+                                  if (confirm("Apakah Anda yakin ingin menghapus draft Perjanjian Kinerja ini?")) {
+                                    deletePK.mutate(pk.id);
+                                  }
+                                }}
                               >
-                                <Send className="w-3.5 h-3.5 mr-1" /> Ajukan
+                                <Trash2 className="w-3.5 h-3.5 mr-1" /> Hapus
                               </Button>
-                            </Link>
+                            </>
                           )}
                         </TableCell>
                       </TableRow>

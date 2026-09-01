@@ -117,7 +117,7 @@ describe('PerformanceAgreementService', () => {
     });
 
     it('rejects deletion with 409 Conflict if status becomes APPROVED after lock', async () => {
-      mocked.performanceAgreement.findUnique.mockResolvedValue({
+      mocked.performanceAgreement.findUnique.mockResolvedValueOnce({
         id: 'pk-1',
         userId: 'u-owner',
         status: 'APPROVED',

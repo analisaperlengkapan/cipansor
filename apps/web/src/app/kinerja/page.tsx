@@ -80,7 +80,7 @@ function KinerjaHubPageContent() {
             Sistem Manajemen Kinerja Terintegrasi Cipansor
           </Badge>
           <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
-            Dari Perencanaan Strategis hingga Perjanjian & Evaluasi Kinerja
+            Manajemen Kinerja: Perencanaan Strategis, Perjanjian & Evaluasi
           </h1>
           <p className="text-emerald-100/90 text-sm leading-relaxed sm:text-base">
             Mengintegrasikan alur <b>RPJP (20 Thn) &rarr; Renstra (5 Thn) &rarr; RKA (1 Thn)</b> ke dalam <b>Perjanjian Kinerja (PK) Pegawai</b> serta Evaluasi Bulanan berbasis Budaya Perilaku <b>SAFTI</b> (Siddiq, Amanah, Fathonah, Tabligh, Istiqomah).

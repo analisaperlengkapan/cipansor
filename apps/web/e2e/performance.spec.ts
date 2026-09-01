@@ -19,7 +19,7 @@ test.describe("Integrated Performance Management (/kinerja) E2E Flows", () => {
     await page.goto("/kinerja/pk");
     await expect(page).toHaveURL(/\/kinerja\/pk/);
     await expect(page.locator("h1")).toContainText(/Perjanjian Kinerja/i);
-    await expect(page.locator("text=Buat PK Baru")).toBeVisible();
+    await expect(page.locator("text=Buat Perjanjian Kinerja")).toBeVisible();
   });
 
   test("periodic evaluation hub loads monthly evaluations", async ({ page }) => {

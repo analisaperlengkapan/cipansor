@@ -107,13 +107,13 @@ function PeriodicEvaluationListPageContent() {
         <Dialog open={openCreate} onOpenChange={setOpenCreate}>
           <DialogTrigger asChild>
             <Button className="bg-emerald-600 hover:bg-emerald-700">
-              <Plus className="w-4 h-4 mr-2" /> Mulai Evaluasi Bulanan
+              <Plus className="w-4 h-4 mr-2" /> Buat Evaluasi Bulanan
             </Button>
           </DialogTrigger>
           <DialogContent>
             <form onSubmit={handleCreateEval}>
               <DialogHeader>
-                <DialogTitle>Buat Evaluasi Kinerja Bulanan</DialogTitle>
+                <DialogTitle>Buat Evaluasi Bulanan Baru</DialogTitle>
                 <DialogDescription>
                   Pilih Perjanjian Kinerja (PK) yang sudah disetujui serta bulan & tahun evaluasi.
                 </DialogDescription>

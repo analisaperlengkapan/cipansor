@@ -35,11 +35,11 @@ function mockReqRes(overrides: Partial<Request> = {}) {
     statusCode: 200,
     jsonPayload: undefined as unknown,
     status(code: number) {
-      this.statusCode = code;
+      (this as any).statusCode = code;
       return this;
     },
     json(payload: unknown) {
-      this.jsonPayload = payload;
+      (this as any).jsonPayload = payload;
       return this;
     },
   } as unknown as Response & { statusCode: number; jsonPayload: any };

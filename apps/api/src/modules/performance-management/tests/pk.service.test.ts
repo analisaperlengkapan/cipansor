@@ -116,7 +116,9 @@ describe('PerformanceAgreementService', () => {
       expect(mocked.performanceAgreement.delete).not.toHaveBeenCalled();
     });
 
-    it('rejects deletion with 409 Conflict if status becomes APPROVED after lock', async () => {
+    it('rejects deletion with 409 Conflict if status becomes APPROVED before lock is acquired', async () => {
+      // In deletePK, $queryRaw FOR UPDATE locks the row first, then findUnique reads the latest status under lock.
+      // If a concurrent approval finishes before lock acquisition, findUnique under lock reads status = APPROVED.
       mocked.performanceAgreement.findUnique.mockResolvedValueOnce({
         id: 'pk-1',
         userId: 'u-owner',

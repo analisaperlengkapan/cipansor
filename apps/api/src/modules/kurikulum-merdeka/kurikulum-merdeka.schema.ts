@@ -58,8 +58,8 @@ export const listLearningOutcomesQuerySchema = z.object({
     .string()
     .transform((v) => v === 'true')
     .optional(),
-  page: z.string().transform(Number).pipe(z.number().min(1)).default('1'),
-  limit: z.string().transform(Number).pipe(z.number().min(1).max(100)).default('20'),
+  page: z.coerce.number().min(1).default(1),
+  limit: z.coerce.number().min(1).max(100).default(20),
 });
 
 export const getLearningOutcomeByIdSchema = z.object({
@@ -92,8 +92,8 @@ export const listLearningObjectivesQuerySchema = z.object({
     .string()
     .transform((v) => v === 'true')
     .optional(),
-  page: z.string().transform(Number).pipe(z.number().min(1)).default('1'),
-  limit: z.string().transform(Number).pipe(z.number().min(1).max(100)).default('20'),
+  page: z.coerce.number().min(1).default(1),
+  limit: z.coerce.number().min(1).max(100).default(20),
 });
 
 export const createLearningObjectiveSchema = z.object({
@@ -124,8 +124,8 @@ export const listTeachingModulesQuerySchema = z.object({
     .string()
     .transform((v) => v === 'true')
     .optional(),
-  page: z.string().transform(Number).pipe(z.number().min(1)).default('1'),
-  limit: z.string().transform(Number).pipe(z.number().min(1).max(100)).default('20'),
+  page: z.coerce.number().min(1).default(1),
+  limit: z.coerce.number().min(1).max(100).default(20),
 });
 
 export const createTeachingModuleSchema = z.object({
@@ -190,8 +190,8 @@ export const listP5ProjectsQuerySchema = z.object({
   classId: z.string().uuid().optional(),
   supervisorId: z.string().uuid().optional(),
   status: ProjectStatusEnum.optional(),
-  page: z.string().transform(Number).pipe(z.number().min(1)).default('1'),
-  limit: z.string().transform(Number).pipe(z.number().min(1).max(100)).default('20'),
+  page: z.coerce.number().min(1).default(1),
+  limit: z.coerce.number().min(1).max(100).default(20),
 });
 
 export const getP5ProjectByIdSchema = z.object({
@@ -236,8 +236,8 @@ export const listP5AssessmentsQuerySchema = z.object({
   projectId: z.string().uuid().optional(),
   studentId: z.string().uuid().optional(),
   assessedById: z.string().uuid().optional(),
-  page: z.string().transform(Number).pipe(z.number().min(1)).default('1'),
-  limit: z.string().transform(Number).pipe(z.number().min(1).max(100)).default('20'),
+  page: z.coerce.number().min(1).default(1),
+  limit: z.coerce.number().min(1).max(100).default(20),
 });
 
 export const createP5AssessmentSchema = z.object({
@@ -275,8 +275,8 @@ export const listMerdekaAssessmentsQuerySchema = z.object({
   academicYearId: z.string().uuid().optional(),
   category: AssessmentCategoryEnum.optional(),
   status: ProjectStatusEnum.optional(),
-  page: z.string().transform(Number).pipe(z.number().min(1)).default('1'),
-  limit: z.string().transform(Number).pipe(z.number().min(1).max(100)).default('20'),
+  page: z.coerce.number().min(1).default(1),
+  limit: z.coerce.number().min(1).max(100).default(20),
 });
 
 export const getMerdekaAssessmentByIdSchema = z.object({
@@ -323,8 +323,8 @@ export const updateMerdekaAssessmentSchema = z.object({
 export const listMerdekaResultsQuerySchema = z.object({
   assessmentId: z.string().uuid().optional(),
   studentId: z.string().uuid().optional(),
-  page: z.string().transform(Number).pipe(z.number().min(1)).default('1'),
-  limit: z.string().transform(Number).pipe(z.number().min(1).max(100)).default('20'),
+  page: z.coerce.number().min(1).default(1),
+  limit: z.coerce.number().min(1).max(100).default(20),
 });
 
 export const createMerdekaResultSchema = z.object({

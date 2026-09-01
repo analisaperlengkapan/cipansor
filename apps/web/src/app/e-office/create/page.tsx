@@ -196,7 +196,8 @@ export default function CreateLetterPage() {
               <CardTitle>Informasi Dasar</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {(!user?.unitId || units.length > 0) && (
+              {/* B5: Display unit selector ONLY when user is authorized to issue cross-unit letters */}
+              {user && (user.roleCode === "YAYASAN_KETUA" || user.roleCode === "YAYASAN_SEKRETARIS" || user.roleCode === "SUPER_ADMIN" || !user.unitId) && (
                 <FormField
                   control={form.control}
                   name="unitId"

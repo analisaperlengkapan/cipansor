@@ -159,6 +159,7 @@ export const CorrespondenceService = {
       where: {
         id: { in: uniqueIds },
         isActive: true,
+        deletedAt: null,
       },
       select: {
         id: true,
@@ -175,7 +176,7 @@ export const CorrespondenceService = {
             },
             OR: [{ expiresAt: null }, { expiresAt: { gte: now } }],
           },
-          select: { role: { select: { code: true } } },
+          select: { unitId: true, role: { select: { code: true } } },
         },
       },
     });
@@ -192,9 +193,13 @@ export const CorrespondenceService = {
         throw Errors.badRequest(`Pengguna ${u.id} tidak memiliki peran internal yang sah`);
       }
 
-      // Enforce unit scope if caller is unit-restricted
-      if (!actorSeesAll && actor?.unitId && u.unitId && u.unitId !== actor.unitId) {
-        throw Errors.forbidden(`Pengguna ${u.id} berada di luar unit Anda`);
+      // Enforce unit scope based on active role assignments or legacy user unitId
+      if (!actorSeesAll && actor?.unitId) {
+        const matchesUserUnit = u.unitId === actor.unitId || u.unitId === null;
+        const matchesRoleUnit = u.userRoles.some((ur) => ur.unitId === actor.unitId || ur.unitId === null);
+        if (!matchesUserUnit && !matchesRoleUnit) {
+          throw Errors.forbidden(`Pengguna ${u.id} berada di luar unit Anda`);
+        }
       }
     }
   },
@@ -744,10 +749,13 @@ export const CorrespondenceService = {
 
       if (action === 'APPROVE') {
         if (letter.direction === 'INCOMING' && reviewFinished) {
-          nextStatus = DbLetterStatus.DISPOSED;
+          // A2 & A6: Incoming review completion does not require signer flag.
+          // If recipients exist, set DISPOSED; otherwise set SENT (representing reviewed/processed incoming letter).
+          const hasRecipients = letter.recipients && letter.recipients.length > 0;
+          nextStatus = hasRecipients ? DbLetterStatus.DISPOSED : DbLetterStatus.SENT;
 
           // When review finishes for an INCOMING letter with recipients, create live Disposition tasks
-          if (letter.recipients && letter.recipients.length > 0) {
+          if (hasRecipients) {
             const uniqueRecipientIds = Array.from(
               new Set(letter.recipients.map((r) => r.userId).filter(Boolean))
             ) as string[];
@@ -942,6 +950,12 @@ export const CorrespondenceService = {
       });
       if (!letter) throw Errors.notFound('Letter not found');
 
+      // A7: If reviewerIds parameter was not supplied, validate eligibility of stored draft reviewers
+      if ((!reviewerIds || reviewerIds.length === 0) && letter.reviewers.length > 0) {
+        const storedReviewerIds = letter.reviewers.map((r) => r.reviewerId);
+        await this.validateParticipantEligibility(storedReviewerIds, actor);
+      }
+
       if (letter.createdById !== actor.id) {
         throw Errors.forbidden('Hanya pembuat surat yang dapat mengajukan konsep untuk ditinjau');
       }
@@ -1102,12 +1116,24 @@ export const CorrespondenceService = {
   async archiveLetter(letterId: string, actor: LetterActor, note?: string) {
     await assertLetterAccess(actor, letterId);
 
+    // B4: Restrict archive authorization to creator, correspondence role, executive foundation roles, or super admin
+    const isCreator = actor.id === (await prisma.letter.findUnique({ where: { id: letterId }, select: { createdById: true } }))?.createdById;
+    const isExecutive = actor.roleCode === RoleCode.YAYASAN_KETUA || actor.roleCode === RoleCode.YAYASAN_SEKRETARIS || actor.roleCode === RoleCode.SUPER_ADMIN;
+    const isCorrRole = handlesUnitCorrespondence(actor);
+
+    if (!isCreator && !isExecutive && !isCorrRole) {
+      throw Errors.forbidden('Anda tidak berwenang mengarsipkan surat ini.');
+    }
+
     return await prisma.$transaction(async (tx) => {
+      // A4: Lock letter row to serialize concurrent disposition and archive operations
+      await tx.$executeRaw`SELECT id FROM letters WHERE id = ${letterId} FOR UPDATE`;
+
       const letter = await tx.letter.findUnique({
         where: { id: letterId },
         select: { id: true, status: true },
       });
-      if (!letter) throw new Error('Letter not found');
+      if (!letter) throw Errors.notFound('Surat tidak ditemukan');
 
       assertMayArchive(letter.status);
 
@@ -1188,8 +1214,15 @@ export const CorrespondenceService = {
       const newlyCreatedDispositions = [];
 
       for (const targetRecipientId of recipients) {
+        // A5: Deduplicate only identical dispositions (same letter, recipient, sender, instruction)
         const existingDisp = await tx.disposition.findFirst({
-          where: { letterId: txLetter.id, recipientId: targetRecipientId, status: { not: 'COMPLETED' } },
+          where: {
+            letterId: txLetter.id,
+            recipientId: targetRecipientId,
+            senderId: data.senderId,
+            instruction: data.instruction,
+            status: { not: 'COMPLETED' },
+          },
         });
         if (existingDisp) {
           allDispositions.push(existingDisp);
@@ -1342,6 +1375,7 @@ export const CorrespondenceService = {
 
     const where: Prisma.UserWhereInput = {
       isActive: true,
+      deletedAt: null, // A8: Exclude soft-deleted users
       // Candidates must have an active non-external role assignment
       userRoles: {
         some: {
@@ -1359,8 +1393,13 @@ export const CorrespondenceService = {
     const and: Prisma.UserWhereInput[] = [];
 
     if (effectiveUnitId) {
+      // A3: Match unit by legacy user unitId OR active role assignment unitId
       and.push({
-        OR: [{ unitId: effectiveUnitId }, { unitId: null }],
+        OR: [
+          { unitId: effectiveUnitId },
+          { unitId: null },
+          { userRoles: { some: { unitId: effectiveUnitId, isActive: true } } },
+        ],
       });
     }
 

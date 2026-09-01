@@ -835,19 +835,17 @@ export default function LetterDetailPage({
               {(() => {
                 const reviewers = letter.reviewers ?? [];
                 const mine = reviewers.find(
-                  (r: any) => r.reviewerId === user?.id,
+                  (r) => r.reviewerId === user?.id,
                 );
                 const turn = [...reviewers]
-                  .filter((r: any) => r.status !== "APPROVED")
-                  .sort((a: any, b: any) => a.order - b.order)[0];
+                  .filter((r) => r.status !== "APPROVED")
+                  .sort((a,b) => a.order - b.order)[0];
                 const openForReview =
                   letter.status === "PENDING_REVIEW" ||
                   letter.status === "READY_TO_SIGN";
 
                 if (!mine || !openForReview) return null;
 
-                // When the letter is READY_TO_SIGN and current user is a designated signer,
-                // offer the sign action regardless of whether their review row was already marked APPROVED.
                 if (letter.status === "READY_TO_SIGN" && mine.isSigner) {
                   return (
                     <div className="pt-4 border-t space-y-3">
@@ -867,13 +865,13 @@ export default function LetterDetailPage({
                 }
 
                 const myTurn =
-                  !!mine && (turn as any)?.reviewerId === user?.id;
+                  !!mine && turn?.reviewerId === user?.id;
 
                 if (!myTurn) {
                   return (
                     <div className="pt-4 border-t">
                       <p className="text-xs text-muted-foreground">
-                        Menunggu verifikator urutan {(turn as any)?.order} lebih
+                        Menunggu verifikator urutan {turn?.order} lebih
                         dahulu.
                       </p>
                     </div>

@@ -236,6 +236,15 @@ describe('CorrespondenceService', () => {
 
   describe('submitForReview', () => {
     it('submits a DRAFT letter into review when reviewers exist', async () => {
+      vi.mocked(prisma.user.findMany).mockResolvedValue([
+        {
+          id: 'rev-user-1',
+          unitId: 'unit-1',
+          teacher: null,
+          staff: { nip: '123' },
+          userRoles: [{ role: { code: 'SDIT_GURU' } }],
+        },
+      ] as any);
       vi.mocked(prisma.letter.findUnique).mockResolvedValue({
         id: 'let-draft',
         status: 'DRAFT',
@@ -379,6 +388,22 @@ describe('CorrespondenceService', () => {
     });
 
     it('generates letterNumber for outgoing letters upon submitForReview if missing', async () => {
+      vi.mocked(prisma.user.findMany).mockResolvedValue([
+        {
+          id: 'rev-user-1',
+          unitId: 'unit-1',
+          teacher: null,
+          staff: { nip: '123' },
+          userRoles: [{ role: { code: 'SDIT_GURU' } }],
+        },
+        {
+          id: 'rev-user-2',
+          unitId: 'unit-1',
+          teacher: null,
+          staff: { nip: '124' },
+          userRoles: [{ role: { code: 'SDIT_GURU' } }],
+        },
+      ] as any);
       vi.mocked(prisma.letter.findUnique).mockResolvedValue({
         id: 'let-draft-out',
         status: 'DRAFT',
@@ -863,10 +888,15 @@ describe('CorrespondenceService', () => {
       );
 
       const findCall = vi.mocked(prisma.user.findMany).mock.calls.at(-1)![0] as any;
-      // Effective unitId should be 'unit-2' (honored from query) rather than being pinned to 'unit-1'
       expect(findCall.where.AND).toEqual(
         expect.arrayContaining([
-          { OR: [{ unitId: 'unit-2' }, { unitId: null }] },
+          {
+            OR: [
+              { unitId: 'unit-2' },
+              { unitId: null },
+              { userRoles: { some: { unitId: 'unit-2', isActive: true } } },
+            ],
+          },
         ])
       );
     });
@@ -880,10 +910,15 @@ describe('CorrespondenceService', () => {
       );
 
       const findCall = vi.mocked(prisma.user.findMany).mock.calls.at(-1)![0] as any;
-      // Effective unitId must remain 'unit-1' (caller's assigned unitId)
       expect(findCall.where.AND).toEqual(
         expect.arrayContaining([
-          { OR: [{ unitId: 'unit-1' }, { unitId: null }] },
+          {
+            OR: [
+              { unitId: 'unit-1' },
+              { unitId: null },
+              { userRoles: { some: { unitId: 'unit-1', isActive: true } } },
+            ],
+          },
         ])
       );
     });

@@ -4,7 +4,7 @@ import httpStatus from 'http-status';
 import { complaintsController } from '../complaints.controller';
 import { complaintsService } from '../complaints.service';
 import { prisma } from '@/lib/prisma';
-import { UserRole } from '@prisma/client';
+import { RoleCode } from '@prisma/client';
 
 vi.mock('../complaints.service', () => ({
   complaintsService: {
@@ -30,7 +30,8 @@ function mockRequest(body = {}, userOverriding = {}): Request {
     body,
     user: {
       sub: 'user-uuid-1',
-      role: UserRole.STAFF,
+      role: RoleCode.SDIT_TATA_USAHA,
+      roleCode: RoleCode.SDIT_TATA_USAHA,
       unitId: 'unit-uuid-1',
       ...userOverriding,
     },

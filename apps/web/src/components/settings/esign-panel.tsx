@@ -23,7 +23,8 @@ import { KeyRound, ShieldCheck, ShieldAlert, Clock, Ban } from "lucide-react";
  * dalam state formulir ini dan dibersihkan segera setelah dikirim.
  */
 
-const STATE_LABEL: Record<SigningKeyState, string> = {
+/** Dipakai bersama daftar kunci Super Admin, supaya istilahnya satu. */
+export const STATE_LABEL: Record<SigningKeyState, string> = {
   PENDING_APPROVAL: "Menunggu persetujuan",
   ACTIVE: "Aktif",
   EXPIRING_SOON: "Akan segera berakhir",
@@ -31,7 +32,7 @@ const STATE_LABEL: Record<SigningKeyState, string> = {
   REVOKED: "Dicabut",
 };
 
-function StateBadge({ state }: { state: SigningKeyState }) {
+export function StateBadge({ state }: { state: SigningKeyState }) {
   const tone: Record<SigningKeyState, string> = {
     ACTIVE: "border-emerald-600 text-emerald-700 bg-emerald-50",
     EXPIRING_SOON: "border-amber-600 text-amber-700 bg-amber-50",

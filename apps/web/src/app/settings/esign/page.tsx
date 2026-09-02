@@ -12,6 +12,7 @@ import {
   Card, CardContent, CardDescription, CardHeader, CardTitle,
 } from "@/components/ui/card";
 import { useEsignRequests } from "@/hooks/use-esign";
+import { EsignKeyInventory } from "@/components/settings/esign-key-inventory";
 import { safeFormat } from "@/lib/date";
 import { id as idLocale } from "date-fns/locale";
 import { ShieldCheck, Clock } from "lucide-react";
@@ -72,11 +73,11 @@ export default function EsignRequestsPage() {
       <div className="space-y-6 p-6">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">
-            Pengajuan Tanda Tangan Elektronik
+            Tanda Tangan Elektronik
           </h1>
           <p className="text-sm text-muted-foreground">
-            Menyetujui penerbitan dan perpanjangan kunci tanda tangan, beserta
-            masa berlakunya.
+            Menyetujui penerbitan dan perpanjangan kunci tanda tangan beserta
+            masa berlakunya, dan mencabutnya bila perlu.
           </p>
         </div>
 
@@ -166,6 +167,11 @@ export default function EsignRequestsPage() {
             ))}
           </CardContent>
         </Card>
+
+        {/* Menerbitkan dan mencabut adalah dua sisi wewenang yang sama, jadi
+            keduanya berada di halaman yang sama. Sebelumnya rute pencabutan
+            tidak dipanggil dari mana pun. */}
+        <EsignKeyInventory />
 
         {decided.length > 0 && (
           <Card>

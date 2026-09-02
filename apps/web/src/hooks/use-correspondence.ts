@@ -6,7 +6,64 @@ import {
   LetterStatus,
   LetterDetail,
   CreateDispositionInput,
+  PublicLetterVerificationResult,
+  CorrespondenceParticipant,
+  ListParticipantsQueryInput,
 } from "@cipansor/shared";
+
+export function useCorrespondenceParticipants(params?: ListParticipantsQueryInput) {
+  return useQuery({
+    queryKey: ["correspondenceParticipants", params],
+    queryFn: async () => {
+      const response = await api.get<{
+        success: boolean;
+        data: CorrespondenceParticipant[];
+      }>("/correspondence/participants", { params });
+      return response.data;
+    },
+  });
+}
+
+export function useCaptchaChallenge() {
+  return useQuery({
+    queryKey: ["captchaChallenge"],
+    queryFn: async () => {
+      const response = await api.get<{
+        success: boolean;
+        data: { token: string; num1: number; num2: number };
+      }>("/esign/captcha");
+      return response.data.data;
+    },
+    staleTime: 0,
+    gcTime: 0,
+  });
+}
+
+export function useVerifyPdfLetter() {
+  return useMutation({
+    mutationFn: async ({
+      file,
+      captchaToken,
+      captchaAnswer,
+    }: {
+      file: File;
+      captchaToken: string;
+      captchaAnswer: string;
+    }) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("captchaToken", captchaToken);
+      formData.append("captchaAnswer", captchaAnswer);
+      const response = await api.post<{
+        success: boolean;
+        data: PublicLetterVerificationResult;
+      }>("/esign/verify-pdf", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return response.data.data;
+    },
+  });
+}
 
 interface GetLettersParams {
   unitId: string;
@@ -53,6 +110,7 @@ export function useCorrespondence(unitId?: string) {
         return response.data.data;
       },
       enabled: !!id,
+      staleTime: 0,
     });
   };
 
@@ -67,20 +125,41 @@ export function useCorrespondence(unitId?: string) {
     },
   });
 
+  // Submit DRAFT for Review
+  const submitForReview = useMutation({
+    mutationFn: async ({ id, note, reviewerIds }: { id: string; note?: string; reviewerIds?: string[] }) => {
+      const response = await api.post(`/correspondence/letters/${id}/submit`, {
+        note,
+        reviewerIds,
+      });
+      return response.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["letter", variables.id] });
+      queryClient.invalidateQueries({ queryKey: ["letters"] });
+    },
+  });
+
   // Review/Approve Letter
   const reviewLetter = useMutation({
     mutationFn: async ({
       id,
       action,
       notes,
+      nextReviewerId,
+      isFinalSigner,
     }: {
       id: string;
       action: "APPROVE" | "REJECT";
       notes?: string;
+      nextReviewerId?: string;
+      isFinalSigner?: boolean;
     }) => {
       const response = await api.post(`/correspondence/letters/${id}/review`, {
         action,
         notes,
+        nextReviewerId,
+        isFinalSigner,
       });
       return response.data;
     },
@@ -126,6 +205,27 @@ export function useCorrespondence(unitId?: string) {
     },
   });
 
+  /**
+   * Send a returned draft back up the ladder.
+   *
+   * `POST /correspondence/letters/:id/resubmit` has existed since the workflow
+   * was tightened, and nothing on the frontend has ever called it. A letter a
+   * reviewer sent back for revision therefore reached REVISION_NEEDED and
+   * stopped there: the author could edit it and had no way to resubmit, and no
+   * button anywhere in the app said otherwise. The one flow the workflow rules
+   * were written to make possible was the one flow the UI could not perform.
+   */
+  const resubmitLetter = useMutation({
+    mutationFn: async ({ id, note }: { id: string; note?: string }) => {
+      const response = await api.post(`/correspondence/letters/${id}/resubmit`, { note });
+      return response.data;
+    },
+    onSuccess: (_d, v) => {
+      queryClient.invalidateQueries({ queryKey: ["letters"] });
+      queryClient.invalidateQueries({ queryKey: ["letter", v.id] });
+    },
+  });
+
   // Get Stats — same reasoning as useLetters: no unit is a valid scope, not a
   // reason to skip the request.
   const useStats = () => {
@@ -144,9 +244,11 @@ export function useCorrespondence(unitId?: string) {
     useLetters,
     useLetter,
     createLetter,
+    submitForReview,
     reviewLetter,
     createDisposition,
     updateDispositionStatus,
+    resubmitLetter,
     useStats,
   };
 }

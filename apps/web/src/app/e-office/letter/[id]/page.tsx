@@ -4,7 +4,7 @@ import { authFileUrl } from "@/lib/files";
 import { safeFormat } from "@/lib/date";
 import { useCorrespondence } from "@/hooks/use-correspondence";
 import { useAuth } from "@/hooks/use-auth";
-import { useTeachers } from "@/hooks/use-teachers";
+import { useCorrespondenceParticipants } from "@/hooks/use-correspondence";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -19,7 +19,9 @@ import {
   XCircle,
   Printer,
   ShieldCheck,
+  ShieldOff,
   PenLine,
+  Undo2,
 } from "lucide-react";
 
 import { id } from "date-fns/locale";
@@ -56,11 +58,26 @@ import { toast } from "sonner";
 import {
   LetterType,
   LetterNature,
+  LetterUrgency,
   LETTER_TYPE_LABELS,
   LETTER_NATURE_LABELS,
+  LETTER_URGENCY_LABELS,
+  mayRevokeSignature,
+  whoMayRevoke,
 } from "@cipansor/shared";
 import { LetterFlowHistory } from "@/components/e-office/letter-flow-history";
 import { SignLetterDialog } from "@/components/e-office/sign-letter-dialog";
+import { RevokeLetterDialog } from "@/components/e-office/revoke-letter-dialog";
+import { RevocationRequestsCard } from "@/components/e-office/revocation-requests-card";
+import { getPrimaryRoleCode } from "@/lib/rbac";
+
+/** Status seorang verifikator, dalam bahasa yang dibaca penggunanya. */
+const REVIEWER_STATUS_LABEL: Record<string, string> = {
+  PENDING: "Menunggu",
+  APPROVED: "Sudah diparaf",
+  REJECTED: "Dikembalikan",
+  REVISION_NEEDED: "Minta revisi",
+};
 
 export default function LetterDetailPage({
   params,
@@ -71,14 +88,16 @@ export default function LetterDetailPage({
   const { user } = useAuth();
   const {
     useLetter,
+    submitForReview,
     reviewLetter,
     createDisposition,
     updateDispositionStatus,
+    resubmitLetter,
   } = useCorrespondence(user?.unitId);
-  const { data: teachers } = useTeachers({
-    page: 1,
+  const [participantSearch, setParticipantSearch] = useState("");
+  const { data: participantsData } = useCorrespondenceParticipants({
+    search: participantSearch || undefined,
     limit: 100,
-    unitId: user?.unitId,
   });
   const { data: letter, isLoading } = useLetter(params.id);
 
@@ -86,19 +105,65 @@ export default function LetterDetailPage({
   const [notes, setNotes] = useState("");
   const [dispositionOpen, setDispositionOpen] = useState(false);
   const [signOpen, setSignOpen] = useState(false);
+  const [revokeOpen, setRevokeOpen] = useState(false);
+  const [resubmitNote, setResubmitNote] = useState("");
   const [dispositionData, setDispositionData] = useState({
-    recipientId: "",
+    recipientIds: [] as string[],
     instruction: "",
     deadline: "",
     notes: "",
   });
+  const [forwardModalOpen, setForwardModalOpen] = useState(false);
+  const [forwardData, setForwardData] = useState({
+    nextReviewerId: "",
+    isFinalSigner: false,
+    notes: "",
+  });
   const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
   const [completeNotes, setCompleteNotes] = useState("");
+  const [selectedReviewerId, setSelectedReviewerId] = useState<string>("");
 
   // Find active disposition for current user
   const activeDisposition = letter?.dispositions?.find(
     (d) => d.recipientId === user?.id && d.status !== "COMPLETED",
   );
+
+  /**
+   * The letter's signature, and whether it still stands.
+   *
+   * `signatures` is ordered oldest-first by the API, so the last entry is the
+   * one that speaks for the letter now. A revoked signature is deliberately
+   * kept and shown: a letter that circulated must be able to explain itself,
+   * and "withdrawn, for this reason" is a far more useful answer to whoever
+   * holds a printout than silence.
+   */
+  const latestSignature = letter?.signatures?.at(-1) ?? null;
+  const activeSignature = latestSignature?.revokedAt ? null : latestSignature;
+  const revokedSignature = latestSignature?.revokedAt ? latestSignature : null;
+
+  /**
+   * Kewenangan mencabut, dibaca dari tabel yang sama dengan yang ditegakkan
+   * server (`@cipansor/shared`), bukan disalin ulang di sini.
+   *
+   * Yang tidak berwenang tidak kehilangan salurannya: tombolnya tetap ada dan
+   * membuka permohonan, bukan pencabutan. Menyembunyikannya sama sekali berarti
+   * petugas tata usaha yang menemukan nomor surat ganda tidak punya jalan apa
+   * pun selain memberi tahu secara lisan.
+   */
+  const signerParty = activeSignature
+    ? {
+        userId:
+          letter?.reviewers?.find((r) => r.isSigner)?.reviewerId ?? "",
+        roleCode: activeSignature.signerRoleCode ?? null,
+      }
+    : null;
+  const actorParty = {
+    userId: user?.id ?? "",
+    roleCode: getPrimaryRoleCode(user) ?? null,
+  };
+  const canRevokeLetter =
+    !!signerParty && mayRevokeSignature(signerParty, actorParty);
+  const whoMayRevokeText = signerParty ? whoMayRevoke(signerParty) : "";
 
   const handleUpdateDisposition = async (
     status: "IN_PROGRESS" | "COMPLETED",
@@ -117,108 +182,49 @@ export default function LetterDetailPage({
     }
   };
 
+  const handleResubmit = async () => {
+    if (!letter?.id) return;
+    try {
+      await resubmitLetter.mutateAsync({
+        id: letter.id,
+        note: resubmitNote.trim() || undefined,
+      });
+      setResubmitNote("");
+      toast.success("Surat diajukan ulang untuk diverifikasi.");
+    } catch (error: any) {
+      toast.error(
+        error?.response?.data?.error?.message ??
+          error?.response?.data?.message ??
+          "Gagal mengajukan ulang surat",
+      );
+    }
+  };
+
   const handleDownloadPDF = async () => {
-    if (!pdfRef.current) return;
+    if (!letter?.id) return;
 
     try {
-      toast.info("Sedang menyiapkan PDF...");
-      const scale = 2;
-      const canvas = await html2canvas(pdfRef.current, { scale, useCORS: true });
-      const pdf = new jsPDF("p", "mm", "a4");
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-
-      const pxPerMm = canvas.width / pdfWidth;
-      const pageHeightPx = pdfHeight * pxPerMm;
-
-      /**
-       * Where a page may be cut.
-       *
-       * The previous version sliced every `pdfHeight` regardless of what was
-       * there, so a two-page letter opened page 2 with the bottom half of a
-       * line of text and ended it mid-sentence. Paragraphs are marked in the
-       * naskah with `data-naskah-block`; their top edges are the offsets where
-       * a cut lands between lines instead of through one. A little white space
-       * at the foot of a page is the correct trade.
-       */
-      const naskahTop = pdfRef.current.getBoundingClientRect().top;
-      const breakpoints = Array.from(
-        pdfRef.current.querySelectorAll("[data-naskah-block]"),
-      )
-        .map((el) => (el.getBoundingClientRect().top - naskahTop) * scale)
-        .filter((y) => y > 0);
-
-      /**
-       * Margins for the sheets the naskah itself does not provide.
-       *
-       * The naskah's own padding only produces white space at the very top of
-       * page 1 and the very bottom of the last page. Every cut in between was
-       * laid flush against the paper edge, so page 2 of a long letter opened
-       * with a line of text touching the top edge and closed with one touching
-       * the bottom — underneath the page number, which is drawn over the image.
-       * Beyond looking wrong, most printers cannot print within about 5 mm of
-       * the edge, so those lines came out clipped on paper.
-       *
-       * Page 1 keeps its own top margin (the kop is drawn inside it); the
-       * bottom margin applies to every page and is where the page number sits.
-       */
-      const TOP_MARGIN_MM = 15;
-      const BOTTOM_MARGIN_MM = 15;
-      const usableFirstPx = (pdfHeight - BOTTOM_MARGIN_MM) * pxPerMm;
-      const usableRestPx =
-        (pdfHeight - TOP_MARGIN_MM - BOTTOM_MARGIN_MM) * pxPerMm;
-
-      const pages: number[] = [0];
-      while (true) {
-        const top = pages[pages.length - 1];
-        const usable = pages.length === 1 ? usableFirstPx : usableRestPx;
-        if (top + usable >= canvas.height) break;
-        // The last breakpoint that still fits on this page.
-        const next = breakpoints.filter((y) => y > top && y <= top + usable).pop();
-        // No breakpoint fits (a single block taller than a page) — fall back to
-        // a hard cut rather than loop forever.
-        pages.push(next ?? top + usable);
-      }
-
-      const slice = document.createElement("canvas");
-      const sctx = slice.getContext("2d")!;
-      pages.forEach((top, i) => {
-        // Ends where the next page begins, not a full page-height further on.
-        // Taking the full height re-drew the paragraphs that belong to the next
-        // page, so a page started cleanly and still ran off mid-sentence.
-        const height = (pages[i + 1] ?? canvas.height) - top;
-        slice.width = canvas.width;
-        slice.height = height;
-        sctx.fillStyle = "#ffffff";
-        sctx.fillRect(0, 0, slice.width, slice.height);
-        sctx.drawImage(canvas, 0, -top);
-        if (i > 0) pdf.addPage();
-        pdf.addImage(
-          slice.toDataURL("image/png"),
-          "PNG",
-          0,
-          // Page 1 begins at the paper edge because the kop already sits inside
-          // the naskah's own padding; continuation pages need the margin drawn.
-          i === 0 ? 0 : TOP_MARGIN_MM,
-          pdfWidth,
-          height / pxPerMm,
-        );
-        // Continuation pages carry no letterhead, so they need to say which
-        // page they are — a loose sheet from a five-page edaran otherwise has
-        // nothing on it identifying where it belongs.
-        if (pages.length > 1) {
-          pdf.setFontSize(9);
-          pdf.setTextColor(120);
-          pdf.text(
-            `Halaman ${i + 1} dari ${pages.length}`,
-            pdfWidth - 15,
-            pdfHeight - 8,
-            { align: "right" },
-          );
-        }
+      toast.info("Sedang mengunduh dokumen PDF...");
+      const response = await fetch(`/api/correspondence/letters/${letter.id}/pdf`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+        },
       });
 
-      pdf.save(`Surat-${letter?.letterNumber || "Draft"}.pdf`);
+      if (!response.ok) {
+        throw new Error("Gagal mengunduh file PDF dari server");
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Surat-${letter.letterNumber || letter.agendaNumber || "Draft"}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
       toast.success("Surat berhasil diunduh");
     } catch (error) {
       console.error(error);
@@ -247,8 +253,51 @@ export default function LetterDetailPage({
     }
   };
 
+  const handleSubmitDraftForReview = async () => {
+    const firstReviewerId = letter.reviewers?.[0]?.reviewerId || selectedReviewerId;
+    if (!firstReviewerId) {
+      toast.error("Pemeriksa pertama wajib dipilih saat mengajukan review");
+      return;
+    }
+    try {
+      await submitForReview.mutateAsync({
+        id: letter.id,
+        note: notes || "Mengajukan draft untuk ditinjau",
+        reviewerIds: letter.reviewers?.length ? undefined : [selectedReviewerId],
+      });
+      toast.success("Draft surat berhasil diajukan untuk ditinjau");
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || "Gagal mengajukan draft untuk ditinjau");
+    }
+  };
+
+  const handleForwardReview = async () => {
+    const hasExistingSigner = letter.reviewers?.some((r) => r.isSigner);
+    if (!forwardData.nextReviewerId && !forwardData.isFinalSigner && !hasExistingSigner) {
+      toast.error("Pilih pejabat penerus atau tandai sebagai penandatangan akhir.");
+      return;
+    }
+    try {
+      await reviewLetter.mutateAsync({
+        id: letter.id,
+        action: "APPROVE",
+        notes: forwardData.notes || notes,
+        nextReviewerId: forwardData.nextReviewerId || undefined,
+        isFinalSigner: forwardData.isFinalSigner,
+      });
+      toast.success(
+        forwardData.nextReviewerId
+          ? "Surat berhasil disetujui dan diteruskan"
+          : "Surat berhasil disetujui"
+      );
+      setForwardModalOpen(false);
+    } catch (error) {
+      toast.error("Gagal meneruskan surat");
+    }
+  };
+
   const handleCreateDisposition = async () => {
-    if (!dispositionData.recipientId || !dispositionData.instruction) {
+    if ((!dispositionData.recipientIds || dispositionData.recipientIds.length === 0) || !dispositionData.instruction) {
       toast.error("Penerima dan Instruksi wajib diisi");
       return;
     }
@@ -257,7 +306,7 @@ export default function LetterDetailPage({
       await createDisposition.mutateAsync({
         letterId: letter.id,
         senderId: user?.id || "",
-        recipientId: dispositionData.recipientId,
+        recipientIds: dispositionData.recipientIds,
         instruction: dispositionData.instruction,
         deadline: dispositionData.deadline,
         notes: dispositionData.notes,
@@ -265,7 +314,7 @@ export default function LetterDetailPage({
       toast.success("Disposisi berhasil dibuat");
       setDispositionOpen(false);
       setDispositionData({
-        recipientId: "",
+        recipientIds: [],
         instruction: "",
         deadline: "",
         notes: "",
@@ -277,31 +326,127 @@ export default function LetterDetailPage({
 
   return (
     <div className="max-w-5xl mx-auto p-6 space-y-6">
-      <Dialog open={dispositionOpen} onOpenChange={setDispositionOpen}>
+      {/* Dialog Forward Concept Letter */}
+      <Dialog open={forwardModalOpen} onOpenChange={setForwardModalOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Buat Disposisi</DialogTitle>
+            <DialogTitle>Setujui & Teruskan Konsep Surat</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label>Diteruskan Kepada</Label>
+              <Label>Diteruskan Kepada Pejabat/Atasan Berikutnya</Label>
+              <Input
+                placeholder="Cari pejabat..."
+                value={participantSearch}
+                onChange={(e) => setParticipantSearch(e.target.value)}
+                className="text-xs mb-1"
+              />
               <Select
                 onValueChange={(val) =>
-                  setDispositionData({ ...dispositionData, recipientId: val })
+                  setForwardData({ ...forwardData, nextReviewerId: val, isFinalSigner: false })
                 }
-                value={dispositionData.recipientId}
+                value={forwardData.nextReviewerId}
+                disabled={forwardData.isFinalSigner}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Pilih penerima..." />
+                  <SelectValue placeholder="Pilih pejabat penerus..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {teachers?.data.map((t: any) => (
-                    <SelectItem key={t.userId} value={t.userId}>
-                      {t.user?.name || t.nip}
-                    </SelectItem>
-                  ))}
+                  {participantsData?.data
+                    .filter((u) => u.id !== user?.id)
+                    .map((u) => (
+                      <SelectItem key={u.id} value={u.id}>
+                        {u.nip ? `${u.name} (${u.nip})` : u.name}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
+            </div>
+            <div className="flex items-center space-x-2 pt-2">
+              <input
+                type="checkbox"
+                id="isFinalSigner"
+                checked={forwardData.isFinalSigner}
+                onChange={(e) =>
+                  setForwardData({
+                    ...forwardData,
+                    isFinalSigner: e.target.checked,
+                    nextReviewerId: e.target.checked ? "" : forwardData.nextReviewerId,
+                  })
+                }
+                className="h-4 w-4 rounded border-gray-300"
+              />
+              <Label htmlFor="isFinalSigner" className="text-sm font-medium cursor-pointer">
+                Atau tandai untuk langsung diajukan ke Penandatanganan Akhir
+              </Label>
+            </div>
+            <div className="grid gap-2">
+              <Label>Catatan / Instruksi Pengulas</Label>
+              <Textarea
+                placeholder="Catatan pengulasan atau catatan persetujuan..."
+                value={forwardData.notes}
+                onChange={(e) =>
+                  setForwardData({ ...forwardData, notes: e.target.value })
+                }
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={() => setForwardModalOpen(false)}>
+              Batal
+            </Button>
+            <Button onClick={handleForwardReview}>Proses & Teruskan</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={dispositionOpen} onOpenChange={setDispositionOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Buat Disposisi / Teruskan Surat Masuk</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label>Diteruskan Kepada (Dapat Memilih Beberapa Penerima)</Label>
+              <div className="space-y-2 border rounded-md p-3">
+                <Input
+                  placeholder="Cari penerima disposisi..."
+                  value={participantSearch}
+                  onChange={(e) => setParticipantSearch(e.target.value)}
+                  className="text-xs mb-2 bg-white"
+                />
+                <div className="space-y-2 max-h-40 overflow-y-auto">
+                  {participantsData?.data.map((u) => (
+                    <div key={u.id} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id={`disp-rec-${u.id}`}
+                        value={u.id}
+                        checked={dispositionData.recipientIds.includes(u.id)}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          const current = dispositionData.recipientIds;
+                          if (checked) {
+                            setDispositionData({
+                              ...dispositionData,
+                              recipientIds: [...current, u.id],
+                            });
+                          } else {
+                            setDispositionData({
+                              ...dispositionData,
+                              recipientIds: current.filter((id) => id !== u.id),
+                            });
+                          }
+                        }}
+                        className="h-4 w-4 rounded border-gray-300"
+                      />
+                      <label htmlFor={`disp-rec-${u.id}`} className="text-sm cursor-pointer">
+                        {u.nip ? `${u.name} (${u.nip})` : u.name}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
             <div className="grid gap-2">
               <Label>Instruksi</Label>
@@ -394,6 +539,15 @@ export default function LetterDetailPage({
         onOpenChange={setSignOpen}
       />
 
+      <RevokeLetterDialog
+        letterId={letter.id}
+        letterNumber={letter.letterNumber}
+        canRevoke={canRevokeLetter}
+        whoMayRevokeText={whoMayRevokeText}
+        open={revokeOpen}
+        onOpenChange={setRevokeOpen}
+      />
+
       {/* Hidden PDF Template */}
       <div className="fixed left-[-9999px] top-0">
         <LetterPDFTemplate ref={pdfRef} letter={letter} />
@@ -410,18 +564,61 @@ export default function LetterDetailPage({
           </p>
         </div>
         <div className="ml-auto flex items-center gap-2">
-          {letter.status === "SIGNED" && (
+          {revokedSignature ? (
             <Badge
               variant="outline"
-              className="border-green-600 text-green-600 bg-green-50 gap-1"
+              className="border-orange-600 text-orange-700 bg-orange-50 gap-1"
             >
-              <ShieldCheck className="h-3 w-3" />
-              Status: Ditandatangani
+              <ShieldOff className="h-3 w-3" />
+              Naskah dicabut
             </Badge>
+          ) : (
+            letter.status === "SIGNED" && (
+              <Badge
+                variant="outline"
+                className="border-green-600 text-green-600 bg-green-50 gap-1"
+              >
+                <ShieldCheck className="h-3 w-3" />
+                Status: Ditandatangani
+              </Badge>
+            )
+          )}
+          {/* Labelled when revoked, because an unqualified green "Sudah TTD"
+              beside an orange "dicabut" reads as a contradiction. The letter
+              really is SIGNED in the agenda — that is what this badge says,
+              and saying so removes the ambiguity. */}
+          {revokedSignature && (
+            <span className="text-xs text-muted-foreground">Status agenda:</span>
           )}
           <LetterStatusBadge status={letter.status} />
         </div>
       </div>
+
+      {/* A withdrawn signature must be the first thing the page says. The
+          letter keeps its SIGNED status — it really was signed, and really did
+          circulate — so without this the page would still read as valid. */}
+      {revokedSignature && (
+        <div className="rounded-lg border border-orange-300 bg-orange-50 p-4 text-sm text-orange-900">
+          <p className="flex items-center gap-2 font-semibold">
+            <ShieldOff className="h-4 w-4" />
+            Naskah dinas ini telah dicabut
+          </p>
+          {revokedSignature.revokedReason && (
+            <p className="mt-1">{revokedSignature.revokedReason}</p>
+          )}
+          <p className="mt-2 text-xs text-orange-800">
+            Dicabut{" "}
+            {safeFormat(new Date(revokedSignature.revokedAt!), "dd MMMM yyyy HH:mm", {
+              locale: id,
+            })}
+            {revokedSignature.revokedBy?.name
+              ? ` oleh ${revokedSignature.revokedBy.name}`
+              : ""}
+            . Surat ini tidak lagi berlaku, dan halaman verifikasi publik
+            menyatakannya demikian kepada siapa pun yang mengunggah berkasnya.
+          </p>
+        </div>
+      )}
 
       <div className="grid gap-6 md:grid-cols-3">
         <div className="md:col-span-2 space-y-6">
@@ -486,7 +683,11 @@ export default function LetterDetailPage({
                   <label className="text-xs font-medium text-muted-foreground">
                     Urgensi
                   </label>
-                  <p>{letter.urgency}</p>
+                  {/* Was the raw enum ("NORMAL"), like Sifat used to be. */}
+                  <p>
+                    {LETTER_URGENCY_LABELS[letter.urgency as LetterUrgency] ??
+                      letter.urgency}
+                  </p>
                 </div>
               </div>
 
@@ -551,6 +752,13 @@ export default function LetterDetailPage({
             </Card>
           )}
 
+          <RevocationRequestsCard
+            letterId={letter.id}
+            requests={letter.revocationRequests ?? []}
+            canDecide={canRevokeLetter}
+            currentUserId={user?.id}
+          />
+
           <Card>
             <CardHeader>
               <CardTitle>Riwayat Disposisi</CardTitle>
@@ -587,10 +795,13 @@ export default function LetterDetailPage({
                 <p className="text-sm text-blue-700">
                   Instruksi: <strong>"{activeDisposition.instruction}"</strong>
                 </p>
+                {/* `flex-1`, not `w-full`. Two `w-full` buttons in one flex
+                    row each asked for the whole width, so the second one hung
+                    off the edge of the card and "Selesai" was cut in half. */}
                 <div className="flex gap-2">
                   {activeDisposition.status === "PENDING" && (
                     <Button
-                      className="w-full bg-blue-600 hover:bg-blue-700"
+                      className="flex-1 bg-blue-600 hover:bg-blue-700"
                       size="sm"
                       onClick={() => handleUpdateDisposition("IN_PROGRESS")}
                       disabled={isUpdating}
@@ -599,7 +810,7 @@ export default function LetterDetailPage({
                     </Button>
                   )}
                   <Button
-                    className="w-full bg-green-600 hover:bg-green-700"
+                    className="flex-1 bg-green-600 hover:bg-green-700"
                     size="sm"
                     onClick={() => setCompleteDialogOpen(true)}
                     disabled={isUpdating}
@@ -616,6 +827,10 @@ export default function LetterDetailPage({
               <CardTitle>Aksi</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
+              {/* A withdrawn letter is still printable — stamped DICABUT, the
+                  way an e-signature platform watermarks a voided document. The
+                  office still has to file a copy, and whoever holds the letter
+                  deserves a sheet that explains itself. */}
               <Button
                 className="w-full"
                 variant="outline"
@@ -624,6 +839,11 @@ export default function LetterDetailPage({
                 <Printer className="mr-2 h-4 w-4" />
                 Cetak Surat
               </Button>
+              {revokedSignature && (
+                <p className="-mt-1 text-xs text-muted-foreground">
+                  Salinan yang dicetak akan bercap DICABUT beserta alasannya.
+                </p>
+              )}
 
               <Button
                 className="w-full"
@@ -633,6 +853,106 @@ export default function LetterDetailPage({
                 <Send className="mr-2 h-4 w-4" />
                 Disposisi
               </Button>
+
+              {/*
+                Menarik kembali surat yang telanjur beredar.
+
+                Skema dan halaman verifikasi publik sudah lama siap
+                menampilkannya; yang tidak pernah ada adalah jalan untuk
+                melakukannya, sehingga satu-satunya cara adalah menyunting basis
+                data. Wewenangnya tetap ditegakkan server — di sini ia hanya
+                menentukan tombolnya ditawarkan atau tidak.
+              */}
+              {!!activeSignature && (
+                <Button
+                  className="w-full border-orange-300 text-orange-700 hover:bg-orange-50"
+                  variant="outline"
+                  onClick={() => setRevokeOpen(true)}
+                >
+                  <Undo2 className="mr-2 h-4 w-4" />
+                  {canRevokeLetter ? "Cabut Naskah Dinas" : "Ajukan Pencabutan"}
+                </Button>
+              )}
+
+              {/*
+                Konsep yang dikembalikan untuk revisi.
+
+                Sebelumnya tidak ada jalan keluar dari keadaan ini: rutenya ada
+                di API sejak aturan alurnya diperketat, tetapi tidak satu pun
+                halaman memanggilnya, sehingga surat yang dikembalikan berhenti
+                di situ selamanya.
+
+                Mengajukan ulang menghapus seluruh paraf, termasuk yang sudah
+                diberikan sebelum surat dikembalikan — sebuah paraf menyatakan
+                naskah *itu* layak diajukan, dan naskahnya sudah berubah. Itu
+                dikatakan di sini, bukan disimpan sebagai kejutan.
+              */}
+              {letter.status === "REVISION_NEEDED" &&
+                letter.createdById === user?.id && (
+                  <div className="space-y-3 border-t pt-4">
+                    <p className="text-xs font-medium text-muted-foreground">
+                      Surat dikembalikan untuk diperbaiki
+                    </p>
+                    <Textarea
+                      placeholder="Catatan perbaikan (opsional)…"
+                      value={resubmitNote}
+                      onChange={(e) => setResubmitNote(e.target.value)}
+                      className="text-xs"
+                    />
+                    <Button
+                      className="w-full bg-blue-600 hover:bg-blue-700"
+                      size="sm"
+                      onClick={handleResubmit}
+                      disabled={resubmitLetter.isPending}
+                    >
+                      <Send className="mr-2 h-4 w-4" />
+                      {resubmitLetter.isPending ? "Mengajukan…" : "Ajukan Ulang"}
+                    </Button>
+                    <p className="text-xs text-muted-foreground">
+                      Seluruh paraf yang sudah diberikan akan dihapus dan
+                      dikumpulkan ulang, karena naskahnya berubah setelah
+                      diparaf.
+                    </p>
+                  </div>
+                )}
+
+              {letter.status === "DRAFT" && letter.createdById === user?.id && (
+                <div className="space-y-3 pt-2 border-t">
+                  {(!letter.reviewers || letter.reviewers.length === 0) && (
+                    <div className="space-y-2">
+                      <Label className="text-xs font-medium text-slate-700">Pilih Pemeriksa Pertama</Label>
+                      <Input
+                        placeholder="Cari pejabat..."
+                        value={participantSearch}
+                        onChange={(e) => setParticipantSearch(e.target.value)}
+                        className="text-xs mb-1"
+                      />
+                      <Select
+                        value={selectedReviewerId}
+                        onValueChange={setSelectedReviewerId}
+                      >
+                        <SelectTrigger className="text-xs bg-white">
+                          <SelectValue placeholder="Pilih pemeriksa/atasan..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {participantsData?.data.map((u) => (
+                            <SelectItem key={u.id} value={u.id}>
+                              {u.nip ? `${u.name} (${u.nip})` : u.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                  <Button
+                    className="w-full bg-blue-600 hover:bg-blue-700"
+                    onClick={handleSubmitDraftForReview}
+                  >
+                    <Send className="mr-2 h-4 w-4" />
+                    Ajukan Review
+                  </Button>
+                </div>
+              )}
 
               {/*
                 Verifikasi berjenjang.
@@ -650,24 +970,43 @@ export default function LetterDetailPage({
               {(() => {
                 const reviewers = letter.reviewers ?? [];
                 const mine = reviewers.find(
-                  (r: any) => r.reviewerId === user?.id,
+                  (r) => r.reviewerId === user?.id,
                 );
                 const turn = [...reviewers]
-                  .filter((r: any) => r.status !== "APPROVED")
-                  .sort((a: any, b: any) => a.order - b.order)[0];
+                  .filter((r) => r.status !== "APPROVED")
+                  .sort((a,b) => a.order - b.order)[0];
                 const openForReview =
                   letter.status === "PENDING_REVIEW" ||
                   letter.status === "READY_TO_SIGN";
-                const myTurn =
-                  !!mine && (turn as any)?.reviewerId === user?.id;
 
                 if (!mine || !openForReview) return null;
+
+                if (letter.status === "READY_TO_SIGN" && mine.isSigner) {
+                  return (
+                    <div className="pt-4 border-t space-y-3">
+                      <p className="text-xs font-medium text-muted-foreground mb-2">
+                        Penandatanganan
+                      </p>
+                      <Button
+                        className="w-full bg-green-600 hover:bg-green-700"
+                        size="sm"
+                        onClick={() => setSignOpen(true)}
+                      >
+                        <PenLine className="mr-2 h-4 w-4" />
+                        Tandatangani Dokumen
+                      </Button>
+                    </div>
+                  );
+                }
+
+                const myTurn =
+                  !!mine && turn?.reviewerId === user?.id;
 
                 if (!myTurn) {
                   return (
                     <div className="pt-4 border-t">
                       <p className="text-xs text-muted-foreground">
-                        Menunggu verifikator urutan {(turn as any)?.order} lebih
+                        Menunggu verifikator urutan {turn?.order} lebih
                         dahulu.
                       </p>
                     </div>
@@ -699,10 +1038,17 @@ export default function LetterDetailPage({
                         <Button
                           className="flex-1 bg-green-600 hover:bg-green-700"
                           size="sm"
-                          onClick={() => handleReview("APPROVE")}
+                          onClick={() => {
+                            setForwardData({
+                              nextReviewerId: "",
+                              isFinalSigner: false,
+                              notes: notes,
+                            });
+                            setForwardModalOpen(true);
+                          }}
                         >
                           <CheckCircle className="mr-2 h-3 w-3" />
-                          Setuju
+                          Setuju & Teruskan
                         </Button>
                       )}
                       <Button
@@ -747,9 +1093,16 @@ export default function LetterDetailPage({
                       {index + 1}
                     </div>
                     <div>
-                      <p className="font-medium">{reviewer.reviewerName}</p>
-                      <p className="text-xs text-muted-foreground capitalize">
-                        {reviewer.status.toLowerCase().replace("_", " ")}
+                      <p className="font-medium">
+                        {reviewer.reviewer?.name ?? "Tidak diketahui"}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {/* Ini bagian yang paling sering dibaca di halaman ini:
+                            surat berhenti di siapa. Sebelumnya namanya kosong
+                            (DTO menjanjikan `reviewerName`, API mengirim
+                            `reviewer.name`) dan statusnya berbahasa Inggris. */}
+                        {reviewer.isSigner ? "Penanda tangan" : "Paraf"} ·{" "}
+                        {REVIEWER_STATUS_LABEL[reviewer.status] ?? reviewer.status}
                       </p>
                       {reviewer.notes && (
                         <p className="text-xs mt-1 bg-muted p-2 rounded">
@@ -761,7 +1114,7 @@ export default function LetterDetailPage({
                 ))}
                 {(!letter.reviewers || letter.reviewers.length === 0) && (
                   <p className="text-sm text-muted-foreground text-center">
-                    Tidak ada reviewer assigned.
+                    Belum ada pemeriksa yang ditunjuk.
                   </p>
                 )}
               </div>

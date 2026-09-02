@@ -1,6 +1,6 @@
 # Roadmap — outstanding work, most urgent first
 
-Ordered backlog as of **2026-08-02**. Companion to
+Ordered backlog as of **2026-09-02**. Companion to
 [`KNOWN_ISSUES.md`](./KNOWN_ISSUES.md) (which records *defects* in detail); this
 file records *what to do next and in what order*.
 
@@ -11,14 +11,19 @@ a visitor sees, then correctness work, then deliverables, then tidiness.
 
 ## Current deployment state
 
-- As of **2026-07-31** both containers were rebuilt and rolled together from
-  `main @ 41ee99e2` (through #381/#382) via `deploy-images.sh`. That deploy
-  carried the CORS fix (§2), the public i18n work (§5) and the chatbot markdown
-  fix to production, all verified live after the roll.
-- **`main` has since moved ahead of production.** `#383` (teacher dashboard
-  figures + the unit-admin route grants, `main @ d09bb67b`) is merged but **not
-  deployed** — production still runs `41ee99e2`, so a guru signing in today
-  still sees the fabricated stat row described in §8.4.
+- As of **2026-09-02** both containers were rebuilt and rolled from
+  `main @ b81c8ae4` (through #413) via `deploy-images.sh`. Production and `main`
+  are level. That deploy carried the Gmail API transport, the password-reset
+  flow and the honest mail-status card (§13), verified live after the roll:
+  a real message left through `gmail_api` with `delivered: true`.
+- Verified live the same day, and worth keeping straight because the previous
+  version of this section was months stale:
+  `NEXT_PUBLIC_SHOW_DEMO_LOGIN` is **false** and built that way — the demo
+  credential panel is gone from `/login`. `DEMO_MODE` is still `true` in the api
+  container, so the 2FA wall is still bypassed (§1).
+- Prior state, for the record: the 2026-07-31 roll from `main @ 41ee99e2`
+  (through #381/#382) carried the CORS fix (§2), the public i18n work (§5) and
+  the chatbot markdown fix.
 - The two containers can therefore hold *different* commits. Before assuming
   production runs what `main` says, check the running image itself — e.g.
   `docker exec cipansor-api grep -o "<snippet>" /app/apps/api/dist/…/<file>.js`.
@@ -30,17 +35,32 @@ a visitor sees, then correctness work, then deliverables, then tidiness.
 
 ---
 
-## 🔴 1. Before any real launch — demo mode is wide open
+## 🟠 1. Before any real launch — half closed
 
-`NEXT_PUBLIC_SHOW_DEMO_LOGIN=true` and `DEMO_MODE=true` are live **right now**.
-That is deliberate for the demo phase, and it means:
+**Closed:** `NEXT_PUBLIC_SHOW_DEMO_LOGIN` is `false` and the web image is built
+with it, so the demo credential panel no longer appears on `/login`. Verified
+against the live page 2026-09-02 (zero occurrences of the panel's markers).
 
-- every demo account's credentials are published on `/login`, and
-- those accounts are exempt from the mandatory 2FA wall.
+**Still open:** `DEMO_MODE=true` in the api container. Every account skips the
+mandatory-2FA wall, including both `SUPER_ADMIN`s, neither of which has an
+authenticator enrolled. Flipping it locks out testing until someone enrols, so
+it belongs on the launch checklist rather than being flipped casually.
 
-Before a real launch both must become `false` **and the web image rebuilt** —
-`NEXT_PUBLIC_SHOW_DEMO_LOGIN` is inlined at build time, so changing `.env`
-alone does nothing. Treat this as a launch blocker, not a setting.
+Note the asymmetry that made the first half easy to get wrong:
+`NEXT_PUBLIC_SHOW_DEMO_LOGIN` is inlined at **build** time, so changing `.env`
+alone does nothing — the web image has to be rebuilt. `DEMO_MODE` is read at
+runtime and only needs a restart.
+
+**Seeded credentials are still the only credentials.** All 107 accounts come
+from the seed. Measured against production 2026-09-02: both super admins
+(`super.admin@` and `superadmin@cipansor.or.id`) sign in with the demo password
+`Cipansor123!`, and `SuperAdmin123!` — which `seed.ts` still prints for
+`superadmin@` on every run — is rejected.
+
+That is not drift: a 2026-08-14 bulk reset set every one of the 107 rows to a
+single password, and the value chosen was the demo one. So the seed's closing
+log advertises a credential that has not worked on production since. Fix the
+log line, or stop treating seed output as a description of the live system.
 
 ## ✅ 2. CORS returned a comma-joined `Access-Control-Allow-Origin` — fixed
 
@@ -155,7 +175,9 @@ for an actual intake. The values above are demo data from the seed.
    SPMB → active santri only after the registration fee is settled (transfers
    excepted), and **jenjang progression TK→SD→SMP→SMA** that carries prior data
    forward with an explicit change confirmation.
-3. **Fill the ~41 empty tables.** The **RPJP / Renstra / RKA** slice is
+3. **Fill the empty tables — 45 of 285, counted 2026-09-02** (a real
+   `count(*)` per table, not `reltuples`, which reports every never-analysed
+   table as empty and gives 262). The **RPJP / Renstra / RKA** slice is
    **done** — `prisma/seeds/strategic-plan-cipansor.ts` seeds the yayasan's
    full cascade from the three planning documents (RPJP 2027–2045 → Renstra
    2027–2029 → RKA 2027), all foundation-wide (`unitId` null): 15 objectives,
@@ -225,9 +247,11 @@ for an actual intake. The values above are demo data from the seed.
 > route name in a document nobody has updated since July. Verify against the
 > code, then record the result here — this file is the tracker.
 
-## 🟡 9. Documentation deliverable (in flight)
+## 🟡 9. Documentation deliverable — the branch is gone
 
-Branch `docs/user-guide`. Decisions already taken with the user:
+**Checked 2026-09-02: `docs/user-guide` does not exist**, on origin or locally.
+Whatever was done on it was never pushed, so this is not "in flight" — it is
+unstarted. Decisions already taken with the user still hold:
 
 - **Role-first user guide**, where each role's chapter details how that role
   uses every module it touches.
@@ -331,8 +355,10 @@ run before, expect to re-check any page the sweep flags.
     `paud-report`'s check is an authorization gate, not a read filter. Decide
     these case by case when auditing each module, never by find-and-replace.
 - ~210 racy `isVisible({ timeout })` probes in e2e specs.
-- Dependabot PRs still open (checked 2026-07-31): **#333** (zod 3→4),
-  **#377** (eslint 8→10), **#379** (typescript 5→7). All three are major
+- Dependabot PRs still open (re-checked 2026-09-02): **#333** (zod 3→4),
+  **#377** and its duplicate **#418** (both eslint 8→10), **#379** (typescript
+  5→7, now CONFLICTING), **#419** (@tanstack/react-table 8→9). Close one of the
+  eslint pair before touching either. All are major
   bumps across several workspaces — `zod` is declared in api, shared and web,
   and `packages/shared` is the Zod DTO boundary the whole monorepo imports, so
   none of these is a one-line merge. The root `package.json` pins
@@ -347,6 +373,43 @@ run before, expect to re-check any page the sweep flags.
   the content in the DOM, so `.first()` returns a menu button. `text=UA` matched
   "Konsolidasi Keuangan". Guarded by a test in `apps/web/src/lib/rbac.test.ts`
   that cross-checks every unquoted `text=` against all 81 roles' sidebar labels.
+
+## ✅ 13. Outgoing e-mail — live 2026-09-02
+
+The system sends mail, for the first time, through the **Gmail API**: a Google
+Cloud service account with domain-wide delegation scoped to `gmail.send` alone,
+impersonating `noreply@cipansor.or.id`. No password exists to leak, and the
+Workspace admin can revoke it per scope. SMTP remains a fallback; with neither
+configured the transport is `log`, and — this is the part that was wrong before
+— the settings screen now *says so* instead of showing a green badge.
+
+Every automated message leaves as `noreply@cipansor.or.id` with
+`Reply-To: halo@cipansor.or.id`, so a wali who hits Reply reaches a mailbox
+someone reads. Setup, quotas and the failure-message table:
+[`EMAIL_SETUP.md`](./EMAIL_SETUP.md). It costs nothing — Gmail API has no
+per-call charge, and the 2,000 recipients/day limit is far above a school of
+107 accounts.
+
+**Password reset now exists at all.** The onboarding orchestrator had been
+minting reset tokens for months with no endpoint to redeem them and no page to
+present them, so every "set your password" e-mail led to the login wall with
+the token discarded. Both halves shipped in #413. There is deliberately **no
+self-service "lupa password" form**: a reset is started by an admin from
+Pengguna → ⋯ → *Kirim tautan reset password*, so nothing unauthenticated can
+make this system send mail, and there is no public form to probe for which
+addresses have accounts.
+
+What #413 did **not** do, and is worth knowing:
+
+- **No spend or volume alarm.** Same gap as the chatbot (§10.1). The daily cap
+  is Google's, not ours, and nothing notices approaching it.
+- **`sendEOfficeLetter` was removed, not wired.** It had no caller; e-office
+  mail belongs with #414, attached to a real event.
+- **The notification preferences screen still reads a mock.** Its query returns
+  `DEFAULT_PREFERENCES` with a comment saying "in production, this would fetch
+  from API", so the per-user toggles a wali sees are not the ones the event bus
+  consults. The bus reads the real `preferences.service`; the screen does not
+  yet write to it.
 
 ---
 

@@ -205,6 +205,27 @@ export function useCorrespondence(unitId?: string) {
     },
   });
 
+  /**
+   * Send a returned draft back up the ladder.
+   *
+   * `POST /correspondence/letters/:id/resubmit` has existed since the workflow
+   * was tightened, and nothing on the frontend has ever called it. A letter a
+   * reviewer sent back for revision therefore reached REVISION_NEEDED and
+   * stopped there: the author could edit it and had no way to resubmit, and no
+   * button anywhere in the app said otherwise. The one flow the workflow rules
+   * were written to make possible was the one flow the UI could not perform.
+   */
+  const resubmitLetter = useMutation({
+    mutationFn: async ({ id, note }: { id: string; note?: string }) => {
+      const response = await api.post(`/correspondence/letters/${id}/resubmit`, { note });
+      return response.data;
+    },
+    onSuccess: (_d, v) => {
+      queryClient.invalidateQueries({ queryKey: ["letters"] });
+      queryClient.invalidateQueries({ queryKey: ["letter", v.id] });
+    },
+  });
+
   // Get Stats — same reasoning as useLetters: no unit is a valid scope, not a
   // reason to skip the request.
   const useStats = () => {
@@ -227,6 +248,7 @@ export function useCorrespondence(unitId?: string) {
     reviewLetter,
     createDisposition,
     updateDispositionStatus,
+    resubmitLetter,
     useStats,
   };
 }

@@ -82,10 +82,22 @@ export interface UpdateLetterInput extends Partial<CreateLetterInput> {
   reviewerNotes?: string; // For adding notes during review
 }
 
+/**
+ * One rung of a letter's verification ladder.
+ *
+ * The name lives on the nested `reviewer`, which is what the API sends. A flat
+ * `reviewerName: string` was declared here too and no endpoint has ever
+ * populated it — so the letter page's "Status Review" card printed an empty
+ * name beside every rung, and the panel that exists to say *who* is holding the
+ * letter up said only "Pending".
+ *
+ * Same defect as `LetterDispositionDetail` had, and the same lesson: a DTO
+ * field that no response fills is not documentation, it is a silent bug with a
+ * type annotation on it.
+ */
 export interface LetterReviewerDetail {
   id: string;
   reviewerId: string;
-  reviewerName: string;
   order: number;
   status: string;
   isSigner: boolean;
@@ -98,14 +110,28 @@ export interface LetterReviewerDetail {
   };
 }
 
+/**
+ * One disposition hop on a letter.
+ *
+ * `sender` and `recipient` are nested objects, matching what the API actually
+ * sends (`include: { sender: { select: { name } } }`). They used to be declared
+ * here as flat `senderName` / `recipientName` strings — fields the API has
+ * never sent. TypeScript was satisfied, `disposition.senderName[0]` read
+ * `undefined[0]` at runtime, and the whole letter page crashed for every letter
+ * that had ever been disposed. A DTO that describes a response nobody sends is
+ * worse than no DTO: it converts a visible mistake into a silent one.
+ */
 export interface LetterDispositionDetail {
   id: string;
-  senderName: string;
-  recipientName: string;
+  senderId?: string;
+  sender?: { name: string } | null;
   recipientId: string;
+  recipient?: { name: string } | null;
   instruction: string;
   status: string;
-  deadline?: string;
+  deadline?: string | null;
+  notes?: string | null;
+  completedAt?: string | null;
   createdAt: string;
 }
 

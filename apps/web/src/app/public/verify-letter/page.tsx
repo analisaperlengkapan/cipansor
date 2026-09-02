@@ -23,6 +23,18 @@ import { safeFormat } from "@/lib/date";
 import { id as localeId } from "date-fns/locale";
 import type { PublicLetterVerificationResult } from "@cipansor/shared";
 
+/** Status surat, dalam bahasa yang dibaca pengunjung dari luar. */
+const LETTER_STATUS_LABEL: Record<string, string> = {
+  DRAFT: "Konsep",
+  PENDING_REVIEW: "Menunggu verifikasi",
+  REVISION_NEEDED: "Perlu revisi",
+  READY_TO_SIGN: "Siap ditandatangani",
+  SIGNED: "Telah ditandatangani",
+  SENT: "Telah dikirim",
+  DISPOSED: "Telah didisposisikan",
+  ARCHIVED: "Diarsipkan",
+};
+
 function formatWibTimestamp(dateInput?: Date | string | null, includeSeconds = false) {
   if (!dateInput) return "-";
   try {
@@ -329,7 +341,11 @@ function PublicVerifyContent() {
                     </div>
                     <div>
                       <span className="text-xs text-slate-500 block">Status Dokumen</span>
-                      <span className="font-medium text-slate-900">{result.letter.status}</span>
+                      {/* Was the raw enum — "SIGNED", "ARCHIVED" — on the one
+                          page in the system read by people outside it. */}
+                      <span className="font-medium text-slate-900">
+                        {LETTER_STATUS_LABEL[result.letter.status] ?? result.letter.status}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -373,9 +389,54 @@ function PublicVerifyContent() {
                 </div>
               )}
 
+              {/*
+                A failed check needs to say what to do next, not only that it
+                failed.
+
+                Verification binds to the exact bytes that were signed, so a
+                *genuine* letter fails this check the moment it is re-saved,
+                re-compressed, printed to PDF again, or passed through a chat
+                app. Left as one red sentence, the page tells that person their
+                real document is a forgery. The likeliest innocent cause comes
+                first, and there is a way to ask a human.
+              */}
               {!result.isValid && !result.isRevoked && (
-                <div className="text-center py-4 text-red-600 text-sm">
-                  {result.reason || "Dokumen ini tidak terdaftar dalam sistem resmi Yayasan Pesantren Cipansor."}
+                <div className="space-y-4">
+                  <p className="rounded-md bg-red-50 border border-red-200 p-4 text-sm text-red-700">
+                    {result.reason ||
+                      "Dokumen ini tidak terdaftar dalam sistem resmi Yayasan Pesantren Cipansor."}
+                  </p>
+
+                  <div className="rounded-md border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+                    <p className="font-semibold text-slate-900">
+                      Sebelum menyimpulkan dokumen ini palsu, periksa dahulu:
+                    </p>
+                    <ul className="mt-2 list-disc space-y-1 pl-5">
+                      <li>
+                        Berkas yang diunggah harus <strong>berkas PDF asli</strong> yang
+                        diterima dari Yayasan — bukan hasil pindai, foto, tangkapan layar,
+                        atau cetak ulang menjadi PDF baru.
+                      </li>
+                      <li>
+                        Berkas yang dikirim ulang lewat aplikasi pesan kadang dipadatkan
+                        sehingga isinya berubah sedikit. Mintalah berkas aslinya.
+                      </li>
+                      <li>
+                        Surat yang terbit sebelum sistem tanda tangan elektronik ini berlaku
+                        memang tidak terdaftar di sini.
+                      </li>
+                    </ul>
+                    <p className="mt-3">
+                      Masih ragu?{" "}
+                      <a
+                        href="mailto:halo@cipansor.or.id"
+                        className="font-semibold text-blue-700 underline"
+                      >
+                        halo@cipansor.or.id
+                      </a>{" "}
+                      — sebutkan nomor suratnya, dan petugas kami akan memeriksakannya.
+                    </p>
+                  </div>
                 </div>
               )}
             </CardContent>

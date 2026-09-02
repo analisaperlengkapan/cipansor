@@ -560,12 +560,21 @@ export const CorrespondenceService = {
             user: { select: { name: true } },
           },
         },
+        /**
+         * Oldest first, like the flow history below it.
+         *
+         * The disposition trail is read as a story — this official forwarded it
+         * to that one, who forwarded it on — and newest-first told it backwards
+         * while drawing a connector line that implied forwards. It also decided
+         * which disposition `activeDisposition` picked when someone held more
+         * than one; oldest-outstanding is the one that should be acted on first.
+         */
         dispositions: {
           include: {
             sender: { select: { name: true } },
             recipient: { select: { name: true } },
           },
-          orderBy: { createdAt: 'desc' },
+          orderBy: { createdAt: 'asc' },
         },
         // Oldest first: this is read as a story, and a story told backwards
         // makes the reader reconstruct the order themselves.

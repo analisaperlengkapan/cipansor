@@ -292,7 +292,7 @@ and remove the token endpoints of §2.6. Keep `complaints.controller.test.ts`.
 lambang; an Arabic letterhead does not throw; no path produces a `SIGNED` letter
 with `pdfHash = NULL`; the deleted test suites are still present and green.
 
-### PR-2 — Revocation (§2.5)
+### PR-2 — Revocation (§2.5) — **SHIPPED** (PR #436)
 Route and UI to revoke a signing key; endpoint, service, authority rule and UI
 to revoke a letter signature, with the reason surfaced on the public page.
 
@@ -300,6 +300,27 @@ to revoke a letter signature, with the reason surfaced on the public page.
 and the public verification page reports the revocation and its reason.
 
 *Security-operational — bring this forward if anything is ever compromised.*
+
+**What shipped, and the decisions inside it:**
+
+| Decision | Why |
+|---|---|
+| `GET /esign/keys` + a key-holder card on `/settings/esign` | The revoke route already existed and nothing called it. It could not be called from a UI because no page listed the holders — so the inventory is not a nicety, it is the precondition. |
+| Revoking a key reports the letters signed with it | Mercifully, revoking a key does **not** invalidate letters already signed — each signature stores its own copy of the public key. That is right for a departing official and wrong for a leaked passphrase, so the count and the list come back with the response and the admin is told to revoke those signatures one by one. Matched on `publicKey`, not just `signerId`: the same person may have held an earlier key. |
+| `POST /esign/letters/:id/revoke` is **not** `isSuperAdmin` | A signer withdraws their own signature. Authority is checked in the service against the signature row, which is the only place that knows who signed *this* letter. `esign.routes.test.ts` pins both halves — that the route exists without the Super-Admin guard, and that it is still behind `authenticate`. |
+| No passphrase to revoke | Revoking produces no new cryptographic assertion; it withdraws an old one. Demanding the passphrase would block exactly the case the feature exists for — a passphrase that leaked, or an official who has gone. |
+| The letter's `status` is left alone | It really was signed and really did circulate; sending it back to DRAFT erases that from the buku agenda. Validity lives on the signature, and `LetterFlowAction.SIGNATURE_REVOKED` records the act in the letter's own history. |
+| Reason ≥ 10 characters, trimmed before storing | It is **public text** — shown as written to anyone who uploads the PDF. Zod's `min()` passes ten spaces, so the length is re-checked after trimming in `utils/esign-revocation.ts`, and both dialogs warn the writer before they type. |
+| A revoked letter can no longer be printed | The generator drops the signature block once revoked, so a fresh download is a *different* file with a hash the database has never seen — and the public page would answer it with the sentence a forgery gets. Copies already in circulation still verify and still report the revocation, because they carry the bytes that were hashed. |
+| Neither key nor signature can be revoked twice | The second revocation would overwrite the first date and reason — and the first is the one that answers "since when". |
+
+Schema, additive only: `UserSigningKey.revokedById` (accountability parity with
+`LetterSignature`, which already had it) and `LetterFlowAction.SIGNATURE_REVOKED`.
+
+**Still open after this PR:** the revocation reason is free text, so nothing
+distinguishes *keyCompromise* from *superseded* (RFC 5280 reason codes). The
+blast-radius list is the stand-in — it puts the affected letters in front of the
+admin instead of leaving the distinction to a dropdown nobody reads.
 
 ### PR-3 — Archive the signed PDF bytes (§2.4)
 Schema change. Store the exact buffer that was hashed; serve downloads from it.

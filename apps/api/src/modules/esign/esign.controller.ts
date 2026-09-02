@@ -57,9 +57,29 @@ export const EsignController = {
     } catch (e) { next(e); }
   },
 
+  async listKeys(_req: Request, res: Response, next: NextFunction) {
+    try {
+      res.json({ success: true, data: await EsignService.listKeys() });
+    } catch (e) { next(e); }
+  },
+
   async revoke(req: Request, res: Response, next: NextFunction) {
     try {
-      const data = await EsignService.revokeKey(req.params.userId, req.body.reason);
+      const data = await EsignService.revokeKey(
+        req.params.userId, req.user!.id, req.body.reason
+      );
+      res.json({ success: true, data });
+    } catch (e) { next(e); }
+  },
+
+  /** Cabut tanda tangan pada surat — penandatangannya sendiri atau Super Admin. */
+  async revokeSignature(req: Request, res: Response, next: NextFunction) {
+    try {
+      const data = await EsignService.revokeLetterSignature(
+        req.params.letterId,
+        { id: req.user!.id, roleCode: req.user!.roleCode },
+        req.body.reason
+      );
       res.json({ success: true, data });
     } catch (e) { next(e); }
   },

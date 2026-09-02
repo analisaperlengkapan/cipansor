@@ -19,7 +19,9 @@ import {
   XCircle,
   Printer,
   ShieldCheck,
+  ShieldOff,
   PenLine,
+  Undo2,
 } from "lucide-react";
 
 import { id } from "date-fns/locale";
@@ -61,6 +63,8 @@ import {
 } from "@cipansor/shared";
 import { LetterFlowHistory } from "@/components/e-office/letter-flow-history";
 import { SignLetterDialog } from "@/components/e-office/sign-letter-dialog";
+import { RevokeSignatureDialog } from "@/components/e-office/revoke-signature-dialog";
+import { getPrimaryRoleCode } from "@/lib/rbac";
 
 export default function LetterDetailPage({
   params,
@@ -87,6 +91,7 @@ export default function LetterDetailPage({
   const [notes, setNotes] = useState("");
   const [dispositionOpen, setDispositionOpen] = useState(false);
   const [signOpen, setSignOpen] = useState(false);
+  const [revokeOpen, setRevokeOpen] = useState(false);
   const [dispositionData, setDispositionData] = useState({
     recipientIds: [] as string[],
     instruction: "",
@@ -107,6 +112,27 @@ export default function LetterDetailPage({
   const activeDisposition = letter?.dispositions?.find(
     (d) => d.recipientId === user?.id && d.status !== "COMPLETED",
   );
+
+  /**
+   * The letter's signature, and whether it still stands.
+   *
+   * `signatures` is ordered oldest-first by the API, so the last entry is the
+   * one that speaks for the letter now. A revoked signature is deliberately
+   * kept and shown: a letter that circulated must be able to explain itself,
+   * and "withdrawn, for this reason" is a far more useful answer to whoever
+   * holds a printout than silence.
+   */
+  const latestSignature = letter?.signatures?.at(-1) ?? null;
+  const activeSignature = latestSignature?.revokedAt ? null : latestSignature;
+  const revokedSignature = latestSignature?.revokedAt ? latestSignature : null;
+
+  // Mirrors the server rule in `utils/esign-revocation.ts`: the signer
+  // withdraws their own signature, and Super Admin may act when the signer
+  // cannot — or is the problem. Shown, never enforced, here.
+  const mayRevokeSignature =
+    !!activeSignature &&
+    (getPrimaryRoleCode(user) === "SUPER_ADMIN" ||
+      letter?.reviewers?.some((r) => r.isSigner && r.reviewerId === user?.id));
 
   const handleUpdateDisposition = async (
     status: "IN_PROGRESS" | "COMPLETED",
@@ -464,6 +490,13 @@ export default function LetterDetailPage({
         onOpenChange={setSignOpen}
       />
 
+      <RevokeSignatureDialog
+        letterId={letter.id}
+        letterNumber={letter.letterNumber}
+        open={revokeOpen}
+        onOpenChange={setRevokeOpen}
+      />
+
       {/* Hidden PDF Template */}
       <div className="fixed left-[-9999px] top-0">
         <LetterPDFTemplate ref={pdfRef} letter={letter} />
@@ -480,18 +513,61 @@ export default function LetterDetailPage({
           </p>
         </div>
         <div className="ml-auto flex items-center gap-2">
-          {letter.status === "SIGNED" && (
+          {revokedSignature ? (
             <Badge
               variant="outline"
-              className="border-green-600 text-green-600 bg-green-50 gap-1"
+              className="border-orange-600 text-orange-700 bg-orange-50 gap-1"
             >
-              <ShieldCheck className="h-3 w-3" />
-              Status: Ditandatangani
+              <ShieldOff className="h-3 w-3" />
+              Tanda tangan dicabut
             </Badge>
+          ) : (
+            letter.status === "SIGNED" && (
+              <Badge
+                variant="outline"
+                className="border-green-600 text-green-600 bg-green-50 gap-1"
+              >
+                <ShieldCheck className="h-3 w-3" />
+                Status: Ditandatangani
+              </Badge>
+            )
+          )}
+          {/* Labelled when revoked, because an unqualified green "Sudah TTD"
+              beside an orange "dicabut" reads as a contradiction. The letter
+              really is SIGNED in the agenda — that is what this badge says,
+              and saying so removes the ambiguity. */}
+          {revokedSignature && (
+            <span className="text-xs text-muted-foreground">Status agenda:</span>
           )}
           <LetterStatusBadge status={letter.status} />
         </div>
       </div>
+
+      {/* A withdrawn signature must be the first thing the page says. The
+          letter keeps its SIGNED status — it really was signed, and really did
+          circulate — so without this the page would still read as valid. */}
+      {revokedSignature && (
+        <div className="rounded-lg border border-orange-300 bg-orange-50 p-4 text-sm text-orange-900">
+          <p className="flex items-center gap-2 font-semibold">
+            <ShieldOff className="h-4 w-4" />
+            Tanda tangan elektronik surat ini telah dicabut
+          </p>
+          {revokedSignature.revokedReason && (
+            <p className="mt-1">{revokedSignature.revokedReason}</p>
+          )}
+          <p className="mt-2 text-xs text-orange-800">
+            Dicabut{" "}
+            {safeFormat(new Date(revokedSignature.revokedAt!), "dd MMMM yyyy HH:mm", {
+              locale: id,
+            })}
+            {revokedSignature.revokedBy?.name
+              ? ` oleh ${revokedSignature.revokedBy.name}`
+              : ""}
+            . Surat ini tidak lagi berlaku, dan halaman verifikasi publik
+            menyatakannya demikian kepada siapa pun yang mengunggah berkasnya.
+          </p>
+        </div>
+      )}
 
       <div className="grid gap-6 md:grid-cols-3">
         <div className="md:col-span-2 space-y-6">
@@ -686,14 +762,25 @@ export default function LetterDetailPage({
               <CardTitle>Aksi</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
+              {/* The server refuses to regenerate a revoked letter, because a
+                  fresh file would not match the hash that was signed and would
+                  verify publicly as a forgery. Saying so here beats offering a
+                  button that fails. */}
               <Button
                 className="w-full"
                 variant="outline"
                 onClick={handleDownloadPDF}
+                disabled={!!revokedSignature}
               >
                 <Printer className="mr-2 h-4 w-4" />
                 Cetak Surat
               </Button>
+              {revokedSignature && (
+                <p className="-mt-1 text-xs text-muted-foreground">
+                  Naskah yang tanda tangannya sudah dicabut tidak dapat dicetak
+                  ulang. Terbitkan surat pengganti bila diperlukan.
+                </p>
+              )}
 
               <Button
                 className="w-full"
@@ -703,6 +790,26 @@ export default function LetterDetailPage({
                 <Send className="mr-2 h-4 w-4" />
                 Disposisi
               </Button>
+
+              {/*
+                Menarik kembali surat yang telanjur beredar.
+
+                Skema dan halaman verifikasi publik sudah lama siap
+                menampilkannya; yang tidak pernah ada adalah jalan untuk
+                melakukannya, sehingga satu-satunya cara adalah menyunting basis
+                data. Wewenangnya tetap ditegakkan server — di sini ia hanya
+                menentukan tombolnya ditawarkan atau tidak.
+              */}
+              {mayRevokeSignature && (
+                <Button
+                  className="w-full border-orange-300 text-orange-700 hover:bg-orange-50"
+                  variant="outline"
+                  onClick={() => setRevokeOpen(true)}
+                >
+                  <Undo2 className="mr-2 h-4 w-4" />
+                  Cabut Tanda Tangan
+                </Button>
+              )}
 
               {letter.status === "DRAFT" && letter.createdById === user?.id && (
                 <div className="space-y-3 pt-2 border-t">

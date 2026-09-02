@@ -11,6 +11,7 @@ import {
   decideRequestSchema,
   requestKeySchema,
   revokeKeySchema,
+  revokeSignatureSchema,
   signLetterSchema,
 } from './esign.schema';
 
@@ -107,8 +108,26 @@ router.post(
   EsignController.signLetter
 );
 
+/**
+ * Mencabut tanda tangan pada surat.
+ *
+ * Sengaja tidak dijaga `isSuperAdmin`: penandatangannya sendiri pun berhak
+ * menarik kembali tanda tangannya, dan wewenang itu diperiksa di layanan
+ * terhadap baris tanda tangannya (utils/esign-revocation.ts) — bukan di sini,
+ * karena rutenya tidak mengetahui siapa yang menandatangani surat ini.
+ *
+ * Tidak menuntut passphrase: mencabut tidak menghasilkan bukti kriptografis
+ * baru, ia hanya menyatakan yang lama tidak lagi berlaku.
+ */
+router.post(
+  '/letters/:letterId/revoke',
+  validate(revokeSignatureSchema),
+  EsignController.revokeSignature
+);
+
 // Kewenangan Super Admin: menyetujui, menolak, mencabut.
 router.get('/requests', isSuperAdmin, EsignController.listRequests);
+router.get('/keys', isSuperAdmin, EsignController.listKeys);
 router.post('/requests/:id/decide', isSuperAdmin, validate(decideRequestSchema), EsignController.decide);
 router.post('/keys/:userId/revoke', isSuperAdmin, validate(revokeKeySchema), EsignController.revoke);
 

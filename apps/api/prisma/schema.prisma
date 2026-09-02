@@ -493,6 +493,7 @@ model User {
   letterFlowTargeted   LetterFlowEvent[] @relation("LetterFlowTarget")
   signingKey           UserSigningKey?
   approvedSigningKeys  UserSigningKey[]  @relation("SigningKeyApprover")
+  revokedSigningKeys   UserSigningKey[]  @relation("SigningKeyRevoker")
   signingKeyRequests   SigningKeyRequest[] @relation("SigningKeyRequester")
   signingKeyDecisions  SigningKeyRequest[] @relation("SigningKeyDecider")
   letterSignatures     LetterSignature[] @relation("LetterSigner")
@@ -7047,6 +7048,7 @@ enum LetterFlowAction {
   DISPOSED // Didisposisikan ke pejabat berikutnya
   DISPOSITION_UPDATED // Penerima disposisi memperbarui/menyelesaikan tindak lanjut
   SENT // Surat keluar dikirim
+  SIGNATURE_REVOKED // Tanda tangan elektronik dicabut — surat tidak lagi berlaku
   ARCHIVED // Surat diarsipkan — akhir alur
 }
 
@@ -7125,13 +7127,18 @@ model UserSigningKey {
   approvedAt          DateTime? @map("approved_at")
   expiresAt           DateTime? @map("expires_at")
 
+  /// Pencabutan dicatat lengkap dengan pelakunya. Mencabut wewenang
+  /// menandatangani adalah tindakan yang harus dapat dipertanggungjawabkan
+  /// kepada orang tertentu, bukan kepada "sistem".
   revokedAt           DateTime? @map("revoked_at")
   revokedReason       String?   @map("revoked_reason") @db.Text
+  revokedById         String?   @map("revoked_by_id")
   createdAt           DateTime  @default(now()) @map("created_at")
   updatedAt           DateTime  @updatedAt @map("updated_at")
 
   user       User  @relation(fields: [userId], references: [id], onDelete: Cascade)
   approvedBy User? @relation("SigningKeyApprover", fields: [approvedById], references: [id])
+  revokedBy  User? @relation("SigningKeyRevoker", fields: [revokedById], references: [id])
 
   @@map("user_signing_keys")
 }

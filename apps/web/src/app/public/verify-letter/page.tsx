@@ -272,6 +272,21 @@ function PublicVerifyContent() {
                     </strong>
                     . Dokumen ini tidak lagi berlaku untuk keperluan administratif.
                   </p>
+                  {/* The reason is the whole point of asking for one. Without
+                      it the page can only say "dicabut" and leave the reader
+                      to guess whether the letter was wrong, superseded, or
+                      issued to the wrong person — which is exactly what they
+                      came here to find out. */}
+                  {result.revokedReason && (
+                    <p className="mt-3 border-t border-orange-300 pt-3">
+                      <span className="block text-xs uppercase tracking-wider text-orange-700">
+                        Alasan pencabutan
+                      </span>
+                      <span className="font-medium whitespace-pre-line">
+                        {result.revokedReason}
+                      </span>
+                    </p>
+                  )}
                 </div>
               )}
 

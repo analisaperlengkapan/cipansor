@@ -29,6 +29,7 @@ vi.mock('../../lib/prisma', () => ({
     letterReviewer: { update: vi.fn() },
     letterSignature: { create: vi.fn(), update: vi.fn(), findUnique: vi.fn(), findMany: vi.fn(), findFirst: vi.fn() },
     letterFlowEvent: { create: vi.fn() },
+    auditLog: { create: vi.fn() },
     user: { findUnique: vi.fn() },
     $transaction: vi.fn((cb: any) => cb(prisma)),
   },
@@ -421,5 +422,262 @@ describe('verifikasi publik', () => {
     expect(r.intact).toBe(true);
     expect(r.revoked).toBe(true);
     expect(r.valid).toBe(false);
+  });
+});
+
+/**
+ * Pencabutan.
+ *
+ * Dua hal yang paling mudah salah dan paling mahal akibatnya: mencabut sesuatu
+ * yang sudah dicabut (menimpa catatan pertama, yang justru menjawab sejak kapan
+ * ia tidak berlaku), dan mengira mencabut kunci berarti mencabut surat-suratnya
+ * (tidak — dan itulah sebabnya jumlahnya dilaporkan kembali).
+ */
+describe('mencabut kunci tanda tangan', () => {
+  const REASON = 'Passphrase bocor ke pihak lain';
+
+  beforeEach(() => {
+    vi.mocked(prisma.letterSignature.findMany).mockResolvedValue([] as any);
+    vi.mocked(prisma.auditLog.create).mockResolvedValue({ id: 'audit-1' } as any);
+  });
+
+  it('mencatat tanggal, alasan, dan siapa yang mencabut', async () => {
+    vi.mocked(prisma.userSigningKey.findUnique).mockResolvedValue(activeKey() as any);
+
+    await EsignService.revokeKey('ketua', 'admin-1', REASON);
+
+    expect(prisma.userSigningKey.update).toHaveBeenCalledWith({
+      where: { id: 'key-1' },
+      data: expect.objectContaining({
+        revokedAt: expect.any(Date),
+        revokedReason: REASON,
+        revokedById: 'admin-1',
+      }),
+    });
+  });
+
+  it('menolak mencabut kunci yang sudah dicabut', async () => {
+    vi.mocked(prisma.userSigningKey.findUnique).mockResolvedValue(
+      activeKey({ revokedAt: new Date('2026-01-01'), revokedReason: 'Sudah' }) as any
+    );
+
+    await expect(EsignService.revokeKey('ketua', 'admin-1', REASON)).rejects.toThrow(
+      /sudah dicabut/i
+    );
+    expect(prisma.userSigningKey.update).not.toHaveBeenCalled();
+  });
+
+  it('menolak alasan yang hanya berisi spasi', async () => {
+    vi.mocked(prisma.userSigningKey.findUnique).mockResolvedValue(activeKey() as any);
+
+    await expect(
+      EsignService.revokeKey('ketua', 'admin-1', '              ')
+    ).rejects.toThrow(/Alasan pencabutan/i);
+    expect(prisma.userSigningKey.update).not.toHaveBeenCalled();
+  });
+
+  /**
+   * Yang mencabut kunci karena passphrase bocor perlu tahu berapa surat yang
+   * sudah telanjur ditandatangani dengannya — mencabut kuncinya tidak mencabut
+   * satu pun di antaranya.
+   */
+  it('melaporkan surat yang sudah ditandatangani dengan kunci itu', async () => {
+    const key = activeKey();
+    vi.mocked(prisma.userSigningKey.findUnique).mockResolvedValue(key as any);
+    vi.mocked(prisma.letterSignature.findMany).mockResolvedValue([
+      {
+        id: 'sig-1',
+        signedAt: new Date('2026-08-01'),
+        letter: {
+          id: 'letter-1',
+          letterNumber: '434/Sket/Y-CPS/VII/2026',
+          subject: 'Keterangan',
+          date: new Date('2026-08-01'),
+        },
+      },
+    ] as any);
+
+    const r = await EsignService.revokeKey('ketua', 'admin-1', REASON);
+
+    expect(r.affectedLetterCount).toBe(1);
+    expect(r.affectedLetters[0]).toMatchObject({ letterId: 'letter-1', signatureId: 'sig-1' });
+  });
+
+  /**
+   * Dicocokkan pada salinan kunci publiknya, bukan sekadar pada
+   * penandatangannya: orang yang sama bisa pernah memegang kunci lain, dan
+   * surat-surat kunci lama itu tidak ada hubungannya dengan kebocoran ini.
+   */
+  it('mencocokkan surat pada kunci publiknya, bukan hanya pada penandatangannya', async () => {
+    const key = activeKey();
+    vi.mocked(prisma.userSigningKey.findUnique).mockResolvedValue(key as any);
+
+    await EsignService.revokeKey('ketua', 'admin-1', REASON);
+
+    expect(prisma.letterSignature.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { signerId: 'ketua', publicKey: key.publicKey, revokedAt: null },
+      })
+    );
+  });
+
+  it('memberi tahu pemilik kunci', async () => {
+    vi.mocked(prisma.userSigningKey.findUnique).mockResolvedValue(activeKey() as any);
+
+    await EsignService.revokeKey('ketua', 'admin-1', REASON);
+
+    expect(emitMock).toHaveBeenCalledWith(
+      'notification:send',
+      expect.objectContaining({ userId: 'ketua', title: expect.stringMatching(/Dicabut/i) })
+    );
+  });
+});
+
+describe('mencabut tanda tangan surat', () => {
+  const REASON = 'Nomor surat ganda, diterbitkan ulang';
+  const SIGNER = { id: 'ketua', roleCode: 'YAYASAN_KETUA' };
+  const ADMIN = { id: 'admin-1', roleCode: 'SUPER_ADMIN' };
+  const OTHER = { id: 'guru-9', roleCode: 'TKQ_GURU' };
+
+  function signedLetter(over: Record<string, unknown> = {}) {
+    return {
+      id: 'letter-1',
+      status: 'SIGNED',
+      letterNumber: '434/Sket/Y-CPS/VII/2026',
+      subject: 'Keterangan',
+      createdById: 'tata-usaha',
+      signatures: [{ id: 'sig-1', signerId: 'ketua', revokedAt: null }],
+      ...over,
+    };
+  }
+
+  beforeEach(() => {
+    vi.mocked(prisma.letterSignature.update).mockResolvedValue({
+      id: 'sig-1',
+      revokedAt: new Date(),
+      revokedReason: REASON,
+    } as any);
+    vi.mocked(prisma.letterFlowEvent.create).mockResolvedValue({ id: 'ev-1' } as any);
+    vi.mocked(prisma.auditLog.create).mockResolvedValue({ id: 'audit-1' } as any);
+  });
+
+  it('penandatangannya sendiri boleh mencabut', async () => {
+    vi.mocked(prisma.letter.findUnique).mockResolvedValue(signedLetter() as any);
+
+    await EsignService.revokeLetterSignature('letter-1', SIGNER, REASON);
+
+    expect(prisma.letterSignature.update).toHaveBeenCalledWith({
+      where: { id: 'sig-1' },
+      data: expect.objectContaining({
+        revokedAt: expect.any(Date),
+        revokedReason: REASON,
+        revokedById: 'ketua',
+      }),
+    });
+  });
+
+  it('Super Admin boleh mencabut tanda tangan orang lain', async () => {
+    vi.mocked(prisma.letter.findUnique).mockResolvedValue(signedLetter() as any);
+
+    await EsignService.revokeLetterSignature('letter-1', ADMIN, REASON);
+
+    expect(prisma.letterSignature.update).toHaveBeenCalled();
+  });
+
+  it('pengguna lain ditolak, dan tidak ada yang tertulis', async () => {
+    vi.mocked(prisma.letter.findUnique).mockResolvedValue(signedLetter() as any);
+
+    await expect(
+      EsignService.revokeLetterSignature('letter-1', OTHER, REASON)
+    ).rejects.toThrow(/penandatangan surat ini atau Super Admin/i);
+
+    expect(prisma.letterSignature.update).not.toHaveBeenCalled();
+    expect(prisma.letterFlowEvent.create).not.toHaveBeenCalled();
+  });
+
+  it('menolak surat yang belum ditandatangani', async () => {
+    vi.mocked(prisma.letter.findUnique).mockResolvedValue(signedLetter({ signatures: [] }) as any);
+
+    await expect(
+      EsignService.revokeLetterSignature('letter-1', ADMIN, REASON)
+    ).rejects.toThrow(/belum ditandatangani/i);
+  });
+
+  /**
+   * Statusnya sengaja tetap. Surat ini memang pernah ditandatangani dan memang
+   * pernah beredar; mengembalikannya ke DRAFT menghapus kenyataan itu dari buku
+   * agenda. Yang menentukan sah atau tidaknya adalah tanda tangannya.
+   */
+  it('tidak mengubah status surat', async () => {
+    vi.mocked(prisma.letter.findUnique).mockResolvedValue(signedLetter() as any);
+
+    await EsignService.revokeLetterSignature('letter-1', ADMIN, REASON);
+
+    expect(prisma.letter.update).not.toHaveBeenCalled();
+  });
+
+  it('mencatat pencabutan pada riwayat alur surat', async () => {
+    vi.mocked(prisma.letter.findUnique).mockResolvedValue(signedLetter() as any);
+
+    await EsignService.revokeLetterSignature('letter-1', ADMIN, REASON);
+
+    expect(prisma.letterFlowEvent.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        letterId: 'letter-1',
+        actorId: 'admin-1',
+        action: 'SIGNATURE_REVOKED',
+        note: expect.stringContaining(REASON),
+      }),
+    });
+  });
+
+  it('memberi tahu penandatangan dan pembuat konsep', async () => {
+    vi.mocked(prisma.letter.findUnique).mockResolvedValue(signedLetter() as any);
+
+    await EsignService.revokeLetterSignature('letter-1', ADMIN, REASON);
+
+    const notified = emitMock.mock.calls
+      .filter((c) => c[0] === 'notification:send')
+      .map((c) => (c[1] as { userId: string }).userId);
+    expect(notified).toContain('ketua');
+    expect(notified).toContain('tata-usaha');
+  });
+
+  it('tidak memberi tahu pencabutnya sendiri', async () => {
+    vi.mocked(prisma.letter.findUnique).mockResolvedValue(signedLetter() as any);
+
+    await EsignService.revokeLetterSignature('letter-1', SIGNER, REASON);
+
+    const notified = emitMock.mock.calls
+      .filter((c) => c[0] === 'notification:send')
+      .map((c) => (c[1] as { userId: string }).userId);
+    expect(notified).not.toContain('ketua');
+  });
+
+  /**
+   * Bedanya harus terasa: "sudah dicabut" bukan "belum ditandatangani". Baris
+   * yang sudah dicabut tetap diambil dari basis data justru supaya kalimat
+   * inilah yang keluar.
+   */
+  it('menolak tanda tangan yang sudah dicabut, dan mengatakannya begitu', async () => {
+    vi.mocked(prisma.letter.findUnique).mockResolvedValue(
+      signedLetter({
+        signatures: [{ id: 'sig-1', signerId: 'ketua', revokedAt: new Date('2026-08-20') }],
+      }) as any
+    );
+
+    await expect(
+      EsignService.revokeLetterSignature('letter-1', ADMIN, REASON)
+    ).rejects.toThrow(/sudah dicabut/i);
+    expect(prisma.letterSignature.update).not.toHaveBeenCalled();
+  });
+
+  it('menolak alasan yang terlalu pendek', async () => {
+    vi.mocked(prisma.letter.findUnique).mockResolvedValue(signedLetter() as any);
+
+    await expect(
+      EsignService.revokeLetterSignature('letter-1', ADMIN, 'salah')
+    ).rejects.toThrow(/Alasan pencabutan/i);
+    expect(prisma.letterSignature.update).not.toHaveBeenCalled();
   });
 });

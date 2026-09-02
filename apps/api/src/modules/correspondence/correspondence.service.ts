@@ -593,8 +593,13 @@ export const CorrespondenceService = {
             signedAt: true,
             verificationToken: true,
             algorithm: true,
-            // A revoked signature must not print as a valid one.
+            // A revoked signature must not print as a valid one — and the
+            // reason travels with it, so the letter's own page can say why
+            // instead of leaving the reader to find out from the public
+            // verification form.
             revokedAt: true,
+            revokedReason: true,
+            revokedBy: { select: { name: true } },
             signer: {
               select: {
                 name: true,

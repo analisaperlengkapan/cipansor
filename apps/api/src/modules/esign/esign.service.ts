@@ -28,6 +28,13 @@ import {
 import { generateLetterPdfBuffer, LetterPdfError } from '@/utils/generate-letter-pdf';
 import { verifyLetterByToken } from '@/utils/letter-verification';
 import {
+  RevocationError,
+  assertKeyRevocable,
+  assertSignatureRevocable,
+  normalizeReason,
+  type RevocationActor,
+} from '@/utils/esign-revocation';
+import {
   DEFAULT_VALIDITY_DAYS,
   SigningKeyState,
   assertCanSign,
@@ -81,6 +88,18 @@ async function clearFailedAttempts(keyId: string) {
     where: { id: keyId },
     data: { failedAttempts: 0, lockedUntil: null, lastUsedAt: new Date() },
   });
+}
+
+/**
+ * Terjemahkan penolakan aturan pencabutan menjadi galat HTTP yang semestinya.
+ *
+ * Tanpa ini `RevocationError` jatuh ke penangan umum sebagai 500, dan operator
+ * yang alasannya kurang sepuluh karakter membaca "Internal server error"
+ * alih-alih kalimat yang memberitahunya apa yang harus diperbaiki.
+ */
+function asHttpError(error: unknown): unknown {
+  if (!(error instanceof RevocationError)) return error;
+  return error.forbidden ? Errors.forbidden(error.message) : Errors.badRequest(error.message);
 }
 
 export const EsignService = {
@@ -366,25 +385,284 @@ export const EsignService = {
     return { success: true };
   },
 
-  /** Cabut kunci (Super Admin). Tanda tangan lama tetap dapat diverifikasi. */
-  async revokeKey(userId: string, reason: string) {
+  /**
+   * Daftar kunci yang pernah diterbitkan — kewenangan Super Admin.
+   *
+   * Ada karena pencabutan menuntutnya. Rutenya sudah lama tersedia, tetapi
+   * tanpa daftar ini tidak ada satu pun tempat di dalam aplikasi yang
+   * menyebutkan siapa saja pemegang kunci — sehingga passphrase yang bocor atau
+   * pejabat yang berhenti hanya dapat dicabut lewat basis data langsung.
+   *
+   * Statusnya dihitung di sini, bukan dibaca dari kolom, sama seperti di
+   * halaman pengaturan pemiliknya (utils/esign-lifecycle.ts).
+   */
+  async listKeys() {
+    const keys = await prisma.userSigningKey.findMany({
+      select: {
+        id: true,
+        userId: true,
+        algorithm: true,
+        approvedAt: true,
+        expiresAt: true,
+        lastUsedAt: true,
+        lockedUntil: true,
+        revokedAt: true,
+        revokedReason: true,
+        createdAt: true,
+        user: {
+          select: {
+            name: true,
+            email: true,
+            unit: { select: { name: true } },
+            staff: { select: { position: true } },
+            // Peran utama saja, sekadar untuk dikenali di daftar. Kewenangan
+            // tidak pernah dibaca dari sini — itu urusan middleware.
+            userRoles: {
+              where: { isActive: true },
+              select: { role: { select: { code: true } } },
+              orderBy: { isPrimary: 'desc' },
+              take: 1,
+            },
+          },
+        },
+        approvedBy: { select: { name: true } },
+        revokedBy: { select: { name: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 500,
+    });
+
+    const now = new Date();
+    return keys.map((k) => ({
+      id: k.id,
+      userId: k.userId,
+      name: k.user.name,
+      email: k.user.email,
+      roleCode: k.user.userRoles[0]?.role.code ?? null,
+      position: k.user.staff?.position ?? null,
+      unitName: k.user.unit?.name ?? null,
+      algorithm: k.algorithm,
+      state: effectiveState(k, now),
+      approvedAt: k.approvedAt,
+      approvedByName: k.approvedBy?.name ?? null,
+      expiresAt: k.expiresAt,
+      daysUntilExpiry: daysUntilExpiry(k, now),
+      lastUsedAt: k.lastUsedAt,
+      lockedUntil: k.lockedUntil,
+      revokedAt: k.revokedAt,
+      revokedReason: k.revokedReason,
+      revokedByName: k.revokedBy?.name ?? null,
+      createdAt: k.createdAt,
+    }));
+  },
+
+  /**
+   * Cabut kunci (Super Admin).
+   *
+   * **Mencabut kunci tidak mencabut surat.** Setiap tanda tangan menyimpan
+   * salinan kunci publiknya sendiri, jadi surat yang telanjur sah tetap
+   * terverifikasi — dan memang begitu yang dikehendaki untuk pergantian pejabat
+   * atau kunci yang kedaluwarsa.
+   *
+   * Untuk passphrase yang bocor, itu justru bukan yang diinginkan: siapa pun
+   * yang memegang passphrase itu bisa saja telah menandatangani surat sebelum
+   * kebocorannya diketahui. Karena itu pemanggil mendapat kembali daftar surat
+   * yang ditandatangani dengan kunci ini beserta jumlahnya — supaya yang
+   * mencabut melihat sendiri seberapa luas akibatnya dan dapat memutuskan mana
+   * yang perlu dicabut satu per satu, bukan menyangka pekerjaannya sudah
+   * selesai.
+   */
+  async revokeKey(userId: string, actorId: string, reason: string) {
     const key = await prisma.userSigningKey.findUnique({ where: { userId } });
     if (!key) throw Errors.notFound('Kunci tanda tangan tidak ditemukan');
 
+    let trimmed: string;
+    try {
+      trimmed = normalizeReason(reason);
+      assertKeyRevocable(key);
+    } catch (e) {
+      throw asHttpError(e);
+    }
+
+    const revokedAt = new Date();
     await prisma.userSigningKey.update({
       where: { id: key.id },
-      data: { revokedAt: new Date(), revokedReason: reason },
+      data: { revokedAt, revokedReason: trimmed, revokedById: actorId },
+    });
+
+    // Surat yang ditandatangani dengan kunci ini — dicocokkan pada salinan
+    // kunci publiknya, bukan sekadar pada penandatangannya, karena orang yang
+    // sama bisa pernah memegang kunci lain sebelumnya.
+    const signedWithThisKey = await prisma.letterSignature.findMany({
+      where: { signerId: userId, publicKey: key.publicKey, revokedAt: null },
+      select: {
+        id: true,
+        signedAt: true,
+        letter: { select: { id: true, letterNumber: true, subject: true, date: true } },
+      },
+      orderBy: { signedAt: 'desc' },
+      take: 200,
+    });
+
+    await prisma.auditLog.create({
+      data: {
+        userId: actorId,
+        action: 'REVOKE',
+        entity: 'UserSigningKey',
+        entityId: key.id,
+        newValues: {
+          revokedAt: revokedAt.toISOString(),
+          revokedReason: trimmed,
+          keyHolderId: userId,
+          lettersStillValid: signedWithThisKey.length,
+        },
+      },
     });
 
     eventBus.emit('notification:send', {
       userId,
       type: 'WARNING',
       title: 'Kunci Tanda Tangan Dicabut',
-      message: `Kunci tanda tangan elektronik Anda dicabut: ${reason}`,
+      message: `Kunci tanda tangan elektronik Anda dicabut: ${trimmed}`,
       data: {},
     });
 
-    return { success: true };
+    return {
+      success: true,
+      revokedAt,
+      revokedReason: trimmed,
+      affectedLetterCount: signedWithThisKey.length,
+      affectedLetters: signedWithThisKey.map((s) => ({
+        signatureId: s.id,
+        letterId: s.letter.id,
+        letterNumber: s.letter.letterNumber,
+        subject: s.letter.subject,
+        date: s.letter.date,
+        signedAt: s.signedAt,
+      })),
+    };
+  },
+
+  /**
+   * Cabut tanda tangan pada sebuah surat.
+   *
+   * Menarik kembali surat yang telanjur beredar adalah kebutuhan tata usaha
+   * yang biasa — SK salah orang, nomor ganda, keputusan yang dibatalkan. Skema
+   * dan halaman verifikasi publik sudah lama siap menampilkannya; yang tidak
+   * pernah ada adalah jalan untuk melakukannya, sehingga satu-satunya cara
+   * adalah menyunting basis data.
+   *
+   * Barisnya tidak dihapus. Surat yang sudah beredar harus tetap bisa dijawab
+   * statusnya kepada siapa pun yang mengunggahnya — dan jawaban "dicabut,
+   * dengan alasan ini" jauh lebih berguna daripada "tidak terdaftar", yang
+   * berbunyi persis seperti jawaban untuk dokumen palsu.
+   */
+  async revokeLetterSignature(letterId: string, actor: RevocationActor, reason: string) {
+    const letter = await prisma.letter.findUnique({
+      where: { id: letterId },
+      select: {
+        id: true,
+        status: true,
+        letterNumber: true,
+        subject: true,
+        createdById: true,
+        /**
+         * Termasuk yang sudah dicabut, sengaja.
+         *
+         * Menyaring `revokedAt: null` di sini akan membuat surat yang tanda
+         * tangannya sudah dicabut tampak seperti surat yang belum pernah
+         * ditandatangani — dan itulah kalimat yang akan dibaca operatornya.
+         * Barisnya diambil apa adanya supaya aturan di
+         * `utils/esign-revocation.ts` yang menjawab, dengan sebab yang benar.
+         */
+        signatures: {
+          orderBy: { signedAt: 'desc' },
+          select: { id: true, signerId: true, revokedAt: true },
+        },
+      },
+    });
+    if (!letter) throw Errors.notFound('Surat tidak ditemukan');
+
+    const target = letter.signatures[0] ?? null;
+    let trimmed: string;
+    try {
+      // Wewenang lebih dulu: yang tidak berwenang tidak perlu diberi tahu
+      // panjang alasan yang benar, apalagi bahwa suratnya memang sudah dicabut.
+      assertSignatureRevocable(target, actor);
+      trimmed = normalizeReason(reason);
+    } catch (e) {
+      throw asHttpError(e);
+    }
+
+    const revokedAt = new Date();
+    const updated = await prisma.$transaction(async (tx) => {
+      const sig = await tx.letterSignature.update({
+        where: { id: target!.id },
+        data: { revokedAt, revokedReason: trimmed, revokedById: actor.id },
+      });
+
+      await tx.letterFlowEvent.create({
+        data: {
+          letterId: letter.id,
+          actorId: actor.id,
+          action: LetterFlowAction.SIGNATURE_REVOKED,
+          fromStatus: letter.status,
+          toStatus: letter.status,
+          note: `Tanda tangan elektronik dicabut: ${trimmed}`,
+        },
+      });
+
+      await tx.auditLog.create({
+        data: {
+          userId: actor.id,
+          action: 'REVOKE',
+          entity: 'LetterSignature',
+          entityId: sig.id,
+          newValues: {
+            revokedAt: revokedAt.toISOString(),
+            revokedReason: trimmed,
+            letterId: letter.id,
+            letterNumber: letter.letterNumber,
+          },
+        },
+      });
+
+      return sig;
+    });
+
+    /**
+     * Status surat sengaja tidak diubah.
+     *
+     * Surat ini memang pernah ditandatangani dan memang pernah beredar;
+     * mengembalikannya ke DRAFT akan menghapus kenyataan itu dari buku agenda.
+     * Yang menentukan sah atau tidaknya adalah tanda tangannya, dan di situlah
+     * pencabutan dicatat — dibaca oleh halaman verifikasi publik, oleh naskah
+     * yang dicetak, dan oleh riwayat alur surat di atas.
+     */
+
+    // Penandatangan diberi tahu bila bukan dia sendiri yang mencabut; pembuat
+    // konsep selalu, karena dialah yang biasanya harus menerbitkan gantinya.
+    const notify = new Set<string>();
+    if (target!.signerId !== actor.id) notify.add(target!.signerId);
+    if (letter.createdById && letter.createdById !== actor.id) notify.add(letter.createdById);
+
+    const label = letter.letterNumber || letter.subject || 'Surat';
+    for (const userId of notify) {
+      eventBus.emit('notification:send', {
+        userId,
+        type: 'WARNING',
+        title: 'Tanda Tangan Surat Dicabut',
+        message: `Tanda tangan elektronik pada ${label} dicabut: ${trimmed}`,
+        data: { letterId: letter.id },
+      });
+    }
+
+    return {
+      success: true,
+      signatureId: updated.id,
+      revokedAt: updated.revokedAt,
+      revokedReason: updated.revokedReason,
+    };
   },
 
   /**

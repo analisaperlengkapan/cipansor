@@ -64,6 +64,29 @@ export const CorrespondenceController = {
     if (!letter) {
       throw Errors.notFound('Surat tidak ditemukan');
     }
+
+    /**
+     * A letter whose signature has been withdrawn is not printed again.
+     *
+     * The generator drops the signature block for a revoked signature, so a
+     * fresh download would be a *different* file with a different byte hash —
+     * one the database has never seen. Uploading it to the public verification
+     * page would then be answered "tidak terdaftar ... atau telah mengalami
+     * perubahan", the same sentence a forgery gets, instead of "dicabut,
+     * dengan alasan ini". Handing out a document that verifies as fake is
+     * worse than handing out nothing.
+     *
+     * Copies already in circulation still verify correctly and still report
+     * the revocation: they carry the bytes that were hashed at signing.
+     */
+    const latest = letter.signatures?.at(-1);
+    if (latest?.revokedAt) {
+      throw Errors.badRequest(
+        'Tanda tangan surat ini telah dicabut, sehingga naskahnya tidak dapat dicetak lagi. ' +
+          'Terbitkan surat pengganti bila diperlukan.'
+      );
+    }
+
     let pdfBuffer: Buffer;
     try {
       pdfBuffer = await generateLetterPdfBuffer(letter);

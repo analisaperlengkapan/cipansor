@@ -1,6 +1,10 @@
 import { z } from 'zod';
 import { MIN_PASSPHRASE_LENGTH } from '@/utils/esign';
 import { MAX_VALIDITY_DAYS, MIN_VALIDITY_DAYS } from '@/utils/esign-lifecycle';
+import {
+  MAX_REVOCATION_REASON_LENGTH,
+  MIN_REVOCATION_REASON_LENGTH,
+} from '@/utils/esign-revocation';
 
 const passphrase = z.string().min(MIN_PASSPHRASE_LENGTH);
 
@@ -28,8 +32,27 @@ export const decideRequestSchema = z.object({
   note: z.string().max(1000).optional(),
 });
 
+/**
+ * Alasan pencabutan, dengan panjang minimum yang sama untuk kunci dan surat.
+ *
+ * Naik dari tiga karakter menjadi sepuluh. Alasan pencabutan surat tampil apa
+ * adanya di halaman verifikasi publik, dan "sal" bukan keterangan; alasan
+ * pencabutan kunci dibaca pemiliknya sebagai satu-satunya penjelasan mengapa
+ * wewenangnya dicabut. Panjangnya tetap diperiksa ulang di
+ * `utils/esign-revocation.ts` setelah dipangkas spasinya — sepuluh spasi lolos
+ * dari `min()` di sini.
+ */
+const revocationReason = z
+  .string()
+  .min(MIN_REVOCATION_REASON_LENGTH)
+  .max(MAX_REVOCATION_REASON_LENGTH);
+
 export const revokeKeySchema = z.object({
-  reason: z.string().min(3).max(1000),
+  reason: revocationReason,
+});
+
+export const revokeSignatureSchema = z.object({
+  reason: revocationReason,
 });
 
 export const signLetterSchema = z.object({

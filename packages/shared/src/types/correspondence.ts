@@ -171,19 +171,28 @@ export interface LetterDetail {
  * The electronic signature affixed to a signed letter.
  *
  * Deliberately no `signature` or `digest` field: the naskah only needs to
- * carry the QR, and the proof itself is checked server-side by
- * `GET /esign/verify/:token`. Shipping the raw signature to every reader of
- * the letter would put the cryptographic material on more screens than the
+ * carry the QR, and the proof itself is checked server-side against the
+ * uploaded PDF's bytes. Shipping the raw signature to every reader of the
+ * letter would put the cryptographic material on more screens than the
  * verification actually requires.
  */
 export interface LetterSignatureDetail {
   id: string;
   signedAt: string;
-  /** Goes into the QR as `/verifikasi/{token}` — a capability, not a secret. */
+  /**
+   * The raw token printed into the QR — not a URL.
+   *
+   * Scanning it opens nothing, deliberately: a token attests that some letter
+   * was signed, never that the document in your hand is that letter, so
+   * verification takes an uploaded PDF instead.
+   */
   verificationToken: string;
   algorithm: string;
   /** Set when the signature was revoked; the naskah must then not claim valid. */
   revokedAt?: string | null;
+  /** Shown to anyone who can read the letter, and on the public page. */
+  revokedReason?: string | null;
+  revokedBy?: { name: string } | null;
   signer: {
     name: string;
     nip?: string;
@@ -223,6 +232,14 @@ export interface PublicLetterVerificationResult {
   isValid: boolean;
   isRevoked?: boolean;
   revokedAt?: string | Date | null;
+  /**
+   * Why it was withdrawn, in the revoker's own words.
+   *
+   * Public text: it is shown as written to anyone who uploads the document.
+   * Without it the page can only say "dicabut" and leave the reader to guess
+   * whether the letter was wrong, superseded, or issued to the wrong person.
+   */
+  revokedReason?: string | null;
   signedAt?: string | Date;
   algorithm?: string;
   digest?: string;

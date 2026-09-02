@@ -130,11 +130,81 @@ describe('PerformanceAgreementService', () => {
         id: 'pk-1',
         userId: 'u-owner',
         status: 'APPROVED',
+        user: { id: 'u-owner', unitId: 'unit-sdit' },
       });
 
-      await expect(pkService.deletePK('pk-1', 'u-owner', false)).rejects.toThrow(/approved/i);
+      await expect(pkService.deletePK('pk-1', { id: 'u-owner' })).rejects.toThrow(/draft/i);
       expect(mockQueryRaw).toHaveBeenCalledTimes(1);
       expect(mocked.performanceAgreement.delete).not.toHaveBeenCalled();
+    });
+
+    it('rejects deletion with 409 Conflict when PK is PROPOSED', async () => {
+      mocked.performanceAgreement.findUnique.mockResolvedValueOnce({
+        id: 'pk-1',
+        userId: 'u-owner',
+        status: 'PROPOSED',
+        user: { id: 'u-owner', unitId: 'unit-sdit' },
+      });
+
+      await expect(pkService.deletePK('pk-1', { id: 'u-owner' })).rejects.toThrow(/draft/i);
+      expect(mocked.performanceAgreement.delete).not.toHaveBeenCalled();
+    });
+
+    it('blocks unit admin from deleting PK belonging to an employee in another unit (403 Forbidden)', async () => {
+      mocked.performanceAgreement.findUnique.mockResolvedValueOnce({
+        id: 'pk-1',
+        userId: 'u-smpit-employee',
+        status: 'DRAFT',
+        user: { id: 'u-smpit-employee', unitId: 'unit-smpit' },
+      });
+
+      await expect(
+        pkService.deletePK('pk-1', {
+          id: 'admin-sdit',
+          isAdmin: true,
+          roleCode: 'SDIT_ADMIN',
+          unitId: 'unit-sdit',
+        })
+      ).rejects.toThrow(/permission|forbidden/i);
+      expect(mocked.performanceAgreement.delete).not.toHaveBeenCalled();
+    });
+
+    it('allows unit admin to delete DRAFT PK belonging to an employee in the same unit', async () => {
+      mocked.performanceAgreement.findUnique.mockResolvedValueOnce({
+        id: 'pk-1',
+        userId: 'u-sdit-employee',
+        status: 'DRAFT',
+        user: { id: 'u-sdit-employee', unitId: 'unit-sdit' },
+      });
+      mocked.performanceAgreement.delete.mockResolvedValueOnce({ id: 'pk-1' });
+
+      await pkService.deletePK('pk-1', {
+        id: 'admin-sdit',
+        isAdmin: true,
+        roleCode: 'SDIT_ADMIN',
+        unitId: 'unit-sdit',
+      });
+
+      expect(mocked.performanceAgreement.delete).toHaveBeenCalledWith({ where: { id: 'pk-1' } });
+    });
+
+    it('allows SUPER_ADMIN to delete DRAFT PK from any unit', async () => {
+      mocked.performanceAgreement.findUnique.mockResolvedValueOnce({
+        id: 'pk-1',
+        userId: 'u-smpit-employee',
+        status: 'DRAFT',
+        user: { id: 'u-smpit-employee', unitId: 'unit-smpit' },
+      });
+      mocked.performanceAgreement.delete.mockResolvedValueOnce({ id: 'pk-1' });
+
+      await pkService.deletePK('pk-1', {
+        id: 'superadmin',
+        isAdmin: true,
+        roleCode: 'SUPER_ADMIN',
+        unitId: null,
+      });
+
+      expect(mocked.performanceAgreement.delete).toHaveBeenCalledWith({ where: { id: 'pk-1' } });
     });
 
     it('rejects deletion when PK becomes APPROVED after acquiring row lock (concurrent approval race)', async () => {
@@ -144,9 +214,10 @@ describe('PerformanceAgreementService', () => {
         id: 'pk-1',
         userId: 'u-owner',
         status: 'APPROVED',
+        user: { id: 'u-owner', unitId: 'unit-sdit' },
       });
 
-      await expect(pkService.deletePK('pk-1', 'u-owner', false)).rejects.toThrow(/approved/i);
+      await expect(pkService.deletePK('pk-1', 'u-owner', false)).rejects.toThrow(/draft/i);
 
       expect(mockQueryRaw).toHaveBeenCalledTimes(1);
       const sqlStrings = mockQueryRaw.mock.calls[0][0];

@@ -69,7 +69,14 @@ export const usePKDetail = (id: string) => {
   });
 };
 
-import type { CreatePKRequestDTO, CreateEvaluationRequestDTO, UpdateRealizationRequestDTO, UpdateBehaviorScoreRequestDTO } from "@cipansor/shared";
+import type {
+  CreatePKRequestDTO,
+  CreateEvaluationRequestDTO,
+  UpdateRealizationRequestDTO,
+  UpdateBehaviorScoreRequestDTO,
+  CreatePKIndicatorRequestDTO,
+  UpdatePKIndicatorRequestDTO,
+} from "@cipansor/shared";
 
 export const useCreatePK = () => {
   const queryClient = useQueryClient();
@@ -175,17 +182,7 @@ export const useRejectPK = () => {
 export const useCreatePKIndicator = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (data: {
-      pkId: string;
-      title: string;
-      target: number;
-      unit: string;
-      weight: number;
-      category: "DIRECT" | "INDIRECT" | "NON_CASCADING";
-      refIndicatorId?: string;
-      refStrategicIndicatorId?: string;
-      notes?: string;
-    }) => {
+    mutationFn: async (data: CreatePKIndicatorRequestDTO) => {
       const res = await api.post("/performance-agreements/indicators", data);
       return res.data;
     },
@@ -203,7 +200,7 @@ export const useCreatePKIndicator = () => {
 export const useUpdatePKIndicator = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, pkId, ...data }: { id: string; pkId: string } & Record<string, any>) => {
+    mutationFn: async ({ id, pkId, ...data }: { id: string; pkId: string } & UpdatePKIndicatorRequestDTO) => {
       const res = await api.put(`/performance-agreements/indicators/${id}`, data);
       return res.data;
     },

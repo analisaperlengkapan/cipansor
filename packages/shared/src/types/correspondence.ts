@@ -156,6 +156,8 @@ export interface LetterDetail {
   senderInstance?: string;
   recipientName?: string;
   recipientInstance?: string;
+  createdById?: string;
+  createdBy?: { name: string };
   createdByName: string;
   createdAt: string;
 
@@ -192,7 +194,8 @@ export interface LetterSignatureDetail {
 export interface CreateDispositionInput {
   letterId: string;
   senderId: string;
-  recipientId: string;
+  recipientId?: string;
+  recipientIds?: string[];
   instruction: string;
   deadline?: string;
   parentDispositionId?: string;
@@ -214,3 +217,47 @@ export interface AgendaNumberConfig {
   format: string;
   resetPeriod: string;
 }
+
+// Public Verification DTO
+export interface PublicLetterVerificationResult {
+  isValid: boolean;
+  isRevoked?: boolean;
+  revokedAt?: string | Date | null;
+  signedAt?: string | Date;
+  algorithm?: string;
+  digest?: string;
+  signer?: {
+    name: string;
+    nip: string;
+    position: string;
+  };
+  letter?: {
+    letterNumber: string;
+    subject: string | null;
+    date: string | Date;
+    status: string;
+    unitName: string;
+  };
+  reason?: string;
+}
+
+export interface ListParticipantsQuery {
+  search?: string;
+  unitId?: string;
+  limit?: number;
+}
+
+export interface CorrespondenceParticipant {
+  id: string;
+  name: string;
+  email: string;
+  unitId?: string | null;
+  unitName?: string | null;
+  roleCode?: string | null;
+  nip?: string | null;
+  position?: string | null;
+}
+
+export type CreateDispositionResponse =
+  | LetterDispositionDetail
+  | LetterDispositionDetail[];

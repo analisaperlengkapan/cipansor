@@ -38,14 +38,14 @@ function hasLimiter(method: string, path: string) {
   return handlersFor(method, path).some((h) => isRateLimiter(h.handle));
 }
 
+function hasRoute(method: string, path: string) {
+  return (router.stack as unknown as RouteLayer[]).some(
+    (l) => l.route && l.route.path === path && l.route.methods[method]
+  );
+}
+
 /**
- * Every route that carries a passphrase must carry a strict limiter with it.
- *
- * app.ts reserves the strict limiter for "credential-bearing endpoints ONLY"
- * and then lists the auth routes by hand. E-sign was added afterwards and
- * never joined that list, so three endpoints that accept a passphrase ran on
- * the ordinary budget. A hand-maintained list is exactly the kind of thing
- * that goes stale silently, so the guard belongs next to the routes.
+ * Every route that carries a passphrase or handles public uploads must carry rate limiting.
  */
 describe('esign.routes rate limiting', () => {
   it('POST /letters/:letterId/sign is rate limited', () => {
@@ -62,28 +62,32 @@ describe('esign.routes rate limiting', () => {
 
   /**
    * The settings page reads this on every visit and it holds nothing guessable.
-   * Limiting it would repeat the /auth/me mistake app.ts documents: a whole
-   * pesantren behind one NAT gateway locked out of a read-only status call.
    */
   it('GET /me is NOT rate limited', () => {
     expect(hasLimiter('get', '/me')).toBe(false);
   });
 
   /**
-   * Scanned by outsiders with no account, from any number of addresses. It
-   * neither accepts a secret nor reveals the letter body, and a token is 160
-   * random bits, so there is nothing here to brute force — but there is a
-   * whole dinas office behind one address.
+   * A token-only verification endpoint must not exist.
+   *
+   * It answers "this letter is valid" from a database row alone, so it says
+   * nothing about the document the asker is actually holding — a forger keeps
+   * the genuine QR, edits the body, and the endpoint still says yes. Public
+   * verification binds to the uploaded bytes instead, and this test is what
+   * stops the convenient shortcut from being added back.
    */
-  it('GET /verify/:token is NOT rate limited', () => {
-    expect(hasLimiter('get', '/verify/:token')).toBe(false);
+  it('exposes no token-based verification route', () => {
+    expect(hasRoute('get', '/verify/:token')).toBe(false);
+    expect(hasRoute('post', '/verify/:token')).toBe(false);
+  });
+
+  it('POST /verify-pdf is rate limited', () => {
+    expect(hasLimiter('post', '/verify-pdf')).toBe(true);
   });
 });
 
 /**
- * Only a Super Admin issues, refuses or revokes signing keys. If one of these
- * gates is dropped, any authenticated user could grant themselves the ability
- * to sign on behalf of the yayasan.
+ * Only a Super Admin issues, refuses or revokes signing keys.
  */
 describe('esign.routes authority gates', () => {
   it('GET /requests requires isSuperAdmin', () => {

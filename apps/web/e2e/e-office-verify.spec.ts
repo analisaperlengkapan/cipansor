@@ -156,7 +156,7 @@ test.describe("E-Office & Public Letter Verification E2E", () => {
 
     await page.getByRole("button", { name: /verifikasi dokumen/i }).click();
 
-    await expect(page.getByText(/SURAT TELAH DICABUT/i)).toBeVisible();
+    await expect(page.getByText(/NASKAH TELAH DICABUT/i)).toBeVisible();
     await expect(page.getByText(/Keterangan Pencabutan/i)).toBeVisible();
   });
 

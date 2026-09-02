@@ -57,9 +57,74 @@ export const EsignController = {
     } catch (e) { next(e); }
   },
 
+  async listKeys(_req: Request, res: Response, next: NextFunction) {
+    try {
+      res.json({ success: true, data: await EsignService.listKeys() });
+    } catch (e) { next(e); }
+  },
+
   async revoke(req: Request, res: Response, next: NextFunction) {
     try {
-      const data = await EsignService.revokeKey(req.params.userId, req.body.reason);
+      const data = await EsignService.revokeKey(
+        req.params.userId, req.user!.id, req.body.reason, req.body.code
+      );
+      res.json({ success: true, data });
+    } catch (e) { next(e); }
+  },
+
+  /** Cabut tanda tangan pada surat — penandatangannya sendiri atau Super Admin. */
+  async revokeSignature(req: Request, res: Response, next: NextFunction) {
+    try {
+      const data = await EsignService.revokeLetterSignature(
+        req.params.letterId,
+        { id: req.user!.id, roleCode: req.user!.roleCode },
+        req.body.reason,
+        req.body.passphrase
+      );
+      res.json({ success: true, data });
+    } catch (e) { next(e); }
+  },
+
+  /** Ajukan pencabutan — siapa pun yang boleh membaca suratnya. */
+  async requestRevocation(req: Request, res: Response, next: NextFunction) {
+    try {
+      const data = await EsignService.requestRevocation(
+        req.params.letterId,
+        { id: req.user!.id, roleCode: req.user!.roleCode, unitId: req.user!.unitId },
+        req.body.reason,
+        req.body.attachmentUrl
+      );
+      res.status(201).json({ success: true, data });
+    } catch (e) { next(e); }
+  },
+
+  /** Antrean permohonan — disaring pada kewenangan pemanggilnya. */
+  async listRevocationRequests(req: Request, res: Response, next: NextFunction) {
+    try {
+      const data = await EsignService.listRevocationRequests(
+        { id: req.user!.id, roleCode: req.user!.roleCode },
+        req.query.status as never
+      );
+      res.json({ success: true, data });
+    } catch (e) { next(e); }
+  },
+
+  async decideRevocation(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { approve, note, passphrase, reason } = req.body;
+      const data = await EsignService.decideRevocation(
+        req.params.id,
+        { id: req.user!.id, roleCode: req.user!.roleCode },
+        approve,
+        { note, passphrase, reason }
+      );
+      res.json({ success: true, data });
+    } catch (e) { next(e); }
+  },
+
+  async withdrawRevocationRequest(req: Request, res: Response, next: NextFunction) {
+    try {
+      const data = await EsignService.withdrawRevocationRequest(req.params.id, req.user!.id);
       res.json({ success: true, data });
     } catch (e) { next(e); }
   },
@@ -67,7 +132,7 @@ export const EsignController = {
   async signLetter(req: Request, res: Response, next: NextFunction) {
     try {
       const data = await EsignService.signLetter(
-        req.params.letterId, req.user!.id, req.body.passphrase
+        req.params.letterId, req.user!.id, req.body.passphrase, req.user!.roleCode
       );
       res.status(201).json({ success: true, data });
     } catch (e) { next(e); }

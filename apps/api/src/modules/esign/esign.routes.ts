@@ -10,7 +10,10 @@ import {
   changePassphraseSchema,
   decideRequestSchema,
   requestKeySchema,
+  decideRevocationSchema,
+  requestRevocationSchema,
   revokeKeySchema,
+  revokeSignatureSchema,
   signLetterSchema,
 } from './esign.schema';
 
@@ -107,8 +110,51 @@ router.post(
   EsignController.signLetter
 );
 
+/**
+ * Mencabut naskah dinas.
+ *
+ * Sengaja tidak dijaga `isSuperAdmin` — dan justru karena Super Admin **tidak**
+ * boleh. Kewenangan mencabut melekat pada jabatan yang menerbitkan, jadi ia
+ * diperiksa di layanan terhadap baris tanda tangannya
+ * (`@cipansor/shared/letter-revocation-authority`), bukan di sini: rutenya
+ * tidak mengetahui siapa yang menandatangani naskah ini.
+ *
+ * Menuntut passphrase, dan karena itu dibatasi lajunya: pencabutan adalah
+ * pernyataan kriptografis yang ditandatangani pencabutnya, sebagaimana CRL
+ * ditandatangani penerbitnya (RFC 5280).
+ */
+router.post(
+  '/letters/:letterId/revoke',
+  passphraseLimiter,
+  validate(revokeSignatureSchema),
+  EsignController.revokeSignature
+);
+
+/**
+ * Permohonan pencabutan — mengajukan, bukan memutuskan.
+ *
+ * Terbuka bagi siapa pun yang boleh membaca suratnya, karena yang paling
+ * mungkin lebih dulu menemukan nomor surat ganda adalah petugas tata usaha,
+ * bukan pejabat yang berwenang mencabutnya. Tidak menuntut passphrase: tidak
+ * ada yang berubah pada suratnya sampai permohonannya diputuskan.
+ */
+router.post(
+  '/letters/:letterId/revocation-requests',
+  validate(requestRevocationSchema),
+  EsignController.requestRevocation
+);
+router.get('/revocation-requests', EsignController.listRevocationRequests);
+router.post(
+  '/revocation-requests/:id/decide',
+  passphraseLimiter,
+  validate(decideRevocationSchema),
+  EsignController.decideRevocation
+);
+router.post('/revocation-requests/:id/withdraw', EsignController.withdrawRevocationRequest);
+
 // Kewenangan Super Admin: menyetujui, menolak, mencabut.
 router.get('/requests', isSuperAdmin, EsignController.listRequests);
+router.get('/keys', isSuperAdmin, EsignController.listKeys);
 router.post('/requests/:id/decide', isSuperAdmin, validate(decideRequestSchema), EsignController.decide);
 router.post('/keys/:userId/revoke', isSuperAdmin, validate(revokeKeySchema), EsignController.revoke);
 

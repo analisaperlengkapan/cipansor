@@ -1,4 +1,4 @@
-import { PDFDocument, PDFFont, PDFPage, StandardFonts, rgb } from 'pdf-lib';
+import { PDFDocument, PDFFont, PDFPage, StandardFonts, degrees, rgb } from 'pdf-lib';
 import QRCode from 'qrcode';
 import {
   DECIDING_OFFICIAL,
@@ -111,6 +111,20 @@ function isEncodable(ch: string): boolean {
 }
 
 /** Distinct characters in `text` that the naskah font cannot render. */
+/**
+ * Ganti aksara yang tidak dapat dikodekan WinAnsi dengan tanda tanya.
+ *
+ * Dipakai HANYA pada keterangan pencabutan, bukan pada naskahnya. Sebuah naskah
+ * yang memuat aksara di luar WinAnsi ditolak sejak awal (`assertRenderable`)
+ * supaya penulisnya memperbaikinya — tetapi menolak mencetak cap pencabutan
+ * karena alasannya memuat satu aksara asing akan meninggalkan surat yang sudah
+ * dicabut beredar tanpa tanda apa pun. Di sini, tercetak dengan satu aksara
+ * pengganti jauh lebih baik daripada tidak tercetak.
+ */
+function sanitizeForWinAnsi(text: string): string {
+  return [...text].map((ch) => (isEncodable(ch) ? ch : '?')).join('');
+}
+
 function unsupportedCharacters(text: string): string[] {
   const bad = new Set<string>();
   for (const ch of text) if (!isEncodable(ch)) bad.add(ch);
@@ -250,16 +264,30 @@ export async function generateLetterPdfBuffer(letter: LetterPdfInput): Promise<B
     height: logoHeight,
   });
 
+  /**
+   * Nama yayasan di baris atas, nama unit penerbitnya di baris bawah.
+   *
+   * Untuk naskah yang terbit dari yayasan sendiri keduanya sama, dan kop surat
+   * mencetak "YAYASAN PESANTREN CIPANSOR" dua kali bertumpuk. Baris unit
+   * dilewati bila ia hanya mengulang baris di atasnya — kop surat sebuah unit
+   * (MTs, TK Qur'an) tetap memakai dua baris sebagaimana mestinya.
+   */
   const orgName = 'YAYASAN PESANTREN CIPANSOR';
-  const unitName = letter.unit?.name?.toUpperCase() ?? 'KANTOR YAYASAN';
+  const rawUnitName = letter.unit?.name?.toUpperCase() ?? 'KANTOR YAYASAN';
+  const unitName = rawUnitName === orgName ? null : rawUnitName;
   const legalBasis = 'SK Kemenkumham RI No. AHU-0012345.AH.01.04.Tahun 2020';
   const address = letter.unit?.address ?? 'Jl. Raya Cipansor No. 01, Tasikmalaya, Jawa Barat';
   const contact = `Website: cipansor.or.id | Telp: ${letter.unit?.phone || '0265-123456'} | Email: ${letter.unit?.email || 'halo@cipansor.or.id'}`;
 
-  cur.text(orgName, { x: centreOf(orgName, fontTimesBold, 12), size: 12, font: fontTimesBold });
-  cur.down(16);
-  cur.text(unitName, { x: centreOf(unitName, fontTimesBold, 14), size: 14, font: fontTimesBold });
-  cur.down(14);
+  if (unitName) {
+    cur.text(orgName, { x: centreOf(orgName, fontTimesBold, 12), size: 12, font: fontTimesBold });
+    cur.down(16);
+    cur.text(unitName, { x: centreOf(unitName, fontTimesBold, 14), size: 14, font: fontTimesBold });
+    cur.down(14);
+  } else {
+    cur.text(orgName, { x: centreOf(orgName, fontTimesBold, 14), size: 14, font: fontTimesBold });
+    cur.down(16);
+  }
   cur.text(legalBasis, {
     x: centreOf(legalBasis, fontTimesItalic, 8),
     size: 8,
@@ -395,10 +423,25 @@ export async function generateLetterPdfBuffer(letter: LetterPdfInput): Promise<B
 
   // ── Body ─────────────────────────────────────────────────────────────────
   const contentMaxWidth = width - MARGIN_X * 2;
+  /**
+   * Baris tunggal adalah baris, bukan spasi.
+   *
+   * Sebelumnya hanya baris kosong ganda yang memisahkan alinea, dan setiap
+   * pergantian baris tunggal di dalamnya menjadi satu spasi belaka. Blok data
+   * yang ditulis penyusunnya sebagai
+   *
+   *     Nama            : …
+   *     Tempat/Tgl Lahir: …
+   *     Nomor Induk     : …
+   *
+   * — bentuk yang ada di hampir setiap surat keterangan — tercetak berdempet
+   * menjadi satu paragraf panjang yang tidak terbaca. Sekarang alinea tetap
+   * dipisah oleh baris kosong, dan di dalam alinea setiap baris berdiri sendiri.
+   */
   const paragraphs = (letter.content || '')
     .split(/\n\s*\n/)
-    .map((p) => p.trim())
-    .filter((p) => p.length > 0);
+    .map((p) => p.replace(/\s+$/gm, ''))
+    .filter((p) => p.trim().length > 0);
 
   for (const para of paragraphs) {
     // "MEMUTUSKAN" stands alone and centred, separating the considerans from
@@ -411,9 +454,15 @@ export async function generateLetterPdfBuffer(letter: LetterPdfInput): Promise<B
       cur.down(20);
       continue;
     }
-    for (const line of wrapText(para, contentMaxWidth, fontTimes, BODY_SIZE)) {
-      cur.text(line, { x: MARGIN_X, font: fontTimes });
-      cur.down();
+    for (const sourceLine of para.split('\n')) {
+      if (!sourceLine.trim()) {
+        cur.down();
+        continue;
+      }
+      for (const line of wrapText(sourceLine, contentMaxWidth, fontTimes, BODY_SIZE)) {
+        cur.text(line, { x: MARGIN_X, font: fontTimes });
+        cur.down();
+      }
     }
     cur.down(8);
   }
@@ -521,4 +570,70 @@ export async function generateLetterPdfBuffer(letter: LetterPdfInput): Promise<B
 
   const pdfBytes = await pdfDoc.save();
   return Buffer.from(pdfBytes);
+}
+
+/**
+ * Cap "DICABUT" pada salinan naskah yang sudah dicabut.
+ *
+ * Bukan menolak mencetaknya. Kantor tetap perlu mengarsipkan salinannya, dan
+ * penerima yang sudah memegang surat itu berhak mendapat lembar yang menjelaskan
+ * dirinya sendiri; platform tanda tangan elektronik pun begitu — DocuSign
+ * membubuhkan watermark VOID dan tetap membiarkan dokumennya diunduh.
+ *
+ * Yang dibubuhkan cap adalah **salinan**, bukan berkas yang ditandatangani.
+ * Pemanggilnya wajib lebih dulu membuktikan bahwa naskah yang dihasilkan ulang
+ * masih sama persis dengan yang di-hash saat penandatanganan (lihat
+ * `correspondence.controller.ts`), sehingga salinan yang telanjur beredar tetap
+ * terverifikasi dan tetap dilaporkan sebagai dicabut, bukan sebagai palsu.
+ */
+export async function stampRevoked(
+  pdfBuffer: Buffer,
+  revocation: { reason: string; revokedAt: Date; revokedByName?: string | null }
+): Promise<Buffer> {
+  const pdfDoc = await PDFDocument.load(pdfBuffer);
+  const bold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  const italic = await pdfDoc.embedFont(StandardFonts.TimesRomanItalic);
+
+  const stampedOn = revocation.revokedAt.toISOString().slice(0, 10);
+  const foot = sanitizeForWinAnsi(
+    `DICABUT ${stampedOn}${revocation.revokedByName ? ` oleh ${revocation.revokedByName}` : ''} — ${revocation.reason}`
+  );
+
+  for (const page of pdfDoc.getPages()) {
+    const { width, height } = page.getSize();
+    const label = 'DICABUT';
+    const size = 92;
+    const textWidth = bold.widthOfTextAtSize(label, size);
+
+    // Melintang, di belakang teksnya, cukup pucat untuk tetap terbaca isinya
+    // dan cukup jelas untuk tidak mungkin terlewat.
+    page.drawText(label, {
+      x: width / 2 - (textWidth * Math.cos(Math.PI / 6)) / 2,
+      y: height / 2 - (textWidth * Math.sin(Math.PI / 6)) / 2,
+      size,
+      font: bold,
+      color: rgb(0.85, 0.35, 0.25),
+      opacity: 0.22,
+      rotate: degrees(30),
+    });
+
+    // Keterangan kaki: watermark mengatakan "dicabut", baris ini mengatakan
+    // sejak kapan dan mengapa — yang justru dicari pembacanya.
+    const footSize = 7;
+    let line = foot;
+    while (italic.widthOfTextAtSize(line, footSize) > width - 2 * 40 && line.length > 12) {
+      line = `${line.slice(0, -4)}…`;
+    }
+    page.drawText(line, {
+      x: 40,
+      y: 18,
+      size: footSize,
+      font: italic,
+      color: rgb(0.7, 0.2, 0.15),
+    });
+  }
+
+  pdfDoc.setCreationDate(new Date(0));
+  pdfDoc.setModificationDate(new Date(0));
+  return Buffer.from(await pdfDoc.save());
 }

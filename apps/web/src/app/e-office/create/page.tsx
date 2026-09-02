@@ -3,7 +3,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { getPrimaryRoleCode } from "@/lib/rbac";
 import { useCorrespondence } from "@/hooks/use-correspondence";
@@ -65,9 +65,23 @@ const letterSchema = z.object({
   recipientIds: z.array(z.string()).optional(),
 });
 
-export default function CreateLetterPage() {
+function CreateLetterForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user } = useAuth();
+
+  /**
+   * The direction the caller asked for.
+   *
+   * The e-office dashboard has separate tiles for "Catat Surat Masuk" and
+   * "Buat Surat Keluar" and sends `?direction=incoming` / `?direction=outgoing`
+   * with each. The form ignored the parameter entirely and always opened as an
+   * outgoing letter — so "Catat Surat Masuk" opened a form for writing one.
+   */
+  const requestedDirection =
+    searchParams.get("direction")?.toUpperCase() === "INCOMING"
+      ? LetterDirection.INCOMING
+      : LetterDirection.OUTGOING;
   const { data: units = [] } = useUnits();
   const [searchQuery, setSearchQuery] = React.useState("");
   const [uploading, setUploading] = React.useState(false);
@@ -77,7 +91,7 @@ export default function CreateLetterPage() {
     resolver: zodResolver(letterSchema),
     defaultValues: {
       unitId: user?.unitId || "",
-      direction: LetterDirection.OUTGOING,
+      direction: requestedDirection,
       type: LetterType.SURAT_DINAS,
       date: new Date().toISOString().split("T")[0],
       urgency: LetterUrgency.NORMAL,
@@ -246,10 +260,10 @@ export default function CreateLetterPage() {
                         </FormControl>
                         <SelectContent>
                           <SelectItem value={LetterDirection.INCOMING}>
-                            Surat Masuk (Dari Luar)
+                            Surat Masuk (diterima dari pihak lain)
                           </SelectItem>
                           <SelectItem value={LetterDirection.OUTGOING}>
-                            Surat Keluar (Ke Luar)
+                            Surat Keluar (diterbitkan yayasan)
                           </SelectItem>
                         </SelectContent>
                       </Select>
@@ -685,5 +699,19 @@ export default function CreateLetterPage() {
         </form>
       </Form>
     </div>
+  );
+}
+
+/**
+ * `useSearchParams` forces the subtree into client-side rendering, so it needs a
+ * Suspense boundary above it or the whole route opts out of static generation.
+ */
+export default function CreateLetterPage() {
+  return (
+    <React.Suspense
+      fallback={<div className="p-6 text-muted-foreground">Memuat formulir…</div>}
+    >
+      <CreateLetterForm />
+    </React.Suspense>
   );
 }

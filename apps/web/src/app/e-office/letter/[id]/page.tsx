@@ -19,7 +19,9 @@ import {
   XCircle,
   Printer,
   ShieldCheck,
+  ShieldOff,
   PenLine,
+  Undo2,
 } from "lucide-react";
 
 import { id } from "date-fns/locale";
@@ -56,11 +58,26 @@ import { toast } from "sonner";
 import {
   LetterType,
   LetterNature,
+  LetterUrgency,
   LETTER_TYPE_LABELS,
   LETTER_NATURE_LABELS,
+  LETTER_URGENCY_LABELS,
+  mayRevokeSignature,
+  whoMayRevoke,
 } from "@cipansor/shared";
 import { LetterFlowHistory } from "@/components/e-office/letter-flow-history";
 import { SignLetterDialog } from "@/components/e-office/sign-letter-dialog";
+import { RevokeLetterDialog } from "@/components/e-office/revoke-letter-dialog";
+import { RevocationRequestsCard } from "@/components/e-office/revocation-requests-card";
+import { getPrimaryRoleCode } from "@/lib/rbac";
+
+/** Status seorang verifikator, dalam bahasa yang dibaca penggunanya. */
+const REVIEWER_STATUS_LABEL: Record<string, string> = {
+  PENDING: "Menunggu",
+  APPROVED: "Sudah diparaf",
+  REJECTED: "Dikembalikan",
+  REVISION_NEEDED: "Minta revisi",
+};
 
 export default function LetterDetailPage({
   params,
@@ -75,6 +92,7 @@ export default function LetterDetailPage({
     reviewLetter,
     createDisposition,
     updateDispositionStatus,
+    resubmitLetter,
   } = useCorrespondence(user?.unitId);
   const [participantSearch, setParticipantSearch] = useState("");
   const { data: participantsData } = useCorrespondenceParticipants({
@@ -87,6 +105,8 @@ export default function LetterDetailPage({
   const [notes, setNotes] = useState("");
   const [dispositionOpen, setDispositionOpen] = useState(false);
   const [signOpen, setSignOpen] = useState(false);
+  const [revokeOpen, setRevokeOpen] = useState(false);
+  const [resubmitNote, setResubmitNote] = useState("");
   const [dispositionData, setDispositionData] = useState({
     recipientIds: [] as string[],
     instruction: "",
@@ -108,6 +128,43 @@ export default function LetterDetailPage({
     (d) => d.recipientId === user?.id && d.status !== "COMPLETED",
   );
 
+  /**
+   * The letter's signature, and whether it still stands.
+   *
+   * `signatures` is ordered oldest-first by the API, so the last entry is the
+   * one that speaks for the letter now. A revoked signature is deliberately
+   * kept and shown: a letter that circulated must be able to explain itself,
+   * and "withdrawn, for this reason" is a far more useful answer to whoever
+   * holds a printout than silence.
+   */
+  const latestSignature = letter?.signatures?.at(-1) ?? null;
+  const activeSignature = latestSignature?.revokedAt ? null : latestSignature;
+  const revokedSignature = latestSignature?.revokedAt ? latestSignature : null;
+
+  /**
+   * Kewenangan mencabut, dibaca dari tabel yang sama dengan yang ditegakkan
+   * server (`@cipansor/shared`), bukan disalin ulang di sini.
+   *
+   * Yang tidak berwenang tidak kehilangan salurannya: tombolnya tetap ada dan
+   * membuka permohonan, bukan pencabutan. Menyembunyikannya sama sekali berarti
+   * petugas tata usaha yang menemukan nomor surat ganda tidak punya jalan apa
+   * pun selain memberi tahu secara lisan.
+   */
+  const signerParty = activeSignature
+    ? {
+        userId:
+          letter?.reviewers?.find((r) => r.isSigner)?.reviewerId ?? "",
+        roleCode: activeSignature.signerRoleCode ?? null,
+      }
+    : null;
+  const actorParty = {
+    userId: user?.id ?? "",
+    roleCode: getPrimaryRoleCode(user) ?? null,
+  };
+  const canRevokeLetter =
+    !!signerParty && mayRevokeSignature(signerParty, actorParty);
+  const whoMayRevokeText = signerParty ? whoMayRevoke(signerParty) : "";
+
   const handleUpdateDisposition = async (
     status: "IN_PROGRESS" | "COMPLETED",
     notes?: string,
@@ -122,6 +179,24 @@ export default function LetterDetailPage({
       toast.success("Status disposisi diperbarui");
     } catch (error) {
       toast.error("Gagal memperbarui status");
+    }
+  };
+
+  const handleResubmit = async () => {
+    if (!letter?.id) return;
+    try {
+      await resubmitLetter.mutateAsync({
+        id: letter.id,
+        note: resubmitNote.trim() || undefined,
+      });
+      setResubmitNote("");
+      toast.success("Surat diajukan ulang untuk diverifikasi.");
+    } catch (error: any) {
+      toast.error(
+        error?.response?.data?.error?.message ??
+          error?.response?.data?.message ??
+          "Gagal mengajukan ulang surat",
+      );
     }
   };
 
@@ -464,6 +539,15 @@ export default function LetterDetailPage({
         onOpenChange={setSignOpen}
       />
 
+      <RevokeLetterDialog
+        letterId={letter.id}
+        letterNumber={letter.letterNumber}
+        canRevoke={canRevokeLetter}
+        whoMayRevokeText={whoMayRevokeText}
+        open={revokeOpen}
+        onOpenChange={setRevokeOpen}
+      />
+
       {/* Hidden PDF Template */}
       <div className="fixed left-[-9999px] top-0">
         <LetterPDFTemplate ref={pdfRef} letter={letter} />
@@ -480,18 +564,61 @@ export default function LetterDetailPage({
           </p>
         </div>
         <div className="ml-auto flex items-center gap-2">
-          {letter.status === "SIGNED" && (
+          {revokedSignature ? (
             <Badge
               variant="outline"
-              className="border-green-600 text-green-600 bg-green-50 gap-1"
+              className="border-orange-600 text-orange-700 bg-orange-50 gap-1"
             >
-              <ShieldCheck className="h-3 w-3" />
-              Status: Ditandatangani
+              <ShieldOff className="h-3 w-3" />
+              Naskah dicabut
             </Badge>
+          ) : (
+            letter.status === "SIGNED" && (
+              <Badge
+                variant="outline"
+                className="border-green-600 text-green-600 bg-green-50 gap-1"
+              >
+                <ShieldCheck className="h-3 w-3" />
+                Status: Ditandatangani
+              </Badge>
+            )
+          )}
+          {/* Labelled when revoked, because an unqualified green "Sudah TTD"
+              beside an orange "dicabut" reads as a contradiction. The letter
+              really is SIGNED in the agenda — that is what this badge says,
+              and saying so removes the ambiguity. */}
+          {revokedSignature && (
+            <span className="text-xs text-muted-foreground">Status agenda:</span>
           )}
           <LetterStatusBadge status={letter.status} />
         </div>
       </div>
+
+      {/* A withdrawn signature must be the first thing the page says. The
+          letter keeps its SIGNED status — it really was signed, and really did
+          circulate — so without this the page would still read as valid. */}
+      {revokedSignature && (
+        <div className="rounded-lg border border-orange-300 bg-orange-50 p-4 text-sm text-orange-900">
+          <p className="flex items-center gap-2 font-semibold">
+            <ShieldOff className="h-4 w-4" />
+            Naskah dinas ini telah dicabut
+          </p>
+          {revokedSignature.revokedReason && (
+            <p className="mt-1">{revokedSignature.revokedReason}</p>
+          )}
+          <p className="mt-2 text-xs text-orange-800">
+            Dicabut{" "}
+            {safeFormat(new Date(revokedSignature.revokedAt!), "dd MMMM yyyy HH:mm", {
+              locale: id,
+            })}
+            {revokedSignature.revokedBy?.name
+              ? ` oleh ${revokedSignature.revokedBy.name}`
+              : ""}
+            . Surat ini tidak lagi berlaku, dan halaman verifikasi publik
+            menyatakannya demikian kepada siapa pun yang mengunggah berkasnya.
+          </p>
+        </div>
+      )}
 
       <div className="grid gap-6 md:grid-cols-3">
         <div className="md:col-span-2 space-y-6">
@@ -556,7 +683,11 @@ export default function LetterDetailPage({
                   <label className="text-xs font-medium text-muted-foreground">
                     Urgensi
                   </label>
-                  <p>{letter.urgency}</p>
+                  {/* Was the raw enum ("NORMAL"), like Sifat used to be. */}
+                  <p>
+                    {LETTER_URGENCY_LABELS[letter.urgency as LetterUrgency] ??
+                      letter.urgency}
+                  </p>
                 </div>
               </div>
 
@@ -621,6 +752,13 @@ export default function LetterDetailPage({
             </Card>
           )}
 
+          <RevocationRequestsCard
+            letterId={letter.id}
+            requests={letter.revocationRequests ?? []}
+            canDecide={canRevokeLetter}
+            currentUserId={user?.id}
+          />
+
           <Card>
             <CardHeader>
               <CardTitle>Riwayat Disposisi</CardTitle>
@@ -657,10 +795,13 @@ export default function LetterDetailPage({
                 <p className="text-sm text-blue-700">
                   Instruksi: <strong>"{activeDisposition.instruction}"</strong>
                 </p>
+                {/* `flex-1`, not `w-full`. Two `w-full` buttons in one flex
+                    row each asked for the whole width, so the second one hung
+                    off the edge of the card and "Selesai" was cut in half. */}
                 <div className="flex gap-2">
                   {activeDisposition.status === "PENDING" && (
                     <Button
-                      className="w-full bg-blue-600 hover:bg-blue-700"
+                      className="flex-1 bg-blue-600 hover:bg-blue-700"
                       size="sm"
                       onClick={() => handleUpdateDisposition("IN_PROGRESS")}
                       disabled={isUpdating}
@@ -669,7 +810,7 @@ export default function LetterDetailPage({
                     </Button>
                   )}
                   <Button
-                    className="w-full bg-green-600 hover:bg-green-700"
+                    className="flex-1 bg-green-600 hover:bg-green-700"
                     size="sm"
                     onClick={() => setCompleteDialogOpen(true)}
                     disabled={isUpdating}
@@ -686,6 +827,10 @@ export default function LetterDetailPage({
               <CardTitle>Aksi</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
+              {/* A withdrawn letter is still printable — stamped DICABUT, the
+                  way an e-signature platform watermarks a voided document. The
+                  office still has to file a copy, and whoever holds the letter
+                  deserves a sheet that explains itself. */}
               <Button
                 className="w-full"
                 variant="outline"
@@ -694,6 +839,11 @@ export default function LetterDetailPage({
                 <Printer className="mr-2 h-4 w-4" />
                 Cetak Surat
               </Button>
+              {revokedSignature && (
+                <p className="-mt-1 text-xs text-muted-foreground">
+                  Salinan yang dicetak akan bercap DICABUT beserta alasannya.
+                </p>
+              )}
 
               <Button
                 className="w-full"
@@ -703,6 +853,68 @@ export default function LetterDetailPage({
                 <Send className="mr-2 h-4 w-4" />
                 Disposisi
               </Button>
+
+              {/*
+                Menarik kembali surat yang telanjur beredar.
+
+                Skema dan halaman verifikasi publik sudah lama siap
+                menampilkannya; yang tidak pernah ada adalah jalan untuk
+                melakukannya, sehingga satu-satunya cara adalah menyunting basis
+                data. Wewenangnya tetap ditegakkan server — di sini ia hanya
+                menentukan tombolnya ditawarkan atau tidak.
+              */}
+              {!!activeSignature && (
+                <Button
+                  className="w-full border-orange-300 text-orange-700 hover:bg-orange-50"
+                  variant="outline"
+                  onClick={() => setRevokeOpen(true)}
+                >
+                  <Undo2 className="mr-2 h-4 w-4" />
+                  {canRevokeLetter ? "Cabut Naskah Dinas" : "Ajukan Pencabutan"}
+                </Button>
+              )}
+
+              {/*
+                Konsep yang dikembalikan untuk revisi.
+
+                Sebelumnya tidak ada jalan keluar dari keadaan ini: rutenya ada
+                di API sejak aturan alurnya diperketat, tetapi tidak satu pun
+                halaman memanggilnya, sehingga surat yang dikembalikan berhenti
+                di situ selamanya.
+
+                Mengajukan ulang menghapus seluruh paraf, termasuk yang sudah
+                diberikan sebelum surat dikembalikan — sebuah paraf menyatakan
+                naskah *itu* layak diajukan, dan naskahnya sudah berubah. Itu
+                dikatakan di sini, bukan disimpan sebagai kejutan.
+              */}
+              {letter.status === "REVISION_NEEDED" &&
+                letter.createdById === user?.id && (
+                  <div className="space-y-3 border-t pt-4">
+                    <p className="text-xs font-medium text-muted-foreground">
+                      Surat dikembalikan untuk diperbaiki
+                    </p>
+                    <Textarea
+                      placeholder="Catatan perbaikan (opsional)…"
+                      value={resubmitNote}
+                      onChange={(e) => setResubmitNote(e.target.value)}
+                      className="text-xs"
+                    />
+                    <Button
+                      className="w-full bg-blue-600 hover:bg-blue-700"
+                      size="sm"
+                      onClick={handleResubmit}
+                      disabled={resubmitLetter.isPending}
+                    >
+                      <Send className="mr-2 h-4 w-4" />
+                      {resubmitLetter.isPending ? "Mengajukan…" : "Ajukan Ulang"}
+                    </Button>
+                    <p className="text-xs text-muted-foreground">
+                      Seluruh paraf yang sudah diberikan akan dihapus dan
+                      dikumpulkan ulang, karena naskahnya berubah setelah
+                      diparaf.
+                    </p>
+                  </div>
+                )}
 
               {letter.status === "DRAFT" && letter.createdById === user?.id && (
                 <div className="space-y-3 pt-2 border-t">
@@ -881,9 +1093,16 @@ export default function LetterDetailPage({
                       {index + 1}
                     </div>
                     <div>
-                      <p className="font-medium">{reviewer.reviewerName}</p>
-                      <p className="text-xs text-muted-foreground capitalize">
-                        {reviewer.status.toLowerCase().replace("_", " ")}
+                      <p className="font-medium">
+                        {reviewer.reviewer?.name ?? "Tidak diketahui"}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {/* Ini bagian yang paling sering dibaca di halaman ini:
+                            surat berhenti di siapa. Sebelumnya namanya kosong
+                            (DTO menjanjikan `reviewerName`, API mengirim
+                            `reviewer.name`) dan statusnya berbahasa Inggris. */}
+                        {reviewer.isSigner ? "Penanda tangan" : "Paraf"} ·{" "}
+                        {REVIEWER_STATUS_LABEL[reviewer.status] ?? reviewer.status}
                       </p>
                       {reviewer.notes && (
                         <p className="text-xs mt-1 bg-muted p-2 rounded">
@@ -895,7 +1114,7 @@ export default function LetterDetailPage({
                 ))}
                 {(!letter.reviewers || letter.reviewers.length === 0) && (
                   <p className="text-sm text-muted-foreground text-center">
-                    Tidak ada reviewer assigned.
+                    Belum ada pemeriksa yang ditunjuk.
                   </p>
                 )}
               </div>

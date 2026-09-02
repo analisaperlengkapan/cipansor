@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
+import { getPrimaryRoleCode } from "@/lib/rbac";
 import { useCorrespondence } from "@/hooks/use-correspondence";
 import { useCorrespondenceParticipants } from "@/hooks/use-correspondence";
 import { useUnits } from "@/hooks/use-units";
@@ -197,7 +198,7 @@ export default function CreateLetterPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               {/* B5: Display unit selector ONLY when user is authorized to issue cross-unit letters */}
-              {user && (user.roleCode === "YAYASAN_KETUA" || user.roleCode === "YAYASAN_SEKRETARIS" || user.roleCode === "SUPER_ADMIN" || !user.unitId) && (
+              {user && (getPrimaryRoleCode(user) === "YAYASAN_KETUA" || getPrimaryRoleCode(user) === "YAYASAN_SEKRETARIS" || getPrimaryRoleCode(user) === "SUPER_ADMIN" || !user.unitId) && (
                 <FormField
                   control={form.control}
                   name="unitId"

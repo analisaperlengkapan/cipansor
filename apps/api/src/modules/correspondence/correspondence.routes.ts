@@ -32,6 +32,7 @@ router.post('/letters', validate(createLetterSchema), CorrespondenceController.c
 router.get('/letters', CorrespondenceController.findAll);
 router.get('/stats', CorrespondenceController.getStats);
 router.get('/letters/:id', CorrespondenceController.findOne);
+router.get('/letters/:id/pdf', CorrespondenceController.getPdf);
 router.post('/letters/:id/review', validate(reviewLetterSchema), CorrespondenceController.review);
 router.post(
   '/letters/:id/submit',

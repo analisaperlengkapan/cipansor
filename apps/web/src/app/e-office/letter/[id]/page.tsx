@@ -126,107 +126,30 @@ export default function LetterDetailPage({
   };
 
   const handleDownloadPDF = async () => {
-    if (!pdfRef.current) return;
+    if (!letter?.id) return;
 
     try {
-      toast.info("Sedang menyiapkan PDF...");
-      const scale = 2;
-      const canvas = await html2canvas(pdfRef.current, { scale, useCORS: true });
-      const pdf = new jsPDF("p", "mm", "a4");
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-
-      const pxPerMm = canvas.width / pdfWidth;
-      const pageHeightPx = pdfHeight * pxPerMm;
-
-      /**
-       * Where a page may be cut.
-       *
-       * The previous version sliced every `pdfHeight` regardless of what was
-       * there, so a two-page letter opened page 2 with the bottom half of a
-       * line of text and ended it mid-sentence. Paragraphs are marked in the
-       * naskah with `data-naskah-block`; their top edges are the offsets where
-       * a cut lands between lines instead of through one. A little white space
-       * at the foot of a page is the correct trade.
-       */
-      const naskahTop = pdfRef.current.getBoundingClientRect().top;
-      const breakpoints = Array.from(
-        pdfRef.current.querySelectorAll("[data-naskah-block]"),
-      )
-        .map((el) => (el.getBoundingClientRect().top - naskahTop) * scale)
-        .filter((y) => y > 0);
-
-      /**
-       * Margins for the sheets the naskah itself does not provide.
-       *
-       * The naskah's own padding only produces white space at the very top of
-       * page 1 and the very bottom of the last page. Every cut in between was
-       * laid flush against the paper edge, so page 2 of a long letter opened
-       * with a line of text touching the top edge and closed with one touching
-       * the bottom — underneath the page number, which is drawn over the image.
-       * Beyond looking wrong, most printers cannot print within about 5 mm of
-       * the edge, so those lines came out clipped on paper.
-       *
-       * Page 1 keeps its own top margin (the kop is drawn inside it); the
-       * bottom margin applies to every page and is where the page number sits.
-       */
-      const TOP_MARGIN_MM = 15;
-      const BOTTOM_MARGIN_MM = 15;
-      const usableFirstPx = (pdfHeight - BOTTOM_MARGIN_MM) * pxPerMm;
-      const usableRestPx =
-        (pdfHeight - TOP_MARGIN_MM - BOTTOM_MARGIN_MM) * pxPerMm;
-
-      const pages: number[] = [0];
-      while (true) {
-        const top = pages[pages.length - 1];
-        const usable = pages.length === 1 ? usableFirstPx : usableRestPx;
-        if (top + usable >= canvas.height) break;
-        // The last breakpoint that still fits on this page.
-        const next = breakpoints.filter((y) => y > top && y <= top + usable).pop();
-        // No breakpoint fits (a single block taller than a page) — fall back to
-        // a hard cut rather than loop forever.
-        pages.push(next ?? top + usable);
-      }
-
-      const slice = document.createElement("canvas");
-      const sctx = slice.getContext("2d")!;
-      pages.forEach((top, i) => {
-        // Ends where the next page begins, not a full page-height further on.
-        // Taking the full height re-drew the paragraphs that belong to the next
-        // page, so a page started cleanly and still ran off mid-sentence.
-        const height = (pages[i + 1] ?? canvas.height) - top;
-        slice.width = canvas.width;
-        slice.height = height;
-        sctx.fillStyle = "#ffffff";
-        sctx.fillRect(0, 0, slice.width, slice.height);
-        sctx.drawImage(canvas, 0, -top);
-        if (i > 0) pdf.addPage();
-        pdf.addImage(
-          slice.toDataURL("image/png"),
-          "PNG",
-          0,
-          // Page 1 begins at the paper edge because the kop already sits inside
-          // the naskah's own padding; continuation pages need the margin drawn.
-          i === 0 ? 0 : TOP_MARGIN_MM,
-          pdfWidth,
-          height / pxPerMm,
-        );
-        // Continuation pages carry no letterhead, so they need to say which
-        // page they are — a loose sheet from a five-page edaran otherwise has
-        // nothing on it identifying where it belongs.
-        if (pages.length > 1) {
-          pdf.setFontSize(9);
-          pdf.setTextColor(120);
-          pdf.text(
-            `Halaman ${i + 1} dari ${pages.length}`,
-            pdfWidth - 15,
-            pdfHeight - 8,
-            { align: "right" },
-          );
-        }
+      toast.info("Sedang mengunduh dokumen PDF...");
+      const response = await fetch(`/api/correspondence/letters/${letter.id}/pdf`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+        },
       });
 
-      pdf.save(`Surat-${letter?.letterNumber || "Draft"}.pdf`);
+      if (!response.ok) {
+        throw new Error("Gagal mengunduh file PDF dari server");
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Surat-${letter.letterNumber || letter.agendaNumber || "Draft"}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
       toast.success("Surat berhasil diunduh");
     } catch (error) {
       console.error(error);

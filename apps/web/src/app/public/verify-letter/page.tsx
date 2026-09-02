@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
-import { usePublicVerifyLetter } from "@/hooks/use-correspondence";
+import { useCaptchaChallenge, useVerifyPdfLetter } from "@/hooks/use-correspondence";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,71 +15,100 @@ import {
   User,
   Building,
   RefreshCw,
-  Search,
+  Upload,
   Lock,
+  FileUp,
 } from "lucide-react";
 import { safeFormat } from "@/lib/date";
 import { id as localeId } from "date-fns/locale";
 import type { PublicLetterVerificationResult } from "@cipansor/shared";
 
+function formatWibTimestamp(dateInput?: Date | string | null, includeSeconds = false) {
+  if (!dateInput) return "-";
+  try {
+    const d = new Date(dateInput);
+    return new Intl.DateTimeFormat("id-ID", {
+      timeZone: "Asia/Jakarta",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      ...(includeSeconds ? { second: "2-digit" } : {}),
+      hour12: false,
+    }).format(d);
+  } catch {
+    return "-";
+  }
+}
+
 function PublicVerifyContent() {
-  const searchParams = useSearchParams();
-  const tokenFromUrl = searchParams.get("code") || searchParams.get("token") || "";
-
-  const [tokenInput, setTokenInput] = useState(tokenFromUrl);
-  const [activeToken, setActiveToken] = useState<string>("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [result, setResult] = useState<PublicLetterVerificationResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [triggerNonce, setTriggerNonce] = useState(0);
 
-  // Simple Captcha Anti-Spam
-  const [captchaNum1, setCaptchaNum1] = useState(0);
-  const [captchaNum2, setCaptchaNum2] = useState(0);
+  // Anti-Spam CAPTCHA (Server-side challenge token)
+  const { data: captchaData, refetch: refetchCaptcha } = useCaptchaChallenge();
   const [captchaAnswer, setCaptchaAnswer] = useState("");
-  const [captchaPassed, setCaptchaPassed] = useState(false);
 
-  const generateCaptcha = () => {
-    const num1 = Math.floor(Math.random() * 9) + 1;
-    const num2 = Math.floor(Math.random() * 9) + 1;
-    setCaptchaNum1(num1);
-    setCaptchaNum2(num2);
+  const verifyPdfMutation = useVerifyPdfLetter();
+
+  const refreshCaptcha = () => {
     setCaptchaAnswer("");
-    setCaptchaPassed(false);
+    refetchCaptcha();
   };
 
-  useEffect(() => {
-    generateCaptcha();
-  }, []);
-
-  useEffect(() => {
-    if (tokenFromUrl && tokenFromUrl.trim()) {
-      setTokenInput(tokenFromUrl.trim());
-      setActiveToken(tokenFromUrl.trim());
-      setCaptchaPassed(true);
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      if (file.type !== "application/pdf") {
+        setError("Format file harus berupa PDF.");
+        setSelectedFile(null);
+        return;
+      }
+      setSelectedFile(file);
+      setError(null);
     }
-  }, [tokenFromUrl]);
+  };
 
-  const { data: result, isLoading: loading, isError, error: queryError, refetch } = usePublicVerifyLetter(
-    captchaPassed ? activeToken : undefined,
-    triggerNonce
-  );
-
-  const verifyToken = (tokenToVerify: string) => {
-    const trimmed = tokenToVerify.trim();
-    if (!trimmed) return;
-
-    if (!captchaPassed && Number(captchaAnswer) !== captchaNum1 + captchaNum2) {
-      setError("Jawaban verifikasi keamanan (CAPTCHA) belum tepat.");
+  const handleVerify = async () => {
+    if (!selectedFile) {
+      setError("Silakan pilih file PDF dokumen terlebih dahulu.");
       return;
     }
 
-    setCaptchaPassed(true);
-    setError(null);
+    if (!captchaData?.token) {
+      setError("Sesi CAPTCHA belum siap. Silakan muat ulang halaman.");
+      return;
+    }
 
-    if (activeToken === trimmed) {
-      refetch();
-    } else {
-      setActiveToken(trimmed);
-      setTriggerNonce((prev) => prev + 1);
+    if (!captchaAnswer) {
+      setError("Jawaban verifikasi keamanan (CAPTCHA) wajib diisi.");
+      return;
+    }
+
+    setError(null);
+    setResult(null);
+
+    try {
+      const data = await verifyPdfMutation.mutateAsync({
+        file: selectedFile,
+        captchaToken: captchaData.token,
+        captchaAnswer,
+      });
+      setResult(data);
+      refreshCaptcha();
+    } catch (err: any) {
+      refreshCaptcha();
+      if (err?.response?.status === 429) {
+        setError("Terlalu banyak permintaan verifikasi. Silakan tunggu beberapa saat.");
+      } else {
+        setError(
+          err?.response?.data?.error?.message ||
+            err?.response?.data?.message ||
+            "Terjadi kesalahan saat memverifikasi dokumen PDF."
+        );
+      }
     }
   };
 
@@ -104,72 +132,76 @@ function PublicVerifyContent() {
         <Card className="shadow-md border-slate-200">
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
-              <Search className="h-5 w-5 text-blue-600" />
-              Cari & Periksa Token Verifikasi
+              <Upload className="h-5 w-5 text-blue-600" />
+              Unggah File PDF Surat / Naskah Dinas
             </CardTitle>
             <CardDescription>
-              Masukkan kode / token verifikasi yang tertera di bawah QR Code dokumen.
+              Unggah berkas PDF dokumen resmi untuk memverifikasi keabsahan tanda tangan elektronik.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="token">Token / Kode Verifikasi Dokumen</Label>
-              <Input
-                id="token"
-                placeholder="Masukkan token (contoh: 8f9a2b1c-3d4e-5f6a)"
-                value={tokenInput}
-                onChange={(e) => setTokenInput(e.target.value)}
-                className="font-mono"
-              />
+              <Label htmlFor="pdf-file">Berkas Dokumen PDF</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="pdf-file"
+                  type="file"
+                  accept="application/pdf"
+                  onChange={handleFileChange}
+                  className="bg-white cursor-pointer"
+                />
+              </div>
+              {selectedFile && (
+                <p className="text-xs text-slate-600 flex items-center gap-1 mt-1">
+                  <FileUp className="h-3.5 w-3.5 text-blue-600" />
+                  File terpilih: <span className="font-semibold text-slate-800">{selectedFile.name}</span> ({(selectedFile.size / 1024).toFixed(1)} KB)
+                </p>
+              )}
             </div>
 
-
             {/* Anti Spam CAPTCHA */}
-            {!captchaPassed && !tokenFromUrl && (
-              <div className="p-3 bg-slate-100 rounded-md border text-sm space-y-2">
-                <div className="flex items-center gap-2 text-slate-700 font-medium">
-                  <Lock className="h-4 w-4 text-blue-600" />
-                  Keamanan Anti-Spam: Berapakah <strong>{captchaNum1} + {captchaNum2}</strong>?
-                </div>
-                <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    placeholder="Hasil penjumlahan..."
-                    value={captchaAnswer}
-                    onChange={(e) => setCaptchaAnswer(e.target.value)}
-                    className="max-w-[180px] bg-white"
-                  />
-                  <Button variant="ghost" size="sm" onClick={generateCaptcha}>
-                    <RefreshCw className="h-4 w-4 mr-1" /> Acak
-                  </Button>
-                </div>
+            <div className="p-3 bg-slate-100 rounded-md border text-sm space-y-2">
+              <div className="flex items-center gap-2 text-slate-700 font-medium">
+                <Lock className="h-4 w-4 text-blue-600" />
+                Keamanan Anti-Spam: Berapakah{" "}
+                <strong>
+                  {captchaData ? `${captchaData.num1} + ${captchaData.num2}` : "..."}
+                </strong>
+                ?
               </div>
-            )}
+              <div className="flex gap-2">
+                <Input
+                  type="number"
+                  placeholder="Hasil..."
+                  value={captchaAnswer}
+                  onChange={(e) => setCaptchaAnswer(e.target.value)}
+                  className="max-w-[180px] bg-white"
+                />
+                <Button variant="ghost" size="sm" onClick={refreshCaptcha}>
+                  <RefreshCw className="h-4 w-4 mr-1" /> Acak
+                </Button>
+              </div>
+            </div>
 
             <Button
               className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold"
-              onClick={() => verifyToken(tokenInput)}
-              disabled={loading || !tokenInput.trim()}
+              onClick={handleVerify}
+              disabled={verifyPdfMutation.isPending || !selectedFile}
             >
-              {loading ? (
+              {verifyPdfMutation.isPending ? (
                 <>
                   <RefreshCw className="h-4 w-4 animate-spin mr-2" />
-                  Memeriksa Keabsahan...
+                  Memeriksa Keabsahan Dokumen...
                 </>
               ) : (
                 "Verifikasi Dokumen"
               )}
             </Button>
 
-            {(error || isError) && (
+            {error && (
               <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-md flex items-center gap-2">
                 <AlertTriangle className="h-5 w-5 shrink-0" />
-                <span>
-                  {error ||
-                    ((queryError as any)?.response?.status === 429
-                      ? "Terlalu banyak permintaan verifikasi. Silakan tunggu beberapa saat."
-                      : "Terjadi kesalahan atau dokumen tidak dapat diverifikasi.")}
-                </span>
+                <span>{error}</span>
               </div>
             )}
           </CardContent>
@@ -235,9 +267,7 @@ function PublicVerifyContent() {
                     Surat ini telah resmi dicabut oleh penerbit/penandatangan pada{" "}
                     <strong>
                       {result.revokedAt
-                        ? safeFormat(new Date(result.revokedAt), "dd MMMM yyyy HH:mm", {
-                            locale: localeId,
-                          })
+                        ? `${formatWibTimestamp(result.revokedAt, true)} WIB`
                         : "tanggal yang ditentukan"}
                     </strong>
                     . Dokumen ini tidak lagi berlaku untuk keperluan administratif.
@@ -309,20 +339,18 @@ function PublicVerifyContent() {
                       <span className="font-medium text-slate-900">{result.signer.position}</span>
                     </div>
                     {result.signedAt && (
-                      <div>
+                      <div className="sm:col-span-2">
                         <span className="text-xs text-slate-500 block">Waktu Penandatanganan</span>
                         <span className="font-medium text-slate-900">
-                          {safeFormat(new Date(result.signedAt), "dd MMMM yyyy HH:mm:ss", {
-                            locale: localeId,
-                          })} WIB
+                          {formatWibTimestamp(result.signedAt, true)} WIB
                         </span>
                       </div>
                     )}
                     {result.digest && (
-                      <div>
+                      <div className="sm:col-span-2">
                         <span className="text-xs text-slate-500 block">Digital Digest SHA-256</span>
                         <span className="font-mono text-xs text-slate-600 truncate block">
-                          {result.digest.slice(0, 16)}...{result.digest.slice(-16)}
+                          {result.digest}
                         </span>
                       </div>
                     )}

@@ -31,7 +31,7 @@ export function usePublicVerifyLetter(token?: string, nonce: number = 0) {
       const response = await api.get<{
         success: boolean;
         data: PublicLetterVerificationResult;
-      }>(`/correspondence/public/verify/${encodeURIComponent(token!.trim())}`);
+      }>(`/esign/verify/${encodeURIComponent(token!.trim())}`);
       return response.data.data;
     },
     enabled: !!token && token.trim().length > 0,
@@ -39,6 +39,47 @@ export function usePublicVerifyLetter(token?: string, nonce: number = 0) {
     gcTime: 0,
     refetchOnMount: "always",
     retry: false,
+  });
+}
+
+export function useCaptchaChallenge() {
+  return useQuery({
+    queryKey: ["captchaChallenge"],
+    queryFn: async () => {
+      const response = await api.get<{
+        success: boolean;
+        data: { token: string; num1: number; num2: number };
+      }>("/esign/captcha");
+      return response.data.data;
+    },
+    staleTime: 0,
+    gcTime: 0,
+  });
+}
+
+export function useVerifyPdfLetter() {
+  return useMutation({
+    mutationFn: async ({
+      file,
+      captchaToken,
+      captchaAnswer,
+    }: {
+      file: File;
+      captchaToken: string;
+      captchaAnswer: string;
+    }) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("captchaToken", captchaToken);
+      formData.append("captchaAnswer", captchaAnswer);
+      const response = await api.post<{
+        success: boolean;
+        data: PublicLetterVerificationResult;
+      }>("/esign/verify-pdf", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return response.data.data;
+    },
   });
 }
 

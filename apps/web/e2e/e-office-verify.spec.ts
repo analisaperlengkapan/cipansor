@@ -2,17 +2,15 @@ import { test, expect } from "@playwright/test";
 import { loginAs } from "./helpers/auth-api";
 
 test.describe("E-Office & Public Letter Verification E2E", () => {
-  test("Public Letter Verification page loads and displays form and CAPTCHA", async ({ page }) => {
+  test("Public Letter Verification page loads and displays PDF upload form and CAPTCHA", async ({ page }) => {
     await page.goto("/public/verify-letter");
 
     await expect(page.locator("h1")).toContainText("Verifikasi Tanda Tangan Elektronik");
-    await expect(page.getByPlaceholder(/masukkan token/i)).toBeVisible();
+    await expect(page.locator("input[type='file']")).toBeVisible();
     await expect(page.getByRole("button", { name: /verifikasi dokumen/i })).toBeVisible();
 
-    // Fill invalid token and fail CAPTCHA check first
-    await page.getByPlaceholder(/masukkan token/i).fill("invalid-token-123");
-    await page.getByRole("button", { name: /verifikasi dokumen/i }).click();
-    await expect(page.getByText(/jawaban verifikasi keamanan/i)).toBeVisible();
+    // Verify button is disabled when no PDF file is selected
+    await expect(page.getByRole("button", { name: /verifikasi dokumen/i })).toBeDisabled();
   });
 
   test("E-Office main page renders and displays stats for authenticated users", async ({ page }) => {
@@ -26,16 +24,33 @@ test.describe("E-Office & Public Letter Verification E2E", () => {
     await expect(page.getByRole("button", { name: /buat surat baru/i })).toBeVisible();
   });
 
-  test("Automatic public verification works when code URL parameter is present", async ({ page }) => {
-    // Open verification page with code parameter
-    await page.goto("/public/verify-letter?code=invalid-test-token");
+  test("Integration test against real backend /api/esign/verify-pdf endpoint", async ({ page }) => {
+    await page.goto("/public/verify-letter");
 
-    // Page should auto-populate input and execute verification attempt
-    await expect(page.getByPlaceholder(/masukkan token/i)).toHaveValue("invalid-test-token");
+    const buffer = Buffer.from("%PDF-1.7\n1 0 obj\n<< /Type /Catalog >>\nendobj\ntrailer\n<< /Root 1 0 R >>\n%%EOF");
+    await page.setInputFiles("input[type='file']", {
+      name: "sample-document.pdf",
+      mimeType: "application/pdf",
+      buffer,
+    });
+
+    const captchaText = await page.textContent("text=/Keamanan Anti-Spam: Berapakah/");
+    if (captchaText) {
+      const match = captchaText.match(/(\d+)\s*\+\s*(\d+)/);
+      if (match) {
+        const sum = parseInt(match[1]) + parseInt(match[2]);
+        await page.getByPlaceholder("Hasil...").fill(sum.toString());
+      }
+    }
+
+    await page.getByRole("button", { name: /verifikasi dokumen/i }).click();
+
+    // With real backend, uploading random PDF buffer should return DOKUMEN TIDAK VALID or result
+    await expect(page.locator("text=/DOKUMEN TIDAK VALID|DOKUMEN SAH & TERVERIFIKASI/")).toBeVisible();
   });
 
-  test("Valid public verification displays success status and signer details", async ({ page }) => {
-    await page.route("**/api/correspondence/public/verify/valid-token-123", async (route) => {
+  test("Valid public PDF verification displays success status and TTE signer details", async ({ page }) => {
+    await page.route("**/api/esign/verify-pdf", async (route) => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -52,47 +67,128 @@ test.describe("E-Office & Public Letter Verification E2E", () => {
               status: "SIGNED",
               unitName: "SMA Al-Qur'an",
             },
-            signedAt: "2026-08-01T00:00:00Z",
+            signedAt: "2026-08-01T16:40:31Z",
+            digest: "a1b2c3d4e5f67890a1b2c3d4e5f67890a1b2c3d4e5f67890a1b2c3d4e5f67890",
           },
         }),
       });
     });
 
-    await page.goto("/public/verify-letter?code=valid-token-123");
+    await page.goto("/public/verify-letter");
+
+    const buffer = Buffer.from("%PDF-1.7\n1 0 obj\n<< /Type /Catalog >>\nendobj\ntrailer\n<< /Root 1 0 R >>\n%%EOF");
+    await page.setInputFiles("input[type='file']", {
+      name: "surat-resmi.pdf",
+      mimeType: "application/pdf",
+      buffer,
+    });
+
+    const captchaText = await page.textContent("text=/Keamanan Anti-Spam: Berapakah/");
+    if (captchaText) {
+      const match = captchaText.match(/(\d+)\s*\+\s*(\d+)/);
+      if (match) {
+        const sum = parseInt(match[1]) + parseInt(match[2]);
+        await page.getByPlaceholder("Hasil...").fill(sum.toString());
+      }
+    }
+
+    await page.getByRole("button", { name: /verifikasi dokumen/i }).click();
+
     await expect(page.getByText(/DOKUMEN SAH & TERVERIFIKASI/i)).toBeVisible();
     await expect(page.getByText("Dr. H. Ahmad")).toBeVisible();
     await expect(page.getByText("001/SK/Y-CPS/VIII/2026")).toBeVisible();
+    await expect(page.getByText(/23:40:31 WIB/i)).toBeVisible();
   });
 
-  test("Confidential letter hides subject field on public verification page", async ({ page }) => {
-    await page.route("**/api/correspondence/public/verify/confidential-token-123", async (route) => {
+  test("Revoked PDF verification displays revoked notice", async ({ page }) => {
+    await page.route("**/api/esign/verify-pdf", async (route) => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
         body: JSON.stringify({
           success: true,
           data: {
-            isValid: true,
-            isRevoked: false,
+            isValid: false,
+            isRevoked: true,
+            revokedAt: "2026-08-02T10:00:00Z",
+            revokedReason: "Dibatalkan oleh pimpinan",
             signer: { name: "H. Ustadz Abdullah", nip: "19750202", position: "Sekretaris" },
             letter: {
-              letterNumber: "002/RAHASIA/Y-CPS/VIII/2026",
-              subject: null,
+              letterNumber: "002/SK/Y-CPS/VIII/2026",
+              subject: "SK Pengangkatan",
               date: "2026-08-01",
-              status: "SIGNED",
+              status: "REVOKED",
               unitName: "Yayasan Pesantren Cipansor",
             },
-            signedAt: "2026-08-01T00:00:00Z",
+            signedAt: "2026-08-01T12:00:00Z",
           },
         }),
       });
     });
 
-    await page.goto("/public/verify-letter?code=confidential-token-123");
-    await expect(page.getByText(/DOKUMEN SAH & TERVERIFIKASI/i)).toBeVisible();
-    await expect(page.getByText(/Perihal dan isi surat tidak ditampilkan \(Sifat Surat Rahasia\/Terbatas\)/i)).toBeVisible();
+    await page.goto("/public/verify-letter");
+
+    const buffer = Buffer.from("%PDF-1.7\n1 0 obj\n<< /Type /Catalog >>\nendobj\ntrailer\n<< /Root 1 0 R >>\n%%EOF");
+    await page.setInputFiles("input[type='file']", {
+      name: "surat-revoked.pdf",
+      mimeType: "application/pdf",
+      buffer,
+    });
+
+    const captchaText = await page.textContent("text=/Keamanan Anti-Spam: Berapakah/");
+    if (captchaText) {
+      const match = captchaText.match(/(\d+)\s*\+\s*(\d+)/);
+      if (match) {
+        const sum = parseInt(match[1]) + parseInt(match[2]);
+        await page.getByPlaceholder("Hasil...").fill(sum.toString());
+      }
+    }
+
+    await page.getByRole("button", { name: /verifikasi dokumen/i }).click();
+
+    await expect(page.getByText(/SURAT TELAH DICABUT/i)).toBeVisible();
+    await expect(page.getByText(/Keterangan Pencabutan/i)).toBeVisible();
   });
 
+  test("Invalid PDF displays invalid document error", async ({ page }) => {
+    await page.route("**/api/esign/verify-pdf", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          success: true,
+          data: {
+            isValid: false,
+            isRevoked: false,
+            reason: "Dokumen PDF ini tidak terdaftar dalam sistem resmi Yayasan Pesantren Cipansor.",
+          },
+        }),
+      });
+    });
+
+    await page.goto("/public/verify-letter");
+
+    const buffer = Buffer.from("%PDF-1.7\n1 0 obj\n<< /Type /Catalog >>\nendobj\ntrailer\n<< /Root 1 0 R >>\n%%EOF");
+    await page.setInputFiles("input[type='file']", {
+      name: "surat-invalid.pdf",
+      mimeType: "application/pdf",
+      buffer,
+    });
+
+    const captchaText = await page.textContent("text=/Keamanan Anti-Spam: Berapakah/");
+    if (captchaText) {
+      const match = captchaText.match(/(\d+)\s*\+\s*(\d+)/);
+      if (match) {
+        const sum = parseInt(match[1]) + parseInt(match[2]);
+        await page.getByPlaceholder("Hasil...").fill(sum.toString());
+      }
+    }
+
+    await page.getByRole("button", { name: /verifikasi dokumen/i }).click();
+
+    await expect(page.getByText(/DOKUMEN TIDAK VALID/i)).toBeVisible();
+    await expect(page.getByText(/tidak terdaftar dalam sistem resmi/i)).toBeVisible();
+  });
 
   test("Authenticated user can navigate to Create Letter and search participants in real flow", async ({ page }) => {
     await loginAs(page, "superAdmin");
@@ -100,11 +196,9 @@ test.describe("E-Office & Public Letter Verification E2E", () => {
     await page.goto("/e-office/create");
     await expect(page.locator("h1")).toContainText("Buat Surat Baru");
 
-    // Check basic form fields exist
     await expect(page.getByLabel(/Perihal/i)).toBeVisible();
     await page.getByLabel(/Perihal/i).fill("Undangan Rapat Evaluasi E2E");
 
-    // Search input for participant selection exists
     const searchInput = page.getByPlaceholder(/Cari pejabat\/staf/i);
     await expect(searchInput).toBeVisible();
     await searchInput.fill("Ahmad");

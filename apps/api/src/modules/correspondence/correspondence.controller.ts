@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { CorrespondenceService } from './correspondence.service';
 import { asyncHandler, Errors } from '@/middleware/error';
 import { ApiResponse } from '@/utils/response';
+import { generateLetterPdfBuffer } from '@/utils/generate-letter-pdf';
 import {
   choosesUnit,
   handlesUnitCorrespondence,
@@ -56,6 +57,18 @@ export const CorrespondenceController = {
   findOne: asyncHandler(async (req: Request, res: Response) => {
     const result = await CorrespondenceService.getLetterById(req.params.id, actorOf(req));
     res.json(ApiResponse.success(result));
+  }),
+
+  getPdf: asyncHandler(async (req: Request, res: Response) => {
+    const letter = await CorrespondenceService.getLetterById(req.params.id, actorOf(req));
+    if (!letter) {
+      throw Errors.notFound('Surat tidak ditemukan');
+    }
+    const pdfBuffer = await generateLetterPdfBuffer(letter);
+    const fileName = `Surat-${letter.letterNumber || letter.agendaNumber || 'Draft'}.pdf`;
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="${fileName}"`);
+    res.send(pdfBuffer);
   }),
 
   review: asyncHandler(async (req: Request, res: Response) => {

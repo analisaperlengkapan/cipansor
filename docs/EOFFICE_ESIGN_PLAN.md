@@ -409,7 +409,7 @@ Peruri, Digisign) — a procurement decision, not an engineering one. What the
 work above buys is a system that behaves correctly at its own tier, and one that
 a PSrE could be dropped into later without redesigning the flow around it.
 
-### PR-3 — Archive the signed PDF bytes (§2.4) — **SHIPPED** (PR #436)
+### PR-3 — Archive the signed PDF bytes (§2.4) — **SHIPPED** (PR #437)
 
 `LetterSignedDocument` holds the exact buffer that was hashed, written inside
 the signing transaction alongside `pdfHash` — for the same reason the hash is

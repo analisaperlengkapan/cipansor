@@ -3,7 +3,7 @@
  * Phase 7A.2 - Notification Integration
  *
  * Supports:
- * - Email notifications via SMTP/SendGrid/AWS SES
+ * - Email notifications (Gmail API or SMTP — see email-transport.ts)
  * - SMS notifications via Twilio/AWS SNS
  * - Push notifications (future)
  * - Notification templates
@@ -14,71 +14,174 @@ import { prisma } from '../../lib/prisma';
 import { logger } from '../../lib/logger';
 import { Twilio } from 'twilio';
 import { config } from '../../config';
-import nodemailer from 'nodemailer';
 import { whatsAppService } from './whatsapp.service';
+import {
+  deliverEmail,
+  describeEmailTransport,
+  resetEmailTransport,
+  type EmailTransportKind,
+} from './email-transport';
+
+/**
+ * Escapes unsafe characters for HTML interpolation.
+ */
+function escapeHtml(str: string): string {
+  if (!str) return '';
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+/**
+ * Layout HTML Wrapper standard for Yayasan Pesantren Cipansor
+ */
+const renderEmailLayout = (title: string, contentHtml: string) => `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${title}</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f3f4f6; margin: 0; padding: 24px;">
+  <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+    <!-- Header -->
+    <div style="background-color: #1e3a8a; color: #ffffff; padding: 20px 24px; text-align: center;">
+      <h1 style="margin: 0; font-size: 20px; font-weight: 700; letter-spacing: 0.5px;">Yayasan Pesantren Cipansor</h1>
+      <p style="margin: 4px 0 0 0; font-size: 12px; color: #93c5fd;">Sistem Informasi Management Terpadu</p>
+    </div>
+    <!-- Body -->
+    <div style="padding: 24px; color: #1f2937; line-height: 1.6;">
+      ${contentHtml}
+    </div>
+    <!-- Footer -->
+    <div style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 16px 24px; text-align: center; font-size: 12px; color: #64748b;">
+      <p style="margin: 0 0 8px 0;">Email ini dikirim secara otomatis oleh Sistem Informasi Yayasan Pesantren Cipansor.</p>
+      <p style="margin: 0; font-style: italic; color: #0284c7;">
+        Mohon <strong>tidak membalas langsung ke alamat email noreply ini</strong>. Jika Anda memiliki pertanyaan, silakan kirim email ke kanal resmi kami di
+        <a href="mailto:${config.mail.replyTo}" style="color: #0284c7; font-weight: bold; text-decoration: underline;">${config.mail.replyTo}</a>.
+      </p>
+      <p style="margin: 12px 0 0 0; color: #94a3b8;">&copy; ${new Date().getFullYear()} Yayasan Pesantren Cipansor. All rights reserved.</p>
+    </div>
+  </div>
+</body>
+</html>
+`;
 
 // Notification templates
 const templates = {
   // Welcome email for new users
   welcome: {
     subject: 'Selamat Datang di Cipansor',
-    html: (data: { name: string; email: string; password?: string }) => `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #1e40af;">Selamat Datang di Cipansor!</h2>
-        <p>Halo ${data.name},</p>
+    html: (data: { name: string; email: string; password?: string }) =>
+      renderEmailLayout(
+        'Selamat Datang di Cipansor',
+        `
+        <h2 style="color: #1e3a8a; margin-top: 0;">Selamat Datang di Cipansor!</h2>
+        <p>Halo <strong>${escapeHtml(data.name)}</strong>,</p>
         <p>Akun Anda telah berhasil dibuat di sistem Cipansor - Pesantren Management System.</p>
-        <p>Detail akun Anda:</p>
-        <ul>
-          <li><strong>Email:</strong> ${data.email}</li>
-          ${data.password ? `<li><strong>Password sementara:</strong> ${data.password}</li>` : ''}
-        </ul>
-        ${data.password ? '<p>Silakan segera ubah password Anda setelah login pertama kali.</p>' : ''}
-        <p>Salam,<br/>Tim Cipansor</p>
-      </div>
-    `,
+        <div style="background-color: #f1f5f9; border-left: 4px solid #1e3a8a; padding: 12px 16px; margin: 16px 0; border-radius: 4px;">
+          <p style="margin: 0 0 8px 0;"><strong>Detail Akun Anda:</strong></p>
+          <ul style="margin: 0; padding-left: 20px;">
+            <li><strong>Email:</strong> ${escapeHtml(data.email)}</li>
+            ${data.password ? `<li><strong>Password sementara:</strong> <code>${escapeHtml(data.password)}</code></li>` : ''}
+          </ul>
+        </div>
+        ${data.password ? '<p style="color: #dc2626; font-size: 13px;"><em>Demi keamanan, silakan segera ubah password Anda setelah login pertama kali.</em></p>' : ''}
+        <p style="margin-top: 24px;">Salam,<br/><strong>Tim Pengelola Cipansor</strong></p>
+        `
+      ),
   },
 
   // Password reset
   passwordReset: {
     subject: 'Reset Password - Cipansor',
-    html: (data: { name: string; resetLink: string }) => `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #1e40af;">Reset Password</h2>
-        <p>Halo ${data.name},</p>
-        <p>Kami menerima permintaan untuk mereset password akun Anda.</p>
-        <p>Klik tombol di bawah untuk mereset password:</p>
-        <a href="${data.resetLink}" style="display: inline-block; background-color: #1e40af; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 16px 0;">Reset Password</a>
-        <p>Link ini akan kadaluarsa dalam 1 jam.</p>
-        <p>Jika Anda tidak meminta reset password, abaikan email ini.</p>
-        <p>Salam,<br/>Tim Cipansor</p>
-      </div>
-    `,
+    html: (data: { name: string; resetLink: string; expiresInHours?: number }) =>
+      renderEmailLayout(
+        'Reset Password - Cipansor',
+        `
+        <h2 style="color: #1e3a8a; margin-top: 0;">Reset Password</h2>
+        <p>Halo <strong>${escapeHtml(data.name)}</strong>,</p>
+        <p>Kami menerima permintaan untuk mereset password akun Anda di Sistem Cipansor.</p>
+        <div style="text-align: center; margin: 24px 0;">
+          <a href="${escapeHtml(data.resetLink)}" style="display: inline-block; background-color: #1e3a8a; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Reset Password Saya</a>
+        </div>
+        <!--
+          The lifetime is passed in rather than written here. Self-service
+          resets last an hour; the tokens minted when a santri or wali account
+          is created last 24, and this line used to claim "1 jam" for both.
+        -->
+        <p style="font-size: 13px; color: #64748b;">Link ini akan kadaluarsa dalam ${data.expiresInHours ?? 1} jam.</p>
+        <p style="font-size: 12px; color: #94a3b8; word-break: break-all;">Jika tombol di atas tidak berfungsi, salin tautan ini ke peramban Anda:<br/>${escapeHtml(data.resetLink)}</p>
+        <p style="font-size: 13px; color: #64748b;">Jika Anda tidak meminta reset password, abaikan saja email ini.</p>
+        <p style="margin-top: 24px;">Salam,<br/><strong>Tim IT & Keamanan Cipansor</strong></p>
+        `
+      ),
   },
 
   // Payment reminder
   paymentReminder: {
-    subject: 'Pengingat Pembayaran - Cipansor',
+    subject: 'Pengingat Tagihan Pembayaran - Cipansor',
     html: (data: {
       parentName: string;
       studentName: string;
       invoiceNumber: string;
       amount: string;
       dueDate: string;
-    }) => `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #1e40af;">Pengingat Pembayaran</h2>
-        <p>Yth. Bapak/Ibu ${data.parentName},</p>
-        <p>Kami ingin mengingatkan bahwa terdapat tagihan yang perlu dibayarkan untuk:</p>
-        <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
-          <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Nama Siswa:</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${data.studentName}</td></tr>
-          <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>No. Invoice:</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${data.invoiceNumber}</td></tr>
-          <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Jumlah:</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${data.amount}</td></tr>
-          <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Jatuh Tempo:</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${data.dueDate}</td></tr>
+    }) =>
+      renderEmailLayout(
+        'Pengingat Pembayaran - Cipansor',
+        `
+        <h2 style="color: #1e3a8a; margin-top: 0;">Pengingat Tagihan Pembayaran</h2>
+        <p>Yth. Bapak/Ibu <strong>${escapeHtml(data.parentName)}</strong>,</p>
+        <p>Kami menyampaikan pengingat mengenai tagihan pendidikan/pesantren untuk putra/putri Anda:</p>
+        <table style="width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px;">
+          <tr style="background-color: #f8fafc;"><td style="padding: 10px; border: 1px solid #e2e8f0; width: 35%;"><strong>Nama Santri/Siswa:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0;">${escapeHtml(data.studentName)}</td></tr>
+          <tr><td style="padding: 10px; border: 1px solid #e2e8f0;"><strong>No. Invoice:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0;"><code>${escapeHtml(data.invoiceNumber)}</code></td></tr>
+          <tr style="background-color: #f8fafc;"><td style="padding: 10px; border: 1px solid #e2e8f0;"><strong>Jumlah Tagihan:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0; color: #047857; font-weight: bold;">${escapeHtml(data.amount)}</td></tr>
+          <tr><td style="padding: 10px; border: 1px solid #e2e8f0;"><strong>Jatuh Tempo:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0; color: #b91c1c; font-weight: bold;">${escapeHtml(data.dueDate)}</td></tr>
         </table>
-        <p>Mohon segera melakukan pembayaran sebelum jatuh tempo untuk menghindari denda keterlambatan.</p>
-        <p>Salam,<br/>Tim Keuangan Cipansor</p>
-      </div>
-    `,
+        <p>Mohon segera melakukan pembayaran sebelum tanggal jatuh tempo melalui Portal Wali / Rekening Resmi Yayasan.</p>
+        <p style="margin-top: 24px;">Salam hangat,<br/><strong>Bendahara & Keuangan Cipansor</strong></p>
+        `
+      ),
+  },
+
+  // Payment Receipt (Kwitansi Pembayaran)
+  paymentReceipt: {
+    subject: 'Bukti Pembayaran Resmi - Cipansor',
+    html: (data: {
+      parentName: string;
+      studentName: string;
+      receiptNumber: string;
+      amount: string;
+      paymentDate: string;
+      paymentMethod: string;
+      description: string;
+    }) =>
+      renderEmailLayout(
+        'Bukti Pembayaran Resmi',
+        `
+        <h2 style="color: #047857; margin-top: 0;">Kwitansi & Bukti Pembayaran Resmi</h2>
+        <p>Yth. Bapak/Ibu <strong>${escapeHtml(data.parentName)}</strong>,</p>
+        <p>Pembayaran Anda telah kami terima dan diverifikasi oleh Tim Keuangan Yayasan Pesantren Cipansor.</p>
+        <div style="background-color: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 6px; padding: 16px; margin: 16px 0;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+            <tr><td style="padding: 6px 0; color: #065f46;"><strong>No. Bukti / Transaksi:</strong></td><td style="padding: 6px 0; text-align: right; color: #065f46;"><code>${escapeHtml(data.receiptNumber)}</code></td></tr>
+            <tr><td style="padding: 6px 0; color: #065f46;"><strong>Nama Santri:</strong></td><td style="padding: 6px 0; text-align: right; color: #065f46;">${escapeHtml(data.studentName)}</td></tr>
+            <tr><td style="padding: 6px 0; color: #065f46;"><strong>Keterangan:</strong></td><td style="padding: 6px 0; text-align: right; color: #065f46;">${escapeHtml(data.description)}</td></tr>
+            <tr><td style="padding: 6px 0; color: #065f46;"><strong>Metode Pembayaran:</strong></td><td style="padding: 6px 0; text-align: right; color: #065f46;">${escapeHtml(data.paymentMethod)}</td></tr>
+            <tr><td style="padding: 6px 0; color: #065f46;"><strong>Tanggal Pembayaran:</strong></td><td style="padding: 6px 0; text-align: right; color: #065f46;">${escapeHtml(data.paymentDate)}</td></tr>
+            <tr style="border-top: 1px solid #a7f3d0;"><td style="padding: 10px 0 0 0; color: #047857; font-size: 16px;"><strong>Total Dibayar:</strong></td><td style="padding: 10px 0 0 0; text-align: right; color: #047857; font-size: 18px; font-weight: bold;">${escapeHtml(data.amount)}</td></tr>
+          </table>
+        </div>
+        <p>Terima kasih atas kepercayaannya mendampingi pendidikan santri di Cipansor.</p>
+        <p style="margin-top: 24px;">Jazakumullah Khairan,<br/><strong>Tim Keuangan Yayasan Pesantren Cipansor</strong></p>
+        `
+      ),
   },
 
   // Violation notification to parent
@@ -91,22 +194,24 @@ const templates = {
       description: string;
       points: number;
       date: string;
-    }) => `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #dc2626;">Pemberitahuan Pelanggaran</h2>
-        <p>Yth. Bapak/Ibu ${data.parentName},</p>
-        <p>Dengan ini kami sampaikan bahwa putra/putri Bapak/Ibu telah melakukan pelanggaran:</p>
-        <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
-          <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Nama Siswa:</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${data.studentName}</td></tr>
-          <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Jenis Pelanggaran:</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${data.violationType}</td></tr>
-          <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Deskripsi:</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${data.description}</td></tr>
-          <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Poin:</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${data.points}</td></tr>
-          <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Tanggal:</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${data.date}</td></tr>
+    }) =>
+      renderEmailLayout(
+        'Pemberitahuan Kedisiplinan',
+        `
+        <h2 style="color: #b91c1c; margin-top: 0;">Pemberitahuan Pelanggaran Kedisiplinan</h2>
+        <p>Yth. Bapak/Ibu <strong>${escapeHtml(data.parentName)}</strong>,</p>
+        <p>Dengan ini kami menyampaikan laporan catatan kedisiplinan putra/putri Bapak/Ibu:</p>
+        <table style="width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px;">
+          <tr style="background-color: #f8fafc;"><td style="padding: 10px; border: 1px solid #e2e8f0; width: 35%;"><strong>Nama Santri:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0;">${escapeHtml(data.studentName)}</td></tr>
+          <tr><td style="padding: 10px; border: 1px solid #e2e8f0;"><strong>Kategori Pelanggaran:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0;">${escapeHtml(data.violationType)}</td></tr>
+          <tr style="background-color: #f8fafc;"><td style="padding: 10px; border: 1px solid #e2e8f0;"><strong>Deskripsi:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0;">${escapeHtml(data.description)}</td></tr>
+          <tr><td style="padding: 10px; border: 1px solid #e2e8f0;"><strong>Poin Pelanggaran:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0; color: #b91c1c; font-weight: bold;">+${data.points} Poin</td></tr>
+          <tr style="background-color: #f8fafc;"><td style="padding: 10px; border: 1px solid #e2e8f0;"><strong>Tanggal Kejadian:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0;">${escapeHtml(data.date)}</td></tr>
         </table>
-        <p>Mohon kerja samanya untuk memberikan pembinaan kepada putra/putri Bapak/Ibu.</p>
-        <p>Salam,<br/>Tim Pembinaan Cipansor</p>
-      </div>
-    `,
+        <p>Mohon kerjasamanya untuk senantiasa membimbing dan memberikan pengarahan kepada ananda.</p>
+        <p style="margin-top: 24px;">Salam,<br/><strong>Tim Pengasuhan & Kedisiplinan Cipansor</strong></p>
+        `
+      ),
   },
 
   // Attendance alert
@@ -118,25 +223,27 @@ const templates = {
       status: string;
       date: string;
       notes?: string;
-    }) => `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #1e40af;">Pemberitahuan Kehadiran</h2>
-        <p>Yth. Bapak/Ibu ${data.parentName},</p>
-        <p>Status kehadiran putra/putri Bapak/Ibu hari ini:</p>
-        <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
-          <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Nama Siswa:</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${data.studentName}</td></tr>
-          <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Tanggal:</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${data.date}</td></tr>
-          <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Status:</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${data.status}</td></tr>
-          ${data.notes ? `<tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Keterangan:</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${data.notes}</td></tr>` : ''}
+    }) =>
+      renderEmailLayout(
+        'Pemberitahuan Kehadiran',
+        `
+        <h2 style="color: #1e3a8a; margin-top: 0;">Laporan Kehadiran Santri</h2>
+        <p>Yth. Bapak/Ibu <strong>${escapeHtml(data.parentName)}</strong>,</p>
+        <p>Informasi status presensi putra/putri Bapak/Ibu hari ini:</p>
+        <table style="width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px;">
+          <tr style="background-color: #f8fafc;"><td style="padding: 10px; border: 1px solid #e2e8f0; width: 35%;"><strong>Nama Santri:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0;">${escapeHtml(data.studentName)}</td></tr>
+          <tr><td style="padding: 10px; border: 1px solid #e2e8f0;"><strong>Tanggal:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0;">${escapeHtml(data.date)}</td></tr>
+          <tr style="background-color: #f8fafc;"><td style="padding: 10px; border: 1px solid #e2e8f0;"><strong>Status Kehadiran:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0; font-weight: bold;">${escapeHtml(data.status)}</td></tr>
+          ${data.notes ? `<tr><td style="padding: 10px; border: 1px solid #e2e8f0;"><strong>Keterangan:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0;">${escapeHtml(data.notes)}</td></tr>` : ''}
         </table>
-        <p>Salam,<br/>Tim Cipansor</p>
-      </div>
-    `,
+        <p style="margin-top: 24px;">Salam,<br/><strong>Tim Kesiswaan Cipansor</strong></p>
+        `
+      ),
   },
 
   // Permit status update
   permitStatusUpdate: {
-    subject: 'Update Status Izin - Cipansor',
+    subject: 'Update Status Izin Santri - Cipansor',
     html: (data: {
       parentName: string;
       studentName: string;
@@ -145,34 +252,79 @@ const templates = {
       startDate: string;
       endDate: string;
       notes?: string;
-    }) => `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #1e40af;">Update Status Izin</h2>
-        <p>Yth. Bapak/Ibu ${data.parentName},</p>
-        <p>Pengajuan izin telah diproses dengan status: <strong>${data.status}</strong></p>
-        <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
-          <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Nama Siswa:</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${data.studentName}</td></tr>
-          <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Jenis Izin:</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${data.permitType}</td></tr>
-          <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Tanggal:</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${data.startDate} - ${data.endDate}</td></tr>
-          ${data.notes ? `<tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Catatan:</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${data.notes}</td></tr>` : ''}
+    }) =>
+      renderEmailLayout(
+        'Update Status Perizinan',
+        `
+        <h2 style="color: #1e3a8a; margin-top: 0;">Status Pengajuan Izin Santri</h2>
+        <p>Yth. Bapak/Ibu <strong>${escapeHtml(data.parentName)}</strong>,</p>
+        <p>Permohonan izin pengasuhan/keluar kompleks santri telah diverifikasi dengan status: <span style="background-color: #dbeafe; color: #1e40af; padding: 4px 8px; border-radius: 4px; font-weight: bold;">${escapeHtml(data.status)}</span></p>
+        <table style="width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px;">
+          <tr style="background-color: #f8fafc;"><td style="padding: 10px; border: 1px solid #e2e8f0; width: 35%;"><strong>Nama Santri:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0;">${escapeHtml(data.studentName)}</td></tr>
+          <tr><td style="padding: 10px; border: 1px solid #e2e8f0;"><strong>Jenis Izin:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0;">${escapeHtml(data.permitType)}</td></tr>
+          <tr style="background-color: #f8fafc;"><td style="padding: 10px; border: 1px solid #e2e8f0;"><strong>Periode Izin:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0;">${escapeHtml(data.startDate)} - ${escapeHtml(data.endDate)}</td></tr>
+          ${data.notes ? `<tr><td style="padding: 10px; border: 1px solid #e2e8f0;"><strong>Catatan Pengasuh:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0;">${escapeHtml(data.notes)}</td></tr>` : ''}
         </table>
-        <p>Salam,<br/>Tim Cipansor</p>
-      </div>
-    `,
+        <p style="margin-top: 24px;">Salam,<br/><strong>Tim Musyrif & Kesantrian Cipansor</strong></p>
+        `
+      ),
+  },
+
+  // Tahfidz Progress Update (Report Setoran Hafalan)
+  tahfidzProgress: {
+    subject: 'Laporan Perkembangan Tahfidz Santri - Cipansor',
+    html: (data: {
+      parentName: string;
+      studentName: string;
+      surah: string;
+      verses: string;
+      juz: number;
+      grade: string;
+      teacherName: string;
+      date: string;
+    }) =>
+      renderEmailLayout(
+        'Laporan Tahfidz Al-Qur\'an',
+        `
+        <h2 style="color: #047857; margin-top: 0;">Laporan Setoran & Capaian Tahfidz</h2>
+        <p>Yth. Bapak/Ibu <strong>${escapeHtml(data.parentName)}</strong>,</p>
+        <p>Alhamdulillah, berikut perkembangan hafalan Al-Qur'an putra/putri Anda:</p>
+        <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 16px; margin: 16px 0;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+            <tr><td style="padding: 6px 0; color: #166534;"><strong>Nama Santri:</strong></td><td style="padding: 6px 0; text-align: right; color: #166534;">${escapeHtml(data.studentName)}</td></tr>
+            <tr><td style="padding: 6px 0; color: #166534;"><strong>Surah / Ayat:</strong></td><td style="padding: 6px 0; text-align: right; color: #166534;">${escapeHtml(data.surah)} (${escapeHtml(data.verses)})</td></tr>
+            <tr><td style="padding: 6px 0; color: #166534;"><strong>Juz:</strong></td><td style="padding: 6px 0; text-align: right; color: #166534;">Juz ${data.juz}</td></tr>
+            <tr><td style="padding: 6px 0; color: #166534;"><strong>Nilai Kelancaran:</strong></td><td style="padding: 6px 0; text-align: right; color: #166534; font-weight: bold;">${escapeHtml(data.grade)}</td></tr>
+            <tr><td style="padding: 6px 0; color: #166534;"><strong>Pengampu / Ustadz:</strong></td><td style="padding: 6px 0; text-align: right; color: #166534;">${escapeHtml(data.teacherName)}</td></tr>
+            <tr><td style="padding: 6px 0; color: #166534;"><strong>Tanggal Setoran:</strong></td><td style="padding: 6px 0; text-align: right; color: #166534;">${escapeHtml(data.date)}</td></tr>
+          </table>
+        </div>
+        <p>Semoga ananda istiqomah dan senantiasa diberkahi Al-Qur'an.</p>
+        <p style="margin-top: 24px;">Jazakumullah Khairan,<br/><strong>Lembaga Tahfidz Qur'an Cipansor</strong></p>
+        `
+      ),
   },
 
   // General announcement
   announcement: {
-    subject: '[Pengumuman] {title} - Cipansor',
-    html: (data: { title: string; content: string; priority: string }) => `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        ${data.priority === 'HIGH' ? '<div style="background-color: #dc2626; color: white; padding: 8px; text-align: center; font-weight: bold;">PENTING</div>' : ''}
-        <h2 style="color: #1e40af;">${data.title}</h2>
-        <div style="line-height: 1.6;">${data.content}</div>
-        <hr style="margin: 24px 0; border: none; border-top: 1px solid #ddd;" />
-        <p style="color: #666; font-size: 12px;">Pengumuman ini dikirim melalui sistem Cipansor - Pesantren Management System.</p>
-      </div>
-    `,
+    subject: '[Pengumuman Resmi] {title} - Cipansor',
+    html: (data: { title: string; content: string; priority: string }) =>
+      renderEmailLayout(
+        escapeHtml(data.title),
+        `
+        ${data.priority === 'HIGH' ? '<div style="background-color: #dc2626; color: white; padding: 8px 12px; text-align: center; font-weight: bold; border-radius: 4px; margin-bottom: 16px;">PENGUMUMAN PENTING</div>' : ''}
+        <h2 style="color: #1e3a8a; margin-top: 0;">${escapeHtml(data.title)}</h2>
+        <!--
+          The white-space: pre-line below is load-bearing, not decoration.
+          Announcement bodies are typed into a textarea, so they are plain text
+          carrying real newlines; escaped and dropped into ordinary HTML they
+          collapse, and a pengumuman written in four paragraphs arrives as one
+          block.
+        -->
+        <div style="line-height: 1.6; margin: 16px 0; white-space: pre-line;">${escapeHtml(data.content)}</div>
+        <p style="margin-top: 24px;">Salam,<br/><strong>Pengurus Yayasan Pesantren Cipansor</strong></p>
+        `
+      ),
   },
 };
 
@@ -233,35 +385,32 @@ interface NotificationResult {
   channel: NotificationChannel;
   messageId?: string;
   error?: string;
+  /** EMAIL only: which transport handled it (`gmail_api`, `smtp` or `log`). */
+  transport?: EmailTransportKind;
+  /**
+   * EMAIL only: whether the message actually left the building.
+   *
+   * `success: true, delivered: false` is the log-only transport — the call
+   * worked, nothing was sent. Callers that need certainty must check this and
+   * not `success` alone.
+   */
+  delivered?: boolean;
 }
 
 class NotificationService {
-  private transporter: nodemailer.Transporter | null = null;
-
   /**
-   * Get or create email transporter
+   * Reset the cached mail transport (useful for runtime/config updates).
+   *
+   * The transport itself now lives in `email-transport.ts`; this stays as the
+   * entry point callers already know about.
    */
-  private getTransporter(): nodemailer.Transporter | null {
-    if (this.transporter) {
-      return this.transporter;
-    }
+  resetTransporter(): void {
+    resetEmailTransport();
+  }
 
-    const smtpHost = process.env.SMTP_HOST;
-    if (!smtpHost) {
-      return null;
-    }
-
-    this.transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: parseInt(process.env.SMTP_PORT || '587', 10),
-      secure: process.env.SMTP_SECURE === 'true',
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-    });
-
-    return this.transporter;
+  /** Which transport is configured, and the identity it sends under. */
+  emailTransportStatus() {
+    return describeEmailTransport();
   }
 
   /**
@@ -271,16 +420,31 @@ class NotificationService {
     const { channel, userId, type, title, message } = options;
 
     try {
-      // Log notification to database
-      const notificationLog = await prisma.notification.create({
-        data: {
-          userId: userId || '',
-          type: this.mapNotificationType(type),
-          title,
-          message,
-          status: 'UNREAD',
-        },
-      });
+      // Record the notification in-app, but only when it belongs to a real
+      // account.
+      //
+      // `Notification.userId` is a required foreign key to `users`. This used
+      // to write `userId || ''`, and an empty string is not a user id: Prisma
+      // raised a foreign-key error, the catch below swallowed it, and the
+      // method returned `success: false` — WITHOUT EVER REACHING THE SWITCH.
+      // Any caller addressing a recipient by e-mail alone silently sent
+      // nothing. Dispatch no longer depends on the in-app row existing.
+      let notificationLogId: string | undefined;
+
+      if (userId) {
+        const notificationLog = await prisma.notification.create({
+          data: {
+            userId,
+            type: this.mapNotificationType(type),
+            title,
+            // An empty body renders as a blank row in the bell menu. Falling
+            // back to the title keeps the record readable.
+            message: message || title,
+            status: 'UNREAD',
+          },
+        });
+        notificationLogId = notificationLog.id;
+      }
 
       let result: NotificationResult;
 
@@ -295,7 +459,9 @@ class NotificationService {
           result = await this.sendWhatsApp(options);
           break;
         case 'IN_APP':
-          result = { success: true, channel, messageId: notificationLog.id };
+          result = notificationLogId
+            ? { success: true, channel, messageId: notificationLogId }
+            : { success: false, channel, error: 'In-app notification requires a userId' };
           break;
         default:
           result = { success: false, channel, error: 'Unsupported channel' };
@@ -363,6 +529,16 @@ class NotificationService {
             templateData as Parameters<typeof templates.permitStatusUpdate.html>[0]
           );
           break;
+        case 'paymentReceipt':
+          htmlContent = templates.paymentReceipt.html(
+            templateData as Parameters<typeof templates.paymentReceipt.html>[0]
+          );
+          break;
+        case 'tahfidzProgress':
+          htmlContent = templates.tahfidzProgress.html(
+            templateData as Parameters<typeof templates.tahfidzProgress.html>[0]
+          );
+          break;
         case 'announcement':
           htmlContent = templates.announcement.html(
             templateData as Parameters<typeof templates.announcement.html>[0]
@@ -371,32 +547,35 @@ class NotificationService {
       }
     }
 
-    // Log email for development/debugging
-    logger.info(`[EMAIL] To: ${recipientEmail}, Subject: ${subject}`);
-
-    const transporter = this.getTransporter();
-
-    // Check if SMTP is configured
-    if (!transporter) {
-      logger.warn('Email not configured - SMTP_HOST not set. Email logged only.');
-      return { success: true, channel: 'EMAIL', messageId: `log_${Date.now()}` };
-    }
-
     try {
-      const info = await transporter.sendMail({
-        from: process.env.SMTP_FROM || '"Cipansor System" <no-reply@cipansor.or.id>',
+      const result = await deliverEmail({
         to: recipientEmail,
-        subject: subject,
+        subject,
         html: htmlContent,
       });
 
-      logger.info(`Email sent to ${recipientEmail}: ${info.messageId}`);
-      return { success: true, channel: 'EMAIL', messageId: info.messageId };
+      // `delivered` distinguishes a real send from the log-only transport. The
+      // call still counts as successful — nothing went wrong — but the two must
+      // never look identical in the logs, because for months they did.
+      logger.info(
+        result.delivered
+          ? `Email sent to ${recipientEmail} via ${result.kind}: ${result.messageId}`
+          : `Email NOT sent (transport=${result.kind}) to ${recipientEmail}: ${subject}`,
+      );
+
+      return {
+        success: true,
+        channel: 'EMAIL',
+        messageId: result.messageId,
+        transport: result.kind,
+        delivered: result.delivered,
+      };
     } catch (error) {
       logger.error(`Failed to send email to ${recipientEmail}:`, error);
       return {
         success: false,
         channel: 'EMAIL',
+        delivered: false,
         error: error instanceof Error ? error.message : 'Unknown email error',
       };
     }
@@ -529,6 +708,72 @@ class NotificationService {
   }
 
   /**
+   * Send payment receipt email
+   */
+  async sendPaymentReceipt(receipt: {
+    userId: string;
+    recipientEmail: string;
+    parentName: string;
+    studentName: string;
+    receiptNumber: string;
+    amount: string;
+    paymentDate: string;
+    paymentMethod: string;
+    description: string;
+  }): Promise<NotificationResult> {
+    return this.send({
+      userId: receipt.userId,
+      recipientEmail: receipt.recipientEmail,
+      channel: 'EMAIL',
+      type: 'PAYMENT_REMINDER',
+      title: 'Bukti Pembayaran Resmi - Cipansor',
+      message: `Pembayaran ${receipt.amount} untuk ${receipt.studentName} telah diterima (${receipt.receiptNumber}).`,
+      templateKey: 'paymentReceipt',
+      templateData: receipt,
+      priority: 'HIGH',
+    });
+  }
+
+  /**
+   * Send tahfidz progress update
+   */
+  async sendTahfidzProgress(progress: {
+    userId: string;
+    recipientEmail: string;
+    parentName: string;
+    studentName: string;
+    surah: string;
+    verses: string;
+    juz: number;
+    grade: string;
+    teacherName: string;
+    date: string;
+  }): Promise<NotificationResult> {
+    return this.send({
+      userId: progress.userId,
+      recipientEmail: progress.recipientEmail,
+      channel: 'EMAIL',
+      type: 'ATTENDANCE',
+      title: 'Laporan Perkembangan Tahfidz Santri - Cipansor',
+      message: `Setoran ${progress.studentName}: ${progress.surah} ayat ${progress.verses} — nilai ${progress.grade}.`,
+      templateKey: 'tahfidzProgress',
+      templateData: progress,
+      priority: 'MEDIUM',
+    });
+  }
+
+  /*
+   * `sendEOfficeLetter` and its `eofficeLetter` template were removed here.
+   *
+   * They had no caller anywhere in the API — only a unit test that invoked the
+   * helper directly — so nothing ever sent an e-office letter by e-mail, and a
+   * template that is never rendered by the product cannot be kept honest by a
+   * test that renders it. E-office correspondence is the subject of its own
+   * change (#414); the mail for it belongs there, wired to a real event, rather
+   * than sitting here looking finished.
+   */
+
+  /**
    * Send payment reminder to parents
    */
   async sendPaymentReminder(invoice: {
@@ -556,7 +801,7 @@ class NotificationService {
         channel: 'EMAIL',
         type: 'PAYMENT_REMINDER',
         title: 'Pengingat Pembayaran',
-        message: '',
+        message: `Tagihan ${invoice.invoiceNumber} untuk ${invoice.student.name} jatuh tempo ${invoice.dueDate.toLocaleDateString('id-ID')}.`,
         templateKey: 'paymentReminder',
         templateData: {
           parentName: sp.parent.name,
@@ -628,7 +873,7 @@ class NotificationService {
         channel: 'EMAIL',
         type: 'VIOLATION',
         title: 'Pemberitahuan Pelanggaran',
-        message: '',
+        message: `${violation.student.name}: ${violation.type} (${violation.points} poin).`,
         templateKey: 'violationNotification',
         templateData: {
           parentName: sp.parent.name,
@@ -680,7 +925,7 @@ class NotificationService {
           channel: 'EMAIL',
           type: 'ATTENDANCE',
           title: 'Pemberitahuan Kehadiran',
-          message: '',
+          message: `${attendance.studentName} tercatat ${statusLabel} pada ${attendance.date.toLocaleDateString('id-ID')}.`,
           templateKey: 'attendanceAlert',
           templateData: {
             parentName: sp.parent.name,
@@ -739,7 +984,7 @@ class NotificationService {
           userId: user.id,
           type: this.mapNotificationType('ANNOUNCEMENT'),
           title: announcement.title,
-          message: '',
+          message: announcement.content,
           status: 'UNREAD',
         })),
       });
@@ -759,7 +1004,7 @@ class NotificationService {
             channel: 'EMAIL',
             type: 'ANNOUNCEMENT',
             title: announcement.title,
-            message: '',
+            message: announcement.content,
             templateKey: 'announcement',
             templateData: {
               title: announcement.title,

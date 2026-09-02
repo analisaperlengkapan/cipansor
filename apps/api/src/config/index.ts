@@ -119,6 +119,58 @@ export const config = {
   },
 
   /**
+   * Outgoing mail identity, shared by every transport.
+   *
+   * `from` is the mailbox the yayasan sends *from* and nobody reads;
+   * `replyTo` is the one a human answers. Keeping them separate is the whole
+   * point — a wali who hits "Reply" on a tagihan reminder must reach
+   * halo@, not a noreply@ mailbox that discards them.
+   */
+  mail: {
+    from: process.env.MAIL_FROM || '"Yayasan Pesantren Cipansor" <noreply@cipansor.or.id>',
+    replyTo: process.env.MAIL_REPLY_TO || 'halo@cipansor.or.id',
+  },
+
+  /**
+   * Gmail API transport (preferred).
+   *
+   * A Google Cloud **service account** with domain-wide delegation, which
+   * impersonates `sender` and calls `gmail.users.messages.send`. Preferred over
+   * SMTP + app password because there is no password to leak: the credential is
+   * an RSA key the Workspace admin can revoke, scoped to `gmail.send` alone, and
+   * it cannot be used to read mail or sign in anywhere.
+   *
+   * Inert until both the account e-mail and the key are present, so an
+   * unconfigured deployment falls through to SMTP and then to log-only.
+   */
+  gmail: {
+    serviceAccountEmail: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL || '',
+    // Private keys carry real newlines. Env files cannot, so the value is
+    // stored with literal \n and unescaped here.
+    serviceAccountKey: (process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
+    // The Workspace mailbox the service account acts as. Must be a real user or
+    // alias in the domain, or Google answers 400 unauthorized_client.
+    sender: process.env.GMAIL_SENDER || 'noreply@cipansor.or.id',
+  },
+
+  smtp: {
+    host: process.env.SMTP_HOST || '',
+    port: parseInt(process.env.SMTP_PORT || '587', 10),
+    secure: process.env.SMTP_SECURE === 'true', // true for 465, false for 587
+    user: process.env.SMTP_USER || '',
+    pass: process.env.SMTP_PASS || '',
+    // NOTE: no `from`/`replyTo` here. The sending identity belongs to
+    // `config.mail` and is the same whichever transport carries the message —
+    // keeping a second copy under `smtp` is how the two drift apart, and how
+    // the reply address ends up correct on one path and not the other.
+    oauth2: {
+      clientId: process.env.SMTP_OAUTH_CLIENT_ID,
+      clientSecret: process.env.SMTP_OAUTH_CLIENT_SECRET,
+      refreshToken: process.env.SMTP_OAUTH_REFRESH_TOKEN,
+    },
+  },
+
+  /**
    * Public customer-service chatbot.
    *
    * Disabled by default and inert without credentials: with no provider

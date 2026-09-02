@@ -7,6 +7,8 @@ import {
   registerSchema,
   refreshTokenSchema,
   changePasswordSchema,
+  sendPasswordResetSchema,
+  resetPasswordSchema,
 } from './auth.schema';
 import rateLimit from 'express-rate-limit';
 
@@ -79,6 +81,49 @@ router.post('/login', validate(loginSchema), controller.login);
  */
 router.post('/refresh', validate(refreshTokenSchema), controller.refreshToken);
 
+/**
+ * Redeeming a reset link is unauthenticated by necessity — someone who cannot
+ * sign in is exactly who arrives holding one.
+ *
+ * Rate limited hard and separately from login: this accepts a token, so without
+ * a cap it is an offline guessing oracle with an online interface.
+ *
+ * NOTE WHAT IS NOT HERE. There is no public `/forgot-password`. Sending a reset
+ * link is an admin action (`/send-password-reset`, below the authenticate wall),
+ * so nothing unauthenticated can make this system send mail, and there is no
+ * open form to probe for which addresses have accounts.
+ */
+const passwordResetLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: Number(process.env.PASSWORD_RESET_RATE_LIMIT_MAX) || 5,
+  message: 'Terlalu banyak permintaan reset password. Silakan coba lagi nanti.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+/**
+ * @swagger
+ * /api/auth/reset-password:
+ *   post:
+ *     summary: Set a new password using a reset token
+ *     description: >
+ *       Redeems a single-use token e-mailed to the account holder. The token is
+ *       stored only as a SHA-256 hash and is cleared on use.
+ *     tags: [Auth]
+ *     security: []
+ *     responses:
+ *       200:
+ *         description: Password updated
+ *       400:
+ *         description: Token invalid or expired
+ */
+router.post(
+  '/reset-password',
+  passwordResetLimiter,
+  validate(resetPasswordSchema),
+  controller.resetPassword,
+);
+
 // ==========================================
 // 2FA Routes (Accepts Temp Tokens for Setup/Login)
 // ==========================================
@@ -149,6 +194,28 @@ router.post('/2fa/login', authenticate2FA, twoFactorLimiter, controller.verifyTw
 
 // Protected routes (Requires Full Access Token)
 router.use(authenticate);
+
+/**
+ * @swagger
+ * /api/auth/send-password-reset:
+ *   post:
+ *     summary: E-mail a password reset link to a user (admin only)
+ *     description: >
+ *       The only way a reset starts. A user who has forgotten their password
+ *       contacts an admin, who identifies them and triggers this.
+ *     tags: [Auth]
+ *     responses:
+ *       200:
+ *         description: Link sent
+ *       404:
+ *         description: No such user
+ */
+router.post(
+  '/send-password-reset',
+  isAdmin,
+  validate(sendPasswordResetSchema),
+  controller.sendPasswordReset,
+);
 
 /**
  * @swagger

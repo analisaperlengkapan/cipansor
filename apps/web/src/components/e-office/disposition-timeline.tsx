@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { id } from "date-fns/locale";
 import { safeFormat } from "@/lib/date";
 import { LetterDispositionDetail } from "@cipansor/shared";
@@ -52,6 +55,20 @@ function initial(name?: string | null): string {
 }
 
 export function DispositionTimeline({ dispositions }: DispositionTimelineProps) {
+  /**
+   * "Terlambat" is decided by the browser's clock, after mount.
+   *
+   * `Date.now()` during render is impure: the component stops being idempotent,
+   * so the badge can change on any incidental re-render, and on a
+   * server-rendered page the server's clock writes the HTML while the client's
+   * redraws it — a hydration mismatch by construction. Reading the clock once
+   * after mount gives every render the same answer. The cost is only that the
+   * overdue mark appears on the first client paint rather than in the server
+   * HTML, which is the right trade for a value that is about *now*.
+   */
+  const [now, setNow] = useState<number | null>(null);
+  useEffect(() => setNow(Date.now()), []);
+
   if (!dispositions || dispositions.length === 0) {
     return (
       <div className="text-center p-4 text-muted-foreground text-sm">
@@ -59,8 +76,6 @@ export function DispositionTimeline({ dispositions }: DispositionTimelineProps) 
       </div>
     );
   }
-
-  const now = Date.now();
 
   return (
     <div className="space-y-4">
@@ -72,6 +87,7 @@ export function DispositionTimeline({ dispositions }: DispositionTimelineProps) 
         // Only an outstanding disposition can be late; a finished one that ran
         // over is history, not a task.
         const overdue =
+          now !== null &&
           !!deadline &&
           deadline.getTime() < now &&
           disposition.status !== "COMPLETED";

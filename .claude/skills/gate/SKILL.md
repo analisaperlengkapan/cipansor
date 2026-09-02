@@ -11,14 +11,32 @@ backstop. Run these in order from the repo root and stop at the first failure.
 ```bash
 pnpm --filter api db:generate         # Prisma client (needed if schema changed)
 pnpm --filter @cipansor/shared build  # shared types, consumed by both apps
+pnpm --filter api lint                # eslint — CI fails on errors, not warnings
+pnpm --filter web lint                # eslint — see the note below
 pnpm --filter api build               # tsc, build config
 pnpm --filter api build:strict        # tsc, full strict incl. tests (the real bar)
 pnpm --filter api test                # vitest (API)
 pnpm --filter web build               # next build (also typechecks web)
 pnpm --filter web test                # vitest (web)
+pnpm run audit:deps                   # the Security job, run against live advisories
 ```
 
 Notes:
+- **Lint is not optional and `build` does not cover it.** The React Compiler
+  rules ship as eslint errors, not type errors: `Date.now()` called during
+  render passed `build`, `build:strict`, all 1,327 API tests and all 362 web
+  tests, and failed CI's Lint job on `disposition-timeline.tsx`. Read the count
+  at the end — CI fails on **errors** and tolerates the ~1,900 warnings, so
+  `grep -E '  error '` is how you find the one that matters.
+- **A lint error CI does not report is probably yours alone.** eslint reads no
+  `.gitignore`, so generated bundles a developer happens to have on disk
+  (a `.next.bak/` rollback copy, a service worker) are linted locally and never
+  in CI's fresh checkout. Add them to `globalIgnores` rather than learning to
+  skim past them.
+- **`audit:deps` can fail on a tree you did not touch.** It queries GitHub's
+  live advisory endpoint, so a newly published CVE reddens every open PR at
+  once. The fix is a pin in the root `package.json` `pnpm.overrides`, then
+  `pnpm install` (commit the lockfile — CI installs `--frozen-lockfile`).
 - `api build` / `web build` can OOM tsc/next on the default heap; if you see
   exit 134, prefix with `NODE_OPTIONS=--max-old-space-size=4096`.
 - `web build` bakes `NEXT_PUBLIC_API_URL` (defaults to `http://localhost:3001`).

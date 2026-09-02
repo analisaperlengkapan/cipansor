@@ -2,12 +2,7 @@ import { Request, Response } from 'express';
 import { CorrespondenceService } from './correspondence.service';
 import { asyncHandler, Errors } from '@/middleware/error';
 import { ApiResponse } from '@/utils/response';
-import crypto from 'crypto';
-import {
-  generateLetterPdfBuffer,
-  stampRevoked,
-  LetterPdfError,
-} from '@/utils/generate-letter-pdf';
+import { resolveLetterPdf } from './signed-pdf';
 import {
   choosesUnit,
   handlesUnitCorrespondence,
@@ -71,61 +66,27 @@ export const CorrespondenceController = {
     }
 
     /**
-     * A withdrawn letter is still printed — stamped DICABUT, not refused.
+     * A signed letter is served from the archive, never re-rendered.
      *
-     * The office still has to file a copy, and whoever is already holding the
-     * letter deserves a sheet that explains itself. Refusing the download left
-     * both without one. Electronic-signature platforms do the same: DocuSign
-     * watermarks a voided envelope VOID and keeps it downloadable.
+     * `resolveLetterPdf` holds the whole rule, including why: the bytes that
+     * were hashed at signing are the only bytes that can still be verified, and
+     * regenerating them is a promise no living dependency tree can keep.
      *
-     * The care is in *what* gets stamped. The generator drops the signature
-     * block once a signature is revoked, so a naive re-render is a different
-     * document from the one that was hashed — and uploading it to the public
-     * page would be answered with the sentence a forgery gets. So the naskah is
-     * rebuilt **as it stood when signed**, its bytes are re-hashed, and the
-     * stamp is applied only once that hash matches `pdfHash`. Circulated copies
-     * keep verifying, and keep reporting the revocation.
-     *
-     * When it does not match, the bytes have drifted since signing — the very
-     * hazard `docs/EOFFICE_ESIGN_PLAN.md` §2.4 describes — and refusing is the
-     * honest answer until PR-3 archives the signed bytes.
+     * A withdrawn letter is still printed — stamped DICABUT, not refused. The
+     * office still has to file a copy, and whoever is already holding the
+     * letter deserves a sheet that explains itself. Electronic-signature
+     * platforms do the same: DocuSign watermarks a voided envelope VOID and
+     * keeps it downloadable.
      */
-    const latest = letter.signatures?.at(-1);
-    const revoked = latest?.revokedAt ? latest : null;
+    const { buffer, source } = await resolveLetterPdf(letter);
 
-    let pdfBuffer: Buffer;
-    try {
-      pdfBuffer = await generateLetterPdfBuffer(
-        revoked
-          ? {
-              ...letter,
-              signatures: (letter.signatures ?? []).map((s) => ({ ...s, revokedAt: null })),
-            }
-          : letter
-      );
-    } catch (e) {
-      if (e instanceof LetterPdfError) throw Errors.badRequest(e.message);
-      throw e;
-    }
-
-    if (revoked) {
-      const hash = crypto.createHash('sha256').update(pdfBuffer).digest('hex');
-      if (!latest?.pdfHash || hash !== latest.pdfHash) {
-        throw Errors.badRequest(
-          'Naskah ini tidak dapat dicetak ulang: berkas yang dihasilkan tidak lagi sama persis ' +
-            'dengan yang ditandatangani, sehingga salinan bercap pun tidak dapat dipertanggungjawabkan.'
-        );
-      }
-      pdfBuffer = await stampRevoked(pdfBuffer, {
-        reason: revoked.revokedReason ?? 'Dicabut oleh pejabat yang berwenang.',
-        revokedAt: new Date(revoked.revokedAt as unknown as string),
-        revokedByName: revoked.revokedBy?.name ?? null,
-      });
-    }
     const fileName = `Surat-${letter.letterNumber || letter.agendaNumber || 'Draft'}.pdf`;
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `inline; filename="${fileName}"`);
-    res.send(pdfBuffer);
+    // Terbaca di alat pemeriksa: naskah yang disajikan dari arsip adalah naskah
+    // yang byte-nya memang ditandatangani, bukan hasil render ulang.
+    res.setHeader('X-Naskah-Source', source);
+    res.send(buffer);
   }),
 
   review: asyncHandler(async (req: Request, res: Response) => {

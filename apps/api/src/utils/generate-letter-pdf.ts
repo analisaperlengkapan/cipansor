@@ -36,6 +36,17 @@ const DECIDING_OFFICIAL_TITLE_CASE = DECIDING_OFFICIAL.split(' ')
  * as altered. Treat a change here as a migration.
  */
 
+/**
+ * Revisi tata letak yang menghasilkan sebuah berkas.
+ *
+ * Disimpan bersama setiap naskah yang diarsipkan (`LetterSignedDocument`),
+ * supaya byte lama yang tidak lagi dapat dibuat ulang tetap dapat dijelaskan:
+ * build inilah yang membuatnya. **Naikkan nilainya pada commit yang sama dengan
+ * perubahan apa pun yang mengubah keluaran** — kop surat, jarak baris, urutan
+ * gambar, atau kenaikan versi `pdf-lib`.
+ */
+export const LETTER_PDF_GENERATOR = 'cipansor-naskah/2026-09-02';
+
 export class LetterPdfError extends Error {
   constructor(message: string) {
     super(message);

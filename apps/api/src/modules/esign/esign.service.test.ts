@@ -35,6 +35,7 @@ vi.mock('../../lib/prisma', () => ({
     letterReviewer: { update: vi.fn() },
     letterSignature: { create: vi.fn(), update: vi.fn(), findUnique: vi.fn(), findMany: vi.fn(), findFirst: vi.fn() },
     letterFlowEvent: { create: vi.fn() },
+    letterSignedDocument: { create: vi.fn(), findUnique: vi.fn() },
     auditLog: { create: vi.fn() },
     user: { findUnique: vi.fn() },
     $transaction: vi.fn((cb: any) => cb(prisma)),
@@ -260,6 +261,58 @@ describe('menandatangani surat', () => {
         pdfSignature: expect.any(String),
       }),
     });
+  });
+
+  /**
+   * Byte-nya diarsipkan, bukan dijanjikan dapat dibuat ulang.
+   *
+   * Selama unduhan membuat ulang naskahnya, verifikasi publik bertumpu pada
+   * janji bahwa penghasil PDF akan mengeluarkan byte identik selamanya — dan
+   * satu kenaikan versi `pdf-lib` cukup untuk membatalkan seluruh surat yang
+   * pernah ditandatangani sekaligus.
+   */
+  it('mengarsipkan byte naskah yang ditandatangani, dengan hash yang sama', async () => {
+    vi.mocked(prisma.letter.findUnique).mockResolvedValue(letter() as any);
+    vi.mocked(prisma.userSigningKey.findUnique).mockResolvedValue(activeKey() as any);
+    vi.mocked(prisma.letterSignature.create).mockResolvedValue({
+      id: 'sig-1', verificationToken: 'tok', signedAt: new Date(),
+    } as any);
+    vi.mocked(prisma.letterSignature.update).mockResolvedValue({
+      id: 'sig-1', verificationToken: 'tok', signedAt: new Date(),
+    } as any);
+
+    await EsignService.signLetter('letter-1', 'ketua', PASS);
+
+    const signedHash = vi.mocked(prisma.letterSignature.update).mock.calls[0][0].data
+      .pdfHash as string;
+    const archived = vi.mocked(prisma.letterSignedDocument.create).mock.calls[0][0].data as any;
+
+    expect(archived.signatureId).toBe('sig-1');
+    expect(archived.sha256).toBe(signedHash);
+    expect(archived.byteSize).toBe(archived.bytes.length);
+    expect(crypto.createHash('sha256').update(archived.bytes).digest('hex')).toBe(signedHash);
+    expect(archived.generator).toMatch(/^cipansor-naskah\//);
+  });
+
+  /**
+   * Sebuah surat SIGNED yang arsipnya gagal ditulis adalah surat yang tidak
+   * dapat dicetak sesuai aslinya. Itu bukan keadaan yang boleh lolos diam-diam,
+   * jadi kegagalannya membatalkan penandatanganan seperti kegagalan lain.
+   */
+  it('tidak menandatangani bila arsipnya gagal ditulis', async () => {
+    vi.mocked(prisma.letter.findUnique).mockResolvedValue(letter() as any);
+    vi.mocked(prisma.userSigningKey.findUnique).mockResolvedValue(activeKey() as any);
+    vi.mocked(prisma.letterSignature.create).mockResolvedValue({
+      id: 'sig-1', verificationToken: 'tok', signedAt: new Date(),
+    } as any);
+    vi.mocked(prisma.letterSignature.update).mockResolvedValue({ id: 'sig-1' } as any);
+    vi.mocked(prisma.letterSignedDocument.create).mockRejectedValue(
+      new Error('bytea write failed')
+    );
+
+    await expect(EsignService.signLetter('letter-1', 'ketua', PASS)).rejects.toThrow(
+      /bytea write failed/
+    );
   });
 
   /**

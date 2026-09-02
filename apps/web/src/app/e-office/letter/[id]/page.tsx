@@ -211,8 +211,22 @@ export default function LetterDetailPage({
         },
       });
 
+      /**
+       * Pesan servernya yang dibacakan, bukan kalimat umum.
+       *
+       * Penolakan di sisi server bukan "gagal mengunduh": naskahnya bisa saja
+       * arsipnya tidak lagi utuh, atau byte-nya sudah menyimpang dari yang
+       * ditandatangani sehingga salinan bercap tidak dapat dipertanggung-
+       * jawabkan. Menggantinya dengan "Gagal mengunduh surat" membuat operator
+       * mencoba lagi, bukan melapor.
+       */
       if (!response.ok) {
-        throw new Error("Gagal mengunduh file PDF dari server");
+        const body = await response.json().catch(() => null);
+        throw new Error(
+          body?.error?.message ||
+            body?.message ||
+            "Gagal mengunduh file PDF dari server",
+        );
       }
 
       const blob = await response.blob();
@@ -228,7 +242,11 @@ export default function LetterDetailPage({
       toast.success("Surat berhasil diunduh");
     } catch (error) {
       console.error(error);
-      toast.error("Gagal mengunduh surat");
+      toast.error(
+        error instanceof Error && error.message
+          ? error.message
+          : "Gagal mengunduh surat",
+      );
     }
   };
 

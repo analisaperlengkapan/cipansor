@@ -18,6 +18,7 @@
     "db:migrate": "prisma migrate dev --config prisma/prisma.config.ts",
     "db:deploy": "prisma migrate deploy --config prisma/prisma.config.ts",
     "db:seed": "tsx prisma/seed.ts",
+    "db:archive-letters": "tsx prisma/scripts/archive-signed-letters.ts",
     "db:studio": "prisma studio --config prisma/prisma.config.ts",
     "chatbot:eval": "tsx src/modules/chatbot/eval/run.ts"
   },

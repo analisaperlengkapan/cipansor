@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { MainLayout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
@@ -203,6 +203,47 @@ function ExamPlayer({
     }
   }, [attempt, examDuration, draftStorageKey]);
 
+  const currentQuestion = questions[currentIndex];
+
+  const handleFinish = useCallback(async () => {
+    try {
+      await finishExam.mutateAsync(attempt.id);
+      if (typeof window !== "undefined") {
+        localStorage.removeItem(draftStorageKey);
+      }
+      toast.success("Ujian selesai!");
+      router.push("/student/exams");
+    } catch {
+      toast.error("Gagal menyelesaikan ujian");
+    }
+  }, [attempt.id, draftStorageKey, finishExam, router]);
+
+  const handleAnswerChange = async (value: any) => {
+    if (!currentQuestion) return;
+
+    const newAnswers = { ...answers, [currentQuestion.id]: value };
+    setAnswers(newAnswers);
+
+    // Save draft locally immediately for offline recovery
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem(draftStorageKey, JSON.stringify(newAnswers));
+      } catch (err) {
+        console.error("Failed to save draft locally", err);
+      }
+    }
+
+    try {
+      await submitAnswer.mutateAsync({
+        attemptId: attempt.id,
+        questionId: currentQuestion.id,
+        answer: value,
+      });
+    } catch {
+      console.error("Failed to save answer online; saved to offline draft");
+    }
+  };
+
   // Timer & Auto-submit
   useEffect(() => {
     if (attempt.status !== "IN_PROGRESS") return;
@@ -220,7 +261,7 @@ function ExamPlayer({
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [attempt.status]);
+  }, [attempt.status, handleFinish]);
 
   // Anti-Cheating: Tab Switch & Window Blur Listener
   useEffect(() => {
@@ -242,7 +283,7 @@ function ExamPlayer({
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [attempt.id, attempt.status]);
+  }, [attempt.id, attempt.status, recordSecurityLog]);
 
   // Offline resilience sync listener
   useEffect(() => {
@@ -267,48 +308,7 @@ function ExamPlayer({
 
     window.addEventListener("online", handleOnline);
     return () => window.removeEventListener("online", handleOnline);
-  }, [answers, attempt.id, attempt.status]);
-
-  const currentQuestion = questions[currentIndex];
-
-  const handleAnswerChange = async (value: any) => {
-    if (!currentQuestion) return;
-
-    const newAnswers = { ...answers, [currentQuestion.id]: value };
-    setAnswers(newAnswers);
-
-    // Save draft locally immediately for offline recovery
-    if (typeof window !== "undefined") {
-      try {
-        localStorage.setItem(draftStorageKey, JSON.stringify(newAnswers));
-      } catch (err) {
-        console.error("Failed to save draft locally", err);
-      }
-    }
-
-    try {
-      await submitAnswer.mutateAsync({
-        attemptId: attempt.id,
-        questionId: currentQuestion.id,
-        answer: value,
-      });
-    } catch (error) {
-      console.error("Failed to save answer online; saved to offline draft");
-    }
-  };
-
-  const handleFinish = async () => {
-    try {
-      await finishExam.mutateAsync(attempt.id);
-      if (typeof window !== "undefined") {
-        localStorage.removeItem(draftStorageKey);
-      }
-      toast.success("Ujian selesai!");
-      router.push("/student/exams");
-    } catch (error) {
-      toast.error("Gagal menyelesaikan ujian");
-    }
-  };
+  }, [answers, attempt.id, attempt.status, submitAnswer]);
 
   if (attempt.status !== "IN_PROGRESS") {
     return (
@@ -355,6 +355,12 @@ function ExamPlayer({
             {attempt.exam?.title}
           </div>
           <div className="flex items-center gap-4">
+            {tabSwitchCount > 0 && (
+              <div className="flex items-center gap-1 text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-md">
+                <AlertTriangle className="h-3.5 w-3.5" />
+                <span>{tabSwitchCount}x Pindah Tab</span>
+              </div>
+            )}
             <div
               className={`flex items-center gap-2 font-mono text-xl font-bold ${timeLeft < 300 ? "text-red-500" : "text-primary"}`}
             >

@@ -236,6 +236,59 @@ bagian ketiga.
 Dari berkas itu Anda butuh tiga nilai: `client_email`, `private_key`, dan
 `client_id`.
 
+#### Kalau muncul "Service account key creation is disabled"
+
+```
+An Organization Policy that blocks service accounts key creation has been
+enforced on your organization.
+Enforced Organization Policies IDs: iam.disableServiceAccountKeyCreation
+```
+
+Ini bukan kesalahan Anda. Organisasi Google Cloud yang baru dibuat otomatis
+mendapat sejumlah kebijakan *Secure by Default*, dan salah satunya melarang
+pengunduhan kunci service account. Alasannya masuk akal: kunci yang diunduh
+tidak pernah kedaluwarsa, dan sekali bocor tetap berlaku sampai seseorang ingat
+mencabutnya.
+
+**Matikan kebijakan itu untuk project ini saja — bukan untuk seluruh
+organisasi.**
+
+1. Beri diri Anda peran **Organization Policy Administrator**
+   (`roles/orgpolicy.policyAdmin`): **IAM & Admin → IAM**, ganti cakupan ke
+   organisasi `cipansor.or.id`, **Grant access**, principal
+   `admin@cipansor.or.id`. (Sama seperti Project Creator di langkah 1 — peran
+   Cloud tidak datang sendiri dari status super admin Workspace.)
+2. **IAM & Admin → Organization Policies**.
+3. Di pemilih resource di kiri atas, pilih **project** `Cipansor` — bukan
+   organisasinya. Ini bagian yang menentukan: mengubahnya di tingkat project
+   membuat seluruh sisa organisasi tetap terlindungi.
+4. Cari **Disable service account key creation**
+   (`iam.disableServiceAccountKeyCreation`) → **Manage policy**.
+5. Pilih **Override parent's policy** → **Off** / *Not enforced* → **Set
+   policy**.
+6. Tunggu sebentar (perubahannya butuh beberapa saat untuk menyebar), lalu
+   ulangi langkah 4 di atas.
+
+**Nyalakan kembali setelah kuncinya di tangan.** Kembalikan pilihan itu ke
+*Inherit parent's policy*. Kunci yang sudah ada tetap berfungsi; yang dilarang
+hanyalah pembuatan kunci **baru** — yang justru pertahanan yang Anda inginkan.
+Catat di suatu tempat bahwa langkah ini perlu diulang bila kelak kuncinya
+dirotasi.
+
+Dua alternatif, bila Anda tidak ingin menyentuh kebijakan organisasi:
+
+- **Project di luar organisasi.** Kebijakan organisasi hanya berlaku pada
+  resource di dalamnya. Sebuah project tanpa induk organisasi tidak terkena —
+  lihat catatan "No organization" di langkah 1. Konsekuensinya tetap sama:
+  project jadi milik akun pembuatnya.
+- **Tanpa kunci sama sekali** (paling aman, paling banyak kerjanya). Server ini
+  berjalan di VM Azure, dan Google mendukung *Workload Identity Federation*
+  dengan Azure sebagai penyedia identitas: aplikasi menukar token identitas VM
+  dengan token Google, sehingga tidak ada kunci yang pernah tersimpan di mana
+  pun. Ini perlu menyiapkan workload identity pool di Google, managed identity
+  di Azure, dan jalur kode kedua di `google-service-account.ts` — sepadan bila
+  suatu saat ada waktunya, berlebihan untuk mengaktifkan email hari ini.
+
 ### 5. Catat Client ID (Unique ID) service account
 
 1. Masih di halaman service account, tab **Details**.

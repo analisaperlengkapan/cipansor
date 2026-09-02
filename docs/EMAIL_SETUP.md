@@ -84,9 +84,48 @@ Satu-satunya syarat pada `noreply@` adalah **ada** — lihat langkah 7.
 
 1. Buka <https://console.cloud.google.com/>.
 2. Klik pemilih project di kiri atas → **New Project**.
-3. Nama: `cipansor-mailer` (bebas). Organisasi: pilih `cipansor.or.id` bila
-   muncul. → **Create**.
-4. Pastikan project ini yang aktif di pemilih project sebelum lanjut.
+3. Isi:
+   - *Project name*: **Cipansor Mailer**
+   - *Project ID*: `cipansor-mailer` — kalau ditolak, biarkan Google
+     menambahkan angka (`cipansor-mailer-482913`). ID ini **unik di seluruh
+     Google Cloud**, bukan hanya di organisasi Anda, jadi nama sesederhana ini
+     mungkin sudah dipakai orang lain. Isinya tidak penting bagi sistem —
+     tidak ada satu pun variabel di `.env` yang memuat ID project.
+   - *Organization / Location*: `cipansor.or.id` bila muncul; kalau tidak,
+     **No organization** (lihat catatan di bawah).
+4. **Create**, lalu pastikan project ini yang aktif di pemilih project.
+
+**Satu project untuk satu keperluan.** Menamainya `cipansor-mailer` dan bukan
+`cipansor` secara umum itu disengaja: di dalamnya ada service account yang
+boleh mengirim email atas nama domain. Kalau suatu saat kunci itu bocor atau
+project-nya perlu dihapus, tidak ada integrasi lain yang ikut terbawa.
+Integrasi Google berikutnya sebaiknya punya project sendiri.
+
+#### Kalau diminta "request access" saat memilih organisasi
+
+Menjadi **super admin Workspace tidak otomatis memberi hak di Google Cloud** —
+keduanya sistem izin yang terpisah. Yang muncul biasanya permintaan salah satu
+peran berikut:
+
+| Peran | Untuk apa |
+|---|---|
+| **Project Creator** (`roles/resourcemanager.projectCreator`) | membuat project di bawah organisasi — ini yang Anda butuhkan sekarang |
+| **Organization Administrator** (`roles/resourcemanager.organizationAdmin`) | memberikan peran kepada orang lain di tingkat organisasi |
+
+Anda adalah adminnya, jadi **jangan mengirim permintaan ke siapa pun** —
+berikan sendiri perannya: Cloud Console → **IAM & Admin → IAM**, ganti cakupan
+di kiri atas dari project ke **organisasi** `cipansor.or.id`, **Grant access**,
+principal `admin@cipansor.or.id`, peran **Project Creator**. Kalau tombol itu
+pun tidak bisa ditekan, berikan dulu **Organization Administrator** kepada diri
+sendiri — seorang super admin Workspace berwenang melakukannya justru untuk
+kasus seperti ini.
+
+**Jalan pintas yang sah:** pilih **No organization**. Semuanya tetap bekerja —
+service account, delegasi domain, dan pengiriman email tidak peduli project itu
+berada di bawah organisasi atau tidak. Konsekuensinya hanya soal tata kelola:
+project menjadi milik pribadi akun pembuatnya alih-alih milik yayasan, sehingga
+tidak ikut terwarisi bila akun itu suatu saat ditutup. Untuk mulai berjalan hari
+ini itu sepadan; pindahkan ke organisasi belakangan bila perlu.
 
 ### 2. Aktifkan Gmail API
 

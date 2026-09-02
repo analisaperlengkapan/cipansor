@@ -91,6 +91,9 @@ Satu-satunya syarat pada `noreply@` adalah **ada** — lihat langkah 7.
      Google Cloud**, bukan hanya di organisasi Anda, jadi nama sesederhana ini
      mungkin sudah dipakai orang lain. Isinya tidak penting bagi sistem —
      tidak ada satu pun variabel di `.env` yang memuat ID project.
+
+     Nama tampilan project boleh diganti kapan saja; **ID-nya permanen.** Jadi
+     bila ragu soal penamaan, yang perlu dipikirkan hanya kolom ID.
    - *Organization / Location*: `cipansor.or.id` bila muncul; kalau tidak,
      **No organization** (lihat catatan di bawah).
 4. **Create**, lalu pastikan project ini yang aktif di pemilih project.
@@ -139,10 +142,26 @@ ini itu sepadan; pindahkan ke organisasi belakangan bila perlu.
 
 1. Menu → **APIs & Services** → **Credentials**.
 2. **+ Create credentials** → **Service account**.
-3. Isi:
-   - *Service account name*: `cipansor-mailer`
-   - *Service account ID*: terisi otomatis, mis.
-     `cipansor-mailer@cipansor-mailer.iam.gserviceaccount.com`
+3. Isi ketiganya:
+
+   | Kolom | Isi | Catatan |
+   |---|---|---|
+   | *Service account name* | `Cipansor Mailer` | Label tampilan. **Bisa diubah** kapan saja. |
+   | *Service account ID* | `cipansor-mailer` | **Permanen.** Ini jadi awalan alamatnya — konsol langsung menampilkan hasilnya di bawah kolom: `cipansor-mailer@<project-id>.iam.gserviceaccount.com`. Huruf kecil, angka, dan tanda hubung; 6–30 karakter. Inilah nilai `GOOGLE_SERVICE_ACCOUNT_EMAIL` nanti. |
+   | *Service account description* | lihat di bawah | Opsional bagi Google, **tidak opsional bagi Anda**. |
+
+   Deskripsi adalah satu-satunya tempat yang menjelaskan benda ini kepada
+   admin berikutnya, yang mungkin bertahun-tahun lagi melihat sebuah akun
+   robot tak dikenal di daftar IAM dan bertanya-tanya apakah aman dihapus.
+   Salin ini:
+
+   ```
+   Mengirim email notifikasi Sistem Informasi Cipansor sebagai
+   noreply@cipansor.or.id melalui Gmail API (scope gmail.send,
+   domain-wide delegation). Dipakai container cipansor-api.
+   JANGAN HAPUS: mematikan seluruh email sistem.
+   ```
+
 4. **Create and continue** → langkah "Grant this service account access to
    project" **dilewati saja** (Continue) — tidak ada peran IAM yang dibutuhkan.
    Izin yang dipakai datang dari Workspace, bukan dari IAM.

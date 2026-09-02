@@ -14,7 +14,7 @@ test.describe("PPDB - Main Page", () => {
     await page.goto("/ppdb");
     await page.waitForLoadState("domcontentloaded", { timeout: 10000 });
 
-    expect(page.url()).toMatch(/ppdb/);
+    expect(page.url()).toMatch(/(spmb|ppdb)/);
   });
 
   test("should display PPDB stats and overview", async ({ page }) => {
@@ -26,7 +26,7 @@ test.describe("PPDB - Main Page", () => {
 
     const hasContent = await page.content();
     expect(hasContent.length).toBeGreaterThan(1000);
-    expect(page.url()).toMatch(/ppdb/);
+    expect(page.url()).toMatch(/(spmb|ppdb)/);
   });
 
   test("should display menu cards for PPDB features", async ({ page }) => {
@@ -38,12 +38,12 @@ test.describe("PPDB - Main Page", () => {
 
     // Check for links to sub-features
     const hasLinks = await page
-      .locator('a[href*="/ppdb/"]')
+      .locator('a[href*="/spmb/"], a[href*="/ppdb/"]')
       .first()
       .isVisible({ timeout: 5000 })
       .catch(() => false);
 
-    expect(hasLinks || page.url().includes("ppdb")).toBeTruthy();
+    expect(hasLinks || page.url().includes("spmb") || page.url().includes("ppdb")).toBeTruthy();
   });
 });
 
@@ -62,17 +62,17 @@ test.describe("PPDB - Navigation", () => {
       await page.waitForTimeout(500);
     }
 
-    expect(page.url()).toMatch(/ppdb/);
+    expect(page.url()).toMatch(/(spmb|ppdb)/);
   });
 
   test("should navigate to waves page", async ({ page }) => {
     await loginAs(page, "superAdmin");
 
     await page.waitForTimeout(2000);
-    await page.goto("/ppdb/waves");
+    await page.goto("/spmb/waves");
     await page.waitForLoadState("domcontentloaded", { timeout: 10000 });
 
-    expect(page.url()).toMatch(/ppdb\/waves/);
+    expect(page.url()).toMatch(/(spmb|ppdb)\/waves/);
   });
 });
 
@@ -88,6 +88,6 @@ test.describe("PPDB - Performance", () => {
     const loadTime = Date.now() - startTime;
 
     expect(loadTime).toBeLessThan(15000);
-    expect(page.url()).toMatch(/ppdb/);
+    expect(page.url()).toMatch(/(spmb|ppdb)/);
   });
 });

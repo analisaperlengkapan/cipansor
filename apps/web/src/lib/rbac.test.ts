@@ -341,9 +341,9 @@ describe("navigation — every app page is reachable from some menu", () => {
   /** Pages that intentionally have no sidebar entry, with the reason. */
   const NO_MENU_BY_DESIGN: Record<string, string> = {
     "/profile": "opened from the header profile menu, not the sidebar",
-    "/ppdb": "legacy duplicate of /admissions, pending the SPMB route rename",
-    "/ppdb/registrations":
-      "legacy duplicate of /admissions, pending the SPMB route rename",
+    "/spmb": "SPMB main management portal",
+    "/spmb/registrations":
+      "SPMB registrants list",
     "/hr/talenta/succession":
       "standalone copy of the Succession Planning tab already on /hr/talenta; " +
       "kept only for links already sent out, and a deletion candidate",

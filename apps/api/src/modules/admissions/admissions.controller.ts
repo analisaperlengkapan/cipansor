@@ -30,6 +30,20 @@ export async function getAdmissionPeriods(req: Request, res: Response, next: Nex
   }
 }
 
+/**
+ * Public document OCR & AI cross-matching endpoint (`POST /admissions/public/parse-document`).
+ * Parses uploaded document images (KTP, KK, etc.) and cross-checks data against user inputs.
+ */
+export async function parsePublicDocument(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { parseAndVerifyDocument } = await import('./document-ocr.service');
+    const result = await parseAndVerifyDocument(req.body);
+    res.json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function getAdmissionPeriodById(req: Request, res: Response, next: NextFunction) {
   try {
     const period = await service.getAdmissionPeriodById(req.params.id);
@@ -163,17 +177,19 @@ export async function updateRegistrantStatus(req: Request, res: Response, next: 
 export async function enrollRegistrant(req: Request, res: Response, next: NextFunction) {
   try {
     const schema = z.object({
-      nis: z.string().min(1),
+      nis: z.string().optional(),
       nisn: z.string().optional(),
       classId: z.string().optional(),
       roomId: z.string().optional(),
     });
+    const user = requireUser(req);
     const data = schema.parse(req.body);
     const result = await service.enrollRegistrant(req.params.id, {
       nis: data.nis,
       nisn: data.nisn,
       classId: data.classId,
       roomId: data.roomId,
+      processedById: user.id,
     });
     res.json({
       success: true,

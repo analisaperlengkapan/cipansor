@@ -128,7 +128,7 @@ export default function RegistrationsPage() {
                     <TableRow key={reg.id}>
                       <TableCell className="font-medium">
                         <Link
-                          href={`/ppdb/registrations/${reg.id}`}
+                          href={`/spmb/registrations/${reg.id}`}
                           className="text-primary hover:underline"
                         >
                           {reg.fullName || reg.name || "-"}

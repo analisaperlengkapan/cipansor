@@ -282,6 +282,26 @@ export class StudentOnboardingOrchestrator {
         });
       }
 
+      // Auto-generate the registration-fee invoice if period charges a fee
+      if (period && Number(period.registrationFee) > 0 && tx.paymentType) {
+        const paymentType = await tx.paymentType.findFirst({
+          where: { unitId, code: 'REG_FEE' },
+        });
+        if (paymentType) {
+          const financeService = await import('../../modules/finance/finance.service');
+          await financeService.createInvoice(
+            {
+              studentId: student.id,
+              paymentTypeId: paymentType.id,
+              amount: Number(period.registrationFee),
+              dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+              notes: `Biaya Pendaftaran ${registrant.fullName}`,
+            } as any,
+            tx as any
+          );
+        }
+      }
+
       return {
         success: true,
         studentId: student.id,

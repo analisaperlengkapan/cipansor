@@ -41,6 +41,26 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       {
+        source: "/ppdb",
+        destination: "/spmb",
+        permanent: true,
+      },
+      {
+        source: "/ppdb/:path*",
+        destination: "/spmb/:path*",
+        permanent: true,
+      },
+      {
+        source: "/psb",
+        destination: "/spmb",
+        permanent: true,
+      },
+      {
+        source: "/psb/:path*",
+        destination: "/spmb/:path*",
+        permanent: true,
+      },
+      {
         source: "/public/ppdb",
         destination: "/public/spmb",
         permanent: true,
@@ -89,7 +109,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: "Permissions-Policy",
-            value: "camera=(), microphone=(), geolocation=()",
+            value: "camera=(self), microphone=(), geolocation=()",
           },
         ],
       },

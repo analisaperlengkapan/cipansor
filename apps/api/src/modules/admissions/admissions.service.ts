@@ -342,9 +342,29 @@ async function createRegistrantOnce(data: CreateRegistrantExtendedInput) {
     const parentEmail = data.fatherEmail && data.fatherEmail !== '' ? data.fatherEmail : undefined;
     const parentOccupation = data.fatherOccupation || data.motherOccupation;
 
+    // Look up active open wave for the period to auto-assign wave
+    const now = new Date();
+    const activeWave = tx.admissionWave
+      ? await tx.admissionWave.findFirst({
+          where: {
+            periodId: data.admissionPeriodId,
+            status: 'OPEN',
+            startDate: { lte: now },
+            endDate: { gte: now },
+          },
+          orderBy: { waveNumber: 'asc' },
+        })
+      : null;
+
+    let waveId: string | undefined = undefined;
+    if (activeWave && activeWave.registeredCount < activeWave.quota) {
+      waveId = activeWave.id;
+    }
+
     const registrant = await tx.registrant.create({
       data: {
         admissionPeriodId: data.admissionPeriodId,
+        waveId,
         registrationNo,
         fullName: data.fullName,
         name: data.fullName, // legacy column, kept in sync
@@ -366,6 +386,13 @@ async function createRegistrantOnce(data: CreateRegistrantExtendedInput) {
         campaignId: data.campaignId,
       },
     });
+
+    if (waveId && activeWave) {
+      await tx.admissionWave.updateMany({
+        where: { id: waveId, registeredCount: { lt: activeWave.quota } },
+        data: { registeredCount: { increment: 1 } },
+      });
+    }
 
     // Best Practice: Ensure a REG_FEE payment type exists so that the
     // registration-fee invoice can be created automatically at enrollment
@@ -654,198 +681,30 @@ export async function updateRegistrantStatus(id: string, data: UpdateRegistrantS
 export async function enrollRegistrant(
   registrantId: string,
   studentData: {
-    nis: string;
+    nis?: string;
     nisn?: string;
     classId?: string;
     roomId?: string;
+    processedById?: string;
   }
 ) {
-  // Pre-compute a bcrypt hash OUTSIDE the transaction. bcrypt.hash with cost
-  // factor 10 takes ~80-100ms during which we'd otherwise be holding row locks
-  // inside the enrollment transaction, increasing lock contention under
-  // concurrent load. The hash is only consumed by the "no existing user" path
-  // below; when an existing user is reused it is simply discarded. The small
-  // amount of wasted work when the hash isn't needed is worth the shorter
-  // transaction lifetime.
-  const randomPassword = randomBytes(24).toString('base64url');
-  const prehashedPassword = await bcrypt.hash(randomPassword, 10);
-
-  const result = await prisma.$transaction(async (tx) => {
-    // Read registrant + status check INSIDE the transaction so two concurrent
-    // enrollment requests can't both pass the ACCEPTED check and end up
-    // creating duplicate User/Student records for the same registrant.
-    const registrant = await tx.registrant.findUnique({
-      where: { id: registrantId },
-      include: { admissionPeriod: { include: { unit: true } } },
-    });
-
-    if (!registrant) throw new Error('Registrant not found');
-    if (registrant.status !== AdmissionStatus.ACCEPTED) {
-      throw new Error('Registrant must be accepted before enrollment');
-    }
-
-    const existingUser = registrant.email
-      ? await tx.user.findUnique({
-          where: { email: registrant.email },
-          include: { student: true },
-        })
-      : null;
-
-    let user;
-    let student;
-
-    if (existingUser && existingUser.student) {
-      user = existingUser;
-      student = await tx.student.update({
-        where: { id: existingUser.student.id },
-        data: {
-          unitId: registrant.admissionPeriod.unitId,
-          status: 'active',
-          nis: studentData.nis,
-          // Persist the caller-supplied NISN on re-enrollment too. The other
-          // two branches below (existing-user-without-student and brand-new
-          // user) both set `nisn: studentData.nisn` on `tx.student.create`,
-          // so omitting it here would silently discard the value when a
-          // previously-enrolled student is re-enrolled (e.g. after graduating
-          // or transferring) with a new NISN.
-          nisn: studentData.nisn,
-          graduateYear: null,
-        },
-      });
-
-      await tx.classEnrollment.updateMany({
-        where: { studentId: student.id, status: 'active' },
-        data: { status: 'completed' },
-      });
-    } else if (existingUser) {
-      // A User with the registrant's email already exists but has no linked
-      // Student record (e.g. the same email belongs to a parent / staff
-      // account). Reuse that user and attach a new Student row to it instead
-      // of attempting `tx.user.create({ email })`, which would violate the
-      // `User.email @unique` constraint and abort the entire transaction
-      // with an opaque P2002 error.
-      user = existingUser;
-
-      student = await tx.student.create({
-        data: {
-          userId: user.id,
-          unitId: registrant.admissionPeriod.unitId,
-          nis: studentData.nis,
-          nisn: studentData.nisn,
-          gender: registrant.gender,
-          birthPlace: registrant.birthPlace,
-          birthDate: registrant.birthDate,
-          address: registrant.address,
-          parentName: registrant.parentName,
-          parentPhone: registrant.parentPhone,
-          parentEmail: registrant.parentEmail,
-          status: 'active',
-          entryYear: new Date().getFullYear(),
-        },
-      });
-    } else {
-      // Use the bcrypt hash computed before the transaction (see above).
-      // The plain password is intentionally discarded so the account can only
-      // be activated via the standard password-reset flow. This avoids
-      // shipping a known-weak / non-bcrypt placeholder hash to production.
-      user = await tx.user.create({
-        data: {
-          name: registrant.fullName,
-          email: registrant.email || `${studentData.nis}@student.cipansor.or.id`,
-          passwordHash: prehashedPassword,
-          role: 'STUDENT',
-          unitId: registrant.admissionPeriod.unitId,
-          isActive: true,
-        },
-      });
-
-      student = await tx.student.create({
-        data: {
-          userId: user.id,
-          unitId: registrant.admissionPeriod.unitId,
-          nis: studentData.nis,
-          nisn: studentData.nisn,
-          gender: registrant.gender,
-          birthPlace: registrant.birthPlace,
-          birthDate: registrant.birthDate,
-          address: registrant.address,
-          parentName: registrant.parentName,
-          parentPhone: registrant.parentPhone,
-          parentEmail: registrant.parentEmail,
-          status: 'active',
-          entryYear: new Date().getFullYear(),
-        },
-      });
-    }
-
-    if (studentData.classId) {
-      await tx.classEnrollment.create({
-        data: {
-          studentId: student.id,
-          classId: studentData.classId,
-          status: 'active',
-        },
-      });
-    }
-
-    if (studentData.roomId) {
-      await tx.roomAssignment.create({
-        data: {
-          studentId: student.id,
-          roomId: studentData.roomId,
-          isActive: true,
-          assignedAt: new Date(),
-        },
-      });
-    }
-
-    await tx.registrant.update({
-      where: { id: registrantId },
-      data: {
-        status: AdmissionStatus.ENROLLED,
-        enrolledAt: new Date(),
-        studentId: student.id,
-      },
-    });
-
-    // The registrant's status transitions from ACCEPTED -> ENROLLED here, but
-    // unlike `updateRegistrantStatus` this code path doesn't go through the
-    // shared status-transition logic. We must therefore decrement the wave's
-    // `acceptedCount` ourselves; otherwise every successful enrollment leaves
-    // a stale ACCEPTED count behind, eventually overstating the wave's
-    // acceptance rate (see `ppdb-wave.service.ts` `getStats`).
-    if (registrant.waveId) {
-      await tx.admissionWave.updateMany({
-        where: { id: registrant.waveId, acceptedCount: { gt: 0 } },
-        data: { acceptedCount: { decrement: 1 } },
-      });
-    }
-
-    // Auto-generate the registration-fee invoice now that we have a real
-    // Student to attach it to. Skipped if no fee is configured or the
-    // REG_FEE payment type is missing.
-    const period = registrant.admissionPeriod;
-    if (period && Number(period.registrationFee) > 0) {
-      const paymentType = await tx.paymentType.findFirst({
-        where: { unitId: period.unitId, code: 'REG_FEE' },
-      });
-      if (paymentType) {
-        await financeService.createInvoice(
-          {
-            studentId: student.id,
-            paymentTypeId: paymentType.id,
-            amount: Number(period.registrationFee),
-            dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-            notes: `Biaya Pendaftaran ${registrant.fullName}`,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          } as any,
-          tx as Prisma.TransactionClient
-        );
-      }
-    }
-
-    return { user, student };
+  const registrant = await prisma.registrant.findUnique({
+    where: { id: registrantId },
+    include: { admissionPeriod: true },
   });
+
+  if (!registrant) throw new Error('Registrant not found');
+
+  const { StudentOnboardingOrchestrator } = await import(
+    '../../services/integration/student-onboarding.orchestrator'
+  );
+
+  const result = await StudentOnboardingOrchestrator.processEnrollment(
+    registrantId,
+    registrant.admissionPeriod.unitId,
+    studentData.processedById || 'system',
+    studentData.classId
+  );
 
   return result;
 }

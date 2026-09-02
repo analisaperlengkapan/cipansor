@@ -24,7 +24,10 @@ test.describe("Password reset link", () => {
     await expect(page.getByText("Setel Ulang Password")).toBeVisible();
     // The form itself is the proof — reaching the URL is not enough if the
     // page renders an error state instead.
-    await expect(page.getByLabel("Password baru")).toBeVisible();
+    // `exact` matters: getByLabel matches substrings, and "Ulangi password
+    // baru" contains "Password baru", so the loose form resolves to two
+    // elements and fails on strict mode rather than on anything real.
+    await expect(page.getByLabel("Password baru", { exact: true })).toBeVisible();
     await expect(
       page.getByRole("button", { name: /Simpan password baru/i }),
     ).toBeVisible();
@@ -58,25 +61,23 @@ test.describe("Outgoing mail configuration", () => {
   test("reports the transport the server really has, not a hardcoded one", async ({
     page,
   }) => {
-    const card = page.locator("text=Server Email Keluar").locator("..").locator("..");
-    await expect(card).toBeVisible();
+    await expect(page.getByText("Server Email Keluar")).toBeVisible();
 
     // Exactly one of the two states, and which one is decided by the server:
     // with no credentials configured the page must say so rather than showing
     // a green badge over a mailbox nothing sends from.
     const ready = page.getByText("Email siap kirim");
     const notSending = page.getByText(/Email tidak terkirim/);
-    await expect(ready.or(notSending)).toBeVisible();
+    await expect(ready.or(notSending).first()).toBeVisible();
   });
 
   test("shows a reply address that is not the noreply mailbox", async ({
     page,
   }) => {
-    const replyTo = page.getByText("halo@cipansor.or.id");
-    await expect(replyTo).toBeVisible();
-
     // The pairing is the point: automated mail comes from noreply@, and a wali
-    // who answers it must land somewhere a human reads.
+    // who answers it must land somewhere a human reads. `.first()` because the
+    // address also appears in the channel list below the card.
     await expect(page.getByText(/Tujuan balasan/i)).toBeVisible();
+    await expect(page.getByText("halo@cipansor.or.id").first()).toBeVisible();
   });
 });

@@ -2,7 +2,12 @@ import { Request, Response } from 'express';
 import { CorrespondenceService } from './correspondence.service';
 import { asyncHandler, Errors } from '@/middleware/error';
 import { ApiResponse } from '@/utils/response';
-import { generateLetterPdfBuffer, LetterPdfError } from '@/utils/generate-letter-pdf';
+import crypto from 'crypto';
+import {
+  generateLetterPdfBuffer,
+  stampRevoked,
+  LetterPdfError,
+} from '@/utils/generate-letter-pdf';
 import {
   choosesUnit,
   handlesUnitCorrespondence,
@@ -66,33 +71,56 @@ export const CorrespondenceController = {
     }
 
     /**
-     * A letter whose signature has been withdrawn is not printed again.
+     * A withdrawn letter is still printed — stamped DICABUT, not refused.
      *
-     * The generator drops the signature block for a revoked signature, so a
-     * fresh download would be a *different* file with a different byte hash —
-     * one the database has never seen. Uploading it to the public verification
-     * page would then be answered "tidak terdaftar ... atau telah mengalami
-     * perubahan", the same sentence a forgery gets, instead of "dicabut,
-     * dengan alasan ini". Handing out a document that verifies as fake is
-     * worse than handing out nothing.
+     * The office still has to file a copy, and whoever is already holding the
+     * letter deserves a sheet that explains itself. Refusing the download left
+     * both without one. Electronic-signature platforms do the same: DocuSign
+     * watermarks a voided envelope VOID and keeps it downloadable.
      *
-     * Copies already in circulation still verify correctly and still report
-     * the revocation: they carry the bytes that were hashed at signing.
+     * The care is in *what* gets stamped. The generator drops the signature
+     * block once a signature is revoked, so a naive re-render is a different
+     * document from the one that was hashed — and uploading it to the public
+     * page would be answered with the sentence a forgery gets. So the naskah is
+     * rebuilt **as it stood when signed**, its bytes are re-hashed, and the
+     * stamp is applied only once that hash matches `pdfHash`. Circulated copies
+     * keep verifying, and keep reporting the revocation.
+     *
+     * When it does not match, the bytes have drifted since signing — the very
+     * hazard `docs/EOFFICE_ESIGN_PLAN.md` §2.4 describes — and refusing is the
+     * honest answer until PR-3 archives the signed bytes.
      */
     const latest = letter.signatures?.at(-1);
-    if (latest?.revokedAt) {
-      throw Errors.badRequest(
-        'Tanda tangan surat ini telah dicabut, sehingga naskahnya tidak dapat dicetak lagi. ' +
-          'Terbitkan surat pengganti bila diperlukan.'
-      );
-    }
+    const revoked = latest?.revokedAt ? latest : null;
 
     let pdfBuffer: Buffer;
     try {
-      pdfBuffer = await generateLetterPdfBuffer(letter);
+      pdfBuffer = await generateLetterPdfBuffer(
+        revoked
+          ? {
+              ...letter,
+              signatures: (letter.signatures ?? []).map((s) => ({ ...s, revokedAt: null })),
+            }
+          : letter
+      );
     } catch (e) {
       if (e instanceof LetterPdfError) throw Errors.badRequest(e.message);
       throw e;
+    }
+
+    if (revoked) {
+      const hash = crypto.createHash('sha256').update(pdfBuffer).digest('hex');
+      if (!latest?.pdfHash || hash !== latest.pdfHash) {
+        throw Errors.badRequest(
+          'Naskah ini tidak dapat dicetak ulang: berkas yang dihasilkan tidak lagi sama persis ' +
+            'dengan yang ditandatangani, sehingga salinan bercap pun tidak dapat dipertanggungjawabkan.'
+        );
+      }
+      pdfBuffer = await stampRevoked(pdfBuffer, {
+        reason: revoked.revokedReason ?? 'Dicabut oleh pejabat yang berwenang.',
+        revokedAt: new Date(revoked.revokedAt as unknown as string),
+        revokedByName: revoked.revokedBy?.name ?? null,
+      });
     }
     const fileName = `Surat-${letter.letterNumber || letter.agendaNumber || 'Draft'}.pdf`;
     res.setHeader('Content-Type', 'application/pdf');

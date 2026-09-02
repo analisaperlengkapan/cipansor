@@ -317,10 +317,97 @@ and the public verification page reports the revocation and its reason.
 Schema, additive only: `UserSigningKey.revokedById` (accountability parity with
 `LetterSignature`, which already had it) and `LetterFlowAction.SIGNATURE_REVOKED`.
 
-**Still open after this PR:** the revocation reason is free text, so nothing
-distinguishes *keyCompromise* from *superseded* (RFC 5280 reason codes). The
-blast-radius list is the stand-in — it puts the affected letters in front of the
-admin instead of leaving the distinction to a dropdown nobody reads.
+### PR-2b — Authority, proof, and the AATL read
+
+Revised 2026-09-02 after the yayasan pushed back on the authority rule and sent
+the **Adobe AATL Technical Requirements v2.0**. Three sources were checked
+against each other; they agree, and they all disagreed with what PR-2 first
+shipped.
+
+**Who may revoke.** Authority to revoke follows authority to *issue*.
+
+| Source | Rule |
+|---|---|
+| ANRI, tata naskah dinas | *"Pejabat yang berhak menetapkan perubahan, pencabutan, dan pembatalan adalah pejabat yang berwenang menetapkan naskah dinas tersebut."* A regulatory naskah must be withdrawn by one of equal or higher level. |
+| RFC 5280 / BSrE | Only the issuer revokes. The certificate owner *requests*, in writing with a reason; the issuer decides. |
+| DocuSign / Acrobat Sign | Only the sender may void. The **signer specifically cannot** — they may only decline to sign. |
+
+So `signer OR SUPER_ADMIN` was wrong in both directions. Super Admin is a
+*technical* role; an IT administrator annulling the Ketua's SK is what none of
+the three permits. And signer-only would leave a wrongly issued SK valid forever
+once its signer stops holding office.
+
+The rule now, in `packages/shared/src/types/letter-revocation-authority.ts`:
+
+| Actor | May revoke |
+|---|---|
+| Anyone | their own signature |
+| **Pengawas Yayasan** | own + Pengurus + every unit office |
+| **Pembina** | own + any naskah signed by a Pembina (succession in office) |
+| Ketua / Sekretaris / Bendahara | own only |
+| **Super Admin** | **nothing** — keys and certificates only |
+
+Annulling what the Pengurus issued is a *supervisory* act, not an executive one,
+so it sits with the Pengawas. Putting it on the Ketua would have the executing
+organ annul its own work — the separation UU 16/2001 jo. UU 28/2004 Pasal 29
+exists to prevent. Pembina succeeds its own office because there is no organ
+above it to appeal to.
+
+**Everyone else gets a channel, not a wall.** `LetterRevocationRequest`: anyone
+who may read the letter may ask, with a reason and an optional attachment; the
+authorised officer decides on the letter's own page. The clerk who spots the
+duplicate number is rarely the officer who may annul it.
+
+**Revoking now takes a passphrase, and is signed.** The first version reasoned
+that "revoking makes no new cryptographic assertion". That is wrong: a CRL is a
+signed, timestamped data structure (RFC 5280). The revoker signs the statement —
+binding signature, letter, revoker, office, time and reason — with **their own**
+key, so a leaked passphrase or a departed official blocks nothing, a live session
+alone cannot withdraw an official letter, and the public page *proves* the
+revocation instead of asserting it. Editing the reason afterwards invalidates it.
+
+**A revoked naskah is stamped, not withheld.** DocuSign watermarks a voided
+document and keeps it downloadable; refusing the download left the office unable
+to file a copy. The naskah is rebuilt as it stood when signed, re-hashed, and
+stamped only once the hash matches `pdfHash` — so circulated copies keep
+verifying and keep reporting the revocation. A mismatch means the bytes have
+drifted since signing (§2.4) and printing is refused, honestly.
+
+**Reason codes (RFC 5280 §5.3.1), on key revocation.** AATL ICA6(a) enumerates
+three different situations with three different consequences, and only
+`KEY_COMPROMISE` makes previously signed letters doubtful. Without the
+distinction an operator has two equally wrong options: revoke a dozen sound
+letters, or leave letters signed with a leaked key standing. Not applied to
+letters: withdrawing a naskah is an administrative act, and ANRI's form for it is
+the written reason.
+
+### What AATL asks that we cannot meet, and should not pretend to
+
+AATL is a programme for **certificate authorities**, not for signing
+applications. Membership needs a WebTrust or ETSI EN 319 411 audit every two
+years (G2), FIPS 140-2 Level 3 HSMs for the ICA key (ICA4), face-to-face
+identity proofing (ICA5a), and a contract with Adobe. The yayasan is not going
+to be an AATL member, and building toward that is the wrong goal.
+
+What the document is genuinely useful for is as a checklist of what a serious
+deployment looks like:
+
+| AATL | Here | Verdict |
+|---|---|---|
+| **EE1/EE2** X.509 v3 per RFC 5280, KeyUsage + EKU | no certificate at all, just a raw public key | Needed before any PAdES signature Acrobat will trust |
+| **EE4(b)** RSA ≥ 2048 or EC ≥ 256 | **Ed25519** | ⚠️ **Ed25519 is not on AATL's list.** Independent confirmation of §4.3: the algorithm choice is what blocks PAdES, and RFC 8419 EdDSA-in-CMS support in Acrobat is thin. A migration, not a patch. |
+| **EE3** RFC 3161 timestamp; embedded revocation info for LTV | none | **The highest-value single item.** Without a timestamp there is no answer to "was the key valid *at the time of signing*", which is exactly what revocation semantics need. Already PR-5. |
+| **EE4(c)** private key in FIPS 140-2 L2 hardware | scrypt + AES-GCM in the application database | Out of reach; state it plainly rather than imply otherwise |
+| **ICA5(a)** identity proofing before issuance | Super Admin approves a request in the app | **Cheap and worth doing**: record *how* identity was verified at approval. It is the difference between "an admin clicked approve" and "the Ketua checked the KTP in person on this date" — and that difference is what PP 71/2019 weighs when distinguishing *tersertifikasi* from *tidak tersertifikasi*. |
+| **ICA6(a)** immediate revocation on suspected compromise | key revocation, now with reason codes | Met |
+| **ICA7** published status for enquiring about validity | a database column | A public **key**-status endpoint would meet it — deliberately about the *key*, never the document, so it cannot become the token oracle §1 exists to retire |
+
+**Standing conclusion:** the signature here is *tanda tangan elektronik tidak
+tersertifikasi* under PP 71/2019, and every improvement above still leaves it
+that way. Becoming *tersertifikasi* means using a PSrE (BSrE, Privy, VIDA,
+Peruri, Digisign) — a procurement decision, not an engineering one. What the
+work above buys is a system that behaves correctly at its own tier, and one that
+a PSrE could be dropped into later without redesigning the flow around it.
 
 ### PR-3 — Archive the signed PDF bytes (§2.4)
 Schema change. Store the exact buffer that was hashed; serve downloads from it.

@@ -138,6 +138,13 @@ describe('esign.routes authority gates', () => {
    * place that knows who signed this particular letter — so the guard here is
    * that the route stays authenticated and never becomes public.
    */
+  /**
+   * Revoking a naskah is not behind `isSuperAdmin` — and precisely because
+   * Super Admin must NOT be able to. Authority to revoke follows authority to
+   * issue: it belongs to the signing office, checked in the service against the
+   * signature row. Guarding this route with `isSuperAdmin` would hand the
+   * annulment of a Ketua's SK to whoever administers the servers.
+   */
   it('POST /letters/:letterId/revoke is authenticated but not Super-Admin-only', () => {
     expect(hasRoute('post', '/letters/:letterId/revoke')).toBe(true);
     expect(
@@ -147,5 +154,35 @@ describe('esign.routes authority gates', () => {
     // and not a helper that answers "not public" to everything.
     expect(isPublicRoute('post', '/letters/:letterId/revoke')).toBe(false);
     expect(isPublicRoute('post', '/verify-pdf')).toBe(true);
+  });
+
+  /**
+   * Revoking carries a passphrase, so it must be rate limited like signing.
+   * A revocation is a signed statement, not a status change — the same
+   * guessing surface as the signature itself.
+   */
+  it('POST /letters/:letterId/revoke is rate limited', () => {
+    expect(hasLimiter('post', '/letters/:letterId/revoke')).toBe(true);
+  });
+
+  it('POST /revocation-requests/:id/decide is rate limited', () => {
+    expect(hasLimiter('post', '/revocation-requests/:id/decide')).toBe(true);
+  });
+
+  /**
+   * Asking for a revocation is open to anyone who may read the letter — the
+   * clerk who spots the duplicate number is rarely the officer who may annul
+   * it — but it is never public, and it never carries a passphrase, because
+   * nothing changes until the request is decided.
+   */
+  it('requesting a revocation is authenticated, un-gated and passphrase-free', () => {
+    expect(hasRoute('post', '/letters/:letterId/revocation-requests')).toBe(true);
+    expect(isPublicRoute('post', '/letters/:letterId/revocation-requests')).toBe(false);
+    expect(
+      handlersFor('post', '/letters/:letterId/revocation-requests').some(
+        (h) => h.handle === isSuperAdmin
+      )
+    ).toBe(false);
+    expect(hasLimiter('post', '/letters/:letterId/revocation-requests')).toBe(false);
   });
 });

@@ -126,10 +126,29 @@ export interface AffectedLetter {
   signedAt: string;
 }
 
+/** Sebab pencabutan kunci, mengikuti RFC 5280 §5.3.1. */
+export type SigningKeyRevocationCode =
+  | "KEY_COMPROMISE"
+  | "AFFILIATION_CHANGED"
+  | "SUPERSEDED"
+  | "CESSATION_OF_OPERATION"
+  | "PRIVILEGE_WITHDRAWN";
+
+export const REVOCATION_CODE_LABEL: Record<SigningKeyRevocationCode, string> = {
+  KEY_COMPROMISE: "Passphrase atau kunci diduga bocor",
+  AFFILIATION_CHANGED: "Berhenti menjabat / wewenang dicabut",
+  SUPERSEDED: "Diterbitkan ulang, digantikan kunci baru",
+  CESSATION_OF_OPERATION: "Tidak dipakai lagi",
+  PRIVILEGE_WITHDRAWN: "Kekeliruan penerbitan",
+};
+
 export interface RevokeKeyResult {
   success: boolean;
   revokedAt: string;
   revokedReason: string;
+  revocationCode: SigningKeyRevocationCode;
+  /** Hanya kebocoran kunci yang membuat surat-surat lama perlu ditinjau. */
+  lettersNeedReview: boolean;
   affectedLetterCount: number;
   affectedLetters: AffectedLetter[];
 }
@@ -150,9 +169,13 @@ export function useEsignKeys() {
     queryFn: async () => (await api.get("/esign/keys")).data.data,
   });
 
-  const revokeKey = useMutation<RevokeKeyResult, unknown, { userId: string; reason: string }>({
-    mutationFn: async ({ userId, reason }) =>
-      (await api.post(`/esign/keys/${userId}/revoke`, { reason })).data.data,
+  const revokeKey = useMutation<
+    RevokeKeyResult,
+    unknown,
+    { userId: string; reason: string; code: SigningKeyRevocationCode }
+  >({
+    mutationFn: async ({ userId, reason, code }) =>
+      (await api.post(`/esign/keys/${userId}/revoke`, { reason, code })).data.data,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["esign", "keys"] });
       queryClient.invalidateQueries({ queryKey: ["esign", "me"] });
@@ -163,21 +186,87 @@ export function useEsignKeys() {
 }
 
 /**
- * Mencabut tanda tangan pada surat.
+ * Mencabut naskah dinas.
  *
- * Tidak menuntut passphrase: mencabut tidak menghasilkan bukti kriptografis
- * baru, ia hanya menyatakan yang lama tidak lagi berlaku. Wewenangnya diperiksa
- * server terhadap baris tanda tangannya — penandatangan surat itu sendiri, atau
- * Super Admin.
+ * Menuntut passphrase, sama seperti menandatangani — dan passphrase yang diminta
+ * adalah milik **pencabutnya**, bukan milik penandatangan. Dua sebabnya: menarik
+ * surat resmi tidak boleh cukup dengan sesi yang tertinggal terbuka, dan
+ * pernyataan pencabutannya ditandatangani supaya halaman verifikasi publik dapat
+ * membuktikannya (sebuah CRL pun ditandatangani penerbitnya — RFC 5280).
  */
-export function useRevokeLetterSignature() {
+export function useRevokeLetter() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { letterId: string; reason: string }) =>
-      (await api.post(`/esign/letters/${input.letterId}/revoke`, { reason: input.reason }))
-        .data.data,
+    mutationFn: async (input: { letterId: string; reason: string; passphrase: string }) =>
+      (
+        await api.post(`/esign/letters/${input.letterId}/revoke`, {
+          reason: input.reason,
+          passphrase: input.passphrase,
+        })
+      ).data.data,
     onSuccess: (_d, v) => {
       queryClient.invalidateQueries({ queryKey: ["letters"] });
+      queryClient.invalidateQueries({ queryKey: ["letter", v.letterId] });
+    },
+  });
+}
+
+/**
+ * Mengajukan pencabutan kepada yang berwenang.
+ *
+ * Tidak menuntut passphrase: tidak ada yang berubah pada suratnya sampai
+ * permohonannya diputuskan. Terbuka bagi siapa pun yang boleh membaca suratnya,
+ * karena yang paling mungkin lebih dulu menemukan nomor surat ganda adalah
+ * petugas tata usaha — bukan pejabat yang berwenang mencabutnya.
+ */
+export function useRequestRevocation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      letterId: string;
+      reason: string;
+      attachmentUrl?: string;
+    }) =>
+      (
+        await api.post(`/esign/letters/${input.letterId}/revocation-requests`, {
+          reason: input.reason,
+          attachmentUrl: input.attachmentUrl,
+        })
+      ).data.data,
+    onSuccess: (_d, v) => {
+      queryClient.invalidateQueries({ queryKey: ["letter", v.letterId] });
+    },
+  });
+}
+
+/** Memutuskan permohonan — menyetujui berarti mencabut, di sini dan sekarang. */
+export function useDecideRevocation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      requestId: string;
+      letterId: string;
+      approve: boolean;
+      note?: string;
+      passphrase?: string;
+      reason?: string;
+    }) => {
+      const { requestId, letterId: _letterId, ...body } = input;
+      return (await api.post(`/esign/revocation-requests/${requestId}/decide`, body)).data.data;
+    },
+    onSuccess: (_d, v) => {
+      queryClient.invalidateQueries({ queryKey: ["letters"] });
+      queryClient.invalidateQueries({ queryKey: ["letter", v.letterId] });
+    },
+  });
+}
+
+export function useWithdrawRevocationRequest() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { requestId: string; letterId: string }) =>
+      (await api.post(`/esign/revocation-requests/${input.requestId}/withdraw`)).data.data,
+    onSuccess: (_d, v) => {
       queryClient.invalidateQueries({ queryKey: ["letter", v.letterId] });
     },
   });

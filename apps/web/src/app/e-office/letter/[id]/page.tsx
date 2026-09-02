@@ -62,10 +62,13 @@ import {
   LETTER_TYPE_LABELS,
   LETTER_NATURE_LABELS,
   LETTER_URGENCY_LABELS,
+  mayRevokeSignature,
+  whoMayRevoke,
 } from "@cipansor/shared";
 import { LetterFlowHistory } from "@/components/e-office/letter-flow-history";
 import { SignLetterDialog } from "@/components/e-office/sign-letter-dialog";
-import { RevokeSignatureDialog } from "@/components/e-office/revoke-signature-dialog";
+import { RevokeLetterDialog } from "@/components/e-office/revoke-letter-dialog";
+import { RevocationRequestsCard } from "@/components/e-office/revocation-requests-card";
 import { getPrimaryRoleCode } from "@/lib/rbac";
 
 /** Status seorang verifikator, dalam bahasa yang dibaca penggunanya. */
@@ -138,13 +141,29 @@ export default function LetterDetailPage({
   const activeSignature = latestSignature?.revokedAt ? null : latestSignature;
   const revokedSignature = latestSignature?.revokedAt ? latestSignature : null;
 
-  // Mirrors the server rule in `utils/esign-revocation.ts`: the signer
-  // withdraws their own signature, and Super Admin may act when the signer
-  // cannot — or is the problem. Shown, never enforced, here.
-  const mayRevokeSignature =
-    !!activeSignature &&
-    (getPrimaryRoleCode(user) === "SUPER_ADMIN" ||
-      letter?.reviewers?.some((r) => r.isSigner && r.reviewerId === user?.id));
+  /**
+   * Kewenangan mencabut, dibaca dari tabel yang sama dengan yang ditegakkan
+   * server (`@cipansor/shared`), bukan disalin ulang di sini.
+   *
+   * Yang tidak berwenang tidak kehilangan salurannya: tombolnya tetap ada dan
+   * membuka permohonan, bukan pencabutan. Menyembunyikannya sama sekali berarti
+   * petugas tata usaha yang menemukan nomor surat ganda tidak punya jalan apa
+   * pun selain memberi tahu secara lisan.
+   */
+  const signerParty = activeSignature
+    ? {
+        userId:
+          letter?.reviewers?.find((r) => r.isSigner)?.reviewerId ?? "",
+        roleCode: activeSignature.signerRoleCode ?? null,
+      }
+    : null;
+  const actorParty = {
+    userId: user?.id ?? "",
+    roleCode: getPrimaryRoleCode(user) ?? null,
+  };
+  const canRevokeLetter =
+    !!signerParty && mayRevokeSignature(signerParty, actorParty);
+  const whoMayRevokeText = signerParty ? whoMayRevoke(signerParty) : "";
 
   const handleUpdateDisposition = async (
     status: "IN_PROGRESS" | "COMPLETED",
@@ -520,9 +539,11 @@ export default function LetterDetailPage({
         onOpenChange={setSignOpen}
       />
 
-      <RevokeSignatureDialog
+      <RevokeLetterDialog
         letterId={letter.id}
         letterNumber={letter.letterNumber}
+        canRevoke={canRevokeLetter}
+        whoMayRevokeText={whoMayRevokeText}
         open={revokeOpen}
         onOpenChange={setRevokeOpen}
       />
@@ -549,7 +570,7 @@ export default function LetterDetailPage({
               className="border-orange-600 text-orange-700 bg-orange-50 gap-1"
             >
               <ShieldOff className="h-3 w-3" />
-              Tanda tangan dicabut
+              Naskah dicabut
             </Badge>
           ) : (
             letter.status === "SIGNED" && (
@@ -580,7 +601,7 @@ export default function LetterDetailPage({
         <div className="rounded-lg border border-orange-300 bg-orange-50 p-4 text-sm text-orange-900">
           <p className="flex items-center gap-2 font-semibold">
             <ShieldOff className="h-4 w-4" />
-            Tanda tangan elektronik surat ini telah dicabut
+            Naskah dinas ini telah dicabut
           </p>
           {revokedSignature.revokedReason && (
             <p className="mt-1">{revokedSignature.revokedReason}</p>
@@ -731,6 +752,13 @@ export default function LetterDetailPage({
             </Card>
           )}
 
+          <RevocationRequestsCard
+            letterId={letter.id}
+            requests={letter.revocationRequests ?? []}
+            canDecide={canRevokeLetter}
+            currentUserId={user?.id}
+          />
+
           <Card>
             <CardHeader>
               <CardTitle>Riwayat Disposisi</CardTitle>
@@ -799,23 +827,21 @@ export default function LetterDetailPage({
               <CardTitle>Aksi</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {/* The server refuses to regenerate a revoked letter, because a
-                  fresh file would not match the hash that was signed and would
-                  verify publicly as a forgery. Saying so here beats offering a
-                  button that fails. */}
+              {/* A withdrawn letter is still printable — stamped DICABUT, the
+                  way an e-signature platform watermarks a voided document. The
+                  office still has to file a copy, and whoever holds the letter
+                  deserves a sheet that explains itself. */}
               <Button
                 className="w-full"
                 variant="outline"
                 onClick={handleDownloadPDF}
-                disabled={!!revokedSignature}
               >
                 <Printer className="mr-2 h-4 w-4" />
                 Cetak Surat
               </Button>
               {revokedSignature && (
                 <p className="-mt-1 text-xs text-muted-foreground">
-                  Naskah yang tanda tangannya sudah dicabut tidak dapat dicetak
-                  ulang. Terbitkan surat pengganti bila diperlukan.
+                  Salinan yang dicetak akan bercap DICABUT beserta alasannya.
                 </p>
               )}
 
@@ -837,14 +863,14 @@ export default function LetterDetailPage({
                 data. Wewenangnya tetap ditegakkan server — di sini ia hanya
                 menentukan tombolnya ditawarkan atau tidak.
               */}
-              {mayRevokeSignature && (
+              {!!activeSignature && (
                 <Button
                   className="w-full border-orange-300 text-orange-700 hover:bg-orange-50"
                   variant="outline"
                   onClick={() => setRevokeOpen(true)}
                 >
                   <Undo2 className="mr-2 h-4 w-4" />
-                  Cabut Tanda Tangan
+                  {canRevokeLetter ? "Cabut Naskah Dinas" : "Ajukan Pencabutan"}
                 </Button>
               )}
 

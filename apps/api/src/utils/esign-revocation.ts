@@ -1,4 +1,4 @@
-import { RoleCode } from '@prisma/client';
+import { mayRevokeSignature, whoMayRevoke } from './letter-revocation-authority';
 
 /**
  * Aturan pencabutan — kunci tanda tangan dan tanda tangan pada surat.
@@ -21,6 +21,12 @@ import { RoleCode } from '@prisma/client';
  *    halaman verifikasi kepada siapa pun yang mengunggah berkasnya. Karena itu
  *    ada panjang minimum — "abc" bukan keterangan — dan karena itu pula
  *    antarmuka wajib memberi tahu pencabutnya sebelum ia menulis.
+ * 3. **Pencabutan adalah pernyataan kriptografis.** Sebuah CRL pun struktur
+ *    data yang ditandatangani (RFC 5280), jadi pencabutan di sini menuntut
+ *    passphrase pencabutnya dan menghasilkan tanda tangan Ed25519 atas
+ *    pernyataannya. Sesi yang tertinggal terbuka tidak cukup untuk menarik
+ *    surat resmi, dan halaman publik dapat membuktikan pencabutannya alih-alih
+ *    sekadar mempercayai satu baris basis data.
  */
 
 /** Panjang minimum alasan, karena alasan surat terbaca publik. */
@@ -55,13 +61,15 @@ export interface RevocableKey {
 /** Bentuk minimal tanda tangan surat yang dibutuhkan aturan di bawah. */
 export interface RevocableSignature {
   signerId: string;
+  /** Jabatan penandatangan saat menandatangani; kewenangan diukur ke sini. */
+  signerRoleCode?: string | null;
   revokedAt: Date | null;
 }
 
-/** Yang melakukan pencabutan — identitas dan wewenangnya. */
+/** Yang melakukan pencabutan — identitas dan jabatannya. */
 export interface RevocationActor {
   id: string;
-  roleCode: string;
+  roleCode: string | null;
 }
 
 /**
@@ -103,22 +111,22 @@ export function assertKeyRevocable(key: RevocableKey | null): void {
 }
 
 /**
- * Siapa yang boleh mencabut tanda tangan pada surat?
+ * Boleh mencabut naskah ini?
  *
- * Penandatangannya sendiri — sebab yang menarik kembali sebuah tanda tangan
- * seharusnya yang membubuhkannya — dan Super Admin, sebagai pemegang kewenangan
- * sistem ketika penandatangannya berhalangan, sudah tidak menjabat, atau justru
- * dialah persoalannya.
- *
- * Pembuat konsep sengaja tidak termasuk: seorang penyusun naskah tidak menarik
- * tanda tangan atasannya. Begitu pula pemeriksa/paraf — paraf menyatakan naskah
- * layak diajukan, bukan wewenang atas tanda tangan yang sudah dibubuhkan.
+ * Aturannya sendiri ada di `letter-revocation-authority.ts`, ditulis sebagai
+ * satu tabel jabatan supaya dapat dibaca orang yang tidak membaca kode. Yang
+ * penting diketahui di sini hanya bahwa **Super Admin tidak termasuk**: ia
+ * mengelola kunci dan sertifikat, bukan kewenangan menandatangani atas nama
+ * yayasan.
  */
-export function mayRevokeSignature(
+export function actorMayRevoke(
   signature: RevocableSignature,
   actor: RevocationActor
 ): boolean {
-  return actor.roleCode === RoleCode.SUPER_ADMIN || signature.signerId === actor.id;
+  return mayRevokeSignature(
+    { userId: signature.signerId, roleCode: signature.signerRoleCode ?? null },
+    { userId: actor.id, roleCode: actor.roleCode }
+  );
 }
 
 export function assertSignatureRevocable(
@@ -128,13 +136,13 @@ export function assertSignatureRevocable(
   if (!signature) {
     throw new RevocationError('Surat ini belum ditandatangani secara elektronik.');
   }
-  if (!mayRevokeSignature(signature, actor)) {
+  if (!actorMayRevoke(signature, actor)) {
     throw new RevocationError(
-      'Hanya penandatangan surat ini atau Super Admin yang dapat mencabut tanda tangannya.',
+      whoMayRevoke({ userId: signature.signerId, roleCode: signature.signerRoleCode ?? null }),
       true
     );
   }
   if (signature.revokedAt) {
-    throw new RevocationError('Tanda tangan surat ini sudah dicabut sebelumnya.');
+    throw new RevocationError('Naskah ini sudah dicabut sebelumnya.');
   }
 }

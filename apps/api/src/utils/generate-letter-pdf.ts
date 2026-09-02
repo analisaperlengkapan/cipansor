@@ -1,4 +1,4 @@
-import { PDFDocument, PDFFont, PDFPage, StandardFonts, rgb } from 'pdf-lib';
+import { PDFDocument, PDFFont, PDFPage, StandardFonts, degrees, rgb } from 'pdf-lib';
 import QRCode from 'qrcode';
 import {
   DECIDING_OFFICIAL,
@@ -111,6 +111,20 @@ function isEncodable(ch: string): boolean {
 }
 
 /** Distinct characters in `text` that the naskah font cannot render. */
+/**
+ * Ganti aksara yang tidak dapat dikodekan WinAnsi dengan tanda tanya.
+ *
+ * Dipakai HANYA pada keterangan pencabutan, bukan pada naskahnya. Sebuah naskah
+ * yang memuat aksara di luar WinAnsi ditolak sejak awal (`assertRenderable`)
+ * supaya penulisnya memperbaikinya — tetapi menolak mencetak cap pencabutan
+ * karena alasannya memuat satu aksara asing akan meninggalkan surat yang sudah
+ * dicabut beredar tanpa tanda apa pun. Di sini, tercetak dengan satu aksara
+ * pengganti jauh lebih baik daripada tidak tercetak.
+ */
+function sanitizeForWinAnsi(text: string): string {
+  return [...text].map((ch) => (isEncodable(ch) ? ch : '?')).join('');
+}
+
 function unsupportedCharacters(text: string): string[] {
   const bad = new Set<string>();
   for (const ch of text) if (!isEncodable(ch)) bad.add(ch);
@@ -521,4 +535,70 @@ export async function generateLetterPdfBuffer(letter: LetterPdfInput): Promise<B
 
   const pdfBytes = await pdfDoc.save();
   return Buffer.from(pdfBytes);
+}
+
+/**
+ * Cap "DICABUT" pada salinan naskah yang sudah dicabut.
+ *
+ * Bukan menolak mencetaknya. Kantor tetap perlu mengarsipkan salinannya, dan
+ * penerima yang sudah memegang surat itu berhak mendapat lembar yang menjelaskan
+ * dirinya sendiri; platform tanda tangan elektronik pun begitu — DocuSign
+ * membubuhkan watermark VOID dan tetap membiarkan dokumennya diunduh.
+ *
+ * Yang dibubuhkan cap adalah **salinan**, bukan berkas yang ditandatangani.
+ * Pemanggilnya wajib lebih dulu membuktikan bahwa naskah yang dihasilkan ulang
+ * masih sama persis dengan yang di-hash saat penandatanganan (lihat
+ * `correspondence.controller.ts`), sehingga salinan yang telanjur beredar tetap
+ * terverifikasi dan tetap dilaporkan sebagai dicabut, bukan sebagai palsu.
+ */
+export async function stampRevoked(
+  pdfBuffer: Buffer,
+  revocation: { reason: string; revokedAt: Date; revokedByName?: string | null }
+): Promise<Buffer> {
+  const pdfDoc = await PDFDocument.load(pdfBuffer);
+  const bold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  const italic = await pdfDoc.embedFont(StandardFonts.TimesRomanItalic);
+
+  const stampedOn = revocation.revokedAt.toISOString().slice(0, 10);
+  const foot = sanitizeForWinAnsi(
+    `DICABUT ${stampedOn}${revocation.revokedByName ? ` oleh ${revocation.revokedByName}` : ''} — ${revocation.reason}`
+  );
+
+  for (const page of pdfDoc.getPages()) {
+    const { width, height } = page.getSize();
+    const label = 'DICABUT';
+    const size = 92;
+    const textWidth = bold.widthOfTextAtSize(label, size);
+
+    // Melintang, di belakang teksnya, cukup pucat untuk tetap terbaca isinya
+    // dan cukup jelas untuk tidak mungkin terlewat.
+    page.drawText(label, {
+      x: width / 2 - (textWidth * Math.cos(Math.PI / 6)) / 2,
+      y: height / 2 - (textWidth * Math.sin(Math.PI / 6)) / 2,
+      size,
+      font: bold,
+      color: rgb(0.85, 0.35, 0.25),
+      opacity: 0.22,
+      rotate: degrees(30),
+    });
+
+    // Keterangan kaki: watermark mengatakan "dicabut", baris ini mengatakan
+    // sejak kapan dan mengapa — yang justru dicari pembacanya.
+    const footSize = 7;
+    let line = foot;
+    while (italic.widthOfTextAtSize(line, footSize) > width - 2 * 40 && line.length > 12) {
+      line = `${line.slice(0, -4)}…`;
+    }
+    page.drawText(line, {
+      x: 40,
+      y: 18,
+      size: footSize,
+      font: italic,
+      color: rgb(0.7, 0.2, 0.15),
+    });
+  }
+
+  pdfDoc.setCreationDate(new Date(0));
+  pdfDoc.setModificationDate(new Date(0));
+  return Buffer.from(await pdfDoc.save());
 }

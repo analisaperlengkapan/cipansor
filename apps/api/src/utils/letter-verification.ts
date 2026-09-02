@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { verifySignature } from '@/utils/esign';
+import { verifyRevocation, verifySignature } from '@/utils/esign';
 
 export async function verifyLetterByToken(token: string) {
   const signature = await prisma.letterSignature.findUnique({
@@ -12,6 +12,7 @@ export async function verifyLetterByToken(token: string) {
           staff: { select: { nip: true, position: true } },
         },
       },
+      revokedBy: { select: { name: true } },
       letter: {
         select: {
           id: true,
@@ -51,11 +52,45 @@ export async function verifyLetterByToken(token: string) {
   const isPublicNature = l.nature === 'PUBLIC';
   const isValid = intact && !signature.revokedAt;
 
+  /**
+   * Pencabutannya sendiri dibuktikan, bukan sekadar dipercaya.
+   *
+   * Sebuah CRL adalah struktur data yang ditandatangani penerbitnya (RFC 5280),
+   * dan pencabutan di sini pun begitu: pencabut menandatangani pernyataannya
+   * dengan kuncinya sendiri. Halaman publik karena itu dapat mengatakan bahwa
+   * pencabutan ini benar dinyatakan oleh pejabat yang namanya tercantum —
+   * termasuk bahwa alasan yang terbaca itu memang alasan yang ditandatanganinya,
+   * bukan teks yang disunting kemudian.
+   *
+   * Bernilai `null` untuk pencabutan yang tercatat sebelum tanda tangan
+   * pencabutan diberlakukan; itu bukan kegagalan verifikasi, hanya ketiadaan
+   * bukti tambahan.
+   */
+  let revocationVerified: boolean | null = null;
+  if (signature.revokedAt) {
+    if (signature.revocationSignature && signature.revocationPublicKey) {
+      revocationVerified = verifyRevocation(
+        signature.revocationPublicKey,
+        {
+          signatureId: signature.id,
+          letterId: l.id,
+          revokedById: signature.revokedById ?? '',
+          revokedByRoleCode: signature.revokedByRoleCode ?? null,
+          revokedAt: signature.revokedAt,
+          reason: signature.revokedReason ?? '',
+        },
+        signature.revocationSignature
+      );
+    }
+  }
+
   let reason: string | undefined;
   if (!intact) {
     reason = 'Isi naskah telah diubah setelah ditandatangani.';
   } else if (signature.revokedAt) {
-    reason = signature.revokedReason ? `Surat telah dicabut: ${signature.revokedReason}` : 'Surat telah dicabut.';
+    reason = signature.revokedReason
+      ? `Naskah telah dicabut: ${signature.revokedReason}`
+      : 'Naskah telah dicabut.';
   }
 
   return {
@@ -67,6 +102,8 @@ export async function verifyLetterByToken(token: string) {
     isRevoked: !!signature.revokedAt,
     revokedAt: signature.revokedAt,
     revokedReason: signature.revokedReason,
+    revokedByName: signature.revokedBy?.name ?? null,
+    revocationVerified,
     letterNumber: l.letterNumber || l.agendaNumber || '-',
     letterType: l.type,
     nature: l.nature,

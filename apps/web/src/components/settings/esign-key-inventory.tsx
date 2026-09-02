@@ -14,7 +14,16 @@ import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { StateBadge } from "@/components/settings/esign-panel";
-import { useEsignKeys, type AffectedLetter, type EsignKeyRow } from "@/hooks/use-esign";
+import {
+  REVOCATION_CODE_LABEL,
+  useEsignKeys,
+  type AffectedLetter,
+  type EsignKeyRow,
+  type SigningKeyRevocationCode,
+} from "@/hooks/use-esign";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import { safeFormat } from "@/lib/date";
 import { id as idLocale } from "date-fns/locale";
 import { AlertTriangle, Ban, KeyRound } from "lucide-react";
@@ -49,7 +58,9 @@ export function EsignKeyInventory() {
   const { keys, revokeKey } = useEsignKeys();
   const [target, setTarget] = useState<EsignKeyRow | null>(null);
   const [reason, setReason] = useState("");
+  const [code, setCode] = useState<SigningKeyRevocationCode>("AFFILIATION_CHANGED");
   const [affected, setAffected] = useState<AffectedLetter[] | null>(null);
+  const [needsReview, setNeedsReview] = useState(false);
 
   const rows = keys.data ?? [];
   const active = rows.filter((k) => k.state !== "REVOKED");
@@ -61,9 +72,15 @@ export function EsignKeyInventory() {
   async function submit() {
     if (!target) return;
     try {
-      const result = await revokeKey.mutateAsync({ userId: target.userId, reason: trimmed });
+      const result = await revokeKey.mutateAsync({
+        userId: target.userId,
+        reason: trimmed,
+        code,
+      });
       setTarget(null);
       setReason("");
+      setCode("AFFILIATION_CHANGED");
+      setNeedsReview(result.lettersNeedReview);
       setAffected(result.affectedLetters);
       toast.success(`Kunci tanda tangan ${target.name} telah dicabut.`);
     } catch (e: any) {
@@ -198,6 +215,35 @@ export function EsignKeyInventory() {
             </div>
 
             <div className="space-y-1.5">
+              <Label htmlFor="revoke-key-code">Sebab pencabutan</Label>
+              {/* Kode sebab RFC 5280 §5.3.1. Bukan formalitas: hanya kebocoran
+                  kunci yang membuat surat-surat yang telanjur ditandatangani
+                  menjadi meragukan, dan tanpa membedakannya petugas hanya punya
+                  dua pilihan yang sama-sama keliru — mencabut semuanya, atau
+                  tidak mencabut satu pun. */}
+              <Select value={code} onValueChange={(v) => setCode(v as SigningKeyRevocationCode)}>
+                <SelectTrigger id="revoke-key-code">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {(
+                    Object.keys(REVOCATION_CODE_LABEL) as SigningKeyRevocationCode[]
+                  ).map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {REVOCATION_CODE_LABEL[c]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {code === "KEY_COMPROMISE" && (
+                <p className="text-xs font-medium text-red-700">
+                  Surat-surat yang sudah ditandatangani dengan kunci ini menjadi
+                  meragukan dan perlu ditinjau satu per satu.
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-1.5">
               <Label htmlFor="revoke-key-reason">Alasan pencabutan</Label>
               <Textarea
                 id="revoke-key-reason"
@@ -236,17 +282,23 @@ export function EsignKeyInventory() {
             <DialogTitle>Kunci telah dicabut</DialogTitle>
             <DialogDescription>
               {affected?.length
-                ? `${affected.length} surat pernah ditandatangani dengan kunci ini dan masih dinyatakan sah.`
-                : "Belum ada surat yang ditandatangani dengan kunci ini."}
+                ? `${affected.length} naskah pernah ditandatangani dengan kunci ini dan masih dinyatakan sah.`
+                : "Belum ada naskah yang ditandatangani dengan kunci ini."}
             </DialogDescription>
           </DialogHeader>
 
           {!!affected?.length && (
             <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">
-                Bila kunci dicabut karena passphrase-nya bocor, tanda tangan pada
-                surat-surat berikut perlu dicabut satu per satu — pencabutan
-                kunci tidak melakukannya.
+              <p
+                className={
+                  needsReview
+                    ? "rounded-md border border-red-300 bg-red-50 p-3 text-sm font-medium text-red-800"
+                    : "text-sm text-muted-foreground"
+                }
+              >
+                {needsReview
+                  ? "Kunci ini dicabut karena diduga bocor, sehingga naskah-naskah berikut menjadi meragukan: siapa pun yang memegang passphrase itu bisa saja menandatanganinya. Tinjau dan cabut satu per satu — pencabutan kunci tidak melakukannya."
+                  : "Naskah-naskah berikut tetap sah, dan memang harus tetap sah: setiap tanda tangan menyimpan salinan kunci publiknya sendiri, sehingga pergantian pejabat tidak membatalkan surat yang pernah diterbitkannya."}
               </p>
               <ul className="max-h-64 space-y-1 overflow-y-auto text-sm">
                 {affected.map((l) => (

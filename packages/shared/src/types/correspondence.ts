@@ -191,6 +191,7 @@ export interface LetterDetail {
   dispositions: LetterDispositionDetail[];
   flowEvents?: LetterFlowEventDetail[];
   signatures?: LetterSignatureDetail[];
+  revocationRequests?: LetterRevocationRequestDetail[];
 }
 
 /**
@@ -214,11 +215,21 @@ export interface LetterSignatureDetail {
    */
   verificationToken: string;
   algorithm: string;
+  /**
+   * Jabatan penandatangan saat menandatangani.
+   *
+   * Kewenangan mencabut diukur terhadap jabatan ini
+   * (`letter-revocation-authority.ts`), bukan terhadap jabatan orang itu hari
+   * ini — sebuah SK yang ditandatangani Ketua tetap naskah Ketua walaupun
+   * penandatangannya kemudian menjabat yang lain.
+   */
+  signerRoleCode?: string | null;
   /** Set when the signature was revoked; the naskah must then not claim valid. */
   revokedAt?: string | null;
   /** Shown to anyone who can read the letter, and on the public page. */
   revokedReason?: string | null;
   revokedBy?: { name: string } | null;
+  revokedByRoleCode?: string | null;
   signer: {
     name: string;
     nip?: string;
@@ -253,6 +264,41 @@ export interface AgendaNumberConfig {
   resetPeriod: string;
 }
 
+/**
+ * Permohonan pencabutan naskah dinas.
+ *
+ * Mengajukan dan memutuskan adalah dua perbuatan yang berbeda, oleh dua pihak
+ * yang berbeda — bentuk yang sama dengan pencabutan sertifikat pada RFC 5280.
+ */
+export interface LetterRevocationRequestDetail {
+  id: string;
+  letterId: string;
+  signatureId: string;
+  requesterId: string;
+  requester?: { id: string; name: string; email: string } | null;
+  reason: string;
+  attachmentUrl?: string | null;
+  status: "PENDING" | "APPROVED" | "REJECTED" | "WITHDRAWN";
+  decidedById?: string | null;
+  decidedBy?: { name: string } | null;
+  decidedAt?: string | null;
+  decisionNote?: string | null;
+  createdAt: string;
+  letter?: {
+    id: string;
+    letterNumber?: string | null;
+    subject: string;
+    date: string;
+  } | null;
+  signature?: {
+    id: string;
+    signerId: string;
+    signerRoleCode?: string | null;
+    revokedAt?: string | null;
+    signer?: { name: string } | null;
+  } | null;
+}
+
 // Public Verification DTO
 export interface PublicLetterVerificationResult {
   isValid: boolean;
@@ -266,6 +312,17 @@ export interface PublicLetterVerificationResult {
    * whether the letter was wrong, superseded, or issued to the wrong person.
    */
   revokedReason?: string | null;
+  /** Pejabat yang mencabutnya. */
+  revokedByName?: string | null;
+  /**
+   * Benarkah pencabutan ini dinyatakan oleh pejabat yang namanya tercantum?
+   *
+   * `true` bila tanda tangan Ed25519 atas pernyataan pencabutannya sah — sama
+   * seperti CRL yang ditandatangani penerbitnya (RFC 5280). `null` untuk
+   * pencabutan yang tercatat sebelum tanda tangan pencabutan diberlakukan:
+   * bukan kegagalan verifikasi, hanya ketiadaan bukti tambahan.
+   */
+  revocationVerified?: boolean | null;
   signedAt?: string | Date;
   algorithm?: string;
   digest?: string;

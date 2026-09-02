@@ -596,6 +596,21 @@ export const CorrespondenceService = {
          * caller has already passed `assertLetterAccess` above, so this adds
          * nothing they could not already read.
          */
+        /**
+         * Permohonan pencabutan ikut bersama suratnya.
+         *
+         * Halaman suratnya sendiri adalah tempat pejabat berwenang akan
+         * melihatnya — pemberitahuan pun mengarahkannya ke sana — sehingga
+         * permohonan tidak memerlukan menu tersendiri untuk sampai ke mejanya.
+         */
+        revocationRequests: {
+          include: {
+            requester: { select: { id: true, name: true, email: true } },
+            decidedBy: { select: { name: true } },
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 20,
+        },
         signatures: {
           select: {
             id: true,
@@ -606,9 +621,18 @@ export const CorrespondenceService = {
             // reason travels with it, so the letter's own page can say why
             // instead of leaving the reader to find out from the public
             // verification form.
+            // Kewenangan mencabut diukur terhadap jabatan penandatangan saat
+            // menandatangani, jadi antarmuka pun perlu membacanya untuk
+            // menawarkan tombol yang sama dengan yang akan diterima server.
+            signerRoleCode: true,
             revokedAt: true,
             revokedReason: true,
+            revokedByRoleCode: true,
             revokedBy: { select: { name: true } },
+            // Dipakai pencetakan salinan bercap: naskah yang dihasilkan ulang
+            // harus terbukti masih sama persis dengan yang di-hash saat
+            // ditandatangani sebelum boleh dicap dan diserahkan.
+            pdfHash: true,
             signer: {
               select: {
                 name: true,

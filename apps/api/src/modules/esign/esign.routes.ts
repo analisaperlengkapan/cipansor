@@ -10,6 +10,8 @@ import {
   changePassphraseSchema,
   decideRequestSchema,
   requestKeySchema,
+  decideRevocationSchema,
+  requestRevocationSchema,
   revokeKeySchema,
   revokeSignatureSchema,
   signLetterSchema,
@@ -109,21 +111,46 @@ router.post(
 );
 
 /**
- * Mencabut tanda tangan pada surat.
+ * Mencabut naskah dinas.
  *
- * Sengaja tidak dijaga `isSuperAdmin`: penandatangannya sendiri pun berhak
- * menarik kembali tanda tangannya, dan wewenang itu diperiksa di layanan
- * terhadap baris tanda tangannya (utils/esign-revocation.ts) — bukan di sini,
- * karena rutenya tidak mengetahui siapa yang menandatangani surat ini.
+ * Sengaja tidak dijaga `isSuperAdmin` — dan justru karena Super Admin **tidak**
+ * boleh. Kewenangan mencabut melekat pada jabatan yang menerbitkan, jadi ia
+ * diperiksa di layanan terhadap baris tanda tangannya
+ * (`@cipansor/shared/letter-revocation-authority`), bukan di sini: rutenya
+ * tidak mengetahui siapa yang menandatangani naskah ini.
  *
- * Tidak menuntut passphrase: mencabut tidak menghasilkan bukti kriptografis
- * baru, ia hanya menyatakan yang lama tidak lagi berlaku.
+ * Menuntut passphrase, dan karena itu dibatasi lajunya: pencabutan adalah
+ * pernyataan kriptografis yang ditandatangani pencabutnya, sebagaimana CRL
+ * ditandatangani penerbitnya (RFC 5280).
  */
 router.post(
   '/letters/:letterId/revoke',
+  passphraseLimiter,
   validate(revokeSignatureSchema),
   EsignController.revokeSignature
 );
+
+/**
+ * Permohonan pencabutan — mengajukan, bukan memutuskan.
+ *
+ * Terbuka bagi siapa pun yang boleh membaca suratnya, karena yang paling
+ * mungkin lebih dulu menemukan nomor surat ganda adalah petugas tata usaha,
+ * bukan pejabat yang berwenang mencabutnya. Tidak menuntut passphrase: tidak
+ * ada yang berubah pada suratnya sampai permohonannya diputuskan.
+ */
+router.post(
+  '/letters/:letterId/revocation-requests',
+  validate(requestRevocationSchema),
+  EsignController.requestRevocation
+);
+router.get('/revocation-requests', EsignController.listRevocationRequests);
+router.post(
+  '/revocation-requests/:id/decide',
+  passphraseLimiter,
+  validate(decideRevocationSchema),
+  EsignController.decideRevocation
+);
+router.post('/revocation-requests/:id/withdraw', EsignController.withdrawRevocationRequest);
 
 // Kewenangan Super Admin: menyetujui, menolak, mencabut.
 router.get('/requests', isSuperAdmin, EsignController.listRequests);

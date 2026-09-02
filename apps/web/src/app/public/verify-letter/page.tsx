@@ -241,7 +241,7 @@ function PublicVerifyContent() {
                   ) : result.isRevoked ? (
                     <span className="text-orange-700 flex items-center gap-2">
                       <AlertTriangle className="h-6 w-6 text-orange-600" />
-                      SURAT TELAH DICABUT
+                      NASKAH TELAH DICABUT
                     </span>
                   ) : (
                     <span className="text-red-700 flex items-center gap-2">
@@ -293,9 +293,26 @@ function PublicVerifyContent() {
                     <p className="mt-3 border-t border-orange-300 pt-3">
                       <span className="block text-xs uppercase tracking-wider text-orange-700">
                         Alasan pencabutan
+                        {result.revokedByName ? ` · oleh ${result.revokedByName}` : ""}
                       </span>
                       <span className="font-medium whitespace-pre-line">
                         {result.revokedReason}
+                      </span>
+                    </p>
+                  )}
+
+                  {/* Pencabutannya dibuktikan, bukan sekadar dipercaya: pencabut
+                      menandatangani pernyataannya dengan kuncinya sendiri, sama
+                      seperti CRL ditandatangani penerbitnya (RFC 5280). Yang
+                      dibuktikan termasuk alasannya — teks di atas tidak dapat
+                      disunting setelah ditandatangani tanpa membatalkannya. */}
+                  {result.revocationVerified === true && (
+                    <p className="mt-3 flex items-start gap-2 text-xs text-orange-800">
+                      <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                      <span>
+                        Pencabutan ini terverifikasi secara kriptografis:
+                        dinyatakan oleh pejabat yang namanya tercantum, dengan
+                        alasan persis seperti yang tertulis di atas.
                       </span>
                     </p>
                   )}

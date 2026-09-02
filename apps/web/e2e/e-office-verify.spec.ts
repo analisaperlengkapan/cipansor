@@ -97,7 +97,17 @@ test.describe("E-Office & Public Letter Verification E2E", () => {
     await expect(page.getByText(/DOKUMEN SAH & TERVERIFIKASI/i)).toBeVisible();
     await expect(page.getByText("Dr. H. Ahmad")).toBeVisible();
     await expect(page.getByText("001/SK/Y-CPS/VIII/2026")).toBeVisible();
-    await expect(page.getByText(/23:40:31 WIB/i)).toBeVisible();
+    /**
+     * 16:40:31Z is 23:40:31 in WIB (UTC+7), and that conversion is what this
+     * line is for.
+     *
+     * The separator is not. `id-ID` renders time parts with dots — "23.40.31",
+     * which is how Indonesian writes a clock time — so an assertion pinned to
+     * colons failed against a page that was formatting correctly. Kept loose on
+     * the separator, exact on every digit: a page that forgot the timezone
+     * would print 16.40.31 and still fail here.
+     */
+    await expect(page.getByText(/23[.:]40[.:]31 WIB/i)).toBeVisible();
   });
 
   test("Revoked PDF verification displays revoked notice", async ({ page }) => {

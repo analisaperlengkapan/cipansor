@@ -156,6 +156,8 @@ export interface LetterDetail {
   senderInstance?: string;
   recipientName?: string;
   recipientInstance?: string;
+  createdById?: string;
+  createdBy?: { name: string };
   createdByName: string;
   createdAt: string;
 
@@ -231,10 +233,31 @@ export interface PublicLetterVerificationResult {
   };
   letter?: {
     letterNumber: string;
-    subject: string;
+    subject: string | null;
     date: string | Date;
     status: string;
     unitName: string;
   };
   reason?: string;
 }
+
+export interface ListParticipantsQuery {
+  search?: string;
+  unitId?: string;
+  limit?: number;
+}
+
+export interface CorrespondenceParticipant {
+  id: string;
+  name: string;
+  email: string;
+  unitId?: string | null;
+  unitName?: string | null;
+  roleCode?: string | null;
+  nip?: string | null;
+  position?: string | null;
+}
+
+export type CreateDispositionResponse =
+  | LetterDispositionDetail
+  | LetterDispositionDetail[];

@@ -4,7 +4,7 @@ import { authFileUrl } from "@/lib/files";
 import { safeFormat } from "@/lib/date";
 import { useCorrespondence } from "@/hooks/use-correspondence";
 import { useAuth } from "@/hooks/use-auth";
-import { useTeachers } from "@/hooks/use-teachers";
+import { useCorrespondenceParticipants } from "@/hooks/use-correspondence";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -71,14 +71,15 @@ export default function LetterDetailPage({
   const { user } = useAuth();
   const {
     useLetter,
+    submitForReview,
     reviewLetter,
     createDisposition,
     updateDispositionStatus,
   } = useCorrespondence(user?.unitId);
-  const { data: teachers } = useTeachers({
-    page: 1,
+  const [participantSearch, setParticipantSearch] = useState("");
+  const { data: participantsData } = useCorrespondenceParticipants({
+    search: participantSearch || undefined,
     limit: 100,
-    unitId: user?.unitId,
   });
   const { data: letter, isLoading } = useLetter(params.id);
 
@@ -100,6 +101,7 @@ export default function LetterDetailPage({
   });
   const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
   const [completeNotes, setCompleteNotes] = useState("");
+  const [selectedReviewerId, setSelectedReviewerId] = useState<string>("");
 
   // Find active disposition for current user
   const activeDisposition = letter?.dispositions?.find(
@@ -124,107 +126,30 @@ export default function LetterDetailPage({
   };
 
   const handleDownloadPDF = async () => {
-    if (!pdfRef.current) return;
+    if (!letter?.id) return;
 
     try {
-      toast.info("Sedang menyiapkan PDF...");
-      const scale = 2;
-      const canvas = await html2canvas(pdfRef.current, { scale, useCORS: true });
-      const pdf = new jsPDF("p", "mm", "a4");
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-
-      const pxPerMm = canvas.width / pdfWidth;
-      const pageHeightPx = pdfHeight * pxPerMm;
-
-      /**
-       * Where a page may be cut.
-       *
-       * The previous version sliced every `pdfHeight` regardless of what was
-       * there, so a two-page letter opened page 2 with the bottom half of a
-       * line of text and ended it mid-sentence. Paragraphs are marked in the
-       * naskah with `data-naskah-block`; their top edges are the offsets where
-       * a cut lands between lines instead of through one. A little white space
-       * at the foot of a page is the correct trade.
-       */
-      const naskahTop = pdfRef.current.getBoundingClientRect().top;
-      const breakpoints = Array.from(
-        pdfRef.current.querySelectorAll("[data-naskah-block]"),
-      )
-        .map((el) => (el.getBoundingClientRect().top - naskahTop) * scale)
-        .filter((y) => y > 0);
-
-      /**
-       * Margins for the sheets the naskah itself does not provide.
-       *
-       * The naskah's own padding only produces white space at the very top of
-       * page 1 and the very bottom of the last page. Every cut in between was
-       * laid flush against the paper edge, so page 2 of a long letter opened
-       * with a line of text touching the top edge and closed with one touching
-       * the bottom — underneath the page number, which is drawn over the image.
-       * Beyond looking wrong, most printers cannot print within about 5 mm of
-       * the edge, so those lines came out clipped on paper.
-       *
-       * Page 1 keeps its own top margin (the kop is drawn inside it); the
-       * bottom margin applies to every page and is where the page number sits.
-       */
-      const TOP_MARGIN_MM = 15;
-      const BOTTOM_MARGIN_MM = 15;
-      const usableFirstPx = (pdfHeight - BOTTOM_MARGIN_MM) * pxPerMm;
-      const usableRestPx =
-        (pdfHeight - TOP_MARGIN_MM - BOTTOM_MARGIN_MM) * pxPerMm;
-
-      const pages: number[] = [0];
-      while (true) {
-        const top = pages[pages.length - 1];
-        const usable = pages.length === 1 ? usableFirstPx : usableRestPx;
-        if (top + usable >= canvas.height) break;
-        // The last breakpoint that still fits on this page.
-        const next = breakpoints.filter((y) => y > top && y <= top + usable).pop();
-        // No breakpoint fits (a single block taller than a page) — fall back to
-        // a hard cut rather than loop forever.
-        pages.push(next ?? top + usable);
-      }
-
-      const slice = document.createElement("canvas");
-      const sctx = slice.getContext("2d")!;
-      pages.forEach((top, i) => {
-        // Ends where the next page begins, not a full page-height further on.
-        // Taking the full height re-drew the paragraphs that belong to the next
-        // page, so a page started cleanly and still ran off mid-sentence.
-        const height = (pages[i + 1] ?? canvas.height) - top;
-        slice.width = canvas.width;
-        slice.height = height;
-        sctx.fillStyle = "#ffffff";
-        sctx.fillRect(0, 0, slice.width, slice.height);
-        sctx.drawImage(canvas, 0, -top);
-        if (i > 0) pdf.addPage();
-        pdf.addImage(
-          slice.toDataURL("image/png"),
-          "PNG",
-          0,
-          // Page 1 begins at the paper edge because the kop already sits inside
-          // the naskah's own padding; continuation pages need the margin drawn.
-          i === 0 ? 0 : TOP_MARGIN_MM,
-          pdfWidth,
-          height / pxPerMm,
-        );
-        // Continuation pages carry no letterhead, so they need to say which
-        // page they are — a loose sheet from a five-page edaran otherwise has
-        // nothing on it identifying where it belongs.
-        if (pages.length > 1) {
-          pdf.setFontSize(9);
-          pdf.setTextColor(120);
-          pdf.text(
-            `Halaman ${i + 1} dari ${pages.length}`,
-            pdfWidth - 15,
-            pdfHeight - 8,
-            { align: "right" },
-          );
-        }
+      toast.info("Sedang mengunduh dokumen PDF...");
+      const response = await fetch(`/api/correspondence/letters/${letter.id}/pdf`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+        },
       });
 
-      pdf.save(`Surat-${letter?.letterNumber || "Draft"}.pdf`);
+      if (!response.ok) {
+        throw new Error("Gagal mengunduh file PDF dari server");
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Surat-${letter.letterNumber || letter.agendaNumber || "Draft"}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
       toast.success("Surat berhasil diunduh");
     } catch (error) {
       console.error(error);
@@ -250,6 +175,24 @@ export default function LetterDetailPage({
       );
     } catch (error) {
       toast.error("Gagal memproses review");
+    }
+  };
+
+  const handleSubmitDraftForReview = async () => {
+    const firstReviewerId = letter.reviewers?.[0]?.reviewerId || selectedReviewerId;
+    if (!firstReviewerId) {
+      toast.error("Pemeriksa pertama wajib dipilih saat mengajukan review");
+      return;
+    }
+    try {
+      await submitForReview.mutateAsync({
+        id: letter.id,
+        note: notes || "Mengajukan draft untuk ditinjau",
+        reviewerIds: letter.reviewers?.length ? undefined : [selectedReviewerId],
+      });
+      toast.success("Draft surat berhasil diajukan untuk ditinjau");
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || "Gagal mengajukan draft untuk ditinjau");
     }
   };
 
@@ -317,6 +260,12 @@ export default function LetterDetailPage({
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label>Diteruskan Kepada Pejabat/Atasan Berikutnya</Label>
+              <Input
+                placeholder="Cari pejabat..."
+                value={participantSearch}
+                onChange={(e) => setParticipantSearch(e.target.value)}
+                className="text-xs mb-1"
+              />
               <Select
                 onValueChange={(val) =>
                   setForwardData({ ...forwardData, nextReviewerId: val, isFinalSigner: false })
@@ -328,11 +277,11 @@ export default function LetterDetailPage({
                   <SelectValue placeholder="Pilih pejabat penerus..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {teachers?.data
-                    .filter((t: any) => t.userId !== user?.id)
-                    .map((t: any) => (
-                      <SelectItem key={t.userId} value={t.userId}>
-                        {t.user?.name || t.nip}
+                  {participantsData?.data
+                    .filter((u) => u.id !== user?.id)
+                    .map((u) => (
+                      <SelectItem key={u.id} value={u.id}>
+                        {u.nip ? `${u.name} (${u.nip})` : u.name}
                       </SelectItem>
                     ))}
                 </SelectContent>
@@ -384,36 +333,44 @@ export default function LetterDetailPage({
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label>Diteruskan Kepada (Dapat Memilih Beberapa Penerima)</Label>
-              <div className="space-y-2 border rounded-md p-3 max-h-40 overflow-y-auto">
-                {teachers?.data.map((t: any) => (
-                  <div key={t.userId} className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id={`disp-rec-${t.userId}`}
-                      value={t.userId}
-                      checked={dispositionData.recipientIds.includes(t.userId)}
-                      onChange={(e) => {
-                        const checked = e.target.checked;
-                        const current = dispositionData.recipientIds;
-                        if (checked) {
-                          setDispositionData({
-                            ...dispositionData,
-                            recipientIds: [...current, t.userId],
-                          });
-                        } else {
-                          setDispositionData({
-                            ...dispositionData,
-                            recipientIds: current.filter((id) => id !== t.userId),
-                          });
-                        }
-                      }}
-                      className="h-4 w-4 rounded border-gray-300"
-                    />
-                    <label htmlFor={`disp-rec-${t.userId}`} className="text-sm cursor-pointer">
-                      {t.user?.name || t.nip}
-                    </label>
-                  </div>
-                ))}
+              <div className="space-y-2 border rounded-md p-3">
+                <Input
+                  placeholder="Cari penerima disposisi..."
+                  value={participantSearch}
+                  onChange={(e) => setParticipantSearch(e.target.value)}
+                  className="text-xs mb-2 bg-white"
+                />
+                <div className="space-y-2 max-h-40 overflow-y-auto">
+                  {participantsData?.data.map((u) => (
+                    <div key={u.id} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id={`disp-rec-${u.id}`}
+                        value={u.id}
+                        checked={dispositionData.recipientIds.includes(u.id)}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          const current = dispositionData.recipientIds;
+                          if (checked) {
+                            setDispositionData({
+                              ...dispositionData,
+                              recipientIds: [...current, u.id],
+                            });
+                          } else {
+                            setDispositionData({
+                              ...dispositionData,
+                              recipientIds: current.filter((id) => id !== u.id),
+                            });
+                          }
+                        }}
+                        className="h-4 w-4 rounded border-gray-300"
+                      />
+                      <label htmlFor={`disp-rec-${u.id}`} className="text-sm cursor-pointer">
+                        {u.nip ? `${u.name} (${u.nip})` : u.name}
+                      </label>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
             <div className="grid gap-2">
@@ -747,6 +704,44 @@ export default function LetterDetailPage({
                 Disposisi
               </Button>
 
+              {letter.status === "DRAFT" && letter.createdById === user?.id && (
+                <div className="space-y-3 pt-2 border-t">
+                  {(!letter.reviewers || letter.reviewers.length === 0) && (
+                    <div className="space-y-2">
+                      <Label className="text-xs font-medium text-slate-700">Pilih Pemeriksa Pertama</Label>
+                      <Input
+                        placeholder="Cari pejabat..."
+                        value={participantSearch}
+                        onChange={(e) => setParticipantSearch(e.target.value)}
+                        className="text-xs mb-1"
+                      />
+                      <Select
+                        value={selectedReviewerId}
+                        onValueChange={setSelectedReviewerId}
+                      >
+                        <SelectTrigger className="text-xs bg-white">
+                          <SelectValue placeholder="Pilih pemeriksa/atasan..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {participantsData?.data.map((u) => (
+                            <SelectItem key={u.id} value={u.id}>
+                              {u.nip ? `${u.name} (${u.nip})` : u.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                  <Button
+                    className="w-full bg-blue-600 hover:bg-blue-700"
+                    onClick={handleSubmitDraftForReview}
+                  >
+                    <Send className="mr-2 h-4 w-4" />
+                    Ajukan Review
+                  </Button>
+                </div>
+              )}
+
               {/*
                 Verifikasi berjenjang.
 
@@ -763,19 +758,17 @@ export default function LetterDetailPage({
               {(() => {
                 const reviewers = letter.reviewers ?? [];
                 const mine = reviewers.find(
-                  (r: any) => r.reviewerId === user?.id,
+                  (r) => r.reviewerId === user?.id,
                 );
                 const turn = [...reviewers]
-                  .filter((r: any) => r.status !== "APPROVED")
-                  .sort((a: any, b: any) => a.order - b.order)[0];
+                  .filter((r) => r.status !== "APPROVED")
+                  .sort((a,b) => a.order - b.order)[0];
                 const openForReview =
                   letter.status === "PENDING_REVIEW" ||
                   letter.status === "READY_TO_SIGN";
 
                 if (!mine || !openForReview) return null;
 
-                // When the letter is READY_TO_SIGN and current user is a designated signer,
-                // offer the sign action regardless of whether their review row was already marked APPROVED.
                 if (letter.status === "READY_TO_SIGN" && mine.isSigner) {
                   return (
                     <div className="pt-4 border-t space-y-3">
@@ -795,13 +788,13 @@ export default function LetterDetailPage({
                 }
 
                 const myTurn =
-                  !!mine && (turn as any)?.reviewerId === user?.id;
+                  !!mine && turn?.reviewerId === user?.id;
 
                 if (!myTurn) {
                   return (
                     <div className="pt-4 border-t">
                       <p className="text-xs text-muted-foreground">
-                        Menunggu verifikator urutan {(turn as any)?.order} lebih
+                        Menunggu verifikator urutan {turn?.order} lebih
                         dahulu.
                       </p>
                     </div>

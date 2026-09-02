@@ -9,12 +9,15 @@ import { prisma } from '@/lib/prisma';
 import { comparePassword } from '@/lib/password';
 import { Errors } from '@/middleware/error';
 import { eventBus } from '@/lib/event-bus';
+import crypto from 'crypto';
 import {
   createKeyMaterial,
   lockoutUntil,
   newVerificationToken,
   rewrapKeyMaterial,
   signPayload,
+  signPdfHash,
+  verifyPdfHashSignature,
   verifySignature,
   type EncryptedKeyMaterial,
   type ScryptParams,
@@ -22,6 +25,8 @@ import {
   EsignError,
   MAX_PASSPHRASE_ATTEMPTS,
 } from '@/utils/esign';
+import { generateLetterPdfBuffer } from '@/utils/generate-letter-pdf';
+import { verifyLetterByToken } from '@/utils/letter-verification';
 import {
   DEFAULT_VALIDITY_DAYS,
   SigningKeyState,
@@ -391,7 +396,7 @@ export const EsignService = {
   async signLetter(letterId: string, userId: string, passphrase: string) {
     const letter = await prisma.letter.findUnique({
       where: { id: letterId },
-      include: { reviewers: true },
+      include: { reviewers: { orderBy: { order: 'asc' } } },
     });
     if (!letter) throw Errors.notFound('Surat tidak ditemukan');
 
@@ -402,6 +407,22 @@ export const EsignService = {
     if (letter.status !== LetterStatus.READY_TO_SIGN) {
       throw Errors.badRequest(
         `Surat belum siap ditandatangani (status: ${letter.status}).`
+      );
+    }
+
+    // Verify that caller is the current pending reviewer in turn order and no non-signer reviewers remain pending
+    const pendingReviewers = letter.reviewers.filter((r) => r.status !== 'APPROVED');
+    const pendingNonSigners = pendingReviewers.filter((r) => !r.isSigner);
+    if (pendingNonSigners.length > 0) {
+      throw Errors.forbidden(
+        `Surat belum selesai ditinjau oleh seluruh pemeriksa/paraf sebelum ditandatangani.`
+      );
+    }
+
+    const currentTurn = pendingReviewers[0];
+    if (currentTurn && currentTurn.reviewerId !== userId) {
+      throw Errors.forbidden(
+        `Belum giliran Anda. Menunggu verifikator urutan ${currentTurn.order} terlebih dahulu.`
       );
     }
 
@@ -439,9 +460,43 @@ export const EsignService = {
     }
 
     const result = await prisma.$transaction(async (tx) => {
+      // Lock letter row and re-verify reviewer state under concurrency
+      await tx.$executeRaw`SELECT id FROM letters WHERE id = ${letterId} FOR UPDATE`;
+
+      const txLetter = await tx.letter.findUnique({
+        where: { id: letterId },
+        include: { reviewers: { orderBy: { order: 'asc' } } },
+      });
+      if (!txLetter) throw Errors.notFound('Surat tidak ditemukan');
+
+      const txMine = txLetter.reviewers.find((r) => r.reviewerId === userId);
+      if (!txMine?.isSigner) {
+        throw Errors.forbidden('Anda bukan penandatangan surat ini.');
+      }
+      if (txLetter.status !== LetterStatus.READY_TO_SIGN) {
+        throw Errors.badRequest(
+          `Surat belum siap ditandatangani (status: ${txLetter.status}).`
+        );
+      }
+
+      const pendingReviewers = txLetter.reviewers.filter((r) => r.status !== 'APPROVED');
+      const pendingNonSigners = pendingReviewers.filter((r) => !r.isSigner);
+      if (pendingNonSigners.length > 0) {
+        throw Errors.forbidden(
+          'Surat belum selesai ditinjau oleh seluruh pemeriksa/paraf sebelum ditandatangani.'
+        );
+      }
+
+      const currentTurn = pendingReviewers[0];
+      if (currentTurn && currentTurn.reviewerId !== userId) {
+        throw Errors.forbidden(
+          `Belum giliran Anda. Menunggu verifikator urutan ${currentTurn.order} terlebih dahulu.`
+        );
+      }
+
       const signature = await tx.letterSignature.create({
         data: {
-          letterId: letter.id,
+          letterId: txLetter.id,
           signerId: userId,
           algorithm: signed.algorithm,
           publicKey: signed.publicKey,
@@ -453,19 +508,19 @@ export const EsignService = {
       });
 
       await tx.letterReviewer.update({
-        where: { id: mine.id },
+        where: { id: txMine.id },
         data: { status: 'APPROVED', reviewedAt: signedAt },
       });
       await tx.letter.update({
-        where: { id: letter.id },
+        where: { id: txLetter.id },
         data: { status: LetterStatus.SIGNED },
       });
       await tx.letterFlowEvent.create({
         data: {
-          letterId: letter.id,
+          letterId: txLetter.id,
           actorId: userId,
           action: LetterFlowAction.SIGNED,
-          fromStatus: letter.status,
+          fromStatus: txLetter.status,
           toStatus: LetterStatus.SIGNED,
           note: 'Ditandatangani secara elektronik.',
         },
@@ -473,6 +528,41 @@ export const EsignService = {
 
       return signature;
     });
+
+    // Generate canonical PDF bytes for the signed letter and sign its SHA-256 byte hash with Ed25519
+    try {
+      const fullLetter = await prisma.letter.findUnique({
+        where: { id: letterId },
+        include: {
+          unit: true,
+          signatures: {
+            include: {
+              signer: {
+                select: {
+                  name: true,
+                  teacher: { select: { nip: true } },
+                  staff: { select: { nip: true } },
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (fullLetter) {
+        const pdfBuffer = await generateLetterPdfBuffer(fullLetter);
+        const pdfHash = crypto.createHash('sha256').update(pdfBuffer).digest('hex');
+        const pdfSignature = signPdfHash(toMaterial(key!), passphrase, pdfHash);
+
+        await prisma.letterSignature.update({
+          where: { id: result.id },
+          data: { pdfHash, pdfSignature },
+        });
+      }
+    } catch (e) {
+      // PDF hash generation fallback / error handling log
+      console.error('Failed to generate signed PDF hash during signLetter:', e);
+    }
 
     await clearFailedAttempts(key!.id);
 
@@ -496,62 +586,61 @@ export const EsignService = {
    * Perihal pun hanya ditampilkan untuk surat bersifat Biasa.
    */
   async verifyByToken(token: string) {
+    return verifyLetterByToken(token);
+  },
+
+  /**
+   * Verifikasi publik lewat buffer file PDF yang diunggah.
+   *
+   * Mencari token verifikasi atau mencocokkan rekaman tanda tangan di DB,
+   * lalu memanggil verifyLetterByToken agar tetap menjaga aturan kerahasiaan.
+   */
+  async verifyByPdfBuffer(pdfBuffer: Buffer) {
+    // 1. Calculate SHA-256 byte hash of uploaded PDF
+    const uploadedHash = crypto.createHash('sha256').update(pdfBuffer).digest('hex');
+
+    // 2. Direct DB lookup by indexed pdfHash
     const signature = await prisma.letterSignature.findUnique({
-      where: { verificationToken: token },
-      include: {
-        signer: { select: { name: true } },
-        letter: {
-          select: {
-            id: true,
-            letterNumber: true,
-            date: true,
-            type: true,
-            nature: true,
-            subject: true,
-            content: true,
-            unitId: true,
-            unit: { select: { name: true } },
-          },
-        },
+      where: { pdfHash: uploadedHash },
+      select: {
+        verificationToken: true,
+        publicKey: true,
+        pdfHash: true,
+        pdfSignature: true,
       },
     });
 
-    if (!signature) {
-      return { found: false as const };
+    if (!signature || !signature.pdfHash || !signature.pdfSignature) {
+      return {
+        found: false as const,
+        isValid: false,
+        isRevoked: false,
+        reason: 'Dokumen PDF tidak terdaftar dalam sistem resmi Yayasan Pesantren Cipansor atau telah mengalami perubahan.',
+        letter: null,
+        signer: null,
+      };
     }
 
-    const l = signature.letter;
-    const intact = verifySignature(signature.publicKey, signature.signature, {
-      letterId: l.id,
-      letterNumber: l.letterNumber,
-      date: l.date,
-      type: l.type,
-      nature: l.nature,
-      subject: l.subject,
-      content: l.content,
-      unitId: l.unitId,
-      signerId: signature.signerId,
-      signedAt: signature.signedAt,
-    });
+    // 3. Verify Ed25519 digital signature over the PDF byte hash
+    const isSigValid = verifyPdfHashSignature(
+      signature.publicKey,
+      signature.pdfHash,
+      signature.pdfSignature
+    );
 
-    const isPublicNature = l.nature === 'PUBLIC';
+    if (!isSigValid) {
+      return {
+        found: false as const,
+        isValid: false,
+        isRevoked: false,
+        reason: 'Tanda tangan digital pada dokumen PDF tidak valid atau telah dimanipulasi.',
+        letter: null,
+        signer: null,
+      };
+    }
 
-    return {
-      found: true as const,
-      valid: intact && !signature.revokedAt,
-      intact,
-      revoked: !!signature.revokedAt,
-      revokedReason: signature.revokedReason,
-      letterNumber: l.letterNumber,
-      letterType: l.type,
-      nature: l.nature,
-      // Hanya untuk surat biasa; selebihnya cukup dibuktikan keasliannya.
-      subject: isPublicNature ? l.subject : null,
-      date: l.date,
-      unitName: l.unit?.name ?? null,
-      signerName: signature.signer.name,
-      signedAt: signature.signedAt,
-    };
+    // 4. Delegate to verifyLetterByToken for complete letter status & details
+    return verifyLetterByToken(signature.verificationToken);
   },
 };
 

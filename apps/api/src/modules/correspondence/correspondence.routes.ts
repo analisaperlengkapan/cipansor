@@ -1,13 +1,15 @@
 import { Router } from 'express';
 import { CorrespondenceController } from './correspondence.controller';
 import { authenticate } from '@/middleware/auth';
-import { validate } from '@/middleware/validate';
+import { validate, validateQuery } from '@/middleware/error';
 import {
   createLetterSchema,
   reviewLetterSchema,
   createDispositionSchema,
   updateDispositionStatusSchema,
   letterNoteSchema,
+  submitLetterSchema,
+  listParticipantsQuerySchema,
 } from './correspondence.schema';
 
 const router = Router();
@@ -17,14 +19,26 @@ const router = Router();
 // Omitting local defaultLimiter prevents double-counting against rate limit counters in production.
 router.get('/public/verify', CorrespondenceController.verifyPublic);
 router.get('/public/verify/:token', CorrespondenceController.verifyPublic);
+router.post('/public/verify', CorrespondenceController.verifyPublic);
 
 router.use(authenticate);
 
+router.get(
+  '/participants',
+  validateQuery(listParticipantsQuerySchema),
+  CorrespondenceController.getParticipants
+);
 router.post('/letters', validate(createLetterSchema), CorrespondenceController.create);
 router.get('/letters', CorrespondenceController.findAll);
 router.get('/stats', CorrespondenceController.getStats);
 router.get('/letters/:id', CorrespondenceController.findOne);
+router.get('/letters/:id/pdf', CorrespondenceController.getPdf);
 router.post('/letters/:id/review', validate(reviewLetterSchema), CorrespondenceController.review);
+router.post(
+  '/letters/:id/submit',
+  validate(submitLetterSchema),
+  CorrespondenceController.submitForReview
+);
 // The way back from REVISION_NEEDED, which previously had none.
 router.post(
   '/letters/:id/resubmit',

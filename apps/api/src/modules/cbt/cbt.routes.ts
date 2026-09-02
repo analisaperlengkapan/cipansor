@@ -138,4 +138,12 @@ router.post(
   CBTController.finishExam
 );
 
+// Record Security Log (Anti-cheating tab switch/blur monitoring)
+router.post(
+  '/attempts/:attemptId/security-log',
+  authenticate,
+  authorize(UserRole.STUDENT),
+  CBTController.recordSecurityLog
+);
+
 export const cbtRoutes = router;

@@ -50,6 +50,14 @@ vi.mock('../../lib/prisma', () => ({
       findMany: vi.fn(),
       findUnique: vi.fn(),
     },
+    grade: {
+      findFirst: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+    },
+    teacher: {
+      findUnique: vi.fn(),
+    },
     $transaction: vi.fn((callbackOrPromises, _options?) => {
       if (typeof callbackOrPromises === 'function') return callbackOrPromises(prisma);
       return Promise.resolve(callbackOrPromises);
@@ -542,6 +550,129 @@ describe('CBT Service', () => {
           score: expect.anything(), // Decimal(10) — only MC score
         }),
       });
+    });
+
+    it('should randomize question and option order deterministically per attempt', async () => {
+      const mockAttempt = {
+        id: 'attempt-123',
+        studentId: 'std-1',
+        exam: {
+          questionBank: {
+            questions: [
+              { id: 'q1', content: 'Q1', options: [{ id: 'opt1' }, { id: 'opt2' }], order: 1 },
+              { id: 'q2', content: 'Q2', options: [{ id: 'opt3' }, { id: 'opt4' }], order: 2 },
+              { id: 'q3', content: 'Q3', options: [], order: 3 },
+            ],
+          },
+        },
+      };
+
+      vi.mocked(prisma.examAttempt.findUnique).mockImplementation(
+        () => Promise.resolve(JSON.parse(JSON.stringify(mockAttempt))) as any
+      );
+
+      const attempt1 = await CBTService.getAttempt('attempt-123', 'std-1');
+      const questions1 = attempt1.exam.questionBank.questions;
+
+      // Re-fetching same attempt should return identical randomized order
+      const attempt2 = await CBTService.getAttempt('attempt-123', 'std-1');
+      const questions2 = attempt2.exam.questionBank.questions;
+
+      expect(questions1).toHaveLength(3);
+      expect(questions1.map((q: any) => q.id)).toEqual(questions2.map((q: any) => q.id));
+    });
+
+    it('should record security log events (anti-cheating tab switches)', async () => {
+      const mockAttempt = {
+        id: 'attempt-1',
+        studentId: 'std-1',
+        tabSwitchCount: 1,
+        securityLogs: [{ type: 'TAB_SWITCH', timestamp: '2025-03-01T10:00:00Z' }],
+      };
+
+      vi.mocked(prisma.examAttempt.findUnique).mockResolvedValue(mockAttempt as any);
+      vi.mocked(prisma.examAttempt.update).mockResolvedValue({
+        id: 'attempt-1',
+        tabSwitchCount: 2,
+      } as any);
+
+      await CBTService.recordSecurityLog('attempt-1', 'std-1', {
+        type: 'TAB_SWITCH',
+        details: 'Minimizing window',
+      });
+
+      expect(prisma.examAttempt.update).toHaveBeenCalledWith({
+        where: { id: 'attempt-1' },
+        data: expect.objectContaining({
+          tabSwitchCount: 2,
+          securityLogs: expect.arrayContaining([
+            expect.objectContaining({ type: 'TAB_SWITCH' }),
+          ]),
+        }),
+      });
+    });
+
+    it('should enforce strict duration limits and expire attempt if time exceeded', async () => {
+      const pastTime = new Date(Date.now() - 90 * 60 * 1000); // 90 mins ago for a 60 min exam
+      vi.mocked(prisma.examAttempt.findUnique).mockResolvedValue({
+        id: 'attempt-1',
+        studentId: 'std-1',
+        status: 'IN_PROGRESS',
+        startedAt: pastTime,
+        exam: { questionBankId: 'bank-1', duration: 60 },
+      } as any);
+
+      await expect(
+        CBTService.submitAnswer('attempt-1', 'q-1', 'opt-A', 'std-1')
+      ).rejects.toThrow('Waktu pengerjaan ujian telah habis.');
+
+      expect(prisma.examAttempt.update).toHaveBeenCalledWith({
+        where: { id: 'attempt-1' },
+        data: expect.objectContaining({ status: 'EXPIRED' }),
+      });
+    });
+
+    it('should calculate distractor analysis for multiple choice questions', async () => {
+      const mockExam = {
+        id: 'exam-1',
+        title: 'Exam Title',
+        questionBank: {
+          questions: [
+            {
+              id: 'q1',
+              type: 'MULTIPLE_CHOICE',
+              content: 'What is 2+2?',
+              options: [{ id: 'opt1', text: '4' }, { id: 'opt2', text: '5' }],
+            },
+          ],
+        },
+        attempts: [
+          {
+            id: 'a1',
+            status: 'COMPLETED',
+            score: 100,
+            answers: [{ questionId: 'q1', answer: 'opt1', score: 10, isCorrect: true }],
+          },
+          {
+            id: 'a2',
+            status: 'COMPLETED',
+            score: 0,
+            answers: [{ questionId: 'q1', answer: 'opt2', score: 0, isCorrect: false }],
+          },
+        ],
+      };
+
+      vi.mocked(prisma.exam.findUnique).mockResolvedValue(mockExam as any);
+
+      const insights = await CBTService.getExamDifficultyInsights('exam-1');
+
+      expect(insights).not.toBeNull();
+      const qInsight = insights!.questionInsights[0];
+      expect(qInsight.distractorAnalysis).toBeDefined();
+      expect(qInsight.distractorAnalysis).toHaveLength(2);
+      expect(qInsight.distractorAnalysis![0]).toEqual(
+        expect.objectContaining({ count: 1, percentage: 50 })
+      );
     });
   });
 });

@@ -7,6 +7,31 @@ import type { JwtPayload } from '@/lib/jwt';
 /** Authenticated caller shape used for unit-scoping checks. */
 type AuthUser = Pick<JwtPayload, 'id' | 'role'> & { unitId?: string | null };
 
+/** Deterministic pseudo-random number generator for attempt-level shuffling */
+function seededRandom(seedStr: string) {
+  let h = 0;
+  for (let i = 0; i < seedStr.length; i++) {
+    h = (Math.imul(31, h) + seedStr.charCodeAt(i)) | 0;
+  }
+  return function () {
+    h = (h + 0x6d2b79f5) | 0;
+    let t = Math.imul(h ^ (h >>> 15), 1 | h);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/** Seeded Fisher-Yates array shuffling */
+function shuffleWithSeed<T>(array: T[], seedStr: string): T[] {
+  const result = [...array];
+  const rand = seededRandom(seedStr);
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
+
 // Types for inputs (can be moved to shared types later)
 interface CreateQuestionBankInput {
   unitId: string;
@@ -593,13 +618,19 @@ export class CBTService {
             (ans) => ans.question.type === 'ESSAY' && ans.score === null
           );
 
-          return tx.examAttempt.update({
+          const updatedAttempt = await tx.examAttempt.update({
             where: { id: attemptId },
             data: {
               score: new Decimal(totalScore),
               status: hasUngradedEssay ? 'NEEDS_REVIEW' : 'COMPLETED',
             },
           });
+
+          if (!hasUngradedEssay) {
+            await CBTService.syncGradeToAcademicGradebook(attemptId, tx);
+          }
+
+          return updatedAttempt;
         }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
       } catch (error: any) {
         lastError = error;
@@ -692,6 +723,7 @@ export class CBTService {
                     content: true,
                     options: true,
                     points: true,
+                    order: true,
                     // NO ANSWER KEY
                   },
                   orderBy: { order: 'asc' },
@@ -706,19 +738,96 @@ export class CBTService {
     if (!attempt) throw Errors.notFound('Attempt');
     if (attempt.studentId !== studentId) throw Errors.forbidden('Access denied');
 
+    // Best Practice Enhancement: Seed-based deterministic shuffling per attempt
+    // Keeps same order on page refresh while randomizing across different students.
+    if (attempt.exam?.questionBank?.questions) {
+      // Deep clone questions array to avoid mutating cached Prisma model in-place
+      let questions = attempt.exam.questionBank.questions.map((q) => ({
+        ...q,
+        options: Array.isArray(q.options) ? [...q.options] : q.options,
+      }));
+
+      // Shuffle question order using attemptId seed
+      questions = shuffleWithSeed(questions, attemptId);
+
+      // Shuffle options order for each MCQ question using attemptId + questionId seed
+      questions = questions.map((q) => {
+        if (Array.isArray(q.options) && q.options.length > 0) {
+          return {
+            ...q,
+            options: shuffleWithSeed(q.options as any[], `${attemptId}_${q.id}`),
+          };
+        }
+        return q;
+      });
+
+      attempt.exam.questionBank.questions = questions as any;
+    }
+
     return attempt;
+  }
+
+  static async recordSecurityLog(
+    attemptId: string,
+    studentId: string,
+    event: { type: string; details?: string }
+  ) {
+    const attempt = await prisma.examAttempt.findUnique({
+      where: { id: attemptId },
+    });
+    if (!attempt) throw Errors.notFound('Attempt');
+    if (attempt.studentId !== studentId) throw Errors.forbidden('Access denied');
+
+    const existingLogs = Array.isArray((attempt as any).securityLogs)
+      ? ((attempt as any).securityLogs as any[])
+      : [];
+    const updatedLogs = [
+      ...existingLogs,
+      {
+        type: event.type,
+        details: event.details ?? null,
+        timestamp: new Date().toISOString(),
+      },
+    ];
+
+    const isTabSwitch = event.type === 'TAB_SWITCH' || event.type === 'FOCUS_LOST';
+    const currentTabSwitches = (attempt as any).tabSwitchCount ?? 0;
+    const newTabSwitchCount = isTabSwitch ? currentTabSwitches + 1 : currentTabSwitches;
+
+    return prisma.examAttempt.update({
+      where: { id: attemptId },
+      data: {
+        tabSwitchCount: newTabSwitchCount,
+        securityLogs: updatedLogs,
+      } as any,
+    });
   }
 
   static async submitAnswer(attemptId: string, questionId: string, answer: any, studentId: string) {
     const attempt = await prisma.examAttempt.findUnique({
       where: { id: attemptId },
-      include: { exam: { select: { questionBankId: true } } },
+      include: { exam: { select: { questionBankId: true, duration: true } } },
     });
     if (!attempt) throw Errors.notFound('Attempt');
     if (attempt.studentId !== studentId) throw Errors.forbidden('Access denied');
 
     if (attempt.status !== 'IN_PROGRESS') {
       throw Errors.badRequest('Cannot submit answer for a completed or expired attempt');
+    }
+
+    // Strict time limit check with 2 minute grace period
+    if (attempt.startedAt && attempt.exam.duration) {
+      const gracePeriodMinutes = 2;
+      const allowedDurationMs = (attempt.exam.duration + gracePeriodMinutes) * 60 * 1000;
+      const elapsedMs = Date.now() - new Date(attempt.startedAt).getTime();
+
+      if (elapsedMs > allowedDurationMs) {
+        await prisma.examAttempt.update({
+          where: { id: attemptId },
+          data: { status: 'EXPIRED', finishedAt: new Date() },
+        });
+        throw Errors.badRequest('Waktu pengerjaan ujian telah habis.');
+      }
     }
 
     // Validate that the question belongs to this exam's question bank
@@ -1032,7 +1141,78 @@ export class CBTService {
 
     if (!finishedAttempt) throw Errors.notFound('Attempt');
 
+    // Auto-sync score to academic Gradebook if completed (no pending essay grading)
+    if (finishedAttempt.status === 'COMPLETED') {
+      await CBTService.syncGradeToAcademicGradebook(attemptId);
+    }
+
     return finishedAttempt;
+  }
+
+  /**
+   * Automatically synchronizes CBT attempt scores into the academic Gradebook (`Grade` model).
+   */
+  static async syncGradeToAcademicGradebook(attemptId: string, tx?: any) {
+    const db = tx || prisma;
+    const attempt = await db.examAttempt.findUnique({
+      where: { id: attemptId },
+      include: {
+        exam: {
+          select: {
+            id: true,
+            unitId: true,
+            academicYearId: true,
+            subjectId: true,
+            classId: true,
+            teacherId: true,
+            type: true,
+            title: true,
+            weight: true,
+          },
+        },
+      },
+    });
+
+    if (!attempt || attempt.score === null || attempt.status !== 'COMPLETED') return null;
+
+    const existingGrade = await db.grade.findFirst({
+      where: {
+        studentId: attempt.studentId,
+        examId: attempt.examId,
+      },
+    });
+
+    if (existingGrade) {
+      return db.grade.update({
+        where: { id: existingGrade.id },
+        data: {
+          score: attempt.score,
+          gradedAt: new Date(),
+          notes: `Nilai CBT (${attempt.exam.title}) - Terpelihara Otomatis`,
+        },
+      });
+    }
+
+    const teacher = await db.teacher.findUnique({
+      where: { id: attempt.exam.teacherId },
+      select: { userId: true },
+    });
+
+    if (!teacher) return null;
+
+    return db.grade.create({
+      data: {
+        studentId: attempt.studentId,
+        examId: attempt.examId,
+        subjectId: attempt.exam.subjectId,
+        academicYearId: attempt.exam.academicYearId,
+        type: 'EXAM',
+        score: attempt.score,
+        weight: attempt.exam.weight ?? new Decimal(1),
+        notes: `Nilai CBT Ujian Online (${attempt.exam.title})`,
+        gradedById: teacher.userId,
+      },
+    });
   }
 
   /**
@@ -1096,12 +1276,44 @@ export class CBTService {
         ? (countCorrect(upperGroup, q.id) - countCorrect(lowerGroup, q.id)) / groupSize
         : null;
 
+      // Best Practice: Distractor analysis for multiple choice questions
+      let distractorAnalysis: Array<{ option: any; count: number; percentage: number }> | undefined;
+      if (q.type === 'MULTIPLE_CHOICE' && Array.isArray(q.options)) {
+        const getOptKey = (opt: any) =>
+          typeof opt === 'object' && opt !== null && opt.id ? opt.id : opt;
+
+        const optionCounts: Record<string, number> = {};
+        answers.forEach((ans) => {
+          if (ans && ans.answer != null) {
+            const rawAns = ans.answer as any;
+            const rawKey =
+              typeof rawAns === 'object' && rawAns !== null && 'id' in rawAns
+                ? rawAns.id
+                : rawAns;
+            const keyStr = typeof rawKey === 'string' ? rawKey : JSON.stringify(rawKey);
+            optionCounts[keyStr] = (optionCounts[keyStr] || 0) + 1;
+          }
+        });
+
+        distractorAnalysis = (q.options as any[]).map((opt) => {
+          const optKey = getOptKey(opt);
+          const keyStr = typeof optKey === 'string' ? optKey : JSON.stringify(optKey);
+          const count = optionCounts[keyStr] || 0;
+          return {
+            option: opt,
+            count,
+            percentage: totalGraded > 0 ? (count / totalGraded) * 100 : 0,
+          };
+        });
+      }
+
       return {
         questionId: q.id,
         content: q.content.substring(0, 100),
         successRate,
         difficultyIndex: totalGraded > 0 ? totalCorrect / totalGraded : null,
         discriminationIndex,
+        distractorAnalysis,
         totalGraded,
         isKiller: successRate < 30 && totalGraded > 5,
         needsReview:

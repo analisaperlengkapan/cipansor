@@ -68,7 +68,21 @@ async function main() {
       let hash: string;
       let bytes: Buffer;
       try {
-        bytes = await generateLetterPdfBuffer(letter);
+        /**
+         * Dirender sebagai naskah yang belum dicabut, sebab begitulah keadaannya
+         * saat ditandatangani.
+         *
+         * Penghasil PDF menghilangkan blok tanda tangan begitu sebuah tanda
+         * tangan dicabut. Merender apa adanya karena itu menghasilkan berkas
+         * yang berbeda dari yang di-hash, dan surat yang sudah dicabut akan
+         * dilaporkan "menyimpang" padahal byte-nya masih dapat dibuat ulang
+         * dengan sempurna — justru surat-surat yang paling membutuhkan arsip,
+         * karena merekalah yang perlu dicetak sebagai salinan bercap.
+         */
+        bytes = await generateLetterPdfBuffer({
+          ...letter,
+          signatures: letter.signatures.map((s) => ({ ...s, revokedAt: null })),
+        });
         hash = crypto.createHash('sha256').update(bytes).digest('hex');
       } catch (e) {
         drifted.push({

@@ -111,7 +111,10 @@ describe('Gmail API delivery', () => {
   });
 
   it('sends a base64url MIME message carrying both From and Reply-To', async () => {
-    const fetchMock = vi.fn(async (url: string | URL) => {
+    // Both parameters are declared even though only `url` is read: the call
+    // tuple is what the assertions below index into, and a one-parameter mock
+    // gives them nothing at position 1.
+    const fetchMock = vi.fn(async (url: string | URL, _init?: RequestInit) => {
       if (String(url).includes('oauth2.googleapis.com')) {
         return new Response(JSON.stringify({ access_token: 'tok-123', expires_in: 3600 }), {
           status: 200,
@@ -134,7 +137,7 @@ describe('Gmail API delivery', () => {
     );
     expect(sendCall).toBeDefined();
 
-    const sendInit = sendCall![1] as RequestInit;
+    const sendInit = sendCall![1] as unknown as RequestInit;
     expect((sendInit.headers as Record<string, string>).Authorization).toBe('Bearer tok-123');
 
     const raw = JSON.parse(sendInit.body as string).raw as string;

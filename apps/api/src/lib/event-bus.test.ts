@@ -204,6 +204,10 @@ describe('Event bus — payment received', () => {
     paidAt: new Date(),
     unitId: 'unit-1',
     unitName: 'SMA',
+    // Required by PaymentReceivedEvent. Omitting it type-checked locally and
+    // failed in CI: `build` uses tsconfig.build.json, which excludes tests —
+    // only `build:strict` sees this file.
+    processedById: 'bendahara-1',
   };
 
   beforeEach(() => {

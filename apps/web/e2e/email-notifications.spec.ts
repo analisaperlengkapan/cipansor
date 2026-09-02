@@ -17,9 +17,17 @@ test.describe("Password reset link", () => {
     await page.context().clearCookies();
     await page.goto("/reset-password?token=" + "a".repeat(64));
 
+    // Not getByRole("heading"): CardTitle renders a plain <div>, so the page
+    // never had that role and asserting it failed for a reason that had
+    // nothing to do with what this test is for.
     await expect(page).toHaveURL(/\/reset-password/);
-    await expect(page.getByRole("heading", { name: /Setel Ulang Password/i })).toBeVisible();
+    await expect(page.getByText("Setel Ulang Password")).toBeVisible();
+    // The form itself is the proof — reaching the URL is not enough if the
+    // page renders an error state instead.
     await expect(page.getByLabel("Password baru")).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: /Simpan password baru/i }),
+    ).toBeVisible();
   });
 
   test("asks for a new link when the URL carries no token", async ({ page }) => {

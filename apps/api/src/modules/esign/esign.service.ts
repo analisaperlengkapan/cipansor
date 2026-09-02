@@ -26,7 +26,11 @@ import {
   EsignError,
   MAX_PASSPHRASE_ATTEMPTS,
 } from '@/utils/esign';
-import { generateLetterPdfBuffer, LetterPdfError } from '@/utils/generate-letter-pdf';
+import {
+  generateLetterPdfBuffer,
+  LetterPdfError,
+  LETTER_PDF_GENERATOR,
+} from '@/utils/generate-letter-pdf';
 import { verifyLetterByToken } from '@/utils/letter-verification';
 import { assertLetterAccess, type LetterActor } from '@/utils/letter-access';
 import { LetterRevocationRequestStatus, SigningKeyRevocationCode } from '@prisma/client';
@@ -982,6 +986,36 @@ export const EsignService = {
       const withPdf = await tx.letterSignature.update({
         where: { id: signature.id },
         data: { pdfHash, pdfSignature },
+      });
+
+      /**
+       * Byte-nya diarsipkan, bukan dijanjikan dapat dibuat ulang.
+       *
+       * `pdfHash` adalah SHA-256 dari byte ini, dan verifikasi publik bekerja
+       * dengan menghitung ulang hash berkas yang diunggah. Sebelum ini tidak
+       * ada berkas yang disimpan: setiap unduhan membuat ulang naskahnya, jadi
+       * seluruh sistem verifikasi bertumpu pada janji bahwa penghasil PDF akan
+       * mengeluarkan byte yang identik selamanya. Kenaikan versi `pdf-lib`,
+       * satu spasi di kop surat, atau build ICU yang berbeda cukup untuk
+       * membatalkan seluruh surat yang pernah ditandatangani sekaligus.
+       *
+       * Menaruhnya di dalam transaksi ini disengaja, dengan alasan yang sama
+       * seperti hash-nya: sebuah surat SIGNED yang arsipnya gagal ditulis
+       * adalah surat yang tidak dapat dicetak sesuai aslinya, dan itu bukan
+       * keadaan yang boleh dibiarkan lolos diam-diam.
+       */
+      await tx.letterSignedDocument.create({
+        data: {
+          signatureId: signature.id,
+          // Prisma `Bytes` menerima Uint8Array; Buffer Node tidak menyempit
+          // ke `Uint8Array<ArrayBuffer>` karena bisa saja beralas
+          // SharedArrayBuffer. Menyalinnya sekali jauh lebih murah daripada
+          // sebuah `as`.
+          bytes: new Uint8Array(pdfBuffer),
+          sha256: pdfHash,
+          byteSize: pdfBuffer.length,
+          generator: LETTER_PDF_GENERATOR,
+        },
       });
 
       return withPdf;

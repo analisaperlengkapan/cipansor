@@ -409,11 +409,44 @@ Peruri, Digisign) — a procurement decision, not an engineering one. What the
 work above buys is a system that behaves correctly at its own tier, and one that
 a PSrE could be dropped into later without redesigning the flow around it.
 
-### PR-3 — Archive the signed PDF bytes (§2.4)
-Schema change. Store the exact buffer that was hashed; serve downloads from it.
+### PR-3 — Archive the signed PDF bytes (§2.4) — **SHIPPED** (PR #436)
 
-*Done when:* a `pdf-lib` upgrade no longer invalidates historical letters —
-provable by bumping it in a test and re-verifying an old letter.
+`LetterSignedDocument` holds the exact buffer that was hashed, written inside
+the signing transaction alongside `pdfHash` — for the same reason the hash is
+written there: a letter that is SIGNED but whose bytes were never stored cannot
+be reprinted as itself, and that is not a state to let through quietly.
+
+A **separate table, not a `Bytes` column on `LetterSignature`.** A blob column
+is pulled in by every query that omits `select`, and sits on the same pages as
+the columns the letter list reads. The archive is read only when the file is
+actually asked for.
+
+`resolveLetterPdf` (`modules/correspondence/signed-pdf.ts`) is now the single
+answer to "what bytes are this letter's PDF":
+
+- **Signed and archived** → the archived bytes, verbatim. The naskah is never
+  re-rendered. The archive checks itself first (`sha256` against both its own
+  column and the signature's `pdfHash`) and refuses rather than hand out a
+  corrupted file that the public page would then report as a forgery.
+- **Signed before the archive existed** → the old regenerate path, with the old
+  guard intact: a DICABUT copy is printed only if today's bytes still match
+  `pdfHash`.
+- **Unsigned draft** → rendered, as before.
+
+`prisma/scripts/archive-signed-letters.ts` (`pnpm --filter api db:archive-letters`,
+`--dry-run` supported) backfills the historical letters — but only those whose
+bytes still reproduce exactly. Letters that have already drifted are reported,
+not archived with the wrong bytes: those bytes are not what was signed, and
+storing them as if they were would forge the archive.
+
+`LETTER_PDF_GENERATOR` travels with every archived row, so bytes that can no
+longer be reproduced can still be attributed to the build that made them. **Bump
+it in the same commit as any change to the PDF output.**
+
+*Done when:* a `pdf-lib` upgrade no longer invalidates historical letters.
+`signed-pdf.test.ts` proves both halves in one test — that a change to what the
+generator emits really does break the hash, and that the archive keeps serving
+the bytes that were signed regardless.
 
 ### PR-4 — Flow completeness (§2.7 a, b, d)
 `sentAt` plus a correct `SENT` transition for outgoing letters and a dispatch

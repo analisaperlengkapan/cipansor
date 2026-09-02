@@ -7276,11 +7276,57 @@ model LetterSignature {
   signer    User   @relation("LetterSigner", fields: [signerId], references: [id])
   revokedBy User?  @relation("LetterSignatureRevoker", fields: [revokedById], references: [id])
   revocationRequests LetterRevocationRequest[]
+  /// Byte naskah yang benar-benar ditandatangani — lihat LetterSignedDocument.
+  document  LetterSignedDocument?
 
   @@unique([letterId, signerId])
   @@index([letterId])
   @@index([pdfHash])
   @@map("letter_signatures")
+}
+
+/// Byte PDF yang benar-benar ditandatangani, disimpan apa adanya.
+///
+/// Sebelum ini tidak ada berkas yang disimpan sama sekali: setiap unduhan
+/// membuat ulang naskahnya, dan verifikasi publik bergantung pada janji bahwa
+/// `generateLetterPdfBuffer` akan menghasilkan byte yang persis sama selamanya.
+/// Janji itu tidak dapat ditepati oleh perangkat lunak yang hidup. Menaikkan
+/// versi `pdf-lib`, mengubah satu spasi di kop surat, atau mendarat di build ICU
+/// yang berbeda akan mengubah byte-nya — dan **seluruh surat yang pernah
+/// ditandatangani gagal verifikasi sekaligus**, semuanya diumumkan kepada
+/// publik sebagai naskah yang telah diubah. Repositori ini menerima pembaruan
+/// dependensi setiap minggu, jadi ini bukan bahaya hipotetis.
+///
+/// Karena itu byte-nya diarsipkan pada saat penandatanganan, di dalam transaksi
+/// yang sama, dan unduhan dilayani dari arsip ini. Naskah yang sudah
+/// ditandatangani tidak pernah dirender ulang.
+///
+/// **Tabel tersendiri, bukan kolom pada `LetterSignature`.** Sebuah kolom
+/// `Bytes` akan ikut terbaca oleh setiap kueri yang tidak menyebutkan `select`,
+/// dan ikut menghuni halaman yang sama dengan kolom-kolom yang dibaca daftar
+/// surat. Arsip hanya dibaca ketika berkasnya memang diminta.
+model LetterSignedDocument {
+  id          String @id @default(uuid())
+  signatureId String @unique @map("signature_id")
+
+  /// Byte PDF final, apa adanya. Inilah yang di-hash menjadi `pdfHash`.
+  bytes    Bytes
+  /// Salinan hash-nya, supaya arsip dapat memeriksa dirinya sendiri sebelum
+  /// disajikan — sebuah berkas yang rusak di penyimpanan tidak boleh keluar
+  /// diam-diam sebagai naskah resmi.
+  sha256   String
+  byteSize Int    @map("byte_size")
+
+  /// Yang menghasilkan byte ini, untuk menelusuri perbedaan di kemudian hari.
+  /// Naskah lama yang byte-nya tidak lagi dapat dibuat ulang tetap dapat
+  /// dijelaskan: build inilah yang membuatnya.
+  generator String
+
+  archivedAt DateTime @default(now()) @map("archived_at")
+
+  signature LetterSignature @relation(fields: [signatureId], references: [id], onDelete: Cascade)
+
+  @@map("letter_signed_documents")
 }
 
 /// LetterRevocationRequest - Permohonan Pencabutan Naskah Dinas

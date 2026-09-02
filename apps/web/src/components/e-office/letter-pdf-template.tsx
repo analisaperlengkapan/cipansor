@@ -3,7 +3,7 @@
 import React, { forwardRef, useEffect, useState } from "react";
 import { QRCodeCanvas } from "qrcode.react";
 import { safeFormat } from "@/lib/date";
-import { siteConfig } from "@/config/site";
+import { siteConfig, getPublicVerifyUrl } from "@/config/site";
 import { id } from "date-fns/locale";
 
 import {
@@ -39,7 +39,7 @@ export const LetterPDFTemplate = forwardRef<
 
   const publicSiteUrl =
     process.env.NEXT_PUBLIC_SITE_URL || siteConfig.url || "https://cipansor.or.id";
-  const publicVerifyUrl = `${publicSiteUrl.replace(/\/$/, "")}/public/verify-letter`;
+  const publicVerifyUrl = getPublicVerifyUrl(publicSiteUrl);
 
   useEffect(() => {
     if (!qrCodeValue) {

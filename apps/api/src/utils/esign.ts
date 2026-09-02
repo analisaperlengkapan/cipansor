@@ -290,6 +290,40 @@ export function verifySignature(
   }
 }
 
+/** Tandatangani hash byte PDF secara langsung dengan Ed25519. */
+export function signPdfHash(
+  material: EncryptedKeyMaterial,
+  passphrase: string,
+  pdfHashHex: string
+): string {
+  const privateKey = unsealPrivateKey(material, passphrase);
+  const signature = crypto.sign(null, Buffer.from(pdfHashHex, 'utf8'), privateKey);
+  return signature.toString('base64');
+}
+
+/** Verifikasi tanda tangan Ed25519 atas hash byte PDF. */
+export function verifyPdfHashSignature(
+  publicKeyBase64: string,
+  pdfHashHex: string,
+  signatureBase64: string
+): boolean {
+  try {
+    const publicKey = crypto.createPublicKey({
+      key: Buffer.from(publicKeyBase64, 'base64'),
+      type: 'spki',
+      format: 'der',
+    });
+    return crypto.verify(
+      null,
+      Buffer.from(pdfHashHex, 'utf8'),
+      publicKey,
+      Buffer.from(signatureBase64, 'base64')
+    );
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Token verifikasi yang dimuat QR.
  *

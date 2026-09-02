@@ -42,21 +42,36 @@ export function usePublicVerifyLetter(token?: string, nonce: number = 0) {
   });
 }
 
+export function useCaptchaChallenge() {
+  return useQuery({
+    queryKey: ["captchaChallenge"],
+    queryFn: async () => {
+      const response = await api.get<{
+        success: boolean;
+        data: { token: string; num1: number; num2: number };
+      }>("/esign/captcha");
+      return response.data.data;
+    },
+    staleTime: 0,
+    gcTime: 0,
+  });
+}
+
 export function useVerifyPdfLetter() {
   return useMutation({
     mutationFn: async ({
       file,
+      captchaToken,
       captchaAnswer,
-      expectedCaptcha,
     }: {
       file: File;
+      captchaToken: string;
       captchaAnswer: string;
-      expectedCaptcha: string;
     }) => {
       const formData = new FormData();
       formData.append("file", file);
+      formData.append("captchaToken", captchaToken);
       formData.append("captchaAnswer", captchaAnswer);
-      formData.append("expectedCaptcha", expectedCaptcha);
       const response = await api.post<{
         success: boolean;
         data: PublicLetterVerificationResult;

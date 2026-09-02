@@ -9,12 +9,15 @@ import { prisma } from '@/lib/prisma';
 import { comparePassword } from '@/lib/password';
 import { Errors } from '@/middleware/error';
 import { eventBus } from '@/lib/event-bus';
+import crypto from 'crypto';
 import {
   createKeyMaterial,
   lockoutUntil,
   newVerificationToken,
   rewrapKeyMaterial,
   signPayload,
+  signPdfHash,
+  verifyPdfHashSignature,
   verifySignature,
   type EncryptedKeyMaterial,
   type ScryptParams,
@@ -22,6 +25,7 @@ import {
   EsignError,
   MAX_PASSPHRASE_ATTEMPTS,
 } from '@/utils/esign';
+import { generateLetterPdfBuffer } from '@/utils/generate-letter-pdf';
 import { verifyLetterByToken } from '@/utils/letter-verification';
 import {
   DEFAULT_VALIDITY_DAYS,
@@ -525,6 +529,41 @@ export const EsignService = {
       return signature;
     });
 
+    // Generate canonical PDF bytes for the signed letter and sign its SHA-256 byte hash with Ed25519
+    try {
+      const fullLetter = await prisma.letter.findUnique({
+        where: { id: letterId },
+        include: {
+          unit: true,
+          signatures: {
+            include: {
+              signer: {
+                select: {
+                  name: true,
+                  teacher: { select: { nip: true } },
+                  staff: { select: { nip: true } },
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (fullLetter) {
+        const pdfBuffer = await generateLetterPdfBuffer(fullLetter);
+        const pdfHash = crypto.createHash('sha256').update(pdfBuffer).digest('hex');
+        const pdfSignature = signPdfHash(toMaterial(key!), passphrase, pdfHash);
+
+        await prisma.letterSignature.update({
+          where: { id: result.id },
+          data: { pdfHash, pdfSignature },
+        });
+      }
+    } catch (e) {
+      // PDF hash generation fallback / error handling log
+      console.error('Failed to generate signed PDF hash during signLetter:', e);
+    }
+
     await clearFailedAttempts(key!.id);
 
     return {
@@ -557,25 +596,51 @@ export const EsignService = {
    * lalu memanggil verifyLetterByToken agar tetap menjaga aturan kerahasiaan.
    */
   async verifyByPdfBuffer(pdfBuffer: Buffer) {
-    // Coba cari token verifikasi yang tertanam di dalam teks/metadata PDF
-    const text = pdfBuffer.toString('latin1');
-    const signatures = await prisma.letterSignature.findMany({
-      select: { verificationToken: true },
+    // 1. Calculate SHA-256 byte hash of uploaded PDF
+    const uploadedHash = crypto.createHash('sha256').update(pdfBuffer).digest('hex');
+
+    // 2. Direct DB lookup by indexed pdfHash
+    const signature = await prisma.letterSignature.findUnique({
+      where: { pdfHash: uploadedHash },
+      select: {
+        verificationToken: true,
+        publicKey: true,
+        pdfHash: true,
+        pdfSignature: true,
+      },
     });
 
-    let matchedToken: string | null = null;
-    for (const sig of signatures) {
-      if (sig.verificationToken && text.includes(sig.verificationToken)) {
-        matchedToken = sig.verificationToken;
-        break;
-      }
+    if (!signature || !signature.pdfHash || !signature.pdfSignature) {
+      return {
+        found: false as const,
+        isValid: false,
+        isRevoked: false,
+        reason: 'Dokumen PDF tidak terdaftar dalam sistem resmi Yayasan Pesantren Cipansor atau telah mengalami perubahan.',
+        letter: null,
+        signer: null,
+      };
     }
 
-    if (matchedToken) {
-      return verifyLetterByToken(matchedToken);
+    // 3. Verify Ed25519 digital signature over the PDF byte hash
+    const isSigValid = verifyPdfHashSignature(
+      signature.publicKey,
+      signature.pdfHash,
+      signature.pdfSignature
+    );
+
+    if (!isSigValid) {
+      return {
+        found: false as const,
+        isValid: false,
+        isRevoked: false,
+        reason: 'Tanda tangan digital pada dokumen PDF tidak valid atau telah dimanipulasi.',
+        letter: null,
+        signer: null,
+      };
     }
 
-    return { found: false as const };
+    // 4. Delegate to verifyLetterByToken for complete letter status & details
+    return verifyLetterByToken(signature.verificationToken);
   },
 };
 

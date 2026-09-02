@@ -7205,6 +7205,11 @@ model LetterSignature {
   /// disisir lewat halaman verifikasi publik.
   verificationToken String    @unique @map("verification_token")
   signedAt          DateTime  @default(now()) @map("signed_at")
+
+  /// Hash byte SHA-256 dari PDF final dan tanda tangan Ed25519 atas hash tersebut.
+  pdfHash           String?   @unique @map("pdf_hash")
+  pdfSignature      String?   @map("pdf_signature") @db.Text
+
   /// Pencabutan tidak menghapus baris: surat yang pernah beredar harus tetap
   /// dapat dijelaskan statusnya kepada yang memindai QR-nya.
   revokedAt         DateTime? @map("revoked_at")
@@ -7217,6 +7222,7 @@ model LetterSignature {
 
   @@unique([letterId, signerId])
   @@index([letterId])
+  @@index([pdfHash])
   @@map("letter_signatures")
 }
 

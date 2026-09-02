@@ -10,6 +10,7 @@ import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { useSignLetter } from "@/hooks/use-esign";
+import { getPublicVerifyUrl } from "@/config/site";
 import { PenLine, ShieldCheck } from "lucide-react";
 
 /**
@@ -40,8 +41,8 @@ export function SignLetterDialog({
 
   const publicVerifyUrl =
     typeof window !== "undefined"
-      ? `${window.location.origin}/public/verify-letter`
-      : "https://cipansor.or.id/public/verify-letter";
+      ? getPublicVerifyUrl(window.location.origin)
+      : getPublicVerifyUrl("https://cipansor.or.id");
 
   async function submit() {
     try {

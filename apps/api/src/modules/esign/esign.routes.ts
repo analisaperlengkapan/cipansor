@@ -71,6 +71,7 @@ const upload = multer({
  *
  * Didaftarkan sebelum `router.use(authenticate)`.
  */
+router.get('/captcha', publicVerifyLimiter, EsignController.getCaptcha);
 router.get('/verify/:token', publicVerifyLimiter, EsignController.verify);
 router.post('/verify-pdf', publicVerifyLimiter, upload.single('file'), EsignController.verifyPdf);
 

@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { prisma } from '../../lib/prisma';
 import { EsignService } from './esign.service';
-import { createKeyMaterial, signPayload, type SignablePayload } from '@/utils/esign';
+import { createKeyMaterial, signPayload, signPdfHash, type SignablePayload } from '@/utils/esign';
+import crypto from 'crypto';
 
 const { emitMock, compareMock } = vi.hoisted(() => ({
   emitMock: vi.fn(),
@@ -26,7 +27,7 @@ vi.mock('../../lib/prisma', () => ({
     },
     letter: { findUnique: vi.fn(), update: vi.fn() },
     letterReviewer: { update: vi.fn() },
-    letterSignature: { create: vi.fn(), findUnique: vi.fn(), findMany: vi.fn(), findFirst: vi.fn() },
+    letterSignature: { create: vi.fn(), update: vi.fn(), findUnique: vi.fn(), findMany: vi.fn(), findFirst: vi.fn() },
     letterFlowEvent: { create: vi.fn() },
     user: { findUnique: vi.fn() },
     $transaction: vi.fn((cb: any) => cb(prisma)),
@@ -262,23 +263,26 @@ describe('verifikasi publik', () => {
     };
     const s = signPayload(m, PASS, payload);
     return {
-      signerId: 'ketua',
-      publicKey: s.publicKey,
-      signature: s.signature,
-      signedAt,
-      revokedAt: null,
-      revokedReason: null,
-      signer: { name: 'H. Ramram Mansur Ramdani' },
-      letter: {
-        id: 'letter-1',
-        letterNumber: payload.letterNumber,
-        date: payload.date,
-        type: payload.type,
-        nature,
-        subject: payload.subject,
-        content,
-        unitId: 'unit-1',
-        unit: { name: 'Yayasan' },
+      material: m,
+      fixture: {
+        signerId: 'ketua',
+        publicKey: s.publicKey,
+        signature: s.signature,
+        signedAt,
+        revokedAt: null,
+        revokedReason: null,
+        signer: { name: 'H. Ramram Mansur Ramdani' },
+        letter: {
+          id: 'letter-1',
+          letterNumber: payload.letterNumber,
+          date: payload.date,
+          type: payload.type,
+          nature,
+          subject: payload.subject,
+          content,
+          unitId: 'unit-1',
+          unit: { name: 'Yayasan' },
+        },
       },
     };
   }
@@ -291,7 +295,7 @@ describe('verifikasi publik', () => {
 
   it('surat asli terverifikasi', async () => {
     vi.mocked(prisma.letterSignature.findUnique).mockResolvedValue(
-      signedFixture('PUBLIC') as any
+      signedFixture('PUBLIC').fixture as any
     );
     const r: any = await EsignService.verifyByToken('tok');
     expect(r.found).toBe(true);
@@ -299,14 +303,30 @@ describe('verifikasi publik', () => {
     expect(r.signerName).toBe('H. Ramram Mansur Ramdani');
   });
 
-  it('verifikasi via upload buffer PDF berhasil menemukan token yang cocok', async () => {
-    const fixture = signedFixture('PUBLIC');
-    vi.mocked(prisma.letterSignature.findMany).mockResolvedValue([
-      { verificationToken: 'tok-embedded-123' },
-    ] as any);
-    vi.mocked(prisma.letterSignature.findUnique).mockResolvedValue(fixture as any);
+  it('verifikasi via upload buffer PDF berhasil menemukan record berdasarkan hash SHA-256', async () => {
+    const pdfBuffer = Buffer.from('PDF Content for SHA-256 hash matching test');
+    const pdfHash = crypto.createHash('sha256').update(pdfBuffer).digest('hex');
 
-    const pdfBuffer = Buffer.from('PDF Content containing token tok-embedded-123 inside');
+    const { material, fixture } = signedFixture('PUBLIC');
+    const pdfSignature = signPdfHash(material, PASS, pdfHash);
+
+    const fullFixture = {
+      ...fixture,
+      verificationToken: 'tok-123',
+      pdfHash,
+      pdfSignature,
+    };
+
+    vi.mocked(prisma.letterSignature.findUnique).mockImplementation((args: any) => {
+      if (args?.where?.pdfHash === pdfHash) {
+        return Promise.resolve(fullFixture as any);
+      }
+      if (args?.where?.verificationToken === 'tok-123') {
+        return Promise.resolve(fullFixture as any);
+      }
+      return Promise.resolve(null as any);
+    });
+
     const r: any = await EsignService.verifyByPdfBuffer(pdfBuffer);
 
     expect(r.found).toBe(true);
@@ -317,7 +337,7 @@ describe('verifikasi publik', () => {
     'tidak pernah mengembalikan isi surat (sifat %s)',
     async (nature) => {
       vi.mocked(prisma.letterSignature.findUnique).mockResolvedValue(
-        signedFixture(nature) as any
+        signedFixture(nature).fixture as any
       );
       const r: any = await EsignService.verifyByToken('tok');
       expect(JSON.stringify(r)).not.toContain('Isi rahasia yang tidak boleh bocor');
@@ -327,7 +347,7 @@ describe('verifikasi publik', () => {
 
   it('perihal hanya ditampilkan untuk surat bersifat Biasa', async () => {
     vi.mocked(prisma.letterSignature.findUnique).mockResolvedValue(
-      signedFixture('PUBLIC') as any
+      signedFixture('PUBLIC').fixture as any
     );
     expect(((await EsignService.verifyByToken('tok')) as any).subject).toBe(
       'Perihal yang sensitif'
@@ -335,16 +355,16 @@ describe('verifikasi publik', () => {
 
     for (const nature of ['LIMITED', 'CONFIDENTIAL', 'STRICTLY_CONFIDENTIAL']) {
       vi.mocked(prisma.letterSignature.findUnique).mockResolvedValue(
-        signedFixture(nature) as any
+        signedFixture(nature).fixture as any
       );
       expect(((await EsignService.verifyByToken('tok')) as any).subject).toBeNull();
     }
   });
 
   it('naskah yang diubah setelah ditandatangani tidak lagi sah', async () => {
-    const f = signedFixture('PUBLIC');
-    f.letter.content = 'Isi yang sudah diubah diam-diam.';
-    vi.mocked(prisma.letterSignature.findUnique).mockResolvedValue(f as any);
+    const { fixture } = signedFixture('PUBLIC');
+    fixture.letter.content = 'Isi yang sudah diubah diam-diam.';
+    vi.mocked(prisma.letterSignature.findUnique).mockResolvedValue(fixture as any);
 
     const r: any = await EsignService.verifyByToken('tok');
     expect(r.intact).toBe(false);
@@ -352,10 +372,10 @@ describe('verifikasi publik', () => {
   });
 
   it('tanda tangan yang dicabut tidak sah walau naskahnya utuh', async () => {
-    const f: any = signedFixture('PUBLIC');
-    f.revokedAt = new Date();
-    f.revokedReason = 'Diterbitkan keliru';
-    vi.mocked(prisma.letterSignature.findUnique).mockResolvedValue(f);
+    const { fixture } = signedFixture('PUBLIC');
+    fixture.revokedAt = new Date();
+    fixture.revokedReason = 'Diterbitkan keliru';
+    vi.mocked(prisma.letterSignature.findUnique).mockResolvedValue(fixture as any);
 
     const r: any = await EsignService.verifyByToken('tok');
     expect(r.intact).toBe(true);

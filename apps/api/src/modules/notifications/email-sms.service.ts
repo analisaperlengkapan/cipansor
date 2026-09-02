@@ -3,7 +3,7 @@
  * Phase 7A.2 - Notification Integration
  *
  * Supports:
- * - Email notifications via SMTP/SendGrid/AWS SES
+ * - Email notifications (Gmail API or SMTP — see email-transport.ts)
  * - SMS notifications via Twilio/AWS SNS
  * - Push notifications (future)
  * - Notification templates
@@ -14,8 +14,13 @@ import { prisma } from '../../lib/prisma';
 import { logger } from '../../lib/logger';
 import { Twilio } from 'twilio';
 import { config } from '../../config';
-import nodemailer from 'nodemailer';
 import { whatsAppService } from './whatsapp.service';
+import {
+  deliverEmail,
+  describeEmailTransport,
+  resetEmailTransport,
+  type EmailTransportKind,
+} from './email-transport';
 
 /**
  * Escapes unsafe characters for HTML interpolation.
@@ -57,7 +62,7 @@ const renderEmailLayout = (title: string, contentHtml: string) => `
       <p style="margin: 0 0 8px 0;">Email ini dikirim secara otomatis oleh Sistem Informasi Yayasan Pesantren Cipansor.</p>
       <p style="margin: 0; font-style: italic; color: #0284c7;">
         Mohon <strong>tidak membalas langsung ke alamat email noreply ini</strong>. Jika Anda memiliki pertanyaan, silakan kirim email ke kanal resmi kami di
-        <a href="mailto:${config.smtp.replyTo}" style="color: #0284c7; font-weight: bold; text-decoration: underline;">${config.smtp.replyTo}</a>.
+        <a href="mailto:${config.mail.replyTo}" style="color: #0284c7; font-weight: bold; text-decoration: underline;">${config.mail.replyTo}</a>.
       </p>
       <p style="margin: 12px 0 0 0; color: #94a3b8;">&copy; ${new Date().getFullYear()} Yayasan Pesantren Cipansor. All rights reserved.</p>
     </div>
@@ -94,7 +99,7 @@ const templates = {
   // Password reset
   passwordReset: {
     subject: 'Reset Password - Cipansor',
-    html: (data: { name: string; resetLink: string }) =>
+    html: (data: { name: string; resetLink: string; expiresInHours?: number }) =>
       renderEmailLayout(
         'Reset Password - Cipansor',
         `
@@ -104,7 +109,13 @@ const templates = {
         <div style="text-align: center; margin: 24px 0;">
           <a href="${escapeHtml(data.resetLink)}" style="display: inline-block; background-color: #1e3a8a; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Reset Password Saya</a>
         </div>
-        <p style="font-size: 13px; color: #64748b;">Link ini akan kadaluarsa dalam 1 jam.</p>
+        <!--
+          The lifetime is passed in rather than written here. Self-service
+          resets last an hour; the tokens minted when a santri or wali account
+          is created last 24, and this line used to claim "1 jam" for both.
+        -->
+        <p style="font-size: 13px; color: #64748b;">Link ini akan kadaluarsa dalam ${data.expiresInHours ?? 1} jam.</p>
+        <p style="font-size: 12px; color: #94a3b8; word-break: break-all;">Jika tombol di atas tidak berfungsi, salin tautan ini ke peramban Anda:<br/>${escapeHtml(data.resetLink)}</p>
         <p style="font-size: 13px; color: #64748b;">Jika Anda tidak meminta reset password, abaikan saja email ini.</p>
         <p style="margin-top: 24px;">Salam,<br/><strong>Tim IT & Keamanan Cipansor</strong></p>
         `
@@ -294,41 +305,6 @@ const templates = {
       ),
   },
 
-  // E-Office Official Letter / Surat Tugas / Persuratan
-  eofficeLetter: {
-    subject: 'Surat Resmi & Kedinasan - Cipansor',
-    html: (data: {
-      recipientName: string;
-      letterNumber: string;
-      title: string;
-      summary: string;
-      signatoryName: string;
-      date: string;
-      actionUrl?: string;
-    }) =>
-      renderEmailLayout(
-        'E-Office Persuratan Resmi',
-        `
-        <h2 style="color: #1e3a8a; margin-top: 0;">Pemberitahuan Persuratan E-Office</h2>
-        <p>Kepada Yth. <strong>${escapeHtml(data.recipientName)}</strong>,</p>
-        <p>Terdapat naskah dinas / surat resmi baru yang diterbitkan melalui E-Office Yayasan Pesantren Cipansor:</p>
-        <table style="width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px;">
-          <tr style="background-color: #f8fafc;"><td style="padding: 10px; border: 1px solid #e2e8f0; width: 35%;"><strong>No. Surat:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0;"><code>${escapeHtml(data.letterNumber)}</code></td></tr>
-          <tr><td style="padding: 10px; border: 1px solid #e2e8f0;"><strong>Perihal:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0; font-weight: bold;">${escapeHtml(data.title)}</td></tr>
-          <tr style="background-color: #f8fafc;"><td style="padding: 10px; border: 1px solid #e2e8f0;"><strong>Ringkasan / Isi:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0;">${escapeHtml(data.summary)}</td></tr>
-          <tr><td style="padding: 10px; border: 1px solid #e2e8f0;"><strong>Penandatangan:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0;">${escapeHtml(data.signatoryName)}</td></tr>
-          <tr style="background-color: #f8fafc;"><td style="padding: 10px; border: 1px solid #e2e8f0;"><strong>Tanggal Terbit:</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0;">${escapeHtml(data.date)}</td></tr>
-        </table>
-        ${
-          data.actionUrl
-            ? `<div style="text-align: center; margin: 24px 0;"><a href="${escapeHtml(data.actionUrl)}" style="display: inline-block; background-color: #1e3a8a; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px;">Buka Dokumen di E-Office</a></div>`
-            : ''
-        }
-        <p style="margin-top: 24px;">Hormat kami,<br/><strong>Sekretariat & E-Office Cipansor</strong></p>
-        `
-      ),
-  },
-
   // General announcement
   announcement: {
     subject: '[Pengumuman Resmi] {title} - Cipansor',
@@ -338,7 +314,14 @@ const templates = {
         `
         ${data.priority === 'HIGH' ? '<div style="background-color: #dc2626; color: white; padding: 8px 12px; text-align: center; font-weight: bold; border-radius: 4px; margin-bottom: 16px;">PENGUMUMAN PENTING</div>' : ''}
         <h2 style="color: #1e3a8a; margin-top: 0;">${escapeHtml(data.title)}</h2>
-        <div style="line-height: 1.6; margin: 16px 0;">${escapeHtml(data.content)}</div>
+        <!--
+          The white-space: pre-line below is load-bearing, not decoration.
+          Announcement bodies are typed into a textarea, so they are plain text
+          carrying real newlines; escaped and dropped into ordinary HTML they
+          collapse, and a pengumuman written in four paragraphs arrives as one
+          block.
+        -->
+        <div style="line-height: 1.6; margin: 16px 0; white-space: pre-line;">${escapeHtml(data.content)}</div>
         <p style="margin-top: 24px;">Salam,<br/><strong>Pengurus Yayasan Pesantren Cipansor</strong></p>
         `
       ),
@@ -402,60 +385,32 @@ interface NotificationResult {
   channel: NotificationChannel;
   messageId?: string;
   error?: string;
+  /** EMAIL only: which transport handled it (`gmail_api`, `smtp` or `log`). */
+  transport?: EmailTransportKind;
+  /**
+   * EMAIL only: whether the message actually left the building.
+   *
+   * `success: true, delivered: false` is the log-only transport — the call
+   * worked, nothing was sent. Callers that need certainty must check this and
+   * not `success` alone.
+   */
+  delivered?: boolean;
 }
 
 class NotificationService {
-  private transporter: nodemailer.Transporter | null = null;
-
   /**
-   * Get or create email transporter
-   */
-  private getTransporter(): nodemailer.Transporter | null {
-    if (this.transporter) {
-      return this.transporter;
-    }
-
-    const smtpHost = config.smtp.host || process.env.SMTP_HOST;
-    if (!smtpHost) {
-      return null;
-    }
-
-    let authConfig: Record<string, string | undefined> | undefined = undefined;
-
-    if (
-      config.smtp.oauth2?.clientId &&
-      config.smtp.oauth2?.clientSecret &&
-      config.smtp.oauth2?.refreshToken
-    ) {
-      authConfig = {
-        type: 'OAuth2',
-        user: config.smtp.user || 'noreply@cipansor.or.id',
-        clientId: config.smtp.oauth2.clientId,
-        clientSecret: config.smtp.oauth2.clientSecret,
-        refreshToken: config.smtp.oauth2.refreshToken,
-      };
-    } else if (config.smtp.user && config.smtp.pass) {
-      authConfig = {
-        user: config.smtp.user,
-        pass: config.smtp.pass,
-      };
-    }
-
-    this.transporter = nodemailer.createTransport({
-      host: smtpHost,
-      port: config.smtp.port,
-      secure: config.smtp.secure,
-      ...(authConfig ? { auth: authConfig as any } : {}),
-    });
-
-    return this.transporter;
-  }
-
-  /**
-   * Reset cached transporter instance (useful for runtime/config updates)
+   * Reset the cached mail transport (useful for runtime/config updates).
+   *
+   * The transport itself now lives in `email-transport.ts`; this stays as the
+   * entry point callers already know about.
    */
   resetTransporter(): void {
-    this.transporter = null;
+    resetEmailTransport();
+  }
+
+  /** Which transport is configured, and the identity it sends under. */
+  emailTransportStatus() {
+    return describeEmailTransport();
   }
 
   /**
@@ -465,16 +420,31 @@ class NotificationService {
     const { channel, userId, type, title, message } = options;
 
     try {
-      // Log notification to database
-      const notificationLog = await prisma.notification.create({
-        data: {
-          userId: userId || '',
-          type: this.mapNotificationType(type),
-          title,
-          message,
-          status: 'UNREAD',
-        },
-      });
+      // Record the notification in-app, but only when it belongs to a real
+      // account.
+      //
+      // `Notification.userId` is a required foreign key to `users`. This used
+      // to write `userId || ''`, and an empty string is not a user id: Prisma
+      // raised a foreign-key error, the catch below swallowed it, and the
+      // method returned `success: false` — WITHOUT EVER REACHING THE SWITCH.
+      // Any caller addressing a recipient by e-mail alone silently sent
+      // nothing. Dispatch no longer depends on the in-app row existing.
+      let notificationLogId: string | undefined;
+
+      if (userId) {
+        const notificationLog = await prisma.notification.create({
+          data: {
+            userId,
+            type: this.mapNotificationType(type),
+            title,
+            // An empty body renders as a blank row in the bell menu. Falling
+            // back to the title keeps the record readable.
+            message: message || title,
+            status: 'UNREAD',
+          },
+        });
+        notificationLogId = notificationLog.id;
+      }
 
       let result: NotificationResult;
 
@@ -489,7 +459,9 @@ class NotificationService {
           result = await this.sendWhatsApp(options);
           break;
         case 'IN_APP':
-          result = { success: true, channel, messageId: notificationLog.id };
+          result = notificationLogId
+            ? { success: true, channel, messageId: notificationLogId }
+            : { success: false, channel, error: 'In-app notification requires a userId' };
           break;
         default:
           result = { success: false, channel, error: 'Unsupported channel' };
@@ -567,11 +539,6 @@ class NotificationService {
             templateData as Parameters<typeof templates.tahfidzProgress.html>[0]
           );
           break;
-        case 'eofficeLetter':
-          htmlContent = templates.eofficeLetter.html(
-            templateData as Parameters<typeof templates.eofficeLetter.html>[0]
-          );
-          break;
         case 'announcement':
           htmlContent = templates.announcement.html(
             templateData as Parameters<typeof templates.announcement.html>[0]
@@ -580,33 +547,35 @@ class NotificationService {
       }
     }
 
-    // Log email for development/debugging
-    logger.info(`[EMAIL] To: ${recipientEmail}, Subject: ${subject}`);
-
-    const transporter = this.getTransporter();
-
-    // Check if SMTP is configured
-    if (!transporter) {
-      logger.warn('Email not configured - SMTP_HOST not set. Email logged only.');
-      return { success: true, channel: 'EMAIL', messageId: `log_${Date.now()}` };
-    }
-
     try {
-      const info = await transporter.sendMail({
-        from: config.smtp.from,
-        replyTo: config.smtp.replyTo,
+      const result = await deliverEmail({
         to: recipientEmail,
-        subject: subject,
+        subject,
         html: htmlContent,
       });
 
-      logger.info(`Email sent to ${recipientEmail}: ${info.messageId}`);
-      return { success: true, channel: 'EMAIL', messageId: info.messageId };
+      // `delivered` distinguishes a real send from the log-only transport. The
+      // call still counts as successful — nothing went wrong — but the two must
+      // never look identical in the logs, because for months they did.
+      logger.info(
+        result.delivered
+          ? `Email sent to ${recipientEmail} via ${result.kind}: ${result.messageId}`
+          : `Email NOT sent (transport=${result.kind}) to ${recipientEmail}: ${subject}`,
+      );
+
+      return {
+        success: true,
+        channel: 'EMAIL',
+        messageId: result.messageId,
+        transport: result.kind,
+        delivered: result.delivered,
+      };
     } catch (error) {
       logger.error(`Failed to send email to ${recipientEmail}:`, error);
       return {
         success: false,
         channel: 'EMAIL',
+        delivered: false,
         error: error instanceof Error ? error.message : 'Unknown email error',
       };
     }
@@ -758,7 +727,7 @@ class NotificationService {
       channel: 'EMAIL',
       type: 'PAYMENT_REMINDER',
       title: 'Bukti Pembayaran Resmi - Cipansor',
-      message: '',
+      message: `Pembayaran ${receipt.amount} untuk ${receipt.studentName} telah diterima (${receipt.receiptNumber}).`,
       templateKey: 'paymentReceipt',
       templateData: receipt,
       priority: 'HIGH',
@@ -786,39 +755,23 @@ class NotificationService {
       channel: 'EMAIL',
       type: 'ATTENDANCE',
       title: 'Laporan Perkembangan Tahfidz Santri - Cipansor',
-      message: '',
+      message: `Setoran ${progress.studentName}: ${progress.surah} ayat ${progress.verses} — nilai ${progress.grade}.`,
       templateKey: 'tahfidzProgress',
       templateData: progress,
       priority: 'MEDIUM',
     });
   }
 
-  /**
-   * Send e-office official letter notification
+  /*
+   * `sendEOfficeLetter` and its `eofficeLetter` template were removed here.
+   *
+   * They had no caller anywhere in the API — only a unit test that invoked the
+   * helper directly — so nothing ever sent an e-office letter by e-mail, and a
+   * template that is never rendered by the product cannot be kept honest by a
+   * test that renders it. E-office correspondence is the subject of its own
+   * change (#414); the mail for it belongs there, wired to a real event, rather
+   * than sitting here looking finished.
    */
-  async sendEOfficeLetter(letter: {
-    userId: string;
-    recipientEmail: string;
-    recipientName: string;
-    letterNumber: string;
-    title: string;
-    summary: string;
-    signatoryName: string;
-    date: string;
-    actionUrl?: string;
-  }): Promise<NotificationResult> {
-    return this.send({
-      userId: letter.userId,
-      recipientEmail: letter.recipientEmail,
-      channel: 'EMAIL',
-      type: 'ANNOUNCEMENT',
-      title: 'Surat Resmi & Kedinasan - Cipansor',
-      message: '',
-      templateKey: 'eofficeLetter',
-      templateData: letter,
-      priority: 'HIGH',
-    });
-  }
 
   /**
    * Send payment reminder to parents
@@ -848,7 +801,7 @@ class NotificationService {
         channel: 'EMAIL',
         type: 'PAYMENT_REMINDER',
         title: 'Pengingat Pembayaran',
-        message: '',
+        message: `Tagihan ${invoice.invoiceNumber} untuk ${invoice.student.name} jatuh tempo ${invoice.dueDate.toLocaleDateString('id-ID')}.`,
         templateKey: 'paymentReminder',
         templateData: {
           parentName: sp.parent.name,
@@ -920,7 +873,7 @@ class NotificationService {
         channel: 'EMAIL',
         type: 'VIOLATION',
         title: 'Pemberitahuan Pelanggaran',
-        message: '',
+        message: `${violation.student.name}: ${violation.type} (${violation.points} poin).`,
         templateKey: 'violationNotification',
         templateData: {
           parentName: sp.parent.name,
@@ -972,7 +925,7 @@ class NotificationService {
           channel: 'EMAIL',
           type: 'ATTENDANCE',
           title: 'Pemberitahuan Kehadiran',
-          message: '',
+          message: `${attendance.studentName} tercatat ${statusLabel} pada ${attendance.date.toLocaleDateString('id-ID')}.`,
           templateKey: 'attendanceAlert',
           templateData: {
             parentName: sp.parent.name,
@@ -1031,7 +984,7 @@ class NotificationService {
           userId: user.id,
           type: this.mapNotificationType('ANNOUNCEMENT'),
           title: announcement.title,
-          message: '',
+          message: announcement.content,
           status: 'UNREAD',
         })),
       });
@@ -1051,7 +1004,7 @@ class NotificationService {
             channel: 'EMAIL',
             type: 'ANNOUNCEMENT',
             title: announcement.title,
-            message: '',
+            message: announcement.content,
             templateKey: 'announcement',
             templateData: {
               title: announcement.title,

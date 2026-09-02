@@ -1,9 +1,23 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import nodemailer from 'nodemailer';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { notificationService, templates } from './email-sms.service';
-import { config } from '../../config';
+import { deliverEmail } from './email-transport';
 
-// Mock prisma and logger
+// Mocked as a module rather than spied on the namespace: the service imports
+// `deliverEmail` as a binding, so a namespace spy would not be the function it
+// calls.
+vi.mock('./email-transport', () => ({
+  deliverEmail: vi.fn(),
+  describeEmailTransport: vi.fn(() => ({
+    kind: 'gmail_api',
+    configured: true,
+    from: 'Yayasan Pesantren Cipansor <noreply@cipansor.or.id>',
+    replyTo: 'halo@cipansor.or.id',
+  })),
+  resetEmailTransport: vi.fn(),
+}));
+
+const deliverEmailMock = vi.mocked(deliverEmail);
+
 vi.mock('../../lib/prisma', () => ({
   prisma: {
     notification: {
@@ -11,39 +25,36 @@ vi.mock('../../lib/prisma', () => ({
       createMany: vi.fn().mockResolvedValue({ count: 1 }),
     },
     user: {
-      findMany: vi.fn().mockResolvedValue([
-        { id: 'user-1', email: 'test@cipansor.or.id', phone: '08123456789' }
-      ]),
+      findMany: vi
+        .fn()
+        .mockResolvedValue([
+          { id: 'user-1', email: 'test@cipansor.or.id', phone: '08123456789' },
+        ]),
     },
   },
 }));
 
 vi.mock('../../lib/logger', () => ({
-  logger: {
-    info: vi.fn(),
-    error: vi.fn(),
-    warn: vi.fn(),
-  },
+  logger: { info: vi.fn(), error: vi.fn(), warn: vi.fn() },
 }));
 
-describe('NotificationService Email Integration', () => {
-  let sendMailMock: ReturnType<typeof vi.fn>;
-
+describe('NotificationService email dispatch', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    sendMailMock = vi.fn().mockResolvedValue({ messageId: 'msg-abc-123' });
-    vi.spyOn(nodemailer, 'createTransport').mockReturnValue({
-      sendMail: sendMailMock,
-    } as any);
-
-    (config.smtp as { host: string }).host = 'smtp.gmail.com';
-
-    // Reset singleton transporter
-    (notificationService as any).transporter = null;
+    deliverEmailMock.mockResolvedValue({
+      kind: 'gmail_api',
+      delivered: true,
+      messageId: 'msg-abc-123',
+    });
   });
 
-  it('should format email with default From and Reply-To headers', async () => {
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('hands the transport a rendered subject and body', async () => {
     const result = await notificationService.send({
+      userId: 'user-1',
       channel: 'EMAIL',
       type: 'WELCOME',
       recipientEmail: 'santri@cipansor.or.id',
@@ -55,17 +66,99 @@ describe('NotificationService Email Integration', () => {
 
     expect(result.success).toBe(true);
     expect(result.messageId).toBe('msg-abc-123');
-    expect(sendMailMock).toHaveBeenCalledWith(
+    expect(result.transport).toBe('gmail_api');
+    expect(result.delivered).toBe(true);
+
+    expect(deliverEmailMock).toHaveBeenCalledWith(
       expect.objectContaining({
-        from: expect.stringContaining('noreply@cipansor.or.id'),
-        replyTo: 'halo@cipansor.or.id',
         to: 'santri@cipansor.or.id',
         subject: 'Selamat Datang di Cipansor',
-      })
+        html: expect.stringContaining('Ahmad Santri'),
+      }),
     );
   });
 
-  it('should render payment receipt email template with replyTo footer instructions', () => {
+  it('reports delivered:false when the transport only logged the message', async () => {
+    // The defect this pins: with nothing configured the service returned a
+    // plain success, so a discarded e-mail was indistinguishable from a sent
+    // one — in the logs and in the settings screen.
+    deliverEmailMock.mockResolvedValue({ kind: 'log', delivered: false, messageId: 'log_1' });
+
+    const result = await notificationService.send({
+      userId: 'user-1',
+      channel: 'EMAIL',
+      type: 'GENERAL',
+      recipientEmail: 'wali@cipansor.or.id',
+      title: 'Pengumuman',
+      message: 'Isi',
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.delivered).toBe(false);
+    expect(result.transport).toBe('log');
+  });
+
+  it('still sends when the recipient has no user account', async () => {
+    // `Notification.userId` is a required foreign key. The old code wrote
+    // `userId || ''`, which threw before the channel switch was ever reached,
+    // so addressing someone by e-mail alone sent nothing at all.
+    const result = await notificationService.send({
+      channel: 'EMAIL',
+      type: 'GENERAL',
+      recipientEmail: 'orang-luar@example.test',
+      title: 'Undangan',
+      message: 'Isi undangan',
+    });
+
+    expect(result.success).toBe(true);
+    expect(deliverEmailMock).toHaveBeenCalledWith(
+      expect.objectContaining({ to: 'orang-luar@example.test' }),
+    );
+  });
+
+  it('surfaces a transport failure as an unsuccessful result', async () => {
+    deliverEmailMock.mockRejectedValue(new Error('Gmail API send failed: Delegation denied'));
+
+    const result = await notificationService.send({
+      userId: 'user-1',
+      channel: 'EMAIL',
+      type: 'GENERAL',
+      recipientEmail: 'wali@cipansor.or.id',
+      title: 'Tagihan',
+      message: 'Isi',
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.delivered).toBe(false);
+    expect(result.error).toMatch(/Delegation denied/);
+  });
+
+  it('fills the in-app record rather than leaving a blank row', async () => {
+    await notificationService.sendPaymentReceipt({
+      userId: 'u1',
+      recipientEmail: 'ortu@cipansor.or.id',
+      parentName: 'Hendra',
+      studentName: 'Fauzan',
+      receiptNumber: 'KW-001',
+      amount: 'Rp 500.000',
+      paymentDate: '27 Agustus 2025',
+      paymentMethod: 'Transfer',
+      description: 'SPP',
+    });
+
+    const { prisma } = await import('../../lib/prisma');
+    expect(prisma.notification.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          message: expect.stringContaining('Fauzan'),
+        }),
+      }),
+    );
+  });
+});
+
+describe('email templates', () => {
+  it('renders the payment receipt with the reply-to mailbox in the footer', () => {
     const html = templates.paymentReceipt.html({
       parentName: 'Bapak Hendra',
       studentName: 'Fauzan',
@@ -79,11 +172,11 @@ describe('NotificationService Email Integration', () => {
     expect(html).toContain('Bapak Hendra');
     expect(html).toContain('KW-2025-001');
     expect(html).toContain('Rp 500.000');
+    // Every template must point a reply at the mailbox a human reads.
     expect(html).toContain('halo@cipansor.or.id');
-    expect(html).toContain('noreply');
   });
 
-  it('should render tahfidz progress email template', () => {
+  it('renders the tahfidz report', () => {
     const html = templates.tahfidzProgress.html({
       parentName: 'Bapak Hendra',
       studentName: 'Fauzan',
@@ -101,60 +194,48 @@ describe('NotificationService Email Integration', () => {
     expect(html).toContain('halo@cipansor.or.id');
   });
 
-  it('should render e-office official letter email template', () => {
-    const html = templates.eofficeLetter.html({
-      recipientName: 'Ustadz Ahmad',
-      letterNumber: '001/YPC/VIII/2025',
-      title: 'Surat Tugas Panitia Penerimaan Santri Baru',
-      summary: 'Penunjukan Panitia PPDB 2025',
-      signatoryName: 'K.H. Ketua Yayasan',
-      date: '27 Agustus 2025',
-      actionUrl: 'https://portal.cipansor.or.id/e-office',
+  it('states the real lifetime of a reset link instead of assuming an hour', () => {
+    const onboarding = templates.passwordReset.html({
+      name: 'Wali Fauzan',
+      resetLink: 'https://portal.cipansor.or.id/reset-password?token=abc',
+      expiresInHours: 24,
     });
 
-    expect(html).toContain('001/YPC/VIII/2025');
-    expect(html).toContain('Surat Tugas Panitia Penerimaan Santri Baru');
-    expect(html).toContain('https://portal.cipansor.or.id/e-office');
+    expect(onboarding).toContain('24 jam');
+    // The link is also printed in full, for clients that strip the button.
+    expect(onboarding).toContain('https://portal.cipansor.or.id/reset-password?token=abc');
+
+    const selfService = templates.passwordReset.html({
+      name: 'Wali Fauzan',
+      resetLink: 'https://portal.cipansor.or.id/reset-password?token=abc',
+      expiresInHours: 1,
+    });
+
+    expect(selfService).toContain('1 jam');
   });
 
-  it('should trigger helper methods for payment receipt, tahfidz progress, and e-office letters', async () => {
-    const receiptRes = await notificationService.sendPaymentReceipt({
-      userId: 'u1',
-      recipientEmail: 'ortu@cipansor.or.id',
-      parentName: 'Hendra',
-      studentName: 'Fauzan',
-      receiptNumber: 'KW-001',
-      amount: 'Rp 500.000',
-      paymentDate: '27 Agustus 2025',
-      paymentMethod: 'Transfer',
-      description: 'SPP',
+  it('preserves the paragraphs of an announcement typed into a textarea', () => {
+    const html = templates.announcement.html({
+      title: 'Libur Semester',
+      content: 'Baris pertama.\n\nBaris kedua.',
+      priority: 'MEDIUM',
     });
-    expect(receiptRes.success).toBe(true);
 
-    const tahfidzRes = await notificationService.sendTahfidzProgress({
-      userId: 'u2',
-      recipientEmail: 'ortu@cipansor.or.id',
-      parentName: 'Hendra',
-      studentName: 'Fauzan',
-      surah: 'Al-Baqarah',
-      verses: '1-10',
-      juz: 1,
-      grade: 'Mumtaz',
-      teacherName: 'Ustadz Ahmad',
-      date: '27 Agustus 2025',
-    });
-    expect(tahfidzRes.success).toBe(true);
+    // Without `white-space: pre-line` the two lines run together, which is what
+    // every announcement e-mail did.
+    expect(html).toContain('white-space: pre-line');
+    expect(html).toContain('Baris pertama.\n\nBaris kedua.');
+  });
 
-    const letterRes = await notificationService.sendEOfficeLetter({
-      userId: 'u3',
-      recipientEmail: 'staf@cipansor.or.id',
-      recipientName: 'Ustadz Ahmad',
-      letterNumber: '002/YPC/VIII/2025',
-      title: 'Surat Undangan',
-      summary: 'Rapat Rencana Kerja',
-      signatoryName: 'Ketua',
-      date: '27 Agustus 2025',
+  it('escapes markup in values that come from users', () => {
+    const html = templates.announcement.html({
+      title: '<script>alert(1)</script>',
+      content: 'Isi <b>tebal</b>',
+      priority: 'HIGH',
     });
-    expect(letterRes.success).toBe(true);
+
+    expect(html).not.toContain('<script>');
+    expect(html).toContain('&lt;script&gt;');
+    expect(html).toContain('&lt;b&gt;tebal&lt;/b&gt;');
   });
 });

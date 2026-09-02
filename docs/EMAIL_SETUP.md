@@ -182,6 +182,20 @@ Robot itu tidak punya kotak surat sendiri. Yang membuatnya boleh mengirim
 *sebagai* `noreply@cipansor.or.id` adalah izin delegasi di langkah 6 — itulah
 sebabnya kedua alamat ini berbeda dan keduanya diperlukan.
 
+**Karena itu, jangan beri service account ID `noreply`.** Godaannya besar —
+tugasnya memang mengirim sebagai noreply — tetapi hasilnya dua alamat yang nyaris
+kembar:
+
+```
+noreply@cipansor.iam.gserviceaccount.com     ← robot
+noreply@cipansor.or.id                       ← kotak surat
+```
+
+Keduanya harus masuk ke variabel yang *berbeda*, dan tertukarnya persis
+menghasilkan `unauthorized_client` — kesalahan yang paling mahal waktunya di
+seluruh panduan ini, karena pesannya tidak menyebut-nyebut soal alamat. ID
+`cipansor-mailer` membuat keduanya mustahil tertukar sekilas pandang.
+
 ### Private key ≠ client secret
 
 `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY` **bukan** client secret.

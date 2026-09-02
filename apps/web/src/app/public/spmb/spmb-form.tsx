@@ -353,7 +353,7 @@ export function SpmbForm({
 
       // Reset form
       setFormData(initialFormData);
-      setFiles({ photo: null, birthCertificate: null, familyCard: null });
+      setFiles({ photo: null, birthCertificate: null, familyCard: null, ktp: null });
       setCurrentStep(0);
     } catch (error) {
       toast.error("Gagal mengirim pendaftaran. Silakan coba lagi.");

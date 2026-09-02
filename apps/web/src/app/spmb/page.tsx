@@ -62,7 +62,7 @@ export default function SPMBPage() {
       title: "Diterima",
       description: "Calon santri yang diterima",
       icon: CheckCircle,
-      href: "/spmb/accepted",
+      href: "/spmb/registrations?status=ACCEPTED",
       color: "text-emerald-600",
       bgColor: "bg-emerald-50",
       count: "0",

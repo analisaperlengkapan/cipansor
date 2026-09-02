@@ -11,6 +11,7 @@ import type {
   ViolationSummary,
   LibrarySummary,
   PsbSummary,
+  SpmbSummary,
 } from '@cipansor/shared';
 
 interface DateRange {

@@ -288,7 +288,7 @@ export class StudentOnboardingOrchestrator {
           where: { unitId, code: 'REG_FEE' },
         });
         if (paymentType) {
-          const financeService = await import('@/modules/finance/finance.service');
+          const financeService = await import('../../modules/finance/finance.service');
           await financeService.createInvoice(
             {
               studentId: student.id,

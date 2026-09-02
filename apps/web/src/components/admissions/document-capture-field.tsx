@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Camera, Upload, CheckCircle2, AlertCircle, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
+import { api } from "@/lib/api";
 
 interface DocumentCaptureFieldProps {
   label: string;
@@ -48,25 +49,19 @@ export function DocumentCaptureField({
       const reader = new FileReader();
       reader.onload = async () => {
         const imageBase64 = reader.result as string;
-        const res = await fetch("/api/admissions/public/parse-document", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            imageBase64,
-            documentType,
-            userInputData,
-          }),
+        const res = await api.post("/admissions/public/parse-document", {
+          imageBase64,
+          documentType,
+          userInputData,
         });
 
-        if (res.ok) {
-          const json = await res.json();
-          if (json.data) {
-            setOcrStatus(json.data.validation);
-            if (json.data.extractedData && onOcrExtracted) {
-              onOcrExtracted(json.data.extractedData);
-            }
-            toast.success("Dokumen berhasil dipindai dan diverifikasi.");
+        if (res.data?.data) {
+          const data = res.data.data;
+          setOcrStatus(data.validation);
+          if (data.extractedData && onOcrExtracted) {
+            onOcrExtracted(data.extractedData);
           }
+          toast.success("Dokumen berhasil dipindai dan diverifikasi.");
         }
       };
       reader.readAsDataURL(selectedFile);

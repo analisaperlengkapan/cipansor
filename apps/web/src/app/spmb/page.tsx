@@ -26,16 +26,16 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-export default function PPDBPage() {
+export default function SPMBPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("overview");
 
   const menuItems = [
     {
-      title: "Gelombang PPDB",
+      title: "Gelombang SPMB",
       description: "Kelola periode dan gelombang penerimaan",
       icon: Calendar,
-      href: "/ppdb/waves",
+      href: "/spmb/waves",
       color: "text-blue-600",
       bgColor: "bg-blue-50",
       count: "0",
@@ -44,7 +44,7 @@ export default function PPDBPage() {
       title: "Pendaftar",
       description: "Daftar calon santri yang mendaftar",
       icon: Users,
-      href: "/ppdb/registrations",
+      href: "/spmb/registrations",
       color: "text-green-600",
       bgColor: "bg-green-50",
       count: "0",
@@ -53,7 +53,7 @@ export default function PPDBPage() {
       title: "Seleksi",
       description: "Proses seleksi dan penilaian calon santri",
       icon: ClipboardList,
-      href: "/ppdb/selections",
+      href: "/spmb/selections",
       color: "text-purple-600",
       bgColor: "bg-purple-50",
       count: "0",
@@ -62,7 +62,7 @@ export default function PPDBPage() {
       title: "Diterima",
       description: "Calon santri yang diterima",
       icon: CheckCircle,
-      href: "/ppdb/accepted",
+      href: "/spmb/accepted",
       color: "text-emerald-600",
       bgColor: "bg-emerald-50",
       count: "0",
@@ -106,10 +106,10 @@ export default function PPDBPage() {
         {/* Header */}
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
-            PPDB - Penerimaan Peserta Didik Baru
+            SPMB - Sistem Penerimaan Murid Baru
           </h1>
           <p className="text-muted-foreground">
-            Sistem penerimaan dan seleksi santri baru
+            Pusat kendali penerimaan, verifikasi berkas, seleksi, dan onboarding santri baru
           </p>
         </div>
 
@@ -185,19 +185,19 @@ export default function PPDBPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-4 md:grid-cols-3">
-                <Link href="/ppdb/waves">
+                <Link href="/spmb/waves">
                   <Button className="w-full" variant="outline">
                     <Calendar className="mr-2 h-4 w-4" />
                     Kelola Gelombang
                   </Button>
                 </Link>
-                <Link href="/ppdb/registrations">
+                <Link href="/spmb/registrations">
                   <Button className="w-full" variant="outline">
                     <Users className="mr-2 h-4 w-4" />
                     Lihat Pendaftar
                   </Button>
                 </Link>
-                <Link href="/ppdb/selections">
+                <Link href="/spmb/selections">
                   <Button className="w-full" variant="outline">
                     <ClipboardList className="mr-2 h-4 w-4" />
                     Proses Seleksi
@@ -226,7 +226,7 @@ export default function PPDBPage() {
                     <li>5. Jadwal tes masuk</li>
                   </ol>
                 </div>
-                <Link href="/ppdb/registrations">
+                <Link href="/spmb/registrations">
                   <Button className="w-full">Kelola Pendaftaran</Button>
                 </Link>
               </CardContent>
@@ -251,7 +251,7 @@ export default function PPDBPage() {
                     <li>• Tes Kesehatan</li>
                   </ul>
                 </div>
-                <Link href="/ppdb/selections">
+                <Link href="/spmb/selections">
                   <Button className="w-full">Lihat Jadwal Seleksi</Button>
                 </Link>
               </CardContent>
@@ -261,7 +261,7 @@ export default function PPDBPage() {
           <TabsContent value="reports" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Laporan PPDB</CardTitle>
+                <CardTitle>Laporan SPMB</CardTitle>
                 <CardDescription>
                   Laporan dan statistik penerimaan santri baru
                 </CardDescription>

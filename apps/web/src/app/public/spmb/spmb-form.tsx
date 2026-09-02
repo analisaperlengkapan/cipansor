@@ -35,6 +35,7 @@ import {
 import { usePublicUnits } from "@/hooks/use-units";
 import { getPeriodWindow } from "@/lib/admission-period";
 import { RegistrationTracker } from "@/components/admissions/registration-tracker";
+import { DocumentCaptureField } from "@/components/admissions/document-capture-field";
 import {
   CheckCircle2,
   User,
@@ -194,10 +195,12 @@ export function SpmbForm({
     photo: File | null;
     birthCertificate: File | null;
     familyCard: File | null;
+    ktp: File | null;
   }>({
     photo: null,
     birthCertificate: null,
     familyCard: null,
+    ktp: null,
   });
 
   const steps = [
@@ -1002,11 +1005,10 @@ export function SpmbForm({
                               <Info className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
                               <div className="text-sm">
                                 <p className="font-medium text-blue-800">
-                                  Instruksi Upload:
+                                  Instruksi & Fitur Kamera / AI OCR:
                                 </p>
                                 <p className="text-blue-700">
-                                  Format file yang didukung: JPG, PNG, PDF.
-                                  Ukuran maksimal 2MB per file.
+                                  Anda dapat memilih file dari perangkat atau mengambil foto langsung dari kamera HP/laptop. Sistem secara otomatis memindai NIK & No. KK untuk memverifikasi kecocokan data.
                                 </p>
                               </div>
                             </div>
@@ -1014,51 +1016,51 @@ export function SpmbForm({
                         </Card>
 
                         <div className="space-y-4">
-                          <div className="space-y-2">
-                            <Label>Pas Foto (3x4 Latar Biru)</Label>
-                            <Input
-                              type="file"
-                              accept="image/*"
-                              onChange={(e) => handleFileChange(e, "photo")}
-                            />
-                            {files.photo && (
-                              <p className="text-xs text-green-600">
-                                File terpilih: {files.photo.name}
-                              </p>
-                            )}
-                          </div>
+                          <DocumentCaptureField
+                            label="Pas Foto Calon Santri (3x4 Latar Biru)"
+                            documentType="foto"
+                            file={files.photo}
+                            onFileSelect={(f) => setFiles((prev) => ({ ...prev, photo: f }))}
+                          />
 
-                          <div className="space-y-2">
-                            <Label>Akte Kelahiran</Label>
-                            <Input
-                              type="file"
-                              accept="image/*,application/pdf"
-                              onChange={(e) =>
-                                handleFileChange(e, "birthCertificate")
+                          <DocumentCaptureField
+                            label="KTP Orang Tua / Wali"
+                            documentType="ktp"
+                            file={files.ktp}
+                            userInputData={{
+                              fullName: formData.fatherName || formData.motherName,
+                              nationalId: formData.nationalId,
+                            }}
+                            onFileSelect={(f) => setFiles((prev) => ({ ...prev, ktp: f }))}
+                            onOcrExtracted={(ext) => {
+                              if (ext.nationalId && !formData.nationalId) {
+                                setFormData((prev) => ({ ...prev, nationalId: ext.nationalId! }));
                               }
-                            />
-                            {files.birthCertificate && (
-                              <p className="text-xs text-green-600">
-                                File terpilih: {files.birthCertificate.name}
-                              </p>
-                            )}
-                          </div>
+                            }}
+                          />
 
-                          <div className="space-y-2">
-                            <Label>Kartu Keluarga (KK)</Label>
-                            <Input
-                              type="file"
-                              accept="image/*,application/pdf"
-                              onChange={(e) =>
-                                handleFileChange(e, "familyCard")
+                          <DocumentCaptureField
+                            label="Kartu Keluarga (KK)"
+                            documentType="kk"
+                            file={files.familyCard}
+                            userInputData={{
+                              fullName: formData.fatherName || formData.motherName,
+                              familyCardNumber: formData.familyCardNumber,
+                            }}
+                            onFileSelect={(f) => setFiles((prev) => ({ ...prev, familyCard: f }))}
+                            onOcrExtracted={(ext) => {
+                              if (ext.familyCardNumber && !formData.familyCardNumber) {
+                                setFormData((prev) => ({ ...prev, familyCardNumber: ext.familyCardNumber! }));
                               }
-                            />
-                            {files.familyCard && (
-                              <p className="text-xs text-green-600">
-                                File terpilih: {files.familyCard.name}
-                              </p>
-                            )}
-                          </div>
+                            }}
+                          />
+
+                          <DocumentCaptureField
+                            label="Akte Kelahiran"
+                            documentType="akta"
+                            file={files.birthCertificate}
+                            onFileSelect={(f) => setFiles((prev) => ({ ...prev, birthCertificate: f }))}
+                          />
                         </div>
                       </div>
                     )}

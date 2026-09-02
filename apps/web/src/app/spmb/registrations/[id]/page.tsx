@@ -8,6 +8,9 @@ import {
   useRegistrant,
   useOnboardRegistrant,
   useRecordRegistrationFee,
+  useUpdateRegistrantScore,
+  useUpdateRegistrantStatus,
+  useVerifyRegistrantDocument,
 } from "@/hooks/use-admissions";
 import { useAuth } from "@/hooks/use-auth";
 import { safeFormat } from "@/lib/date";
@@ -20,7 +23,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Loader2, Rocket, GraduationCap, Wallet } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Loader2, Rocket, GraduationCap, Wallet, Check, X, FileText, Award } from "lucide-react";
 
 const STATUS_LABEL: Record<string, string> = {
   REGISTERED: "Mendaftar",
@@ -52,7 +56,59 @@ export default function RegistrationDetailPage({
   const { data: registrant, isLoading } = useRegistrant(params.id);
   const onboard = useOnboardRegistrant();
   const recordFee = useRecordRegistrationFee();
+  const updateScore = useUpdateRegistrantScore();
+  const updateStatus = useUpdateRegistrantStatus();
+  const verifyDoc = useVerifyRegistrantDocument();
+
   const [isOnboarding, setIsOnboarding] = useState(false);
+  const [testScore, setTestScore] = useState<string>("");
+  const [interviewScore, setInterviewScore] = useState<string>("");
+  const [tahfidzScore, setTahfidzScore] = useState<string>("");
+
+  React.useEffect(() => {
+    if (registrant) {
+      if (registrant.testScore != null) setTestScore(String(registrant.testScore));
+      if (registrant.interviewScore != null) setInterviewScore(String(registrant.interviewScore));
+      if (registrant.tahfidzScore != null) setTahfidzScore(String(registrant.tahfidzScore));
+    }
+  }, [registrant]);
+
+  const handleSaveScores = async () => {
+    if (!registrant) return;
+    try {
+      await updateScore.mutateAsync({
+        id: registrant.id,
+        testScore: testScore ? Number(testScore) : undefined,
+        interviewScore: interviewScore ? Number(interviewScore) : undefined,
+        tahfidzScore: tahfidzScore ? Number(tahfidzScore) : undefined,
+      });
+      toast.success("Nilai seleksi berhasil disimpan.");
+    } catch {
+      toast.error("Gagal menyimpan nilai seleksi.");
+    }
+  };
+
+  const handleStatusChange = async (newStatus: string) => {
+    if (!registrant) return;
+    try {
+      await updateStatus.mutateAsync({
+        id: registrant.id,
+        status: newStatus,
+      });
+      toast.success(`Status berhasil diubah ke ${STATUS_LABEL[newStatus] ?? newStatus}.`);
+    } catch {
+      toast.error("Gagal mengubah status.");
+    }
+  };
+
+  const handleVerifyDocument = async (docId: string, isVerified: boolean) => {
+    try {
+      await verifyDoc.mutateAsync({ id: docId, isVerified });
+      toast.success(isVerified ? "Dokumen diverifikasi." : "Verifikasi batalkan.");
+    } catch {
+      toast.error("Gagal memperbarui status dokumen.");
+    }
+  };
 
   const handleRecordFee = async () => {
     if (!registrant) return;
@@ -204,13 +260,15 @@ export default function RegistrationDetailPage({
             </CardHeader>
             <CardContent className="grid grid-cols-2 gap-4">
               <Field label="Nama Lengkap" value={registrant.fullName || registrant.name} />
-              <Field label="Jenis Kelamin" value={registrant.gender} />
+              <Field label="Jenis Kelamin" value={registrant.gender === "MALE" ? "Laki-laki" : "Perempuan"} />
               <Field label="Tempat Lahir" value={registrant.birthPlace} />
               <Field
                 label="Tanggal Lahir"
                 value={safeFormat(registrant.birthDate, "dd MMM yyyy")}
               />
               <Field label="Asal Sekolah" value={registrant.previousSchool} />
+              <Field label="Kemampuan Qur'an" value={registrant.quranAbility} />
+              <Field label="Hafalan" value={registrant.memorizedJuz ? `${registrant.memorizedJuz} Juz` : "-"} />
               <Field
                 label="Tanggal Daftar"
                 value={safeFormat(registrant.createdAt, "dd MMM yyyy")}
@@ -227,9 +285,144 @@ export default function RegistrationDetailPage({
               <Field label="No. HP Wali" value={registrant.parentPhone} />
               <Field label="Email Wali" value={registrant.parentEmail} />
               <Field label="Pekerjaan" value={registrant.parentOccupation} />
+              <Field label="Alamat" value={registrant.address} />
             </CardContent>
           </Card>
         </div>
+
+        {/* Nilai Seleksi & Keputusan Status */}
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Award className="h-5 w-5 text-primary" /> Penginputan Nilai Seleksi
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <p className="text-xs font-bold uppercase mb-1">Tes Akademik</p>
+                  <Input
+                    type="number"
+                    min={0}
+                    max={100}
+                    placeholder="0-100"
+                    value={testScore}
+                    onChange={(e) => setTestScore(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <p className="text-xs font-bold uppercase mb-1">Wawancara</p>
+                  <Input
+                    type="number"
+                    min={0}
+                    max={100}
+                    placeholder="0-100"
+                    value={interviewScore}
+                    onChange={(e) => setInterviewScore(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <p className="text-xs font-bold uppercase mb-1">Tes Qur'an/Tahfidz</p>
+                  <Input
+                    type="number"
+                    min={0}
+                    max={100}
+                    placeholder="0-100"
+                    value={tahfidzScore}
+                    onChange={(e) => setTahfidzScore(e.target.value)}
+                  />
+                </div>
+              </div>
+              <Button onClick={handleSaveScores} disabled={updateScore.isPending} className="w-full">
+                {updateScore.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                Simpan Nilai Seleksi
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Keputusan Kelulusan Seleksi</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <p className="text-xs text-muted-foreground">
+                Ubah status pendaftaran calon santri berdasarkan kriteria seleksi:
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  size="sm"
+                  variant={registrant.status === "ACCEPTED" ? "default" : "outline"}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                  onClick={() => handleStatusChange("ACCEPTED")}
+                  disabled={updateStatus.isPending}
+                >
+                  Terima (ACCEPTED)
+                </Button>
+                <Button
+                  size="sm"
+                  variant={registrant.status === "REJECTED" ? "destructive" : "outline"}
+                  onClick={() => handleStatusChange("REJECTED")}
+                  disabled={updateStatus.isPending}
+                >
+                  Tolak (REJECTED)
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleStatusChange("TEST_SCHEDULED")}
+                  disabled={updateStatus.isPending}
+                >
+                  Jadwalkan Tes
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Verifikasi Dokumen Persyaratan */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <FileText className="h-5 w-5 text-primary" /> Dokumen Persyaratan SPMB
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {registrant.documents && registrant.documents.length > 0 ? (
+              <div className="space-y-3">
+                {registrant.documents.map((doc: any) => (
+                  <div
+                    key={doc.id}
+                    className="flex items-center justify-between p-3 rounded-lg border bg-slate-50/50"
+                  >
+                    <div>
+                      <p className="font-semibold text-sm">{doc.name}</p>
+                      <p className="text-xs text-muted-foreground">Tipe: {doc.type}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={doc.isVerified ? "default" : "secondary"}>
+                        {doc.isVerified ? "Terverifikasi" : "Belum Verifikasi"}
+                      </Badge>
+                      <Button
+                        size="sm"
+                        variant={doc.isVerified ? "outline" : "default"}
+                        onClick={() => handleVerifyDocument(doc.id, !doc.isVerified)}
+                        disabled={verifyDoc.isPending}
+                      >
+                        {doc.isVerified ? <X className="h-4 w-4 mr-1" /> : <Check className="h-4 w-4 mr-1" />}
+                        {doc.isVerified ? "Batal" : "Verifikasi"}
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm italic text-muted-foreground py-4">
+                Belum ada berkas dokumen yang diunggah oleh pendaftar.
+              </p>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </MainLayout>
   );

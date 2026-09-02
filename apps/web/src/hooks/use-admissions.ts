@@ -80,6 +80,61 @@ export function useAdmissionPeriods(params?: any) {
   });
 }
 
+export function useUpdateRegistrantScore() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      testScore,
+      interviewScore,
+      tahfidzScore,
+      notes,
+    }: {
+      id: string;
+      testScore?: number;
+      interviewScore?: number;
+      tahfidzScore?: number;
+      notes?: string;
+    }) => {
+      const response = await api.patch(`/admissions/registrants/${id}/score`, {
+        testScore,
+        interviewScore,
+        tahfidzScore,
+        notes,
+      });
+      return response.data.data;
+    },
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: ["admission-registrant", id] });
+      queryClient.invalidateQueries({ queryKey: ["admission-registrants"] });
+    },
+  });
+}
+
+export function useVerifyRegistrantDocument() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      isVerified,
+      notes,
+    }: {
+      id: string;
+      isVerified: boolean;
+      notes?: string;
+    }) => {
+      const response = await api.patch(`/admissions/documents/${id}/verify`, {
+        isVerified,
+        notes,
+      });
+      return response.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admission-registrant"] });
+    },
+  });
+}
+
 export function useAdmissionPeriod(id: string) {
   return useQuery({
     queryKey: ["admission-period", id],

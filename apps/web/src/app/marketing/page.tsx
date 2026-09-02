@@ -231,7 +231,7 @@ export default function MarketingDashboard() {
   };
 
   const copyTrackingLink = (code: string) => {
-    const link = `${window.location.origin}/psb?ref=${code}`;
+    const link = `${window.location.origin}/public/spmb?source=${code}`;
     navigator.clipboard.writeText(link);
     toast.success("Link tracking berhasil disalin");
   };
@@ -876,7 +876,7 @@ export default function MarketingDashboard() {
                               <DropdownMenuItem
                                 onClick={() =>
                                   window.open(
-                                    `/psb?ref=${campaign.code}`,
+                                    `/public/spmb?source=${campaign.code}`,
                                     "_blank",
                                   )
                                 }

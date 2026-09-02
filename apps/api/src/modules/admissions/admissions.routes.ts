@@ -57,6 +57,11 @@ router.get(
   publicRegistrantLimiter,
   controller.trackPublicRegistrantStatus
 );
+router.post(
+  '/public/parse-document',
+  publicRegistrantLimiter,
+  controller.parsePublicDocument
+);
 
 router.use(authenticate);
 

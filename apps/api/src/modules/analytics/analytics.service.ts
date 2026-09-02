@@ -727,7 +727,7 @@ export async function getLibraryStats(unitId?: string): Promise<LibrarySummary> 
   };
 }
 
-export async function getPSBStats(unitId?: string): Promise<PsbSummary> {
+export async function getSPMBStats(unitId?: string): Promise<SpmbSummary> {
   // Check for active admission period
   const activePeriod = await prisma.admissionPeriod.findFirst({
     where: {
@@ -788,3 +788,5 @@ export async function getPSBStats(unitId?: string): Promise<PsbSummary> {
     byPeriod: periodsData,
   };
 }
+
+export const getPSBStats = getSPMBStats;

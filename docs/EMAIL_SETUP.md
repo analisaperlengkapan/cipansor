@@ -59,9 +59,26 @@ suatu saat daftar wali santri tumbuh besar dan ada pengumuman massal harian.
 
 ## Langkah-langkah di Google Console
 
-Anda perlu dua peran: **Google Cloud Console** (membuat service account) dan
+Anda perlu dua konsol: **Google Cloud Console** (membuat service account) dan
 **Google Admin console** (mengizinkan service account itu bertindak sebagai
-`noreply@`). Keduanya dipegang admin Workspace yayasan.
+`noreply@`).
+
+### Masuk pakai akun yang mana?
+
+**Keduanya dibuka dengan `admin@cipansor.or.id`** — akun super admin Workspace.
+Bukan `noreply@`.
+
+- Langkah 6 (domain-wide delegation) **hanya bisa** dilakukan super admin.
+  `noreply@` tidak punya wewenang itu.
+- `noreply@` **tidak pernah perlu login ke mana pun** agar ini bekerja. Justru
+  itu intinya: service account bertindak *sebagai* dia tanpa memakai
+  passwordnya. Kotak surat itu memang tidak dijaga siapa-siapa, dan tidak
+  seharusnya dipakai membuka konsol.
+- Kepemilikan project ikut akun pembuatnya. Project yang dimiliki kotak surat
+  fungsional akan ikut hilang bila suatu saat kotak surat itu dihapus; dimiliki
+  admin yayasan, project-nya tetap ada dan tetap bisa dikelola.
+
+Satu-satunya syarat pada `noreply@` adalah **ada** — lihat langkah 7.
 
 ### 1. Buat atau pilih project — Google Cloud Console
 
@@ -177,10 +194,24 @@ Perubahan delegasi kadang butuh beberapa menit untuk menyebar.
 
 ### 7. Pastikan kotak surat pengirim ada
 
-`noreply@cipansor.or.id` harus benar-benar ada di Workspace — sebagai **user**
-atau sebagai **alias** dari user yang ada. Service account meniru identitas
-seorang pengguna nyata; kalau alamat itu tidak ada, Google menolak dengan
-`unauthorized_client` meski langkah 6 sudah benar.
+`noreply@cipansor.or.id` harus benar-benar ada di Workspace, dan sebaiknya
+sebagai **user tersendiri**, bukan alias.
+
+Alasannya: yang ditiru service account (`sub` pada permintaan token) harus
+berupa akun pengguna nyata di domain. Alamat alias tidak selalu diterima di
+posisi itu, dan kalaupun tokennya terbit, Gmail dapat menulis ulang header
+`From` menjadi alamat utama pemilik alias — sehingga email tetap terkirim tapi
+bukan atas nama yang Anda maksud. Kalau alamat itu sama sekali tidak ada, Google
+menolak dengan `unauthorized_client` meski langkah 6 sudah benar.
+
+Membuat user tersendiri memakai satu lisensi, dan Workspace for Nonprofits
+menyediakannya jauh lebih banyak dari yang yayasan perlukan.
+
+Kalau Anda tetap ingin memakai alias, setel `GMAIL_SENDER` ke **alamat utama**
+pemilik alias, dan pastikan alias itu terdaftar sebagai *Send mail as* yang
+terverifikasi pada akun tersebut — barulah `MAIL_FROM` boleh memakai alamat
+aliasnya. Uji satu kiriman nyata dan periksa header `From` yang benar-benar
+sampai; jangan berasumsi.
 
 Begitu juga `halo@cipansor.or.id` harus ada dan **dibaca orang** — bisa berupa
 user biasa atau *Google Group* berisi staf TU. Ke sinilah balasan wali santri

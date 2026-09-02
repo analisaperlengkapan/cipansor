@@ -268,6 +268,8 @@ something that has never happened.
 **Not fixed here.** The repair is a Dockerfile change to the runtime image
 (install `sharp` for musl in the runner stage, or move the runner to a glibc
 base), which is a deploy-risk change and does not belong in a content PR.
+**Still true after the 2026-09-02 rebuild** — re-measured on the live site,
+`/_next/image?w=256` returns the source file at 156,656 bytes unchanged.
 Everything shipped in the meantime carries explicit derivatives instead —
 `galleryThumb()` in `packages/shared/src/public-site.ts` — so the gallery page
 costs 484 KB rather than 2.3 MB whether or not this is ever repaired. Anything
@@ -327,6 +329,16 @@ That is an authority question for the yayasan, not a data-cleanup task. Prefer
 mandatory-2FA wall, including both active `SUPER_ADMIN`s, neither of which has
 2FA enrolled. Flipping it is part of launch, and it locks out testing until
 someone enrols — see the launch checklist rather than treating it as a bug.
+Re-confirmed in the container 2026-09-02. Its sibling is closed:
+`NEXT_PUBLIC_SHOW_DEMO_LOGIN` is now `false` and built that way, so the
+credential panel is gone from `/login`.
+
+**7. `#2` above is now half-solved, in the direction that matters.**
+`/reset-password` is public, portal-only and reachable with no session (#413),
+so an e-mailed link resolves. `/certificates/verify/[code]` is untouched and
+still answers **404** on the apex, **307 → /login** on the portal — measured
+again 2026-09-02. What it discloses still needs deciding before it joins the
+public list.
 
 
 ## ✅ Resolved by this effort (2026-07-22)

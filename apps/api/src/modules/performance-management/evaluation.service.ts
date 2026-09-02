@@ -120,7 +120,8 @@ export class EvaluationService {
     evaluationId: string,
     callerId: string,
     isAdmin: boolean,
-    tx: Prisma.TransactionClient
+    tx: Prisma.TransactionClient,
+    opts: { ownerOnly?: boolean; supervisorOnly?: boolean } = {}
   ) {
     const initialEval = await tx.pKEvaluation.findUnique({
       where: { id: evaluationId },
@@ -137,7 +138,7 @@ export class EvaluationService {
       include: { pk: true },
     });
     if (!evaluation) throw Errors.notFound('Evaluation');
-    pkService.assertAccess(evaluation.pk, callerId, isAdmin);
+    pkService.assertAccess(evaluation.pk, callerId, isAdmin, opts);
     if (evaluation.status === PlanStatus.APPROVED) {
       throw Errors.conflict('An approved evaluation can no longer be edited');
     }
@@ -192,7 +193,9 @@ export class EvaluationService {
     data: { score: number; notes?: string }
   ) {
     return prisma.$transaction(async (tx) => {
-      await this.loadEditableEvaluationInTx(evaluationId, callerId, isAdmin, tx);
+      await this.loadEditableEvaluationInTx(evaluationId, callerId, isAdmin, tx, {
+        supervisorOnly: true,
+      });
 
       const detail = await tx.pKBehaviorEvaluation.findUnique({
         where: { evaluationId_behaviorValueId: { evaluationId, behaviorValueId } },

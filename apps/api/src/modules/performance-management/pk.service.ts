@@ -221,17 +221,45 @@ export class PerformanceAgreementService {
     });
   }
 
-  async deletePK(id: string, callerId: string, isAdmin: boolean) {
+  async deletePK(
+    id: string,
+    caller:
+      | string
+      | { id: string; isAdmin?: boolean; roleCode?: string | null; unitId?: string | null },
+    isAdminLegacy?: boolean
+  ) {
+    const callerObj =
+      typeof caller === 'string'
+        ? { id: caller, isAdmin: !!isAdminLegacy, roleCode: undefined, unitId: null }
+        : caller;
+
     return prisma.$transaction(async (tx) => {
       if (typeof tx.$queryRaw === 'function') {
         await tx.$queryRaw`SELECT id FROM "performance_agreements" WHERE id = ${id} FOR UPDATE`;
       }
 
-      const pk = await tx.performanceAgreement.findUnique({ where: { id } });
+      const pk = await tx.performanceAgreement.findUnique({
+        where: { id },
+        include: {
+          user: { select: { id: true, unitId: true } },
+        },
+      });
       if (!pk) throw Errors.notFound('PK');
-      this.assertAccess(pk, callerId, isAdmin, { ownerOnly: true });
-      if (pk.status === PlanStatus.APPROVED) {
-        throw Errors.conflict('An approved PK can no longer be deleted');
+
+      if (pk.status === PlanStatus.APPROVED || pk.status === PlanStatus.PROPOSED) {
+        throw Errors.conflict('Only DRAFT performance agreements can be deleted');
+      }
+
+      const isOwner = pk.userId === callerObj.id;
+      const isSuperAdmin = callerObj.roleCode === 'SUPER_ADMIN';
+      const isSameUnitAdmin =
+        !!callerObj.isAdmin &&
+        callerObj.unitId !== null &&
+        callerObj.unitId !== undefined &&
+        pk.user?.unitId === callerObj.unitId;
+
+      if (!isOwner && !isSuperAdmin && !isSameUnitAdmin) {
+        throw Errors.forbidden('You do not have permission to delete this performance agreement');
       }
 
       return tx.performanceAgreement.delete({ where: { id } });

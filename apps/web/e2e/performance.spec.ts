@@ -58,7 +58,7 @@ test.describe("Integrated Performance Management (/kinerja) E2E Flows", () => {
     expect(dialogMessage).toContain("tidak boleh lebih awal");
   });
 
-  test("end-to-end flow: submit PK, submit evaluation creation, and verify analytics drilldown", async ({ page }) => {
+  test("end-to-end flow: full PK lifecycle, indicator, evaluation, SAFTI scoring, and analytics", async ({ page }) => {
     const runTag = `E2E_PK_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
     const testNote = `Perjanjian Kinerja Tahun 2026 ${runTag}`;
 

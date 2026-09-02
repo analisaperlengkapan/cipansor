@@ -40,6 +40,16 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       {
+        source: "/pkg",
+        destination: "/kinerja",
+        permanent: true,
+      },
+      {
+        source: "/pkg/:path*",
+        destination: "/kinerja",
+        permanent: true,
+      },
+      {
         source: "/public/ppdb",
         destination: "/public/spmb",
         permanent: true,

@@ -138,3 +138,26 @@ export type CreatePKRequestDTO = z.infer<typeof createPKSchema>;
 export type CreateEvaluationRequestDTO = z.infer<typeof createEvaluationSchema>;
 export type UpdateRealizationRequestDTO = Omit<z.infer<typeof updateIndicatorRealizationSchema>, 'indicatorId'>;
 export type UpdateBehaviorScoreRequestDTO = Omit<z.infer<typeof updateBehaviorScoreSchema>, 'behaviorValueId'>;
+
+export interface CreatePKIndicatorRequestDTO {
+  pkId: string;
+  title: string;
+  target: number;
+  unit: string;
+  weight: number;
+  category: "DIRECT" | "INDIRECT" | "NON_CASCADING";
+  refIndicatorId?: string;
+  refStrategicIndicatorId?: string;
+  notes?: string;
+}
+
+export interface UpdatePKIndicatorRequestDTO {
+  title?: string;
+  target?: number;
+  unit?: string;
+  weight?: number;
+  category?: "DIRECT" | "INDIRECT" | "NON_CASCADING";
+  refIndicatorId?: string | null;
+  refStrategicIndicatorId?: string | null;
+  notes?: string | null;
+}

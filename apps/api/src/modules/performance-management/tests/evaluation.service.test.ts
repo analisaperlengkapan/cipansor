@@ -116,11 +116,49 @@ describe('EvaluationService', () => {
         });
 
       await expect(
-        evaluationService.updateBehaviorScore('ev-1', 'bv-1', 'u-1', false, { score: 95 })
+        evaluationService.updateBehaviorScore('ev-1', 'bv-1', 'u-boss', false, { score: 95 })
       ).rejects.toThrow(/approved/i);
 
       expect(mockQueryRaw).toHaveBeenCalledTimes(1);
       expect(mocked.pKBehaviorEvaluation.update).not.toHaveBeenCalled();
+    });
+
+    it('blocks PK owner from scoring their own SAFTI behavior (403 Forbidden)', async () => {
+      mocked.pKEvaluation.findUnique
+        .mockResolvedValueOnce({ id: 'ev-1', pkId: 'pk-1' })
+        .mockResolvedValueOnce({
+          id: 'ev-1',
+          pkId: 'pk-1',
+          status: 'DRAFT',
+          pk: { userId: 'u-1', supervisorId: 'u-boss' },
+        });
+
+      await expect(
+        evaluationService.updateBehaviorScore('ev-1', 'bv-1', 'u-1', false, { score: 95 })
+      ).rejects.toThrow(/supervisor/i);
+
+      expect(mocked.pKBehaviorEvaluation.update).not.toHaveBeenCalled();
+    });
+
+    it('allows assigned supervisor to update SAFTI behavior score', async () => {
+      mocked.pKEvaluation.findUnique
+        .mockResolvedValueOnce({ id: 'ev-1', pkId: 'pk-1' })
+        .mockResolvedValueOnce({
+          id: 'ev-1',
+          pkId: 'pk-1',
+          status: 'DRAFT',
+          pk: { userId: 'u-1', supervisorId: 'u-boss' },
+        });
+      mocked.pKBehaviorEvaluation.findUnique.mockResolvedValueOnce({
+        id: 'bev-1',
+        evaluationId: 'ev-1',
+        behaviorValueId: 'bv-1',
+      });
+      mocked.pKBehaviorEvaluation.update.mockResolvedValueOnce({ id: 'bev-1' });
+
+      await evaluationService.updateBehaviorScore('ev-1', 'bv-1', 'u-boss', false, { score: 95 });
+
+      expect(mocked.pKBehaviorEvaluation.update).toHaveBeenCalled();
     });
   });
 

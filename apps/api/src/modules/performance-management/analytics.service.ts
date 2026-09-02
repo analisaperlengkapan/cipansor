@@ -19,7 +19,7 @@ export class PKAnalyticsService {
     const foundationEvCount = unitId
       ? 0
       : await prisma.pKEvaluation.count({
-          where: { pk: { user: { unitId: null } }, status: PlanStatus.APPROVED },
+          where: { pk: { user: { unitId: null } } },
         });
 
     const unitMetrics = await Promise.all(
@@ -30,7 +30,7 @@ export class PKAnalyticsService {
         });
 
         const evCount = await prisma.pKEvaluation.count({
-          where: { pk: { user: { unitId: unit.id } }, status: PlanStatus.APPROVED },
+          where: { pk: { user: { unitId: unit.id } } },
         });
 
         const approvedPks = allPks.filter((p) => p.status === PlanStatus.APPROVED);
@@ -119,8 +119,23 @@ export class PKAnalyticsService {
 
     return {
       unit: unit ? { id: unit.id, name: unit.name } : null,
-      strategicPlan,
-      agreements,
+      strategicPlan: strategicPlan
+        ? { id: strategicPlan.id, title: strategicPlan.title, progress: strategicPlan.progress }
+        : null,
+      agreements: agreements.map((a) => ({
+        id: a.id,
+        userId: a.userId,
+        supervisorId: a.supervisorId,
+        periodStart: a.periodStart instanceof Date ? a.periodStart.toISOString() : String(a.periodStart ?? ''),
+        periodEnd: a.periodEnd instanceof Date ? a.periodEnd.toISOString() : String(a.periodEnd ?? ''),
+        status: a.status,
+        totalScore: a.totalScore,
+        behaviorScore: a.behaviorScore,
+        overallScore: a.overallScore,
+        user: a.user,
+        supervisor: a.supervisor,
+        indicators: a.indicators,
+      })),
     };
   }
 

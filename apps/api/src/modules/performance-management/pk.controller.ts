@@ -11,10 +11,20 @@ import {
   updatePKIndicatorSchema,
 } from './pk.validation';
 
-function caller(req: Request): { id: string; isAdmin: boolean } {
+function caller(req: Request): {
+  id: string;
+  isAdmin: boolean;
+  roleCode?: string;
+  unitId?: string | null;
+} {
   const id = req.user?.sub;
   if (!id) throw Errors.unauthorized();
-  return { id, isAdmin: isAdminRoleCode(req.user?.roleCode ?? '') };
+  return {
+    id,
+    isAdmin: isAdminRoleCode(req.user?.roleCode ?? ''),
+    roleCode: req.user?.roleCode,
+    unitId: req.user?.unitId ?? null,
+  };
 }
 
 export const listSupervisors = asyncHandler(async (req: Request, res: Response) => {
@@ -52,8 +62,8 @@ export const updatePK = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const deletePK = asyncHandler(async (req: Request, res: Response) => {
-  const { id, isAdmin } = caller(req);
-  await pkService.deletePK(req.params.id, id, isAdmin);
+  const user = caller(req);
+  await pkService.deletePK(req.params.id, user);
   res.json(ApiResponse.success(null, 'Performance agreement deleted'));
 });
 

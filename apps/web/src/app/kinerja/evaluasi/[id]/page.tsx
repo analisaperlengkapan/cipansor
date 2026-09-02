@@ -239,79 +239,81 @@ function PeriodicEvaluationDetailPageContent() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Indikator Target</TableHead>
-                    <TableHead>Target</TableHead>
-                    <TableHead>Bobot</TableHead>
-                    <TableHead>Realisasi Bulan Ini</TableHead>
-                    <TableHead>Uraian Kegiatan / Evidence</TableHead>
-                    <TableHead className="text-right">Aksi Simpan</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {evaluation.indicatorDetails?.map((item) => {
-                    const currentRealization = realizationInputs[item.indicatorId]?.realization ?? item.realization;
-                    const currentActivities = realizationInputs[item.indicatorId]?.activities ?? (item.activities || "");
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Indikator Target</TableHead>
+                      <TableHead>Target</TableHead>
+                      <TableHead>Bobot</TableHead>
+                      <TableHead>Realisasi Bulan Ini</TableHead>
+                      <TableHead>Uraian Kegiatan / Evidence</TableHead>
+                      <TableHead className="text-right">Aksi Simpan</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {evaluation.indicatorDetails?.map((item) => {
+                      const currentRealization = realizationInputs[item.indicatorId]?.realization ?? item.realization;
+                      const currentActivities = realizationInputs[item.indicatorId]?.activities ?? (item.activities || "");
 
-                    return (
-                      <TableRow key={item.id}>
-                        <TableCell className="font-semibold">
-                          {item.indicator?.title}
-                          <div className="text-xs text-muted-foreground">Kategori: {item.indicator?.category}</div>
-                        </TableCell>
-                        <TableCell>{item.indicator?.target} {item.indicator?.unit}</TableCell>
-                        <TableCell className="font-semibold text-emerald-600">{item.indicator?.weight}%</TableCell>
-                        <TableCell className="w-36">
-                          <Input
-                            type="number"
-                            value={currentRealization}
-                            disabled={evaluation.status === "APPROVED"}
-                            onChange={(e) =>
-                              setRealizationInputs({
-                                ...realizationInputs,
-                                [item.indicatorId]: {
-                                  realization: Number(e.target.value),
-                                  activities: currentActivities,
-                                },
-                              })
-                            }
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Input
-                            placeholder="Uraian bukti kegiatan..."
-                            value={currentActivities}
-                            disabled={evaluation.status === "APPROVED"}
-                            onChange={(e) =>
-                              setRealizationInputs({
-                                ...realizationInputs,
-                                [item.indicatorId]: {
-                                  realization: currentRealization,
-                                  activities: e.target.value,
-                                },
-                              })
-                            }
-                          />
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {evaluation.status !== "APPROVED" && (
-                            <Button
-                              size="sm"
-                              className="bg-emerald-600 hover:bg-emerald-700"
-                              onClick={() => handleSaveRealization(item.indicatorId)}
-                              disabled={updateRealization.isPending}
-                            >
-                              <Save className="w-3.5 h-3.5 mr-1" /> Simpan
-                            </Button>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+                      return (
+                        <TableRow key={item.id}>
+                          <TableCell className="font-semibold">
+                            {item.indicator?.title}
+                            <div className="text-xs text-muted-foreground">Kategori: {item.indicator?.category}</div>
+                          </TableCell>
+                          <TableCell>{item.indicator?.target} {item.indicator?.unit}</TableCell>
+                          <TableCell className="font-semibold text-emerald-600">{item.indicator?.weight}%</TableCell>
+                          <TableCell className="w-36">
+                            <Input
+                              type="number"
+                              value={currentRealization}
+                              disabled={evaluation.status === "APPROVED"}
+                              onChange={(e) =>
+                                setRealizationInputs({
+                                  ...realizationInputs,
+                                  [item.indicatorId]: {
+                                    realization: Number(e.target.value),
+                                    activities: currentActivities,
+                                  },
+                                })
+                              }
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              placeholder="Uraian bukti kegiatan..."
+                              value={currentActivities}
+                              disabled={evaluation.status === "APPROVED"}
+                              onChange={(e) =>
+                                setRealizationInputs({
+                                  ...realizationInputs,
+                                  [item.indicatorId]: {
+                                    realization: currentRealization,
+                                    activities: e.target.value,
+                                  },
+                                })
+                              }
+                            />
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {evaluation.status !== "APPROVED" && (
+                              <Button
+                                size="sm"
+                                className="bg-emerald-600 hover:bg-emerald-700"
+                                onClick={() => handleSaveRealization(item.indicatorId)}
+                                disabled={updateRealization.isPending}
+                              >
+                                <Save className="w-3.5 h-3.5 mr-1" /> Simpan
+                              </Button>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -353,7 +355,7 @@ function PeriodicEvaluationDetailPageContent() {
                             min={0}
                             max={100}
                             value={currentScore}
-                            disabled={evaluation.status === "APPROVED"}
+                            disabled={evaluation.status === "APPROVED" || !canApprove}
                             onChange={(e) =>
                               setBehaviorInputs({
                                 ...behaviorInputs,
@@ -372,7 +374,7 @@ function PeriodicEvaluationDetailPageContent() {
                             <Input
                               placeholder="Misal: Selalu disiplin waktu ibadah dan tepat waktu hadir..."
                               value={currentNotes}
-                              disabled={evaluation.status === "APPROVED"}
+                              disabled={evaluation.status === "APPROVED" || !canApprove}
                               onChange={(e) =>
                                 setBehaviorInputs({
                                   ...behaviorInputs,
@@ -383,7 +385,7 @@ function PeriodicEvaluationDetailPageContent() {
                                 })
                               }
                             />
-                            {evaluation.status !== "APPROVED" && (
+                            {evaluation.status !== "APPROVED" && canApprove && (
                               <Button
                                 size="sm"
                                 className="bg-purple-600 hover:bg-purple-700 text-white"

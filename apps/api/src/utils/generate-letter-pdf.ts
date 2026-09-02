@@ -264,16 +264,30 @@ export async function generateLetterPdfBuffer(letter: LetterPdfInput): Promise<B
     height: logoHeight,
   });
 
+  /**
+   * Nama yayasan di baris atas, nama unit penerbitnya di baris bawah.
+   *
+   * Untuk naskah yang terbit dari yayasan sendiri keduanya sama, dan kop surat
+   * mencetak "YAYASAN PESANTREN CIPANSOR" dua kali bertumpuk. Baris unit
+   * dilewati bila ia hanya mengulang baris di atasnya — kop surat sebuah unit
+   * (MTs, TK Qur'an) tetap memakai dua baris sebagaimana mestinya.
+   */
   const orgName = 'YAYASAN PESANTREN CIPANSOR';
-  const unitName = letter.unit?.name?.toUpperCase() ?? 'KANTOR YAYASAN';
+  const rawUnitName = letter.unit?.name?.toUpperCase() ?? 'KANTOR YAYASAN';
+  const unitName = rawUnitName === orgName ? null : rawUnitName;
   const legalBasis = 'SK Kemenkumham RI No. AHU-0012345.AH.01.04.Tahun 2020';
   const address = letter.unit?.address ?? 'Jl. Raya Cipansor No. 01, Tasikmalaya, Jawa Barat';
   const contact = `Website: cipansor.or.id | Telp: ${letter.unit?.phone || '0265-123456'} | Email: ${letter.unit?.email || 'halo@cipansor.or.id'}`;
 
-  cur.text(orgName, { x: centreOf(orgName, fontTimesBold, 12), size: 12, font: fontTimesBold });
-  cur.down(16);
-  cur.text(unitName, { x: centreOf(unitName, fontTimesBold, 14), size: 14, font: fontTimesBold });
-  cur.down(14);
+  if (unitName) {
+    cur.text(orgName, { x: centreOf(orgName, fontTimesBold, 12), size: 12, font: fontTimesBold });
+    cur.down(16);
+    cur.text(unitName, { x: centreOf(unitName, fontTimesBold, 14), size: 14, font: fontTimesBold });
+    cur.down(14);
+  } else {
+    cur.text(orgName, { x: centreOf(orgName, fontTimesBold, 14), size: 14, font: fontTimesBold });
+    cur.down(16);
+  }
   cur.text(legalBasis, {
     x: centreOf(legalBasis, fontTimesItalic, 8),
     size: 8,
@@ -409,10 +423,25 @@ export async function generateLetterPdfBuffer(letter: LetterPdfInput): Promise<B
 
   // ── Body ─────────────────────────────────────────────────────────────────
   const contentMaxWidth = width - MARGIN_X * 2;
+  /**
+   * Baris tunggal adalah baris, bukan spasi.
+   *
+   * Sebelumnya hanya baris kosong ganda yang memisahkan alinea, dan setiap
+   * pergantian baris tunggal di dalamnya menjadi satu spasi belaka. Blok data
+   * yang ditulis penyusunnya sebagai
+   *
+   *     Nama            : …
+   *     Tempat/Tgl Lahir: …
+   *     Nomor Induk     : …
+   *
+   * — bentuk yang ada di hampir setiap surat keterangan — tercetak berdempet
+   * menjadi satu paragraf panjang yang tidak terbaca. Sekarang alinea tetap
+   * dipisah oleh baris kosong, dan di dalam alinea setiap baris berdiri sendiri.
+   */
   const paragraphs = (letter.content || '')
     .split(/\n\s*\n/)
-    .map((p) => p.trim())
-    .filter((p) => p.length > 0);
+    .map((p) => p.replace(/\s+$/gm, ''))
+    .filter((p) => p.trim().length > 0);
 
   for (const para of paragraphs) {
     // "MEMUTUSKAN" stands alone and centred, separating the considerans from
@@ -425,9 +454,15 @@ export async function generateLetterPdfBuffer(letter: LetterPdfInput): Promise<B
       cur.down(20);
       continue;
     }
-    for (const line of wrapText(para, contentMaxWidth, fontTimes, BODY_SIZE)) {
-      cur.text(line, { x: MARGIN_X, font: fontTimes });
-      cur.down();
+    for (const sourceLine of para.split('\n')) {
+      if (!sourceLine.trim()) {
+        cur.down();
+        continue;
+      }
+      for (const line of wrapText(sourceLine, contentMaxWidth, fontTimes, BODY_SIZE)) {
+        cur.text(line, { x: MARGIN_X, font: fontTimes });
+        cur.down();
+      }
     }
     cur.down(8);
   }

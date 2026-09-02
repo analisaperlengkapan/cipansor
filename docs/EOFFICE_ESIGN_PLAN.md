@@ -423,6 +423,33 @@ end-to-end; add an attachment list and the "Lampiran" line.
 ### PR-5 — PAdES B-B + RFC 3161 (§4.3 Tier 1)
 Embed the signature in the PDF. Requires the RSA/ECDSA change.
 
+### Also fixed while walking the flow (PR #436)
+
+Rendering every page at every stage found defects no diff review would:
+
+- `DispositionTimeline` read `disposition.senderName[0]`; the API sends
+  `sender: { name }`. The DTO declared the flat field, so TypeScript passed and
+  `undefined[0]` blanked the **whole letter page for every disposed letter**.
+- `LetterReviewerDetail.reviewerName` — same defect, silent: the "Status Review"
+  panel printed no name at all.
+- `/e-office/outbox` re-rendered the inbox component, whose direction is
+  internal state starting at INCOMING → **the outbox showed the inbox**.
+- Urgency named three different ways; the dashboard shifted every letter one
+  step (IMMEDIATE→"Penting"). One `LETTER_URGENCY_LABELS` now.
+- A column headed "Sifat" displayed urgency.
+- `REVISION_NEEDED` was terminal in the UI: `resubmit` existed in the API and
+  nothing called it.
+- `/e-office/archive` 404'd from the module's own landing tile; `dead-links.test.ts`
+  scanned `href=` only. Widened to `router.push` → 27 more pre-existing dead
+  targets recorded as backlog (13 are `/paud/…` pushed from `/tk/…`).
+- `limit: 10` with no pagination controls: letter 11 was unreachable.
+- The naskah's letterhead printed the yayasan name **twice** for its own letters,
+  and single newlines inside a paragraph were collapsed — so the
+  `Nama : … / Nomor Induk : … / Kelas : …` block of every surat keterangan
+  printed as one run-on paragraph. Both only visible once the PDF was rendered
+  and read; `generate-letter-pdf.test.ts` now reads the text layer (inflating
+  Flate streams and decoding hex strings) instead of only hashing bytes.
+
 ### PR-7 — Arabic and Unicode in the naskah
 
 **Requested 2026-09-02. Not a patch — it needs a font, a shaping engine and a

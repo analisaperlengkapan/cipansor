@@ -275,6 +275,12 @@ export const authApi = {
   login: (data: LoginRequest) =>
     api.post<ApiResponse<LoginResponse>>("/auth/login", data),
 
+  ssoLogin: (data: { provider: 'google' | 'microsoft'; email?: string; idToken?: string }) =>
+    api.post<ApiResponse<LoginResponse>>("/auth/sso/login", data),
+
+  getSSOConfig: () =>
+    api.get<ApiResponse<{ domain: string; googleEnabled: boolean; microsoftEnabled: boolean }>>("/auth/sso/config"),
+
   logout: () => api.post("/auth/logout"),
 
   me: () => api.get<ApiResponse<User>>("/auth/me"),

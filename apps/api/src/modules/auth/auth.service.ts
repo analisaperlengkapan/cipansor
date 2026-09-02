@@ -4,7 +4,7 @@ import { generateTokenPair, verifyToken, getExpirationDate, generateAccessToken 
 import { Errors } from '@/middleware/error';
 import { isAdminRoleCode, isGovernanceRoleCode, deriveLegacyRole } from '@/middleware/auth';
 import { config } from '@/config';
-import type { LoginInput, RegisterInput, ChangePasswordInput } from './auth.schema';
+import type { LoginInput, RegisterInput, ChangePasswordInput, SSOLoginInput } from './auth.schema';
 import { RoleCode, UnitType } from '@prisma/client';
 import { generateSecret, generateURI, verify as verifyOtp } from 'otplib';
 import * as qrcode from 'qrcode';
@@ -243,6 +243,174 @@ export class AuthService {
         permissions,
       },
       ...tokens,
+    };
+  }
+
+  /**
+   * SSO Login (Google Workspace & Microsoft 365)
+   * Cryptographically verifies the OIDC token with provider before authenticating.
+   */
+  async ssoLogin(input: SSOLoginInput) {
+    if (!input.idToken) {
+      throw Errors.badRequest('SSO idToken is required for cryptographically verified authentication');
+    }
+
+    let email: string;
+
+    try {
+      if (input.provider === 'google') {
+        email = await this.verifyGoogleIdToken(input.idToken);
+      } else if (input.provider === 'microsoft') {
+        email = await this.verifyMicrosoftIdToken(input.idToken);
+      } else {
+        throw Errors.badRequest('Unsupported SSO provider');
+      }
+    } catch (err: any) {
+      throw Errors.unauthorized(`SSO token verification failed: ${err.message || 'Invalid signature'}`);
+    }
+
+    if (!email) {
+      throw Errors.badRequest('Email could not be verified from SSO provider token');
+    }
+
+    const user = await prisma.user.findFirst({
+      where: {
+        email,
+        deletedAt: null,
+      },
+      include: {
+        unit: true,
+        userRoles: {
+          where: activeRoleWhere(),
+          include: {
+            role: true,
+            unit: true,
+          },
+          orderBy: { isPrimary: 'desc' },
+        },
+      },
+    });
+
+    if (!user) {
+      const isDomainEmail = email.toLowerCase().endsWith('@cipansor.or.id');
+      if (isDomainEmail) {
+        throw Errors.unauthorized(`Akun email ${input.provider === 'google' ? 'Google' : 'Microsoft'} (${email}) belum terdaftar di Sistem Cipansor. Silakan hubungi Administrator.`);
+      }
+      throw Errors.unauthorized('Email tidak terdaftar di sistem');
+    }
+
+    if (!user.isActive) {
+      throw Errors.unauthorized('Account is deactivated');
+    }
+
+    const primaryAssignment = user.userRoles.find((r) => r.isPrimary) || user.userRoles[0];
+    if (!primaryAssignment) {
+      throw Errors.forbidden('No active role assignment found for this user');
+    }
+
+    const roleCode = primaryAssignment.role.code;
+    const permissions = (primaryAssignment.role.permissions as string[]) || [];
+    const roleId = primaryAssignment.roleId;
+    const assignmentUnitId = primaryAssignment.unitId;
+    const isUserAdmin = isAdminRoleCode(roleCode);
+
+    const basePayload = {
+      id: user.id,
+      sub: user.id,
+      email: user.email,
+      roleId: roleId || '',
+      roleCode,
+      unitId: assignmentUnitId || user.unitId,
+      permissions,
+      role: deriveLegacyRole(roleCode),
+    };
+
+    const isDemoAccount = process.env.DEMO_MODE === 'true';
+
+    // Check 2FA
+    if (user.isTwoFactorEnabled && !isDemoAccount) {
+      const tempToken = generateAccessToken({ ...basePayload, isTemp: true }, '5m');
+      return { requiresTwoFactor: true, tempToken };
+    }
+
+    if (isUserAdmin && !user.isTwoFactorEnabled && !isDemoAccount) {
+      const tempToken = generateAccessToken({ ...basePayload, isTemp: true }, '10m');
+      return { requiresTwoFactorSetup: true, tempToken };
+    }
+
+    // Generate tokens
+    const tokens = generateTokenPair(basePayload);
+
+    const [, , activeAcademicYearId] = await Promise.all([
+      prisma.refreshToken.create({
+        data: {
+          token: tokens.refreshToken,
+          userId: user.id,
+          expiresAt: getExpirationDate(config.jwt.refreshExpiresIn),
+        },
+      }),
+      prisma.user.update({
+        where: { id: user.id },
+        data: { lastLoginAt: new Date() },
+      }),
+      this.getActiveAcademicYearId(),
+    ]);
+
+    const userWithoutPassword = this.stripSensitiveFields(user);
+
+    return {
+      user: {
+        ...userWithoutPassword,
+        academicYearId: activeAcademicYearId,
+        permissions,
+      },
+      ...tokens,
+    };
+  }
+
+  /**
+   * Verify Google OAuth2 ID token against Google's tokeninfo endpoint
+   */
+  private async verifyGoogleIdToken(idToken: string): Promise<string> {
+    const res = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(idToken)}`);
+    if (!res.ok) {
+      throw new Error('Google token validation failed or token expired');
+    }
+    const data = (await res.json()) as { email?: string; email_verified?: string | boolean; hd?: string };
+    if (!data.email || (data.email_verified !== 'true' && data.email_verified !== true)) {
+      throw new Error('Google account email is not verified');
+    }
+    return data.email;
+  }
+
+  /**
+   * Verify Microsoft Entra ID OIDC / Graph token
+   */
+  private async verifyMicrosoftIdToken(idToken: string): Promise<string> {
+    const res = await fetch('https://graph.microsoft.com/v1.0/me', {
+      headers: { Authorization: `Bearer ${idToken}` },
+    });
+    if (!res.ok) {
+      throw new Error('Microsoft token validation failed or token expired');
+    }
+    const data = (await res.json()) as { userPrincipalName?: string; mail?: string };
+    const email = data.mail || data.userPrincipalName;
+    if (!email) {
+      throw new Error('Microsoft account email not found');
+    }
+    return email;
+  }
+
+  /**
+   * Get SSO configuration status
+   */
+  getSSOConfig() {
+    return {
+      domain: 'cipansor.or.id',
+      googleEnabled: true,
+      googleClientId: process.env.GOOGLE_CLIENT_ID || 'cipansor-google-client-id.apps.googleusercontent.com',
+      microsoftEnabled: true,
+      microsoftClientId: process.env.MICROSOFT_CLIENT_ID || 'cipansor-microsoft-client-id',
     };
   }
 

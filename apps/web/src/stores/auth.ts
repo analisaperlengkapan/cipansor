@@ -13,6 +13,7 @@ interface AuthState {
   tempToken: string | null;
 
   login: (credentials: LoginRequest) => Promise<void>;
+  ssoLogin: (data: { provider: 'google' | 'microsoft'; email?: string; idToken?: string }) => Promise<void>;
   verifyTwoFactor: (token: string) => Promise<void>;
   logout: () => Promise<void>;
   fetchUser: () => Promise<void>;
@@ -66,6 +67,52 @@ export const useAuthStore = create<AuthState>()(
       requiresTwoFactor: false,
       requiresTwoFactorSetup: false,
       tempToken: null,
+
+      ssoLogin: async (data: { provider: 'google' | 'microsoft'; email?: string; idToken?: string }) => {
+        set({ isLoading: true, error: null });
+        try {
+          const response = await authApi.ssoLogin(data);
+          const responseData = response.data.data as any;
+
+          if (responseData.requiresTwoFactor) {
+            set({
+              requiresTwoFactor: true,
+              tempToken: responseData.tempToken,
+              isLoading: false,
+            });
+            return;
+          }
+
+          const { user, accessToken, refreshToken } = responseData;
+
+          localStorage.setItem("accessToken", accessToken);
+          localStorage.setItem("refreshToken", refreshToken);
+          document.cookie = `accessToken=${accessToken}; path=/; max-age=86400; samesite=lax`;
+
+          set({
+            user,
+            isAuthenticated: true,
+            isLoading: false,
+            requiresTwoFactor: false,
+            requiresTwoFactorSetup: false,
+            tempToken: null,
+          });
+        } catch (error: unknown) {
+          const message =
+            error instanceof Error ? error.message : "SSO Login failed";
+          const axiosError = error as {
+            response?: { data?: { error?: { message?: string }; message?: string } };
+          };
+          set({
+            error:
+              axiosError.response?.data?.error?.message ||
+              axiosError.response?.data?.message ||
+              message,
+            isLoading: false,
+          });
+          throw error;
+        }
+      },
 
       login: async (credentials: LoginRequest) => {
         set({ isLoading: true, error: null });

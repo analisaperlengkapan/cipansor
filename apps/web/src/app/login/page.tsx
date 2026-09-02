@@ -115,6 +115,7 @@ function LoginPageContent() {
   const router = useRouter();
   const {
     login,
+    ssoLogin,
     isLoading,
     error,
     clearError,
@@ -411,6 +412,59 @@ function LoginPageContent() {
                 Masuk
               </Button>
             </form>
+
+            <div className="relative my-4">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-card px-2 text-muted-foreground">
+                  Atau Masuk Dengan Akun Domain
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full flex items-center justify-center gap-2"
+                disabled={isLoading}
+                onClick={() => {
+                  toast.info(
+                    "Login SSO Google Workspace memerlukan OAuth Client ID resmi domain @cipansor.or.id yang disetel di Google Cloud Console."
+                  );
+                }}
+              >
+                <svg className="h-4 w-4" viewBox="0 0 24 24">
+                  <path
+                    fill="currentColor"
+                    d="M12.545,10.239v3.821h5.445c-0.712,2.315-2.647,3.972-5.445,3.972c-3.332,0-6.033-2.701-6.033-6.032s2.701-6.032,6.033-6.032c1.498,0,2.866,0.549,3.921,1.453l2.814-2.814C17.503,2.988,15.139,2,12.545,2C7.021,2,2.543,6.477,2.543,12s4.478,10,10.002,10c8.396,0,10.249-7.85,9.426-11.761H12.545z"
+                  />
+                </svg>
+                Google Workspace
+              </Button>
+
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full flex items-center justify-center gap-2"
+                disabled={isLoading}
+                onClick={() => {
+                  toast.info(
+                    "Login SSO Microsoft 365 memerlukan Application ID resmi domain @cipansor.or.id yang disetel di Azure Entra ID."
+                  );
+                }}
+              >
+                <svg className="h-4 w-4 text-blue-600" viewBox="0 0 23 23">
+                  <path fill="#f35325" d="M1 1h10v10H1z" />
+                  <path fill="#81bc06" d="M12 1h10v10H12z" />
+                  <path fill="#05a6f0" d="M1 12h10v10H1z" />
+                  <path fill="#ffba08" d="M12 12h10v10H12z" />
+                </svg>
+                Microsoft 365
+              </Button>
+            </div>
 
             {/* Mobile Demo Credentials */}
             {SHOW_DEMO_LOGIN && (

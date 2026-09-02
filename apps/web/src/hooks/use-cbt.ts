@@ -60,6 +60,26 @@ export const useQuestionBanks = (params?: any) => {
   });
 };
 
+export const useRecordSecurityLog = () => {
+  return useMutation({
+    mutationFn: async ({
+      attemptId,
+      eventType,
+      details,
+    }: {
+      attemptId: string;
+      eventType: string;
+      details?: string;
+    }) => {
+      const { data } = await api.post(`/cbt/attempts/${attemptId}/security-log`, {
+        eventType,
+        details,
+      });
+      return data.data;
+    },
+  });
+};
+
 // Exam Scheduling
 
 export const useExams = (params?: any) => {

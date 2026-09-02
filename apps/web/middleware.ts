@@ -17,21 +17,7 @@ import { hostSplitActionFor, isPortalHost } from "@/lib/host-split";
 // Public routes that don't require authentication.
 // "/unauthorized" is the access-denied page ProtectedRoute redirects to; it
 // must stay reachable for any user (otherwise RBAC would bounce them off it).
-//
-// "/reset-password" is here for the same reason a login form is: the person
-// arriving on it cannot sign in — they are holding a link e-mailed to them.
-// Leaving it out is what made every "set your password" e-mail land on
-// "/login?redirect=/reset-password" with the token discarded; the page existed
-// nowhere and the redirect hid that fact.
-//
-// THERE IS DELIBERATELY NO SELF-SERVICE "lupa password" PAGE. A reset is
-// started by an admin who has identified the person, not by anyone who can type
-// an e-mail address into a public form. That keeps the mail-sending trigger
-// behind the session wall and off the open internet.
-//
-// Portal-only: not in PUBLIC_PATH_PREFIXES, so the apex answers 404 for it,
-// which is right for an account action.
-const publicRoutes = ["/login", "/", "/unauthorized", "/reset-password"];
+const publicRoutes = ["/login", "/", "/unauthorized"];
 
 /**
  * Public marketing pages, reachable with no session at all.

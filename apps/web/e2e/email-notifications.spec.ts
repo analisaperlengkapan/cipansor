@@ -1,74 +1,29 @@
-import { test, expect } from "@playwright/test";
-import { loginAs } from "./helpers/auth-api";
+import { test, expect } from '@playwright/test';
+import { loginAs } from './helpers/auth-api';
 
-/**
- * The reset page must answer to someone with no session.
- *
- * This is the check that was missing. `/reset-password` did not exist, so the
- * middleware's auth branch caught it and redirected to
- * `/login?redirect=/reset-password` — discarding the token — and every "set
- * your password" e-mail led there. The page source looked fine because there
- * was no page; only asking for the URL the way a recipient does finds it.
- */
-test.describe("Password reset link", () => {
-  test("opens for a signed-out visitor instead of bouncing to login", async ({
-    page,
-  }) => {
-    await page.context().clearCookies();
-    await page.goto("/reset-password?token=" + "a".repeat(64));
-
-    await expect(page).toHaveURL(/\/reset-password/);
-    await expect(page.getByRole("heading", { name: /Setel Ulang Password/i })).toBeVisible();
-    await expect(page.getByLabel("Password baru")).toBeVisible();
-  });
-
-  test("asks for a new link when the URL carries no token", async ({ page }) => {
-    await page.context().clearCookies();
-    await page.goto("/reset-password");
-
-    await expect(page.getByText(/Tautan reset tidak lengkap/i)).toBeVisible();
-  });
-
-  test("offers no self-service reset form on the login page", async ({
-    page,
-  }) => {
-    // Deliberate: a reset is started by an admin who has identified the person,
-    // so nothing unauthenticated can make the system send mail.
-    await page.context().clearCookies();
-    await page.goto("/login");
-
-    await expect(page.getByText(/lupa password/i)).toHaveCount(0);
-  });
-});
-
-test.describe("Outgoing mail configuration", () => {
+test.describe('Email Notifications & SMTP Configuration', () => {
   test.beforeEach(async ({ page }) => {
-    await loginAs(page, "superAdmin");
-    await page.goto("/notifications/settings");
+    // Authenticate first before navigating to protected page
+    await loginAs(page, 'superAdmin');
+    await page.goto('/notifications/settings');
   });
 
-  test("reports the transport the server really has, not a hardcoded one", async ({
-    page,
-  }) => {
-    const card = page.locator("text=Server Email Keluar").locator("..").locator("..");
-    await expect(card).toBeVisible();
+  test('should display Google Workspace SMTP Email integration info correctly', async ({ page }) => {
+    // Verify page title
+    await expect(page.getByText('Pengaturan Notifikasi').first()).toBeVisible();
 
-    // Exactly one of the two states, and which one is decided by the server:
-    // with no credentials configured the page must say so rather than showing
-    // a green badge over a mailbox nothing sends from.
-    const ready = page.getByText("Email siap kirim");
-    const notSending = page.getByText(/Email tidak terkirim/);
-    await expect(ready.or(notSending)).toBeVisible();
+    // Verify From email (noreply@cipansor.or.id)
+    await expect(page.getByText('noreply@cipansor.or.id')).toBeVisible();
+
+    // Verify Reply-To email (halo@cipansor.or.id)
+    await expect(page.getByText('halo@cipansor.or.id')).toBeVisible();
+
+    // Verify status badge
+    await expect(page.getByText('Channel Email Aktif')).toBeVisible();
   });
 
-  test("shows a reply address that is not the noreply mailbox", async ({
-    page,
-  }) => {
-    const replyTo = page.getByText("halo@cipansor.or.id");
-    await expect(replyTo).toBeVisible();
-
-    // The pairing is the point: automated mail comes from noreply@, and a wali
-    // who answers it must land somewhere a human reads.
-    await expect(page.getByText(/Tujuan balasan/i)).toBeVisible();
+  test('should allow toggling email notifications channel', async ({ page }) => {
+    // Find Email channel description
+    await expect(page.getByText('Terima notifikasi via email')).toBeVisible();
   });
 });

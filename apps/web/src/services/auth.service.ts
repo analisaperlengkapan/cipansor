@@ -47,13 +47,8 @@ export interface ChangePasswordInput {
   newPassword: string;
 }
 
-/**
- * Admin-triggered reset. Keyed on a user id, not an e-mail address: there is
- * deliberately no public "forgot password" form, so the caller is always an
- * admin looking at a user record.
- */
-export interface SendPasswordResetInput {
-  userId: string;
+export interface ResetPasswordInput {
+  email: string;
 }
 
 export interface ConfirmResetPasswordInput {
@@ -176,15 +171,10 @@ export const authService = {
   },
 
   /**
-   * E-mail a password reset link to a user (admin only).
+   * Request password reset
    */
-  async sendPasswordReset(
-    input: SendPasswordResetInput,
-  ): Promise<{ message: string; expiresInHours: number }> {
-    const response = await api.post<
-      ApiResponse<{ message: string; expiresInHours: number }>
-    >("/auth/send-password-reset", input);
-    return response.data.data;
+  async requestPasswordReset(input: ResetPasswordInput): Promise<void> {
+    await api.post("/auth/forgot-password", input);
   },
 
   /**

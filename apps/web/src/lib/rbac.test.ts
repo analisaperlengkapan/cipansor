@@ -492,8 +492,6 @@ describe("navigation — every page renders the app shell", () => {
    */
   const NO_SHELL_BY_DESIGN: Record<string, string> = {
     "/login": "the page you reach when you have no session to build a shell for",
-    "/reset-password":
-      "reached from an emailed link with no session — same reason as /login",
     "/unauthorized": "an error page; its own link back is the way out",
     "/assessment/raport-merdeka/[studentId]/[academicYearId]/[semester]":
       "print view — sidebar and header must not reach the paper",

@@ -24,7 +24,6 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { notificationsService } from "@/services/notifications.service";
 import {
   Bell,
   Mail,
@@ -166,12 +165,6 @@ export default function NotificationSettingsPage() {
   const [hasChanges, setHasChanges] = useState(false);
   const queryClient = useQueryClient();
 
-  // What the server is actually configured to send with.
-  const { data: transport, isLoading: transportLoading } = useQuery({
-    queryKey: ["email-transport"],
-    queryFn: () => notificationsService.getEmailTransport(),
-  });
-
   // Fetch current preferences
   const { isLoading, data: fetchedPreferences } = useQuery({
     queryKey: ["notification-preferences"],
@@ -306,106 +299,42 @@ export default function NotificationSettingsPage() {
           </Card>
         </div>
 
-        {/*
-          What is actually configured on the server — asked, not asserted.
-
-          This card used to print "noreply@cipansor.or.id", "halo@cipansor.or.id"
-          and "smtp.gmail.com:587" as literal strings, and showed "Channel Email
-          Aktif" whenever the channel toggle was on. With no transport configured
-          — which is how production has run all along — it described a working
-          Gmail setup while every message was being written to a log and thrown
-          away. The badge now reports the transport, not the toggle.
-        */}
+        {/* Email Integration Status & Configuration Banner */}
         <Card className="border-primary/20 bg-primary/5">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-primary">
               <Mail className="h-5 w-5" />
-              Server Email Keluar
+              Integrasi Server Email Google Workspace (Cipansor SMTP)
             </CardTitle>
             <CardDescription>
-              Konfigurasi pengiriman email resmi Yayasan Pesantren Cipansor,
-              dibaca langsung dari server.
+              Informasi konfigurasi server email resmi Yayasan Pesantren Cipansor
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {transportLoading ? (
-              <p className="text-sm text-muted-foreground">
-                Memuat konfigurasi…
-              </p>
-            ) : !transport ? (
-              <p className="text-sm text-muted-foreground">
-                Konfigurasi email tidak dapat dibaca.
-              </p>
-            ) : (
-              <>
-                <div className="grid gap-3 sm:grid-cols-2 text-sm">
-                  <div className="rounded-md border bg-background p-3">
-                    <span className="text-xs text-muted-foreground block">
-                      Pengirim (From)
-                    </span>
-                    <strong className="font-medium text-foreground break-all">
-                      {transport.from}
-                    </strong>
-                    <span className="text-xs text-muted-foreground block mt-1">
-                      Alamat otomatis sistem — tidak dibaca manusia
-                    </span>
-                  </div>
-                  <div className="rounded-md border bg-background p-3">
-                    <span className="text-xs text-muted-foreground block">
-                      Tujuan balasan (Reply-To)
-                    </span>
-                    <strong className="font-medium text-foreground break-all">
-                      {transport.replyTo}
-                    </strong>
-                    <span className="text-xs text-muted-foreground block mt-1">
-                      Ke sinilah balasan wali santri sampai
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap items-center justify-between gap-2 border-t pt-2 text-xs text-muted-foreground">
-                  <span>
-                    {transport.kind === "gmail_api" && (
-                      <>
-                        Metode: <code>Gmail API</code> (service account, tanpa
-                        sandi aplikasi) sebagai <code>{transport.sender}</code>
-                      </>
-                    )}
-                    {transport.kind === "smtp" && (
-                      <>
-                        Metode: <code>SMTP</code> — <code>{transport.host}</code>
-                      </>
-                    )}
-                    {transport.kind === "log" && (
-                      <>Belum ada transport email yang dikonfigurasi.</>
-                    )}
-                  </span>
-                  {transport.configured ? (
-                    <Badge
-                      variant="outline"
-                      className="border-emerald-500 bg-emerald-50 text-emerald-700"
-                    >
-                      Email siap kirim
-                    </Badge>
-                  ) : (
-                    <Badge
-                      variant="outline"
-                      className="border-amber-500 bg-amber-50 text-amber-700"
-                    >
-                      Email tidak terkirim — hanya dicatat di log
-                    </Badge>
-                  )}
-                </div>
-
-                {!transport.configured && (
-                  <p className="rounded-md border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
-                    Notifikasi email tidak akan sampai ke siapa pun sampai
-                    kredensial Gmail API atau SMTP diisi di server. Lihat{" "}
-                    <code>docs/EMAIL_SETUP.md</code>.
-                  </p>
-                )}
-              </>
-            )}
+            <div className="grid gap-3 sm:grid-cols-2 text-sm">
+              <div className="rounded-md border bg-background p-3">
+                <span className="text-xs text-muted-foreground block">Email Server (From):</span>
+                <strong className="font-medium text-foreground">noreply@cipansor.or.id</strong>
+                <span className="text-xs text-muted-foreground block mt-1">Pengirim Otomatis Sistem</span>
+              </div>
+              <div className="rounded-md border bg-background p-3">
+                <span className="text-xs text-muted-foreground block">Helpesk / Kanal Tanya Jawab (Reply-To):</span>
+                <strong className="font-medium text-foreground">halo@cipansor.or.id</strong>
+                <span className="text-xs text-muted-foreground block mt-1">Tujuan Balasan Email Otomatis</span>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground pt-2 border-t">
+              <span>Server Host: <code>smtp.gmail.com:587 (TLS/STARTTLS)</code></span>
+              {preferences.emailEnabled ? (
+                <Badge variant="outline" className="border-emerald-500 text-emerald-700 bg-emerald-50">
+                  Channel Email Aktif
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="border-amber-500 text-amber-700 bg-amber-50">
+                  Channel Email Nonaktif
+                </Badge>
+              )}
+            </div>
           </CardContent>
         </Card>
 

@@ -102,31 +102,17 @@ services:
       # limit is tunable without a rebuild.
       CHATBOT_RATE_LIMIT_WINDOW_MS: ${CHATBOT_RATE_LIMIT_WINDOW_MS:-60000}
       CHATBOT_RATE_LIMIT_MAX_REQUESTS: ${CHATBOT_RATE_LIMIT_MAX_REQUESTS:-10}
-      # Outgoing mail identity, shared by every transport.
-      #
-      # NOTE THE ABSENCE OF QUOTES around the MAIL_FROM default. Compose does
-      # not strip them: written as ${MAIL_FROM:-'"Name" <a@b>'} the container
-      # receives the apostrophes as part of the value, and nodemailer parses the
-      # display name as "' Name'". Verified with `docker compose config`.
-      MAIL_FROM: ${MAIL_FROM:-Yayasan Pesantren Cipansor <noreply@cipansor.or.id>}
-      MAIL_REPLY_TO: ${MAIL_REPLY_TO:-halo@cipansor.or.id}
-      # Gmail API transport (preferred — no password anywhere).
-      # A service account with domain-wide delegation, impersonating GMAIL_SENDER.
-      # See docs/EMAIL_SETUP.md for how these three are produced.
-      GOOGLE_SERVICE_ACCOUNT_EMAIL: ${GOOGLE_SERVICE_ACCOUNT_EMAIL:-}
-      GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY: ${GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY:-}
-      GMAIL_SENDER: ${GMAIL_SENDER:-noreply@cipansor.or.id}
-      # SMTP fallback, used only when the Gmail credentials above are absent.
+      # SMTP Email Configuration
       SMTP_HOST: ${SMTP_HOST:-}
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_SECURE: ${SMTP_SECURE:-false}
       SMTP_USER: ${SMTP_USER:-noreply@cipansor.or.id}
       SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-'"Yayasan Pesantren Cipansor" <noreply@cipansor.or.id>'}
+      SMTP_REPLY_TO: ${SMTP_REPLY_TO:-halo@cipansor.or.id}
       SMTP_OAUTH_CLIENT_ID: ${SMTP_OAUTH_CLIENT_ID:-}
       SMTP_OAUTH_CLIENT_SECRET: ${SMTP_OAUTH_CLIENT_SECRET:-}
       SMTP_OAUTH_REFRESH_TOKEN: ${SMTP_OAUTH_REFRESH_TOKEN:-}
-      # Cap on reset-link requests per 15 minutes, per IP.
-      PASSWORD_RESET_RATE_LIMIT_MAX: ${PASSWORD_RESET_RATE_LIMIT_MAX:-5}
     volumes:
       # User uploads (santri photos, e-simaan recordings, attachments) are
       # written to public/uploads and served from /uploads. Without a volume

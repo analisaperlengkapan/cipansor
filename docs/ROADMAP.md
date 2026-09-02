@@ -413,6 +413,38 @@ What #413 did **not** do, and is worth knowing:
 
 ---
 
+## 🔴 14. E-Office & electronic signature — audited 2026-09-02, six PRs planned
+
+Full findings and the plan: [`EOFFICE_ESIGN_PLAN.md`](./EOFFICE_ESIGN_PLAN.md).
+Three things from it that change what you do next:
+
+- **PR #414 must be closed, not merged.** The feature it advertises is not in
+  it: on 2026-09-02 at 01:57 UTC a Jules commit titled *"update status assertion
+  … and add mysql2 override"* deleted the +5,112 lines that PR #421 had merged
+  into that branch seventeen minutes earlier. Every correspondence file on the
+  branch is now byte-identical to `main`. Merging #414 would only downgrade
+  dependencies and CI and delete two test suites. **The work survives at commit
+  `e93a7cf2`** and nothing points at it — recover from there.
+- **Naskah dinas are rasterised today.** `e-office/letter/[id]/page.tsx:126`
+  turns the whole letter into one PNG via `html2canvas` + `jsPDF.addImage`, so
+  the text is unselectable, unsearchable, and cannot carry a real PAdES
+  signature. `raport-merdeka` does the same. The server-side `pdf-lib` generator
+  in `e93a7cf2` fixes it, with four defects to repair first.
+- **Revocation is display-only.** Key revocation has an endpoint but no UI;
+  letter-signature revocation has schema fields, a public "Surat telah dicabut"
+  message, and template filtering — but **no code path anywhere writes
+  `revokedAt`**. The system advertises a capability it does not have.
+
+The signing crypto itself is *good* and should not be rebuilt — scrypt-sealed
+Ed25519 keys, a passphrase that is never stored in any form, server-decided
+enrolment vs renewal, and a lifecycle guard that refuses expired, revoked,
+locked and unapproved keys. What it lacks is standards *form*: the signature
+lives in the database rather than inside the PDF, so no external party can
+verify a letter without visiting our site. See §4 of the plan for the mapping to
+UU ITE Pasal 11, PP 71/2019, and PAdES.
+
+---
+
 ## Operating notes that keep costing time when forgotten
 
 - **`node` is not on this host's PATH.** Everything runs through

@@ -4,6 +4,48 @@ Status of production-readiness work and the remaining roadmap. Updated as part o
 the production-readiness / architecture-standardization effort. For the system
 overview see [`ARCHITECTURE.md`](./ARCHITECTURE.md).
 
+## 🔴 OPEN — naskah dinas are exported as one flat PNG (2026-09-02)
+
+`apps/web/src/app/e-office/letter/[id]/page.tsx:126` renders the letter with
+`html2canvas(...)`, calls `toDataURL("image/png")`, and hands the result to
+`jsPDF.addImage(...)`. The downloaded PDF therefore contains **no text at
+all** — one raster image per page. `apps/web/src/app/assessment/raport-merdeka/
+page.tsx` does the same for report cards.
+
+The letter template even documents it, at `letter-pdf-template.tsx:40`:
+*"This template is not only displayed — html2canvas rasterises it into the
+downloaded PDF."*
+
+Costs: the text cannot be selected, searched, or indexed by the archive; screen
+readers get nothing; files are far larger than they need to be; and — the reason
+this blocks other work — **a raster PDF cannot carry a meaningful PAdES
+signature**, so it is a hard ceiling on the e-signature roadmap.
+
+A server-side `pdf-lib` generator that keeps text as text and embeds only the QR
+as an image exists at commit `e93a7cf2` (21 `drawText` calls). It has four
+defects to fix before use — silent single-page truncation, a missing letterhead
+logo, WinAnsi-only fonts that throw on Arabic, and a signature block that can
+overlap the body. See [`EOFFICE_ESIGN_PLAN.md`](./EOFFICE_ESIGN_PLAN.md) §2.2.
+
+## 🔴 OPEN — revocation is advertised but cannot be performed (2026-09-02)
+
+Two independent holes, both found by asking "who writes this field?":
+
+- **Signing keys.** `POST /esign/keys/:userId/revoke` exists in
+  `esign.routes.ts`, guarded by `isSuperAdmin` and validated by
+  `revokeKeySchema` — and **no frontend code calls it**. A leaked signing
+  passphrase, or an official who leaves the yayasan, cannot be revoked through
+  the application.
+- **Letter signatures.** `LetterSignature` carries `revokedAt`, `revokedReason`
+  and `revokedById`. `letter-verification.ts` branches on them, the public
+  verification page is written to report *"Surat telah dicabut: …"*, and the
+  naskah template filters revoked signatures out of the QR block. But the only
+  `letterSignature.update` in the whole tree writes `{ pdfHash, pdfSignature }`.
+  **No route, controller or service method ever sets `revokedAt`.**
+
+So the UI can display a state no code path can produce. Withdrawing a wrongly
+issued SK is an ordinary administrative need, and today it is impossible.
+
 ## ✅ FIXED — public pages rendered Indonesian when EN/AR was selected (2026-07-23)
 
 **Was.** Switching the public site to English or Arabic translated the

@@ -315,6 +315,52 @@ end-to-end; add an attachment list and the "Lampiran" line.
 ### PR-5 — PAdES B-B + RFC 3161 (§4.3 Tier 1)
 Embed the signature in the PDF. Requires the RSA/ECDSA change.
 
+### PR-7 — Arabic and Unicode in the naskah
+
+**Requested 2026-09-02. Not a patch — it needs a font, a shaping engine and a
+build change, which is why PR-1 refused the input instead of half-rendering it.**
+
+Today `generateLetterPdfBuffer` uses `StandardFonts.TimesRoman` and friends,
+whose repertoire is WinAnsi. PR-1 added `assertRenderable`, which rejects a
+naskah containing anything outside it and names the offending characters. That
+is the honest floor — before it, `pdf-lib` threw from deep inside, the throw was
+swallowed, and the letter was signed but permanently unverifiable — but it means
+a pesantren cannot put a Qur'anic quotation or an Arabic bismillah in a letter
+body, which is a real limitation for this institution.
+
+What full support actually requires, in order:
+
+1. **An embedded Unicode font.** `@pdf-lib/fontkit` plus a TTF/OTF. Two faces are
+   needed: a Times-metric Latin face (Tinos or Liberation Serif, both
+   open-licensed) and an Arabic face (Noto Naskh Arabic). Subset them — a full
+   Noto Naskh is ~500 KB and every letter would carry it.
+2. **A shaping engine, which pdf-lib does not have.** Embedding the glyphs is not
+   enough: Arabic needs contextual joining (a letter's form depends on its
+   neighbours) and bidirectional reordering. Without it the text renders as
+   isolated letters in left-to-right order — wrong in a way that looks like
+   nonsense to a reader of Arabic, and worse than refusing. The realistic
+   options are `harfbuzzjs` (WASM, does real shaping) feeding positioned glyphs
+   to pdf-lib, or replacing pdf-lib for this document with a renderer that
+   shapes natively.
+3. **A build change.** The API image stages only `dist` and `node_modules`, so a
+   font file needs either a Dockerfile step or the base64-in-source treatment
+   used for the lambang (`apps/api/src/assets/logo-cipansor.ts`). At subset
+   sizes the latter stays viable and keeps the bytes frozen, which matters —
+   see below.
+4. **A hash-stability decision.** Changing the font changes every rendered byte,
+   so every letter signed before the change fails public verification and is
+   reported as altered. This must land *after* PR-3 archives the signed PDF
+   bytes, or it silently invalidates the archive. **PR-7 is blocked on PR-3.**
+
+Scope note: the letterhead itself is Latin-only today, so this is about letter
+*bodies*. If the yayasan wants an Arabic kop surat, the cheaper answer is to put
+the calligraphy in the lambang image — it is an image by nature, and needs no
+shaping at all.
+
+*Done when:* a letter whose body contains an Arabic sentence renders with correct
+joining and right-to-left order, verifies after upload, and a letter signed
+before the change still verifies.
+
 ### PR-6 — Structured signing authority (§2.7 c)
 a.n. / u.b. / Plt. / Plh. as a modelled rule.
 
@@ -338,3 +384,7 @@ deploy in this series must be pre-checked with a non-destructive
    apply.
 3. **Retention:** how long a signed letter and its archived PDF must be kept —
    this drives whether Tier 3 (B-LTA) is in scope.
+4. **Arabic in letter bodies (PR-7):** whether staff need to write Arabic script
+   inside the naskah, or whether an Arabic element on the letterhead — shipped as
+   part of the lambang image — is enough. The first is weeks of work behind PR-3;
+   the second is an afternoon.

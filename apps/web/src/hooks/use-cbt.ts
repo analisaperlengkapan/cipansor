@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api, SharedPaginatedResponse } from "@/lib/api";
+import { api } from "@/lib/api";
 
 // Types
 export enum QuestionType {

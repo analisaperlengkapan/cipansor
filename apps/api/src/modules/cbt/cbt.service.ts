@@ -1284,11 +1284,12 @@ export class CBTService {
 
         const optionCounts: Record<string, number> = {};
         answers.forEach((ans) => {
-          if (ans.answer != null) {
+          if (ans && ans.answer != null) {
+            const rawAns = ans.answer as any;
             const rawKey =
-              typeof ans.answer === 'object' && ans.answer !== null && ans.answer.id
-                ? ans.answer.id
-                : ans.answer;
+              typeof rawAns === 'object' && rawAns !== null && 'id' in rawAns
+                ? rawAns.id
+                : rawAns;
             const keyStr = typeof rawKey === 'string' ? rawKey : JSON.stringify(rawKey);
             optionCounts[keyStr] = (optionCounts[keyStr] || 0) + 1;
           }

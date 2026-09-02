@@ -71,7 +71,6 @@ services:
       # missing .env degrades to correct rather than to localhost.
       PUBLIC_SITE_URL: ${PUBLIC_SITE_URL:-https://cipansor.or.id}
       PORTAL_URL: ${PORTAL_URL:-https://portal.cipansor.or.id}
-      PUBLIC_VERIFY_RATE_LIMIT_MAX: ${PUBLIC_VERIFY_RATE_LIMIT_MAX:-30}
       LOG_LEVEL: ${LOG_LEVEL:-info}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
       # Marks the whole deployment as a demo, lifting the mandatory 2FA wall so

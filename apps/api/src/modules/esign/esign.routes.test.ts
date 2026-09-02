@@ -39,7 +39,13 @@ function hasLimiter(method: string, path: string) {
 }
 
 /**
- * Every route that carries a passphrase or handles public uploads must carry rate limiting.
+ * Every route that carries a passphrase must carry a strict limiter with it.
+ *
+ * app.ts reserves the strict limiter for "credential-bearing endpoints ONLY"
+ * and then lists the auth routes by hand. E-sign was added afterwards and
+ * never joined that list, so three endpoints that accept a passphrase ran on
+ * the ordinary budget. A hand-maintained list is exactly the kind of thing
+ * that goes stale silently, so the guard belongs next to the routes.
  */
 describe('esign.routes rate limiting', () => {
   it('POST /letters/:letterId/sign is rate limited', () => {
@@ -56,25 +62,28 @@ describe('esign.routes rate limiting', () => {
 
   /**
    * The settings page reads this on every visit and it holds nothing guessable.
+   * Limiting it would repeat the /auth/me mistake app.ts documents: a whole
+   * pesantren behind one NAT gateway locked out of a read-only status call.
    */
   it('GET /me is NOT rate limited', () => {
     expect(hasLimiter('get', '/me')).toBe(false);
   });
 
   /**
-   * Public verification routes are rate limited.
+   * Scanned by outsiders with no account, from any number of addresses. It
+   * neither accepts a secret nor reveals the letter body, and a token is 160
+   * random bits, so there is nothing here to brute force — but there is a
+   * whole dinas office behind one address.
    */
-  it('GET /verify/:token is rate limited', () => {
-    expect(hasLimiter('get', '/verify/:token')).toBe(true);
-  });
-
-  it('POST /verify-pdf is rate limited', () => {
-    expect(hasLimiter('post', '/verify-pdf')).toBe(true);
+  it('GET /verify/:token is NOT rate limited', () => {
+    expect(hasLimiter('get', '/verify/:token')).toBe(false);
   });
 });
 
 /**
- * Only a Super Admin issues, refuses or revokes signing keys.
+ * Only a Super Admin issues, refuses or revokes signing keys. If one of these
+ * gates is dropped, any authenticated user could grant themselves the ability
+ * to sign on behalf of the yayasan.
  */
 describe('esign.routes authority gates', () => {
   it('GET /requests requires isSuperAdmin', () => {

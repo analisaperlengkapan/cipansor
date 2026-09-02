@@ -23,7 +23,9 @@ test("a scanned QR does not land on the login page", async ({ page }) => {
   // The redirect was a 307 to /login?redirect=… — assert on the URL we ended
   // up at, which is what the person holding the letter actually sees.
   expect(new URL(page.url()).pathname).toBe(`/verifikasi/${SOME_TOKEN}`);
-  expect(response?.status()).toBeLessThan(400);
+  // An unknown token renders a 404 "Surat tidak ditemukan" verification page,
+  // which is expected public behavior (status 404, not redirected to login).
+  expect([200, 404]).toContain(response?.status());
 });
 
 test("an unknown token is answered, not hidden behind a login form", async ({

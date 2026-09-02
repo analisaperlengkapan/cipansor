@@ -5,10 +5,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
-import { getPrimaryRoleCode } from "@/lib/rbac";
 import { useCorrespondence } from "@/hooks/use-correspondence";
-import { useCorrespondenceParticipants } from "@/hooks/use-correspondence";
-import { useUnits } from "@/hooks/use-units";
+import { useTeachers } from "@/hooks/use-teachers";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -48,7 +46,6 @@ import React from "react";
 import { Upload } from "lucide-react";
 
 const letterSchema = z.object({
-  unitId: z.string().optional(),
   direction: z.nativeEnum(LetterDirection),
   type: z.nativeEnum(LetterType),
   subject: z.string().min(1, "Perihal wajib diisi"),
@@ -68,15 +65,23 @@ const letterSchema = z.object({
 export default function CreateLetterPage() {
   const router = useRouter();
   const { user } = useAuth();
-  const { data: units = [] } = useUnits();
-  const [searchQuery, setSearchQuery] = React.useState("");
+  const { createLetter } = useCorrespondence(user?.unitId);
+  const { data: teachers } = useTeachers({
+    page: 1,
+    limit: 100,
+    unitId: user?.unitId,
+  });
   const [uploading, setUploading] = React.useState(false);
-  const [submitMode, setSubmitMode] = React.useState<"DRAFT" | "SUBMIT">("DRAFT");
+
+  const staffOptions =
+    teachers?.data.map((t: any) => ({
+      label: t.user?.name || t.nip,
+      value: t.userId,
+    })) || [];
 
   const form = useForm<z.infer<typeof letterSchema>>({
     resolver: zodResolver(letterSchema),
     defaultValues: {
-      unitId: user?.unitId || "",
       direction: LetterDirection.OUTGOING,
       type: LetterType.SURAT_DINAS,
       date: new Date().toISOString().split("T")[0],
@@ -86,20 +91,6 @@ export default function CreateLetterPage() {
       recipientIds: [],
     },
   });
-
-  const selectedUnitId = form.watch("unitId") || user?.unitId;
-  const { createLetter } = useCorrespondence(selectedUnitId);
-  const { data: participantsData } = useCorrespondenceParticipants({
-    search: searchQuery || undefined,
-    unitId: selectedUnitId,
-    limit: 100,
-  });
-
-  const staffOptions =
-    participantsData?.data.map((u) => ({
-      label: u.nip ? `${u.name} (${u.nip})` : u.name,
-      value: u.id,
-    })) || [];
 
   const direction = form.watch("direction");
   const letterType = form.watch("type");
@@ -149,34 +140,21 @@ export default function CreateLetterPage() {
   };
 
   async function onSubmit(values: z.infer<typeof letterSchema>) {
-    const effectiveUnitId = values.unitId || user?.unitId;
-    if (!effectiveUnitId) {
-      toast.error("Unit ID wajib dipilih");
-      return;
-    }
-
-    const targetStatus =
-      submitMode === "SUBMIT" ? LetterStatus.PENDING_REVIEW : LetterStatus.DRAFT;
-
-    if (submitMode === "SUBMIT" && values.direction === LetterDirection.OUTGOING && (!values.reviewerIds || values.reviewerIds.length === 0)) {
-      toast.error("Pemeriksa pertama wajib dipilih saat mengajukan review.");
+    if (!user?.unitId) {
+      toast.error("Unit ID tidak ditemukan");
       return;
     }
 
     try {
       await createLetter.mutateAsync({
         ...values,
-        unitId: effectiveUnitId,
-        status: targetStatus,
+        unitId: user.unitId,
+        status: LetterStatus.DRAFT,
       });
-      toast.success(
-        targetStatus === LetterStatus.PENDING_REVIEW
-          ? "Surat berhasil diajukan untuk ditinjau"
-          : "Draft surat berhasil disimpan"
-      );
+      toast.success("Surat berhasil dibuat");
       router.push("/e-office/inbox");
     } catch (error) {
-      toast.error("Gagal memproses surat");
+      toast.error("Gagal membuat surat");
       console.error(error);
     }
   }
@@ -197,37 +175,6 @@ export default function CreateLetterPage() {
               <CardTitle>Informasi Dasar</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* B5: Display unit selector ONLY when user is authorized to issue cross-unit letters */}
-              {user && (getPrimaryRoleCode(user) === "YAYASAN_KETUA" || getPrimaryRoleCode(user) === "YAYASAN_SEKRETARIS" || getPrimaryRoleCode(user) === "SUPER_ADMIN" || !user.unitId) && (
-                <FormField
-                  control={form.control}
-                  name="unitId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Unit Penerbit / Pembuat Surat</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value || user?.unitId || ""}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Pilih unit penerbit..." />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {units.map((u) => (
-                            <SelectItem key={u.id} value={u.id}>
-                              {u.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
-
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -394,90 +341,44 @@ export default function CreateLetterPage() {
                   name="reviewerIds"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Pemeriksa / Peninjau Pertama</FormLabel>
-                      <div className="space-y-2">
-                        <Input
-                          placeholder="Cari pejabat/staf..."
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                          className="text-xs mb-1"
-                        />
-                        <Select
-                          onValueChange={(val) => field.onChange([val])}
-                          value={field.value?.[0] || ""}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Pilih pemeriksa/atasan pertama..." />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {staffOptions.map((option: any) => (
-                              <SelectItem key={option.value} value={option.value}>
-                                {option.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <FormDescription>
-                        Pilih pejabat/atasan pertama yang akan mengulas konsep surat ini. Pemeriksa pertama dapat meneruskan secara fleksibel ke pejabat berikutnya.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
-              {direction === LetterDirection.INCOMING && (
-                <FormField
-                  control={form.control}
-                  name="recipientIds"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Teruskan Surat Masuk Kepada (Dapat memilih lebih dari 1)</FormLabel>
+                      <FormLabel>Pemeriksa & Penandatangan (Urut)</FormLabel>
                       <FormControl>
-                        <div className="space-y-2 border rounded-md p-3">
-                          <Input
-                            placeholder="Cari penerima disposisi/terusan..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="text-xs mb-2 bg-white"
-                          />
-                          <div className="space-y-2 max-h-40 overflow-y-auto">
-                            {staffOptions.map((option: any) => (
-                              <div
-                                key={option.value}
-                                className="flex items-center space-x-2"
-                              >
-                                <input
-                                  type="checkbox"
-                                  value={option.value}
-                                  checked={(field.value || []).includes(
-                                    option.value,
-                                  )}
-                                  onChange={(e) => {
-                                    const checked = e.target.checked;
-                                    const current = field.value || [];
-                                    if (checked) {
-                                      field.onChange([...current, option.value]);
-                                    } else {
-                                      field.onChange(
-                                        current.filter(
-                                          (val: string) => val !== option.value,
-                                        ),
-                                      );
-                                    }
-                                  }}
-                                  className="h-4 w-4 rounded border-gray-300"
-                                />
-                                <label className="text-sm cursor-pointer">{option.label}</label>
-                              </div>
-                            ))}
-                          </div>
+                        {/* Simple multiple select using standard Select for now as MultiSelect component is missing */}
+                        <div className="space-y-2 border rounded-md p-4 max-h-48 overflow-y-auto">
+                          {staffOptions.map((option: any) => (
+                            <div
+                              key={option.value}
+                              className="flex items-center space-x-2"
+                            >
+                              <input
+                                type="checkbox"
+                                value={option.value}
+                                checked={(field.value || []).includes(
+                                  option.value,
+                                )}
+                                onChange={(e) => {
+                                  const checked = e.target.checked;
+                                  const current = field.value || [];
+                                  if (checked) {
+                                    field.onChange([...current, option.value]);
+                                  } else {
+                                    field.onChange(
+                                      current.filter(
+                                        (val: string) => val !== option.value,
+                                      ),
+                                    );
+                                  }
+                                }}
+                                className="h-4 w-4 rounded border-gray-300"
+                              />
+                              <label className="text-sm">{option.label}</label>
+                            </div>
+                          ))}
                         </div>
                       </FormControl>
                       <FormDescription>
-                        Pilih pejabat/staf yang akan menerima terusan awal surat masuk ini.
+                        Pilih urutan pemeriksa (Paraf) hingga Penandatangan
+                        terakhir.
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -663,25 +564,13 @@ export default function CreateLetterPage() {
             </CardContent>
           </Card>
 
-          <div className="flex gap-4">
-            <Button
-              type="submit"
-              variant="outline"
-              className="flex-1"
-              disabled={createLetter.isPending}
-              onClick={() => setSubmitMode("DRAFT")}
-            >
-              Simpan Draft
-            </Button>
-            <Button
-              type="submit"
-              className="flex-1 bg-blue-600 hover:bg-blue-700"
-              disabled={createLetter.isPending}
-              onClick={() => setSubmitMode("SUBMIT")}
-            >
-              Ajukan Review
-            </Button>
-          </div>
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={createLetter.isPending}
+          >
+            {createLetter.isPending ? "Menyimpan..." : "Simpan Draft"}
+          </Button>
         </form>
       </Form>
     </div>

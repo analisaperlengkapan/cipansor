@@ -27,7 +27,7 @@ export const registerSchema = z.object({
     .regex(/[A-Z]/, 'Password must contain uppercase letter')
     .regex(/[a-z]/, 'Password must contain lowercase letter')
     .regex(/[0-9]/, 'Password must contain number'),
-  roleCode: z.nativeEnum(RoleCode, { errorMap: () => ({ message: 'Invalid role code' }) }).optional(),
+  roleCode: z.nativeEnum(RoleCode, { message: 'Invalid role code' }).optional(),
   // DEPRECATED: Legacy `role` field. Use `roleCode` instead.
   // Accepted for backward compatibility with pre-migration API clients.
   // Restricted to the known legacy UserRole enum values so that invalid
@@ -59,8 +59,37 @@ export const changePasswordSchema = z.object({
     .regex(/[0-9]/, 'Password must contain number'),
 });
 
+// Send a reset link — an ADMIN action, not a self-service one.
+//
+// There is deliberately no public "forgot password" endpoint. A reset is
+// started by an admin who has already identified the person asking, so the
+// input is a user id rather than an e-mail address anyone could type: nothing
+// unauthenticated can make this system send mail, and there is no public form
+// to probe for which addresses have accounts.
+export const sendPasswordResetSchema = z.object({
+  userId: z.string().uuid('Invalid user id'),
+});
+
+// Reset password — redeem the token from the e-mail.
+//
+// The password rules match `registerSchema`: an account reached through a
+// reset link must not end up weaker than one created through the admin form.
+export const resetPasswordSchema = z.object({
+  token: z.string().min(32, 'Reset token is required'),
+  // Named `newPassword` to match `changePasswordSchema` and the web client,
+  // which has been posting this shape to a route that did not exist yet.
+  newPassword: z
+    .string()
+    .min(8, 'Password must be at least 8 characters')
+    .regex(/[A-Z]/, 'Password must contain uppercase letter')
+    .regex(/[a-z]/, 'Password must contain lowercase letter')
+    .regex(/[0-9]/, 'Password must contain number'),
+});
+
 // Types
 export type LoginInput = z.infer<typeof loginSchema>;
+export type SendPasswordResetInput = z.infer<typeof sendPasswordResetSchema>;
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 // RegisterInput: either `roleCode` OR `role` is present (guaranteed by refine).
 // The service layer resolves the legacy `role` field to a proper RoleCode
 // using the target Unit's type when `roleCode` is not provided.

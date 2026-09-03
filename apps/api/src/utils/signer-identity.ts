@@ -23,6 +23,7 @@ export interface SignerIdentityInput {
 
 export interface SignerIdentityRecord extends SignerIdentityInput {
   verifiedAt?: Date | string | null;
+  ktpFileName?: string | null;
 }
 
 export class IdentityError extends Error {
@@ -93,14 +94,26 @@ export function missingIdentityFields(
 }
 
 /**
- * Bolehkah kunci diterbitkan untuk identitas ini?
+ * Bolehkah pengajuan kunci dibuat untuk identitas ini?
  *
- * Dua syarat yang berbeda dan keduanya diperlukan: datanya **lengkap**, dan
- * seorang penyetuju sudah **mencocokkannya**. Data yang lengkap tetapi belum
- * diperiksa hanyalah ketikan pemohon sendiri; verifikasi tanpa data lengkap
- * tidak mungkin ada.
+ * Dua syarat, dan **verifikasi bukan salah satunya** — itu justru yang
+ * dikerjakan oleh pengajuan ini. Menuntut identitas terverifikasi *sebelum*
+ * boleh mengajukan menutup satu-satunya pintu menuju verifikasi, sebab
+ * verifikasi terjadi ketika Super Admin memutuskan pengajuannya
+ * (`decideRequest`). Fungsi ini pernah menuntutnya, dan akibatnya tidak ada
+ * seorang pun yang dapat memperoleh kunci; lihat uji rantai di
+ * `esign.identity-chain.test.ts`.
+ *
+ * Yang benar-benar dituntut:
+ *
+ * 1. **Datanya lengkap.** Kunci tidak boleh terbit atas nama akun yang
+ *    identitasnya tidak diketahui.
+ * 2. **Foto KTP-nya sudah ada.** Bukan formalitas: tanpa berkas itu Super
+ *    Admin tidak punya apa pun untuk dicocokkan, sehingga pengajuannya akan
+ *    tergeletak tidak dapat disetujui. Menolaknya di sini, sambil menyebut
+ *    sebabnya, lebih baik daripada antrean yang diam-diam buntu.
  */
-export function assertIdentityReadyForKey(
+export function assertIdentityReadyToRequest(
   identity: SignerIdentityRecord | null | undefined
 ): void {
   const missing = missingIdentityFields(identity);
@@ -112,10 +125,11 @@ export function assertIdentityReadyForKey(
     );
   }
 
-  if (!identity?.verifiedAt) {
+  if (!identity?.ktpFileName) {
     throw new IdentityError(
-      'Data identitas Anda sudah lengkap tetapi belum diverifikasi. Super Admin ' +
-        'akan mencocokkannya dengan kartu identitas Anda terlebih dahulu.'
+      'Unggah dulu foto KTP Anda. Super Admin mencocokkan data yang Anda isi ' +
+        'dengan kartunya sebelum menyetujui, jadi tanpa berkas itu pengajuan Anda ' +
+        'tidak dapat diputuskan.'
     );
   }
 }

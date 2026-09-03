@@ -170,14 +170,19 @@ export const CorrespondenceService = {
       throw Errors.forbidden('Anda tidak memiliki wewenang untuk membuat surat resmi');
     }
 
-    // Unit scope check: non-foundation actors can only create letters for their own unit
+    // Unit scope check: non-foundation actors MUST have a unitId and can only create letters for their own unit
     const isFoundationActor = actor.roleCode && (
       actor.roleCode.startsWith('YAYASAN_') ||
-      actor.roleCode === 'SUPER_ADMIN'
+      actor.roleCode === RoleCode.SUPER_ADMIN
     );
 
-    if (actor.unitId && data.unitId !== actor.unitId && !isFoundationActor) {
-      throw Errors.forbidden('Anda hanya dapat membuat surat untuk unit kerja Anda');
+    if (!isFoundationActor) {
+      if (!actor.unitId) {
+        throw Errors.forbidden('Pengguna tanpa unit kerja tidak dapat membuat surat resmi');
+      }
+      if (data.unitId !== actor.unitId) {
+        throw Errors.forbidden('Anda hanya dapat membuat surat untuk unit kerja Anda');
+      }
     }
 
     // Reject terminal/signed status directly supplied by client
@@ -465,10 +470,9 @@ export const CorrespondenceService = {
     notes?: string
   ) {
     const result = await prisma.$transaction(async (tx) => {
-      // The whole ladder is read, not just the caller's own rung: whether this
-      // reviewer may act at all depends on the rungs below them. The previous
-      // version fetched only the caller's row, which is why the signer could
-      // sign a draft the sekretaris had never opened.
+      // Acquire row lock to prevent race conditions during concurrent review actions
+      await tx.$executeRaw`SELECT id FROM letters WHERE id = ${letterId} FOR UPDATE`;
+
       const letter = await tx.letter.findUnique({
         where: { id: letterId },
         select: { id: true, status: true, createdById: true, reviewers: true },
@@ -720,6 +724,34 @@ export const CorrespondenceService = {
       throw new Error(
         'Surat sudah diarsipkan; buka kembali arsipnya sebelum mendisposisikan.'
       );
+    }
+
+    // Check disposition creation authority: must be letter creator, last disposition recipient, unit admin/tata usaha, executive foundation role, or SUPER_ADMIN
+    const isCreator = letter.createdById === actor.id;
+    const isLastRecipient = letter.dispositions[0]?.recipientId === actor.id;
+    const isExecFoundation = actor.roleCode && [RoleCode.SUPER_ADMIN, RoleCode.YAYASAN_KETUA, RoleCode.YAYASAN_SEKRETARIS].includes(actor.roleCode as any);
+    const isUnitAdmin = actor.roleCode && actor.unitId === letter.unitId && [
+      RoleCode.SDIT_ADMIN,
+      RoleCode.SMPIT_ADMIN,
+      RoleCode.SMAQ_ADMIN,
+      RoleCode.TKQ_ADMIN,
+      RoleCode.SDIT_TATA_USAHA,
+      RoleCode.SMPIT_TATA_USAHA,
+      RoleCode.SMAQ_TATA_USAHA,
+      RoleCode.TKQ_TATA_USAHA,
+      RoleCode.PESANTREN_TATA_USAHA,
+      RoleCode.PT_TATA_USAHA,
+      RoleCode.SDIT_KEPALA_SEKOLAH,
+      RoleCode.SMPIT_KEPALA_SEKOLAH,
+      RoleCode.SMAQ_KEPALA_SEKOLAH,
+      RoleCode.TKQ_KEPALA_SEKOLAH,
+      RoleCode.PESANTREN_PENGASUH,
+      RoleCode.PESANTREN_DIREKTUR,
+      RoleCode.PT_REKTOR,
+    ].includes(actor.roleCode as any);
+
+    if (!isCreator && !isLastRecipient && !isExecFoundation && !isUnitAdmin) {
+      throw Errors.forbidden('Anda tidak memiliki wewenang untuk membuat disposisi surat ini');
     }
 
     const disposition = await prisma.$transaction(async (tx) => {

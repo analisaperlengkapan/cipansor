@@ -296,6 +296,17 @@ export function computePdfHash(pdfBuffer: Buffer): string {
 }
 
 /** Verify a PDF SHA-256 byte digest signature against public key. */
+export function signPdfHash(
+  material: EncryptedKeyMaterial,
+  passphrase: string,
+  pdfHashHex: string
+): string {
+  const privateKey = unsealPrivateKey(material, passphrase);
+  const payload = `cipansor-esign/pdf/v1\n${pdfHashHex}`;
+  const signature = crypto.sign(null, Buffer.from(payload, 'utf8'), privateKey);
+  return signature.toString('base64');
+}
+
 export function verifyPdfHashSignature(
   publicKeyBase64: string,
   signatureBase64: string,

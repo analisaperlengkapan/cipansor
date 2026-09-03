@@ -75,8 +75,8 @@ describe('esign.routes rate limiting', () => {
    * random bits, so there is nothing here to brute force — but there is a
    * whole dinas office behind one address.
    */
-  it('GET /verify/:token is NOT rate limited', () => {
-    expect(hasLimiter('get', '/verify/:token')).toBe(false);
+  it('GET /verify/:token is rate limited', () => {
+    expect(hasLimiter('get', '/verify/:token')).toBe(true);
   });
 });
 

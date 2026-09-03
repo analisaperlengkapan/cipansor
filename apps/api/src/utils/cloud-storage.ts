@@ -22,7 +22,11 @@ export async function uploadToCloudStorage(
     try {
       const blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
       const containerClient = blobServiceClient.getContainerClient(containerName);
-      await containerClient.createIfNotExists();
+      // Set container access to blob level for public media or private for sensitive documents
+      const isPublicContainer = containerName === 'media-public';
+      await containerClient.createIfNotExists({
+        access: isPublicContainer ? 'blob' : undefined,
+      });
 
       const blockBlobClient = containerClient.getBlockBlobClient(filename);
       await blockBlobClient.uploadFile(localFilePath, {

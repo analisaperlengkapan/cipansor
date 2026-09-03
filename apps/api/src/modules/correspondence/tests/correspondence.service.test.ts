@@ -33,6 +33,7 @@ vi.mock('../../../../src/lib/prisma', () => ({
     letterFlowEvent: {
       create: vi.fn(),
     },
+    $executeRaw: vi.fn().mockResolvedValue(1),
     $transaction: vi.fn((callback) => callback(prisma)),
   },
 }));
@@ -40,6 +41,50 @@ vi.mock('../../../../src/lib/prisma', () => ({
 describe('CorrespondenceService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  describe('createLetter', () => {
+    it('should reject letter creation for non-foundation user without unitId', async () => {
+      const dto = {
+        unitId: 'unit-1',
+        direction: 'INCOMING' as any,
+        date: new Date().toISOString(),
+        subject: 'Undangan Rapat',
+        status: 'DRAFT' as any,
+        nature: 'PUBLIC' as any,
+        classificationId: 'class-1',
+        senderName: 'Diknas',
+      };
+
+      await expect(
+        CorrespondenceService.createLetter(dto as any, { id: 'user-1', roleCode: 'SDIT_TATA_USAHA', unitId: null })
+      ).rejects.toThrow(/Pengguna tanpa unit kerja tidak dapat membuat surat resmi/);
+    });
+
+    it('should reject disposition creation for non-authorized reader', async () => {
+      vi.mocked(prisma.letter.findUnique).mockResolvedValue({
+        id: 'letter-1',
+        unitId: 'unit-1',
+        createdById: 'creator-1',
+        status: 'SIGNED',
+        direction: 'INCOMING',
+        reviewers: [],
+        recipients: [{ userId: 'user-reader' }],
+        dispositions: [],
+      } as any);
+
+      await expect(
+        CorrespondenceService.createDisposition(
+          {
+            letterId: 'letter-1',
+            senderId: 'user-reader',
+            recipientId: 'user-2',
+            instruction: 'Tolong hadiri',
+          },
+          { id: 'user-reader', roleCode: 'SDIT_GURU', unitId: 'unit-1' }
+        )
+      ).rejects.toThrow(/Anda tidak memiliki wewenang untuk membuat disposisi surat ini/);
+    });
   });
 
   describe('generateNumber', () => {

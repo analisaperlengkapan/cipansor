@@ -15,6 +15,7 @@ import {
   newVerificationToken,
   rewrapKeyMaterial,
   signPayload,
+  signPdfHash,
   verifySignature,
   computePdfHash,
   verifyPdfHashSignature,
@@ -390,7 +391,7 @@ export const EsignService = {
    * Hanya penandatangan yang ditunjuk, hanya ketika surat sudah sampai
    * gilirannya, dan hanya dengan passphrase yang benar.
    */
-  async signLetter(letterId: string, userId: string, passphrase: string) {
+  async signLetter(letterId: string, userId: string, passphrase: string, pdfBuffer?: Buffer) {
     const letter = await prisma.letter.findUnique({
       where: { id: letterId },
       include: { reviewers: true },
@@ -425,8 +426,16 @@ export const EsignService = {
     };
 
     let signed;
+    let pdfHashHex: string | undefined;
+    let pdfSig: string | undefined;
+
     try {
       signed = signPayload(toMaterial(key!), passphrase, payload);
+
+      // Compute PDF byte hash and PDF signature if PDF buffer is provided or created from content
+      const bufferToHash = pdfBuffer ?? Buffer.from(letter.content ?? letter.subject ?? '', 'utf8');
+      pdfHashHex = computePdfHash(bufferToHash);
+      pdfSig = signPdfHash(toMaterial(key!), passphrase, pdfHashHex);
     } catch (error) {
       if (error instanceof EsignError) {
         await recordFailedAttempt(key!.id, key!.failedAttempts);
@@ -449,6 +458,8 @@ export const EsignService = {
           publicKey: signed.publicKey,
           digest: signed.digest,
           signature: signed.signature,
+          pdfHash: pdfHashHex,
+          pdfSignature: pdfSig,
           verificationToken: newVerificationToken(),
           signedAt,
         },

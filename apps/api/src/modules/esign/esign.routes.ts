@@ -57,6 +57,20 @@ const passphraseLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+const publicVerifyLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: Number(process.env.PUBLIC_VERIFY_RATE_LIMIT_MAX) || 30,
+  message: {
+    success: false,
+    error: {
+      code: 'RATE_LIMIT_EXCEEDED',
+      message: 'Terlalu banyak percobaan verifikasi dokumen. Coba lagi beberapa saat lagi.',
+    },
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 /**
  * Verifikasi publik — SENGAJA di luar `authenticate`.
  *
@@ -68,8 +82,8 @@ const passphraseLimiter = rateLimit({
  * Didaftarkan sebelum `router.use(authenticate)` karena middleware Express
  * berlaku untuk rute yang didaftarkan sesudahnya.
  */
-router.get('/verify/:token', EsignController.verify);
-router.post('/verify-pdf', memoryUpload.single('file'), EsignController.verifyPdf);
+router.get('/verify/:token', publicVerifyLimiter, EsignController.verify);
+router.post('/verify-pdf', publicVerifyLimiter, memoryUpload.single('file'), EsignController.verifyPdf);
 
 router.use(authenticate);
 

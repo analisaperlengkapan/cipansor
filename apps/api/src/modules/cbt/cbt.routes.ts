@@ -1,7 +1,14 @@
 import { Router } from 'express';
 import { CBTController } from './cbt.controller';
 import { authenticate, authorize } from '@/middleware/auth';
+import { validate } from '@/middleware/validate';
 import { UserRole } from '@prisma/client';
+import { z } from 'zod';
+
+const recordSecurityLogSchema = z.object({
+  eventType: z.enum(['TAB_SWITCH', 'FOCUS_LOST', 'COPY', 'PASTE', 'RIGHT_CLICK']),
+  details: z.string().max(500).optional(),
+});
 
 const router = Router();
 
@@ -143,6 +150,7 @@ router.post(
   '/attempts/:attemptId/security-log',
   authenticate,
   authorize(UserRole.STUDENT),
+  validate(recordSecurityLogSchema),
   CBTController.recordSecurityLog
 );
 

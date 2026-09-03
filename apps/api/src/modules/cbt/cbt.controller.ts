@@ -41,15 +41,6 @@ export class CBTController {
     try {
       const user = requireUser(req);
       const { eventType, details } = req.body;
-      const ALLOWED_EVENT_TYPES = ['TAB_SWITCH', 'FOCUS_LOST', 'COPY', 'PASTE', 'RIGHT_CLICK'];
-
-      if (!eventType || typeof eventType !== 'string' || !ALLOWED_EVENT_TYPES.includes(eventType)) {
-        throw Errors.badRequest(`eventType must be one of: ${ALLOWED_EVENT_TYPES.join(', ')}`);
-      }
-
-      if (details !== undefined && details !== null && typeof details !== 'string') {
-        throw Errors.badRequest('details must be a string');
-      }
 
       const result = await CBTService.recordSecurityLog(
         req.params.attemptId,

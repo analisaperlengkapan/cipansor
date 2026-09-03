@@ -38,14 +38,14 @@ describe('CBT Controller', () => {
       expect(res.json).toHaveBeenCalledWith({ success: true, data: { id: 'log-1' } });
     });
 
-    it('should throw error for invalid eventType', async () => {
-      req.body = { eventType: 'INVALID_EVENT' };
+    it('should call next on service failure', async () => {
+      req.body = { eventType: 'TAB_SWITCH' };
+      const err = new Error('Service error');
+      vi.mocked(CBTService.recordSecurityLog).mockRejectedValue(err);
 
       await CBTController.recordSecurityLog(req, res, next);
 
-      expect(next).toHaveBeenCalledWith(expect.objectContaining({
-        message: expect.stringContaining('eventType must be one of'),
-      }));
+      expect(next).toHaveBeenCalledWith(err);
     });
   });
 });

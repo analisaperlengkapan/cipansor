@@ -68,7 +68,7 @@ test.describe("Single Sign-On (SSO) Buttons", () => {
     await page.goto("/login#id_token=valid_mock_token&provider=google");
 
     await expect(
-      page.getByText(/Two-Factor Authentication/i)
+      page.getByText(/Two-Factor Authentication/i).first()
     ).toBeVisible({ timeout: 10000 });
   });
 });

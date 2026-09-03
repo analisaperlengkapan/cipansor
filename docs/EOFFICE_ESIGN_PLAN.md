@@ -844,6 +844,87 @@ needs storage with per-record authorisation, or it must not be stored at all.
    "1–2 years", and it is defensible because it is derived from what the
    evidence is *for*.
 
+#### How long, counted from when — and whether OCR changes the answer
+
+Asked 2026-09-03.
+
+**The counting basis is settled, and it is not issuance.** The CA/Browser Forum
+Baseline Requirements say it plainly: *"The CA SHALL retain all documentation
+relating to certificate requests and the verification thereof, and all
+Certificates and revocation thereof, for at least **seven years after any
+Certificate based on that documentation ceases to be valid**."* Audit logs get
+the same seven years. ETSI EN 319 412-5 expresses its declared retention the
+same way — a number of years **after the certificate expires**. eIDAS Art.
+24.2(h) sets the purpose but no number, leaving each provider to state its own.
+
+So: **seven years is the common figure, and every standard counts it from the
+end of validity, not from issuance.** Worth knowing that the proportionality of
+that number is contested inside the standards bodies themselves — CA/B Forum
+ballot SC28 (2020) noted that seven years of retention for a two-year
+certificate is out of proportion. Our keys are shorter-lived still: validity is
+granted per approval in days, so "after expiry" arrives quickly.
+
+Applied here, the two artefacts deserve different answers:
+
+- **The verification record: keep it for as long as the letters.** Letters are
+  archived permanently, so "who was verified as this signer, by whom, on what
+  evidence" has to stay answerable permanently. The record is a few fields and
+  a hash — it costs nothing to keep and everything to lose.
+- **The image: do not keep it at all** — for the reason below.
+
+#### OCR: yes for the text, no for the face
+
+**It works well enough.** Published work on Indonesian e-KTP puts Tesseract with
+proper preprocessing — grayscale, Gaussian blur, thresholding, deskew, line
+segmentation — at roughly 90–98% field accuracy. Two routes, and the choice
+matters legally more than technically: a local WASM engine keeps the image
+inside our own system (and needs no native dependency, which matters on a stack
+that already cannot resolve `sharp`), while a commercial OCR API is more
+accurate but makes the KTP a **transfer of personal data to a third party**,
+needing its own lawful basis and a processor agreement. For a yayasan of this
+size the second is disproportionate.
+
+**The reason to do it is not accuracy — it is that OCR dissolves the retention
+problem.** Reading the card turns the image into a *comparison result*, and a
+comparison result is exactly the durable artefact recommended above. The flow
+becomes:
+
+1. The applicant uploads the KTP.
+2. OCR extracts NIK, name, place and date of birth.
+3. The system compares them field by field against what the applicant typed.
+4. The Super Admin sees the match report **and** the image, once, while deciding.
+5. On decision the **image is deleted**; the report and the image's SHA-256 are
+   kept.
+
+Nothing sensitive is stored long-term, so there is no retention window to argue
+about and no concentrated target to protect. The `/uploads` authorisation gap
+still has to be respected — the image must be readable only by the deciding
+Super Admin and only until the decision — but it is a much smaller problem when
+the file's life is measured in days.
+
+**What OCR does not do: catch forgery.** Anyone submitting a fabricated KTP
+submits one whose printed text matches what they typed, so the fields will
+agree. Its real value is data quality and sparing the Super Admin a manual
+character-by-character comparison of a 16-digit NIK. Presenting it as fraud
+detection would be the same overclaim as calling a weighted sum "AI".
+
+**Face matching the KTP photo against the profile photo: recommended against.**
+
+1. A facial image is biometric data — *data pribadi yang bersifat spesifik*
+   under UU PDP. Art. 20(2) requires **explicit consent, given separately**, not
+   folded into general terms, plus layered protection and the sanctions exposure
+   that comes with sensitive data.
+2. What it automates is a judgement a Super Admin who knows the staff personally
+   makes better, in an organisation of roughly a hundred accounts.
+3. A printed KTP photograph — low resolution, often years old — matched against
+   a profile photo produces false rejections, and a false rejection here blocks
+   a legitimate official from signing.
+4. Decisively: **BSrE's own enrolment already performs face matching against
+   Dukcapil**, the authoritative population database. If the yayasan ever moves
+   to a PSrE, it receives real biometric verification against the right source.
+   Building our own now is building a worse version of something that would
+   later arrive properly.
+
 **On access, the proposal is right and for the right reason.** The requester
 loses read-back once the decision is made: they already hold their own KTP, so
 denying it costs them nothing, and it removes an exfiltration path from a

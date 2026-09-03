@@ -3,6 +3,7 @@ import rateLimit from 'express-rate-limit';
 import multer from 'multer';
 import { EsignController } from './esign.controller';
 import { authenticate, isSuperAdmin } from '@/middleware/auth';
+import { requireTurnstile } from '@/middleware/turnstile';
 import { validate } from '@/middleware/validate';
 import { Errors } from '@/middleware/error';
 import {
@@ -105,8 +106,17 @@ const upload = multer({
  * tetap menjawab sah. Keabsahan hanya dijawab lewat unggahan berkas, yang
  * terikat pada hash byte dokumennya.
  */
-router.get('/captcha', publicVerifyLimiter, EsignController.getCaptcha);
-router.post('/verify-pdf', publicVerifyLimiter, upload.single('file'), EsignController.verifyPdf);
+//
+// Gerbang anti-botnya Turnstile, dan letaknya SESUDAH `upload.single` karena
+// permintaannya multipart: sebelum multer berjalan, `req.body` masih kosong
+// dan tokennya belum ada di mana pun untuk dibaca.
+router.post(
+  '/verify-pdf',
+  publicVerifyLimiter,
+  upload.single('file'),
+  requireTurnstile,
+  EsignController.verifyPdf
+);
 
 router.use(authenticate);
 

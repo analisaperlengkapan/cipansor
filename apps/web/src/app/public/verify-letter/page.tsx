@@ -1,7 +1,11 @@
 "use client";
 
 import React, { useState, useEffect, Suspense } from "react";
-import { useCaptchaChallenge, useVerifyPdfLetter } from "@/hooks/use-correspondence";
+import { useVerifyPdfLetter } from "@/hooks/use-correspondence";
+import {
+  TurnstileWidget,
+  isTurnstileEnabled,
+} from "@/components/security/turnstile-widget";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -63,9 +67,19 @@ function PublicVerifyContent() {
   const [result, setResult] = useState<PublicLetterVerificationResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Anti-Spam CAPTCHA (Server-side challenge token)
-  const { data: captchaData, refetch: refetchCaptcha } = useCaptchaChallenge();
-  const [captchaAnswer, setCaptchaAnswer] = useState("");
+  /**
+   * Turnstile menggantikan tantangan aritmetika yang dulu ada di sini.
+   *
+   * Yang lama menyertakan jawabannya di dalam tokennya sendiri —
+   * `base64url(angka1:angka2:jawaban:kedaluwarsa)` — sehingga bot cukup
+   * membaca token yang baru saja diterimanya. Yang menggantikannya harus
+   * dijawab oleh Cloudflare, bukan oleh nilai yang kita kirim sendiri ke
+   * peramban.
+   */
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileResetSignal, setTurnstileResetSignal] = useState(0);
+  // Widget tidak dapat dimuat: teruskan, biarkan peladen yang memutuskan.
+  const [turnstileBlocked, setTurnstileBlocked] = useState(false);
 
   const verifyPdfMutation = useVerifyPdfLetter();
 
@@ -84,9 +98,11 @@ function PublicVerifyContent() {
       ? (result.letter.authoringTrack as LetterAuthoringTrack)
       : null;
 
-  const refreshCaptcha = () => {
-    setCaptchaAnswer("");
-    refetchCaptcha();
+  // Token Turnstile sekali pakai: penukaran kedua ditolak Cloudflare. Jadi
+  // tantangan baru diminta setelah SETIAP pengiriman, berhasil maupun gagal.
+  const refreshTurnstile = () => {
+    setTurnstileToken(null);
+    setTurnstileResetSignal((n) => n + 1);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -108,13 +124,10 @@ function PublicVerifyContent() {
       return;
     }
 
-    if (!captchaData?.token) {
-      setError("Sesi CAPTCHA belum siap. Silakan muat ulang halaman.");
-      return;
-    }
-
-    if (!captchaAnswer) {
-      setError("Jawaban verifikasi keamanan (CAPTCHA) wajib diisi.");
+    if (isTurnstileEnabled() && !turnstileToken && !turnstileBlocked) {
+      setError(
+        "Verifikasi keamanan belum selesai. Tunggu sesaat, lalu coba lagi.",
+      );
       return;
     }
 
@@ -124,13 +137,12 @@ function PublicVerifyContent() {
     try {
       const data = await verifyPdfMutation.mutateAsync({
         file: selectedFile,
-        captchaToken: captchaData.token,
-        captchaAnswer,
+        turnstileToken,
       });
       setResult(data);
-      refreshCaptcha();
+      refreshTurnstile();
     } catch (err: any) {
-      refreshCaptcha();
+      refreshTurnstile();
       if (err?.response?.status === 429) {
         setError("Terlalu banyak permintaan verifikasi. Silakan tunggu beberapa saat.");
       } else {
@@ -190,29 +202,20 @@ function PublicVerifyContent() {
               )}
             </div>
 
-            {/* Anti Spam CAPTCHA */}
-            <div className="p-3 bg-slate-100 rounded-md border text-sm space-y-2">
-              <div className="flex items-center gap-2 text-slate-700 font-medium">
-                <Lock className="h-4 w-4 text-blue-600" />
-                Keamanan Anti-Spam: Berapakah{" "}
-                <strong>
-                  {captchaData ? `${captchaData.num1} + ${captchaData.num2}` : "..."}
-                </strong>
-                ?
-              </div>
-              <div className="flex gap-2">
-                <Input
-                  type="number"
-                  placeholder="Hasil..."
-                  value={captchaAnswer}
-                  onChange={(e) => setCaptchaAnswer(e.target.value)}
-                  className="max-w-[180px] bg-white"
+            {isTurnstileEnabled() && (
+              <div className="p-3 bg-slate-100 rounded-md border text-sm space-y-2">
+                <div className="flex items-center gap-2 text-slate-700 font-medium">
+                  <Lock className="h-4 w-4 text-blue-600" />
+                  Verifikasi keamanan
+                </div>
+                <TurnstileWidget
+                  action="verify-letter"
+                  onToken={setTurnstileToken}
+                  onUnavailable={() => setTurnstileBlocked(true)}
+                  resetSignal={turnstileResetSignal}
                 />
-                <Button variant="ghost" size="sm" onClick={refreshCaptcha}>
-                  <RefreshCw className="h-4 w-4 mr-1" /> Acak
-                </Button>
               </div>
-            </div>
+            )}
 
             <Button
               className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold"

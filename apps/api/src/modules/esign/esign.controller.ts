@@ -3,13 +3,8 @@ import { SigningKeyRequestStatus } from '@prisma/client';
 import { EsignService } from './esign.service';
 import { asyncHandler, Errors } from '@/middleware/error';
 import { ApiResponse } from '@/utils/response';
-import { generateCaptchaChallenge, verifyCaptchaAnswer } from '@/utils/captcha';
 
 export const EsignController = {
-  getCaptcha: asyncHandler(async (_req: Request, res: Response) => {
-    const challenge = generateCaptchaChallenge();
-    res.json(ApiResponse.success(challenge));
-  }),
   async myStatus(req: Request, res: Response, next: NextFunction) {
     try {
       res.json({ success: true, data: await EsignService.myStatus(req.user!.id) });
@@ -178,19 +173,9 @@ export const EsignController = {
   /** Publik: dipanggil halaman verifikasi setelah QR dipindai. */
 
   /** Publik: dipanggil halaman verifikasi publik via upload PDF. */
+  // Pemeriksaan anti-bot sudah selesai sebelum handler ini dipanggil, di
+  // `requireTurnstile` pada rutenya. Handler tetap memeriksa berkasnya sendiri.
   verifyPdf: asyncHandler(async (req: Request, res: Response) => {
-    const captchaToken = req.body?.captchaToken;
-    const captchaAnswer = req.body?.captchaAnswer ?? req.body?.captcha;
-
-    if (!captchaToken || !captchaAnswer) {
-      throw Errors.badRequest('Verifikasi CAPTCHA (token dan jawaban) wajib diisi.');
-    }
-
-    const isValidCaptcha = verifyCaptchaAnswer(captchaToken, captchaAnswer);
-    if (!isValidCaptcha) {
-      throw Errors.badRequest('Jawaban CAPTCHA salah atau sesi verifikasi telah kedaluwarsa.');
-    }
-
     if (!req.file || !req.file.buffer) {
       throw Errors.badRequest('File PDF wajib diunggah.');
     }

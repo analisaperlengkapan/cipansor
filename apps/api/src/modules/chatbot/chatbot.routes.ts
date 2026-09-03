@@ -3,6 +3,7 @@ import rateLimit from 'express-rate-limit';
 import { RoleCode } from '@prisma/client';
 import { validate } from '@/middleware/error';
 import { authenticate, authorize } from '@/middleware/auth';
+import { requireTurnstile } from '@/middleware/turnstile';
 import { config } from '@/config';
 import { logger } from '@/lib/logger';
 import * as controller from './chatbot.controller';
@@ -41,7 +42,17 @@ const router = Router();
 // calling existing authorised endpoints as that user with their active role —
 // never by widening what this router can see.
 router.get('/public/status', controller.status);
-router.post('/public/ask', chatbotLimiter, validate(publicChatSchema), controller.ask);
+// Turnstile di depan limiter yang sudah ada, bukan menggantikannya. Batas
+// 10/menit per IP membatasi ongkos satu penyerang; Turnstile membatasi jumlah
+// penyerang yang sepadan untuk mencoba. Endpoint ini membelanjakan uang pada
+// setiap panggilan, jadi keduanya dipakai bersama.
+router.post(
+  '/public/ask',
+  chatbotLimiter,
+  requireTurnstile,
+  validate(publicChatSchema),
+  controller.ask
+);
 
 // Admin surface: configure the assistant's persona. Authenticated and locked to
 // SUPER_ADMIN — the persona is additive style only (it can never revoke a

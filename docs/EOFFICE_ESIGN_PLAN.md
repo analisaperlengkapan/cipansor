@@ -59,10 +59,21 @@ So: `/verifikasi/[token]` was removed on purpose, `/public/verify-letter` takes
 an uploaded PDF plus a captcha, and the QR now carries the **raw token string**
 rather than a URL — scanning it opens nothing, by design.
 
-The upload path is implemented well: captcha issued server-side and verified
-before the file is touched, a dedicated public rate limiter
+The upload path is implemented well: a dedicated public rate limiter
 (`PUBLIC_VERIFY_RATE_LIMIT_MAX`, default 30 per 15 min), multer in memory only
 with a 10 MB cap and a PDF filter.
+
+**Correction, 2026-09-03.** This paragraph used to add "captcha issued
+server-side and verified before the file is touched", and called it well
+implemented. It was neither. The challenge was arithmetic (`3 + 4`) and its
+token was `base64url("num1:num2:answer:expiresAt")` plus an HMAC. The HMAC
+stopped a token being *forged*; it did nothing to stop one being *read*. A bot
+fetched `/esign/captcha`, base64-decoded the token it had just been handed, and
+submitted the answer — and could replay the same pair for five minutes, because
+nothing marked a token as spent. It was a speed bump for scripts that did not
+decode, and no obstacle at all to any that did. Replaced by Cloudflare
+Turnstile, whose answer is held by Cloudflare rather than shipped to the
+browser, and whose tokens are single-use server-side.
 
 ---
 
@@ -275,8 +286,8 @@ themselves. Adobe shows nothing. They must trust us and visit cipansor.or.id.
 - **Tier 3 — PAdES B-LT/B-LTA**, for ijazah and syahadah that must still verify
   in twenty years.
 
-Upload-and-captcha verification (§1) **stays at every tier**: it closes the
-content-substitution hole, which PAdES alone does not.
+Upload verification behind an anti-bot gate (§1) **stays at every tier**: it
+closes the content-substitution hole, which PAdES alone does not.
 
 ---
 

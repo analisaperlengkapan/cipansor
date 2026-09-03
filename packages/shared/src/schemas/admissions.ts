@@ -86,3 +86,14 @@ export interface RegistrantDocumentDTO {
   notes?: string | null;
   createdAt: string;
 }
+
+export interface OnboardRegistrantPayload {
+  registrantId: string;
+  unitId?: string;
+  classId?: string;
+  assignedClassId?: string;
+  roomId?: string;
+  nis?: string;
+  nisn?: string;
+  academicYearId?: string;
+}

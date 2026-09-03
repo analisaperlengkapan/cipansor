@@ -403,6 +403,9 @@ async function createRegistrantOnce(data: CreateRegistrantExtendedInput, isAdmin
         if (wave.registeredCount >= wave.quota) {
           continue;
         }
+        const isLastSlot = wave.registeredCount + 1 >= wave.quota;
+        const targetStatus = isLastSlot ? 'FULL' : 'OPEN';
+
         const claim = await tx.admissionWave.updateMany({
           where: {
             id: wave.id,
@@ -411,7 +414,7 @@ async function createRegistrantOnce(data: CreateRegistrantExtendedInput, isAdmin
           },
           data: {
             registeredCount: { increment: 1 },
-            status: 'OPEN',
+            status: targetStatus,
           },
         });
 

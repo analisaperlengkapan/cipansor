@@ -202,7 +202,7 @@ describe('Student Onboarding & Wave Quota Unit Tests', () => {
       });
     });
 
-    it('claims a wave previously marked FULL if registeredCount is less than quota due to cancellation', async () => {
+    it('claims a wave previously marked FULL if registeredCount is less than quota due to cancellation, and sets FULL when reaching quota', async () => {
       const mockPeriod = {
         id: 'period-1',
         academicYear: { name: '2026/2027' },
@@ -240,7 +240,7 @@ describe('Student Onboarding & Wave Quota Unit Tests', () => {
           status: { in: ['OPEN', 'FULL'] },
           registeredCount: { lt: 50 },
         },
-        data: { registeredCount: { increment: 1 }, status: 'OPEN' },
+        data: { registeredCount: { increment: 1 }, status: 'FULL' },
       });
     });
   });

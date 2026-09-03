@@ -29,6 +29,7 @@ export function DocumentCaptureField({
   onFileSelect,
   userInputData,
   onOcrExtracted,
+  onOcrResult,
 }: DocumentCaptureFieldProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);

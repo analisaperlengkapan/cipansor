@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import type { RegistrantDTO, RegistrantDocumentDTO } from "@cipansor/shared";
+import type { RegistrantDTO, RegistrantDocumentDTO, OnboardRegistrantPayload } from "@cipansor/shared";
 
 // =====================================
 // Backward-compat types & constants
@@ -223,17 +223,6 @@ export function useRegistrant(id: string) {
     },
     enabled: !!id,
   });
-}
-
-export interface OnboardRegistrantPayload {
-  registrantId: string;
-  unitId?: string;
-  classId?: string;
-  assignedClassId?: string;
-  roomId?: string;
-  nis?: string;
-  nisn?: string;
-  academicYearId?: string;
 }
 
 export function useOnboardRegistrant() {

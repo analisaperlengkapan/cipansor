@@ -307,28 +307,9 @@ export class StudentOnboardingOrchestrator {
         });
       }
 
-      // 10. Generate REG_FEE invoice ONLY IF the registration fee has not been paid yet
-      const isAlreadyPaid = registrant.registrationFeePaidAt != null || Number(period?.registrationFee ?? 0) === 0;
-      if (!isAlreadyPaid && period && Number(period.registrationFee) > 0 && tx.paymentType) {
-        const paymentType = await tx.paymentType.findFirst({
-          where: { unitId: effectiveUnitId, code: 'REG_FEE' },
-        });
-        if (paymentType) {
-          const financeService = await import('../../modules/finance/finance.service');
-          await financeService.createInvoice(
-            {
-              studentId: student.id,
-              paymentTypeId: paymentType.id,
-              amount: Number(period.registrationFee),
-              dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-              notes: `Biaya Pendaftaran ${registrant.fullName}`,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            } as any,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            tx as any
-          );
-        }
-      }
+      // Policy: Registration fee (daftar ulang) settlement is mandatory prior to onboarding
+      // (enforced by assertAdmissionFeeSettled above). Payment is recorded prior to enrollment via
+      // recordRegistrationFee, so no unpaid invoice generation is needed during student onboarding.
 
       return {
         success: true,

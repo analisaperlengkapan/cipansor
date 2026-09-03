@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import {
   CreateLetterInput,
+  DispatchLetterInput,
   LetterDirection,
   LetterStatus,
   LetterDetail,
@@ -226,6 +227,28 @@ export function useCorrespondence(unitId?: string) {
     },
   });
 
+  /**
+   * Catat bahwa naskah keluar ini benar-benar dikirim.
+   *
+   * Langkah yang tidak pernah ada tombolnya: sebuah surat yang sudah
+   * ditandatangani langsung melompat ke arsip, dan saat naskahnya diserahkan
+   * kepada kurir — satu-satunya saat yang dicatat buku agenda surat keluar —
+   * tidak dapat dituliskan di mana pun.
+   */
+  const dispatchLetter = useMutation({
+    mutationFn: async ({ id, ...body }: DispatchLetterInput & { id: string }) => {
+      const response = await api.post(
+        `/correspondence/letters/${id}/dispatch`,
+        body,
+      );
+      return response.data;
+    },
+    onSuccess: (_d, v) => {
+      queryClient.invalidateQueries({ queryKey: ["letters"] });
+      queryClient.invalidateQueries({ queryKey: ["letter", v.id] });
+    },
+  });
+
   // Get Stats — same reasoning as useLetters: no unit is a valid scope, not a
   // reason to skip the request.
   const useStats = () => {
@@ -249,6 +272,7 @@ export function useCorrespondence(unitId?: string) {
     createDisposition,
     updateDispositionStatus,
     resubmitLetter,
+    dispatchLetter,
     useStats,
   };
 }

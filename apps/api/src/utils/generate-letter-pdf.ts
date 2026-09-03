@@ -1,3 +1,4 @@
+import type { Prisma } from '@prisma/client';
 import { PDFDocument, PDFFont, PDFPage, StandardFonts, degrees, rgb } from 'pdf-lib';
 import QRCode from 'qrcode';
 import {
@@ -45,7 +46,7 @@ const DECIDING_OFFICIAL_TITLE_CASE = DECIDING_OFFICIAL.split(' ')
  * perubahan apa pun yang mengubah keluaran** — kop surat, jarak baris, urutan
  * gambar, atau kenaikan versi `pdf-lib`.
  */
-export const LETTER_PDF_GENERATOR = 'cipansor-naskah/2026-09-02';
+export const LETTER_PDF_GENERATOR = 'cipansor-naskah/2026-09-03';
 
 export class LetterPdfError extends Error {
   constructor(message: string) {
@@ -83,7 +84,37 @@ export interface LetterPdfInput {
       staff?: { nip?: string | null } | null;
     } | null;
   }> | null;
+  /** Berkas yang menyertai naskah; hanya jumlahnya yang tercetak. */
+  attachments?: Array<{ name: string }> | null;
+  /** Penerima internal; yang `isCC` menjadi daftar tembusan di kaki naskah. */
+  recipients?: Array<{
+    isCC: boolean;
+    user?: { name: string } | null;
+    unit?: { name: string } | null;
+  }> | null;
 }
+
+/**
+ * Relasi yang harus ikut terbaca setiap kali sebuah naskah dirender.
+ *
+ * Bukan kenyamanan, melainkan pengaman. Naskah yang sama dirender di dua jalur
+ * — saat ditandatangani (`esign.service`) dan saat diunduh
+ * (`correspondence/signed-pdf`) — dan hash byte-nyalah yang menjadi dasar
+ * verifikasi publik. Kalau salah satu jalur lupa mengambil `attachments` atau
+ * `recipients`, jalur itu mencetak naskah tanpa baris Lampiran dan tanpa blok
+ * Tembusan, byte-nya berbeda, dan surat yang sah dilaporkan sebagai berubah.
+ * Satu tempat, dipakai keduanya, supaya keduanya tidak dapat berselisih.
+ */
+export const LETTER_PDF_RELATIONS = {
+  unit: true,
+  attachments: { orderBy: { order: 'asc' } },
+  recipients: {
+    include: {
+      user: { select: { name: true } },
+      unit: { select: { name: true } },
+    },
+  },
+} satisfies Prisma.LetterInclude;
 
 const PAGE_WIDTH = 595.28; // A4
 const PAGE_HEIGHT = 841.89;
@@ -142,6 +173,42 @@ function unsupportedCharacters(text: string): string[] {
   return [...bad];
 }
 
+/**
+ * Nama-nama penerima tembusan, apa adanya dari urutan yang dikirim API.
+ *
+ * Seorang pengguna atau sebuah unit — keduanya sah sebagai penerima tembusan,
+ * dan sebuah baris tanpa nama sama sekali dilewati daripada mencetak baris
+ * bernomor yang kosong.
+ */
+function copyRecipients(letter: LetterPdfInput): string[] {
+  return (letter.recipients ?? [])
+    .filter((r) => r.isCC)
+    .map((r) => r.user?.name?.trim() || r.unit?.name?.trim() || '')
+    .filter((name) => name.length > 0);
+}
+
+/**
+ * Bilangan kecil dalam huruf, untuk "Lampiran : 2 (dua) berkas".
+ *
+ * Tata naskah dinas menulis jumlah lampiran dengan angka *dan* huruf, dengan
+ * alasan yang sama seperti pada kuitansi: satu angka mudah diubah setelah
+ * naskah ditandatangani, dua bentuk yang harus cocok jauh lebih sulit. Cukup
+ * sampai 99 — sebuah surat dengan seratus lampiran punya masalah lain.
+ */
+const SATUAN = [
+  'nol', 'satu', 'dua', 'tiga', 'empat', 'lima', 'enam', 'tujuh', 'delapan',
+  'sembilan', 'sepuluh', 'sebelas',
+];
+
+function spellOut(n: number): string {
+  if (n < 12) return SATUAN[n];
+  if (n < 20) return `${SATUAN[n - 10]} belas`;
+  const puluh = Math.floor(n / 10);
+  const sisa = n % 10;
+  const head = `${SATUAN[puluh]} puluh`;
+  return sisa ? `${head} ${SATUAN[sisa]}` : head;
+}
+
 function assertRenderable(letter: LetterPdfInput): void {
   const fields: Array<[string, string | null | undefined]> = [
     ['Perihal', letter.subject],
@@ -150,6 +217,12 @@ function assertRenderable(letter: LetterPdfInput): void {
     ['Instansi penerima', letter.recipientInstance],
     ['Jabatan penanda tangan', letter.senderTitle],
     ['Nama pengirim', letter.senderName],
+    // Nama tembusan ikut tercetak, jadi ia ikut diperiksa. Menolak di sini
+    // menyebut bagian mana yang bermasalah; membiarkannya lolos berarti
+    // pdf-lib yang melempar dari kedalaman, tanpa menyebut apa pun.
+    ...copyRecipients(letter).map(
+      (name, i) => [`Tembusan ${i + 1}`, name] as [string, string]
+    ),
   ];
 
   const offenders = new Set<string>();
@@ -416,7 +489,26 @@ export async function generateLetterPdfBuffer(letter: LetterPdfInput): Promise<B
       font: fontTimes,
     });
     cur.down();
-    cur.text('Lampiran : -', { x: MARGIN_X, font: fontTimes });
+    /**
+     * Berapa berkas yang menyertai naskah ini.
+     *
+     * Selalu "-" sebelumnya, apa pun keadaannya — dan tidak ada tempat untuk
+     * mencatat lampiran, jadi "-" selalu benar secara kebetulan. Baris ini ada
+     * justru supaya penerima tahu apa yang seharusnya ia terima: surat yang
+     * menyatakan dua lampiran dan sampai tanpa keduanya adalah surat yang
+     * kekurangannya dapat dibuktikan.
+     *
+     * Naskah tanpa lampiran mencetak persis kalimat yang sama seperti dahulu,
+     * sehingga byte setiap surat yang sudah ditandatangani tidak berubah —
+     * lihat uji "naskah tanpa lampiran dan tanpa tembusan" di berkas ujinya.
+     */
+    const lampiranCount = (letter.attachments ?? []).length;
+    cur.text(
+      lampiranCount === 0
+        ? 'Lampiran : -'
+        : `Lampiran : ${lampiranCount} (${spellOut(lampiranCount)}) berkas`,
+      { x: MARGIN_X, font: fontTimes }
+    );
     cur.down();
     cur.text(`Perihal   : ${letter.subject}`, { x: MARGIN_X, font: fontTimesBold });
     cur.down(25);
@@ -550,6 +642,33 @@ export async function generateLetterPdfBuffer(letter: LetterPdfInput): Promise<B
   if (signerNip !== '-') {
     cur.text(`NIP. ${signerNip}`, { x: rightAlignX, size: 9, font: fontTimes });
     cur.down(12);
+  }
+
+  // ── Tembusan ─────────────────────────────────────────────────────────────
+  /**
+   * Siapa saja yang menerima salinan naskah ini.
+   *
+   * Unsur baku naskah dinas, di kaki kiri halaman terakhir, di bawah blok
+   * tanda tangan — bukan di atasnya, karena tembusan adalah keterangan
+   * peredaran, bukan bagian dari isi yang ditandatangani. Kolom `isCC` sudah
+   * ada sejak awal dan tidak pernah diisi apa pun selain `false`, sehingga
+   * penyusun yang perlu mencantumkan tembusan menuliskannya di badan surat, di
+   * mana tidak ada satu pun bagian sistem yang dapat membacanya.
+   *
+   * Seluruh daftar dijamin muat dalam satu halaman sebelum baris pertamanya
+   * digambar: daftar tembusan yang terpotong di antara dua halaman membuat
+   * pembaca menyangka salinannya berhenti di situ.
+   */
+  const copies = copyRecipients(letter);
+  if (copies.length > 0) {
+    cur.ensure(26 + copies.length * 13);
+    cur.down(18);
+    cur.text('Tembusan:', { x: MARGIN_X, size: 9, font: fontTimesBold });
+    cur.down(13);
+    copies.forEach((name, i) => {
+      cur.text(`${i + 1}. ${name}`, { x: MARGIN_X, size: 9, font: fontTimes });
+      cur.down(13);
+    });
   }
 
   // ── Footers ──────────────────────────────────────────────────────────────

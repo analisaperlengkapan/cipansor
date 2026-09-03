@@ -6,6 +6,7 @@ export {
   letterNoteSchema,
   submitLetterSchema,
   listParticipantsQuerySchema,
+  dispatchLetterSchema,
 } from '@cipansor/shared';
 
 export type {
@@ -16,4 +17,5 @@ export type {
   LetterNoteSchemaInput,
   SubmitLetterSchemaInput,
   ListParticipantsQueryInput,
+  DispatchLetterSchemaInput,
 } from '@cipansor/shared';

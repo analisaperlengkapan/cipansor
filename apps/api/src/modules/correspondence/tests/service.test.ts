@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CorrespondenceService } from '../correspondence.service';
 import { prisma } from '@/lib/prisma';
+import { LETTER_PDF_RELATIONS } from '@/utils/generate-letter-pdf';
 
 // Mock dependencies
 vi.mock('@/lib/prisma', () => ({
@@ -27,6 +28,12 @@ vi.mock('@/lib/prisma', () => ({
     },
     letterRecipient: {
       createMany: vi.fn(),
+    },
+    letterAttachment: {
+      createMany: vi.fn(),
+    },
+    letterDispatch: {
+      create: vi.fn(),
     },
     disposition: {
       findFirst: vi.fn(),
@@ -1107,6 +1114,367 @@ describe('CorrespondenceService', () => {
 
       const detailCall = vi.mocked(prisma.letter.findUnique).mock.calls.at(-1)![0] as any;
       expect(detailCall.include.signatures).toBeDefined();
+    });
+
+    /**
+     * Naskah yang sama dirender di dua tempat, dan hash byte-nya adalah dasar
+     * verifikasi publik. Kalau halaman ini mengambil relasi yang lebih sedikit
+     * daripada jalur penandatanganan, naskah yang diunduh kehilangan baris
+     * Lampiran dan blok Tembusan-nya, dan surat yang sah dilaporkan berubah.
+     */
+    it('membaca relasi yang dibutuhkan penghasil PDF', async () => {
+      vi.mocked(prisma.letter.findUnique).mockResolvedValue({
+        id: 'letter-1',
+        unitId: 'unit-1',
+        createdById: 'creator-1',
+        status: 'SIGNED',
+        reviewers: [],
+        recipients: [],
+        dispositions: [],
+      } as any);
+
+      await CorrespondenceService.getLetterById('letter-1', {
+        id: 'creator-1',
+        roleCode: 'SUPER_ADMIN',
+        unitId: null,
+      } as any);
+
+      const call = vi.mocked(prisma.letter.findUnique).mock.calls.at(-1)![0] as any;
+      for (const relation of Object.keys(LETTER_PDF_RELATIONS)) {
+        expect(call.include[relation]).toBeDefined();
+      }
+    });
+  });
+
+  /**
+   * Buku ekspedisi surat keluar.
+   *
+   * Status SENT sudah ada di skema sejak awal dan yang mengisinya justru surat
+   * *masuk*; saat sebuah naskah keluar benar-benar diserahkan kepada kurir
+   * tidak tercatat di mana pun.
+   */
+  describe('dispatchLetter', () => {
+    const petugas = { id: 'tu-1', roleCode: 'SDIT_TATA_USAHA', unitId: 'unit-1' };
+    const signedLetter = (over: Record<string, unknown> = {}) => ({
+      id: 'letter-1',
+      unitId: 'unit-1',
+      createdById: 'creator-1',
+      subject: 'Undangan Rapat Kerja',
+      status: 'SIGNED',
+      direction: 'OUTGOING',
+      sentAt: null,
+      reviewers: [],
+      recipients: [],
+      dispositions: [],
+      signatures: [{ revokedAt: null }],
+      ...over,
+    });
+
+    it('mencatat pengiriman, memindahkan status ke SENT, dan mengisi sentAt', async () => {
+      vi.mocked(prisma.letter.findUnique).mockResolvedValue(signedLetter() as any);
+      vi.mocked(prisma.letterDispatch.create).mockResolvedValue({ id: 'exp-1' } as any);
+      vi.mocked(prisma.letter.update).mockResolvedValue({} as any);
+
+      const result = await CorrespondenceService.dispatchLetter(
+        'letter-1',
+        petugas as any,
+        {
+          channel: 'COURIER',
+          dispatchedAt: '2026-09-02T03:00:00.000Z',
+          receivedByName: 'Satpam MTs',
+          trackingNumber: 'JNE-99',
+        } as any
+      );
+
+      expect(prisma.letterDispatch.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            letterId: 'letter-1',
+            dispatchedById: 'tu-1',
+            channel: 'COURIER',
+            receivedByName: 'Satpam MTs',
+            trackingNumber: 'JNE-99',
+          }),
+        })
+      );
+      expect(prisma.letter.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: {
+            status: 'SENT',
+            sentAt: new Date('2026-09-02T03:00:00.000Z'),
+          },
+        })
+      );
+      expect(result.status).toBe('SENT');
+    });
+
+    /**
+     * Sebuah surat keluar dari kantor satu kali. Yang berikutnya adalah
+     * pengiriman kedua ke alamat lain, atau pengiriman ulang karena yang
+     * pertama tidak sampai — keduanya tercatat, dan keduanya tidak mengubah
+     * kapan naskah itu terbit ke luar.
+     */
+    it('tidak menggeser sentAt pada pengiriman susulan', async () => {
+      const first = new Date('2026-09-01T02:00:00.000Z');
+      vi.mocked(prisma.letter.findUnique).mockResolvedValue(
+        signedLetter({ status: 'SENT', sentAt: first }) as any
+      );
+      vi.mocked(prisma.letterDispatch.create).mockResolvedValue({ id: 'exp-2' } as any);
+      vi.mocked(prisma.letter.update).mockResolvedValue({} as any);
+
+      await CorrespondenceService.dispatchLetter('letter-1', petugas as any, {
+        channel: 'POST',
+      } as any);
+
+      expect(prisma.letter.update).toHaveBeenCalledWith(
+        expect.objectContaining({ data: { status: 'SENT', sentAt: first } })
+      );
+    });
+
+    it('menolak surat masuk — surat masuk diterima, bukan dikirim', async () => {
+      vi.mocked(prisma.letter.findUnique).mockResolvedValue(
+        signedLetter({ direction: 'INCOMING', status: 'DISPOSED' }) as any
+      );
+
+      await expect(
+        CorrespondenceService.dispatchLetter('letter-1', petugas as any, {
+          channel: 'HAND_DELIVERY',
+        } as any)
+      ).rejects.toThrow(/Surat masuk diterima, bukan dikirim/);
+      expect(prisma.letterDispatch.create).not.toHaveBeenCalled();
+    });
+
+    it('menolak naskah yang belum ditandatangani', async () => {
+      vi.mocked(prisma.letter.findUnique).mockResolvedValue(
+        signedLetter({ status: 'READY_TO_SIGN', signatures: [] }) as any
+      );
+
+      await expect(
+        CorrespondenceService.dispatchLetter('letter-1', petugas as any, {
+          channel: 'HAND_DELIVERY',
+        } as any)
+      ).rejects.toThrow(/belum ditandatangani/);
+      expect(prisma.letterDispatch.create).not.toHaveBeenCalled();
+    });
+
+    it('menolak naskah yang sudah dicabut', async () => {
+      vi.mocked(prisma.letter.findUnique).mockResolvedValue(
+        signedLetter({
+          status: 'SIGNED',
+          signatures: [{ revokedAt: new Date('2026-09-02T00:00:00.000Z') }],
+        }) as any
+      );
+
+      await expect(
+        CorrespondenceService.dispatchLetter('letter-1', petugas as any, {
+          channel: 'EMAIL',
+        } as any)
+      ).rejects.toThrow(/sudah dicabut/);
+    });
+
+    /**
+     * Seorang guru yang menjadi verifikator surat ini boleh membacanya — itu
+     * sebabnya ia diuji di sini dan bukan seorang asing. Membaca bukan
+     * mengirim: mencatat pengiriman adalah perbuatan tata usaha.
+     */
+    it('menolak peran yang boleh membaca surat tetapi tidak mengurus persuratan', async () => {
+      vi.mocked(prisma.letter.findUnique).mockResolvedValue(
+        signedLetter({ reviewers: [{ reviewerId: 'guru-1' }] }) as any
+      );
+
+      await expect(
+        CorrespondenceService.dispatchLetter(
+          'letter-1',
+          { id: 'guru-1', roleCode: 'SDIT_GURU_KELAS', unitId: 'unit-1' } as any,
+          { channel: 'POST' } as any
+        )
+      ).rejects.toThrow(/tidak berwenang/);
+      expect(prisma.letterDispatch.create).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('tembusan dan lampiran', () => {
+    const admin = { id: 'user-1', roleCode: 'SUPER_ADMIN', unitId: null };
+
+    const eligible = (ids: string[]) =>
+      ids.map((id) => ({
+        id,
+        unitId: 'unit-1',
+        teacher: null,
+        staff: { nip: '123' },
+        userRoles: [{ role: { code: 'SDIT_TATA_USAHA' } }],
+      }));
+
+    it('menulis penerima tembusan sebagai isCC true', async () => {
+      vi.mocked(prisma.user.findMany).mockResolvedValue(
+        eligible(['penerima-1', 'tembusan-1']) as any
+      );
+      vi.mocked(prisma.letter.create).mockResolvedValue({
+        id: 'let-cc',
+        status: 'DRAFT',
+        unitId: 'unit-1',
+      } as any);
+
+      await CorrespondenceService.createLetter(
+        {
+          unitId: 'unit-1',
+          direction: 'OUTGOING' as any,
+          subject: 'Undangan',
+          date: '2026-09-01',
+          urgency: 'NORMAL' as any,
+          nature: 'PUBLIC' as any,
+          status: 'DRAFT' as any,
+          recipientIds: ['penerima-1'],
+          ccIds: ['tembusan-1'],
+        },
+        'user-1',
+        admin as any
+      );
+
+      const rows = vi
+        .mocked(prisma.letterRecipient.createMany)
+        .mock.calls.flatMap((c) => (c[0] as any).data as any[]);
+
+      expect(rows).toContainEqual(
+        expect.objectContaining({ userId: 'penerima-1', isCC: false })
+      );
+      expect(rows).toContainEqual(
+        expect.objectContaining({ userId: 'tembusan-1', isCC: true })
+      );
+    });
+
+    /**
+     * Seseorang menerima surat ini *atau* salinannya. Dua baris untuk orang
+     * yang sama mencetak namanya di kaki naskah sebagai tembusan padahal ia
+     * penerima utamanya.
+     */
+    it('tidak mencatat penerima utama sekaligus sebagai tembusan', async () => {
+      vi.mocked(prisma.user.findMany).mockResolvedValue(eligible(['orang-1']) as any);
+      vi.mocked(prisma.letter.create).mockResolvedValue({
+        id: 'let-dup',
+        status: 'DRAFT',
+        unitId: 'unit-1',
+      } as any);
+
+      await CorrespondenceService.createLetter(
+        {
+          unitId: 'unit-1',
+          direction: 'OUTGOING' as any,
+          subject: 'Undangan',
+          date: '2026-09-01',
+          urgency: 'NORMAL' as any,
+          nature: 'PUBLIC' as any,
+          status: 'DRAFT' as any,
+          recipientIds: ['orang-1'],
+          ccIds: ['orang-1'],
+        },
+        'user-1',
+        admin as any
+      );
+
+      const rows = vi
+        .mocked(prisma.letterRecipient.createMany)
+        .mock.calls.flatMap((c) => (c[0] as any).data as any[]);
+
+      expect(rows.filter((r) => r.userId === 'orang-1')).toHaveLength(1);
+      expect(rows[0].isCC).toBe(false);
+    });
+
+    it('menyimpan lampiran berikut urutannya', async () => {
+      vi.mocked(prisma.letter.create).mockResolvedValue({
+        id: 'let-att',
+        status: 'DRAFT',
+        unitId: 'unit-1',
+      } as any);
+
+      await CorrespondenceService.createLetter(
+        {
+          unitId: 'unit-1',
+          direction: 'OUTGOING' as any,
+          subject: 'Laporan',
+          date: '2026-09-01',
+          urgency: 'NORMAL' as any,
+          nature: 'PUBLIC' as any,
+          status: 'DRAFT' as any,
+          attachments: [
+            { name: 'Daftar hadir.pdf', fileUrl: '/uploads/a.pdf' },
+            { name: 'Notulen.pdf', fileUrl: '/uploads/b.pdf' },
+          ],
+        },
+        'user-1',
+        admin as any
+      );
+
+      expect(prisma.letterAttachment.createMany).toHaveBeenCalledWith({
+        data: [
+          expect.objectContaining({ name: 'Daftar hadir.pdf', order: 1 }),
+          expect.objectContaining({ name: 'Notulen.pdf', order: 2 }),
+        ],
+      });
+    });
+
+    /**
+     * Penerima tembusan dapat membaca suratnya. Melewatkannya dari pemeriksaan
+     * kelayakan menjadikan tembusan jalan memberi akses kepada peran yang
+     * justru dikecualikan dari persuratan.
+     */
+    it('memeriksa kelayakan penerima tembusan seperti penerima biasa', async () => {
+      vi.mocked(prisma.user.findMany).mockResolvedValue([] as any);
+
+      await expect(
+        CorrespondenceService.createLetter(
+          {
+            unitId: 'unit-1',
+            direction: 'OUTGOING' as any,
+            subject: 'Undangan',
+            date: '2026-09-01',
+            urgency: 'NORMAL' as any,
+            nature: 'PUBLIC' as any,
+            status: 'DRAFT' as any,
+            ccIds: ['santri-1'],
+          },
+          'user-1',
+          admin as any
+        )
+      ).rejects.toThrow();
+      expect(prisma.letter.create).not.toHaveBeenCalled();
+    });
+  });
+
+  /**
+   * SENT berarti "naskah ini sudah meninggalkan kantor". Sebelumnya justru
+   * surat *masuk* yang mengisinya, sehingga daftar surat menampilkan surat
+   * yang baru tiba sebagai "Terkirim".
+   */
+  describe('penyelesaian review surat masuk', () => {
+    it('mengarsipkan surat masuk yang selesai tanpa disposisi, bukan menandainya terkirim', async () => {
+      vi.mocked(prisma.letter.findUnique).mockResolvedValue({
+        id: 'inc-1',
+        status: 'PENDING_REVIEW',
+        direction: 'INCOMING',
+        unitId: 'unit-1',
+        createdById: 'creator-1',
+        reviewers: [
+          { id: 'rev-1', reviewerId: 'user-1', order: 1, status: 'PENDING', isSigner: true },
+        ],
+        recipients: [],
+      } as any);
+      vi.mocked(prisma.letter.update).mockResolvedValue({} as any);
+
+      await CorrespondenceService.processReview('inc-1', 'user-1', 'APPROVE');
+
+      expect(prisma.letter.update).toHaveBeenCalledWith(
+        expect.objectContaining({ data: { status: 'ARCHIVED' } })
+      );
+
+      // Penutupannya tercatat sebagai peristiwa tersendiri: riwayat alur harus
+      // menyebut siapa yang menutup surat itu dan atas dasar apa.
+      const events = vi
+        .mocked(prisma.letterFlowEvent.create)
+        .mock.calls.map((c) => (c[0] as any).data);
+      expect(events).toContainEqual(
+        expect.objectContaining({ action: 'ARCHIVED', toStatus: 'ARCHIVED' })
+      );
     });
   });
 });

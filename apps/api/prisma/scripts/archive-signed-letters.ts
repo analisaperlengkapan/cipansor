@@ -25,6 +25,7 @@ import { createPrismaClient } from '../client';
 import {
   generateLetterPdfBuffer,
   LETTER_PDF_GENERATOR,
+  LETTER_PDF_RELATIONS,
 } from '../../src/utils/generate-letter-pdf';
 
 const dryRun = process.argv.includes('--dry-run');
@@ -49,7 +50,10 @@ async function main() {
       const letter = await prisma.letter.findUnique({
         where: { id: sig.letterId },
         include: {
-          unit: true,
+          // Bentuk yang sama dengan jalur penandatanganan dan pengunduhan; kalau
+          // skrip ini mengambil relasi yang lebih sedikit, ia merender naskah
+          // yang berbeda dan melaporkan surat yang utuh sebagai menyimpang.
+          ...LETTER_PDF_RELATIONS,
           signatures: {
             include: {
               signer: {

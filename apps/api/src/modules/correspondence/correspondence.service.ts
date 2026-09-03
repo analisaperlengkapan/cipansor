@@ -11,6 +11,8 @@ import { prisma } from '@/lib/prisma';
 import {
   CreateLetterInput,
   CreateDispositionInput,
+  DispatchLetterSchemaInput,
+  LETTER_DISPATCH_CHANNEL_LABELS,
   LetterDirection,
   LetterStatus,
   UpdateLetterInput,
@@ -27,6 +29,7 @@ import {
 import { seesAllUnits } from '@/utils/resolve-unit-id';
 import {
   assertMayArchive,
+  assertMayDispatch,
   assertMayResubmit,
   assertMayReview,
   nextRung,
@@ -34,6 +37,7 @@ import {
   statusAfterResubmit,
   type ReviewerRung,
 } from '@/utils/letter-workflow';
+import { LETTER_PDF_RELATIONS } from '@/utils/generate-letter-pdf';
 import { AGENDA_TYPE_CODE, assertNatureAllowed } from '@/utils/letter-naskah';
 import { Errors } from '@/middleware/error';
 
@@ -227,6 +231,10 @@ export const CorrespondenceService = {
     const participantsToValidate = [
       ...(data.reviewerIds || []),
       ...(data.recipientIds || []),
+      // Penerima tembusan adalah penerima juga: ia akan dapat membaca surat
+      // ini. Melewatkannya dari pemeriksaan kelayakan berarti tembusan menjadi
+      // jalan memberi akses kepada peran yang justru dikecualikan.
+      ...(data.ccIds || []),
     ];
     if (participantsToValidate.length > 0) {
       await this.validateParticipantEligibility(participantsToValidate, actor);
@@ -348,6 +356,53 @@ export const CorrespondenceService = {
             userId: recipientId,
             unitId: targetUnitId,
             isCC: false,
+          })),
+        });
+      }
+
+      /**
+       * Tembusan.
+       *
+       * `isCC` ada di skema sejak awal dan satu-satunya penulisannya di seluruh
+       * kode adalah `isCC: false` di atas — kolom yang tidak pernah bernilai
+       * true adalah kolom yang tidak ada.
+       *
+       * Siapa pun yang sudah menjadi penerima utama tidak dicatat lagi sebagai
+       * tembusan: seseorang menerima surat ini *atau* salinannya, dan dua baris
+       * untuk orang yang sama akan mencetak namanya dua kali di kaki naskah.
+       */
+      const primaryRecipients = new Set(data.recipientIds ?? []);
+      const ccRecipients = Array.from(new Set(data.ccIds ?? [])).filter(
+        (id) => !primaryRecipients.has(id)
+      );
+      if (ccRecipients.length > 0) {
+        await tx.letterRecipient.createMany({
+          data: ccRecipients.map((userId) => ({
+            letterId: letter.id,
+            userId,
+            unitId: targetUnitId,
+            isCC: true,
+          })),
+        });
+      }
+
+      /**
+       * Lampiran.
+       *
+       * Urutannya adalah urutan yang disusun pembuatnya, dan ia disimpan:
+       * naskahnya mengumumkan "Lampiran : 2 (dua) berkas", dan daftar bernomor
+       * yang urutannya berubah-ubah setiap kali dibaca bukan daftar.
+       */
+      if (data.attachments && data.attachments.length > 0) {
+        await tx.letterAttachment.createMany({
+          data: data.attachments.map((att, index) => ({
+            letterId: letter.id,
+            name: att.name,
+            fileUrl: att.fileUrl,
+            mimeType: att.mimeType ?? null,
+            sizeBytes: att.sizeBytes ?? null,
+            order: index + 1,
+            uploadedById: userId,
           })),
         });
       }
@@ -540,7 +595,16 @@ export const CorrespondenceService = {
     return await prisma.letter.findUnique({
       where: { id },
       include: {
-        unit: true,
+        /**
+         * Unit, lampiran, dan penerima — bentuk yang sama persis dengan yang
+         * dibaca jalur penandatanganan.
+         *
+         * Halaman ini juga yang memberi makan `resolveLetterPdf`, jadi kalau
+         * kedua jalur mengambil relasi yang berbeda, naskah yang dicetak
+         * berbeda dari naskah yang di-hash dan verifikasi publik menyebut surat
+         * yang sah sebagai berubah. Satu tetapan, dipakai keduanya.
+         */
+        ...LETTER_PDF_RELATIONS,
         classification: true,
         createdBy: { select: { name: true } },
         reviewers: {
@@ -555,10 +619,11 @@ export const CorrespondenceService = {
           },
           orderBy: { order: 'asc' },
         },
-        recipients: {
-          include: {
-            user: { select: { name: true } },
-          },
+        // Buku ekspedisi naskah ini, terbaru di atas: yang dicari petugas
+        // hampir selalu pengiriman terakhir.
+        dispatches: {
+          include: { dispatchedBy: { select: { name: true } } },
+          orderBy: { dispatchedAt: 'desc' },
         },
         /**
          * Oldest first, like the flow history below it.
@@ -787,10 +852,37 @@ export const CorrespondenceService = {
 
       if (action === 'APPROVE') {
         if (letter.direction === 'INCOMING' && reviewFinished) {
-          // A2 & A6: Incoming review completion does not require signer flag.
-          // If recipients exist, set DISPOSED; otherwise set SENT (representing reviewed/processed incoming letter).
+          /**
+           * A2 & A6: penyelesaian review surat masuk tidak menuntut penanda
+           * tangan. Ada penerima → DISPOSED; tidak ada → surat itu selesai.
+           *
+           * Sebelumnya "selesai" ditulis sebagai **SENT**, dan itu keliru dalam
+           * arti yang paling harfiah: sebuah surat *masuk* dicatat sebagai
+           * terkirim. Statusnya tampil "Terkirim" di daftar surat, penyaring
+           * status menghitungnya bersama surat keluar, dan satu-satunya keadaan
+           * yang seharusnya berarti "naskah ini sudah meninggalkan kantor"
+           * justru paling sering diisi oleh surat yang baru saja tiba.
+           *
+           * ARCHIVED, karena itulah yang sebenarnya terjadi: surat masuk yang
+           * sudah diverifikasi dan tidak perlu diteruskan kepada siapa pun sudah
+           * selesai perjalanannya, dan yang tersisa hanyalah menyimpannya.
+           * Peristiwanya dicatat tersendiri di bawah, supaya riwayat alurnya
+           * menyebut siapa yang menutup surat itu dan atas dasar apa — bukan
+           * berpindah status tanpa keterangan.
+           */
           const hasRecipients = letter.recipients && letter.recipients.length > 0;
-          nextStatus = hasRecipients ? DbLetterStatus.DISPOSED : DbLetterStatus.SENT;
+          nextStatus = hasRecipients ? DbLetterStatus.DISPOSED : DbLetterStatus.ARCHIVED;
+
+          if (!hasRecipients) {
+            await recordFlow(tx, {
+              letterId: letter.id,
+              actorId: reviewerId,
+              action: LetterFlowAction.ARCHIVED,
+              fromStatus: letter.status,
+              toStatus: DbLetterStatus.ARCHIVED,
+              note: 'Selesai diverifikasi tanpa disposisi; surat langsung diarsipkan.',
+            });
+          }
 
           // When review finishes for an INCOMING letter with recipients, create live Disposition tasks
           if (hasRecipients) {
@@ -1140,6 +1232,138 @@ export const CorrespondenceService = {
 
       return { id: letterId, status: nextStatus };
     });
+  },
+
+  /**
+   * Catat bahwa sebuah naskah keluar benar-benar dikirim.
+   *
+   * Inilah langkah yang selama ini hilang. Surat keluar berjalan
+   * DRAFT → PENDING_REVIEW → READY_TO_SIGN → SIGNED → ARCHIVED, dan saat
+   * naskahnya diserahkan kepada kurir — satu-satunya saat yang menjadi alasan
+   * buku agenda surat keluar ada — tidak tercatat di mana pun. Status SENT ada
+   * di skema sejak awal, tetapi yang mengisinya justru surat *masuk*
+   * (`processReview`, kini diperbaiki).
+   *
+   * Yang disimpan bukan sekadar penanda "sudah dikirim": tanggal, saluran,
+   * kepada siapa diserahkan, nomor resi, dan tanda terimanya. Ketika penerima
+   * menyatakan tidak menerima surat, kelimanya itulah jawabannya — dan sebuah
+   * kolom boolean tidak menjawab satu pun.
+   *
+   * Kewenangannya sama dengan pengarsipan: pembuat surat, petugas persuratan
+   * unit, atau pejabat yayasan. Pengiriman adalah perbuatan tata usaha, bukan
+   * perbuatan penanda tangan.
+   */
+  async dispatchLetter(
+    letterId: string,
+    actor: LetterActor,
+    input: DispatchLetterSchemaInput
+  ) {
+    await assertLetterAccess(actor, letterId);
+
+    const existing = await prisma.letter.findUnique({
+      where: { id: letterId },
+      select: { createdById: true },
+    });
+    if (!existing) throw Errors.notFound('Surat tidak ditemukan');
+
+    const isCreator = actor.id === existing.createdById;
+    const isExecutive =
+      actor.roleCode === RoleCode.YAYASAN_KETUA ||
+      actor.roleCode === RoleCode.YAYASAN_SEKRETARIS ||
+      actor.roleCode === RoleCode.SUPER_ADMIN;
+
+    if (!isCreator && !isExecutive && !handlesUnitCorrespondence(actor)) {
+      throw Errors.forbidden('Anda tidak berwenang mencatat pengiriman surat ini.');
+    }
+
+    const dispatchedAt = input.dispatchedAt ? new Date(input.dispatchedAt) : new Date();
+
+    const result = await prisma.$transaction(async (tx) => {
+      // Sejalan dengan pengarsipan dan review: dua petugas yang mencatat
+      // pengiriman surat yang sama pada saat yang sama tidak boleh saling
+      // menimpa `sentAt`.
+      await tx.$executeRaw`SELECT id FROM letters WHERE id = ${letterId} FOR UPDATE`;
+
+      const letter = await tx.letter.findUnique({
+        where: { id: letterId },
+        select: {
+          id: true,
+          status: true,
+          direction: true,
+          sentAt: true,
+          subject: true,
+          unitId: true,
+          createdById: true,
+          signatures: {
+            select: { revokedAt: true },
+            orderBy: { signedAt: 'asc' },
+          },
+        },
+      });
+      if (!letter) throw Errors.notFound('Surat tidak ditemukan');
+
+      const latestSignature = letter.signatures.at(-1) ?? null;
+      assertMayDispatch(letter.direction, letter.status, !!latestSignature?.revokedAt);
+
+      const dispatch = await tx.letterDispatch.create({
+        data: {
+          letterId,
+          dispatchedById: actor.id,
+          dispatchedAt,
+          channel: input.channel,
+          receivedByName: input.receivedByName ?? null,
+          trackingNumber: input.trackingNumber ?? null,
+          receiptUrl: input.receiptUrl ?? null,
+          note: input.note ?? null,
+        },
+      });
+
+      await tx.letter.update({
+        where: { id: letterId },
+        data: {
+          status: DbLetterStatus.SENT,
+          // Pengiriman pertama, dan hanya yang pertama. Surat yang diantar ke
+          // beberapa alamat atau dikirim ulang karena tidak sampai tetap
+          // "keluar dari kantor" pada tanggal yang pertama itu; setiap
+          // percobaannya tetap tersimpan sebagai barisnya sendiri.
+          sentAt: letter.sentAt ?? dispatchedAt,
+        },
+      });
+
+      const channelLabel = LETTER_DISPATCH_CHANNEL_LABELS[input.channel] ?? input.channel;
+      await recordFlow(tx, {
+        letterId,
+        actorId: actor.id,
+        action: LetterFlowAction.SENT,
+        fromStatus: letter.status,
+        toStatus: DbLetterStatus.SENT,
+        note: input.receivedByName
+          ? `Dikirim lewat ${channelLabel}, diterima ${input.receivedByName}.`
+          : `Dikirim lewat ${channelLabel}.`,
+      });
+
+      return { letter, dispatch, sentAt: letter.sentAt ?? dispatchedAt };
+    });
+
+    // Pembuat surat berhak tahu naskahnya sudah keluar; yang mencatat
+    // pengirimannya hampir selalu petugas tata usaha, bukan dia.
+    if (result.letter.createdById !== actor.id) {
+      eventBus.emit('notification:send', {
+        userId: result.letter.createdById,
+        unitId: result.letter.unitId,
+        type: 'INFO',
+        title: 'Surat Sudah Dikirim',
+        message: `Surat "${result.letter.subject}" tercatat sudah dikirim.`,
+        data: { letterId, link: `/e-office/letter/${letterId}` },
+      });
+    }
+
+    return {
+      id: letterId,
+      status: DbLetterStatus.SENT,
+      sentAt: result.sentAt,
+      dispatch: result.dispatch,
+    };
   },
 
   /**

@@ -10,6 +10,7 @@ import {
   letterNoteSchema,
   submitLetterSchema,
   listParticipantsQuerySchema,
+  dispatchLetterSchema,
 } from './correspondence.schema';
 
 const router = Router();
@@ -45,6 +46,12 @@ router.post(
   '/letters/:id/resubmit',
   validate(letterNoteSchema),
   CorrespondenceController.resubmit
+);
+// Kapan naskah keluar benar-benar dikirim, lewat apa, dan apa tanda terimanya.
+router.post(
+  '/letters/:id/dispatch',
+  validate(dispatchLetterSchema),
+  CorrespondenceController.dispatch
 );
 // The end of the chain: the last official to hold the letter files it.
 router.post(

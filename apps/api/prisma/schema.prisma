@@ -500,6 +500,8 @@ model User {
   revokedSignatures    LetterSignature[] @relation("LetterSignatureRevoker")
   revocationRequests   LetterRevocationRequest[] @relation("LetterRevocationRequester")
   revocationDecisions  LetterRevocationRequest[] @relation("LetterRevocationDecider")
+  letterDispatches     LetterDispatch[]  @relation("LetterDispatcher")
+  letterAttachments    LetterAttachment[] @relation("LetterAttachmentUploader")
 
   // Risk Management
   createdRisks        Risk[]             @relation("RiskCreator")
@@ -7440,6 +7442,14 @@ model Letter {
   senderInstance    String?         @map("sender_instance") // Instansi Pengirim
   recipientName     String?         @map("recipient_name") // Penerima (External)
   recipientInstance String?         @map("recipient_instance")
+  /// Kapan naskah ini benar-benar keluar dari kantor.
+  ///
+  /// Terpisah dari `date` (tanggal yang tercetak pada naskah) dan dari
+  /// `updatedAt`: buku agenda surat keluar mencatat tanggal *pengiriman*, dan
+  /// tanpa kolom ini tidak ada satu pun angka "surat terkirim" yang dapat
+  /// dipertanggungjawabkan. Diisi pada pengiriman pertama dan tidak diubah
+  /// oleh pengiriman susulan — lihat LetterDispatch.
+  sentAt            DateTime?       @map("sent_at")
 
   // Relations
   unit           Unit                  @relation(fields: [unitId], references: [id])
@@ -7452,6 +7462,8 @@ model Letter {
   flowEvents     LetterFlowEvent[]
   signatures     LetterSignature[]
   revocationRequests LetterRevocationRequest[]
+  attachments    LetterAttachment[]
+  dispatches     LetterDispatch[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -7460,6 +7472,7 @@ model Letter {
   @@index([direction])
   @@index([status])
   @@index([date])
+  @@index([sentAt])
   @@map("letters")
 }
 
@@ -7503,6 +7516,78 @@ model LetterRecipient {
   @@index([letterId])
   @@index([userId])
   @@map("letter_recipients")
+}
+
+/// LetterAttachment - Daftar lampiran naskah dinas
+///
+/// `Letter.fileUrl` adalah berkas naskahnya sendiri (pindaian surat masuk,
+/// atau naskah yang diunggah), satu berkas dan bukan daftar. Lampiran adalah
+/// hal yang berbeda: berkas-berkas yang *menyertai* naskah, dan yang
+/// keberadaannya diumumkan pada kepala surat sebagai "Lampiran : 2 (dua)
+/// berkas". Tanpa tabel ini surat keluar tidak dapat melampirkan apa pun, dan
+/// baris "Lampiran" pada setiap naskah tercetak "-" apa pun keadaannya.
+model LetterAttachment {
+  id       String  @id @default(uuid())
+  letterId String  @map("letter_id")
+  /// Nama sebagaimana dibaca pengarsip, bukan nama berkas di penyimpanan.
+  name     String
+  fileUrl  String  @map("file_url")
+  mimeType String? @map("mime_type")
+  sizeBytes Int?   @map("size_bytes")
+  /// Urutan sebagaimana disebut dalam naskah; lampiran adalah daftar bernomor.
+  order    Int     @default(1)
+
+  uploadedById String? @map("uploaded_by_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  letter     Letter @relation(fields: [letterId], references: [id], onDelete: Cascade)
+  uploadedBy User?  @relation("LetterAttachmentUploader", fields: [uploadedById], references: [id])
+
+  @@index([letterId, order])
+  @@map("letter_attachments")
+}
+
+/// Cara sebuah naskah keluar dari kantor.
+enum LetterDispatchChannel {
+  HAND_DELIVERY // Diantar langsung / diserahkan kepada yang bersangkutan
+  COURIER // Kurir / ekspedisi
+  POST // Pos
+  EMAIL // Surel
+  WHATSAPP
+  OTHER
+}
+
+/// LetterDispatch - Buku ekspedisi surat keluar
+///
+/// Yang dicatat sebuah buku ekspedisi bukan "surat ini sudah dikirim"
+/// melainkan *kapan*, *lewat apa*, *kepada siapa diserahkan*, dan *apa bukti
+/// terimanya*. Status SENT saja tidak menjawab satu pun dari itu, dan ketika
+/// penerima menyatakan tidak menerima surat, jawabannya justru ada di
+/// keempatnya.
+///
+/// Satu naskah boleh punya lebih dari satu baris: surat yang sama diantar ke
+/// beberapa alamat, atau dikirim ulang karena yang pertama tidak sampai.
+/// `Letter.sentAt` tetap menunjuk pengiriman pertama.
+model LetterDispatch {
+  id             String                @id @default(uuid())
+  letterId       String                @map("letter_id")
+  dispatchedById String                @map("dispatched_by_id")
+  dispatchedAt   DateTime              @map("dispatched_at")
+  channel        LetterDispatchChannel
+  /// Kepada siapa naskahnya diserahkan — orang, bukan instansi tujuan surat.
+  receivedByName String?               @map("received_by_name")
+  /// Nomor resi ekspedisi, bila ada.
+  trackingNumber String?               @map("tracking_number")
+  /// Tanda terima terpindai.
+  receiptUrl     String?               @map("receipt_url")
+  note           String?               @db.Text
+  createdAt      DateTime              @default(now()) @map("created_at")
+
+  letter       Letter @relation(fields: [letterId], references: [id], onDelete: Cascade)
+  dispatchedBy User   @relation("LetterDispatcher", fields: [dispatchedById], references: [id])
+
+  @@index([letterId, dispatchedAt])
+  @@map("letter_dispatches")
 }
 
 /// Disposition - Disposisi Surat

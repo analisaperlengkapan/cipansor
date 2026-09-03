@@ -30,6 +30,7 @@ import {
   generateLetterPdfBuffer,
   LetterPdfError,
   LETTER_PDF_GENERATOR,
+  LETTER_PDF_RELATIONS,
 } from '@/utils/generate-letter-pdf';
 import { verifyLetterByToken } from '@/utils/letter-verification';
 import { assertLetterAccess, type LetterActor } from '@/utils/letter-access';
@@ -963,7 +964,17 @@ export const EsignService = {
       const fullLetter = await tx.letter.findUnique({
         where: { id: letterId },
         include: {
-          unit: true,
+          /**
+           * Relasi yang dibaca penghasil PDF, dari satu tetapan bersama.
+           *
+           * Jalur ini dan jalur pengunduhan (`correspondence/signed-pdf`)
+           * merender naskah yang sama, dan hash byte inilah yang menjadi dasar
+           * verifikasi publik. Ketika `unit`, `attachments`, atau `recipients`
+           * hanya diambil salah satunya, yang satu mencetak baris Lampiran dan
+           * blok Tembusan sedangkan yang lain tidak — byte-nya berbeda, dan
+           * surat yang sah dilaporkan kepada publik sebagai berubah.
+           */
+          ...LETTER_PDF_RELATIONS,
           signatures: {
             include: {
               signer: {

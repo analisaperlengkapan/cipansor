@@ -149,6 +149,88 @@ describe('isi naskah', () => {
   });
 });
 
+describe('lampiran dan tembusan', () => {
+  /**
+   * Baris "Lampiran" pada kepala surat selalu tercetak "-", apa pun keadaannya,
+   * karena memang tidak ada tempat untuk mencatat lampiran. Baris itu ada
+   * justru supaya penerima tahu apa yang seharusnya ia terima.
+   */
+  it('mengumumkan jumlah lampiran dengan angka dan huruf', async () => {
+    const pdf = await generateLetterPdfBuffer(
+      letterWith({
+        type: 'SURAT_DINAS',
+        attachments: [{ name: 'Daftar hadir' }, { name: 'Notulen' }],
+      })
+    );
+    expect(pdfText(pdf)).toContain('Lampiran : 2 (dua) berkas');
+  });
+
+  it('tetap menulis "-" ketika tidak ada lampiran', async () => {
+    const pdf = await generateLetterPdfBuffer(letterWith({ type: 'SURAT_DINAS' }));
+    expect(pdfText(pdf)).toContain('Lampiran : -');
+  });
+
+  it('mencetak daftar tembusan bernomor di kaki naskah', async () => {
+    const pdf = await generateLetterPdfBuffer(
+      letterWith({
+        recipients: [
+          { isCC: false, user: { name: 'Kepala MTs Cipansor' } },
+          { isCC: true, user: { name: 'Ketua Yayasan' } },
+          { isCC: true, unit: { name: 'Arsip Tata Usaha' } },
+        ],
+      })
+    );
+    const text = pdfText(pdf);
+    expect(text).toContain('Tembusan:');
+    expect(text).toContain('1. Ketua Yayasan');
+    expect(text).toContain('2. Arsip Tata Usaha');
+    // Penerima utama bukan tembusan; namanya tidak boleh ikut di daftar itu.
+    expect(text).not.toContain('3. Kepala MTs Cipansor');
+  });
+
+  it('tidak mencetak blok tembusan ketika tidak ada satu pun', async () => {
+    const pdf = await generateLetterPdfBuffer(
+      letterWith({ recipients: [{ isCC: false, user: { name: 'Kepala MTs' } }] })
+    );
+    expect(pdfText(pdf)).not.toContain('Tembusan:');
+  });
+
+  /**
+   * Penjaga byte, bukan penjaga tampilan.
+   *
+   * `LetterSignature.pdfHash` adalah SHA-256 dari byte naskah, dan verifikasi
+   * publik bekerja dengan menghitung ulang hash berkas yang diunggah. Naskah
+   * yang tidak punya lampiran dan tidak punya tembusan — yaitu setiap surat
+   * yang pernah ditandatangani sebelum perubahan ini — harus menghasilkan byte
+   * yang sama persis seperti sebelumnya, kalau tidak seluruh surat lama akan
+   * dilaporkan kepada publik sebagai berubah.
+   *
+   * Hash di bawah diambil dari tata letak sebelum lampiran dan tembusan ada.
+   * Kalau uji ini merah, tata letaknya berubah untuk *semua* naskah: itu
+   * bukan galat uji, itu migrasi — lihat komentar modul di
+   * generate-letter-pdf.ts.
+   */
+  it('naskah tanpa lampiran dan tanpa tembusan tetap menghasilkan byte yang sama', async () => {
+    const pdf = await generateLetterPdfBuffer({
+      id: 'letter-1',
+      letterNumber: '434/Sket/Y-CPS/IX/2026',
+      date: new Date('2026-09-01T00:00:00.000Z'),
+      type: 'SURAT_DINAS',
+      nature: 'PUBLIC',
+      subject: 'Undangan Rapat Kerja',
+      content: 'Dengan hormat,\n\nKami mengundang Bapak/Ibu untuk hadir.',
+      senderTitle: 'Sekretaris Yayasan',
+      recipientName: 'Kepala MTs Cipansor',
+      unit: { name: 'Yayasan Pesantren Cipansor', address: 'Tasikmalaya' },
+      signatures: [],
+    });
+
+    expect(crypto.createHash('sha256').update(pdf).digest('hex')).toBe(
+      'd4e73b4df26d9798e8e7e075634ce95d7d0b91600ccfd1dd97a773e178182537'
+    );
+  });
+});
+
 describe('cap DICABUT', () => {
   it('membubuhkan cap dan keterangan pencabutannya pada setiap halaman', async () => {
     const clean = await generateLetterPdfBuffer(letterWith({}));

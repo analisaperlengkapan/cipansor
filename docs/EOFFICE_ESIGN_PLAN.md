@@ -694,15 +694,13 @@ away from the standard while looking more official.
 
 Three changes that are worth making, though:
 
-1. **Our QR currently encodes a bare token, so scanning it opens nothing.** That
-   is worse than no QR: it looks scannable and is not. Encode the verification
-   URL with the token as a parameter, landing on the upload-verify page with the
-   token pre-filled. This keeps §1's decision intact — the page still demands
-   the file, so no token oracle is reintroduced — while making the QR do what
-   every reader expects it to do.
-2. **Put the yayasan lambang in the centre of the QR** (error-correction level
-   H tolerates it). That delivers the branded look the request is really after,
-   at no cost to the standard.
+1. ~~Our QR encodes a bare token, so scanning it opens nothing.~~ ✅ **Shipped
+   (#446).** It now encodes the verification page address, with **no token in
+   the link** — a tokenised link could only say "some letter was signed", which
+   is the oracle §1 removed. Proved by decoding a 250 dpi render with jsQR
+   rather than by looking at it.
+2. ~~Put the yayasan lambang in the centre of the QR.~~ ✅ **Shipped (#446)**,
+   at error-correction H, on a white pad.
 3. ~~Reconsider printing `NIP.` in the signature block.~~ **Decided
    2026-09-03: removed.** NIP no longer prints on the naskah and is no longer
    returned by public verification — it is internal information, and every

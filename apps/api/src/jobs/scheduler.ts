@@ -8,6 +8,8 @@ import {
 import { aggregateDashboardMetrics } from './dashboard-metrics.job';
 import { runMonthlyAutoBilling } from './finance-billing.job';
 import { sendMonthlySppReminders } from './spp-reminder.job';
+import { purgeIdentityDocuments } from './identity-purge.job';
+import { prisma } from '@/lib/prisma';
 
 /**
  * Scheduler Module
@@ -148,6 +150,45 @@ export function initializeScheduler(): void {
   scheduledTasks.push(sppReminderTask);
   logger.info('[Scheduler] SPP reminder job scheduled at 06:00 WIB on the 1st of each month');
 
+  /**
+   * Penyapuan foto KTP — tiap hari pukul 02.30 WIB.
+   *
+   * Di sini, bukan di crontab host, karena berkasnya ada di volume yang
+   * terpasang ke kontainer ini dan basis datanya hanya terjangkau dari jaringan
+   * Compose. Penjadwal di luar kontainer terikat pada satu mesin dan tidak ikut
+   * berpindah bersama image-nya. Alasan selengkapnya ada di berkas jobnya.
+   *
+   * 02.30 dipilih di celah yang kosong: snapshot harian 01.00, ringkasan
+   * mingguan 02.00, cleanup 03.00. Pekerjaannya sendiri ringan — sebuah kueri
+   * berindeks dan pembacaan satu direktori — tetapi menaruhnya bertumpuk dengan
+   * yang lain hanya menyulitkan pembacaan log ketika ada yang salah.
+   *
+   * Kegagalan dicatat sebagai error dan tidak menjatuhkan penjadwal; berhasil
+   * atau gagal, jalannya meninggalkan baris di `audit_logs` — yang menjawab
+   * "kapan terakhir retensi ini benar-benar ditegakkan" setelah log diputar.
+   */
+  const identityPurgeTask = cron.schedule(
+    '30 2 * * *',
+    async () => {
+      logger.info('[Scheduler] Running identity document purge job');
+      try {
+        const summary = await purgeIdentityDocuments(prisma);
+        logger.info(
+          `[Scheduler] Identity purge: ${summary.expired.length} expired, ` +
+            `${summary.orphans.length} orphaned, ` +
+            `${summary.onDiskCount} on disk, ${summary.referencedCount} referenced`
+        );
+      } catch (error) {
+        logger.error('[Scheduler] Identity document purge job failed:', error);
+      }
+    },
+    {
+      timezone: 'Asia/Jakarta',
+    }
+  );
+  scheduledTasks.push(identityPurgeTask);
+  logger.info('[Scheduler] Identity document purge job scheduled daily at 02:30 WIB');
+
   logger.info(`[Scheduler] ${scheduledTasks.length} jobs scheduled successfully`);
 }
 
@@ -171,6 +212,7 @@ export async function runJob(
     | 'cleanup'
     | 'auto-billing'
     | 'spp-reminder'
+    | 'identity-purge'
 ): Promise<void> {
   logger.info(`[Scheduler] Manually running job: ${jobName}`);
 
@@ -192,6 +234,9 @@ export async function runJob(
       break;
     case 'spp-reminder':
       await sendMonthlySppReminders();
+      break;
+    case 'identity-purge':
+      await purgeIdentityDocuments(prisma);
       break;
     default:
       throw new Error(`Unknown job: ${jobName}`);

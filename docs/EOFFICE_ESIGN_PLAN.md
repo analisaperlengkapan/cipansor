@@ -1167,23 +1167,72 @@ The asymmetry decides the direction: waiting longer leaves an orphan one day
 longer, while sweeping too early deletes a KTP someone just uploaded and leaves
 them to re-upload it without ever learning why.
 
-### Still open: nothing runs the purge
+### Nothing ran the purge — scheduled in the application, 2026-09-03 (#455)
 
-Measured on the production host, 2026-09-03: `crontab -l` is empty for the
-deploy user and `/etc/cron.d` holds only `certbot`, `e2scrub_all` and
-`sysstat`. **`db:purge-identity-documents` has never been scheduled**, so both
-phases — the retention purge and the orphan sweep — exist and have never run.
+Measured on the production host first: `crontab -l` empty for the deploy user,
+`/etc/cron.d` holding only `certbot`, `e2scrub_all` and `sysstat`.
+**`db:purge-identity-documents` had never been scheduled**, so both phases — the
+retention purge and the orphan sweep — existed and had never run. `ktpRetainUntil`
+was computed and stored on every upload, the retention figure was documented, and
+nothing deleted anything. The retention window was a column, not a promise, and
+the code that would honour it being correct changed nothing about that.
 
-This is worth more than the hole it was written to close. `ktpRetainUntil` is
-computed and stored on every upload, the retention figure is documented, and the
-comment at the head of the script argues for a command over an in-process
-scheduler on the grounds that *"a command that was not run leaves a trace in
-crontab that can be inspected."* Inspecting it is what showed that the trace is
-absent. Until an entry exists, the retention window is a column, not a promise —
-and the code that would honour it being correct changes nothing about that.
+**Where the scheduler belongs, and why not cron.** The script's own header argued
+for a command over an in-process scheduler on the grounds that *"a command that
+was not run leaves a trace in crontab that can be inspected."* Inspecting it is
+what showed the trace was absent — the argument failed on its only test. Three
+further reasons put the job inside the application:
 
-Scheduling it is a production change on the host, not a repository change, so it
-is listed here rather than done.
+- The KTP files live on the `api_identity` volume mounted into the API container,
+  and the database is reachable only across the Compose bridge network. Anything
+  outside the container has to borrow both through `docker compose exec`.
+- A host crontab does not travel with the image. It pins the deployment to one
+  machine, and moving the stack means remembering to recreate it — the class of
+  step that is discovered missing years later, exactly as this one was.
+- It is not in the repository, so nothing reviews it, and no test can see it.
+
+The API already runs six `node-cron` jobs in-process on `Asia/Jakarta`, verified
+live in the production container's log. The purge is now the seventh, daily at
+**02:30 WIB** — in the gap between the 01:00 snapshot and the 03:00 cleanup.
+
+**What replaces crontab as the audit trail.** A scheduler that dies quietly is
+the real objection to in-process jobs, and the answer is not a different
+scheduler but a durable record. Every run that is not a dry run writes one
+`audit_logs` row (`PURGE_IDENTITY_DOCUMENTS`) carrying the four counts — expired,
+orphaned, on disk, referenced. Log lines could not do this job: `docker-compose.yml`
+rotates at 10 MB × 3 files while the metrics job writes a line every minute, so
+evidence that the purge ran last week is overwritten well before anyone asks. The
+audit row makes *"when was this retention window last actually enforced"* a single
+query. It records counts only — never file names, which are randomised precisely
+so they name nobody.
+
+One process runs it: `container_name` in `docker-compose.yml` pins the API to a
+single instance. Were that to change, a collision would still be harmless —
+deleting an already-deleted file is not an error, and re-nulling a null column
+changes nothing — so there is no lock, only a written reason why none is needed.
+
+`pnpm --filter api db:purge-identity-documents [--dry-run]` still exists and now
+calls the same function, so the manual path and the scheduled path cannot drift.
+
+**But that command cannot run inside the production container**, and this is the
+second reason the host-cron plan was never going to work. Measured on the running
+image: `pnpm` is present, `tsx` is not — it is a devDependency, and the image
+installs production dependencies only. The `.ts` scripts under `prisma/scripts/`
+*are* copied in, so the image ships three scripts it cannot execute. A crontab
+entry calling `docker compose exec api pnpm --filter api
+db:purge-identity-documents` would have failed every night, silently, exactly
+like the entry that was never written. The command is for a developer checkout
+or the host's build tooling; in production the compiled job is the only path:
+
+```bash
+docker compose exec api node -e "
+  const {purgeIdentityDocuments} = require('./dist/jobs');
+  const {prisma} = require('./dist/lib/prisma');
+  purgeIdentityDocuments(prisma, {dryRun: true})
+    .then(s => console.log(s.expired.length, s.orphans.length, s.onDiskCount, s.referencedCount))
+    .finally(() => prisma.\$disconnect());
+"
+```
 
 ---
 

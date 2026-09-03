@@ -462,12 +462,22 @@ side, and a file no row names is deleted once it is a day old. It mattered out
 of proportion to its size, because it defeated any retention figure the system
 quoted while it stood.
 
-**Still open, and it is the cheapest item on this list:** nothing schedules
-`db:purge-identity-documents`. Verified 2026-09-03 — the deploy user has no
-crontab and `/etc/cron.d` holds only `certbot`, `e2scrub_all` and `sysstat`. Both
-phases of the purge are correct and neither has ever run, which makes the
-retention window a stored column rather than a kept promise. It is a host
-change, not a code change.
+Nothing scheduled that purge either — verified 2026-09-03, no crontab for the
+deploy user and `/etc/cron.d` holding only `certbot`, `e2scrub_all` and
+`sysstat`. Both phases were correct and neither had ever run, which made the
+retention window a stored column rather than a kept promise. **Fixed in #455,
+and deliberately not with cron.** The KTP files sit on a volume mounted into the
+API container and the database is only reachable across the Compose network, so
+a host scheduler has to borrow both through `docker exec`, does not travel with
+the image, and is invisible to review. The API already runs six `node-cron` jobs
+in-process; the purge is the seventh, daily at 02:30 WIB. Each real run writes an
+`audit_logs` row with its counts — which is the part that makes it auditable,
+since container logs rotate at 10 MB × 3 files while a job writes to them every
+minute. The `db:purge-identity-documents` command still exists and calls the same
+function — though not inside the production container, which ships `pnpm` but not
+`tsx` (a devDependency), so the `.ts` scripts it copies in cannot be executed
+there. A crontab entry invoking that command through `docker compose exec` would
+have failed every night in silence.
 
 **§5b(a) DOCX authoring track — step 1 shipped (#454).** `Letter.authoringTrack`
 now records `GENERATED` vs `UPLOADED` and the public verification page states

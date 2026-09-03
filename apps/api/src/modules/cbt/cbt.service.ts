@@ -769,38 +769,46 @@ export class CBTService {
 
   static async recordSecurityLog(
     attemptId: string,
-    studentId: string,
+    userId: string,
     event: { type: string; details?: string }
   ) {
+    const ALLOWED_EVENT_TYPES = ['TAB_SWITCH', 'FOCUS_LOST', 'COPY', 'PASTE', 'RIGHT_CLICK'];
+    if (!event.type || !ALLOWED_EVENT_TYPES.includes(event.type)) {
+      throw Errors.badRequest(`Invalid event type: ${event.type}. Must be one of ${ALLOWED_EVENT_TYPES.join(', ')}`);
+    }
+
+    const student = await prisma.student.findUnique({ where: { userId } });
+    if (!student) throw Errors.unauthorized('User is not a student');
+
     const attempt = await prisma.examAttempt.findUnique({
       where: { id: attemptId },
     });
     if (!attempt) throw Errors.notFound('Attempt');
-    if (attempt.studentId !== studentId) throw Errors.forbidden('Access denied');
-
-    const existingLogs = Array.isArray((attempt as any).securityLogs)
-      ? ((attempt as any).securityLogs as any[])
-      : [];
-    const updatedLogs = [
-      ...existingLogs,
-      {
-        type: event.type,
-        details: event.details ?? null,
-        timestamp: new Date().toISOString(),
-      },
-    ];
+    if (attempt.studentId !== student.id) throw Errors.forbidden('Access denied');
 
     const isTabSwitch = event.type === 'TAB_SWITCH' || event.type === 'FOCUS_LOST';
-    const currentTabSwitches = (attempt as any).tabSwitchCount ?? 0;
-    const newTabSwitchCount = isTabSwitch ? currentTabSwitches + 1 : currentTabSwitches;
 
-    return prisma.examAttempt.update({
-      where: { id: attemptId },
-      data: {
-        tabSwitchCount: newTabSwitchCount,
-        securityLogs: updatedLogs,
-      } as any,
-    });
+    const [log] = await prisma.$transaction([
+      prisma.examSecurityLog.create({
+        data: {
+          attemptId,
+          type: event.type,
+          details: event.details ? event.details.substring(0, 500) : null,
+        },
+      }),
+      ...(isTabSwitch
+        ? [
+            prisma.examAttempt.update({
+              where: { id: attemptId },
+              data: {
+                tabSwitchCount: { increment: 1 },
+              },
+            }),
+          ]
+        : []),
+    ]);
+
+    return log;
   }
 
   static async submitAnswer(attemptId: string, questionId: string, answer: any, studentId: string) {
@@ -1015,6 +1023,22 @@ export class CBTService {
 
     if (!attempt) throw Errors.notFound('Attempt');
     if (attempt.studentId !== studentId) throw Errors.forbidden('Access denied');
+
+    // Strict time limit check with 2 minute grace period
+    if (attempt.startedAt && attempt.exam?.duration) {
+      const gracePeriodMinutes = 2;
+      const allowedDurationMs = (attempt.exam.duration + gracePeriodMinutes) * 60 * 1000;
+      const elapsedMs = Date.now() - new Date(attempt.startedAt).getTime();
+
+      if (elapsedMs > allowedDurationMs) {
+        await prisma.examAttempt.update({
+          where: { id: attemptId },
+          data: { status: 'EXPIRED', finishedAt: new Date() },
+        });
+        throw Errors.badRequest('Waktu pengerjaan ujian telah habis.');
+      }
+    }
+
     if (attempt.status !== 'IN_PROGRESS') {
       // Strip sensitive fields before returning to the student to prevent leaking
       // correct answers and explanations. Only expose the same fields as getAttempt.
@@ -1167,31 +1191,13 @@ export class CBTService {
             teacherId: true,
             type: true,
             title: true,
-            weight: true,
+            maxScore: true,
           },
         },
       },
     });
 
     if (!attempt || attempt.score === null || attempt.status !== 'COMPLETED') return null;
-
-    const existingGrade = await db.grade.findFirst({
-      where: {
-        studentId: attempt.studentId,
-        examId: attempt.examId,
-      },
-    });
-
-    if (existingGrade) {
-      return db.grade.update({
-        where: { id: existingGrade.id },
-        data: {
-          score: attempt.score,
-          gradedAt: new Date(),
-          notes: `Nilai CBT (${attempt.exam.title}) - Terpelihara Otomatis`,
-        },
-      });
-    }
 
     const teacher = await db.teacher.findUnique({
       where: { id: attempt.exam.teacherId },
@@ -1200,17 +1206,43 @@ export class CBTService {
 
     if (!teacher) return null;
 
-    return db.grade.create({
-      data: {
+    const maxScore = attempt.exam.maxScore ? Number(attempt.exam.maxScore) : 100;
+    const numericScore = Number(attempt.score);
+    const percentage = maxScore > 0 ? (numericScore / maxScore) * 100 : 0;
+
+    let letterGrade = 'E';
+    if (percentage >= 85) letterGrade = 'A';
+    else if (percentage >= 75) letterGrade = 'B';
+    else if (percentage >= 65) letterGrade = 'C';
+    else if (percentage >= 55) letterGrade = 'D';
+
+    return db.grade.upsert({
+      where: {
+        studentId_examId: {
+          studentId: attempt.studentId,
+          examId: attempt.examId,
+        },
+      },
+      create: {
         studentId: attempt.studentId,
         examId: attempt.examId,
         subjectId: attempt.exam.subjectId,
         academicYearId: attempt.exam.academicYearId,
         type: 'EXAM',
         score: attempt.score,
-        weight: attempt.exam.weight ?? new Decimal(1),
+        maxScore: new Decimal(maxScore),
+        percentage: new Decimal(percentage),
+        letterGrade,
         notes: `Nilai CBT Ujian Online (${attempt.exam.title})`,
         gradedById: teacher.userId,
+      },
+      update: {
+        score: attempt.score,
+        maxScore: new Decimal(maxScore),
+        percentage: new Decimal(percentage),
+        letterGrade,
+        gradedAt: new Date(),
+        notes: `Nilai CBT (${attempt.exam.title}) - Terpelihara Otomatis`,
       },
     });
   }

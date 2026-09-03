@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { prisma } from '../../lib/prisma';
-import { CBTService } from './cbt.service';
+import { prisma } from '../../../lib/prisma';
+import { CBTService } from '../cbt.service';
 
 vi.mock('@prisma/client', () => ({
   Prisma: {
@@ -18,7 +18,7 @@ vi.mock('@prisma/client', () => ({
 }));
 
 // Mock external dependencies
-vi.mock('../../lib/prisma', () => ({
+vi.mock('../../../lib/prisma', () => ({
   prisma: {
     questionBank: {
       create: vi.fn(),
@@ -50,12 +50,19 @@ vi.mock('../../lib/prisma', () => ({
       findMany: vi.fn(),
       findUnique: vi.fn(),
     },
+    examSecurityLog: {
+      create: vi.fn(),
+    },
     grade: {
       findFirst: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
+      upsert: vi.fn(),
     },
     teacher: {
+      findUnique: vi.fn(),
+    },
+    student: {
       findUnique: vi.fn(),
     },
     $transaction: vi.fn((callbackOrPromises, _options?) => {
@@ -572,43 +579,52 @@ describe('CBT Service', () => {
       );
 
       const attempt1 = await CBTService.getAttempt('attempt-123', 'std-1');
-      const questions1 = attempt1.exam.questionBank.questions;
+      const questions1 = attempt1.exam?.questionBank?.questions ?? [];
 
       // Re-fetching same attempt should return identical randomized order
       const attempt2 = await CBTService.getAttempt('attempt-123', 'std-1');
-      const questions2 = attempt2.exam.questionBank.questions;
+      const questions2 = attempt2.exam?.questionBank?.questions ?? [];
 
       expect(questions1).toHaveLength(3);
       expect(questions1.map((q: any) => q.id)).toEqual(questions2.map((q: any) => q.id));
     });
 
     it('should record security log events (anti-cheating tab switches)', async () => {
+      const mockStudent = { id: 'std-1', userId: 'user-std-1' };
       const mockAttempt = {
         id: 'attempt-1',
         studentId: 'std-1',
         tabSwitchCount: 1,
-        securityLogs: [{ type: 'TAB_SWITCH', timestamp: '2025-03-01T10:00:00Z' }],
       };
 
+      vi.mocked(prisma.student.findUnique).mockResolvedValue(mockStudent as any);
       vi.mocked(prisma.examAttempt.findUnique).mockResolvedValue(mockAttempt as any);
-      vi.mocked(prisma.examAttempt.update).mockResolvedValue({
-        id: 'attempt-1',
-        tabSwitchCount: 2,
+      vi.mocked(prisma.examSecurityLog.create).mockResolvedValue({
+        id: 'log-1',
+        attemptId: 'attempt-1',
+        type: 'TAB_SWITCH',
+        details: 'Minimizing window',
+        createdAt: new Date(),
       } as any);
 
-      await CBTService.recordSecurityLog('attempt-1', 'std-1', {
+      await CBTService.recordSecurityLog('attempt-1', 'user-std-1', {
         type: 'TAB_SWITCH',
         details: 'Minimizing window',
       });
 
+      expect(prisma.examSecurityLog.create).toHaveBeenCalledWith({
+        data: {
+          attemptId: 'attempt-1',
+          type: 'TAB_SWITCH',
+          details: 'Minimizing window',
+        },
+      });
+
       expect(prisma.examAttempt.update).toHaveBeenCalledWith({
         where: { id: 'attempt-1' },
-        data: expect.objectContaining({
-          tabSwitchCount: 2,
-          securityLogs: expect.arrayContaining([
-            expect.objectContaining({ type: 'TAB_SWITCH' }),
-          ]),
-        }),
+        data: {
+          tabSwitchCount: { increment: 1 },
+        },
       });
     });
 

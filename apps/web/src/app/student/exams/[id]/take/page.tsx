@@ -17,6 +17,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import {
   useStartExam,
+  useExamAttempt,
   useSubmitAnswer,
   useFinishExam,
   useRecordSecurityLog,
@@ -52,14 +53,16 @@ export default function TakeExamPage({ params }: { params: { id: string } }) {
   const { data: exam, isLoading: loadingExam } = useExam(params.id);
   const startExam = useStartExam();
 
-  const [attempt, setAttempt] = useState<ExamAttempt | null>(null);
+  const [attemptId, setAttemptId] = useState<string | null>(null);
   const [isStarting, setIsStarting] = useState(false);
+
+  const { data: fullAttempt, isLoading: loadingAttempt } = useExamAttempt(attemptId ?? "");
 
   const handleStart = async () => {
     setIsStarting(true);
     try {
       const data = await startExam.mutateAsync(params.id);
-      setAttempt(data);
+      setAttemptId(data.id);
     } catch (error: any) {
       toast.error(error.message || "Gagal memulai ujian");
     } finally {
@@ -67,7 +70,7 @@ export default function TakeExamPage({ params }: { params: { id: string } }) {
     }
   };
 
-  if (loadingExam) {
+  if (loadingExam || (attemptId && loadingAttempt)) {
     return (
       <div className="flex items-center justify-center h-screen">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -87,7 +90,7 @@ export default function TakeExamPage({ params }: { params: { id: string } }) {
     );
   }
 
-  if (!attempt) {
+  if (!fullAttempt) {
     return (
       <MainLayout>
         <div className="max-w-2xl mx-auto py-12">
@@ -144,7 +147,7 @@ export default function TakeExamPage({ params }: { params: { id: string } }) {
     );
   }
 
-  return <ExamPlayer attempt={attempt} examDuration={exam.duration} />;
+  return <ExamPlayer attempt={fullAttempt} examDuration={exam.duration} />;
 }
 
 function ExamPlayer({
@@ -207,6 +210,21 @@ function ExamPlayer({
 
   const handleFinish = useCallback(async () => {
     try {
+      // Sync all current answers/draft to server before finishing
+      for (const [qId, ans] of Object.entries(answers)) {
+        if (ans !== undefined && ans !== "") {
+          try {
+            await submitAnswer.mutateAsync({
+              attemptId: attempt.id,
+              questionId: qId,
+              answer: ans,
+            });
+          } catch (e) {
+            console.error("Failed to sync answer before finish", e);
+          }
+        }
+      }
+
       await finishExam.mutateAsync(attempt.id);
       if (typeof window !== "undefined") {
         localStorage.removeItem(draftStorageKey);
@@ -216,7 +234,7 @@ function ExamPlayer({
     } catch {
       toast.error("Gagal menyelesaikan ujian");
     }
-  }, [attempt.id, draftStorageKey, finishExam, router]);
+  }, [answers, attempt.id, draftStorageKey, finishExam, router, submitAnswer]);
 
   const handleAnswerChange = async (value: any) => {
     if (!currentQuestion) return;

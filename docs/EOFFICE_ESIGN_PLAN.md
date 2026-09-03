@@ -694,15 +694,13 @@ away from the standard while looking more official.
 
 Three changes that are worth making, though:
 
-1. **Our QR currently encodes a bare token, so scanning it opens nothing.** That
-   is worse than no QR: it looks scannable and is not. Encode the verification
-   URL with the token as a parameter, landing on the upload-verify page with the
-   token pre-filled. This keeps §1's decision intact — the page still demands
-   the file, so no token oracle is reintroduced — while making the QR do what
-   every reader expects it to do.
-2. **Put the yayasan lambang in the centre of the QR** (error-correction level
-   H tolerates it). That delivers the branded look the request is really after,
-   at no cost to the standard.
+1. ~~Our QR encodes a bare token, so scanning it opens nothing.~~ ✅ **Shipped
+   (#446).** It now encodes the verification page address, with **no token in
+   the link** — a tokenised link could only say "some letter was signed", which
+   is the oracle §1 removed. Proved by decoding a 250 dpi render with jsQR
+   rather than by looking at it.
+2. ~~Put the yayasan lambang in the centre of the QR.~~ ✅ **Shipped (#446)**,
+   at error-correction H, on a white pad.
 3. ~~Reconsider printing `NIP.` in the signature block.~~ **Decided
    2026-09-03: removed.** NIP no longer prints on the naskah and is no longer
    returned by public verification — it is internal information, and every
@@ -778,8 +776,43 @@ either is caught without asking anything outside. That check *warns* rather than
 refuses — civil-registry errors exist, and blocking a legitimate official
 because their own NIK is internally inconsistent costs more than reporting it.
 
-Step 3 (the KTP image and OCR) is not built; see the analysis below for why the
-order matters.
+**Step 3 is now built too, and the reasoning changed on the way.** Two
+corrections came out of reviewing the first version:
+
+*The verification methods were mostly unfalsifiable.* Of the three offered —
+card shown in person, scan examined, known personally — two left nothing anyone
+could check. An approver could pick either without doing anything, and the
+record would read "because I said so". A choice that leaves no evidence shrinks
+the whole gate to a click. And requiring a hundred staff across five units to
+visit the Super Admin in person is not a flow anyone can run. There is one path
+now: a KTP photograph uploaded through the system.
+
+*Deleting the image at the decision was an over-correction.* It made
+"show the card you checked" unanswerable — and that is precisely the question
+retention exists for. eIDAS Art. 24.2(h) requires registration information to
+be kept "for the purpose of providing evidence in legal proceedings", and the
+CA/Browser Forum sets the figure at **seven years after the certificate ceases
+to be valid**. A hash does not substitute: it can decide whether a copy is
+identical, it cannot show what was examined. So a rejected request has its image
+deleted immediately — no key was issued, so nothing is being accounted for — and
+an approved one keeps it until `ktpRetainUntil`, computed from the key's expiry
+plus `IDENTITY_DOCUMENT_RETENTION_YEARS` (default 7, lowerable by the yayasan,
+and written down in one place rather than chosen implicitly).
+
+What holds either way: **the applicant loses read access the moment the request
+is decided.** They already hold their own KTP, so closing that path costs them
+nothing and removes an exfiltration route from a hijacked session. Only Super
+Admin can open it, through one endpoint that records every read into
+`AuditLog` — because "only Super Admin can see it" is a promise that needs a
+record before anyone can check it.
+
+The files live in `apps/api/private/identity/`, mode 0600, gitignored, and on
+no static route. Not tidiness: `public/uploads` is served behind `uploadsAuth`,
+which its own comment calls authentication rather than authorisation — any
+valid access token opens every file there. Retention is enforced by
+`pnpm --filter api db:purge-identity-documents`, run periodically, because a
+retention date with nothing to act on it is a date in a database while the file
+stays on disk forever.
 
 #### The original write-up
 

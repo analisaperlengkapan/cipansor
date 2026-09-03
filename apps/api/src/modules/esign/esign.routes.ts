@@ -17,6 +17,10 @@ import {
   revokeSignatureSchema,
   signLetterSchema,
 } from './esign.schema';
+import {
+  isAcceptedIdentityDocument,
+  MAX_IDENTITY_DOCUMENT_BYTES,
+} from '@/utils/identity-document-store';
 
 const router = Router();
 
@@ -56,6 +60,25 @@ const publicVerifyLimiter = rateLimit({
  * Multer memory storage untuk mengunggah file PDF sementara.
  * File tidak disimpan di disk dan dibuang dari memori setelah endpoint merespons.
  */
+/**
+ * Foto KTP, ditahan di memori sampai disimpan ke direktori privat.
+ *
+ * Storage memori, bukan disk: multer dengan disk storage menulis ke direktori
+ * unggahan umum lebih dahulu, dan berkas ini tidak boleh pernah singgah di
+ * sana — walau sesaat, itu direktori yang dilayani peladen statis.
+ */
+const identityUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: MAX_IDENTITY_DOCUMENT_BYTES },
+  fileFilter: (_req, file, cb) => {
+    if (isAcceptedIdentityDocument(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(Errors.badRequest('Berkas harus berupa gambar (JPG, PNG, WebP) atau PDF.'));
+    }
+  },
+});
+
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
@@ -92,6 +115,11 @@ router.get('/me', EsignController.myStatus);
 // Identitas dulu: rutenya berada sebelum pengajuan, seperti urutan yang harus
 // dijalani pemohon.
 router.put('/me/identity', validate(saveIdentitySchema), EsignController.saveIdentity);
+router.post(
+  '/me/identity/ktp',
+  identityUpload.single('file'),
+  EsignController.uploadIdentityDocument
+);
 router.post('/me/request', validate(requestKeySchema), EsignController.requestKey);
 router.post(
   '/me/activate',
@@ -158,6 +186,18 @@ router.post('/revocation-requests/:id/withdraw', EsignController.withdrawRevocat
 
 // Kewenangan Super Admin: menyetujui, menolak, mencabut.
 router.get('/requests', isSuperAdmin, EsignController.listRequests);
+/**
+ * Foto KTP pemohon. Super Admin saja — dan pembacaannya dicatat di layanan.
+ *
+ * Berkasnya **tidak** berada di `public/uploads`: direktori itu disajikan di
+ * balik `uploadsAuth`, yang membuktikan pemanggilnya sudah masuk dan bukan
+ * bahwa ia berhak atas berkas itu. Ini satu-satunya jalan membacanya.
+ */
+router.get(
+  '/identities/:userId/ktp',
+  isSuperAdmin,
+  EsignController.readIdentityDocument
+);
 router.get('/keys', isSuperAdmin, EsignController.listKeys);
 router.post('/requests/:id/decide', isSuperAdmin, validate(decideRequestSchema), EsignController.decide);
 router.post('/keys/:userId/revoke', isSuperAdmin, validate(revokeKeySchema), EsignController.revoke);

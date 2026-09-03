@@ -413,7 +413,7 @@ What #413 did **not** do, and is worth knowing:
 
 ---
 
-## 🟡 14. E-Office & electronic signature — audited 2026-09-02, PR-1..PR-4 shipped
+## 🟡 14. E-Office & electronic signature — audited 2026-09-02, PR-1..PR-4 + identity gate shipped
 
 Full findings and the plan: [`EOFFICE_ESIGN_PLAN.md`](./EOFFICE_ESIGN_PLAN.md).
 
@@ -424,6 +424,21 @@ Pasal 29 all put it), PR-3 (#437, the signed PDF bytes archived so a dependency
 bump can no longer invalidate every letter ever signed), PR-4 (flow completeness
 — a real dispatch record, tembusan, and lampiran, plus the end of `SENT` being
 applied to incoming letters).
+
+**Also shipped 2026-09-03:** the naskah stopped printing a fabricated Kemenkumham
+number and the signer's NIP (#444); the QR now opens the verification page
+instead of encoding a token that opens nothing (#446); and a signing key can no
+longer be issued to an account nobody has identified — `UserIdentity` with a KTP
+uploaded through the system, verified by a Super Admin whose statement is
+recorded (#445, and #447 open). Three of those change the naskah's bytes, so
+**`db:archive-letters` must run before any of them reaches production.**
+
+Three questions were researched and answered on 2026-09-03 rather than guessed —
+two authoring tracks, the QR-versus-logo visual, and segel elektronik — with the
+BSSN/BSrE, ANRI SRIKANDI, ETSI and CA/Browser Forum sources quoted in the plan
+(§5b, §PR-5b). The yayasan's answers are recorded there too: no PSrE for now,
+NIP off the naskah, KTP uploaded through the system as the only proof of
+identity.
 
 **Still open:** PR-5
 (PAdES B-B + RFC 3161 timestamps — the highest-value remaining item, since

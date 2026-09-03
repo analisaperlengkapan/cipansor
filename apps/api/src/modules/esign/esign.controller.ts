@@ -24,6 +24,35 @@ export const EsignController = {
     } catch (e) { next(e); }
   },
 
+  /** Foto KTP pemohon — satu-satunya jalur pembuktian identitas. */
+  async uploadIdentityDocument(req: Request, res: Response, next: NextFunction) {
+    try {
+      if (!req.file) throw Errors.badRequest('Berkas foto KTP wajib diunggah.');
+      const data = await EsignService.uploadIdentityDocument(req.user!.id, req.file);
+      res.status(201).json({ success: true, data });
+    } catch (e) { next(e); }
+  },
+
+  /**
+   * Membaca foto KTP seorang pemohon. Super Admin saja, dan tercatat.
+   *
+   * Dikirim dengan `Content-Disposition: inline` dan tanpa cache: berkas ini
+   * berumur pendek dengan sengaja, dan salinan yang tertinggal di cache
+   * peramban akan hidup lebih lama daripada aslinya.
+   */
+  async readIdentityDocument(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { buffer, contentType } = await EsignService.readIdentityDocument(
+        req.params.userId,
+        req.user!.id
+      );
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Content-Disposition', 'inline; filename="ktp"');
+      res.setHeader('Cache-Control', 'no-store, private');
+      res.send(buffer);
+    } catch (e) { next(e); }
+  },
+
   async requestKey(req: Request, res: Response, next: NextFunction) {
     try {
       const data = await EsignService.requestKey(req.user!.id, req.body?.reason);

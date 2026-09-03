@@ -57,13 +57,13 @@ describe('Cloud Storage Utility (Azure Blob Storage Provider)', () => {
     });
   });
 
-  it('should fall back to local storage when Azure upload fails', async () => {
+  it('should throw error when Azure is configured but upload fails', async () => {
     process.env.AZURE_STORAGE_CONNECTION_STRING = 'DefaultEndpointsProtocol=https;AccountName=cipansorstore;AccountKey=fakeKey;EndpointSuffix=core.windows.net';
     mockUploadFile.mockRejectedValueOnce(new Error('Network error'));
 
-    const result = await uploadToCloudStorage('/tmp/dummy.pdf', 'dummy.pdf', 'application/pdf', 'e-office-documents');
-    expect(result.provider).toBe('local');
-    expect(result.url).toBe('/uploads/dummy.pdf');
+    await expect(
+      uploadToCloudStorage('/tmp/dummy.pdf', 'dummy.pdf', 'application/pdf', 'e-office-documents')
+    ).rejects.toThrow(/Gagal mengunggah berkas ke Azure Blob Storage/);
   });
 
   it('should report correct storage config status', () => {

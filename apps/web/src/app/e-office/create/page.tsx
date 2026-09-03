@@ -139,7 +139,10 @@ export default function CreateLetterPage() {
     }
   };
 
-  async function onSubmit(values: z.infer<typeof letterSchema>) {
+  async function onSubmit(
+    values: z.infer<typeof letterSchema>,
+    requestedStatus: LetterStatus = LetterStatus.DRAFT,
+  ) {
     if (!user?.unitId) {
       toast.error("Unit ID tidak ditemukan");
       return;
@@ -149,9 +152,13 @@ export default function CreateLetterPage() {
       await createLetter.mutateAsync({
         ...values,
         unitId: user.unitId,
-        status: LetterStatus.DRAFT,
+        status: requestedStatus,
       });
-      toast.success("Surat berhasil dibuat");
+      toast.success(
+        requestedStatus === LetterStatus.PENDING_REVIEW
+          ? "Surat berhasil diajukan untuk diperiksa"
+          : "Konsep surat berhasil disimpan",
+      );
       router.push("/e-office/inbox");
     } catch (error) {
       toast.error("Gagal membuat surat");
@@ -564,13 +571,27 @@ export default function CreateLetterPage() {
             </CardContent>
           </Card>
 
-          <Button
-            type="submit"
-            className="w-full"
-            disabled={createLetter.isPending}
-          >
-            {createLetter.isPending ? "Menyimpan..." : "Simpan Draft"}
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-4">
+            <Button
+              type="button"
+              variant="outline"
+              className="flex-1"
+              disabled={createLetter.isPending}
+              onClick={form.handleSubmit((v) => onSubmit(v, LetterStatus.DRAFT))}
+            >
+              {createLetter.isPending ? "Menyimpan..." : "Simpan Draft"}
+            </Button>
+            <Button
+              type="button"
+              className="flex-1"
+              disabled={createLetter.isPending}
+              onClick={form.handleSubmit((v) =>
+                onSubmit(v, LetterStatus.PENDING_REVIEW),
+              )}
+            >
+              {createLetter.isPending ? "Mengajukan..." : "Ajukan untuk Diperiksa"}
+            </Button>
+          </div>
         </form>
       </Form>
     </div>

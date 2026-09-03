@@ -28,7 +28,7 @@ function actorOf(req: Request): LetterActor {
 export const CorrespondenceController = {
   async create(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await CorrespondenceService.createLetter(req.body, req.user!.id);
+      const result = await CorrespondenceService.createLetter(req.body, actorOf(req));
       res.status(201).json({ success: true, data: result });
     } catch (error) {
       next(error);

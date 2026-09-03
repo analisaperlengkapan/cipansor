@@ -85,10 +85,10 @@ async function recordFlow(
 const DEFAULT_AGENDA_FORMAT = '[NO]/[TYPE]/Y-CPS/[ROMAN]/[YEAR]';
 
 export const CorrespondenceService = {
-  // Helper: Generate Auto Number
-  async generateNumber(unitId: string, type: string, academicYearId: string): Promise<string> {
+  // Helper: Generate Auto Number inside transaction or client
+  async generateNumber(db: Db, unitId: string, type: string, academicYearId: string): Promise<string> {
     // 1. Find Agenda Config
-    let agenda = await prisma.agendaNumber.findUnique({
+    let agenda = await db.agendaNumber.findUnique({
       where: {
         unitId_academicYearId_type: {
           unitId,
@@ -100,7 +100,7 @@ export const CorrespondenceService = {
 
     // 2. Create if not exists
     if (!agenda) {
-      agenda = await prisma.agendaNumber.create({
+      agenda = await db.agendaNumber.create({
         data: {
           unitId,
           academicYearId,
@@ -112,7 +112,7 @@ export const CorrespondenceService = {
     }
 
     // 3. Increment (Atomic)
-    const updatedAgenda = await prisma.agendaNumber.update({
+    const updatedAgenda = await db.agendaNumber.update({
       where: { id: agenda.id },
       data: { lastNumber: { increment: 1 } },
     });
@@ -134,7 +134,37 @@ export const CorrespondenceService = {
     return formatted;
   },
 
-  async createLetter(data: CreateLetterInput, userId: string) {
+  async createLetter(data: CreateLetterInput, actorOrUserId: LetterActor | string) {
+    const actor: LetterActor = typeof actorOrUserId === 'string'
+      ? { id: actorOrUserId }
+      : actorOrUserId;
+
+    // Check authorization: Student, Parent, Committee, and Alumni roles cannot create letters
+    const excludedRoles = [
+      'SDIT_SISWA', 'SMPIT_SISWA', 'SMAQ_SISWA', 'TKQ_SISWA',
+      'SDIT_ORANG_TUA', 'SMPIT_ORANG_TUA', 'SMAQ_ORANG_TUA', 'TKQ_ORANG_TUA',
+      'SDIT_KOMITE', 'SMPIT_KOMITE', 'SMAQ_KOMITE', 'TKQ_KOMITE',
+      'ALUMNI'
+    ];
+    if (actor.roleCode && excludedRoles.includes(actor.roleCode)) {
+      throw Errors.forbidden('Siswa, Orang Tua, dan Komite tidak memiliki wewenang untuk membuat surat');
+    }
+
+    // Unit scope check: non-foundation actors can only create letters for their own unit
+    const isFoundationActor = actor.roleCode && (
+      actor.roleCode.startsWith('YAYASAN_') ||
+      actor.roleCode === 'SUPER_ADMIN'
+    );
+
+    if (actor.unitId && data.unitId !== actor.unitId && !isFoundationActor) {
+      throw Errors.forbidden('Anda hanya dapat membuat surat untuk unit kerja Anda');
+    }
+
+    // Reject terminal/signed status directly supplied by client
+    if (['SIGNED', 'READY_TO_SIGN', 'ARCHIVED'].includes(data.status)) {
+      throw Errors.badRequest('Status awal surat yang dikirim tidak valid');
+    }
+
     // Jenis naskah menentukan sifat mana yang sah dan buku nomor mana yang
     // dipakai. Divalidasi sebelum apa pun ditulis: menolak setelah nomor
     // agenda terlanjur naik akan meninggalkan lubang di buku agenda.
@@ -147,28 +177,26 @@ export const CorrespondenceService = {
     });
     const academicYearId = activeYear?.id || 'DEFAULT';
 
-    // Generate number if missing
-    let agendaNumber = data.agendaNumber;
-    let letterNumber = data.letterNumber;
-
-    if (data.direction === 'INCOMING' && !agendaNumber) {
-      agendaNumber = await this.generateNumber(data.unitId, 'INCOMING', academicYearId);
-    } else if (data.direction === 'OUTGOING' && !letterNumber) {
-      // Typically only generated when status is READY or SIGNED, but we'll allow draft numbering if needed
-      // Or just leave it empty for DRAFT
-      if (data.status !== 'DRAFT') {
-        // Per jenis, not one shared counter: on paper an SK has its own agenda
-        // book, and sharing a counter would make SK numbers skip every time an
-        // ordinary letter went out.
-        letterNumber = await this.generateNumber(
-          data.unitId,
-          AGENDA_TYPE_CODE[type],
-          academicYearId
-        );
-      }
-    }
+    const userId = actor.id;
 
     return await prisma.$transaction(async (tx) => {
+      // Generate number inside transaction so rollbacks revert counter
+      let agendaNumber = data.agendaNumber;
+      let letterNumber = data.letterNumber;
+
+      if (data.direction === 'INCOMING' && !agendaNumber) {
+        agendaNumber = await this.generateNumber(tx, data.unitId, 'INCOMING', academicYearId);
+      } else if (data.direction === 'OUTGOING' && !letterNumber) {
+        if (data.status !== 'DRAFT') {
+          letterNumber = await this.generateNumber(
+            tx,
+            data.unitId,
+            AGENDA_TYPE_CODE[type],
+            academicYearId
+          );
+        }
+      }
+
       // Create Letter
       const letter = await tx.letter.create({
         data: {

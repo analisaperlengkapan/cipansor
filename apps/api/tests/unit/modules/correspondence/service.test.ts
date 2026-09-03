@@ -57,7 +57,7 @@ describe('CorrespondenceService', () => {
         lastNumber: 11,
       } as any);
 
-      const result = await CorrespondenceService.generateNumber('unit-1', 'OUTGOING', 'year-1');
+      const result = await CorrespondenceService.generateNumber(prisma, 'unit-1', 'OUTGOING', 'year-1');
 
       const date = new Date();
       const year = date.getFullYear().toString();
@@ -76,7 +76,7 @@ describe('CorrespondenceService', () => {
         lastNumber: 1,
       } as any);
 
-      await CorrespondenceService.generateNumber('unit-1', 'OUTGOING', 'year-1');
+      await CorrespondenceService.generateNumber(prisma, 'unit-1', 'OUTGOING', 'year-1');
 
       expect(prisma.agendaNumber.create).toHaveBeenCalled();
     });

@@ -179,11 +179,21 @@ export const handleSingleUpload = (fieldName: string) => {
             });
           }
 
-          // Construct public URL
-          const protocol = req.protocol;
-          const host = req.get('host');
+          // Construct public URL (or Azure Blob URL if configured)
           const filename = req.file.filename;
-          req.body.fileUrl = `${protocol}://${host}/uploads/${filename}`;
+          const mimeType = req.file.mimetype;
+          const localPath = req.file.path;
+
+          const { uploadToCloudStorage } = await import('@/utils/cloud-storage');
+          const storageResult = await uploadToCloudStorage(localPath, filename, mimeType);
+
+          if (storageResult.provider === 'azure') {
+            req.body.fileUrl = storageResult.url;
+          } else {
+            const protocol = req.protocol;
+            const host = req.get('host');
+            req.body.fileUrl = `${protocol}://${host}/uploads/${filename}`;
+          }
 
           // Also map other metadata if needed
           if (!req.body.fileName) {

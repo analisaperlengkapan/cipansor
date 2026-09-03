@@ -92,6 +92,17 @@ export function errorHandler(error: Error, req: Request, res: Response, next: Ne
     });
   }
 
+  // Handle Workflow errors (WorkflowError -> 409 Conflict)
+  if (error.name === 'WorkflowError') {
+    return res.status(409).json({
+      success: false,
+      error: {
+        code: ErrorCode.CONFLICT,
+        message: error.message,
+      },
+    });
+  }
+
   // Handle Zod validation errors
   if (error instanceof ZodError) {
     const details = error.issues.map((e) => ({

@@ -33,12 +33,16 @@ import { useState } from "react";
 
 import { id } from "date-fns/locale";
 
-export default function InboxPage() {
+interface InboxPageProps {
+  defaultDirection?: LetterDirection;
+}
+
+export default function InboxPage({ defaultDirection = LetterDirection.INCOMING }: InboxPageProps) {
   const router = useRouter();
   const { user } = useAuth();
   const [page, setPage] = useState(1);
   const [direction, setDirection] = useState<LetterDirection>(
-    LetterDirection.INCOMING,
+    defaultDirection,
   );
   const [search, setSearch] = useState("");
   const [scope, setScope] = useState<"ALL" | "PERSONAL">("ALL");

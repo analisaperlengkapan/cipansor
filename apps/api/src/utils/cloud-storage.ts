@@ -45,11 +45,12 @@ export async function uploadToCloudStorage(
         filename,
       };
     } catch (error) {
-      logger.error('Azure Blob Storage upload failed, falling back to local storage', { error, filename });
+      logger.error('Azure Blob Storage upload failed', { error, filename });
+      throw new Error(`Gagal mengunggah berkas ke Azure Blob Storage: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
-  // Fallback to local storage URL
+  // Fallback to local storage URL when Azure is NOT configured
   return {
     url: `/uploads/${filename}`,
     provider: 'local',

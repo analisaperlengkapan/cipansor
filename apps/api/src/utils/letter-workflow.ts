@@ -108,7 +108,13 @@ export function statusAfterApproval(
   );
   const turn = nextRung(after);
 
-  if (!turn) return LetterStatus.SIGNED;
+  if (!turn) {
+    const currentRung = reviewers.find((r) => r.reviewerId === approvedId);
+    if (currentRung?.isSigner) {
+      return LetterStatus.SIGNED;
+    }
+    return LetterStatus.READY_TO_SIGN;
+  }
   return turn.isSigner ? LetterStatus.READY_TO_SIGN : LetterStatus.PENDING_REVIEW;
 }
 

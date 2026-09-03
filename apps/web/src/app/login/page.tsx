@@ -135,12 +135,28 @@ function LoginPageContent() {
       if (hash.includes("id_token=")) {
         const params = new URLSearchParams(hash.substring(1));
         const idToken = params.get("id_token");
-        const provider = (hash.includes("microsoft") || hash.includes("provider=microsoft")) ? "microsoft" : "google";
+        const state = params.get("state");
+        const storedState = sessionStorage.getItem("sso_state");
+        const storedProvider = (sessionStorage.getItem("sso_provider") || (hash.includes("microsoft") ? "microsoft" : "google")) as "google" | "microsoft";
+
+        if (storedState && state !== storedState) {
+          toast.error("Validasi keamanan SSO (state) gagal. Silakan coba lagi.");
+          sessionStorage.removeItem("sso_state");
+          sessionStorage.removeItem("sso_nonce");
+          sessionStorage.removeItem("sso_provider");
+          window.history.replaceState(null, "", window.location.pathname);
+          return;
+        }
+
+        sessionStorage.removeItem("sso_state");
+        sessionStorage.removeItem("sso_nonce");
+        sessionStorage.removeItem("sso_provider");
+
         if (idToken) {
           window.history.replaceState(null, "", window.location.pathname);
-          ssoLogin({ provider, idToken }).then(() => {
-            const state = useAuthStore.getState();
-            if (!state.requiresTwoFactor && !state.requiresTwoFactorSetup && state.isAuthenticated) {
+          ssoLogin({ provider: storedProvider, idToken }).then(() => {
+            const storeState = useAuthStore.getState();
+            if (!storeState.requiresTwoFactor && !storeState.requiresTwoFactorSetup && storeState.isAuthenticated) {
               router.push(landingRouteForCurrentUser());
             }
           }).catch(() => {});
@@ -469,8 +485,14 @@ function LoginPageContent() {
                       );
                       return;
                     }
+                    const state = crypto.randomUUID();
+                    const nonce = crypto.randomUUID();
+                    sessionStorage.setItem("sso_provider", "google");
+                    sessionStorage.setItem("sso_state", state);
+                    sessionStorage.setItem("sso_nonce", nonce);
+
                     const redirectUri = encodeURIComponent(window.location.origin + "/login");
-                    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?response_type=id_token&client_id=${config.googleClientId}&redirect_uri=${redirectUri}&scope=openid%20email%20profile&nonce=${Date.now()}`;
+                    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?response_type=id_token&client_id=${config.googleClientId}&redirect_uri=${redirectUri}&scope=openid%20email%20profile&state=${state}&nonce=${nonce}`;
                     window.location.href = authUrl;
                   } catch {}
                 }}
@@ -500,8 +522,14 @@ function LoginPageContent() {
                       );
                       return;
                     }
+                    const state = crypto.randomUUID();
+                    const nonce = crypto.randomUUID();
+                    sessionStorage.setItem("sso_provider", "microsoft");
+                    sessionStorage.setItem("sso_state", state);
+                    sessionStorage.setItem("sso_nonce", nonce);
+
                     const redirectUri = encodeURIComponent(window.location.origin + "/login");
-                    const authUrl = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${config.microsoftClientId}&response_type=id_token&redirect_uri=${redirectUri}&scope=openid%20profile%20email&response_mode=fragment&nonce=${Date.now()}`;
+                    const authUrl = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${config.microsoftClientId}&response_type=id_token&redirect_uri=${redirectUri}&scope=openid%20profile%20email&response_mode=fragment&state=${state}&nonce=${nonce}`;
                     window.location.href = authUrl;
                   } catch {}
                 }}

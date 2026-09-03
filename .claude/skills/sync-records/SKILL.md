@@ -11,6 +11,14 @@ them — and it is the answer to "sesuaikan memori, plan, dan file lainnya".
 
 Run it **before** compacting, not after.
 
+Two committed hooks ask for this pass so nobody has to remember to:
+`hooks/pre-compact-sync.sh` pauses the first manual `/compact` of a session, and
+`hooks/stop-sync-records.sh` asks once at the first resting point after the
+session has produced commits. Both ask exactly once and then stand aside. If
+this pass genuinely finds nothing worth writing, say that in one line — an
+invented edit to satisfy a hook is worse than no edit, because the next reader
+trusts it.
+
 ## What to write, and where
 
 | finding | goes to |

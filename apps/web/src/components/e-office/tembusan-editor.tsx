@@ -179,7 +179,11 @@ export function TembusanEditor({
         {pendingType === "INTERNAL" ? (
           <div className="space-y-2">
             <Input
-              placeholder="Cari pejabat/staf..."
+              // Sengaja tidak "Cari pejabat/staf..." — formulir pembuatan surat
+              // sudah memakai kalimat itu untuk pemeriksa, dan dua kotak cari
+              // berbunyi sama pada satu halaman membuat penyusun menebak yang
+              // mana yang mencari apa.
+              placeholder="Cari penerima tembusan..."
               value={search}
               onChange={(e) => onSearchChange(e.target.value)}
               className="text-xs"

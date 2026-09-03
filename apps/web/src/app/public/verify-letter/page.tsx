@@ -21,7 +21,11 @@ import {
 } from "lucide-react";
 import { safeFormat } from "@/lib/date";
 import { id as localeId } from "date-fns/locale";
-import type { PublicLetterVerificationResult } from "@cipansor/shared";
+import {
+  LETTER_AUTHORING_TRACK_LABELS,
+  LetterAuthoringTrack,
+  type PublicLetterVerificationResult,
+} from "@cipansor/shared";
 
 /** Status surat, dalam bahasa yang dibaca pengunjung dari luar. */
 const LETTER_STATUS_LABEL: Record<string, string> = {
@@ -64,6 +68,21 @@ function PublicVerifyContent() {
   const [captchaAnswer, setCaptchaAnswer] = useState("");
 
   const verifyPdfMutation = useVerifyPdfLetter();
+
+  /**
+   * Jalur penyusunan naskah, hanya bila jawabannya benar-benar datang.
+   *
+   * Sebuah nilai yang tidak dikenal tidak boleh menjadi kalimat jaminan:
+   * `LETTER_AUTHORING_TRACK_LABELS[nilai-asing]` bernilai `undefined`, dan
+   * membacanya di dalam JSX akan menjatuhkan seluruh halaman. Yang benar
+   * adalah tidak menyatakan apa-apa — halaman ini boleh diam soal cara
+   * penyusunan, tetapi tidak boleh menebaknya.
+   */
+  const authoringTrack =
+    result?.letter?.authoringTrack &&
+    result.letter.authoringTrack in LETTER_AUTHORING_TRACK_LABELS
+      ? (result.letter.authoringTrack as LetterAuthoringTrack)
+      : null;
 
   const refreshCaptcha = () => {
     setCaptchaAnswer("");
@@ -364,6 +383,37 @@ function PublicVerifyContent() {
                         {LETTER_STATUS_LABEL[result.letter.status] ?? result.letter.status}
                       </span>
                     </div>
+                    {/*
+                      Apa yang dibuktikan halaman ini, dan apa yang tidak.
+
+                      Pemeriksaan di atas mengikat byte berkas yang diunggah
+                      pembaca kepada byte yang ditandatangani — itu berlaku
+                      sama untuk kedua jalur. Yang berbeda adalah hubungan
+                      antara keterangan di kartu ini dan isi dokumennya:
+                      naskah yang disusun sistem mengambil keduanya dari satu
+                      sumber, sedangkan naskah yang diunggah penyusunnya tidak
+                      dapat diperiksa demikian oleh mesin mana pun.
+                      Menampilkan keduanya tanpa membedakannya berarti
+                      menjanjikan pemeriksaan yang tidak pernah terjadi.
+                    */}
+                    {authoringTrack && (
+                      <div className="sm:col-span-2 border-t pt-3">
+                        <span className="text-xs text-slate-500 block">
+                          Cara Naskah Disusun
+                        </span>
+                        <span className="font-medium text-slate-900 flex items-center gap-1">
+                          {authoringTrack === LetterAuthoringTrack.UPLOADED ? (
+                            <FileUp className="h-3.5 w-3.5 text-slate-400" />
+                          ) : (
+                            <FileText className="h-3.5 w-3.5 text-slate-400" />
+                          )}
+                          {LETTER_AUTHORING_TRACK_LABELS[authoringTrack].label}
+                        </span>
+                        <span className="mt-1 block text-xs leading-relaxed text-slate-600">
+                          {LETTER_AUTHORING_TRACK_LABELS[authoringTrack].assurance}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

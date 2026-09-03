@@ -635,7 +635,7 @@ this; no diff review would have.
 These were asked as *"consider whether this is a good idea"*, so the answers are
 recommendations with their reasoning, not a work order.
 
-### (a) Two authoring tracks — **worth building, with conditions**
+### (a) Two authoring tracks — **worth building, with conditions** — **step 1 SHIPPED (#454)**
 
 The proposal: let the drafter choose between (1) downloading a pre-filled DOCX
 template, editing it in Word, exporting to PDF and uploading that, or (2) typing
@@ -682,6 +682,45 @@ Therefore: build it, but **record the track on the letter** (`GENERATED` vs
 produced by the system" and "this naskah was uploaded by its drafter and sealed
 on receipt" are different assurances, and a verification page that blurs them is
 worse than one that admits the difference.
+
+#### What #454 shipped, and the defect it found on the way
+
+`Letter.authoringTrack` exists, defaults to `GENERATED`, and is returned by
+public verification and printed on the verification page with the sentence that
+belongs to it — the `UPLOADED` sentence says outright that the agenda metadata
+is vouched for by the reviewers and the signer, not by any automatic check.
+Every existing row is `GENERATED`, and that is a demonstrable statement rather
+than an assumption: `generateLetterPdfBuffer` is the only source of signed
+bytes anywhere in the system.
+
+The enum now exists twice — once in `schema.prisma`, once in `@cipansor/shared`
+so the browser bundle need not import Prisma — with nothing in the type system
+tying them together. `letter-authoring-track.test.ts` ties them instead, and it
+was proved red by deleting `UPLOADED` from the shared copy before it was
+trusted. The failure it prevents is not a compile error but a public page that
+falls over on a value the database considers ordinary.
+
+**The defect.** The create-letter form offers *"Upload File Naskah (PDF)"* with
+no direction condition, so it appears on surat keluar. The letter page rendered
+that file as **"Berkas naskah"** and previewed it under **"Pratinjau Naskah"**.
+The signing path has never read it. So an outgoing letter could carry two
+documents — the drafter's upload and the system's rendering — presented with
+equal weight, where only the second is hashed, signed, archived, and matched
+when someone verifies a copy. Nothing said which was which.
+
+This is the same records problem the section above predicted, arriving through a
+door nobody was watching: not "the metadata may disagree with the uploaded PDF"
+but "the uploaded PDF is not the letter at all". Renaming it to *Berkas unggahan
+penyusun*, with a line saying plainly that the signed naskah is the one behind
+*Cetak Surat*, costs nothing and removes the ambiguity today. The label
+disappears by itself once the track is real — an `UPLOADED` letter's file *is*
+its naskah, so the condition stops matching.
+
+**Still to build:** signing the uploaded bytes rather than ignoring them (the
+TTE visualisation has to be stamped onto the drafter's own layout, which is the
+substantial part), and the pre-filled DOCX template to start from. Until then
+the column is honest about a system with one track, which is better than a
+system with two tracks that is silent about which one it used.
 
 ### (b) Replacing the QR with an e-sign logo — **do not replace it; improve it**
 

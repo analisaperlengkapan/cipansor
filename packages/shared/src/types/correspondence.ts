@@ -39,6 +39,44 @@ export enum LetterNature {
 }
 
 /**
+ * Dari mana byte naskah yang ditandatangani berasal.
+ *
+ * Cerminan `LetterAuthoringTrack` di Prisma. Ada di sini karena halaman
+ * verifikasi publik harus menyebutkannya: dua jalur ini membuktikan hal yang
+ * sama tentang byte-nya dan hal yang berbeda tentang buku agendanya.
+ */
+export enum LetterAuthoringTrack {
+  GENERATED = "GENERATED",
+  UPLOADED = "UPLOADED",
+}
+
+/**
+ * Apa yang sebenarnya dijamin tiap jalur, ditulis untuk dibaca orang luar.
+ *
+ * Kalimatnya sengaja tidak seimbang. Yang satu boleh menyatakan bahwa
+ * keterangan dan isinya berasal dari satu sumber; yang lain hanya boleh
+ * menyatakan bahwa berkasnya utuh sejak ditandatangani — karena memang hanya
+ * itu yang dapat dibuktikan, dan sebuah halaman verifikasi yang meminjam
+ * kalimat pertama untuk kasus kedua sedang menjanjikan sesuatu yang tidak
+ * diperiksanya.
+ */
+export const LETTER_AUTHORING_TRACK_LABELS: Record<
+  LetterAuthoringTrack,
+  { label: string; assurance: string }
+> = {
+  [LetterAuthoringTrack.GENERATED]: {
+    label: "Disusun oleh sistem",
+    assurance:
+      "Naskah ini disusun sistem dari data yang tercatat pada buku agenda, sehingga nomor, perihal, tanggal, dan isinya berasal dari satu sumber yang sama.",
+  },
+  [LetterAuthoringTrack.UPLOADED]: {
+    label: "Diunggah penyusun",
+    assurance:
+      "Naskah ini ditulis penyusunnya di luar sistem lalu diunggah, dan disegel apa adanya pada saat diterima. Keutuhan berkasnya terbukti; kesesuaian isinya dengan keterangan buku agenda di atas dipastikan oleh pemeriksa dan penanda tangan, bukan oleh pemeriksaan otomatis.",
+  },
+};
+
+/**
  * Cara sebuah naskah keluar dari kantor.
  *
  * Dicatat karena buku ekspedisi mencatatnya: ketika penerima menyatakan tidak
@@ -311,6 +349,8 @@ export interface LetterDetail {
   urgency: LetterUrgency;
   nature: LetterNature;
   status: LetterStatus;
+  /** Jalur penyusunan naskah — lihat LetterAuthoringTrack. */
+  authoringTrack?: LetterAuthoringTrack;
   senderName?: string;
   senderTitle?: string;
   senderInstance?: string;
@@ -479,6 +519,11 @@ export interface PublicLetterVerificationResult {
     date: string | Date;
     status: string;
     unitName: string;
+    /**
+     * Optional because a response produced before this field existed does not
+     * carry it, and the page must render that case rather than crash on it.
+     */
+    authoringTrack?: LetterAuthoringTrack | null;
   };
   reason?: string;
 }

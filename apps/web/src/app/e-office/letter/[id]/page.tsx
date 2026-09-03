@@ -6,7 +6,13 @@ import { useCorrespondence } from "@/hooks/use-correspondence";
 import { useAuth } from "@/hooks/use-auth";
 import { useCorrespondenceParticipants } from "@/hooks/use-correspondence";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { LetterStatusBadge } from "@/components/e-office/letter-status-badge";
 import { DispositionTimeline } from "@/components/e-office/disposition-timeline";
@@ -60,6 +66,7 @@ import {
   LetterType,
   LetterNature,
   LetterUrgency,
+  LetterAuthoringTrack,
   LetterDirection,
   LetterDispatchChannel,
   LETTER_TYPE_LABELS,
@@ -276,6 +283,29 @@ export default function LetterDetailPage({
   if (!letter) {
     return <div className="p-6 text-center">Surat tidak ditemukan.</div>;
   }
+
+  /**
+   * Berkas yang diunggah penyusun, yang bukan naskah yang ditandatangani.
+   *
+   * Formulir pembuatan surat menawarkan "Upload File Naskah (PDF)" pada surat
+   * keluar juga, dan kartu ini dulu menampilkannya sebagai "Berkas naskah"
+   * lengkap dengan "Pratinjau Naskah". Tetapi jalur penandatanganan tidak
+   * pernah membacanya: `generateLetterPdfBuffer` menyusun naskahnya sendiri
+   * dari isian formulir, dan byte itulah yang di-hash, ditandatangani,
+   * diarsipkan, dan dicocokkan pada verifikasi publik. Dua dokumen berbeda
+   * ditampilkan dengan bobot yang sama, dan hanya satu yang berlaku.
+   *
+   * Pada surat masuk keadaannya terbalik dan labelnya tetap benar: berkas itu
+   * memang naskah aslinya, dan tidak ada naskah lain yang disusun sistem.
+   *
+   * Ketika jalur UPLOADED nanti benar-benar menandatangani byte unggahan,
+   * keterangan ini hilang dengan sendirinya — bukan karena dihapus, melainkan
+   * karena `authoringTrack` naskah itu memang bukan GENERATED.
+   */
+  const uploadedFileIsNotTheNaskah =
+    !!letter.fileUrl &&
+    letter.direction === LetterDirection.OUTGOING &&
+    letter.authoringTrack !== LetterAuthoringTrack.UPLOADED;
 
   const handleReview = async (action: "APPROVE" | "REJECT") => {
     try {
@@ -894,20 +924,33 @@ export default function LetterDetailPage({
                   Surat.pdf", sehingga satu-satunya berkas yang ada disebut
                   dengan nama sesuatu yang belum pernah ada. */}
               {letter.fileUrl && (
-                <div className="flex items-center gap-2 p-3 border rounded-md">
-                  <FileText className="h-5 w-5 text-blue-600" />
-                  <span className="text-sm font-medium flex-1">
-                    Berkas naskah
-                  </span>
-                  <Button variant="ghost" size="sm" asChild>
-                    <a
-                      href={authFileUrl(letter.fileUrl)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      Download
-                    </a>
-                  </Button>
+                <div className="space-y-2 rounded-md border p-3">
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-5 w-5 text-blue-600" />
+                    <span className="text-sm font-medium flex-1">
+                      {uploadedFileIsNotTheNaskah
+                        ? "Berkas unggahan penyusun"
+                        : "Berkas naskah"}
+                    </span>
+                    <Button variant="ghost" size="sm" asChild>
+                      <a
+                        href={authFileUrl(letter.fileUrl)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Download
+                      </a>
+                    </Button>
+                  </div>
+                  {uploadedFileIsNotTheNaskah && (
+                    <p className="text-xs text-muted-foreground">
+                      Berkas ini <strong>bukan</strong> naskah yang
+                      ditandatangani. Naskah surat keluar ini disusun sistem;
+                      yang ditandatangani, diarsipkan, dan diperiksa pada
+                      halaman verifikasi publik adalah berkas dari{" "}
+                      <em>Cetak Surat</em>.
+                    </p>
+                  )}
                 </div>
               )}
 
@@ -1047,8 +1090,16 @@ export default function LetterDetailPage({
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <FileText className="h-5 w-5" />
-                  Pratinjau Naskah
+                  {uploadedFileIsNotTheNaskah
+                    ? "Pratinjau Berkas Unggahan"
+                    : "Pratinjau Naskah"}
                 </CardTitle>
+                {uploadedFileIsNotTheNaskah && (
+                  <CardDescription>
+                    Bukan naskah yang ditandatangani — lihat keterangan pada
+                    berkas unggahan di atas.
+                  </CardDescription>
+                )}
               </CardHeader>
               <CardContent>
                 <object

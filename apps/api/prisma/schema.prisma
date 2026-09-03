@@ -7032,6 +7032,34 @@ enum LetterNature {
   STRICTLY_CONFIDENTIAL // Sangat Rahasia
 }
 
+/// Dari mana byte naskah yang ditandatangani itu berasal.
+///
+/// Bukan rincian teknis. Kedua jalur menghasilkan jaminan yang **berbeda**, dan
+/// halaman verifikasi publik yang mengaburkan bedanya lebih buruk daripada yang
+/// mengakuinya:
+///
+/// - `GENERATED` — sistem yang menyusun naskahnya dari isian formulir. Metadata
+///   di buku agenda dan isi dokumennya berasal dari satu sumber, jadi keduanya
+///   tidak mungkin berselisih.
+/// - `UPLOADED` — penyusun menulisnya di pengolah kata, mengekspor PDF, lalu
+///   mengunggahnya. Byte-nya tetap di-hash, ditandatangani, dan diarsipkan
+///   dengan cara yang persis sama — yang tidak dapat dijamin siapa pun adalah
+///   bahwa *Perihal* di buku agenda sama dengan yang tertulis di dalam PDF-nya.
+///   Tidak ada pemeriksaan yang dapat menemukan itu; yang ada hanyalah bahwa
+///   seluruh pemeriksa dalam tangga persetujuan dan penanda tangan melihat PDF
+///   yang sesungguhnya sebelum bertindak.
+///
+/// Seluruh baris hari ini bernilai `GENERATED`, dan itu pernyataan yang benar
+/// dan dapat ditunjukkan, bukan asumsi: satu-satunya sumber byte yang
+/// ditandatangani adalah `generateLetterPdfBuffer` di `esign.service.ts`.
+/// `Letter.fileUrl` — berkas yang diunggah lewat "Upload File Naskah" —
+/// **tidak** pernah menjadi byte yang ditandatangani, dan kolom ini ada
+/// sebagian justru untuk membuat kenyataan itu terbaca alih-alih tersembunyi.
+enum LetterAuthoringTrack {
+  GENERATED
+  UPLOADED
+}
+
 enum LetterStatus {
   DRAFT // Konsep
   PENDING_REVIEW // Menunggu Paraf/Review
@@ -7539,6 +7567,8 @@ model Letter {
   urgency           LetterUrgency   @default(NORMAL)
   nature            LetterNature    @default(PUBLIC)
   status            LetterStatus    @default(DRAFT)
+  /// Jalur penyusunan naskah — lihat LetterAuthoringTrack.
+  authoringTrack    LetterAuthoringTrack @default(GENERATED) @map("authoring_track")
   // External Parties (if not linked to User/Unit)
   senderName        String?         @map("sender_name") // Pengirim (External)
   senderTitle       String?         @map("sender_title")

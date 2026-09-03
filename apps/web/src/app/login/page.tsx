@@ -129,21 +129,28 @@ function LoginPageContent() {
   // Handle OIDC token callback in URL hash (e.g. #id_token=...)
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const hash = window.location.hash;
-    if (hash.includes("id_token=")) {
-      const params = new URLSearchParams(hash.substring(1));
-      const idToken = params.get("id_token");
-      const provider = hash.includes("microsoft") ? "microsoft" : "google";
-      if (idToken) {
-        window.history.replaceState(null, "", window.location.pathname);
-        ssoLogin({ provider, idToken }).then(() => {
-          const state = useAuthStore.getState();
-          if (!state.requiresTwoFactor && !state.requiresTwoFactorSetup && state.isAuthenticated) {
-            router.push(landingRouteForCurrentUser());
-          }
-        }).catch(() => {});
+
+    const checkHashAndLogin = () => {
+      const hash = window.location.hash;
+      if (hash.includes("id_token=")) {
+        const params = new URLSearchParams(hash.substring(1));
+        const idToken = params.get("id_token");
+        const provider = (hash.includes("microsoft") || hash.includes("provider=microsoft")) ? "microsoft" : "google";
+        if (idToken) {
+          window.history.replaceState(null, "", window.location.pathname);
+          ssoLogin({ provider, idToken }).then(() => {
+            const state = useAuthStore.getState();
+            if (!state.requiresTwoFactor && !state.requiresTwoFactorSetup && state.isAuthenticated) {
+              router.push(landingRouteForCurrentUser());
+            }
+          }).catch(() => {});
+        }
       }
-    }
+    };
+
+    checkHashAndLogin();
+    window.addEventListener("hashchange", checkHashAndLogin);
+    return () => window.removeEventListener("hashchange", checkHashAndLogin);
   }, [ssoLogin, router]);
   const [showPassword, setShowPassword] = useState(false);
   const [selectedDemo, setSelectedDemo] = useState<string | null>(null);

@@ -36,11 +36,13 @@ export default function SPMBPage() {
   const { data: acceptedData } = useRegistrants({ status: "ACCEPTED" });
   const { data: pendingData } = useRegistrants({ status: "DOCUMENT_CHECK" });
   const { data: periodsData } = useAdmissionPeriods();
+  const { data: activePeriodsData } = useAdmissionPeriods({ isActive: true });
 
   const totalRegistrants = registrantsData?.meta?.total ?? registrantsData?.data?.length ?? 0;
   const acceptedCount = acceptedData?.meta?.total ?? acceptedData?.data?.length ?? 0;
   const pendingCount = pendingData?.meta?.total ?? pendingData?.data?.length ?? 0;
   const totalPeriods = periodsData?.meta?.total ?? periodsData?.data?.length ?? 0;
+  const activePeriodsCount = activePeriodsData?.meta?.total ?? activePeriodsData?.data?.length ?? 0;
 
   const menuItems = [
     {
@@ -105,7 +107,7 @@ export default function SPMBPage() {
     },
     {
       title: "Gelombang Aktif",
-      value: String(totalPeriods),
+      value: String(activePeriodsCount),
       icon: Calendar,
       color: "text-purple-600",
       description: "Periode berjalan",

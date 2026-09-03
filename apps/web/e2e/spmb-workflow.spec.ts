@@ -43,14 +43,15 @@ test.describe("SPMB - Public Registration & Admin Operations", () => {
     expect(bodyText).toContain("Lulus Seleksi");
   });
 
-  test("admin registrations list displays data table and filters", async ({ page }) => {
+  test("admin registrations list displays data table and syncs status query filter", async ({ page }) => {
     await loginAs(page, "superAdmin");
-    await page.goto("/spmb/registrations");
+    await page.goto("/spmb/registrations?status=ACCEPTED");
     await page.waitForLoadState("domcontentloaded", { timeout: 10000 });
 
-    expect(page.url()).toContain("/spmb/registrations");
+    expect(page.url()).toContain("/spmb/registrations?status=ACCEPTED");
     const pageContent = await page.content();
     expect(pageContent.length).toBeGreaterThan(1000);
+
     const searchInput = page.locator("input[placeholder*='Cari']").first();
     if (await searchInput.isVisible()) {
       await searchInput.fill("Ahmad");

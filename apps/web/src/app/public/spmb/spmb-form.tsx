@@ -205,6 +205,11 @@ export function SpmbForm({
   });
 
   const [ocrResults, setOcrResults] = useState<Record<string, { status: "WARNING" | "MISMATCH"; notes: string[] }>>({});
+  const [activeRegistration, setActiveRegistration] = useState<{
+    registrantId: string;
+    registrationToken: string;
+    registrationNo: string;
+  } | null>(null);
 
   const steps = [
     { id: "student", title: "Data Calon Santri", icon: User },
@@ -318,7 +323,48 @@ export function SpmbForm({
     return { failedKeys, failedLabels };
   };
 
+  const handleRetryUpload = async () => {
+    if (!activeRegistration) return;
+    setIsSubmitting(true);
+    try {
+      const { failedKeys, failedLabels } = await uploadSelectedDocuments(
+        activeRegistration.registrantId,
+        activeRegistration.registrationToken
+      );
+
+      setFiles((prev) => {
+        const next = { ...prev };
+        if (!failedKeys.includes("photo")) next.photo = null;
+        if (!failedKeys.includes("ktp")) next.ktp = null;
+        if (!failedKeys.includes("familyCard")) next.familyCard = null;
+        if (!failedKeys.includes("birthCertificate")) next.birthCertificate = null;
+        return next;
+      });
+
+      if (failedLabels.length === 0) {
+        toast.success("Seluruh berkas dokumen berhasil diunggah.");
+        setSuccessData({
+          registrationNumber: activeRegistration.registrationNo,
+          name: formData.fullName,
+        });
+        setActiveRegistration(null);
+        setFormData(initialFormData);
+        setCurrentStep(0);
+      } else {
+        toast.error(`Beberapa berkas masih gagal diunggah: ${failedLabels.join(", ")}`);
+      }
+    } catch (err) {
+      toast.error("Gagal mengunggah ulang berkas dokumen. Silakan coba lagi.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleSubmit = async () => {
+    if (activeRegistration) {
+      return handleRetryUpload();
+    }
+
     setIsSubmitting(true);
     try {
       const admissionPeriodId = formData.periodId || activePeriod?.id;
@@ -374,15 +420,11 @@ export function SpmbForm({
       const result = await createRegistration.mutateAsync(payload);
       const createdRegistrantId = result?.id || result?.data?.id;
       const registrationToken = result?.registrationToken || result?.data?.registrationToken;
+      const registrationNo = result?.registrationNo || result?.registrationNumber || "PSB-" + Date.now();
 
       if (createdRegistrantId) {
         const { failedKeys, failedLabels } = await uploadSelectedDocuments(createdRegistrantId, registrationToken);
 
-        if (failedLabels.length > 0) {
-          toast.error(`Pendaftaran tersimpan, tetapi berkas gagal diunggah: ${failedLabels.join(", ")}`);
-        }
-
-        // Only clear successfully uploaded files
         setFiles((prev) => {
           const next = { ...prev };
           if (!failedKeys.includes("photo")) next.photo = null;
@@ -391,17 +433,25 @@ export function SpmbForm({
           if (!failedKeys.includes("birthCertificate")) next.birthCertificate = null;
           return next;
         });
+
+        if (failedLabels.length > 0) {
+          toast.error(`Pendaftaran tersimpan (${registrationNo}), tetapi berkas gagal diunggah: ${failedLabels.join(", ")}`);
+          setActiveRegistration({
+            registrantId: createdRegistrantId,
+            registrationToken,
+            registrationNo,
+          });
+          return;
+        }
       }
 
       setSuccessData({
-        registrationNumber:
-          result?.registrationNo ||
-          result?.registrationNumber ||
-          "PSB-" + Date.now(),
+        registrationNumber: registrationNo,
         name: formData.fullName,
       });
 
-      // Reset text form inputs
+      // Reset form on full success
+      setActiveRegistration(null);
       setFormData(initialFormData);
       setCurrentStep(0);
     } catch (error: any) {
@@ -1049,6 +1099,24 @@ export function SpmbForm({
                     {/* Step 5: Documents */}
                     {currentStep === 4 && (
                       <div className="space-y-6">
+                        {activeRegistration && (
+                          <Card className="bg-amber-50 border-amber-300">
+                            <CardContent className="pt-4">
+                              <div className="flex items-start gap-3">
+                                <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                                <div className="text-sm">
+                                  <p className="font-medium text-amber-900">
+                                    Pendaftaran Tersimpan ({activeRegistration.registrationNo})
+                                  </p>
+                                  <p className="text-amber-800">
+                                    Data formulir pendaftaran Anda sudah tersimpan. Beberapa berkas dokumen gagal diunggah. Silakan pilih kembali berkas yang gagal dan tekan tombol di bawah untuk mencoba mengunggah ulang.
+                                  </p>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        )}
+
                         <Card className="bg-blue-50 border-blue-200">
                           <CardContent className="pt-4">
                             <div className="flex items-start gap-3">

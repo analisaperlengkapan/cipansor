@@ -168,7 +168,7 @@ describe('Admissions Service', () => {
         address: 'Test Address',
         fatherName: 'Father',
         motherName: 'Mother',
-      } as any)
+      } as any, false)
     ).rejects.toThrow('Semua gelombang pendaftaran pada periode ini telah penuh atau ditutup');
   });
 

@@ -303,12 +303,7 @@ export async function getPublicActiveAdmissionPeriod(
  */
 export async function getPublicUnits(_req: Request, res: Response, next: NextFunction) {
   try {
-    const { prisma } = await import('../../lib/prisma');
-    const units = await prisma.unit.findMany({
-      where: { deletedAt: null },
-      select: { id: true, name: true, type: true },
-      orderBy: { name: 'asc' },
-    });
+    const units = await service.getPublicUnitsService();
     res.json({ success: true, data: units });
   } catch (error) {
     next(error);

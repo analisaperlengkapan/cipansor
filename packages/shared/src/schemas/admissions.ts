@@ -1,7 +1,14 @@
 import { z } from "zod";
 
 export const parseDocumentSchema = z.object({
-  imageBase64: z.string().min(1, "Dokumen base64/image wajib diisi"),
+  imageBase64: z
+    .string()
+    .min(1, "Dokumen base64/image wajib diisi")
+    .max(2800000, "Ukuran berkas melebihi batas maksimum (2MB)")
+    .refine(
+      (val) => /^data:(image\/(jpeg|jpg|png|webp)|application\/pdf);base64,/i.test(val),
+      "Tipe berkas tidak didukung. Hanya gambar (JPEG/PNG/WebP) dan PDF yang diperbolehkan"
+    ),
   documentType: z.enum(["ktp", "kk", "akta", "foto", "lainnya"]),
   userInputData: z
     .object({

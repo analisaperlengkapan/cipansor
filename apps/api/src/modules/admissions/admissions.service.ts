@@ -311,7 +311,7 @@ export async function createPublicRegistrantService(data: CreateRegistrantExtend
     throw Errors.badRequest('Admission period is not open for registration');
   }
 
-  const registrant = await createRegistrant(data);
+  const registrant = await createRegistrant(data, false);
 
   const crypto = await import('crypto');
   const timestampHex = Date.now().toString(16);
@@ -328,7 +328,7 @@ export async function createPublicRegistrantService(data: CreateRegistrantExtend
   };
 }
 
-export async function createRegistrant(data: CreateRegistrantExtendedInput) {
+export async function createRegistrant(data: CreateRegistrantExtendedInput, isAdmin: boolean = true) {
   // Race-safety: `generateRegistrationNo` derives the next number from
   // `count(*) + 1`. Under PostgreSQL's default READ COMMITTED isolation,
   // two concurrent transactions can read the same count and try to insert
@@ -340,7 +340,7 @@ export async function createRegistrant(data: CreateRegistrantExtendedInput) {
   let lastError: unknown;
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
     try {
-      return await createRegistrantOnce(data);
+      return await createRegistrantOnce(data, isAdmin);
     } catch (err) {
       lastError = err;
       if (
@@ -358,7 +358,7 @@ export async function createRegistrant(data: CreateRegistrantExtendedInput) {
   throw lastError;
 }
 
-async function createRegistrantOnce(data: CreateRegistrantExtendedInput) {
+async function createRegistrantOnce(data: CreateRegistrantExtendedInput, isAdmin: boolean = true) {
   return prisma.$transaction(async (tx) => {
     const registrationNo = await generateRegistrationNo(data.admissionPeriodId, tx);
 
@@ -422,7 +422,7 @@ async function createRegistrantOnce(data: CreateRegistrantExtendedInput) {
         }
       }
 
-      if (!waveClaimed) {
+      if (!waveClaimed && !isAdmin) {
         throw Errors.badRequest('Semua gelombang pendaftaran pada periode ini telah penuh atau ditutup');
       }
     }
@@ -802,6 +802,17 @@ export async function deleteRegistrant(id: string) {
         data: { registeredCount: { decrement: 1 } },
       });
 
+      const wave = await tx.admissionWave.findUnique({
+        where: { id: registrant.waveId },
+        select: { id: true, status: true, registeredCount: true, quota: true },
+      });
+      if (wave && wave.status === 'FULL' && wave.registeredCount < wave.quota) {
+        await tx.admissionWave.update({
+          where: { id: wave.id },
+          data: { status: 'OPEN' },
+        });
+      }
+
       if (registrant.status === AdmissionStatus.ACCEPTED) {
         await tx.admissionWave.updateMany({
           where: { id: registrant.waveId, acceptedCount: { gt: 0 } },
@@ -1006,6 +1017,14 @@ export type PublicAdmissionPeriod = Prisma.AdmissionPeriodGetPayload<{
  * copies of this three-tier fallback would drift, and the drift reintroduces
  * exactly the bug described above.
  */
+export async function getPublicUnitsService() {
+  return prisma.unit.findMany({
+    where: { deletedAt: null },
+    select: { id: true, name: true, type: true },
+    orderBy: { name: 'asc' },
+  });
+}
+
 export async function findPublicActivePeriod(
   now: Date = new Date()
 ): Promise<PublicAdmissionPeriod | null> {

@@ -175,8 +175,8 @@ describe('lampiran dan tembusan', () => {
       letterWith({
         recipients: [
           { isCC: false, user: { name: 'Kepala MTs Cipansor' } },
-          { isCC: true, user: { name: 'Ketua Yayasan' } },
-          { isCC: true, unit: { name: 'Arsip Tata Usaha' } },
+          { isCC: true, order: 1, user: { name: 'Ketua Yayasan' } },
+          { isCC: true, order: 2, externalName: 'Arsip Tata Usaha' },
         ],
       })
     );
@@ -188,11 +188,54 @@ describe('lampiran dan tembusan', () => {
     expect(text).not.toContain('3. Kepala MTs Cipansor');
   });
 
+  /**
+   * Tembusan naskah dinas sering ditujukan ke pihak yang tidak punya akun di
+   * sistem ini, dan urutannya adalah urutan yang disusun penulisnya — biasanya
+   * menurun menurut kedudukan, dengan pihak dalam dan luar berselang-seling.
+   */
+  it('mencetak tembusan pihak luar, dalam urutan yang disusun penulisnya', async () => {
+    const pdf = await generateLetterPdfBuffer(
+      letterWith({
+        recipients: [
+          { isCC: true, order: 3, externalName: 'Arsip Tata Usaha' },
+          { isCC: true, order: 1, externalName: 'Kepala KUA Kecamatan Cipansor' },
+          { isCC: true, order: 2, user: { name: 'Ketua Yayasan' } },
+        ],
+      })
+    );
+    const text = pdfText(pdf);
+    expect(text).toContain('1. Kepala KUA Kecamatan Cipansor');
+    expect(text).toContain('2. Ketua Yayasan');
+    expect(text).toContain('3. Arsip Tata Usaha');
+  });
+
   it('tidak mencetak blok tembusan ketika tidak ada satu pun', async () => {
     const pdf = await generateLetterPdfBuffer(
       letterWith({ recipients: [{ isCC: false, user: { name: 'Kepala MTs' } }] })
     );
     expect(pdfText(pdf)).not.toContain('Tembusan:');
+  });
+
+  /**
+   * `LetterRecipient.unitId` menyimpan unit **penerbit** surat — satu-satunya
+   * penulisnya mengisinya dengan unit asal naskah — jadi baris tembusan tanpa
+   * nama tidak boleh jatuh ke sana. Kalau jatuh, naskahnya mencetak nama
+   * yayasan sendiri sebagai penerima tembusannya sendiri.
+   */
+  it('tidak pernah mencetak unit penerbit sebagai penerima tembusan', async () => {
+    const pdf = await generateLetterPdfBuffer(
+      letterWith({
+        recipients: [
+          { isCC: true, order: 1, externalName: 'Kepala KUA' },
+          // Baris tanpa nama sama sekali — dilewati, bukan diisi dari unit.
+          { isCC: true, order: 2 },
+        ],
+      })
+    );
+    const text = pdfText(pdf);
+    expect(text).toContain('1. Kepala KUA');
+    expect(text).not.toContain('2. ');
+    expect(text).not.toContain('Yayasan Pesantren Cipansor\n2.');
   });
 
   /**

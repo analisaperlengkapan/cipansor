@@ -86,11 +86,13 @@ export interface LetterPdfInput {
   }> | null;
   /** Berkas yang menyertai naskah; hanya jumlahnya yang tercetak. */
   attachments?: Array<{ name: string }> | null;
-  /** Penerima internal; yang `isCC` menjadi daftar tembusan di kaki naskah. */
+  /** Penerima naskah; yang `isCC` menjadi daftar tembusan di kaki naskah. */
   recipients?: Array<{
     isCC: boolean;
+    order?: number | null;
+    /** Tembusan ke pihak di luar sistem — nama ditulis penyusun. */
+    externalName?: string | null;
     user?: { name: string } | null;
-    unit?: { name: string } | null;
   }> | null;
 }
 
@@ -108,11 +110,12 @@ export interface LetterPdfInput {
 export const LETTER_PDF_RELATIONS = {
   unit: true,
   attachments: { orderBy: { order: 'asc' } },
+  // `unit` sengaja tidak diambil: kolom `unitId` pada baris penerima berisi unit
+  // penerbit suratnya, bukan penerima, sehingga tidak ada yang dapat dicetak
+  // darinya selain nama yayasan sendiri.
   recipients: {
-    include: {
-      user: { select: { name: true } },
-      unit: { select: { name: true } },
-    },
+    include: { user: { select: { name: true } } },
+    orderBy: { order: 'asc' },
   },
 } satisfies Prisma.LetterInclude;
 
@@ -174,16 +177,26 @@ function unsupportedCharacters(text: string): string[] {
 }
 
 /**
- * Nama-nama penerima tembusan, apa adanya dari urutan yang dikirim API.
+ * Nama-nama penerima tembusan, dalam urutan yang disusun penulisnya.
  *
- * Seorang pengguna atau sebuah unit — keduanya sah sebagai penerima tembusan,
- * dan sebuah baris tanpa nama sama sekali dilewati daripada mencetak baris
- * bernomor yang kosong.
+ * Dua asal yang sama sahnya: seorang pengguna sistem, atau nama pihak luar yang
+ * ditulis penyusun — Kepala KUA, Ketua RW, dinas terkait — yang tidak punya akun
+ * di sini dan tetap harus tercetak. Baris tanpa nama sama sekali dilewati
+ * daripada mencetak nomor urut yang kosong.
+ *
+ * `unit` bukan salah satunya, walau kolomnya ada: `LetterRecipient.unitId`
+ * menyimpan unit *penerbit* surat, jadi memakainya akan mencetak nama yayasan
+ * sendiri sebagai penerima tembusannya sendiri.
+ *
+ * Diurutkan di sini, bukan hanya di kueri, supaya pemanggil yang menyusun
+ * datanya sendiri (uji, skrip) tetap mendapat daftar yang sama.
  */
 function copyRecipients(letter: LetterPdfInput): string[] {
   return (letter.recipients ?? [])
     .filter((r) => r.isCC)
-    .map((r) => r.user?.name?.trim() || r.unit?.name?.trim() || '')
+    .slice()
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+    .map((r) => r.user?.name?.trim() || r.externalName?.trim() || '')
     .filter((name) => name.length > 0);
 }
 

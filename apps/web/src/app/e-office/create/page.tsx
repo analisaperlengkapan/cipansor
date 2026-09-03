@@ -42,6 +42,7 @@ import {
   renderTemplateDraft,
   remainingPlaceholders,
 } from "@cipansor/shared";
+import { TembusanEditor } from "@/components/e-office/tembusan-editor";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
 import React from "react";
@@ -63,7 +64,14 @@ const letterSchema = z.object({
   fileUrl: z.string().optional(),
   reviewerIds: z.array(z.string()).optional(),
   recipientIds: z.array(z.string()).optional(),
-  ccIds: z.array(z.string()).optional(),
+  ccRecipients: z
+    .array(
+      z.object({
+        userId: z.string().optional(),
+        externalName: z.string().optional(),
+      }),
+    )
+    .optional(),
   attachments: z
     .array(
       z.object({
@@ -110,7 +118,7 @@ function CreateLetterForm() {
       nature: LetterNature.PUBLIC,
       reviewerIds: [],
       recipientIds: [],
-      ccIds: [],
+      ccRecipients: [],
       attachments: [],
     },
   });
@@ -501,73 +509,40 @@ function CreateLetterForm() {
               )}
 
               {/*
-                Tembusan.
+                Tembusan — daftar yang bisa disusun, bukan daftar centang.
 
-                Unsur baku naskah dinas yang selama ini tidak punya tempat:
-                kolomnya ada di basis data dan tidak pernah bernilai apa pun
-                selain "bukan tembusan", sehingga penyusun yang perlu
-                mencantumkannya menuliskannya di badan surat — di mana ia tidak
-                terbaca oleh apa pun, dan tidak tercetak di kaki naskah
-                sebagaimana mestinya.
+                Dua hal yang tidak bisa dilakukan daftar centang: memuat pihak
+                yang tidak punya akun di sini (justru sebagian besar tembusan
+                naskah dinas), dan menyimpan urutan — padahal tembusan tercetak
+                sebagai daftar bernomor yang lazim menurun menurut kedudukan.
               */}
               {direction === LetterDirection.OUTGOING && (
                 <FormField
                   control={form.control}
-                  name="ccIds"
+                  name="ccRecipients"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Tembusan (opsional)</FormLabel>
                       <FormControl>
-                        <div className="space-y-2 rounded-md border p-3">
-                          <Input
-                            placeholder="Cari penerima tembusan..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="mb-2 bg-white text-xs"
-                          />
-                          <div className="max-h-40 space-y-2 overflow-y-auto">
-                            {staffOptions.map((option: any) => (
-                              <div
-                                key={option.value}
-                                className="flex items-center space-x-2"
-                              >
-                                <input
-                                  type="checkbox"
-                                  id={`cc-${option.value}`}
-                                  value={option.value}
-                                  checked={(field.value || []).includes(option.value)}
-                                  onChange={(e) => {
-                                    const current = field.value || [];
-                                    field.onChange(
-                                      e.target.checked
-                                        ? [...current, option.value]
-                                        : current.filter(
-                                            (val: string) => val !== option.value,
-                                          ),
-                                    );
-                                  }}
-                                  className="h-4 w-4 rounded border-gray-300"
-                                />
-                                <label
-                                  htmlFor={`cc-${option.value}`}
-                                  className="cursor-pointer text-sm"
-                                >
-                                  {option.label}
-                                </label>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
+                        <TembusanEditor
+                          value={field.value || []}
+                          onChange={field.onChange}
+                          participants={participantsData?.data ?? []}
+                          search={searchQuery}
+                          onSearchChange={setSearchQuery}
+                        />
                       </FormControl>
                       <FormDescription>
-                        Penerima salinan naskah. Namanya tercetak sebagai daftar
-                        bernomor di kaki surat.
+                        Tembusan internal terkirim sendiri lewat sistem; tembusan
+                        pihak luar hanya tercetak pada naskah, dan
+                        pengantarannya di luar sistem.
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
               )}
+
               {direction === LetterDirection.INCOMING && (
                 <FormField
                   control={form.control}

@@ -29,6 +29,31 @@ export const letterAttachmentSchema = z.object({
 
 export type LetterAttachmentSchemaInput = z.infer<typeof letterAttachmentSchema>;
 
+/**
+ * Satu baris tembusan. Persis satu dari kedua bentuknya.
+ *
+ * Menerima keduanya sekaligus akan menghasilkan baris yang tidak dapat
+ * dicetak tanpa memilih salah satu diam-diam, dan menerima keduanya kosong
+ * menghasilkan nomor urut tanpa nama.
+ */
+export const letterCcSchema = z
+  .object({
+    userId: z.string().uuid().optional(),
+    externalName: z.string().trim().min(1).max(255).optional(),
+  })
+  .refine((v) => Boolean(v.userId) !== Boolean(v.externalName), {
+    message: "Tembusan diisi pengguna internal atau nama pihak luar, bukan keduanya",
+  });
+
+export type LetterCcSchemaInput = z.infer<typeof letterCcSchema>;
+
+/** Mengganti seluruh daftar tembusan sebuah naskah yang belum ditandatangani. */
+export const updateLetterCcSchema = z.object({
+  ccRecipients: z.array(letterCcSchema).max(30),
+});
+
+export type UpdateLetterCcSchemaInput = z.infer<typeof updateLetterCcSchema>;
+
 export const createLetterSchema = z.object({
   unitId: z.string().uuid(),
   direction: z.nativeEnum(LetterDirection),
@@ -51,7 +76,7 @@ export const createLetterSchema = z.object({
   recipientInstance: z.string().optional(),
   reviewerIds: z.array(z.string().uuid()).optional(),
   recipientIds: z.array(z.string().uuid()).optional(),
-  ccIds: z.array(z.string().uuid()).optional(),
+  ccRecipients: z.array(letterCcSchema).max(30).optional(),
   attachments: z.array(letterAttachmentSchema).max(20).optional(),
 });
 

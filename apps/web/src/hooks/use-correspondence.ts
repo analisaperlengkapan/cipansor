@@ -3,6 +3,7 @@ import { api } from "@/lib/api";
 import {
   CreateLetterInput,
   DispatchLetterInput,
+  LetterCcInput,
   LetterDirection,
   LetterStatus,
   LetterDetail,
@@ -249,6 +250,31 @@ export function useCorrespondence(unitId?: string) {
     },
   });
 
+  /**
+   * Ganti daftar tembusan sebuah naskah yang belum ditandatangani.
+   *
+   * Mengirim daftar utuhnya, bukan satu baris: urutan adalah bagian dari isi
+   * daftar itu, dan menambah/menghapus per baris tidak dapat memindahkannya.
+   */
+  const updateLetterCc = useMutation({
+    mutationFn: async ({
+      id,
+      ccRecipients,
+    }: {
+      id: string;
+      ccRecipients: LetterCcInput[];
+    }) => {
+      const response = await api.put(
+        `/correspondence/letters/${id}/tembusan`,
+        { ccRecipients },
+      );
+      return response.data;
+    },
+    onSuccess: (_d, v) => {
+      queryClient.invalidateQueries({ queryKey: ["letter", v.id] });
+    },
+  });
+
   // Get Stats — same reasoning as useLetters: no unit is a valid scope, not a
   // reason to skip the request.
   const useStats = () => {
@@ -273,6 +299,7 @@ export function useCorrespondence(unitId?: string) {
     updateDispositionStatus,
     resubmitLetter,
     dispatchLetter,
+    updateLetterCc,
     useStats,
   };
 }

@@ -11,6 +11,7 @@ import {
   submitLetterSchema,
   listParticipantsQuerySchema,
   dispatchLetterSchema,
+  updateLetterCcSchema,
 } from './correspondence.schema';
 
 const router = Router();
@@ -46,6 +47,12 @@ router.post(
   '/letters/:id/resubmit',
   validate(letterNoteSchema),
   CorrespondenceController.resubmit
+);
+// Tembusan sebuah naskah yang belum ditandatangani, diganti utuh.
+router.put(
+  '/letters/:id/tembusan',
+  validate(updateLetterCcSchema),
+  CorrespondenceController.updateCc
 );
 // Kapan naskah keluar benar-benar dikirim, lewat apa, dan apa tanda terimanya.
 router.post(

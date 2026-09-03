@@ -591,6 +591,173 @@ a.n. / u.b. / Plt. / Plh. as a modelled rule.
 **Blocked on a governance decision, not on engineering:** who may sign on whose
 behalf, and under which of those forms. Needs the yayasan's answer first.
 
+### PR-4b — Tembusan that can actually be composed — **SHIPPED**
+
+PR-4 shipped tembusan as a checkbox list of system users. Two things were wrong
+with that and both came from the same mistake — treating a printed, numbered
+list as a set membership question.
+
+**Most tembusan are not system users.** A naskah dinas routinely copies the
+Kepala KUA, the Ketua RW, a dinas — parties with no account here and no reason
+to have one. `LetterRecipient.externalName` holds those; a row now carries a
+`userId` **or** an `externalName`, never both. The distinction is real, not
+cosmetic: an internal tembusan is genuinely delivered (the recipient is
+notified and can open the letter, since a CC row already grants read access),
+while an external one is only printed and carried by hand. The form says so
+rather than leaving the drafter to assume.
+
+**A checkbox list has no order.** Tembusan prints as a numbered list, and the
+numbering conventionally descends by seniority with internal and external
+parties interleaved — an order no checkbox list can express, since it follows
+whatever the participant search returned. `LetterRecipient.order` stores the
+drafter's order, and `TembusanEditor` lets them add, remove and move rows.
+
+`PUT /letters/:id/tembusan` replaces the whole list — because the order *is*
+part of the content, and per-row add/remove endpoints still could not reorder.
+It refuses once the letter carries a signature: the tembusan is printed at the
+foot of the naskah and those bytes are archived (PR-3), so a list that could
+change afterwards would name copies that do not appear on the sheet people are
+holding.
+
+**Found while rendering the editor:** `LetterRecipient.unitId` was commented
+*"Penerima Unit"*, and it has never held one. Its only writer fills it with the
+letter's **issuing** unit, so a name-resolution fallback of
+`user.name || externalName || unit.name` could only ever print *the yayasan's
+own name as a recipient of its own tembusan*. The fallback is gone from both the
+generator and the shared helper, the relation is no longer fetched for the PDF,
+and the column's comment now says what it actually holds. A screenshot found
+this; no diff review would have.
+
+---
+
+## 5b. Three questions asked on 2026-09-03, and what the standards say
+
+These were asked as *"consider whether this is a good idea"*, so the answers are
+recommendations with their reasoning, not a work order.
+
+### (a) Two authoring tracks — **worth building, with conditions**
+
+The proposal: let the drafter choose between (1) downloading a pre-filled DOCX
+template, editing it in Word, exporting to PDF and uploading that, or (2) typing
+into the form and letting the system generate the PDF, previewable before it is
+sent.
+
+**This is what ANRI's own national application does.** SRIKANDI accepts **DOCX**
+for naskah keluar and PDF for naskah masuk, and its Admin Unit Kearsipan uploads
+DOCX templates matching the institution's tata naskah. Its roles — penerima
+utama, penerima tembusan, verifikator, penandatangan — are the same four this
+system already has.
+
+What track 1 buys, beyond convenience:
+
+- **It solves PR-7 for most cases, for free.** A drafter who needs an Arabic
+  quotation writes it in Word and exports. That removes the need for harfbuzzjs
+  shaping and an embedded Noto Naskh subset from the critical path — weeks of
+  work, avoided by a track that has other reasons to exist. PR-7 stops being a
+  blocker and becomes an optimisation for track 2.
+- Real layout freedom: tables, multi-column lampiran, the elaborate diktum of a
+  long SK — things the generator would otherwise have to grow into a word
+  processor to support.
+- **No LibreOffice in the API image.** The drafter converts to PDF themselves,
+  as proposed. Server-side DOCX→PDF would add ~400 MB and a whole class of
+  rendering drift.
+
+What it costs, stated plainly:
+
+- **The buku agenda's metadata can disagree with the document.** Nothing can
+  detect a form that says *Perihal: Undangan Rapat* above an uploaded PDF that
+  says something else. This is not a cryptographic problem — the bytes are still
+  hashed, signed and archived — it is a records problem, and the only control is
+  that every reviewer in the ladder and the signer see the actual PDF before
+  they act. They already do. Say this out loud in the UI rather than implying
+  the two are linked.
+- **The letter number.** A number is issued only when the letter leaves DRAFT,
+  so a template downloaded from a draft cannot carry one. Offer the template
+  download only after submission, or mark it `[NOMOR DIISI SISTEM]` — do not
+  stamp a number onto an arbitrary uploaded layout, which is fragile in exactly
+  the way that matters.
+
+Therefore: build it, but **record the track on the letter** (`GENERATED` vs
+`UPLOADED`) and show it on the public verification page. "This naskah was
+produced by the system" and "this naskah was uploaded by its drafter and sealed
+on receipt" are different assurances, and a verification page that blurs them is
+worse than one that admits the difference.
+
+### (b) Replacing the QR with an e-sign logo — **do not replace it; improve it**
+
+The Indonesian rule runs the other way. Guidance derived from BSSN/BSrE states
+the visualisation is **minimally a QR code plus the signer's name and jabatan**,
+and Salatiga's Perwal 55/2021 puts it flatly: *"bentuk visualisasi TTE adalah
+dengan QRCODE"*. Marks like Kejaksaan's `#KEJAKSAANDIGITAL` are programme
+branding that sits *with* the QR, not instead of it. Dropping the QR would move
+away from the standard while looking more official.
+
+Three changes that are worth making, though:
+
+1. **Our QR currently encodes a bare token, so scanning it opens nothing.** That
+   is worse than no QR: it looks scannable and is not. Encode the verification
+   URL with the token as a parameter, landing on the upload-verify page with the
+   token pre-filled. This keeps §1's decision intact — the page still demands
+   the file, so no token oracle is reintroduced — while making the QR do what
+   every reader expects it to do.
+2. **Put the yayasan lambang in the centre of the QR** (error-correction level
+   H tolerates it). That delivers the branded look the request is really after,
+   at no cost to the standard.
+3. **Reconsider printing `NIP.` in the signature block.** The BSrE-derived
+   guidance says the *visualisation* must not contain personal data such as a
+   scanned signature, NIP or NIK. Whether that reaches the naskah's own
+   signature block — where tata naskah dinas does put NIP for ASN — is a
+   question for the yayasan, not one to settle from a wiki page. Worth asking;
+   not worth changing unilaterally.
+
+And the footnote. Official practice prints something like *"Dokumen ini telah
+ditandatangani secara elektronik menggunakan sertifikat elektronik yang
+diterbitkan oleh Balai Sertifikasi Elektronik (BSrE), BSSN"*. **We must not copy
+that wording**, because it would be false: these keys are the yayasan's own, not
+a PSrE's. Ours has to name what it actually is — see §4.3 on the tier we are on.
+
+### (c) Segel elektronik (e-seal) — **right idea, wrong moment; but respect its ordering now**
+
+PP 71/2019 defines a Segel Elektronik as an electronic signature used by a
+**badan usaha or instansi** to guarantee the authenticity and integrity of a
+document. Where a signature carries a person's assent, a seal carries the
+organisation's origin — and it can be applied automatically, with no human in
+the loop.
+
+Three facts from BSrE's *Petunjuk Teknis Manajemen Segel Elektronik* v2.0 change
+the architecture, so they are worth writing down even though we will not
+implement it yet:
+
+- **One seal per document**, with zero, one or many signatures.
+- **The seal must be applied first, then the signatures**, if the result is to
+  validate as a seal under Adobe's rules — and if the seal is invisible, the
+  signatures must be invisible too.
+- A seal is only usable inside an integrated application, precisely because
+  nobody presses a button for it.
+
+Why not now:
+
+- BSrE's issuance path runs through a **Verifikator Instansi** with an
+  `email dinas`. A yayasan is not an instansi; this door is closed. A commercial
+  PSrE would be the route, which is the same gate as Tier 2 in §4.3.
+- Building an *in-house* seal with our own keys would add a second uncertified
+  cryptographic artifact that proves exactly what the first one already proves.
+  It doubles what has to be explained to a reader without doubling what can be
+  demonstrated to one.
+
+Its real use case is a document **issued with no human signer** — a surat
+keterangan aktif generated on request, a transcript, a machine-issued
+attestation. This system cannot issue such a letter today; every naskah has a
+signer. When that changes, or when a PSrE certificate exists, the seal becomes
+the right answer.
+
+**What to do now:** nothing, except keep the pipeline order sealable. The moment
+a seal exists it belongs between "the PDF is final" and "the hash is computed",
+which is where PR-3 already computes `pdfHash`. No abstraction is needed — only
+the discipline not to design anything that puts signing before finalisation.
+
+---
+
 ### Deployment note
 
 `e93a7cf2` adds 6 lines to `schema.prisma` (`pdfHash`, `pdfSignature` and their
@@ -617,5 +784,15 @@ real backfill.
    this drives whether Tier 3 (B-LTA) is in scope.
 4. **Arabic in letter bodies (PR-7):** whether staff need to write Arabic script
    inside the naskah, or whether an Arabic element on the letterhead — shipped as
-   part of the lambang image — is enough. The first is weeks of work behind PR-3;
-   the second is an afternoon.
+   part of the lambang image — is enough. §5b(a) adds a third answer that did not
+   exist when this question was written: the DOCX track lets a drafter write
+   Arabic in Word and upload the PDF, which covers most of the need without the
+   shaping engine.
+5. **`NIP.` in the signature block (§5b(b)).** BSrE-derived guidance says the
+   signature *visualisation* must not carry personal data such as NIP or NIK.
+   Whether that reaches the naskah's own signature block — where tata naskah
+   dinas does print NIP for ASN — is the yayasan's call, and worth confirming
+   before the first ijazah is signed.
+6. **Segel elektronik (§5b(c)).** Whether the yayasan intends to obtain a
+   commercial PSrE certificate. That single answer settles Tier 2, the e-seal,
+   and whether the naskah may ever carry the standard BSrE footnote wording.

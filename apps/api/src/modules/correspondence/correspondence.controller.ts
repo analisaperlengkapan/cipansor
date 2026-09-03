@@ -123,6 +123,22 @@ export const CorrespondenceController = {
   }),
 
   /**
+   * Daftar tembusan, diganti utuh.
+   *
+   * Antarmuka menyunting daftarnya — menambah baris, menghapus baris, memilih
+   * pihak dalam atau menuliskan nama pihak luar — lalu mengirimkan hasil
+   * akhirnya. Urutan baris adalah bagian dari isinya.
+   */
+  updateCc: asyncHandler(async (req: Request, res: Response) => {
+    const result = await CorrespondenceService.updateLetterCc(
+      req.params.id,
+      actorOf(req),
+      req.body.ccRecipients
+    );
+    res.json(ApiResponse.success(result));
+  }),
+
+  /**
    * Buku ekspedisi: naskah ini benar-benar keluar dari kantor.
    *
    * Terpisah dari `archive` dengan sengaja — mengirim dan mengarsipkan adalah

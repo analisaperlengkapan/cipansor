@@ -154,6 +154,49 @@ describe('blok tanda tangan', () => {
    * yang beredar dengan NIP tercetak adalah satu salinan lagi dari nomor
    * kepegawaian seseorang, dan naskahnya tidak menjadi lebih sah karenanya.
    */
+  /**
+   * Bukti bahwa QR tidak lagi menyandikan token.
+   *
+   * Membongkar isi QR dari dalam PDF mahal; yang murah dan justru lebih tepat
+   * adalah membuktikan **tokennya tidak lagi berpengaruh apa pun** terhadap
+   * keluaran. Dua naskah yang hanya berbeda tokennya menghasilkan byte yang
+   * sama persis — dan itu hanya mungkin bila yang masuk ke dalam kodenya bukan
+   * token.
+   */
+  it('token tidak lagi menentukan isi QR', async () => {
+    const withToken = (verificationToken: string) =>
+      letterWith({
+        signatures: [
+          {
+            verificationToken,
+            signedAt: new Date('2026-09-01T03:00:00.000Z'),
+            signer: { name: 'H. Endang Suryana' },
+          },
+        ],
+      });
+
+    const a = await generateLetterPdfBuffer(withToken('token-pertama-abcdef'));
+    const b = await generateLetterPdfBuffer(withToken('token-kedua-zyxwvu'));
+    expect(crypto.createHash('sha256').update(a).digest('hex')).toBe(
+      crypto.createHash('sha256').update(b).digest('hex')
+    );
+  });
+
+  it('mencetak alamat halaman verifikasi pada kaki naskah', async () => {
+    const pdf = await generateLetterPdfBuffer(
+      letterWith({
+        signatures: [
+          {
+            verificationToken: 'tok-abc',
+            signedAt: new Date('2026-09-01T03:00:00.000Z'),
+            signer: { name: 'H. Endang Suryana' },
+          },
+        ],
+      })
+    );
+    expect(pdfText(pdf)).toContain('/public/verify-letter');
+  });
+
   it('tidak mencetak NIP penanda tangan', async () => {
     const pdf = await generateLetterPdfBuffer(
       letterWith({

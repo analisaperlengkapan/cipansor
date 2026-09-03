@@ -10,7 +10,7 @@ import { comparePassword } from '@/lib/password';
 import { Errors } from '@/middleware/error';
 import { eventBus } from '@/lib/event-bus';
 import {
-  assertIdentityReadyForKey,
+  assertIdentityReadyToRequest,
   IdentityError,
   isWellFormedNik,
   missingIdentityFields,
@@ -511,14 +511,19 @@ export const EsignService = {
      * tanda tangan yang membuktikan pengetahuan passphrase dan tidak lebih —
      * sedangkan seluruh gunanya adalah membuktikan siapa yang menandatangani.
      *
+     * Yang **tidak** dituntut di sini adalah identitas yang sudah
+     * terverifikasi, dan itu disengaja: verifikasinya justru terjadi di
+     * `decideRequest`, atas pengajuan ini. Menuntutnya lebih dulu membuat
+     * keduanya saling menunggu dan tidak seorang pun memperoleh kunci.
+     *
      * Berlaku untuk perpanjangan juga: masa berlaku ada supaya identitas
-     * diperiksa ulang, jadi memperpanjang kunci milik identitas yang sudah
-     * kedaluwarsa verifikasinya justru melewati pemeriksaan yang menjadi alasan
-     * masa berlaku itu ada.
+     * diperiksa ulang. `saveMyIdentity` menggugurkan verifikasi setiap kali
+     * datanya berubah, jadi perpanjangan atas data yang sudah bergeser tetap
+     * kembali melewati pencocokan Super Admin.
      */
     const identity = await prisma.userIdentity.findUnique({ where: { userId } });
     try {
-      assertIdentityReadyForKey(identity);
+      assertIdentityReadyToRequest(identity);
     } catch (e) {
       if (e instanceof IdentityError) throw Errors.badRequest(e.message);
       throw e;

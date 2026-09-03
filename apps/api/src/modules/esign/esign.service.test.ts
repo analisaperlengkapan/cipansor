@@ -121,13 +121,41 @@ describe('identitas sebagai syarat kunci', () => {
     expect(prisma.signingKeyRequest.create).not.toHaveBeenCalled();
   });
 
-  it('menolak pengajuan bila datanya lengkap tetapi belum diverifikasi', async () => {
+  /**
+   * **Uji ini dahulu menegaskan kebalikannya, dan kebalikannya adalah bug.**
+   *
+   * Ia menuntut `requestKey` menolak identitas yang belum diverifikasi. Tetapi
+   * verifikasi hanya terjadi di `decideRequest`, atas sebuah pengajuan — jadi
+   * aturan itu menutup satu-satunya pintu menuju verifikasi, dan di produksi
+   * 2026-09-03 tidak seorang pun dapat memperoleh kunci: setiap pengajuan
+   * dijawab "sudah lengkap tetapi belum diverifikasi", selamanya.
+   *
+   * Uji lama hijau karena ia menguji separuh rantai terhadap dirinya sendiri.
+   * Yang menemukannya adalah menelusuri rantainya di sistem yang berjalan.
+   */
+  it('MENERIMA pengajuan yang datanya lengkap dan ada KTP walau belum diverifikasi', async () => {
+    vi.mocked(prisma.signingKeyRequest.findFirst).mockResolvedValue(null as any);
+    vi.mocked(prisma.userSigningKey.findUnique).mockResolvedValue(null as any);
+    vi.mocked(prisma.userIdentity.findUnique).mockResolvedValue(
+      verifiedIdentity({ verifiedAt: null, verifiedById: null }) as any
+    );
+    vi.mocked(prisma.signingKeyRequest.create).mockResolvedValue({ id: 'req-1' } as any);
+
+    await EsignService.requestKey('ketua');
+    expect(prisma.signingKeyRequest.create).toHaveBeenCalled();
+  });
+
+  /**
+   * Yang tetap ditolak: tanpa foto KTP, Super Admin tidak punya apa pun untuk
+   * dicocokkan, jadi pengajuannya akan tergeletak tidak dapat diputuskan.
+   */
+  it('menolak pengajuan bila foto KTP-nya belum diunggah', async () => {
     vi.mocked(prisma.signingKeyRequest.findFirst).mockResolvedValue(null as any);
     vi.mocked(prisma.userIdentity.findUnique).mockResolvedValue(
-      verifiedIdentity({ verifiedAt: null }) as any
+      verifiedIdentity({ verifiedAt: null, ktpFileName: null }) as any
     );
 
-    await expect(EsignService.requestKey('ketua')).rejects.toThrow(/belum diverifikasi/);
+    await expect(EsignService.requestKey('ketua')).rejects.toThrow(/foto KTP/);
     expect(prisma.signingKeyRequest.create).not.toHaveBeenCalled();
   });
 

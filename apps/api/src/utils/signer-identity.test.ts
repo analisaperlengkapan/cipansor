@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  assertIdentityReadyForKey,
+  assertIdentityReadyToRequest,
   identitySerialNumber,
   IdentityError,
   isWellFormedNik,
@@ -43,28 +43,41 @@ describe('kelengkapan identitas', () => {
   });
 });
 
-describe('kesiapan menerbitkan kunci', () => {
+describe('kesiapan mengajukan kunci', () => {
+  const withKtp = { ...complete, ktpFileName: 'a1b2.png' };
+
   it('menolak data yang belum lengkap, sambil menyebut kekurangannya', () => {
-    expect(() =>
-      assertIdentityReadyForKey({ ...complete, nik: null, verifiedAt: new Date() })
-    ).toThrow(/NIK/);
-    expect(() => assertIdentityReadyForKey(null)).toThrow(IdentityError);
+    expect(() => assertIdentityReadyToRequest({ ...withKtp, nik: null })).toThrow(/NIK/);
+    expect(() => assertIdentityReadyToRequest(null)).toThrow(IdentityError);
   });
 
   /**
-   * Dua syarat yang berbeda. Data lengkap yang belum diperiksa siapa pun
-   * hanyalah ketikan pemohon sendiri — kunci yang terbit di atasnya membuktikan
-   * pengetahuan passphrase, bukan identitas.
+   * Tanpa berkasnya, Super Admin tidak punya apa pun untuk dicocokkan, dan
+   * pengajuannya akan tergeletak tidak dapat disetujui. Menolak sekarang sambil
+   * menyebut sebabnya lebih baik daripada antrean yang diam-diam buntu.
    */
-  it('menolak data lengkap yang belum diverifikasi', () => {
-    expect(() => assertIdentityReadyForKey({ ...complete, verifiedAt: null })).toThrow(
-      /belum diverifikasi/
+  it('menolak data lengkap yang belum ada foto KTP-nya', () => {
+    expect(() => assertIdentityReadyToRequest({ ...complete, ktpFileName: null })).toThrow(
+      /foto KTP/
     );
   });
 
-  it('meloloskan identitas yang lengkap dan sudah diverifikasi', () => {
+  /**
+   * **Verifikasi bukan syarat mengajukan, dan ini uji yang paling penting di
+   * berkas ini.** Verifikasi terjadi ketika Super Admin memutuskan pengajuan
+   * ini; menuntutnya lebih dulu menutup satu-satunya pintu menuju verifikasi,
+   * dan tidak seorang pun dapat memperoleh kunci. Persis itu yang sempat
+   * terjadi di produksi.
+   */
+  it('meloloskan identitas lengkap + ada KTP meskipun BELUM diverifikasi', () => {
     expect(() =>
-      assertIdentityReadyForKey({ ...complete, verifiedAt: new Date() })
+      assertIdentityReadyToRequest({ ...withKtp, verifiedAt: null })
+    ).not.toThrow();
+  });
+
+  it('meloloskan identitas yang sudah diverifikasi juga', () => {
+    expect(() =>
+      assertIdentityReadyToRequest({ ...withKtp, verifiedAt: new Date() })
     ).not.toThrow();
   });
 });

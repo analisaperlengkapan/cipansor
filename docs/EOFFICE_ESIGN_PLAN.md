@@ -1214,6 +1214,26 @@ changes nothing — so there is no lock, only a written reason why none is neede
 `pnpm --filter api db:purge-identity-documents [--dry-run]` still exists and now
 calls the same function, so the manual path and the scheduled path cannot drift.
 
+**But that command cannot run inside the production container**, and this is the
+second reason the host-cron plan was never going to work. Measured on the running
+image: `pnpm` is present, `tsx` is not — it is a devDependency, and the image
+installs production dependencies only. The `.ts` scripts under `prisma/scripts/`
+*are* copied in, so the image ships three scripts it cannot execute. A crontab
+entry calling `docker compose exec api pnpm --filter api
+db:purge-identity-documents` would have failed every night, silently, exactly
+like the entry that was never written. The command is for a developer checkout
+or the host's build tooling; in production the compiled job is the only path:
+
+```bash
+docker compose exec api node -e "
+  const {purgeIdentityDocuments} = require('./dist/jobs');
+  const {prisma} = require('./dist/lib/prisma');
+  purgeIdentityDocuments(prisma, {dryRun: true})
+    .then(s => console.log(s.expired.length, s.orphans.length, s.onDiskCount, s.referencedCount))
+    .finally(() => prisma.\$disconnect());
+"
+```
+
 ---
 
 ## 6. Open decisions for the yayasan

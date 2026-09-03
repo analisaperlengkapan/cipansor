@@ -474,7 +474,10 @@ in-process; the purge is the seventh, daily at 02:30 WIB. Each real run writes a
 `audit_logs` row with its counts — which is the part that makes it auditable,
 since container logs rotate at 10 MB × 3 files while a job writes to them every
 minute. The `db:purge-identity-documents` command still exists and calls the same
-function.
+function — though not inside the production container, which ships `pnpm` but not
+`tsx` (a devDependency), so the `.ts` scripts it copies in cannot be executed
+there. A crontab entry invoking that command through `docker compose exec` would
+have failed every night in silence.
 
 **§5b(a) DOCX authoring track — step 1 shipped (#454).** `Letter.authoringTrack`
 now records `GENERATED` vs `UPLOADED` and the public verification page states

@@ -10,6 +10,12 @@
  *
  *     pnpm --filter api db:purge-identity-documents [--dry-run]
  *
+ * **Bukan untuk dijalankan di dalam kontainer produksi.** Image-nya memasang
+ * dependensi produksi saja, jadi `tsx` tidak ada di sana — berkas ini ikut
+ * tersalin tetapi tidak dapat dijalankan. Di produksi jalurnya adalah pekerjaan
+ * terjadwal, atau `purgeIdentityDocuments` yang sudah terkompilasi lewat
+ * `require('./dist/jobs')`.
+ *
  * Dulu di sinilah seluruh logikanya, dengan komentar yang menolak penjadwal
  * dalam proses karena "perintah yang tidak dijalankan meninggalkan jejak di
  * crontab yang dapat diperiksa". Crontab-nya kemudian diperiksa, dan kosong:

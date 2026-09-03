@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { SigningKeyRevocationCode } from '@prisma/client';
+import { IdentityVerificationMethod, SigningKeyRevocationCode } from '@prisma/client';
 import { MIN_PASSPHRASE_LENGTH } from '@/utils/esign';
 import { MAX_VALIDITY_DAYS, MIN_VALIDITY_DAYS } from '@/utils/esign-lifecycle';
 import {
@@ -31,6 +31,38 @@ export const decideRequestSchema = z.object({
   approve: z.boolean(),
   grantedDays: z.number().int().min(MIN_VALIDITY_DAYS).max(MAX_VALIDITY_DAYS).optional(),
   note: z.string().max(1000).optional(),
+  /**
+   * Bagaimana identitas pemohon dicocokkan.
+   *
+   * Wajib bila identitasnya belum pernah diverifikasi — server yang
+   * memeriksanya, bukan skema ini, sebab jawabannya bergantung pada keadaan
+   * baris identitas dan bukan pada bentuk permintaan.
+   */
+  identityVerification: z
+    .object({
+      method: z.nativeEnum(IdentityVerificationMethod),
+      note: z.string().max(1000).optional(),
+    })
+    .optional(),
+});
+
+/**
+ * Identitas yang menjadi dasar sebuah kunci.
+ *
+ * NIK diterima apa adanya lalu dinormalkan di layanan — orang menyalinnya dari
+ * KTP berikut titik dan spasinya, dan menolak karena itu adalah menolak isian
+ * yang sebenarnya benar.
+ */
+export const saveIdentitySchema = z.object({
+  legalName: z.string().trim().min(3).max(200),
+  nik: z.string().trim().min(16).max(25),
+  birthPlace: z.string().trim().min(2).max(100),
+  birthDate: z
+    .string()
+    .refine((v) => !Number.isNaN(Date.parse(v)), { message: 'Tanggal lahir tidak sah' })
+    .refine((v) => Date.parse(v) < Date.now(), {
+      message: 'Tanggal lahir tidak boleh di masa depan',
+    }),
 });
 
 /**

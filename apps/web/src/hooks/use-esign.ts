@@ -18,7 +18,41 @@ export type SigningKeyState =
   | "EXPIRED"
   | "REVOKED";
 
+/**
+ * Cara identitas seseorang dibuktikan kepada penyetuju.
+ *
+ * Inilah artefak yang lestari — bukan pindaian kartunya. Catatan bahwa pejabat
+ * tertentu telah mencocokkannya pada tanggal tertentu menjawab pertanyaan yang
+ * sama, berukuran beberapa baris, dan tidak menjadi sasaran bila basis data
+ * bocor.
+ */
+export type IdentityVerificationMethod =
+  | "KTP_IN_PERSON"
+  | "KTP_SCAN"
+  | "KNOWN_PERSONALLY";
+
+export const IDENTITY_VERIFICATION_LABELS: Record<
+  IdentityVerificationMethod,
+  string
+> = {
+  KTP_IN_PERSON: "KTP ditunjukkan langsung dan dicocokkan",
+  KTP_SCAN: "Pindaian/foto KTP diperiksa",
+  KNOWN_PERSONALLY: "Dikenali pribadi, tanpa kartu ditunjukkan",
+};
+
+export interface EsignIdentityStatus {
+  legalName: string | null;
+  birthPlace: string | null;
+  birthDate: string | null;
+  /** NIK tidak dikirim balik; pemiliknya sudah mengetahuinya. */
+  hasNik: boolean;
+  /** Ruas yang masih kosong, dalam bahasa yang bisa dibacakan. */
+  missingFields: string[];
+  verifiedAt: string | null;
+}
+
 export interface EsignStatus {
+  identity: EsignIdentityStatus;
   hasKey: boolean;
   state: SigningKeyState | null;
   expiresAt: string | null;
@@ -42,6 +76,22 @@ export function useEsign() {
     queryFn: async () => (await api.get("/esign/me")).data.data,
   });
 
+  /**
+   * Identitas yang mendasari kunci.
+   *
+   * Menyimpannya menggugurkan verifikasi yang sudah ada — server yang
+   * memutuskan itu, dan halaman ini mengatakannya sebelum tombolnya ditekan.
+   */
+  const saveIdentity = useMutation({
+    mutationFn: async (input: {
+      legalName: string;
+      nik: string;
+      birthPlace: string;
+      birthDate: string;
+    }) => (await api.put("/esign/me/identity", input)).data.data,
+    onSuccess: invalidate,
+  });
+
   const requestKey = useMutation({
     mutationFn: async (reason?: string) =>
       (await api.post("/esign/me/request", { reason })).data.data,
@@ -63,7 +113,7 @@ export function useEsign() {
     onSuccess: invalidate,
   });
 
-  return { status, requestKey, activate, changePassphrase };
+  return { status, saveIdentity, requestKey, activate, changePassphrase };
 }
 
 /** Antrean pengajuan — hanya Super Admin yang dilayani server. */
@@ -82,6 +132,11 @@ export function useEsignRequests(status?: "PENDING" | "APPROVED" | "REJECTED") {
       approve: boolean;
       grantedDays?: number;
       note?: string;
+      /** Wajib bila identitas pemohon belum pernah diverifikasi. */
+      identityVerification?: {
+        method: IdentityVerificationMethod;
+        note?: string;
+      };
     }) => {
       const { id, ...body } = input;
       return (await api.post(`/esign/requests/${id}/decide`, body)).data.data;

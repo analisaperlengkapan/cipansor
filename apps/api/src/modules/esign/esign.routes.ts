@@ -10,6 +10,7 @@ import {
   changePassphraseSchema,
   decideRequestSchema,
   requestKeySchema,
+  saveIdentitySchema,
   decideRevocationSchema,
   requestRevocationSchema,
   revokeKeySchema,
@@ -88,6 +89,9 @@ router.use(authenticate);
 
 // Milik sendiri, di halaman pengaturan.
 router.get('/me', EsignController.myStatus);
+// Identitas dulu: rutenya berada sebelum pengajuan, seperti urutan yang harus
+// dijalani pemohon.
+router.put('/me/identity', validate(saveIdentitySchema), EsignController.saveIdentity);
 router.post('/me/request', validate(requestKeySchema), EsignController.requestKey);
 router.post(
   '/me/activate',

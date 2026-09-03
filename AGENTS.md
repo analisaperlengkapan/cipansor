@@ -143,6 +143,8 @@ every session gets it.
 | `hooks/guard.sh` | PreToolUse — blocks a full-file Write to `schema.prisma` and a push to `main` |
 | `hooks/session-bootstrap.sh` | SessionStart — installs deps, generates the Prisma client, builds shared |
 | `hooks/pre-compact-sync.sh` | PreCompact — pauses the first manual `/compact` of a session so the records get written first |
+| `hooks/stop-sync-baseline.sh` | SessionStart — records the HEAD sha the session started from, so the Stop hook has something to compare against |
+| `hooks/stop-sync-records.sh` | Stop — asks for a `sync-records` pass once, at the first resting point after the session has produced commits |
 
 **Why the compaction hook exists.** Compaction discards the transcript, and only
 files survive it. Findings were reaching `memory/`, the plan and the ROADMAP
@@ -152,3 +154,21 @@ a `sync-records` pass, and lets the next one through unconditionally — so it c
 nag but can never wedge a session. It never blocks *auto*-compaction, which
 fires at the context wall where a refusal would leave no way out.
 `/compact skip-sync` bypasses it deliberately.
+
+**Why there is a `Stop` hook too.** The compaction hook only guards the
+compaction door. A session that finishes without ever being compacted never
+passes through it — and those are exactly the sessions that leave findings in
+the transcript alone. `stop-sync-records.sh` closes that gap.
+
+It is deliberately hard to trigger, because `Stop` fires at the end of *every*
+turn and a reminder that appears every turn teaches everyone to ignore hook
+messages. It stays quiet unless all five hold: not already continuing from its
+own block (`stop_hook_active` — this is what makes a loop impossible), not yet
+asked this session, at least one commit since the session began, no pending
+changes to tracked files (a resting point, not mid-edit), and no durable record
+touched since the session began. One reminder per session, then never again.
+`CLAUDE_SKIP_STOP_SYNC=1` turns it off.
+
+Both `Stop` and `PreCompact` fail open on everything else — unreadable input, an
+unreadable git tree, an unwritable stamp directory. A hook that breaks a session
+is worse than a hook that misses a reminder.

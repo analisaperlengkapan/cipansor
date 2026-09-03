@@ -61,6 +61,8 @@ export interface SendPasswordResetInput {
 export interface ConfirmResetPasswordInput {
   token: string;
   newPassword: string;
+  /** Token Turnstile; tidak ada ketika gerbangnya dimatikan di build ini. */
+  turnstileToken?: string;
 }
 
 /**

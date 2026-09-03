@@ -206,12 +206,24 @@ export function ChatWidget() {
             )}
           </div>
 
+          {/*
+            `interaction-only`: nol tinggi sampai Cloudflare benar-benar
+            menuntut interaksi. Versi pertama memakai widget biasa dan blok
+            65px-nya memakan 13% tinggi panel secara permanen, menyempitkan
+            ruang percakapan demi sesuatu yang hampir tidak pernah disentuh
+            pengunjung. Pembungkusnya sengaja hanya berpadding horizontal:
+            sebuah div tanpa isi dan tanpa padding vertikal setingginya nol,
+            jadi ia hilang sendiri tanpa perlu selector `:has()` yang belum
+            tentu berlaku seperti dugaan.
+          */}
           <TurnstileWidget
             action="chatbot-ask"
+            appearance="interaction-only"
+            size="flexible"
             onToken={setTurnstileToken}
             onUnavailable={() => setTurnstileBlocked(true)}
             resetSignal={turnstileResetSignal}
-            className="border-t border-border px-3 pt-3"
+            className="px-3"
           />
 
           <form
@@ -251,11 +263,35 @@ export function ChatWidget() {
         </div>
       )}
 
+      {/*
+        Ikon sendirian tidak memberi tahu apa pun. Sebuah lingkaran biru
+        bergambar balon percakapan bisa berarti obrolan dengan petugas, formulir
+        pesan, atau nomor WhatsApp — dan pengunjung yang tidak yakin tidak
+        menekannya. Pil ini menyebutkan tugasnya dengan kata kerja, lalu
+        menghilang begitu panelnya terbuka karena ajakan yang sudah dituruti
+        hanya menjadi penghalang.
+      */}
+      {!open && (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          tabIndex={-1}
+          aria-hidden="true"
+          className="fixed bottom-[1.85rem] right-20 z-50 hidden rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground shadow-lg transition-transform hover:scale-105 sm:block"
+        >
+          Ada pertanyaan? Tanya di sini
+        </button>
+      )}
+
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
         aria-expanded={open}
-        aria-label={open ? "Tutup asisten informasi" : "Buka asisten informasi"}
+        aria-label={
+          open
+            ? "Tutup asisten informasi"
+            : "Buka asisten informasi — tanya seputar pendaftaran dan informasi umum"
+        }
         className={cn(
           "fixed bottom-6 right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform hover:scale-105",
         )}

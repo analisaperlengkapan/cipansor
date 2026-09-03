@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import {
   TurnstileWidget,
-  isTurnstileEnabled,
+  useTurnstile,
 } from "@/components/security/turnstile-widget";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -140,21 +140,7 @@ function LoginPageContent() {
    * mereka menyentuh batasnya. Turnstile menaikkan ongkos setiap percobaan,
    * bukan ongkos setiap alamat.
    */
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
-  const [turnstileResetSignal, setTurnstileResetSignal] = useState(0);
-  const turnstileRequired = isTurnstileEnabled();
-  /**
-   * Turnstile menyala di build ini, tetapi widget-nya tidak dapat dimuat pada
-   * peramban ini. Tombolnya dibuka kembali dan peladen yang memutuskan — ia
-   * sudah gagal-terbuka ketika Cloudflare tak terjangkau. Mengunci tombolnya
-   * di sini akan membuat pengurus terkurung di luar portalnya sendiri tanpa
-   * satu pun tuas di sisi peladen yang dapat membukanya.
-   */
-  const [turnstileBlocked, setTurnstileBlocked] = useState(false);
-  const refreshTurnstile = () => {
-    setTurnstileToken(null);
-    setTurnstileResetSignal((n) => n + 1);
-  };
+  const turnstile = useTurnstile();
 
   const {
     register,
@@ -168,7 +154,7 @@ function LoginPageContent() {
   const onSubmit = async (data: LoginForm) => {
     try {
       clearError();
-      await login({ ...data, turnstileToken: turnstileToken ?? undefined });
+      await login({ ...data, turnstileToken: turnstile.token ?? undefined });
       const state = useAuthStore.getState();
       if (
         !state.requiresTwoFactor &&
@@ -181,7 +167,7 @@ function LoginPageContent() {
       // Error is handled in store. Tokennya sudah terpakai apa pun hasilnya —
       // Cloudflare menolak penukaran kedua — jadi percobaan berikutnya butuh
       // tantangan baru, bukan token yang sama.
-      refreshTurnstile();
+      turnstile.refresh();
     }
   };
 
@@ -201,7 +187,7 @@ function LoginPageContent() {
       await login({
         email: acc.email,
         password: acc.password,
-        turnstileToken: turnstileToken ?? undefined,
+        turnstileToken: turnstile.token ?? undefined,
       });
 
       const state = useAuthStore.getState();
@@ -442,20 +428,12 @@ function LoginPageContent() {
                 )}
               </div>
 
-              <TurnstileWidget
-                action="login"
-                onToken={setTurnstileToken}
-                onUnavailable={() => setTurnstileBlocked(true)}
-                resetSignal={turnstileResetSignal}
-              />
+              <TurnstileWidget action="login" {...turnstile.widgetProps} />
 
               <Button
                 type="submit"
                 className="w-full"
-                disabled={
-                  isLoading ||
-                  (turnstileRequired && !turnstileToken && !turnstileBlocked)
-                }
+                disabled={isLoading || !turnstile.ready}
               >
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Masuk

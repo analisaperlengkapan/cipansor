@@ -111,10 +111,30 @@ export interface CreateLetterInput {
    * adalah `isCC: false` yang dipaku pada pembuatan surat. Tembusan adalah
    * unsur baku naskah dinas; tanpa ini penyusun terpaksa menuliskannya di
    * badan surat, di mana ia tidak terbaca oleh apa pun.
+   *
+   * Satu daftar berurutan, bukan dua: tembusan tercetak sebagai daftar
+   * bernomor, dan urutannya adalah urutan yang disusun penulisnya — biasanya
+   * menurun menurut kedudukan, dengan pihak dalam dan luar berselang-seling.
+   * Dua array terpisah akan memaksa semua pihak internal berkumpul di atas,
+   * yang bukan urutan yang dimaksud siapa pun.
    */
-  ccIds?: string[]; // CC recipients (User IDs)
+  ccRecipients?: LetterCcInput[];
   /** Lampiran yang menyertai naskah, sudah diunggah lewat POST /upload. */
   attachments?: LetterAttachmentInput[];
+}
+
+/**
+ * Satu baris tembusan: ke dalam atau ke luar, tidak pernah keduanya.
+ *
+ * `userId` adalah pengguna sistem — ia akan menerima pemberitahuan dan dapat
+ * membuka suratnya sendiri, jadi tembusan kepadanya benar-benar terkirim.
+ * `externalName` adalah pihak di luar sistem (Kepala KUA, Ketua RW, dinas
+ * terkait): namanya tercetak pada naskah, dan pengantarannya di luar sistem —
+ * yang justru jujur, karena sistem memang tidak mengantarkannya.
+ */
+export interface LetterCcInput {
+  userId?: string;
+  externalName?: string;
 }
 
 export interface LetterAttachmentInput {
@@ -216,10 +236,26 @@ export interface LetterRecipientDetail {
   id: string;
   userId?: string | null;
   unitId?: string | null;
+  /** Terisi untuk tembusan ke pihak di luar sistem; `userId` lalu kosong. */
+  externalName?: string | null;
+  /** Unit **penerbit** surat, bukan penerima — lihat `ccRecipientName`. */
   isCC: boolean;
+  order: number;
   readAt?: string | null;
   user?: { name: string } | null;
   unit?: { name: string } | null;
+}
+
+/**
+ * Nama yang tercetak untuk satu baris tembusan.
+ *
+ * Sengaja **tidak** jatuh ke `unit.name`: kolom `unitId` pada baris penerima
+ * berisi unit *penerbit* suratnya, bukan unit penerima (lihat komentarnya di
+ * schema.prisma). Memakainya sebagai cadangan akan mencetak nama yayasan
+ * sendiri sebagai salah satu penerima tembusannya sendiri.
+ */
+export function ccRecipientName(r: LetterRecipientDetail): string {
+  return r.user?.name?.trim() || r.externalName?.trim() || "Tidak diketahui";
 }
 
 /** Satu baris buku ekspedisi: kapan naskah keluar, lewat apa, dan buktinya. */

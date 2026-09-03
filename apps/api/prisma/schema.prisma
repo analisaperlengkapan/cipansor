@@ -7503,8 +7503,28 @@ model LetterRecipient {
   id        String    @id @default(uuid())
   letterId  String    @map("letter_id")
   userId    String?   @map("user_id") // Penerima Internal User
-  unitId    String?   @map("unit_id") // Penerima Unit
+  /// Unit **penerbit** surat, bukan unit penerima.
+  ///
+  /// Komentarnya dulu berbunyi "Penerima Unit", dan itu menggambarkan fitur
+  /// yang tidak pernah dibuat: satu-satunya penulis kolom ini mengisinya dengan
+  /// unit asal suratnya sendiri. Karena itu tidak ada satu pun baris yang
+  /// pernah menunjuk unit sebagai penerima, dan membaca kolom ini sebagai
+  /// penerima akan mencetak nama yayasan sendiri sebagai tembusannya sendiri.
+  /// Tembusan kepada sebuah unit ditulis sebagai `externalName`, atau kepada
+  /// pejabat unit itu lewat `userId`.
+  unitId    String?   @map("unit_id")
   isCC      Boolean   @default(false) @map("is_cc") // Tembusan
+  /// Penerima di luar sistem — nama ditulis tangan oleh penyusun.
+  ///
+  /// Tembusan naskah dinas sering ditujukan kepada pihak yang tidak punya akun
+  /// di sini sama sekali: Kepala KUA, Ketua RW, dinas terkait. Tanpa kolom ini
+  /// tembusan hanya bisa ditujukan ke dalam, dan penyusun terpaksa menuliskan
+  /// sisanya di badan surat. Satu baris tembusan berisi `userId` **atau**
+  /// `externalName`, tidak pernah keduanya.
+  externalName String? @map("external_name")
+  /// Urutan sebagaimana tercetak. Tembusan adalah daftar bernomor, dan nomor
+  /// yang berubah-ubah setiap kali halaman dimuat bukan nomor.
+  order     Int       @default(0)
   readAt    DateTime? @map("read_at")
   createdAt DateTime  @default(now()) @map("created_at")
 
@@ -7513,7 +7533,7 @@ model LetterRecipient {
   user   User?  @relation(fields: [userId], references: [id])
   unit   Unit?  @relation(fields: [unitId], references: [id])
 
-  @@index([letterId])
+  @@index([letterId, order])
   @@index([userId])
   @@map("letter_recipients")
 }

@@ -12,6 +12,7 @@ import {
   CreateLetterInput,
   CreateDispositionInput,
   DispatchLetterSchemaInput,
+  LetterCcInput,
   LETTER_DISPATCH_CHANNEL_LABELS,
   LetterDirection,
   LetterStatus,
@@ -94,6 +95,61 @@ async function recordFlow(
  * mengubah kode.
  */
 const DEFAULT_AGENDA_FORMAT = '[NO]/[TYPE]/Y-CPS/[ROMAN]/[YEAR]';
+
+/** Pengguna internal yang disebut dalam daftar tembusan, tanpa duplikat. */
+function ccUserIds(cc?: LetterCcInput[] | null): string[] {
+  return Array.from(
+    new Set((cc ?? []).map((c) => c.userId).filter((id): id is string => !!id))
+  );
+}
+
+/**
+ * Baris-baris tembusan yang akan ditulis, dalam urutan yang disusun penulisnya.
+ *
+ * Dua penyaringan, keduanya karena naskahnya mencetak daftar bernomor:
+ * seseorang yang sudah menjadi penerima utama tidak dicatat lagi sebagai
+ * tembusan — ia menerima surat ini *atau* salinannya — dan nama yang sama
+ * tidak ditulis dua kali, sebab dua baris untuk satu pihak akan tercetak
+ * sebagai dua nomor untuk satu orang.
+ */
+function buildCcRows(
+  letterId: string,
+  unitId: string,
+  cc: LetterCcInput[] | undefined | null,
+  primaryRecipientIds?: string[] | null
+): Array<{
+  letterId: string;
+  userId: string | null;
+  unitId: string;
+  externalName: string | null;
+  isCC: true;
+  order: number;
+}> {
+  const primary = new Set(primaryRecipientIds ?? []);
+  const seen = new Set<string>();
+  const rows: ReturnType<typeof buildCcRows> = [];
+
+  for (const entry of cc ?? []) {
+    const key = entry.userId
+      ? `u:${entry.userId}`
+      : `e:${(entry.externalName ?? '').trim().toLowerCase()}`;
+    if (key === 'e:') continue;
+    if (entry.userId && primary.has(entry.userId)) continue;
+    if (seen.has(key)) continue;
+    seen.add(key);
+
+    rows.push({
+      letterId,
+      userId: entry.userId ?? null,
+      unitId,
+      externalName: entry.userId ? null : (entry.externalName ?? '').trim(),
+      isCC: true,
+      order: rows.length + 1,
+    });
+  }
+
+  return rows;
+}
 
 export const CorrespondenceService = {
   // Helper: Generate Auto Number
@@ -231,10 +287,12 @@ export const CorrespondenceService = {
     const participantsToValidate = [
       ...(data.reviewerIds || []),
       ...(data.recipientIds || []),
-      // Penerima tembusan adalah penerima juga: ia akan dapat membaca surat
-      // ini. Melewatkannya dari pemeriksaan kelayakan berarti tembusan menjadi
-      // jalan memberi akses kepada peran yang justru dikecualikan.
-      ...(data.ccIds || []),
+      // Penerima tembusan internal adalah penerima juga: ia akan dapat membaca
+      // surat ini. Melewatkannya dari pemeriksaan kelayakan berarti tembusan
+      // menjadi jalan memberi akses kepada peran yang justru dikecualikan.
+      // Tembusan ke pihak luar tidak diperiksa — ia hanya nama yang tercetak,
+      // dan tidak membuka apa pun.
+      ...ccUserIds(data.ccRecipients),
     ];
     if (participantsToValidate.length > 0) {
       await this.validateParticipantEligibility(participantsToValidate, actor);
@@ -371,19 +429,14 @@ export const CorrespondenceService = {
        * tembusan: seseorang menerima surat ini *atau* salinannya, dan dua baris
        * untuk orang yang sama akan mencetak namanya dua kali di kaki naskah.
        */
-      const primaryRecipients = new Set(data.recipientIds ?? []);
-      const ccRecipients = Array.from(new Set(data.ccIds ?? [])).filter(
-        (id) => !primaryRecipients.has(id)
+      const ccRows = buildCcRows(
+        letter.id,
+        targetUnitId,
+        data.ccRecipients,
+        data.recipientIds
       );
-      if (ccRecipients.length > 0) {
-        await tx.letterRecipient.createMany({
-          data: ccRecipients.map((userId) => ({
-            letterId: letter.id,
-            userId,
-            unitId: targetUnitId,
-            isCC: true,
-          })),
-        });
+      if (ccRows.length > 0) {
+        await tx.letterRecipient.createMany({ data: ccRows });
       }
 
       /**
@@ -1231,6 +1284,78 @@ export const CorrespondenceService = {
       });
 
       return { id: letterId, status: nextStatus };
+    });
+  },
+
+  /**
+   * Ganti seluruh daftar tembusan sebuah naskah.
+   *
+   * Mengganti, bukan menambah satu per satu, karena yang dikirim antarmuka
+   * adalah daftar utuh sesudah disunting — dan urutan adalah bagian dari
+   * daftarnya, bukan keterangan tambahan. Menambah dan menghapus per baris
+   * akan memerlukan dua endpoint lagi dan tetap tidak dapat memindahkan urutan.
+   *
+   * **Hanya selama naskah belum ditandatangani.** Tembusan tercetak di kaki
+   * naskah, dan byte naskah yang ditandatangani sudah diarsipkan (PR-3): kalau
+   * daftar ini boleh berubah sesudahnya, basis data akan menyebut tembusan yang
+   * tidak ada pada lembar yang beredar — dan lembar itulah yang dipegang orang.
+   */
+  async updateLetterCc(letterId: string, actor: LetterActor, cc: LetterCcInput[]) {
+    await assertLetterAccess(actor, letterId);
+
+    const internalIds = ccUserIds(cc);
+    if (internalIds.length > 0) {
+      await this.validateParticipantEligibility(internalIds, actor);
+    }
+
+    return await prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT id FROM letters WHERE id = ${letterId} FOR UPDATE`;
+
+      const letter = await tx.letter.findUnique({
+        where: { id: letterId },
+        select: {
+          id: true,
+          status: true,
+          unitId: true,
+          createdById: true,
+          recipients: { where: { isCC: false }, select: { userId: true } },
+          signatures: { select: { id: true } },
+        },
+      });
+      if (!letter) throw Errors.notFound('Surat tidak ditemukan');
+
+      if (letter.signatures.length > 0) {
+        throw Errors.badRequest(
+          'Naskah ini sudah ditandatangani; daftar tembusannya tercetak pada lembar ' +
+            'yang beredar dan tidak dapat diubah lagi.'
+        );
+      }
+
+      const isCreator = actor.id === letter.createdById;
+      const isExecutive =
+        actor.roleCode === RoleCode.YAYASAN_KETUA ||
+        actor.roleCode === RoleCode.YAYASAN_SEKRETARIS ||
+        actor.roleCode === RoleCode.SUPER_ADMIN;
+      if (!isCreator && !isExecutive && !handlesUnitCorrespondence(actor)) {
+        throw Errors.forbidden('Anda tidak berwenang mengubah tembusan surat ini.');
+      }
+
+      // Hanya baris tembusan yang diganti. Penerima utama adalah daftar yang
+      // berbeda, dan menghapusnya di sini akan mencabut akses orang yang
+      // memang berhak membaca surat ini.
+      await tx.letterRecipient.deleteMany({ where: { letterId, isCC: true } });
+
+      const rows = buildCcRows(
+        letterId,
+        letter.unitId,
+        cc,
+        letter.recipients.map((r) => r.userId).filter((id): id is string => !!id)
+      );
+      if (rows.length > 0) {
+        await tx.letterRecipient.createMany({ data: rows });
+      }
+
+      return { id: letterId, count: rows.length };
     });
   },
 

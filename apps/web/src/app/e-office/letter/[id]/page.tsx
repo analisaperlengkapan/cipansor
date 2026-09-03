@@ -67,13 +67,16 @@ import {
   LETTER_NATURE_LABELS,
   LETTER_URGENCY_LABELS,
   LETTER_DISPATCH_CHANNEL_LABELS,
+  ccRecipientName,
   mayRevokeSignature,
   whoMayRevoke,
+  type LetterCcInput,
 } from "@cipansor/shared";
 import { LetterFlowHistory } from "@/components/e-office/letter-flow-history";
 import { SignLetterDialog } from "@/components/e-office/sign-letter-dialog";
 import { RevokeLetterDialog } from "@/components/e-office/revoke-letter-dialog";
 import { RevocationRequestsCard } from "@/components/e-office/revocation-requests-card";
+import { TembusanEditor } from "@/components/e-office/tembusan-editor";
 import { getPrimaryRoleCode } from "@/lib/rbac";
 
 /** Status seorang verifikator, dalam bahasa yang dibaca penggunanya. */
@@ -99,6 +102,7 @@ export default function LetterDetailPage({
     updateDispositionStatus,
     resubmitLetter,
     dispatchLetter,
+    updateLetterCc,
   } = useCorrespondence(user?.unitId);
   const [participantSearch, setParticipantSearch] = useState("");
   const { data: participantsData } = useCorrespondenceParticipants({
@@ -127,6 +131,7 @@ export default function LetterDetailPage({
   });
   const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
   const [completeNotes, setCompleteNotes] = useState("");
+  const [ccDraft, setCcDraft] = useState<LetterCcInput[] | null>(null);
   const [dispatchOpen, setDispatchOpen] = useState(false);
   const [dispatchData, setDispatchData] = useState({
     channel: LetterDispatchChannel.HAND_DELIVERY as LetterDispatchChannel,
@@ -363,6 +368,21 @@ export default function LetterDetailPage({
         error?.response?.data?.error?.message ??
           error?.response?.data?.message ??
           "Gagal mencatat pengiriman surat",
+      );
+    }
+  };
+
+  const handleSaveCc = async () => {
+    if (!letter?.id || ccDraft === null) return;
+    try {
+      await updateLetterCc.mutateAsync({ id: letter.id, ccRecipients: ccDraft });
+      setCcDraft(null);
+      toast.success("Daftar tembusan disimpan");
+    } catch (error: any) {
+      toast.error(
+        error?.response?.data?.error?.message ??
+          error?.response?.data?.message ??
+          "Gagal menyimpan tembusan",
       );
     }
   };
@@ -928,25 +948,106 @@ export default function LetterDetailPage({
                 </div>
               )}
 
-              {/* Tembusan, seperti yang tercetak di kaki naskah. */}
-              {(letter.recipients?.some((r) => r.isCC) ?? false) && (
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground">
-                    Tembusan
-                  </label>
-                  <ol className="mt-1 list-decimal space-y-1 pl-5 text-sm">
-                    {letter.recipients!
-                      .filter((r) => r.isCC)
-                      .map((r) => (
-                        <li key={r.id}>
-                          {r.user?.name ?? r.unit?.name ?? "Tidak diketahui"}
-                        </li>
-                      ))}
-                  </ol>
-                </div>
-              )}
             </CardContent>
           </Card>
+
+          {/*
+            Tembusan — dapat disusun selama naskah belum ditandatangani.
+
+            Sesudah ditandatangani daftar ini terkunci, dan bukan karena
+            kehati-hatian belaka: tembusan tercetak di kaki naskah dan byte
+            naskah itu sudah diarsipkan, jadi daftar yang berubah sesudahnya
+            akan menyebut tembusan yang tidak ada pada lembar yang beredar —
+            dan lembar itulah yang dipegang orang.
+          */}
+          {(() => {
+            const cc = (letter.recipients ?? []).filter((r) => r.isCC);
+            const locked = (letter.signatures?.length ?? 0) > 0;
+            const editing = ccDraft !== null;
+            if (locked && cc.length === 0) return null;
+
+            return (
+              <Card>
+                <CardHeader>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <CardTitle>Tembusan</CardTitle>
+                    {!locked && !editing && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          setCcDraft(
+                            cc.map((r) =>
+                              r.userId
+                                ? { userId: r.userId }
+                                : { externalName: ccRecipientName(r) },
+                            ),
+                          )
+                        }
+                      >
+                        Susun Tembusan
+                      </Button>
+                    )}
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {editing ? (
+                    <>
+                      <TembusanEditor
+                        value={ccDraft}
+                        onChange={setCcDraft}
+                        participants={participantsData?.data ?? []}
+                        search={participantSearch}
+                        onSearchChange={setParticipantSearch}
+                        disabled={updateLetterCc.isPending}
+                      />
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCcDraft(null)}
+                          disabled={updateLetterCc.isPending}
+                        >
+                          Batal
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={handleSaveCc}
+                          disabled={updateLetterCc.isPending}
+                        >
+                          {updateLetterCc.isPending ? "Menyimpan..." : "Simpan"}
+                        </Button>
+                      </div>
+                    </>
+                  ) : cc.length > 0 ? (
+                    <ol className="list-decimal space-y-1 pl-5 text-sm">
+                      {cc.map((r) => (
+                        <li key={r.id}>
+                          {ccRecipientName(r)}
+                          {!r.userId && (
+                            <span className="ml-2 text-xs text-muted-foreground">
+                              (pihak luar — diantar di luar sistem)
+                            </span>
+                          )}
+                        </li>
+                      ))}
+                    </ol>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      Belum ada tembusan. Naskah dicetak tanpa daftar tembusan.
+                    </p>
+                  )}
+
+                  {locked && (
+                    <p className="text-xs text-muted-foreground">
+                      Naskah sudah ditandatangani, sehingga daftar tembusan
+                      terkunci — ia tercetak pada lembar yang beredar.
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })()}
 
           {letter.fileUrl && (
             <Card>

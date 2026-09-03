@@ -184,14 +184,27 @@ function ExamPlayer({
     }
 
     if (typeof window !== "undefined") {
-      try {
-        const savedDraft = localStorage.getItem(draftStorageKey);
-        if (savedDraft) {
-          const parsed = JSON.parse(savedDraft);
-          Object.assign(initialAnswers, parsed);
+      if (attempt.status !== "IN_PROGRESS") {
+        localStorage.removeItem(draftStorageKey);
+      } else {
+        try {
+          const savedDraftRaw = localStorage.getItem(draftStorageKey);
+          if (savedDraftRaw) {
+            const savedDraft = JSON.parse(savedDraftRaw);
+            const draftAnswers = savedDraft.answers || savedDraft;
+            const draftTime = savedDraft.timestamp || 0;
+            const attemptUpdatedTime = attempt.updatedAt ? new Date(attempt.updatedAt).getTime() : 0;
+
+            for (const [qId, draftVal] of Object.entries(draftAnswers)) {
+              const hasServerAns = initialAnswers[qId] !== undefined;
+              if (!hasServerAns || draftTime > attemptUpdatedTime) {
+                initialAnswers[qId] = draftVal;
+              }
+            }
+          }
+        } catch (err) {
+          console.error("Failed to load local exam draft", err);
         }
-      } catch (err) {
-        console.error("Failed to load local exam draft", err);
       }
     }
     setAnswers(initialAnswers);
@@ -210,19 +223,28 @@ function ExamPlayer({
 
   const handleFinish = useCallback(async () => {
     try {
-      // Sync all current answers/draft to server before finishing
-      for (const [qId, ans] of Object.entries(answers)) {
-        if (ans !== undefined && ans !== "") {
-          try {
-            await submitAnswer.mutateAsync({
-              attemptId: attempt.id,
-              questionId: qId,
-              answer: ans,
-            });
-          } catch (e) {
-            console.error("Failed to sync answer before finish", e);
-          }
-        }
+      // Parallel sync only for unsynced/modified answers before finishing
+      const unsyncedEntries = Object.entries(answers).filter(([qId, ans]) => {
+        const serverAns = attempt.answers?.find((a: any) => a.questionId === qId)?.answer;
+        return (
+          ans !== undefined &&
+          ans !== "" &&
+          (serverAns === undefined || JSON.stringify(serverAns) !== JSON.stringify(ans))
+        );
+      });
+
+      if (unsyncedEntries.length > 0) {
+        await Promise.all(
+          unsyncedEntries.map(([qId, ans]) =>
+            submitAnswer
+              .mutateAsync({
+                attemptId: attempt.id,
+                questionId: qId,
+                answer: ans,
+              })
+              .catch((e) => console.error("Failed to sync answer before finish", e))
+          )
+        );
       }
 
       await finishExam.mutateAsync(attempt.id);
@@ -234,7 +256,7 @@ function ExamPlayer({
     } catch {
       toast.error("Gagal menyelesaikan ujian");
     }
-  }, [answers, attempt.id, draftStorageKey, finishExam, router, submitAnswer]);
+  }, [answers, attempt.answers, attempt.id, draftStorageKey, finishExam, router, submitAnswer]);
 
   const handleAnswerChange = async (value: any) => {
     if (!currentQuestion) return;
@@ -242,10 +264,13 @@ function ExamPlayer({
     const newAnswers = { ...answers, [currentQuestion.id]: value };
     setAnswers(newAnswers);
 
-    // Save draft locally immediately for offline recovery
+    // Save draft locally with timestamp for offline recovery
     if (typeof window !== "undefined") {
       try {
-        localStorage.setItem(draftStorageKey, JSON.stringify(newAnswers));
+        localStorage.setItem(
+          draftStorageKey,
+          JSON.stringify({ answers: newAnswers, timestamp: Date.now(), examId: attempt.examId })
+        );
       } catch (err) {
         console.error("Failed to save draft locally", err);
       }

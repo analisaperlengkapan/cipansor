@@ -1024,7 +1024,26 @@ export class CBTService {
     if (!attempt) throw Errors.notFound('Attempt');
     if (attempt.studentId !== studentId) throw Errors.forbidden('Access denied');
 
-    // Strict time limit check with 2 minute grace period
+    if (attempt.status !== 'IN_PROGRESS') {
+      // Strip sensitive fields before returning to the student to prevent leaking
+      // correct answers and explanations. Only expose the same fields as getAttempt.
+      if (attempt.exam?.questionBank?.questions) {
+        attempt.exam.questionBank.questions = attempt.exam.questionBank.questions
+          .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+          .map(
+            ({ id, type, content, options, points }) => ({ id, type, content, options, points })
+          ) as any;
+      }
+
+      // Idempotent catch-up sync: ensure completed attempts have a Grade record created
+      if (attempt.status === 'COMPLETED') {
+        await CBTService.syncGradeToAcademicGradebook(attemptId);
+      }
+
+      return attempt;
+    }
+
+    // Strict time limit check with 2 minute grace period (ONLY for IN_PROGRESS attempts)
     if (attempt.startedAt && attempt.exam?.duration) {
       const gracePeriodMinutes = 2;
       const allowedDurationMs = (attempt.exam.duration + gracePeriodMinutes) * 60 * 1000;
@@ -1037,19 +1056,6 @@ export class CBTService {
         });
         throw Errors.badRequest('Waktu pengerjaan ujian telah habis.');
       }
-    }
-
-    if (attempt.status !== 'IN_PROGRESS') {
-      // Strip sensitive fields before returning to the student to prevent leaking
-      // correct answers and explanations. Only expose the same fields as getAttempt.
-      if (attempt.exam?.questionBank?.questions) {
-        attempt.exam.questionBank.questions = attempt.exam.questionBank.questions
-          .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-          .map(
-            ({ id, type, content, options, points }) => ({ id, type, content, options, points })
-          ) as any;
-      }
-      return attempt;
     }
 
     // Auto grading
@@ -1182,16 +1188,12 @@ export class CBTService {
       where: { id: attemptId },
       include: {
         exam: {
-          select: {
-            id: true,
-            unitId: true,
-            academicYearId: true,
-            subjectId: true,
-            classId: true,
-            teacherId: true,
-            type: true,
-            title: true,
-            maxScore: true,
+          include: {
+            questionBank: {
+              include: {
+                questions: true,
+              },
+            },
           },
         },
       },

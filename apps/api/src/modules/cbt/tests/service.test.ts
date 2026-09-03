@@ -630,7 +630,7 @@ describe('CBT Service', () => {
 
     it('should enforce strict duration limits and expire attempt if time exceeded', async () => {
       const pastTime = new Date(Date.now() - 90 * 60 * 1000); // 90 mins ago for a 60 min exam
-      vi.mocked(prisma.examAttempt.findUnique).mockResolvedValue({
+      vi.mocked(prisma.examAttempt.findUnique).mockResolvedValueOnce({
         id: 'attempt-1',
         studentId: 'std-1',
         status: 'IN_PROGRESS',
@@ -645,6 +645,76 @@ describe('CBT Service', () => {
       expect(prisma.examAttempt.update).toHaveBeenCalledWith({
         where: { id: 'attempt-1' },
         data: expect.objectContaining({ status: 'EXPIRED' }),
+      });
+    });
+
+    it('should NOT expire an already COMPLETED attempt during late retry of finishExamAttempt', async () => {
+      const pastTime = new Date(Date.now() - 90 * 60 * 1000); // 90 mins ago
+      const completedAttempt = {
+        id: 'attempt-1',
+        studentId: 'std-1',
+        status: 'COMPLETED',
+        score: 100,
+        startedAt: pastTime,
+        exam: { id: 'exam-1', duration: 60, questionBank: { questions: [] } },
+        answers: [],
+      };
+
+      vi.mocked(prisma.examAttempt.findUnique).mockResolvedValueOnce(completedAttempt as any);
+
+      const result = await CBTService.finishExamAttempt('attempt-1', 'std-1');
+
+      expect(result.status).toBe('COMPLETED');
+      expect(prisma.examAttempt.update).not.toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ status: 'EXPIRED' }) })
+      );
+    });
+
+    it('should calculate percentage and letter grade from question bank total points in syncGradeToAcademicGradebook', async () => {
+      vi.mocked(prisma.grade.upsert).mockClear();
+
+      const mockAttemptForSync = {
+        id: 'attempt-sync-1',
+        studentId: 'std-1',
+        examId: 'exam-1',
+        score: 50, // student got 50 points
+        status: 'COMPLETED',
+        exam: {
+          id: 'exam-1',
+          maxScore: 50, // exam max score set to 50
+          subjectId: 'sub-1',
+          academicYearId: 'ay-1',
+          teacherId: 't-1',
+          title: 'Math Exam',
+          questionBank: {
+            questions: [
+              { points: 25 },
+              { points: 25 }, // total possible points = 50
+            ],
+          },
+        },
+      };
+
+      vi.mocked(prisma.examAttempt.findUnique).mockImplementation((args: any) => {
+        if (args?.where?.id === 'attempt-sync-1') {
+          return Promise.resolve(mockAttemptForSync) as any;
+        }
+        return Promise.resolve(null) as any;
+      });
+      vi.mocked(prisma.teacher.findUnique).mockResolvedValue({ userId: 'user-t-1' } as any);
+      vi.mocked(prisma.grade.upsert).mockResolvedValue({ id: 'grade-1' } as any);
+
+      await CBTService.syncGradeToAcademicGradebook('attempt-sync-1');
+
+      // 50 out of 50 total question points = 100% -> Letter grade A!
+      expect(prisma.grade.upsert).toHaveBeenLastCalledWith({
+        where: { studentId_examId: { studentId: 'std-1', examId: 'exam-1' } },
+        create: expect.objectContaining({
+          letterGrade: 'A',
+        }),
+        update: expect.objectContaining({
+          letterGrade: 'A',
+        }),
       });
     });
 

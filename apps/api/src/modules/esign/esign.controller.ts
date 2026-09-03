@@ -72,4 +72,14 @@ export const EsignController = {
       res.json({ success: true, data: await EsignService.verifyByToken(req.params.token) });
     } catch (e) { next(e); }
   },
+
+  /** Publik: verifikasi unggahan berkas PDF berbasis SHA-256 byte digest. */
+  async verifyPdf(req: Request, res: Response, next: NextFunction) {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ success: false, error: { message: 'File PDF harus diunggah' } });
+      }
+      res.json({ success: true, data: await EsignService.verifyPdf(req.file.buffer) });
+    } catch (e) { next(e); }
+  },
 };

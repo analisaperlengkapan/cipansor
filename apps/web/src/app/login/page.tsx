@@ -137,7 +137,14 @@ function LoginPageContent() {
         const idToken = params.get("id_token");
         const state = params.get("state");
         const storedState = sessionStorage.getItem("sso_state");
-        const storedProvider = (sessionStorage.getItem("sso_provider") || (hash.includes("microsoft") ? "microsoft" : "google")) as "google" | "microsoft";
+        const storedNonce = sessionStorage.getItem("sso_nonce");
+        const storedProvider = sessionStorage.getItem("sso_provider") as "google" | "microsoft" | null;
+
+        if (!storedProvider) {
+          toast.error("Sesi SSO tidak valid atau telah kedaluwarsa. Silakan coba lagi.");
+          window.history.replaceState(null, "", window.location.pathname);
+          return;
+        }
 
         if (storedState && state !== storedState) {
           toast.error("Validasi keamanan SSO (state) gagal. Silakan coba lagi.");
@@ -146,6 +153,24 @@ function LoginPageContent() {
           sessionStorage.removeItem("sso_provider");
           window.history.replaceState(null, "", window.location.pathname);
           return;
+        }
+
+        // Decode JWT payload to verify nonce claim
+        if (idToken && storedNonce) {
+          try {
+            const parts = idToken.split(".");
+            if (parts.length === 3) {
+              const payload = JSON.parse(atob(parts[1]));
+              if (payload.nonce && payload.nonce !== storedNonce) {
+                toast.error("Validasi keamanan SSO (nonce) gagal. Silakan coba lagi.");
+                sessionStorage.removeItem("sso_state");
+                sessionStorage.removeItem("sso_nonce");
+                sessionStorage.removeItem("sso_provider");
+                window.history.replaceState(null, "", window.location.pathname);
+                return;
+              }
+            }
+          } catch {}
         }
 
         sessionStorage.removeItem("sso_state");

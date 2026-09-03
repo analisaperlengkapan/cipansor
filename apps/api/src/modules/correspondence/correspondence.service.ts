@@ -13,7 +13,9 @@ import {
   LetterDirection,
   LetterStatus,
   UpdateLetterInput,
+  RoleCode,
 } from '@cipansor/shared';
+import { Errors } from '@/middleware/error';
 import { eventBus } from '@/lib/event-bus';
 import {
   assertLetterAccess,
@@ -139,15 +141,33 @@ export const CorrespondenceService = {
       ? { id: actorOrUserId }
       : actorOrUserId;
 
-    // Check authorization: Student, Parent, Committee, and Alumni roles cannot create letters
-    const excludedRoles = [
-      'SDIT_SISWA', 'SMPIT_SISWA', 'SMAQ_SISWA', 'TKQ_SISWA',
-      'SDIT_ORANG_TUA', 'SMPIT_ORANG_TUA', 'SMAQ_ORANG_TUA', 'TKQ_ORANG_TUA',
-      'SDIT_KOMITE', 'SMPIT_KOMITE', 'SMAQ_KOMITE', 'TKQ_KOMITE',
-      'ALUMNI'
+    // Explicit allowlist authorization: only unit correspondence roles (*_TATA_USAHA, *_KEPALA_SEKOLAH, unit admins),
+    // executive foundation roles (YAYASAN_KETUA, YAYASAN_SEKRETARIS), and SUPER_ADMIN are allowed.
+    const allowedRoles = [
+      RoleCode.SUPER_ADMIN,
+      RoleCode.YAYASAN_KETUA,
+      RoleCode.YAYASAN_SEKRETARIS,
+      RoleCode.SDIT_ADMIN,
+      RoleCode.SMPIT_ADMIN,
+      RoleCode.SMAQ_ADMIN,
+      RoleCode.TKQ_ADMIN,
+      RoleCode.SDIT_KEPALA_SEKOLAH,
+      RoleCode.SMPIT_KEPALA_SEKOLAH,
+      RoleCode.SMAQ_KEPALA_SEKOLAH,
+      RoleCode.TKQ_KEPALA_SEKOLAH,
+      RoleCode.SDIT_TATA_USAHA,
+      RoleCode.SMPIT_TATA_USAHA,
+      RoleCode.SMAQ_TATA_USAHA,
+      RoleCode.TKQ_TATA_USAHA,
+      RoleCode.PESANTREN_TATA_USAHA,
+      RoleCode.PT_TATA_USAHA,
+      RoleCode.PESANTREN_PENGASUH,
+      RoleCode.PESANTREN_DIREKTUR,
+      RoleCode.PT_REKTOR,
     ];
-    if (actor.roleCode && excludedRoles.includes(actor.roleCode)) {
-      throw Errors.forbidden('Siswa, Orang Tua, dan Komite tidak memiliki wewenang untuk membuat surat');
+
+    if (!actor.roleCode || !allowedRoles.includes(actor.roleCode)) {
+      throw Errors.forbidden('Anda tidak memiliki wewenang untuk membuat surat resmi');
     }
 
     // Unit scope check: non-foundation actors can only create letters for their own unit
@@ -625,9 +645,40 @@ export const CorrespondenceService = {
     return await prisma.$transaction(async (tx) => {
       const letter = await tx.letter.findUnique({
         where: { id: letterId },
-        select: { id: true, status: true },
+        select: {
+          id: true,
+          status: true,
+          createdById: true,
+          unitId: true,
+          dispositions: {
+            orderBy: { createdAt: 'desc' },
+            take: 1,
+            select: { recipientId: true },
+          },
+        },
       });
       if (!letter) throw new Error('Letter not found');
+
+      // Check write authority: must be letter creator, last disposition recipient, unit admin, executive foundation role, or SUPER_ADMIN
+      const isCreator = letter.createdById === actor.id;
+      const isLastRecipient = letter.dispositions[0]?.recipientId === actor.id;
+      const isExecFoundation = actor.roleCode && [RoleCode.SUPER_ADMIN, RoleCode.YAYASAN_KETUA, RoleCode.YAYASAN_SEKRETARIS].includes(actor.roleCode as any);
+      const isUnitAdmin = actor.roleCode && actor.unitId === letter.unitId && [
+        RoleCode.SDIT_ADMIN,
+        RoleCode.SMPIT_ADMIN,
+        RoleCode.SMAQ_ADMIN,
+        RoleCode.TKQ_ADMIN,
+        RoleCode.SDIT_TATA_USAHA,
+        RoleCode.SMPIT_TATA_USAHA,
+        RoleCode.SMAQ_TATA_USAHA,
+        RoleCode.TKQ_TATA_USAHA,
+        RoleCode.PESANTREN_TATA_USAHA,
+        RoleCode.PT_TATA_USAHA,
+      ].includes(actor.roleCode as any);
+
+      if (!isCreator && !isLastRecipient && !isExecFoundation && !isUnitAdmin) {
+        throw Errors.forbidden('Anda tidak memiliki wewenang untuk mengarsipkan surat ini');
+      }
 
       assertMayArchive(letter.status);
 

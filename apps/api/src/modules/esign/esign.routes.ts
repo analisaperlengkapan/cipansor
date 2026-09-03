@@ -1,7 +1,13 @@
 import { Router } from 'express';
+import multer from 'multer';
 import rateLimit from 'express-rate-limit';
 import { EsignController } from './esign.controller';
 import { authenticate, isSuperAdmin } from '@/middleware/auth';
+
+const memoryUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+});
 import { validate } from '@/middleware/validate';
 import {
   activateKeySchema,
@@ -63,6 +69,7 @@ const passphraseLimiter = rateLimit({
  * berlaku untuk rute yang didaftarkan sesudahnya.
  */
 router.get('/verify/:token', EsignController.verify);
+router.post('/verify-pdf', memoryUpload.single('file'), EsignController.verifyPdf);
 
 router.use(authenticate);
 

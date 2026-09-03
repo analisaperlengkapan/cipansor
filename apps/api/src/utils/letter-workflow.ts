@@ -108,11 +108,9 @@ export function statusAfterApproval(
   );
   const turn = nextRung(after);
 
+  // Even when all reviewers (including the signer) approve via the review flow,
+  // the letter remains in READY_TO_SIGN until an esign signature is created via passphrase.
   if (!turn) {
-    const currentRung = reviewers.find((r) => r.reviewerId === approvedId);
-    if (currentRung?.isSigner) {
-      return LetterStatus.SIGNED;
-    }
     return LetterStatus.READY_TO_SIGN;
   }
   return turn.isSigner ? LetterStatus.READY_TO_SIGN : LetterStatus.PENDING_REVIEW;
@@ -171,9 +169,15 @@ export function assertMayArchive(letterStatus: LetterStatus): void {
   if (ALREADY_CLOSED.includes(letterStatus)) {
     throw new WorkflowError('Surat ini sudah diarsipkan.');
   }
-  if (letterStatus === LetterStatus.DRAFT) {
+  const NON_TERMINAL_STATUSES: readonly LetterStatus[] = [
+    LetterStatus.DRAFT,
+    LetterStatus.PENDING_REVIEW,
+    LetterStatus.REVISION_NEEDED,
+    LetterStatus.READY_TO_SIGN,
+  ];
+  if (NON_TERMINAL_STATUSES.includes(letterStatus)) {
     throw new WorkflowError(
-      'Konsep surat tidak dapat diarsipkan; selesaikan atau batalkan konsepnya terlebih dahulu.'
+      `Surat berstatus ${letterStatus} belum selesai diproses sehingga tidak dapat diarsipkan.`
     );
   }
 }

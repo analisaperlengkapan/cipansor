@@ -16,6 +16,8 @@ import {
   rewrapKeyMaterial,
   signPayload,
   verifySignature,
+  computePdfHash,
+  verifyPdfHashSignature,
   type EncryptedKeyMaterial,
   type ScryptParams,
   type SignablePayload,
@@ -495,6 +497,63 @@ export const EsignService = {
    *
    * Perihal pun hanya ditampilkan untuk surat bersifat Biasa.
    */
+  /** Verifikasi PDF berbasis SHA-256 byte digest upload dokumen. */
+  async verifyPdf(fileBuffer: Buffer) {
+    const pdfHash = computePdfHash(fileBuffer);
+
+    const signatures = await prisma.letterSignature.findMany({
+      include: {
+        signer: { select: { name: true } },
+        letter: {
+          select: {
+            id: true,
+            letterNumber: true,
+            date: true,
+            type: true,
+            nature: true,
+            subject: true,
+            content: true,
+            unitId: true,
+            unit: { select: { name: true } },
+          },
+        },
+      },
+    });
+
+    const matched = signatures.find((sig) => {
+      if (sig.pdfHash && sig.pdfHash === pdfHash) {
+        if (sig.pdfSignature) {
+          return verifyPdfHashSignature(sig.publicKey, sig.pdfSignature, pdfHash);
+        }
+        return true;
+      }
+      return false;
+    });
+
+    if (!matched) {
+      return { found: false as const, valid: false };
+    }
+
+    const l = matched.letter;
+    const isPublicNature = l.nature === 'PUBLIC';
+
+    return {
+      found: true as const,
+      valid: !matched.revokedAt,
+      pdfHashMatch: true,
+      revoked: !!matched.revokedAt,
+      revokedReason: matched.revokedReason,
+      letterNumber: l.letterNumber,
+      letterType: l.type,
+      nature: l.nature,
+      subject: isPublicNature ? l.subject : null,
+      date: l.date,
+      unitName: l.unit?.name ?? null,
+      signerName: matched.signer.name,
+      signedAt: matched.signedAt,
+    };
+  },
+
   async verifyByToken(token: string) {
     const signature = await prisma.letterSignature.findUnique({
       where: { verificationToken: token },

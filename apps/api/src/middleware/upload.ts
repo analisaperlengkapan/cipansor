@@ -189,6 +189,8 @@ export const handleSingleUpload = (fieldName: string) => {
 
           if (storageResult.provider === 'azure') {
             req.body.fileUrl = storageResult.url;
+            // Clean up staging file on local disk after successful Azure Blob upload
+            await fs.promises.unlink(localPath).catch(() => undefined);
           } else {
             const protocol = req.protocol;
             const host = req.get('host');

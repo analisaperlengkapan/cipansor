@@ -129,20 +129,16 @@ describe('where an approval leaves the letter', () => {
     );
   });
 
-  it("signs the letter on the signer's approval", () => {
-    expect(
-      statusAfterApproval(
-        ladder({ sekretaris: 'APPROVED', wakil: 'APPROVED' }),
-        'ketua'
-      )
-    ).toBe(LetterStatus.SIGNED);
+  it("leaves the letter in READY_TO_SIGN on the signer's approval", () => {
+    const complete = ladder({ sekretaris: 'APPROVED', wakil: 'APPROVED' });
+    expect(statusAfterApproval(complete, 'ketua')).toBe(LetterStatus.READY_TO_SIGN);
   });
 
   it('handles a single reviewer who is also the signer', () => {
     const solo: ReviewerRung[] = [
       { id: 'r1', reviewerId: 'ketua', order: 1, status: 'PENDING', isSigner: true },
     ];
-    expect(statusAfterApproval(solo, 'ketua')).toBe(LetterStatus.SIGNED);
+    expect(statusAfterApproval(solo, 'ketua')).toBe(LetterStatus.READY_TO_SIGN);
   });
 });
 
@@ -193,6 +189,6 @@ describe('archiving', () => {
   });
 
   it('refuses to archive an unfinished draft', () => {
-    expect(() => assertMayArchive(LetterStatus.DRAFT)).toThrow(/Konsep/);
+    expect(() => assertMayArchive(LetterStatus.DRAFT)).toThrow(/belum selesai/);
   });
 });

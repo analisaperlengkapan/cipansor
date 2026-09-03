@@ -79,7 +79,7 @@ describe('Correspondence Service', () => {
 
       vi.mocked(prisma.letter.create).mockResolvedValue({ id: 'letter-1' } as any);
 
-      await CorrespondenceService.createLetter(dto as any, 'user-1');
+      await CorrespondenceService.createLetter(dto as any, { id: 'user-1', roleCode: 'SUPER_ADMIN', unitId: 'unit-1' });
 
       // Uses transaction
       expect(prisma.letter.create).toHaveBeenCalledWith({
@@ -139,7 +139,7 @@ describe('Correspondence Service', () => {
       },
     ];
 
-    it('signs the letter when the signer approves last, and records it', async () => {
+    it('leaves the letter in READY_TO_SIGN when the signer approves, waiting for esign signature', async () => {
       // Sekretaris has already parafed; only the signer is left.
       vi.mocked(prisma.letter.findUnique).mockResolvedValue({
         id: 'letter-1',
@@ -161,14 +161,7 @@ describe('Correspondence Service', () => {
       });
       expect(prisma.letter.update).toHaveBeenCalledWith({
         where: { id: 'letter-1' },
-        data: { status: 'SIGNED' },
-      });
-      expect(prisma.letterFlowEvent.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({
-          action: 'SIGNED',
-          toStatus: 'SIGNED',
-          actorId: 'ketua',
-        }),
+        data: { status: 'READY_TO_SIGN' },
       });
     });
 
@@ -207,31 +200,6 @@ describe('Correspondence Service', () => {
       });
     });
 
-    it('notifies the creator once a letter is signed', async () => {
-      vi.mocked(prisma.letter.findUnique).mockResolvedValue({
-        id: 'letter-1',
-        status: 'READY_TO_SIGN',
-        createdById: 'creator-1',
-        unitId: 'unit-1',
-        subject: 'Undangan Rapat',
-        letterNumber: '001/X/2026',
-        reviewers: ladder({ sekretaris: 'APPROVED' }),
-      } as any);
-      vi.mocked(prisma.letterReviewer.update).mockResolvedValue({} as any);
-      vi.mocked(prisma.letter.update).mockResolvedValue({} as any);
-
-      await CorrespondenceService.processReview('letter-1', 'ketua', 'APPROVE');
-
-      expect(emitMock).toHaveBeenCalledWith(
-        'notification:send',
-        expect.objectContaining({
-          userId: 'creator-1',
-          type: 'INFO',
-          title: 'Surat Telah Ditandatangani',
-          data: { letterId: 'letter-1' },
-        })
-      );
-    });
 
     it('returns a rejected draft to REVISION_NEEDED and notifies its author', async () => {
       vi.mocked(prisma.letter.findUnique).mockResolvedValue({

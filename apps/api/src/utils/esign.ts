@@ -290,6 +290,35 @@ export function verifySignature(
   }
 }
 
+/** Compute SHA-256 hash of raw PDF file bytes. */
+export function computePdfHash(pdfBuffer: Buffer): string {
+  return crypto.createHash('sha256').update(pdfBuffer).digest('hex');
+}
+
+/** Verify a PDF SHA-256 byte digest signature against public key. */
+export function verifyPdfHashSignature(
+  publicKeyBase64: string,
+  signatureBase64: string,
+  pdfHashHex: string
+): boolean {
+  try {
+    const publicKey = crypto.createPublicKey({
+      key: Buffer.from(publicKeyBase64, 'base64'),
+      type: 'spki',
+      format: 'der',
+    });
+    const payload = `cipansor-esign/pdf/v1\n${pdfHashHex}`;
+    return crypto.verify(
+      null,
+      Buffer.from(payload, 'utf8'),
+      publicKey,
+      Buffer.from(signatureBase64, 'base64')
+    );
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Token verifikasi yang dimuat QR.
  *

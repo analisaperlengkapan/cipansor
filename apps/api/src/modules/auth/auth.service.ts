@@ -9,6 +9,9 @@ import { RoleCode, UnitType } from '@prisma/client';
 import { generateSecret, generateURI, verify as verifyOtp } from 'otplib';
 import * as qrcode from 'qrcode';
 import crypto from 'crypto';
+import jwt from 'jsonwebtoken';
+import { JwksClient } from 'jwks-rsa';
+import { SSOConfigResponse } from '@cipansor/shared';
 
 /**
  * Resolve a legacy UserRole value (e.g. 'TEACHER', 'STAFF') into the correct
@@ -369,48 +372,106 @@ export class AuthService {
   }
 
   /**
-   * Verify Google OAuth2 ID token against Google's tokeninfo endpoint
+   * Verify Google OAuth2 ID token against Google's tokeninfo endpoint and validate claims
    */
   private async verifyGoogleIdToken(idToken: string): Promise<string> {
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    if (!clientId) {
+      throw Errors.badRequest('Google SSO is not configured on this server');
+    }
+
     const res = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(idToken)}`);
     if (!res.ok) {
       throw new Error('Google token validation failed or token expired');
     }
-    const data = (await res.json()) as { email?: string; email_verified?: string | boolean; hd?: string };
-    if (!data.email || (data.email_verified !== 'true' && data.email_verified !== true)) {
-      throw new Error('Google account email is not verified');
+
+    const data = (await res.json()) as {
+      email?: string;
+      email_verified?: string | boolean;
+      aud?: string;
+      exp?: string | number;
+    };
+
+    if (data.aud !== clientId) {
+      throw new Error('Google token audience (aud) mismatch');
     }
+
+    if (data.exp && Number(data.exp) < Date.now() / 1000) {
+      throw new Error('Google token has expired');
+    }
+
+    if (!data.email || (data.email_verified !== 'true' && data.email_verified !== true)) {
+      throw new Error('Google account email is missing or not verified');
+    }
+
     return data.email;
   }
 
   /**
-   * Verify Microsoft Entra ID OIDC / Graph token
+   * Cryptographically verify Microsoft Entra ID OIDC ID token using JWKS
    */
   private async verifyMicrosoftIdToken(idToken: string): Promise<string> {
-    const res = await fetch('https://graph.microsoft.com/v1.0/me', {
-      headers: { Authorization: `Bearer ${idToken}` },
+    const clientId = process.env.MICROSOFT_CLIENT_ID;
+    if (!clientId) {
+      throw Errors.badRequest('Microsoft SSO is not configured on this server');
+    }
+
+    const decoded = jwt.decode(idToken, { complete: true });
+    if (!decoded || typeof decoded === 'string' || !decoded.header.kid) {
+      throw new Error('Invalid Microsoft ID token format');
+    }
+
+    const tenantId = process.env.MICROSOFT_TENANT_ID || 'common';
+    const jwksClient = new JwksClient({
+      jwksUri: `https://login.microsoftonline.com/${tenantId}/discovery/v2.0/keys`,
+      cache: true,
+      rateLimit: true,
     });
-    if (!res.ok) {
-      throw new Error('Microsoft token validation failed or token expired');
+
+    const key = await jwksClient.getSigningKey(decoded.header.kid);
+    const signingKey = key.getPublicKey();
+
+    const payload = jwt.verify(idToken, signingKey, {
+      algorithms: ['RS256'],
+    }) as jwt.JwtPayload;
+
+    if (payload.aud !== clientId) {
+      throw new Error('Microsoft token audience (aud) mismatch');
     }
-    const data = (await res.json()) as { userPrincipalName?: string; mail?: string };
-    const email = data.mail || data.userPrincipalName;
+
+    if (payload.exp && payload.exp < Date.now() / 1000) {
+      throw new Error('Microsoft token has expired');
+    }
+
+    if (
+      payload.iss &&
+      !payload.iss.startsWith('https://login.microsoftonline.com/') &&
+      !payload.iss.startsWith('https://sts.windows.net/')
+    ) {
+      throw new Error('Microsoft token issuer (iss) invalid');
+    }
+
+    const email = (payload.preferred_username || payload.email || payload.upn) as string | undefined;
     if (!email) {
-      throw new Error('Microsoft account email not found');
+      throw new Error('Microsoft token does not contain a valid email claim');
     }
+
     return email;
   }
 
   /**
    * Get SSO configuration status
    */
-  getSSOConfig() {
+  getSSOConfig(): SSOConfigResponse {
+    const googleClientId = process.env.GOOGLE_CLIENT_ID || null;
+    const microsoftClientId = process.env.MICROSOFT_CLIENT_ID || null;
+
     return {
       domain: 'cipansor.or.id',
-      googleEnabled: true,
-      googleClientId: process.env.GOOGLE_CLIENT_ID || 'cipansor-google-client-id.apps.googleusercontent.com',
-      microsoftEnabled: true,
-      microsoftClientId: process.env.MICROSOFT_CLIENT_ID || 'cipansor-microsoft-client-id',
+      googleEnabled: Boolean(googleClientId),
+      googleClientId,
+      microsoftEnabled: Boolean(microsoftClientId),
+      microsoftClientId,
     };
   }
 

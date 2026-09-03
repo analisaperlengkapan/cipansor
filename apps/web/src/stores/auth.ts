@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { AxiosError } from "axios";
 import { User, authApi, rolesApi, LoginRequest } from "@/lib/api";
+import { SSOLoginRequest, LoginResponse } from "@cipansor/shared";
 
 interface AuthState {
   user: User | null;
@@ -13,7 +14,7 @@ interface AuthState {
   tempToken: string | null;
 
   login: (credentials: LoginRequest) => Promise<void>;
-  ssoLogin: (data: { provider: 'google' | 'microsoft'; email?: string; idToken?: string }) => Promise<void>;
+  ssoLogin: (data: SSOLoginRequest) => Promise<void>;
   verifyTwoFactor: (token: string) => Promise<void>;
   logout: () => Promise<void>;
   fetchUser: () => Promise<void>;
@@ -68,13 +69,13 @@ export const useAuthStore = create<AuthState>()(
       requiresTwoFactorSetup: false,
       tempToken: null,
 
-      ssoLogin: async (data: { provider: 'google' | 'microsoft'; email?: string; idToken?: string }) => {
+      ssoLogin: async (data: SSOLoginRequest) => {
         set({ isLoading: true, error: null });
         try {
           const response = await authApi.ssoLogin(data);
-          const responseData = response.data.data as any;
+          const responseData = response.data.data;
 
-          if (responseData.requiresTwoFactor) {
+          if ('requiresTwoFactor' in responseData && responseData.requiresTwoFactor) {
             set({
               requiresTwoFactor: true,
               tempToken: responseData.tempToken,
@@ -83,7 +84,18 @@ export const useAuthStore = create<AuthState>()(
             return;
           }
 
-          const { user, accessToken, refreshToken } = responseData;
+          if ('requiresTwoFactorSetup' in responseData && responseData.requiresTwoFactorSetup) {
+            set({
+              requiresTwoFactorSetup: true,
+              tempToken: responseData.tempToken,
+              isLoading: false,
+            });
+            localStorage.setItem("accessToken", responseData.tempToken);
+            document.cookie = `accessToken=${responseData.tempToken}; path=/; max-age=3600; samesite=lax`;
+            return;
+          }
+
+          const { user, accessToken, refreshToken } = responseData as LoginResponse;
 
           localStorage.setItem("accessToken", accessToken);
           localStorage.setItem("refreshToken", refreshToken);

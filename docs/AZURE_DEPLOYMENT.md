@@ -52,13 +52,18 @@ docker push acrcipansor.azurecr.io/cipansor-web:latest
 ```
 
 ### Langkah 4: Buat Azure Database for PostgreSQL Flexible Server
+Catatan Keamanan: Gunakan password acak yang kuat dan simpan di Azure Key Vault / environment variable lokal. Jangan pernah menyimpan password dalam bentuk plaintext.
+
 ```bash
+# Generate password acak yang aman
+DB_PASS=$(openssl rand -base64 24)
+
 az postgres flexible-server create \
   --resource-group rg-cipansor-prod \
   --name db-cipansor-prod \
   --location southeastasia \
   --admin-user cipansoradmin \
-  --admin-password 'YourSecurePassword123!' \
+  --admin-password "$DB_PASS" \
   --sku-name Standard_B1ms \
   --tier Burstable \
   --storage-size 32
@@ -103,14 +108,17 @@ az webapp create \
 ```
 
 ### Langkah 7: Konfigurasi Environment Variables (App Settings)
-Atur variabel lingkungan di Azure Portal atau via CLI:
+Atur variabel lingkungan di Azure Portal atau via CLI (disarankan mereferensikan rahasia dari Azure Key Vault `@Microsoft.KeyVault(...)`):
 ```bash
 az webapp config appsettings set --resource-group rg-cipansor-prod --name app-cipansor-api --settings \
-  DATABASE_URL="postgresql://cipansoradmin:YourSecurePassword123!@db-cipansor-prod.postgres.database.azure.com:5432/cipansor?sslmode=require" \
+  DATABASE_URL="postgresql://cipansoradmin:${DB_PASS}@db-cipansor-prod.postgres.database.azure.com:5432/cipansor?sslmode=require" \
   AZURE_STORAGE_ACCOUNT="cipansorstore" \
-  GOOGLE_SERVICE_ACCOUNT_EMAIL="cipansor-mailer@cipansor-mailer.iam.gserviceaccount.com" \
+  AZURE_STORAGE_CONNECTION_STRING="${AZURE_STORAGE_CONNECTION_STRING}" \
+  GOOGLE_CLIENT_ID="${GOOGLE_CLIENT_ID}" \
+  MICROSOFT_CLIENT_ID="${MICROSOFT_CLIENT_ID}" \
+  GOOGLE_SERVICE_ACCOUNT_EMAIL="${GOOGLE_SERVICE_ACCOUNT_EMAIL}" \
   GMAIL_SENDER="noreply@cipansor.or.id" \
-  JWT_SECRET="ProductionSuperSecretJWTKey123!"
+  JWT_SECRET="${JWT_SECRET}"
 ```
 
 ---

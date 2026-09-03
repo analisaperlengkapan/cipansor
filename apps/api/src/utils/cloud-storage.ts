@@ -1,3 +1,4 @@
+import { BlobServiceClient } from '@azure/storage-blob';
 import { logger } from '@/lib/logger';
 
 export interface StorageUploadResult {
@@ -10,20 +11,27 @@ export interface StorageUploadResult {
  * Upload a local file to Cloud Storage (Azure Blob Storage if configured, otherwise local disk)
  */
 export async function uploadToCloudStorage(
-  _localFilePath: string,
+  localFilePath: string,
   filename: string,
-  _mimeType: string,
+  mimeType: string,
   containerName: string = 'cipansor-documents'
 ): Promise<StorageUploadResult> {
   const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
-  const storageAccount = process.env.AZURE_STORAGE_ACCOUNT;
 
-  // Check if Azure Blob Storage is configured
-  if (connectionString || storageAccount) {
+  if (connectionString) {
     try {
-      // Constructs Azure Blob URL: https://<account>.blob.core.windows.net/<container>/<filename>
-      const accountName = storageAccount || 'cipansornonprofit';
-      const azureBlobUrl = `https://${accountName}.blob.core.windows.net/${containerName}/${filename}`;
+      const blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
+      const containerClient = blobServiceClient.getContainerClient(containerName);
+      await containerClient.createIfNotExists();
+
+      const blockBlobClient = containerClient.getBlockBlobClient(filename);
+      await blockBlobClient.uploadFile(localFilePath, {
+        blobHTTPHeaders: {
+          blobContentType: mimeType,
+        },
+      });
+
+      const azureBlobUrl = blockBlobClient.url;
 
       logger.info('File uploaded to Azure Blob Storage', {
         filename,

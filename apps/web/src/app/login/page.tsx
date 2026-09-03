@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -28,6 +28,7 @@ import {
 import { TwoFactorVerify } from "@/components/auth/TwoFactorVerify";
 import { TwoFactorSetup } from "@/components/auth/TwoFactorSetup";
 import { toast } from "sonner";
+import { authApi } from "@/lib/api";
 import {
   DEMO_ACCOUNTS,
   DEMO_TABS,
@@ -124,6 +125,26 @@ function LoginPageContent() {
     verifyTwoFactor,
     resetAuth,
   } = useAuthStore();
+
+  // Handle OIDC token callback in URL hash (e.g. #id_token=...)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const hash = window.location.hash;
+    if (hash.includes("id_token=")) {
+      const params = new URLSearchParams(hash.substring(1));
+      const idToken = params.get("id_token");
+      const provider = hash.includes("microsoft") ? "microsoft" : "google";
+      if (idToken) {
+        window.history.replaceState(null, "", window.location.pathname);
+        ssoLogin({ provider, idToken }).then(() => {
+          const state = useAuthStore.getState();
+          if (!state.requiresTwoFactor && !state.requiresTwoFactorSetup && state.isAuthenticated) {
+            router.push(landingRouteForCurrentUser());
+          }
+        }).catch(() => {});
+      }
+    }
+  }, [ssoLogin, router]);
   const [showPassword, setShowPassword] = useState(false);
   const [selectedDemo, setSelectedDemo] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>(DEMO_TABS[0]?.key ?? "");
@@ -430,10 +451,21 @@ function LoginPageContent() {
                 variant="outline"
                 className="w-full flex items-center justify-center gap-2"
                 disabled={isLoading}
-                onClick={() => {
-                  toast.info(
-                    "Login SSO Google Workspace memerlukan OAuth Client ID resmi domain @cipansor.or.id yang disetel di Google Cloud Console."
-                  );
+                onClick={async () => {
+                  try {
+                    clearError();
+                    const configRes = await authApi.getSSOConfig();
+                    const config = configRes.data.data;
+                    if (!config.googleEnabled || !config.googleClientId) {
+                      toast.info(
+                        "Google Workspace SSO belum dikonfigurasi di server. Minta administrator menyetel GOOGLE_CLIENT_ID."
+                      );
+                      return;
+                    }
+                    const redirectUri = encodeURIComponent(window.location.origin + "/login");
+                    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?response_type=id_token&client_id=${config.googleClientId}&redirect_uri=${redirectUri}&scope=openid%20email%20profile&nonce=${Date.now()}`;
+                    window.location.href = authUrl;
+                  } catch {}
                 }}
               >
                 <svg className="h-4 w-4" viewBox="0 0 24 24">
@@ -450,10 +482,21 @@ function LoginPageContent() {
                 variant="outline"
                 className="w-full flex items-center justify-center gap-2"
                 disabled={isLoading}
-                onClick={() => {
-                  toast.info(
-                    "Login SSO Microsoft 365 memerlukan Application ID resmi domain @cipansor.or.id yang disetel di Azure Entra ID."
-                  );
+                onClick={async () => {
+                  try {
+                    clearError();
+                    const configRes = await authApi.getSSOConfig();
+                    const config = configRes.data.data;
+                    if (!config.microsoftEnabled || !config.microsoftClientId) {
+                      toast.info(
+                        "Microsoft 365 SSO belum dikonfigurasi di server. Minta administrator menyetel MICROSOFT_CLIENT_ID."
+                      );
+                      return;
+                    }
+                    const redirectUri = encodeURIComponent(window.location.origin + "/login");
+                    const authUrl = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${config.microsoftClientId}&response_type=id_token&redirect_uri=${redirectUri}&scope=openid%20profile%20email&response_mode=fragment&nonce=${Date.now()}`;
+                    window.location.href = authUrl;
+                  } catch {}
                 }}
               >
                 <svg className="h-4 w-4 text-blue-600" viewBox="0 0 23 23">

@@ -3,7 +3,7 @@
 import React, { forwardRef, useEffect, useState } from "react";
 import { QRCodeCanvas } from "qrcode.react";
 import { safeFormat } from "@/lib/date";
-import { siteConfig, getPublicVerifyUrl } from "@/config/site";
+import { siteConfig } from "@/config/site";
 import { id } from "date-fns/locale";
 
 import {
@@ -58,30 +58,18 @@ export const LetterPDFTemplate = forwardRef<
   // Revoked signatures stay in the record so a circulated letter can still be
   // explained, but the naskah must not print one as if it were valid.
   const signature = signatures.filter((s) => !s.revokedAt).at(-1);
-  /**
-   * The QR now carries the bare verification token, not a URL.
-   *
-   * It used to encode `${origin}/verifikasi/<token>`, and scanning it opened a
-   * page that answered whether the letter was valid. A token can only attest
-   * that *some* letter was signed — never that the document in the reader's
-   * hand is that letter — so a forger kept the genuine QR, edited the body, and
-   * the page still vouched for it. Verification now means uploading the PDF at
-   * the printed address, where the bytes themselves are hashed and matched.
-   */
-  const qrCodeValue = signature ? signature.verificationToken : "";
-  const verifyUrl = getPublicVerifyUrl(
-    process.env.NEXT_PUBLIC_SITE_URL || siteConfig.url || origin || undefined,
-  );
+  const verifyUrl =
+    signature && origin ? `${origin}/verifikasi/${signature.verificationToken}` : "";
 
   useEffect(() => {
-    if (!qrCodeValue) {
+    if (!verifyUrl) {
       setQrDataUrl(null);
       return;
     }
     // The offscreen canvas is painted by QRCodeCanvas below on the same commit,
     // so it is readable here.
     setQrDataUrl(qrSourceRef.current?.toDataURL("image/png") ?? null);
-  }, [qrCodeValue]);
+  }, [verifyUrl]);
 
   if (!letter) return null;
 
@@ -397,6 +385,12 @@ export const LetterPDFTemplate = forwardRef<
               <p className="mt-1 text-[8pt] leading-tight text-gray-700">
                 Ditandatangani secara elektronik
               </p>
+              <p className="text-[8pt] leading-tight text-gray-700">
+                {safeFormat(new Date(signature.signedAt), "dd MMMM yyyy HH:mm", {
+                  locale: id,
+                })}{" "}
+                WIB
+              </p>
             </div>
           ) : null}
 
@@ -429,11 +423,11 @@ export const LetterPDFTemplate = forwardRef<
         layar justru berisiko: html2canvas menghitung area tangkapan dari kotak
         elemen, dan anak yang menjorok jauh ke kiri bisa menggeser hasilnya.
       */}
-      {qrCodeValue && (
+      {verifyUrl && (
         <div aria-hidden="true" style={{ display: "none" }}>
           <QRCodeCanvas
             ref={qrSourceRef}
-            value={qrCodeValue}
+            value={verifyUrl}
             size={104}
             level="M"
             marginSize={1}

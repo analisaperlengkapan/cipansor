@@ -14,6 +14,9 @@ import {
   User,
   LoginRequest,
   LoginResponse,
+  SSOLoginRequest,
+  SSOConfigResponse,
+  SSOLoginResult,
   UserRoleAssignment,
   Role,
   RoleAssignment,
@@ -275,11 +278,11 @@ export const authApi = {
   login: (data: LoginRequest) =>
     api.post<ApiResponse<LoginResponse>>("/auth/login", data),
 
-  ssoLogin: (data: { provider: 'google' | 'microsoft'; email?: string; idToken?: string }) =>
-    api.post<ApiResponse<LoginResponse>>("/auth/sso/login", data),
+  ssoLogin: (data: SSOLoginRequest) =>
+    api.post<ApiResponse<SSOLoginResult>>("/auth/sso/login", data),
 
   getSSOConfig: () =>
-    api.get<ApiResponse<{ domain: string; googleEnabled: boolean; microsoftEnabled: boolean }>>("/auth/sso/config"),
+    api.get<ApiResponse<SSOConfigResponse>>("/auth/sso/config"),
 
   logout: () => api.post("/auth/logout"),
 

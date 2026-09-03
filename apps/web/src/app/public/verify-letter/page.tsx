@@ -374,13 +374,12 @@ function PublicVerifyContent() {
                     <User className="h-4 w-4 text-blue-600" /> Informasi Penandatangan Elektronik (TTE)
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-slate-50 rounded-lg border text-sm">
+                    {/* Nama dan jabatan — bukan NIP. Halaman ini terbuka untuk
+                        umum dan hanya perlu menjawab siapa yang menandatangani,
+                        bukan nomor induk kepegawaiannya. */}
                     <div>
                       <span className="text-xs text-slate-500 block">Nama Penandatangan</span>
                       <span className="font-bold text-slate-900">{result.signer.name}</span>
-                    </div>
-                    <div>
-                      <span className="text-xs text-slate-500 block">NIP / Identitas</span>
-                      <span className="font-medium text-slate-900">{result.signer.nip}</span>
                     </div>
                     <div className="sm:col-span-2">
                       <span className="text-xs text-slate-500 block">Jabatan / Wewenang</span>

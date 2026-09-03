@@ -5,11 +5,19 @@ export async function verifyLetterByToken(token: string) {
   const signature = await prisma.letterSignature.findUnique({
     where: { verificationToken: token },
     include: {
+      /**
+       * Nama dan jabatan saja — NIP tidak diambil, apalagi dikirim.
+       *
+       * Halaman verifikasi ini terbuka untuk umum. Yang perlu dijawabnya adalah
+       * "benarkah naskah ini ditandatangani, oleh siapa, dan masih berlakukah"
+       * — bukan "berapa nomor induk pegawainya". Nomor induk adalah keterangan
+       * internal, dan sebuah endpoint publik yang mengembalikannya menjadikan
+       * setiap surat yang beredar sebagai jalan mengumpulkannya.
+       */
       signer: {
         select: {
           name: true,
-          teacher: { select: { nip: true } },
-          staff: { select: { nip: true, position: true } },
+          staff: { select: { position: true } },
         },
       },
       revokedBy: { select: { name: true } },
@@ -114,7 +122,6 @@ export async function verifyLetterByToken(token: string) {
     signerName: signature.signer.name,
     signer: {
       name: signature.signer.name,
-      nip: signature.signer.teacher?.nip || signature.signer.staff?.nip || '-',
       position: signature.signer.staff?.position || 'Pejabat / Guru Yayasan',
     },
     letter: {

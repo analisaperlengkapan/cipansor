@@ -703,12 +703,13 @@ Three changes that are worth making, though:
 2. **Put the yayasan lambang in the centre of the QR** (error-correction level
    H tolerates it). That delivers the branded look the request is really after,
    at no cost to the standard.
-3. **Reconsider printing `NIP.` in the signature block.** The BSrE-derived
-   guidance says the *visualisation* must not contain personal data such as a
-   scanned signature, NIP or NIK. Whether that reaches the naskah's own
-   signature block — where tata naskah dinas does put NIP for ASN — is a
-   question for the yayasan, not one to settle from a wiki page. Worth asking;
-   not worth changing unilaterally.
+3. ~~Reconsider printing `NIP.` in the signature block.~~ **Decided
+   2026-09-03: removed.** NIP no longer prints on the naskah and is no longer
+   returned by public verification — it is internal information, and every
+   circulating sheet that carried it was one more copy of someone's employment
+   number. It stays on the authenticated letter page, which is what "internal"
+   means. This changes the bytes for any letter whose signer had a NIP, so
+   `db:archive-letters` must run **before** the change reaches production.
 
 And the footnote. Official practice prints something like *"Dokumen ini telah
 ditandatangani secara elektronik menggunakan sertifikat elektronik yang
@@ -758,6 +759,82 @@ the discipline not to design anything that puts signing before finalisation.
 
 ---
 
+### PR-5b — Identity behind a key, and the identifiers a seal would need
+
+Asked on 2026-09-03, and the premise checks out against the standards on both
+sides.
+
+**A signature binds to a person only if the certificate says who.** BSrE's own
+enrolment collects full name, **NIK**, phone, a **photograph of the KTP**, and a
+**selfie**, and matches them against Dukcapil's population data — name, NIK,
+date of birth, photo, biometrics. ETSI EN 319 412-2 gives the shape the result
+takes in the certificate: the subject's `serialNumber` is
+*3-character identity type + 2-character ISO country code + `-` + identifier*,
+where the type is one of `PAS` (passport), `IDC` (national identity card),
+`PNO` (civic registration number), `TAX` or `TIN`. For Indonesia that is:
+
+    serialNumber = IDCID-<NIK>
+
+**What this system binds to today is a database row.** A key is issued to a
+`User` whose only identity is a name and an email. The signature therefore
+proves "whoever knew the passphrase of the key we issued to user-id X" — and
+nothing in the system says who X is in the world. That is the gap, and closing
+it does **not** require a PSrE:
+
+1. Store the identity a certificate would carry — legal name as on the KTP,
+   NIK, place and date of birth — as a prerequisite for a signing key, not as
+   optional profile decoration.
+2. **Refuse the request when it is incomplete**, naming what is missing, rather
+   than letting a key be issued to an unidentified account.
+3. Require a **KTP photograph** at enrolment and have the Super Admin confirm
+   it against the entered data before approving. That is the identity-proofing
+   step, and recording *that it happened, by whom, and on what evidence* also
+   closes the AATL ICA5(a) item already on the backlog.
+
+Two things must be decided before the KTP images are stored, because they are
+the yayasan's calls and not engineering ones: **how long a KTP scan is kept**
+(it should be deleted once the identity has been verified — the verification
+record, not the image, is the durable artefact) and **who may see it** (Super
+Admin only, and the access logged). UU PDP treats NIK and identity documents as
+personal data; collecting them without a retention rule creates a liability the
+system did not have before.
+
+**The seal side — what identifies an organisation.** ETSI EN 319 412-1 gives
+`organizationIdentifier` the same shape: *3-character legal-person identity type
++ 2-character country code + `-` + identifier*, where the type is `NTR` (national
+trade register), `VAT` (VAT/tax number), or `LEI` (global Legal Entity
+Identifier, always `LEIXG-`). Mapped onto a yayasan:
+
+| Certificate field | Value for Yayasan Pesantren Cipansor | Why |
+|---|---|---|
+| `organizationIdentifier` | `NTRID-AHU-3039.AH.01.04.Tahun 2022` | A yayasan's national register **is** Ditjen AHU Kemenkumham, and the pengesahan badan hukum number is its entry. This is the primary identifier. |
+| (alternative) | `VATID-<NPWP, digits only>` | Accepted where a tax number is the registry of record. Keep both on file; put NTR in the certificate. |
+| `O` organizationName | `Yayasan Pesantren Cipansor` | The legal name **exactly as in the SK**, not the brand or the pesantren's popular name. |
+| `OU` organizationalUnit | e.g. `MTs Cipansor` | Only when the seal is issued per unit. BSrE issues seals both per Organisasi and per Unit Organisasi, so the field has to exist even if unused at first. |
+| `L` / `ST` / `C` | `Tasikmalaya` / `Jawa Barat` / `ID` | **A certificate carries a locality, not a postal address.** The full street address belongs in the registration record behind the seal, not in the subject DN. |
+
+So the answer to *"alamat organisasi cocoknya bagaimana?"* is: locality,
+province and country in the certificate; the full address in the yayasan's
+identity record, which is what the registrar checks the certificate against.
+
+**Found while answering this.** The naskah's letterhead printed
+`SK Kemenkumham RI No. AHU-0012345.AH.01.04.Tahun 2020`, hard-coded in the
+generator. `0012345` is a placeholder and the year is wrong — meaning **every
+naskah dinas this system has ever issued carried a legal-entity number that does
+not exist**, while three different values lived side by side: that one, the
+notarial deed in `LETTERHEAD.legalBasis` (copied from a real letter), and the
+genuine `AHU-3039.AH.01.04.Tahun 2022` on the public legalitas page. The naskah
+now prints `LETTERHEAD.legalBasis` — the only one of the three that came from a
+document — along with the real address and telephone number, replacing
+`0265-123456`, which was also invented. This is the same class of defect as a
+fabricated bank account number, and it was sitting on the letterhead of every
+official letter.
+
+Recommended order of work: the identity gate (1–3 above) is worth building now
+and is independent of any PSrE decision. The seal itself waits — see §5b(c).
+
+---
+
 ### Deployment note
 
 `e93a7cf2` adds 6 lines to `schema.prisma` (`pdfHash`, `pdfSignature` and their
@@ -793,6 +870,17 @@ real backfill.
    Whether that reaches the naskah's own signature block — where tata naskah
    dinas does print NIP for ASN — is the yayasan's call, and worth confirming
    before the first ijazah is signed.
-6. **Segel elektronik (§5b(c)).** Whether the yayasan intends to obtain a
-   commercial PSrE certificate. That single answer settles Tier 2, the e-seal,
-   and whether the naskah may ever carry the standard BSrE footnote wording.
+6. ~~**Segel elektronik (§5b(c)).**~~ **Answered 2026-09-03: not for now.** The
+   yayasan stays on in-house keys. Tier 2, the e-seal and the standard BSrE
+   footnote wording all wait on that decision being revisited.
+7. **Retention and access for KTP scans (§PR-5b).** How long an uploaded KTP
+   photograph is kept — it should be deleted once identity is verified, leaving
+   the verification record rather than the image — and who besides Super Admin
+   may see it. UU PDP treats NIK and identity documents as personal data;
+   collecting them without a retention rule creates a liability the system does
+   not have today.
+8. **The yayasan's own identity record (§PR-5b).** Confirm the legal name
+   exactly as written in the pengesahan, the NPWP, and the full registered
+   address. The letterhead has been printing a fabricated Kemenkumham number
+   until today, so these should be checked against the documents rather than
+   against the code.

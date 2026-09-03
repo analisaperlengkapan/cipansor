@@ -369,9 +369,13 @@ export interface LetterSignatureDetail {
   revokedReason?: string | null;
   revokedBy?: { name: string } | null;
   revokedByRoleCode?: string | null;
+  /**
+   * Nama saja. NIP sengaja tidak ada di sini maupun di hasil verifikasi
+   * publik: nomor induk pegawai adalah keterangan internal, dan naskah yang
+   * beredar tidak perlu membawanya untuk membuktikan siapa yang menandatangani.
+   */
   signer: {
     name: string;
-    nip?: string;
   };
 }
 
@@ -467,7 +471,6 @@ export interface PublicLetterVerificationResult {
   digest?: string;
   signer?: {
     name: string;
-    nip: string;
     position: string;
   };
   letter?: {

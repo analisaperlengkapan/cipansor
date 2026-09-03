@@ -23,7 +23,21 @@ import path from 'path';
  * berkas yang sama.
  */
 
-const STORE_DIR = path.join(process.cwd(), 'private', 'identity');
+/**
+ * Letak penyimpanan, relatif terhadap direktori kerja API.
+ *
+ * Diekspor karena nilainya adalah sebuah kontrak dengan berkas penerapan, bukan
+ * rincian dalam: `docker-compose.yml` harus memasang volume bernama tepat di
+ * jalur ini. Tanpa itu berkasnya tinggal di lapisan tulis kontainer dan lenyap
+ * pada setiap penerapan ulang — sementara basis data masih menyimpan
+ * `ktpRetainUntil` tujuh tahun ke depan dan catatan verifikasi yang menyatakan
+ * dokumennya pernah dilihat. Uji di sebelahnya membandingkan keduanya, supaya
+ * memindahkan direktori ini tanpa memindahkan volumenya menjadi gagal, bukan
+ * diam.
+ */
+export const IDENTITY_STORE_RELATIVE_DIR = path.join('private', 'identity');
+
+const STORE_DIR = path.join(process.cwd(), IDENTITY_STORE_RELATIVE_DIR);
 
 /** Jenis berkas yang diterima, beserta akhiran yang dipakai menyimpannya. */
 const ACCEPTED: Record<string, string> = {

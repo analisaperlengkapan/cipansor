@@ -36,17 +36,7 @@ export interface QuestionBank {
   _count?: { questions: number; exams: number };
 }
 
-export interface ExamAttempt {
-  id: string;
-  examId: string;
-  studentId: string;
-  startedAt: string;
-  finishedAt?: string;
-  score?: number;
-  status: "IN_PROGRESS" | "COMPLETED" | "EXPIRED" | "NEEDS_REVIEW";
-  exam?: any;
-  answers?: any[];
-}
+export type { ExamAttempt, ExamSecurityLog } from "@cipansor/shared";
 
 // Hooks
 

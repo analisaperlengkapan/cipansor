@@ -175,8 +175,8 @@ function ExamPlayer({
       setQuestions(attempt.exam.questionBank.questions);
     }
 
-    if ((attempt as any)?.tabSwitchCount) {
-      setTabSwitchCount((attempt as any).tabSwitchCount);
+    if (attempt?.tabSwitchCount) {
+      setTabSwitchCount(attempt.tabSwitchCount);
     }
 
     // Restore initial answers from backend + local draft storage for offline resilience
@@ -198,12 +198,12 @@ function ExamPlayer({
             const draftAnswers = savedDraft.answers || savedDraft;
             const draftTime = savedDraft.timestamp || 0;
             const attemptUpdatedTime = attempt.updatedAt ? new Date(attempt.updatedAt).getTime() : 0;
-            const attemptStartedTime = attempt.startedAt ? new Date(attempt.startedAt).getTime() : 0;
 
             for (const [qId, draftVal] of Object.entries(draftAnswers)) {
               const hasServerAns = initialAnswers[qId] !== undefined && initialAnswers[qId] !== "";
-              // Apply draft if newer than server updated_at, OR if unsaved on server and draft is newer than attempt started_at
-              if ((hasServerAns && draftTime > attemptUpdatedTime) || (!hasServerAns && draftTime > attemptStartedTime)) {
+              // For questions with NO server answer (hasServerAns == false), always apply local draft.
+              // For questions with existing server answer, apply draft only if draft is newer than attempt.updatedAt.
+              if (!hasServerAns || draftTime > attemptUpdatedTime) {
                 initialAnswers[qId] = draftVal;
               }
             }

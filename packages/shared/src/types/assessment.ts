@@ -243,3 +243,27 @@ export interface ExamAnalyticsData extends GradeStats {
     score: number;
   }[];
 }
+
+export interface ExamSecurityLog {
+  id: string;
+  attemptId: string;
+  type: string;
+  details?: string | null;
+  createdAt: string | Date;
+}
+
+export interface ExamAttempt {
+  id: string;
+  examId: string;
+  studentId: string;
+  startedAt: string | Date;
+  finishedAt?: string | Date | null;
+  score?: number | null;
+  status: ExamStatus | string;
+  tabSwitchCount?: number;
+  securityLogs?: ExamSecurityLog[];
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
+  exam?: any;
+  answers?: any[];
+}

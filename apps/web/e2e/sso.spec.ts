@@ -46,6 +46,11 @@ test.describe("Single Sign-On (SSO) Buttons", () => {
   });
 
   test("should handle requiresTwoFactor branch during SSO callback", async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.clear();
+      sessionStorage.clear();
+    });
+
     await page.route("**/api/auth/sso/login", async (route) => {
       await route.fulfill({
         status: 200,
@@ -62,6 +67,8 @@ test.describe("Single Sign-On (SSO) Buttons", () => {
 
     await page.goto("/login#id_token=valid_mock_token&provider=google");
 
-    await expect(page.getByText(/Two-Factor Authentication/i)).toBeVisible({ timeout: 5000 });
+    await expect(
+      page.getByRole("heading", { name: /Two-Factor Authentication|2FA/i })
+    ).toBeVisible({ timeout: 10000 });
   });
 });

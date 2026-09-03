@@ -413,7 +413,7 @@ What #413 did **not** do, and is worth knowing:
 
 ---
 
-## 🟡 14. E-Office & electronic signature — audited 2026-09-02, PR-1..PR-4 + identity gate shipped
+## 🟡 14. E-Office & electronic signature — shipped AND deployed 2026-09-03, chain walked end-to-end in production
 
 Full findings and the plan: [`EOFFICE_ESIGN_PLAN.md`](./EOFFICE_ESIGN_PLAN.md).
 
@@ -430,8 +430,23 @@ number and the signer's NIP (#444); the QR now opens the verification page
 instead of encoding a token that opens nothing (#446); and a signing key can no
 longer be issued to an account nobody has identified — `UserIdentity` with a KTP
 uploaded through the system, verified by a Super Admin whose statement is
-recorded (#445, and #447 open). Three of those change the naskah's bytes, so
-**`db:archive-letters` must run before any of them reaches production.**
+recorded (#445, #447), stored on a named volume so a redeploy cannot destroy the
+evidence the retention window promises (#448).
+
+**Deployed the same day, and then walked end-to-end in production** — which is
+what found the bug that mattered. `requestKey` demanded an already-verified
+identity while verification only happened when a Super Admin decided a request:
+a deadlock in which **nobody could ever obtain a signing key**, so every signed
+naskah, the archive, public verification and revocation were unreachable. 1,399
+unit tests were green over it, and one of them asserted the deadlock as correct
+behaviour. Fixed in #449 with a guard that walks the whole chain instead of
+testing each half against itself. See plan §7 for the walk's full results —
+including the one-byte tamper that verification correctly refuses to find.
+
+The deploy itself was additive: no `DROP TABLE`, no `DROP COLUMN`, seed
+untouched, so `db push` with no reseed. `db:archive-letters` had nothing to
+archive — `letter_signatures` in production was empty — but the ordering rule
+stands for every future PDF-layout change.
 
 Three questions were researched and answered on 2026-09-03 rather than guessed —
 two authoring tracks, the QR-versus-logo visual, and segel elektronik — with the
@@ -440,12 +455,16 @@ BSSN/BSrE, ANRI SRIKANDI, ETSI and CA/Browser Forum sources quoted in the plan
 NIP off the naskah, KTP uploaded through the system as the only proof of
 identity.
 
-**Still open:** PR-5
-(PAdES B-B + RFC 3161 timestamps — the highest-value remaining item, since
-without a timestamp there is no answer to *"was the key valid at the time of
-signing"*, which is exactly what revocation semantics need), PR-6 (a.n./u.b./
-Plt./Plh. — blocked on a governance decision), PR-7 (Arabic — needs an embedded
-Unicode font and a shaping engine).
+**Still open:** the orphaned-KTP hole found by the walk (deleting a
+`UserIdentity` row leaves its scan on disk forever, unreachable by
+`db:purge-identity-documents`, and `User` deletion cascades into exactly that) —
+small, and it defeats any retention figure while it stands; PR-5 (PAdES B-B +
+RFC 3161 timestamps — the highest-value remaining feature, since without a
+timestamp there is no answer to *"was the key valid at the time of signing"*,
+which is exactly what revocation semantics need); the §5b(a) DOCX authoring
+track, which also answers PR-7 for most cases; PR-6 (a.n./u.b./Plt./Plh. —
+blocked on a governance decision); PR-7 (Arabic — needs an embedded Unicode font
+and a shaping engine); and KTP OCR, deliberately ranked last.
 
 Three things from the audit that still change what you do next:
 

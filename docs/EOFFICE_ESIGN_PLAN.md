@@ -1029,19 +1029,85 @@ and is independent of any PSrE decision. The seal itself waits — see §5b(c).
 
 ---
 
-### Deployment note
+### Deployment note — **done, 2026-09-03**
 
-`e93a7cf2` adds 6 lines to `schema.prisma` (`pdfHash`, `pdfSignature` and their
-index). Production still has no `_prisma_migrations` (ROADMAP §3), so every
-deploy in this series must be pre-checked with a non-destructive
-`prisma migrate diff` that comes back clean.
+The whole series shipped to production on 2026-09-03. The prediction above held:
+`prisma migrate diff` against the live database came back **5 new tables + 12
+new columns + one replaced index, with no `DROP TABLE` and no `DROP COLUMN`**,
+so `db push` was safe and no reseed was needed (`seed.ts` was untouched across
+all nine PRs). 285 → 290 tables; 107 users / 14 santri / 2 letters intact.
 
-PR-3 adds one table (`letter_signed_documents`) and PR-4 adds two more
-(`letter_attachments`, `letter_dispatches`) plus one enum
-(`LetterDispatchChannel`) and one nullable column (`letters.sent_at`). All
-additive — nothing is dropped or narrowed, so `db push` is safe here — and after
-PR-3 deploys, run `pnpm --filter api db:archive-letters --dry-run` before the
-real backfill.
+Two corrections to what this section used to assume:
+
+- **`--accept-data-loss` was still required**, even with nothing dropped —
+  Prisma also warns when adding a unique index (`letter_signatures.pdf_hash`).
+  The right response is not to refuse the flag but to prove the warning empty
+  first: the table had 0 rows and the column did not yet exist.
+- **`db:archive-letters` had nothing to archive.** `letter_signatures` in
+  production was empty; the one letter marked `SIGNED` was seed data with no
+  signature row. The ordering rule stands for the future — it simply protected
+  nothing this time.
+
+---
+
+## 7. Walking the chain in production, 2026-09-03
+
+Route probes said the deploy was live. They were wrong about what that proved,
+and the walk is what found it.
+
+### The deadlock — the whole feature was unreachable
+
+`requestKey` required an identity that was **already verified**. Verification
+only happens in `decideRequest`, on a request. The two waited on each other, and
+every applicant got the same answer forever: *"sudah lengkap tetapi belum
+diverifikasi"*. **Nobody could ever obtain a signing key**, so signed naskah,
+the PDF archive, public verification and revocation were all unreachable. Nine
+PRs of work, closed off by one line. Fixed in **#449**.
+
+Two lessons worth keeping:
+
+- **1,399 unit tests were green over it**, and one of them — *"menolak pengajuan
+  bila datanya lengkap tetapi belum diverifikasi"* — asserted the bug as correct
+  behaviour. Each test locked half the chain against its own expectation and
+  nothing composed the two. The replacement guard,
+  `esign.identity-chain.test.ts`, walks from filling in the identity to the key
+  being approved, and was proven red against `main` before the fix landed.
+- **`401` does not prove a route exists.** `router.use(authenticate)` runs
+  before route matching, so a mistyped path answers 401 too. Probing
+  `/esign/me/identity/document` returned 401 and the real path turned out to be
+  `/esign/me/identity/ktp`. To prove a route exists, knock with a valid token.
+
+### What the walk confirmed
+
+| step | result |
+|---|---|
+| request with no identity | refused, naming all four missing fields |
+| complete but no KTP | refused, asking for the upload |
+| KTP upload | stored SHA-256 **identical** to the source file |
+| Super Admin reads the KTP | 200, same hash, logged as `READ / UserIdentity.ktp` |
+| approve without declaring a match | **refused** |
+| approve with the declaration | `ktpRetainUntil` = key expiry **+ 7 years**, not upload date |
+| passphrase | requested **after** approval, as decided on 2026-09-03 |
+| tembusan | internal + external, ordered, correct |
+| signing | download = archive = `pdfHash`, all three identical |
+| verify by upload | valid, intact, **no NIP anywhere** |
+| **one byte altered** | **not found** — the substitution attack §2.6 exists to stop |
+| revoke, then re-verify | revoked, `revocationVerified: true` |
+
+Two design properties confirmed in production rather than assumed: the KTP
+uploaded before a `--force-recreate` **survived it** (the point of #448), and
+verification still works after the signing key row is deleted, because the
+public key lives on the signature row — old letters stay verifiable forever.
+
+### Still open after the walk
+
+**Deleting a `UserIdentity` row does not delete its KTP file.**
+`db:purge-identity-documents` works from `ktpRetainUntil` in the database, so a
+file whose row is gone is unreachable by it — permanently. The relation is
+`onDelete: Cascade` from `User`, so deleting one user is enough to strand their
+KTP scan on disk. Not fixed. The fix is two-sided: identity deletion should call
+`deleteIdentityDocument`, and the purge script should sweep orphans by comparing
+the directory against the `ktpFileName` values still on record.
 
 ---
 
@@ -1059,20 +1125,29 @@ real backfill.
    exist when this question was written: the DOCX track lets a drafter write
    Arabic in Word and upload the PDF, which covers most of the need without the
    shaping engine.
-5. **`NIP.` in the signature block (§5b(b)).** BSrE-derived guidance says the
-   signature *visualisation* must not carry personal data such as NIP or NIK.
-   Whether that reaches the naskah's own signature block — where tata naskah
-   dinas does print NIP for ASN — is the yayasan's call, and worth confirming
-   before the first ijazah is signed.
+5. ~~**`NIP.` in the signature block (§5b(b)).**~~ **Answered 2026-09-03: remove
+   it.** NIP is internal, so it no longer prints in the naskah's signature block
+   and no longer appears on the verification page (#444). It is still held on the
+   user record for internal use. Confirmed live during the production walk: the
+   verification response carries name and position only.
 6. ~~**Segel elektronik (§5b(c)).**~~ **Answered 2026-09-03: not for now.** The
    yayasan stays on in-house keys. Tier 2, the e-seal and the standard BSrE
    footnote wording all wait on that decision being revisited.
-7. **Whether to store the KTP image at all (§PR-5b).** The analysis is written
-   up there: the identity gate is worth building either way, and it delivers its
-   evidentiary benefit without storing a new sensitive image. Storing the image
-   is only defensible after `/uploads`' authorisation gap is closed — today any
-   signed-in account can read any file in it. If the yayasan wants the image,
-   the question to answer is the retention tail beyond key expiry.
+7. ~~**Whether to store the KTP image at all (§PR-5b).**~~ **Answered
+   2026-09-03: store it, with a retention window.** The `/uploads` authorisation
+   gap was not closed but side-stepped — the scans live in
+   `apps/api/private/identity/`, which no static route serves, readable only
+   through a Super-Admin endpoint that logs every read (#447), on a named volume
+   so a redeploy cannot silently destroy the evidence the retention promises
+   (#448). The tail is `IDENTITY_DOCUMENT_RETENTION_YEARS`, default 7, measured
+   from **key expiry** per CA/Browser Forum. Lowering it is the yayasan's call;
+   the orphan-file hole in §7 should be closed first, since it defeats any
+   retention figure.
+
+8. **How long a revoked-and-superseded letter stays downloadable.** Raised by
+   the walk rather than decided by it: a revoked letter still verifies as
+   *found, intact, revoked*, which is correct. Nobody has said how long its
+   archived bytes should remain retrievable.
 8. **The yayasan's own identity record (§PR-5b).** Confirm the legal name
    exactly as written in the pengesahan, the NPWP, and the full registered
    address. The letterhead has been printing a fabricated Kemenkumham number

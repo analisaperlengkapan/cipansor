@@ -496,6 +496,8 @@ model User {
   revokedSigningKeys   UserSigningKey[]  @relation("SigningKeyRevoker")
   signingKeyRequests   SigningKeyRequest[] @relation("SigningKeyRequester")
   signingKeyDecisions  SigningKeyRequest[] @relation("SigningKeyDecider")
+  identity             UserIdentity?       @relation("IdentitySubject")
+  verifiedIdentities   UserIdentity[]      @relation("IdentityVerifier")
   letterSignatures     LetterSignature[] @relation("LetterSigner")
   revokedSignatures    LetterSignature[] @relation("LetterSignatureRevoker")
   revocationRequests   LetterRevocationRequest[] @relation("LetterRevocationRequester")
@@ -7183,6 +7185,75 @@ enum SigningKeyRevocationCode {
 /// ini menyimpan pengajuan beserta putusannya, dan tidak pernah dihapus —
 /// riwayat siapa memberi wewenang menandatangani, kapan, dan untuk berapa
 /// lama, adalah bagian dari pertanggungjawaban.
+/// UserIdentity - Identitas yang menjadi dasar sebuah kunci tanda tangan
+///
+/// Sebuah tanda tangan elektronik mengikat kepada **orang**, dan ia hanya
+/// mengikat sejauh penerbitnya tahu siapa orang itu. Sebelum tabel ini, kunci
+/// diterbitkan kepada sebuah baris `User` yang identitasnya hanya nama dan
+/// surel — sehingga tanda tangan membuktikan "seseorang yang tahu passphrase
+/// kunci yang kami terbitkan untuk user-id X", dan tidak ada apa pun di sistem
+/// yang menyatakan siapa X di dunia nyata.
+///
+/// Ruas-ruasnya mengikuti apa yang dikumpulkan penerbit sertifikat sungguhan:
+/// nama sesuai kartu identitas, NIK, tempat dan tanggal lahir. Dalam sertifikat
+/// X.509, NIK inilah yang menjadi `serialNumber` subjeknya dengan bentuk
+/// `IDCID-<NIK>` menurut ETSI EN 319 412-2 — jadi menyimpannya sekarang bukan
+/// persiapan spekulatif, melainkan ruas yang sama yang akan dipakai bila
+/// yayasan kelak memakai PSrE.
+///
+/// Melekat pada pengguna, bukan pada kunci: identitas seseorang bertahan
+/// melewati setiap penerbitan ulang dan perpanjangan kuncinya.
+model UserIdentity {
+  id     String @id @default(uuid())
+  userId String @unique @map("user_id")
+
+  /// Nama sebagaimana tertulis pada kartu identitas — bukan nama panggilan,
+  /// dan bukan nama pada akun, yang boleh saja disingkat.
+  legalName String @map("legal_name")
+  /// NIK, 16 digit.
+  ///
+  /// Unik: satu nomor induk kependudukan tidak boleh menjadi dasar dua akun
+  /// penandatangan. Tanpa itu, seseorang yang punya dua akun dapat memegang
+  /// dua kunci yang sama-sama mengaku dirinya, dan pencabutan salah satunya
+  /// tidak menghentikan yang lain.
+  nik        String    @unique
+  birthPlace String    @map("birth_place")
+  birthDate  DateTime  @map("birth_date") @db.Date
+
+  /// Kapan seorang Super Admin menyatakan identitas ini benar.
+  ///
+  /// Kosong berarti belum diverifikasi, dan kunci tidak boleh terbit. Setiap
+  /// perubahan pada keempat ruas di atas mengosongkannya kembali: verifikasi
+  /// menyatakan data *yang itu* sudah dicocokkan, bukan bahwa orangnya pernah
+  /// diperiksa sekali seumur hidup.
+  verifiedAt   DateTime? @map("verified_at")
+  verifiedById String?   @map("verified_by_id")
+  /// Bagaimana identitasnya dibuktikan — inilah artefak yang lestari.
+  ///
+  /// Bukan gambarnya. Sebuah pindaian KTP adalah data pribadi bersifat
+  /// spesifik yang harus dijaga selama disimpan; catatan bahwa seorang pejabat
+  /// tertentu telah mencocokkannya pada tanggal tertentu menjawab pertanyaan
+  /// yang sama, berukuran beberapa baris, dan tidak menjadi sasaran bila basis
+  /// data ini bocor.
+  verificationMethod IdentityVerificationMethod? @map("verification_method")
+  verificationNote   String?                     @map("verification_note") @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user       User  @relation("IdentitySubject", fields: [userId], references: [id], onDelete: Cascade)
+  verifiedBy User? @relation("IdentityVerifier", fields: [verifiedById], references: [id])
+
+  @@map("user_identities")
+}
+
+/// Cara identitas seseorang dibuktikan kepada penyetuju.
+enum IdentityVerificationMethod {
+  KTP_IN_PERSON // Kartu identitas ditunjukkan langsung dan dicocokkan
+  KTP_SCAN // Pindaian/foto kartu identitas diperiksa
+  KNOWN_PERSONALLY // Dikenali pribadi oleh penyetuju, tanpa kartu ditunjukkan
+}
+
 model SigningKeyRequest {
   id       String                @id @default(uuid())
   userId   String                @map("user_id")

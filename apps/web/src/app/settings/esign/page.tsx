@@ -11,11 +11,22 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Card, CardContent, CardDescription, CardHeader, CardTitle,
 } from "@/components/ui/card";
-import { useEsignRequests } from "@/hooks/use-esign";
+import {
+  useEsignRequests,
+  IDENTITY_VERIFICATION_LABELS,
+  type IdentityVerificationMethod,
+} from "@/hooks/use-esign";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { EsignKeyInventory } from "@/components/settings/esign-key-inventory";
 import { safeFormat } from "@/lib/date";
 import { id as idLocale } from "date-fns/locale";
-import { ShieldCheck, Clock } from "lucide-react";
+import { ShieldCheck, Clock, BadgeCheck, TriangleAlert } from "lucide-react";
 
 /**
  * Antrean persetujuan kunci tanda tangan elektronik — kewenangan Super Admin.
@@ -49,18 +60,32 @@ export default function EsignRequestsPage() {
   const { requests, decide } = useEsignRequests();
   const [days, setDays] = useState<Record<string, number>>({});
   const [note, setNote] = useState<Record<string, string>>({});
+  const [method, setMethod] = useState<
+    Record<string, IdentityVerificationMethod>
+  >({});
+  const [idNote, setIdNote] = useState<Record<string, string>>({});
 
   const rows: any[] = requests.data ?? [];
   const pending = rows.filter((r) => r.status === "PENDING");
   const decided = rows.filter((r) => r.status !== "PENDING");
 
-  async function submit(id: string, approve: boolean) {
+  async function submit(id: string, approve: boolean, needsIdentity: boolean) {
     try {
       await decide.mutateAsync({
         id,
         approve,
         grantedDays: approve ? (days[id] ?? DEFAULT_DAYS) : undefined,
         note: note[id] || undefined,
+        // Hanya ikut ketika menyetujui identitas yang belum pernah
+        // diverifikasi. Menolak tidak menuntut apa pun: yang ditolak tidak
+        // menerbitkan kunci.
+        identityVerification:
+          approve && needsIdentity
+            ? {
+                method: method[id] ?? "KTP_IN_PERSON",
+                note: idNote[id] || undefined,
+              }
+            : undefined,
       });
       toast.success(approve ? "Pengajuan disetujui." : "Pengajuan ditolak.");
     } catch (e: any) {
@@ -102,7 +127,20 @@ export default function EsignRequestsPage() {
               </p>
             )}
 
-            {pending.map((r) => (
+            {pending.map((r) => {
+              const identity = r.user?.identity ?? null;
+              const missing = [
+                [identity?.legalName, "nama lengkap sesuai KTP"],
+                [identity?.nik, "NIK"],
+                [identity?.birthPlace, "tempat lahir"],
+                [identity?.birthDate, "tanggal lahir"],
+              ]
+                .filter(([v]) => !v)
+                .map(([, label]) => label as string);
+              const needsIdentity = !identity?.verifiedAt;
+              const canApprove = missing.length === 0;
+
+              return (
               <div key={r.id} className="space-y-3 rounded-lg border p-4">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-medium">{r.user?.name}</span>
@@ -119,6 +157,135 @@ export default function EsignRequestsPage() {
 
                 {r.reason && (
                   <p className="rounded-md bg-muted/50 p-3 text-sm">{r.reason}</p>
+                )}
+
+                {/*
+                  Identitas pemohon — inilah yang sesungguhnya diputuskan.
+
+                  Menyetujui sebuah pengajuan berarti menyatakan bahwa akun ini
+                  benar-benar orang yang diakuinya. Data itu harus terlihat di
+                  layar yang sama dengan tombolnya; menyetujui tanpa melihat
+                  siapa yang disetujui bukan verifikasi, hanya persetujuan.
+                */}
+                <div className="rounded-md border border-dashed p-3">
+                  <p className="mb-2 text-xs font-medium text-muted-foreground">
+                    Identitas pemohon
+                  </p>
+                  {missing.length > 0 ? (
+                    <p className="flex items-start gap-2 text-sm text-amber-700">
+                      <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" />
+                      Belum lengkap: {missing.join(", ")}. Minta pemohon
+                      melengkapinya sebelum kunci dapat diterbitkan.
+                    </p>
+                  ) : (
+                    <dl className="grid gap-x-4 gap-y-1 text-sm sm:grid-cols-2">
+                      <div>
+                        <dt className="text-xs text-muted-foreground">
+                          Nama sesuai KTP
+                        </dt>
+                        <dd className="font-medium">{identity.legalName}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-xs text-muted-foreground">NIK</dt>
+                        <dd className="font-medium tabular-nums">
+                          {identity.nik}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-xs text-muted-foreground">
+                          Tempat lahir
+                        </dt>
+                        <dd>{identity.birthPlace}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-xs text-muted-foreground">
+                          Tanggal lahir
+                        </dt>
+                        <dd>
+                          {safeFormat(
+                            new Date(identity.birthDate),
+                            "dd MMMM yyyy",
+                            { locale: idLocale },
+                          )}
+                        </dd>
+                      </div>
+                    </dl>
+                  )}
+
+                  {identity?.verifiedAt && (
+                    <p className="mt-2 flex items-center gap-2 text-xs text-emerald-700">
+                      <BadgeCheck className="h-4 w-4" />
+                      Sudah diverifikasi
+                      {identity.verifiedBy?.name
+                        ? ` oleh ${identity.verifiedBy.name}`
+                        : ""}{" "}
+                      pada{" "}
+                      {safeFormat(
+                        new Date(identity.verifiedAt),
+                        "dd MMM yyyy",
+                        { locale: idLocale },
+                      )}
+                      {identity.verificationMethod
+                        ? ` — ${IDENTITY_VERIFICATION_LABELS[identity.verificationMethod as IdentityVerificationMethod] ?? identity.verificationMethod}`
+                        : ""}
+                    </p>
+                  )}
+                </div>
+
+                {/*
+                  Cara pemeriksaannya, ditanyakan hanya sekali — saat identitas
+                  ini pertama dinyatakan benar. Jawabannya adalah artefak yang
+                  lestari: ia menjawab "atas dasar apa kunci ini terbit"
+                  bertahun-tahun kemudian.
+                */}
+                {canApprove && needsIdentity && (
+                  <div className="grid gap-3 rounded-md border border-amber-300 bg-amber-50 p-3 sm:grid-cols-2">
+                    <div className="space-y-1 sm:col-span-2">
+                      <p className="text-xs font-medium text-amber-900">
+                        Identitas ini belum pernah diverifikasi. Cocokkan datanya
+                        dengan kartu identitas, lalu sebutkan cara pemeriksaannya.
+                      </p>
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor={`method-${r.id}`}>Cara pemeriksaan</Label>
+                      <Select
+                        value={method[r.id] ?? "KTP_IN_PERSON"}
+                        onValueChange={(v) =>
+                          setMethod({
+                            ...method,
+                            [r.id]: v as IdentityVerificationMethod,
+                          })
+                        }
+                      >
+                        <SelectTrigger id={`method-${r.id}`} className="bg-white">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Object.entries(IDENTITY_VERIFICATION_LABELS).map(
+                            ([value, label]) => (
+                              <SelectItem key={value} value={value}>
+                                {label}
+                              </SelectItem>
+                            ),
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor={`idnote-${r.id}`}>
+                        Keterangan (opsional)
+                      </Label>
+                      <Input
+                        id={`idnote-${r.id}`}
+                        className="bg-white"
+                        placeholder="mis. KTP asli ditunjukkan di kantor yayasan"
+                        value={idNote[r.id] ?? ""}
+                        onChange={(e) =>
+                          setIdNote({ ...idNote, [r.id]: e.target.value })
+                        }
+                      />
+                    </div>
+                  </div>
                 )}
 
                 <div className="grid gap-3 sm:grid-cols-2">
@@ -147,24 +314,30 @@ export default function EsignRequestsPage() {
                   </div>
                 </div>
 
-                <div className="flex gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <Button
-                    onClick={() => submit(r.id, true)}
-                    disabled={decide.isPending}
+                    onClick={() => submit(r.id, true, needsIdentity)}
+                    disabled={decide.isPending || !canApprove}
                   >
                     <ShieldCheck className="mr-2 h-4 w-4" />
                     Setujui
                   </Button>
                   <Button
                     variant="outline"
-                    onClick={() => submit(r.id, false)}
+                    onClick={() => submit(r.id, false, needsIdentity)}
                     disabled={decide.isPending}
                   >
                     Tolak
                   </Button>
+                  {!canApprove && (
+                    <span className="text-xs text-muted-foreground">
+                      Persetujuan terkunci sampai identitas pemohon lengkap.
+                    </span>
+                  )}
                 </div>
               </div>
-            ))}
+              );
+            })}
           </CardContent>
         </Card>
 

@@ -759,7 +759,31 @@ the discipline not to design anything that puts signing before finalisation.
 
 ---
 
-### PR-5b — Identity behind a key, and the identifiers a seal would need
+### PR-5b — Identity behind a key, and the identifiers a seal would need — **step 1 SHIPPED**
+
+Steps 1 and 2 below are built: `UserIdentity` holds the legal name, NIK, place
+and date of birth; `POST /esign/me/request` refuses an applicant whose identity
+is incomplete or unverified **and names what is missing**; approving a request
+is the moment a Super Admin states *how* the identity was checked
+(`IdentityVerificationMethod`), and that statement — not a scan — is what is
+kept. Editing any of the four fields clears the verification, because what an
+approver attested is *that* data, not that the person was once checked.
+
+Two things fell out of building it. `LetterRecipient`-style thinking applies to
+NIK too: it is `@unique`, so one NIK cannot underwrite two signing accounts —
+otherwise revoking one key leaves the other, claiming the same person, still
+signing. And **the NIK encodes the birth date** (digits 7–12, with the day + 40
+for women), so the two fields check each other for free: a transposed digit in
+either is caught without asking anything outside. That check *warns* rather than
+refuses — civil-registry errors exist, and blocking a legitimate official
+because their own NIK is internally inconsistent costs more than reporting it.
+
+Step 3 (the KTP image and OCR) is not built; see the analysis below for why the
+order matters.
+
+#### The original write-up
+
+#### What the standards require
 
 Asked on 2026-09-03, and the premise checks out against the standards on both
 sides.

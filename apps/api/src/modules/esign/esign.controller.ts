@@ -16,6 +16,14 @@ export const EsignController = {
     } catch (e) { next(e); }
   },
 
+  /** Identitas yang mendasari kunci — diisi pemohon, dinyatakan benar orang lain. */
+  async saveIdentity(req: Request, res: Response, next: NextFunction) {
+    try {
+      const data = await EsignService.saveMyIdentity(req.user!.id, req.body);
+      res.json({ success: true, data });
+    } catch (e) { next(e); }
+  },
+
   async requestKey(req: Request, res: Response, next: NextFunction) {
     try {
       const data = await EsignService.requestKey(req.user!.id, req.body?.reason);
@@ -49,9 +57,9 @@ export const EsignController = {
 
   async decide(req: Request, res: Response, next: NextFunction) {
     try {
-      const { approve, grantedDays, note } = req.body;
+      const { approve, grantedDays, note, identityVerification } = req.body;
       const data = await EsignService.decideRequest(
-        req.params.id, req.user!.id, approve, grantedDays, note
+        req.params.id, req.user!.id, approve, grantedDays, note, identityVerification
       );
       res.json({ success: true, data });
     } catch (e) { next(e); }

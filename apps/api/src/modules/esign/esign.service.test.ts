@@ -38,6 +38,7 @@ vi.mock('../../lib/prisma', () => ({
     letterSignedDocument: { create: vi.fn(), findUnique: vi.fn() },
     auditLog: { create: vi.fn() },
     user: { findUnique: vi.fn() },
+    userIdentity: { findUnique: vi.fn(), findFirst: vi.fn(), upsert: vi.fn(), update: vi.fn() },
     $transaction: vi.fn((cb: any) => cb(prisma)),
   },
 }));
@@ -47,6 +48,29 @@ vi.mock('@/lib/password', () => ({ comparePassword: compareMock }));
 
 const PASS = 'passphrase-tanda-tangan-2026';
 const DAY = 24 * 60 * 60 * 1000;
+
+/**
+ * Identitas yang lengkap dan sudah diverifikasi.
+ *
+ * Bawaan untuk hampir setiap uji di berkas ini, karena kebanyakan menguji
+ * perilaku *setelah* syarat identitas terpenuhi. Yang menguji syaratnya sendiri
+ * mengganti nilainya sendiri.
+ */
+function verifiedIdentity(over: Record<string, unknown> = {}) {
+  return {
+    id: 'identity-1',
+    userId: 'ketua',
+    legalName: 'Haji Endang Suryana',
+    nik: '3206051205750001',
+    birthPlace: 'Tasikmalaya',
+    birthDate: new Date('1975-05-12T00:00:00.000Z'),
+    verifiedAt: new Date('2026-08-01T00:00:00.000Z'),
+    verifiedById: 'superadmin',
+    verificationMethod: 'KTP_IN_PERSON',
+    verificationNote: null,
+    ...over,
+  };
+}
 
 /** Kunci aktif lengkap dengan bahan kriptografinya. */
 function activeKey(over: Record<string, unknown> = {}) {
@@ -66,7 +90,223 @@ function activeKey(over: Record<string, unknown> = {}) {
   };
 }
 
-beforeEach(() => vi.clearAllMocks());
+beforeEach(() => {
+  vi.clearAllMocks();
+  // Identitas terverifikasi adalah keadaan bawaan: syarat identitas diuji
+  // tersendiri di bawah, dan menuntut setiap uji lain menyiapkannya hanya
+  // membuat semuanya menguji dua hal sekaligus.
+  vi.mocked(prisma.userIdentity.findUnique).mockResolvedValue(verifiedIdentity() as any);
+});
+
+/**
+ * Gerbang identitas.
+ *
+ * Sebuah tanda tangan elektronik mengikat kepada orang, dan ia mengikat hanya
+ * sejauh penerbitnya tahu siapa orang itu. Kunci yang terbit untuk akun tanpa
+ * identitas menghasilkan tanda tangan yang membuktikan pengetahuan passphrase
+ * dan tidak lebih.
+ */
+describe('identitas sebagai syarat kunci', () => {
+  it('menolak pengajuan bila datanya belum lengkap, sambil menyebut apa yang kurang', async () => {
+    vi.mocked(prisma.signingKeyRequest.findFirst).mockResolvedValue(null as any);
+    vi.mocked(prisma.userIdentity.findUnique).mockResolvedValue(
+      verifiedIdentity({ birthPlace: null }) as any
+    );
+
+    await expect(EsignService.requestKey('ketua')).rejects.toThrow(/tempat lahir/);
+    expect(prisma.signingKeyRequest.create).not.toHaveBeenCalled();
+  });
+
+  it('menolak pengajuan bila datanya lengkap tetapi belum diverifikasi', async () => {
+    vi.mocked(prisma.signingKeyRequest.findFirst).mockResolvedValue(null as any);
+    vi.mocked(prisma.userIdentity.findUnique).mockResolvedValue(
+      verifiedIdentity({ verifiedAt: null }) as any
+    );
+
+    await expect(EsignService.requestKey('ketua')).rejects.toThrow(/belum diverifikasi/);
+    expect(prisma.signingKeyRequest.create).not.toHaveBeenCalled();
+  });
+
+  it('menolak pengajuan dari akun yang belum punya identitas sama sekali', async () => {
+    vi.mocked(prisma.signingKeyRequest.findFirst).mockResolvedValue(null as any);
+    vi.mocked(prisma.userIdentity.findUnique).mockResolvedValue(null as any);
+
+    await expect(EsignService.requestKey('ketua')).rejects.toThrow(/Lengkapi dulu/);
+  });
+
+  /**
+   * Verifikasi menyatakan bahwa data *yang itu* sudah dicocokkan. Tanpa aturan
+   * ini, seseorang dapat lolos verifikasi dengan datanya sendiri lalu
+   * menggantinya menjadi milik orang lain, dan kunci berikutnya terbit atas nama
+   * yang tidak pernah diperiksa.
+   */
+  it('mengubah data identitas menggugurkan verifikasinya', async () => {
+    vi.mocked(prisma.userSigningKey.findUnique).mockResolvedValue(null as any);
+    vi.mocked(prisma.userIdentity.findFirst).mockResolvedValue(null as any);
+    vi.mocked(prisma.userIdentity.upsert).mockResolvedValue(verifiedIdentity() as any);
+
+    await EsignService.saveMyIdentity('ketua', {
+      legalName: 'Haji Endang Suryana',
+      nik: '3206.0512.0575.0001',
+      birthPlace: 'Tasikmalaya',
+      birthDate: '1975-05-12',
+    });
+
+    const call = vi.mocked(prisma.userIdentity.upsert).mock.calls.at(-1)![0] as any;
+    expect(call.update.verifiedAt).toBeNull();
+    expect(call.update.verifiedById).toBeNull();
+    // NIK dinormalkan: orang menyalinnya dari KTP berikut titiknya.
+    expect(call.update.nik).toBe('3206051205750001');
+  });
+
+  it('tidak mengembalikan NIK kepada pemiliknya sendiri — ia sudah mengetahuinya', async () => {
+    vi.mocked(prisma.userSigningKey.findUnique).mockResolvedValue(null as any);
+    vi.mocked(prisma.userIdentity.findFirst).mockResolvedValue(null as any);
+    vi.mocked(prisma.userIdentity.upsert).mockResolvedValue(verifiedIdentity() as any);
+
+    const result = await EsignService.saveMyIdentity('ketua', {
+      legalName: 'Haji Endang Suryana',
+      nik: '3206051205750001',
+      birthPlace: 'Tasikmalaya',
+      birthDate: '1975-05-12',
+    });
+    expect(result.nik).toBeUndefined();
+  });
+
+  /**
+   * Melaporkan, bukan menolak: NIK menyandikan tanggal lahir, jadi
+   * ketidakcocokan berarti salah satunya salah ketik — tetapi kekeliruan
+   * pencatatan kependudukan juga ada.
+   */
+  it('melaporkan ketidakcocokan tanggal lahir dengan NIK tanpa menolaknya', async () => {
+    vi.mocked(prisma.userSigningKey.findUnique).mockResolvedValue(null as any);
+    vi.mocked(prisma.userIdentity.findFirst).mockResolvedValue(null as any);
+    vi.mocked(prisma.userIdentity.upsert).mockResolvedValue(verifiedIdentity() as any);
+
+    const result = await EsignService.saveMyIdentity('ketua', {
+      legalName: 'Haji Endang Suryana',
+      nik: '3206051205750001',
+      birthPlace: 'Tasikmalaya',
+      birthDate: '1975-05-21',
+    });
+    expect(result.warning).toMatch(/tidak sama/);
+    expect(prisma.userIdentity.upsert).toHaveBeenCalled();
+  });
+
+  it('menolak NIK yang sudah mendasari akun lain', async () => {
+    vi.mocked(prisma.userSigningKey.findUnique).mockResolvedValue(null as any);
+    vi.mocked(prisma.userIdentity.findFirst).mockResolvedValue({ id: 'lain' } as any);
+
+    await expect(
+      EsignService.saveMyIdentity('ketua', {
+        legalName: 'Haji Endang Suryana',
+        nik: '3206051205750001',
+        birthPlace: 'Tasikmalaya',
+        birthDate: '1975-05-12',
+      })
+    ).rejects.toThrow(/akun lain/);
+  });
+
+  /**
+   * Identitas itulah yang mendasari kunci yang sedang hidup; mengubahnya
+   * diam-diam membuat surat yang sudah ditandatangani merujuk kepada orang yang
+   * berbeda dari yang pernah diperiksa.
+   */
+  it('menolak mengubah identitas selagi kuncinya masih berlaku', async () => {
+    vi.mocked(prisma.userSigningKey.findUnique).mockResolvedValue({
+      revokedAt: null,
+      expiresAt: new Date(Date.now() + 30 * DAY),
+    } as any);
+
+    await expect(
+      EsignService.saveMyIdentity('ketua', {
+        legalName: 'Haji Endang Suryana',
+        nik: '3206051205750001',
+        birthPlace: 'Tasikmalaya',
+        birthDate: '1975-05-12',
+      })
+    ).rejects.toThrow(/masih berlaku/);
+  });
+});
+
+describe('persetujuan menyatakan siapa orangnya', () => {
+  const pending = {
+    id: 'req-1',
+    userId: 'ketua',
+    kind: 'ENROLLMENT',
+    status: 'PENDING',
+  };
+
+  it('menolak menyetujui bila identitas pemohon belum lengkap', async () => {
+    vi.mocked(prisma.signingKeyRequest.findUnique).mockResolvedValue(pending as any);
+    vi.mocked(prisma.userIdentity.findUnique).mockResolvedValue(
+      verifiedIdentity({ nik: null }) as any
+    );
+
+    await expect(
+      EsignService.decideRequest('req-1', 'superadmin', true, 30)
+    ).rejects.toThrow(/belum lengkap/);
+    expect(prisma.signingKeyRequest.update).not.toHaveBeenCalled();
+  });
+
+  it('menolak menyetujui identitas yang belum diverifikasi tanpa menyebut caranya', async () => {
+    vi.mocked(prisma.signingKeyRequest.findUnique).mockResolvedValue(pending as any);
+    vi.mocked(prisma.userIdentity.findUnique).mockResolvedValue(
+      verifiedIdentity({ verifiedAt: null }) as any
+    );
+
+    await expect(
+      EsignService.decideRequest('req-1', 'superadmin', true, 30)
+    ).rejects.toThrow(/sebutkan cara pemeriksaannya/);
+  });
+
+  it('mencatat siapa yang memverifikasi, kapan, dan dengan cara apa', async () => {
+    vi.mocked(prisma.signingKeyRequest.findUnique).mockResolvedValue(pending as any);
+    vi.mocked(prisma.userIdentity.findUnique).mockResolvedValue(
+      verifiedIdentity({ verifiedAt: null }) as any
+    );
+    vi.mocked(prisma.signingKeyRequest.update).mockResolvedValue({ id: 'req-1' } as any);
+    vi.mocked(prisma.userSigningKey.deleteMany).mockResolvedValue({ count: 0 } as any);
+
+    await EsignService.decideRequest('req-1', 'superadmin', true, 30, undefined, {
+      method: 'KTP_IN_PERSON' as any,
+      note: 'KTP asli ditunjukkan di kantor yayasan.',
+    });
+
+    expect(prisma.userIdentity.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { userId: 'ketua' },
+        data: expect.objectContaining({
+          verifiedById: 'superadmin',
+          verificationMethod: 'KTP_IN_PERSON',
+          verificationNote: 'KTP asli ditunjukkan di kantor yayasan.',
+        }),
+      })
+    );
+  });
+
+  it('tidak menuntut verifikasi ulang untuk identitas yang sudah terverifikasi', async () => {
+    vi.mocked(prisma.signingKeyRequest.findUnique).mockResolvedValue(pending as any);
+    vi.mocked(prisma.signingKeyRequest.update).mockResolvedValue({ id: 'req-1' } as any);
+    vi.mocked(prisma.userSigningKey.deleteMany).mockResolvedValue({ count: 0 } as any);
+
+    await expect(
+      EsignService.decideRequest('req-1', 'superadmin', true, 30)
+    ).resolves.toBeTruthy();
+    expect(prisma.userIdentity.update).not.toHaveBeenCalled();
+  });
+
+  /** Menolak tidak menuntut apa pun: yang ditolak tidak menerbitkan kunci. */
+  it('menolak pengajuan tanpa memeriksa identitas', async () => {
+    vi.mocked(prisma.signingKeyRequest.findUnique).mockResolvedValue(pending as any);
+    vi.mocked(prisma.userIdentity.findUnique).mockResolvedValue(null as any);
+    vi.mocked(prisma.signingKeyRequest.update).mockResolvedValue({ id: 'req-1' } as any);
+
+    await expect(
+      EsignService.decideRequest('req-1', 'superadmin', false, undefined, 'Belum diperlukan.')
+    ).resolves.toBeTruthy();
+  });
+});
 
 describe('pengajuan kunci', () => {
   it('memilih ENROLLMENT bila belum punya kunci', async () => {

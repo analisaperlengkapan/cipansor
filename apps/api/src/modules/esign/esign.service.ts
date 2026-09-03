@@ -1,4 +1,5 @@
 import {
+  IdentityVerificationMethod,
   LetterFlowAction,
   LetterStatus,
   Prisma,
@@ -9,6 +10,14 @@ import { prisma } from '@/lib/prisma';
 import { comparePassword } from '@/lib/password';
 import { Errors } from '@/middleware/error';
 import { eventBus } from '@/lib/event-bus';
+import {
+  assertIdentityReadyForKey,
+  IdentityError,
+  isWellFormedNik,
+  missingIdentityFields,
+  nikBirthDateMismatch,
+  normaliseNik,
+} from '@/utils/signer-identity';
 import crypto from 'crypto';
 import {
   createKeyMaterial,
@@ -152,6 +161,7 @@ function asHttpError(error: unknown): unknown {
 export const EsignService = {
   /** Ringkasan kunci milik pengguna, untuk halaman pengaturan. */
   async myStatus(userId: string) {
+    const identity = await prisma.userIdentity.findUnique({ where: { userId } });
     const key = await prisma.userSigningKey.findUnique({
       where: { userId },
       select: {
@@ -177,6 +187,23 @@ export const EsignService = {
     const state = key ? effectiveState(key) : null;
 
     return {
+      /**
+       * Keadaan identitas, dikirim bersama keadaan kunci.
+       *
+       * Halaman e-sign harus dapat mengatakan *mengapa* tombol pengajuan tidak
+       * tersedia sebelum ditekan. Menyembunyikan alasannya sampai server
+       * menolak berarti pemohon menekan tombol, membaca penolakan, lalu mencari
+       * sendiri formulir mana yang harus diisi.
+       */
+      identity: {
+        /** NIK sengaja tidak dikirim balik; pemiliknya sudah mengetahuinya. */
+        legalName: identity?.legalName ?? null,
+        birthPlace: identity?.birthPlace ?? null,
+        birthDate: identity?.birthDate ?? null,
+        hasNik: !!identity?.nik,
+        missingFields: missingIdentityFields(identity),
+        verifiedAt: identity?.verifiedAt ?? null,
+      },
       hasKey: !!key,
       state,
       expiresAt: key?.expiresAt ?? null,
@@ -189,6 +216,89 @@ export const EsignService = {
       pendingRequest: pendingRequest
         ? { id: pendingRequest.id, kind: pendingRequest.kind, createdAt: pendingRequest.createdAt }
         : null,
+    };
+  },
+
+  /**
+   * Isi atau perbarui identitas sendiri.
+   *
+   * Pemohonlah yang mengetik datanya; yang menyatakannya benar adalah orang
+   * lain. Setiap perubahan pada keempat ruasnya **mengosongkan kembali
+   * verifikasinya**, sebab yang dinyatakan seorang penyetuju adalah data *yang
+   * itu* sudah dicocokkan dengan kartu identitas — bukan bahwa orangnya pernah
+   * diperiksa sekali seumur hidup. Tanpa aturan itu, seseorang dapat lolos
+   * verifikasi dengan datanya sendiri lalu menggantinya menjadi milik orang
+   * lain, dan kunci berikutnya terbit atas nama yang tidak pernah diperiksa.
+   *
+   * Tidak dapat diubah selama masih ada kunci yang hidup: identitas itulah yang
+   * mendasari kunci tersebut, dan mengubahnya diam-diam akan membuat surat yang
+   * sudah ditandatangani merujuk kepada orang yang berbeda dari yang diperiksa.
+   */
+  async saveMyIdentity(
+    userId: string,
+    input: { legalName: string; nik: string; birthPlace: string; birthDate: string }
+  ) {
+    const key = await prisma.userSigningKey.findUnique({
+      where: { userId },
+      select: { revokedAt: true, expiresAt: true },
+    });
+    const keyIsLive = !!key && !key.revokedAt && (!key.expiresAt || key.expiresAt > new Date());
+    if (keyIsLive) {
+      throw Errors.badRequest(
+        'Kunci tanda tangan Anda masih berlaku, sehingga identitas yang mendasarinya ' +
+          'tidak dapat diubah. Hubungi Super Admin bila ada data yang keliru.'
+      );
+    }
+
+    const nik = normaliseNik(input.nik);
+    if (!isWellFormedNik(nik)) {
+      throw Errors.badRequest('NIK harus terdiri atas 16 angka.');
+    }
+
+    const birthDate = new Date(input.birthDate);
+    if (Number.isNaN(birthDate.getTime())) {
+      throw Errors.badRequest('Tanggal lahir tidak sah.');
+    }
+
+    // Satu NIK tidak boleh mendasari dua akun penandatangan; pencabutan salah
+    // satunya tidak akan menghentikan yang lain.
+    const claimedElsewhere = await prisma.userIdentity.findFirst({
+      where: { nik, userId: { not: userId } },
+      select: { id: true },
+    });
+    if (claimedElsewhere) {
+      throw Errors.conflict(
+        'NIK ini sudah terdaftar pada akun lain. Satu NIK hanya dapat mendasari satu ' +
+          'akun penandatangan.'
+      );
+    }
+
+    const data = {
+      legalName: input.legalName.trim(),
+      nik,
+      birthPlace: input.birthPlace.trim(),
+      birthDate,
+      // Data berubah, maka verifikasinya gugur — lihat komentar di atas.
+      verifiedAt: null,
+      verifiedById: null,
+      verificationMethod: null,
+      verificationNote: null,
+    };
+
+    const identity = await prisma.userIdentity.upsert({
+      where: { userId },
+      create: { userId, ...data },
+      update: data,
+    });
+
+    return {
+      ...identity,
+      nik: undefined,
+      // Diperiksa di sini, bukan ditolak: NIK menyandikan tanggal lahir, jadi
+      // ketidakcocokan berarti salah satunya salah ketik — tetapi kekeliruan
+      // pencatatan kependudukan juga ada, dan memblokir pejabat yang sah karena
+      // NIK-nya sendiri tidak konsisten lebih merugikan daripada melaporkannya.
+      warning: nikBirthDateMismatch(nik, birthDate),
     };
   },
 
@@ -206,6 +316,27 @@ export const EsignService = {
     });
     if (existing) {
       throw Errors.badRequest('Pengajuan Anda sebelumnya masih menunggu keputusan.');
+    }
+
+    /**
+     * Identitas dulu, kunci kemudian.
+     *
+     * Ditolak di sini, sebelum apa pun tercatat, dan dengan menyebut ruas mana
+     * yang kurang. Kunci yang terbit untuk akun tanpa identitas menghasilkan
+     * tanda tangan yang membuktikan pengetahuan passphrase dan tidak lebih —
+     * sedangkan seluruh gunanya adalah membuktikan siapa yang menandatangani.
+     *
+     * Berlaku untuk perpanjangan juga: masa berlaku ada supaya identitas
+     * diperiksa ulang, jadi memperpanjang kunci milik identitas yang sudah
+     * kedaluwarsa verifikasinya justru melewati pemeriksaan yang menjadi alasan
+     * masa berlaku itu ada.
+     */
+    const identity = await prisma.userIdentity.findUnique({ where: { userId } });
+    try {
+      assertIdentityReadyForKey(identity);
+    } catch (e) {
+      if (e instanceof IdentityError) throw Errors.badRequest(e.message);
+      throw e;
     }
 
     const key = await prisma.userSigningKey.findUnique({ where: { userId } });
@@ -244,7 +375,28 @@ export const EsignService = {
     return prisma.signingKeyRequest.findMany({
       where: status ? { status } : undefined,
       include: {
-        user: { select: { id: true, name: true, email: true } },
+        // Identitas ikut, karena inilah yang sedang diputuskan. NIK termasuk:
+        // rute ini hanya terbuka bagi Super Admin, dan mencocokkan NIK dengan
+        // kartu identitas adalah pekerjaan yang diminta darinya.
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            identity: {
+              select: {
+                legalName: true,
+                nik: true,
+                birthPlace: true,
+                birthDate: true,
+                verifiedAt: true,
+                verificationMethod: true,
+                verificationNote: true,
+                verifiedBy: { select: { name: true } },
+              },
+            },
+          },
+        },
         decidedBy: { select: { name: true } },
       },
       orderBy: [{ status: 'asc' }, { createdAt: 'desc' }],
@@ -265,7 +417,8 @@ export const EsignService = {
     deciderId: string,
     approve: boolean,
     grantedDays?: number,
-    note?: string
+    note?: string,
+    identityVerification?: { method: IdentityVerificationMethod; note?: string }
   ) {
     const request = await prisma.signingKeyRequest.findUnique({ where: { id: requestId } });
     if (!request) throw Errors.notFound('Pengajuan tidak ditemukan');
@@ -296,7 +449,53 @@ export const EsignService = {
     const days = grantedDays ?? DEFAULT_VALIDITY_DAYS;
     assertValidityDays(days);
 
+    /**
+     * Menyetujui berarti menyatakan siapa orangnya.
+     *
+     * Persetujuan di sini adalah satu-satunya saat seorang manusia menyatakan
+     * bahwa akun ini benar-benar orang yang diakuinya. Kalau identitasnya belum
+     * pernah dicocokkan, penyetuju harus mengatakan **bagaimana** ia
+     * mencocokkannya — kartu ditunjukkan langsung, pindaian diperiksa, atau
+     * dikenali pribadi. Catatan itulah yang lestari: ia menjawab "atas dasar apa
+     * kunci ini terbit" bertahun-tahun kemudian, berukuran beberapa baris, dan
+     * tidak menjadi sasaran bila basis data ini bocor — tidak seperti pindaian
+     * kartunya.
+     *
+     * Identitas yang sudah terverifikasi tidak wajib diperiksa ulang: setiap
+     * perubahan datanya sudah menggugurkan verifikasinya sendiri
+     * (`saveMyIdentity`), jadi verifikasi yang masih berdiri memang menyatakan
+     * data yang sekarang.
+     */
+    const identity = await prisma.userIdentity.findUnique({
+      where: { userId: request.userId },
+    });
+    const missing = missingIdentityFields(identity);
+    if (missing.length > 0) {
+      throw Errors.badRequest(
+        `Identitas pemohon belum lengkap (${missing.join(', ')}), sehingga kunci tidak ` +
+          'dapat diterbitkan atas namanya. Minta pemohon melengkapinya lebih dahulu.'
+      );
+    }
+    if (!identity!.verifiedAt && !identityVerification) {
+      throw Errors.badRequest(
+        'Identitas pemohon belum diverifikasi. Cocokkan datanya dengan kartu identitas, ' +
+          'lalu sebutkan cara pemeriksaannya saat menyetujui.'
+      );
+    }
+
     return prisma.$transaction(async (tx) => {
+      if (identityVerification) {
+        await tx.userIdentity.update({
+          where: { userId: request.userId },
+          data: {
+            verifiedAt: new Date(),
+            verifiedById: deciderId,
+            verificationMethod: identityVerification.method,
+            verificationNote: identityVerification.note ?? null,
+          },
+        });
+      }
+
       const approved = await tx.signingKeyRequest.update({
         where: { id: requestId },
         data: {

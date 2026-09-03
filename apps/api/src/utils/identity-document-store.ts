@@ -148,3 +148,78 @@ export async function deleteIdentityDocument(fileName: string): Promise<void> {
     if ((e as NodeJS.ErrnoException).code !== 'ENOENT') throw e;
   }
 }
+
+/**
+ * Berapa lama sebuah berkas yang tak dirujuk dibiarkan sebelum dianggap yatim.
+ *
+ * Berkasnya ditulis lebih dulu, barisnya menyusul: `uploadIdentityDocument`
+ * memanggil `storeIdentityDocument` sebelum `prisma.userIdentity.update`.
+ * Selama jeda itu — dan selama sebuah transaksi yang belum dikukuhkan — sebuah
+ * berkas yang sah tampak persis seperti berkas yatim. Jeda itu berukuran
+ * milidetik; sehari adalah margin yang begitu jauh melampauinya sehingga
+ * penyapu ini tidak perlu tahu apa pun tentang waktu tempuh permintaan.
+ *
+ * Ongkos salahnya asimetris, dan ambang ini condong ke arah yang benar:
+ * menunggu sehari lebih lama menyisakan satu berkas yatim sehari lebih lama,
+ * sedangkan menyapu terlalu cepat menghapus foto KTP yang baru saja diunggah
+ * seseorang dan membuatnya harus mengunggah ulang tanpa tahu sebabnya.
+ */
+export const IDENTITY_ORPHAN_GRACE_MS = 24 * 60 * 60 * 1000;
+
+export interface IdentityDocumentOnDisk {
+  fileName: string;
+  modifiedAt: Date;
+}
+
+/**
+ * Daftar berkas yang benar-benar ada di disk.
+ *
+ * Ini satu-satunya arah pandang yang dapat menemukan berkas yatim. Penyapu
+ * `db:purge-identity-documents` berangkat dari basis data — ia membaca baris
+ * yang masa simpannya lewat, lalu menghapus berkas yang disebut baris itu.
+ * Dengan sendirinya ia tidak akan pernah menyentuh berkas yang barisnya sudah
+ * tidak ada: tidak ada baris, tidak ada yang menyebutkan namanya, tidak ada
+ * yang menghapusnya. Direktori inilah yang tahu.
+ *
+ * Direktori yang belum pernah dibuat bukan kegagalan — ia berarti belum ada
+ * berkas sama sekali, yang jawabannya sama: daftar kosong.
+ */
+export async function listIdentityDocuments(): Promise<IdentityDocumentOnDisk[]> {
+  let entries;
+  try {
+    entries = await fs.readdir(STORE_DIR, { withFileTypes: true });
+  } catch (e) {
+    if ((e as NodeJS.ErrnoException).code === 'ENOENT') return [];
+    throw e;
+  }
+
+  const found: IdentityDocumentOnDisk[] = [];
+  for (const entry of entries) {
+    if (!entry.isFile()) continue;
+    const stat = await fs.stat(path.join(STORE_DIR, entry.name));
+    found.push({ fileName: entry.name, modifiedAt: stat.mtime });
+  }
+  return found;
+}
+
+/**
+ * Pilih berkas mana yang yatim: ada di disk, tidak dirujuk baris mana pun, dan
+ * sudah cukup tua untuk memastikan penulisnya bukan permintaan yang sedang
+ * berjalan.
+ *
+ * Dipisahkan dari I/O-nya supaya keputusannya dapat diuji tanpa disk maupun
+ * basis data — dan supaya yang diuji adalah aturannya, bukan kemampuan Node
+ * menghapus berkas.
+ */
+export function orphanedIdentityDocuments(
+  onDisk: IdentityDocumentOnDisk[],
+  referenced: Iterable<string>,
+  now: Date = new Date()
+): IdentityDocumentOnDisk[] {
+  const keep = new Set(referenced);
+  return onDisk.filter(
+    (f) =>
+      !keep.has(f.fileName) &&
+      now.getTime() - f.modifiedAt.getTime() >= IDENTITY_ORPHAN_GRACE_MS
+  );
+}

@@ -663,6 +663,10 @@ export const CorrespondenceService = {
         reviewers: {
           include: {
             reviewer: {
+              // NIP tetap di sini: halaman surat hanya terbuka bagi yang sudah
+              // masuk dan berhak membacanya, dan nomor induk memang keterangan
+              // internal. Yang dihapus adalah NIP pada naskah yang beredar dan
+              // pada halaman verifikasi publik, bukan NIP di meja sendiri.
               select: {
                 name: true,
                 teacher: { select: { nip: true } },
@@ -752,11 +756,8 @@ export const CorrespondenceService = {
             // ditandatangani sebelum boleh dicap dan diserahkan.
             pdfHash: true,
             signer: {
-              select: {
-                name: true,
-                teacher: { select: { nip: true } },
-                staff: { select: { nip: true } },
-              },
+              // Nama saja: naskah tidak lagi mencetak NIP.
+              select: { name: true },
             },
           },
           orderBy: { signedAt: 'asc' },

@@ -46,7 +46,7 @@ const DECIDING_OFFICIAL_TITLE_CASE = DECIDING_OFFICIAL.split(' ')
  * perubahan apa pun yang mengubah keluaran** — kop surat, jarak baris, urutan
  * gambar, atau kenaikan versi `pdf-lib`.
  */
-export const LETTER_PDF_GENERATOR = 'cipansor-naskah/2026-09-03';
+export const LETTER_PDF_GENERATOR = 'cipansor-naskah/2026-09-03b';
 
 export class LetterPdfError extends Error {
   constructor(message: string) {
@@ -78,11 +78,7 @@ export interface LetterPdfInput {
     verificationToken: string;
     signedAt: Date | string;
     revokedAt?: Date | string | null;
-    signer?: {
-      name: string;
-      teacher?: { nip?: string | null } | null;
-      staff?: { nip?: string | null } | null;
-    } | null;
+    signer?: { name: string } | null;
   }> | null;
   /** Berkas yang menyertai naskah; hanya jumlahnya yang tercetak. */
   attachments?: Array<{ name: string }> | null;
@@ -369,12 +365,33 @@ export async function generateLetterPdfBuffer(letter: LetterPdfInput): Promise<B
    * dilewati bila ia hanya mengulang baris di atasnya — kop surat sebuah unit
    * (MTs, TK Qur'an) tetap memakai dua baris sebagaimana mestinya.
    */
-  const orgName = 'YAYASAN PESANTREN CIPANSOR';
+  const orgName = LETTERHEAD.organisation;
   const rawUnitName = letter.unit?.name?.toUpperCase() ?? 'KANTOR YAYASAN';
   const unitName = rawUnitName === orgName ? null : rawUnitName;
-  const legalBasis = 'SK Kemenkumham RI No. AHU-0012345.AH.01.04.Tahun 2020';
-  const address = letter.unit?.address ?? 'Jl. Raya Cipansor No. 01, Tasikmalaya, Jawa Barat';
-  const contact = `Website: cipansor.or.id | Telp: ${letter.unit?.phone || '0265-123456'} | Email: ${letter.unit?.email || 'halo@cipansor.or.id'}`;
+
+  /**
+   * Dasar hukum yayasan, dari kop surat aslinya.
+   *
+   * Sebelumnya baris ini berbunyi *"SK Kemenkumham RI No.
+   * AHU-0012345.AH.01.04.Tahun 2020"* — dituliskan langsung di sini, dan
+   * nomornya karangan: `0012345` adalah angka contoh, dan tahunnya pun bukan
+   * tahun pengesahan yayasan ini. Artinya **setiap naskah dinas yang pernah
+   * terbit dari sistem ini mencantumkan nomor badan hukum yang tidak ada.**
+   *
+   * Nilai yang benar sudah tersimpan sejak lama di `LETTERHEAD`, disalin dari
+   * kop surat yang sungguh-sungguh dikeluarkan yayasan, dan berkas ini tidak
+   * pernah membacanya. Tiga nilai berbeda hidup berdampingan: yang di sini,
+   * yang di `LETTERHEAD`, dan nomor pengesahan Kemenkumham yang sah di halaman
+   * legalitas publik (`AHU-3039.AH.01.04.Tahun 2022`). Yang dipakai naskah
+   * sekarang adalah satu-satunya yang berasal dari dokumen.
+   *
+   * Alamat dan kontak cadangannya juga diambil dari sumber yang sama; nomor
+   * telepon `0265-123456` yang lama adalah contoh, bukan nomor yayasan.
+   */
+  const legalBasis = LETTERHEAD.legalBasis;
+  const address =
+    letter.unit?.address ?? `${LETTERHEAD.addressLine1}, ${LETTERHEAD.addressLine2}`;
+  const contact = `Website: ${LETTERHEAD.website} | ${LETTERHEAD.phone} | Email: ${letter.unit?.email || 'halo@cipansor.or.id'}`;
 
   if (unitName) {
     cur.text(orgName, { x: centreOf(orgName, fontTimesBold, 12), size: 12, font: fontTimesBold });
@@ -586,7 +603,7 @@ export async function generateLetterPdfBuffer(letter: LetterPdfInput): Promise<B
   // ── Signature block ──────────────────────────────────────────────────────
   const activeSignature = (letter.signatures || []).filter((s) => !s.revokedAt).slice(-1)[0];
   // Reserve the whole block so it can never be split across pages or land on
-  // top of the body: date + org + title + QR + captions + name + NIP.
+  // top of the body: date + org + title + QR + captions + name.
   cur.ensure(activeSignature ? 200 : 150);
   cur.down(20);
 
@@ -645,17 +662,27 @@ export async function generateLetterPdfBuffer(letter: LetterPdfInput): Promise<B
     cur.down(50); // room for a wet signature
   }
 
+  /**
+   * Nama penanda tangan saja — NIP tidak dicetak.
+   *
+   * Pedoman visualisasi tanda tangan elektronik menyatakan visualisasinya tidak
+   * memuat data pribadi seperti pindaian tanda tangan, NIP, atau NIK; dan bagi
+   * yayasan ini nomor induk pegawai memang keterangan internal, bukan bagian
+   * dari naskah yang beredar ke luar. Sebuah naskah dinas tidak menjadi lebih
+   * sah karena mencantumkannya, tetapi setiap lembar yang beredar menjadi satu
+   * salinan lagi dari nomor kepegawaian seseorang.
+   *
+   * Ini mengubah byte naskah bagi penanda tangan yang punya NIP. Byte yang
+   * sudah ditandatangani tetap aman karena diarsipkan utuh (PR-3) — tetapi
+   * naskah lama semacam itu tidak lagi dapat dibuat ulang secara identik, jadi
+   * `db:archive-letters` harus dijalankan **sebelum** perubahan ini diterapkan
+   * ke produksi.
+   */
   const signerName =
     activeSignature?.signer?.name || letter.senderName || '.........................';
-  const signerNip =
-    activeSignature?.signer?.teacher?.nip || activeSignature?.signer?.staff?.nip || '-';
 
   cur.text(signerName, { x: rightAlignX, font: fontTimesBold });
   cur.down(12);
-  if (signerNip !== '-') {
-    cur.text(`NIP. ${signerNip}`, { x: rightAlignX, size: 9, font: fontTimes });
-    cur.down(12);
-  }
 
   // ── Tembusan ─────────────────────────────────────────────────────────────
   /**

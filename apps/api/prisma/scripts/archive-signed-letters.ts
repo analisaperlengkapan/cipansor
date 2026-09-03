@@ -57,11 +57,9 @@ async function main() {
           signatures: {
             include: {
               signer: {
-                select: {
-                  name: true,
-                  teacher: { select: { nip: true } },
-                  staff: { select: { nip: true } },
-                },
+                // Nama saja: naskah tidak lagi mencetak NIP, dan mengambil
+                // yang tidak dicetak hanya menyebarkannya lebih jauh.
+                select: { name: true },
               },
             },
           },

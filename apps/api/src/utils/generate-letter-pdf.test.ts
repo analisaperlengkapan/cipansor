@@ -27,10 +27,7 @@ describe('generateLetterPdfBuffer determinism', () => {
         {
           verificationToken: 'test-token-abcdef123456',
           signedAt: new Date('2025-05-15T10:00:00.000Z'),
-          signer: {
-            name: 'Ustadz Ahmad',
-            teacher: { nip: '198501012010011001' },
-          },
+          signer: { name: 'Ustadz Ahmad' },
         },
       ],
     };
@@ -149,6 +146,32 @@ describe('isi naskah', () => {
   });
 });
 
+describe('blok tanda tangan', () => {
+  /**
+   * Pedoman visualisasi tanda tangan elektronik menyatakan visualisasinya tidak
+   * memuat data pribadi seperti pindaian tanda tangan, NIP, atau NIK — dan bagi
+   * yayasan ini nomor induk pegawai memang keterangan internal. Setiap lembar
+   * yang beredar dengan NIP tercetak adalah satu salinan lagi dari nomor
+   * kepegawaian seseorang, dan naskahnya tidak menjadi lebih sah karenanya.
+   */
+  it('tidak mencetak NIP penanda tangan', async () => {
+    const pdf = await generateLetterPdfBuffer(
+      letterWith({
+        signatures: [
+          {
+            verificationToken: 'tok-abc',
+            signedAt: new Date('2026-09-01T03:00:00.000Z'),
+            signer: { name: 'H. Endang Suryana' },
+          },
+        ],
+      })
+    );
+    const text = pdfText(pdf);
+    expect(text).toContain('H. Endang Suryana');
+    expect(text).not.toContain('NIP');
+  });
+});
+
 describe('lampiran dan tembusan', () => {
   /**
    * Baris "Lampiran" pada kepala surat selalu tercetak "-", apa pun keadaannya,
@@ -248,10 +271,23 @@ describe('lampiran dan tembusan', () => {
    * yang sama persis seperti sebelumnya, kalau tidak seluruh surat lama akan
    * dilaporkan kepada publik sebagai berubah.
    *
-   * Hash di bawah diambil dari tata letak sebelum lampiran dan tembusan ada.
-   * Kalau uji ini merah, tata letaknya berubah untuk *semua* naskah: itu
-   * bukan galat uji, itu migrasi — lihat komentar modul di
-   * generate-letter-pdf.ts.
+   * Kalau uji ini merah, tata letaknya berubah untuk *semua* naskah: itu bukan
+   * galat uji, itu migrasi — lihat komentar modul di generate-letter-pdf.ts.
+   * Memperbarui angkanya sah **hanya** setelah perubahannya disengaja dan
+   * akibatnya diterima; mengubahnya supaya uji hijau kembali menghapus
+   * satu-satunya penjaga yang ada.
+   *
+   * Riwayat pin ini:
+   *
+   * - `d4e73b4d…` — sebelum lampiran dan tembusan. Tetap sama saat keduanya
+   *   ditambahkan, karena keduanya hanya tercetak bila datanya ada.
+   * - `cde0a068…` — 2026-09-03. Kop surat berhenti mencetak nomor badan hukum
+   *   karangan (`AHU-0012345…Tahun 2020`) dan memakai dasar hukum dari kop
+   *   surat yang sungguh dikeluarkan yayasan, beserta alamat dan telepon yang
+   *   sebenarnya. Perubahan disengaja dan menyentuh setiap naskah; naskah yang
+   *   sudah ditandatangani tetap aman karena byte-nya diarsipkan (PR-3), tetapi
+   *   `db:archive-letters` harus dijalankan **sebelum** ini diterapkan ke
+   *   produksi agar naskah lama yang belum berarsip masih dapat dibuat ulang.
    */
   it('naskah tanpa lampiran dan tanpa tembusan tetap menghasilkan byte yang sama', async () => {
     const pdf = await generateLetterPdfBuffer({
@@ -269,7 +305,7 @@ describe('lampiran dan tembusan', () => {
     });
 
     expect(crypto.createHash('sha256').update(pdf).digest('hex')).toBe(
-      'd4e73b4df26d9798e8e7e075634ce95d7d0b91600ccfd1dd97a773e178182537'
+      'cde0a06869aeb3964915f9f052ee38767ef08d3f47161cb7bb986d89ca7f61d8'
     );
   });
 });

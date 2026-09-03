@@ -703,12 +703,13 @@ Three changes that are worth making, though:
 2. **Put the yayasan lambang in the centre of the QR** (error-correction level
    H tolerates it). That delivers the branded look the request is really after,
    at no cost to the standard.
-3. **Reconsider printing `NIP.` in the signature block.** The BSrE-derived
-   guidance says the *visualisation* must not contain personal data such as a
-   scanned signature, NIP or NIK. Whether that reaches the naskah's own
-   signature block — where tata naskah dinas does put NIP for ASN — is a
-   question for the yayasan, not one to settle from a wiki page. Worth asking;
-   not worth changing unilaterally.
+3. ~~Reconsider printing `NIP.` in the signature block.~~ **Decided
+   2026-09-03: removed.** NIP no longer prints on the naskah and is no longer
+   returned by public verification — it is internal information, and every
+   circulating sheet that carried it was one more copy of someone's employment
+   number. It stays on the authenticated letter page, which is what "internal"
+   means. This changes the bytes for any letter whose signer had a NIP, so
+   `db:archive-letters` must run **before** the change reaches production.
 
 And the footnote. Official practice prints something like *"Dokumen ini telah
 ditandatangani secara elektronik menggunakan sertifikat elektronik yang
@@ -758,6 +759,219 @@ the discipline not to design anything that puts signing before finalisation.
 
 ---
 
+### PR-5b — Identity behind a key, and the identifiers a seal would need
+
+Asked on 2026-09-03, and the premise checks out against the standards on both
+sides.
+
+**A signature binds to a person only if the certificate says who.** BSrE's own
+enrolment collects full name, **NIK**, phone, a **photograph of the KTP**, and a
+**selfie**, and matches them against Dukcapil's population data — name, NIK,
+date of birth, photo, biometrics. ETSI EN 319 412-2 gives the shape the result
+takes in the certificate: the subject's `serialNumber` is
+*3-character identity type + 2-character ISO country code + `-` + identifier*,
+where the type is one of `PAS` (passport), `IDC` (national identity card),
+`PNO` (civic registration number), `TAX` or `TIN`. For Indonesia that is:
+
+    serialNumber = IDCID-<NIK>
+
+**What this system binds to today is a database row.** A key is issued to a
+`User` whose only identity is a name and an email. The signature therefore
+proves "whoever knew the passphrase of the key we issued to user-id X" — and
+nothing in the system says who X is in the world. That is the gap, and closing
+it does **not** require a PSrE:
+
+1. Store the identity a certificate would carry — legal name as on the KTP,
+   NIK, place and date of birth — as a prerequisite for a signing key, not as
+   optional profile decoration.
+2. **Refuse the request when it is incomplete**, naming what is missing, rather
+   than letting a key be issued to an unidentified account.
+3. Require a **KTP photograph** at enrolment and have the Super Admin confirm
+   it against the entered data before approving. That is the identity-proofing
+   step, and recording *that it happened, by whom, and on what evidence* also
+   closes the AATL ICA5(a) item already on the backlog.
+
+#### Keeping the KTP: what the standards say, and the one fact that decides it
+
+Asked 2026-09-03, weighing *delete after verification* against *keep for a
+fixed period* against *delete immediately and re-check against the real KTP if
+questioned*.
+
+**The instinct to keep it matches the standard.** eIDAS Art. 24.2(h) obliges a
+qualified trust service provider to *"record and keep accessible for an
+appropriate period of time … all relevant information concerning data issued and
+received … in particular, for the purpose of providing evidence in legal
+proceedings"*. ETSI EN 319 412-5 goes further and lets a certificate **declare**
+its retention period, expressed as a number of years after the certificate
+expires. So "kalau nanti dipertanyakan, ada dasarnya" is not a hunch — it is the
+codified reason registration evidence is retained at all. Note what the standards
+do *not* do: they fix no number. Each provider states its own period in its
+practice statement, which means we have to choose ours and write it down.
+
+**The flaw in deleting immediately.** Re-checking against the signer's KTP today
+proves the person exists and their data matches. It does not prove what was
+presented at enrolment, which is the question actually in dispute when someone
+claims a key was issued to an impostor.
+
+**But one fact settles the shape of any answer.** `/uploads` is served by
+`uploadsAuth`, which is **authentication, not authorisation** — the middleware's
+own comment says so: *"any valid access token, including a santri's or a
+parent's, opens every file in the directory."* Filenames are crypto-random and
+that is the only separation. So *"only Super Admin may see it"* **cannot be
+implemented by putting a KTP through the existing upload endpoint.** A KTP image
+needs storage with per-record authorisation, or it must not be stored at all.
+
+**Recommendation, in the order it should be built:**
+
+1. **Ship the identity gate without the image first.** Required fields (legal
+   name as on the KTP, NIK, place and date of birth), an automatic refusal that
+   names what is missing, and a Super Admin who confirms the data against a KTP
+   *seen* — in person, which for this yayasan is the normal case — and records
+   that they did. That delivers the whole evidentiary benefit and stores no new
+   sensitive image.
+2. **The durable artefact is the verification record, never the image**: who
+   verified, when, which fields were compared, and — if an image was uploaded —
+   its SHA-256. That record is small, carries no personal data beyond what the
+   account already holds, and answers the diligence question permanently. If a
+   copy of the KTP is later produced by anyone, the hash settles whether it is
+   the same file.
+3. **Only then, if the yayasan still wants the image**, build authorised storage
+   for it — outside `/uploads`, read only through an endpoint that checks the
+   caller is Super Admin, with every access logged. Retention **tied to the
+   signing key, not to the calendar**: delete when the key it justified has
+   expired or been revoked, plus a stated tail. A key here already has a short,
+   per-approval validity, so this is naturally much shorter than a guessed
+   "1–2 years", and it is defensible because it is derived from what the
+   evidence is *for*.
+
+#### How long, counted from when — and whether OCR changes the answer
+
+Asked 2026-09-03.
+
+**The counting basis is settled, and it is not issuance.** The CA/Browser Forum
+Baseline Requirements say it plainly: *"The CA SHALL retain all documentation
+relating to certificate requests and the verification thereof, and all
+Certificates and revocation thereof, for at least **seven years after any
+Certificate based on that documentation ceases to be valid**."* Audit logs get
+the same seven years. ETSI EN 319 412-5 expresses its declared retention the
+same way — a number of years **after the certificate expires**. eIDAS Art.
+24.2(h) sets the purpose but no number, leaving each provider to state its own.
+
+So: **seven years is the common figure, and every standard counts it from the
+end of validity, not from issuance.** Worth knowing that the proportionality of
+that number is contested inside the standards bodies themselves — CA/B Forum
+ballot SC28 (2020) noted that seven years of retention for a two-year
+certificate is out of proportion. Our keys are shorter-lived still: validity is
+granted per approval in days, so "after expiry" arrives quickly.
+
+Applied here, the two artefacts deserve different answers:
+
+- **The verification record: keep it for as long as the letters.** Letters are
+  archived permanently, so "who was verified as this signer, by whom, on what
+  evidence" has to stay answerable permanently. The record is a few fields and
+  a hash — it costs nothing to keep and everything to lose.
+- **The image: do not keep it at all** — for the reason below.
+
+#### OCR: yes for the text, no for the face
+
+**It works well enough.** Published work on Indonesian e-KTP puts Tesseract with
+proper preprocessing — grayscale, Gaussian blur, thresholding, deskew, line
+segmentation — at roughly 90–98% field accuracy. Two routes, and the choice
+matters legally more than technically: a local WASM engine keeps the image
+inside our own system (and needs no native dependency, which matters on a stack
+that already cannot resolve `sharp`), while a commercial OCR API is more
+accurate but makes the KTP a **transfer of personal data to a third party**,
+needing its own lawful basis and a processor agreement. For a yayasan of this
+size the second is disproportionate.
+
+**The reason to do it is not accuracy — it is that OCR dissolves the retention
+problem.** Reading the card turns the image into a *comparison result*, and a
+comparison result is exactly the durable artefact recommended above. The flow
+becomes:
+
+1. The applicant uploads the KTP.
+2. OCR extracts NIK, name, place and date of birth.
+3. The system compares them field by field against what the applicant typed.
+4. The Super Admin sees the match report **and** the image, once, while deciding.
+5. On decision the **image is deleted**; the report and the image's SHA-256 are
+   kept.
+
+Nothing sensitive is stored long-term, so there is no retention window to argue
+about and no concentrated target to protect. The `/uploads` authorisation gap
+still has to be respected — the image must be readable only by the deciding
+Super Admin and only until the decision — but it is a much smaller problem when
+the file's life is measured in days.
+
+**What OCR does not do: catch forgery.** Anyone submitting a fabricated KTP
+submits one whose printed text matches what they typed, so the fields will
+agree. Its real value is data quality and sparing the Super Admin a manual
+character-by-character comparison of a 16-digit NIK. Presenting it as fraud
+detection would be the same overclaim as calling a weighted sum "AI".
+
+**Face matching the KTP photo against the profile photo: recommended against.**
+
+1. A facial image is biometric data — *data pribadi yang bersifat spesifik*
+   under UU PDP. Art. 20(2) requires **explicit consent, given separately**, not
+   folded into general terms, plus layered protection and the sanctions exposure
+   that comes with sensitive data.
+2. What it automates is a judgement a Super Admin who knows the staff personally
+   makes better, in an organisation of roughly a hundred accounts.
+3. A printed KTP photograph — low resolution, often years old — matched against
+   a profile photo produces false rejections, and a false rejection here blocks
+   a legitimate official from signing.
+4. Decisively: **BSrE's own enrolment already performs face matching against
+   Dukcapil**, the authoritative population database. If the yayasan ever moves
+   to a PSrE, it receives real biometric verification against the right source.
+   Building our own now is building a worse version of something that would
+   later arrive properly.
+
+**On access, the proposal is right and for the right reason.** The requester
+loses read-back once the decision is made: they already hold their own KTP, so
+denying it costs them nothing, and it removes an exfiltration path from a
+hijacked account — the threat is a leaked *user* session, not the user. Two
+additions: the requester must still be able to see *that* a document is on file
+and *when it will be deleted*, because UU PDP gives a data subject the right to
+the record of processing; and Super Admin access must be logged, since "only
+Super Admin can see it" is a promise that needs a record before anyone can check
+it. NIK and an identity document sit at the sensitive end of UU PDP, so the duty
+of care here is higher than for the rest of the system.
+
+**The seal side — what identifies an organisation.** ETSI EN 319 412-1 gives
+`organizationIdentifier` the same shape: *3-character legal-person identity type
++ 2-character country code + `-` + identifier*, where the type is `NTR` (national
+trade register), `VAT` (VAT/tax number), or `LEI` (global Legal Entity
+Identifier, always `LEIXG-`). Mapped onto a yayasan:
+
+| Certificate field | Value for Yayasan Pesantren Cipansor | Why |
+|---|---|---|
+| `organizationIdentifier` | `NTRID-AHU-3039.AH.01.04.Tahun 2022` | A yayasan's national register **is** Ditjen AHU Kemenkumham, and the pengesahan badan hukum number is its entry. This is the primary identifier. |
+| (alternative) | `VATID-<NPWP, digits only>` | Accepted where a tax number is the registry of record. Keep both on file; put NTR in the certificate. |
+| `O` organizationName | `Yayasan Pesantren Cipansor` | The legal name **exactly as in the SK**, not the brand or the pesantren's popular name. |
+| `OU` organizationalUnit | e.g. `MTs Cipansor` | Only when the seal is issued per unit. BSrE issues seals both per Organisasi and per Unit Organisasi, so the field has to exist even if unused at first. |
+| `L` / `ST` / `C` | `Tasikmalaya` / `Jawa Barat` / `ID` | **A certificate carries a locality, not a postal address.** The full street address belongs in the registration record behind the seal, not in the subject DN. |
+
+So the answer to *"alamat organisasi cocoknya bagaimana?"* is: locality,
+province and country in the certificate; the full address in the yayasan's
+identity record, which is what the registrar checks the certificate against.
+
+**Found while answering this.** The naskah's letterhead printed
+`SK Kemenkumham RI No. AHU-0012345.AH.01.04.Tahun 2020`, hard-coded in the
+generator. `0012345` is a placeholder and the year is wrong — meaning **every
+naskah dinas this system has ever issued carried a legal-entity number that does
+not exist**, while three different values lived side by side: that one, the
+notarial deed in `LETTERHEAD.legalBasis` (copied from a real letter), and the
+genuine `AHU-3039.AH.01.04.Tahun 2022` on the public legalitas page. The naskah
+now prints `LETTERHEAD.legalBasis` — the only one of the three that came from a
+document — along with the real address and telephone number, replacing
+`0265-123456`, which was also invented. This is the same class of defect as a
+fabricated bank account number, and it was sitting on the letterhead of every
+official letter.
+
+Recommended order of work: the identity gate (1–3 above) is worth building now
+and is independent of any PSrE decision. The seal itself waits — see §5b(c).
+
+---
+
 ### Deployment note
 
 `e93a7cf2` adds 6 lines to `schema.prisma` (`pdfHash`, `pdfSignature` and their
@@ -793,6 +1007,17 @@ real backfill.
    Whether that reaches the naskah's own signature block — where tata naskah
    dinas does print NIP for ASN — is the yayasan's call, and worth confirming
    before the first ijazah is signed.
-6. **Segel elektronik (§5b(c)).** Whether the yayasan intends to obtain a
-   commercial PSrE certificate. That single answer settles Tier 2, the e-seal,
-   and whether the naskah may ever carry the standard BSrE footnote wording.
+6. ~~**Segel elektronik (§5b(c)).**~~ **Answered 2026-09-03: not for now.** The
+   yayasan stays on in-house keys. Tier 2, the e-seal and the standard BSrE
+   footnote wording all wait on that decision being revisited.
+7. **Whether to store the KTP image at all (§PR-5b).** The analysis is written
+   up there: the identity gate is worth building either way, and it delivers its
+   evidentiary benefit without storing a new sensitive image. Storing the image
+   is only defensible after `/uploads`' authorisation gap is closed — today any
+   signed-in account can read any file in it. If the yayasan wants the image,
+   the question to answer is the retention tail beyond key expiry.
+8. **The yayasan's own identity record (§PR-5b).** Confirm the legal name
+   exactly as written in the pengesahan, the NPWP, and the full registered
+   address. The letterhead has been printing a fabricated Kemenkumham number
+   until today, so these should be checked against the documents rather than
+   against the code.

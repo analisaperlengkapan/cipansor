@@ -10,7 +10,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { LetterStatusBadge } from "@/components/e-office/letter-status-badge";
 import { DispositionTimeline } from "@/components/e-office/disposition-timeline";
-import { LetterPDFTemplate } from "@/components/e-office/letter-pdf-template";
 import {
   ArrowLeft,
   FileText,
@@ -27,19 +26,19 @@ import {
 } from "lucide-react";
 
 import { id } from "date-fns/locale";
-import { useState, useRef } from "react";
-/**
- * `html2canvas-pro`, not `html2canvas`.
+import { useState } from "react";
+/*
+ * Tidak ada html2canvas dan jsPDF di sini lagi.
  *
- * Tailwind v4 compiles this app's palette to `lab()` colours, and
- * html2canvas 1.4.1 throws "Attempting to parse an unsupported color function"
- * on the first element whose computed colour is one — which is essentially
- * every element. The download therefore rejected before producing anything,
- * for every letter, and the user only saw "Gagal mengunduh". The pro fork is
- * the same API with modern colour-function support.
+ * Halaman ini dulu merender seluruh surat menjadi satu PNG lalu menempelkannya
+ * ke sebuah PDF — naskah yang tidak dapat dipilih, dicari, dibaca pembaca
+ * layar, atau membawa tanda tangan PAdES. PR-1 menggantinya dengan penghasil
+ * PDF di server, tetapi jalur lamanya ditinggalkan hidup-hidup: `pdfRef`
+ * dipasang dan tidak pernah dibaca, `LetterPDFTemplate` dirender tersembunyi
+ * pada setiap kali halaman surat dibuka, dan kedua pustaka itu tetap ikut
+ * terkirim ke peramban. Kode mati yang tetap dimuat pengguna bukan sekadar
+ * kode mati.
  */
-import html2canvas from "html2canvas-pro";
-import jsPDF from "jspdf";
 import {
   Dialog,
   DialogContent,
@@ -111,7 +110,6 @@ export default function LetterDetailPage({
   });
   const { data: letter, isLoading } = useLetter(params.id);
 
-  const pdfRef = useRef<HTMLDivElement>(null);
   const [notes, setNotes] = useState("");
   const [dispositionOpen, setDispositionOpen] = useState(false);
   const [signOpen, setSignOpen] = useState(false);
@@ -743,11 +741,6 @@ export default function LetterDetailPage({
         open={revokeOpen}
         onOpenChange={setRevokeOpen}
       />
-
-      {/* Hidden PDF Template */}
-      <div className="fixed left-[-9999px] top-0">
-        <LetterPDFTemplate ref={pdfRef} letter={letter} />
-      </div>
 
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" onClick={() => router.back()}>
